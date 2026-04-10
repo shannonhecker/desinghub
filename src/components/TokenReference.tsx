@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
-import { getTheme, getSystemInfo } from "@/data/registry";
+import { getTheme, getSystemInfo, activateTheme } from "@/data/registry";
 import { contrastRatio, formatRatio, meetsAA, isHex } from "@/lib/contrastUtils";
 
 interface TokenEntry {

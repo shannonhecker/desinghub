@@ -1,10 +1,22 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
-import { getTheme, getFont, getSystemInfo } from "@/data/registry";
+import { getTheme, getFont, getSystemInfo, activateTheme } from "@/data/registry";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+
+// Initialize Highcharts modules (only in browser)
+if (typeof window !== "undefined") {
+  const initMore = require("highcharts/highcharts-more");
+  const initSolidGauge = require("highcharts/modules/solid-gauge");
+  const initHeatmap = require("highcharts/modules/heatmap");
+  const initTreemap = require("highcharts/modules/treemap");
+  if (initMore.default) initMore.default(Highcharts); else initMore(Highcharts);
+  if (initSolidGauge.default) initSolidGauge.default(Highcharts); else initSolidGauge(Highcharts);
+  if (initHeatmap.default) initHeatmap.default(Highcharts); else initHeatmap(Highcharts);
+  if (initTreemap.default) initTreemap.default(Highcharts); else initTreemap(Highcharts);
+}
 
 function getChartTheme(system: string, T: any, font: string): Partial<Highcharts.Options> {
   if (system === "salt") {
@@ -56,13 +68,13 @@ const CHARTS: ChartDef[] = [
   {
     id: "line", name: "Line Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "line" },
-      title: { ...t.title, text: "Monthly Revenue" },
-      xAxis: { ...t.xAxis as any, categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
-      yAxis: { ...t.yAxis as any, title: { ...((t.yAxis as any)?.title || {}), text: "Revenue ($K)" } },
+      ...t, chart: { ...(t.chart as any), type: "line" },
+      title: { ...(t.title as any), text: "Monthly Revenue" },
+      xAxis: { ...(t.xAxis as any), categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+      yAxis: { ...(t.yAxis as any), title: { text: "Revenue ($K)" } },
       series: [
-        { name: "2024", data: [120, 134, 145, 152, 168, 185], type: "line" },
-        { name: "2025", data: [140, 155, 162, 178, 195, 210], type: "line" },
+        { name: "2024", data: [120, 134, 145, 152, 168, 185], type: "line" as const },
+        { name: "2025", data: [140, 155, 162, 178, 195, 210], type: "line" as const },
       ],
       credits: { enabled: false },
     }),
@@ -70,12 +82,12 @@ const CHARTS: ChartDef[] = [
   {
     id: "area", name: "Area Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "area" },
-      title: { ...t.title, text: "User Growth" },
-      xAxis: { ...t.xAxis as any, categories: ["Q1", "Q2", "Q3", "Q4"] },
+      ...t, chart: { ...(t.chart as any), type: "area" },
+      title: { ...(t.title as any), text: "User Growth" },
+      xAxis: { ...(t.xAxis as any), categories: ["Q1", "Q2", "Q3", "Q4"] },
       series: [
-        { name: "Free", data: [5000, 8200, 12400, 18000], type: "area" },
-        { name: "Pro", data: [1200, 2400, 4100, 6800], type: "area" },
+        { name: "Free", data: [5000, 8200, 12400, 18000], type: "area" as const },
+        { name: "Pro", data: [1200, 2400, 4100, 6800], type: "area" as const },
       ],
       plotOptions: { area: { fillOpacity: 0.3 } },
       credits: { enabled: false },
@@ -84,12 +96,12 @@ const CHARTS: ChartDef[] = [
   {
     id: "column", name: "Column Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "column" },
-      title: { ...t.title, text: "Sales by Region" },
-      xAxis: { ...t.xAxis as any, categories: ["NA", "EMEA", "APAC", "LATAM"] },
+      ...t, chart: { ...(t.chart as any), type: "column" },
+      title: { ...(t.title as any), text: "Sales by Region" },
+      xAxis: { ...(t.xAxis as any), categories: ["NA", "EMEA", "APAC", "LATAM"] },
       series: [
-        { name: "Q3", data: [420, 380, 290, 180], type: "column" },
-        { name: "Q4", data: [480, 410, 340, 210], type: "column" },
+        { name: "Q3", data: [420, 380, 290, 180], type: "column" as const },
+        { name: "Q4", data: [480, 410, 340, 210], type: "column" as const },
       ],
       credits: { enabled: false },
     }),
@@ -97,15 +109,12 @@ const CHARTS: ChartDef[] = [
   {
     id: "pie", name: "Pie Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "pie" },
-      title: { ...t.title, text: "Market Share" },
-      series: [{
-        name: "Share", type: "pie",
-        data: [
-          { name: "Product A", y: 45 }, { name: "Product B", y: 26 },
-          { name: "Product C", y: 17 }, { name: "Other", y: 12 },
-        ],
-      }],
+      ...t, chart: { ...(t.chart as any), type: "pie" },
+      title: { ...(t.title as any), text: "Market Share" },
+      series: [{ name: "Share", type: "pie" as const, data: [
+        { name: "Product A", y: 45 }, { name: "Product B", y: 26 },
+        { name: "Product C", y: 17 }, { name: "Other", y: 12 },
+      ]}],
       plotOptions: { pie: { allowPointSelect: true, dataLabels: { enabled: true, format: "{point.name}: {point.percentage:.0f}%", style: { fontSize: "11px" } } } },
       credits: { enabled: false },
     }),
@@ -113,13 +122,13 @@ const CHARTS: ChartDef[] = [
   {
     id: "scatter", name: "Scatter Plot", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "scatter" },
-      title: { ...t.title, text: "Risk vs Return" },
-      xAxis: { ...t.xAxis as any, title: { text: "Risk (%)" } },
-      yAxis: { ...t.yAxis as any, title: { text: "Return (%)" } },
+      ...t, chart: { ...(t.chart as any), type: "scatter" },
+      title: { ...(t.title as any), text: "Risk vs Return" },
+      xAxis: { ...(t.xAxis as any), title: { text: "Risk (%)" } },
+      yAxis: { ...(t.yAxis as any), title: { text: "Return (%)" } },
       series: [
-        { name: "Equities", type: "scatter", data: [[8, 12], [10, 15], [12, 11], [15, 18], [6, 8], [9, 14]] },
-        { name: "Bonds", type: "scatter", data: [[2, 3], [3, 4], [4, 5], [3, 3.5], [2.5, 4.2]] },
+        { name: "Equities", type: "scatter" as const, data: [[8,12],[10,15],[12,11],[15,18],[6,8],[9,14]] },
+        { name: "Bonds", type: "scatter" as const, data: [[2,3],[3,4],[4,5],[3,3.5],[2.5,4.2]] },
       ],
       credits: { enabled: false },
     }),
@@ -127,24 +136,20 @@ const CHARTS: ChartDef[] = [
   {
     id: "bar", name: "Bar Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "bar" },
-      title: { ...t.title, text: "Top Performers" },
-      xAxis: { ...t.xAxis as any, categories: ["Alice", "Bob", "Carol", "Dan", "Eve"] },
-      series: [{ name: "Score", data: [95, 88, 82, 76, 71], type: "bar" }],
+      ...t, chart: { ...(t.chart as any), type: "bar" },
+      title: { ...(t.title as any), text: "Top Performers" },
+      xAxis: { ...(t.xAxis as any), categories: ["Alice", "Bob", "Carol", "Dan", "Eve"] },
+      series: [{ name: "Score", data: [95, 88, 82, 76, 71], type: "bar" as const }],
       credits: { enabled: false },
     }),
   },
   {
     id: "donut", name: "Donut Chart", category: "Core",
     getOptions: (t) => ({
-      ...t, chart: { ...t.chart, type: "pie" },
-      title: { ...t.title, text: "Portfolio Allocation" },
-      series: [{
-        name: "Allocation", type: "pie", innerSize: "60%",
-        data: [
-          { name: "Equities", y: 55 }, { name: "Bonds", y: 25 },
-          { name: "Alternatives", y: 12 }, { name: "Cash", y: 8 },
-        ],
+      ...t, chart: { ...(t.chart as any), type: "pie" },
+      title: { ...(t.title as any), text: "Portfolio Allocation" },
+      series: [{ name: "Allocation", type: "pie" as const, innerSize: "60%",
+        data: [{ name: "Equities", y: 55 }, { name: "Bonds", y: 25 }, { name: "Alternatives", y: 12 }, { name: "Cash", y: 8 }],
       }],
       credits: { enabled: false },
     }),
@@ -153,29 +158,30 @@ const CHARTS: ChartDef[] = [
     id: "gauge", name: "Gauge", category: "Advanced",
     getOptions: (t) => ({
       ...t,
-      chart: { ...t.chart, type: "solidgauge", height: 280 },
-      title: { ...t.title, text: "System Health" },
-      pane: { center: ["50%", "70%"], size: "100%", startAngle: -90, endAngle: 90, background: [{ backgroundColor: (t.colors as string[])?.[0] + "20", innerRadius: "60%", outerRadius: "100%", shape: "arc", borderWidth: 0 }] },
+      chart: { ...(t.chart as any), type: "solidgauge", height: 280 },
+      title: { ...(t.title as any), text: "System Health" },
+      pane: { center: ["50%", "70%"], size: "100%", startAngle: -90, endAngle: 90,
+        background: [{ backgroundColor: ((t.colors as string[])?.[0] || "#1B7F9E") + "20", innerRadius: "60%", outerRadius: "100%", shape: "arc" as const, borderWidth: 0 }] },
       yAxis: { min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickInterval: null as any, labels: { enabled: false } },
-      series: [{ name: "Health", data: [87], type: "solidgauge" as any, dataLabels: { format: "<span style='font-size:24px;font-weight:600'>{y}%</span>", borderWidth: 0, y: -20 }, innerRadius: "60%", radius: "100%" }],
+      series: [{ name: "Health", data: [87], type: "solidgauge" as any,
+        dataLabels: { format: '<span style="font-size:24px;font-weight:600">{y}%</span>', borderWidth: 0, y: -20 },
+        innerRadius: "60%", radius: "100%" }],
       credits: { enabled: false },
     }),
   },
   {
     id: "heatmap", name: "Heatmap", category: "Advanced",
     getOptions: (t) => {
-      const colors = t.colors as string[] || ["#1B7F9E"];
+      const accentColor = (t.colors as string[])?.[0] || "#1B7F9E";
       return {
-        ...t,
-        chart: { ...t.chart, type: "heatmap" },
-        title: { ...t.title, text: "Correlation Matrix" },
-        xAxis: { ...t.xAxis as any, categories: ["A", "B", "C", "D"] },
-        yAxis: { ...t.yAxis as any, categories: ["A", "B", "C", "D"], title: undefined },
-        colorAxis: { min: -1, max: 1, stops: [[0, "#E52135"], [0.5, "#F5F7F8"], [1, colors[0]]] },
-        series: [{
-          name: "Correlation", type: "heatmap",
+        ...t, chart: { ...(t.chart as any), type: "heatmap" },
+        title: { ...(t.title as any), text: "Correlation Matrix" },
+        xAxis: { ...(t.xAxis as any), categories: ["A", "B", "C", "D"] },
+        yAxis: { ...(t.yAxis as any), categories: ["A", "B", "C", "D"], title: undefined, reversed: true },
+        colorAxis: { min: -1, max: 1, stops: [[0, "#E52135"], [0.5, "#F5F7F8"], [1, accentColor]] },
+        series: [{ name: "Correlation", type: "heatmap" as const, borderWidth: 1,
           data: [[0,0,1],[0,1,0.8],[0,2,0.3],[0,3,-0.2],[1,0,0.8],[1,1,1],[1,2,0.5],[1,3,0.1],[2,0,0.3],[2,1,0.5],[2,2,1],[2,3,0.7],[3,0,-0.2],[3,1,0.1],[3,2,0.7],[3,3,1]],
-          dataLabels: { enabled: true, format: "{point.value:.1f}", style: { fontSize: "11px" } },
+          dataLabels: { enabled: true, format: "{point.value:.1f}", style: { fontSize: "11px", textOutline: "none" } },
         }],
         credits: { enabled: false },
       };
@@ -184,11 +190,9 @@ const CHARTS: ChartDef[] = [
   {
     id: "treemap", name: "Treemap", category: "Advanced",
     getOptions: (t) => ({
-      ...t,
-      chart: { ...t.chart, type: "treemap" },
-      title: { ...t.title, text: "Portfolio Treemap" },
-      series: [{
-        type: "treemap", layoutAlgorithm: "squarified",
+      ...t, chart: { ...(t.chart as any), type: "treemap" },
+      title: { ...(t.title as any), text: "Portfolio Treemap" },
+      series: [{ type: "treemap" as const, layoutAlgorithm: "squarified",
         data: [
           { name: "Tech", value: 35, colorValue: 1 }, { name: "Healthcare", value: 20, colorValue: 2 },
           { name: "Finance", value: 18, colorValue: 3 }, { name: "Energy", value: 12, colorValue: 4 },
@@ -199,30 +203,39 @@ const CHARTS: ChartDef[] = [
     }),
   },
   {
-    id: "candlestick", name: "Candlestick", category: "Financial",
-    getOptions: (t) => {
-      const colors = t.colors as string[] || ["#1B7F9E"];
-      return {
-        ...t,
-        chart: { ...t.chart, type: "candlestick" },
-        title: { ...t.title, text: "AAPL Stock Price" },
-        xAxis: { ...t.xAxis as any, categories: ["Mon", "Tue", "Wed", "Thu", "Fri"] },
-        yAxis: { ...t.yAxis as any, title: { text: "Price ($)" } },
-        series: [{
-          type: "candlestick", name: "AAPL",
-          data: [[175, 182, 173, 180], [180, 185, 178, 184], [184, 186, 181, 183], [183, 188, 182, 187], [187, 190, 185, 189]],
-          color: "#E52135", upColor: colors[0] || "#00875D",
-        }],
-        credits: { enabled: false },
-      };
-    },
+    id: "spline", name: "Spline Chart", category: "Core",
+    getOptions: (t) => ({
+      ...t, chart: { ...(t.chart as any), type: "spline" },
+      title: { ...(t.title as any), text: "Temperature Trend" },
+      xAxis: { ...(t.xAxis as any), categories: ["6am", "9am", "12pm", "3pm", "6pm", "9pm"] },
+      series: [
+        { name: "Today", data: [14, 18, 24, 27, 22, 16], type: "spline" as const },
+        { name: "Yesterday", data: [12, 16, 22, 25, 20, 14], type: "spline" as const },
+      ],
+      credits: { enabled: false },
+    }),
+  },
+  {
+    id: "stacked-column", name: "Stacked Column", category: "Core",
+    getOptions: (t) => ({
+      ...t, chart: { ...(t.chart as any), type: "column" },
+      title: { ...(t.title as any), text: "Revenue Breakdown" },
+      xAxis: { ...(t.xAxis as any), categories: ["Q1", "Q2", "Q3", "Q4"] },
+      plotOptions: { column: { stacking: "normal" } },
+      series: [
+        { name: "Services", data: [120, 135, 148, 162], type: "column" as const },
+        { name: "Products", data: [80, 95, 110, 125], type: "column" as const },
+        { name: "Licensing", data: [40, 45, 52, 58], type: "column" as const },
+      ],
+      credits: { enabled: false },
+    }),
   },
 ];
 
-function ChartCard({ chart, theme }: { chart: ChartDef; theme: Partial<Highcharts.Options> }) {
+function ChartCard({ chart, theme, bg, border }: { chart: ChartDef; theme: Partial<Highcharts.Options>; bg: string; border: string }) {
   const options = useMemo(() => chart.getOptions(theme), [chart, theme]);
   return (
-    <div style={{ background: "#16213e", borderRadius: 8, border: "1px solid #2a2a4a", padding: 16 }}>
+    <div style={{ background: bg, borderRadius: 8, border: `1px solid ${border}`, padding: 12, overflow: "hidden" }}>
       <HighchartsReact highcharts={Highcharts} options={options} />
     </div>
   );
@@ -240,52 +253,56 @@ export function ChartsPage() {
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
     : getTheme("fluent", store.fluent.themeKey);
 
+  activateTheme(activeSystem, T);
   const font = getFont(activeSystem);
   const chartTheme = useMemo(() => getChartTheme(activeSystem, T, font), [activeSystem, T, font]);
 
-  const categories = [...new Set(CHARTS.map((c) => c.category))];
-  const filtered = selectedCategory ? CHARTS.filter((c) => c.category === selectedCategory) : CHARTS;
+  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surfaceContainerLow : T.bg2;
+  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : T.fg1;
+  const fg3 = activeSystem === "salt" ? T.fg3 : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
+  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
+  const accent = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary : T.brandBg;
+  const accentFg = activeSystem === "salt" ? T.accentFg : activeSystem === "m3" ? T.onPrimary : T.fgOnBrand;
+
+  // Use the DS's chip/filter classes
+  const chipClass = activeSystem === "salt" ? "s-btn" : activeSystem === "m3" ? "m3-chip" : "f-btn";
+
+  const categories = [...new Set(CHARTS.map(c => c.category))];
+  const filtered = selectedCategory ? CHARTS.filter(c => c.category === selectedCategory) : CHARTS;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Charts & Data Visualization</h2>
-      <p style={{ fontSize: 13, color: "#707080", marginBottom: 16 }}>
+    <div style={{ padding: 24, fontFamily: font }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, color: fg, marginBottom: 4 }}>Charts & Data Visualization</h2>
+      <p style={{ fontSize: 13, color: fg3, marginBottom: 16 }}>
         Highcharts themed with {sysInfo.name} tokens. Charts auto-adapt to theme, mode, and density.
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        <button
-          onClick={() => setSelectedCategory(null)}
-          style={{
-            padding: "4px 12px", fontSize: 12, borderRadius: 16,
-            background: !selectedCategory ? sysInfo.color : "transparent",
-            color: !selectedCategory ? "#fff" : "#a0a0b0",
-            border: `1px solid ${!selectedCategory ? sysInfo.color : "#2a2a4a"}`,
-            cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
-          }}
-        >
-          All
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            style={{
-              padding: "4px 12px", fontSize: 12, borderRadius: 16,
-              background: selectedCategory === cat ? sysInfo.color : "transparent",
-              color: selectedCategory === cat ? "#fff" : "#a0a0b0",
-              border: `1px solid ${selectedCategory === cat ? sysInfo.color : "#2a2a4a"}`,
-              cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
+      <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
+        {[null, ...categories].map(cat => {
+          const isActive = selectedCategory === cat;
+          if (activeSystem === "m3") {
+            return (
+              <button key={cat || "all"} className={`m3-chip ${isActive ? "selected" : ""}`}
+                onClick={() => setSelectedCategory(cat)} style={{ fontSize: 12 }}>
+                {cat || "All"}
+              </button>
+            );
+          }
+          const cls = activeSystem === "salt"
+            ? `s-btn ${isActive ? "s-btn-solid" : "s-btn-bordered"}`
+            : `f-btn ${isActive ? "f-btn-primary" : "f-btn-outline"}`;
+          return (
+            <button key={cat || "all"} className={cls} onClick={() => setSelectedCategory(cat)}
+              style={{ fontSize: 12, minWidth: "auto", padding: "0 12px", height: 28 }}>
+              {cat || "All"}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(420px, 1fr))", gap: 16 }}>
-        {filtered.map((chart) => (
-          <ChartCard key={chart.id} chart={chart} theme={chartTheme} />
+        {filtered.map(chart => (
+          <ChartCard key={chart.id} chart={chart} theme={chartTheme} bg={bg} border={border} />
         ))}
       </div>
     </div>

@@ -1,5 +1,15 @@
 import { useState } from "react";
 
+/* ── EXPORTED FOR DESIGN HUB ── */
+export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
+export function setSaltT(theme) { T = theme; }
+export function getSaltT() { return T; }
+export function getSaltPreviews() { return PREVIEWS; }
+export function getSaltDemoComponent(id) {
+  const comp = COMPS.find(c => c.id === id);
+  return comp ? comp.render : null;
+}
+
 /* ── SALT THEMES (JPM Brand + Legacy × Light/Dark) ── */
 const BASE_LIGHT = {
   bg: "#FFFFFF", bg2: "#F5F7F8", bg3: "#E2E4E5", bgInv: "#101820",

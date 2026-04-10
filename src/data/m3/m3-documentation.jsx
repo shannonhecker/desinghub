@@ -1,5 +1,43 @@
 import { useState, useEffect, useRef, createContext, useContext } from "react";
 
+/* ── EXPORTED FOR DESIGN HUB ── */
+export { THEMES as M3_THEMES, buildCSS as m3BuildCSS, COMPS as M3_COMPS, CATS as M3_CATS, MATERIAL_COLORS, I as M3Icon };
+export { generateM3Theme };
+export function setM3T(theme) { T = theme; }
+export function getM3T() { return T; }
+export function getM3DemoComponent(id) {
+  const comp = COMPS.find(c => c.id === id);
+  return comp ? comp.render : null;
+}
+export function getM3DensityCSS(density) {
+  if (density === 0) return '';
+  const d = density * 4;
+  const btnH = 40 + d, tfH = 56 + d, chipH = 32 + d, tabH = 48 + d;
+  const fabSmH = 40 + d, fabMdH = 56 + d, ibH = 40 + d, navH = 80 + d * 2;
+  const menuPadV = Math.max(6, 12 + d), dpDay = Math.max(24, 32 + d);
+  return `
+    .m3-btn{height:${btnH}px;} .m3-tf{height:${tfH}px;}
+    .m3-tf-filled .m3-tf-content{padding-top:${Math.max(4,8+d)}px;}
+    .m3-tf-label{font-size:${tfH<=48?14:16}px;}
+    .m3-tf-filled:focus-within .m3-tf-label,.m3-tf-filled .m3-tf-label.up{top:${Math.max(4,8+d)}px;}
+    .m3-chip{height:${Math.max(24,chipH)}px;}
+    .m3-switch{width:${52+d}px;height:${32+d}px;border-radius:${(32+d)/2}px;}
+    .m3-tab{padding:${Math.max(4,12+d)}px 24px;}
+    .m3-nav-pill{height:${Math.max(24,32+d)}px;} .m3-nav-item{height:${navH}px;}
+    .m3-fab{width:${fabMdH}px;height:${fabMdH}px;} .m3-fab-sm{width:${fabSmH}px;height:${fabSmH}px;}
+    .m3-ib{width:${ibH}px;height:${ibH}px;} .m3-menu-item{padding:${menuPadV}px 12px;}
+    .m3-dp-day{width:${dpDay}px;height:${dpDay}px;font-size:${dpDay<=28?12:14}px;}
+  `;
+}
+export function getM3LayoutDensity(density) {
+  return {
+    0:    { sideW: 260, mainP: 28, cardMin: 220, gap: 10, topP: "10px 20px", sideP: "18px 14px 10px", sideFontSize: 13, navP: "8px 10px" },
+    [-1]: { sideW: 240, mainP: 24, cardMin: 200, gap: 8,  topP: "8px 16px",  sideP: "14px 12px 8px",  sideFontSize: 13, navP: "7px 9px" },
+    [-2]: { sideW: 220, mainP: 20, cardMin: 180, gap: 8,  topP: "6px 14px",  sideP: "12px 10px 6px",  sideFontSize: 12, navP: "6px 8px" },
+    [-3]: { sideW: 200, mainP: 16, cardMin: 160, gap: 6,  topP: "4px 12px",  sideP: "10px 8px 4px",   sideFontSize: 12, navP: "5px 8px" },
+  }[density] || { sideW: 260, mainP: 28, cardMin: 220, gap: 10, topP: "10px 20px", sideP: "18px 14px 10px", sideFontSize: 13, navP: "8px 10px" };
+}
+
 /* ── ALL M3 THEME PALETTES (from Figma Design Kit) ── */
 const THEMES = {
   light: {

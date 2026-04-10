@@ -1,5 +1,44 @@
 import { useState, useEffect, useRef } from "react";
 
+/* ── EXPORTED FOR DESIGN HUB ── */
+export { THEMES as FLUENT_THEMES, buildCSS as fluentBuildCSS, COMPS as FLUENT_COMPS, CATS as FLUENT_CATS, FIcon, FONT as FLUENT_FONT };
+export function setFluentT(theme) { T = theme; }
+export function getFluentT() { return T; }
+export function getFluentPreviews() { return PREVIEWS; }
+export function getFluentDemoComponent(id) {
+  const comp = COMPS.find(c => c.id === id);
+  return comp ? comp.render : null;
+}
+export function getFluentSizeCSS(size) {
+  const sizeMap = {
+    small:  { h: 24, pad: 8,  fs: 12, iconS: 16, sideW: 220, sidePad: 10, mainPad: 20, cardMin: 160, gap: 8,  bodyFs: 12, labelFs: 12, headFs: 24, subFs: 11, gridGap: 8,  cardPad: 10, sideItemPad: "5px 8px", sideFs: 11, topBarH: 36, cardRadius: 4 },
+    medium: { h: 32, pad: 12, fs: 14, iconS: 20, sideW: 260, sidePad: 12, mainPad: 32, cardMin: 200, gap: 10, bodyFs: 14, labelFs: 14, headFs: 28, subFs: 12, gridGap: 10, cardPad: 14, sideItemPad: "8px 12px", sideFs: 13, topBarH: 44, cardRadius: 8 },
+    large:  { h: 40, pad: 16, fs: 14, iconS: 24, sideW: 300, sidePad: 16, mainPad: 40, cardMin: 240, gap: 14, bodyFs: 14, labelFs: 16, headFs: 36, subFs: 14, gridGap: 14, cardPad: 18, sideItemPad: "10px 14px", sideFs: 14, topBarH: 52, cardRadius: 8 },
+  };
+  const sz = sizeMap[size] || sizeMap.medium;
+  return `
+    .f-btn{height:${sz.h}px;padding:0 ${sz.pad}px;font-size:${sz.fs}px;min-width:${sz.h*3}px;border-radius:${sz.cardRadius/2}px;}
+    .f-btn-sm{height:${sizeMap.small.h}px;padding:0 ${sizeMap.small.pad}px;font-size:${sizeMap.small.fs}px;}
+    .f-btn-lg{height:${sizeMap.large.h}px;padding:0 ${sizeMap.large.pad}px;font-size:${sizeMap.large.fs}px;}
+    .f-input{height:${sz.h}px;font-size:${sz.fs}px;padding:0 ${sz.pad-2}px;}
+    .f-input-label{font-size:${sz.labelFs}px;}
+    .f-checkbox{font-size:${sz.fs}px;gap:${sz.gap-2}px;}
+    .f-cb-box{width:${sz.iconS-4}px;height:${sz.iconS-4}px;}
+    .f-radio{font-size:${sz.fs}px;gap:${sz.gap-2}px;}
+    .f-radio-circle{width:${sz.iconS-4}px;height:${sz.iconS-4}px;border-radius:${(sz.iconS-4)/2}px;}
+    .f-tab{padding:${Math.max(6,sz.pad-2)}px ${sz.pad}px;font-size:${sz.fs}px;}
+    .f-menu-item{padding:${Math.max(4,sz.pad-4)}px ${sz.pad-2}px;font-size:${sz.fs}px;}
+    .f-badge{height:${sz.h-12}px;min-width:${sz.h-12}px;font-size:${sz.fs-2}px;}
+    .f-msgbar{padding:${Math.max(4,sz.pad-4)}px ${sz.pad}px;font-size:${sz.fs}px;}
+    .f-card{border-radius:${sz.cardRadius}px;}
+    .f-avatar{width:${sz.h}px;height:${sz.h}px;font-size:${sz.fs}px;}
+    .f-switch{width:${sz.h+8}px;height:${sz.h/1.6}px;border-radius:${sz.h}px;}
+    .f-switch .f-sw-thumb{width:${sz.h/2.3}px;height:${sz.h/2.3}px;border-radius:${sz.h}px;}
+    .f-switch.on .f-sw-thumb{left:${sz.h-6}px;}
+    .f-sidebar-item{padding:${sz.sideItemPad};font-size:${sz.sideFs}px;}
+  `;
+}
+
 /* ── FLUENT 2 THEME PALETTES ── */
 const THEMES = {
   light: {
