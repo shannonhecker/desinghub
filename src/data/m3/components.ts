@@ -1,0 +1,36 @@
+import type { ComponentDef } from '../salt/components';
+
+export const COMPS: ComponentDef[] = [
+  { id: "buttons", name: "Buttons", cat: "Actions", desc: "5 variants: Filled, Outlined, Text, Elevated, Tonal. Hover, focus, press, disabled states." },
+  { id: "chips", name: "Chips", cat: "Actions", desc: "Click to toggle selected (fill + checkmark). Filter, assist, input, suggestion types." },
+  { id: "fabs", name: "FAB", cat: "Actions", desc: "Floating Action Button. Hover raises elevation. 3 sizes." },
+  { id: "icon-buttons", name: "Icon Buttons", cat: "Actions", desc: "4 variants with different fill behaviors. Toggle selected." },
+  { id: "menus", name: "Menus", cat: "Actions", desc: "Hover and focus-visible highlights on menu items." },
+  { id: "text-fields", name: "Text Fields", cat: "Inputs", desc: "Filled and Outlined. Focus border thickens + turns primary, label floats." },
+  { id: "switches", name: "Switches", cat: "Inputs", desc: "Thumb resizes on hover/press. State layer circle appears." },
+  { id: "checkboxes", name: "Checkboxes", cat: "Inputs", desc: "Hover shows state layer. Focus-visible shows outline." },
+  { id: "radios", name: "Radio Buttons", cat: "Inputs", desc: "40dp state layer circle on hover. One selection at a time." },
+  { id: "sliders", name: "Sliders", cat: "Inputs", desc: "Drag thumb or click track. Thumb scales up on hover/press." },
+  { id: "date-pickers", name: "Date Pickers", cat: "Inputs", desc: "Click days to select. Hover shows surface overlay." },
+  { id: "nav-bar", name: "Navigation Bar", cat: "Navigation", desc: "Active shows 64dp pill indicator. Bottom nav pattern." },
+  { id: "tabs", name: "Tabs", cat: "Navigation", desc: "Hover shows primary state layer. Active shows indicator bar." },
+  { id: "dialogs", name: "Dialogs", cat: "Communication", desc: "Level 3 elevation. Title, body, action buttons." },
+  { id: "snackbar", name: "Snackbar", cat: "Communication", desc: "Action and close buttons respond to hover/focus." },
+  { id: "progress", name: "Progress Indicators", cat: "Communication", desc: "Animated linear and circular indicators. Determinate fills." },
+  { id: "tooltips", name: "Tooltips", cat: "Communication", desc: "Hover or focus icon buttons to see tooltips." },
+  { id: "badges", name: "Badges", cat: "Communication", desc: "Dot and count badges anchored to interactive elements." },
+  { id: "cards", name: "Cards", cat: "Containment", desc: "3 variants: Elevated, Filled, Outlined. Hover raises elevation." },
+  { id: "bottom-sheets", name: "Bottom Sheets", cat: "Containment", desc: "Drag handle and content layout." },
+  { id: "dividers", name: "Dividers", cat: "Containment", desc: "Full-width and inset dividers." },
+  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols -- 2,500+ variable font icons. 3 styles, 4 axes." },
+  { id: "a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG AA contrast, 48dp touch targets, keyboard patterns, ARIA roles." },
+  { id: "content-design", name: "Content Design", cat: "Foundations", desc: "UX writing: concise, direct, useful. Patterns for errors, empty states." },
+  { id: "guide-color-roles", name: "Color Roles", cat: "Guides", desc: "Primary, Secondary, Tertiary, Error -- where to use each accent." },
+  { id: "guide-surfaces", name: "Surfaces & Depth", cat: "Guides", desc: "Surface container scale, outline tokens, inverse colors." },
+  { id: "guide-state-layers", name: "State Layers", cat: "Guides", desc: "Hover 8%, Focus 12%, Pressed 12%, Dragged 16%." },
+  { id: "guide-theming", name: "Theming Principles", cat: "Guides", desc: "HCT color space, tonal palettes, dark theme rules." },
+  { id: "guide-mapping", name: "Component Mapping", cat: "Guides", desc: "Which color token maps to which component." },
+  { id: "guide-palette", name: "Full Palette", cat: "Guides", desc: "All tokens in current theme visualized." },
+];
+
+export const CATS = ["Guides", "Foundations", "Actions", "Inputs", "Navigation", "Communication", "Containment"];

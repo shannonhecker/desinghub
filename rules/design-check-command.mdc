@@ -1,0 +1,173 @@
+---
+description: Run a full design system audit. Invoke with "design check", "review my design", "audit UI", "check my components", "lint design", or "validate tokens".
+globs: ["**/*.tsx", "**/*.jsx", "**/*.css", "**/*.html"]
+alwaysApply: false
+---
+
+# Design Check Command
+
+When the user asks to review, check, audit, or lint their design/UI, run this full checklist.
+
+## Step 1 — Detect Design System
+
+Scan the file for imports and tokens:
+- `@salt-ds/` or `--salt-*` → **Salt DS**
+- `@mui/` or `--md-sys-*` → **Material 3**
+- `@fluentui/` or `colorBrand*` → **Fluent 2**
+
+State which system was detected. If mixed or unclear, flag it.
+
+---
+
+## Step 2 — Token Audit
+
+Check every style property in the file:
+
+| Check | Pass | Fail Example |
+|---|---|---|
+| Colors use semantic tokens | `var(--salt-palette-accent)` | `#1B7F9E` |
+| Spacing uses system tokens | `var(--salt-spacing-100)` | `15px` |
+| Radius uses system tokens | `var(--salt-curve-100)` | `7px` |
+| Font size uses system tokens | `var(--salt-text-fontSize)` | `13px` |
+| Shadows use system elevation | `var(--salt-shadow-100)` | `box-shadow: 0 2px 4px rgba(...)` |
+
+Report: `✅ N tokens correct` / `❌ N raw values found (list each with line number and fix)`
+
+---
+
+## Step 3 — Component API Audit
+
+### Salt-specific checks:
+- [ ] Button appearances are `solid` / `bordered` / `transparent` (NOT filled/outlined/text)
+- [ ] Button sentiments are `accented` / `neutral` / `positive` / `caution` / `negative`
+- [ ] Input/Dropdown/ComboBox use `variant="primary|secondary|tertiary"`
+- [ ] Input `bordered` prop used for full-border mode (not border CSS)
+- [ ] Validation via `<FormField validationStatus="error">` wrapper (not inline styles)
+
+### M3-specific checks:
+- [ ] Button variants are `filled` / `outlined` / `text` / `elevated` / `tonal`
+- [ ] Elevation uses tonal surface (not shadows) in light theme
+- [ ] State layers use opacity overlay (not background swap)
+
+### Fluent-specific checks:
+- [ ] Button appearances are `primary` / `default` / `outline` / `subtle`
+- [ ] Components use `size="small|medium|large"` (not custom heights)
+
+Report: `✅ N components correct` / `❌ N issues found (list each with correct API)`
+
+---
+
+## Step 4 — Contrast Audit
+
+For each text/background combination in the file:
+
+```
+Calculate: contrast = (lighter_luminance + 0.05) / (darker_luminance + 0.05)
+
+Normal text:  ≥ 4.5:1 required (AA)
+Large text:   ≥ 3.0:1 required (≥18px bold or ≥24px)
+UI controls:  ≥ 3.0:1 required
+Focus ring:   ≥ 3.0:1 against adjacent colors
+```
+
+Check BOTH light AND dark mode token values.
+
+### Known dark mode risks:
+- Salt: teal-500 (`#1B7F9E`) on jet (`#101820`) = 3.90:1 ❌ → use `accentText` teal-400 (`#4CA1C2`) = 6.12:1 ✅
+- Fluent: `brandBg` on dark bg1 — verify ≥3:1
+- M3: `outlineVariant` is decorative only (1.99:1 is OK for borders, NOT for text)
+
+Report: `✅ All combinations pass AA` / `❌ N failures (list each with ratio and fix)`
+
+---
+
+## Step 5 — Validation States Audit
+
+For every input-type component (`Input`, `Checkbox`, `Radio`, `Switch`, `Select`, `ComboBox`, `Dropdown`, `DatePicker`, `NumberInput`, `MultilineInput`, `Slider`, `FileDropZone`):
+
+- [ ] Error state exists with red/negative border + icon + message
+- [ ] Warning state exists with orange/caution indicator
+- [ ] Success state exists with green/positive indicator
+- [ ] Disabled state exists with reduced opacity + no interaction
+- [ ] Focus state exists with visible ring
+
+Report: `✅ N components have full validation` / `❌ N components missing states (list each)`
+
+---
+
+## Step 6 — Accessibility Audit
+
+- [ ] All interactive elements reachable via keyboard Tab
+- [ ] Focus indicators visible (2px ring, ≥3:1 contrast)
+- [ ] Touch targets ≥ 44px (Salt Touch) / ≥ 48dp (M3) / ≥ 32px (Fluent)
+- [ ] Icon-only buttons have `aria-label`
+- [ ] Images have `alt` text
+- [ ] Form fields have associated `<label>`
+- [ ] Error messages linked via `aria-describedby`
+- [ ] No `tabIndex > 0` (breaks natural tab order)
+
+Report: `✅ All a11y checks pass` / `❌ N issues (list each with fix)`
+
+---
+
+## Step 7 — Density / Responsive Audit
+
+### Salt:
+- [ ] Components work at all 4 densities (High/Medium/Low/Touch)
+- [ ] No hardcoded heights (use `--salt-size-base`)
+- [ ] No hardcoded spacing (use `--salt-spacing-*`)
+- [ ] Layout doesn't break when density changes
+
+### M3:
+- [ ] Density offset -1 to -3 doesn't cause overlap
+- [ ] Min touch target maintained
+
+### Fluent:
+- [ ] S/M/L sizes render correctly
+- [ ] Size prop used consistently (not mixed)
+
+---
+
+## Step 8 — Dark Mode Audit
+
+- [ ] All tokens resolve correctly in dark mode
+- [ ] No hardcoded light-mode colors
+- [ ] Accent text readable on dark backgrounds (≥4.5:1)
+- [ ] Borders/dividers visible on dark backgrounds
+- [ ] Status colors (error/warning/success) remain readable
+- [ ] Shadows increase opacity in dark mode
+
+---
+
+## Output Format
+
+```markdown
+# Design Check Report
+
+**System detected:** Salt DS / Material 3 / Fluent 2
+**File:** [filename]
+**Date:** [date]
+
+## Results
+
+| Category | Status | Issues |
+|---|---|---|
+| Token Usage | ✅ / ❌ | N issues |
+| Component API | ✅ / ❌ | N issues |
+| Contrast | ✅ / ❌ | N failures |
+| Validation States | ✅ / ❌ | N missing |
+| Accessibility | ✅ / ❌ | N issues |
+| Density | ✅ / ❌ | N issues |
+| Dark Mode | ✅ / ❌ | N issues |
+
+## Issues (sorted by severity)
+
+### 🔴 Critical
+[list]
+
+### 🟡 Warning  
+[list]
+
+### 🔵 Info
+[list]
+```
