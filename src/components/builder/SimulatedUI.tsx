@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent";
@@ -493,5 +493,137 @@ export function SimulatedSwitch({
         <div className={`${prefix}-switch-thumb`} />
       </div>
     </label>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedAlert
+   ═══════════════════════════════════════════ */
+
+interface AlertProps extends SimProps {
+  variant?: "info" | "success" | "warning" | "error";
+  title?: string;
+  message?: string;
+}
+
+export function SimulatedAlert({
+  system,
+  variant = "info",
+  title = "Update Available",
+  message = "A new version of Design Hub is ready to install.",
+}: AlertProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [dismissed, setDismissed] = useState(false);
+
+  const iconMap: Record<string, string> = {
+    info: "info",
+    success: "check_circle",
+    warning: "warning",
+    error: "error",
+  };
+
+  if (dismissed) return null;
+
+  return (
+    <div className={`${prefix}-alert ${prefix}-alert-${variant}`}>
+      <div className={`${prefix}-alert-icon`}>
+        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+          {iconMap[variant]}
+        </span>
+      </div>
+      <div className={`${prefix}-alert-content`}>
+        <div className={`${prefix}-alert-title`}>{title}</div>
+        <div className={`${prefix}-alert-message`}>{message}</div>
+      </div>
+      <button
+        className={`${prefix}-alert-close`}
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedProgress
+   ═══════════════════════════════════════════ */
+
+interface ProgressProps extends SimProps {
+  label?: string;
+  targetValue?: number;
+}
+
+export function SimulatedProgress({
+  system,
+  label = "Uploading assets...",
+  targetValue = 65,
+}: ProgressProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [progress, setProgress] = useState(10);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setProgress(targetValue), 500);
+    return () => clearTimeout(timer);
+  }, [targetValue]);
+
+  return (
+    <div className={`${prefix}-progress-container`}>
+      <div className={`${prefix}-progress-label-row`}>
+        <span className={`${prefix}-progress-label`}>{label}</span>
+        <span className={`${prefix}-progress-value`}>{progress}%</span>
+      </div>
+      <div className={`${prefix}-progress-track`}>
+        <div
+          className={`${prefix}-progress-fill`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedTooltip
+   ═══════════════════════════════════════════ */
+
+interface TooltipProps extends SimProps {
+  text?: string;
+  buttonLabel?: string;
+}
+
+export function SimulatedTooltip({
+  system,
+  text = "This is a simulated tooltip",
+  buttonLabel = "Hover me",
+}: TooltipProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [visible, setVisible] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const show = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setVisible(true), 200);
+  }, []);
+
+  const hide = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setVisible(false);
+  }, []);
+
+  return (
+    <div className={`${prefix}-tooltip-wrapper`}>
+      <button
+        className={`${prefix}-btn ${prefix}-btn-secondary`}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+      >
+        {buttonLabel}
+      </button>
+      <div className={`${prefix}-tooltip${visible ? ` ${prefix}-tooltip-visible` : ""}`}>
+        {text}
+      </div>
+    </div>
   );
 }

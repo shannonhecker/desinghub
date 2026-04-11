@@ -5,6 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import {
   SimulatedAvatar, SimulatedDropdown, SimulatedDataTable, SimulatedDatePicker,
   SimulatedDialog, SimulatedTabs, SimulatedInput, SimulatedCheckbox, SimulatedSwitch,
+  SimulatedAlert, SimulatedProgress, SimulatedTooltip,
 } from "./SimulatedUI";
 
 /* ── Default welcome state ── */
@@ -151,6 +152,16 @@ function PreviewContent() {
           </div>
         )}
 
+        {/* Alert banner */}
+        {has("alerts") && (
+          <SimulatedAlert system={designSystem} />
+        )}
+
+        {/* Progress bar */}
+        {has("progress-bar") && (
+          <SimulatedProgress system={designSystem} />
+        )}
+
         {/* Interactive buttons */}
         {has("buttons") && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -289,6 +300,11 @@ function PreviewContent() {
           </div>
         )}
 
+        {/* Tooltip */}
+        {has("tooltips") && (
+          <SimulatedTooltip system={designSystem} />
+        )}
+
         {/* Dialog */}
         {has("buttons") && (
           <SimulatedDialog system={designSystem} />
@@ -341,13 +357,61 @@ function PreviewContent() {
   );
 }
 
-/* ── Side panel (no header — actions are in top bar) ── */
+/* ── Preview toolbar — DS switcher + theme toggle ── */
+function PreviewToolbar() {
+  const { designSystem, setDesignSystem, mode, setMode } = useBuilder();
+
+  const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
+    { key: "salt", label: "Salt DS" },
+    { key: "m3", label: "Material 3" },
+    { key: "fluent", label: "Fluent 2" },
+  ];
+
+  const themes: { key: "light" | "dark"; icon: string; label: string }[] = [
+    { key: "light", icon: "light_mode", label: "Light" },
+    { key: "dark", icon: "dark_mode", label: "Dark" },
+  ];
+
+  return (
+    <div className="preview-toolbar">
+      {/* UI Kit Switcher */}
+      <div className="preview-toolbar-group">
+        {systems.map((s) => (
+          <button
+            key={s.key}
+            className={`preview-toolbar-btn${designSystem === s.key ? " preview-toolbar-btn-active" : ""}`}
+            onClick={() => setDesignSystem(s.key)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Theme Toggle */}
+      <div className="preview-toolbar-group">
+        {themes.map((t) => (
+          <button
+            key={t.key}
+            className={`preview-toolbar-btn${mode === t.key ? " preview-toolbar-btn-active" : ""}`}
+            onClick={() => setMode(t.key)}
+          >
+            <span className="material-symbols-outlined preview-toolbar-icon">{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Side panel with toolbar ── */
 export function PreviewSidePanel() {
   const { previewOpen, previewKey, messages } = useBuilder();
   const hasContent = messages.some((m) => m.role === "ai");
 
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+      {hasContent && <PreviewToolbar />}
       <div className="preview-side-body">
         {hasContent ? (
           <div className="preview-frame" key={previewKey}>
@@ -381,6 +445,7 @@ export function StandalonePreview() {
           {designSystem.toUpperCase()} &middot; {mode}
         </span>
       </div>
+      <PreviewToolbar />
       <PreviewContent />
     </div>
   );

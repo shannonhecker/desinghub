@@ -35,6 +35,9 @@ const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
   { label: "Toggles", ids: ["switches", "checkboxes", "radios"] },
   { label: "Badges", ids: ["badges"] },
   { label: "Avatars", ids: ["avatars"] },
+  { label: "Alerts", ids: ["alerts"] },
+  { label: "Progress", ids: ["progress-bar"] },
+  { label: "Tooltips", ids: ["tooltips"] },
 ];
 
 const REFINE_CHIPS = ["Dark Mode", "Light Mode"];
