@@ -4,141 +4,88 @@ import React from "react";
 import Link from "next/link";
 import { useBuilder } from "@/store/useBuilder";
 
-const DS_LABELS: Record<string, string> = {
-  salt: "Salt DS",
-  m3: "Material 3",
-  fluent: "Fluent 2",
-};
-
 export function Sidebar() {
   const {
     sidebarCollapsed,
     toggleSidebar,
-    designSystem,
-    setDesignSystem,
     clearChat,
     messages,
+    mode,
+    setMode,
   } = useBuilder();
 
-  const isHome = messages.length === 0;
+  const hasChat = messages.length > 0;
 
   return (
     <>
-      {/* Mobile backdrop */}
       {!sidebarCollapsed && (
-        <div
-          className="sidebar-backdrop"
-          onClick={toggleSidebar}
-          style={{ display: "none" }}
-        />
+        <div className="sidebar-backdrop" onClick={toggleSidebar} style={{ display: "none" }} />
       )}
 
       <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
-        {/* Header */}
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon">DH</div>
             <span className="sidebar-logo-text">Design Hub</span>
           </div>
-          <button
-            className="sidebar-collapse-btn"
-            onClick={toggleSidebar}
-            aria-label="Collapse sidebar"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              chevron_left
-            </span>
+          <button className="sidebar-collapse-btn" onClick={toggleSidebar} aria-label="Collapse sidebar">
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
           </button>
         </div>
 
-        {/* New Chat */}
-        <button className="sidebar-new-chat" onClick={clearChat}>
-          <span className="icon material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          New Chat
-        </button>
-
         <div className="sidebar-body">
-          {/* Features */}
-          <div className="sidebar-section-title">Features</div>
+          <div className="sidebar-section-title">Chat</div>
           <ul className="sidebar-nav">
-            <li className={isHome ? "active" : ""} onClick={() => { if (messages.length > 0) clearChat(); }}>
-              <span className="nav-icon material-symbols-outlined">chat</span>
-              Chat
-            </li>
-            <li>
-              <span className="nav-icon material-symbols-outlined">bookmark</span>
-              Saved
-            </li>
-            <li>
-              <span className="nav-icon material-symbols-outlined">auto_stories</span>
-              Library
-            </li>
-            <li>
-              <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, color: "inherit", textDecoration: "none" }}>
-                <span className="nav-icon material-symbols-outlined">view_quilt</span>
-                UI Kit Overview
-              </Link>
+            <li className={!hasChat ? "active" : ""} onClick={clearChat}>
+              <span className="nav-icon material-symbols-outlined">add_circle</span>
+              New Chat
             </li>
           </ul>
 
-          {/* Design Systems */}
-          <div className="sidebar-section-title">Design Systems</div>
+          <div className="sidebar-section-title">History</div>
           <ul className="sidebar-nav">
-            {(["salt", "m3", "fluent"] as const).map((ds) => (
-              <li
-                key={ds}
-                className={designSystem === ds ? "active" : ""}
-                onClick={() => setDesignSystem(ds)}
-              >
-                <span className="nav-icon material-symbols-outlined">
-                  {ds === "salt" ? "palette" : ds === "m3" ? "widgets" : "dashboard"}
-                </span>
-                {DS_LABELS[ds]}
+            {hasChat ? (
+              <li className="active">
+                <span className="nav-icon material-symbols-outlined">chat_bubble</span>
+                Current Session
               </li>
-            ))}
+            ) : (
+              <li style={{ color: "var(--b-fg3)", cursor: "default", fontSize: 12 }}>
+                <span className="nav-icon material-symbols-outlined" style={{ fontSize: 16 }}>history</span>
+                No history yet
+              </li>
+            )}
           </ul>
 
-          {/* Workspaces */}
-          <div className="sidebar-section-title">Workspaces</div>
+          <div className="sidebar-section-title">Saved</div>
           <ul className="sidebar-nav">
-            <li>
-              <span className="nav-icon material-symbols-outlined">folder</span>
-              Dashboard
-            </li>
-            <li>
-              <span className="nav-icon material-symbols-outlined">folder</span>
-              Landing Page
-            </li>
-            <li>
-              <span className="nav-icon material-symbols-outlined">folder</span>
-              Form Builder
+            <li style={{ color: "var(--b-fg3)", cursor: "default", fontSize: 12 }}>
+              <span className="nav-icon material-symbols-outlined" style={{ fontSize: 16 }}>bookmark_border</span>
+              No saved chats
             </li>
           </ul>
         </div>
 
-        {/* Footer */}
-        <div className="sidebar-footer">
-          <div className="sidebar-footer-icon">
-            <span className="material-symbols-outlined" style={{ fontSize: 18, color: "white" }}>
-              auto_awesome
-            </span>
-          </div>
-          <div className="sidebar-footer-title">Upgrade to Pro</div>
-          <div className="sidebar-footer-text">
-            Unlock advanced theming, export to Figma, and team collaboration.
-          </div>
-          <button className="sidebar-footer-btn">Upgrade</button>
+        {/* Theme toggle */}
+        <div className="theme-toggle">
+          <button className={`theme-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>dark_mode</span>
+            Dark
+          </button>
+          <button className={`theme-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>light_mode</span>
+            Light
+          </button>
         </div>
+
+        {/* UI Kit link */}
+        <Link href="/" className="sidebar-uikit-link">
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>view_quilt</span>
+          UI Kit Overview
+        </Link>
       </aside>
 
-      {/* Mobile styles for backdrop */}
-      <style>{`
-        @media (max-width: 768px) {
-          .sidebar-backdrop { display: block !important; }
-        }
-      `}</style>
+      <style>{`@media (max-width: 768px) { .sidebar-backdrop { display: block !important; } }`}</style>
     </>
   );
 }
