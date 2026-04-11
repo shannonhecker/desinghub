@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Allow .jsx files in src/data
+  output: 'export',
+  basePath: '/desinghub',
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 };
 
