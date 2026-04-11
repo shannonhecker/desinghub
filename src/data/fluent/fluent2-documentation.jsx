@@ -66,7 +66,7 @@ const THEMES = {
     cardBg: "#333333", cardBgHover: "#3D3D3D", cardBgPressed: "#2E2E2E",
     fg1: "#FFFFFF", fg2: "#D6D6D6", fg3: "#ADADAD", fg4: "#999999", fgDisabled: "#5C5C5C",
     fgInverted: "#242424", fgOnBrand: "#FFFFFF",
-    brandBg: "#0F6CBD", brandBgHover: "#2886DE", brandBgPressed: "#115EA3", brandBgSelected: "#0F548C",
+    brandBg: "#115EA3", brandBgHover: "#0F6CBD", brandBgPressed: "#0C3B5E", brandBgSelected: "#0F548C",
     brandBg2: "#082338", brandFg1: "#479EF5", brandFg2: "#62ABF5", brandFgLink: "#479EF5",
     brandStroke1: "#479EF5",
     strokeAccessible: "#ADADAD", stroke1: "#666666", stroke2: "#525252", stroke3: "#3D3D3D", strokeDisabled: "#424242",
@@ -112,9 +112,9 @@ const buildCSS = (T) => `
 .f-btn-primary:hover { background:${T.brandBgHover}; }
 .f-btn-primary:active { background:${T.brandBgPressed}; }
 
-.f-btn-default { background:${T.bg1}; color:${T.fg1}; border-color:${T.stroke1}; }
-.f-btn-default:hover { background:${T.bg3}; border-color:${T.strokeAccessible}; }
-.f-btn-default:active { background:${T.bg4}; }
+.f-btn-secondary { background:${T.bg1}; color:${T.fg1}; border-color:${T.stroke1}; }
+.f-btn-secondary:hover { background:${T.bg3}; border-color:${T.strokeAccessible}; }
+.f-btn-secondary:active { background:${T.bg4}; }
 
 .f-btn-outline { background:transparent; color:${T.brandFg1}; border-color:${T.brandStroke1}; }
 .f-btn-outline:hover { background:${T.brandBg2}; }
@@ -123,6 +123,10 @@ const buildCSS = (T) => `
 .f-btn-subtle { background:transparent; color:${T.fg1}; }
 .f-btn-subtle:hover { background:${T.subtleBgHover}; }
 .f-btn-subtle:active { background:${T.subtleBgPressed}; }
+
+.f-btn-transparent { background:transparent; color:${T.fg1}; border:none; }
+.f-btn-transparent:hover { background:transparent; color:${T.fg1}; }
+.f-btn-transparent:active { background:transparent; color:${T.fg1}; }
 
 .f-btn-sm { height:24px; padding:0 8px; font-size:12px; min-width:64px; }
 .f-btn-lg { height:40px; padding:0 16px; font-size:14px; }
@@ -165,7 +169,7 @@ const buildCSS = (T) => `
 .f-card:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
 
 /* === BADGE === */
-.f-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; border-radius:9999px; padding:0 6px; font-size:12px; font-weight:600; font-family:${FONT}; }
+.f-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; border-radius:10000px; padding:0 6px; font-size:12px; font-weight:600; font-family:${FONT}; }
 .f-badge-brand { background:${T.brandBg}; color:${T.fgOnBrand}; }
 .f-badge-danger { background:${T.dangerBg3}; color:white; }
 .f-badge-success { background:${T.successBg3}; color:white; }
@@ -173,7 +177,7 @@ const buildCSS = (T) => `
 .f-badge-subtle { background:${T.bg4}; color:${T.fg2}; }
 
 /* === AVATAR === */
-.f-avatar { width:32px; height:32px; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; font-family:${FONT}; color:${T.fgOnBrand}; background:${T.brandBg}; flex-shrink:0; }
+.f-avatar { width:32px; height:32px; border-radius:10000px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; font-family:${FONT}; color:${T.fgOnBrand}; background:${T.brandBg}; flex-shrink:0; }
 .f-avatar-sm { width:24px; height:24px; font-size:11px; }
 .f-avatar-lg { width:48px; height:48px; font-size:20px; }
 
@@ -257,9 +261,10 @@ function Buttons() {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
         <button className="f-btn f-btn-primary">Primary</button>
-        <button className="f-btn f-btn-default">Default</button>
+        <button className="f-btn f-btn-secondary">Secondary</button>
         <button className="f-btn f-btn-outline">Outline</button>
         <button className="f-btn f-btn-subtle">Subtle</button>
+        <button className="f-btn f-btn-transparent">Transparent</button>
         <button className="f-btn f-btn-primary" disabled>Disabled</button>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -423,7 +428,7 @@ function Dialogs() {
       <div style={{ fontSize: 20, fontWeight: 600, color: T.fg1, marginBottom: 12 }}>Delete this file?</div>
       <div style={{ fontSize: 14, color: T.fg2, lineHeight: 1.5, marginBottom: 20 }}>This action cannot be undone. The file will be permanently removed from your storage.</div>
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button className="f-btn f-btn-default">Cancel</button>
+        <button className="f-btn f-btn-secondary">Cancel</button>
         <button className="f-btn f-btn-primary" style={{ background: T.dangerBg3 }}>Delete</button>
       </div>
     </div>
@@ -466,7 +471,7 @@ function Tooltips() {
   return (
     <div style={{ display: "flex", gap: 24 }}>
       <div className="f-tooltip-wrap">
-        <button className="f-btn f-btn-default">Hover me</button>
+        <button className="f-btn f-btn-secondary">Hover me</button>
         <div className="f-tooltip-tip">This is a tooltip</div>
       </div>
       <div className="f-tooltip-wrap">
@@ -667,14 +672,14 @@ function DLElevation() {
 function DLShapes() {
   const radii = [
     ["None", 0, "Nav bars, tab bars"], ["Small", 2, "Small badges"], ["Medium", 4, "Buttons, inputs"],
-    ["Large", 8, "Large buttons"], ["XLarge", 12, "Bottom sheets"], ["Circle", 9999, "Avatars, pills"],
+    ["Large", 6, "Large buttons"], ["XLarge", 8, "Bottom sheets"], ["2XLarge", 12, "Modals, dialogs"], ["Circle", 10000, "Avatars, pills"],
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div>
         <div style={{ fontFamily: FONT, fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 8 }}>Four Fundamental Forms</div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {[["Rectangle", 4, "80px", "48px"], ["Circle", 9999, "48px", "48px"], ["Pill", 9999, "96px", "32px"]].map(([name, r, w, h]) => (
+          {[["Rectangle", 4, "80px", "48px"], ["Circle", 10000, "48px", "48px"], ["Pill", 10000, "96px", "32px"]].map(([name, r, w, h]) => (
             <div key={name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               <div style={{ width: w, height: h, borderRadius: r, background: T.brandBg2, border: `1px solid ${T.brandStroke1}40` }} />
               <span style={{ fontSize: 11, color: T.fg2, fontFamily: FONT }}>{name}</span>
@@ -693,7 +698,7 @@ function DLShapes() {
             <div key={name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <div style={{ width: 48, height: 48, borderRadius: Math.min(r, 24), background: T.bg3, border: `2px solid ${T.strokeAccessible}` }} />
               <span style={{ fontSize: 11, fontWeight: 600, color: T.fg1, fontFamily: FONT }}>{name}</span>
-              <span style={{ fontSize: 9, color: T.fg3, fontFamily: "monospace" }}>{r === 9999 ? "50%" : `${r}px`}</span>
+              <span style={{ fontSize: 9, color: T.fg3, fontFamily: "monospace" }}>{r === 10000 ? "50%" : `${r}px`}</span>
             </div>
           ))}
         </div>
@@ -714,7 +719,7 @@ function DLShapes() {
 }
 
 function DLSpacing() {
-  const spacing = [2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32];
+  const spacing = [2, 4, 6, 8, 10, 12, 16, 20, 24, 32];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.5 }}>4px base unit. Values 2, 6, 10 exist for icon alignment. Used consistently across all components and platforms.</div>
@@ -812,8 +817,8 @@ function DLAccessibility() {
           Focus follows a "Z" pattern: left to right, top to bottom. Focus must never be "lost" after closing a dialog or temporary UI — it returns to the trigger element.
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button className="f-btn f-btn-default">Tab to me</button>
-          <button className="f-btn f-btn-default">Then me</button>
+          <button className="f-btn f-btn-secondary">Tab to me</button>
+          <button className="f-btn f-btn-secondary">Then me</button>
           <button className="f-btn f-btn-primary">Then me</button>
         </div>
         <div style={{ fontSize: 11, color: T.fg3, fontFamily: FONT, marginTop: 6 }}>Try pressing Tab — the 2px focus ring appears without changing the button's color. This distinguishes keyboard from mouse interaction.</div>
@@ -1075,7 +1080,7 @@ const COMPS = [
   { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Component size variants (Small 24px / Medium 32px / Large 40px). Height, padding, and font adjust — icons, gaps, and colors stay constant.", render: DLDensity },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing principles: simple, direct, human. Style rules for tense, voice, capitalization, punctuation, and accessibility.", render: FluentContentDesign },
   // Components
-  { id: "buttons", name: "Buttons", cat: "Actions", desc: "Primary, Default, Outline, Subtle variants in 3 sizes. Hover darkens background.", render: Buttons },
+  { id: "buttons", name: "Buttons", cat: "Actions", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
   { id: "inputs", name: "Text Input", cat: "Inputs", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
   { id: "checkboxes", name: "Checkbox", cat: "Inputs", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },
   { id: "radios", name: "Radio Group", cat: "Inputs", desc: "Single selection. Fluent inner dot pattern with brand border.", render: Radios },
@@ -1150,7 +1155,7 @@ const PREVIEWS = {
   buttons: () => (
     <div style={{ display: "flex", gap: 4, padding: "8px 0" }}>
       <div style={{ height: 20, padding: "0 8px", borderRadius: 3, background: T.brandBg, color: T.fgOnBrand, fontSize: 9, fontWeight: 600, fontFamily: FONT, display: "flex", alignItems: "center" }}>Primary</div>
-      <div style={{ height: 20, padding: "0 8px", borderRadius: 3, background: T.bg1, border: `1px solid ${T.stroke1}`, fontSize: 9, fontFamily: FONT, display: "flex", alignItems: "center", color: T.fg1 }}>Default</div>
+      <div style={{ height: 20, padding: "0 8px", borderRadius: 3, background: T.bg1, border: `1px solid ${T.stroke1}`, fontSize: 9, fontFamily: FONT, display: "flex", alignItems: "center", color: T.fg1 }}>Secondary</div>
     </div>
   ),
   inputs: () => (
@@ -1387,7 +1392,7 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: sz.gap, padding: `${sz.gap - 2}px ${sz.sidePad + 4}px`, borderBottom: `1px solid ${T.stroke2}`, background: T.bg1, minHeight: sz.topBarH }}>
           <button className="f-btn f-btn-subtle" onClick={() => setSb(!sb)} style={{ minWidth: "auto", width: sz.h, height: sz.h, padding: 0 }}>☰</button>
           <span style={{ fontSize: sz.sideFs, color: T.fg3, flex: 1 }}>{sc ? `${sc.cat} / ${sc.name}` : "Fluent 2 Interactive Documentation"}</span>
-          <span style={{ fontSize: sz.sideFs - 2, color: T.fg3, background: T.bg3, padding: `${sz.gap / 3}px ${sz.gap}px`, borderRadius: 9999 }}>{T.name} · {size.charAt(0).toUpperCase() + size.slice(1)} ({sz.h}px)</span>
+          <span style={{ fontSize: sz.sideFs - 2, color: T.fg3, background: T.bg3, padding: `${sz.gap / 3}px ${sz.gap}px`, borderRadius: 10000 }}>{T.name} · {size.charAt(0).toUpperCase() + size.slice(1)} ({sz.h}px)</span>
         </div>
 
         <div style={{ padding: sz.mainPad }}>

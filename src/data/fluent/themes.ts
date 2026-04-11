@@ -55,8 +55,8 @@ export function buildCSS(T: any) {
 .f-btn-primary{background:${T.brandBg};color:${T.fgOnBrand};}
 .f-btn-primary:hover{background:${T.brandBgHover};}
 .f-btn-primary:active{background:${T.brandBgPressed};}
-.f-btn-default{background:${T.bg1};color:${T.fg1};border-color:${T.stroke1};}
-.f-btn-default:hover{background:${T.bg3};border-color:${T.strokeAccessible};}
+.f-btn-secondary{background:${T.bg1};color:${T.fg1};border-color:${T.stroke1};}
+.f-btn-secondary:hover{background:${T.bg3};border-color:${T.strokeAccessible};}
 .f-btn-outline{background:transparent;color:${T.brandFg1};border-color:${T.brandStroke1};}
 .f-btn-outline:hover{background:${T.brandBg2};}
 .f-btn-subtle{background:transparent;color:${T.fg1};}

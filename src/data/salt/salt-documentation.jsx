@@ -44,11 +44,13 @@ const THEMES = {
 let T = THEMES["jpm-light"];
 const FONT = "'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif";
 const FONT_HEAD = "'Open Sans', sans-serif"; // Amplitude is JPM-internal
+const FONT_CODE = "'PT Mono', monospace"; // Salt monospace/code font
 
 /* ── CSS ── */
 const buildCSS = (T) => `
 * { box-sizing:border-box; margin:0; padding:0; }
 :root { --dur-fast:150ms; --dur-norm:200ms; --dur-slow:300ms; --ease:cubic-bezier(0.2,0,0,1); }
+/* Salt official duration tokens: instant=0ms, perceptible=300ms, notable=1000ms, cutoff=10000ms */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0.01ms!important;animation-duration:0.01ms!important;}}
 
 .s-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--cr,4px);font-family:${FONT};font-weight:600;cursor:pointer;border:1px solid transparent;outline:none;transition:background var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease);padding:0 var(--pad,12px);height:var(--h,28px);font-size:var(--fs,12px);}
@@ -377,7 +379,7 @@ function DLColor(){
     {name:"Blue",role:"Info statuses",shades:["#EAF6FF","#C7DEFF","#9ABDF5","#669CE8","#0078CF","#005EA6","#00457E","#002D59","#001736"]},
     {name:"Green",role:"Success / Positive",shades:["#EAF5F2","#B8E5D1","#89CCAD","#53B087","#00875D","#006B48","#005637","#003F25","#002915"]},
     {name:"Red",role:"Error / Negative",shades:["#FFECEA","#FFC1BA","#FF938A","#FF5D57","#E52135","#BA1729","#910D1E","#690413","#450002"]},
-    {name:"Orange",role:"Warning / Caution",shades:["#FFECD9","#FFC6A1","#F7A06A","#E87A38","#C75300","#9E4200","#813600","#612900","#422000"]},
+    {name:"Orange",role:"Warning / Caution",shades:["#FFECD9","#FFC6A1","#F7A06A","#EB7B39","#C75300","#9E4200","#813600","#612900","#422000"]},
     {name:"Purple",role:"Ancillary color",shades:["#F6F0FA","#F0D6F5","#DAAFE0","#C388CC","#A25BAD","#85438F","#682D71","#491552","#33003B"]},
     {name:"Brown",role:"Brand accent",shades:["#F3EEE8","#EDE5D8","#D7BA9D","#B88A67","#996C48","#7D532F","#673F1B","#422407","#2E1905"]},
   ];
@@ -581,7 +583,7 @@ function DLElevation(){
 }
 
 function DLSpacing(){
-  const sp=[[25,1],[50,2],[75,3],[100,4],[150,6],[200,8],[300,12]];
+  const sp=[[25,1],[50,2],[100,4],[150,6],[200,8],[300,12],[500,20],[700,28],[900,36]];
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>4px base unit (High density). Spacing scales proportionally with density. Fixed spacing (borders=1px) stays constant.</div>
     <div style={{display:"flex",flexDirection:"column",gap:3}}>
@@ -599,9 +601,9 @@ function DLSpacing(){
 function DLTokens(){
   return <div style={{display:"flex",flexDirection:"column",gap:16}}>
     <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>Salt uses a 3-layer token architecture: <strong>Foundation</strong> (raw values) → <strong>Palette</strong> (light/dark switching) → <strong>Characteristic</strong> (semantic purpose). Only vanilla CSS variables — no third-party libraries.</div>
-    {[["Foundation","--salt-color-green-100 = rgb(93,189,116)","Raw hex/rgb values, spacing px, font sizes"],
+    {[["Foundation","--salt-color-green-100 = rgb(234,245,242)","Raw hex/rgb values, spacing px, font sizes"],
       ["Palette","--salt-palette-positive-weak = green-100 (light) / green-900 (dark)","Mode switching layer, most practical place to customize themes"],
-      ["Characteristic","--salt-status-success-background = palette-positive-weak","Semantic intent: actionable, container, content, editable, navigable, selectable, status, track"]
+      ["Characteristic","--salt-status-success-background = palette-positive-weak","Semantic intent: actionable, category, container, content, editable, focused, layout, navigable, overlayable, selectable, sentiment, separable, status, target, text"]
     ].map(([level,example,desc])=>(
       <div key={level} style={{padding:12,borderRadius:6,background:T.bg2,border:`1px solid ${T.border}`}}>
         <div style={{fontSize:13,fontWeight:600,color:T.fg,fontFamily:FONT}}>{level}</div>
@@ -663,8 +665,8 @@ const CATS = ["Design Language","Foundations","Actions","Inputs","Navigation","C
 const COMPS = [
   {id:"dl-color",name:"Color",cat:"Design Language",desc:"8 foundation ramps × 9 shades (incl. Brown). Named backgrounds (snow/marble/limestone/titanium + jet/granite/leather). 40 categorical colors. From Figma.",render:DLColor},
   {id:"dl-icons",name:"Iconography",cat:"Design Language",desc:"salt-ds icons — ~430 unique SVG icons in 2 styles (Default outline, Solid filled) across 15 categories. Density-responsive sizing.",render:DLIcons},
-  {id:"dl-typography",name:"Typography",cat:"Design Language",desc:"Open Sans + Amplitude. 10 type styles. Line height 1.3×. Size adjusts with density.",render:DLTypography},
-  {id:"dl-elevation",name:"Elevation",cat:"Design Language",desc:"4 shadow levels (100–400). Shadow + z-index for depth. Dark mode doubles opacity.",render:DLElevation},
+  {id:"dl-typography",name:"Typography",cat:"Design Language",desc:"Open Sans + Amplitude + PT Mono. 12 type styles. Line height 1.3×. Size adjusts with density.",render:DLTypography},
+  {id:"dl-elevation",name:"Elevation",cat:"Design Language",desc:"5 shadow levels (lowest through medium). Shadow + z-index for depth. Dark mode doubles opacity.",render:DLElevation},
   {id:"dl-spacing",name:"Spacing",cat:"Design Language",desc:"4px base grid. Proportional scale (25–300). Fixed spacing for borders. Adjusts with density.",render:DLSpacing},
   {id:"dl-tokens",name:"Token Architecture",cat:"Design Language",desc:"3-layer system: Foundation (raw) → Palette (mode switch) → Characteristic (semantic). Pure CSS variables.",render:DLTokens},
   {id:"dl-a11y",name:"Accessibility",cat:"Foundations",desc:"WCAG 2.1 AA core. 4.5:1 contrast, focus rings, 44px touch targets, screen reader tested, reduced motion.",render:DLAccessibility},
@@ -692,7 +694,7 @@ const COMPS = [
   {id:"menu",name:"Menu",cat:"Navigation",desc:"Grouped/basic templates. Items with icon, separator, secondary label. States: Default, Hover, Active, Disabled.",render:MenuDemo},
   {id:"toast",name:"Toast",cat:"Communication",desc:"Auto-dismiss notification. Sentiments: Info, Success, Warning, Error. Top-right positioning.",render:ToastDemo},
   {id:"toggle-btn",name:"Toggle Button",cat:"Actions",desc:"Toggle on/off selection. Single-select and multi-select groups. Works with icon buttons.",render:ToggleButtonDemo},
-  {id:"segmented-btn",name:"Segmented Button Group",cat:"Actions",desc:"Connected buttons for single/multi select. Shape morphs on press. All sizes XS-XL.",render:SegmentedButtonDemo},
+  {id:"segmented-btn",name:"Segmented Button Group",cat:"Actions",desc:"Connected buttons for single/multi select. Shape morphs on press. All densities (High/Medium/Low/Touch).",render:SegmentedButtonDemo},
   {id:"tag",name:"Tag",cat:"Actions",desc:"Removable labels for categorization. Dismissible (vs Pill which is selectable).",render:TagDemo},
   {id:"drawer",name:"Drawer",cat:"Containment",desc:"Slide-out panel. Primary/secondary. Border placement: Left, Right, Top, Bottom.",render:DrawerDemo},
   {id:"spinner",name:"Spinner",cat:"Communication",desc:"Indeterminate loading indicator. Sizes scale with density.",render:SpinnerDemo},
@@ -842,7 +844,7 @@ function SegmentedButtonDemo(){
         <button key={i} onClick={()=>setSel(i)} style={{padding:"6px 16px",border:"none",borderRight:i<2?`1px solid ${T.border}`:"none",background:sel===i?T.accent:"transparent",color:sel===i?T.accentFg:T.fg,fontSize:12,fontFamily:FONT,fontWeight:sel===i?600:400,cursor:"pointer"}}>{l}</button>
       ))}
     </div>
-    <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>Connected buttons for single/multi select. Shape morphs on press. Works with all button sizes (XS–XL).</div>
+    <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>Connected buttons for single/multi select. Shape morphs on press. Works with all densities (High/Medium/Low/Touch).</div>
   </div>;
 }
 

@@ -52,6 +52,7 @@ const THEMES = {
     onSurface: "#1D1B20", onSurfaceVariant: "#49454F",
     outline: "#79747E", outlineVariant: "#CAC4D0",
     inverseSurface: "#322F35", inverseOnSurface: "#F5EFF7", inversePrimary: "#D0BCFF",
+    onTertiary: "#FFFFFF", surfaceDim: "#DED8E1", surfaceBright: "#FEF7FF", shadow: "#000000", scrim: "#000000",
   },
   dark: {
     name: "Dark", primary: "#D0BCFF", onPrimary: "#381E72",
@@ -65,6 +66,7 @@ const THEMES = {
     onSurface: "#E6E0E9", onSurfaceVariant: "#CAC4D0",
     outline: "#938F99", outlineVariant: "#49454F",
     inverseSurface: "#E6E0E9", inverseOnSurface: "#322F35", inversePrimary: "#6750A4",
+    onTertiary: "#492532", surfaceDim: "#141218", surfaceBright: "#3B383E", shadow: "#000000", scrim: "#000000",
   },
   lightMediumContrast: {
     name: "Light Medium Contrast", primary: "#4B3487", onPrimary: "#FFFFFF",
@@ -78,6 +80,7 @@ const THEMES = {
     onSurface: "#1D1B20", onSurfaceVariant: "#454050",
     outline: "#61596D", outlineVariant: "#7D7689",
     inverseSurface: "#322F35", inverseOnSurface: "#F5EFF7", inversePrimary: "#D0BCFF",
+    onTertiary: "#FFFFFF", surfaceDim: "#DED8E1", surfaceBright: "#FEF7FF", shadow: "#000000", scrim: "#000000",
   },
   lightHighContrast: {
     name: "Light High Contrast", primary: "#29085C", onPrimary: "#FFFFFF",
@@ -91,6 +94,7 @@ const THEMES = {
     onSurface: "#000000", onSurfaceVariant: "#26212E",
     outline: "#454050", outlineVariant: "#454050",
     inverseSurface: "#322F35", inverseOnSurface: "#FFFFFF", inversePrimary: "#F0E4FF",
+    onTertiary: "#FFFFFF", surfaceDim: "#DED8E1", surfaceBright: "#FEF7FF", shadow: "#000000", scrim: "#000000",
   },
   darkMediumContrast: {
     name: "Dark Medium Contrast", primary: "#D4C1FF", onPrimary: "#1F0057",
@@ -104,6 +108,7 @@ const THEMES = {
     onSurface: "#FFF7FF", onSurfaceVariant: "#CFC8D5",
     outline: "#A7A0AD", outlineVariant: "#86808D",
     inverseSurface: "#E6E0E9", inverseOnSurface: "#2B2930", inversePrimary: "#503C8E",
+    onTertiary: "#492532", surfaceDim: "#141218", surfaceBright: "#3B383E", shadow: "#000000", scrim: "#000000",
   },
   darkHighContrast: {
     name: "Dark High Contrast", primary: "#FFF9FF", onPrimary: "#000000",
@@ -117,6 +122,7 @@ const THEMES = {
     onSurface: "#FFFFFF", onSurfaceVariant: "#FFF9FF",
     outline: "#CFC8D5", outlineVariant: "#CFC8D5",
     inverseSurface: "#E6E0E9", inverseOnSurface: "#000000", inversePrimary: "#2F1565",
+    onTertiary: "#492532", surfaceDim: "#141218", surfaceBright: "#3B383E", shadow: "#000000", scrim: "#000000",
   },
 };
 
@@ -165,10 +171,11 @@ function hslToHex(h,s,l) {
 }
 function generateM3Theme(sourceHex, isDark = false) {
   const [h,s] = hexToHSL(sourceHex);
-  const p = (tone) => hslToHex(h, Math.min(s,48), tone);
-  const n = (tone) => hslToHex(h, Math.min(s*0.15,8), tone);
-  const sec = (tone) => hslToHex(h, Math.min(s*0.35,16), tone);
-  const ter = (tone) => hslToHex((h+60)%360, Math.min(s*0.6,32), tone);
+  const p = (tone) => hslToHex(h, Math.max(48, s), tone);
+  const n = (tone) => hslToHex(h, 4, tone);
+  const nv = (tone) => hslToHex(h, 8, tone);
+  const sec = (tone) => hslToHex(h, 16, tone);
+  const ter = (tone) => hslToHex((h+60)%360, 24, tone);
   const err = (tone) => hslToHex(25, 80, tone);
 
   if (isDark) {
@@ -177,13 +184,15 @@ function generateM3Theme(sourceHex, isDark = false) {
       primaryContainer: p(30), onPrimaryContainer: p(90),
       secondary: sec(80), onSecondary: sec(20),
       secondaryContainer: sec(30), onSecondaryContainer: sec(90),
-      tertiary: ter(80), tertiaryContainer: ter(30), onTertiaryContainer: ter(90),
+      tertiary: ter(80), onTertiary: ter(20), tertiaryContainer: ter(30), onTertiaryContainer: ter(90),
       error: err(80), onError: err(20), errorContainer: err(30), onErrorContainer: err(90),
-      surface: n(6), surfaceContainerLowest: n(4), surfaceContainerLow: n(10),
+      surface: n(6), surfaceDim: n(6), surfaceBright: n(24),
+      surfaceContainerLowest: n(4), surfaceContainerLow: n(10),
       surfaceContainer: n(12), surfaceContainerHigh: n(17), surfaceContainerHighest: n(22),
-      onSurface: n(90), onSurfaceVariant: n(80),
-      outline: n(60), outlineVariant: n(30),
+      onSurface: n(90), onSurfaceVariant: nv(80),
+      outline: nv(60), outlineVariant: nv(30),
       inverseSurface: n(90), inverseOnSurface: n(20), inversePrimary: p(40),
+      shadow: "#000000", scrim: "#000000",
     };
   }
   return {
@@ -191,13 +200,15 @@ function generateM3Theme(sourceHex, isDark = false) {
     primaryContainer: p(90), onPrimaryContainer: p(10),
     secondary: sec(40), onSecondary: "#FFFFFF",
     secondaryContainer: sec(90), onSecondaryContainer: sec(10),
-    tertiary: ter(40), tertiaryContainer: ter(90), onTertiaryContainer: ter(10),
+    tertiary: ter(40), onTertiary: "#FFFFFF", tertiaryContainer: ter(90), onTertiaryContainer: ter(10),
     error: err(40), onError: "#FFFFFF", errorContainer: err(90), onErrorContainer: err(10),
-    surface: n(98), surfaceContainerLowest: "#FFFFFF", surfaceContainerLow: n(96),
+    surface: n(98), surfaceDim: n(87), surfaceBright: n(98),
+    surfaceContainerLowest: "#FFFFFF", surfaceContainerLow: n(96),
     surfaceContainer: n(94), surfaceContainerHigh: n(92), surfaceContainerHighest: n(90),
-    onSurface: n(10), onSurfaceVariant: n(30),
-    outline: n(50), outlineVariant: n(80),
+    onSurface: n(10), onSurfaceVariant: nv(30),
+    outline: nv(50), outlineVariant: nv(80),
     inverseSurface: n(20), inverseOnSurface: n(95), inversePrimary: p(80),
+    shadow: "#000000", scrim: "#000000",
   };
 }
 
