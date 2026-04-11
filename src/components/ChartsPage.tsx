@@ -1,21 +1,27 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getTheme, getFont, getSystemInfo, activateTheme } from "@/data/registry";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// Initialize Highcharts modules (only in browser)
-if (typeof window !== "undefined") {
-  const initMore = require("highcharts/highcharts-more");
-  const initSolidGauge = require("highcharts/modules/solid-gauge");
-  const initHeatmap = require("highcharts/modules/heatmap");
-  const initTreemap = require("highcharts/modules/treemap");
-  if (initMore.default) initMore.default(Highcharts); else initMore(Highcharts);
-  if (initSolidGauge.default) initSolidGauge.default(Highcharts); else initSolidGauge(Highcharts);
-  if (initHeatmap.default) initHeatmap.default(Highcharts); else initHeatmap(Highcharts);
-  if (initTreemap.default) initTreemap.default(Highcharts); else initTreemap(Highcharts);
+// Initialize Highcharts modules once via dynamic import
+let modulesLoaded = false;
+function ensureModules() {
+  if (modulesLoaded || typeof window === "undefined") return;
+  modulesLoaded = true;
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const mods = [
+    require("highcharts/highcharts-more"),
+    require("highcharts/modules/solid-gauge"),
+    require("highcharts/modules/heatmap"),
+    require("highcharts/modules/treemap"),
+  ];
+  mods.forEach((m) => {
+    const init = typeof m === "function" ? m : m?.default;
+    if (typeof init === "function") init(Highcharts);
+  });
 }
 
 function getChartTheme(system: string, T: any, font: string): Partial<Highcharts.Options> {
@@ -242,6 +248,7 @@ function ChartCard({ chart, theme, bg, border }: { chart: ChartDef; theme: Parti
 }
 
 export function ChartsPage() {
+  ensureModules();
   const store = useDesignHub();
   const { activeSystem } = store;
   const sysInfo = getSystemInfo(activeSystem);
