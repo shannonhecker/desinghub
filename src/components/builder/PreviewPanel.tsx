@@ -33,9 +33,7 @@ function DefaultPreview() {
 
 /* ── Preview content — interactive UI kit components ── */
 function PreviewContent() {
-  const { designSystem, mode, interfaceType, selectedComponents, colorOverrides } = useBuilder();
-
-  const isDark = mode === "dark";
+  const { designSystem, interfaceType, selectedComponents, colorOverrides } = useBuilder();
 
   /* ── Interactive state ── */
   const [activeTab, setActiveTab] = useState(0);
@@ -44,39 +42,26 @@ function PreviewContent() {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
 
-  const accents: Record<string, { primary: string; bg: string; fg: string; surface: string; border: string; font: string; hover: string }> = {
-    salt: {
-      primary: colorOverrides.accent || "#1B7F9E",
-      bg: isDark ? "#101820" : "#FFFFFF",
-      fg: isDark ? "#E2E4E5" : "#000000",
-      surface: isDark ? "#1A2229" : "#F5F7F8",
-      border: isDark ? "#3A3F44" : "#B1B5B9",
-      hover: isDark ? "#1E2A33" : "#EDF0F2",
-      font: "'Open Sans', sans-serif",
-    },
-    m3: {
-      primary: colorOverrides.primary || "#6750A4",
-      bg: isDark ? "#141218" : "#FEF7FF",
-      fg: isDark ? "#E6E0E9" : "#1D1B20",
-      surface: isDark ? "#1D1B20" : "#F3EDF7",
-      border: isDark ? "#49454F" : "#CAC4D0",
-      hover: isDark ? "#252330" : "#E8E0F0",
-      font: "'Roboto', sans-serif",
-    },
-    fluent: {
-      primary: colorOverrides.brandBg || "#0F6CBD",
-      bg: isDark ? "#292929" : "#FFFFFF",
-      fg: isDark ? "#FFFFFF" : "#242424",
-      surface: isDark ? "#1F1F1F" : "#FAFAFA",
-      border: isDark ? "#666666" : "#D1D1D1",
-      hover: isDark ? "#333333" : "#F0F0F0",
-      font: "'Segoe UI', -apple-system, sans-serif",
-    },
+  /* Semantic tokens reference — all values come from CSS custom properties */
+  const t = {
+    primary: "var(--ds-primary)",
+    bg: "var(--ds-bg)",
+    fg: "var(--ds-fg)",
+    fgSecondary: "var(--ds-fg-secondary)",
+    fgTertiary: "var(--ds-fg-tertiary)",
+    surface: "var(--ds-surface)",
+    border: "var(--ds-border)",
+    hover: "var(--ds-hover)",
+    font: "var(--ds-font)",
+    primaryHover: "var(--ds-primary-hover)",
+    primaryGlow: "var(--ds-primary-glow)",
+    primaryShadow: "var(--ds-primary-shadow)",
   };
+  const radius = "var(--ds-radius)";
+  const btnRadius = "var(--ds-btn-radius)";
 
-  const t = accents[designSystem];
-  const radius = designSystem === "m3" ? 12 : designSystem === "fluent" ? 6 : 4;
-  const btnRadius = designSystem === "m3" ? 20 : designSystem === "fluent" ? 6 : 4;
+  /* Resolve colorOverrides to a CSS custom property override on the wrapper */
+  const primaryOverride = colorOverrides.accent || colorOverrides.primary || colorOverrides.brandBg;
   const has = (c: string) => selectedComponents.includes(c);
 
   const handleBtnClick = (name: string) => {
@@ -85,7 +70,13 @@ function PreviewContent() {
   };
 
   return (
-    <div style={{ background: t.bg, color: t.fg, fontFamily: t.font, minHeight: "100%", fontSize: 13 }}>
+    <div
+      className={`preview-${designSystem}`}
+      style={{
+        background: t.bg, color: t.fg, fontFamily: t.font, minHeight: "100%", fontSize: 13,
+        ...(primaryOverride && { '--ds-primary': primaryOverride } as React.CSSProperties),
+      }}
+    >
       {/* Header with interactive tabs */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: `1px solid ${t.border}`, background: t.surface }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -132,13 +123,13 @@ function PreviewContent() {
                 onMouseLeave={() => setHoveredCard(null)}
                 style={{
                   background: hoveredCard === "stat-" + i ? t.hover : t.surface,
-                  border: `1px solid ${hoveredCard === "stat-" + i ? t.primary + "40" : t.border}`,
+                  border: `1px solid ${hoveredCard === "stat-" + i ? t.primaryHover : t.border}`,
                   borderRadius: radius, padding: 14, cursor: "pointer",
                   transition: "all 150ms ease",
                   transform: hoveredCard === "stat-" + i ? "translateY(-1px)" : "none",
                 }}
               >
-                <div style={{ fontSize: 11, color: t.fg + "99", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 20, fontWeight: 700 }}>
                   {i === 0 ? "$42.8K" : i === 1 ? "1,247" : "+18%"}
                 </div>
@@ -179,7 +170,7 @@ function PreviewContent() {
                   transform: activeBtn === btn.label ? "scale(0.95)" : "scale(1)",
                   opacity: activeBtn === btn.label ? 0.8 : 1,
                   transition: "all 150ms ease",
-                  boxShadow: activeBtn === btn.label && btn.label === "Primary" ? `0 0 16px ${t.primary}60` : "none",
+                  boxShadow: activeBtn === btn.label && btn.label === "Primary" ? `0 0 16px ${t.primaryGlow}` : "none",
                 }}
               >{btn.label}</button>
             ))}
@@ -222,16 +213,16 @@ function PreviewContent() {
                 onMouseLeave={() => setHoveredCard(null)}
                 style={{
                   background: hoveredCard === card.title ? t.hover : t.surface,
-                  border: `1px solid ${hoveredCard === card.title ? t.primary + "40" : t.border}`,
+                  border: `1px solid ${hoveredCard === card.title ? t.primaryHover : t.border}`,
                   borderRadius: radius, padding: 14, cursor: "pointer",
                   transition: "all 150ms ease",
                   transform: hoveredCard === card.title ? "translateY(-2px)" : "none",
-                  boxShadow: hoveredCard === card.title ? `0 4px 12px ${t.primary}15` : "none",
+                  boxShadow: hoveredCard === card.title ? `0 4px 12px ${t.primaryShadow}` : "none",
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 20, color: t.primary, marginBottom: 6, display: "block" }}>{card.icon}</span>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{card.title}</div>
-                <div style={{ fontSize: 11, color: t.fg + "88", marginTop: 4 }}>View details</div>
+                <div style={{ fontSize: 11, color: t.fgTertiary, marginTop: 4 }}>View details</div>
               </div>
             ))}
           </div>
@@ -313,7 +304,7 @@ function PreviewContent() {
         {/* Avatar group */}
         {has("avatars") && (
           <div>
-            <div style={{ fontSize: 11, color: t.fg + "88", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Team</div>
+            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Team</div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <SimulatedAvatar system={designSystem} initials="AK" size="lg" presence="available" />
               <SimulatedAvatar system={designSystem} initials="JL" size="md" presence="busy" />
@@ -326,7 +317,7 @@ function PreviewContent() {
         {/* Dropdown */}
         {(has("inputs") || has("form-field")) && (
           <div>
-            <div style={{ fontSize: 11, color: t.fg + "88", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</div>
+            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</div>
             <SimulatedDropdown
               system={designSystem}
               items={[
@@ -348,7 +339,7 @@ function PreviewContent() {
         {/* Date picker */}
         {(has("inputs") || has("form-field")) && (
           <div>
-            <div style={{ fontSize: 11, color: t.fg + "88", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Schedule</div>
+            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Schedule</div>
             <SimulatedDatePicker system={designSystem} />
           </div>
         )}
