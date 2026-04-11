@@ -33,6 +33,8 @@ export function ChatPanel() {
     messages, inputText, isVoiceActive, isGenerating,
     setInputText, addMessage, toggleVoice, setGenerating, bumpPreview,
     designSystem, mode, density, interfaceType, selectedComponents, colorOverrides,
+    previewOpen, setPreviewOpen,
+    setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
   } = useBuilder();
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -54,10 +56,40 @@ export function ChatPanel() {
     addMessage("user", msg);
     setGenerating(true);
 
-    if (msg.toLowerCase().includes("preview")) {
-      const previewUrl = `${window.location.origin}${(window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath || ''}/builder?preview=1`;
-      window.open(previewUrl, 'design-hub-preview', 'width=800,height=600');
-    }
+    const l = msg.toLowerCase();
+    let shouldOpenPreview = false;
+
+    /* ── Parse design system ── */
+    if (l.includes("salt")) { setDesignSystem("salt"); shouldOpenPreview = true; }
+    else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3"); shouldOpenPreview = true; }
+    else if (l.includes("fluent")) { setDesignSystem("fluent"); shouldOpenPreview = true; }
+
+    /* ── Parse interface type + auto-select components ── */
+    const componentMap: Record<string, string[]> = {
+      dashboard: ["buttons", "table", "tabs", "cards", "badges", "progress"],
+      landing: ["buttons", "cards", "inputs", "badges"],
+      form: ["inputs", "text-fields", "form-field", "buttons", "checkboxes", "radios", "switches"],
+      ecommerce: ["cards", "buttons", "badges", "inputs"],
+      blog: ["cards", "buttons", "tabs", "avatars"],
+      portfolio: ["cards", "buttons", "tabs", "badges"],
+    };
+
+    if (l.includes("dashboard")) { setInterfaceType("dashboard"); setSelectedComponents(componentMap.dashboard); shouldOpenPreview = true; }
+    else if (l.includes("landing")) { setInterfaceType("landing"); setSelectedComponents(componentMap.landing); shouldOpenPreview = true; }
+    else if (l.includes("form")) { setInterfaceType("form"); setSelectedComponents(componentMap.form); shouldOpenPreview = true; }
+    else if (l.includes("ecommerce") || l.includes("shop")) { setInterfaceType("ecommerce"); setSelectedComponents(componentMap.ecommerce); shouldOpenPreview = true; }
+    else if (l.includes("blog")) { setInterfaceType("blog"); setSelectedComponents(componentMap.blog); shouldOpenPreview = true; }
+    else if (l.includes("portfolio")) { setInterfaceType("portfolio"); setSelectedComponents(componentMap.portfolio); shouldOpenPreview = true; }
+
+    /* ── Parse theme mode ── */
+    if (l.includes("dark")) setMode("dark");
+    else if (l.includes("light")) setMode("light");
+
+    /* ── "preview" keyword opens the inline panel ── */
+    if (l.includes("preview")) shouldOpenPreview = true;
+
+    /* ── Auto-open preview panel ── */
+    if (shouldOpenPreview && !previewOpen) setPreviewOpen(true);
 
     setTimeout(() => {
       addMessage("ai", getAIResponse(msg));

@@ -1,11 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useBuilder } from "@/store/useBuilder";
+
+/* ── Default welcome state ── */
+function DefaultPreview() {
+  return (
+    <div className="preview-default">
+      <div className="preview-default-icon">
+        <span className="material-symbols-outlined" style={{ fontSize: 32, color: "white" }}>
+          auto_awesome
+        </span>
+      </div>
+      <h3 className="preview-default-title">Design Preview</h3>
+      <p className="preview-default-desc">
+        Start a conversation to see your design come to life. Try asking for a
+        dashboard, landing page, or form.
+      </p>
+      <div className="preview-default-tags">
+        <span className="preview-tag">Salt DS</span>
+        <span className="preview-tag">Material 3</span>
+        <span className="preview-tag">Fluent 2</span>
+      </div>
+    </div>
+  );
+}
 
 /* ── Preview content — renders a mini layout based on user's choices ── */
 function PreviewContent() {
-  const { designSystem, mode, density, interfaceType, selectedComponents, colorOverrides } = useBuilder();
+  const { designSystem, mode, interfaceType, selectedComponents, colorOverrides } = useBuilder();
 
   const isDark = mode === "dark";
 
@@ -70,7 +93,6 @@ function PreviewContent() {
       </div>
 
       <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Stats */}
         {(interfaceType === "landing" || interfaceType === "dashboard") && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
             {["Revenue", "Users", "Growth"].map((label, i) => (
@@ -89,7 +111,6 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Buttons */}
         {has("buttons") && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button style={{ padding: "8px 16px", borderRadius: btnRadius, background: t.primary, color: "#fff", border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Primary</button>
@@ -98,25 +119,23 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Inputs */}
         {(has("inputs") || has("text-fields") || has("form-field")) && (
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <input placeholder="Email address" style={{
-              flex: 1, minWidth: 160, padding: "8px 12px", borderRadius: radius, fontSize: 13,
+              flex: 1, minWidth: 140, padding: "8px 12px", borderRadius: radius, fontSize: 13,
               border: `1px solid ${t.border}`, background: t.surface, color: t.fg,
               fontFamily: t.font, outline: "none",
             }} />
             <input placeholder="Password" type="password" style={{
-              flex: 1, minWidth: 160, padding: "8px 12px", borderRadius: radius, fontSize: 13,
+              flex: 1, minWidth: 140, padding: "8px 12px", borderRadius: radius, fontSize: 13,
               border: `1px solid ${t.border}`, background: t.surface, color: t.fg,
               fontFamily: t.font, outline: "none",
             }} />
           </div>
         )}
 
-        {/* Cards */}
         {has("cards") && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
             {["Analytics", "Reports", "Users", "Settings"].map((title) => (
               <div key={title} style={{
                 background: t.surface, border: `1px solid ${t.border}`, borderRadius: radius,
@@ -129,7 +148,6 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Checkboxes / Switches / Radios */}
         {(has("checkboxes") || has("switches") || has("radios")) && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 12 }}>
             {has("checkboxes") && (
@@ -157,7 +175,6 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Badges */}
         {has("badges") && (
           <div style={{ display: "flex", gap: 8 }}>
             {[{ label: "Active", color: "#00875D" }, { label: "Pending", color: "#C75300" }, { label: "Closed", color: "#E52135" }].map((b) => (
@@ -166,7 +183,6 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Table */}
         {(has("table") || interfaceType === "dashboard") && (
           <div style={{ border: `1px solid ${t.border}`, borderRadius: radius, overflow: "hidden" }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", fontSize: 11, fontWeight: 700, padding: "8px 12px", background: t.surface, borderBottom: `1px solid ${t.border}`, color: t.fg + "88" }}>
@@ -184,72 +200,47 @@ function PreviewContent() {
   );
 }
 
-/* ── Export Actions ── */
-function ExportActions() {
-  const { designSystem, mode, density, interfaceType, selectedComponents, colorOverrides } = useBuilder();
-  const [downloading, setDownloading] = useState(false);
-
-  const handleDownload = () => {
-    setDownloading(true);
-    const config = { designSystem, mode, density, interfaceType, selectedComponents, colorOverrides, generatedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${interfaceType}-${designSystem}-config.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 1500);
-  };
+/* ── Side panel (no header — actions are in top bar) ── */
+export function PreviewSidePanel() {
+  const { previewOpen, previewKey, messages } = useBuilder();
+  const hasContent = messages.some((m) => m.role === "ai");
 
   return (
-    <div className="export-bar">
-      <button className="b-btn b-btn-primary b-btn-sm" onClick={handleDownload} disabled={downloading}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
-        {downloading ? "Packaging..." : "Download"}
-      </button>
-      <div style={{ flex: 1 }} />
-      <span style={{ fontSize: 11, color: "var(--b-fg3)" }}>
-        {designSystem.toUpperCase()} &middot; {interfaceType} &middot; {selectedComponents.length} components
-      </span>
+    <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+      <div className="preview-side-body">
+        {hasContent ? (
+          <div className="preview-frame" key={previewKey}>
+            <PreviewContent />
+          </div>
+        ) : (
+          <DefaultPreview />
+        )}
+      </div>
     </div>
   );
 }
 
-/* ── Preview Panel (overlay) ── */
-export function PreviewPanel() {
-  const { previewKey, previewOpen, togglePreview, designSystem, mode } = useBuilder();
-
+/* ── Standalone Preview (for pop-out window) ── */
+export function StandalonePreview() {
+  const { designSystem, mode } = useBuilder();
   return (
-    <div className={`preview-overlay ${previewOpen ? "open" : ""}`}>
-      <div className="preview-header">
-        <div className="preview-header-left">
+    <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
+      <div className="standalone-preview-header">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", gap: 6 }}>
             <span className="preview-dot" style={{ background: "#ff5f57" }} />
             <span className="preview-dot" style={{ background: "#febc2e" }} />
             <span className="preview-dot" style={{ background: "#28c840" }} />
           </div>
-          <span className="preview-header-title">Live Preview</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="preview-badge">
-            {designSystem.toUpperCase()} &middot; {mode}
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--b-fg)" }}>
+            Design Hub Preview
           </span>
-          <button className="settings-close" onClick={togglePreview} aria-label="Close preview">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-          </button>
         </div>
+        <span className="preview-badge-inline">
+          {designSystem.toUpperCase()} &middot; {mode}
+        </span>
       </div>
-
-      <div className="preview-canvas">
-        {previewKey >= 0 && (
-          <div className="preview-frame" key={previewKey}>
-            <PreviewContent />
-          </div>
-        )}
-      </div>
-
-      <ExportActions />
+      <PreviewContent />
     </div>
   );
 }

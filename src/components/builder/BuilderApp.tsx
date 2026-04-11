@@ -1,30 +1,184 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useBuilder } from "@/store/useBuilder";
-import { Sidebar } from "./Sidebar";
+import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
+import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import "./builder.css";
 
 export function BuilderApp() {
-  const { mode, sidebarCollapsed, toggleSidebar } = useBuilder();
+  const {
+    mode, previewOpen, togglePreview, setMode, clearChat,
+    designSystem, interfaceType, selectedComponents, colorOverrides, density,
+    setDesignSystem, setInterfaceType, setSelectedComponents,
+  } = useBuilder();
+
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  /* ── Resizable drag bar ── */
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [splitPos, setSplitPos] = useState(55);
+  const isDragging = useRef(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      e.preventDefault();
+      const rect = containerRef.current.getBoundingClientRect();
+      const pos = ((e.clientX - rect.left) / rect.width) * 100;
+      setSplitPos(Math.max(30, Math.min(75, pos)));
+    };
+    const onUp = () => {
+      if (isDragging.current) {
+        isDragging.current = false;
+        setDragActive(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, []);
+
+  const startDrag = () => {
+    isDragging.current = true;
+    setDragActive(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  /* ── Pop-out mode ── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("preview") === "1") {
+      const ds = params.get("ds") as DesignSystem | null;
+      const m = params.get("mode") as BuilderMode | null;
+      const t = params.get("type") as InterfaceType | null;
+      const c = params.get("components");
+      if (ds) setDesignSystem(ds);
+      if (m) setMode(m);
+      if (t) setInterfaceType(t);
+      if (c) setSelectedComponents(c.split(","));
+      setIsStandalone(true);
+    }
+  }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
+
+  const handlePopOut = () => {
+    const basePath =
+      typeof window !== "undefined"
+        ? ((window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath || "")
+        : "";
+    const params = new URLSearchParams({
+      preview: "1", ds: designSystem, mode, type: interfaceType,
+      components: selectedComponents.join(","),
+    });
+    window.open(
+      `${window.location.origin}${basePath}/builder?${params}`,
+      "design-hub-preview", "width=800,height=600"
+    );
+  };
+
+  const handleDownload = () => {
+    setDownloading(true);
+    const config = { designSystem, mode, density, interfaceType, selectedComponents, colorOverrides, generatedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${interfaceType}-${designSystem}-config.json`; a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => setDownloading(false), 1500);
+  };
+
+  if (isStandalone) return <StandalonePreview />;
 
   return (
-    <div className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}>
-      <Sidebar />
-
+    <div className={`builder-shell no-sidebar ${mode === "light" ? "builder-light" : ""}`}>
       <div className="main-content">
-        {/* Top bar — minimal */}
+        {/* ── Horizontal top bar ── */}
         <div className="top-bar">
-          {sidebarCollapsed && (
-            <button className="hamburger-btn" onClick={toggleSidebar}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
+          {/* Left: brand + new chat */}
+          <div className="top-bar-left">
+            <div className="top-bar-logo">
+              <div className="top-bar-logo-icon">DH</div>
+              <span className="top-bar-logo-text">Design Hub</span>
+            </div>
+            <button className="top-bar-btn" onClick={clearChat} title="New Chat">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+              New Chat
             </button>
-          )}
+          </div>
+
+          {/* Right: actions */}
+          <div className="top-bar-right">
+            {/* Preview-specific actions (visible when open) */}
+            {previewOpen && (
+              <div className="top-bar-actions">
+                <span className="preview-badge-inline">{designSystem.toUpperCase()} &middot; {mode}</span>
+                <span className="preview-badge-inline">{interfaceType} &middot; {selectedComponents.length} components</span>
+                <button className="preview-action-btn" onClick={handleDownload} disabled={downloading} title="Download config">
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    {downloading ? "hourglass_top" : "download"}
+                  </span>
+                </button>
+                <button className="preview-action-btn" onClick={handlePopOut} title="Pop out">
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
+                </button>
+              </div>
+            )}
+
+            {/* Dark / Light toggle */}
+            <button
+              className="top-bar-btn icon-only"
+              onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+              title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                {mode === "dark" ? "light_mode" : "dark_mode"}
+              </span>
+            </button>
+
+            {/* UI Kit link */}
+            <Link href="/" className="top-bar-btn icon-only" title="UI Kit Overview">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>dashboard</span>
+            </Link>
+
+            {/* Preview toggle */}
+            <button
+              className={`preview-toggle-btn ${previewOpen ? "active" : ""}`}
+              onClick={togglePreview}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>
+              Preview
+            </button>
+          </div>
         </div>
 
-        <ChatPanel />
+        {/* ── Content: chat + resizable preview ── */}
+        <div
+          className={`content-split ${previewOpen ? "has-preview" : ""}`}
+          ref={containerRef}
+          style={previewOpen ? { "--chat-width": `${splitPos}%` } as React.CSSProperties : undefined}
+        >
+          <ChatPanel />
+
+          {previewOpen && (
+            <div
+              className={`resize-handle ${dragActive ? "dragging" : ""}`}
+              onMouseDown={startDrag}
+            />
+          )}
+
+          <PreviewSidePanel />
+        </div>
       </div>
 
       <SettingsPanel />

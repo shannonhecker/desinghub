@@ -60,6 +60,7 @@ interface BuilderState {
   // Actions — UI
   toggleSettings: () => void;
   togglePreview: () => void;
+  setPreviewOpen: (v: boolean) => void;
   toggleSidebar: () => void;
   toggleMobilePreview: () => void;
   bumpPreview: () => void;
@@ -138,6 +139,7 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
+  setPreviewOpen: (v) => set({ previewOpen: v }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleMobilePreview: () => set((s) => ({ mobilePreviewOpen: !s.mobilePreviewOpen })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
