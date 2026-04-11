@@ -14,7 +14,7 @@
   --b-border2: rgba(255, 255, 255, 0.1);
   --b-fg: #eeedf5;
   --b-fg2: #a8a3c0;
-  --b-fg3: #6b6585;
+  --b-fg3: #8b85a5;
   --b-accent: #8b5cf6;
   --b-accent2: #a78bfa;
   --b-accent3: #c4b5fd;
@@ -71,7 +71,7 @@
   --b-border2: rgba(139, 92, 246, 0.14);
   --b-fg: #15102a;
   --b-fg2: #4a3d6e;
-  --b-fg3: #8a7daa;
+  --b-fg3: #5e5680;
   --b-glass: rgba(255, 255, 255, 0.75);
   --b-shadow: 0 8px 32px rgba(139, 92, 246, 0.06);
   --b-accent-glow: rgba(139, 92, 246, 0.12);
@@ -1016,7 +1016,7 @@
 .input-box {
   position: relative;
   z-index: 1;
-  background: var(--glass-white);
+  background: var(--b-bg2);
   border: 1px solid var(--glass-border);
   border-radius: var(--b-radius);
   padding: 4px;
@@ -1025,23 +1025,42 @@
   box-shadow: var(--shadow-glass);
   overflow: hidden;
 }
+/* Animated gradient shimmer on the chatbox background */
 .input-box::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--reflection-top);
-  pointer-events: none;
   border-radius: inherit;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 100%, rgba(139, 92, 246, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 50%);
+  pointer-events: none;
   z-index: 0;
+  animation: inputGradientShift 8s ease-in-out infinite alternate;
 }
+@keyframes inputGradientShift {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+/* No colored border on focus — keep it subtle */
 .input-box.focused {
-  border-color: rgba(94, 231, 223, 0.25);
-  box-shadow: 0 0 0 2px rgba(94, 231, 223, 0.06), var(--shadow-glass);
-  background: var(--glass-white-md);
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-glass);
+  background: var(--b-bg2);
+}
+.builder-light .input-box {
+  background: rgba(255, 255, 255, 0.55);
+}
+.builder-light .input-box::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
 }
 .builder-light .input-box.focused {
-  border-color: rgba(8, 145, 178, 0.2);
-  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.06), var(--shadow-glass);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .input-textarea {
@@ -1060,34 +1079,40 @@
   box-sizing: border-box;
 }
 .input-textarea::placeholder { color: var(--b-fg3); }
+.input-textarea:focus-visible { outline: none; }
 
 .input-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 4px 8px 6px;
   gap: 6px;
 }
 
-/* Mic button */
+/* Mic button — far left, solid background */
 .mic-btn {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--b-border);
-  background: transparent;
-  color: var(--b-fg3);
+  border: none;
+  background: rgba(139, 92, 246, 0.85);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--b-transition);
 }
-.mic-btn:hover { background: var(--b-surface2); color: var(--b-fg2); }
+.builder-light .mic-btn {
+  background: rgba(109, 40, 217, 0.85);
+  color: #ffffff;
+}
+.mic-btn:hover { background: rgba(139, 92, 246, 1); color: #ffffff; }
+.builder-light .mic-btn:hover { background: rgba(109, 40, 217, 1); }
 .mic-btn.active {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.9);
+  border: none;
+  color: #ffffff;
   animation: micPulse 2s infinite;
 }
 @keyframes micPulse {
@@ -1095,7 +1120,7 @@
   50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
 
-/* ── ANIMATED SEND BUTTON (CTA) ── */
+/* ── SEND BUTTON — solid fill, white icon ── */
 .send-btn {
   width: 38px;
   height: 38px;
@@ -1107,53 +1132,41 @@
   justify-content: center;
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
-  background: transparent;
-  color: white;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, background 0.3s;
+  background: #0891b2;
+  color: #ffffff;
+}
+.builder-light .send-btn {
+  background: #0e7490;
 }
 
-/* Rotating gradient background */
-.send-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, #5ee7df, #b490f5, #3b82f6, #5ee7df);
-  animation: ctaRotate 3s linear infinite;
-}
-
-/* Inner fill */
-.send-btn::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #5ee7df, #3b82f6);
-  transition: inset 0.3s;
-}
+.send-btn::before,
+.send-btn::after { display: none; }
 
 .send-btn .btn-icon {
   position: relative;
   z-index: 2;
   font-size: 18px;
+  color: #ffffff;
+  opacity: 1;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .send-btn:hover {
   transform: scale(1.08);
-  box-shadow: 0 0 16px rgba(94, 231, 223, 0.2);
+  background: #06b6d4;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
 }
-.send-btn:hover::after { inset: 1px; }
 .send-btn:hover .btn-icon { transform: translateY(-1px); }
 
 .send-btn:active { transform: scale(0.95); }
 .send-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.35;
   cursor: default;
   transform: none;
   box-shadow: none;
+  background: #6b7280;
 }
-.send-btn:disabled::before { animation: none; }
 
 @keyframes ctaRotate {
   0% { transform: rotate(0deg); }
