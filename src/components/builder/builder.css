@@ -2292,3 +2292,304 @@
   color: var(--colorNeutralForeground1, #242424);
   border-color: var(--colorNeutralStroke1, #D1D1D1);
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   Simulated Input — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared input base ── */
+[class*="-input-container"] { display: flex; flex-direction: column; gap: 4px; }
+[class*="-label"] {
+  font-weight: 600;
+  display: block;
+}
+[class*="-input-wrapper"] { position: relative; }
+[class*="-input"] {
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+[class*="-helper-text"] { display: block; }
+
+/* ── Salt Input ── */
+.s-input-container { font-family: 'Open Sans', sans-serif; font-size: 13px; }
+.s-label {
+  font-size: 12px;
+  color: var(--salt-content-secondary-foreground, #A8ACAF);
+}
+.s-label-focused { color: var(--salt-palette-accent, #1B7F9E); }
+.s-input {
+  padding: 6px 12px;
+  border: 1px solid var(--salt-editable-borderColor, #3A3F44);
+  border-radius: 4px;
+  background: var(--salt-editable-primary-background, #1A2229);
+  color: var(--salt-content-primary-foreground, #E2E4E5);
+  font-size: 13px;
+}
+.s-input::placeholder { color: var(--salt-content-secondary-foreground, #A8ACAF); opacity: 0.7; }
+.s-input:focus {
+  border-color: var(--salt-palette-accent, #1B7F9E);
+  box-shadow: 0 0 0 1px var(--salt-palette-accent, #1B7F9E);
+}
+.s-input-error .s-input { border-color: var(--salt-palette-negative, #E52135); }
+.s-input-error .s-label { color: var(--salt-palette-negative, #E52135); }
+.s-input-error .s-helper-text { color: var(--salt-palette-negative, #E52135); }
+.s-helper-text {
+  font-size: 11px;
+  color: var(--salt-content-secondary-foreground, #A8ACAF);
+}
+
+/* ── Material 3 Input ── */
+.m3-input-container { font-family: 'Roboto', sans-serif; font-size: 14px; }
+.m3-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant, #49454F);
+}
+.m3-label-focused { color: var(--md-sys-color-primary, #6750A4); }
+.m3-input {
+  padding: 12px 16px;
+  border: 1px solid var(--md-sys-color-outline, #CAC4D0);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--md-sys-color-on-surface, #1D1B20);
+  font-size: 14px;
+}
+.m3-input::placeholder { color: var(--md-sys-color-on-surface-variant, #49454F); opacity: 0.7; }
+.m3-input:focus {
+  border-color: var(--md-sys-color-primary, #6750A4);
+  border-width: 2px;
+  padding: 11px 15px;
+}
+.m3-input-error .m3-input { border-color: var(--md-sys-color-error, #BA1A1A); }
+.m3-input-error .m3-label { color: var(--md-sys-color-error, #BA1A1A); }
+.m3-input-error .m3-helper-text { color: var(--md-sys-color-error, #BA1A1A); }
+.m3-helper-text {
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant, #49454F);
+  padding-left: 16px;
+}
+
+/* ── Fluent 2 Input ── */
+.f-input-container { font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 14px; }
+.f-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--colorNeutralForeground1, #242424);
+}
+.f-label-focused { color: var(--colorNeutralForeground1, #242424); }
+.f-input-wrapper { position: relative; }
+.f-input {
+  padding: 5px 12px;
+  border: 1px solid var(--colorNeutralStroke1, #D1D1D1);
+  border-radius: 4px;
+  border-bottom-width: 2px;
+  border-bottom-color: var(--colorNeutralStrokeAccessible, #616161);
+  background: var(--colorNeutralBackground1, #fff);
+  color: var(--colorNeutralForeground1, #242424);
+  font-size: 14px;
+}
+.f-input::placeholder { color: var(--colorNeutralForeground4, #707070); }
+.f-input:focus {
+  border-color: var(--colorNeutralStroke1, #D1D1D1);
+  border-bottom-color: transparent;
+}
+.f-input-bottom-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 0 0 4px 4px;
+  background: var(--colorBrandStroke1, #0F6CBD);
+  transform: scaleX(0);
+  transition: transform 200ms ease;
+}
+.f-input-wrapper-focused .f-input-bottom-line { transform: scaleX(1); }
+.f-input-error .f-input { border-bottom-color: var(--colorStatusDangerForeground1, #C50F1F); }
+.f-input-error .f-helper-text { color: var(--colorStatusDangerForeground1, #C50F1F); }
+.f-helper-text {
+  font-size: 12px;
+  color: var(--colorNeutralForeground3, #707070);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   Simulated Checkbox — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared checkbox base ── */
+[class*="-checkbox-container"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+[class*="-checkbox-visual"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+[class*="-checkbox-visual"] svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+[class*="-checkbox-label"] { line-height: 1.4; }
+
+/* ── Salt Checkbox ── */
+.s-checkbox-container { font-family: 'Open Sans', sans-serif; font-size: 13px; color: var(--salt-content-primary-foreground, #E2E4E5); }
+.s-checkbox-visual {
+  width: 16px; height: 16px;
+  border: 2px solid var(--salt-editable-borderColor, #3A3F44);
+  border-radius: 3px;
+  background: transparent;
+  color: #fff;
+}
+.s-checkbox-checked {
+  background: var(--salt-palette-accent, #1B7F9E);
+  border-color: var(--salt-palette-accent, #1B7F9E);
+}
+.s-checkbox-container:hover .s-checkbox-visual:not(.s-checkbox-checked) {
+  border-color: var(--salt-palette-accent, #1B7F9E);
+}
+
+/* ── Material 3 Checkbox ── */
+.m3-checkbox-container { font-family: 'Roboto', sans-serif; font-size: 14px; color: var(--md-sys-color-on-surface, #1D1B20); }
+.m3-checkbox-visual {
+  width: 18px; height: 18px;
+  border: 2px solid var(--md-sys-color-on-surface-variant, #49454F);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--md-sys-color-on-primary, #fff);
+}
+.m3-checkbox-checked {
+  background: var(--md-sys-color-primary, #6750A4);
+  border-color: var(--md-sys-color-primary, #6750A4);
+}
+.m3-checkbox-container:hover .m3-checkbox-visual:not(.m3-checkbox-checked) {
+  border-color: var(--md-sys-color-on-surface, #1D1B20);
+}
+
+/* ── Fluent 2 Checkbox ── */
+.f-checkbox-container { font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 14px; color: var(--colorNeutralForeground1, #242424); }
+.f-checkbox-visual {
+  width: 16px; height: 16px;
+  border: 1px solid var(--colorNeutralStrokeAccessible, #616161);
+  border-radius: 3px;
+  background: transparent;
+  color: #fff;
+}
+.f-checkbox-checked {
+  background: var(--colorBrandBackground, #0F6CBD);
+  border-color: var(--colorBrandBackground, #0F6CBD);
+}
+.f-checkbox-container:hover .f-checkbox-visual:not(.f-checkbox-checked) {
+  border-color: var(--colorNeutralForeground1, #242424);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   Simulated Switch — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared switch base ── */
+[class*="-switch-container"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+[class*="-switch-track"] {
+  position: relative;
+  flex-shrink: 0;
+  transition: background 200ms ease;
+}
+[class*="-switch-thumb"] {
+  position: absolute;
+  border-radius: 50%;
+  transition: left 200ms ease, width 200ms ease, height 200ms ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ── Salt Switch ── */
+.s-switch-container { font-family: 'Open Sans', sans-serif; font-size: 13px; color: var(--salt-content-primary-foreground, #E2E4E5); }
+.s-switch-track {
+  width: 36px; height: 20px;
+  border-radius: 10px;
+  background: var(--salt-editable-borderColor, #3A3F44);
+}
+.s-switch-on.s-switch-track { background: var(--salt-palette-accent, #1B7F9E); }
+.s-switch-thumb {
+  width: 16px; height: 16px;
+  top: 2px; left: 2px;
+  background: #fff;
+}
+.s-switch-on .s-switch-thumb { left: 18px; }
+
+/* ── Material 3 Switch — larger track, icon-ready thumb ── */
+.m3-switch-container { font-family: 'Roboto', sans-serif; font-size: 14px; color: var(--md-sys-color-on-surface, #1D1B20); }
+.m3-switch-track {
+  width: 52px; height: 32px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-highest, #E6E0E9);
+  border: 2px solid var(--md-sys-color-outline, #CAC4D0);
+}
+.m3-switch-on.m3-switch-track {
+  background: var(--md-sys-color-primary, #6750A4);
+  border-color: var(--md-sys-color-primary, #6750A4);
+}
+.m3-switch-thumb {
+  width: 16px; height: 16px;
+  top: 8px; left: 8px;
+  background: var(--md-sys-color-outline, #CAC4D0);
+  box-shadow: none;
+}
+.m3-switch-on .m3-switch-thumb {
+  left: 28px;
+  width: 24px; height: 24px;
+  top: 4px;
+  background: var(--md-sys-color-on-primary, #fff);
+}
+
+/* ── Fluent 2 Switch — pill track ── */
+.f-switch-container { font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 14px; color: var(--colorNeutralForeground1, #242424); }
+.f-switch-track {
+  width: 40px; height: 20px;
+  border-radius: 10px;
+  background: var(--colorNeutralStrokeAccessible, #616161);
+}
+.f-switch-on.f-switch-track { background: var(--colorBrandBackground, #0F6CBD); }
+.f-switch-thumb {
+  width: 14px; height: 14px;
+  top: 3px; left: 3px;
+  background: #fff;
+}
+.f-switch-on .f-switch-thumb { left: 23px; }
+
+/* ── Dark mode overrides — Input, Checkbox, Switch ── */
+.builder-light .s-input {
+  background: var(--salt-editable-primary-background, #fff);
+  border-color: var(--salt-editable-borderColor, #B1B5B9);
+  color: var(--salt-content-primary-foreground, #000);
+}
+.builder-light .s-label { color: var(--salt-content-secondary-foreground, #72767A); }
+.builder-light .s-helper-text { color: var(--salt-content-secondary-foreground, #72767A); }
+.builder-light .s-checkbox-container { color: var(--salt-content-primary-foreground, #000); }
+.builder-light .s-checkbox-visual { border-color: var(--salt-editable-borderColor, #B1B5B9); }
+.builder-light .s-switch-container { color: var(--salt-content-primary-foreground, #000); }
+.builder-light .s-switch-track { background: var(--salt-editable-borderColor, #B1B5B9); }
+
+.builder-light .m3-checkbox-container { color: var(--md-sys-color-on-surface, #1D1B20); }
+.builder-light .m3-switch-container { color: var(--md-sys-color-on-surface, #1D1B20); }
+
+.builder-light .f-input {
+  background: var(--colorNeutralBackground1, #fff);
+  color: var(--colorNeutralForeground1, #242424);
+}
+.builder-light .f-checkbox-container { color: var(--colorNeutralForeground1, #242424); }
+.builder-light .f-switch-container { color: var(--colorNeutralForeground1, #242424); }

@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import { SimulatedAvatar, SimulatedDropdown, SimulatedDataTable, SimulatedDatePicker, SimulatedDialog, SimulatedTabs } from "./SimulatedUI";
+import {
+  SimulatedAvatar, SimulatedDropdown, SimulatedDataTable, SimulatedDatePicker,
+  SimulatedDialog, SimulatedTabs, SimulatedInput, SimulatedCheckbox, SimulatedSwitch,
+} from "./SimulatedUI";
 
 /* ── Default welcome state ── */
 function DefaultPreview() {
@@ -35,8 +38,6 @@ function PreviewContent() {
 
   /* ── Interactive state ── */
   const [activeTab, setActiveTab] = useState(0);
-  const [checks, setChecks] = useState<Record<string, boolean>>({ notifications: true, updates: false, newsletter: false });
-  const [switchOn, setSwitchOn] = useState(true);
   const [radio, setRadio] = useState("a");
   const [activeBtn, setActiveBtn] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
@@ -187,40 +188,11 @@ function PreviewContent() {
           <SimulatedTabs system={designSystem} />
         )}
 
-        {/* Interactive inputs with focus styles */}
+        {/* Inputs */}
         {(has("inputs") || has("text-fields") || has("form-field")) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {[
-                { placeholder: "Email address", type: "text" },
-                { placeholder: "Password", type: "password" },
-              ].map((inp) => (
-                <input
-                  key={inp.placeholder}
-                  placeholder={inp.placeholder}
-                  type={inp.type}
-                  style={{
-                    flex: 1, minWidth: 140, padding: "8px 12px", borderRadius: radius, fontSize: 13,
-                    border: `1px solid ${t.border}`, background: t.surface, color: t.fg,
-                    fontFamily: t.font, outline: "none", transition: "border-color 150ms ease, box-shadow 150ms ease",
-                  }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${t.primary}30`; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.boxShadow = "none"; }}
-                />
-              ))}
-            </div>
-            <textarea
-              placeholder="Additional notes..."
-              rows={2}
-              style={{
-                width: "100%", padding: "8px 12px", borderRadius: radius, fontSize: 13,
-                border: `1px solid ${t.border}`, background: t.surface, color: t.fg,
-                fontFamily: t.font, outline: "none", resize: "vertical", transition: "border-color 150ms ease, box-shadow 150ms ease",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = t.primary; e.currentTarget.style.boxShadow = `0 0 0 2px ${t.primary}30`; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.boxShadow = "none"; }}
-            />
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <SimulatedInput system={designSystem} label="Email Address" placeholder="name@company.com" helperText="We'll never share your email." />
+            <SimulatedInput system={designSystem} label="Password" placeholder="Enter password" type="password" helperText="" />
           </div>
         )}
 
@@ -254,49 +226,18 @@ function PreviewContent() {
           </div>
         )}
 
-        {/* Interactive checkboxes, switches, radios */}
+        {/* Checkboxes + Switches */}
         {(has("checkboxes") || has("switches") || has("radios")) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {has("checkboxes") && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  { key: "notifications", label: "Enable notifications" },
-                  { key: "updates", label: "Automatic updates" },
-                  { key: "newsletter", label: "Subscribe to newsletter" },
-                ].map((item) => (
-                  <label
-                    key={item.key}
-                    onClick={() => setChecks((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                    style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
-                  >
-                    <span style={{
-                      width: 16, height: 16, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center",
-                      border: `2px solid ${checks[item.key] ? t.primary : t.border}`,
-                      background: checks[item.key] ? t.primary : "transparent",
-                      color: "#fff", fontSize: 10, transition: "all 150ms ease",
-                    }}>{checks[item.key] ? "✓" : ""}</span>
-                    {item.label}
-                  </label>
-                ))}
-              </div>
+              <>
+                <SimulatedCheckbox system={designSystem} label="Enable notifications" defaultChecked />
+                <SimulatedCheckbox system={designSystem} label="Automatic updates" />
+                <SimulatedCheckbox system={designSystem} label="Subscribe to newsletter" />
+              </>
             )}
             {has("switches") && (
-              <label
-                onClick={() => setSwitchOn(!switchOn)}
-                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
-              >
-                <span style={{
-                  width: 36, height: 20, borderRadius: 10, position: "relative", display: "inline-block",
-                  background: switchOn ? t.primary : t.border, transition: "background 200ms ease",
-                }}>
-                  <span style={{
-                    position: "absolute", top: 2, width: 16, height: 16, borderRadius: "50%", background: "#fff",
-                    left: switchOn ? 18 : 2, transition: "left 200ms ease",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                  }} />
-                </span>
-                Dark mode
-              </label>
+              <SimulatedSwitch system={designSystem} label="Dark mode" />
             )}
             {has("radios") && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -308,7 +249,7 @@ function PreviewContent() {
                   <label
                     key={item.value}
                     onClick={() => setRadio(item.value)}
-                    style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", fontSize: 13, fontFamily: t.font, color: t.fg }}
                   >
                     <span style={{
                       width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",

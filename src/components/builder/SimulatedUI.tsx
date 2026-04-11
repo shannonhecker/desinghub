@@ -383,3 +383,115 @@ export function SimulatedTabs({
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedInput
+   ═══════════════════════════════════════════ */
+
+interface InputProps extends SimProps {
+  label?: string;
+  placeholder?: string;
+  helperText?: string;
+  type?: string;
+  error?: boolean;
+}
+
+export function SimulatedInput({
+  system,
+  label = "Email Address",
+  placeholder = "name@company.com",
+  helperText = "We'll never share your email.",
+  type = "text",
+  error = false,
+}: InputProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [value, setValue] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <div className={`${prefix}-input-container${error ? ` ${prefix}-input-error` : ""}`}>
+      <label className={`${prefix}-label${focused ? ` ${prefix}-label-focused` : ""}`}>
+        {label}
+      </label>
+      <div className={`${prefix}-input-wrapper${focused ? ` ${prefix}-input-wrapper-focused` : ""}`}>
+        <input
+          type={type}
+          className={`${prefix}-input`}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        {system === "fluent" && <div className={`${prefix}-input-bottom-line`} />}
+      </div>
+      {helperText && (
+        <span className={`${prefix}-helper-text`}>{helperText}</span>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedCheckbox
+   ═══════════════════════════════════════════ */
+
+interface CheckboxProps extends SimProps {
+  label?: string;
+  defaultChecked?: boolean;
+}
+
+export function SimulatedCheckbox({
+  system,
+  label = "Accept terms and conditions",
+  defaultChecked = false,
+}: CheckboxProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [checked, setChecked] = useState(defaultChecked);
+
+  return (
+    <label
+      className={`${prefix}-checkbox-container`}
+      onClick={(e) => { e.preventDefault(); setChecked(!checked); }}
+    >
+      <div className={`${prefix}-checkbox-visual${checked ? ` ${prefix}-checkbox-checked` : ""}`}>
+        {checked && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+      </div>
+      <span className={`${prefix}-checkbox-label`}>{label}</span>
+    </label>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedSwitch
+   ═══════════════════════════════════════════ */
+
+interface SwitchProps extends SimProps {
+  label?: string;
+  defaultOn?: boolean;
+}
+
+export function SimulatedSwitch({
+  system,
+  label = "Enable Notifications",
+  defaultOn = false,
+}: SwitchProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [toggled, setToggled] = useState(defaultOn);
+
+  return (
+    <label
+      className={`${prefix}-switch-container`}
+      onClick={(e) => { e.preventDefault(); setToggled(!toggled); }}
+    >
+      <span className={`${prefix}-switch-label`}>{label}</span>
+      <div className={`${prefix}-switch-track${toggled ? ` ${prefix}-switch-on` : ""}`}>
+        <div className={`${prefix}-switch-thumb`} />
+      </div>
+    </label>
+  );
+}
