@@ -558,7 +558,7 @@ export function ChatPanel() {
           : "Try 'add buttons', 'remove cards', 'dark mode', or 'switch to Fluent'...";
 
   return (
-    <div className="chat-layout">
+    <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
       {/* Scrollable content area */}
       <div className="chat-scroll">
         {/* Orb */}

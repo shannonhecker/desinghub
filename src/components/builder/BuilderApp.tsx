@@ -103,6 +103,13 @@ export function BuilderApp() {
 
   return (
     <div className={`builder-shell no-sidebar ${mode === "light" ? "builder-light" : ""}`}>
+      {/* Liquid Glass animated blob scene */}
+      <div className="blob-scene" aria-hidden="true">
+        <div className="blob blob--1" />
+        <div className="blob blob--2" />
+        <div className="blob blob--3" />
+      </div>
+
       <div className="main-content">
         {/* ── Horizontal top bar ── */}
         <div className="top-bar">

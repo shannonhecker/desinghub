@@ -113,6 +113,13 @@ export function HeroHeader() {
   return (
     <section className={`hero-section ${isDark ? "hero-dark" : "hero-light"}`}>
 
+      {/* ═══ Liquid Glass Blob Scene ═══ */}
+      <div className="hero-blob-scene" aria-hidden="true">
+        <div className="hero-blob hero-blob--1" />
+        <div className="hero-blob hero-blob--2" />
+        <div className="hero-blob hero-blob--3" />
+      </div>
+
       {/* ═══ Background Layers ═══ */}
 
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
