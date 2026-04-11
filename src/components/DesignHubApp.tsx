@@ -125,16 +125,29 @@ function ThemeControls() {
 
   if (activeSystem === "m3") {
     const { m3, setM3Theme, setM3Density, setM3CustomColor, setM3DarkCustom } = store;
+    const isDark = m3.themeKey.startsWith("dark");
+    const contrast = m3.themeKey.includes("HighContrast") ? "high" : m3.themeKey.includes("MediumContrast") ? "medium" : "standard";
+    const buildKey = (dark: boolean, c: string) => {
+      if (m3.themeKey === "custom") return "custom";
+      const prefix = dark ? "dark" : "light";
+      if (c === "high") return `${prefix}HighContrast`;
+      if (c === "medium") return `${prefix}MediumContrast`;
+      return prefix;
+    };
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 0" }}>
-        <ControlGroup label="Palette">
-          <select value={m3.themeKey} onChange={e => setM3Theme(e.target.value)}
-            style={{ background: t.bg2, color: t.fg, border: `1px solid ${t.border}`, borderRadius: 4, padding: "4px 8px", fontSize: 12, fontFamily: t.font }}>
-            {["light","dark","lightMediumContrast","lightHighContrast","darkMediumContrast","darkHighContrast","custom"].map(k =>
-              <option key={k} value={k}>{k === "custom" ? "Custom" : k.replace(/([A-Z])/g, " $1").trim()}</option>
-            )}
-          </select>
+        <ControlGroup label="Mode">
+          <CtrlBtn active={!isDark && m3.themeKey !== "custom"} onClick={() => setM3Theme(buildKey(false, contrast))}>Light</CtrlBtn>
+          <CtrlBtn active={isDark && m3.themeKey !== "custom"} onClick={() => setM3Theme(buildKey(true, contrast))}>Dark</CtrlBtn>
+          <CtrlBtn active={m3.themeKey === "custom"} onClick={() => setM3Theme("custom")}>Custom</CtrlBtn>
         </ControlGroup>
+        {m3.themeKey !== "custom" && (
+          <ControlGroup label="Contrast">
+            <CtrlBtn active={contrast === "standard"} onClick={() => setM3Theme(buildKey(isDark, "standard"))}>Standard</CtrlBtn>
+            <CtrlBtn active={contrast === "medium"} onClick={() => setM3Theme(buildKey(isDark, "medium"))}>Medium</CtrlBtn>
+            <CtrlBtn active={contrast === "high"} onClick={() => setM3Theme(buildKey(isDark, "high"))}>High</CtrlBtn>
+          </ControlGroup>
+        )}
         {m3.themeKey === "custom" && (
           <ControlGroup label="Custom Color">
             <input type="color" value={m3.customColor} onChange={e => setM3CustomColor(e.target.value)}
