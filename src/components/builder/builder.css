@@ -3254,3 +3254,192 @@
   --ds-border: #D1D1D1;
   --ds-hover: #F0F0F0;
 }
+
+/* ─── DnD Canvas ─── */
+
+.canvas-block {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: var(--ds-radius, 8px);
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.canvas-block:hover {
+  border-color: var(--ds-border);
+}
+.canvas-block.is-dragging {
+  opacity: 0.5;
+  z-index: 100;
+}
+
+.canvas-block-handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ds-fg-tertiary, #666);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: 4px;
+  z-index: 5;
+}
+.canvas-block:hover .canvas-block-handle {
+  opacity: 1;
+}
+.canvas-block-handle:hover {
+  background: var(--ds-hover, rgba(255,255,255,0.06));
+  color: var(--ds-fg, #fff);
+}
+
+.canvas-block-swap {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ds-fg-tertiary, #666);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  z-index: 5;
+  font-family: inherit;
+}
+.canvas-block:hover .canvas-block-swap {
+  opacity: 1;
+}
+.canvas-block-swap:hover {
+  background: var(--ds-hover, rgba(255,255,255,0.06));
+  color: var(--ds-primary);
+}
+
+.canvas-block-remove {
+  position: absolute;
+  top: 6px;
+  right: 34px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ds-fg-tertiary, #666);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  z-index: 5;
+  font-family: inherit;
+}
+.canvas-block:hover .canvas-block-remove {
+  opacity: 1;
+}
+.canvas-block-remove:hover {
+  background: rgba(229, 33, 53, 0.1);
+  color: #E52135;
+}
+
+.canvas-block-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ds-fg-tertiary, #666);
+  margin-bottom: 8px;
+  padding-left: 24px;
+}
+
+/* Swap Menu */
+@keyframes swap-menu-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.swap-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.swap-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--ds-surface, rgba(20,20,30,0.95));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--ds-border);
+  border-radius: 10px;
+  padding: 4px;
+  z-index: 1000;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  animation: swap-menu-in 0.15s ease both;
+}
+
+.swap-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--ds-fg);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s;
+}
+.swap-menu-item:hover {
+  background: var(--ds-hover, rgba(255,255,255,0.06));
+}
+.swap-menu-item .material-symbols-outlined {
+  font-size: 16px;
+  color: var(--ds-primary);
+}
+
+/* Add block button */
+.canvas-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed var(--ds-border);
+  border-radius: var(--ds-radius, 8px);
+  background: none;
+  color: var(--ds-fg-secondary, #888);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  position: relative;
+}
+.canvas-add-btn:hover {
+  border-color: var(--ds-primary);
+  color: var(--ds-primary);
+  background: var(--ds-hover, rgba(255,255,255,0.03));
+}

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export type DesignSystem = 'salt' | 'm3' | 'fluent';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
+export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
 
 export interface ChatMessage {
   id: string;
@@ -30,6 +31,10 @@ interface BuilderState {
   colorOverrides: Record<string, string>;
   hasOverrides: boolean;
 
+  // Onboarding state (persisted across remounts)
+  onboardingStep: OnboardingStep;
+  pendingComponents: string[];
+
   // UI state
   settingsOpen: boolean;
   previewOpen: boolean;
@@ -56,6 +61,11 @@ interface BuilderState {
   // Actions — Colors
   setColorOverride: (key: string, value: string) => void;
   resetColors: () => void;
+
+  // Actions — Onboarding
+  setOnboardingStep: (s: OnboardingStep) => void;
+  setPendingComponents: (c: string[]) => void;
+  togglePendingComponent: (label: string) => void;
 
   // Actions — UI
   toggleSettings: () => void;
@@ -88,6 +98,10 @@ export const useBuilder = create<BuilderState>((set) => ({
   colorOverrides: {},
   hasOverrides: false,
 
+  // Onboarding state
+  onboardingStep: 'type',
+  pendingComponents: [],
+
   // UI state
   settingsOpen: false,
   previewOpen: false,
@@ -104,7 +118,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
-  clearChat: () => set({ messages: [] }),
+  clearChat: () => set({ messages: [], onboardingStep: 'type', pendingComponents: [] }),
 
   setDesignSystem: (ds) => {
     const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light' };
@@ -136,6 +150,15 @@ export const useBuilder = create<BuilderState>((set) => ({
   setColorOverride: (key, value) =>
     set((s) => ({ colorOverrides: { ...s.colorOverrides, [key]: value }, hasOverrides: true })),
   resetColors: () => set({ colorOverrides: {}, hasOverrides: false }),
+
+  setOnboardingStep: (s) => set({ onboardingStep: s }),
+  setPendingComponents: (c) => set({ pendingComponents: c }),
+  togglePendingComponent: (label) =>
+    set((s) => ({
+      pendingComponents: s.pendingComponents.includes(label)
+        ? s.pendingComponents.filter((c) => c !== label)
+        : [...s.pendingComponents, label],
+    })),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

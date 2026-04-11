@@ -7,6 +7,7 @@ import {
   SimulatedDialog, SimulatedTabs, SimulatedInput, SimulatedCheckbox, SimulatedSwitch,
   SimulatedAlert, SimulatedProgress, SimulatedTooltip,
 } from "./SimulatedUI";
+import { PreviewCanvas } from "./PreviewCanvas";
 
 /* ── Default welcome state ── */
 function DefaultPreview() {
@@ -406,7 +407,7 @@ export function PreviewSidePanel() {
       <div className="preview-side-body">
         {hasContent ? (
           <div className="preview-frame" key={previewKey}>
-            <PreviewContent />
+            <PreviewCanvas />
           </div>
         ) : (
           <DefaultPreview />

@@ -2,13 +2,11 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { InterfaceType, DesignSystem } from "@/store/useBuilder";
+import type { InterfaceType, DesignSystem, OnboardingStep } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════
    Progressive Disclosure — Step Configuration
    ═══════════════════════════════════════════ */
-
-type OnboardingStep = "type" | "style" | "components" | "ready";
 
 const TYPE_CHIPS: { label: string; value: InterfaceType }[] = [
   { label: "Dashboard", value: "dashboard" },
@@ -40,7 +38,199 @@ const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
   { label: "Tooltips", ids: ["tooltips"] },
 ];
 
-const REFINE_CHIPS = ["Dark Mode", "Light Mode"];
+const REFINE_CHIPS = [
+  "Dark Mode", "Light Mode",
+  "Add Buttons", "Add Cards", "Add Table",
+  "Build Dashboard", "Build Form",
+  "Show All", "Clear All",
+];
+
+/* ── Component keyword → ID mapping for free-form chat ── */
+
+const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[] = [
+  { keywords: ["kpi", "metric", "kpi card", "stats", "stat card", "statistics"],    ids: ["progress"],                              label: "KPI Cards" },
+  { keywords: ["table", "data table", "grid", "data grid", "spreadsheet"],          ids: ["table"],                                 label: "Data Table" },
+  { keywords: ["input", "form field", "text field", "text input", "form input",
+               "form element", "field"],                                             ids: ["inputs", "text-fields", "form-field"],   label: "Form Fields" },
+  { keywords: ["button", "cta", "action button"],                                   ids: ["buttons"],                               label: "Buttons" },
+  { keywords: ["card", "content card", "info card"],                                ids: ["cards"],                                 label: "Cards" },
+  { keywords: ["nav", "navigation", "tab", "menu", "sidebar nav"],                 ids: ["tabs"],                                  label: "Navigation" },
+  { keywords: ["toggle", "switch", "checkbox", "radio", "check box"],              ids: ["switches", "checkboxes", "radios"],      label: "Toggles" },
+  { keywords: ["badge", "chip", "tag", "label badge"],                              ids: ["badges"],                                label: "Badges" },
+  { keywords: ["avatar", "profile pic", "user icon", "user image"],                ids: ["avatars"],                               label: "Avatars" },
+  { keywords: ["alert", "notification", "banner", "toast", "snackbar"],            ids: ["alerts"],                                label: "Alerts" },
+  { keywords: ["progress bar", "loader", "loading", "spinner", "loading bar"],     ids: ["progress-bar"],                          label: "Progress" },
+  { keywords: ["tooltip", "popover", "hint", "info tip"],                          ids: ["tooltips"],                              label: "Tooltips" },
+  { keywords: ["dropdown", "select", "picker", "combobox", "combo box"],           ids: ["inputs", "form-field"],                  label: "Dropdown" },
+  { keywords: ["date picker", "datepicker", "calendar input", "date field"],       ids: ["inputs", "form-field"],                  label: "Date Picker" },
+  { keywords: ["dialog", "modal", "popup", "overlay"],                             ids: ["buttons"],                               label: "Dialog" },
+];
+
+/* ═══════════════════════════════════════════
+   Layout Presets — generate full page combos
+   ═══════════════════════════════════════════ */
+
+const LAYOUT_PRESETS: Record<string, string[]> = {
+  dashboard:  ["StatsCards", "DataTable", "Tabs", "Cards", "Progress"],
+  form:       ["FormFields", "Toggles", "Buttons", "Dropdown", "DatePicker"],
+  landing:    ["StatsCards", "Buttons", "Cards", "Badges", "Avatars"],
+  ecommerce:  ["Cards", "Badges", "Buttons", "DataTable", "FormFields"],
+  blog:       ["Cards", "Avatars", "Badges", "Tabs", "Buttons"],
+  portfolio:  ["Cards", "Avatars", "StatsCards", "Tabs", "Buttons"],
+};
+
+const BLOCK_TO_IDS: Record<string, string[]> = {
+  Alert:      ["alerts"],
+  DataTable:  ["table"],
+  FormFields: ["inputs", "text-fields", "form-field"],
+  Buttons:    ["buttons"],
+  Cards:      ["cards"],
+  Tabs:       ["tabs"],
+  Toggles:    ["switches", "checkboxes", "radios"],
+  Badges:     ["badges"],
+  Avatars:    ["avatars"],
+  Progress:   ["progress-bar"],
+  Tooltips:   ["tooltips"],
+  StatsCards: ["progress"],
+  Dropdown:   ["inputs", "form-field"],
+  DatePicker: ["inputs", "form-field"],
+  Dialog:     ["buttons"],
+};
+
+/** Detect layout-generation intent and return the resolved component IDs + metadata. */
+function processLayoutCommand(
+  input: string,
+): { layoutType: string; ids: string[]; blocks: string[] } | null {
+  const l = input.toLowerCase();
+
+  // Layout intent patterns
+  const layoutPatterns = [
+    /\b(?:build|create|generate|make|set up|design|give me|i need|start)\b.*?\b(dashboard|form|landing|ecommerce|e-commerce|blog|portfolio)\b/i,
+    /\b(dashboard|form|landing|ecommerce|e-commerce|blog|portfolio)\b.*?\b(?:layout|page|view|template|screen)\b/i,
+  ];
+
+  for (const pattern of layoutPatterns) {
+    const match = l.match(pattern);
+    if (match) {
+      let type = match[1].toLowerCase().replace("-", "");
+      // Normalize "landing page" → "landing", "e-commerce" → "ecommerce"
+      if (type === "e" || type === "ecommerce") type = "ecommerce";
+      const blocks = LAYOUT_PRESETS[type];
+      if (!blocks) continue;
+      const ids = [...new Set(blocks.flatMap((b) => BLOCK_TO_IDS[b] || []))];
+      return { layoutType: type, ids, blocks };
+    }
+  }
+  return null;
+}
+
+function processComponentCommand(
+  input: string,
+  currentComponents: string[],
+): { response: string; newComponents: string[] | null } {
+  const l = input.toLowerCase();
+
+  /* ── List / query current components ── */
+  if (/\b(what components|list components|what do i have|show components|current components|what's in)\b/i.test(l)) {
+    if (currentComponents.length === 0) {
+      return { response: "You don't have any components selected yet. Try 'add buttons' or 'build a dashboard' to get started.", newComponents: null };
+    }
+    // Reverse-map IDs to labels
+    const activeLabels = COMPONENT_KEYWORDS
+      .filter((g) => g.ids.some((id) => currentComponents.includes(id)))
+      .map((g) => g.label);
+    const uniqueLabels = [...new Set(activeLabels)];
+    return {
+      response: `You currently have ${uniqueLabels.length} component group${uniqueLabels.length === 1 ? "" : "s"}: ${uniqueLabels.join(", ")}.`,
+      newComponents: null,
+    };
+  }
+
+  /* ── Intent detection ── */
+  const isClear   = /\b(clear all|remove all|reset|empty|start over|clean)\b/i.test(l);
+  const isAll     = /\b(all components|everything|show all|add all)\b/i.test(l);
+  const isRemove  = /\b(remove|delete|hide|drop|take away|get rid of)\b/i.test(l);
+  const isAdd     = /\b(add|include|show|put|insert|give me|want|need|more|create|generate|build|make)\b/i.test(l);
+  const isReplace = /\b(replace|swap)\b/i.test(l);
+  const isExcept  = /\b(except|other than|besides|but not|everything but|all but)\b/i.test(l);
+
+  /* ── Match mentioned components ── */
+  // Sort keywords by length (longest first) to avoid partial matches ("form" vs "form field")
+  const mentionedGroups = COMPONENT_KEYWORDS.filter((g) =>
+    g.keywords.some((kw) => {
+      const re = new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}s?\\b`, "i");
+      return re.test(l);
+    }),
+  );
+  const mentionedIds    = [...new Set(mentionedGroups.flatMap((g) => g.ids))];
+  const mentionedLabels = [...new Set(mentionedGroups.map((g) => g.label))];
+
+  /* ── Negation: "remove everything except X" ── */
+  if (isRemove && isExcept && mentionedIds.length > 0) {
+    const newComps = currentComponents.filter((id) => mentionedIds.includes(id));
+    const remaining = COMPONENT_KEYWORDS
+      .filter((g) => g.ids.some((id) => newComps.includes(id)))
+      .map((g) => g.label);
+    const uniqueRemaining = [...new Set(remaining)];
+    return {
+      response: `Removed everything except ${mentionedLabels.join(", ")}. ${uniqueRemaining.length} group${uniqueRemaining.length === 1 ? "" : "s"} remaining.`,
+      newComponents: newComps,
+    };
+  }
+
+  /* ── Replace / Swap: "replace X with Y" or "swap X for Y" ── */
+  if (isReplace && mentionedGroups.length >= 2) {
+    // First mentioned group is the one being replaced, rest are the replacements
+    const toRemoveGroup = mentionedGroups[0];
+    const toAddGroups = mentionedGroups.slice(1);
+    const removeIds = toRemoveGroup.ids;
+    const addIds = toAddGroups.flatMap((g) => g.ids);
+    let newComps = currentComponents.filter((id) => !removeIds.includes(id));
+    newComps = [...new Set([...newComps, ...addIds])];
+    const addedLabels = toAddGroups.map((g) => g.label);
+    const total = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
+    return {
+      response: `Replaced ${toRemoveGroup.label} with ${addedLabels.join(", ")}. You now have ${total} component groups.`,
+      newComponents: newComps,
+    };
+  }
+
+  /* ── Clear all ── */
+  if (isClear)
+    return { response: "All components cleared. Tell me what to add or select from the options.", newComponents: [] };
+
+  /* ── Show all ── */
+  if (isAll) {
+    const allIds = COMPONENT_KEYWORDS.flatMap((g) => g.ids);
+    const uniqueAll = [...new Set(allIds)];
+    return { response: `Added all available components to your preview! You now have ${COMPONENT_KEYWORDS.length} component groups.`, newComponents: uniqueAll };
+  }
+
+  /* ── Remove specific ── */
+  if (isRemove && mentionedIds.length > 0) {
+    const newComps = currentComponents.filter((id) => !mentionedIds.includes(id));
+    const remaining = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
+    return {
+      response: `Removed ${mentionedLabels.join(", ")}. ${remaining} group${remaining === 1 ? "" : "s"} remaining.`,
+      newComponents: newComps,
+    };
+  }
+
+  /* ── Add specific (handles compound: "add buttons, cards, and a table") ── */
+  if ((isAdd || mentionedIds.length > 0) && mentionedIds.length > 0) {
+    const newComps = [...new Set([...currentComponents, ...mentionedIds])];
+    const total = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
+    // Handle count phrases — cosmetic only
+    const countMatch = l.match(/\b(\d+|two|three|four|five|six|seven|eight|nine|ten)\s+\w+/);
+    const countNote = countMatch ? " (showing component variations)" : "";
+    return {
+      response: `Added ${mentionedLabels.join(", ")} to your preview${countNote}. You now have ${total} component groups.`,
+      newComponents: newComps,
+    };
+  }
+
+  return { response: "", newComponents: null };
+}
 
 /* ── AI response templates ── */
 const TYPE_RESPONSES: Record<InterfaceType, string> = {
@@ -65,9 +255,9 @@ function getFreeformResponse(input: string): string {
   if (l.includes("material") || l.includes("m3")) return "Switched to Material 3 — dynamic color and Roboto type scale.";
   if (l.includes("fluent")) return "Switched to Fluent 2 — Segoe UI and brand blue palette.";
   if (l.includes("color") || l.includes("accent")) return "I'll adjust the color palette for you.";
-  if (l.includes("add") || l.includes("more")) return "Added to your preview. Check the updated layout.";
-  if (l.includes("remove") || l.includes("less")) return "Removed from the preview. Looking cleaner already.";
-  return "Got it! I've updated your design. Check the preview to see the changes.";
+  if (l.includes("thank")) return "You're welcome! Let me know if you need anything else.";
+  if (l.includes("help")) return "I can help! Try 'add buttons', 'remove cards', 'build a dashboard', 'dark mode', 'switch to Fluent', or 'what components do I have?'.";
+  return "I didn't catch that. Try 'add buttons', 'remove cards', 'build a dashboard', or 'dark mode'.";
 }
 
 /* ═══════════════════════════════════════════
@@ -78,31 +268,31 @@ export function ChatPanel() {
   const {
     messages, inputText, isVoiceActive, isGenerating,
     setInputText, addMessage, toggleVoice, setGenerating, bumpPreview,
-    designSystem, interfaceType,
+    designSystem, interfaceType, selectedComponents,
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
+    onboardingStep: step, setOnboardingStep: setStep,
+    pendingComponents, setPendingComponents, togglePendingComponent,
   } = useBuilder();
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
 
-  /* ── Onboarding state machine ── */
-  const [step, setStep] = useState<OnboardingStep>("type");
-  const [pendingComponents, setPendingComponents] = useState<string[]>([]);
-
   const hasMessages = messages.length > 0;
   const hasText = inputText.trim().length > 0;
   const glowActive = focused || hasText;
   const orbState = isGenerating ? "generating" : hasText ? "typing" : "";
 
-  /* Reset onboarding when chat is cleared */
+  /* Recover step state — if messages exist but step was lost (e.g. HMR) */
   useEffect(() => {
-    if (messages.length === 0) {
-      setStep("type");
-      setPendingComponents([]);
+    if (messages.length > 0 && step === "type") {
+      const hasAiMsg = messages.some((m) => m.role === "ai");
+      if (hasAiMsg && selectedComponents.length > 0) {
+        setStep("ready"); // Wizard was completed, restore to ready
+      }
     }
-  }, [messages.length]);
+  }, []); // Run once on mount
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -137,9 +327,7 @@ export function ChatPanel() {
   };
 
   const handleComponentToggle = (chip: (typeof COMPONENT_CHIPS)[number]) => {
-    setPendingComponents((prev) =>
-      prev.includes(chip.label) ? prev.filter((c) => c !== chip.label) : [...prev, chip.label]
-    );
+    togglePendingComponent(chip.label);
   };
 
   const handleGeneratePreview = () => {
@@ -173,19 +361,68 @@ export function ChatPanel() {
     setGenerating(true);
     const l = msg.toLowerCase();
 
-    /* ── STEP_READY: free-form refinement ── */
-    if (step === "ready") {
-      if (l.includes("dark")) setMode("dark");
-      else if (l.includes("light")) setMode("light");
+    /* ═══ UNIVERSAL: layout + component commands work in ANY step ═══ */
 
-      if (l.includes("salt")) setDesignSystem("salt");
-      else if (l.includes("material") || l.includes("m3")) setDesignSystem("m3");
-      else if (l.includes("fluent")) setDesignSystem("fluent");
+    /* Layout generation — detect first (higher priority than single-component adds) */
+    const layoutResult = processLayoutCommand(msg);
+    if (layoutResult) {
+      setSelectedComponents(layoutResult.ids);
+      if (!previewOpen) setPreviewOpen(true);
 
+      const dsLabel = designSystem === "salt" ? "Salt DS" : designSystem === "m3" ? "Material 3" : "Fluent 2";
+      const blockList = layoutResult.blocks.join(", ");
+      setTimeout(() => {
+        addMessage(
+          "ai",
+          `Generated a ${layoutResult.layoutType} layout with ${layoutResult.blocks.length} component groups: ${blockList}. ` +
+          `Using ${dsLabel} styling. Customize by saying 'add' or 'remove' any component.`
+        );
+        setGenerating(false);
+        bumpPreview();
+        if (step !== "ready") setStep("ready");
+      }, 800 + Math.random() * 800);
+      return;
+    }
+
+    const { response: compResponse, newComponents } = processComponentCommand(msg, selectedComponents);
+
+    /* Theme changes — work in any step */
+    let themeChanged = false;
+    if (l.includes("dark"))  { setMode("dark");  themeChanged = true; }
+    else if (l.includes("light")) { setMode("light"); themeChanged = true; }
+
+    /* Design system changes — work in any step */
+    let dsChanged = false;
+    if (l.includes("salt"))                         { setDesignSystem("salt");   dsChanged = true; }
+    else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3");     dsChanged = true; }
+    else if (l.includes("fluent"))                  { setDesignSystem("fluent"); dsChanged = true; }
+
+    /* If component command matched, apply it and respond (regardless of step) */
+    if (newComponents !== null) {
+      setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
 
       setTimeout(() => {
-        addMessage("ai", getFreeformResponse(msg));
+        addMessage("ai", compResponse);
+        setGenerating(false);
+        bumpPreview();
+        if (step !== "ready") setStep("ready");
+      }, 600 + Math.random() * 800);
+      return;
+    }
+
+    /* ── STEP_READY: free-form refinement (theme/DS already applied above) ── */
+    if (step === "ready") {
+      if (!previewOpen) setPreviewOpen(true);
+
+      const aiResponse = themeChanged
+        ? "Theme updated! The preview reflects the new mode."
+        : dsChanged
+          ? getFreeformResponse(msg)
+          : getFreeformResponse(msg);
+
+      setTimeout(() => {
+        addMessage("ai", aiResponse);
         setGenerating(false);
         bumpPreview();
       }, 600 + Math.random() * 800);
@@ -313,7 +550,7 @@ export function ChatPanel() {
         ? "Or type a design system name..."
         : step === "components"
           ? "Select components above..."
-          : "Refine your design — try 'dark mode' or 'switch to Fluent'...";
+          : "Try 'add buttons', 'remove cards', 'dark mode', or 'switch to Fluent'...";
 
   return (
     <div className="chat-layout">
