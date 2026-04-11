@@ -35,6 +35,11 @@ interface BuilderState {
   onboardingStep: OnboardingStep;
   pendingComponents: string[];
 
+  // Canvas selection
+  selectedBlockId: string | null;
+  componentLibraryOpen: boolean;
+  addMenuOpen: boolean;
+
   // UI state
   settingsOpen: boolean;
   previewOpen: boolean;
@@ -66,6 +71,12 @@ interface BuilderState {
   setOnboardingStep: (s: OnboardingStep) => void;
   setPendingComponents: (c: string[]) => void;
   togglePendingComponent: (label: string) => void;
+
+  // Actions — Canvas selection
+  setSelectedBlockId: (id: string | null) => void;
+  toggleComponentLibrary: () => void;
+  toggleAddMenu: () => void;
+  setAddMenuOpen: (v: boolean) => void;
 
   // Actions — UI
   toggleSettings: () => void;
@@ -101,6 +112,11 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Onboarding state
   onboardingStep: 'type',
   pendingComponents: [],
+
+  // Canvas selection
+  selectedBlockId: null,
+  componentLibraryOpen: false,
+  addMenuOpen: false,
 
   // UI state
   settingsOpen: false,
@@ -159,6 +175,11 @@ export const useBuilder = create<BuilderState>((set) => ({
         ? s.pendingComponents.filter((c) => c !== label)
         : [...s.pendingComponents, label],
     })),
+
+  setSelectedBlockId: (id) => set({ selectedBlockId: id }),
+  toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
+  toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
+  setAddMenuOpen: (v) => set({ addMenuOpen: v }),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

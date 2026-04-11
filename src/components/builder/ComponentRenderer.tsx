@@ -27,6 +27,7 @@ interface ComponentRendererProps {
 /* ── Token reference for inline styles ── */
 const t = {
   primary: "var(--ds-primary)",
+  onPrimary: "var(--ds-on-primary)",
   bg: "var(--ds-bg)",
   fg: "var(--ds-fg)",
   fgSecondary: "var(--ds-fg-secondary)",
@@ -38,6 +39,9 @@ const t = {
   primaryHover: "var(--ds-primary-hover)",
   primaryGlow: "var(--ds-primary-glow)",
   primaryShadow: "var(--ds-primary-shadow)",
+  statusPositive: "var(--ds-status-positive)",
+  statusWarning: "var(--ds-status-warning)",
+  statusNegative: "var(--ds-status-negative)",
 };
 const radius = "var(--ds-radius)";
 const btnRadius = "var(--ds-btn-radius)";
@@ -82,7 +86,7 @@ function ButtonsBlock() {
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
       {[
-        { label: "Primary", bg: t.primary, fg: "#fff", border: "none" },
+        { label: "Primary", bg: t.primary, fg: t.onPrimary, border: "none" },
         { label: "Secondary", bg: "transparent", fg: t.primary, border: `1px solid ${t.primary}` },
         { label: "Text", bg: "transparent", fg: t.fg, border: "none" },
       ].map((btn) => (
@@ -199,9 +203,9 @@ function TogglesBlock({ system }: { system: DesignSystem }) {
 function BadgesBlock() {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const badges = [
-    { label: "Active", color: "#00875D" },
-    { label: "Pending", color: "#C75300" },
-    { label: "Closed", color: "#E52135" },
+    { label: "Active", color: t.statusPositive },
+    { label: "Pending", color: t.statusWarning },
+    { label: "Closed", color: t.statusNegative },
   ];
 
   return (
@@ -216,8 +220,9 @@ function BadgesBlock() {
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
-            background: activeBadge === b.label ? b.color : b.color + "20",
-            color: activeBadge === b.label ? "#fff" : b.color,
+            background: activeBadge === b.label ? b.color : "transparent",
+            color: activeBadge === b.label ? t.onPrimary : b.color,
+            border: `1px solid ${b.color}`,
             transition: "all 150ms ease",
             userSelect: "none",
           }}
@@ -396,6 +401,85 @@ function StatsCardsBlock() {
   );
 }
 
+/* ── Single-component library blocks ── */
+
+function SimulatedButtonBlock({
+  system,
+  variant = "primary",
+  label = "New Button",
+}: {
+  system: DesignSystem;
+  variant?: string;
+  label?: string;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const isPrimary = variant === "primary";
+  return (
+    <button
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      style={{
+        padding: "8px 20px",
+        borderRadius: btnRadius,
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+        background: isPrimary ? t.primary : "transparent",
+        color: isPrimary ? t.onPrimary : t.fg,
+        border: isPrimary ? "none" : `1px solid ${t.border}`,
+        transform: pressed ? "scale(0.96)" : "scale(1)",
+        transition: "all 150ms ease",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function SimulatedTitleBlock({
+  level = "h2",
+  text = "New Heading",
+}: {
+  system: DesignSystem;
+  level?: string;
+  text?: string;
+}) {
+  const sizes: Record<string, { fontSize: number; fontWeight: number }> = {
+    h1: { fontSize: 28, fontWeight: 700 },
+    h2: { fontSize: 22, fontWeight: 700 },
+    h3: { fontSize: 18, fontWeight: 600 },
+    h4: { fontSize: 16, fontWeight: 600 },
+    h5: { fontSize: 14, fontWeight: 600 },
+    h6: { fontSize: 12, fontWeight: 600 },
+  };
+  const s = sizes[level] || sizes.h2;
+  return (
+    <div style={{ ...s, color: t.fg, lineHeight: 1.3 }}>
+      {text}
+    </div>
+  );
+}
+
+function SimulatedTextInputBlock({
+  system,
+  label = "Label",
+  placeholder = "Enter text...",
+}: {
+  system: DesignSystem;
+  label?: string;
+  placeholder?: string;
+}) {
+  return (
+    <SimulatedInput
+      system={system}
+      label={label}
+      placeholder={placeholder}
+      helperText=""
+    />
+  );
+}
+
 /* ── Renderer map ── */
 const RENDERERS: Record<
   string,
@@ -417,6 +501,9 @@ const RENDERERS: Record<
   DatePicker: DatePickerBlock,
   StatsCards: StatsCardsBlock as React.FC<{ system: DesignSystem }>,
   Typography: TypographyBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedButton: SimulatedButtonBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedTitle: SimulatedTitleBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedTextInput: SimulatedTextInputBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

@@ -6,12 +6,13 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface SortableBlockProps {
   id: string;
+  isSelected?: boolean;
   onSwapClick: () => void;
   onRemove?: () => void;
   children: React.ReactNode;
 }
 
-export function SortableBlock({ id, onSwapClick, onRemove, children }: SortableBlockProps) {
+export function SortableBlock({ id, isSelected, onSwapClick, onRemove, children }: SortableBlockProps) {
   const {
     attributes,
     listeners,
@@ -30,7 +31,7 @@ export function SortableBlock({ id, onSwapClick, onRemove, children }: SortableB
     <div
       ref={setNodeRef}
       style={style}
-      className={`canvas-block${isDragging ? " is-dragging" : ""}`}
+      className={`canvas-block${isDragging ? " is-dragging" : ""}${isSelected ? " is-selected" : ""}`}
       {...attributes}
     >
       {/* Drag handle */}

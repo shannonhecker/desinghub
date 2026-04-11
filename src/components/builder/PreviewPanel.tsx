@@ -349,9 +349,13 @@ function PreviewContent() {
   );
 }
 
-/* ── Preview toolbar — DS switcher + theme toggle ── */
+/* ── Preview toolbar — DS switcher + theme toggle + canvas actions ── */
 function PreviewToolbar() {
-  const { designSystem, setDesignSystem, mode, setMode } = useBuilder();
+  const {
+    designSystem, setDesignSystem, mode, setMode,
+    toggleComponentLibrary, componentLibraryOpen,
+    toggleAddMenu,
+  } = useBuilder();
 
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
@@ -391,6 +395,24 @@ function PreviewToolbar() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Canvas Actions */}
+      <div className="preview-toolbar-group">
+        <button
+          className={`preview-toolbar-btn${componentLibraryOpen ? " preview-toolbar-btn-active" : ""}`}
+          onClick={toggleComponentLibrary}
+          title="Component Library"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">category</span>
+        </button>
+        <button
+          className="preview-toolbar-btn"
+          onClick={toggleAddMenu}
+          title="Add Component"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
+        </button>
       </div>
     </div>
   );

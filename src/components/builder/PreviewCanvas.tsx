@@ -9,6 +9,9 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -20,6 +23,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
+import { ComponentLibrary, LIBRARY_BLUEPRINTS } from "./ComponentLibrary";
 
 /* ── Map store component IDs to block type strings ── */
 const ID_TO_BLOCK: Record<string, string> = {
@@ -60,6 +64,9 @@ const BLOCK_TO_ID: Record<string, string> = {
   Dropdown: "dropdown",
   DatePicker: "date-picker",
   Typography: "typography",
+  SimulatedButton: "sim-button",
+  SimulatedTitle: "sim-title",
+  SimulatedTextInput: "sim-text-input",
 };
 
 interface Block {
@@ -73,14 +80,30 @@ function makeBlockId() {
   return `block-${++blockCounter}-${Date.now()}`;
 }
 
+/* ── Droppable canvas wrapper ── */
+function CanvasDropZone({ children }: { children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "canvas-drop-zone" });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`canvas-drop-zone${isOver ? " is-over" : ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function PreviewCanvas() {
-  const { designSystem, selectedComponents, setSelectedComponents, colorOverrides } = useBuilder();
-  const primaryOverride = colorOverrides.accent || colorOverrides.primary || colorOverrides.brandBg;
+  const {
+    designSystem, selectedComponents, setSelectedComponents,
+    selectedBlockId, setSelectedBlockId,
+    addMenuOpen, setAddMenuOpen,
+  } = useBuilder();
 
   /* ── State ── */
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   /* Track whether we initialized from store already */
   const initializedRef = useRef(false);
@@ -120,9 +143,32 @@ export function PreviewCanvas() {
   );
 
   /* ── Handlers ── */
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveDragId(null);
       const { active, over } = event;
+
+      // Case 1: Library blueprint dropped onto canvas
+      if (active.data.current?.fromLibrary) {
+        const { type, defaults } = active.data.current as {
+          type: string;
+          defaults: Record<string, unknown>;
+        };
+        const newId = makeBlockId();
+        setBlocks((prev) => {
+          const next = [...prev, { id: newId, type, props: { ...defaults } }];
+          syncToStore(next);
+          return next;
+        });
+        setSelectedBlockId(newId);
+        return;
+      }
+
+      // Case 2: Reorder existing blocks
       if (over && active.id !== over.id) {
         setBlocks((prev) => {
           const oldIndex = prev.findIndex((b) => b.id === active.id);
@@ -133,7 +179,7 @@ export function PreviewCanvas() {
         });
       }
     },
-    [syncToStore]
+    [syncToStore, setSelectedBlockId]
   );
 
   const handleSwap = useCallback(
@@ -152,14 +198,16 @@ export function PreviewCanvas() {
 
   const handleAddBlock = useCallback(
     (type: string) => {
+      const newId = makeBlockId();
       setBlocks((prev) => {
-        const next = [...prev, { id: makeBlockId(), type, props: {} }];
+        const next = [...prev, { id: newId, type, props: {} }];
         syncToStore(next);
         return next;
       });
       setAddMenuOpen(false);
+      setSelectedBlockId(newId);
     },
-    [syncToStore]
+    [syncToStore, setSelectedBlockId, setAddMenuOpen]
   );
 
   const handleRemoveBlock = useCallback(
@@ -169,82 +217,93 @@ export function PreviewCanvas() {
         syncToStore(next);
         return next;
       });
+      if (selectedBlockId === id) setSelectedBlockId(null);
     },
-    [syncToStore]
+    [syncToStore, selectedBlockId, setSelectedBlockId]
   );
 
-  return (
-    <div
-      className={`preview-${designSystem}`}
-      style={{
-        background: "var(--ds-bg)",
-        color: "var(--ds-fg)",
-        fontFamily: "var(--ds-font)",
-        minHeight: "100%",
-        fontSize: 13,
-        padding: 16,
-        ...(primaryOverride
-          ? ({ "--ds-primary": primaryOverride } as React.CSSProperties)
-          : {}),
-      }}
-    >
-      {/* Add component button — top */}
-      <div style={{ position: "relative" }}>
-        <button
-          className="canvas-add-btn"
-          onClick={() => setAddMenuOpen(!addMenuOpen)}
-          type="button"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            add
-          </span>
-          Add Component
-        </button>
+  /* ── Resolve drag overlay content ── */
+  const activeBlueprintLabel = activeDragId
+    ? LIBRARY_BLUEPRINTS.find((bp) => bp.id === activeDragId)
+    : null;
 
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      {/* Component Library panel — inside DndContext so useDraggable works */}
+      <ComponentLibrary />
+
+      <div
+        className={`preview-${designSystem} preview-canvas-root`}
+        onClick={() => setSelectedBlockId(null)}
+      >
+        {/* Add component menu — triggered from toolbar */}
         {addMenuOpen && (
-          <SwapMenu
-            onSelect={handleAddBlock}
-            onClose={() => setAddMenuOpen(false)}
-          />
+          <div style={{ position: "relative" }}>
+            <SwapMenu
+              onSelect={handleAddBlock}
+              onClose={() => setAddMenuOpen(false)}
+            />
+          </div>
         )}
+
+        <CanvasDropZone>
+          <SortableContext
+            items={blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {blocks.map((block) => (
+              <div
+                key={block.id}
+                style={{ position: "relative" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedBlockId(block.id);
+                }}
+              >
+                <SortableBlock
+                  id={block.id}
+                  isSelected={selectedBlockId === block.id}
+                  onSwapClick={() =>
+                    setSwapTarget(swapTarget === block.id ? null : block.id)
+                  }
+                  onRemove={() => handleRemoveBlock(block.id)}
+                >
+                  <ComponentRenderer
+                    type={block.type}
+                    system={designSystem}
+                    {...block.props}
+                  />
+                </SortableBlock>
+
+                {/* Swap menu for this block */}
+                {swapTarget === block.id && (
+                  <SwapMenu
+                    onSelect={(newType) => handleSwap(block.id, newType)}
+                    onClose={() => setSwapTarget(null)}
+                  />
+                )}
+              </div>
+            ))}
+          </SortableContext>
+        </CanvasDropZone>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={blocks.map((b) => b.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {blocks.map((block) => (
-            <div key={block.id} style={{ position: "relative" }}>
-              <SortableBlock
-                id={block.id}
-                onSwapClick={() =>
-                  setSwapTarget(swapTarget === block.id ? null : block.id)
-                }
-                onRemove={() => handleRemoveBlock(block.id)}
-              >
-                <ComponentRenderer
-                  type={block.type}
-                  system={designSystem}
-                  {...block.props}
-                />
-              </SortableBlock>
-
-              {/* Swap menu for this block */}
-              {swapTarget === block.id && (
-                <SwapMenu
-                  onSelect={(newType) => handleSwap(block.id, newType)}
-                  onClose={() => setSwapTarget(null)}
-                />
-              )}
-            </div>
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
+      {/* Drag overlay — ghost preview while dragging from library */}
+      <DragOverlay dropAnimation={null}>
+        {activeBlueprintLabel ? (
+          <div className="lib-drag-overlay">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              {activeBlueprintLabel.icon}
+            </span>
+            <span>{activeBlueprintLabel.label}</span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

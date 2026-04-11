@@ -165,8 +165,9 @@ export function BuilderApp() {
             </button>
 
             {/* UI Kit link */}
-            <Link href="/" className="top-bar-btn icon-only" title="UI Kit Overview">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>dashboard</span>
+            <Link href="/" className="top-bar-btn" title="UI Kit Overview">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>palette</span>
+              UI Kit
             </Link>
 
             {/* Preview toggle */}
