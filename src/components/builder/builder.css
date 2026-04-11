@@ -1023,47 +1023,57 @@
   transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow-glass);
-  overflow: hidden;
 }
-/* Animated gradient shimmer on the chatbox background */
+/* Gradient glow border — visible on focus via ::before */
 .input-box::before {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 100%, rgba(139, 92, 246, 0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(217, 70, 239, 0.05) 0%, transparent 50%);
+  inset: -2px;
+  border-radius: calc(var(--b-radius) + 2px);
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 25%, #d946ef 50%, #ec4899 75%, #8b5cf6 100%);
+  background-size: 300% 300%;
   pointer-events: none;
-  z-index: 0;
-  animation: inputGradientShift 8s ease-in-out infinite alternate;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
-@keyframes inputGradientShift {
-  0%   { opacity: 0.6; }
-  50%  { opacity: 1; }
-  100% { opacity: 0.7; }
+.input-box.focused::before {
+  opacity: 1;
+  animation: gradientBorderShift 4s ease-in-out infinite;
 }
-/* No colored border on focus — keep it subtle */
-.input-box.focused {
-  border-color: var(--glass-border);
-  box-shadow: var(--shadow-glass);
+@keyframes gradientBorderShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* Inner background cover to create the border effect */
+.input-box::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(var(--b-radius) - 2px);
   background: var(--b-bg2);
+  pointer-events: none;
+  z-index: -1;
+}
+.input-box.focused {
+  border-color: transparent;
+  box-shadow: 0 0 28px rgba(139, 92, 246, 0.20), 0 0 56px rgba(217, 70, 239, 0.10);
 }
 .builder-light .input-box {
   background: rgba(255, 255, 255, 0.55);
 }
-.builder-light .input-box::before {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
+.builder-light .input-box::after {
+  background: rgba(245, 243, 252, 0.97);
 }
 .builder-light .input-box.focused {
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-color: transparent;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.10), 0 0 40px rgba(217, 70, 239, 0.06);
 }
 
 .input-textarea {
+  position: relative;
+  z-index: 1;
   width: 100%;
   border: none;
   background: transparent;
@@ -1082,21 +1092,23 @@
 .input-textarea:focus-visible { outline: none; }
 
 .input-actions {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 4px 8px 6px;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* Mic button — far left, solid background */
+/* Mic button — dark subtle circle, muted icon */
 .mic-btn {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: none;
-  background: rgba(139, 92, 246, 0.85);
-  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: #9892b0;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1104,11 +1116,12 @@
   transition: all var(--b-transition);
 }
 .builder-light .mic-btn {
-  background: rgba(109, 40, 217, 0.85);
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.10);
+  color: #5e5680;
 }
-.mic-btn:hover { background: rgba(139, 92, 246, 1); color: #ffffff; }
-.builder-light .mic-btn:hover { background: rgba(109, 40, 217, 1); }
+.mic-btn:hover { background: rgba(255, 255, 255, 0.12); color: #c4bfdf; }
+.builder-light .mic-btn:hover { background: rgba(0, 0, 0, 0.08); color: #3d3560; }
 .mic-btn.active {
   background: rgba(239, 68, 68, 0.9);
   border: none;
@@ -1120,7 +1133,7 @@
   50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
 
-/* ── SEND BUTTON — solid fill, white icon ── */
+/* ── SEND BUTTON — solid magenta, white icon ── */
 .send-btn {
   width: 38px;
   height: 38px;
@@ -1133,11 +1146,11 @@
   position: relative;
   overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s, background 0.3s;
-  background: #0891b2;
+  background: #d946ef;
   color: #ffffff;
 }
 .builder-light .send-btn {
-  background: #0e7490;
+  background: #c026d3;
 }
 
 .send-btn::before,
@@ -1154,18 +1167,21 @@
 
 .send-btn:hover {
   transform: scale(1.08);
-  background: #06b6d4;
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+  background: #e879f9;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.3);
 }
 .send-btn:hover .btn-icon { transform: translateY(-1px); }
 
 .send-btn:active { transform: scale(0.95); }
 .send-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: default;
   transform: none;
   box-shadow: none;
-  background: #6b7280;
+  background: rgba(255, 255, 255, 0.08);
+}
+.builder-light .send-btn:disabled {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 @keyframes ctaRotate {
