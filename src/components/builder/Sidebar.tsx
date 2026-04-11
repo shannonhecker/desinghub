@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useBuilder } from "@/store/useBuilder";
 
 const DS_LABELS: Record<string, string> = {
@@ -73,6 +74,12 @@ export function Sidebar() {
             <li>
               <span className="nav-icon material-symbols-outlined">auto_stories</span>
               Library
+            </li>
+            <li>
+              <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, color: "inherit", textDecoration: "none" }}>
+                <span className="nav-icon material-symbols-outlined">view_quilt</span>
+                UI Kit Overview
+              </Link>
             </li>
           </ul>
 

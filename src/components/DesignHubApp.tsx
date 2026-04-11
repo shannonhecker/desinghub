@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useDesignHub, type SystemId, type ActiveTab } from "@/store/useDesignHub";
 import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews } from "@/data/registry";
 import { ComponentPreview } from "./ComponentPreview";
@@ -354,6 +355,16 @@ export function DesignHubApp() {
           }}>
             {t.T.name || sysInfo.name}
           </span>
+          <Link href="/builder" style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            fontSize: 12, fontWeight: 600, color: "#fff",
+            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+            padding: "5px 14px", borderRadius: 8, textDecoration: "none",
+            boxShadow: "0 0 12px rgba(124,58,237,0.3)",
+            transition: "box-shadow 200ms, transform 200ms",
+          }}>
+            AI Builder
+          </Link>
         </div>
       </header>
 
