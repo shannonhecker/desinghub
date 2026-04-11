@@ -36,11 +36,12 @@ const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
   { label: "Alerts", ids: ["alerts"] },
   { label: "Progress", ids: ["progress-bar"] },
   { label: "Tooltips", ids: ["tooltips"] },
+  { label: "Typography", ids: ["typography"] },
 ];
 
 const REFINE_CHIPS = [
   "Dark Mode", "Light Mode",
-  "Add Buttons", "Add Cards", "Add Table",
+  "Add Buttons", "Add Cards", "Add Typography",
   "Build Dashboard", "Build Form",
   "Show All", "Clear All",
 ];
@@ -64,6 +65,9 @@ const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[]
   { keywords: ["dropdown", "select", "picker", "combobox", "combo box"],           ids: ["inputs", "form-field"],                  label: "Dropdown" },
   { keywords: ["date picker", "datepicker", "calendar input", "date field"],       ids: ["inputs", "form-field"],                  label: "Date Picker" },
   { keywords: ["dialog", "modal", "popup", "overlay"],                             ids: ["buttons"],                               label: "Dialog" },
+  { keywords: ["typography", "text", "body text", "title", "heading", "label",
+               "caption", "font", "type scale", "type", "headline", "subtitle",
+               "paragraph", "overline", "display text"],                           ids: ["typography"],                            label: "Typography" },
 ];
 
 /* ═══════════════════════════════════════════
@@ -95,6 +99,7 @@ const BLOCK_TO_IDS: Record<string, string[]> = {
   Dropdown:   ["inputs", "form-field"],
   DatePicker: ["inputs", "form-field"],
   Dialog:     ["buttons"],
+  Typography: ["typography"],
 };
 
 /** Detect layout-generation intent and return the resolved component IDs + metadata. */

@@ -18,6 +18,7 @@ export function BuilderApp() {
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -164,13 +165,28 @@ export function BuilderApp() {
 
         {/* ── Content: chat + resizable preview ── */}
         <div
-          className={`content-split ${previewOpen ? "has-preview" : ""}`}
+          className={`content-split ${previewOpen ? "has-preview" : ""} ${!isChatOpen ? "chat-collapsed" : ""}`}
           ref={containerRef}
-          style={previewOpen ? { "--chat-width": `${splitPos}%` } as React.CSSProperties : undefined}
+          style={previewOpen && isChatOpen ? { "--chat-width": `${splitPos}%` } as React.CSSProperties : undefined}
         >
-          <ChatPanel />
+          {/* Collapsible chat wrapper — never unmounts */}
+          <div className={`chat-slide ${isChatOpen ? "chat-slide-open" : "chat-slide-closed"}`}>
+            <ChatPanel />
+          </div>
 
-          {previewOpen && (
+          {/* Collapse / Expand toggle — sits on the dividing edge */}
+          <button
+            className={`chat-collapse-btn ${!isChatOpen ? "collapsed" : ""}`}
+            onClick={() => setIsChatOpen((v) => !v)}
+            title={isChatOpen ? "Collapse chat" : "Expand chat"}
+            aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              {isChatOpen ? "chevron_left" : "chevron_right"}
+            </span>
+          </button>
+
+          {previewOpen && isChatOpen && (
             <div
               className={`resize-handle ${dragActive ? "dragging" : ""}`}
               onMouseDown={startDrag}

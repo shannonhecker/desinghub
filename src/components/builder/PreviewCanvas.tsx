@@ -39,6 +39,7 @@ const ID_TO_BLOCK: Record<string, string> = {
   "progress-bar": "Progress",
   tooltips: "Tooltips",
   progress: "StatsCards",
+  typography: "Typography",
 };
 
 /* Reverse: block type -> a canonical store ID */
@@ -58,6 +59,7 @@ const BLOCK_TO_ID: Record<string, string> = {
   Dialog: "dialog",
   Dropdown: "dropdown",
   DatePicker: "date-picker",
+  Typography: "typography",
 };
 
 interface Block {
@@ -186,6 +188,27 @@ export function PreviewCanvas() {
           : {}),
       }}
     >
+      {/* Add component button — top */}
+      <div style={{ position: "relative" }}>
+        <button
+          className="canvas-add-btn"
+          onClick={() => setAddMenuOpen(!addMenuOpen)}
+          type="button"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            add
+          </span>
+          Add Component
+        </button>
+
+        {addMenuOpen && (
+          <SwapMenu
+            onSelect={handleAddBlock}
+            onClose={() => setAddMenuOpen(false)}
+          />
+        )}
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -222,27 +245,6 @@ export function PreviewCanvas() {
           ))}
         </SortableContext>
       </DndContext>
-
-      {/* Add component button */}
-      <div style={{ position: "relative" }}>
-        <button
-          className="canvas-add-btn"
-          onClick={() => setAddMenuOpen(!addMenuOpen)}
-          type="button"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            add
-          </span>
-          Add Component
-        </button>
-
-        {addMenuOpen && (
-          <SwapMenu
-            onSelect={handleAddBlock}
-            onClose={() => setAddMenuOpen(false)}
-          />
-        )}
-      </div>
     </div>
   );
 }
