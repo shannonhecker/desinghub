@@ -32,14 +32,17 @@ interface BuilderState {
 
   // UI state
   settingsOpen: boolean;
+  previewOpen: boolean;
+  sidebarCollapsed: boolean;
   mobilePreviewOpen: boolean;
-  previewKey: number; // forces preview re-render
+  previewKey: number;
 
   // Actions — Chat
   setInputText: (t: string) => void;
   addMessage: (role: 'user' | 'ai', content: string) => void;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
+  clearChat: () => void;
 
   // Actions — Design
   setDesignSystem: (ds: DesignSystem) => void;
@@ -56,6 +59,8 @@ interface BuilderState {
 
   // Actions — UI
   toggleSettings: () => void;
+  togglePreview: () => void;
+  toggleSidebar: () => void;
   toggleMobilePreview: () => void;
   bumpPreview: () => void;
 }
@@ -64,15 +69,8 @@ let msgId = 0;
 const uid = () => `msg-${++msgId}-${Date.now()}`;
 
 export const useBuilder = create<BuilderState>((set) => ({
-  // Chat
-  messages: [
-    {
-      id: 'welcome',
-      role: 'ai',
-      content: "Hi! I'm your AI website builder. Tell me what you'd like to create — pick a design system, describe your layout, and I'll generate it in real time. You can also use the settings panel to fine-tune everything.",
-      timestamp: Date.now(),
-    },
-  ],
+  // Chat — start empty so hero shows
+  messages: [],
   inputText: '',
   isVoiceActive: false,
   isGenerating: false,
@@ -91,6 +89,8 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // UI state
   settingsOpen: false,
+  previewOpen: false,
+  sidebarCollapsed: false,
   mobilePreviewOpen: false,
   previewKey: 0,
 
@@ -103,6 +103,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
+  clearChat: () => set({ messages: [] }),
 
   setDesignSystem: (ds) => {
     const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light' };
@@ -136,6 +137,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   resetColors: () => set({ colorOverrides: {}, hasOverrides: false }),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
+  togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
+  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleMobilePreview: () => set((s) => ({ mobilePreviewOpen: !s.mobilePreviewOpen })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
 }));

@@ -94,101 +94,112 @@ export function SettingsPanel() {
   const colorKeys = COLOR_KEYS[designSystem];
 
   return (
-    <div className={`settings-panel ${settingsOpen ? "open" : ""}`}>
-      <div className="settings-header">
-        <span>Customize</span>
-        <button className="b-btn b-btn-ghost b-btn-icon" onClick={toggleSettings} aria-label="Close settings">✕</button>
-      </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className={`settings-overlay ${settingsOpen ? "open" : ""}`}
+        onClick={toggleSettings}
+      />
 
-      <div className="settings-body">
-        {/* Design System */}
-        <div className="settings-group">
-          <label>Design System</label>
-          <select
-            className="settings-select"
-            value={designSystem}
-            onChange={(e) => setDesignSystem(e.target.value as DesignSystem)}
-          >
-            {DS_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
-            ))}
-          </select>
+      {/* Panel */}
+      <div className={`settings-panel ${settingsOpen ? "open" : ""}`}>
+        <div className="settings-header">
+          <span>Configuration</span>
+          <button className="settings-close" onClick={toggleSettings} aria-label="Close settings">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+          </button>
         </div>
 
-        {/* Interface Type */}
-        <div className="settings-group">
-          <label>Interface Type</label>
-          <select
-            className="settings-select"
-            value={interfaceType}
-            onChange={(e) => setInterfaceType(e.target.value as InterfaceType)}
-          >
-            {INTERFACE_OPTIONS.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Mode */}
-        <div className="settings-group">
-          <label>Mode</label>
-          <div className="settings-toggle-row">
-            <button className={`settings-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>Light</button>
-            <button className={`settings-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>Dark</button>
+        <div className="settings-body">
+          {/* Design System */}
+          <div className="settings-group">
+            <label>Design System</label>
+            <select
+              className="settings-select"
+              value={designSystem}
+              onChange={(e) => setDesignSystem(e.target.value as DesignSystem)}
+            >
+              {DS_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Density */}
-        <div className="settings-group">
-          <label>Density / Size</label>
-          <div className="settings-toggle-row">
-            {densityOptions.map((o) => (
-              <button key={o.value} className={`settings-toggle-btn ${density === o.value ? "active" : ""}`} onClick={() => setDensity(o.value)}>
-                {o.label}
-              </button>
-            ))}
+          {/* Interface Type */}
+          <div className="settings-group">
+            <label>Interface Type</label>
+            <select
+              className="settings-select"
+              value={interfaceType}
+              onChange={(e) => setInterfaceType(e.target.value as InterfaceType)}
+            >
+              {INTERFACE_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Components */}
-        <div className="settings-group">
-          <label>Components</label>
-          <div className="comp-chips">
-            {components.map((c) => (
-              <button key={c} className={`comp-chip ${selectedComponents.includes(c) ? "selected" : ""}`} onClick={() => toggleComponent(c)}>
-                {c.replace(/-/g, " ")}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Color Overrides */}
-        <div className="settings-group">
-          <label>
-            Color Overrides
-            {hasOverrides && (
-              <button onClick={resetColors} style={{
-                float: "right", fontSize: 10, color: "var(--b-accent2)", background: "none",
-                border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.05em",
-              }}>
-                Reset
-              </button>
-            )}
-          </label>
-          {colorKeys.map((c) => (
-            <div key={c.key} className="color-row">
-              <span className="color-label">{c.label}</span>
-              <input
-                type="color"
-                className="color-swatch"
-                value={colorOverrides[c.key] || DEFAULT_COLORS[c.key] || "#6366f1"}
-                onChange={(e) => setColorOverride(c.key, e.target.value)}
-              />
+          {/* Mode */}
+          <div className="settings-group">
+            <label>Mode</label>
+            <div className="settings-toggle-row">
+              <button className={`settings-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>Light</button>
+              <button className={`settings-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>Dark</button>
             </div>
-          ))}
+          </div>
+
+          {/* Density */}
+          <div className="settings-group">
+            <label>Density / Size</label>
+            <div className="settings-toggle-row">
+              {densityOptions.map((o) => (
+                <button key={o.value} className={`settings-toggle-btn ${density === o.value ? "active" : ""}`} onClick={() => setDensity(o.value)}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Components */}
+          <div className="settings-group">
+            <label>Components</label>
+            <div className="comp-chips">
+              {components.map((c) => (
+                <button key={c} className={`comp-chip ${selectedComponents.includes(c) ? "selected" : ""}`} onClick={() => toggleComponent(c)}>
+                  {c.replace(/-/g, " ")}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color Overrides */}
+          <div className="settings-group">
+            <label>
+              Color Overrides
+              {hasOverrides && (
+                <button onClick={resetColors} style={{
+                  float: "right", fontSize: 10, color: "var(--b-accent2)", background: "none",
+                  border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+                  textTransform: "uppercase", letterSpacing: "0.05em",
+                }}>
+                  Reset
+                </button>
+              )}
+            </label>
+            {colorKeys.map((c) => (
+              <div key={c.key} className="color-row">
+                <span className="color-label">{c.label}</span>
+                <input
+                  type="color"
+                  className="color-swatch"
+                  value={colorOverrides[c.key] || DEFAULT_COLORS[c.key] || "#7c3aed"}
+                  onChange={(e) => setColorOverride(c.key, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
