@@ -19,6 +19,7 @@ export function BuilderApp() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
 
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +49,15 @@ export function BuilderApp() {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
     };
+  }, []);
+
+  /* ── Header scroll detection ── */
+  useEffect(() => {
+    const scrollEl = document.querySelector(".chat-scroll");
+    if (!scrollEl) return;
+    const onScroll = () => setHeaderScrolled(scrollEl.scrollTop > 40);
+    scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    return () => scrollEl.removeEventListener("scroll", onScroll);
   }, []);
 
   const startDrag = () => {
@@ -112,7 +122,7 @@ export function BuilderApp() {
 
       <div className="main-content">
         {/* ── Horizontal top bar ── */}
-        <div className="top-bar">
+        <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
           {/* Left: brand + new chat */}
           <div className="top-bar-left">
             <div className="top-bar-logo">
