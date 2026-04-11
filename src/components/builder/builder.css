@@ -1032,76 +1032,24 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
-/* Gradient glow border — spinning conic gradient, thin and smooth */
-.input-box::before {
-  content: '';
-  position: absolute;
-  /* oversized square so rotation always covers the rectangle */
-  top: 50%;
-  left: 50%;
-  width: 200%;
-  height: 800%;
-  transform: translate(-50%, -50%) rotate(0deg);
-  background: conic-gradient(
-    from 0deg,
-    #8b5cf6, #6366f1, #3b82f6, #06b6d4,
-    #a855f7, #d946ef, #ec4899, #f59e0b,
-    #8b5cf6
-  );
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  animation: gradientSpin 4s linear infinite;
-}
-.input-box.focused::before {
-  opacity: 1;
-}
-@keyframes gradientSpin {
-  0%   { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-/* Inner fill — masks the gradient leaving only a 1px border visible */
-.input-box::after {
-  content: '';
-  position: absolute;
-  inset: 1.5px;
-  border-radius: calc(var(--b-radius) - 1.5px);
-  background: rgba(11, 14, 26, 0.95);
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
-.input-box.focused::after {
-  opacity: 1;
-}
+/* Static gradient border on focus — no animation */
+.input-box::before { display: none; }
+.input-box::after  { display: none; }
 .input-box.focused {
-  border-color: transparent;
-  background: transparent;
+  border-color: rgba(139, 92, 246, 0.35);
   box-shadow:
     0 0 20px rgba(139, 92, 246, 0.10),
-    0 0 50px rgba(99, 102, 241, 0.05),
-    0 0 100px rgba(217, 70, 239, 0.03);
-  backdrop-filter: none;
+    0 0 50px rgba(99, 102, 241, 0.05);
 }
 .builder-light .input-box {
   background: rgba(255, 255, 255, 0.50);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
-.builder-light .input-box::after {
-  background: rgba(240, 238, 248, 0.96);
-}
 .builder-light .input-box.focused {
-  border-color: transparent;
-  background: transparent;
+  border-color: rgba(139, 92, 246, 0.25);
   box-shadow:
-    0 0 12px rgba(139, 92, 246, 0.08),
-    0 0 32px rgba(99, 102, 241, 0.04),
-    0 0 64px rgba(217, 70, 239, 0.03);
-}
-.builder-light .input-box.focused::before {
-  opacity: 0.6;
+    0 0 16px rgba(139, 92, 246, 0.08),
+    0 0 40px rgba(99, 102, 241, 0.04);
 }
 
 .input-textarea {
