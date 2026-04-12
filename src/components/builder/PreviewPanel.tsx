@@ -54,6 +54,8 @@ function DeviceControls() {
   const mode = useBuilder((s) => s.mode);
   const interfaceType = useBuilder((s) => s.interfaceType);
   const selectedComponents = useBuilder((s) => s.selectedComponents);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
 
   const preset = PRESETS[deviceMode];
   const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
@@ -109,6 +111,15 @@ function DeviceControls() {
       <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
         <RotateCcw size={15} strokeWidth={2} />
         <span>Refresh</span>
+      </button>
+
+      {/* Code / UI toggle */}
+      <button
+        className={`bp-popout-btn${canvasViewMode === 'code' ? " bp-code-btn--active" : ""}`}
+        onClick={toggleCanvasViewMode}
+        title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
+      >
+        <span className="bp-code-toggle-label">&lt;/&gt;</span>
       </button>
 
       {/* Pop out — opens preview in its own window */}
@@ -245,9 +256,6 @@ function PreviewToolbar() {
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
-  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
-  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
-
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
@@ -298,13 +306,6 @@ function PreviewToolbar() {
         </button>
         <button className="preview-toolbar-btn" onClick={toggleAddMenu} title="Add Component">
           <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
-        </button>
-        <button
-          className={`preview-toolbar-btn preview-toolbar-code-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-btn--active" : ""}`}
-          onClick={toggleCanvasViewMode}
-          title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
-        >
-          <span className="preview-toolbar-code-label">&lt;/&gt;</span>
         </button>
       </div>
     </div>
