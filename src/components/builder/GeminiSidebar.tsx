@@ -36,8 +36,11 @@ export function GeminiSidebar({
             title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-              {isOpen ? "menu_open" : "menu"}
+            <span
+              className={`material-symbols-outlined gsb-arrow-icon${isOpen ? "" : " gsb-arrow-flipped"}`}
+              style={{ fontSize: 22 }}
+            >
+              chevron_left
             </span>
           </button>
         </div>
