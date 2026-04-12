@@ -1153,8 +1153,9 @@
 .input-box {
   position: relative;
   z-index: 1;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(10, 10, 20, 0.35);
   border: 1px solid var(--glass-border);
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   border-radius: 24px;
   padding: 4px;
   transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
@@ -1165,7 +1166,9 @@
 .input-box::before,
 .input-box::after { display: none; }
 .input-box.focused {
+  background: rgba(6, 7, 18, 0.62);
   border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 .builder-light .input-box.focused {
   border-color: rgba(0, 0, 0, 0.3);
