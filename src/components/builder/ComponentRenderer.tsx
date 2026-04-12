@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import {
   SimulatedAlert,
@@ -56,14 +56,16 @@ function AlertBlock({ system }: { system: DesignSystem }) {
 }
 
 function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
-  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
 
   const defaultRows = [
-    { name: "Jane Doe", status: "Active", role: "Admin", lastActive: "2 hrs ago" },
-    { name: "John Smith", status: "Pending", role: "Editor", lastActive: "Yesterday" },
-    { name: "Alice Jones", status: "Active", role: "Viewer", lastActive: "5 mins ago" },
+    { name: "Jane Doe", status: "Active", role: "Admin", date: "2 hrs ago" },
+    { name: "John Smith", status: "Pending", role: "Editor", date: "Yesterday" },
+    { name: "Alice Jones", status: "Active", role: "Viewer", date: "5 mins ago" },
   ];
   const rows = (block?.props.rows as typeof defaultRows) ?? defaultRows;
 
@@ -97,7 +99,7 @@ function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: s
                 <InlineEditable value={row.role} onChange={(v) => updateCell(i, "role", v)} style={{ outline: "none" }} />
               </td>
               <td style={{ padding: "8px 10px", color: t.fgTertiary }}>
-                <InlineEditable value={row.lastActive} onChange={(v) => updateCell(i, "lastActive", v)} style={{ outline: "none" }} />
+                <InlineEditable value={row.date} onChange={(v) => updateCell(i, "date", v)} style={{ outline: "none" }} />
               </td>
             </tr>
           ))}
@@ -106,11 +108,13 @@ function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: s
     );
   }
 
-  return <SimulatedDataTable system={system} />;
+  return <SimulatedDataTable system={system} data={rows} />;
 }
 
 function FormFieldsBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
-  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
 
@@ -151,7 +155,9 @@ function FormFieldsBlock({ system, blockId }: { system: DesignSystem; blockId?: 
 }
 
 function ButtonsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
-  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
 
@@ -211,7 +217,9 @@ function ButtonsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) 
 
 function CardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
 
@@ -237,39 +245,42 @@ function CardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
         gap: 12,
       }}
     >
-      {cards.map((card) => (
-        <div
-          key={card.title}
-          onMouseEnter={() => setHoveredCard(card.title)}
-          onMouseLeave={() => setHoveredCard(null)}
-          style={{
-            background: hoveredCard === card.title ? t.surfaceHover : t.surface,
-            border: `1px solid ${hoveredCard === card.title ? t.primaryHover : t.border}`,
-            borderRadius: radius,
-            padding: 14,
-            cursor: "pointer",
-            transition: "all 150ms ease",
-            transform: hoveredCard === card.title ? "translateY(-2px)" : "none",
-            boxShadow:
-              hoveredCard === card.title ? `0 4px 12px ${t.primaryShadow}` : "none",
-          }}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 20, color: t.primary, marginBottom: 6, display: "block" }}
+      {cards.map((card, idx) => {
+        const hoverKey = `card-${idx}`;
+        return (
+          <div
+            key={idx}
+            onMouseEnter={() => setHoveredCard(hoverKey)}
+            onMouseLeave={() => setHoveredCard(null)}
+            style={{
+              background: hoveredCard === hoverKey ? t.surfaceHover : t.surface,
+              border: `1px solid ${hoveredCard === hoverKey ? t.primaryHover : t.border}`,
+              borderRadius: radius,
+              padding: 14,
+              cursor: "pointer",
+              transition: "all 150ms ease",
+              transform: hoveredCard === hoverKey ? "translateY(-2px)" : "none",
+              boxShadow:
+                hoveredCard === hoverKey ? `0 4px 12px ${t.primaryShadow}` : "none",
+            }}
           >
-            {card.icon}
-          </span>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>
-            {isSelected && blockId ? (
-              <InlineEditable value={card.title} onChange={(v) => updateCardTitle(cards.indexOf(card), v)} style={{ outline: "none" }} />
-            ) : card.title}
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 20, color: t.primary, marginBottom: 6, display: "block" }}
+            >
+              {card.icon}
+            </span>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>
+              {isSelected && blockId ? (
+                <InlineEditable value={card.title} onChange={(v) => updateCardTitle(idx, v)} style={{ outline: "none" }} />
+              ) : card.title}
+            </div>
+            <div style={{ fontSize: 11, color: t.fgTertiary, marginTop: 4 }}>
+              View details
+            </div>
           </div>
-          <div style={{ fontSize: 11, color: t.fgTertiary, marginTop: 4 }}>
-            View details
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -278,44 +289,81 @@ function TabsBlock({ system }: { system: DesignSystem }) {
   return <SimulatedTabs system={system} />;
 }
 
-function TogglesBlock({ system }: { system: DesignSystem }) {
+function TogglesBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const cb1 = (block?.props.cb1 as string) ?? "Enable notifications";
+  const cb2 = (block?.props.cb2 as string) ?? "Automatic updates";
+  const sw1 = (block?.props.sw1 as string) ?? "Dark mode";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <SimulatedCheckbox system={system} label="Enable notifications" defaultChecked />
-      <SimulatedCheckbox system={system} label="Automatic updates" />
-      <SimulatedSwitch system={system} label="Dark mode" />
+      <SimulatedCheckbox system={system} label={cb1} defaultChecked>
+        {isSelected && blockId ? (
+          <InlineEditable value={cb1} onChange={(v) => updateBlockProps(blockId, { cb1: v })} style={{ outline: "none" }} />
+        ) : undefined}
+      </SimulatedCheckbox>
+      <SimulatedCheckbox system={system} label={cb2}>
+        {isSelected && blockId ? (
+          <InlineEditable value={cb2} onChange={(v) => updateBlockProps(blockId, { cb2: v })} style={{ outline: "none" }} />
+        ) : undefined}
+      </SimulatedCheckbox>
+      <SimulatedSwitch system={system} label={sw1}>
+        {isSelected && blockId ? (
+          <InlineEditable value={sw1} onChange={(v) => updateBlockProps(blockId, { sw1: v })} style={{ outline: "none" }} />
+        ) : undefined}
+      </SimulatedSwitch>
     </div>
   );
 }
 
-function BadgesBlock() {
+function BadgesBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
-  const badges = [
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultBadges = [
     { label: "Active", color: t.statusPositive },
     { label: "Pending", color: t.statusWarning },
     { label: "Closed", color: t.statusNegative },
   ];
+  const badges = (block?.props.badges as typeof defaultBadges) ?? defaultBadges;
+
+  const updateBadgeLabel = (idx: number, label: string) => {
+    if (!blockId) return;
+    const next = badges.map((b, i) => (i === idx ? { ...b, label } : b));
+    updateBlockProps(blockId, { badges: next });
+  };
 
   return (
     <div style={{ display: "flex", gap: 8 }}>
-      {badges.map((b) => (
+      {badges.map((b, idx) => (
         <span
-          key={b.label}
-          onClick={() => setActiveBadge(activeBadge === b.label ? null : b.label)}
+          key={idx}
+          onClick={() => setActiveBadge(activeBadge === `badge-${idx}` ? null : `badge-${idx}`)}
           style={{
             padding: "3px 10px",
             borderRadius: 20,
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
-            background: activeBadge === b.label ? b.color : "transparent",
-            color: activeBadge === b.label ? t.onPrimary : b.color,
+            background: activeBadge === `badge-${idx}` ? b.color : "transparent",
+            color: activeBadge === `badge-${idx}` ? t.onPrimary : b.color,
             border: `1px solid ${b.color}`,
             transition: "all 150ms ease",
             userSelect: "none",
           }}
         >
-          {b.label}
+          {isSelected && blockId ? (
+            <InlineEditable value={b.label} onChange={(v) => updateBadgeLabel(idx, v)} style={{ outline: "none", color: "inherit" }} />
+          ) : b.label}
         </span>
       ))}
     </div>
@@ -345,17 +393,58 @@ function DialogBlock({ system }: { system: DesignSystem }) {
   return <SimulatedDialog system={system} />;
 }
 
-function DropdownBlock({ system }: { system: DesignSystem }) {
+function DropdownBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultItems = [
+    { label: "Admin", value: "admin" },
+    { label: "Editor", value: "editor" },
+    { label: "Viewer", value: "viewer" },
+    { label: "Owner (Locked)", value: "owner", disabled: true },
+  ];
+  const items = (block?.props.items as typeof defaultItems) ?? defaultItems;
+  const placeholder = (block?.props.placeholder as string) ?? "Select a role";
+
+  const updateItem = (idx: number, label: string) => {
+    if (!blockId) return;
+    const next = items.map((item, i) => (i === idx ? { ...item, label } : item));
+    updateBlockProps(blockId, { items: next });
+  };
+
+  if (isSelected && blockId) {
+    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <InlineEditable
+          value={placeholder}
+          onChange={(v) => updateBlockProps(blockId, { placeholder: v })}
+          className={`${prefix}-label`}
+          style={{ outline: "none", display: "block", fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, border: `1px solid ${t.border}`, borderRadius: radius, overflow: "hidden" }}>
+          {items.map((item, idx) => (
+            <div key={idx} style={{ padding: "6px 10px", fontSize: 12, opacity: item.disabled ? 0.5 : 1, background: t.surface }}>
+              <InlineEditable
+                value={item.label}
+                onChange={(v) => updateItem(idx, v)}
+                style={{ outline: "none" }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <SimulatedDropdown
       system={system}
-      items={[
-        { label: "Admin", value: "admin" },
-        { label: "Editor", value: "editor" },
-        { label: "Viewer", value: "viewer" },
-        { label: "Owner (Locked)", value: "owner", disabled: true },
-      ]}
-      placeholder="Select a role"
+      items={items}
+      placeholder={placeholder}
     />
   );
 }
@@ -436,19 +525,32 @@ function TypographyBlock() {
   );
 }
 
-function StatsCardsBlock() {
+function StatsCardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const stats = [
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultStats = [
     { label: "Revenue", value: "$42.8K", pct: 60 },
     { label: "Users", value: "1,247", pct: 75 },
     { label: "Growth", value: "+18%", pct: 90 },
   ];
+  const stats = (block?.props.stats as typeof defaultStats) ?? defaultStats;
+
+  const updateStat = (idx: number, key: string, val: string) => {
+    if (!blockId) return;
+    const next = stats.map((s, i) => (i === idx ? { ...s, [key]: val } : s));
+    updateBlockProps(blockId, { stats: next });
+  };
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
       {stats.map((stat, i) => (
         <div
-          key={stat.label}
+          key={i}
           onMouseEnter={() => setHoveredCard("stat-" + i)}
           onMouseLeave={() => setHoveredCard(null)}
           style={{
@@ -462,9 +564,15 @@ function StatsCardsBlock() {
           }}
         >
           <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}>
-            {stat.label}
+            {isSelected && blockId ? (
+              <InlineEditable value={stat.label} onChange={(v) => updateStat(i, "label", v)} style={{ outline: "none" }} />
+            ) : stat.label}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{stat.value}</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>
+            {isSelected && blockId ? (
+              <InlineEditable value={stat.value} onChange={(v) => updateStat(i, "value", v)} style={{ outline: "none" }} />
+            ) : stat.value}
+          </div>
           <div
             style={{
               marginTop: 8,
@@ -497,16 +605,34 @@ function InlineEditable({
   onChange,
   style,
   className,
+  autoOpenComponentPanel = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   style?: React.CSSProperties;
   className?: string;
+  autoOpenComponentPanel?: boolean;
 }) {
+  const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
   const ref = useRef<HTMLSpanElement>(null);
+  const isEditingRef = useRef(false);
+
+  useEffect(() => {
+    if (ref.current && !isEditingRef.current) {
+      if (ref.current.textContent !== value) {
+        ref.current.textContent = value;
+      }
+    }
+  }, [value]);
+
   const handleBlur = useCallback(() => {
+    isEditingRef.current = false;
     if (ref.current) onChange(ref.current.textContent || "");
   }, [onChange]);
+  const handleFocus = useCallback(() => {
+    isEditingRef.current = true;
+    if (autoOpenComponentPanel) setComponentLibraryOpen(true);
+  }, [autoOpenComponentPanel, setComponentLibraryOpen]);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
@@ -525,8 +651,12 @@ function InlineEditable({
       className={`inline-editable ${className || ""}`}
       style={style}
       onBlur={handleBlur}
+      onFocus={handleFocus}
       onKeyDown={handleKeyDown}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (autoOpenComponentPanel) setComponentLibraryOpen(true);
+      }}
     >
       {value}
     </span>
@@ -544,7 +674,8 @@ function SimulatedButtonBlock({
   label?: string;
   blockId?: string;
 }) {
-  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const isPrimary = variant === "primary";
 
@@ -565,6 +696,7 @@ function SimulatedButtonBlock({
         <InlineEditable
           value={label}
           onChange={(v) => updateBlockProps(blockId, { label: v })}
+          autoOpenComponentPanel
           style={{ outline: "none", minWidth: 20 }}
         />
       ) : (
@@ -585,7 +717,8 @@ function SimulatedTitleBlock({
   text?: string;
   blockId?: string;
 }) {
-  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
@@ -594,6 +727,7 @@ function SimulatedTitleBlock({
       <InlineEditable
         value={text}
         onChange={(v) => updateBlockProps(blockId, { text: v })}
+        autoOpenComponentPanel
         className={`${prefix}-title ${prefix}-title-${level}`}
         style={{ display: "block", outline: "none" }}
       />
@@ -620,7 +754,8 @@ function SimulatedTextInputBlock({
   placeholder?: string;
   blockId?: string;
 }) {
-  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
@@ -630,6 +765,7 @@ function SimulatedTextInputBlock({
         <InlineEditable
           value={label}
           onChange={(v) => updateBlockProps(blockId, { label: v })}
+          autoOpenComponentPanel
           className={`${prefix}-label`}
           style={{ outline: "none", display: "block" }}
         />

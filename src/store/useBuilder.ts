@@ -84,6 +84,7 @@ interface BuilderState {
   updateBlockProps: (id: string, props: Record<string, unknown>) => void;
   setSelectedBlockId: (id: string | null) => void;
   toggleComponentLibrary: () => void;
+  setComponentLibraryOpen: (v: boolean) => void;
   toggleAddMenu: () => void;
   setAddMenuOpen: (v: boolean) => void;
 
@@ -96,8 +97,10 @@ interface BuilderState {
   bumpPreview: () => void;
 }
 
-let msgId = 0;
-const uid = () => `msg-${++msgId}-${Date.now()}`;
+const uid = (() => {
+  let msgId = 0;
+  return () => `msg-${++msgId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+})();
 
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat — start empty so hero shows
@@ -110,7 +113,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   designSystem: 'salt',
   mode: 'dark',
   density: 'medium',
-  themeKey: 'jpm-light',
+  themeKey: 'jpm-dark',
   interfaceType: 'dashboard',
   selectedComponents: ['buttons', 'inputs', 'cards', 'tabs'],
 
@@ -195,6 +198,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   setSelectedBlockId: (id) => set({ selectedBlockId: id }),
   toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
+  setComponentLibraryOpen: (v) => set({ componentLibraryOpen: v }),
   toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
   setAddMenuOpen: (v) => set({ addMenuOpen: v }),
 

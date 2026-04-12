@@ -158,7 +158,7 @@ export function PreviewCanvas() {
           defaults: Record<string, unknown>;
         };
         const newId = makeBlockId();
-        const next = [...blocks, { id: newId, type, props: { ...defaults } }];
+        const next = [{ id: newId, type, props: { ...defaults } }, ...blocks];
         syncToStore(next);
         setSelectedBlockId(newId);
         return;
@@ -189,7 +189,7 @@ export function PreviewCanvas() {
   const handleAddBlock = useCallback(
     (type: string) => {
       const newId = makeBlockId();
-      const next = [...blocks, { id: newId, type, props: {} }];
+      const next = [{ id: newId, type, props: {} }, ...blocks];
       syncToStore(next);
       setAddMenuOpen(false);
       setSelectedBlockId(newId);

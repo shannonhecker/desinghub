@@ -439,12 +439,14 @@ export function SimulatedInput({
 interface CheckboxProps extends SimProps {
   label?: string;
   defaultChecked?: boolean;
+  children?: React.ReactNode;
 }
 
 export function SimulatedCheckbox({
   system,
   label = "Accept terms and conditions",
   defaultChecked = false,
+  children,
 }: CheckboxProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
   const [checked, setChecked] = useState(defaultChecked);
@@ -461,7 +463,7 @@ export function SimulatedCheckbox({
           </svg>
         )}
       </div>
-      <span className={`${prefix}-checkbox-label`}>{label}</span>
+      <span className={`${prefix}-checkbox-label`}>{children || label}</span>
     </label>
   );
 }
@@ -473,12 +475,14 @@ export function SimulatedCheckbox({
 interface SwitchProps extends SimProps {
   label?: string;
   defaultOn?: boolean;
+  children?: React.ReactNode;
 }
 
 export function SimulatedSwitch({
   system,
   label = "Enable Notifications",
   defaultOn = false,
+  children,
 }: SwitchProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
   const [toggled, setToggled] = useState(defaultOn);
@@ -488,7 +492,7 @@ export function SimulatedSwitch({
       className={`${prefix}-switch-container`}
       onClick={(e) => { e.preventDefault(); setToggled(!toggled); }}
     >
-      <span className={`${prefix}-switch-label`}>{label}</span>
+      <span className={`${prefix}-switch-label`}>{children || label}</span>
       <div className={`${prefix}-switch-track${toggled ? ` ${prefix}-switch-on` : ""}`}>
         <div className={`${prefix}-switch-thumb`} />
       </div>
