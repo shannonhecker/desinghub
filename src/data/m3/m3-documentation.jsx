@@ -29,6 +29,7 @@ export function getM3DensityCSS(density) {
     .m3-dp-day{width:${dpDay}px;height:${dpDay}px;font-size:${dpDay<=28?12:14}px;}
   `;
 }
+export function getM3Previews() { return M3_PREVIEWS; }
 export function getM3LayoutDensity(density) {
   return {
     0:    { sideW: 260, mainP: 28, cardMin: 220, gap: 10, topP: "10px 20px", sideP: "18px 14px 10px", sideFontSize: 13, navP: "8px 10px" },

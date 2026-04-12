@@ -182,6 +182,46 @@ function ThemeControls() {
   );
 }
 
+/* ── SIDEBAR NAV PAGES (Charts, Tokens, Audit) ── */
+function SidebarPages() {
+  const { activeTab, setActiveTab, setSelectedComponent, activeSystem } = useDesignHub();
+  const t = useActiveTheme();
+  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "" : "f-sidebar-item";
+
+  const pages: { id: ActiveTab; icon: string; label: string }[] = [
+    { id: "charts", icon: "bar_chart", label: "Charts" },
+    { id: "tokens", icon: "palette", label: "Tokens" },
+    { id: "audit", icon: "fact_check", label: "Audit" },
+  ];
+
+  return (
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ fontSize: 10, textTransform: "uppercase", color: t.fg3, letterSpacing: "0.06em", padding: "8px 0 4px", fontWeight: 700 }}>Pages</div>
+      {pages.map(p => (
+        <button
+          key={p.id}
+          className={itemClass + (activeTab === p.id ? " active" : "")}
+          onClick={() => { setActiveTab(p.id); setSelectedComponent(null); }}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
+            ...(activeSystem === "m3" ? {
+              padding: "8px 12px", borderRadius: 28, border: "none", fontSize: 13,
+              background: activeTab === p.id ? t.accentWeak : "transparent",
+              color: activeTab === p.id ? t.accentText : t.fg2,
+              fontWeight: activeTab === p.id ? 600 : 400,
+              transition: "all 150ms",
+            } : {}),
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 14, opacity: 0.7 }}>{p.icon}</span>
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ── COMPONENT LIST — uses DS sidebar-item classes ── */
 function ComponentList() {
   const { activeSystem, selectedComponent, setSelectedComponent, searchQuery, setSearchQuery } = useDesignHub();
@@ -379,6 +419,8 @@ export function DesignHubApp() {
             <div style={{ padding: "12px 14px", overflowY: "auto", flex: 1 }}>
               <ThemeControls />
               <div style={{ height: 1, background: t.border, margin: "8px 0" }} />
+              <SidebarPages />
+              <div style={{ height: 1, background: t.border, margin: "4px 0 8px" }} />
               <ComponentList />
             </div>
           </aside>

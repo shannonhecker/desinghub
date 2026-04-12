@@ -10,7 +10,7 @@ import {
 import {
   M3_THEMES, m3BuildCSS, M3_COMPS, M3_CATS, MATERIAL_COLORS, M3Icon,
   generateM3Theme, setM3T, getM3T, getM3DemoComponent,
-  getM3DensityCSS, getM3LayoutDensity
+  getM3DensityCSS, getM3LayoutDensity, getM3Previews
 } from './m3/m3-documentation.jsx';
 
 import {
@@ -83,7 +83,7 @@ export function getDemoComponent(system: SystemId, componentId: string): React.C
 export function getPreviews(system: SystemId): Record<string, React.ComponentType> {
   switch (system) {
     case 'salt': return getSaltPreviews();
-    case 'm3': return {}; // M3 doesn't have a PREVIEWS object
+    case 'm3': return getM3Previews();
     case 'fluent': return getFluentPreviews();
   }
 }
