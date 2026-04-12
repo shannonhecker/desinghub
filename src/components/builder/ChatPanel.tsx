@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { InterfaceType, DesignSystem, OnboardingStep } from "@/store/useBuilder";
+
+const OrbScene = dynamic(
+  () => import("./LiquidGpuHero").then((m) => m.OrbScene),
+  { ssr: false }
+);
 
 /* ═══════════════════════════════════════════
    Progressive Disclosure — Step Configuration
@@ -287,7 +293,6 @@ export function ChatPanel() {
   const hasMessages = messages.length > 0;
   const hasText = inputText.trim().length > 0;
   const glowActive = focused || hasText;
-  const orbState = isGenerating ? "generating" : hasText ? "typing" : "";
 
   /* Recover step state — if messages exist but step was lost (e.g. HMR) */
   useEffect(() => {
@@ -563,11 +568,11 @@ export function ChatPanel() {
       <div className="chat-scroll">
         {/* Orb */}
         <div className="orb-container">
-          <div className="orb-wrap" style={hasMessages ? { width: 70, height: 70 } : undefined}>
-            <div className="orb-glow" style={hasMessages ? { filter: "blur(18px)" } : undefined} />
-            {!hasMessages && <div className="orb-particles" />}
-            <div className={`orb-sphere ${orbState}`} />
-            <div className="orb-shimmer" />
+          <div
+            className="orb-wrap orb-wrap--gpu"
+            style={hasMessages ? { width: 80, height: 80 } : undefined}
+          >
+            <OrbScene />
           </div>
         </div>
 

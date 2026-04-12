@@ -607,6 +607,20 @@
   height: 140px;
 }
 
+.orb-wrap--gpu {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.2, 0, 0, 1),
+              height 0.4s cubic-bezier(0.2, 0, 0, 1);
+}
+.orb-wrap--gpu canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
 /* Outer glow ring */
 .orb-glow {
   position: absolute;
@@ -4334,13 +4348,15 @@
 .bp-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 8px 16px;
   background: var(--b-surface);
   border-bottom: 1px solid var(--b-border);
   backdrop-filter: var(--blur-sm);
   flex-shrink: 0;
   gap: 12px;
+}
+.bp-controls .bp-dimensions {
+  margin-left: auto;
 }
 
 .bp-controls-left {

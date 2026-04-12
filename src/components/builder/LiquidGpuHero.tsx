@@ -519,7 +519,7 @@ function GpuOrb() {
    Scene wrapper (R3F Canvas + postprocessing-style glow)
    ═══════════════════════════════════════════════════════════ */
 
-function OrbScene() {
+export function OrbScene() {
   return (
     <Canvas
       className="lgh-canvas"

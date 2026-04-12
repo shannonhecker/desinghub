@@ -1,372 +1,65 @@
 "use client";
 
-import React, { useState } from "react";
-import { useBuilder } from "@/store/useBuilder";
+import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  SimulatedAvatar, SimulatedDropdown, SimulatedDataTable, SimulatedDatePicker,
-  SimulatedDialog, SimulatedTabs, SimulatedInput, SimulatedCheckbox, SimulatedSwitch,
-  SimulatedAlert, SimulatedProgress, SimulatedTooltip,
-} from "./SimulatedUI";
+  Monitor,
+  Tablet,
+  Smartphone,
+  RotateCcw,
+  MessageSquare,
+  Database,
+  Settings,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Bot,
+  Send,
+} from "lucide-react";
+import { useBuilder, type DeviceMode } from "@/store/useBuilder";
 import { PreviewCanvas } from "./PreviewCanvas";
 
-/* ── Default welcome state ── */
-function DefaultPreview() {
-  return (
-    <div className="preview-default">
-      <div className="preview-default-icon">
-        <span className="material-symbols-outlined" style={{ fontSize: 32, color: "white" }}>
-          auto_awesome
-        </span>
-      </div>
-      <h3 className="preview-default-title">Design Preview</h3>
-      <p className="preview-default-desc">
-        Start a conversation to see your design come to life. Try asking for a
-        dashboard, landing page, or form.
-      </p>
-      <div className="preview-default-tags">
-        <span className="preview-tag">Salt DS</span>
-        <span className="preview-tag">Material 3</span>
-        <span className="preview-tag">Fluent 2</span>
-      </div>
-    </div>
-  );
-}
+/* ── Viewport presets ── */
+const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
+  desktop: { width: 1200, height: 800, label: "1200 × 800" },
+  tablet: { width: 768, height: 1024, label: "768 × 1024" },
+  mobile: { width: 375, height: 812, label: "375 × 812" },
+};
 
-/* ── Preview content — interactive UI kit components ── */
-function PreviewContent() {
-  const { designSystem, interfaceType, selectedComponents, colorOverrides } = useBuilder();
+/* ── Sidebar nav items ── */
+const NAV_ITEMS = [
+  { icon: MessageSquare, label: "Chat", active: true },
+  { icon: Database, label: "Data", active: false },
+  { icon: Settings, label: "Settings", active: false },
+  { icon: BarChart3, label: "Analytics", active: false },
+];
 
-  /* ── Interactive state ── */
-  const [activeTab, setActiveTab] = useState(0);
-  const [radio, setRadio] = useState("a");
-  const [activeBtn, setActiveBtn] = useState<string | null>(null);
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const [activeBadge, setActiveBadge] = useState<string | null>(null);
+/* ── Sample chat messages for the empty state ── */
+const SAMPLE_MESSAGES = [
+  { role: "user" as const, text: "Summarize yesterday's sales data" },
+  { role: "ai" as const, text: "Yesterday's total revenue was $14,280 across 142 orders. Top category: Electronics (+12% vs. prior day)." },
+  { role: "user" as const, text: "Show me a breakdown by region" },
+];
 
-  /* Semantic tokens reference — all values come from CSS custom properties */
-  const t = {
-    primary: "var(--ds-primary)",
-    bg: "var(--ds-bg)",
-    fg: "var(--ds-fg)",
-    fgSecondary: "var(--ds-fg-secondary)",
-    fgTertiary: "var(--ds-fg-tertiary)",
-    surface: "var(--ds-surface)",
-    border: "var(--ds-border)",
-    hover: "var(--ds-hover)",
-    font: "var(--ds-font)",
-    primaryHover: "var(--ds-primary-hover)",
-    primaryGlow: "var(--ds-primary-glow)",
-    primaryShadow: "var(--ds-primary-shadow)",
-  };
-  const radius = "var(--ds-radius)";
-  const btnRadius = "var(--ds-btn-radius)";
+/* ══════════════════════════════════════════════════════════
+   Device Controls — top bar with Desktop / Tablet / Mobile
+   ══════════════════════════════════════════════════════════ */
+function DeviceControls() {
+  const deviceMode = useBuilder((s) => s.deviceMode);
+  const setDeviceMode = useBuilder((s) => s.setDeviceMode);
+  const bumpPreview = useBuilder((s) => s.bumpPreview);
+  const chatOpen = useBuilder((s) => s.chatOpen);
+  const toggleChat = useBuilder((s) => s.toggleChat);
 
-  /* Resolve colorOverrides to a CSS custom property override on the wrapper */
-  const primaryOverride = colorOverrides.accent || colorOverrides.primary || colorOverrides.brandBg;
-  const has = (c: string) => selectedComponents.includes(c);
-
-  const handleBtnClick = (name: string) => {
-    setActiveBtn(name);
-    setTimeout(() => setActiveBtn(null), 300);
-  };
-
-  return (
-    <div
-      className={`preview-${designSystem}`}
-      style={{
-        background: t.bg, color: t.fg, fontFamily: t.font, minHeight: "100%", fontSize: 13,
-        ...(primaryOverride && { '--ds-primary': primaryOverride } as React.CSSProperties),
-      }}
-    >
-      {/* Header with interactive tabs */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: `1px solid ${t.border}`, background: t.surface }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 24, borderRadius: radius, background: t.primary, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 700 }}>
-            {designSystem === "salt" ? "S" : designSystem === "m3" ? "M" : "F"}
-          </div>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>
-            {interfaceType === "dashboard" ? "Analytics" : interfaceType === "landing" ? "Product" : interfaceType === "form" ? "Onboarding" : interfaceType === "ecommerce" ? "Shop" : interfaceType === "blog" ? "Blog" : "Portfolio"}
-          </span>
-        </div>
-        {has("tabs") && (
-          <div style={{ display: "flex", gap: 2 }}>
-            {["Overview", "Details", "Settings"].map((tab, i) => (
-              <span
-                key={tab}
-                onClick={() => setActiveTab(i)}
-                style={{
-                  padding: "6px 12px", fontSize: 12, cursor: "pointer",
-                  fontWeight: i === activeTab ? 600 : 400,
-                  color: i === activeTab ? t.primary : t.fg,
-                  borderBottom: i === activeTab ? `2px solid ${t.primary}` : "2px solid transparent",
-                  transition: "all 150ms ease",
-                }}
-              >{tab}</span>
-            ))}
-          </div>
-        )}
-        {!has("tabs") && has("avatars") && (
-          <div />
-        )}
-        {has("avatars") && (
-          <SimulatedAvatar system={designSystem} initials="U" size="sm" />
-        )}
-      </div>
-
-      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* Stats cards */}
-        {(interfaceType === "landing" || interfaceType === "dashboard") && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-            {["Revenue", "Users", "Growth"].map((label, i) => (
-              <div
-                key={label}
-                onMouseEnter={() => setHoveredCard("stat-" + i)}
-                onMouseLeave={() => setHoveredCard(null)}
-                style={{
-                  background: hoveredCard === "stat-" + i ? t.hover : t.surface,
-                  border: `1px solid ${hoveredCard === "stat-" + i ? t.primaryHover : t.border}`,
-                  borderRadius: radius, padding: 14, cursor: "pointer",
-                  transition: "all 150ms ease",
-                  transform: hoveredCard === "stat-" + i ? "translateY(-1px)" : "none",
-                }}
-              >
-                <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 20, fontWeight: 700 }}>
-                  {i === 0 ? "$42.8K" : i === 1 ? "1,247" : "+18%"}
-                </div>
-                {has("progress") && (
-                  <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: t.border }}>
-                    <div style={{ width: `${60 + i * 15}%`, height: "100%", borderRadius: 2, background: t.primary, transition: "width 500ms ease" }} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Alert banner */}
-        {has("alerts") && (
-          <SimulatedAlert system={designSystem} />
-        )}
-
-        {/* Progress bar */}
-        {has("progress-bar") && (
-          <SimulatedProgress system={designSystem} />
-        )}
-
-        {/* Interactive buttons */}
-        {has("buttons") && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {[
-              { label: "Primary", bg: t.primary, fg: "#fff", border: "none" },
-              { label: "Secondary", bg: "transparent", fg: t.primary, border: `1px solid ${t.primary}` },
-              { label: "Text", bg: "transparent", fg: t.fg, border: "none" },
-            ].map((btn) => (
-              <button
-                key={btn.label}
-                onClick={() => handleBtnClick(btn.label)}
-                style={{
-                  padding: "8px 16px", borderRadius: btnRadius, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                  background: btn.bg, color: btn.fg, border: btn.border,
-                  transform: activeBtn === btn.label ? "scale(0.95)" : "scale(1)",
-                  opacity: activeBtn === btn.label ? 0.8 : 1,
-                  transition: "all 150ms ease",
-                  boxShadow: activeBtn === btn.label && btn.label === "Primary" ? `0 0 16px ${t.primaryGlow}` : "none",
-                }}
-              >{btn.label}</button>
-            ))}
-            <button
-              onClick={() => handleBtnClick("Disabled")}
-              disabled
-              style={{
-                padding: "8px 16px", borderRadius: btnRadius, fontSize: 12, fontWeight: 600,
-                background: t.border, color: t.fg + "44", border: "none", cursor: "not-allowed", opacity: 0.5,
-              }}
-            >Disabled</button>
-          </div>
-        )}
-
-        {/* Tabs */}
-        {has("tabs") && (
-          <SimulatedTabs system={designSystem} />
-        )}
-
-        {/* Inputs */}
-        {(has("inputs") || has("text-fields") || has("form-field")) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <SimulatedInput system={designSystem} label="Email Address" placeholder="name@company.com" helperText="We'll never share your email." />
-            <SimulatedInput system={designSystem} label="Password" placeholder="Enter password" type="password" helperText="" />
-          </div>
-        )}
-
-        {/* Interactive cards */}
-        {has("cards") && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
-            {[
-              { title: "Analytics", icon: "bar_chart" },
-              { title: "Reports", icon: "description" },
-              { title: "Users", icon: "group" },
-              { title: "Settings", icon: "settings" },
-            ].map((card) => (
-              <div
-                key={card.title}
-                onMouseEnter={() => setHoveredCard(card.title)}
-                onMouseLeave={() => setHoveredCard(null)}
-                style={{
-                  background: hoveredCard === card.title ? t.hover : t.surface,
-                  border: `1px solid ${hoveredCard === card.title ? t.primaryHover : t.border}`,
-                  borderRadius: radius, padding: 14, cursor: "pointer",
-                  transition: "all 150ms ease",
-                  transform: hoveredCard === card.title ? "translateY(-2px)" : "none",
-                  boxShadow: hoveredCard === card.title ? `0 4px 12px ${t.primaryShadow}` : "none",
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 20, color: t.primary, marginBottom: 6, display: "block" }}>{card.icon}</span>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{card.title}</div>
-                <div style={{ fontSize: 11, color: t.fgTertiary, marginTop: 4 }}>View details</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Checkboxes + Switches */}
-        {(has("checkboxes") || has("switches") || has("radios")) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {has("checkboxes") && (
-              <>
-                <SimulatedCheckbox system={designSystem} label="Enable notifications" defaultChecked />
-                <SimulatedCheckbox system={designSystem} label="Automatic updates" />
-                <SimulatedCheckbox system={designSystem} label="Subscribe to newsletter" />
-              </>
-            )}
-            {has("switches") && (
-              <SimulatedSwitch system={designSystem} label="Dark mode" />
-            )}
-            {has("radios") && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  { value: "a", label: "Option A" },
-                  { value: "b", label: "Option B" },
-                  { value: "c", label: "Option C" },
-                ].map((item) => (
-                  <label
-                    key={item.value}
-                    onClick={() => setRadio(item.value)}
-                    style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none", fontSize: 13, fontFamily: t.font, color: t.fg }}
-                  >
-                    <span style={{
-                      width: 16, height: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                      border: `2px solid ${radio === item.value ? t.primary : t.border}`,
-                      transition: "border-color 150ms ease",
-                    }}>
-                      <span style={{
-                        width: radio === item.value ? 8 : 0, height: radio === item.value ? 8 : 0,
-                        borderRadius: "50%", background: t.primary,
-                        transition: "all 150ms ease",
-                      }} />
-                    </span>
-                    {item.label}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Interactive badges */}
-        {has("badges") && (
-          <div style={{ display: "flex", gap: 8 }}>
-            {[{ label: "Active", color: "#00875D" }, { label: "Pending", color: "#C75300" }, { label: "Closed", color: "#E52135" }].map((b) => (
-              <span
-                key={b.label}
-                onClick={() => setActiveBadge(activeBadge === b.label ? null : b.label)}
-                style={{
-                  padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                  background: activeBadge === b.label ? b.color : b.color + "20",
-                  color: activeBadge === b.label ? "#fff" : b.color,
-                  transition: "all 150ms ease",
-                  userSelect: "none",
-                }}
-              >{b.label}</span>
-            ))}
-          </div>
-        )}
-
-        {/* Tooltip */}
-        {has("tooltips") && (
-          <SimulatedTooltip system={designSystem} />
-        )}
-
-        {/* Dialog */}
-        {has("buttons") && (
-          <SimulatedDialog system={designSystem} />
-        )}
-
-        {/* Avatar group */}
-        {has("avatars") && (
-          <div>
-            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Team</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <SimulatedAvatar system={designSystem} initials="AK" size="lg" presence="available" />
-              <SimulatedAvatar system={designSystem} initials="JL" size="md" presence="busy" />
-              <SimulatedAvatar system={designSystem} initials="RW" size="md" presence="away" />
-              <SimulatedAvatar system={designSystem} initials="MZ" size="sm" presence="offline" />
-            </div>
-          </div>
-        )}
-
-        {/* Dropdown */}
-        {(has("inputs") || has("form-field")) && (
-          <div>
-            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</div>
-            <SimulatedDropdown
-              system={designSystem}
-              items={[
-                { label: "Admin", value: "admin" },
-                { label: "Editor", value: "editor" },
-                { label: "Viewer", value: "viewer" },
-                { label: "Owner (Locked)", value: "owner", disabled: true },
-              ]}
-              placeholder="Select a role"
-            />
-          </div>
-        )}
-
-        {/* Data table */}
-        {(has("table") || interfaceType === "dashboard") && (
-          <SimulatedDataTable system={designSystem} />
-        )}
-
-        {/* Date picker */}
-        {(has("inputs") || has("form-field")) && (
-          <div>
-            <div style={{ fontSize: 11, color: t.fgTertiary, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Schedule</div>
-            <SimulatedDatePicker system={designSystem} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ── Preview toolbar — DS switcher + theme toggle + canvas actions ── */
-function PreviewToolbar() {
-  const {
-    designSystem, setDesignSystem,
-    density, setDensity,
-    toggleComponentLibrary, componentLibraryOpen,
-    toggleAddMenu,
-    chatOpen, toggleChat,
-  } = useBuilder();
-
-  const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
-    { key: "salt", label: "Salt DS" },
-    { key: "m3", label: "Material 3" },
-    { key: "fluent", label: "Fluent 2" },
+  const preset = PRESETS[deviceMode];
+  const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
+    { key: "desktop", Icon: Monitor },
+    { key: "tablet", Icon: Tablet },
+    { key: "mobile", Icon: Smartphone },
   ];
 
   return (
-    <div className="preview-toolbar">
+    <div className="bp-controls">
       {/* Chat collapse toggle */}
       <button
         className="preview-toolbar-collapse-btn"
@@ -379,6 +72,164 @@ function PreviewToolbar() {
         </span>
       </button>
 
+      <div className="bp-controls-left">
+        {devices.map(({ key, Icon }) => (
+          <button
+            key={key}
+            className={`bp-device-btn${deviceMode === key ? " bp-device-btn--active" : ""}`}
+            onClick={() => setDeviceMode(key)}
+            title={key.charAt(0).toUpperCase() + key.slice(1)}
+          >
+            <Icon size={18} strokeWidth={deviceMode === key ? 2.2 : 1.6} />
+          </button>
+        ))}
+      </div>
+
+      <span className="bp-dimensions">{preset.label}</span>
+
+      <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
+        <RotateCcw size={15} strokeWidth={2} />
+        <span>Refresh</span>
+      </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Dashboard Header — sticky top bar inside device frame
+   ══════════════════════════════════════════════════════════ */
+function DashboardHeader({ compact }: { compact: boolean }) {
+  return (
+    <header className="bp-header">
+      <div className="bp-header-brand">
+        <div className="bp-logo-mark">
+          <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
+        </div>
+        {!compact && <span className="bp-logo-text">AI Agent</span>}
+      </div>
+      <div className="bp-status-pill">
+        <span className="bp-status-dot" />
+        <span className="bp-status-label">Active</span>
+      </div>
+    </header>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Dashboard Sidebar — collapsible nav
+   ══════════════════════════════════════════════════════════ */
+function DashboardSidebar({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <motion.aside
+      className="bp-sidebar"
+      animate={{ width: collapsed ? 48 : 180 }}
+      transition={{ type: "spring", stiffness: 340, damping: 32 }}
+    >
+      <nav className="bp-sidebar-nav">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.label}
+            className={`bp-nav-item${item.active ? " bp-nav-item--active" : ""}`}
+            title={item.label}
+          >
+            <item.icon size={18} strokeWidth={item.active ? 2.2 : 1.5} />
+            <AnimatePresence>
+              {!collapsed && (
+                <motion.span
+                  className="bp-nav-label"
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {item.label}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+        ))}
+      </nav>
+
+      <button className="bp-sidebar-toggle" onClick={onToggle} title="Toggle sidebar">
+        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+    </motion.aside>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Default Chat — shown when canvas has no blocks
+   ══════════════════════════════════════════════════════════ */
+function DefaultChatArea({ messageKey }: { messageKey: number }) {
+  return (
+    <div className="bp-chat-area">
+      <div className="bp-messages" key={messageKey}>
+        {SAMPLE_MESSAGES.map((msg, i) => (
+          <motion.div
+            key={`${messageKey}-${i}`}
+            className={`bp-msg bp-msg--${msg.role}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1, duration: 0.25 }}
+          >
+            {msg.role === "ai" && (
+              <div className="bp-msg-avatar">
+                <Bot size={14} strokeWidth={2.4} />
+              </div>
+            )}
+            <div className="bp-msg-bubble">{msg.text}</div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="bp-chat-input">
+        <input type="text" placeholder="Ask the AI agent…" readOnly className="bp-chat-field" />
+        <button className="bp-chat-send">
+          <Send size={14} strokeWidth={2.4} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Dashboard Footer
+   ══════════════════════════════════════════════════════════ */
+function DashboardFooter() {
+  return (
+    <footer className="bp-footer">
+      <span>Powered by Design Hub</span>
+      <span className="bp-footer-sep">·</span>
+      <span>v1.0</span>
+    </footer>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Preview Toolbar — DS switcher + density + canvas actions
+   ══════════════════════════════════════════════════════════ */
+function PreviewToolbar() {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const setDesignSystem = useBuilder((s) => s.setDesignSystem);
+  const density = useBuilder((s) => s.density);
+  const setDensity = useBuilder((s) => s.setDensity);
+  const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
+  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
+  const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
+
+  const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
+    { key: "salt", label: "Salt DS" },
+    { key: "m3", label: "Material 3" },
+    { key: "fluent", label: "Fluent 2" },
+  ];
+
+  return (
+    <div className="preview-toolbar">
       {/* UI Kit Switcher */}
       <div className="preview-toolbar-group">
         {systems.map((s) => (
@@ -392,25 +243,13 @@ function PreviewToolbar() {
         ))}
       </div>
 
-      {/* Density — system-specific labels */}
+      {/* Density */}
       <div className="preview-toolbar-group">
         {(designSystem === "salt"
-          ? [
-              { key: "high", label: "High" },
-              { key: "medium", label: "Medium" },
-              { key: "low", label: "Low" },
-            ]
+          ? [{ key: "high", label: "High" }, { key: "medium", label: "Medium" }, { key: "low", label: "Low" }]
           : designSystem === "m3"
-          ? [
-              { key: "high", label: "HD" },
-              { key: "medium", label: "MD" },
-              { key: "low", label: "LD" },
-            ]
-          : [
-              { key: "high", label: "Small" },
-              { key: "medium", label: "Medium" },
-              { key: "low", label: "Large" },
-            ]
+          ? [{ key: "high", label: "HD" }, { key: "medium", label: "MD" }, { key: "low", label: "LD" }]
+          : [{ key: "high", label: "Small" }, { key: "medium", label: "Medium" }, { key: "low", label: "Large" }]
         ).map((d) => (
           <button
             key={d.key}
@@ -431,11 +270,7 @@ function PreviewToolbar() {
         >
           <span className="material-symbols-outlined preview-toolbar-icon">category</span>
         </button>
-        <button
-          className="preview-toolbar-btn"
-          onClick={toggleAddMenu}
-          title="Add Component"
-        >
+        <button className="preview-toolbar-btn" onClick={toggleAddMenu} title="Add Component">
           <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
         </button>
       </div>
@@ -443,30 +278,78 @@ function PreviewToolbar() {
   );
 }
 
-/* ── Side panel with toolbar ── */
+/* ══════════════════════════════════════════════════════════
+   PreviewSidePanel — the main exported panel for BuilderApp
+   Wraps everything in a device frame with header/sidebar/footer
+   ══════════════════════════════════════════════════════════ */
 export function PreviewSidePanel() {
-  const { previewOpen, previewKey, messages } = useBuilder();
+  const previewOpen = useBuilder((s) => s.previewOpen);
+  const previewKey = useBuilder((s) => s.previewKey);
+  const deviceMode = useBuilder((s) => s.deviceMode);
+  const messages = useBuilder((s) => s.messages);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
+  const isMobile = deviceMode === "mobile";
+  const preset = PRESETS[deviceMode];
+  const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
+
+  const handleSidebarToggle = useCallback(() => {
+    setSidebarCollapsed((v) => !v);
+  }, []);
 
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+      {/* Device controls — always visible */}
+      <DeviceControls />
+
+      {/* DS toolbar — visible when there are AI-generated blocks */}
       {hasContent && <PreviewToolbar />}
-      <div className="preview-side-body">
-        {hasContent ? (
-          <div className="preview-frame" key={previewKey}>
-            <PreviewCanvas />
+
+      {/* Viewport wrapper — the "stage" */}
+      <div className="bp-viewport-wrapper">
+        {/* Device Frame — animated width */}
+        <motion.div
+          className="bp-device-frame"
+          animate={{ width: frameWidth, maxHeight: preset.height }}
+          transition={{ type: "spring", stiffness: 260, damping: 28 }}
+        >
+          {/* SaaS Dashboard layout */}
+          <div className="bp-dashboard" key={previewKey}>
+            <DashboardHeader compact={isMobile} />
+
+            <div className="bp-body">
+              {!isMobile && (
+                <DashboardSidebar
+                  collapsed={sidebarCollapsed}
+                  onToggle={handleSidebarToggle}
+                />
+              )}
+
+              <main className="bp-main">
+                {hasContent ? (
+                  <PreviewCanvas />
+                ) : (
+                  <DefaultChatArea messageKey={previewKey} />
+                )}
+              </main>
+            </div>
+
+            <DashboardFooter />
           </div>
-        ) : (
-          <DefaultPreview />
-        )}
+        </motion.div>
       </div>
     </div>
   );
 }
 
-/* ── Standalone Preview (for pop-out window) ── */
+/* ══════════════════════════════════════════════════════════
+   Standalone Preview — for pop-out window
+   ══════════════════════════════════════════════════════════ */
 export function StandalonePreview() {
-  const { designSystem, mode } = useBuilder();
+  const designSystem = useBuilder((s) => s.designSystem);
+  const mode = useBuilder((s) => s.mode);
+
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
       <div className="standalone-preview-header">
@@ -485,7 +368,6 @@ export function StandalonePreview() {
         </span>
       </div>
       <PreviewToolbar />
-      <PreviewContent />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export function BuilderApp() {
     mode, previewOpen, togglePreview, setMode, clearChat,
     designSystem, interfaceType, selectedComponents, colorOverrides, density,
     setDesignSystem, setInterfaceType, setSelectedComponents,
-    chatOpen: isChatOpen, toggleChat,
+    chatOpen: isChatOpen,
   } = useBuilder();
 
   const [isStandalone, setIsStandalone] = useState(false);

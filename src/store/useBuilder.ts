@@ -4,6 +4,7 @@ export type DesignSystem = 'salt' | 'm3' | 'fluent';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
+export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 export interface ChatMessage {
   id: string;
@@ -54,6 +55,7 @@ interface BuilderState {
   sidebarCollapsed: boolean;
   mobilePreviewOpen: boolean;
   previewKey: number;
+  deviceMode: DeviceMode;
 
   // Actions — Chat
   setInputText: (t: string) => void;
@@ -95,6 +97,7 @@ interface BuilderState {
   setPreviewOpen: (v: boolean) => void;
   toggleChat: () => void;
   setChatOpen: (v: boolean) => void;
+  setDeviceMode: (d: DeviceMode) => void;
   toggleSidebar: () => void;
   toggleMobilePreview: () => void;
   bumpPreview: () => void;
@@ -141,6 +144,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   sidebarCollapsed: false,
   mobilePreviewOpen: false,
   previewKey: 0,
+  deviceMode: 'desktop',
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
@@ -211,6 +215,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setPreviewOpen: (v) => set({ previewOpen: v }),
   toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
   setChatOpen: (v) => set({ chatOpen: v }),
+  setDeviceMode: (d) => set({ deviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleMobilePreview: () => set((s) => ({ mobilePreviewOpen: !s.mobilePreviewOpen })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
