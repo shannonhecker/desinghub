@@ -19,7 +19,7 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, type Block } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
@@ -44,6 +44,9 @@ const ID_TO_BLOCK: Record<string, string> = {
   tooltips: "Tooltips",
   progress: "StatsCards",
   typography: "Typography",
+  "sim-button": "SimulatedButton",
+  "sim-title": "SimulatedTitle",
+  "sim-text-input": "SimulatedTextInput",
 };
 
 /* Reverse: block type -> a canonical store ID */
@@ -69,12 +72,6 @@ const BLOCK_TO_ID: Record<string, string> = {
   SimulatedTextInput: "sim-text-input",
 };
 
-interface Block {
-  id: string;
-  type: string;
-  props: Record<string, unknown>;
-}
-
 let blockCounter = 0;
 function makeBlockId() {
   return `block-${++blockCounter}-${Date.now()}`;
@@ -96,19 +93,20 @@ function CanvasDropZone({ children }: { children: React.ReactNode }) {
 export function PreviewCanvas() {
   const {
     designSystem, selectedComponents, setSelectedComponents,
+    blocks, setBlocks,
     selectedBlockId, setSelectedBlockId,
     addMenuOpen, setAddMenuOpen,
+    density,
   } = useBuilder();
 
-  /* ── State ── */
-  const [blocks, setBlocks] = useState<Block[]>([]);
+  /* ── Local UI state ── */
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   /* Track whether we initialized from store already */
   const initializedRef = useRef(false);
 
-  /* ── Initialize blocks from store on mount / when selectedComponents changes externally ── */
+  /* ── Initialize blocks from selectedComponents on first mount ── */
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -123,17 +121,18 @@ export function PreviewCanvas() {
       }
     }
     setBlocks(initial);
-  }, [selectedComponents]);
+  }, [selectedComponents, setBlocks]);
 
-  /* ── Sync blocks back to store when they change ── */
+  /* ── Sync blocks back to selectedComponents when blocks change ── */
   const syncToStore = useCallback(
     (updated: Block[]) => {
+      setBlocks(updated);
       const ids = updated
         .map((b) => BLOCK_TO_ID[b.type])
         .filter(Boolean) as string[];
       setSelectedComponents(ids);
     },
-    [setSelectedComponents]
+    [setSelectedComponents, setBlocks]
   );
 
   /* ── DnD sensors ── */
@@ -159,67 +158,52 @@ export function PreviewCanvas() {
           defaults: Record<string, unknown>;
         };
         const newId = makeBlockId();
-        setBlocks((prev) => {
-          const next = [...prev, { id: newId, type, props: { ...defaults } }];
-          syncToStore(next);
-          return next;
-        });
+        const next = [...blocks, { id: newId, type, props: { ...defaults } }];
+        syncToStore(next);
         setSelectedBlockId(newId);
         return;
       }
 
       // Case 2: Reorder existing blocks
       if (over && active.id !== over.id) {
-        setBlocks((prev) => {
-          const oldIndex = prev.findIndex((b) => b.id === active.id);
-          const newIndex = prev.findIndex((b) => b.id === over.id);
-          const next = arrayMove(prev, oldIndex, newIndex);
-          syncToStore(next);
-          return next;
-        });
+        const oldIndex = blocks.findIndex((b) => b.id === active.id);
+        const newIndex = blocks.findIndex((b) => b.id === over.id);
+        const next = arrayMove(blocks, oldIndex, newIndex);
+        syncToStore(next);
       }
     },
-    [syncToStore, setSelectedBlockId]
+    [blocks, syncToStore, setSelectedBlockId]
   );
 
   const handleSwap = useCallback(
     (blockId: string, newType: string) => {
-      setBlocks((prev) => {
-        const next = prev.map((b) =>
-          b.id === blockId ? { ...b, type: newType, props: {} } : b
-        );
-        syncToStore(next);
-        return next;
-      });
+      const next = blocks.map((b) =>
+        b.id === blockId ? { ...b, type: newType, props: {} } : b
+      );
+      syncToStore(next);
       setSwapTarget(null);
     },
-    [syncToStore]
+    [blocks, syncToStore]
   );
 
   const handleAddBlock = useCallback(
     (type: string) => {
       const newId = makeBlockId();
-      setBlocks((prev) => {
-        const next = [...prev, { id: newId, type, props: {} }];
-        syncToStore(next);
-        return next;
-      });
+      const next = [...blocks, { id: newId, type, props: {} }];
+      syncToStore(next);
       setAddMenuOpen(false);
       setSelectedBlockId(newId);
     },
-    [syncToStore, setSelectedBlockId, setAddMenuOpen]
+    [blocks, syncToStore, setSelectedBlockId, setAddMenuOpen]
   );
 
   const handleRemoveBlock = useCallback(
     (id: string) => {
-      setBlocks((prev) => {
-        const next = prev.filter((b) => b.id !== id);
-        syncToStore(next);
-        return next;
-      });
+      const next = blocks.filter((b) => b.id !== id);
+      syncToStore(next);
       if (selectedBlockId === id) setSelectedBlockId(null);
     },
-    [syncToStore, selectedBlockId, setSelectedBlockId]
+    [blocks, syncToStore, selectedBlockId, setSelectedBlockId]
   );
 
   /* ── Resolve drag overlay content ── */
@@ -234,11 +218,9 @@ export function PreviewCanvas() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Component Library panel — inside DndContext so useDraggable works */}
-      <ComponentLibrary />
-
+      <div className="preview-canvas-layout">
       <div
-        className={`preview-${designSystem} preview-canvas-root`}
+        className={`preview-${designSystem} preview-canvas-root density-${density}`}
         onClick={() => setSelectedBlockId(null)}
       >
         {/* Add component menu — triggered from toolbar */}
@@ -276,6 +258,7 @@ export function PreviewCanvas() {
                   <ComponentRenderer
                     type={block.type}
                     system={designSystem}
+                    blockId={block.id}
                     {...block.props}
                   />
                 </SortableBlock>
@@ -291,6 +274,10 @@ export function PreviewCanvas() {
             ))}
           </SortableContext>
         </CanvasDropZone>
+      </div>
+
+      {/* Component Library panel — right side layout */}
+      <ComponentLibrary />
       </div>
 
       {/* Drag overlay — ghost preview while dragging from library */}

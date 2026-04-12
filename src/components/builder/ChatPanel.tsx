@@ -36,12 +36,12 @@ const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
   { label: "Alerts", ids: ["alerts"] },
   { label: "Progress", ids: ["progress-bar"] },
   { label: "Tooltips", ids: ["tooltips"] },
-  { label: "Typography", ids: ["typography"] },
+  { label: "Heading", ids: ["sim-title"] },
 ];
 
 const REFINE_CHIPS = [
   "Dark Mode", "Light Mode",
-  "Add Buttons", "Add Cards", "Add Typography",
+  "Add Buttons", "Add Cards", "Add Heading",
   "Build Dashboard", "Build Form",
   "Show All", "Clear All",
 ];
@@ -67,7 +67,7 @@ const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[]
   { keywords: ["dialog", "modal", "popup", "overlay"],                             ids: ["buttons"],                               label: "Dialog" },
   { keywords: ["typography", "text", "body text", "title", "heading", "label",
                "caption", "font", "type scale", "type", "headline", "subtitle",
-               "paragraph", "overline", "display text"],                           ids: ["typography"],                            label: "Typography" },
+               "paragraph", "overline", "display text"],                           ids: ["sim-title"],                             label: "Heading" },
 ];
 
 /* ═══════════════════════════════════════════
@@ -99,7 +99,7 @@ const BLOCK_TO_IDS: Record<string, string[]> = {
   Dropdown:   ["inputs", "form-field"],
   DatePicker: ["inputs", "form-field"],
   Dialog:     ["buttons"],
-  Typography: ["typography"],
+  SimulatedTitle: ["sim-title"],
 };
 
 /** Detect layout-generation intent and return the resolved component IDs + metadata. */

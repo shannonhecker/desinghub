@@ -352,7 +352,8 @@ function PreviewContent() {
 /* ── Preview toolbar — DS switcher + theme toggle + canvas actions ── */
 function PreviewToolbar() {
   const {
-    designSystem, setDesignSystem, mode, setMode,
+    designSystem, setDesignSystem,
+    density, setDensity,
     toggleComponentLibrary, componentLibraryOpen,
     toggleAddMenu,
   } = useBuilder();
@@ -361,11 +362,6 @@ function PreviewToolbar() {
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
     { key: "fluent", label: "Fluent 2" },
-  ];
-
-  const themes: { key: "light" | "dark"; icon: string; label: string }[] = [
-    { key: "light", icon: "light_mode", label: "Light" },
-    { key: "dark", icon: "dark_mode", label: "Dark" },
   ];
 
   return (
@@ -383,16 +379,32 @@ function PreviewToolbar() {
         ))}
       </div>
 
-      {/* Theme Toggle */}
+      {/* Density — system-specific labels */}
       <div className="preview-toolbar-group">
-        {themes.map((t) => (
+        {(designSystem === "salt"
+          ? [
+              { key: "high", label: "High" },
+              { key: "medium", label: "Medium" },
+              { key: "low", label: "Low" },
+            ]
+          : designSystem === "m3"
+          ? [
+              { key: "high", label: "HD" },
+              { key: "medium", label: "MD" },
+              { key: "low", label: "LD" },
+            ]
+          : [
+              { key: "high", label: "Small" },
+              { key: "medium", label: "Medium" },
+              { key: "low", label: "Large" },
+            ]
+        ).map((d) => (
           <button
-            key={t.key}
-            className={`preview-toolbar-btn${mode === t.key ? " preview-toolbar-btn-active" : ""}`}
-            onClick={() => setMode(t.key)}
+            key={d.key}
+            className={`preview-toolbar-btn${density === d.key ? " preview-toolbar-btn-active" : ""}`}
+            onClick={() => setDensity(d.key)}
           >
-            <span className="material-symbols-outlined preview-toolbar-icon">{t.icon}</span>
-            {t.label}
+            {d.label}
           </button>
         ))}
       </div>

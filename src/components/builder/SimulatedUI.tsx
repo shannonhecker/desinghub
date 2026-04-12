@@ -627,3 +627,28 @@ export function SimulatedTooltip({
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedTitle
+   ═══════════════════════════════════════════ */
+
+interface TitleProps extends SimProps {
+  level?: "h1" | "h2" | "h3" | "h4";
+  text?: string;
+}
+
+export function SimulatedTitle({
+  system,
+  level = "h2",
+  text = "New Heading",
+}: TitleProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const cls = `${prefix}-title ${prefix}-title-${level}`;
+
+  switch (level) {
+    case "h1": return <h1 className={cls}>{text}</h1>;
+    case "h3": return <h3 className={cls}>{text}</h3>;
+    case "h4": return <h4 className={cls}>{text}</h4>;
+    default:   return <h2 className={cls}>{text}</h2>;
+  }
+}

@@ -12,6 +12,12 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface Block {
+  id: string;
+  type: string;
+  props: Record<string, unknown>;
+}
+
 interface BuilderState {
   // Chat
   messages: ChatMessage[];
@@ -35,7 +41,8 @@ interface BuilderState {
   onboardingStep: OnboardingStep;
   pendingComponents: string[];
 
-  // Canvas selection
+  // Canvas blocks & selection
+  blocks: Block[];
   selectedBlockId: string | null;
   componentLibraryOpen: boolean;
   addMenuOpen: boolean;
@@ -72,7 +79,9 @@ interface BuilderState {
   setPendingComponents: (c: string[]) => void;
   togglePendingComponent: (label: string) => void;
 
-  // Actions — Canvas selection
+  // Actions — Canvas blocks & selection
+  setBlocks: (blocks: Block[]) => void;
+  updateBlockProps: (id: string, props: Record<string, unknown>) => void;
   setSelectedBlockId: (id: string | null) => void;
   toggleComponentLibrary: () => void;
   toggleAddMenu: () => void;
@@ -113,7 +122,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   onboardingStep: 'type',
   pendingComponents: [],
 
-  // Canvas selection
+  // Canvas blocks & selection
+  blocks: [],
   selectedBlockId: null,
   componentLibraryOpen: false,
   addMenuOpen: false,
@@ -176,6 +186,13 @@ export const useBuilder = create<BuilderState>((set) => ({
         : [...s.pendingComponents, label],
     })),
 
+  setBlocks: (blocks) => set({ blocks }),
+  updateBlockProps: (id, props) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) =>
+        b.id === id ? { ...b, props: { ...b.props, ...props } } : b
+      ),
+    })),
   setSelectedBlockId: (id) => set({ selectedBlockId: id }),
   toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
   toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),

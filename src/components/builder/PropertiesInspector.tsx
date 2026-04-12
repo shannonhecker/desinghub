@@ -1,75 +1,9 @@
 "use client";
 
 import React from "react";
-import { useDraggable } from "@dnd-kit/core";
 import { useBuilder } from "@/store/useBuilder";
 
-export interface LibraryBlueprint {
-  id: string;
-  type: string;
-  label: string;
-  icon: string;
-  defaults: Record<string, unknown>;
-}
-
-export const LIBRARY_BLUEPRINTS: LibraryBlueprint[] = [
-  {
-    id: "lib-button",
-    type: "SimulatedButton",
-    label: "Button",
-    icon: "smart_button",
-    defaults: { variant: "primary", label: "New Button" },
-  },
-  {
-    id: "lib-title",
-    type: "SimulatedTitle",
-    label: "Title / Heading",
-    icon: "title",
-    defaults: { level: "h2", text: "New Heading" },
-  },
-  {
-    id: "lib-text-input",
-    type: "SimulatedTextInput",
-    label: "Text Input",
-    icon: "text_fields",
-    defaults: { placeholder: "Enter text...", label: "Label" },
-  },
-  {
-    id: "lib-alert",
-    type: "Alert",
-    label: "Alert",
-    icon: "warning",
-    defaults: {},
-  },
-];
-
-/* ── Single draggable blueprint card ── */
-function BlueprintItem({ blueprint }: { blueprint: LibraryBlueprint }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: blueprint.id,
-    data: {
-      fromLibrary: true,
-      type: blueprint.type,
-      defaults: blueprint.defaults,
-    },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`lib-blueprint${isDragging ? " is-dragging" : ""}`}
-      {...listeners}
-      {...attributes}
-    >
-      <span className="material-symbols-outlined lib-blueprint-icon">
-        {blueprint.icon}
-      </span>
-      <span className="lib-blueprint-label">{blueprint.label}</span>
-    </div>
-  );
-}
-
-/* ── Inspector field ── */
+/* ── Field component ── */
 function InspectorField({
   label,
   children,
@@ -85,17 +19,18 @@ function InspectorField({
   );
 }
 
-/* ── Block-specific property editors ── */
+/* ── Type-specific form renderers ── */
 
 function ButtonFields({ blockId }: { blockId: string }) {
   const { blocks, updateBlockProps } = useBuilder();
   const block = blocks.find((b) => b.id === blockId);
   if (!block) return null;
+
   const label = (block.props.label as string) ?? "New Button";
   const variant = (block.props.variant as string) ?? "primary";
 
   return (
-    <div>
+    <>
       <InspectorField label="Label">
         <input
           className="inspector-input"
@@ -116,7 +51,7 @@ function ButtonFields({ blockId }: { blockId: string }) {
           <option value="ghost">Text / Ghost</option>
         </select>
       </InspectorField>
-    </div>
+    </>
   );
 }
 
@@ -124,11 +59,12 @@ function TitleFields({ blockId }: { blockId: string }) {
   const { blocks, updateBlockProps } = useBuilder();
   const block = blocks.find((b) => b.id === blockId);
   if (!block) return null;
+
   const text = (block.props.text as string) ?? "New Heading";
   const level = (block.props.level as string) ?? "h2";
 
   return (
-    <div>
+    <>
       <InspectorField label="Text">
         <input
           className="inspector-input"
@@ -149,7 +85,7 @@ function TitleFields({ blockId }: { blockId: string }) {
           <option value="h4">H4</option>
         </select>
       </InspectorField>
-    </div>
+    </>
   );
 }
 
@@ -157,11 +93,12 @@ function TextInputFields({ blockId }: { blockId: string }) {
   const { blocks, updateBlockProps } = useBuilder();
   const block = blocks.find((b) => b.id === blockId);
   if (!block) return null;
+
   const label = (block.props.label as string) ?? "Label";
   const placeholder = (block.props.placeholder as string) ?? "Enter text...";
 
   return (
-    <div>
+    <>
       <InspectorField label="Label">
         <input
           className="inspector-input"
@@ -180,66 +117,96 @@ function TextInputFields({ blockId }: { blockId: string }) {
           }
         />
       </InspectorField>
-    </div>
+    </>
   );
 }
 
+/* ── Type → fields map ── */
 const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedButton: ButtonFields,
   SimulatedTitle: TitleFields,
   SimulatedTextInput: TextInputFields,
 };
 
-/* ── Combined component panel: library + properties ── */
-export function ComponentLibrary() {
+/* ── Main inspector ── */
+export function PropertiesInspector() {
   const {
-    componentLibraryOpen,
-    toggleComponentLibrary,
     selectedBlockId,
     blocks,
+    mode,
+    setMode,
+    density,
+    setDensity,
   } = useBuilder();
-
-  if (!componentLibraryOpen) return null;
 
   const selectedBlock = selectedBlockId
     ? blocks.find((b) => b.id === selectedBlockId)
     : null;
+
   const FieldsComponent = selectedBlock
     ? TYPE_FIELDS[selectedBlock.type]
     : null;
 
   return (
-    <div className="component-library open">
-      <div className="lib-header">
-        <span className="lib-header-title">Components</span>
-        <button
-          className="lib-close-btn"
-          onClick={toggleComponentLibrary}
-          type="button"
-          title="Close panel"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            close
-          </span>
-        </button>
+    <div className="properties-inspector">
+      {/* ── Global controls ── */}
+      <div className="inspector-section">
+        <div className="inspector-section-title">Theme</div>
+        <div className="inspector-toggle-group">
+          <button
+            className={`inspector-toggle-btn${mode === "light" ? " active" : ""}`}
+            onClick={() => setMode("light")}
+          >
+            Light
+          </button>
+          <button
+            className={`inspector-toggle-btn${mode === "dark" ? " active" : ""}`}
+            onClick={() => setMode("dark")}
+          >
+            Dark
+          </button>
+        </div>
       </div>
 
-      <div className="lib-body">
-        <p className="lib-hint">Drag onto the canvas</p>
-        {LIBRARY_BLUEPRINTS.map((bp) => (
-          <BlueprintItem key={bp.id} blueprint={bp} />
-        ))}
+      <div className="inspector-section">
+        <div className="inspector-section-title">Density</div>
+        <div className="inspector-toggle-group">
+          <button
+            className={`inspector-toggle-btn${density === "medium" || density === "comfortable" ? " active" : ""}`}
+            onClick={() => setDensity("medium")}
+          >
+            Comfortable
+          </button>
+          <button
+            className={`inspector-toggle-btn${density === "high" || density === "compact" ? " active" : ""}`}
+            onClick={() => setDensity("high")}
+          >
+            Compact
+          </button>
+        </div>
+      </div>
 
-        {selectedBlock && FieldsComponent && (
-          <div>
-            <div className="lib-section-divider" />
-            <div className="inspector-section-title">
-              {selectedBlock.type.replace("Simulated", "")} Properties
-            </div>
-            <FieldsComponent blockId={selectedBlock.id} />
+      <div className="inspector-divider" />
+
+      {/* ── Block-specific controls ── */}
+      {selectedBlock && FieldsComponent ? (
+        <div className="inspector-section">
+          <div className="inspector-section-title">
+            {selectedBlock.type.replace("Simulated", "")} Properties
           </div>
-        )}
-      </div>
+          <FieldsComponent blockId={selectedBlock.id} />
+        </div>
+      ) : (
+        <div className="inspector-hint">
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 16, opacity: 0.5 }}
+          >
+            touch_app
+          </span>
+          Select a component to edit its properties
+        </div>
+      )}
     </div>
   );
 }

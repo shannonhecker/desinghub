@@ -24,7 +24,9 @@ export const BLOCK_TYPES: BlockTypeOption[] = [
   { type: "Dropdown", icon: "arrow_drop_down_circle", label: "Dropdown" },
   { type: "DatePicker", icon: "calendar_today", label: "Date Picker" },
   { type: "Dialog", icon: "open_in_new", label: "Dialog" },
-  { type: "Typography", icon: "format_size", label: "Typography" },
+  { type: "SimulatedButton", icon: "ads_click", label: "Button" },
+  { type: "SimulatedTitle", icon: "title", label: "Heading" },
+  { type: "SimulatedTextInput", icon: "edit_note", label: "Text Input" },
 ];
 
 interface SwapMenuProps {

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
+import { useBuilder } from "@/store/useBuilder";
 import {
   SimulatedAlert,
   SimulatedDataTable,
@@ -14,6 +15,7 @@ import {
   SimulatedDialog,
   SimulatedDropdown,
   SimulatedDatePicker,
+  SimulatedTitle as SimulatedTitleUI,
 } from "./SimulatedUI";
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -39,6 +41,7 @@ const t = {
   primaryHover: "var(--ds-primary-hover)",
   primaryGlow: "var(--ds-primary-glow)",
   primaryShadow: "var(--ds-primary-shadow)",
+  surfaceHover: "var(--ds-surface-hover)",
   statusPositive: "var(--ds-status-positive)",
   statusWarning: "var(--ds-status-warning)",
   statusNegative: "var(--ds-status-negative)",
@@ -52,98 +55,179 @@ function AlertBlock({ system }: { system: DesignSystem }) {
   return <SimulatedAlert system={system} />;
 }
 
-function DataTableBlock({ system }: { system: DesignSystem }) {
+function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultRows = [
+    { name: "Jane Doe", status: "Active", role: "Admin", lastActive: "2 hrs ago" },
+    { name: "John Smith", status: "Pending", role: "Editor", lastActive: "Yesterday" },
+    { name: "Alice Jones", status: "Active", role: "Viewer", lastActive: "5 mins ago" },
+  ];
+  const rows = (block?.props.rows as typeof defaultRows) ?? defaultRows;
+
+  const updateCell = (rowIdx: number, key: string, value: string) => {
+    if (!blockId) return;
+    const next = rows.map((r, i) => (i === rowIdx ? { ...r, [key]: value } : r));
+    updateBlockProps(blockId, { rows: next });
+  };
+
+  if (isSelected && blockId) {
+    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+    return (
+      <table className={`${prefix}-table`} style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${t.border}`, textAlign: "left" }}>
+            {["Name", "Status", "Role", "Last Active"].map((h) => (
+              <th key={h} style={{ padding: "8px 10px", fontWeight: 600, color: t.fgSecondary, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} style={{ borderBottom: `1px solid ${t.border}` }}>
+              <td style={{ padding: "8px 10px" }}>
+                <InlineEditable value={row.name} onChange={(v) => updateCell(i, "name", v)} style={{ outline: "none" }} />
+              </td>
+              <td style={{ padding: "8px 10px" }}>
+                <InlineEditable value={row.status} onChange={(v) => updateCell(i, "status", v)} style={{ outline: "none", color: row.status === "Active" ? t.statusPositive : t.statusWarning }} />
+              </td>
+              <td style={{ padding: "8px 10px" }}>
+                <InlineEditable value={row.role} onChange={(v) => updateCell(i, "role", v)} style={{ outline: "none" }} />
+              </td>
+              <td style={{ padding: "8px 10px", color: t.fgTertiary }}>
+                <InlineEditable value={row.lastActive} onChange={(v) => updateCell(i, "lastActive", v)} style={{ outline: "none" }} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
   return <SimulatedDataTable system={system} />;
 }
 
-function FormFieldsBlock({ system }: { system: DesignSystem }) {
+function FormFieldsBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const label1 = (block?.props.label1 as string) ?? "Email Address";
+  const placeholder1 = (block?.props.placeholder1 as string) ?? "name@company.com";
+  const helper1 = (block?.props.helper1 as string) ?? "We'll never share your email.";
+  const label2 = (block?.props.label2 as string) ?? "Password";
+  const placeholder2 = (block?.props.placeholder2 as string) ?? "Enter password";
+
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  if (isSelected && blockId) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div className={`${prefix}-input-container`}>
+          <InlineEditable value={label1} onChange={(v) => updateBlockProps(blockId, { label1: v })} className={`${prefix}-label`} style={{ outline: "none", display: "block" }} />
+          <div className={`${prefix}-input-wrapper`}>
+            <input className={`${prefix}-input`} value={placeholder1} onChange={(e) => updateBlockProps(blockId, { placeholder1: e.target.value })} onClick={(e) => e.stopPropagation()} />
+          </div>
+          <InlineEditable value={helper1} onChange={(v) => updateBlockProps(blockId, { helper1: v })} className={`${prefix}-helper-text`} style={{ outline: "none", display: "block" }} />
+        </div>
+        <div className={`${prefix}-input-container`}>
+          <InlineEditable value={label2} onChange={(v) => updateBlockProps(blockId, { label2: v })} className={`${prefix}-label`} style={{ outline: "none", display: "block" }} />
+          <div className={`${prefix}-input-wrapper`}>
+            <input className={`${prefix}-input`} value={placeholder2} onChange={(e) => updateBlockProps(blockId, { placeholder2: e.target.value })} onClick={(e) => e.stopPropagation()} type="password" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <SimulatedInput
-        system={system}
-        label="Email Address"
-        placeholder="name@company.com"
-        helperText="We'll never share your email."
-      />
-      <SimulatedInput
-        system={system}
-        label="Password"
-        placeholder="Enter password"
-        type="password"
-        helperText=""
-      />
+      <SimulatedInput system={system} label={label1} placeholder={placeholder1} helperText={helper1} />
+      <SimulatedInput system={system} label={label2} placeholder={placeholder2} type="password" helperText="" />
     </div>
   );
 }
 
-function ButtonsBlock() {
-  const [activeBtn, setActiveBtn] = useState<string | null>(null);
-  const handleClick = (name: string) => {
-    setActiveBtn(name);
-    setTimeout(() => setActiveBtn(null), 300);
+function ButtonsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
+  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultBtns = [
+    { key: "primary", label: "Primary", bg: t.primary, fg: t.onPrimary, border: "none" },
+    { key: "secondary", label: "Secondary", bg: "transparent", fg: t.primary, border: `1px solid ${t.primary}` },
+    { key: "text", label: "Text", bg: "transparent", fg: t.fg, border: "none" },
+    { key: "disabled", label: "Disabled", bg: t.border, fg: t.fg, border: "none", disabled: true },
+  ];
+
+  const labels: Record<string, string> = (block?.props.btnLabels as Record<string, string>) ?? {};
+  const getLabel = (key: string, fallback: string) => labels[key] ?? fallback;
+
+  const updateLabel = (key: string, value: string) => {
+    if (!blockId) return;
+    updateBlockProps(blockId, { btnLabels: { ...labels, [key]: value } });
   };
+
+  const [activeBtn, setActiveBtn] = useState<string | null>(null);
 
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      {[
-        { label: "Primary", bg: t.primary, fg: t.onPrimary, border: "none" },
-        { label: "Secondary", bg: "transparent", fg: t.primary, border: `1px solid ${t.primary}` },
-        { label: "Text", bg: "transparent", fg: t.fg, border: "none" },
-      ].map((btn) => (
-        <button
-          key={btn.label}
-          onClick={() => handleClick(btn.label)}
+      {defaultBtns.map((btn) => (
+        <div
+          key={btn.key}
+          onClick={() => { if (!btn.disabled) { setActiveBtn(btn.key); setTimeout(() => setActiveBtn(null), 300); } }}
           style={{
+            display: "inline-flex",
             padding: "8px 16px",
             borderRadius: btnRadius,
             fontSize: 12,
             fontWeight: 600,
-            cursor: "pointer",
+            cursor: btn.disabled ? "not-allowed" : "pointer",
             background: btn.bg,
             color: btn.fg,
             border: btn.border,
-            transform: activeBtn === btn.label ? "scale(0.95)" : "scale(1)",
-            opacity: activeBtn === btn.label ? 0.8 : 1,
+            opacity: btn.disabled ? 0.5 : activeBtn === btn.key ? 0.8 : 1,
+            transform: activeBtn === btn.key ? "scale(0.95)" : "scale(1)",
             transition: "all 150ms ease",
-            boxShadow:
-              activeBtn === btn.label && btn.label === "Primary"
-                ? `0 0 16px ${t.primaryGlow}`
-                : "none",
             fontFamily: "inherit",
           }}
         >
-          {btn.label}
-        </button>
+          {isSelected && blockId && !btn.disabled ? (
+            <InlineEditable
+              value={getLabel(btn.key, btn.label)}
+              onChange={(v) => updateLabel(btn.key, v)}
+              style={{ outline: "none", minWidth: 20, color: "inherit" }}
+            />
+          ) : (
+            getLabel(btn.key, btn.label)
+          )}
+        </div>
       ))}
-      <button
-        disabled
-        style={{
-          padding: "8px 16px",
-          borderRadius: btnRadius,
-          fontSize: 12,
-          fontWeight: 600,
-          background: t.border,
-          color: t.fg,
-          border: "none",
-          cursor: "not-allowed",
-          opacity: 0.5,
-          fontFamily: "inherit",
-        }}
-      >
-        Disabled
-      </button>
     </div>
   );
 }
 
-function CardsBlock() {
+function CardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
-  const cards = [
+  const { selectedBlockId, blocks, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+
+  const defaultCards = [
     { title: "Analytics", icon: "bar_chart" },
     { title: "Reports", icon: "description" },
     { title: "Users", icon: "group" },
     { title: "Settings", icon: "settings" },
   ];
+  const cards = (block?.props.cards as typeof defaultCards) ?? defaultCards;
+
+  const updateCardTitle = (idx: number, title: string) => {
+    if (!blockId) return;
+    const next = cards.map((c, i) => (i === idx ? { ...c, title } : c));
+    updateBlockProps(blockId, { cards: next });
+  };
 
   return (
     <div
@@ -159,7 +243,7 @@ function CardsBlock() {
           onMouseEnter={() => setHoveredCard(card.title)}
           onMouseLeave={() => setHoveredCard(null)}
           style={{
-            background: hoveredCard === card.title ? t.hover : t.surface,
+            background: hoveredCard === card.title ? t.surfaceHover : t.surface,
             border: `1px solid ${hoveredCard === card.title ? t.primaryHover : t.border}`,
             borderRadius: radius,
             padding: 14,
@@ -176,7 +260,11 @@ function CardsBlock() {
           >
             {card.icon}
           </span>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{card.title}</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>
+            {isSelected && blockId ? (
+              <InlineEditable value={card.title} onChange={(v) => updateCardTitle(cards.indexOf(card), v)} style={{ outline: "none" }} />
+            ) : card.title}
+          </div>
           <div style={{ fontSize: 11, color: t.fgTertiary, marginTop: 4 }}>
             View details
           </div>
@@ -364,7 +452,7 @@ function StatsCardsBlock() {
           onMouseEnter={() => setHoveredCard("stat-" + i)}
           onMouseLeave={() => setHoveredCard(null)}
           style={{
-            background: hoveredCard === "stat-" + i ? t.hover : t.surface,
+            background: hoveredCard === "stat-" + i ? t.surfaceHover : t.surface,
             border: `1px solid ${hoveredCard === "stat-" + i ? t.primaryHover : t.border}`,
             borderRadius: radius,
             padding: 14,
@@ -403,61 +491,121 @@ function StatsCardsBlock() {
 
 /* ── Single-component library blocks ── */
 
+/* ── Inline-editable text helper ── */
+function InlineEditable({
+  value,
+  onChange,
+  style,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  style?: React.CSSProperties;
+  className?: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const handleBlur = useCallback(() => {
+    if (ref.current) onChange(ref.current.textContent || "");
+  }, [onChange]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        (e.target as HTMLElement).blur();
+      }
+    },
+    []
+  );
+
+  return (
+    <span
+      ref={ref}
+      contentEditable
+      suppressContentEditableWarning
+      className={`inline-editable ${className || ""}`}
+      style={style}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {value}
+    </span>
+  );
+}
+
 function SimulatedButtonBlock({
   system,
   variant = "primary",
   label = "New Button",
+  blockId,
 }: {
   system: DesignSystem;
   variant?: string;
   label?: string;
+  blockId?: string;
 }) {
-  const [pressed, setPressed] = useState(false);
+  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
   const isPrimary = variant === "primary";
+
   return (
-    <button
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      onMouseLeave={() => setPressed(false)}
+    <div
       style={{
+        display: "inline-flex",
         padding: "8px 20px",
         borderRadius: btnRadius,
         fontSize: 13,
         fontWeight: 600,
-        cursor: "pointer",
         background: isPrimary ? t.primary : "transparent",
         color: isPrimary ? t.onPrimary : t.fg,
         border: isPrimary ? "none" : `1px solid ${t.border}`,
-        transform: pressed ? "scale(0.96)" : "scale(1)",
-        transition: "all 150ms ease",
       }}
     >
-      {label}
-    </button>
+      {isSelected && blockId ? (
+        <InlineEditable
+          value={label}
+          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          style={{ outline: "none", minWidth: 20 }}
+        />
+      ) : (
+        label
+      )}
+    </div>
   );
 }
 
 function SimulatedTitleBlock({
+  system,
   level = "h2",
   text = "New Heading",
+  blockId,
 }: {
   system: DesignSystem;
   level?: string;
   text?: string;
+  blockId?: string;
 }) {
-  const sizes: Record<string, { fontSize: number; fontWeight: number }> = {
-    h1: { fontSize: 28, fontWeight: 700 },
-    h2: { fontSize: 22, fontWeight: 700 },
-    h3: { fontSize: 18, fontWeight: 600 },
-    h4: { fontSize: 16, fontWeight: 600 },
-    h5: { fontSize: 14, fontWeight: 600 },
-    h6: { fontSize: 12, fontWeight: 600 },
-  };
-  const s = sizes[level] || sizes.h2;
+  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  if (isSelected && blockId) {
+    return (
+      <InlineEditable
+        value={text}
+        onChange={(v) => updateBlockProps(blockId, { text: v })}
+        className={`${prefix}-title ${prefix}-title-${level}`}
+        style={{ display: "block", outline: "none" }}
+      />
+    );
+  }
+
   return (
-    <div style={{ ...s, color: t.fg, lineHeight: 1.3 }}>
-      {text}
-    </div>
+    <SimulatedTitleUI
+      system={system}
+      level={level as "h1" | "h2" | "h3" | "h4"}
+      text={text}
+    />
   );
 }
 
@@ -465,26 +613,54 @@ function SimulatedTextInputBlock({
   system,
   label = "Label",
   placeholder = "Enter text...",
+  blockId,
 }: {
   system: DesignSystem;
   label?: string;
   placeholder?: string;
+  blockId?: string;
 }) {
+  const { selectedBlockId, updateBlockProps } = useBuilder();
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
   return (
-    <SimulatedInput
-      system={system}
-      label={label}
-      placeholder={placeholder}
-      helperText=""
-    />
+    <div className={`${prefix}-input-container`}>
+      {isSelected && blockId ? (
+        <InlineEditable
+          value={label}
+          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          className={`${prefix}-label`}
+          style={{ outline: "none", display: "block" }}
+        />
+      ) : (
+        <label className={`${prefix}-label`}>{label}</label>
+      )}
+      <div className={`${prefix}-input-wrapper`}>
+        {isSelected && blockId ? (
+          <input
+            type="text"
+            className={`${prefix}-input`}
+            value={placeholder}
+            onChange={(e) => updateBlockProps(blockId, { placeholder: e.target.value })}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <input
+            type="text"
+            className={`${prefix}-input`}
+            placeholder={placeholder}
+            readOnly
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
 /* ── Renderer map ── */
-const RENDERERS: Record<
-  string,
-  React.FC<{ system: DesignSystem }>
-> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const RENDERERS: Record<string, React.FC<any>> = {
   Alert: AlertBlock,
   DataTable: DataTableBlock,
   FormFields: FormFieldsBlock,
@@ -507,7 +683,7 @@ const RENDERERS: Record<
 };
 
 /* ── Main export ── */
-export function ComponentRenderer({ type, system, ...props }: ComponentRendererProps) {
+export function ComponentRenderer({ type, system, blockId, ...props }: ComponentRendererProps & { blockId?: string }) {
   const Renderer = RENDERERS[type];
   if (!Renderer) {
     return (
@@ -520,7 +696,7 @@ export function ComponentRenderer({ type, system, ...props }: ComponentRendererP
   return (
     <div>
       <div className="canvas-block-label">{type}</div>
-      <Renderer system={system} {...(props as Record<string, unknown>)} />
+      <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
     </div>
   );
 }
