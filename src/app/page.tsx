@@ -1,7 +1,7 @@
 "use client";
 
-import { DesignHubApp } from "@/components/DesignHubApp";
+import { BuilderApp } from "@/components/builder/BuilderApp";
 
 export default function Home() {
-  return <DesignHubApp />;
+  return <BuilderApp />;
 }

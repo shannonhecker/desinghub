@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { InterfaceType, DesignSystem, OnboardingStep } from "@/store/useBuilder";
+import { useChatAPI } from "@/lib/useChatAPI";
 
 /* ═══════════════════════════════════════════
    Progressive Disclosure — Step Configuration
@@ -280,6 +281,7 @@ export function ChatPanel() {
     pendingComponents, setPendingComponents, togglePendingComponent,
   } = useBuilder();
 
+  const { sendMessage: sendToAPI } = useChatAPI();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
@@ -415,21 +417,26 @@ export function ChatPanel() {
       return;
     }
 
-    /* ── STEP_READY: free-form refinement (theme/DS already applied above) ── */
+    /* ── STEP_READY: free-form refinement via Claude API ── */
     if (step === "ready") {
       if (!previewOpen) setPreviewOpen(true);
 
-      const aiResponse = themeChanged
-        ? "Theme updated! The preview reflects the new mode."
-        : dsChanged
-          ? getFreeformResponse(msg)
+      // If only a theme/DS toggle, respond locally (fast path)
+      if (themeChanged || dsChanged) {
+        const aiResponse = themeChanged
+          ? "Theme updated! The preview reflects the new mode."
           : getFreeformResponse(msg);
+        setTimeout(() => {
+          addMessage("ai", aiResponse);
+          setGenerating(false);
+          bumpPreview();
+        }, 400);
+        return;
+      }
 
-      setTimeout(() => {
-        addMessage("ai", aiResponse);
-        setGenerating(false);
-        bumpPreview();
-      }, 600 + Math.random() * 800);
+      // Route to Claude API for intelligent responses
+      setGenerating(false); // sendToAPI manages its own generating state
+      sendToAPI(msg).then(() => bumpPreview());
       return;
     }
 

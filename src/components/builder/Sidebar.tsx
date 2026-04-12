@@ -79,7 +79,7 @@ export function Sidebar() {
         </div>
 
         {/* UI Kit link */}
-        <Link href="/" className="sidebar-uikit-link">
+        <Link href="/ui-kit" className="sidebar-uikit-link">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>view_quilt</span>
           UI Kit Overview
         </Link>

@@ -24,53 +24,7 @@ import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
 import { ComponentLibrary, LIBRARY_BLUEPRINTS } from "./ComponentLibrary";
-
-/* ── Map store component IDs to block type strings ── */
-const ID_TO_BLOCK: Record<string, string> = {
-  buttons: "Buttons",
-  cards: "Cards",
-  table: "DataTable",
-  inputs: "FormFields",
-  "text-fields": "FormFields",
-  "form-field": "FormFields",
-  tabs: "Tabs",
-  switches: "Toggles",
-  checkboxes: "Toggles",
-  radios: "Toggles",
-  badges: "Badges",
-  avatars: "Avatars",
-  alerts: "Alert",
-  "progress-bar": "Progress",
-  tooltips: "Tooltips",
-  progress: "StatsCards",
-  typography: "Typography",
-  "sim-button": "SimulatedButton",
-  "sim-title": "SimulatedTitle",
-  "sim-text-input": "SimulatedTextInput",
-};
-
-/* Reverse: block type -> a canonical store ID */
-const BLOCK_TO_ID: Record<string, string> = {
-  Buttons: "buttons",
-  Cards: "cards",
-  DataTable: "table",
-  FormFields: "inputs",
-  Tabs: "tabs",
-  Toggles: "switches",
-  Badges: "badges",
-  Avatars: "avatars",
-  Alert: "alerts",
-  Progress: "progress-bar",
-  Tooltips: "tooltips",
-  StatsCards: "progress",
-  Dialog: "dialog",
-  Dropdown: "dropdown",
-  DatePicker: "date-picker",
-  Typography: "typography",
-  SimulatedButton: "sim-button",
-  SimulatedTitle: "sim-title",
-  SimulatedTextInput: "sim-text-input",
-};
+import { ID_TO_BLOCK, BLOCK_TO_ID } from "@/lib/componentMaps";
 
 let blockCounter = 0;
 function makeBlockId() {

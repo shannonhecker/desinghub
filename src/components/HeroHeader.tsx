@@ -190,7 +190,7 @@ export function HeroHeader() {
             </p>
 
             <div className="hero-ctas hero-fade-up" style={{ animationDelay: "0.45s" }}>
-              <Link href="/builder">
+              <Link href="/">
                 <button className="hero-cta-primary">
                   Start Building Free
                   <ArrowRight size={16} />

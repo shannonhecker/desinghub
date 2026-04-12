@@ -355,7 +355,7 @@ export function DesignHubApp() {
           }}>
             {t.T.name || sysInfo.name}
           </span>
-          <Link href="/builder" target="_blank" rel="noopener noreferrer" style={{
+          <Link href="/" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             fontSize: 12, fontWeight: 600, color: "#fff",
             background: "linear-gradient(135deg, #7c3aed, #a855f7)",
