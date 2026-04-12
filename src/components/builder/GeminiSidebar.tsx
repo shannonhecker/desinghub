@@ -36,11 +36,21 @@ export function GeminiSidebar({
             title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
             aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <span
-              className={`material-symbols-outlined gsb-arrow-icon${isOpen ? "" : " gsb-arrow-flipped"}`}
-              style={{ fontSize: 22 }}
-            >
-              chevron_left
+            <span className="gsb-toggle-wrap">
+              {/* Hamburger — visible when closed */}
+              <span
+                className={`material-symbols-outlined gsb-toggle-icon ${isOpen ? "gsb-icon-out" : "gsb-icon-in"}`}
+                style={{ fontSize: 20 }}
+              >
+                menu
+              </span>
+              {/* Chevron — visible when open */}
+              <span
+                className={`material-symbols-outlined gsb-toggle-icon ${isOpen ? "gsb-icon-in" : "gsb-icon-out"}`}
+                style={{ fontSize: 22 }}
+              >
+                chevron_left
+              </span>
             </span>
           </button>
         </div>
