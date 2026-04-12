@@ -831,7 +831,11 @@
   width: auto;
   display: block;
   flex-shrink: 0;
-  /* no filter — dark mode uses white SVG, light mode uses coloured SVG */
+}
+
+/* Dark logo on light backgrounds */
+.builder-light .ausos-logo-img {
+  filter: brightness(0);
 }
 
 .top-bar-logo-text {
