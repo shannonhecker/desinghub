@@ -556,12 +556,12 @@ export function ChatPanel() {
 
   const placeholderText =
     step === "type"
-      ? "Or describe what you'd like to build..."
+      ? "Describe what you'd like to build..."
       : step === "style"
-        ? "Or type a design system name..."
+        ? "Type a design system name..."
         : step === "components"
-          ? "Select components above..."
-          : "Try 'add buttons', 'remove cards', 'dark mode', or 'switch to Fluent'...";
+          ? "Pick your components above..."
+          : "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'...";
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
