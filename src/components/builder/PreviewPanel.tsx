@@ -17,6 +17,7 @@ import {
   Send,
 } from "lucide-react";
 import { useBuilder, type DeviceMode } from "@/store/useBuilder";
+import { useCloudStorage } from "@/lib/firebase";
 import { PreviewCanvas } from "./PreviewCanvas";
 
 /* ── Viewport presets ── */
@@ -54,8 +55,6 @@ function DeviceControls() {
   const mode = useBuilder((s) => s.mode);
   const interfaceType = useBuilder((s) => s.interfaceType);
   const selectedComponents = useBuilder((s) => s.selectedComponents);
-  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
-  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
 
   const preset = PRESETS[deviceMode];
   const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
@@ -111,15 +110,6 @@ function DeviceControls() {
       <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
         <RotateCcw size={15} strokeWidth={2} />
         <span>Refresh</span>
-      </button>
-
-      {/* Code / UI toggle */}
-      <button
-        className={`bp-popout-btn${canvasViewMode === 'code' ? " bp-code-btn--active" : ""}`}
-        onClick={toggleCanvasViewMode}
-        title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
-      >
-        <span className="bp-code-toggle-label">&lt;/&gt;</span>
       </button>
 
       {/* Pop out — opens preview in its own window */}
@@ -256,6 +246,18 @@ function PreviewToolbar() {
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
+
+  const { saving, saveProject } = useCloudStorage();
+  const handleQuickSave = async () => {
+    const now = new Date();
+    const defaultName = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+    const name = window.prompt("Save project as:", defaultName);
+    if (name === null) return;
+    try { await saveProject(name.trim() || defaultName); } catch { /* surfaced by hook */ }
+  };
+
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
@@ -307,6 +309,24 @@ function PreviewToolbar() {
         <button className="preview-toolbar-btn" onClick={toggleAddMenu} title="Add Component">
           <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
         </button>
+        <button
+          className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
+          onClick={toggleCanvasViewMode}
+          title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
+        >
+          <span className="preview-toolbar-code-label">&lt;/&gt;</span>
+        </button>
+        <button
+          className="preview-toolbar-save-btn"
+          onClick={handleQuickSave}
+          disabled={saving}
+          title="Save project"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+            {saving ? "hourglass_top" : "save"}
+          </span>
+          <span>{saving ? "Saving…" : "Save"}</span>
+        </button>
       </div>
     </div>
   );
@@ -339,8 +359,8 @@ export function PreviewSidePanel() {
       {/* Device controls — always visible */}
       <DeviceControls />
 
-      {/* DS toolbar — visible when there are AI-generated blocks */}
-      {hasContent && <PreviewToolbar />}
+      {/* Toolbar — always visible */}
+      <PreviewToolbar />
 
       {/* Viewport wrapper — the "stage" */}
       <div className="bp-viewport-wrapper">
