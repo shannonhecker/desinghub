@@ -21,6 +21,7 @@ import {
   SimulatedCard,
   SimulatedBadge,
   SimulatedChatMessage,
+  SimulatedChart,
 } from "./SimulatedUI";
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -932,6 +933,59 @@ function SimulatedChatMessageBlock({
   );
 }
 
+function SimulatedChartBlock({
+  system,
+  title = "Monthly Revenue",
+  dataPoints = "40,70,45,90,65",
+  blockId,
+}: {
+  system: DesignSystem;
+  title?: string;
+  dataPoints?: string;
+  blockId?: string;
+}) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  const parsed = dataPoints
+    .split(",")
+    .map((n) => parseInt(n.trim(), 10))
+    .filter((n) => !isNaN(n));
+  const safeData = parsed.length > 0 ? parsed : [40, 70, 45, 90, 65];
+  const maxVal = Math.max(...safeData) * 1.1;
+
+  return (
+    <div className={`${prefix}-chart-container`}>
+      {isSelected && blockId ? (
+        <InlineEditable
+          value={title}
+          onChange={(v) => updateBlockProps(blockId, { title: v })}
+          autoOpenComponentPanel
+          className={`${prefix}-chart-title`}
+          style={{ outline: "none", display: "block" }}
+        />
+      ) : (
+        <h4 className={`${prefix}-chart-title`}>{title}</h4>
+      )}
+      <div className={`${prefix}-chart-area`}>
+        {safeData.map((val, i) => (
+          <div key={i} className={`${prefix}-chart-column`}>
+            <div
+              className={`${prefix}-chart-bar`}
+              style={{ height: `${(val / maxVal) * 100}%` }}
+              role="presentation"
+              aria-label={`Item ${i + 1}: ${val}`}
+            />
+            <span className={`${prefix}-chart-label`}>Item {i + 1}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RENDERERS: Record<string, React.FC<any>> = {
@@ -959,6 +1013,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedCard: SimulatedCardBlock as React.FC<{ system: DesignSystem }>,
   SimulatedBadge: SimulatedBadgeBlock as React.FC<{ system: DesignSystem }>,
   SimulatedChatMessage: SimulatedChatMessageBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedChart: SimulatedChartBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

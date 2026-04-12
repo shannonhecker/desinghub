@@ -29,6 +29,7 @@ Recommend components based on their needs. Available components:
 - SimulatedCard — content card with title and body text (props: title, content)
 - SimulatedBadge — status badge / pill label (props: label, status [default, info, success, warning, error])
 - SimulatedChatMessage — a single chat bubble (props: role [user, system], message)
+- SimulatedChart — a bar chart (props: title, dataPoints [comma-separated numbers e.g. 40,70,45,90,65])
 
 Also available (existing blocks):
 - Buttons, Cards, DataTable, FormFields, Tabs, Toggles

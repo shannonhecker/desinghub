@@ -62,6 +62,13 @@ export const LIBRARY_BLUEPRINTS: LibraryBlueprint[] = [
     icon: "chat_bubble",
     defaults: { role: "user", message: "Can you help me build a dashboard?" },
   },
+  {
+    id: "lib-chart",
+    type: "SimulatedChart",
+    label: "Chart",
+    icon: "bar_chart",
+    defaults: { title: "Monthly Revenue", dataPoints: "40,70,45,90,65" },
+  },
 ];
 
 /* ── Single draggable blueprint card ── */
@@ -301,6 +308,36 @@ function ChatMessageFields({ blockId }: { blockId: string }) {
   );
 }
 
+function ChartFields({ blockId }: { blockId: string }) {
+  const { blocks, updateBlockProps } = useBuilder();
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) return null;
+  const title = (block.props.title as string) ?? "Monthly Revenue";
+  const dataPoints = (block.props.dataPoints as string) ?? "40,70,45,90,65";
+
+  return (
+    <div>
+      <InspectorField label="Title">
+        <input
+          className="inspector-input"
+          type="text"
+          value={title}
+          onChange={(e) => updateBlockProps(blockId, { title: e.target.value })}
+        />
+      </InspectorField>
+      <InspectorField label="Data Points">
+        <input
+          className="inspector-input"
+          type="text"
+          value={dataPoints}
+          placeholder="e.g. 40,70,45,90,65"
+          onChange={(e) => updateBlockProps(blockId, { dataPoints: e.target.value })}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
 const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedButton: ButtonFields,
   SimulatedTitle: TitleFields,
@@ -308,6 +345,7 @@ const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedCard: CardFields,
   SimulatedBadge: BadgeFields,
   SimulatedChatMessage: ChatMessageFields,
+  SimulatedChart: ChartFields,
 };
 
 /* ── Combined component panel: library + properties ── */

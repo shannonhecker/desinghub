@@ -29,6 +29,7 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-card": "SimulatedCard",
   "sim-badge": "SimulatedBadge",
   "sim-chat-message": "SimulatedChatMessage",
+  "sim-chart": "SimulatedChart",
 };
 
 /** Reverse: block type → canonical store ID */
@@ -59,4 +60,5 @@ export const BLOCK_TO_ID: Record<string, string> = {
   SimulatedCard: "sim-card",
   SimulatedBadge: "sim-badge",
   SimulatedChatMessage: "sim-chat-message",
+  SimulatedChart: "sim-chart",
 };
