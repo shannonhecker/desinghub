@@ -18,6 +18,8 @@ import {
   SimulatedTitle as SimulatedTitleUI,
   SimulatedBreadcrumb,
   SimulatedAccordion,
+  SimulatedCard,
+  SimulatedBadge,
 } from "./SimulatedUI";
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -796,6 +798,81 @@ function SimulatedTextInputBlock({
   );
 }
 
+function SimulatedCardBlock({
+  system,
+  title = "Card Title",
+  content = "Card content goes here.",
+  blockId,
+}: {
+  system: DesignSystem;
+  title?: string;
+  content?: string;
+  blockId?: string;
+}) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  // When selected, render an editable shell directly so InlineEditable
+  // can be embedded; otherwise delegate to the pure SimulatedCard component.
+  if (isSelected && blockId) {
+    return (
+      <div className={`${prefix}-sim-card`}>
+        <div className={`${prefix}-sim-card-header`}>
+          <InlineEditable
+            value={title}
+            onChange={(v) => updateBlockProps(blockId, { title: v })}
+            autoOpenComponentPanel
+            className={`${prefix}-sim-card-title`}
+            style={{ outline: "none", display: "block" }}
+          />
+        </div>
+        <div className={`${prefix}-sim-card-body`}>
+          <InlineEditable
+            value={content}
+            onChange={(v) => updateBlockProps(blockId, { content: v })}
+            className={`${prefix}-sim-card-content`}
+            style={{ outline: "none", display: "block" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return <SimulatedCard system={system} title={title} content={content} />;
+}
+
+function SimulatedBadgeBlock({
+  system,
+  label = "Badge",
+  status = "default",
+  blockId,
+}: {
+  system: DesignSystem;
+  label?: string;
+  status?: string;
+  blockId?: string;
+}) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  return (
+    <span className={`${prefix}-sim-badge ${prefix}-sim-badge-${status}`}>
+      {isSelected && blockId ? (
+        <InlineEditable
+          value={label}
+          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          autoOpenComponentPanel
+          style={{ outline: "none", color: "inherit" }}
+        />
+      ) : label}
+    </span>
+  );
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RENDERERS: Record<string, React.FC<any>> = {
@@ -820,6 +897,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedTextInput: SimulatedTextInputBlock as React.FC<{ system: DesignSystem }>,
   SimulatedBreadcrumb: (({ system }: { system: DesignSystem }) => <SimulatedBreadcrumb system={system} />) as React.FC<{ system: DesignSystem }>,
   SimulatedAccordion: (({ system }: { system: DesignSystem }) => <SimulatedAccordion system={system} />) as React.FC<{ system: DesignSystem }>,
+  SimulatedCard: SimulatedCardBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedBadge: SimulatedBadgeBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

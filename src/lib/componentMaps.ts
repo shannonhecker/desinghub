@@ -26,6 +26,8 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-data-table": "SimulatedDataTable",
   "sim-accordion": "SimulatedAccordion",
   "sim-breadcrumb": "SimulatedBreadcrumb",
+  "sim-card": "SimulatedCard",
+  "sim-badge": "SimulatedBadge",
 };
 
 /** Reverse: block type → canonical store ID */
@@ -53,4 +55,6 @@ export const BLOCK_TO_ID: Record<string, string> = {
   SimulatedDataTable: "sim-data-table",
   SimulatedAccordion: "sim-accordion",
   SimulatedBreadcrumb: "sim-breadcrumb",
+  SimulatedCard: "sim-card",
+  SimulatedBadge: "sim-badge",
 };

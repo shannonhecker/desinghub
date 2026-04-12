@@ -724,3 +724,56 @@ export function SimulatedAccordion({ system }: SimProps) {
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedCard
+   ═══════════════════════════════════════════ */
+
+interface CardProps extends SimProps {
+  title?: string;
+  content?: string;
+}
+
+export function SimulatedCard({
+  system,
+  title = "Card Title",
+  content = "Card content goes here.",
+}: CardProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  return (
+    <div className={`${prefix}-sim-card`}>
+      <div className={`${prefix}-sim-card-header`}>
+        <span className={`${prefix}-sim-card-title`}>{title}</span>
+      </div>
+      <div className={`${prefix}-sim-card-body`}>
+        <p className={`${prefix}-sim-card-content`}>{content}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedBadge
+   ═══════════════════════════════════════════ */
+
+type BadgeStatus = "default" | "info" | "success" | "warning" | "error";
+
+interface BadgeProps extends SimProps {
+  label?: string;
+  status?: BadgeStatus;
+}
+
+export function SimulatedBadge({
+  system,
+  label = "Badge",
+  status = "default",
+}: BadgeProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  return (
+    <span className={`${prefix}-sim-badge ${prefix}-sim-badge-${status}`}>
+      {label}
+    </span>
+  );
+}

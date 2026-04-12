@@ -20,12 +20,14 @@ Help them choose:
 
 ### Phase 3: Component Selection
 Recommend components based on their needs. Available components:
-- SimulatedTitle — page headings and titles
-- SimulatedButton — action buttons (primary, secondary, etc.)
-- SimulatedTextInput — form input fields
+- SimulatedTitle — page headings and titles (props: `level` [h1–h4], `text`)
+- SimulatedButton — action buttons (props: `variant` [primary, secondary, outline, ghost], `label`)
+- SimulatedTextInput — form input fields (props: `label`, `placeholder`)
 - SimulatedAlert — notification/status alerts
 - SimulatedDataTable — data tables with sorting
 - SimulatedAccordion — collapsible content sections
+- SimulatedCard — content card with title and body text (props: `title`, `content`)
+- SimulatedBadge — status badge / pill label (props: `label`, `status` [default, info, success, warning, error])
 
 Also available (existing blocks):
 - Buttons, Cards, DataTable, FormFields, Tabs, Toggles

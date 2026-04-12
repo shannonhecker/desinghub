@@ -41,6 +41,20 @@ export const LIBRARY_BLUEPRINTS: LibraryBlueprint[] = [
     icon: "warning",
     defaults: {},
   },
+  {
+    id: "lib-card",
+    type: "SimulatedCard",
+    label: "Card",
+    icon: "credit_card",
+    defaults: { title: "New Card", content: "Card content goes here." },
+  },
+  {
+    id: "lib-badge",
+    type: "SimulatedBadge",
+    label: "Badge",
+    icon: "label",
+    defaults: { label: "New Badge", status: "default" },
+  },
 ];
 
 /* ── Single draggable blueprint card ── */
@@ -184,10 +198,76 @@ function TextInputFields({ blockId }: { blockId: string }) {
   );
 }
 
+function CardFields({ blockId }: { blockId: string }) {
+  const { blocks, updateBlockProps } = useBuilder();
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) return null;
+  const title = (block.props.title as string) ?? "New Card";
+  const content = (block.props.content as string) ?? "Card content goes here.";
+
+  return (
+    <div>
+      <InspectorField label="Title">
+        <input
+          className="inspector-input"
+          type="text"
+          value={title}
+          onChange={(e) => updateBlockProps(blockId, { title: e.target.value })}
+        />
+      </InspectorField>
+      <InspectorField label="Content">
+        <textarea
+          className="inspector-input"
+          rows={3}
+          value={content}
+          onChange={(e) => updateBlockProps(blockId, { content: e.target.value })}
+          style={{ resize: "vertical", lineHeight: 1.5 }}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
+function BadgeFields({ blockId }: { blockId: string }) {
+  const { blocks, updateBlockProps } = useBuilder();
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) return null;
+  const label = (block.props.label as string) ?? "New Badge";
+  const status = (block.props.status as string) ?? "default";
+
+  return (
+    <div>
+      <InspectorField label="Label">
+        <input
+          className="inspector-input"
+          type="text"
+          value={label}
+          onChange={(e) => updateBlockProps(blockId, { label: e.target.value })}
+        />
+      </InspectorField>
+      <InspectorField label="Status">
+        <select
+          className="inspector-select"
+          value={status}
+          onChange={(e) => updateBlockProps(blockId, { status: e.target.value })}
+        >
+          <option value="default">Default</option>
+          <option value="info">Info</option>
+          <option value="success">Success</option>
+          <option value="warning">Warning</option>
+          <option value="error">Error</option>
+        </select>
+      </InspectorField>
+    </div>
+  );
+}
+
 const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedButton: ButtonFields,
   SimulatedTitle: TitleFields,
   SimulatedTextInput: TextInputFields,
+  SimulatedCard: CardFields,
+  SimulatedBadge: BadgeFields,
 };
 
 /* ── Combined component panel: library + properties ── */
