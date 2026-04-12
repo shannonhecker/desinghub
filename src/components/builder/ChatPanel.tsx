@@ -572,15 +572,25 @@ export function ChatPanel() {
         {/* Messages */}
         {hasMessages && (
           <div className="messages-area">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
-                {msg.role === "ai" && <div className="chat-msg-label">Design Hub AI</div>}
-                {msg.content}
-              </div>
-            ))}
+            {messages.map((msg, i) => {
+              const isLastAi = msg.role === "ai" && i === messages.length - 1;
+              return (
+                <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
+                  {msg.content}
+                  {msg.role === "ai" && (
+                    <div className="chat-msg-actions">
+                      <button aria-label="Good response"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>thumb_up</span></button>
+                      <button aria-label="Bad response"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>thumb_down</span></button>
+                      <button aria-label="Regenerate"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span></button>
+                      <button aria-label="Copy"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>content_copy</span></button>
+                    </div>
+                  )}
+                  {isLastAi && !isGenerating && renderChips()}
+                </div>
+              );
+            })}
             {isGenerating && (
               <div className="chat-msg chat-msg-ai">
-                <div className="chat-msg-label">Design Hub AI</div>
                 <div className="typing-dots">
                   <span />
                   <span />
@@ -641,8 +651,8 @@ export function ChatPanel() {
           </div>
         </div>
 
-        {/* Chips below chatbox — Gemini style */}
-        {renderChips()}
+        {/* Chips below chatbox — only for initial type selection */}
+        {!hasMessages && step === "type" && renderChips()}
       </div>
     </div>
   );

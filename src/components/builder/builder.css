@@ -240,13 +240,13 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 70vh;
+  height: 85vh;
   z-index: 1;
   pointer-events: none;
   opacity: 0.5;
   /* Curved dome bottom — wide ellipse with long smooth fade */
-  -webkit-mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 35%, transparent 70%);
-  mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 35%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 40%, transparent 75%);
+  mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 40%, transparent 75%);
 }
 .liquid-bg .wave-canvas-wrap {
   position: absolute;
@@ -701,6 +701,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   padding: 0 24px;
 }
 
@@ -739,21 +740,29 @@
 /* Messages area — same max-width as input */
 .messages-area {
   width: 100%;
-  max-width: 620px;
+  max-width: 680px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   padding-bottom: 16px;
 }
 
-/* ── PROMPT BUBBLES — Gemini dark pills below chatbox ── */
+/* ── PROMPT BUBBLES — Gemini dark pills ── */
 .prompt-bubbles {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
   max-width: 680px;
+}
+/* Center chips only when below chatbox (initial state) */
+.chat-input-bar .prompt-bubbles {
+  justify-content: center;
+  margin-top: 12px;
+}
+/* Left-align chips when inline in conversation */
+.messages-area .prompt-bubbles {
+  justify-content: flex-start;
 }
 
 .prompt-bubble {
@@ -1043,12 +1052,12 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ── CHAT MESSAGES ── */
+/* ── CHAT MESSAGES — Gemini-style clean layout ── */
 .chat-msg {
-  max-width: 75%;
-  padding: 14px 18px;
-  font-size: 14px;
-  line-height: 1.65;
+  max-width: 85%;
+  padding: 12px 0;
+  font-size: 15px;
+  line-height: 1.7;
   animation: msgIn 300ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -1059,51 +1068,60 @@
 
 .chat-msg-user {
   align-self: flex-end;
-  background: rgba(94, 231, 223, 0.12);
-  color: white;
-  border-radius: var(--b-radius) var(--b-radius) 4px var(--b-radius);
-  border: 1px solid rgba(94, 231, 223, 0.18);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg);
+  border-radius: 20px;
+  border: none;
+  padding: 12px 20px;
 }
 .builder-light .chat-msg-user {
-  background: rgba(8, 145, 178, 0.12);
-  border-color: rgba(8, 145, 178, 0.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.05);
   color: #0f172a;
 }
 
 .chat-msg-ai {
   align-self: flex-start;
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border);
+  background: transparent;
+  border: none;
   color: var(--b-fg);
-  border-radius: var(--b-radius) var(--b-radius) var(--b-radius) 4px;
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow-glass);
+  border-radius: 0;
+  backdrop-filter: none;
+  box-shadow: none;
   position: relative;
-  overflow: hidden;
+  padding: 4px 0;
 }
-.chat-msg-ai::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--reflection-top);
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 0;
-}
+.chat-msg-ai::before { display: none; }
 
 .chat-msg-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent-aqua);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  display: none;
 }
-.builder-light .chat-msg-label {
-  color: var(--accent-aqua);
+
+/* AI message actions row */
+.chat-msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.chat-msg-actions button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--b-fg3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.chat-msg-actions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg);
+}
+.builder-light .chat-msg-actions button:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .typing-dots {
