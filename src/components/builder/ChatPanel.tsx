@@ -1,14 +1,8 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { InterfaceType, DesignSystem, OnboardingStep } from "@/store/useBuilder";
-
-const OrbScene = dynamic(
-  () => import("./LiquidGpuHero").then((m) => m.OrbScene),
-  { ssr: false }
-);
 
 /* ═══════════════════════════════════════════
    Progressive Disclosure — Step Configuration
@@ -566,19 +560,13 @@ export function ChatPanel() {
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
       {/* Scrollable content area */}
       <div className="chat-scroll">
-        {/* Orb */}
-        <div className="orb-container">
-          <div
-            className="orb-wrap orb-wrap--gpu"
-            style={hasMessages ? { width: 80, height: 80 } : undefined}
-          >
-            <OrbScene />
-          </div>
-        </div>
 
         {/* Hero title — only STEP_TYPE before first message */}
         {!hasMessages && step === "type" && (
-          <h1 className="hero-title">What would you like to build?</h1>
+          <div className="hero-greeting">
+            <span className="hero-hi">Hi there,</span>
+            <h1 className="hero-title">Where should we start?</h1>
+          </div>
         )}
 
         {/* Messages */}
@@ -603,9 +591,6 @@ export function ChatPanel() {
             <div ref={chatEndRef} />
           </div>
         )}
-
-        {/* Step-specific chips */}
-        {renderChips()}
       </div>
 
       {/* Input — always pinned to bottom */}
@@ -624,27 +609,40 @@ export function ChatPanel() {
               placeholder={placeholderText}
               rows={1}
             />
-            <div className="input-actions">
-              <button
-                className={`mic-btn ${isVoiceActive ? "active" : ""}`}
-                onClick={toggleVoice}
-                aria-label="Toggle voice"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                  {isVoiceActive ? "stop" : "mic"}
-                </span>
-              </button>
-              <button
-                className="send-btn"
-                onClick={() => handleSend()}
-                disabled={!hasText || isGenerating}
-                aria-label="Send"
-              >
-                <span className="btn-icon material-symbols-outlined">arrow_upward</span>
-              </button>
+            <div className="input-toolbar">
+              <div className="toolbar-left">
+                <button className="toolbar-icon-btn" aria-label="Add attachment">
+                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
+                </button>
+              </div>
+              <div className="toolbar-right">
+                {hasText ? (
+                  <button
+                    className="send-btn"
+                    onClick={() => handleSend()}
+                    disabled={isGenerating}
+                    aria-label="Send"
+                  >
+                    <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                  </button>
+                ) : (
+                  <button
+                    className={`mic-btn ${isVoiceActive ? "active" : ""}`}
+                    onClick={toggleVoice}
+                    aria-label="Toggle voice"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                      {isVoiceActive ? "stop" : "mic"}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Chips below chatbox — Gemini style */}
+        {renderChips()}
       </div>
     </div>
   );

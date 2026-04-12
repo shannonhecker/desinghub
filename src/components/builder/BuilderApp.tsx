@@ -2,12 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import "./builder.css";
+
+const WaveScene = dynamic(
+  () => import("./WaveHero").then((m) => m.WaveScene),
+  { ssr: false }
+);
 
 export function BuilderApp() {
   const {
@@ -113,11 +119,9 @@ export function BuilderApp() {
 
   return (
     <div className={`builder-shell no-sidebar ${mode === "light" ? "builder-light" : ""}`}>
-      {/* Liquid Glass animated blob scene */}
-      <div className="blob-scene" aria-hidden="true">
-        <div className="blob blob--1" />
-        <div className="blob blob--2" />
-        <div className="blob blob--3" />
+      {/* Liquid gradient background — top 30% with fade */}
+      <div className="liquid-bg" aria-hidden="true">
+        <WaveScene />
       </div>
 
       <div className="main-content">
