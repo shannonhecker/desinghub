@@ -623,21 +623,101 @@ function DLColor() {
 }
 
 function DLTypography() {
+  // Official Fluent 2 type ramp — 17 named styles from @fluentui/tokens
+  // Source: packages/tokens/src/global/typographyStyles.ts (microsoft/fluentui)
+  // fontFamilyBase: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif
+  // Naming pattern: base = Regular (400), Strong = Semibold (600), Stronger = Bold (700)
+  // Subtitle 1 lh = 28px (lineHeightBase500) — NOT 26px
   const ramp = [
-    ["Display", 68, 92, 600], ["Large Title", 40, 52, 600], ["Title 1", 32, 40, 600], ["Title 2", 28, 36, 600],
-    ["Title 3", 24, 32, 600], ["Subtitle 1", 20, 26, 600], ["Subtitle 2", 16, 22, 600],
-    ["Body 1 Strong", 14, 20, 600], ["Body 1", 14, 20, 400], ["Caption 1 Strong", 12, 16, 600],
-    ["Caption 1", 12, 16, 400], ["Caption 2", 10, 14, 400],
+    // [name, cssKey, sizePx, lineHeightPx, weight]
+    ["Display",            "display",          68, 92, 600],
+    ["Large Title",        "largeTitle",        40, 52, 600],
+    ["Title 1",            "title1",            32, 40, 600],
+    ["Title 2",            "title2",            28, 36, 600],
+    ["Title 3",            "title3",            24, 32, 600],
+    ["Subtitle 1",         "subtitle1",         20, 28, 600],
+    ["Subtitle 2 Stronger","subtitle2Stronger", 16, 22, 700],
+    ["Subtitle 2",         "subtitle2",         16, 22, 600],
+    ["Body 2",             "body2",             16, 22, 400],
+    ["Body 1 Stronger",    "body1Stronger",     14, 20, 700],
+    ["Body 1 Strong",      "body1Strong",       14, 20, 600],
+    ["Body 1",             "body1",             14, 20, 400],
+    ["Caption 1 Stronger", "caption1Stronger",  12, 16, 700],
+    ["Caption 1 Strong",   "caption1Strong",    12, 16, 600],
+    ["Caption 1",          "caption1",          12, 16, 400],
+    ["Caption 2 Strong",   "caption2Strong",    10, 14, 600],
+    ["Caption 2",          "caption2",          10, 14, 400],
   ];
+
+  const weightLabel = w => w === 700 ? "Bold" : w === 600 ? "Semibold" : "Regular";
+  const weightColor = w => w === 700 ? T.statusDanger || "#C50F1F" : w === 600 ? T.brandFg1 : T.fg3;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, marginBottom: 8, lineHeight: 1.5 }}>Segoe UI type ramp for web. 16 styles from Caption 2 (10px) to Display (68px). Regular (400), Semibold (600), Bold (700) weights.</div>
-      {ramp.map(([name, size, lh, weight]) => (
-        <div key={name} style={{ display: "flex", alignItems: "baseline", gap: 12, padding: "4px 0", borderBottom: `1px solid ${T.stroke3}` }}>
-          <span style={{ fontFamily: FONT, fontSize: Math.min(size, 40), fontWeight: weight, color: T.fg1, lineHeight: `${Math.min(lh, 52)}px`, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-          <span style={{ fontSize: 11, color: T.fg3, fontFamily: "monospace", whiteSpace: "nowrap", flexShrink: 0 }}>{size}/{lh} · {weight === 600 ? "Semibold" : "Regular"}</span>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Intro */}
+      <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.6 }}>
+        17 named styles using <strong style={{ color: T.fg1 }}>fontFamilyBase</strong>. Pattern: base = Regular (400), <strong style={{ color: T.fg1 }}>Strong</strong> = Semibold (600), <strong style={{ color: T.fg1 }}>Stronger</strong> = Bold (700). All sizes in fixed px. No letter-spacing tokens defined.
+      </div>
+
+      {/* Font family tokens */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {[
+          { token: "fontFamilyBase",    value: "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, sans-serif", note: "All 17 type ramp styles" },
+          { token: "fontFamilyMonospace", value: "Consolas, 'Courier New', Courier, monospace",                                                       note: "Code / pre-formatted" },
+          { token: "fontFamilyNumeric",   value: "Bahnschrift, 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif",                      note: "Numeric / tabular data" },
+        ].map(f => (
+          <div key={f.token} style={{ flex: 1, minWidth: 180, padding: "8px 12px", borderRadius: 4, background: T.bg3, border: `1px solid ${T.stroke2}` }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: T.brandFg1, fontFamily: "monospace", marginBottom: 3 }}>{f.token}</div>
+            <div style={{ fontSize: 9, color: T.fg3, fontFamily: "monospace", lineHeight: 1.5, marginBottom: 4, wordBreak: "break-all" }}>{f.value}</div>
+            <div style={{ fontSize: 10, color: T.fg2, fontFamily: FONT }}>{f.note}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Type ramp table */}
+      <div style={{ borderRadius: 6, border: `1px solid ${T.stroke2}`, overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ display: "grid", gridTemplateColumns: "50px 1fr 48px 60px 70px 80px", padding: "6px 12px", background: T.bg3, borderBottom: `1px solid ${T.stroke2}`, fontSize: 10, fontWeight: 600, color: T.fg2, fontFamily: FONT, gap: 8, alignItems: "center" }}>
+          <span>Sample</span>
+          <span>Style name</span>
+          <span style={{ textAlign: "right" }}>Size</span>
+          <span style={{ textAlign: "right" }}>Line Ht</span>
+          <span>Weight</span>
+          <span style={{ textAlign: "right" }}>CSS key</span>
         </div>
-      ))}
+        {ramp.map(([name, key, size, lh, weight], i) => {
+          const renderSize = Math.min(size, 28);
+          return (
+            <div key={name} style={{
+              display: "grid", gridTemplateColumns: "50px 1fr 48px 60px 70px 80px",
+              padding: "5px 12px", gap: 8, alignItems: "center",
+              borderBottom: i < ramp.length - 1 ? `1px solid ${T.stroke3}` : "none",
+              background: i % 2 === 0 ? "transparent" : `${T.bg3}60`,
+            }}>
+              <span style={{ fontFamily: FONT, fontSize: renderSize, fontWeight: weight, lineHeight: 1.2, color: T.fg1 }}>Ag</span>
+              <span style={{ fontSize: 11, color: T.fg2, fontFamily: FONT }}>{name}</span>
+              <span style={{ fontSize: 11, color: T.fg3, fontFamily: "monospace", textAlign: "right" }}>{size}px</span>
+              <span style={{ fontSize: 11, color: T.fg3, fontFamily: "monospace", textAlign: "right" }}>{lh}px</span>
+              <span style={{ fontSize: 10, color: weightColor(weight), fontFamily: FONT, fontWeight: weight }}>{weightLabel(weight)}</span>
+              <span style={{ fontSize: 9, color: T.fg3, fontFamily: "monospace", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{key}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Weight showcase */}
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1, fontFamily: FONT, marginBottom: 8 }}>Weight Scale — fontWeightRegular / fontWeightMedium / fontWeightSemibold / fontWeightBold</div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {[["Regular", 400, "body1"], ["Medium", 500, "—"], ["Semibold", 600, "body1Strong"], ["Bold", 700, "body1Stronger"]].map(([label, w, example]) => (
+            <div key={label} style={{ flex: 1, minWidth: 120, padding: "10px 14px", borderRadius: 4, background: T.bg3, border: `1px solid ${T.stroke2}` }}>
+              <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: w, color: T.fg1, lineHeight: 1.3 }}>Aa Bb</div>
+              <div style={{ fontSize: 10, color: T.fg3, fontFamily: FONT, marginTop: 4 }}>{label} · {w}</div>
+              <div style={{ fontSize: 9, color: T.brandFg1, fontFamily: "monospace", marginTop: 2 }}>{example}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -745,6 +825,19 @@ function DLMotion() {
     ["Easy Ease", "cubic-bezier(0.33,0,0.67,1)", "Standard"],
     ["Linear", "linear", "Opacity fades"],
   ];
+
+  // Trigger initial animation on mount
+  useEffect(() => {
+    const id = setTimeout(() => setPlaying(true), 150);
+    return () => clearTimeout(id);
+  }, []);
+
+  // Replay: collapse bars to 0 instantly (transition off), then re-expand with transitions
+  const replay = () => {
+    setPlaying(false);
+    setTimeout(() => setPlaying(true), 80);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.5 }}>Motion should be <strong>functional</strong>, <strong>natural</strong>, <strong>consistent</strong>, and <strong>appealing</strong>. It defines relationships, provides feedback, and guides attention.</div>
@@ -754,7 +847,13 @@ function DLMotion() {
           {durations.map(([name, ms]) => (
             <div key={name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 11, color: T.fg3, fontFamily: "monospace", width: 50, textAlign: "right" }}>{ms}ms</span>
-              <div style={{ width: `${ms / 2}px`, height: 14, borderRadius: 2, background: T.brandBg, transition: playing ? `width ${ms}ms ease` : "none", opacity: 0.5 + (ms / 800) }} />
+              {/* width toggles 0 → target so the CSS transition actually fires */}
+              <div style={{
+                width: playing ? `${ms / 2}px` : 0,
+                height: 14, borderRadius: 2, background: T.brandBg,
+                transition: playing ? `width ${ms}ms ease` : "none",
+                opacity: 0.5 + (ms / 800),
+              }} />
               <span style={{ fontSize: 11, color: T.fg2, fontFamily: FONT }}>{name}</span>
             </div>
           ))}
@@ -772,7 +871,7 @@ function DLMotion() {
           ))}
         </div>
       </div>
-      <button className="f-btn f-btn-outline" onClick={() => { setPlaying(false); setTimeout(() => setPlaying(true), 50); }} style={{ alignSelf: "flex-start" }}>Replay Animations</button>
+      <button className="f-btn f-btn-outline" onClick={replay} style={{ alignSelf: "flex-start" }}>Replay Animations</button>
     </div>
   );
 }

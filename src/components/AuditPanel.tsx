@@ -144,6 +144,14 @@ function runAudit(code: string, system: string, T: any): AuditIssue[] {
 }
 
 function ContrastAudit({ system, T }: { system: string; T: any }) {
+  // Derive card colours from the active DS tokens so the card feels native
+  const cardBg  = system === "salt" ? T.bg  : system === "m3" ? (T.surfaceContainer ?? T.surface) : T.bg2;
+  const cardBdr = system === "salt" ? T.border : system === "m3" ? T.outlineVariant : T.stroke2;
+  const titleFg = system === "salt" ? T.fg  : system === "m3" ? T.onSurface          : T.fg1;
+  const labelFg = system === "salt" ? T.fg2 : system === "m3" ? T.onSurfaceVariant   : T.fg2;
+  const rowFg   = system === "salt" ? T.fg  : system === "m3" ? T.onSurface          : T.fg1;
+  const monoFg  = system === "salt" ? T.fg3 : system === "m3" ? T.onSurfaceVariant   : T.fg3;
+
   const pairs = useMemo(() => {
     if (system === "salt") {
       return [
@@ -178,25 +186,25 @@ function ContrastAudit({ system, T }: { system: string; T: any }) {
   }, [system, T]);
 
   return (
-    <div style={{ background: "#16213e", borderRadius: 8, border: "1px solid #2a2a4a", padding: 16, marginTop: 16 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 12 }}>Contrast Audit — {T.name || "Current Theme"}</h3>
+    <div style={{ background: cardBg, borderRadius: 8, border: `1px solid ${cardBdr}`, padding: 16, marginTop: 16 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: titleFg, marginBottom: 12 }}>Contrast Audit — {T.name || "Current Theme"}</h3>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto auto auto", gap: "6px 12px", fontSize: 12 }}>
-        <div style={{ color: "#707080", fontWeight: 600 }}>Foreground</div>
-        <div style={{ color: "#707080", fontWeight: 600 }}>Background</div>
-        <div style={{ color: "#707080", fontWeight: 600 }}>Ratio</div>
-        <div style={{ color: "#707080", fontWeight: 600 }}>AA</div>
-        <div style={{ color: "#707080", fontWeight: 600 }}>Preview</div>
+        <div style={{ color: labelFg, fontWeight: 600 }}>Foreground</div>
+        <div style={{ color: labelFg, fontWeight: 600 }}>Background</div>
+        <div style={{ color: labelFg, fontWeight: 600 }}>Ratio</div>
+        <div style={{ color: labelFg, fontWeight: 600 }}>AA</div>
+        <div style={{ color: labelFg, fontWeight: 600 }}>Preview</div>
         {pairs.map((p) => {
           if (!isHex(p.fgVal) || !isHex(p.bgVal)) return null;
           const ratio = contrastRatio(p.fgVal, p.bgVal);
           const passes = meetsAA(ratio);
           return (
             <React.Fragment key={`${p.fg}-${p.bg}`}>
-              <div style={{ color: "#e0e0e0" }}>{p.fg} <span style={{ color: "#707080", fontFamily: "monospace", fontSize: 10 }}>{p.fgVal}</span></div>
-              <div style={{ color: "#e0e0e0" }}>{p.bg} <span style={{ color: "#707080", fontFamily: "monospace", fontSize: 10 }}>{p.bgVal}</span></div>
+              <div style={{ color: rowFg }}>{p.fg} <span style={{ color: monoFg, fontFamily: "monospace", fontSize: 10 }}>{p.fgVal}</span></div>
+              <div style={{ color: rowFg }}>{p.bg} <span style={{ color: monoFg, fontFamily: "monospace", fontSize: 10 }}>{p.bgVal}</span></div>
               <div style={{ fontFamily: "monospace", color: passes ? "#53B087" : "#FF5D57" }}>{formatRatio(ratio)}</div>
               <div style={{ color: passes ? "#53B087" : "#FF5D57", fontWeight: 600 }}>{passes ? "PASS" : "FAIL"}</div>
-              <div style={{ width: 60, height: 24, background: p.bgVal, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: p.fgVal, fontSize: 11, fontWeight: 600, border: "1px solid #2a2a4a" }}>Aa</div>
+              <div style={{ width: 60, height: 24, background: p.bgVal, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: p.fgVal, fontSize: 11, fontWeight: 600, border: `1px solid ${cardBdr}` }}>Aa</div>
             </React.Fragment>
           );
         })}
@@ -217,6 +225,12 @@ export function AuditPanel() {
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
     : getTheme("fluent", store.fluent.themeKey);
 
+  // Derive semantic colors from active DS tokens
+  const pageBg  = activeSystem === "salt" ? T.bg2  : activeSystem === "m3" ? T.surface            : T.bg2;
+  const fg      = activeSystem === "salt" ? T.fg   : activeSystem === "m3" ? T.onSurface           : T.fg1;
+  const fg2     = activeSystem === "salt" ? T.fg2  : activeSystem === "m3" ? T.onSurfaceVariant    : T.fg2;
+  const border  = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant    : T.stroke2;
+
   const issues = useMemo(() => (code ? runAudit(code, activeSystem, T) : []), [code, activeSystem, T]);
 
   const critical = issues.filter((i) => i.severity === "critical");
@@ -224,9 +238,9 @@ export function AuditPanel() {
   const infos = issues.filter((i) => i.severity === "info");
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Design Audit</h2>
-      <p style={{ fontSize: 13, color: "#707080", marginBottom: 16 }}>
+    <div style={{ padding: 24, background: pageBg, minHeight: "100%" }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, color: fg, marginBottom: 4 }}>Design Audit</h2>
+      <p style={{ fontSize: 13, color: fg2, marginBottom: 16 }}>
         Paste your {sysInfo.name} code below. The audit checks for raw hex values, wrong component APIs,
         contrast ratios, accessibility, and dark mode compliance.
       </p>

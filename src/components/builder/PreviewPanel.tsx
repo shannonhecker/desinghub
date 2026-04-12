@@ -248,14 +248,37 @@ function PreviewToolbar() {
   const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
+  const mode = useBuilder((s) => s.mode);
+  const interfaceType = useBuilder((s) => s.interfaceType);
+  const selectedComponents = useBuilder((s) => s.selectedComponents);
+  const colorOverrides = useBuilder((s) => s.colorOverrides);
 
   const { saving, saveProject } = useCloudStorage();
+  const [downloading, setDownloading] = useState(false);
+
   const handleQuickSave = async () => {
     const now = new Date();
     const defaultName = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
     const name = window.prompt("Save project as:", defaultName);
     if (name === null) return;
     try { await saveProject(name.trim() || defaultName); } catch { /* surfaced by hook */ }
+  };
+
+  const handleDownload = () => {
+    setDownloading(true);
+    const config = {
+      designSystem, mode, density, interfaceType,
+      selectedComponents, colorOverrides,
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${interfaceType}-${designSystem}-config.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => setDownloading(false), 1500);
   };
 
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
@@ -317,15 +340,24 @@ function PreviewToolbar() {
           <span className="preview-toolbar-code-label">&lt;/&gt;</span>
         </button>
         <button
-          className="preview-toolbar-save-btn"
+          className="preview-toolbar-btn"
+          onClick={handleDownload}
+          disabled={downloading}
+          title="Download config JSON"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">
+            {downloading ? "hourglass_top" : "download"}
+          </span>
+        </button>
+        <button
+          className="preview-toolbar-btn"
           onClick={handleQuickSave}
           disabled={saving}
           title="Save project"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+          <span className="material-symbols-outlined preview-toolbar-icon">
             {saving ? "hourglass_top" : "save"}
           </span>
-          <span>{saving ? "Saving…" : "Save"}</span>
         </button>
       </div>
     </div>

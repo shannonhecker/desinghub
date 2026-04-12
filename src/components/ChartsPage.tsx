@@ -28,7 +28,7 @@ function getChartTheme(system: string, T: any, font: string): Partial<Highcharts
   if (system === "salt") {
     return {
       colors: [T.accent, T.info, T.positive, T.caution, T.negative, "#8B5CF6", "#EC4899", "#F59E0B"],
-      chart: { backgroundColor: T.bg, style: { fontFamily: font } },
+      chart: { backgroundColor: "transparent", style: { fontFamily: font } },
       title: { style: { color: T.fg, fontSize: "16px", fontWeight: "600" } },
       subtitle: { style: { color: T.fg2 } },
       xAxis: { gridLineColor: T.bg3, lineColor: T.border, tickColor: T.border, labels: { style: { color: T.fg3, fontSize: "11px" } }, title: { style: { color: T.fg2 } } },
@@ -41,7 +41,7 @@ function getChartTheme(system: string, T: any, font: string): Partial<Highcharts
   if (system === "m3") {
     return {
       colors: [T.primary, T.secondary, T.tertiary, T.error, "#4CAF50", "#FF9800", "#2196F3", "#E91E63"],
-      chart: { backgroundColor: T.surface, style: { fontFamily: font }, borderRadius: 12 },
+      chart: { backgroundColor: "transparent", style: { fontFamily: font } },
       title: { style: { color: T.onSurface, fontSize: "16px", fontWeight: "500" } },
       subtitle: { style: { color: T.onSurfaceVariant } },
       xAxis: { gridLineColor: T.outlineVariant, lineColor: T.outline, labels: { style: { color: T.onSurfaceVariant, fontSize: "12px" } } },
@@ -53,7 +53,7 @@ function getChartTheme(system: string, T: any, font: string): Partial<Highcharts
   // Fluent
   return {
     colors: [T.brandBg, T.dangerBg3, T.successBg3, T.warningBg3, "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"],
-    chart: { backgroundColor: T.bg1, style: { fontFamily: font }, borderRadius: 8 },
+    chart: { backgroundColor: "transparent", style: { fontFamily: font } },
     title: { style: { color: T.fg1, fontSize: "14px", fontWeight: "600" } },
     subtitle: { style: { color: T.fg2 } },
     xAxis: { gridLineColor: T.stroke3, lineColor: T.stroke1, labels: { style: { color: T.fg3, fontSize: "12px" } } },
@@ -241,7 +241,7 @@ const CHARTS: ChartDef[] = [
 function ChartCard({ chart, theme, bg, border }: { chart: ChartDef; theme: Partial<Highcharts.Options>; bg: string; border: string }) {
   const options = useMemo(() => chart.getOptions(theme), [chart, theme]);
   return (
-    <div style={{ background: bg, borderRadius: 8, border: `1px solid ${border}`, padding: 12, overflow: "hidden" }}>
+    <div style={{ background: bg, borderRadius: 8, border: `1px solid ${border}`, overflow: "hidden" }}>
       <HighchartsReact highcharts={Highcharts} options={options} />
     </div>
   );

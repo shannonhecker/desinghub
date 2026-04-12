@@ -20,14 +20,12 @@ const WaveScene = dynamic(
 
 export function BuilderApp() {
   const {
-    mode, previewOpen, togglePreview, setMode, clearChat,
-    designSystem, interfaceType, selectedComponents, colorOverrides, density,
+    mode, previewOpen, togglePreview, setMode,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen,
   } = useBuilder();
 
   const [isStandalone, setIsStandalone] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
 
   // ── Gemini sidebar ──
@@ -127,23 +125,6 @@ export function BuilderApp() {
     setProjectsOpen(false);
   };
 
-  const handleDownload = () => {
-    setDownloading(true);
-    const config = {
-      designSystem, mode, density, interfaceType,
-      selectedComponents, colorOverrides,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${interfaceType}-${designSystem}-config.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 1500);
-  };
-
   if (isStandalone) return <StandalonePreview />;
 
   return (
@@ -191,27 +172,6 @@ export function BuilderApp() {
 
           {/* Right: all existing controls unchanged */}
           <div className="top-bar-right">
-            {/* Preview-specific actions */}
-            {previewOpen && (
-              <div className="top-bar-actions">
-                <span className="preview-badge-inline">
-                  {designSystem.toUpperCase()} &middot; {mode}
-                </span>
-                <span className="preview-badge-inline">
-                  {interfaceType} &middot; {selectedComponents.length} components
-                </span>
-                <button
-                  className="preview-action-btn"
-                  onClick={handleDownload}
-                  disabled={downloading}
-                  title="Download config"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                    {downloading ? "hourglass_top" : "download"}
-                  </span>
-                </button>
-              </div>
-            )}
 
             {/* Dark / Light toggle */}
             <button

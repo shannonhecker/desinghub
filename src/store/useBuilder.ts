@@ -49,6 +49,11 @@ interface BuilderState {
   addMenuOpen: boolean;
   canvasViewMode: 'ui' | 'code';
 
+  // Zone blocks (header / sidebar / footer)
+  headerBlocks: Block[];
+  sidebarBlocks: Block[];
+  footerBlocks: Block[];
+
   // UI state
   settingsOpen: boolean;
   previewOpen: boolean;
@@ -92,6 +97,14 @@ interface BuilderState {
   toggleAddMenu: () => void;
   setAddMenuOpen: (v: boolean) => void;
   toggleCanvasViewMode: () => void;
+
+  // Actions — Zone blocks
+  setHeaderBlocks: (blocks: Block[]) => void;
+  setSidebarBlocks: (blocks: Block[]) => void;
+  setFooterBlocks: (blocks: Block[]) => void;
+  updateHeaderBlockProps: (id: string, props: Record<string, unknown>) => void;
+  updateSidebarBlockProps: (id: string, props: Record<string, unknown>) => void;
+  updateFooterBlockProps: (id: string, props: Record<string, unknown>) => void;
 
   // Actions — UI
   toggleSettings: () => void;
@@ -139,6 +152,21 @@ export const useBuilder = create<BuilderState>((set) => ({
   componentLibraryOpen: false,
   addMenuOpen: false,
   canvasViewMode: 'ui',
+
+  // Zone blocks — default content matching the static dashboard layout
+  headerBlocks: [
+    { id: 'hdr-brand', type: 'AppBrand', props: { label: 'AI Agent' } },
+    { id: 'hdr-status', type: 'StatusPill', props: { label: 'Active' } },
+  ],
+  sidebarBlocks: [
+    { id: 'nav-0', type: 'NavItem', props: { label: 'Chat', icon: 'chat', active: true } },
+    { id: 'nav-1', type: 'NavItem', props: { label: 'Data', icon: 'database', active: false } },
+    { id: 'nav-2', type: 'NavItem', props: { label: 'Settings', icon: 'settings', active: false } },
+    { id: 'nav-3', type: 'NavItem', props: { label: 'Analytics', icon: 'bar_chart', active: false } },
+  ],
+  footerBlocks: [
+    { id: 'ftr-0', type: 'FooterText', props: { label: 'Powered by Design Hub', version: 'v1.0' } },
+  ],
 
   // UI state
   settingsOpen: false,
@@ -213,6 +241,16 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
   setAddMenuOpen: (v) => set({ addMenuOpen: v }),
   toggleCanvasViewMode: () => set((s) => ({ canvasViewMode: s.canvasViewMode === 'ui' ? 'code' : 'ui' })),
+
+  setHeaderBlocks: (blocks) => set({ headerBlocks: blocks }),
+  setSidebarBlocks: (blocks) => set({ sidebarBlocks: blocks }),
+  setFooterBlocks: (blocks) => set({ footerBlocks: blocks }),
+  updateHeaderBlockProps: (id, props) =>
+    set((s) => ({ headerBlocks: s.headerBlocks.map((b) => b.id === id ? { ...b, props: { ...b.props, ...props } } : b) })),
+  updateSidebarBlockProps: (id, props) =>
+    set((s) => ({ sidebarBlocks: s.sidebarBlocks.map((b) => b.id === id ? { ...b, props: { ...b.props, ...props } } : b) })),
+  updateFooterBlockProps: (id, props) =>
+    set((s) => ({ footerBlocks: s.footerBlocks.map((b) => b.id === id ? { ...b, props: { ...b.props, ...props } } : b) })),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

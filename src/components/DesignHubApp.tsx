@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId, type ActiveTab } from "@/store/useDesignHub";
-import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews } from "@/data/registry";
+import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews, MATERIAL_COLORS } from "@/data/registry";
 import { ComponentPreview } from "./ComponentPreview";
 import { CodePanel } from "./CodePanel";
 import { TokenReference } from "./TokenReference";
@@ -40,7 +40,58 @@ function useActiveTheme() {
   const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
   const borderStrong = activeSystem === "salt" ? T.borderStrong : activeSystem === "m3" ? T.outline : T.strokeAccessible;
 
-  return { T, css, font, bg, bg2, bg3, fg, fg2, fg3, accent, accentFg, accentWeak, accentText, border, borderStrong, activeSystem, densityOrSize };
+  // Density-derived sizing — every px on the page scales with the active density/size
+  const scale = (() => {
+    if (activeSystem === "salt") {
+      const d = densityOrSize as string;
+      return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
+           : d === "low"   ? { navH: 36, navF: 13, labF: 11, tabH: 40, hdrH: 48, gap: 8,  panelW: 260 }
+           : d === "touch" ? { navH: 44, navF: 14, labF: 12, tabH: 48, hdrH: 56, gap: 10, panelW: 288 }
+           :                 { navH: 28, navF: 12, labF: 10, tabH: 32, hdrH: 40, gap: 6,  panelW: 240 }; // medium
+    }
+    if (activeSystem === "m3") {
+      const d = densityOrSize as number;
+      return d === -3 ? { navH: 36, navF: 12, labF: 10, tabH: 36, hdrH: 44, gap: 7,  panelW: 230 }
+           : d === -2 ? { navH: 40, navF: 13, labF: 10, tabH: 40, hdrH: 48, gap: 8,  panelW: 240 }
+           : d === -1 ? { navH: 44, navF: 14, labF: 11, tabH: 44, hdrH: 52, gap: 9,  panelW: 256 }
+           :            { navH: 48, navF: 14, labF: 11, tabH: 48, hdrH: 56, gap: 10, panelW: 268 }; // default
+    }
+    // Fluent
+    const d = densityOrSize as string;
+    return d === "small" ? { navH: 24, navF: 11, labF: 9,  tabH: 28, hdrH: 36, gap: 4,  panelW: 220 }
+         : d === "large" ? { navH: 40, navF: 14, labF: 11, tabH: 42, hdrH: 50, gap: 8,  panelW: 264 }
+         :                 { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 6,  panelW: 240 }; // medium
+  })();
+
+  return { T, css, font, bg, bg2, bg3, fg, fg2, fg3, accent, accentFg, accentWeak, accentText, border, borderStrong, activeSystem, densityOrSize, scale };
+}
+
+/* ── M3 mode dropdown helpers ── */
+const M3_MODE_OPTIONS = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "lightMediumContrast", label: "Light Medium Contrast" },
+  { value: "lightHighContrast", label: "Light High Contrast" },
+  { value: "darkMediumContrast", label: "Dark Medium Contrast" },
+  { value: "darkHighContrast", label: "Dark High Contrast" },
+  { value: "custom", label: "Custom" },
+];
+function ModeIndicator({ value, customColor, border }: { value: string; customColor: string; border: string }) {
+  if (value === "custom") return (
+    <span style={{ width: 14, height: 14, borderRadius: "50%", background: customColor, flexShrink: 0, border: `1px solid ${border}`, display: "inline-block" }} />
+  );
+  // Split circle: left half = light tone, right half = dark tone
+  // Flip orientation for dark variants so the dominant half matches the mode
+  const isDark = value.startsWith("dark");
+  return (
+    <span style={{
+      width: 14, height: 14, borderRadius: "50%", flexShrink: 0, display: "inline-block",
+      background: isDark
+        ? "linear-gradient(90deg, #1c1b1f 50%, #e6e0e9 50%)"
+        : "linear-gradient(90deg, #e6e0e9 50%, #1c1b1f 50%)",
+      border: `1px solid ${border}`,
+    }} />
+  );
 }
 
 /* ── DS SWITCHER — uses active DS button classes ── */
@@ -70,19 +121,29 @@ function SystemSwitcher() {
   );
 }
 
-/* ── THEME CONTROLS — uses DS tokens for all colors ── */
+/* ── THEME CONTROLS — collapsible, uses DS tokens ── */
 function ThemeControls() {
   const store = useDesignHub();
   const { activeSystem } = store;
   const t = useActiveTheme();
+  const [open, setOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [modeOpen, setModeOpen] = useState(false);
 
+  const radius = activeSystem === "m3" ? 12 : activeSystem === "fluent" ? 4 : 4;
+
+  /* Pill button — font and padding scale with density
+     Salt DS spacing: High=4px, Medium=6px, Low=8px, Touch=10px base gap
+     Touch target: Salt Touch ≥44px, but for config controls we scale padding
+     proportionally: vertical = gap, horizontal = gap+8 */
   function CtrlBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
     return (
       <button onClick={onClick} style={{
-        padding: "4px 10px", fontSize: 11, fontWeight: active ? 600 : 400, fontFamily: t.font,
-        background: active ? t.accentWeak : "transparent", color: active ? t.accentText : t.fg3,
+        padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
+        fontSize: t.scale.labF, fontWeight: active ? 600 : 400, fontFamily: t.font,
+        background: active ? t.accentWeak : "transparent", color: active ? t.accentText : t.fg2,
         border: `1px solid ${active ? t.accent + "40" : t.border}`, borderRadius: activeSystem === "m3" ? 20 : 4,
-        cursor: "pointer", transition: "all 150ms",
+        cursor: "pointer", transition: "all 150ms", lineHeight: 1.4,
       }}>
         {children}
       </button>
@@ -90,141 +151,383 @@ function ThemeControls() {
   }
 
   function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
+    /* Gap between label and buttons, and between buttons, both scale with density */
+    const innerGap = Math.max(4, t.scale.gap - 2);
+    const btnGap   = Math.max(4, t.scale.gap - 4);
     return (
-      <div>
-        <div style={{ fontSize: 10, textTransform: "uppercase", color: t.fg3, letterSpacing: 1, marginBottom: 4, fontWeight: 600 }}>{label}</div>
-        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: innerGap }}>
+        {/* fg2 ensures ≥4.5:1 contrast; label scales with density */}
+        <div style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
+        <div style={{ display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
       </div>
     );
   }
 
+  /* ── SALT DS ── */
   if (activeSystem === "salt") {
     const { salt, setSaltTheme, setSaltDensity } = store;
     const theme = salt.themeKey.includes("jpm") ? "jpm" : "legacy";
     const mode = salt.themeKey.includes("dark") ? "dark" : "light";
     const set = (th: string, m: string) => setSaltTheme(`${th}-${m}`);
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 0" }}>
-        <ControlGroup label="Theme">
-          <CtrlBtn active={theme === "jpm"} onClick={() => set("jpm", mode)}>JPM Brand</CtrlBtn>
-          <CtrlBtn active={theme === "legacy"} onClick={() => set("legacy", mode)}>Legacy</CtrlBtn>
-        </ControlGroup>
-        <ControlGroup label="Mode">
-          <CtrlBtn active={mode === "light"} onClick={() => set(theme, "light")}>Light</CtrlBtn>
-          <CtrlBtn active={mode === "dark"} onClick={() => set(theme, "dark")}>Dark</CtrlBtn>
-        </ControlGroup>
-        <ControlGroup label="Density">
-          {(["high", "medium", "low", "touch"] as const).map(k => (
-            <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)}>
-              {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
-            </CtrlBtn>
-          ))}
-        </ControlGroup>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {/* Collapsible header */}
+        <button onClick={() => setOpen(v => !v)} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: `${t.scale.gap - 2}px 0`, background: "none", border: "none", cursor: "pointer",
+          fontSize: t.scale.labF, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: 1,
+          color: t.fg2, fontFamily: t.font,
+        }}>
+          Controls
+          <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
+        </button>
+        {open && (
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+            <ControlGroup label="Theme">
+              <CtrlBtn active={theme === "jpm"} onClick={() => set("jpm", mode)}>JPM Brand</CtrlBtn>
+              <CtrlBtn active={theme === "legacy"} onClick={() => set("legacy", mode)}>Legacy</CtrlBtn>
+            </ControlGroup>
+            <ControlGroup label="Mode">
+              <CtrlBtn active={mode === "light"} onClick={() => set(theme, "light")}>Light</CtrlBtn>
+              <CtrlBtn active={mode === "dark"} onClick={() => set(theme, "dark")}>Dark</CtrlBtn>
+            </ControlGroup>
+            <ControlGroup label="Density">
+              {(["high", "medium", "low", "touch"] as const).map(k => (
+                <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)}>
+                  {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
+                </CtrlBtn>
+              ))}
+            </ControlGroup>
+          </div>
+        )}
       </div>
     );
   }
 
+  /* ── MATERIAL 3 ── */
   if (activeSystem === "m3") {
     const { m3, setM3Theme, setM3Density, setM3CustomColor, setM3DarkCustom } = store;
     const isDark = m3.themeKey.startsWith("dark");
-    const contrast = m3.themeKey.includes("HighContrast") ? "high" : m3.themeKey.includes("MediumContrast") ? "medium" : "standard";
-    const buildKey = (dark: boolean, c: string) => {
-      if (m3.themeKey === "custom") return "custom";
-      const prefix = dark ? "dark" : "light";
-      if (c === "high") return `${prefix}HighContrast`;
-      if (c === "medium") return `${prefix}MediumContrast`;
-      return prefix;
+    const isCustom = m3.themeKey === "custom";
+
+    const selectedPalette = (MATERIAL_COLORS as { name: string; hex: string }[]).find(c => c.hex.toLowerCase() === m3.customColor.toLowerCase());
+
+    const handlePaletteSelect = (hex: string) => {
+      setM3CustomColor(hex);
+      setM3DarkCustom(isDark);
+      setM3Theme("custom");
+      setPaletteOpen(false);
     };
+
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 0" }}>
-        <ControlGroup label="Mode">
-          <CtrlBtn active={!isDark && m3.themeKey !== "custom"} onClick={() => setM3Theme(buildKey(false, contrast))}>Light</CtrlBtn>
-          <CtrlBtn active={isDark && m3.themeKey !== "custom"} onClick={() => setM3Theme(buildKey(true, contrast))}>Dark</CtrlBtn>
-          <CtrlBtn active={m3.themeKey === "custom"} onClick={() => setM3Theme("custom")}>Custom</CtrlBtn>
-        </ControlGroup>
-        {m3.themeKey !== "custom" && (
-          <ControlGroup label="Contrast">
-            <CtrlBtn active={contrast === "standard"} onClick={() => setM3Theme(buildKey(isDark, "standard"))}>Standard</CtrlBtn>
-            <CtrlBtn active={contrast === "medium"} onClick={() => setM3Theme(buildKey(isDark, "medium"))}>Medium</CtrlBtn>
-            <CtrlBtn active={contrast === "high"} onClick={() => setM3Theme(buildKey(isDark, "high"))}>High</CtrlBtn>
-          </ControlGroup>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        <button onClick={() => setOpen(v => !v)} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: `${t.scale.gap - 2}px 0`, background: "none", border: "none", cursor: "pointer",
+          fontSize: t.scale.labF, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: 1,
+          color: t.fg2, fontFamily: t.font,
+        }}>
+          Controls
+          <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
+        </button>
+        {open && (
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+            {/* Mode — M3-native custom dropdown */}
+            <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2), position: "relative" }}>
+              <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Mode</div>
+
+              {/* Click-outside backdrop */}
+              {modeOpen && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setModeOpen(false)} />
+              )}
+
+              {/* Trigger — token-driven outlined select */}
+              <button
+                onClick={() => setModeOpen(v => !v)}
+                style={{
+                  display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", border: `1px solid ${modeOpen ? t.accent : t.border}`, borderRadius: 4,
+                  background: t.bg2, color: t.fg, cursor: "pointer", fontFamily: t.font, fontSize: 13,
+                  transition: "border-color 150ms",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ModeIndicator value={isCustom ? "custom" : m3.themeKey} customColor={m3.customColor} border={t.border} />
+                  {M3_MODE_OPTIONS.find(o => o.value === (isCustom ? "custom" : m3.themeKey))?.label}
+                </span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>
+                  {modeOpen ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {/* Dropdown — all colors from DS tokens, no class-level hardcoding */}
+              {modeOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99,
+                  background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 4,
+                  boxShadow: `0 4px 16px rgba(0,0,0,0.2)`, overflow: "hidden",
+                }}>
+                  {M3_MODE_OPTIONS.map(opt => {
+                    const isSelected = (isCustom ? "custom" : m3.themeKey) === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setM3Theme(opt.value); setModeOpen(false); }}
+                        style={{
+                          display: "flex", width: "100%", alignItems: "center", gap: 8,
+                          padding: "9px 12px", border: "none", cursor: "pointer",
+                          fontFamily: t.font, fontSize: 13, textAlign: "left",
+                          background: isSelected ? t.accentWeak : "transparent",
+                          color: isSelected ? t.accentText : t.fg,
+                          transition: "background 100ms",
+                        }}
+                      >
+                        <ModeIndicator value={opt.value} customColor={m3.customColor} border={t.border} />
+                        <span style={{ flex: 1 }}>{opt.label}</span>
+                        {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.accentText }}>check</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Material Palette — same trigger/dropdown style as Mode */}
+            <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2), position: "relative" }}>
+              <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Material Palette</div>
+
+              {paletteOpen && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setPaletteOpen(false)} />
+              )}
+
+              {/* Trigger — token-driven, identical structure to Mode trigger */}
+              <button
+                onClick={() => setPaletteOpen(v => !v)}
+                style={{
+                  display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", border: `1px solid ${paletteOpen ? t.accent : t.border}`, borderRadius: 4,
+                  background: t.bg2, color: t.fg, cursor: "pointer", fontFamily: t.font, fontSize: 13,
+                  transition: "border-color 150ms",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {selectedPalette
+                    ? <><span style={{ width: 12, height: 12, borderRadius: "50%", background: selectedPalette.hex, flexShrink: 0, border: `1px solid ${t.border}`, display: "inline-block" }} />{selectedPalette.name}</>
+                    : <span style={{ color: t.fg3 }}>Choose a color…</span>
+                  }
+                </span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>
+                  {paletteOpen ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {/* Dropdown — all colors from DS tokens */}
+              {paletteOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99,
+                  background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 4,
+                  boxShadow: `0 4px 16px rgba(0,0,0,0.2)`, maxHeight: 220, overflowY: "auto",
+                }}>
+                  {(MATERIAL_COLORS as { name: string; hex: string }[]).map(c => {
+                    const isSelected = m3.customColor === c.hex;
+                    return (
+                      <button
+                        key={c.hex}
+                        onClick={() => handlePaletteSelect(c.hex)}
+                        style={{
+                          display: "flex", width: "100%", alignItems: "center", gap: 10,
+                          padding: "8px 12px", border: "none", cursor: "pointer",
+                          fontFamily: t.font, fontSize: 13, textAlign: "left",
+                          background: isSelected ? t.accentWeak : "transparent",
+                          color: isSelected ? t.accentText : t.fg,
+                          transition: "background 100ms",
+                        }}
+                      >
+                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: c.hex, flexShrink: 0, border: `1px solid ${t.border}`, display: "inline-block" }} />
+                        <span style={{ flex: 1 }}>{c.name}</span>
+                        <span style={{ fontSize: 10, color: isSelected ? t.accentText : t.fg3, fontFamily: "monospace" }}>{c.hex}</span>
+                        {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.accentText }}>check</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Density */}
+            <ControlGroup label="Density">
+              {([
+                [0, "Default"],
+                [-1, "Comfortable"],
+                [-2, "Compact"],
+                [-3, "Dense"],
+              ] as [number, string][]).map(([d, label]) => (
+                <CtrlBtn key={d} active={m3.density === d} onClick={() => setM3Density(d)}>{label}</CtrlBtn>
+              ))}
+            </ControlGroup>
+          </div>
         )}
-        {m3.themeKey === "custom" && (
-          <ControlGroup label="Custom Color">
-            <input type="color" value={m3.customColor} onChange={e => setM3CustomColor(e.target.value)}
-              style={{ width: 32, height: 24, border: "none", cursor: "pointer", borderRadius: 4 }} />
-            <span style={{ fontSize: 11, color: t.fg3, fontFamily: "monospace" }}>{m3.customColor}</span>
-            <CtrlBtn active={m3.isDarkCustom} onClick={() => setM3DarkCustom(!m3.isDarkCustom)}>{m3.isDarkCustom ? "Dark" : "Light"}</CtrlBtn>
-          </ControlGroup>
-        )}
-        <ControlGroup label="Density">
-          {[0, -1, -2, -3].map(d => (
-            <CtrlBtn key={d} active={m3.density === d} onClick={() => setM3Density(d)}>{d === 0 ? "Default" : `${d}`}</CtrlBtn>
-          ))}
-        </ControlGroup>
       </div>
     );
   }
 
+  /* ── FLUENT 2 ── */
   const { fluent, setFluentTheme, setFluentSize } = store;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 0" }}>
-      <ControlGroup label="Theme">
-        <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
-        <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
-      </ControlGroup>
-      <ControlGroup label="Size">
-        {([["small","S.24"],["medium","M.32"],["large","L.40"]] as const).map(([k,l]) => (
-          <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)}>{l}</CtrlBtn>
-        ))}
-      </ControlGroup>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: `${t.scale.gap - 2}px 0`, background: "none", border: "none", cursor: "pointer",
+        fontSize: t.scale.labF, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
+        color: t.fg2, fontFamily: t.font,
+      }}>
+        Controls
+        <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
+      </button>
+      {open && (
+        <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+          <ControlGroup label="Theme">
+            <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
+            <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
+          </ControlGroup>
+          <ControlGroup label="Size">
+            {([["small","S.24"],["medium","M.32"],["large","L.40"]] as const).map(([k,l]) => (
+              <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)}>{l}</CtrlBtn>
+            ))}
+          </ControlGroup>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── SIDEBAR NAV PAGES (Charts, Tokens, Audit) ── */
-function SidebarPages() {
-  const { activeTab, setActiveTab, setSelectedComponent, activeSystem } = useDesignHub();
+/* ── SIDEBAR DS BRAND — badge + name + subtitle at the top of the drawer ── */
+function SidebarDSBrand() {
+  const { activeSystem } = useDesignHub();
   const t = useActiveTheme();
-  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "" : "f-sidebar-item";
+  const sysInfo = getSystemInfo(activeSystem);
+  const components = getComponents(activeSystem);
 
-  const pages: { id: ActiveTab; icon: string; label: string }[] = [
-    { id: "charts", icon: "bar_chart", label: "Charts" },
-    { id: "tokens", icon: "palette", label: "Tokens" },
-    { id: "audit", icon: "fact_check", label: "Audit" },
-  ];
+  const badge = activeSystem === "salt" ? { label: "S", bg: "#0091CA", color: "#fff" }
+    : activeSystem === "m3" ? { label: "M3", bg: t.accent, color: t.accentFg }
+    : { label: "F2", bg: "#0078D4", color: "#fff" };
 
   return (
-    <div style={{ marginBottom: 4 }}>
-      <div style={{ fontSize: 10, textTransform: "uppercase", color: t.fg3, letterSpacing: "0.06em", padding: "8px 0 4px", fontWeight: 700 }}>Pages</div>
-      {pages.map(p => (
-        <button
-          key={p.id}
-          className={itemClass + (activeTab === p.id ? " active" : "")}
-          onClick={() => { setActiveTab(p.id); setSelectedComponent(null); }}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
-            ...(activeSystem === "m3" ? {
-              padding: "8px 12px", borderRadius: 28, border: "none", fontSize: 13,
-              background: activeTab === p.id ? t.accentWeak : "transparent",
-              color: activeTab === p.id ? t.accentText : t.fg2,
-              fontWeight: activeTab === p.id ? 600 : 400,
-              transition: "all 150ms",
-            } : {}),
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 14, opacity: 0.7 }}>{p.icon}</span>
-          {p.label}
-        </button>
-      ))}
+    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 2}px ${activeSystem === "m3" ? 16 : 14}px` }}>
+      <div style={{
+        width: t.scale.navF + 14, height: t.scale.navF + 14, borderRadius: activeSystem === "m3" ? 10 : 6,
+        background: badge.bg, color: badge.color,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: t.scale.labF, fontWeight: 700, flexShrink: 0, fontFamily: t.font,
+      }}>
+        {badge.label}
+      </div>
+      <div>
+        <div style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg, lineHeight: 1.2 }}>{sysInfo.name}</div>
+        <div style={{ fontSize: t.scale.labF - 1, color: t.fg2, marginTop: 1 }}>{components.length} components</div>
+      </div>
     </div>
   );
 }
 
-/* ── COMPONENT LIST — uses DS sidebar-item classes ── */
+/* ── SIDEBAR SEARCH — sticky between controls and scrollable list ── */
+function SidebarSearch() {
+  const { activeSystem, searchQuery, setSearchQuery } = useDesignHub();
+  const t = useActiveTheme();
+  const inputClass = activeSystem === "salt" ? "s-input" : activeSystem === "m3" ? "" : "f-input";
+  return (
+    <div style={{ position: "relative" }}>
+      <span className="material-symbols-outlined" style={{
+        position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)",
+        fontSize: 15, color: t.fg3, pointerEvents: "none", lineHeight: 1,
+      }}>search</span>
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        className={inputClass}
+        style={{
+          background: activeSystem === "m3" ? t.bg : t.bg2,
+          color: t.fg, border: `1px solid ${t.border}`,
+          borderRadius: activeSystem === "m3" ? 28 : 4,
+          padding: `${t.scale.gap - 1}px 10px ${t.scale.gap - 1}px 28px`,
+          fontSize: t.scale.navF, fontFamily: t.font, outline: "none", width: "100%",
+          boxSizing: "border-box" as const,
+          ...(activeSystem === "m3" ? { height: t.scale.navH - 8 } : {}),
+        }}
+      />
+    </div>
+  );
+}
+
+/* ── CONTENT TOP BAR — hamburger toggle + breadcrumb, replaces M3-only ContentHeader ── */
+function ContentTopBar() {
+  const { activeSystem, activeTab, selectedComponent, setSelectedComponent } = useDesignHub();
+  const { sidebarOpen, toggleSidebar } = useDesignHub();
+  const t = useActiveTheme();
+  const sysInfo = getSystemInfo(activeSystem);
+
+  // Build breadcrumb path
+  let crumb = sysInfo.name;
+  if (selectedComponent) {
+    const comp = getComponents(activeSystem).find(c => c.id === selectedComponent);
+    if (comp) crumb = `${comp.cat} / ${comp.name}`;
+  } else if (activeTab === "charts") {
+    crumb = "Patterns / Charts & Dataviz";
+  } else if (activeTab === "tokens") {
+    crumb = "Tokens";
+  } else if (activeTab === "audit") {
+    crumb = "Audit";
+  }
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: t.scale.gap + 4,
+      padding: `0 ${t.scale.gap + 12}px`,
+      height: t.scale.tabH, flexShrink: 0,
+      borderBottom: `1px solid ${t.border}`,
+      background: activeSystem === "m3" ? t.bg : t.bg,
+    }}>
+      {/* Hamburger — toggles sidebar */}
+      <button
+        onClick={toggleSidebar}
+        style={{
+          background: "none", border: "none", cursor: "pointer", padding: 4,
+          display: "flex", alignItems: "center", color: t.fg2, borderRadius: 4,
+          transition: "color 150ms",
+        }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>
+          {sidebarOpen ? "chevron_left" : "menu"}
+        </span>
+      </button>
+
+      {/* Breadcrumb — clickable segments */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: t.scale.navF - 1, color: t.fg2 }}>
+        {selectedComponent ? (
+          <>
+            <button onClick={() => setSelectedComponent(null)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: t.scale.navF - 1, color: t.accent, fontFamily: t.font }}>
+              {sysInfo.name}
+            </button>
+            <span style={{ color: t.fg3 }}>/</span>
+            <span style={{ color: t.fg, fontWeight: 500 }}>{crumb.split(" / ").pop()}</span>
+          </>
+        ) : (
+          <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap - 2 }}>
+            <span style={{ color: t.fg, fontWeight: 500 }}>{crumb}</span>
+            <span style={{ fontSize: t.scale.labF - 1, color: t.fg3, fontWeight: 400 }}>Interactive Documentation</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── COMPONENT LIST — nav items only (search is now in SidebarSearch above) ── */
 function ComponentList() {
-  const { activeSystem, selectedComponent, setSelectedComponent, searchQuery, setSearchQuery } = useDesignHub();
+  const { activeSystem, selectedComponent, setSelectedComponent, searchQuery, activeTab, setActiveTab } = useDesignHub();
   const t = useActiveTheme();
   const components = getComponents(activeSystem);
   const categories = getCategories(activeSystem);
@@ -234,38 +537,60 @@ function ComponentList() {
     : components;
   const grouped = categories.map(cat => ({ cat, items: filtered.filter(c => c.cat === cat) })).filter(g => g.items.length > 0);
 
-  // Use the DS's own input and sidebar-item classes
-  const inputClass = activeSystem === "salt" ? "s-input" : activeSystem === "m3" ? "" : "f-input";
-  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "" : "f-sidebar-item";
+  // Use the DS's own sidebar-item / menu-item classes (no input class needed here)
+  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : "f-sidebar-item";
+
+  // Unified nav-item active styles per DS — all sizes from density scale
+  const activeItemStyle = (active: boolean): React.CSSProperties => {
+    if (activeSystem === "m3") {
+      return active
+        ? { background: t.accentWeak, color: t.accentText, fontWeight: 500, borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", minHeight: t.scale.navH }
+        : { borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", background: "transparent", color: t.fg, minHeight: t.scale.navH };
+    }
+    // Salt / Fluent — CSS class handles most styling; pass fontSize + color for contrast
+    return active
+      ? { background: t.accentWeak, color: t.accentText, fontWeight: 600, fontSize: t.scale.navF }
+      : { fontSize: t.scale.navF, color: t.fg };
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-        className={inputClass}
-        style={{
-          background: t.bg2, color: t.fg, border: `1px solid ${t.border}`,
-          borderRadius: activeSystem === "m3" ? 28 : 4, padding: "6px 10px", fontSize: 12,
-          fontFamily: t.font, outline: "none", marginBottom: 8, width: "100%",
-          ...(activeSystem === "m3" ? { height: 36, borderBottom: `1px solid ${t.border}` } : {}),
-        }}
-      />
+      {/* Patterns — Charts & Dataviz (always visible unless search active) */}
+      {!searchQuery && (
+        <div style={{ marginBottom: 4 }}>
+          <div style={activeSystem === "m3"
+            ? { fontSize: t.scale.labF, fontWeight: 500, color: t.fg2, letterSpacing: "0.5px", padding: `${t.scale.gap + 4}px 16px ${t.scale.gap - 4}px`, textTransform: "uppercase" as const }
+            : { fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: "0.06em", padding: `${t.scale.gap}px 0 ${t.scale.gap - 2}px`, fontWeight: 700 }
+          }>Patterns</div>
+          <button
+            className={itemClass + (activeTab === "charts" && !selectedComponent ? " active" : "")}
+            onClick={() => { setSelectedComponent(null); setActiveTab("charts"); }}
+            style={{
+              display: "flex", alignItems: "center", gap: activeSystem === "m3" ? 12 : 6,
+              width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
+              ...activeItemStyle(activeTab === "charts" && !selectedComponent),
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: activeSystem === "m3" ? 18 : 14, color: activeTab === "charts" && !selectedComponent ? t.accentText : t.fg3, flexShrink: 0 }}>bar_chart</span>
+            Charts &amp; Dataviz
+          </button>
+        </div>
+      )}
+
+      {/* Component groups */}
       {grouped.map(g => (
         <div key={g.cat}>
-          <div style={{ fontSize: 10, textTransform: "uppercase", color: t.fg3, letterSpacing: "0.06em", padding: "8px 0 4px", fontWeight: 700 }}>{g.cat}</div>
+          <div style={activeSystem === "m3"
+            ? { fontSize: t.scale.labF, fontWeight: 500, color: t.fg2, letterSpacing: "0.5px", padding: `${t.scale.gap + 4}px 16px ${t.scale.gap - 4}px`, textTransform: "uppercase" as const }
+            : { fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: "0.06em", padding: `${t.scale.gap}px 0 ${t.scale.gap - 2}px`, fontWeight: 700 }
+          }>{g.cat}</div>
           {g.items.map(c => (
             <button key={c.id}
               className={itemClass + (selectedComponent === c.id ? " active" : "")}
               onClick={() => setSelectedComponent(selectedComponent === c.id ? null : c.id)}
               style={{
-                display: "block", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
-                // M3 doesn't have a sidebar-item class, so style inline
-                ...(activeSystem === "m3" ? {
-                  padding: "8px 12px", borderRadius: 28, border: "none", fontSize: 13,
-                  background: selectedComponent === c.id ? t.accentWeak : "transparent",
-                  color: selectedComponent === c.id ? t.accentText : t.fg2,
-                  fontWeight: selectedComponent === c.id ? 600 : 400,
-                  transition: "all 150ms",
-                } : {}),
+                display: "flex", alignItems: "center", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
+                ...activeItemStyle(selectedComponent === c.id),
               }}
             >{c.name}</button>
           ))}
@@ -275,26 +600,64 @@ function ComponentList() {
   );
 }
 
-/* ── TAB BAR — uses DS tab classes ── */
+/* ── TAB BAR — each DS renders its own native tab spec ── */
 function TabBar() {
-  const { activeTab, setActiveTab } = useDesignHub();
+  const { activeTab, setActiveTab, activeSystem } = useDesignHub();
   const t = useActiveTheme();
-  const { activeSystem } = useDesignHub();
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: "preview", label: "Preview" },
     { id: "code", label: "Code" },
     { id: "tokens", label: "Tokens" },
-    { id: "charts", label: "Charts" },
     { id: "audit", label: "Audit" },
   ];
 
-  const tabClass = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : "f-tab";
+  /* ── M3 Primary Tabs: height + font scale with density ── */
+  if (activeSystem === "m3") {
+    return (
+      <div style={{ display: "flex", background: t.bg, flexShrink: 0, borderBottom: `1px solid ${t.border}` }}>
+        {tabs.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+              position: "relative", height: t.scale.tabH, padding: `0 ${t.scale.gap + 18}px`,
+              border: "none", background: "transparent", cursor: "pointer",
+              fontSize: t.scale.navF, fontWeight: 500, letterSpacing: "0.1px", fontFamily: t.font,
+              color: active ? t.accent : t.fg2, transition: "color 150ms",
+            }}>
+              {tab.label}
+              {active && (
+                <span style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0,
+                  height: 3, background: t.accent, borderRadius: "3px 3px 0 0", display: "block",
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
+  /* ── Salt DS Tabs: s-tab class + font size from scale ── */
+  if (activeSystem === "salt") {
+    return (
+      <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, background: t.bg, flexShrink: 0 }}>
+        {tabs.map(tab => (
+          <button key={tab.id} className={`s-tab${activeTab === tab.id ? " active" : ""}`}
+            onClick={() => setActiveTab(tab.id)} style={{ fontFamily: t.font, fontSize: t.scale.navF }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  /* ── Fluent 2 Tabs: f-tab class + font size from scale ── */
   return (
-    <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${t.border}`, background: t.bg }}>
+    <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, background: t.bg, flexShrink: 0 }}>
       {tabs.map(tab => (
-        <button key={tab.id} className={`${tabClass} ${activeTab === tab.id ? "active" : ""}`}
-          onClick={() => setActiveTab(tab.id)} style={{ fontFamily: t.font }}>
+        <button key={tab.id} className={`f-tab${activeTab === tab.id ? " active" : ""}`}
+          onClick={() => setActiveTab(tab.id)} style={{ fontFamily: t.font, fontSize: t.scale.navF }}>
           {tab.label}
         </button>
       ))}
@@ -312,26 +675,163 @@ function LandingGrid() {
   const sysInfo = getSystemInfo(activeSystem);
   const previews = getPreviews(activeSystem);
 
-  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : "f-card";
+  /* ─── M3 layout: category sections, type scale + card sizes all follow density ─── */
+  if (activeSystem === "m3") {
+    const heroSize = Math.round(t.scale.tabH * 0.9);   // Display Large → scales with density
+    const h2Size   = Math.round(t.scale.tabH * 0.45);  // Headline Medium
+    const bodySize = t.scale.navF + 2;
+    const outerPad = t.scale.gap * 4;
+    return (
+      <div style={{ padding: `${outerPad}px ${outerPad + 8}px ${outerPad}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
+        {/* Hero */}
+        <div style={{ marginBottom: outerPad, borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad - 8 }}>
+          <div style={{
+            fontSize: t.scale.labF, fontWeight: 500, color: t.accent,
+            letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4,
+          }}>
+            Google · {sysInfo.org}
+          </div>
+          <h1 style={{
+            fontSize: heroSize, fontWeight: 400, color: t.fg,
+            lineHeight: 1.15, margin: `0 0 ${t.scale.gap + 8}px`, letterSpacing: "-0.25px",
+          }}>
+            {sysInfo.name}
+          </h1>
+          <p style={{ fontSize: bodySize, color: t.fg2, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+            {components.length} components across {categories.length} categories —
+            expressive, adaptive, and accessible design system.
+          </p>
+          {/* Quick-stat chips */}
+          <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>
+            {[
+              { icon: "category", label: `${categories.length} Categories` },
+              { icon: "widgets", label: `${components.length} Components` },
+              { icon: "palette", label: "Dynamic Color" },
+              { icon: "accessibility_new", label: "WCAG AA" },
+            ].map(s => (
+              <div key={s.label} style={{
+                display: "flex", alignItems: "center", gap: t.scale.gap - 2,
+                padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: 20,
+                background: t.bg2, border: `1px solid ${t.border}`,
+                fontSize: t.scale.navF - 1, color: t.fg2, fontWeight: 500,
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: t.accent }}>{s.icon}</span>
+                {s.label}
+              </div>
+            ))}
+          </div>
+        </div>
 
-  return (
-    <div style={{ padding: 24, fontFamily: t.font }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: t.fg, marginBottom: 4 }}>{sysInfo.name}</h1>
-        <p style={{ fontSize: 14, color: t.fg3 }}>{sysInfo.org} — {components.length} components across {categories.length} categories</p>
+        {/* Category sections */}
+        {categories.map(cat => {
+          const catItems = components.filter(c => c.cat === cat);
+          return (
+            <div key={cat} style={{ marginBottom: outerPad }}>
+              {/* Category header */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap, marginBottom: t.scale.gap + 10 }}>
+                <h2 style={{ fontSize: h2Size, fontWeight: 400, color: t.fg, margin: 0 }}>{cat}</h2>
+                <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
+              </div>
+              {/* Component cards grid — gap + card internals scale with density */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap + 2 }}>
+                {catItems.map(c => {
+                  const Preview = previews[c.id];
+                  return (
+                    <button key={c.id} className="m3-card m3-card-outlined"
+                      onClick={() => setSelectedComponent(c.id)}
+                      style={{ width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "box-shadow 200ms" }}
+                    >
+                      {/* Preview area */}
+                      <div style={{
+                        background: t.bg2, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        borderBottom: `1px solid ${t.border}`,
+                      }}>
+                        {Preview
+                          ? <div style={{ pointerEvents: "none", width: "100%" }}><Preview /></div>
+                          : <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.fg3, opacity: 0.4 }}>widgets</span>
+                        }
+                      </div>
+                      {/* Label area */}
+                      <div style={{ padding: `${t.scale.gap + 2}px ${t.scale.gap + 6}px ${t.scale.gap + 4}px` }}>
+                        <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: "0.1px" }}>{c.name}</div>
+                        <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+    );
+  }
+
+  /* ─── Salt / Fluent layout — card padding + fonts scale with density ─── */
+  const cardClass = activeSystem === "salt" ? "s-card" : "f-card";
+  const cardPad = t.scale.gap + 6;
+  return (
+    <div style={{ padding: cardPad + 8, fontFamily: t.font }}>
+      <div style={{ marginBottom: cardPad + 10 }}>
+        <h1 style={{ fontSize: t.scale.navF + 14, fontWeight: 700, color: t.fg, marginBottom: 4 }}>{sysInfo.name}</h1>
+        <p style={{ fontSize: t.scale.navF, color: t.fg2 }}>{sysInfo.org} — {components.length} components across {categories.length} categories</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: t.scale.gap + 4 }}>
         {components.map(c => {
           const Preview = previews[c.id];
           return (
             <button key={c.id} className={cardClass} onClick={() => setSelectedComponent(c.id)}
-              style={{ width: "100%", textAlign: "left", padding: 14, fontFamily: t.font }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: t.fg }}>{c.name}</div>
-              <div style={{ fontSize: 10, color: t.fg3, marginTop: 2 }}>{c.cat}</div>
-              {Preview && <div style={{ pointerEvents: "none", marginTop: 4 }}><Preview /></div>}
+              style={{ width: "100%", textAlign: "left", padding: cardPad, fontFamily: t.font }}>
+              <div style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg }}>{c.name}</div>
+              <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.cat}</div>
+              {Preview && <div style={{ pointerEvents: "none", marginTop: t.scale.gap - 2 }}><Preview /></div>}
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ── CONTENT HEADER — breadcrumb + component title for M3 ── */
+function ContentHeader() {
+  const { activeSystem, activeTab, selectedComponent, setSelectedComponent } = useDesignHub();
+  const t = useActiveTheme();
+  if (activeSystem !== "m3" || !selectedComponent) return null;
+
+  const components = getComponents(activeSystem);
+  const comp = components.find(c => c.id === selectedComponent);
+  if (!comp) return null;
+
+  const sysInfo = getSystemInfo(activeSystem);
+  return (
+    <div style={{
+      padding: `${t.scale.gap + 4}px ${t.scale.gap * 4}px 0`, background: t.bg, borderBottom: `1px solid ${t.border}`,
+      flexShrink: 0,
+    }}>
+      {/* Breadcrumb — font scales with density */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: t.scale.labF, color: t.fg2, marginBottom: t.scale.gap }}>
+        <button onClick={() => setSelectedComponent(null)}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: t.scale.labF, color: t.accent, fontFamily: t.font }}>
+          {sysInfo.name}
+        </button>
+        <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF - 2, color: t.fg2 }}>chevron_right</span>
+        <span style={{ color: t.fg2 }}>{comp.cat}</span>
+        <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF - 2, color: t.fg2 }}>chevron_right</span>
+        <span style={{ color: t.fg, fontWeight: 500 }}>{comp.name}</span>
+      </div>
+      {/* Component title row — title scales with density */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+        <h2 style={{ fontSize: Math.round(t.scale.tabH * 0.55), fontWeight: 400, color: t.fg, margin: 0, letterSpacing: "-0.25px" }}>
+          {comp.name}
+        </h2>
+        <span style={{
+          fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
+          padding: `${t.scale.gap - 4}px ${t.scale.gap + 4}px`, borderRadius: 20, fontWeight: 500,
+        }}>
+          {activeTab === "code" ? "Code" : "Preview"}
+        </span>
       </div>
     </div>
   );
@@ -360,48 +860,50 @@ export function DesignHubApp() {
   // DS-specific sidebar item class for the toggle button
   const btnClass = activeSystem === "salt" ? "s-btn s-btn-transparent" : activeSystem === "m3" ? "m3-btn m3-btn-text" : "f-btn f-btn-subtle";
 
+  // Detect dark theme for logo color — logo is black SVG, invert to white in dark mode
+  const isDarkTheme = activeSystem === "salt"
+    ? store.salt.themeKey.includes("dark")
+    : activeSystem === "m3"
+    ? store.m3.themeKey.startsWith("dark")
+    : store.fluent.themeKey === "dark";
+  const logoFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0)";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: t.bg2, fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Inject the DS CSS */}
       <style dangerouslySetInnerHTML={{ __html: t.css }} />
 
-      {/* Header — uses DS background and border tokens */}
+      {/* Header — 3-column, height + padding scale with density */}
       <header style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "6px 16px", borderBottom: `1px solid ${t.border}`, background: t.bg,
-        minHeight: 44, flexShrink: 0,
+        display: "flex", alignItems: "center",
+        padding: `0 ${t.scale.gap + 4}px`, borderBottom: `1px solid ${t.border}`, background: t.bg,
+        minHeight: t.scale.hdrH, flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button className={btnClass} onClick={toggleSidebar}
-            style={{ minWidth: "auto", width: 32, height: 32, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
-            {sidebarOpen ? "◁" : "▷"}
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{
-              width: 24, height: 24, borderRadius: activeSystem === "m3" ? 8 : 4,
-              background: t.accent, display: "flex", alignItems: "center", justifyContent: "center",
-              color: t.accentFg, fontWeight: 700, fontSize: 12,
-            }}>
-              {sysInfo.icon}
-            </div>
-            <span style={{ fontSize: 15, fontWeight: 600, color: t.fg }}>Design Hub</span>
-          </div>
+        {/* Left — logo + title (hamburger moved to ContentTopBar) */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
+          <img src="/aologo.svg" alt="ausōs" style={{ height: t.scale.navF + 8, width: "auto", filter: logoFilter }} />
+          <span style={{ fontSize: t.scale.navF + 1, fontWeight: 600, color: t.fg }}>UI Kit Overview</span>
+        </div>
+
+        {/* Center — DS switcher, always centered */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <SystemSwitcher />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+
+        {/* Right — theme badge + AI Builder */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
           <span style={{
-            fontSize: 11, color: t.accentText, background: t.accentWeak,
-            padding: "3px 10px", borderRadius: activeSystem === "m3" ? 16 : 8, fontWeight: 600,
+            fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
+            padding: `${t.scale.gap - 3}px ${t.scale.gap + 2}px`, borderRadius: activeSystem === "m3" ? 16 : 8, fontWeight: 600,
           }}>
             {t.T.name || sysInfo.name}
           </span>
           <Link href="/" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: 12, fontWeight: 600, color: "#fff",
+            fontSize: t.scale.labF + 1, fontWeight: 600, color: "#fff",
             background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-            padding: "5px 14px", borderRadius: 8, textDecoration: "none",
+            padding: `${t.scale.gap - 1}px ${t.scale.gap + 6}px`, borderRadius: 8, textDecoration: "none",
             boxShadow: "0 0 12px rgba(124,58,237,0.3)",
-            transition: "box-shadow 200ms, transform 200ms",
           }}>
             AI Builder
           </Link>
@@ -409,26 +911,45 @@ export function DesignHubApp() {
       </header>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar — uses DS background, border, and navigation tokens */}
+        {/* Sidebar — DS brand → controls → sticky search → scrollable list */}
         {sidebarOpen && (
           <aside style={{
-            width: 240, borderRight: `1px solid ${t.border}`, background: t.bg,
+            width: t.scale.panelW,
+            borderRight: `1px solid ${t.border}`,
+            background: activeSystem === "m3" ? t.bg2 : t.bg,
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
-            <div style={{ padding: "12px 14px", overflowY: "auto", flex: 1 }}>
+            {/* 1 — DS brand header (no separator — controls flow directly below) */}
+            <div style={{ flexShrink: 0 }}>
+              <SidebarDSBrand />
+            </div>
+            {/* 2 — Theme controls (collapsible) */}
+            <div style={{ padding: `${t.scale.gap}px 14px 0`, flexShrink: 0 }}>
               <ThemeControls />
-              <div style={{ height: 1, background: t.border, margin: "8px 0" }} />
-              <SidebarPages />
-              <div style={{ height: 1, background: t.border, margin: "4px 0 8px" }} />
+            </div>
+            {/* 3 — Sticky search — stays fixed while list below scrolls */}
+            <div style={{
+              padding: `${t.scale.gap}px ${activeSystem === "m3" ? 8 : 14}px`,
+              flexShrink: 0,
+              background: activeSystem === "m3" ? t.bg2 : t.bg,
+            }}>
+              <SidebarSearch />
+            </div>
+            {/* 4 — Scrollable component list (no search inside) */}
+            <div style={{
+              padding: activeSystem === "m3" ? `${t.scale.gap - 2}px 8px ${t.scale.gap + 4}px` : `${t.scale.gap - 2}px 14px ${t.scale.gap + 4}px`,
+              overflowY: "auto", flex: 1,
+            }}>
               <ComponentList />
             </div>
           </aside>
         )}
 
-        {/* Main */}
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.bg2 }}>
-          <TabBar />
+        {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "m3" ? t.bg : t.bg2 }}>
+          <ContentTopBar />
+          {store.selectedComponent && <TabBar />}
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
           </div>
