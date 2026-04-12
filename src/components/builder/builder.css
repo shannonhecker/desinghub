@@ -1429,7 +1429,7 @@
 
 /* Chat bottom input — pinned, centered */
 .chat-input-bar {
-  padding: 16px 24px;
+  padding: 24px 32px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
