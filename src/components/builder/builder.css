@@ -1039,7 +1039,7 @@
 /* Center chips only when below chatbox (initial state) */
 .chat-input-bar .prompt-bubbles {
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 20px;
 }
 /* Left-align chips when inline in conversation */
 .messages-area .prompt-bubbles {
