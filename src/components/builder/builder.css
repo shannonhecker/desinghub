@@ -833,10 +833,6 @@
   flex-shrink: 0;
 }
 
-/* Dark logo on light backgrounds */
-.builder-light .ausos-logo-img {
-  filter: brightness(0);
-}
 
 .top-bar-logo-text {
   font-size: 15px;
