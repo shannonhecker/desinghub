@@ -189,7 +189,11 @@ export function BuilderApp() {
           {/* Left: logo — always visible in header; hamburger lives inside the sidebar */}
           <div className="top-bar-left">
             <div className="top-bar-logo">
-              <img src="/aologo.svg" alt="ausōs" className="ausos-logo-img" />
+              <img
+                src={mode === "light" ? "/aologoC.svg" : "/aologo.svg"}
+                alt="ausōs"
+                className="ausos-logo-img"
+              />
             </div>
           </div>
 
