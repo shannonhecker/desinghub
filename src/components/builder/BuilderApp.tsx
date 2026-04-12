@@ -14,11 +14,11 @@ export function BuilderApp() {
     mode, previewOpen, togglePreview, setMode, clearChat,
     designSystem, interfaceType, selectedComponents, colorOverrides, density,
     setDesignSystem, setInterfaceType, setSelectedComponents,
+    chatOpen: isChatOpen, toggleChat,
   } = useBuilder();
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(true);
   const [headerScrolled, setHeaderScrolled] = useState(false);
 
   /* ── Resizable drag bar ── */
@@ -191,18 +191,6 @@ export function BuilderApp() {
           <div className={`chat-slide ${isChatOpen ? "chat-slide-open" : "chat-slide-closed"}`}>
             <ChatPanel />
           </div>
-
-          {/* Collapse / Expand toggle — sits on the dividing edge */}
-          <button
-            className={`chat-collapse-btn ${!isChatOpen ? "collapsed" : ""}`}
-            onClick={() => setIsChatOpen((v) => !v)}
-            title={isChatOpen ? "Collapse chat" : "Expand chat"}
-            aria-label={isChatOpen ? "Collapse chat" : "Expand chat"}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              {isChatOpen ? "chevron_left" : "chevron_right"}
-            </span>
-          </button>
 
           {previewOpen && isChatOpen && (
             <div

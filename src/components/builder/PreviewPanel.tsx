@@ -356,6 +356,7 @@ function PreviewToolbar() {
     density, setDensity,
     toggleComponentLibrary, componentLibraryOpen,
     toggleAddMenu,
+    chatOpen, toggleChat,
   } = useBuilder();
 
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
@@ -366,6 +367,18 @@ function PreviewToolbar() {
 
   return (
     <div className="preview-toolbar">
+      {/* Chat collapse toggle */}
+      <button
+        className="preview-toolbar-collapse-btn"
+        onClick={toggleChat}
+        title={chatOpen ? "Collapse chat" : "Expand chat"}
+        aria-label={chatOpen ? "Collapse chat" : "Expand chat"}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+          {chatOpen ? "chevron_left" : "chevron_right"}
+        </span>
+      </button>
+
       {/* UI Kit Switcher */}
       <div className="preview-toolbar-group">
         {systems.map((s) => (

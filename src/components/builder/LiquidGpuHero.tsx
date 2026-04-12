@@ -258,38 +258,41 @@ void main() {
   vec3 p = pos.xyz;
   float life = pos.w;
 
-  // Sphere restoration force
+  // Soft sphere restoration — weaker pull lets tendrils extend
   float r = length(p);
-  float targetR = 1.0;
-  vec3 toCenter = safeNormalize(p) * targetR;
-  p = mix(p, toCenter, 0.008);
+  vec3 toCenter = safeNormalize(p) * 1.0;
+  p = mix(p, toCenter, 0.003);
 
-  // Curl noise displacement
-  float t = uTime * 0.15;
+  // Strong multi-octave curl noise for visible tendrils
+  float t = uTime * 0.12;
   vec3 curlP = p * uDistortFreq + t;
   vec3 curl = curlNoise(curlP);
-  p += curl * uShapeDistort * 0.012;
+  // Second octave at higher frequency for fine detail
+  vec3 curl2 = curlNoise(curlP * 2.3 + 7.0);
+  p += (curl * 0.7 + curl2 * 0.3) * uShapeDistort * 0.035;
 
-  // Shape distortion — organic morph
-  float distort = snoise(p * uDistortFreq * 0.7 + uTime * 0.2) * uShapeDistort;
-  p += safeNormalize(p) * distort * 0.06;
+  // Deep organic distortion — creates the bulges and voids
+  float distort = snoise(p * uDistortFreq * 0.5 + uTime * 0.15) * uShapeDistort;
+  float distort2 = snoise(p * uDistortFreq * 1.2 - uTime * 0.1) * uShapeDistort * 0.4;
+  p += safeNormalize(p) * (distort * 0.1 + distort2 * 0.06);
 
-  // Mouse repulsion
+  // Mouse repulsion — stronger push through the cloud
   vec3 toMouse = p - uMouse3D;
   float mouseDist = length(toMouse);
-  float mouseForce = smoothstep(1.2, 0.0, mouseDist) * uMouseInfluence;
-  p += safeNormalize(toMouse) * mouseForce * 0.04;
+  float mouseForce = smoothstep(1.5, 0.0, mouseDist) * uMouseInfluence;
+  p += safeNormalize(toMouse) * mouseForce * 0.08;
 
-  // Gentle orbit
-  float angle = uTime * 0.05;
-  mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-  p.xz = rot * p.xz;
+  // Slow tumbling orbit on two axes
+  float angle1 = uTime * 0.04;
+  mat2 rot1 = mat2(cos(angle1), -sin(angle1), sin(angle1), cos(angle1));
+  p.xz = rot1 * p.xz;
+  float angle2 = uTime * 0.025;
+  mat2 rot2 = mat2(cos(angle2), -sin(angle2), sin(angle2), cos(angle2));
+  p.yz = rot2 * p.yz;
 
-  // Clamp to prevent runaway particles
   p = clamp(p, vec3(-5.0), vec3(5.0));
 
-  // Life cycle — w channel stores "age" for color variation
-  life = fract(life + 0.001);
+  life = fract(life + 0.0008);
 
   gl_FragColor = vec4(p, life);
 }
@@ -321,33 +324,42 @@ varying float vDist;
 uniform float uTime;
 
 void main() {
-  // Soft circle
   float d = length(gl_PointCoord - 0.5);
   if (d > 0.5) discard;
-  float alpha = smoothstep(0.5, 0.15, d);
+  float alpha = smoothstep(0.5, 0.05, d);
 
-  // Gradient: Electric Purple → Vibrant Teal → Royal Blue
-  vec3 purple = vec3(0.659, 0.333, 0.969);  // #A855F7
-  vec3 teal   = vec3(0.176, 0.831, 0.749);  // #2DD4BF
-  vec3 blue   = vec3(0.231, 0.510, 0.965);  // #3B82F6
+  // Warm nebula palette: deep amber → bright gold → pale white
+  vec3 deepAmber = vec3(0.55, 0.28, 0.08);
+  vec3 brightGold = vec3(0.95, 0.78, 0.35);
+  vec3 paleWhite  = vec3(1.0, 0.95, 0.88);
+  vec3 coolGray   = vec3(0.45, 0.42, 0.40);
 
-  float t = fract(vLife * 3.0 + vDist * 0.4 + uTime * 0.05);
+  float t = fract(vLife * 4.0 + vDist * 0.6 + uTime * 0.03);
+
   vec3 color;
-  if (t < 0.33) {
-    color = mix(purple, teal, t / 0.33);
-  } else if (t < 0.66) {
-    color = mix(teal, blue, (t - 0.33) / 0.33);
+  if (t < 0.25) {
+    color = mix(coolGray, deepAmber, t / 0.25);
+  } else if (t < 0.5) {
+    color = mix(deepAmber, brightGold, (t - 0.25) / 0.25);
+  } else if (t < 0.75) {
+    color = mix(brightGold, paleWhite, (t - 0.5) / 0.25);
   } else {
-    color = mix(blue, purple, (t - 0.66) / 0.34);
+    color = mix(paleWhite, coolGray, (t - 0.75) / 0.25);
   }
 
-  // Brighten particles closer to center
-  float glow = smoothstep(1.6, 0.4, vDist);
-  color += glow * 0.35;
+  // Hot bright streaks near the core
+  float coreBright = smoothstep(1.4, 0.2, vDist);
+  color = mix(color, paleWhite, coreBright * 0.6);
 
-  // Soft outer falloff
-  alpha *= smoothstep(2.0, 0.8, vDist);
-  alpha *= 0.85;
+  // Dim particles at the fringe for organic falloff
+  float fringeAlpha = smoothstep(2.2, 0.6, vDist);
+  alpha *= fringeAlpha;
+
+  // Very fine particles — reduce alpha for dusty density feel
+  alpha *= 0.55;
+
+  // Boost contrast: core particles pop, edge particles fade
+  alpha *= (0.4 + coreBright * 0.6);
 
   gl_FragColor = vec4(color, alpha);
 }
@@ -357,7 +369,7 @@ void main() {
    GPU Particle Orb — R3F component
    ═══════════════════════════════════════════════════════════ */
 
-const SIZE = 256;
+const SIZE = 512;
 const COUNT = SIZE * SIZE;
 
 function GpuOrb() {
@@ -369,10 +381,10 @@ function GpuOrb() {
   // Lerped uniform targets
   const mouseTarget = useRef(new THREE.Vector3(0, 0, 0));
   const mouseCurrent = useRef(new THREE.Vector3(0, 0, 0));
-  const distortTarget = useRef(1.0);
-  const distortCurrent = useRef(1.0);
-  const freqTarget = useRef(1.8);
-  const freqCurrent = useRef(1.8);
+  const distortTarget = useRef(1.6);
+  const distortCurrent = useRef(1.6);
+  const freqTarget = useRef(2.2);
+  const freqCurrent = useRef(2.2);
 
   const material = useMemo(() => {
     const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1;
@@ -381,7 +393,7 @@ function GpuOrb() {
       fragmentShader: PARTICLE_FRAG,
       uniforms: {
         texturePosition: { value: null },
-        uPointSize: { value: 3.0 },
+        uPointSize: { value: 1.8 },
         uPixelRatio: { value: dpr },
         uTime: { value: 0 },
       },
@@ -401,22 +413,22 @@ function GpuOrb() {
 
     for (let i = 0; i < COUNT; i++) {
       const i4 = i * 4;
-      // Fibonacci sphere for even distribution
+      // Volumetric fill — cube root distribution for uniform density inside sphere
       const phi = Math.acos(1 - 2 * (i + 0.5) / COUNT);
       const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-      const r = 1.0 + (Math.random() - 0.5) * 0.08;
+      const r = Math.pow(Math.random(), 0.33) * 1.15;
       data[i4 + 0] = r * Math.sin(phi) * Math.cos(theta);
       data[i4 + 1] = r * Math.sin(phi) * Math.sin(theta);
       data[i4 + 2] = r * Math.cos(phi);
-      data[i4 + 3] = Math.random(); // life / age seed
+      data[i4 + 3] = Math.random();
     }
 
     const posVar = gpu.addVariable("texturePosition", GPGPU_POSITION_FRAG, posTex);
     gpu.setVariableDependencies(posVar, [posVar]);
 
     posVar.material.uniforms.uTime = { value: 0 };
-    posVar.material.uniforms.uShapeDistort = { value: 1.0 };
-    posVar.material.uniforms.uDistortFreq = { value: 1.8 };
+    posVar.material.uniforms.uShapeDistort = { value: 1.6 };
+    posVar.material.uniforms.uDistortFreq = { value: 2.2 };
     posVar.material.uniforms.uMouse3D = { value: new THREE.Vector3(0, 0, 0) };
     posVar.material.uniforms.uMouseInfluence = { value: 0.0 };
 
@@ -473,7 +485,7 @@ function GpuOrb() {
     distortCurrent.current += (distortTarget.current - distortCurrent.current) * (1 - Math.pow(0.98, dt60));
     freqCurrent.current += (freqTarget.current - freqCurrent.current) * (1 - Math.pow(0.98, dt60));
 
-    const breathe = 1.0 + Math.sin(t * 0.5) * 0.15;
+    const breathe = 1.0 + Math.sin(t * 0.3) * 0.25;
 
     posVar.material.uniforms.uTime.value = t;
     posVar.material.uniforms.uShapeDistort.value = distortCurrent.current * breathe;
@@ -511,7 +523,7 @@ function OrbScene() {
   return (
     <Canvas
       className="lgh-canvas"
-      camera={{ position: [0, 0, 3.2], fov: 50 }}
+      camera={{ position: [0, 0, 3.8], fov: 50 }}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}
     >

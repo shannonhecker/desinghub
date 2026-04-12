@@ -50,6 +50,7 @@ interface BuilderState {
   // UI state
   settingsOpen: boolean;
   previewOpen: boolean;
+  chatOpen: boolean;
   sidebarCollapsed: boolean;
   mobilePreviewOpen: boolean;
   previewKey: number;
@@ -92,6 +93,8 @@ interface BuilderState {
   toggleSettings: () => void;
   togglePreview: () => void;
   setPreviewOpen: (v: boolean) => void;
+  toggleChat: () => void;
+  setChatOpen: (v: boolean) => void;
   toggleSidebar: () => void;
   toggleMobilePreview: () => void;
   bumpPreview: () => void;
@@ -134,6 +137,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   // UI state
   settingsOpen: false,
   previewOpen: false,
+  chatOpen: true,
   sidebarCollapsed: false,
   mobilePreviewOpen: false,
   previewKey: 0,
@@ -205,6 +209,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
   setPreviewOpen: (v) => set({ previewOpen: v }),
+  toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
+  setChatOpen: (v) => set({ chatOpen: v }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   toggleMobilePreview: () => set((s) => ({ mobilePreviewOpen: !s.mobilePreviewOpen })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
