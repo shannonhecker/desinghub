@@ -39,7 +39,7 @@ class GPUComputationRenderer {
     this.scene.add(this.mesh);
     this.passThruUniforms = { passThruTexture: { value: null } };
     this.passThruShader = this.createShaderMaterial(
-      `void main() { vec2 uv = gl_FragCoord.xy / resolution.xy; gl_FragColor = texture2D( passThruTexture, uv ); }`,
+      `uniform vec2 resolution;\nuniform sampler2D passThruTexture;\nvoid main() { vec2 uv = gl_FragCoord.xy / resolution.xy; gl_FragColor = texture2D( passThruTexture, uv ); }`,
       this.passThruUniforms
     );
   }
@@ -263,18 +263,21 @@ void main() {
   vec3 toCenter = safeNormalize(p) * 1.0;
   p = mix(p, toCenter, 0.003);
 
-  // Strong multi-octave curl noise for visible tendrils
+  // Multi-octave curl noise for dramatic liquid tendrils
   float t = uTime * 0.12;
   vec3 curlP = p * uDistortFreq + t;
   vec3 curl = curlNoise(curlP);
-  // Second octave at higher frequency for fine detail
+  // Second octave — medium detail
   vec3 curl2 = curlNoise(curlP * 2.3 + 7.0);
-  p += (curl * 0.7 + curl2 * 0.3) * uShapeDistort * 0.035;
+  // Third octave — fine turbulence wisps
+  vec3 curl3 = curlNoise(curlP * 4.1 - 13.0);
+  p += (curl * 0.6 + curl2 * 0.28 + curl3 * 0.12) * uShapeDistort * 0.038;
 
   // Deep organic distortion — creates the bulges and voids
   float distort = snoise(p * uDistortFreq * 0.5 + uTime * 0.15) * uShapeDistort;
-  float distort2 = snoise(p * uDistortFreq * 1.2 - uTime * 0.1) * uShapeDistort * 0.4;
-  p += safeNormalize(p) * (distort * 0.1 + distort2 * 0.06);
+  float distort2 = snoise(p * uDistortFreq * 1.2 - uTime * 0.1) * uShapeDistort * 0.5;
+  float distort3 = snoise(p * uDistortFreq * 2.5 + uTime * 0.08) * uShapeDistort * 0.15;
+  p += safeNormalize(p) * (distort * 0.12 + distort2 * 0.07 + distort3 * 0.03);
 
   // Mouse repulsion — stronger push through the cloud
   vec3 toMouse = p - uMouse3D;
@@ -328,38 +331,42 @@ void main() {
   if (d > 0.5) discard;
   float alpha = smoothstep(0.5, 0.05, d);
 
-  // Warm nebula palette: deep amber → bright gold → pale white
-  vec3 deepAmber = vec3(0.55, 0.28, 0.08);
-  vec3 brightGold = vec3(0.95, 0.78, 0.35);
-  vec3 paleWhite  = vec3(1.0, 0.95, 0.88);
-  vec3 coolGray   = vec3(0.45, 0.42, 0.40);
+  // Electric palette: purple → teal → blue → white core
+  vec3 cPurple = vec3(0.659, 0.333, 0.969);  // #A855F7
+  vec3 cTeal   = vec3(0.176, 0.831, 0.749);  // #2DD4BF
+  vec3 cBlue   = vec3(0.231, 0.510, 0.961);  // #3B82F6
+  vec3 cWhite  = vec3(0.92, 0.90, 1.0);
+  vec3 cDeep   = vec3(0.15, 0.08, 0.35);     // deep void
 
-  float t = fract(vLife * 4.0 + vDist * 0.6 + uTime * 0.03);
+  float t = fract(vLife * 4.0 + vDist * 0.5 + uTime * 0.035);
 
   vec3 color;
-  if (t < 0.25) {
-    color = mix(coolGray, deepAmber, t / 0.25);
-  } else if (t < 0.5) {
-    color = mix(deepAmber, brightGold, (t - 0.25) / 0.25);
-  } else if (t < 0.75) {
-    color = mix(brightGold, paleWhite, (t - 0.5) / 0.25);
+  if (t < 0.2) {
+    color = mix(cDeep, cPurple, t / 0.2);
+  } else if (t < 0.4) {
+    color = mix(cPurple, cTeal, (t - 0.2) / 0.2);
+  } else if (t < 0.6) {
+    color = mix(cTeal, cBlue, (t - 0.4) / 0.2);
+  } else if (t < 0.8) {
+    color = mix(cBlue, cWhite, (t - 0.6) / 0.2);
   } else {
-    color = mix(paleWhite, coolGray, (t - 0.75) / 0.25);
+    color = mix(cWhite, cDeep, (t - 0.8) / 0.2);
   }
 
-  // Hot bright streaks near the core
-  float coreBright = smoothstep(1.4, 0.2, vDist);
-  color = mix(color, paleWhite, coreBright * 0.6);
+  // Hot white/purple core glow
+  float coreBright = smoothstep(1.4, 0.15, vDist);
+  color = mix(color, cWhite, coreBright * 0.55);
 
-  // Dim particles at the fringe for organic falloff
-  float fringeAlpha = smoothstep(2.2, 0.6, vDist);
+  // Purple bloom at mid-range
+  float midGlow = smoothstep(1.8, 0.5, vDist) * smoothstep(0.1, 0.5, vDist);
+  color = mix(color, cPurple * 1.2, midGlow * 0.2);
+
+  // Organic fringe falloff
+  float fringeAlpha = smoothstep(2.4, 0.5, vDist);
   alpha *= fringeAlpha;
 
-  // Very fine particles — reduce alpha for dusty density feel
   alpha *= 0.55;
-
-  // Boost contrast: core particles pop, edge particles fade
-  alpha *= (0.4 + coreBright * 0.6);
+  alpha *= (0.35 + coreBright * 0.65);
 
   gl_FragColor = vec4(color, alpha);
 }
@@ -393,7 +400,7 @@ function GpuOrb() {
       fragmentShader: PARTICLE_FRAG,
       uniforms: {
         texturePosition: { value: null },
-        uPointSize: { value: 1.8 },
+        uPointSize: { value: 1.5 },
         uPixelRatio: { value: dpr },
         uTime: { value: 0 },
       },
