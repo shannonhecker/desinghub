@@ -68,11 +68,31 @@ export function BuilderApp() {
         document.body.style.userSelect = "";
       }
     };
+    // Touch equivalents — allow the resize handle to be dragged on tablets
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current || !containerRef.current) return;
+      e.preventDefault(); // prevents page scroll while resizing
+      const touch = e.touches[0];
+      const rect = containerRef.current.getBoundingClientRect();
+      const pos = ((touch.clientX - rect.left) / rect.width) * 100;
+      setSplitPos(Math.max(30, Math.min(75, pos)));
+    };
+    const onTouchEnd = () => {
+      if (isDragging.current) {
+        isDragging.current = false;
+        setDragActive(false);
+        document.body.style.userSelect = "";
+      }
+    };
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
     return () => {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
@@ -89,6 +109,14 @@ export function BuilderApp() {
     isDragging.current = true;
     setDragActive(true);
     document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  // Touch equivalent for the resize handle (tablets)
+  const startDragTouch = (e: React.TouchEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    setDragActive(true);
     document.body.style.userSelect = "none";
   };
 
@@ -134,6 +162,15 @@ export function BuilderApp() {
       <div className="liquid-bg" aria-hidden="true">
         <WaveScene />
       </div>
+
+      {/* Mobile sidebar backdrop — visible only on small screens when sidebar is open */}
+      {isSidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* ── Gemini sidebar ── */}
       <GeminiSidebar
@@ -219,6 +256,8 @@ export function BuilderApp() {
             <div
               className={`resize-handle ${dragActive ? "dragging" : ""}`}
               onMouseDown={startDrag}
+              onTouchStart={startDragTouch}
+              aria-hidden="true"
             />
           )}
 

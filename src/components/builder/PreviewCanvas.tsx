@@ -5,7 +5,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -131,8 +132,17 @@ export function PreviewCanvas() {
   );
 
   /* ── DnD sensors ── */
+  // MouseSensor: require 10px movement so normal clicks are never swallowed
+  // TouchSensor: 250 ms hold + 5 px wiggle tolerance → safe on mobile while scrolling
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 10 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 5 },
+  });
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    mouseSensor,
+    touchSensor,
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
