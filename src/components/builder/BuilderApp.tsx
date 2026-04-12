@@ -31,7 +31,7 @@ export function BuilderApp() {
   const [headerScrolled, setHeaderScrolled] = useState(false);
 
   // ── Gemini sidebar ──
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // ── My Projects modal ──
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -186,8 +186,16 @@ export function BuilderApp() {
         {/* ── Top bar ── */}
         <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
 
-          {/* Left: logo — always visible in header; hamburger lives inside the sidebar */}
+          {/* Left: hamburger (hidden when open, keeps space) + logo */}
           <div className="top-bar-left">
+            <button
+              className={`top-bar-btn icon-only sidebar-toggle-btn ${isSidebarOpen ? "sb-hidden" : ""}`}
+              onClick={() => setIsSidebarOpen((v) => !v)}
+              title="Open sidebar"
+              aria-label="Open sidebar"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
+            </button>
             <div className="top-bar-logo">
               <img
                 src="/aologo.svg"

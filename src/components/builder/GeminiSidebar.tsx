@@ -28,29 +28,16 @@ export function GeminiSidebar({
       {/* gsb-inner is always 260 px — the outer aside clips it to icon-rail width */}
       <div className="gsb-inner">
 
-        {/* ── Header row: hamburger only — logo lives in the top bar ── */}
+        {/* ── Close button — top-left, no padding, aligns with nav bar ── */}
         <div className="gsb-header">
           <button
-            className="gsb-icon-btn gsb-hamburger"
+            className="gsb-icon-btn gsb-close-btn"
             onClick={onToggle}
-            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+            title="Close sidebar"
+            aria-label="Close sidebar"
           >
-            <span className="gsb-toggle-wrap">
-              {/* Hamburger — visible when closed */}
-              <span
-                className={`material-symbols-outlined gsb-toggle-icon ${isOpen ? "gsb-icon-out" : "gsb-icon-in"}`}
-                style={{ fontSize: 20 }}
-              >
-                menu
-              </span>
-              {/* Chevron — visible when open */}
-              <span
-                className={`material-symbols-outlined gsb-toggle-icon ${isOpen ? "gsb-icon-in" : "gsb-icon-out"}`}
-                style={{ fontSize: 22 }}
-              >
-                chevron_left
-              </span>
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+              chevron_left
             </span>
           </button>
         </div>

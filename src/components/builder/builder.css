@@ -496,7 +496,7 @@
    Gemini-style collapsible sidebar
    ══════════════════════════════════════════ */
 
-/* Outer aside: owns the background/blur so it clips cleanly with the width */
+/* Sidebar — in flex flow, slides in by animating margin-left (pushes content) */
 .gemini-sidebar {
   position: relative;
   z-index: 10;
@@ -504,28 +504,22 @@
   height: 100%;
   overflow: clip;
   flex-shrink: 0;
-  /* Transparent by default (icon-rail / closed state) */
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-right: 1px solid transparent;
-  transition: width 300ms ease-in-out,
-              background 300ms ease-in-out,
-              border-color 300ms ease-in-out,
-              backdrop-filter 300ms ease-in-out;
-}
-
-/* Collapsed → narrow icon rail */
-.gemini-sidebar.gsb-closed {
-  width: 52px;
-}
-
-/* Open → glass panel appears */
-.gemini-sidebar.gsb-open {
   background: rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-right-color: rgba(255, 255, 255, 0.07);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  margin-left: -260px;
+  transition: margin-left 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Closed → hidden off-screen, takes no space */
+.gemini-sidebar.gsb-closed {
+  margin-left: -260px;
+}
+
+/* Open → slides in, pushes main content right */
+.gemini-sidebar.gsb-open {
+  margin-left: 0;
 }
 
 /* Inner panel: fixed 260 px layout container — no background here */
@@ -534,17 +528,18 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px 0 20px;
+  padding: 0 0 20px;
 }
 
 /* ── Header row ── */
 .gsb-header {
   display: flex;
   align-items: center;
-  /* hamburger is 36 px + 8 px left pad = 44 px → always inside the 52 px rail */
-  padding: 4px 8px 10px;
+  justify-content: flex-start;
+  padding: 0 8px;
   gap: 8px;
   flex-shrink: 0;
+  height: 52px; /* matches top-bar height */
 }
 
 /* Hamburger — always the leftmost element so it stays visible in icon rail */
@@ -755,10 +750,47 @@
   display: none;
 }
 
-/* Light-mode sidebar tint — only when open */
-.builder-light .gemini-sidebar.gsb-open {
-  background: rgba(255, 255, 255, 0.35);
+/* Light-mode sidebar */
+.builder-light .gemini-sidebar {
+  background: rgba(255, 255, 255, 0.55);
   border-right-color: rgba(0, 0, 0, 0.07);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Light-mode sidebar text — darken all text/icons */
+.builder-light .gsb-new-chat-btn {
+  color: rgba(0, 0, 0, 0.75);
+}
+.builder-light .gsb-nav-btn {
+  color: rgba(0, 0, 0, 0.65);
+}
+.builder-light .gsb-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.20);
+  color: rgba(0, 0, 0, 0.85);
+}
+.builder-light .gsb-section-label {
+  color: rgba(0, 0, 0, 0.40);
+}
+.builder-light .gsb-empty {
+  color: rgba(0, 0, 0, 0.40);
+}
+.builder-light .gsb-history-item {
+  color: rgba(0, 0, 0, 0.65);
+}
+.builder-light .gsb-history-item:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: rgba(0, 0, 0, 0.85);
+}
+.builder-light .gsb-hist-icon {
+  color: rgba(0, 0, 0, 0.45);
+}
+.builder-light .gsb-icon-btn {
+  color: rgba(0, 0, 0, 0.55);
+}
+.builder-light .gsb-icon-btn:hover {
+  color: rgba(0, 0, 0, 0.80);
+  background: rgba(0, 0, 0, 0.06);
 }
 
 /* ── MAIN CONTENT ── */
@@ -782,7 +814,7 @@
   flex-shrink: 0;
   z-index: 10;
   gap: 8px;
-  border-bottom: 1px solid var(--glass-border-subtle);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -795,22 +827,43 @@
 }
 /* Frosted glass appears on scroll */
 .top-bar.scrolled {
-  background: rgba(11, 14, 26, 0.30);
+  background: rgba(11, 14, 26, 0.15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border-color: rgba(255, 255, 255, 0.08);
 }
+.builder-light .top-bar {
+  border-color: rgba(255, 255, 255, 0.15);
+}
 .builder-light .top-bar.scrolled {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  border-color: rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+/* Separator inside the sidebar — only visible when open */
+.gemini-sidebar.gsb-open::after {
+  content: '';
+  position: absolute;
+  top: 52px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 5;
+  pointer-events: none;
+}
+.builder-light .gemini-sidebar.gsb-open::after {
+  background: rgba(255, 255, 255, 0.30);
 }
 
 .top-bar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
 }
 
 .top-bar-right {
@@ -870,6 +923,36 @@
   width: 32px;
   height: 32px;
   justify-content: center;
+}
+
+/* Sidebar toggle — plain white icon, no border or background */
+.top-bar-btn.sidebar-toggle-btn,
+.top-bar-btn.sidebar-toggle-btn:hover {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.90);
+  transform: none;
+  margin-right: 12px;
+  overflow: hidden;
+  transition: opacity 280ms ease,
+              width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              min-width 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              margin-right 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              padding 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              color 150ms ease;
+}
+.top-bar-btn.sidebar-toggle-btn:hover {
+  color: #ffffff;
+}
+/* Sidebar open — collapse button so logo slides into its place */
+.top-bar-btn.sidebar-toggle-btn.sb-hidden {
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin-right: 0;
+  pointer-events: none;
 }
 
 .top-bar-actions {
@@ -1071,8 +1154,11 @@
   background: var(--glass-white-md);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+.builder-light .prompt-bubble {
+  color: rgba(0, 0, 0, 0.65);
+}
 .builder-light .prompt-bubble:hover {
-  border-color: rgba(8, 145, 178, 0.18);
+  color: rgba(0, 0, 0, 0.85);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
@@ -1177,7 +1263,7 @@
   background: #e8f0fa;
 }
 .builder-light .input-box.focused {
-  background: rgba(255, 255, 255, 0.50);
+  background: rgba(255, 255, 255, 0.35);
   border-color: transparent;
   box-shadow:
     0 0 16px rgba(139, 92, 246, 0.08),
