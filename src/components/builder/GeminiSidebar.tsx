@@ -28,9 +28,8 @@ export function GeminiSidebar({
       {/* gsb-inner is always 260 px — the outer aside clips it to icon-rail width */}
       <div className="gsb-inner">
 
-        {/* ── Header row: hamburger (always visible) + logo (hidden when closed) ── */}
+        {/* ── Header row: hamburger only — logo lives in the top bar ── */}
         <div className="gsb-header">
-          {/* Hamburger is the FIRST element so it stays inside the 52 px rail */}
           <button
             className="gsb-icon-btn gsb-hamburger"
             onClick={onToggle}
@@ -41,18 +40,6 @@ export function GeminiSidebar({
               {isOpen ? "menu_open" : "menu"}
             </span>
           </button>
-
-          {/* Logo mark + wordmark — slide out with the sidebar */}
-          <div className="gsb-brand gsb-hide-when-closed">
-            <div className="ausos-logo-mark">
-              <div className="ausos-dot ausos-dot-sm" />
-              <div className="ausos-dot-group">
-                <div className="ausos-dash" />
-                <div className="ausos-dot ausos-dot-lg" />
-              </div>
-            </div>
-            <span className="gsb-wordmark">ausōs</span>
-          </div>
         </div>
 
         {/* ── New Chat — icon-only when collapsed ── */}

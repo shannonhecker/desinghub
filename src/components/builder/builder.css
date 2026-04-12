@@ -502,19 +502,30 @@
   z-index: 10;
   width: 260px;
   height: 100%;
-  /* overflow: clip beats overflow: hidden — properly clips backdrop-filter too */
   overflow: clip;
   flex-shrink: 0;
+  /* Transparent by default (icon-rail / closed state) */
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: 1px solid transparent;
+  transition: width 300ms ease-in-out,
+              background 300ms ease-in-out,
+              border-color 300ms ease-in-out,
+              backdrop-filter 300ms ease-in-out;
+}
+
+/* Collapsed → narrow icon rail */
+.gemini-sidebar.gsb-closed {
+  width: 52px;
+}
+
+/* Open → glass panel appears */
+.gemini-sidebar.gsb-open {
   background: rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  transition: width 300ms ease-in-out;
-}
-
-/* Collapsed → icon rail (52 px) — hamburger stays visible */
-.gemini-sidebar.gsb-closed {
-  width: 52px;
+  border-right-color: rgba(255, 255, 255, 0.07);
 }
 
 /* Inner panel: fixed 260 px layout container — no background here */
@@ -717,8 +728,8 @@
   display: none;
 }
 
-/* Light-mode sidebar tint */
-.builder-light .gemini-sidebar {
+/* Light-mode sidebar tint — only when open */
+.builder-light .gemini-sidebar.gsb-open {
   background: rgba(255, 255, 255, 0.35);
   border-right-color: rgba(0, 0, 0, 0.07);
 }

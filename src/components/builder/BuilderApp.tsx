@@ -186,8 +186,12 @@ export function BuilderApp() {
         {/* ── Top bar ── */}
         <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
 
-          {/* Left — intentionally empty; hamburger lives inside the sidebar */}
-          <div className="top-bar-left" />
+          {/* Left: logo — always visible in header; hamburger lives inside the sidebar */}
+          <div className="top-bar-left">
+            <div className="top-bar-logo">
+              <img src="/aologo.svg" alt="ausōs" className="ausos-logo-img" />
+            </div>
+          </div>
 
           {/* Right: all existing controls unchanged */}
           <div className="top-bar-right">
