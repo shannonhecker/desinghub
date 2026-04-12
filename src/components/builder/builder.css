@@ -514,7 +514,7 @@
   z-index: 10;
   gap: 8px;
   border-bottom: 1px solid var(--glass-border-subtle);
-  background: rgba(11, 14, 26, 0.70);
+  background: rgba(11, 14, 26, 0.30);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: none;
