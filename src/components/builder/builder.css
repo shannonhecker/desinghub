@@ -514,8 +514,9 @@
   z-index: 10;
   gap: 8px;
   border-bottom: 1px solid var(--glass-border-subtle);
-  background: transparent;
-  backdrop-filter: none;
+  background: rgba(11, 14, 26, 0.70);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: none;
   position: relative;
   transition: background 420ms cubic-bezier(.22,1,.36,1),
