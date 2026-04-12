@@ -16,6 +16,8 @@ import {
   SimulatedDropdown,
   SimulatedDatePicker,
   SimulatedTitle as SimulatedTitleUI,
+  SimulatedBreadcrumb,
+  SimulatedAccordion,
 } from "./SimulatedUI";
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -816,6 +818,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedButton: SimulatedButtonBlock as React.FC<{ system: DesignSystem }>,
   SimulatedTitle: SimulatedTitleBlock as React.FC<{ system: DesignSystem }>,
   SimulatedTextInput: SimulatedTextInputBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedBreadcrumb: (({ system }: { system: DesignSystem }) => <SimulatedBreadcrumb system={system} />) as React.FC<{ system: DesignSystem }>,
+  SimulatedAccordion: (({ system }: { system: DesignSystem }) => <SimulatedAccordion system={system} />) as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

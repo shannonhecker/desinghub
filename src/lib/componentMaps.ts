@@ -25,6 +25,7 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-alert": "SimulatedAlert",
   "sim-data-table": "SimulatedDataTable",
   "sim-accordion": "SimulatedAccordion",
+  "sim-breadcrumb": "SimulatedBreadcrumb",
 };
 
 /** Reverse: block type → canonical store ID */
@@ -51,4 +52,5 @@ export const BLOCK_TO_ID: Record<string, string> = {
   SimulatedAlert: "sim-alert",
   SimulatedDataTable: "sim-data-table",
   SimulatedAccordion: "sim-accordion",
+  SimulatedBreadcrumb: "sim-breadcrumb",
 };

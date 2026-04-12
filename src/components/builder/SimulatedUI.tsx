@@ -656,3 +656,71 @@ export function SimulatedTitle({
     default:   return <h2 className={cls}>{text}</h2>;
   }
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedBreadcrumb
+   ═══════════════════════════════════════════ */
+
+export function SimulatedBreadcrumb({ system }: SimProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const path = ["Home", "Projects", "Design Hub"];
+
+  return (
+    <nav className={`${prefix}-breadcrumb`} aria-label="Breadcrumb">
+      <ol className={`${prefix}-breadcrumb-list`}>
+        {path.map((item, index) => {
+          const isLast = index === path.length - 1;
+          return (
+            <li key={item} className={`${prefix}-breadcrumb-item`}>
+              <a
+                href="#"
+                className={`${prefix}-breadcrumb-link${isLast ? " active" : ""}`}
+                onClick={(e) => e.preventDefault()}
+                aria-current={isLast ? "page" : undefined}
+              >
+                {item}
+              </a>
+              {!isLast && (
+                <span className={`${prefix}-breadcrumb-separator`} aria-hidden="true">
+                  {system === "m3" ? "/" : ">"}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedAccordion
+   ═══════════════════════════════════════════ */
+
+export function SimulatedAccordion({ system }: SimProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={`${prefix}-accordion`}>
+      <button
+        className={`${prefix}-accordion-header`}
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+      >
+        <span className={`${prefix}-accordion-title`}>Advanced Settings</span>
+        <span
+          className={`${prefix}-accordion-icon`}
+          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+        >
+          ▾
+        </span>
+      </button>
+      {isOpen && (
+        <div className={`${prefix}-accordion-body`}>
+          <p>Configure deployment environments, manage API keys, and set up custom domains for your project here.</p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -4040,6 +4040,203 @@
 .f-title-h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
 
 /* ══════════════════════════════════════════
+   Breadcrumb — Salt DS / M3 / Fluent 2
+   ══════════════════════════════════════════ */
+
+/* ── Shared reset ── */
+.s-breadcrumb, .m3-breadcrumb, .f-breadcrumb { margin: 0; }
+.s-breadcrumb-list, .m3-breadcrumb-list, .f-breadcrumb-list {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+}
+.s-breadcrumb-item, .m3-breadcrumb-item, .f-breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Salt DS ── */
+.s-breadcrumb-link {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ds-fg-secondary);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: var(--ds-radius, 4px);
+  transition: color 120ms ease, background 120ms ease;
+}
+.s-breadcrumb-link:hover { color: var(--ds-fg); background: var(--ds-surface-hover); }
+.s-breadcrumb-link.active { color: var(--ds-fg); font-weight: 600; pointer-events: none; }
+.s-breadcrumb-separator {
+  font-size: 10px;
+  color: var(--ds-fg-tertiary);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* ── Material 3 ── */
+.m3-breadcrumb-link {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ds-primary);
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: var(--ds-radius, 12px);
+  transition: background 150ms ease;
+}
+.m3-breadcrumb-link:hover { background: var(--ds-primary-hover); }
+.m3-breadcrumb-link.active { color: var(--ds-fg); pointer-events: none; }
+.m3-breadcrumb-separator {
+  font-size: 14px;
+  color: var(--ds-fg-tertiary);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* ── Fluent 2 ── */
+.f-breadcrumb-link {
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ds-primary);
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: var(--ds-radius, 6px);
+  transition: background 100ms ease;
+}
+.f-breadcrumb-link:hover { background: var(--ds-surface-hover); }
+.f-breadcrumb-link.active { color: var(--ds-fg); font-weight: 600; pointer-events: none; }
+.f-breadcrumb-separator {
+  font-size: 11px;
+  color: var(--ds-fg-tertiary);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* ══════════════════════════════════════════
+   Accordion — Salt DS / M3 / Fluent 2
+   ══════════════════════════════════════════ */
+
+/* ── Salt DS ── */
+.s-accordion {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius, 4px);
+  overflow: hidden;
+  font-family: 'Open Sans', sans-serif;
+}
+.s-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--ds-surface);
+  border: none;
+  cursor: pointer;
+  color: var(--ds-fg);
+  transition: background 120ms ease;
+}
+.s-accordion-header:hover { background: var(--ds-surface-hover); }
+.s-accordion-header[aria-expanded="true"] {
+  border-left: 3px solid var(--ds-primary);
+}
+.s-accordion-title { font-size: 13px; font-weight: 600; }
+.s-accordion-icon {
+  font-size: 10px;
+  color: var(--ds-fg-secondary);
+  transition: transform 200ms ease;
+  display: inline-block;
+}
+.s-accordion-body {
+  padding: 12px 14px;
+  background: var(--ds-bg);
+  border-top: 1px solid var(--ds-border);
+  font-size: 13px;
+  color: var(--ds-fg-secondary);
+  line-height: 1.55;
+}
+.s-accordion-body p { margin: 0; }
+
+/* ── Material 3 ── */
+.m3-accordion {
+  border-radius: var(--ds-radius, 12px);
+  overflow: hidden;
+  background: var(--ds-surface);
+  font-family: 'Roboto', sans-serif;
+}
+.m3-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ds-fg);
+  transition: background 150ms ease;
+}
+.m3-accordion-header:hover { background: var(--ds-surface-hover); }
+.m3-accordion-title { font-size: 14px; font-weight: 500; }
+.m3-accordion-icon {
+  font-size: 12px;
+  color: var(--ds-fg-secondary);
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+.m3-accordion-body {
+  padding: 0 16px 16px;
+  font-size: 14px;
+  color: var(--ds-fg-secondary);
+  line-height: 1.5;
+}
+.m3-accordion-body p { margin: 0; }
+
+/* ── Fluent 2 ── */
+.f-accordion {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius, 6px);
+  overflow: hidden;
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+}
+.f-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--ds-surface);
+  border: none;
+  cursor: pointer;
+  color: var(--ds-fg);
+  transition: background 100ms ease;
+}
+.f-accordion-header:hover { background: var(--ds-surface-hover); }
+.f-accordion-title { font-size: 14px; font-weight: 600; }
+.f-accordion-icon {
+  font-size: 11px;
+  color: var(--ds-fg-secondary);
+  transition: transform 180ms ease;
+  display: inline-block;
+}
+.f-accordion-body {
+  padding: 10px 14px 14px;
+  background: var(--ds-bg);
+  border-top: 1px solid var(--ds-border);
+  font-size: 13px;
+  color: var(--ds-fg-secondary);
+  line-height: 1.5;
+}
+.f-accordion-body p { margin: 0; }
+
+/* ══════════════════════════════════════════
    Preview Semantic Tokens
    ══════════════════════════════════════════ */
 
