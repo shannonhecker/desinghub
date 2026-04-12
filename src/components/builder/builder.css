@@ -1170,13 +1170,14 @@
   border-color: rgba(0, 0, 0, 0.3);
 }
 .builder-light .input-box {
-  background: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .builder-light .input-box::after {
   background: #e8f0fa;
 }
 .builder-light .input-box.focused {
+  background: rgba(255, 255, 255, 0.50);
   border-color: transparent;
   box-shadow:
     0 0 16px rgba(139, 92, 246, 0.08),
