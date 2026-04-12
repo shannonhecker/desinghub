@@ -86,6 +86,13 @@ export function GeminiSidebar({
           )}
         </div>
 
+        {/* Copyright footer */}
+        <div className="gsb-copyright gsb-hide-when-closed">
+          <p className="gsb-copyright-text">
+            &copy; {new Date().getFullYear()} ausōs. All rights reserved.
+          </p>
+        </div>
+
       </div>
     </aside>
   );

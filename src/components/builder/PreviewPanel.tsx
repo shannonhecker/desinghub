@@ -287,6 +287,8 @@ export function PreviewSidePanel() {
   const previewKey = useBuilder((s) => s.previewKey);
   const deviceMode = useBuilder((s) => s.deviceMode);
   const messages = useBuilder((s) => s.messages);
+  const designSystem = useBuilder((s) => s.designSystem);
+  const density = useBuilder((s) => s.density);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
@@ -314,8 +316,8 @@ export function PreviewSidePanel() {
           animate={{ width: frameWidth, maxHeight: preset.height }}
           transition={{ type: "spring", stiffness: 260, damping: 28 }}
         >
-          {/* SaaS Dashboard layout */}
-          <div className="bp-dashboard" key={previewKey}>
+          {/* SaaS Dashboard layout — scoped to the selected design system */}
+          <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
             <DashboardHeader compact={isMobile} />
 
             <div className="bp-body">
