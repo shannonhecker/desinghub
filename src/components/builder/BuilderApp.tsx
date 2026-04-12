@@ -110,6 +110,19 @@ export function BuilderApp() {
     }
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
+  /* ── Quick-save from top bar ── */
+  const handleQuickSave = async () => {
+    const now = new Date();
+    const defaultName = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+    const name = window.prompt("Save project as:", defaultName);
+    if (name === null) return; // user cancelled
+    try {
+      await saveProject(name.trim() || defaultName);
+    } catch {
+      // error surfaced by hook
+    }
+  };
+
   const handleSaveProject = async () => {
     const name = saveNameInput.trim() || `Project ${new Date().toLocaleDateString()}`;
     setSaveStep("saving");
@@ -117,7 +130,6 @@ export function BuilderApp() {
       await saveProject(name);
       setSaveStep("idle");
       setSaveNameInput("");
-      setProjectsOpen(true);
     } catch {
       setSaveStep("idle");
     }
@@ -213,6 +225,19 @@ export function BuilderApp() {
                 </button>
               </div>
             )}
+
+            {/* Save */}
+            <button
+              className="top-bar-save-btn"
+              onClick={handleQuickSave}
+              disabled={saving}
+              title="Save project"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+                {saving ? "hourglass_top" : "save"}
+              </span>
+              <span>{saving ? "Saving…" : "Save"}</span>
+            </button>
 
             {/* Dark / Light toggle */}
             <button
@@ -345,6 +370,11 @@ export function BuilderApp() {
           </div>
         </div>
       )}
+
+      {/* ── Page-level copyright ── */}
+      <div className="builder-copyright-fixed" aria-hidden="true">
+        &copy; {new Date().getFullYear()} ausōs. All rights reserved.
+      </div>
     </div>
   );
 }

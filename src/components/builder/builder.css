@@ -720,6 +720,20 @@
   color: #ffffff;
 }
 .gsb-hist-icon { flex-shrink: 0; color: rgba(255, 255, 255, 0.60); }
+
+/* Project name + date stacked in history items */
+.gsb-hist-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.gsb-hist-date {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.32);
+  white-space: nowrap;
+}
+.builder-light .gsb-hist-date { color: rgba(0, 0, 0, 0.32); }
 .gsb-hist-name {
   flex: 1;
   overflow: hidden;
@@ -1740,6 +1754,61 @@
   backdrop-filter: blur(8px);
 }
 .b-btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+/* ── SAVE BUTTON (top bar) ── */
+.top-bar-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(74, 222, 128, 0.10);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-liquid);
+  white-space: nowrap;
+}
+.top-bar-save-btn:hover {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.45);
+  transform: translateY(-1px);
+}
+.top-bar-save-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
+}
+.builder-light .top-bar-save-btn {
+  background: rgba(22, 163, 74, 0.08);
+  border-color: rgba(22, 163, 74, 0.22);
+  color: #16a34a;
+}
+.builder-light .top-bar-save-btn:hover {
+  background: rgba(22, 163, 74, 0.14);
+  border-color: rgba(22, 163, 74, 0.40);
+}
+
+/* ── Page-level copyright (fixed bottom center) ── */
+.builder-copyright-fixed {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+  z-index: 5;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+.builder-light .builder-copyright-fixed {
+  color: rgba(0, 0, 0, 0.20);
+}
 
 /* ── PREVIEW TOGGLE BUTTON (always in top bar) ── */
 .preview-toggle-btn {

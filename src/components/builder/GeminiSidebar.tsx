@@ -10,7 +10,8 @@ interface Props {
   projects: SavedProject[];
   loading: boolean;
   onProjectLoad: (p: SavedProject) => void;
-  onProjectsOpen: () => void;
+  /** @deprecated kept for back-compat; no longer used inside sidebar */
+  onProjectsOpen?: () => void;
 }
 
 export function GeminiSidebar({
@@ -19,7 +20,6 @@ export function GeminiSidebar({
   projects,
   loading,
   onProjectLoad,
-  onProjectsOpen,
 }: Props) {
   const { clearChat } = useBuilder();
 
@@ -28,7 +28,7 @@ export function GeminiSidebar({
       {/* gsb-inner is always 260 px — the outer aside clips it to icon-rail width */}
       <div className="gsb-inner">
 
-        {/* ── Close button — top-left, no padding, aligns with nav bar ── */}
+        {/* ── Close button ── */}
         <div className="gsb-header">
           <button
             className="gsb-icon-btn gsb-close-btn"
@@ -42,7 +42,7 @@ export function GeminiSidebar({
           </button>
         </div>
 
-        {/* ── New Chat — icon-only when collapsed ── */}
+        {/* ── New Chat ── */}
         <button className="gsb-new-chat-btn" onClick={clearChat} title="New chat">
           <span className="material-symbols-outlined" style={{ fontSize: 17 }}>
             edit_square
@@ -50,22 +50,14 @@ export function GeminiSidebar({
           <span className="gsb-btn-label">New chat</span>
         </button>
 
-        {/* ── Projects — icon-only when collapsed ── */}
-        <button className="gsb-nav-btn" onClick={onProjectsOpen} title="My Projects">
-          <span className="material-symbols-outlined" style={{ fontSize: 17 }}>
-            folder_open
-          </span>
-          <span className="gsb-btn-label">Projects</span>
-        </button>
-
-        {/* ── Session history — fully hidden in icon rail ── */}
-        <div className="gsb-section-label gsb-hide-when-closed">Recent</div>
+        {/* ── Projects section — header + inline list ── */}
+        <div className="gsb-section-label gsb-hide-when-closed">Projects</div>
 
         <div className="gsb-history-list gsb-hide-when-closed">
           {loading ? (
             <span className="gsb-empty">Loading…</span>
           ) : projects.length === 0 ? (
-            <span className="gsb-empty">No previous projects</span>
+            <span className="gsb-empty">No saved projects yet</span>
           ) : (
             projects.map((p) => (
               <button
@@ -78,19 +70,20 @@ export function GeminiSidebar({
                   className="material-symbols-outlined gsb-hist-icon"
                   style={{ fontSize: 15 }}
                 >
-                  forum
+                  folder_open
                 </span>
-                <span className="gsb-hist-name">{p.name}</span>
+                <div className="gsb-hist-meta">
+                  <span className="gsb-hist-name">{p.name}</span>
+                  <span className="gsb-hist-date">
+                    {p.updatedAt.toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
               </button>
             ))
           )}
-        </div>
-
-        {/* Copyright footer */}
-        <div className="gsb-copyright gsb-hide-when-closed">
-          <p className="gsb-copyright-text">
-            &copy; {new Date().getFullYear()} ausōs. All rights reserved.
-          </p>
         </div>
 
       </div>
