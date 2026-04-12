@@ -19,7 +19,7 @@ interface AvatarProps extends SimProps {
 
 export function SimulatedAvatar({
   system,
-  initials = "DH",
+  initials = "AB",
   size = "md",
   presence,
   src,
@@ -29,7 +29,7 @@ export function SimulatedAvatar({
   return (
     <div className={`${prefix}-avatar ${prefix}-avatar-${size}`}>
       {src ? (
-        <img className={`${prefix}-avatar-img`} src={src} alt={initials} />
+        <img src={src} alt="Avatar" className={`${prefix}-avatar-img`} />
       ) : (
         <span className={`${prefix}-avatar-initials`}>{initials}</span>
       )}
@@ -556,32 +556,35 @@ export function SimulatedAlert({
 
 interface ProgressProps extends SimProps {
   label?: string;
-  targetValue?: number;
+  value?: number;
 }
 
 export function SimulatedProgress({
   system,
   label = "Uploading assets...",
-  targetValue = 65,
+  value = 50,
 }: ProgressProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
-  const [progress, setProgress] = useState(10);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setProgress(targetValue), 500);
-    return () => clearTimeout(timer);
-  }, [targetValue]);
+  const safeValue = Math.min(Math.max(value, 0), 100);
 
   return (
-    <div className={`${prefix}-progress-container`}>
-      <div className={`${prefix}-progress-label-row`}>
-        <span className={`${prefix}-progress-label`}>{label}</span>
-        <span className={`${prefix}-progress-value`}>{progress}%</span>
-      </div>
+    <div
+      className={`${prefix}-progress-container`}
+      role="progressbar"
+      aria-valuenow={safeValue}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      {label && (
+        <div className={`${prefix}-progress-label-row`}>
+          <span className={`${prefix}-progress-label`}>{label}</span>
+          <span className={`${prefix}-progress-value`}>{safeValue}%</span>
+        </div>
+      )}
       <div className={`${prefix}-progress-track`}>
         <div
           className={`${prefix}-progress-fill`}
-          style={{ width: `${progress}%` }}
+          style={{ width: `${safeValue}%` }}
         />
       </div>
     </div>
