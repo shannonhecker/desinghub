@@ -5,6 +5,9 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
+import { useCloudStorage } from "@/lib/firebase";
+import type { SavedProject } from "@/lib/firebase";
+import { GeminiSidebar } from "./GeminiSidebar";
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
@@ -26,6 +29,24 @@ export function BuilderApp() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+
+  // ── Gemini sidebar ──
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // ── My Projects modal ──
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [saveNameInput, setSaveNameInput] = useState("");
+  const [saveStep, setSaveStep] = useState<"idle" | "naming" | "saving">("idle");
+
+  const {
+    projects,
+    loading: projectsLoading,
+    saving,
+    error: cloudError,
+    saveProject,
+    loadProject,
+    deleteProject,
+  } = useCloudStorage();
 
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -104,13 +125,37 @@ export function BuilderApp() {
     );
   };
 
+  const handleSaveProject = async () => {
+    const name = saveNameInput.trim() || `Project ${new Date().toLocaleDateString()}`;
+    setSaveStep("saving");
+    try {
+      await saveProject(name);
+      setSaveStep("idle");
+      setSaveNameInput("");
+      setProjectsOpen(true);
+    } catch {
+      setSaveStep("idle");
+    }
+  };
+
+  const handleLoadProject = (project: SavedProject) => {
+    loadProject(project);
+    setProjectsOpen(false);
+  };
+
   const handleDownload = () => {
     setDownloading(true);
-    const config = { designSystem, mode, density, interfaceType, selectedComponents, colorOverrides, generatedAt: new Date().toISOString() };
+    const config = {
+      designSystem, mode, density, interfaceType,
+      selectedComponents, colorOverrides,
+      generatedAt: new Date().toISOString(),
+    };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${interfaceType}-${designSystem}-config.json`; a.click();
+    a.href = url;
+    a.download = `${interfaceType}-${designSystem}-config.json`;
+    a.click();
     URL.revokeObjectURL(url);
     setTimeout(() => setDownloading(false), 1500);
   };
@@ -118,41 +163,57 @@ export function BuilderApp() {
   if (isStandalone) return <StandalonePreview />;
 
   return (
-    <div className={`builder-shell no-sidebar ${mode === "light" ? "builder-light" : ""}`}>
-      {/* Liquid gradient background — top 30% with fade */}
+    <div className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}>
+
+      {/* Liquid gradient background */}
       <div className="liquid-bg" aria-hidden="true">
         <WaveScene />
       </div>
 
-      <div className="main-content">
-        {/* ── Horizontal top bar ── */}
-        <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
-          {/* Left: brand + new chat */}
-          <div className="top-bar-left">
-            <div className="top-bar-logo">
-              <div className="top-bar-logo-icon">DH</div>
-              <span className="top-bar-logo-text">Design Hub</span>
-            </div>
-            <button className="top-bar-btn" onClick={clearChat} title="New Chat">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
-              New Chat
-            </button>
-          </div>
+      {/* ── Gemini sidebar ── */}
+      <GeminiSidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen((v) => !v)}
+        projects={projects}
+        loading={projectsLoading}
+        onProjectLoad={handleLoadProject}
+        onProjectsOpen={() => { setProjectsOpen(true); setSaveStep("idle"); }}
+      />
 
-          {/* Right: actions */}
+      {/* ── Main content area ── */}
+      <div className="main-content">
+
+        {/* ── Top bar ── */}
+        <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
+
+          {/* Left — intentionally empty; hamburger lives inside the sidebar */}
+          <div className="top-bar-left" />
+
+          {/* Right: all existing controls unchanged */}
           <div className="top-bar-right">
-            {/* Preview-specific actions (visible when open) */}
+            {/* Preview-specific actions */}
             {previewOpen && (
               <div className="top-bar-actions">
-                <span className="preview-badge-inline">{designSystem.toUpperCase()} &middot; {mode}</span>
-                <span className="preview-badge-inline">{interfaceType} &middot; {selectedComponents.length} components</span>
-                <button className="preview-action-btn" onClick={handleDownload} disabled={downloading} title="Download config">
+                <span className="preview-badge-inline">
+                  {designSystem.toUpperCase()} &middot; {mode}
+                </span>
+                <span className="preview-badge-inline">
+                  {interfaceType} &middot; {selectedComponents.length} components
+                </span>
+                <button
+                  className="preview-action-btn"
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  title="Download config"
+                >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                     {downloading ? "hourglass_top" : "download"}
                   </span>
                 </button>
                 <button className="preview-action-btn" onClick={handlePopOut} title="Pop out">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>open_in_new</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    open_in_new
+                  </span>
                 </button>
               </div>
             )}
@@ -168,7 +229,7 @@ export function BuilderApp() {
               </span>
             </button>
 
-            {/* UI Kit link */}
+            {/* UI Kit */}
             <Link href="/ui-kit" className="top-bar-btn" title="UI Kit Overview">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>palette</span>
               UI Kit
@@ -189,9 +250,12 @@ export function BuilderApp() {
         <div
           className={`content-split ${previewOpen ? "has-preview" : ""} ${!isChatOpen ? "chat-collapsed" : ""}`}
           ref={containerRef}
-          style={previewOpen && isChatOpen ? { "--chat-width": `${splitPos}%` } as React.CSSProperties : undefined}
+          style={
+            previewOpen && isChatOpen
+              ? ({ "--chat-width": `${splitPos}%` } as React.CSSProperties)
+              : undefined
+          }
         >
-          {/* Collapsible chat wrapper — never unmounts */}
           <div className={`chat-slide ${isChatOpen ? "chat-slide-open" : "chat-slide-closed"}`}>
             <ChatPanel />
           </div>
@@ -208,6 +272,83 @@ export function BuilderApp() {
       </div>
 
       <SettingsPanel />
+
+      {/* ── My Projects modal ── */}
+      {projectsOpen && (
+        <div className="projects-overlay" onClick={() => setProjectsOpen(false)}>
+          <div className="projects-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="projects-modal-header">
+              <span className="projects-modal-title">My Projects</span>
+              <button className="projects-modal-close" onClick={() => setProjectsOpen(false)}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+              </button>
+            </div>
+
+            <div className="projects-save-row">
+              {saveStep === "naming" ? (
+                <>
+                  <input
+                    className="projects-name-input"
+                    placeholder="Project name…"
+                    value={saveNameInput}
+                    onChange={(e) => setSaveNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveProject();
+                      if (e.key === "Escape") setSaveStep("idle");
+                    }}
+                    autoFocus
+                  />
+                  <button className="projects-save-btn" onClick={handleSaveProject} disabled={saving}>
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                  <button className="projects-cancel-btn" onClick={() => setSaveStep("idle")}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button className="projects-save-btn wide" onClick={() => setSaveStep("naming")}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>save</span>
+                  Save current design
+                </button>
+              )}
+            </div>
+
+            {cloudError && <div className="projects-error">{cloudError}</div>}
+
+            <div className="projects-list">
+              {projectsLoading ? (
+                <div className="projects-empty">Loading…</div>
+              ) : projects.length === 0 ? (
+                <div className="projects-empty">No saved projects yet.</div>
+              ) : (
+                projects.map((p) => (
+                  <div key={p.id} className="project-item">
+                    <div className="project-item-info" onClick={() => handleLoadProject(p)}>
+                      <span className="project-item-name">{p.name}</span>
+                      <span className="project-item-date">
+                        {p.updatedAt.toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <button
+                      className="project-item-delete"
+                      onClick={() => deleteProject(p.id)}
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        delete
+                      </span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

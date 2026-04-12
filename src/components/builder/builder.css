@@ -492,6 +492,237 @@
   display: flex;
 }
 
+/* ══════════════════════════════════════════
+   Gemini-style collapsible sidebar
+   ══════════════════════════════════════════ */
+
+/* Outer aside: owns the background/blur so it clips cleanly with the width */
+.gemini-sidebar {
+  position: relative;
+  z-index: 10;
+  width: 260px;
+  height: 100%;
+  /* overflow: clip beats overflow: hidden — properly clips backdrop-filter too */
+  overflow: clip;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  transition: width 300ms ease-in-out;
+}
+
+/* Collapsed → icon rail (52 px) — hamburger stays visible */
+.gemini-sidebar.gsb-closed {
+  width: 52px;
+}
+
+/* Inner panel: fixed 260 px layout container — no background here */
+.gsb-inner {
+  width: 260px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0 20px;
+}
+
+/* ── Header row ── */
+.gsb-header {
+  display: flex;
+  align-items: center;
+  /* hamburger is 36 px + 8 px left pad = 44 px → always inside the 52 px rail */
+  padding: 4px 8px 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Hamburger — always the leftmost element so it stays visible in icon rail */
+.gsb-hamburger {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+/* Brand mark + wordmark shown next to hamburger */
+.gsb-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.gsb-wordmark {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--b-fg);
+  white-space: nowrap;
+}
+
+/* Shared icon button */
+.gsb-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--b-fg3);
+  padding: 6px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--b-transition), background var(--b-transition);
+  flex-shrink: 0;
+}
+.gsb-icon-btn:hover {
+  color: var(--b-fg);
+  background: var(--glass-white);
+}
+
+/* ── New Chat button ── */
+.gsb-new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 8px 6px;
+  padding: 9px 12px;
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 12px;
+  color: var(--b-fg);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  flex-shrink: 0;
+  transition: background var(--b-transition), border-color var(--b-transition),
+              transform 120ms var(--ease-liquid);
+}
+.gsb-new-chat-btn:hover {
+  background: var(--glass-white-md);
+  border-color: var(--glass-border);
+  transform: translateY(-1px);
+}
+.gsb-btn-label { white-space: nowrap; }
+
+/* ── Sidebar nav button (Projects, etc.) ── */
+.gsb-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 8px 2px;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  color: var(--b-fg2);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  flex-shrink: 0;
+  transition: background var(--b-transition), color var(--b-transition);
+}
+.gsb-nav-btn:hover {
+  background: var(--glass-white);
+  color: var(--b-fg);
+}
+
+/* Icon-only in collapsed rail */
+.gemini-sidebar.gsb-closed .gsb-nav-btn {
+  margin: 0 7px 2px;
+  padding: 9px;
+  justify-content: center;
+}
+.gemini-sidebar.gsb-closed .gsb-nav-btn .gsb-btn-label {
+  display: none;
+}
+
+/* ── Section label ── */
+.gsb-section-label {
+  padding: 14px 16px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--b-fg3);
+  flex-shrink: 0;
+}
+
+/* ── History list ── */
+.gsb-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+.gsb-empty {
+  display: block;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--b-fg3);
+}
+
+.gsb-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--b-fg2);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  transition: background var(--b-transition), color var(--b-transition);
+}
+.gsb-history-item:hover {
+  background: var(--glass-white);
+  color: var(--b-fg);
+}
+.gsb-hist-icon { flex-shrink: 0; color: var(--b-fg3); }
+.gsb-hist-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gsb-history-list::-webkit-scrollbar { width: 3px; }
+.gsb-history-list::-webkit-scrollbar-track { background: transparent; }
+.gsb-history-list::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
+
+/* ── Icon-rail overrides (collapsed state) ── */
+/* Hide anything with this class when the sidebar is in rail mode */
+.gemini-sidebar.gsb-closed .gsb-hide-when-closed {
+  display: none;
+}
+
+/* New chat: plain icon — no glass box in the rail */
+.gemini-sidebar.gsb-closed .gsb-new-chat-btn {
+  margin: 2px 7px 4px;
+  padding: 9px;
+  justify-content: center;
+  background: none;
+  border-color: transparent;
+  transform: none;
+}
+.gemini-sidebar.gsb-closed .gsb-btn-label {
+  display: none;
+}
+
+/* Light-mode sidebar tint */
+.builder-light .gemini-sidebar {
+  background: rgba(255, 255, 255, 0.35);
+  border-right-color: rgba(0, 0, 0, 0.07);
+}
+
 /* ── MAIN CONTENT ── */
 .main-content {
   flex: 1;
@@ -556,24 +787,24 @@
   gap: 8px;
 }
 
-.top-bar-logo-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--b-gradient2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 10px;
-  color: white;
-  box-shadow: 0 0 12px var(--b-accent-glow);
+/* ── ausōs logo image ── */
+.ausos-logo-img {
+  height: 18px;
+  width: auto;
+  display: block;
   flex-shrink: 0;
+  /* white paths visible on dark backgrounds */
+  filter: none;
+}
+
+/* invert to black on light mode */
+.builder-light .ausos-logo-img {
+  filter: invert(1) brightness(0);
 }
 
 .top-bar-logo-text {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--b-fg);
   letter-spacing: -0.02em;
 }
@@ -616,21 +847,23 @@
 }
 
 .hamburger-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--b-surface);
-  border: 1px solid var(--b-border);
-  color: var(--b-fg2);
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: none;
+  border: none;
+  color: var(--b-fg3);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  margin-right: auto;
-  transition: all var(--b-transition);
+  flex-shrink: 0;
+  transition: color var(--b-transition), background var(--b-transition);
 }
-.hamburger-btn:hover { background: var(--b-surface2); color: var(--b-fg); }
+.hamburger-btn:hover {
+  background: var(--glass-white);
+  color: var(--b-fg);
+}
 
 
 /* ── CONTENT SPLIT (chat + preview side by side) ── */
@@ -1696,6 +1929,192 @@
 .preview-side-body::-webkit-scrollbar { width: 4px; }
 .preview-side-body::-webkit-scrollbar-track { background: transparent; }
 .preview-side-body::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
+
+/* ── My Projects modal ── */
+.projects-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projects-modal {
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: 80vh;
+  background: var(--b-bg2);
+  border: 1px solid var(--b-border2);
+  border-radius: var(--b-radius);
+  box-shadow: var(--b-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.projects-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--b-border);
+}
+
+.projects-modal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--b-fg);
+}
+
+.projects-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--b-fg3);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  transition: color var(--b-transition);
+}
+
+.projects-modal-close:hover { color: var(--b-fg); }
+
+.projects-save-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--b-border);
+}
+
+.projects-name-input {
+  flex: 1;
+  background: var(--b-bg3);
+  border: 1px solid var(--b-border2);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--b-fg);
+  outline: none;
+  font-family: inherit;
+}
+
+.projects-name-input:focus {
+  border-color: var(--b-accent);
+  box-shadow: 0 0 0 2px var(--b-accent-glow);
+}
+
+.projects-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: var(--b-accent);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: opacity var(--b-transition);
+  white-space: nowrap;
+}
+
+.projects-save-btn.wide { width: 100%; justify-content: center; }
+.projects-save-btn:hover { opacity: 0.85; }
+.projects-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.projects-cancel-btn {
+  background: none;
+  border: 1px solid var(--b-border2);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--b-fg3);
+  cursor: pointer;
+  transition: color var(--b-transition);
+  font-family: inherit;
+}
+
+.projects-cancel-btn:hover { color: var(--b-fg); }
+
+.projects-error {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.projects-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.projects-empty {
+  padding: 24px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--b-fg3);
+}
+
+.project-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  transition: background var(--b-transition);
+}
+
+.project-item:hover { background: var(--glass-white); }
+
+.project-item-info {
+  flex: 1;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--b-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-item-date {
+  font-size: 11px;
+  color: var(--b-fg3);
+}
+
+.project-item-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--b-fg3);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color var(--b-transition);
+  opacity: 0;
+}
+
+.project-item:hover .project-item-delete { opacity: 1; }
+.project-item-delete:hover { color: #f87171; }
+
+.projects-list::-webkit-scrollbar { width: 4px; }
+.projects-list::-webkit-scrollbar-track { background: transparent; }
+.projects-list::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
