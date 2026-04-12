@@ -514,9 +514,9 @@
   z-index: 10;
   gap: 8px;
   border-bottom: 1px solid var(--glass-border-subtle);
-  background: rgba(11, 14, 26, 0.30);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow: none;
   position: relative;
   transition: background 420ms cubic-bezier(.22,1,.36,1),
@@ -526,8 +526,9 @@
 }
 /* Frosted glass appears on scroll */
 .top-bar.scrolled {
-  background: rgba(11, 14, 26, 0.75);
-  backdrop-filter: blur(16px);
+  background: rgba(11, 14, 26, 0.30);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.08);
 }
