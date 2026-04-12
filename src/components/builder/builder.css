@@ -245,9 +245,9 @@
   z-index: 1;
   pointer-events: none;
   opacity: 0.5;
-  /* Soft linear fade — no hard ellipse cut */
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 85%);
-  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 85%);
+  /* Radial mask centred at top → U-curve bottom edge */
+  -webkit-mask-image: radial-gradient(ellipse 110% 85% at 50% 0%, black 62%, transparent 90%);
+  mask-image: radial-gradient(ellipse 110% 85% at 50% 0%, black 62%, transparent 90%);
 }
 .liquid-bg .wave-canvas-wrap {
   position: absolute;
@@ -578,7 +578,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--b-fg3);
+  color: rgba(255, 255, 255, 0.85);
   padding: 6px;
   border-radius: 9px;
   display: flex;
@@ -588,7 +588,7 @@
   flex-shrink: 0;
 }
 .gsb-icon-btn:hover {
-  color: var(--b-fg);
+  color: #ffffff;
   background: var(--glass-white);
 }
 
@@ -600,9 +600,9 @@
   margin: 0 8px 6px;
   padding: 9px 12px;
   background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
-  color: var(--b-fg);
+  color: #ffffff;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -614,7 +614,7 @@
 }
 .gsb-new-chat-btn:hover {
   background: var(--glass-white-md);
-  border-color: var(--glass-border);
+  border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 .gsb-btn-label { white-space: nowrap; }
@@ -629,7 +629,7 @@
   background: none;
   border: none;
   border-radius: 12px;
-  color: var(--b-fg2);
+  color: rgba(255, 255, 255, 0.80);
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -640,7 +640,7 @@
 }
 .gsb-nav-btn:hover {
   background: var(--glass-white);
-  color: var(--b-fg);
+  color: #ffffff;
 }
 
 /* Icon-only in collapsed rail */
@@ -660,7 +660,7 @@
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--b-fg3);
+  color: rgba(255, 255, 255, 0.55);
   flex-shrink: 0;
 }
 
@@ -675,7 +675,7 @@
   display: block;
   padding: 10px 16px;
   font-size: 12px;
-  color: var(--b-fg3);
+  color: rgba(255, 255, 255, 0.50);
 }
 
 .gsb-history-item {
@@ -687,7 +687,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--b-fg2);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
   font-family: inherit;
   text-align: left;
@@ -695,9 +695,9 @@
 }
 .gsb-history-item:hover {
   background: var(--glass-white);
-  color: var(--b-fg);
+  color: #ffffff;
 }
-.gsb-hist-icon { flex-shrink: 0; color: var(--b-fg3); }
+.gsb-hist-icon { flex-shrink: 0; color: rgba(255, 255, 255, 0.60); }
 .gsb-hist-name {
   flex: 1;
   overflow: hidden;
