@@ -241,13 +241,13 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 85vh;
+  height: 100vh;
   z-index: 1;
   pointer-events: none;
   opacity: 0.5;
-  /* Curved dome bottom — wide ellipse with long smooth fade */
-  -webkit-mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 40%, transparent 75%);
-  mask-image: radial-gradient(ellipse 140% 100% at 50% 0%, black 40%, transparent 75%);
+  /* Soft linear fade — no hard ellipse cut */
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 85%);
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 85%);
 }
 .liquid-bg .wave-canvas-wrap {
   position: absolute;
