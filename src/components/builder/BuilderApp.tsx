@@ -110,21 +110,6 @@ export function BuilderApp() {
     }
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
-  const handlePopOut = () => {
-    const basePath =
-      typeof window !== "undefined"
-        ? ((window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath || "")
-        : "";
-    const params = new URLSearchParams({
-      preview: "1", ds: designSystem, mode, type: interfaceType,
-      components: selectedComponents.join(","),
-    });
-    window.open(
-      `${window.location.origin}${basePath}/builder?${params}`,
-      "design-hub-preview", "width=800,height=600"
-    );
-  };
-
   const handleSaveProject = async () => {
     const name = saveNameInput.trim() || `Project ${new Date().toLocaleDateString()}`;
     setSaveStep("saving");
@@ -224,11 +209,6 @@ export function BuilderApp() {
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                     {downloading ? "hourglass_top" : "download"}
-                  </span>
-                </button>
-                <button className="preview-action-btn" onClick={handlePopOut} title="Pop out">
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                    open_in_new
                   </span>
                 </button>
               </div>

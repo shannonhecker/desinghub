@@ -2057,7 +2057,9 @@
   background: var(--b-bg);
   color: var(--b-fg);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .standalone-preview-header {
@@ -2067,6 +2069,20 @@
   padding: 10px 16px;
   border-bottom: 1px solid var(--b-border);
   background: var(--b-surface);
+  flex-shrink: 0;
+}
+
+/* Canvas area fills remaining height */
+.standalone-preview-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.standalone-preview-canvas .bp-dashboard {
+  flex: 1;
+  min-height: 0;
 }
 
 /* Preview scrollbars */
@@ -5083,6 +5099,27 @@
   transition: all var(--dur-fast) var(--ease-smooth);
 }
 .bp-refresh-btn:hover {
+  background: var(--glass-white);
+  color: var(--b-fg);
+  border-color: var(--b-fg3);
+}
+
+/* Pop-out button in device controls bar */
+.bp-popout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--b-radius);
+  border: 1px solid var(--b-border);
+  background: transparent;
+  color: var(--b-fg3);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-smooth);
+  flex-shrink: 0;
+}
+.bp-popout-btn:hover {
   background: var(--glass-white);
   color: var(--b-fg);
   border-color: var(--b-fg3);

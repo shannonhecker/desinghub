@@ -50,6 +50,10 @@ function DeviceControls() {
   const bumpPreview = useBuilder((s) => s.bumpPreview);
   const chatOpen = useBuilder((s) => s.chatOpen);
   const toggleChat = useBuilder((s) => s.toggleChat);
+  const designSystem = useBuilder((s) => s.designSystem);
+  const mode = useBuilder((s) => s.mode);
+  const interfaceType = useBuilder((s) => s.interfaceType);
+  const selectedComponents = useBuilder((s) => s.selectedComponents);
 
   const preset = PRESETS[deviceMode];
   const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
@@ -57,6 +61,21 @@ function DeviceControls() {
     { key: "tablet", Icon: Tablet },
     { key: "mobile", Icon: Smartphone },
   ];
+
+  const handlePopOut = () => {
+    const basePath =
+      typeof window !== "undefined"
+        ? ((window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath || "")
+        : "";
+    const params = new URLSearchParams({
+      preview: "1", ds: designSystem, mode, type: interfaceType,
+      components: selectedComponents.join(","),
+    });
+    window.open(
+      `${window.location.origin}${basePath}/builder?${params}`,
+      "design-hub-preview", "width=900,height=700"
+    );
+  };
 
   return (
     <div className="bp-controls">
@@ -90,6 +109,11 @@ function DeviceControls() {
       <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
         <RotateCcw size={15} strokeWidth={2} />
         <span>Refresh</span>
+      </button>
+
+      {/* Pop out — opens preview in its own window */}
+      <button className="bp-popout-btn" onClick={handlePopOut} title="Pop out preview">
+        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>open_in_new</span>
       </button>
     </div>
   );
@@ -350,10 +374,17 @@ export function PreviewSidePanel() {
    ══════════════════════════════════════════════════════════ */
 export function StandalonePreview() {
   const designSystem = useBuilder((s) => s.designSystem);
+  const density = useBuilder((s) => s.density);
   const mode = useBuilder((s) => s.mode);
+  const messages = useBuilder((s) => s.messages);
+  const previewKey = useBuilder((s) => s.previewKey);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const hasContent = messages.some((m) => m.role === "ai");
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
+      {/* Window chrome bar */}
       <div className="standalone-preview-header">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", gap: 6 }}>
@@ -369,7 +400,30 @@ export function StandalonePreview() {
           {designSystem.toUpperCase()} &middot; {mode}
         </span>
       </div>
+
+      {/* DS / density toolbar */}
       <PreviewToolbar />
+
+      {/* Full dashboard canvas */}
+      <div className="standalone-preview-canvas">
+        <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+          <DashboardHeader compact={false} />
+          <div className="bp-body">
+            <DashboardSidebar
+              collapsed={sidebarCollapsed}
+              onToggle={() => setSidebarCollapsed((v) => !v)}
+            />
+            <main className="bp-main">
+              {hasContent ? (
+                <PreviewCanvas />
+              ) : (
+                <DefaultChatArea messageKey={previewKey} />
+              )}
+            </main>
+          </div>
+          <DashboardFooter />
+        </div>
+      </div>
     </div>
   );
 }
