@@ -567,6 +567,8 @@ export function ChatPanel() {
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
       {/* Scrollable content area */}
       <div className="chat-scroll">
+        {/* Flex spacer — pushes content to bottom when messages are few */}
+        <div className="chat-scroll-spacer" />
 
         {/* Hero title — only STEP_TYPE before first message */}
         {!hasMessages && step === "type" && (
