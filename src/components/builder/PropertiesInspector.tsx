@@ -187,6 +187,39 @@ function BadgeFields({ blockId }: { blockId: string }) {
   );
 }
 
+function ChatMessageFields({ blockId }: { blockId: string }) {
+  const { blocks, updateBlockProps } = useBuilder();
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) return null;
+
+  const role = (block.props.role as string) ?? "user";
+  const message = (block.props.message as string) ?? "";
+
+  return (
+    <>
+      <InspectorField label="Role">
+        <select
+          className="inspector-select"
+          value={role}
+          onChange={(e) => updateBlockProps(blockId, { role: e.target.value })}
+        >
+          <option value="user">User</option>
+          <option value="system">System / AI</option>
+        </select>
+      </InspectorField>
+      <InspectorField label="Message">
+        <textarea
+          className="inspector-input"
+          rows={3}
+          value={message}
+          onChange={(e) => updateBlockProps(blockId, { message: e.target.value })}
+          style={{ resize: "vertical", lineHeight: 1.5 }}
+        />
+      </InspectorField>
+    </>
+  );
+}
+
 /* ── Type → fields map ── */
 const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedButton: ButtonFields,
@@ -194,6 +227,7 @@ const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedTextInput: TextInputFields,
   SimulatedCard: CardFields,
   SimulatedBadge: BadgeFields,
+  SimulatedChatMessage: ChatMessageFields,
 };
 
 /* ── Main inspector ── */

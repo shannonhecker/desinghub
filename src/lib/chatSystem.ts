@@ -28,6 +28,7 @@ Recommend components based on their needs. Available components:
 - SimulatedAccordion — collapsible content sections
 - SimulatedCard — content card with title and body text (props: title, content)
 - SimulatedBadge — status badge / pill label (props: label, status [default, info, success, warning, error])
+- SimulatedChatMessage — a single chat bubble (props: role [user, system], message)
 
 Also available (existing blocks):
 - Buttons, Cards, DataTable, FormFields, Tabs, Toggles

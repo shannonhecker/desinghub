@@ -55,6 +55,13 @@ export const LIBRARY_BLUEPRINTS: LibraryBlueprint[] = [
     icon: "label",
     defaults: { label: "New Badge", status: "default" },
   },
+  {
+    id: "lib-chat-message",
+    type: "SimulatedChatMessage",
+    label: "Chat Message",
+    icon: "chat_bubble",
+    defaults: { role: "user", message: "Can you help me build a dashboard?" },
+  },
 ];
 
 /* ── Single draggable blueprint card ── */
@@ -262,12 +269,45 @@ function BadgeFields({ blockId }: { blockId: string }) {
   );
 }
 
+function ChatMessageFields({ blockId }: { blockId: string }) {
+  const { blocks, updateBlockProps } = useBuilder();
+  const block = blocks.find((b) => b.id === blockId);
+  if (!block) return null;
+  const role = (block.props.role as string) ?? "user";
+  const message = (block.props.message as string) ?? "";
+
+  return (
+    <div>
+      <InspectorField label="Role">
+        <select
+          className="inspector-select"
+          value={role}
+          onChange={(e) => updateBlockProps(blockId, { role: e.target.value })}
+        >
+          <option value="user">User</option>
+          <option value="system">System / AI</option>
+        </select>
+      </InspectorField>
+      <InspectorField label="Message">
+        <textarea
+          className="inspector-input"
+          rows={3}
+          value={message}
+          onChange={(e) => updateBlockProps(blockId, { message: e.target.value })}
+          style={{ resize: "vertical", lineHeight: 1.5 }}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
 const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
   SimulatedButton: ButtonFields,
   SimulatedTitle: TitleFields,
   SimulatedTextInput: TextInputFields,
   SimulatedCard: CardFields,
   SimulatedBadge: BadgeFields,
+  SimulatedChatMessage: ChatMessageFields,
 };
 
 /* ── Combined component panel: library + properties ── */

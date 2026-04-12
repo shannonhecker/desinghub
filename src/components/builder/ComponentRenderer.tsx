@@ -20,6 +20,7 @@ import {
   SimulatedAccordion,
   SimulatedCard,
   SimulatedBadge,
+  SimulatedChatMessage,
 } from "./SimulatedUI";
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -873,6 +874,64 @@ function SimulatedBadgeBlock({
   );
 }
 
+function SimulatedChatMessageBlock({
+  system,
+  role = "user",
+  message,
+  blockId,
+}: {
+  system: DesignSystem;
+  role?: "user" | "system";
+  message?: string;
+  blockId?: string;
+}) {
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const isUser = role === "user";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const defaultMsg = isUser
+    ? "Can you help me build a dashboard?"
+    : "Absolutely! I'll generate a layout for you now.";
+  const displayMsg = message || defaultMsg;
+
+  return (
+    <div
+      className={`${prefix}-chat-wrapper ${
+        isUser ? `${prefix}-chat-right` : `${prefix}-chat-left`
+      }`}
+    >
+      {!isUser && (
+        <div className={`${prefix}-chat-avatar`} aria-hidden="true">AI</div>
+      )}
+      <div
+        className={`${prefix}-chat-bubble ${
+          isUser ? `${prefix}-chat-user` : `${prefix}-chat-system`
+        }`}
+      >
+        {isSelected && blockId ? (
+          <InlineEditable
+            value={displayMsg}
+            onChange={(v) => updateBlockProps(blockId, { message: v })}
+            autoOpenComponentPanel
+            style={{ outline: "none" }}
+          />
+        ) : (
+          displayMsg
+        )}
+      </div>
+      {isUser && (
+        <div
+          className={`${prefix}-chat-avatar ${prefix}-avatar-user`}
+          aria-hidden="true"
+        >
+          U
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RENDERERS: Record<string, React.FC<any>> = {
@@ -899,6 +958,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedAccordion: (({ system }: { system: DesignSystem }) => <SimulatedAccordion system={system} />) as React.FC<{ system: DesignSystem }>,
   SimulatedCard: SimulatedCardBlock as React.FC<{ system: DesignSystem }>,
   SimulatedBadge: SimulatedBadgeBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedChatMessage: SimulatedChatMessageBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

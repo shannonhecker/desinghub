@@ -263,6 +263,11 @@ export function BuilderApp() {
 
           <PreviewSidePanel />
         </div>
+
+        {/* ── Copyright — in-flow below chat, never overlaps content ── */}
+        <div className="builder-copyright-fixed" aria-hidden="true">
+          &copy; {new Date().getFullYear()} ausōs. All rights reserved.
+        </div>
       </div>
 
       <SettingsPanel />
@@ -344,10 +349,6 @@ export function BuilderApp() {
         </div>
       )}
 
-      {/* ── Page-level copyright ── */}
-      <div className="builder-copyright-fixed" aria-hidden="true">
-        &copy; {new Date().getFullYear()} ausōs. All rights reserved.
-      </div>
     </div>
   );
 }

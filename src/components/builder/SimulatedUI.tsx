@@ -780,3 +780,51 @@ export function SimulatedBadge({
     </span>
   );
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedChatMessage
+   ═══════════════════════════════════════════ */
+
+interface ChatMessageProps extends SimProps {
+  role?: "user" | "system";
+  message?: string;
+}
+
+export function SimulatedChatMessage({
+  system,
+  role = "user",
+  message,
+}: ChatMessageProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const isUser = role === "user";
+  const defaultMsg = isUser
+    ? "Can you help me build a dashboard?"
+    : "Absolutely! I'll generate a layout for you now.";
+
+  return (
+    <div
+      className={`${prefix}-chat-wrapper ${
+        isUser ? `${prefix}-chat-right` : `${prefix}-chat-left`
+      }`}
+    >
+      {!isUser && (
+        <div className={`${prefix}-chat-avatar`} aria-hidden="true">AI</div>
+      )}
+      <div
+        className={`${prefix}-chat-bubble ${
+          isUser ? `${prefix}-chat-user` : `${prefix}-chat-system`
+        }`}
+      >
+        {message || defaultMsg}
+      </div>
+      {isUser && (
+        <div
+          className={`${prefix}-chat-avatar ${prefix}-avatar-user`}
+          aria-hidden="true"
+        >
+          U
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1792,22 +1792,20 @@
   border-color: rgba(22, 163, 74, 0.40);
 }
 
-/* ── Page-level copyright (fixed bottom center) ── */
+/* ── Page-level copyright — in-flow inside .main-content, never overlaps ── */
 .builder-copyright-fixed {
-  position: fixed;
-  bottom: 10px;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   text-align: center;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.45);
   pointer-events: none;
-  z-index: 5;
   font-family: inherit;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  padding: 12px 0 10px;
+  width: 100%;
 }
 .builder-light .builder-copyright-fixed {
-  color: rgba(0, 0, 0, 0.20);
+  color: rgba(0, 0, 0, 0.45);
 }
 
 /* ── PREVIEW TOGGLE BUTTON (always in top bar) ── */
@@ -6629,3 +6627,81 @@
 .builder-light [class*="-sim-badge-success"] { color: #15803d; }
 .builder-light [class*="-sim-badge-warning"] { color: #92400e; }
 .builder-light [class*="-sim-badge-error"]   { color: #b91c1c; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   SimulatedChatMessage — three-DS variant
+   ═══════════════════════════════════════════════════════════ */
+
+/* Shared wrapper — flex row, gap between avatar and bubble */
+[class$="-chat-wrapper"] {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  font-family: var(--ds-font);
+  margin-bottom: 4px;
+}
+
+/* User message: push to the right */
+[class$="-chat-right"] { flex-direction: row-reverse; }
+
+/* Avatar pill */
+[class$="-chat-avatar"] {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--ds-primary);
+  color: var(--ds-on-primary, #fff);
+}
+
+/* User avatar — slightly muted */
+[class$="-avatar-user"] {
+  background: var(--ds-surface);
+  color: var(--ds-fg-secondary);
+  border: 1px solid var(--ds-border);
+}
+
+/* Bubbles */
+[class$="-chat-bubble"] {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+[class$="-chat-user"] {
+  background: var(--ds-primary);
+  color: var(--ds-on-primary, #fff);
+  border-bottom-right-radius: 4px;
+}
+
+[class$="-chat-system"] {
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  border: 1px solid var(--ds-border);
+  border-bottom-left-radius: 4px;
+}
+
+/* Salt DS tweaks */
+.s-chat-bubble { border-radius: 8px; }
+.s-chat-user   { border-bottom-right-radius: 2px; }
+.s-chat-system { border-bottom-left-radius: 2px; }
+
+/* M3 tweaks — expressive shape */
+.m3-chat-user   { border-bottom-right-radius: 2px; }
+.m3-chat-system {
+  background: var(--md-sys-color-surface-container, var(--ds-surface));
+  border-bottom-left-radius: 2px;
+}
+
+/* Fluent tweaks — square corners */
+.f-chat-bubble { border-radius: 6px; }
+.f-chat-user   { border-bottom-right-radius: 0; }
+.f-chat-system { border-bottom-left-radius: 0; }
