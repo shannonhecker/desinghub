@@ -245,6 +245,8 @@ function PreviewToolbar() {
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
 
   const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
@@ -296,6 +298,13 @@ function PreviewToolbar() {
         </button>
         <button className="preview-toolbar-btn" onClick={toggleAddMenu} title="Add Component">
           <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
+        </button>
+        <button
+          className={`preview-toolbar-btn preview-toolbar-code-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-btn--active" : ""}`}
+          onClick={toggleCanvasViewMode}
+          title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
+        >
+          <span className="preview-toolbar-code-label">&lt;/&gt;</span>
         </button>
       </div>
     </div>

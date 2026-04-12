@@ -1900,6 +1900,90 @@
   font-size: 14px !important;
 }
 
+/* Code toggle button label */
+.preview-toolbar-code-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  letter-spacing: -0.5px;
+}
+.preview-toolbar-code-btn--active .preview-toolbar-code-label {
+  color: #4ade80;
+}
+
+/* ── Canvas Code Viewer ── */
+.canvas-code-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0d1117;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 0;
+  margin: 0 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.canvas-code-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #161b22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.canvas-code-header-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.canvas-code-filename {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  margin-left: 4px;
+}
+
+.canvas-code-count {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  margin-left: auto;
+}
+
+.canvas-code-pre {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 16px 20px;
+  background: transparent;
+}
+
+.canvas-code-body {
+  display: block;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  white-space: pre;
+}
+
+/* Syntax tokens */
+.cv-key    { color: #79c0ff; }
+.cv-string { color: #a5d6ff; }
+.cv-number { color: #f8c555; }
+.cv-keyword{ color: #ff7b72; }
+
+/* Scrollbar inside code viewer */
+.canvas-code-pre::-webkit-scrollbar { width: 5px; height: 5px; }
+.canvas-code-pre::-webkit-scrollbar-track { background: transparent; }
+.canvas-code-pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+.canvas-code-pre::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
 .preview-toolbar-divider {
   width: 1px;
   height: 16px;

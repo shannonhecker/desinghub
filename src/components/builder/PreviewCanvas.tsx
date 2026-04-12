@@ -44,12 +44,53 @@ function CanvasDropZone({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* ── Code Viewer — JSON schema display ── */
+function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }) {
+  const schema = blocks.map((b) => ({ id: b.id, type: b.type, props: b.props }));
+  const json = JSON.stringify(schema, null, 2);
+
+  /* Syntax-highlight tokens (type / string / number / keyword) */
+  const highlighted = json
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(
+      /("(?:[^"\\]|\\.)*")(\s*:)/g,
+      '<span class="cv-key">$1</span>$2'
+    )
+    .replace(
+      /: ("(?:[^"\\]|\\.)*")/g,
+      ': <span class="cv-string">$1</span>'
+    )
+    .replace(/: (\d+\.?\d*)/g, ': <span class="cv-number">$1</span>')
+    .replace(/: (true|false|null)/g, ': <span class="cv-keyword">$1</span>');
+
+  return (
+    <div className="canvas-code-viewer">
+      <div className="canvas-code-header">
+        <span className="canvas-code-header-dot" style={{ background: "#ff5f57" }} />
+        <span className="canvas-code-header-dot" style={{ background: "#febc2e" }} />
+        <span className="canvas-code-header-dot" style={{ background: "#28c840" }} />
+        <span className="canvas-code-filename">canvas-schema.json</span>
+        <span className="canvas-code-count">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</span>
+      </div>
+      <pre className="canvas-code-pre">
+        <code
+          className="canvas-code-body"
+          dangerouslySetInnerHTML={{ __html: highlighted || '// No blocks yet — drag components onto the canvas' }}
+        />
+      </pre>
+    </div>
+  );
+}
+
 export function PreviewCanvas() {
   const {
     designSystem, selectedComponents, setSelectedComponents,
     blocks, setBlocks,
     selectedBlockId, setSelectedBlockId,
     addMenuOpen, setAddMenuOpen,
+    canvasViewMode,
     density,
   } = useBuilder();
 
@@ -173,65 +214,71 @@ export function PreviewCanvas() {
       onDragEnd={handleDragEnd}
     >
       <div className="preview-canvas-layout">
-      <div
-        className={`preview-${designSystem} preview-canvas-root density-${density}`}
-        onClick={() => setSelectedBlockId(null)}
-      >
-        {/* Add component menu — triggered from toolbar */}
-        {addMenuOpen && (
-          <div style={{ position: "relative" }}>
-            <SwapMenu
-              onSelect={handleAddBlock}
-              onClose={() => setAddMenuOpen(false)}
-            />
+
+        {/* ── Code view — JSON schema ── */}
+        {canvasViewMode === 'code' ? (
+          <CodeViewer blocks={blocks} />
+        ) : (
+          <div
+            className={`preview-${designSystem} preview-canvas-root density-${density}`}
+            onClick={() => setSelectedBlockId(null)}
+          >
+            {/* Add component menu — triggered from toolbar */}
+            {addMenuOpen && (
+              <div style={{ position: "relative" }}>
+                <SwapMenu
+                  onSelect={handleAddBlock}
+                  onClose={() => setAddMenuOpen(false)}
+                />
+              </div>
+            )}
+
+            <CanvasDropZone>
+              <SortableContext
+                items={blocks.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {blocks.map((block) => (
+                  <div
+                    key={block.id}
+                    style={{ position: "relative" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedBlockId(block.id);
+                    }}
+                  >
+                    <SortableBlock
+                      id={block.id}
+                      isSelected={selectedBlockId === block.id}
+                      onSwapClick={() =>
+                        setSwapTarget(swapTarget === block.id ? null : block.id)
+                      }
+                      onRemove={() => handleRemoveBlock(block.id)}
+                    >
+                      <ComponentRenderer
+                        type={block.type}
+                        system={designSystem}
+                        blockId={block.id}
+                        {...block.props}
+                      />
+                    </SortableBlock>
+
+                    {/* Swap menu for this block */}
+                    {swapTarget === block.id && (
+                      <SwapMenu
+                        onSelect={(newType) => handleSwap(block.id, newType)}
+                        onClose={() => setSwapTarget(null)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </SortableContext>
+            </CanvasDropZone>
           </div>
         )}
 
-        <CanvasDropZone>
-          <SortableContext
-            items={blocks.map((b) => b.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {blocks.map((block) => (
-              <div
-                key={block.id}
-                style={{ position: "relative" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedBlockId(block.id);
-                }}
-              >
-                <SortableBlock
-                  id={block.id}
-                  isSelected={selectedBlockId === block.id}
-                  onSwapClick={() =>
-                    setSwapTarget(swapTarget === block.id ? null : block.id)
-                  }
-                  onRemove={() => handleRemoveBlock(block.id)}
-                >
-                  <ComponentRenderer
-                    type={block.type}
-                    system={designSystem}
-                    blockId={block.id}
-                    {...block.props}
-                  />
-                </SortableBlock>
-
-                {/* Swap menu for this block */}
-                {swapTarget === block.id && (
-                  <SwapMenu
-                    onSelect={(newType) => handleSwap(block.id, newType)}
-                    onClose={() => setSwapTarget(null)}
-                  />
-                )}
-              </div>
-            ))}
-          </SortableContext>
-        </CanvasDropZone>
-      </div>
-
-      {/* Component Library panel — right side layout */}
-      <ComponentLibrary />
+        {/* Component Library panel — right side (only in UI mode) */}
+        {canvasViewMode === 'ui' && <ComponentLibrary />}
       </div>
 
       {/* Drag overlay — ghost preview while dragging from library */}

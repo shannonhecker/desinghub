@@ -47,6 +47,7 @@ interface BuilderState {
   selectedBlockId: string | null;
   componentLibraryOpen: boolean;
   addMenuOpen: boolean;
+  canvasViewMode: 'ui' | 'code';
 
   // UI state
   settingsOpen: boolean;
@@ -90,6 +91,7 @@ interface BuilderState {
   setComponentLibraryOpen: (v: boolean) => void;
   toggleAddMenu: () => void;
   setAddMenuOpen: (v: boolean) => void;
+  toggleCanvasViewMode: () => void;
 
   // Actions — UI
   toggleSettings: () => void;
@@ -136,6 +138,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   selectedBlockId: null,
   componentLibraryOpen: false,
   addMenuOpen: false,
+  canvasViewMode: 'ui',
 
   // UI state
   settingsOpen: false,
@@ -209,6 +212,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setComponentLibraryOpen: (v) => set({ componentLibraryOpen: v }),
   toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
   setAddMenuOpen: (v) => set({ addMenuOpen: v }),
+  toggleCanvasViewMode: () => set((s) => ({ canvasViewMode: s.canvasViewMode === 'ui' ? 'code' : 'ui' })),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
