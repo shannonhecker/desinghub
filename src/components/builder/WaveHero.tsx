@@ -111,7 +111,7 @@ vec3 getGradientColor(vec2 uv, float time) {
 
   // Saturation boost
   float lum = dot(color, vec3(0.299, 0.587, 0.114));
-  color = mix(vec3(lum), color, 1.35);
+  color = mix(vec3(lum), color, 1.48);
   color = pow(color, vec3(0.92));
 
   // Navy base for dark areas
@@ -294,18 +294,18 @@ export function WaveScene() {
     const uniforms = {
       uTime: { value: 0 },
       uResolution: { value: new THREE.Vector2(box.clientWidth, box.clientHeight) },
-      uColor1: { value: new THREE.Vector3(0.129, 0.949, 0.812) },  // #21F2CF - Teal
+      uColor1: { value: new THREE.Vector3(0.082, 0.980, 0.855) },  // #15FADA - vivid teal
       uColor2: { value: new THREE.Vector3(0.039, 0.055, 0.153) },  // #0A0E27 - Navy
-      uColor3: { value: new THREE.Vector3(0.945, 0.353, 0.133) },  // #F15A22 - Orange
+      uColor3: { value: new THREE.Vector3(0.988, 0.412, 0.098) },  // #FC6919 - vivid orange
       uColor4: { value: new THREE.Vector3(0.039, 0.055, 0.153) },  // #0A0E27 - Navy
-      uColor5: { value: new THREE.Vector3(0.945, 0.353, 0.133) },  // #F15A22 - Orange
+      uColor5: { value: new THREE.Vector3(0.988, 0.412, 0.098) },  // #FC6919 - vivid orange
       uColor6: { value: new THREE.Vector3(0.039, 0.055, 0.153) },  // #0A0E27 - Navy
       uSpeed: { value: 1.5 },
-      uIntensity: { value: 1.8 },
+      uIntensity: { value: 2.05 },
       uTouchTexture: { value: touchTex.texture },
-      uGrainIntensity: { value: 0.08 },
+      uGrainIntensity: { value: 0.07 },
       uDarkNavy: { value: new THREE.Vector3(0.039, 0.055, 0.153) },
-      uGradientSize: { value: 0.45 },
+      uGradientSize: { value: 0.48 },
     };
 
     const mat = new THREE.ShaderMaterial({

@@ -262,7 +262,7 @@
   pointer-events: auto;
 }
 .builder-light .liquid-bg {
-  opacity: 0.3;
+  opacity: 0.45;
 }
 
 /* ── Original background blobs (purple, blue, gold/brown) ── */
@@ -282,7 +282,7 @@
   height: 650px;
   top: -220px;
   left: -180px;
-  background: radial-gradient(circle, rgba(94, 231, 223, 0.35), rgba(59, 130, 246, 0.3));
+  background: radial-gradient(circle, rgba(80, 240, 220, 0.48), rgba(48, 120, 255, 0.40));
 }
 /* Blob 2: purple → pink (bottom-right) */
 .builder-shell::after {
@@ -290,11 +290,11 @@
   height: 550px;
   bottom: -220px;
   right: -120px;
-  background: radial-gradient(circle, rgba(180, 144, 245, 0.3), rgba(236, 72, 153, 0.25));
+  background: radial-gradient(circle, rgba(175, 130, 255, 0.42), rgba(240, 60, 160, 0.34));
   animation-duration: 17s;
   animation-delay: -8s;
 }
-/* Blob 3: gold → pink (center) — uses main-content::before */
+/* Blob 3: gold → rose (center) — uses main-content::before */
 .main-content::before {
   content: "";
   position: absolute;
@@ -306,18 +306,18 @@
   filter: blur(100px);
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(circle, rgba(255, 210, 127, 0.25), rgba(247, 168, 196, 0.2));
+  background: radial-gradient(circle, rgba(255, 205, 100, 0.34), rgba(250, 150, 190, 0.28));
   animation: blob-drift 25s ease-in-out infinite alternate;
   animation-delay: -13s;
 }
 .builder-light .builder-shell::before,
 .builder-light .builder-shell::after {
-  opacity: 0.5;
-  filter: blur(120px);
+  opacity: 0.68;
+  filter: blur(110px);
 }
 .builder-light .main-content::before {
-  opacity: 0.4;
-  filter: blur(120px);
+  opacity: 0.55;
+  filter: blur(110px);
 }
 
 @keyframes blob-drift {
