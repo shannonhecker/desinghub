@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    // No maxAge/expires → session cookie, cleared when browser closes
+    maxAge: 60 * 60, // 1 hour — forces re-login on mobile where session cookies persist
     path: "/",
   });
 
