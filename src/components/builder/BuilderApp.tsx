@@ -22,7 +22,7 @@ export function BuilderApp() {
   const {
     mode, previewOpen, togglePreview, setMode,
     setDesignSystem, setInterfaceType, setSelectedComponents,
-    chatOpen: isChatOpen,
+    chatOpen: isChatOpen, clearChat,
   } = useBuilder();
 
   const [isStandalone, setIsStandalone] = useState(false);
@@ -198,13 +198,18 @@ export function BuilderApp() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
             </button>
-            <div className="top-bar-logo">
+            <button
+              className="top-bar-logo top-bar-logo-btn"
+              onClick={clearChat}
+              title="New chat"
+              aria-label="New chat"
+            >
               <img
                 src="/aologo.svg"
                 alt="ausōs"
                 className="ausos-logo-img"
               />
-            </div>
+            </button>
           </div>
 
           {/* Right: all existing controls unchanged */}
