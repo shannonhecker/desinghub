@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PasswordGate from "@/components/PasswordGate";
 
 export const metadata: Metadata = {
   title: "ausōs — Design System Builder",
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <PasswordGate>{children}</PasswordGate>
+      </body>
     </html>
   );
 }

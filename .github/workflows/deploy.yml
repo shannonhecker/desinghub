@@ -23,7 +23,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Build with staging password hash
+        env:
+          NEXT_PUBLIC_STAGING_PASSWORD_HASH: ${{ secrets.STAGING_PASSWORD_HASH }}
+        run: npm run build
       - run: touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
