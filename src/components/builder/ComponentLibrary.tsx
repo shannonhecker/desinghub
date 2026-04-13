@@ -351,13 +351,10 @@ const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> = {
 /* ── Combined component panel: library + properties ── */
 export function ComponentLibrary() {
   const {
-    componentLibraryOpen,
     toggleComponentLibrary,
     selectedBlockId,
     blocks,
   } = useBuilder();
-
-  if (!componentLibraryOpen) return null;
 
   const selectedBlock = selectedBlockId
     ? blocks.find((b) => b.id === selectedBlockId)
@@ -367,7 +364,7 @@ export function ComponentLibrary() {
     : null;
 
   return (
-    <div className="component-library open">
+    <div className="component-library">
       <div className="lib-header">
         <span className="lib-header-title">Components</span>
         <button

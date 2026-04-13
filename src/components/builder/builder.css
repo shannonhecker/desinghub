@@ -4950,19 +4950,34 @@
    COMPONENT LIBRARY — Drag-to-add panel
    ══════════════════════════════════════════ */
 
-/* Layout panel on right side of canvas */
-.preview-canvas-layout {
+/* ── Builder body: viewport + right component sidebar ── */
+.preview-builder-body {
   flex: 1;
   display: flex;
   flex-direction: row;
   min-height: 0;
+  overflow: hidden;
 }
 
-.component-library {
-  width: 200px;
+/* ── Right component sidebar (outside the device frame) ── */
+.component-sidebar {
+  width: 240px;
   flex-shrink: 0;
-  background: var(--b-surface, #1a1a1a);
-  border-left: 1px solid var(--b-border, rgba(255,255,255,0.08));
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.10);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Component library fills its sidebar container */
+.component-library {
+  width: 100%;
+  flex-shrink: 0;
+  flex: 1;
+  background: transparent;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -5215,9 +5230,14 @@
 }
 
 /* ── Light mode overrides ── */
+.builder-light .component-sidebar {
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left-color: rgba(0, 0, 0, 0.08);
+}
 .builder-light .component-library {
-  background: #f5f5f5;
-  border-left-color: rgba(0,0,0,0.08);
+  background: transparent;
 }
 .builder-light .lib-header-title {
   color: #18181b;
@@ -6380,6 +6400,7 @@
   .bp-controls { padding: 6px 12px; gap: 8px; }
   .bp-dimensions { display: none; }
   .preview-toolbar { padding: 4px 12px; }
+  .component-sidebar { width: 200px; }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -6523,8 +6544,13 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Component library: full-width sheet at bottom on mobile */
-  .preview-canvas-layout {
+  /* Component sidebar: hidden on mobile */
+  .component-sidebar {
+    display: none !important;
+  }
+
+  /* Builder body: single column on mobile */
+  .preview-builder-body {
     flex-direction: column;
   }
 

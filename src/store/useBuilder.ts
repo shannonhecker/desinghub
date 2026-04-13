@@ -149,7 +149,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Canvas blocks & selection
   blocks: [],
   selectedBlockId: null,
-  componentLibraryOpen: false,
+  componentLibraryOpen: true,
   addMenuOpen: false,
   canvasViewMode: 'ui',
 

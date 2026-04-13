@@ -16,15 +16,33 @@ import {
   Bot,
   Send,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { useBuilder, type DeviceMode, type Block } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
-import { PreviewCanvas } from "./PreviewCanvas";
+import { BLOCK_TO_ID } from "@/lib/componentMaps";
+import { PreviewCanvas, makeBlockId } from "./PreviewCanvas";
+import { ComponentLibrary, LIBRARY_BLUEPRINTS } from "./ComponentLibrary";
 
 /* ── Viewport presets ── */
 const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
-  desktop: { width: 1200, height: 800, label: "1200 × 800" },
-  tablet: { width: 768, height: 1024, label: "768 × 1024" },
-  mobile: { width: 375, height: 812, label: "375 × 812" },
+  desktop: { width: 1200, height: 800, label: "1200 \u00d7 800" },
+  tablet: { width: 768, height: 1024, label: "768 \u00d7 1024" },
+  mobile: { width: 375, height: 812, label: "375 \u00d7 812" },
 };
 
 /* ── Icon map for sidebar nav items ── */
@@ -37,8 +55,8 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
 
 /* ── Sample chat messages for the empty state ── */
 const SAMPLE_MESSAGES = [
-  { role: "user" as const, text: "Summarize yesterday's sales data" },
-  { role: "ai" as const, text: "Yesterday's total revenue was $14,280 across 142 orders. Top category: Electronics (+12% vs. prior day)." },
+  { role: "user" as const, text: "Summarize yesterday\u2019s sales data" },
+  { role: "ai" as const, text: "Yesterday\u2019s total revenue was $14,280 across 142 orders. Top category: Electronics (+12% vs. prior day)." },
   { role: "user" as const, text: "Show me a breakdown by region" },
 ];
 
@@ -307,7 +325,7 @@ function DefaultChatArea({ messageKey }: { messageKey: number }) {
         ))}
       </div>
       <div className="bp-chat-input">
-        <input type="text" placeholder="Ask the AI agent…" readOnly className="bp-chat-field" />
+        <input type="text" placeholder="Ask the AI agent\u2026" readOnly className="bp-chat-field" />
         <button className="bp-chat-send">
           <Send size={14} strokeWidth={2.4} />
         </button>
@@ -340,7 +358,7 @@ function DashboardFooter() {
               >
                 {block.props.label as string}
               </span>
-              <span className="bp-footer-sep">·</span>
+              <span className="bp-footer-sep">&middot;</span>
               <span
                 className="bp-zone-editable"
                 contentEditable
@@ -362,6 +380,8 @@ function DashboardFooter() {
 
 /* ══════════════════════════════════════════════════════════
    Preview Toolbar — DS switcher + density + canvas actions
+   Consolidated: removed redundant Add button, repositioned
+   code toggle next to primary builder controls.
    ══════════════════════════════════════════════════════════ */
 function PreviewToolbar() {
   const designSystem = useBuilder((s) => s.designSystem);
@@ -370,7 +390,6 @@ function PreviewToolbar() {
   const setDensity = useBuilder((s) => s.setDensity);
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
-  const toggleAddMenu = useBuilder((s) => s.toggleAddMenu);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
   const mode = useBuilder((s) => s.mode);
@@ -445,24 +464,25 @@ function PreviewToolbar() {
         ))}
       </div>
 
-      {/* Canvas Actions */}
+      {/* UI/Code mode toggle — positioned with primary builder controls */}
       <div className="preview-toolbar-group">
-        <button
-          className={`preview-toolbar-btn${componentLibraryOpen ? " preview-toolbar-btn-active" : ""}`}
-          onClick={toggleComponentLibrary}
-          title="Component Library"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">category</span>
-        </button>
-        <button className="preview-toolbar-btn" onClick={toggleAddMenu} title="Add Component">
-          <span className="material-symbols-outlined preview-toolbar-icon">add_box</span>
-        </button>
         <button
           className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
           onClick={toggleCanvasViewMode}
           title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
         >
           <span className="preview-toolbar-code-label">&lt;/&gt;</span>
+        </button>
+      </div>
+
+      {/* Canvas Actions — library toggle, download, save */}
+      <div className="preview-toolbar-group">
+        <button
+          className={`preview-toolbar-btn${componentLibraryOpen ? " preview-toolbar-btn-active" : ""}`}
+          onClick={toggleComponentLibrary}
+          title={componentLibraryOpen ? "Hide component library" : "Show component library"}
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">category</span>
         </button>
         <button
           className="preview-toolbar-btn"
@@ -490,8 +510,109 @@ function PreviewToolbar() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   CanvasDndProvider — shared DnD context wrapping both the
+   canvas (drop target) and the ComponentLibrary (drag source)
+   so drag-and-drop works across the layout boundary.
+   ══════════════════════════════════════════════════════════ */
+function CanvasDndProvider({ children }: { children: React.ReactNode }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const setBlocks = useBuilder((s) => s.setBlocks);
+  const setSelectedComponents = useBuilder((s) => s.setSelectedComponents);
+  const setSelectedBlockId = useBuilder((s) => s.setSelectedBlockId);
+
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  /* ── DnD sensors ── */
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 10 },
+  });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 250, tolerance: 5 },
+  });
+  const sensors = useSensors(
+    mouseSensor,
+    touchSensor,
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const syncToStore = useCallback(
+    (updated: Block[]) => {
+      setBlocks(updated);
+      const ids = updated
+        .map((b) => BLOCK_TO_ID[b.type])
+        .filter(Boolean) as string[];
+      setSelectedComponents(ids);
+    },
+    [setBlocks, setSelectedComponents]
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragId(null);
+      const { active, over } = event;
+
+      // Case 1: Library blueprint dropped onto canvas
+      if (active.data.current?.fromLibrary) {
+        const { type, defaults } = active.data.current as {
+          type: string;
+          defaults: Record<string, unknown>;
+        };
+        const newId = makeBlockId();
+        const next = [{ id: newId, type, props: { ...defaults } }, ...blocks];
+        syncToStore(next);
+        setSelectedBlockId(newId);
+        return;
+      }
+
+      // Case 2: Reorder existing blocks
+      if (over && active.id !== over.id) {
+        const oldIndex = blocks.findIndex((b) => b.id === active.id);
+        const newIndex = blocks.findIndex((b) => b.id === over.id);
+        const next = arrayMove(blocks, oldIndex, newIndex);
+        syncToStore(next);
+      }
+    },
+    [blocks, syncToStore, setSelectedBlockId]
+  );
+
+  /* ── Resolve drag overlay content ── */
+  const activeBlueprintLabel = activeDragId
+    ? LIBRARY_BLUEPRINTS.find((bp) => bp.id === activeDragId)
+    : null;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      {children}
+
+      {/* Drag overlay — ghost preview while dragging from library */}
+      <DragOverlay dropAnimation={null}>
+        {activeBlueprintLabel ? (
+          <div className="lib-drag-overlay">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              {activeBlueprintLabel.icon}
+            </span>
+            <span>{activeBlueprintLabel.label}</span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    PreviewSidePanel — the main exported panel for BuilderApp
-   Wraps everything in a device frame with header/sidebar/footer
+   Layout: [ DeviceControls ] [ Toolbar ] [ Viewport | ComponentSidebar ]
+   DndContext wraps both the viewport and the right sidebar
+   so dragging from the library onto the canvas works.
    ══════════════════════════════════════════════════════════ */
 export function PreviewSidePanel() {
   const previewOpen = useBuilder((s) => s.previewOpen);
@@ -500,6 +621,7 @@ export function PreviewSidePanel() {
   const messages = useBuilder((s) => s.messages);
   const designSystem = useBuilder((s) => s.designSystem);
   const density = useBuilder((s) => s.density);
+  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
@@ -519,39 +641,51 @@ export function PreviewSidePanel() {
       {/* Toolbar — always visible */}
       <PreviewToolbar />
 
-      {/* Viewport wrapper — the "stage" */}
-      <div className="bp-viewport-wrapper">
-        {/* Device Frame — animated width */}
-        <motion.div
-          className="bp-device-frame"
-          animate={{ width: frameWidth, maxHeight: preset.height }}
-          transition={{ type: "spring", stiffness: 260, damping: 28 }}
-        >
-          {/* SaaS Dashboard layout — scoped to the selected design system */}
-          <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-            <DashboardHeader compact={isMobile} />
+      {/* Main builder area — DndContext wraps viewport + right sidebar */}
+      <CanvasDndProvider>
+        <div className="preview-builder-body">
+          {/* Center: Viewport */}
+          <div className="bp-viewport-wrapper">
+            {/* Device Frame — animated width */}
+            <motion.div
+              className="bp-device-frame"
+              animate={{ width: frameWidth, maxHeight: preset.height }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            >
+              {/* SaaS Dashboard layout — scoped to the selected design system */}
+              <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+                <DashboardHeader compact={isMobile} />
 
-            <div className="bp-body">
-              {!isMobile && (
-                <DashboardSidebar
-                  collapsed={sidebarCollapsed}
-                  onToggle={handleSidebarToggle}
-                />
-              )}
+                <div className="bp-body">
+                  {!isMobile && (
+                    <DashboardSidebar
+                      collapsed={sidebarCollapsed}
+                      onToggle={handleSidebarToggle}
+                    />
+                  )}
 
-              <main className="bp-main">
-                {hasContent ? (
-                  <PreviewCanvas />
-                ) : (
-                  <DefaultChatArea messageKey={previewKey} />
-                )}
-              </main>
-            </div>
+                  <main className="bp-main">
+                    {hasContent ? (
+                      <PreviewCanvas />
+                    ) : (
+                      <DefaultChatArea messageKey={previewKey} />
+                    )}
+                  </main>
+                </div>
 
-            <DashboardFooter />
+                <DashboardFooter />
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
+
+          {/* Right: Component Library Sidebar */}
+          {componentLibraryOpen && (
+            <aside className="component-sidebar">
+              <ComponentLibrary />
+            </aside>
+          )}
+        </div>
+      </CanvasDndProvider>
     </div>
   );
 }
@@ -565,6 +699,7 @@ export function StandalonePreview() {
   const mode = useBuilder((s) => s.mode);
   const messages = useBuilder((s) => s.messages);
   const previewKey = useBuilder((s) => s.previewKey);
+  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
@@ -591,26 +726,37 @@ export function StandalonePreview() {
       {/* DS / density toolbar */}
       <PreviewToolbar />
 
-      {/* Full dashboard canvas */}
-      <div className="standalone-preview-canvas">
-        <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-          <DashboardHeader compact={false} />
-          <div className="bp-body">
-            <DashboardSidebar
-              collapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed((v) => !v)}
-            />
-            <main className="bp-main">
-              {hasContent ? (
-                <PreviewCanvas />
-              ) : (
-                <DefaultChatArea messageKey={previewKey} />
-              )}
-            </main>
+      {/* Full dashboard canvas — DndContext wraps viewport + sidebar */}
+      <CanvasDndProvider>
+        <div className="preview-builder-body">
+          <div className="standalone-preview-canvas">
+            <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+              <DashboardHeader compact={false} />
+              <div className="bp-body">
+                <DashboardSidebar
+                  collapsed={sidebarCollapsed}
+                  onToggle={() => setSidebarCollapsed((v) => !v)}
+                />
+                <main className="bp-main">
+                  {hasContent ? (
+                    <PreviewCanvas />
+                  ) : (
+                    <DefaultChatArea messageKey={previewKey} />
+                  )}
+                </main>
+              </div>
+              <DashboardFooter />
+            </div>
           </div>
-          <DashboardFooter />
+
+          {/* Right: Component Library Sidebar in standalone */}
+          {componentLibraryOpen && (
+            <aside className="component-sidebar">
+              <ComponentLibrary />
+            </aside>
+          )}
         </div>
-      </div>
+      </CanvasDndProvider>
     </div>
   );
 }

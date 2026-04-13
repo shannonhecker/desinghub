@@ -1,34 +1,19 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-  useDroppable,
-} from "@dnd-kit/core";
+import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
-  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useBuilder, type Block } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
-import { ComponentLibrary, LIBRARY_BLUEPRINTS } from "./ComponentLibrary";
 import { ID_TO_BLOCK, BLOCK_TO_ID } from "@/lib/componentMaps";
 
 let blockCounter = 0;
-function makeBlockId() {
+export function makeBlockId() {
   return `block-${++blockCounter}-${Date.now()}`;
 }
 
@@ -109,6 +94,12 @@ function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }
   );
 }
 
+/* ══════════════════════════════════════════════════════════
+   PreviewCanvas — sortable drop zone for builder blocks.
+   DndContext is provided by the parent (CanvasDndProvider
+   in PreviewPanel) so that the ComponentLibrary sidebar
+   shares the same drag-and-drop context.
+   ══════════════════════════════════════════════════════════ */
 export function PreviewCanvas() {
   const {
     designSystem, selectedComponents, setSelectedComponents,
@@ -121,7 +112,6 @@ export function PreviewCanvas() {
 
   /* ── Local UI state ── */
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   /* Track whether we initialized from store already */
   const initializedRef = useRef(false);
@@ -155,55 +145,7 @@ export function PreviewCanvas() {
     [setSelectedComponents, setBlocks]
   );
 
-  /* ── DnD sensors ── */
-  // MouseSensor: require 10px movement so normal clicks are never swallowed
-  // TouchSensor: 250 ms hold + 5 px wiggle tolerance → safe on mobile while scrolling
-  const mouseSensor = useSensor(MouseSensor, {
-    activationConstraint: { distance: 10 },
-  });
-  const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: { delay: 250, tolerance: 5 },
-  });
-  const sensors = useSensors(
-    mouseSensor,
-    touchSensor,
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
   /* ── Handlers ── */
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveDragId(String(event.active.id));
-  }, []);
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveDragId(null);
-      const { active, over } = event;
-
-      // Case 1: Library blueprint dropped onto canvas
-      if (active.data.current?.fromLibrary) {
-        const { type, defaults } = active.data.current as {
-          type: string;
-          defaults: Record<string, unknown>;
-        };
-        const newId = makeBlockId();
-        const next = [{ id: newId, type, props: { ...defaults } }, ...blocks];
-        syncToStore(next);
-        setSelectedBlockId(newId);
-        return;
-      }
-
-      // Case 2: Reorder existing blocks
-      if (over && active.id !== over.id) {
-        const oldIndex = blocks.findIndex((b) => b.id === active.id);
-        const newIndex = blocks.findIndex((b) => b.id === over.id);
-        const next = arrayMove(blocks, oldIndex, newIndex);
-        syncToStore(next);
-      }
-    },
-    [blocks, syncToStore, setSelectedBlockId]
-  );
-
   const handleSwap = useCallback(
     (blockId: string, newType: string) => {
       const next = blocks.map((b) =>
@@ -235,97 +177,68 @@ export function PreviewCanvas() {
     [blocks, syncToStore, selectedBlockId, setSelectedBlockId]
   );
 
-  /* ── Resolve drag overlay content ── */
-  const activeBlueprintLabel = activeDragId
-    ? LIBRARY_BLUEPRINTS.find((bp) => bp.id === activeDragId)
-    : null;
+  /* ── Code view ── */
+  if (canvasViewMode === 'code') {
+    return <CodeViewer blocks={blocks} />;
+  }
 
+  /* ── Canvas view (DndContext is provided by parent) ── */
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+    <div
+      className={`preview-${designSystem} preview-canvas-root density-${density}`}
+      onClick={() => setSelectedBlockId(null)}
     >
-      <div className="preview-canvas-layout">
+      {/* Add component menu — triggered from toolbar */}
+      {addMenuOpen && (
+        <div style={{ position: "relative" }}>
+          <SwapMenu
+            onSelect={handleAddBlock}
+            onClose={() => setAddMenuOpen(false)}
+          />
+        </div>
+      )}
 
-        {/* ── Code view — JSON schema ── */}
-        {canvasViewMode === 'code' ? (
-          <CodeViewer blocks={blocks} />
-        ) : (
-          <div
-            className={`preview-${designSystem} preview-canvas-root density-${density}`}
-            onClick={() => setSelectedBlockId(null)}
-          >
-            {/* Add component menu — triggered from toolbar */}
-            {addMenuOpen && (
-              <div style={{ position: "relative" }}>
-                <SwapMenu
-                  onSelect={handleAddBlock}
-                  onClose={() => setAddMenuOpen(false)}
-                />
-              </div>
-            )}
-
-            <CanvasDropZone>
-              <SortableContext
-                items={blocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
+      <CanvasDropZone>
+        <SortableContext
+          items={blocks.map((b) => b.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {blocks.map((block) => (
+            <div
+              key={block.id}
+              style={{ position: "relative" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedBlockId(block.id);
+              }}
+            >
+              <SortableBlock
+                id={block.id}
+                isSelected={selectedBlockId === block.id}
+                onSwapClick={() =>
+                  setSwapTarget(swapTarget === block.id ? null : block.id)
+                }
+                onRemove={() => handleRemoveBlock(block.id)}
               >
-                {blocks.map((block) => (
-                  <div
-                    key={block.id}
-                    style={{ position: "relative" }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedBlockId(block.id);
-                    }}
-                  >
-                    <SortableBlock
-                      id={block.id}
-                      isSelected={selectedBlockId === block.id}
-                      onSwapClick={() =>
-                        setSwapTarget(swapTarget === block.id ? null : block.id)
-                      }
-                      onRemove={() => handleRemoveBlock(block.id)}
-                    >
-                      <ComponentRenderer
-                        type={block.type}
-                        system={designSystem}
-                        blockId={block.id}
-                        {...block.props}
-                      />
-                    </SortableBlock>
+                <ComponentRenderer
+                  type={block.type}
+                  system={designSystem}
+                  blockId={block.id}
+                  {...block.props}
+                />
+              </SortableBlock>
 
-                    {/* Swap menu for this block */}
-                    {swapTarget === block.id && (
-                      <SwapMenu
-                        onSelect={(newType) => handleSwap(block.id, newType)}
-                        onClose={() => setSwapTarget(null)}
-                      />
-                    )}
-                  </div>
-                ))}
-              </SortableContext>
-            </CanvasDropZone>
-          </div>
-        )}
-
-        {/* Component Library panel — right side (only in UI mode) */}
-        {canvasViewMode === 'ui' && <ComponentLibrary />}
-      </div>
-
-      {/* Drag overlay — ghost preview while dragging from library */}
-      <DragOverlay dropAnimation={null}>
-        {activeBlueprintLabel ? (
-          <div className="lib-drag-overlay">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {activeBlueprintLabel.icon}
-            </span>
-            <span>{activeBlueprintLabel.label}</span>
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+              {/* Swap menu for this block */}
+              {swapTarget === block.id && (
+                <SwapMenu
+                  onSelect={(newType) => handleSwap(block.id, newType)}
+                  onClose={() => setSwapTarget(null)}
+                />
+              )}
+            </div>
+          ))}
+        </SortableContext>
+      </CanvasDropZone>
+    </div>
   );
 }
