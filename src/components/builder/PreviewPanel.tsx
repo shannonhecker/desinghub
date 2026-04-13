@@ -16,7 +16,7 @@ import {
   Bot,
   Send,
 } from "lucide-react";
-import { useBuilder, type DeviceMode } from "@/store/useBuilder";
+import { useBuilder, type DeviceMode, type Block } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
 import { PreviewCanvas } from "./PreviewCanvas";
 
@@ -27,13 +27,13 @@ const PRESETS: Record<DeviceMode, { width: number; height: number; label: string
   mobile: { width: 375, height: 812, label: "375 × 812" },
 };
 
-/* ── Sidebar nav items ── */
-const NAV_ITEMS = [
-  { icon: MessageSquare, label: "Chat", active: true },
-  { icon: Database, label: "Data", active: false },
-  { icon: Settings, label: "Settings", active: false },
-  { icon: BarChart3, label: "Analytics", active: false },
-];
+/* ── Icon map for sidebar nav items ── */
+const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
+  chat: MessageSquare,
+  database: Database,
+  settings: Settings,
+  bar_chart: BarChart3,
+};
 
 /* ── Sample chat messages for the empty state ── */
 const SAMPLE_MESSAGES = [
@@ -122,26 +122,62 @@ function DeviceControls() {
 
 /* ══════════════════════════════════════════════════════════
    Dashboard Header — sticky top bar inside device frame
+   Driven by headerBlocks from store; labels are inline-editable
    ══════════════════════════════════════════════════════════ */
 function DashboardHeader({ compact }: { compact: boolean }) {
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
+
   return (
     <header className="bp-header">
-      <div className="bp-header-brand">
-        <div className="bp-logo-mark">
-          <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
-        </div>
-        {!compact && <span className="bp-logo-text">AI Agent</span>}
-      </div>
-      <div className="bp-status-pill">
-        <span className="bp-status-dot" />
-        <span className="bp-status-label">Active</span>
-      </div>
+      {headerBlocks.map((block) => {
+        if (block.type === "AppBrand") {
+          return (
+            <div key={block.id} className="bp-header-brand">
+              <div className="bp-logo-mark">
+                <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
+              </div>
+              {!compact && (
+                <span
+                  className="bp-logo-text bp-zone-editable"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) =>
+                    updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                  }
+                >
+                  {block.props.label as string}
+                </span>
+              )}
+            </div>
+          );
+        }
+        if (block.type === "StatusPill") {
+          return (
+            <div key={block.id} className="bp-status-pill">
+              <span className="bp-status-dot" />
+              <span
+                className="bp-status-label bp-zone-editable"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) =>
+                  updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                }
+              >
+                {block.props.label as string}
+              </span>
+            </div>
+          );
+        }
+        return null;
+      })}
     </header>
   );
 }
 
 /* ══════════════════════════════════════════════════════════
    Dashboard Sidebar — collapsible nav
+   Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
    ══════════════════════════════════════════════════════════ */
 function DashboardSidebar({
   collapsed,
@@ -150,6 +186,29 @@ function DashboardSidebar({
   collapsed: boolean;
   onToggle: () => void;
 }) {
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
+  const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
+
+  const handleSetActive = (id: string) => {
+    setSidebarBlocks(
+      sidebarBlocks.map((b) => ({ ...b, props: { ...b.props, active: b.id === id } }))
+    );
+  };
+
+  const handleAddNavItem = () => {
+    const newBlock: Block = {
+      id: `nav-${Date.now()}`,
+      type: "NavItem",
+      props: { label: "New Item", icon: "chat", active: false },
+    };
+    setSidebarBlocks([...sidebarBlocks, newBlock]);
+  };
+
+  const handleRemoveNavItem = (id: string) => {
+    setSidebarBlocks(sidebarBlocks.filter((b) => b.id !== id));
+  };
+
   return (
     <motion.aside
       className="bp-sidebar"
@@ -157,28 +216,63 @@ function DashboardSidebar({
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       <nav className="bp-sidebar-nav">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.label}
-            className={`bp-nav-item${item.active ? " bp-nav-item--active" : ""}`}
-            title={item.label}
-          >
-            <item.icon size={18} strokeWidth={item.active ? 2.2 : 1.5} />
-            <AnimatePresence>
+        {sidebarBlocks.map((block) => {
+          if (block.type !== "NavItem") return null;
+          const iconKey = block.props.icon as string;
+          const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
+          const active = block.props.active as boolean;
+          return (
+            <div key={block.id} className="bp-nav-item-row">
+              <button
+                className={`bp-nav-item${active ? " bp-nav-item--active" : ""}`}
+                title={block.props.label as string}
+                onClick={() => handleSetActive(block.id)}
+              >
+                <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
+                <AnimatePresence>
+                  {!collapsed && (
+                    <motion.span
+                      className="bp-nav-label"
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <span
+                        className="bp-zone-editable"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onClick={(e) => e.stopPropagation()}
+                        onBlur={(e) =>
+                          updateSidebarBlockProps(block.id, {
+                            label: e.currentTarget.textContent ?? "",
+                          })
+                        }
+                      >
+                        {block.props.label as string}
+                      </span>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
               {!collapsed && (
-                <motion.span
-                  className="bp-nav-label"
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.15 }}
+                <button
+                  className="bp-nav-remove-btn"
+                  onClick={(e) => { e.stopPropagation(); handleRemoveNavItem(block.id); }}
+                  title="Remove item"
                 >
-                  {item.label}
-                </motion.span>
+                  ×
+                </button>
               )}
-            </AnimatePresence>
+            </div>
+          );
+        })}
+        {!collapsed && (
+          <button className="bp-nav-add-btn" onClick={handleAddNavItem}>
+            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>
+            Add item
           </button>
-        ))}
+        )}
       </nav>
 
       <button className="bp-sidebar-toggle" onClick={onToggle} title="Toggle sidebar">
@@ -224,13 +318,44 @@ function DefaultChatArea({ messageKey }: { messageKey: number }) {
 
 /* ══════════════════════════════════════════════════════════
    Dashboard Footer
+   Driven by footerBlocks; text is inline-editable
    ══════════════════════════════════════════════════════════ */
 function DashboardFooter() {
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
+
   return (
     <footer className="bp-footer">
-      <span>Powered by Design Hub</span>
-      <span className="bp-footer-sep">·</span>
-      <span>v1.0</span>
+      {footerBlocks.map((block) => {
+        if (block.type === "FooterText") {
+          return (
+            <React.Fragment key={block.id}>
+              <span
+                className="bp-zone-editable"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) =>
+                  updateFooterBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                }
+              >
+                {block.props.label as string}
+              </span>
+              <span className="bp-footer-sep">·</span>
+              <span
+                className="bp-zone-editable"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) =>
+                  updateFooterBlockProps(block.id, { version: e.currentTarget.textContent ?? "" })
+                }
+              >
+                {block.props.version as string}
+              </span>
+            </React.Fragment>
+          );
+        }
+        return null;
+      })}
     </footer>
   );
 }

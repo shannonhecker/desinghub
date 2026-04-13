@@ -6775,3 +6775,113 @@
   opacity: 0.9;
 }
 .f-chart-column:hover .f-chart-bar { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════
+   CODE VIEW — copy button
+   ══════════════════════════════════════════════════════════ */
+.canvas-code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.canvas-code-copy-btn:hover {
+  background: rgba(94, 231, 223, 0.12);
+  border-color: rgba(94, 231, 223, 0.25);
+  color: rgba(94, 231, 223, 0.9);
+}
+
+/* ══════════════════════════════════════════════════════════
+   ZONE EDITING — inline editable text inside header / sidebar / footer
+   ══════════════════════════════════════════════════════════ */
+
+/* Editable hint — subtle underline on hover */
+.bp-zone-editable {
+  cursor: text;
+  border-radius: 3px;
+  outline: none;
+  transition: background 0.15s;
+}
+.bp-zone-editable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.bp-zone-editable:focus {
+  background: rgba(94, 231, 223, 0.08);
+  box-shadow: 0 0 0 1px rgba(94, 231, 223, 0.3);
+}
+
+/* Sidebar nav item row — wraps button + remove button */
+.bp-nav-item-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.bp-nav-item-row .bp-nav-item {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Remove button on each nav item */
+.bp-nav-remove-btn {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.25);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+  margin-right: 4px;
+}
+.bp-nav-item-row:hover .bp-nav-remove-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.bp-nav-remove-btn:hover {
+  background: rgba(255, 80, 80, 0.15);
+  color: rgba(255, 100, 100, 0.9);
+}
+
+/* Add nav item button */
+.bp-nav-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.bp-nav-add-btn:hover {
+  border-color: rgba(94, 231, 223, 0.3);
+  color: rgba(94, 231, 223, 0.8);
+  background: rgba(94, 231, 223, 0.05);
+}

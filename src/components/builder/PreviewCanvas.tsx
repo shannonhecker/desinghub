@@ -45,12 +45,30 @@ function CanvasDropZone({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ── Code Viewer — JSON schema display ── */
+/* ── Code Viewer — full-page JSON schema display ── */
 function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }) {
-  const schema = blocks.map((b) => ({ id: b.id, type: b.type, props: b.props }));
-  const json = JSON.stringify(schema, null, 2);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const [copied, setCopied] = useState(false);
 
-  /* Syntax-highlight tokens (type / string / number / keyword) */
+  const schema = {
+    header: headerBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
+    sidebar: sidebarBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
+    main: blocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
+    footer: footerBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
+  };
+  const json = JSON.stringify(schema, null, 2);
+  const totalBlocks = headerBlocks.length + sidebarBlocks.length + blocks.length + footerBlocks.length;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(json).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  /* Syntax-highlight tokens (key / string / number / keyword) */
   const highlighted = json
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -72,8 +90,14 @@ function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }
         <span className="canvas-code-header-dot" style={{ background: "#ff5f57" }} />
         <span className="canvas-code-header-dot" style={{ background: "#febc2e" }} />
         <span className="canvas-code-header-dot" style={{ background: "#28c840" }} />
-        <span className="canvas-code-filename">canvas-schema.json</span>
-        <span className="canvas-code-count">{blocks.length} block{blocks.length !== 1 ? "s" : ""}</span>
+        <span className="canvas-code-filename">ui-schema.json</span>
+        <span className="canvas-code-count">{totalBlocks} block{totalBlocks !== 1 ? "s" : ""}</span>
+        <button className="canvas-code-copy-btn" onClick={handleCopy} title="Copy to clipboard">
+          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+            {copied ? "check" : "content_copy"}
+          </span>
+          {copied ? "Copied!" : "Copy"}
+        </button>
       </div>
       <pre className="canvas-code-pre">
         <code
