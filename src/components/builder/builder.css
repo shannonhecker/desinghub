@@ -6435,7 +6435,12 @@
     max-height: 52vh;
   }
 
-  /* Preview pane: fill remaining space */
+  /* Preview pane: hidden when closed (intrinsic child heights steal flex space in column layout) */
+  .preview-side:not(.open) {
+    display: none !important;
+  }
+
+  /* Preview pane: fill remaining space when open */
   .preview-side.open {
     flex: 1 !important;
     min-height: 0;
