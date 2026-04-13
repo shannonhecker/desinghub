@@ -18,17 +18,16 @@ export default function PasswordGate({
 }) {
   const expectedHash = process.env.NEXT_PUBLIC_STAGING_PASSWORD_HASH ?? "";
 
-  const [authed, setAuthed] = useState(false);
-  const [checked, setChecked] = useState(false);
+  // When no password is configured, skip the gate entirely — no useEffect needed
+  const gateEnabled = expectedHash.length > 0;
+
+  const [authed, setAuthed] = useState(!gateEnabled);
+  const [checked, setChecked] = useState(!gateEnabled);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!expectedHash) {
-      setAuthed(true);
-      setChecked(true);
-      return;
-    }
+    if (!gateEnabled) return;
     try {
       const stored = sessionStorage.getItem(STORAGE_KEY);
       if (stored === expectedHash) {
@@ -38,9 +37,23 @@ export default function PasswordGate({
       // sessionStorage unavailable — stay gated
     }
     setChecked(true);
-  }, [expectedHash]);
+  }, [gateEnabled, expectedHash]);
 
-  if (!checked) return null;
+  // Gate disabled — render children immediately (no flash)
+  if (!gateEnabled) return <>{children}</>;
+
+  // Gate enabled but still checking sessionStorage — show loading background
+  if (!checked)
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #0b1120 0%, #0d1f2d 30%, #1a1035 65%, #120b20 100%)",
+        }}
+      />
+    );
+
   if (authed) return <>{children}</>;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
