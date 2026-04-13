@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -20,14 +18,14 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push("/");
-        router.refresh();
+        // Full page navigation so the middleware sees the new cookie
+        window.location.href = "/";
       } else {
         setError(true);
+        setLoading(false);
       }
     } catch {
       setError(true);
-    } finally {
       setLoading(false);
     }
   };
