@@ -881,7 +881,7 @@ export function DesignHubApp() {
       }}>
         {/* Left — logo + title (hamburger moved to ContentTopBar) */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
-          <img src="/aologo.svg" alt="ausōs" style={{ height: t.scale.navF + 8, width: "auto", filter: logoFilter }} />
+          <img src="/aologo.svg" alt="ausōs" style={{ height: t.scale.navF + 4, width: "auto", filter: logoFilter }} />
           <span style={{ fontSize: t.scale.navF + 1, fontWeight: 600, color: t.fg }}>UI Kit Overview</span>
         </div>
 

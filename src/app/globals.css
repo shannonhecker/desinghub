@@ -5,3 +5,119 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
 a { color: inherit; text-decoration: none; }
+
+/* ═══════════════════════════════════════════
+   Code Block — syntax highlighting tokens
+   All colors via CSS custom properties
+   ═══════════════════════════════════════════ */
+:root {
+  --syn-bg: #0d1117;
+  --syn-fg: #e6edf3;
+  --syn-border: rgba(255, 255, 255, 0.08);
+  --syn-comment: #8b949e;
+  --syn-keyword: #ff7b72;
+  --syn-string: #a5d6ff;
+  --syn-component: #7ee787;
+  --syn-prop: #d2a8ff;
+  --syn-number: #79c0ff;
+  --syn-btn-bg: rgba(255, 255, 255, 0.06);
+  --syn-btn-fg: rgba(255, 255, 255, 0.5);
+}
+
+.code-block-wrapper {
+  position: relative;
+}
+.code-block-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--syn-btn-bg);
+  color: var(--syn-btn-fg);
+  border: 1px solid var(--syn-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, background 0.15s;
+}
+.code-block-copy:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+.code-block-pre {
+  background: var(--syn-bg);
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+  font-size: 12.5px;
+  line-height: 1.65;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", ui-monospace, monospace;
+  border: 1px solid var(--syn-border);
+  color: var(--syn-fg);
+  margin: 0;
+}
+.code-block-body { white-space: pre; }
+
+/* Syntax token classes */
+.syn-comment   { color: var(--syn-comment); font-style: italic; }
+.syn-keyword   { color: var(--syn-keyword); }
+.syn-string    { color: var(--syn-string); }
+.syn-component { color: var(--syn-component); }
+.syn-prop      { color: var(--syn-prop); }
+.syn-number    { color: var(--syn-number); }
+
+/* ── CodePanel layout ── */
+.code-panel { padding: 24px; }
+.code-panel-back {
+  background: none;
+  border: none;
+  color: var(--syn-string);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 0;
+  margin-bottom: 8px;
+}
+.code-panel-back:hover { text-decoration: underline; }
+.code-panel-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+}
+.code-panel-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 16px;
+}
+.code-panel-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+}
+.code-panel-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.35);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+.code-panel-tab:hover { color: rgba(255, 255, 255, 0.6); }
+.code-panel-tab.active {
+  font-weight: 600;
+  color: var(--syn-string);
+  border-bottom-color: var(--syn-string);
+}
+.code-panel-empty {
+  padding: 32px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+}
+.code-panel-empty span { font-size: 11px; }
