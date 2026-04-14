@@ -11,7 +11,7 @@ import { ChartsPage } from "./ChartsPage";
 import { AuditPanel } from "./AuditPanel";
 
 // Helper: get token values by system so all UI uses the active DS
-function useActiveTheme() {
+export function useActiveTheme() {
   const store = useDesignHub();
   const { activeSystem } = store;
   const T = activeSystem === "salt"
@@ -408,9 +408,7 @@ function SidebarDSBrand() {
   const sysInfo = getSystemInfo(activeSystem);
   const components = getComponents(activeSystem);
 
-  const badge = activeSystem === "salt" ? { label: "S", bg: "#0091CA", color: "#fff" }
-    : activeSystem === "m3" ? { label: "M3", bg: t.accent, color: t.accentFg }
-    : { label: "F2", bg: "#0078D4", color: "#fff" };
+  const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : "F2", bg: t.accent, color: t.accentFg };
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 2}px ${activeSystem === "m3" ? 16 : 14}px` }}>
@@ -891,10 +889,9 @@ export function DesignHubApp() {
           </span>
           <Link href="/" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: t.scale.labF + 1, fontWeight: 600, color: "#fff",
-            background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+            fontSize: t.scale.labF + 1, fontWeight: 600, color: t.accentFg,
+            background: t.accent,
             padding: `${t.scale.gap - 1}px ${t.scale.gap + 6}px`, borderRadius: 8, textDecoration: "none",
-            boxShadow: "0 0 12px rgba(124,58,237,0.3)",
           }}>
             AI Builder
           </Link>

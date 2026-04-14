@@ -62,7 +62,7 @@ function extractTokens(theme: any, system: string): TokenEntry[] {
   return tokens;
 }
 
-interface SwatchColors { cardBg: string; border: string; fg: string; fg3: string }
+interface SwatchColors { cardBg: string; border: string; fg: string; fg3: string; positive: string; negative: string }
 
 function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: string; colors: SwatchColors }) {
   const isColor = isHex(token.value);
@@ -86,8 +86,8 @@ function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: s
       {ratio !== null && (
         <div style={{
           fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 8, whiteSpace: "nowrap",
-          background: passes ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-          color: passes ? "#16a34a" : "#dc2626",
+          background: passes ? colors.positive + "20" : colors.negative + "20",
+          color: passes ? colors.positive : colors.negative,
         }}>
           {formatRatio(ratio)} {passes ? "AA ✓" : "AA ✗"}
         </div>
@@ -122,7 +122,9 @@ export function TokenReference() {
   const accent   = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary        : T.brandBg;
   const bgToken  = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surface : T.bg1;
 
-  const swatchColors: SwatchColors = { cardBg, border, fg, fg3 };
+  const positive = activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
+  const negative = activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
+  const swatchColors: SwatchColors = { cardBg, border, fg, fg3, positive, negative };
   const categories = [...new Set(tokens.map((t) => t.category))];
 
   return (

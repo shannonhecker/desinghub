@@ -202,8 +202,8 @@ function ContrastAudit({ system, T }: { system: string; T: any }) {
             <React.Fragment key={`${p.fg}-${p.bg}`}>
               <div style={{ color: rowFg }}>{p.fg} <span style={{ color: monoFg, fontFamily: "monospace", fontSize: 10 }}>{p.fgVal}</span></div>
               <div style={{ color: rowFg }}>{p.bg} <span style={{ color: monoFg, fontFamily: "monospace", fontSize: 10 }}>{p.bgVal}</span></div>
-              <div style={{ fontFamily: "monospace", color: passes ? "#53B087" : "#FF5D57" }}>{formatRatio(ratio)}</div>
-              <div style={{ color: passes ? "#53B087" : "#FF5D57", fontWeight: 600 }}>{passes ? "PASS" : "FAIL"}</div>
+              <div style={{ fontFamily: "monospace", color: passes ? (system === "salt" ? (T.positive || "#36b37e") : system === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10")) : (system === "salt" ? (T.negative || "#de350b") : system === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438")) }}>{formatRatio(ratio)}</div>
+              <div style={{ color: passes ? (system === "salt" ? (T.positive || "#36b37e") : system === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10")) : (system === "salt" ? (T.negative || "#de350b") : system === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438")), fontWeight: 600 }}>{passes ? "PASS" : "FAIL"}</div>
               <div style={{ width: 60, height: 24, background: p.bgVal, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", color: p.fgVal, fontSize: 11, fontWeight: 600, border: `1px solid ${cardBdr}` }}>Aa</div>
             </React.Fragment>
           );
@@ -227,9 +227,16 @@ export function AuditPanel() {
 
   // Derive semantic colors from active DS tokens
   const pageBg  = activeSystem === "salt" ? T.bg2  : activeSystem === "m3" ? T.surface            : T.bg2;
+  const cardBg  = activeSystem === "salt" ? T.bg3  : activeSystem === "m3" ? (T.surfaceContainer ?? T.surface) : T.bg3;
   const fg      = activeSystem === "salt" ? T.fg   : activeSystem === "m3" ? T.onSurface           : T.fg1;
   const fg2     = activeSystem === "salt" ? T.fg2  : activeSystem === "m3" ? T.onSurfaceVariant    : T.fg2;
+  const fg3     = activeSystem === "salt" ? T.fg3  : activeSystem === "m3" ? T.outline             : T.fg3;
   const border  = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant    : T.stroke2;
+  const accent  = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary           : T.brandBg;
+  const positive = activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
+  const negative = activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E")    : (T.dangerFg1 || "#D13438");
+  const warning  = activeSystem === "salt" ? (T.caution || "#ffab00")  : activeSystem === "m3" ? (T.tertiary || "#7D5260") : (T.warningFg1 || "#C19C00");
+  const info     = accent;
 
   const issues = useMemo(() => (code ? runAudit(code, activeSystem, T) : []), [code, activeSystem, T]);
 
@@ -250,8 +257,8 @@ export function AuditPanel() {
         onChange={(e) => setCode(e.target.value)}
         placeholder={`Paste your ${sysInfo.name} React/JSX code here...`}
         style={{
-          width: "100%", height: 200, background: "#0d1117", color: "#e6edf3",
-          border: "1px solid #2a2a4a", borderRadius: 8, padding: 16, fontSize: 13,
+          width: "100%", height: 200, background: cardBg, color: fg,
+          border: `1px solid ${border}`, borderRadius: 8, padding: 16, fontSize: 13,
           fontFamily: "'SF Mono', 'Fira Code', monospace", lineHeight: 1.6,
           resize: "vertical", outline: "none",
         }}
@@ -261,61 +268,63 @@ export function AuditPanel() {
         <div style={{ marginTop: 16 }}>
           {/* Score */}
           <div style={{
-            display: "flex", gap: 16, padding: 16, background: "#16213e",
-            borderRadius: 8, border: "1px solid #2a2a4a", marginBottom: 16,
+            display: "flex", gap: 16, padding: 16, background: cardBg,
+            borderRadius: 8, border: `1px solid ${border}`, marginBottom: 16,
           }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 28, fontWeight: 700, color: critical.length === 0 ? "#53B087" : "#FF5D57" }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: critical.length === 0 ? positive : negative }}>
                 {issues.length === 0 ? "A+" : critical.length > 3 ? "F" : critical.length > 0 ? "C" : "B+"}
               </div>
-              <div style={{ fontSize: 11, color: "#707080" }}>Score</div>
+              <div style={{ fontSize: 11, color: fg3 }}>Score</div>
             </div>
             <div style={{ display: "flex", gap: 20 }}>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#FF5D57" }}>{critical.length}</div>
-                <div style={{ fontSize: 11, color: "#707080" }}>Critical</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: negative }}>{critical.length}</div>
+                <div style={{ fontSize: 11, color: fg3 }}>Critical</div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#F59E0B" }}>{warnings.length}</div>
-                <div style={{ fontSize: 11, color: "#707080" }}>Warnings</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: warning }}>{warnings.length}</div>
+                <div style={{ fontSize: 11, color: fg3 }}>Warnings</div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#4fc3f7" }}>{infos.length}</div>
-                <div style={{ fontSize: 11, color: "#707080" }}>Info</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: info }}>{infos.length}</div>
+                <div style={{ fontSize: 11, color: fg3 }}>Info</div>
               </div>
             </div>
           </div>
 
           {/* Issues */}
           {issues.length === 0 ? (
-            <div style={{ padding: 24, textAlign: "center", color: "#53B087", fontSize: 14, fontWeight: 600 }}>
+            <div style={{ padding: 24, textAlign: "center", color: positive, fontSize: 14, fontWeight: 600 }}>
               No issues found. Code passes all design checks.
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {issues.map((issue, i) => (
+              {issues.map((issue, i) => {
+                const sevColor = issue.severity === "critical" ? negative : issue.severity === "warning" ? warning : info;
+                return (
                 <div key={i} style={{
                   padding: 12, borderRadius: 6,
-                  background: issue.severity === "critical" ? "#FF5D5708" : issue.severity === "warning" ? "#F59E0B08" : "#4fc3f708",
-                  border: `1px solid ${issue.severity === "critical" ? "#FF5D5730" : issue.severity === "warning" ? "#F59E0B30" : "#4fc3f730"}`,
+                  background: sevColor + "08",
+                  border: `1px solid ${sevColor}30`,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 10, fontWeight: 600, textTransform: "uppercase", padding: "1px 6px", borderRadius: 4,
-                      background: issue.severity === "critical" ? "#FF5D5720" : issue.severity === "warning" ? "#F59E0B20" : "#4fc3f720",
-                      color: issue.severity === "critical" ? "#FF5D57" : issue.severity === "warning" ? "#F59E0B" : "#4fc3f7",
+                      fontSize: 10, fontWeight: 600, textTransform: "uppercase" as const, padding: "1px 6px", borderRadius: 4,
+                      background: sevColor + "20", color: sevColor,
                     }}>
                       {issue.severity}
                     </span>
-                    <span style={{ fontSize: 10, color: "#707080" }}>{issue.category}</span>
-                    {issue.line && <span style={{ fontSize: 10, color: "#707080" }}>Line {issue.line}</span>}
+                    <span style={{ fontSize: 10, color: fg3 }}>{issue.category}</span>
+                    {issue.line && <span style={{ fontSize: 10, color: fg3 }}>Line {issue.line}</span>}
                   </div>
-                  <div style={{ fontSize: 12, color: "#e0e0e0" }}>{issue.message}</div>
+                  <div style={{ fontSize: 12, color: fg }}>{issue.message}</div>
                   {issue.fix && (
-                    <div style={{ fontSize: 11, color: "#4fc3f7", marginTop: 4 }}>Fix: {issue.fix}</div>
+                    <div style={{ fontSize: 11, color: info, marginTop: 4 }}>Fix: {issue.fix}</div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

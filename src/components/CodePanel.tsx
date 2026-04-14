@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getSystemInfo } from "@/data/registry";
+import { useActiveTheme } from "@/components/DesignHubApp";
 
 /* ═══════════════════════════════════════════════════════════
    Salt DS — React + HTML code snippets
@@ -1277,7 +1278,7 @@ Highcharts.chart('chart-container', {
 /* ═══════════════════════════════════════════════════════════
    Code Block — single-pass tokenizer, CSS class highlighting
    ═══════════════════════════════════════════════════════════ */
-function CodeBlock({ code, language }: { code: string; language: string }) {
+function CodeBlock({ code, language, theme: t }: { code: string; language: string; theme?: ReturnType<typeof useActiveTheme> }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(code);
@@ -1305,12 +1306,28 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
   }
   highlighted += escaped.slice(lastIdx);
 
+  /* Code block uses DS surface/border tokens with syntax highlighting override */
+  const wrapStyle: React.CSSProperties = t ? {
+    background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 8,
+    position: "relative", overflow: "hidden",
+  } : {};
+  const preStyle: React.CSSProperties = t ? {
+    padding: 16, margin: 0, overflow: "auto", fontSize: 12, lineHeight: 1.6,
+    fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
+    color: t.fg,
+  } : {};
+  const copyStyle: React.CSSProperties = t ? {
+    position: "absolute" as const, top: 8, right: 8, padding: "4px 10px",
+    borderRadius: 4, border: `1px solid ${t.border}`, background: t.bg3,
+    color: t.fg2, fontSize: 11, cursor: "pointer",
+  } : {};
+
   return (
-    <div className="code-block-wrapper">
-      <button className="code-block-copy" onClick={copy}>
+    <div className="code-block-wrapper" style={wrapStyle}>
+      <button className="code-block-copy" onClick={copy} style={copyStyle}>
         {copied ? "Copied!" : "Copy"}
       </button>
-      <pre className="code-block-pre">
+      <pre className="code-block-pre" style={preStyle}>
         <code className="code-block-body" dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
     </div>
@@ -1322,6 +1339,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
    ═══════════════════════════════════════════════════════════ */
 export function CodePanel({ componentId }: { componentId: string }) {
   const { activeSystem } = useDesignHub();
+  const t = useActiveTheme();
   const [codeTab, setCodeTab] = useState<"react" | "html">("react");
   const components = getComponents(activeSystem);
   const comp = components.find((c) => c.id === componentId);
@@ -1330,37 +1348,49 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const codeMap = activeSystem === "salt" ? SALT_CODE : activeSystem === "m3" ? M3_CODE : FLUENT_CODE;
   const snippets = codeMap[componentId];
 
+  /* DS-scoped tab class */
+  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : "f-tab";
+  const btnCls = activeSystem === "salt" ? "s-btn s-btn-transparent" : activeSystem === "m3" ? "m3-btn m3-btn-text" : "f-btn f-btn-subtle";
+
   return (
-    <div className="code-panel">
+    <div style={{ padding: t.scale.gap * 4, fontFamily: t.font }}>
       <button
-        className="code-panel-back"
+        className={btnCls}
         onClick={() => useDesignHub.getState().setSelectedComponent(null)}
+        style={{ fontSize: t.scale.navF, color: t.accent, marginBottom: t.scale.gap * 2, cursor: "pointer" }}
       >
         ← Back to all
       </button>
-      <h2 className="code-panel-title">{comp?.name} — Code</h2>
-      <p className="code-panel-subtitle">
+      <h2 style={{ fontSize: t.scale.navF + 6, fontWeight: 700, color: t.fg, margin: `0 0 ${t.scale.gap}px` }}>
+        {comp?.name} — Code
+      </h2>
+      <p style={{ fontSize: t.scale.navF, color: t.fg2, margin: `0 0 ${t.scale.gap * 3}px` }}>
         {sysInfo.name} implementation with correct imports and API
       </p>
 
       {snippets ? (
         <>
-          <div className="code-panel-tabs">
-            {(["react", "html"] as const).map((t) => (
+          <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: t.scale.gap * 2 }}>
+            {(["react", "html"] as const).map((tab) => (
               <button
-                key={t}
-                className={`code-panel-tab ${codeTab === t ? "active" : ""}`}
-                onClick={() => setCodeTab(t)}
+                key={tab}
+                className={`${tabCls}${codeTab === tab ? " active" : ""}`}
+                onClick={() => setCodeTab(tab)}
+                style={{ fontFamily: t.font, fontSize: t.scale.navF }}
               >
-                {t === "react" ? "React + TypeScript" : "HTML + CSS"}
+                {tab === "react" ? "React + TypeScript" : "HTML + CSS"}
               </button>
             ))}
           </div>
-          <CodeBlock code={snippets[codeTab]} language={codeTab === "react" ? "tsx" : "html"} />
+          <CodeBlock code={snippets[codeTab]} language={codeTab === "react" ? "tsx" : "html"} theme={t} />
         </>
       ) : (
-        <div className="code-panel-empty">
-          Code snippets for <strong>{comp?.name}</strong> coming soon.
+        <div style={{
+          padding: t.scale.gap * 4, textAlign: "center",
+          color: t.fg3, fontSize: t.scale.navF,
+          border: `1px dashed ${t.border}`, borderRadius: 8,
+        }}>
+          Code snippets for <strong style={{ color: t.fg }}>{comp?.name}</strong> coming soon.
           <br />
           <span>Check the {sysInfo.name} documentation for current API reference.</span>
         </div>
