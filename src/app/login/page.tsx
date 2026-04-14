@@ -107,12 +107,12 @@ export default function LoginPage() {
             fontWeight: 400, lineHeight: 1.5,
           }}>
             This site is currently under development.<br />
-            For enquiries, please email{" "}
+            For enquiries, please{" "}
             <a
-              href="mailto:hello@shannonheckerchen.com"
+              href="mailto:shannonheckerchen@gmail.com"
               style={{ color: "rgba(94,231,223,0.7)", textDecoration: "none" }}
             >
-              hello@shannonheckerchen.com
+              say hello
             </a>
           </p>
         </div>
