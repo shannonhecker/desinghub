@@ -22,6 +22,17 @@ import {
   SimulatedBadge,
   SimulatedChatMessage,
   SimulatedChart,
+  SimulatedRadioGroup,
+  SimulatedSlider,
+  SimulatedNumberInput,
+  SimulatedMultilineInput,
+  SimulatedPill,
+  SimulatedToggleButton,
+  SimulatedSegmentedGroup,
+  SimulatedLink,
+  SimulatedListBox,
+  SimulatedComboBox,
+  SimulatedFileDropZone,
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
@@ -1337,6 +1348,42 @@ function NavItemBlock({ blockId }: { blockId?: string }) {
   );
 }
 
+/* ── Batch 6 renderers — pass-through to SimulatedUI components ── */
+
+function SimulatedRadioGroupBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedRadioGroup system={system} label={props.label as string} optionsCsv={props.optionsCsv as string} defaultIndex={Number(props.defaultIndex ?? 0)} />;
+}
+function SimulatedSliderBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedSlider system={system} label={props.label as string} min={Number(props.min ?? 0)} max={Number(props.max ?? 100)} value={Number(props.value ?? 50)} />;
+}
+function SimulatedNumberInputBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedNumberInput system={system} label={props.label as string} value={Number(props.value ?? 1)} min={Number(props.min ?? 0)} max={Number(props.max ?? 99)} step={Number(props.step ?? 1)} />;
+}
+function SimulatedMultilineInputBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedMultilineInput system={system} label={props.label as string} placeholder={props.placeholder as string} rows={Number(props.rows ?? 3)} />;
+}
+function SimulatedPillBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedPill system={system} label={props.label as string} status={props.status as "default"} dismissible={props.dismissible !== false} />;
+}
+function SimulatedToggleButtonBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedToggleButton system={system} label={props.label as string} defaultPressed={Boolean(props.defaultPressed)} />;
+}
+function SimulatedSegmentedGroupBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedSegmentedGroup system={system} optionsCsv={props.optionsCsv as string} defaultIndex={Number(props.defaultIndex ?? 0)} />;
+}
+function SimulatedLinkBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedLink system={system} text={props.text as string} showIcon={props.showIcon !== false} />;
+}
+function SimulatedListBoxBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedListBox system={system} itemsCsv={props.itemsCsv as string} multiSelect={Boolean(props.multiSelect)} />;
+}
+function SimulatedComboBoxBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedComboBox system={system} placeholder={props.placeholder as string} itemsCsv={props.itemsCsv as string} />;
+}
+function SimulatedFileDropZoneBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
+  return <SimulatedFileDropZone system={system} label={props.label as string} acceptTypes={props.acceptTypes as string} />;
+}
+
 function FooterTextBlock({ blockId }: { blockId?: string }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
@@ -1439,6 +1486,18 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
+  /* Batch 6 */
+  SimulatedRadioGroup: SimulatedRadioGroupBlock,
+  SimulatedSlider: SimulatedSliderBlock,
+  SimulatedNumberInput: SimulatedNumberInputBlock,
+  SimulatedMultilineInput: SimulatedMultilineInputBlock,
+  SimulatedPill: SimulatedPillBlock,
+  SimulatedToggleButton: SimulatedToggleButtonBlock,
+  SimulatedSegmentedGroup: SimulatedSegmentedGroupBlock,
+  SimulatedLink: SimulatedLinkBlock,
+  SimulatedListBox: SimulatedListBoxBlock,
+  SimulatedComboBox: SimulatedComboBoxBlock,
+  SimulatedFileDropZone: SimulatedFileDropZoneBlock,
   /* Zone-specific types */
   AppBrand: AppBrandBlock as React.FC<{ system: DesignSystem }>,
   StatusPill: StatusPillBlock as React.FC<{ system: DesignSystem }>,

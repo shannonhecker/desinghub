@@ -372,6 +372,121 @@ function DatePickerFields({ blockId }: { blockId: string }) {
   );
 }
 
+/* ── Batch 6: Remaining UI Kit components ── */
+
+function RadioGroupFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="optionsCsv" label="Options (comma-separated)" placeholder="Option A, Option B, Option C" />
+    </div>
+  );
+}
+
+function SliderFields({ blockId }: { blockId: string }) {
+  const { props, set } = useBlockProps(blockId);
+  const value = Number(props.value ?? 50);
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <InspectorField label={`Value (${value})`}>
+        <input className="inspector-input" type="range" min={0} max={100} value={value}
+          onChange={(e) => set({ value: Number(e.target.value) })} style={{ width: "100%" }} />
+      </InspectorField>
+    </div>
+  );
+}
+
+function NumberInputFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="value" label="Default Value" />
+      <TextField blockId={blockId} propKey="step" label="Step" />
+    </div>
+  );
+}
+
+function MultilineInputFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="placeholder" label="Placeholder" />
+      <SelectField blockId={blockId} propKey="rows" label="Rows" options={[
+        { value: "2", label: "2" }, { value: "3", label: "3" },
+        { value: "4", label: "4" }, { value: "6", label: "6" },
+      ]} />
+    </div>
+  );
+}
+
+function PillFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <SelectField blockId={blockId} propKey="status" label="Status" options={[
+        { value: "default", label: "Default" }, { value: "info", label: "Info" },
+        { value: "success", label: "Success" }, { value: "warning", label: "Warning" },
+        { value: "error", label: "Error" },
+      ]} />
+      <ToggleField blockId={blockId} propKey="dismissible" label="Dismissible" />
+    </div>
+  );
+}
+
+function ToggleButtonFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <ToggleField blockId={blockId} propKey="defaultPressed" label="Default Pressed" />
+    </div>
+  );
+}
+
+function SegmentedGroupFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="optionsCsv" label="Options (comma-separated)" placeholder="Day, Week, Month" />
+    </div>
+  );
+}
+
+function LinkFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="text" label="Text" />
+      <ToggleField blockId={blockId} propKey="showIcon" label="Show Arrow Icon" />
+    </div>
+  );
+}
+
+function ListBoxFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="itemsCsv" label="Items (comma-separated)" placeholder="Apple, Banana, Cherry" />
+      <ToggleField blockId={blockId} propKey="multiSelect" label="Multi-select" />
+    </div>
+  );
+}
+
+function ComboBoxFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="placeholder" label="Placeholder" />
+      <TextField blockId={blockId} propKey="itemsCsv" label="Items (comma-separated)" />
+    </div>
+  );
+}
+
+function FileDropZoneFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="acceptTypes" label="Accepted Types" />
+    </div>
+  );
+}
+
 /* ── Stat Card ── */
 
 function StatCardFields({ blockId }: { blockId: string }) {
@@ -711,6 +826,85 @@ const BLOCK_REGISTRY: BlockRegistryEntry[] = [
     icon: "grid_view",
     defaults: { chartType: "treemap", title: "Portfolio Treemap" },
     Fields: HighchartTitleFields,
+  },
+
+  /* ── Batch 6: Remaining UI Kit ── */
+  {
+    type: "SimulatedRadioGroup",
+    label: "Radio Buttons",
+    icon: "radio_button_checked",
+    defaults: { label: "Select option", optionsCsv: "Option A, Option B, Option C", defaultIndex: 0 },
+    Fields: RadioGroupFields,
+  },
+  {
+    type: "SimulatedSlider",
+    label: "Slider",
+    icon: "tune",
+    defaults: { label: "Volume", min: 0, max: 100, value: 50 },
+    Fields: SliderFields,
+  },
+  {
+    type: "SimulatedNumberInput",
+    label: "Number Input",
+    icon: "pin",
+    defaults: { label: "Quantity", value: 1, min: 0, max: 99, step: 1 },
+    Fields: NumberInputFields,
+  },
+  {
+    type: "SimulatedMultilineInput",
+    label: "Multiline Input",
+    icon: "notes",
+    defaults: { label: "Description", placeholder: "Enter description...", rows: 3 },
+    Fields: MultilineInputFields,
+  },
+  {
+    type: "SimulatedPill",
+    label: "Pill / Tag",
+    icon: "sell",
+    defaults: { label: "Tag", status: "default", dismissible: true },
+    Fields: PillFields,
+  },
+  {
+    type: "SimulatedToggleButton",
+    label: "Toggle Button",
+    icon: "toggle_on",
+    defaults: { label: "Bold", defaultPressed: false },
+    Fields: ToggleButtonFields,
+  },
+  {
+    type: "SimulatedSegmentedGroup",
+    label: "Segmented Group",
+    icon: "view_column",
+    defaults: { optionsCsv: "Day, Week, Month", defaultIndex: 0 },
+    Fields: SegmentedGroupFields,
+  },
+  {
+    type: "SimulatedLink",
+    label: "Link",
+    icon: "link",
+    defaults: { text: "Learn more", showIcon: true },
+    Fields: LinkFields,
+  },
+  {
+    type: "SimulatedListBox",
+    label: "List Box",
+    icon: "list",
+    defaults: { itemsCsv: "Apple, Banana, Cherry, Date, Elderberry", multiSelect: false },
+    Fields: ListBoxFields,
+  },
+  {
+    type: "SimulatedComboBox",
+    label: "ComboBox",
+    icon: "search",
+    defaults: { placeholder: "Search...", itemsCsv: "United States, United Kingdom, Canada, Australia, Germany" },
+    Fields: ComboBoxFields,
+  },
+  {
+    type: "SimulatedFileDropZone",
+    label: "File Drop Zone",
+    icon: "upload_file",
+    defaults: { label: "Drag & drop files here", acceptTypes: ".png, .jpg, .pdf" },
+    Fields: FileDropZoneFields,
   },
 
   /* ── Individual Stat Card ── */

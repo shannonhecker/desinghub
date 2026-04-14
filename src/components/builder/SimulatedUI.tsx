@@ -871,3 +871,424 @@ export function SimulatedChart({
     </div>
   );
 }
+
+/* ═══════════════════════════════════════════
+   SimulatedRadioGroup
+   ═══════════════════════════════════════════ */
+
+interface RadioGroupProps extends SimProps {
+  label?: string;
+  optionsCsv?: string;
+  defaultIndex?: number;
+}
+
+export function SimulatedRadioGroup({
+  system,
+  label = "Select option",
+  optionsCsv = "Option A, Option B, Option C",
+  defaultIndex = 0,
+}: RadioGroupProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const options = optionsCsv.split(",").map((s) => s.trim()).filter(Boolean);
+  const [selected, setSelected] = useState(defaultIndex);
+
+  return (
+    <fieldset className={`${prefix}-radio-group`}>
+      <legend className={`${prefix}-radio-legend`}>{label}</legend>
+      {options.map((opt, i) => (
+        <label
+          key={i}
+          className={`${prefix}-radio-item${selected === i ? ` ${prefix}-radio-selected` : ""}`}
+          onClick={(e) => { e.preventDefault(); setSelected(i); }}
+        >
+          <div className={`${prefix}-radio-circle`}>
+            {selected === i && <div className={`${prefix}-radio-dot`} />}
+          </div>
+          <span className={`${prefix}-radio-label`}>{opt}</span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedSlider
+   ═══════════════════════════════════════════ */
+
+interface SliderProps extends SimProps {
+  label?: string;
+  min?: number;
+  max?: number;
+  value?: number;
+}
+
+export function SimulatedSlider({
+  system,
+  label = "Volume",
+  min = 0,
+  max = 100,
+  value: initialValue = 50,
+}: SliderProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [value, setValue] = useState(initialValue);
+  const pct = ((value - min) / (max - min)) * 100;
+
+  return (
+    <div className={`${prefix}-slider-container`}>
+      <div className={`${prefix}-slider-header`}>
+        <span className={`${prefix}-slider-label`}>{label}</span>
+        <span className={`${prefix}-slider-value`}>{value}</span>
+      </div>
+      <div className={`${prefix}-slider-track`}>
+        <div className={`${prefix}-slider-fill`} style={{ width: `${pct}%` }} />
+        <div className={`${prefix}-slider-thumb`} style={{ left: `${pct}%` }} />
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className={`${prefix}-slider-input`}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedNumberInput
+   ═══════════════════════════════════════════ */
+
+interface NumberInputProps extends SimProps {
+  label?: string;
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+export function SimulatedNumberInput({
+  system,
+  label = "Quantity",
+  value: initialValue = 1,
+  min = 0,
+  max = 99,
+  step = 1,
+}: NumberInputProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [value, setValue] = useState(initialValue);
+
+  return (
+    <div className={`${prefix}-number-input`}>
+      <label className={`${prefix}-number-label`}>{label}</label>
+      <div className={`${prefix}-number-controls`}>
+        <button className={`${prefix}-number-btn`} onClick={() => setValue((v) => Math.max(min, v - step))} disabled={value <= min}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>remove</span>
+        </button>
+        <span className={`${prefix}-number-value`}>{value}</span>
+        <button className={`${prefix}-number-btn`} onClick={() => setValue((v) => Math.min(max, v + step))} disabled={value >= max}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedMultilineInput
+   ═══════════════════════════════════════════ */
+
+interface MultilineInputProps extends SimProps {
+  label?: string;
+  placeholder?: string;
+  rows?: number;
+}
+
+export function SimulatedMultilineInput({
+  system,
+  label = "Description",
+  placeholder = "Enter description...",
+  rows = 3,
+}: MultilineInputProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [value, setValue] = useState("");
+
+  return (
+    <div className={`${prefix}-multiline`}>
+      <label className={`${prefix}-multiline-label`}>{label}</label>
+      <textarea
+        className={`${prefix}-multiline-textarea`}
+        placeholder={placeholder}
+        rows={rows}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <div className={`${prefix}-multiline-footer`}>
+        <span className={`${prefix}-multiline-count`}>{value.length} characters</span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedPill
+   ═══════════════════════════════════════════ */
+
+interface PillProps extends SimProps {
+  label?: string;
+  status?: "default" | "info" | "success" | "warning" | "error";
+  dismissible?: boolean;
+}
+
+export function SimulatedPill({
+  system,
+  label = "Tag",
+  status = "default",
+  dismissible = true,
+}: PillProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
+  return (
+    <span className={`${prefix}-pill ${prefix}-pill-${status}`}>
+      <span className={`${prefix}-pill-text`}>{label}</span>
+      {dismissible && (
+        <button className={`${prefix}-pill-dismiss`} onClick={() => setDismissed(true)}>
+          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+        </button>
+      )}
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedToggleButton
+   ═══════════════════════════════════════════ */
+
+interface ToggleButtonProps extends SimProps {
+  label?: string;
+  defaultPressed?: boolean;
+}
+
+export function SimulatedToggleButton({
+  system,
+  label = "Bold",
+  defaultPressed = false,
+}: ToggleButtonProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [pressed, setPressed] = useState(defaultPressed);
+
+  return (
+    <button
+      className={`${prefix}-toggle-btn${pressed ? ` ${prefix}-toggle-pressed` : ""}`}
+      onClick={() => setPressed(!pressed)}
+      aria-pressed={pressed}
+    >
+      {label}
+    </button>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedSegmentedGroup
+   ═══════════════════════════════════════════ */
+
+interface SegmentedGroupProps extends SimProps {
+  optionsCsv?: string;
+  defaultIndex?: number;
+}
+
+export function SimulatedSegmentedGroup({
+  system,
+  optionsCsv = "Day, Week, Month",
+  defaultIndex = 0,
+}: SegmentedGroupProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const options = optionsCsv.split(",").map((s) => s.trim()).filter(Boolean);
+  const [selected, setSelected] = useState(defaultIndex);
+
+  return (
+    <div className={`${prefix}-segmented`}>
+      {options.map((opt, i) => (
+        <button
+          key={i}
+          className={`${prefix}-segmented-btn${selected === i ? ` ${prefix}-segmented-active` : ""}`}
+          onClick={() => setSelected(i)}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedLink
+   ═══════════════════════════════════════════ */
+
+interface LinkProps extends SimProps {
+  text?: string;
+  showIcon?: boolean;
+}
+
+export function SimulatedLink({
+  system,
+  text = "Learn more",
+  showIcon = true,
+}: LinkProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  return (
+    <span className={`${prefix}-link`}>
+      {text}
+      {showIcon && (
+        <span className="material-symbols-outlined" style={{ fontSize: 14, marginLeft: 2 }}>
+          arrow_forward
+        </span>
+      )}
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedListBox
+   ═══════════════════════════════════════════ */
+
+interface ListBoxProps extends SimProps {
+  itemsCsv?: string;
+  multiSelect?: boolean;
+}
+
+export function SimulatedListBox({
+  system,
+  itemsCsv = "Apple, Banana, Cherry, Date, Elderberry",
+  multiSelect = false,
+}: ListBoxProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const items = itemsCsv.split(",").map((s) => s.trim()).filter(Boolean);
+  const [selected, setSelected] = useState<Set<number>>(new Set([0]));
+
+  const toggle = (i: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (multiSelect) {
+        if (next.has(i)) next.delete(i); else next.add(i);
+      } else {
+        next.clear();
+        next.add(i);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <div className={`${prefix}-listbox`} role="listbox">
+      {items.map((item, i) => (
+        <div
+          key={i}
+          role="option"
+          aria-selected={selected.has(i)}
+          className={`${prefix}-listbox-item${selected.has(i) ? ` ${prefix}-listbox-selected` : ""}`}
+          onClick={() => toggle(i)}
+        >
+          {multiSelect && (
+            <div className={`${prefix}-listbox-check`}>
+              {selected.has(i) && (
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check</span>
+              )}
+            </div>
+          )}
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedComboBox
+   ═══════════════════════════════════════════ */
+
+interface ComboBoxProps extends SimProps {
+  placeholder?: string;
+  itemsCsv?: string;
+}
+
+export function SimulatedComboBox({
+  system,
+  placeholder = "Search...",
+  itemsCsv = "United States, United Kingdom, Canada, Australia, Germany",
+}: ComboBoxProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const items = itemsCsv.split(",").map((s) => s.trim()).filter(Boolean);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = items.filter((it) => it.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <div className={`${prefix}-combobox`}>
+      <div className={`${prefix}-combobox-input-wrap`}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16, opacity: 0.4 }}>search</span>
+        <input
+          className={`${prefix}-combobox-input`}
+          placeholder={placeholder}
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+        />
+        {query && (
+          <button className={`${prefix}-combobox-clear`} onClick={() => { setQuery(""); setOpen(false); }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+          </button>
+        )}
+      </div>
+      {open && filtered.length > 0 && (
+        <div className={`${prefix}-combobox-dropdown`}>
+          {filtered.map((item, i) => (
+            <div
+              key={i}
+              className={`${prefix}-combobox-option`}
+              onClick={() => { setQuery(item); setOpen(false); }}
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedFileDropZone
+   ═══════════════════════════════════════════ */
+
+interface FileDropZoneProps extends SimProps {
+  label?: string;
+  acceptTypes?: string;
+}
+
+export function SimulatedFileDropZone({
+  system,
+  label = "Drag & drop files here",
+  acceptTypes = ".png, .jpg, .pdf",
+}: FileDropZoneProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <div
+      className={`${prefix}-file-drop${dragOver ? ` ${prefix}-file-drop-active` : ""}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 32, opacity: 0.3 }}>
+        cloud_upload
+      </span>
+      <span className={`${prefix}-file-drop-label`}>{label}</span>
+      <span className={`${prefix}-file-drop-hint`}>Accepted: {acceptTypes}</span>
+    </div>
+  );
+}
