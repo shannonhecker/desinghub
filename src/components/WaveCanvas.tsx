@@ -89,8 +89,6 @@ export function WaveCanvas({ className, style }: { className?: string; style?: R
       const W  = canvas!.width  / d;
       const H  = canvas!.height / d;
       ctx!.clearRect(0, 0, W, H);
-      ctx!.lineCap  = "round";
-      ctx!.lineJoin = "round";
       ctx!.strokeStyle = waveGrad!;
       ctx!.lineWidth   = LW;
       for (const ln of lines) {

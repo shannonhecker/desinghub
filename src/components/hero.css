@@ -91,45 +91,6 @@
   opacity: 0.18;
 }
 
-/* ─── Nav ─── */
-
-.hero-nav {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 2rem 2.5rem;
-}
-
-@media (min-width: 1024px) {
-  .hero-nav { padding: 2.5rem 4rem; }
-}
-
-.hero-nav-left {
-  display: flex;
-  align-items: center;
-}
-
-.hero-nav-logo {
-  display: block;
-  opacity: 0.85;
-  transition: opacity 0.3s;
-}
-.hero-nav-logo:hover { opacity: 1; }
-
-.hero-nav-label {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  margin-left: 1rem;
-  padding-left: 1rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 /* ─── Main Content ─── */
 
 .hero-main {
@@ -154,22 +115,6 @@
 
 @media (min-width: 1024px) {
   .hero-brand { margin-bottom: 2.5rem; }
-}
-
-/* ─── Overline ─── */
-
-.hero-overline {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 2.5rem;
-}
-
-@media (min-width: 1024px) {
-  .hero-overline { font-size: 0.75rem; margin-bottom: 3rem; }
 }
 
 /* ─── Headline ─── */
@@ -347,18 +292,12 @@
 /* ─── Mobile ─── */
 
 @media (max-width: 639px) {
-  .hero-nav {
-    padding: 1.5rem 1.25rem;
-  }
   .hero-main {
     padding: 0 1.25rem;
     margin-top: -2rem;
   }
   .hero-headline {
     font-size: 2.25rem;
-  }
-  .hero-overline {
-    margin-bottom: 2rem;
   }
   .hero-cta {
     padding: 0.75rem 1.75rem;

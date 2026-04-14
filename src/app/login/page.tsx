@@ -12,9 +12,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      const formData = new FormData(e.currentTarget);
       const res = await fetch("/api/staging-login", {
         method: "POST",
-        body: new FormData(e.currentTarget),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: formData.get("password") }),
       });
 
       if (res.ok) {

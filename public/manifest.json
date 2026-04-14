@@ -3,6 +3,7 @@
   "short_name": "ausōs",
   "description": "AI-powered design system builder for Salt DS, Material 3, and Fluent 2",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b1120",
   "theme_color": "#0b1120",

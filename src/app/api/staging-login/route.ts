@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
-
 export async function POST(request: NextRequest) {
-  const formData = await request.formData();
-  const password = (formData.get("password") as string | null) ?? "";
+  let password = "";
+
+  // Support both JSON and FormData bodies
+  const ct = request.headers.get("content-type") ?? "";
+  if (ct.includes("application/json")) {
+    const body = await request.json();
+    password = body.password ?? "";
+  } else {
+    const formData = await request.formData();
+    password = (formData.get("password") as string | null) ?? "";
+  }
 
   const expectedPassword = process.env.STAGING_PASSWORD;
 
@@ -20,7 +27,7 @@ export async function POST(request: NextRequest) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60, // 1 hour — forces re-login on mobile
+    maxAge: 60 * 60,
     path: "/",
   });
 
