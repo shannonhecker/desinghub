@@ -102,6 +102,19 @@ export default function LoginPage() {
           }}>
             Enter password to continue
           </p>
+          <p style={{
+            margin: "12px 0 0", fontSize: 11, color: "rgba(255,255,255,0.28)",
+            fontWeight: 400, lineHeight: 1.5,
+          }}>
+            This site is currently under development.<br />
+            For enquiries, please email{" "}
+            <a
+              href="mailto:hello@shannonheckerchen.com"
+              style={{ color: "rgba(94,231,223,0.7)", textDecoration: "none" }}
+            >
+              hello@shannonheckerchen.com
+            </a>
+          </p>
         </div>
 
         {/* Form */}
