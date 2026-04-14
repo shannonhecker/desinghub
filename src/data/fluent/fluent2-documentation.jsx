@@ -1178,7 +1178,10 @@ const COMPS = [
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA compliance. Contrast checklist, focus management, keyboard patterns, ARIA semantics, High Contrast Mode support.", render: DLAccessibility },
   { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Component size variants (Small 24px / Medium 32px / Large 40px). Height, padding, and font adjust — icons, gaps, and colors stay constant.", render: DLDensity },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing principles: simple, direct, human. Style rules for tense, voice, capitalization, punctuation, and accessibility.", render: FluentContentDesign },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
+  { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Components
+  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
   { id: "inputs", name: "Text Input", cat: "Components & Patterns", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
   { id: "checkboxes", name: "Checkbox", cat: "Components & Patterns", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },

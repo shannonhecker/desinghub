@@ -1430,6 +1430,7 @@ const M3_PREVIEWS = {
 };
 
 const COMPS = [
+  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Hover, focus (Tab), press, and disabled states all respond to real interaction.", render: Buttons },
   { id: "text-fields", name: "Text Fields", cat: "Components & Patterns", desc: "Click to focus (border thickens + turns primary, label floats). Hover for state layer. Type to see input. Error variant has red border + icon.", render: TextFields },
   { id: "chips", name: "Chips", cat: "Components & Patterns", desc: "Click to toggle selected (fill + checkmark). Hover and focus-visible states via CSS.", render: Chips },
@@ -1455,6 +1456,8 @@ const COMPS = [
   { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols — 2,500+ variable font icons. 3 styles (Outlined/Rounded/Sharp), 4 axes (Fill, Weight, Grade, Optical Size).", render: M3Icons },
   { id: "a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG AA contrast, focus indicators, touch targets (48dp), keyboard patterns, ARIA roles, reduced motion.", render: M3Accessibility },
   { id: "content-design", name: "Content Design", cat: "Foundations", desc: "UX writing principles: concise, direct, useful. Content patterns for buttons, errors, empty states, confirmations.", render: M3ContentDesign },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
+  { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Guides
   { id: "guide-color-roles", name: "Color Roles", cat: "Foundations", desc: "Primary, Secondary, Tertiary, Error — what each accent color group is for and where to use it.", render: ColorRolesGuide },
   { id: "guide-surfaces", name: "Surfaces & Depth", cat: "Foundations", desc: "Surface container scale, outline tokens, and inverse colors for building visual hierarchy.", render: SurfaceGuide },
