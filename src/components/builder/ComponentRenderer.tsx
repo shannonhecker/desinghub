@@ -986,6 +986,181 @@ function SimulatedChartBlock({
   );
 }
 
+/* ── Batch 1: Form Control block renderers ── */
+
+function SimulatedCheckboxBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const label = (block?.props.label as string) ?? "Accept terms and conditions";
+  const defaultChecked = Boolean(block?.props.defaultChecked);
+
+  return (
+    <SimulatedCheckbox system={system} label={label} defaultChecked={defaultChecked} />
+  );
+}
+
+function SimulatedSwitchBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const label = (block?.props.label as string) ?? "Enable Notifications";
+  const defaultOn = Boolean(block?.props.defaultOn);
+
+  return (
+    <SimulatedSwitch system={system} label={label} defaultOn={defaultOn} />
+  );
+}
+
+function SimulatedDropdownBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const placeholder = (block?.props.placeholder as string) ?? "Select an option";
+
+  return (
+    <SimulatedDropdown system={system} placeholder={placeholder} />
+  );
+}
+
+/* ── Batch 2: Data Display block renderers ── */
+
+function SimulatedDataTableBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const data = (block?.props.rows as { name: string; status: string; role: string; date: string }[]) ?? undefined;
+
+  return <SimulatedDataTable system={system} data={data} />;
+}
+
+function SimulatedProgressBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const label = (block?.props.label as string) ?? "Uploading assets...";
+  const value = Number(block?.props.value ?? 50);
+
+  return <SimulatedProgress system={system} label={label} value={value} />;
+}
+
+function SimulatedAvatarBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const initials = (block?.props.initials as string) ?? "AB";
+  const size = (block?.props.size as "sm" | "md" | "lg") ?? "md";
+  const presence = (block?.props.presence as "available" | "busy" | "away" | "offline" | undefined) || undefined;
+
+  return <SimulatedAvatar system={system} initials={initials} size={size} presence={presence} />;
+}
+
+/* ── Batch 3: Navigation & Layout block renderers ── */
+
+function SimulatedTabsBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const csv = (block?.props.tabsCsv as string) ?? "General, Security, Notifications";
+  const tabs = csv.split(",").map((s) => s.trim()).filter(Boolean);
+
+  return <SimulatedTabs system={system} tabs={tabs} />;
+}
+
+function SimulatedBreadcrumbBlock({
+  system,
+}: {
+  system: DesignSystem;
+}) {
+  // TODO: SimulatedBreadcrumb doesn't accept path prop yet — wire when component is extended
+  return <SimulatedBreadcrumb system={system} />;
+}
+
+function SimulatedAccordionBlock({
+  system,
+}: {
+  system: DesignSystem;
+}) {
+  // TODO: SimulatedAccordion doesn't accept title/content props yet — wire when component is extended
+  return <SimulatedAccordion system={system} />;
+}
+
+/* ── Batch 4: Overlays & Feedback block renderers ── */
+
+function SimulatedDialogBlock({
+  system,
+}: {
+  system: DesignSystem;
+}) {
+  // TODO: SimulatedDialog doesn't accept title/message props yet — wire when component is extended
+  return <SimulatedDialog system={system} />;
+}
+
+function SimulatedTooltipBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const text = (block?.props.text as string) ?? "This is a simulated tooltip";
+  const buttonLabel = (block?.props.buttonLabel as string) ?? "Hover me";
+
+  return <SimulatedTooltip system={system} text={text} buttonLabel={buttonLabel} />;
+}
+
+function SimulatedDatePickerBlock({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const month = (block?.props.month as string) ?? "October";
+  const year = Number(block?.props.year ?? 2026);
+
+  return <SimulatedDatePicker system={system} month={month} year={year} />;
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RENDERERS: Record<string, React.FC<any>> = {
@@ -1008,12 +1183,22 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedButton: SimulatedButtonBlock as React.FC<{ system: DesignSystem }>,
   SimulatedTitle: SimulatedTitleBlock as React.FC<{ system: DesignSystem }>,
   SimulatedTextInput: SimulatedTextInputBlock as React.FC<{ system: DesignSystem }>,
-  SimulatedBreadcrumb: (({ system }: { system: DesignSystem }) => <SimulatedBreadcrumb system={system} />) as React.FC<{ system: DesignSystem }>,
-  SimulatedAccordion: (({ system }: { system: DesignSystem }) => <SimulatedAccordion system={system} />) as React.FC<{ system: DesignSystem }>,
+  SimulatedBreadcrumb: SimulatedBreadcrumbBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedAccordion: SimulatedAccordionBlock as React.FC<{ system: DesignSystem }>,
   SimulatedCard: SimulatedCardBlock as React.FC<{ system: DesignSystem }>,
   SimulatedBadge: SimulatedBadgeBlock as React.FC<{ system: DesignSystem }>,
   SimulatedChatMessage: SimulatedChatMessageBlock as React.FC<{ system: DesignSystem }>,
   SimulatedChart: SimulatedChartBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedCheckbox: SimulatedCheckboxBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedSwitch: SimulatedSwitchBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedDropdown: SimulatedDropdownBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedDataTable: SimulatedDataTableBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedProgress: SimulatedProgressBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedAvatar: SimulatedAvatarBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedTabs: SimulatedTabsBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedDialog: SimulatedDialogBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedTooltip: SimulatedTooltipBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedDatePicker: SimulatedDatePickerBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

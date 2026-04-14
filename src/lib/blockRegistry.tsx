@@ -1,0 +1,532 @@
+"use client";
+
+import React from "react";
+import { useBuilder } from "@/store/useBuilder";
+
+/* ═══════════════════════════════════════════════════════════
+   Block Registry — single source of truth for:
+   • Library blueprints (drag-and-drop)
+   • Property editors (inspector fields)
+   • Type metadata (label, icon)
+
+   Adding a new component? Just add an entry here.
+   Both ComponentLibrary and PropertiesInspector read from this.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Shared inspector field wrapper ── */
+function InspectorField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="inspector-field">
+      <label className="inspector-field-label">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+/* ── Generic hook: read block + updater ── */
+function useBlockProps(blockId: string) {
+  const blocks = useBuilder((s) => s.blocks);
+  const update = useBuilder((s) => s.updateBlockProps);
+  const block = blocks.find((b) => b.id === blockId);
+  return {
+    props: block?.props ?? {},
+    set: (patch: Record<string, unknown>) => update(blockId, patch),
+  };
+}
+
+/* ── Reusable field helpers ── */
+function TextField({ blockId, propKey, label, placeholder }: {
+  blockId: string; propKey: string; label: string; placeholder?: string;
+}) {
+  const { props, set } = useBlockProps(blockId);
+  return (
+    <InspectorField label={label}>
+      <input
+        className="inspector-input"
+        type="text"
+        value={(props[propKey] as string) ?? ""}
+        placeholder={placeholder}
+        onChange={(e) => set({ [propKey]: e.target.value })}
+      />
+    </InspectorField>
+  );
+}
+
+function TextAreaField({ blockId, propKey, label, rows = 3 }: {
+  blockId: string; propKey: string; label: string; rows?: number;
+}) {
+  const { props, set } = useBlockProps(blockId);
+  return (
+    <InspectorField label={label}>
+      <textarea
+        className="inspector-input"
+        rows={rows}
+        value={(props[propKey] as string) ?? ""}
+        onChange={(e) => set({ [propKey]: e.target.value })}
+        style={{ resize: "vertical", lineHeight: 1.5 }}
+      />
+    </InspectorField>
+  );
+}
+
+function SelectField({ blockId, propKey, label, options }: {
+  blockId: string; propKey: string; label: string;
+  options: { value: string; label: string }[];
+}) {
+  const { props, set } = useBlockProps(blockId);
+  return (
+    <InspectorField label={label}>
+      <select
+        className="inspector-select"
+        value={(props[propKey] as string) ?? options[0]?.value}
+        onChange={(e) => set({ [propKey]: e.target.value })}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </InspectorField>
+  );
+}
+
+function ToggleField({ blockId, propKey, label }: {
+  blockId: string; propKey: string; label: string;
+}) {
+  const { props, set } = useBlockProps(blockId);
+  const checked = Boolean(props[propKey]);
+  return (
+    <InspectorField label={label}>
+      <button
+        className={`inspector-toggle-btn${checked ? " active" : ""}`}
+        onClick={() => set({ [propKey]: !checked })}
+        style={{ width: "100%" }}
+      >
+        {checked ? "On" : "Off"}
+      </button>
+    </InspectorField>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Block type definitions
+   ═══════════════════════════════════════════════════════════ */
+
+interface BlockRegistryEntry {
+  type: string;
+  label: string;
+  icon: string;
+  defaults: Record<string, unknown>;
+  Fields: React.FC<{ blockId: string }>;
+}
+
+/* ── Property editor components ── */
+
+function ButtonFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <SelectField blockId={blockId} propKey="variant" label="Variant" options={[
+        { value: "primary", label: "Primary / CTA" },
+        { value: "secondary", label: "Secondary" },
+        { value: "outline", label: "Outline" },
+        { value: "ghost", label: "Text / Ghost" },
+      ]} />
+    </div>
+  );
+}
+
+function TitleFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="text" label="Text" />
+      <SelectField blockId={blockId} propKey="level" label="Level" options={[
+        { value: "h1", label: "H1" },
+        { value: "h2", label: "H2" },
+        { value: "h3", label: "H3" },
+        { value: "h4", label: "H4" },
+      ]} />
+    </div>
+  );
+}
+
+function TextInputFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="placeholder" label="Placeholder" />
+    </div>
+  );
+}
+
+function AlertFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextField blockId={blockId} propKey="message" label="Message" />
+      <SelectField blockId={blockId} propKey="variant" label="Variant" options={[
+        { value: "info", label: "Info" },
+        { value: "success", label: "Success" },
+        { value: "warning", label: "Warning" },
+        { value: "error", label: "Error" },
+      ]} />
+    </div>
+  );
+}
+
+function CardFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextAreaField blockId={blockId} propKey="content" label="Content" />
+    </div>
+  );
+}
+
+function BadgeFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <SelectField blockId={blockId} propKey="status" label="Status" options={[
+        { value: "default", label: "Default" },
+        { value: "info", label: "Info" },
+        { value: "success", label: "Success" },
+        { value: "warning", label: "Warning" },
+        { value: "error", label: "Error" },
+      ]} />
+    </div>
+  );
+}
+
+function ChatMessageFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <SelectField blockId={blockId} propKey="role" label="Role" options={[
+        { value: "user", label: "User" },
+        { value: "system", label: "System / AI" },
+      ]} />
+      <TextAreaField blockId={blockId} propKey="message" label="Message" />
+    </div>
+  );
+}
+
+function ChartFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextField blockId={blockId} propKey="dataPoints" label="Data Points" placeholder="e.g. 40,70,45,90,65" />
+    </div>
+  );
+}
+
+/* ── Batch 1: Form Controls ── */
+
+function CheckboxFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <ToggleField blockId={blockId} propKey="defaultChecked" label="Checked" />
+    </div>
+  );
+}
+
+function SwitchFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <ToggleField blockId={blockId} propKey="defaultOn" label="Default On" />
+    </div>
+  );
+}
+
+function DropdownFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="placeholder" label="Placeholder" />
+    </div>
+  );
+}
+
+/* ── Batch 2: Data Display ── */
+
+function DataTableFields(_: { blockId: string }) {
+  // DataTable rows are edited inline on the canvas; no inspector fields needed yet
+  return (
+    <div style={{ padding: "4px 0", fontSize: 11, opacity: 0.5 }}>
+      Click cells on the canvas to edit data
+    </div>
+  );
+}
+
+function ProgressFields({ blockId }: { blockId: string }) {
+  const { props, set } = useBlockProps(blockId);
+  const value = Number(props.value ?? 50);
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <InspectorField label={`Value (${value}%)`}>
+        <input
+          className="inspector-input"
+          type="range"
+          min={0}
+          max={100}
+          value={value}
+          onChange={(e) => set({ value: Number(e.target.value) })}
+          style={{ width: "100%" }}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
+function AvatarFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="initials" label="Initials" placeholder="AB" />
+      <SelectField blockId={blockId} propKey="size" label="Size" options={[
+        { value: "sm", label: "Small" },
+        { value: "md", label: "Medium" },
+        { value: "lg", label: "Large" },
+      ]} />
+      <SelectField blockId={blockId} propKey="presence" label="Presence" options={[
+        { value: "", label: "None" },
+        { value: "available", label: "Available" },
+        { value: "busy", label: "Busy" },
+        { value: "away", label: "Away" },
+        { value: "offline", label: "Offline" },
+      ]} />
+    </div>
+  );
+}
+
+/* ── Batch 3: Navigation & Layout ── */
+
+function TabsFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="tabsCsv" label="Tab Labels (comma-separated)" placeholder="General, Security, Notifications" />
+    </div>
+  );
+}
+
+function BreadcrumbFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="pathCsv" label="Path (comma-separated)" placeholder="Home, Projects, Design Hub" />
+    </div>
+  );
+}
+
+function AccordionFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextAreaField blockId={blockId} propKey="content" label="Content" rows={3} />
+    </div>
+  );
+}
+
+/* ── Batch 4: Overlays & Feedback ── */
+
+function DialogFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextAreaField blockId={blockId} propKey="message" label="Message" rows={2} />
+    </div>
+  );
+}
+
+function TooltipFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="text" label="Tooltip Text" />
+      <TextField blockId={blockId} propKey="buttonLabel" label="Button Label" />
+    </div>
+  );
+}
+
+function DatePickerFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="month" label="Month" placeholder="October" />
+      <TextField blockId={blockId} propKey="year" label="Year" placeholder="2026" />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Registry — the single source of truth
+   ═══════════════════════════════════════════════════════════ */
+
+const BLOCK_REGISTRY: BlockRegistryEntry[] = [
+  /* ── Existing ── */
+  {
+    type: "SimulatedButton",
+    label: "Button",
+    icon: "smart_button",
+    defaults: { variant: "primary", label: "New Button" },
+    Fields: ButtonFields,
+  },
+  {
+    type: "SimulatedTitle",
+    label: "Title / Heading",
+    icon: "title",
+    defaults: { level: "h2", text: "New Heading" },
+    Fields: TitleFields,
+  },
+  {
+    type: "SimulatedTextInput",
+    label: "Text Input",
+    icon: "text_fields",
+    defaults: { placeholder: "Enter text...", label: "Label" },
+    Fields: TextInputFields,
+  },
+  {
+    type: "Alert",
+    label: "Alert",
+    icon: "warning",
+    defaults: { variant: "info", title: "Update Available", message: "A new version is ready." },
+    Fields: AlertFields,
+  },
+  {
+    type: "SimulatedCard",
+    label: "Card",
+    icon: "credit_card",
+    defaults: { title: "New Card", content: "Card content goes here." },
+    Fields: CardFields,
+  },
+  {
+    type: "SimulatedBadge",
+    label: "Badge",
+    icon: "label",
+    defaults: { label: "New Badge", status: "default" },
+    Fields: BadgeFields,
+  },
+  {
+    type: "SimulatedChatMessage",
+    label: "Chat Message",
+    icon: "chat_bubble",
+    defaults: { role: "user", message: "Can you help me build a dashboard?" },
+    Fields: ChatMessageFields,
+  },
+  {
+    type: "SimulatedChart",
+    label: "Chart",
+    icon: "bar_chart",
+    defaults: { title: "Monthly Revenue", dataPoints: "40,70,45,90,65" },
+    Fields: ChartFields,
+  },
+
+  /* ── Batch 1: Form Controls ── */
+  {
+    type: "SimulatedCheckbox",
+    label: "Checkbox",
+    icon: "check_box",
+    defaults: { label: "Accept terms and conditions", defaultChecked: false },
+    Fields: CheckboxFields,
+  },
+  {
+    type: "SimulatedSwitch",
+    label: "Toggle Switch",
+    icon: "toggle_on",
+    defaults: { label: "Enable Notifications", defaultOn: false },
+    Fields: SwitchFields,
+  },
+  {
+    type: "SimulatedDropdown",
+    label: "Dropdown",
+    icon: "arrow_drop_down_circle",
+    defaults: { placeholder: "Select an option" },
+    Fields: DropdownFields,
+  },
+
+  /* ── Batch 2: Data Display ── */
+  {
+    type: "SimulatedDataTable",
+    label: "Data Table",
+    icon: "table_chart",
+    defaults: {},
+    Fields: DataTableFields,
+  },
+  {
+    type: "SimulatedProgress",
+    label: "Progress Bar",
+    icon: "percent",
+    defaults: { label: "Uploading assets...", value: 50 },
+    Fields: ProgressFields,
+  },
+  {
+    type: "SimulatedAvatar",
+    label: "Avatar",
+    icon: "account_circle",
+    defaults: { initials: "AB", size: "md", presence: "available" },
+    Fields: AvatarFields,
+  },
+
+  /* ── Batch 3: Navigation & Layout ── */
+  {
+    type: "SimulatedTabs",
+    label: "Tabs",
+    icon: "tab",
+    defaults: { tabsCsv: "General, Security, Notifications" },
+    Fields: TabsFields,
+  },
+  {
+    type: "SimulatedBreadcrumb",
+    label: "Breadcrumb",
+    icon: "chevron_right",
+    defaults: { pathCsv: "Home, Projects, Design Hub" },
+    Fields: BreadcrumbFields,
+  },
+  {
+    type: "SimulatedAccordion",
+    label: "Accordion",
+    icon: "expand_more",
+    defaults: { title: "Advanced Settings", content: "Configure deployment environments, manage API keys, and set up custom domains." },
+    Fields: AccordionFields,
+  },
+
+  /* ── Batch 4: Overlays & Feedback ── */
+  {
+    type: "SimulatedDialog",
+    label: "Dialog",
+    icon: "open_in_new",
+    defaults: { title: "Confirm Delete", message: "This action cannot be undone. All data will be permanently removed." },
+    Fields: DialogFields,
+  },
+  {
+    type: "SimulatedTooltip",
+    label: "Tooltip",
+    icon: "info",
+    defaults: { text: "This is a simulated tooltip", buttonLabel: "Hover me" },
+    Fields: TooltipFields,
+  },
+  {
+    type: "SimulatedDatePicker",
+    label: "Date Picker",
+    icon: "calendar_today",
+    defaults: { month: "October", year: 2026 },
+    Fields: DatePickerFields,
+  },
+];
+
+/* ── Lookup helpers ── */
+
+/** Library blueprints for drag-and-drop (auto-generated from registry) */
+export const LIBRARY_BLUEPRINTS = BLOCK_REGISTRY.map((b, i) => ({
+  id: `lib-${i}`,
+  type: b.type,
+  label: b.label,
+  icon: b.icon,
+  defaults: b.defaults,
+}));
+
+/** type → Fields component (for PropertiesInspector) */
+export const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> =
+  Object.fromEntries(BLOCK_REGISTRY.map((b) => [b.type, b.Fields]));

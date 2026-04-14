@@ -36,7 +36,8 @@ import { useBuilder, type DeviceMode, type Block } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, makeBlockId } from "./PreviewCanvas";
-import { ComponentLibrary, LIBRARY_BLUEPRINTS } from "./ComponentLibrary";
+import { ComponentLibrary } from "./ComponentLibrary";
+import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 
 /* ── Viewport presets ── */
 const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
