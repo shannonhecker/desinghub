@@ -112,7 +112,7 @@ export default function LoginPage() {
               href="mailto:shannonheckerchen@gmail.com"
               style={{ color: "rgba(94,231,223,0.7)", textDecoration: "none" }}
             >
-              say hello
+              contact me
             </a>
           </p>
         </div>
