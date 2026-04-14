@@ -1164,38 +1164,38 @@ function FluentContentDesign() {
 }
 
 /* ── COMPONENT REGISTRY ── */
-const CATS = ["Design Language", "Foundations", "Actions", "Inputs", "Navigation", "Communication", "Containment"];
+const CATS = ["Foundations", "Components & Patterns"];
 const COMPS = [
   // Design Language
-  { id: "dl-icons", name: "Iconography", cat: "Design Language", desc: "Fluent System Icons — 4,000+ SVG icons in Regular and Filled variants. Tree-shakeable via fluentui react-icons.", render: DLIcons },
-  { id: "dl-color", name: "Color", cat: "Design Language", desc: "Three palettes — Neutral (grays), Brand (blue), and Shared/Status (semantic). Components darken on interaction. Focus uses stroke, not color.", render: DLColor },
-  { id: "dl-typography", name: "Typography", cat: "Design Language", desc: "Segoe UI type ramp with 16 styles. Clear semantic roles from Caption to Display. Regular and Semibold weights create hierarchy.", render: DLTypography },
-  { id: "dl-elevation", name: "Elevation", cat: "Design Language", desc: "Six shadow levels (shadow2–64) using key + ambient dual shadows. Dark theme doubles opacity. Windows uses strokes instead.", render: DLElevation },
-  { id: "dl-shapes", name: "Shapes", cat: "Design Language", desc: "Four forms (Rectangle, Circle, Pill, Beak). Corner radius from None (0) to Circle (50%). Stroke thickness tokens (1–4px).", render: DLShapes },
-  { id: "dl-spacing", name: "Spacing", cat: "Design Language", desc: "4px base unit with ramp (2–32px). Values 2, 6, 10 for icon alignment. Consistent across all components and platforms.", render: DLSpacing },
-  { id: "dl-motion", name: "Motion", cat: "Design Language", desc: "Duration tokens (50–400ms). Easing curves for entries (decelerate), exits (accelerate), and standard (easy ease).", render: DLMotion },
+  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Fluent System Icons — 4,000+ SVG icons in Regular and Filled variants. Tree-shakeable via fluentui react-icons.", render: DLIcons },
+  { id: "dl-color", name: "Color", cat: "Foundations", desc: "Three palettes — Neutral (grays), Brand (blue), and Shared/Status (semantic). Components darken on interaction. Focus uses stroke, not color.", render: DLColor },
+  { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "Segoe UI type ramp with 16 styles. Clear semantic roles from Caption to Display. Regular and Semibold weights create hierarchy.", render: DLTypography },
+  { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "Six shadow levels (shadow2–64) using key + ambient dual shadows. Dark theme doubles opacity. Windows uses strokes instead.", render: DLElevation },
+  { id: "dl-shapes", name: "Shapes", cat: "Foundations", desc: "Four forms (Rectangle, Circle, Pill, Beak). Corner radius from None (0) to Circle (50%). Stroke thickness tokens (1–4px).", render: DLShapes },
+  { id: "dl-spacing", name: "Spacing", cat: "Foundations", desc: "4px base unit with ramp (2–32px). Values 2, 6, 10 for icon alignment. Consistent across all components and platforms.", render: DLSpacing },
+  { id: "dl-motion", name: "Motion", cat: "Foundations", desc: "Duration tokens (50–400ms). Easing curves for entries (decelerate), exits (accelerate), and standard (easy ease).", render: DLMotion },
   // Foundations
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA compliance. Contrast checklist, focus management, keyboard patterns, ARIA semantics, High Contrast Mode support.", render: DLAccessibility },
   { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Component size variants (Small 24px / Medium 32px / Large 40px). Height, padding, and font adjust — icons, gaps, and colors stay constant.", render: DLDensity },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing principles: simple, direct, human. Style rules for tense, voice, capitalization, punctuation, and accessibility.", render: FluentContentDesign },
   // Components
-  { id: "buttons", name: "Buttons", cat: "Actions", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
-  { id: "inputs", name: "Text Input", cat: "Inputs", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
-  { id: "checkboxes", name: "Checkbox", cat: "Inputs", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },
-  { id: "radios", name: "Radio Group", cat: "Inputs", desc: "Single selection. Fluent inner dot pattern with brand border.", render: Radios },
-  { id: "switches", name: "Switch", cat: "Inputs", desc: "Toggle on/off. Brand fill when on, thumb slides with decelerate easing.", render: Switches },
-  { id: "slider", name: "Slider", cat: "Inputs", desc: "Drag thumb to select a value. Brand-colored thumb with hover scale.", render: SliderDemo },
-  { id: "cards", name: "Cards", cat: "Containment", desc: "Hover lifts with shadow. Background shifts lighter. Subtle stroke border.", render: Cards },
-  { id: "badges", name: "Badges", cat: "Communication", desc: "Brand, danger, success, warning, subtle variants. Pill-shaped counters.", render: Badges },
-  { id: "avatars", name: "Avatars", cat: "Communication", desc: "Circular initials in 3 sizes (24/32/48). Customizable background colors.", render: Avatars },
-  { id: "tabs", name: "Tabs", cat: "Navigation", desc: "Underline-style tabs. Active tab shows brand underline and semibold weight.", render: Tabs },
-  { id: "messagebars", name: "Message Bars", cat: "Communication", desc: "Info, success, warning, danger. Semantic backgrounds with status icons.", render: MessageBars },
-  { id: "dialogs", name: "Dialog", cat: "Communication", desc: "Modal with shadow28 elevation. Title, body, action buttons. 8px radius.", render: Dialogs },
-  { id: "menus", name: "Menu", cat: "Navigation", desc: "Dropdown menu with subtle hover. Dividers separate sections. 4px radius.", render: Menus },
-  { id: "progress", name: "Progress", cat: "Communication", desc: "Linear progress bar (2px) and circular spinner. Brand-colored.", render: ProgressDemo },
-  { id: "tooltips", name: "Tooltips", cat: "Communication", desc: "Hover-triggered popover. Inverted background. Fade-in with decelerate easing.", render: Tooltips },
-  { id: "links", name: "Links", cat: "Navigation", desc: "Brand-colored text links. Underline on hover. Darker on press.", render: Links },
-  { id: "dividers", name: "Dividers", cat: "Containment", desc: "1px stroke2 line. Optional inset for grouped content.", render: Dividers },
+  { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
+  { id: "inputs", name: "Text Input", cat: "Components & Patterns", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
+  { id: "checkboxes", name: "Checkbox", cat: "Components & Patterns", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },
+  { id: "radios", name: "Radio Group", cat: "Components & Patterns", desc: "Single selection. Fluent inner dot pattern with brand border.", render: Radios },
+  { id: "switches", name: "Switch", cat: "Components & Patterns", desc: "Toggle on/off. Brand fill when on, thumb slides with decelerate easing.", render: Switches },
+  { id: "slider", name: "Slider", cat: "Components & Patterns", desc: "Drag thumb to select a value. Brand-colored thumb with hover scale.", render: SliderDemo },
+  { id: "cards", name: "Cards", cat: "Components & Patterns", desc: "Hover lifts with shadow. Background shifts lighter. Subtle stroke border.", render: Cards },
+  { id: "badges", name: "Badges", cat: "Components & Patterns", desc: "Brand, danger, success, warning, subtle variants. Pill-shaped counters.", render: Badges },
+  { id: "avatars", name: "Avatars", cat: "Components & Patterns", desc: "Circular initials in 3 sizes (24/32/48). Customizable background colors.", render: Avatars },
+  { id: "tabs", name: "Tabs", cat: "Components & Patterns", desc: "Underline-style tabs. Active tab shows brand underline and semibold weight.", render: Tabs },
+  { id: "messagebars", name: "Message Bars", cat: "Components & Patterns", desc: "Info, success, warning, danger. Semantic backgrounds with status icons.", render: MessageBars },
+  { id: "dialogs", name: "Dialog", cat: "Components & Patterns", desc: "Modal with shadow28 elevation. Title, body, action buttons. 8px radius.", render: Dialogs },
+  { id: "menus", name: "Menu", cat: "Components & Patterns", desc: "Dropdown menu with subtle hover. Dividers separate sections. 4px radius.", render: Menus },
+  { id: "progress", name: "Progress", cat: "Components & Patterns", desc: "Linear progress bar (2px) and circular spinner. Brand-colored.", render: ProgressDemo },
+  { id: "tooltips", name: "Tooltips", cat: "Components & Patterns", desc: "Hover-triggered popover. Inverted background. Fade-in with decelerate easing.", render: Tooltips },
+  { id: "links", name: "Links", cat: "Components & Patterns", desc: "Brand-colored text links. Underline on hover. Darker on press.", render: Links },
+  { id: "dividers", name: "Dividers", cat: "Components & Patterns", desc: "1px stroke2 line. Optional inset for grouped content.", render: Dividers },
 ];
 
 /* ── MINI PREVIEWS for landing page cards ── */

@@ -36,7 +36,7 @@ export function getComponents(system: SystemId): ComponentDef[] {
 
 export function getCategories(system: SystemId): string[] {
   switch (system) {
-    case 'salt': return ["Design Language", "Foundations", "Actions", "Inputs", "Navigation", "Communication", "Containment"];
+    case 'salt': return ["Foundations", "Components & Patterns"];
     case 'm3': return M3_CATS;
     case 'fluent': return FLUENT_CATS;
   }

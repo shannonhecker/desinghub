@@ -535,7 +535,12 @@ function ComponentList() {
   const filtered = searchQuery
     ? components.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.desc.toLowerCase().includes(searchQuery.toLowerCase()))
     : components;
-  const grouped = categories.map(cat => ({ cat, items: filtered.filter(c => c.cat === cat) })).filter(g => g.items.length > 0);
+  const grouped = categories.map(cat => ({
+    cat,
+    items: filtered
+      .filter(c => c.cat === cat)
+      .sort((a, b) => cat === "Components & Patterns" ? a.name.localeCompare(b.name) : 0),
+  })).filter(g => g.items.length > 0);
 
   // Use the DS's own sidebar-item / menu-item classes (no input class needed here)
   const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : "f-sidebar-item";
@@ -607,8 +612,6 @@ function TabBar() {
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: "preview", label: "Preview" },
     { id: "code", label: "Code" },
-    { id: "tokens", label: "Tokens" },
-    { id: "audit", label: "Audit" },
   ];
 
   /* ── M3 Primary Tabs: height + font scale with density ── */
@@ -840,9 +843,12 @@ function ContentHeader() {
 /* ── MAIN CONTENT ── */
 function MainContent() {
   const { activeTab, selectedComponent, activeSystem } = useDesignHub();
-  if (activeTab === "tokens") return <TokenReference />;
   if (activeTab === "charts") return <ChartsPage />;
-  if (activeTab === "audit") return <AuditPanel />;
+
+  /* Tokens & Audit are now standalone Foundations pages, not tabs */
+  if (selectedComponent === "tokens") return <TokenReference />;
+  if (selectedComponent === "audit") return <AuditPanel />;
+
   if (!selectedComponent) return <LandingGrid />;
   const components = getComponents(activeSystem);
   if (!components.find(c => c.id === selectedComponent)) return <LandingGrid />;
@@ -949,7 +955,7 @@ export function DesignHubApp() {
         {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
         <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "m3" ? t.bg : t.bg2 }}>
           <ContentTopBar />
-          {store.selectedComponent && <TabBar />}
+          {store.selectedComponent && store.selectedComponent !== "tokens" && store.selectedComponent !== "audit" && <TabBar />}
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
           </div>
