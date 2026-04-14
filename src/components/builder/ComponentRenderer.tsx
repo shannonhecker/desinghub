@@ -33,6 +33,15 @@ import {
   SimulatedListBox,
   SimulatedComboBox,
   SimulatedFileDropZone,
+  SimulatedTree,
+  SimulatedRating,
+  SimulatedSkeleton,
+  SimulatedSearchbox,
+  SimulatedTokenizedInput,
+  SimulatedNavDrawer,
+  SimulatedPopover,
+  SimulatedPersona,
+  SimulatedAvatarGroup,
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
@@ -1384,6 +1393,17 @@ function SimulatedFileDropZoneBlock({ system, ...props }: { system: DesignSystem
   return <SimulatedFileDropZone system={system} label={props.label as string} acceptTypes={props.acceptTypes as string} />;
 }
 
+/* ── Batch 7 renderers ── */
+function SimulatedTreeBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedTree system={system} itemsCsv={p.itemsCsv as string} />; }
+function SimulatedRatingBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedRating system={system} label={p.label as string} max={Number(p.max ?? 5)} value={Number(p.value ?? 3)} />; }
+function SimulatedSkeletonBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedSkeleton system={system} variant={p.variant as "card"} />; }
+function SimulatedSearchboxBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedSearchbox system={system} placeholder={p.placeholder as string} />; }
+function SimulatedTokenizedInputBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedTokenizedInput system={system} label={p.label as string} tokensCsv={p.tokensCsv as string} />; }
+function SimulatedNavDrawerBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedNavDrawer system={system} itemsCsv={p.itemsCsv as string} />; }
+function SimulatedPopoverBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedPopover system={system} title={p.title as string} content={p.content as string} />; }
+function SimulatedPersonaBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedPersona system={system} name={p.name as string} role={p.role as string} presence={p.presence as "available"} />; }
+function SimulatedAvatarGroupBlock({ system, ...p }: { system: DesignSystem; [k: string]: unknown }) { return <SimulatedAvatarGroup system={system} namesCsv={p.namesCsv as string} max={Number(p.max ?? 4)} />; }
+
 function FooterTextBlock({ blockId }: { blockId?: string }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
@@ -1498,6 +1518,16 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedListBox: SimulatedListBoxBlock,
   SimulatedComboBox: SimulatedComboBoxBlock,
   SimulatedFileDropZone: SimulatedFileDropZoneBlock,
+  /* Batch 7 */
+  SimulatedTree: SimulatedTreeBlock,
+  SimulatedRating: SimulatedRatingBlock,
+  SimulatedSkeleton: SimulatedSkeletonBlock,
+  SimulatedSearchbox: SimulatedSearchboxBlock,
+  SimulatedTokenizedInput: SimulatedTokenizedInputBlock,
+  SimulatedNavDrawer: SimulatedNavDrawerBlock,
+  SimulatedPopover: SimulatedPopoverBlock,
+  SimulatedPersona: SimulatedPersonaBlock,
+  SimulatedAvatarGroup: SimulatedAvatarGroupBlock,
   /* Zone-specific types */
   AppBrand: AppBrandBlock as React.FC<{ system: DesignSystem }>,
   StatusPill: StatusPillBlock as React.FC<{ system: DesignSystem }>,

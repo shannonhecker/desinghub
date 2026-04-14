@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent";
@@ -1289,6 +1289,403 @@ export function SimulatedFileDropZone({
       </span>
       <span className={`${prefix}-file-drop-label`}>{label}</span>
       <span className={`${prefix}-file-drop-hint`}>Accepted: {acceptTypes}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedTree
+   ═══════════════════════════════════════════ */
+
+interface TreeProps extends SimProps {
+  itemsCsv?: string;
+}
+
+export function SimulatedTree({
+  system,
+  itemsCsv = "Documents > Work > Reports, Documents > Personal, Images > Vacation, Images > Family",
+}: TreeProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(["Documents", "Images"]));
+
+  /* Parse tree from CSV format: "Parent > Child > Grandchild" */
+  const nodes = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    itemsCsv.split(",").map(s => s.trim()).forEach(path => {
+      const parts = path.split(">").map(s => s.trim());
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!map[parts[i]]) map[parts[i]] = [];
+        if (!map[parts[i]].includes(parts[i + 1])) map[parts[i]].push(parts[i + 1]);
+      }
+      const leaf = parts[parts.length - 1];
+      if (!map[leaf]) map[leaf] = [];
+    });
+    return map;
+  }, [itemsCsv]);
+
+  const roots = Object.keys(nodes).filter(k => !Object.values(nodes).some(children => children.includes(k)));
+
+  function TreeNode({ name, depth }: { name: string; depth: number }) {
+    const children = nodes[name] || [];
+    const hasChildren = children.length > 0;
+    const isExpanded = expanded.has(name);
+
+    return (
+      <>
+        <div
+          className={`${prefix}-tree-item`}
+          style={{ paddingLeft: depth * 20 }}
+          onClick={() => {
+            if (hasChildren) {
+              setExpanded(prev => {
+                const next = new Set(prev);
+                if (next.has(name)) next.delete(name); else next.add(name);
+                return next;
+              });
+            }
+          }}
+        >
+          {hasChildren ? (
+            <span className="material-symbols-outlined" style={{ fontSize: 14, transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+              chevron_right
+            </span>
+          ) : (
+            <span style={{ width: 14, display: "inline-block" }} />
+          )}
+          <span className="material-symbols-outlined" style={{ fontSize: 16, opacity: 0.5 }}>
+            {hasChildren ? "folder" : "description"}
+          </span>
+          <span className={`${prefix}-tree-label`}>{name}</span>
+        </div>
+        {isExpanded && children.map(child => (
+          <TreeNode key={child} name={child} depth={depth + 1} />
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <div className={`${prefix}-tree`} role="tree">
+      {roots.map(root => <TreeNode key={root} name={root} depth={0} />)}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedRating
+   ═══════════════════════════════════════════ */
+
+interface RatingProps extends SimProps {
+  max?: number;
+  value?: number;
+  label?: string;
+}
+
+export function SimulatedRating({
+  system,
+  max = 5,
+  value: initialValue = 3,
+  label = "Rating",
+}: RatingProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [value, setValue] = useState(initialValue);
+  const [hover, setHover] = useState<number | null>(null);
+
+  return (
+    <div className={`${prefix}-rating`}>
+      <span className={`${prefix}-rating-label`}>{label}</span>
+      <div className={`${prefix}-rating-stars`}>
+        {Array.from({ length: max }, (_, i) => {
+          const filled = (hover !== null ? hover : value) >= i + 1;
+          return (
+            <button
+              key={i}
+              className={`${prefix}-rating-star${filled ? ` ${prefix}-rating-filled` : ""}`}
+              onClick={() => setValue(i + 1)}
+              onMouseEnter={() => setHover(i + 1)}
+              onMouseLeave={() => setHover(null)}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                {filled ? "star" : "star_border"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <span className={`${prefix}-rating-value`}>{value}/{max}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedSkeleton
+   ═══════════════════════════════════════════ */
+
+interface SkeletonProps extends SimProps {
+  variant?: "text" | "card" | "avatar";
+}
+
+export function SimulatedSkeleton({
+  system,
+  variant = "card",
+}: SkeletonProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+
+  if (variant === "avatar") {
+    return (
+      <div className={`${prefix}-skeleton-row`}>
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-circle`} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "60%" }} />
+          <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "40%" }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "text") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "100%" }} />
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "85%" }} />
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "70%" }} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${prefix}-skeleton-card`}>
+      <div className={`${prefix}-skeleton ${prefix}-skeleton-rect`} />
+      <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "70%" }} />
+        <div className={`${prefix}-skeleton ${prefix}-skeleton-text`} style={{ width: "50%" }} />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedSearchbox
+   ═══════════════════════════════════════════ */
+
+interface SearchboxProps extends SimProps {
+  placeholder?: string;
+}
+
+export function SimulatedSearchbox({
+  system,
+  placeholder = "Search...",
+}: SearchboxProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [query, setQuery] = useState("");
+
+  return (
+    <div className={`${prefix}-searchbox`}>
+      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>search</span>
+      <input
+        className={`${prefix}-searchbox-input`}
+        placeholder={placeholder}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {query && (
+        <button className={`${prefix}-searchbox-clear`} onClick={() => setQuery("")}>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedTokenizedInput
+   ═══════════════════════════════════════════ */
+
+interface TokenizedInputProps extends SimProps {
+  label?: string;
+  tokensCsv?: string;
+}
+
+export function SimulatedTokenizedInput({
+  system,
+  label = "Recipients",
+  tokensCsv = "alice@co.com, bob@co.com",
+}: TokenizedInputProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [tokens, setTokens] = useState(tokensCsv.split(",").map(s => s.trim()).filter(Boolean));
+  const [input, setInput] = useState("");
+
+  const addToken = () => {
+    if (input.trim()) {
+      setTokens([...tokens, input.trim()]);
+      setInput("");
+    }
+  };
+
+  return (
+    <div className={`${prefix}-tokenized`}>
+      <label className={`${prefix}-tokenized-label`}>{label}</label>
+      <div className={`${prefix}-tokenized-field`}>
+        {tokens.map((t, i) => (
+          <span key={i} className={`${prefix}-tokenized-chip`}>
+            {t}
+            <button onClick={() => setTokens(tokens.filter((_, j) => j !== i))} className={`${prefix}-tokenized-remove`}>
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+            </button>
+          </span>
+        ))}
+        <input
+          className={`${prefix}-tokenized-input`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addToken(); } }}
+          placeholder={tokens.length === 0 ? "Type and press Enter..." : ""}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedNavDrawer
+   ═══════════════════════════════════════════ */
+
+interface NavDrawerProps extends SimProps {
+  itemsCsv?: string;
+}
+
+export function SimulatedNavDrawer({
+  system,
+  itemsCsv = "Home, Dashboard, Settings, Profile, Help",
+}: NavDrawerProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const items = itemsCsv.split(",").map(s => s.trim()).filter(Boolean);
+  const [active, setActive] = useState(0);
+  const icons = ["home", "dashboard", "settings", "person", "help"];
+
+  return (
+    <div className={`${prefix}-nav-drawer`}>
+      {items.map((item, i) => (
+        <button
+          key={i}
+          className={`${prefix}-nav-drawer-item${active === i ? ` ${prefix}-nav-drawer-active` : ""}`}
+          onClick={() => setActive(i)}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icons[i % icons.length]}</span>
+          <span>{item}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedPopover
+   ═══════════════════════════════════════════ */
+
+interface PopoverProps extends SimProps {
+  title?: string;
+  content?: string;
+}
+
+export function SimulatedPopover({
+  system,
+  title = "Popover Title",
+  content = "This is additional information displayed in a popover.",
+}: PopoverProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className={`${prefix}-popover-wrapper`}>
+      <button className={`${prefix}-popover-trigger`} onClick={() => setOpen(!open)}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
+        Show Popover
+      </button>
+      {open && (
+        <div className={`${prefix}-popover`}>
+          <div className={`${prefix}-popover-header`}>
+            <span className={`${prefix}-popover-title`}>{title}</span>
+            <button className={`${prefix}-popover-close`} onClick={() => setOpen(false)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+            </button>
+          </div>
+          <div className={`${prefix}-popover-body`}>{content}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedPersona
+   ═══════════════════════════════════════════ */
+
+interface PersonaProps extends SimProps {
+  name?: string;
+  role?: string;
+  presence?: "available" | "busy" | "away" | "offline";
+}
+
+export function SimulatedPersona({
+  system,
+  name = "Jane Doe",
+  role = "Senior Designer",
+  presence = "available",
+}: PersonaProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const presenceColors: Record<string, string> = {
+    available: "var(--ds-status-positive, #22c55e)",
+    busy: "var(--ds-status-negative, #ef4444)",
+    away: "var(--ds-status-warning, #f59e0b)",
+    offline: "var(--ds-fg-tertiary, #9ca3af)",
+  };
+
+  return (
+    <div className={`${prefix}-persona`}>
+      <div className={`${prefix}-persona-avatar`}>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{name.split(" ").map(n => n[0]).join("")}</span>
+        <span className={`${prefix}-persona-presence`} style={{ background: presenceColors[presence] }} />
+      </div>
+      <div className={`${prefix}-persona-info`}>
+        <span className={`${prefix}-persona-name`}>{name}</span>
+        <span className={`${prefix}-persona-role`}>{role}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   SimulatedAvatarGroup
+   ═══════════════════════════════════════════ */
+
+interface AvatarGroupProps extends SimProps {
+  namesCsv?: string;
+  max?: number;
+}
+
+export function SimulatedAvatarGroup({
+  system,
+  namesCsv = "AB, CD, EF, GH, IJ, KL",
+  max = 4,
+}: AvatarGroupProps) {
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const names = namesCsv.split(",").map(s => s.trim()).filter(Boolean);
+  const visible = names.slice(0, max);
+  const overflow = names.length - max;
+
+  return (
+    <div className={`${prefix}-avatar-group`}>
+      {visible.map((name, i) => (
+        <div key={i} className={`${prefix}-avatar-group-item`} style={{ zIndex: visible.length - i }}>
+          <span>{name}</span>
+        </div>
+      ))}
+      {overflow > 0 && (
+        <div className={`${prefix}-avatar-group-item ${prefix}-avatar-group-overflow`} style={{ zIndex: 0 }}>
+          +{overflow}
+        </div>
+      )}
     </div>
   );
 }

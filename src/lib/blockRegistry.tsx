@@ -478,6 +478,78 @@ function ComboBoxFields({ blockId }: { blockId: string }) {
   );
 }
 
+function TreeFields({ blockId }: { blockId: string }) {
+  return <TextField blockId={blockId} propKey="itemsCsv" label="Tree items (Parent > Child, ...)" placeholder="Docs > Work, Docs > Personal" />;
+}
+
+function RatingFields({ blockId }: { blockId: string }) {
+  const { props, set } = useBlockProps(blockId);
+  const value = Number(props.value ?? 3);
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <InspectorField label={`Value (${value})`}>
+        <input className="inspector-input" type="range" min={1} max={5} value={value}
+          onChange={(e) => set({ value: Number(e.target.value) })} style={{ width: "100%" }} />
+      </InspectorField>
+    </div>
+  );
+}
+
+function SkeletonFields({ blockId }: { blockId: string }) {
+  return <SelectField blockId={blockId} propKey="variant" label="Variant" options={[
+    { value: "card", label: "Card" }, { value: "text", label: "Text" }, { value: "avatar", label: "Avatar" },
+  ]} />;
+}
+
+function SearchboxFields({ blockId }: { blockId: string }) {
+  return <TextField blockId={blockId} propKey="placeholder" label="Placeholder" />;
+}
+
+function TokenizedInputFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="tokensCsv" label="Initial tokens (comma-separated)" />
+    </div>
+  );
+}
+
+function NavDrawerFields({ blockId }: { blockId: string }) {
+  return <TextField blockId={blockId} propKey="itemsCsv" label="Items (comma-separated)" placeholder="Home, Dashboard, Settings" />;
+}
+
+function PopoverFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <TextAreaField blockId={blockId} propKey="content" label="Content" rows={2} />
+    </div>
+  );
+}
+
+function PersonaFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="name" label="Name" />
+      <TextField blockId={blockId} propKey="role" label="Role" />
+      <SelectField blockId={blockId} propKey="presence" label="Presence" options={[
+        { value: "available", label: "Available" }, { value: "busy", label: "Busy" },
+        { value: "away", label: "Away" }, { value: "offline", label: "Offline" },
+      ]} />
+    </div>
+  );
+}
+
+function AvatarGroupFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="namesCsv" label="Names (comma-separated)" placeholder="AB, CD, EF, GH" />
+      <TextField blockId={blockId} propKey="max" label="Max visible" />
+    </div>
+  );
+}
+
 function FileDropZoneFields({ blockId }: { blockId: string }) {
   return (
     <div>
@@ -906,6 +978,17 @@ const BLOCK_REGISTRY: BlockRegistryEntry[] = [
     defaults: { label: "Drag & drop files here", acceptTypes: ".png, .jpg, .pdf" },
     Fields: FileDropZoneFields,
   },
+
+  /* ── Batch 7: Missing DS components ── */
+  { type: "SimulatedTree", label: "Tree", icon: "account_tree", defaults: { itemsCsv: "Documents > Work > Reports, Documents > Personal, Images > Vacation, Images > Family" }, Fields: TreeFields },
+  { type: "SimulatedRating", label: "Rating", icon: "star_half", defaults: { label: "Rating", max: 5, value: 3 }, Fields: RatingFields },
+  { type: "SimulatedSkeleton", label: "Skeleton", icon: "hourglass_empty", defaults: { variant: "card" }, Fields: SkeletonFields },
+  { type: "SimulatedSearchbox", label: "Searchbox", icon: "search", defaults: { placeholder: "Search..." }, Fields: SearchboxFields },
+  { type: "SimulatedTokenizedInput", label: "Tokenized Input", icon: "label", defaults: { label: "Recipients", tokensCsv: "alice@co.com, bob@co.com" }, Fields: TokenizedInputFields },
+  { type: "SimulatedNavDrawer", label: "Nav Drawer", icon: "menu_open", defaults: { itemsCsv: "Home, Dashboard, Settings, Profile, Help" }, Fields: NavDrawerFields },
+  { type: "SimulatedPopover", label: "Popover", icon: "chat_bubble_outline", defaults: { title: "Popover Title", content: "Additional information displayed in a popover." }, Fields: PopoverFields },
+  { type: "SimulatedPersona", label: "Persona", icon: "person", defaults: { name: "Jane Doe", role: "Senior Designer", presence: "available" }, Fields: PersonaFields },
+  { type: "SimulatedAvatarGroup", label: "Avatar Group", icon: "group", defaults: { namesCsv: "AB, CD, EF, GH, IJ, KL", max: 4 }, Fields: AvatarGroupFields },
 
   /* ── Individual Stat Card ── */
   {
