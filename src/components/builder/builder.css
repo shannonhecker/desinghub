@@ -622,7 +622,7 @@
   margin: 6px 8px 6px;
   padding: 9px 12px;
   background: var(--glass-white);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: none;
   border-radius: 12px;
   color: #ffffff;
   font-size: 13px;
@@ -636,7 +636,6 @@
 }
 .gsb-new-chat-btn:hover {
   background: var(--glass-white-md);
-  border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 .gsb-btn-label { white-space: nowrap; }
