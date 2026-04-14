@@ -1,41 +1,137 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { ZoneId } from "@/store/useBuilder";
+
+const COL_SPAN_LABELS: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
+
+/* ── Resize handle — drag the right edge to change colSpan ── */
+function ResizeHandle({
+  colSpan,
+  onResize,
+}: {
+  colSpan: number;
+  onResize: (span: number) => void;
+}) {
+  const [resizing, setResizing] = useState(false);
+  const startRef = useRef<{ x: number; span: number; gridWidth: number } | null>(null);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      /* Measure the grid container width to calculate column thresholds */
+      const gridEl = (e.currentTarget as HTMLElement).closest(".zone-grid");
+      const gridWidth = gridEl ? gridEl.clientWidth : 600;
+
+      startRef.current = { x: e.clientX, span: colSpan, gridWidth };
+      setResizing(true);
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [colSpan]
+  );
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!startRef.current) return;
+      const { x: startX, gridWidth } = startRef.current;
+      const colWidth = gridWidth / 3;
+      const delta = e.clientX - startX;
+      const deltaSpans = Math.round(delta / colWidth);
+      const newSpan = Math.max(1, Math.min(3, startRef.current.span + deltaSpans));
+      if (newSpan !== colSpan) onResize(newSpan);
+    },
+    [colSpan, onResize]
+  );
+
+  const handlePointerUp = useCallback(() => {
+    startRef.current = null;
+    setResizing(false);
+  }, []);
+
+  return (
+    <div
+      className={`block-resize-handle${resizing ? " is-resizing" : ""}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      title="Drag to resize width"
+    >
+      <div className="block-resize-grip" />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════ */
 
 interface SortableBlockProps {
   id: string;
+  zone?: ZoneId;
+  compact?: boolean;
   isSelected?: boolean;
-  onSwapClick: () => void;
+  colSpan?: number;
+  onColSpanChange?: (span: number) => void;
+  onSwapClick?: () => void;
   onRemove?: () => void;
   children: React.ReactNode;
 }
 
-export function SortableBlock({ id, isSelected, onSwapClick, onRemove, children }: SortableBlockProps) {
+export function SortableBlock({
+  id,
+  zone,
+  compact,
+  isSelected,
+  colSpan = 3,
+  onColSpanChange,
+  onSwapClick,
+  onRemove,
+  children,
+}: SortableBlockProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+    isSorting,
+  } = useSortable({ id, data: { zone } });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
+  const cls = [
+    "canvas-block",
+    isDragging && "is-dragging",
+    isSelected && "is-selected",
+    compact && "zone-block-compact",
+    /* Drop indicator: show when another item is being sorted and this item is shifting */
+    isSorting && !isDragging && "is-sorting-peer",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`canvas-block${isDragging ? " is-dragging" : ""}${isSelected ? " is-selected" : ""}`}
-      {...attributes}
-    >
+    <div ref={setNodeRef} style={style} className={cls} {...attributes}>
+      {/* Drop-between indicator line */}
+      {isSorting && !isDragging && (
+        <div className="block-drop-indicator" />
+      )}
+
       {/* Drag handle */}
-      <div className="canvas-block-handle" {...listeners} title="Drag to reorder">
+      <div
+        ref={setActivatorNodeRef}
+        className="canvas-block-handle"
+        {...listeners}
+        title="Drag to reorder"
+      >
         <span style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
       </div>
 
@@ -53,19 +149,44 @@ export function SortableBlock({ id, isSelected, onSwapClick, onRemove, children 
         </button>
       )}
 
-      {/* Swap button */}
-      <button
-        className="canvas-block-swap"
-        onClick={onSwapClick}
-        title="Swap component"
-        type="button"
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-          swap_horiz
-        </span>
-      </button>
+      {/* Swap button — hidden in compact mode */}
+      {onSwapClick && !compact && (
+        <button
+          className="canvas-block-swap"
+          onClick={onSwapClick}
+          title="Swap component"
+          type="button"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            swap_horiz
+          </span>
+        </button>
+      )}
+
+      {/* Column span badge — click to cycle */}
+      {onColSpanChange && !compact && (
+        <button
+          className="canvas-block-colspan"
+          onClick={() => {
+            const cycle = [1, 2, 3];
+            const idx = cycle.indexOf(colSpan);
+            onColSpanChange(cycle[(idx + 1) % cycle.length]);
+          }}
+          title={`Width: ${COL_SPAN_LABELS[colSpan] || "Full"} — click to cycle`}
+          type="button"
+        >
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.02em" }}>
+            {COL_SPAN_LABELS[colSpan] || "Full"}
+          </span>
+        </button>
+      )}
 
       {children}
+
+      {/* Resize handle — right edge drag (body zone only) */}
+      {onColSpanChange && !compact && colSpan < 3 && (
+        <ResizeHandle colSpan={colSpan} onResize={onColSpanChange} />
+      )}
     </div>
   );
 }

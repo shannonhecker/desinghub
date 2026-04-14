@@ -1,37 +1,22 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { useBuilder, type Block } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
-import { ID_TO_BLOCK, BLOCK_TO_ID } from "@/lib/componentMaps";
+import { ZoneDropContainer } from "./ZoneDropContainer";
+import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS, BLOCK_TO_ID } from "@/lib/componentMaps";
 
 let blockCounter = 0;
 export function makeBlockId() {
   return `block-${++blockCounter}-${Date.now()}`;
 }
 
-/* ── Droppable canvas wrapper ── */
-function CanvasDropZone({ children }: { children: React.ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id: "canvas-drop-zone" });
-  return (
-    <div
-      ref={setNodeRef}
-      className={`canvas-drop-zone${isOver ? " is-over" : ""}`}
-    >
-      {children}
-    </div>
-  );
-}
+/* CanvasDropZone replaced by ZoneDropContainer */
 
 /* ── Code Viewer — full-page JSON schema display ── */
-function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }) {
+export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }) {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
   const footerBlocks = useBuilder((s) => s.footerBlocks);
@@ -104,9 +89,8 @@ export function PreviewCanvas() {
   const {
     designSystem, selectedComponents, setSelectedComponents,
     blocks, setBlocks,
-    selectedBlockId, setSelectedBlockId,
+    selectedBlockId, setSelectedBlock,
     addMenuOpen, setAddMenuOpen,
-    canvasViewMode,
     density,
   } = useBuilder();
 
@@ -124,9 +108,21 @@ export function PreviewCanvas() {
     const seen = new Set<string>();
     const initial: Block[] = [];
     for (const compId of selectedComponents) {
+      if (seen.has(compId)) continue;
+      seen.add(compId);
+
+      /* Compound expansion: some IDs create multiple individual blocks */
+      const multiBlocks = ID_TO_MULTI_BLOCKS[compId];
+      if (multiBlocks) {
+        for (const mb of multiBlocks) {
+          initial.push({ id: makeBlockId(), type: mb.type, props: { ...mb.props } });
+        }
+        continue;
+      }
+
+      /* Single block */
       const blockType = ID_TO_BLOCK[compId];
-      if (blockType && !seen.has(blockType)) {
-        seen.add(blockType);
+      if (blockType) {
         initial.push({ id: makeBlockId(), type: blockType, props: {} });
       }
     }
@@ -163,30 +159,26 @@ export function PreviewCanvas() {
       const next = [{ id: newId, type, props: {} }, ...blocks];
       syncToStore(next);
       setAddMenuOpen(false);
-      setSelectedBlockId(newId);
+      setSelectedBlock(newId, "body");
     },
-    [blocks, syncToStore, setSelectedBlockId, setAddMenuOpen]
+    [blocks, syncToStore, setSelectedBlock, setAddMenuOpen]
   );
 
   const handleRemoveBlock = useCallback(
     (id: string) => {
       const next = blocks.filter((b) => b.id !== id);
       syncToStore(next);
-      if (selectedBlockId === id) setSelectedBlockId(null);
+      if (selectedBlockId === id) setSelectedBlock(null, null);
     },
-    [blocks, syncToStore, selectedBlockId, setSelectedBlockId]
+    [blocks, syncToStore, selectedBlockId, setSelectedBlock]
   );
 
-  /* ── Code view ── */
-  if (canvasViewMode === 'code') {
-    return <CodeViewer blocks={blocks} />;
-  }
-
   /* ── Canvas view (DndContext is provided by parent) ── */
+  /* Note: Code view is now rendered at the dashboard level in PreviewPanel */
   return (
     <div
       className={`preview-${designSystem} preview-canvas-root density-${density}`}
-      onClick={() => setSelectedBlockId(null)}
+      onClick={() => setSelectedBlock(null, null)}
     >
       {/* Add component menu — triggered from toolbar */}
       {addMenuOpen && (
@@ -198,47 +190,53 @@ export function PreviewCanvas() {
         </div>
       )}
 
-      <CanvasDropZone>
-        <SortableContext
-          items={blocks.map((b) => b.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {blocks.map((block) => (
-            <div
-              key={block.id}
-              style={{ position: "relative" }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedBlockId(block.id);
+      <ZoneDropContainer zoneId="body" blocks={blocks} direction="grid" className="canvas-drop-zone">
+        {blocks.map((block) => {
+          const colSpan = Number(block.props.colSpan) || 3;
+          return (
+          <div
+            key={block.id}
+            style={{ position: "relative", gridColumn: `span ${colSpan}` }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedBlock(block.id, "body");
+            }}
+          >
+            <SortableBlock
+              id={block.id}
+              zone="body"
+              isSelected={selectedBlockId === block.id}
+              colSpan={colSpan}
+              onColSpanChange={(span) => {
+                const next = blocks.map((b) =>
+                  b.id === block.id ? { ...b, props: { ...b.props, colSpan: span } } : b
+                );
+                syncToStore(next);
               }}
+              onSwapClick={() =>
+                setSwapTarget(swapTarget === block.id ? null : block.id)
+              }
+              onRemove={() => handleRemoveBlock(block.id)}
             >
-              <SortableBlock
-                id={block.id}
-                isSelected={selectedBlockId === block.id}
-                onSwapClick={() =>
-                  setSwapTarget(swapTarget === block.id ? null : block.id)
-                }
-                onRemove={() => handleRemoveBlock(block.id)}
-              >
-                <ComponentRenderer
-                  type={block.type}
-                  system={designSystem}
-                  blockId={block.id}
-                  {...block.props}
-                />
-              </SortableBlock>
+              <ComponentRenderer
+                type={block.type}
+                system={designSystem}
+                blockId={block.id}
+                {...block.props}
+              />
+            </SortableBlock>
 
-              {/* Swap menu for this block */}
-              {swapTarget === block.id && (
-                <SwapMenu
-                  onSelect={(newType) => handleSwap(block.id, newType)}
-                  onClose={() => setSwapTarget(null)}
-                />
-              )}
-            </div>
-          ))}
-        </SortableContext>
-      </CanvasDropZone>
+            {/* Swap menu for this block */}
+            {swapTarget === block.id && (
+              <SwapMenu
+                onSelect={(newType) => handleSwap(block.id, newType)}
+                onClose={() => setSwapTarget(null)}
+              />
+            )}
+          </div>
+          );
+        })}
+      </ZoneDropContainer>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
   SimulatedChatMessage,
   SimulatedChart,
 } from "./SimulatedUI";
+import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
 type DesignSystem = "salt" | "m3" | "fluent";
 
@@ -683,19 +684,44 @@ function SimulatedButtonBlock({
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const updateBlockProps = useBuilder((s) => s.updateBlockProps);
   const isSelected = blockId != null && selectedBlockId === blockId;
-  const isPrimary = variant === "primary";
+
+  /* Variant-specific styles */
+  const variantStyles: Record<string, React.CSSProperties> = {
+    primary: {
+      background: t.primary,
+      color: t.onPrimary,
+      border: "none",
+      boxShadow: `0 2px 8px ${t.primaryShadow}`,
+    },
+    secondary: {
+      background: t.surface,
+      color: t.fg,
+      border: `1px solid ${t.border}`,
+    },
+    outline: {
+      background: "transparent",
+      color: t.primary,
+      border: `1.5px solid ${t.primary}`,
+    },
+    ghost: {
+      background: "transparent",
+      color: t.fgSecondary,
+      border: "none",
+    },
+  };
+  const vs = variantStyles[variant ?? "primary"] || variantStyles.primary;
 
   return (
     <div
       style={{
         display: "inline-flex",
-        padding: "8px 20px",
+        padding: variant === "ghost" ? "8px 12px" : "8px 20px",
         borderRadius: btnRadius,
         fontSize: 13,
         fontWeight: 600,
-        background: isPrimary ? t.primary : "transparent",
-        color: isPrimary ? t.onPrimary : t.fg,
-        border: isPrimary ? "none" : `1px solid ${t.border}`,
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+        ...vs,
       }}
     >
       {isSelected && blockId ? (
@@ -843,6 +869,82 @@ function SimulatedCardBlock({
   }
 
   return <SimulatedCard system={system} title={title} content={content} />;
+}
+
+function SimulatedStatCardBlock({
+  blockId,
+  label = "Revenue",
+  value = "$42.8K",
+  pct = 60,
+}: {
+  system?: DesignSystem;
+  blockId?: string;
+  label?: string;
+  value?: string;
+  pct?: number;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+  const isSelected = blockId != null && selectedBlockId === blockId;
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId) ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId) ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+
+  const displayLabel = (block?.props.label as string) ?? label;
+  const displayValue = (block?.props.value as string) ?? value;
+  const displayPct = Number(block?.props.pct ?? pct);
+
+  const handleUpdate = (key: string, val: string | number) => {
+    if (!blockId) return;
+    /* Find the zone and update */
+    const zone = blocks.find((b) => b.id === blockId) ? "body" as const
+      : headerBlocks.find((b) => b.id === blockId) ? "header" as const
+      : sidebarBlocks.find((b) => b.id === blockId) ? "sidebar" as const
+      : "footer" as const;
+    updateZoneBlockProps(zone, blockId, { [key]: val });
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? t.surfaceHover : t.surface,
+        border: `1px solid ${hovered ? t.primaryHover : t.border}`,
+        borderRadius: radius,
+        padding: 14,
+        cursor: "pointer",
+        transition: "all 150ms ease",
+        transform: hovered ? "translateY(-1px)" : "none",
+      }}
+    >
+      <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}>
+        {isSelected && blockId ? (
+          <InlineEditable value={displayLabel} onChange={(v) => handleUpdate("label", v)} style={{ outline: "none" }} />
+        ) : displayLabel}
+      </div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: t.fg }}>
+        {isSelected && blockId ? (
+          <InlineEditable value={displayValue} onChange={(v) => handleUpdate("value", v)} style={{ outline: "none" }} />
+        ) : displayValue}
+      </div>
+      <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: t.border }}>
+        <div style={{
+          width: `${displayPct}%`,
+          height: "100%",
+          borderRadius: 2,
+          background: t.primary,
+          transition: "width 500ms ease",
+        }} />
+      </div>
+    </div>
+  );
 }
 
 function SimulatedBadgeBlock({
@@ -1161,6 +1263,130 @@ function SimulatedDatePickerBlock({
   return <SimulatedDatePicker system={system} month={month} year={year} />;
 }
 
+/* ── Batch 5: Highcharts block renderer ── */
+
+/* ── Zone-specific renderers ── */
+
+function AppBrandBlock({ blockId }: { blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId) ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId) ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const label = (block?.props.label as string) || "App Name";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: "var(--ds-radius)", background: t.primary,
+        display: "flex", alignItems: "center", justifyContent: "center", color: t.onPrimary, flexShrink: 0,
+      }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>smart_toy</span>
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 700, color: t.fg }}>{label}</span>
+    </div>
+  );
+}
+
+function StatusPillBlock({ blockId }: { blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId) ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId) ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const label = (block?.props.label as string) || "Active";
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "4px 10px 4px 8px", borderRadius: 20,
+      background: "rgba(34, 197, 94, 0.1)", border: "1px solid rgba(34, 197, 94, 0.2)",
+    }}>
+      <span style={{
+        width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
+        boxShadow: "0 0 6px rgba(34, 197, 94, 0.5)",
+      }} />
+      <span style={{ fontSize: 11, fontWeight: 600, color: "#22c55e" }}>{label}</span>
+    </div>
+  );
+}
+
+function NavItemBlock({ blockId }: { blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId) ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId) ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const label = (block?.props.label as string) || "Nav Item";
+  const icon = (block?.props.icon as string) || "chat";
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
+      borderRadius: "var(--ds-radius)", color: t.fgSecondary, fontSize: 12, fontWeight: 500,
+    }}>
+      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function FooterTextBlock({ blockId }: { blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId) ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId) ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const label = (block?.props.label as string) || "Footer text";
+  const version = (block?.props.version as string) || "";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 10, color: t.fgTertiary }}>
+      <span>{label}</span>
+      {version && <><span style={{ opacity: 0.4 }}>&middot;</span><span>{version}</span></>}
+    </div>
+  );
+}
+
+function HighchartBlockRenderer({
+  system,
+  blockId,
+}: {
+  system: DesignSystem;
+  blockId?: string;
+}) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId)
+      ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId)
+      ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const chartType = (block?.props.chartType as HighchartType) ?? "line";
+  const title = (block?.props.title as string) ?? "";
+  const value = block?.props.value != null ? Number(block.props.value) : undefined;
+
+  return (
+    <SimulatedHighchart
+      chartType={chartType}
+      title={title}
+      value={value}
+      system={system}
+    />
+  );
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RENDERERS: Record<string, React.FC<any>> = {
@@ -1199,6 +1425,25 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedDialog: SimulatedDialogBlock as React.FC<{ system: DesignSystem }>,
   SimulatedTooltip: SimulatedTooltipBlock as React.FC<{ system: DesignSystem }>,
   SimulatedDatePicker: SimulatedDatePickerBlock as React.FC<{ system: DesignSystem }>,
+  HighchartLine: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartColumn: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartPie: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartScatter: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartDonut: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartSpline: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartStackedColumn: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartGauge: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartHeatmap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  SimulatedAlert: AlertBlock,
+  SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
+  /* Zone-specific types */
+  AppBrand: AppBrandBlock as React.FC<{ system: DesignSystem }>,
+  StatusPill: StatusPillBlock as React.FC<{ system: DesignSystem }>,
+  NavItem: NavItemBlock as React.FC<{ system: DesignSystem }>,
+  FooterText: FooterTextBlock as React.FC<{ system: DesignSystem }>,
 };
 
 /* ── Main export ── */

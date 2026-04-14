@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Monitor,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   DndContext,
+  pointerWithin,
   closestCenter,
   KeyboardSensor,
   MouseSensor,
@@ -26,18 +27,23 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
+  DragOverEvent,
   DragOverlay,
+  type CollisionDetection,
 } from "@dnd-kit/core";
 import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useBuilder, type DeviceMode, type Block } from "@/store/useBuilder";
+import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
-import { PreviewCanvas, makeBlockId } from "./PreviewCanvas";
+import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
+import { ComponentRenderer } from "./ComponentRenderer";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
+import { SortableBlock } from "./SortableBlock";
+import { ZoneDropContainer } from "./ZoneDropContainer";
 
 /* ── Viewport presets ── */
 const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
@@ -52,6 +58,11 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   database: Database,
   settings: Settings,
   bar_chart: BarChart3,
+};
+
+/** Icons that visually fill their bounding box more — render slightly smaller */
+const NAV_ICON_SIZE: Record<string, number> = {
+  bar_chart: 15,
 };
 
 /* ── Sample chat messages for the empty state ── */
@@ -145,51 +156,96 @@ function DeviceControls() {
    ══════════════════════════════════════════════════════════ */
 function DashboardHeader({ compact }: { compact: boolean }) {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const designSystem = useBuilder((s) => s.designSystem);
   const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
+  const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
 
   return (
     <header className="bp-header">
-      {headerBlocks.map((block) => {
-        if (block.type === "AppBrand") {
-          return (
-            <div key={block.id} className="bp-header-brand">
-              <div className="bp-logo-mark">
-                <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
-              </div>
-              {!compact && (
-                <span
-                  className="bp-logo-text bp-zone-editable"
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(e) =>
-                    updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
-                  }
-                >
-                  {block.props.label as string}
-                </span>
-              )}
-            </div>
-          );
-        }
-        if (block.type === "StatusPill") {
-          return (
-            <div key={block.id} className="bp-status-pill">
-              <span className="bp-status-dot" />
-              <span
-                className="bp-status-label bp-zone-editable"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) =>
-                  updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
-                }
+      <ZoneDropContainer zoneId="header" blocks={headerBlocks} direction="horizontal">
+        {headerBlocks.map((block) => {
+          /* Native zone types get custom rendering */
+          if (block.type === "AppBrand") {
+            return (
+              <SortableBlock
+                key={block.id}
+                id={block.id}
+                zone="header"
+                compact
+                isSelected={selectedBlockId === block.id}
+                onRemove={() => removeBlockFromZone("header", block.id)}
               >
-                {block.props.label as string}
-              </span>
-            </div>
+                <div
+                  className="bp-header-brand"
+                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
+                >
+                  <div className="bp-logo-mark">
+                    <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
+                  </div>
+                  {!compact && (
+                    <span
+                      className="bp-logo-text bp-zone-editable"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) =>
+                        updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                      }
+                    >
+                      {block.props.label as string}
+                    </span>
+                  )}
+                </div>
+              </SortableBlock>
+            );
+          }
+          if (block.type === "StatusPill") {
+            return (
+              <SortableBlock
+                key={block.id}
+                id={block.id}
+                zone="header"
+                compact
+                isSelected={selectedBlockId === block.id}
+                onRemove={() => removeBlockFromZone("header", block.id)}
+              >
+                <div
+                  className="bp-status-pill"
+                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
+                >
+                  <span className="bp-status-dot" />
+                  <span
+                    className="bp-status-label bp-zone-editable"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) =>
+                      updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                    }
+                  >
+                    {block.props.label as string}
+                  </span>
+                </div>
+              </SortableBlock>
+            );
+          }
+          /* Any other component type dropped into header */
+          return (
+            <SortableBlock
+              key={block.id}
+              id={block.id}
+              zone="header"
+              compact
+              isSelected={selectedBlockId === block.id}
+              onRemove={() => removeBlockFromZone("header", block.id)}
+            >
+              <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}>
+                <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
+              </div>
+            </SortableBlock>
           );
-        }
-        return null;
-      })}
+        })}
+      </ZoneDropContainer>
     </header>
   );
 }
@@ -206,8 +262,12 @@ function DashboardSidebar({
   onToggle: () => void;
 }) {
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const designSystem = useBuilder((s) => s.designSystem);
   const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
   const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
+  const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
 
   const handleSetActive = (id: string) => {
     setSidebarBlocks(
@@ -224,10 +284,6 @@ function DashboardSidebar({
     setSidebarBlocks([...sidebarBlocks, newBlock]);
   };
 
-  const handleRemoveNavItem = (id: string) => {
-    setSidebarBlocks(sidebarBlocks.filter((b) => b.id !== id));
-  };
-
   return (
     <motion.aside
       className="bp-sidebar"
@@ -235,57 +291,77 @@ function DashboardSidebar({
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       <nav className="bp-sidebar-nav">
-        {sidebarBlocks.map((block) => {
-          if (block.type !== "NavItem") return null;
-          const iconKey = block.props.icon as string;
-          const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
-          const active = block.props.active as boolean;
-          return (
-            <div key={block.id} className="bp-nav-item-row">
-              <button
-                className={`bp-nav-item${active ? " bp-nav-item--active" : ""}`}
-                title={block.props.label as string}
-                onClick={() => handleSetActive(block.id)}
-              >
-                <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
-                <AnimatePresence>
-                  {!collapsed && (
-                    <motion.span
-                      className="bp-nav-label"
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <span
-                        className="bp-zone-editable"
-                        contentEditable
-                        suppressContentEditableWarning
-                        onClick={(e) => e.stopPropagation()}
-                        onBlur={(e) =>
-                          updateSidebarBlockProps(block.id, {
-                            label: e.currentTarget.textContent ?? "",
-                          })
-                        }
-                      >
-                        {block.props.label as string}
-                      </span>
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-              {!collapsed && (
-                <button
-                  className="bp-nav-remove-btn"
-                  onClick={(e) => { e.stopPropagation(); handleRemoveNavItem(block.id); }}
-                  title="Remove item"
+        <ZoneDropContainer zoneId="sidebar" blocks={sidebarBlocks} direction="vertical">
+          {sidebarBlocks.map((block) => {
+            /* Native NavItem rendering */
+            if (block.type === "NavItem") {
+              const iconKey = block.props.icon as string;
+              const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
+              const active = block.props.active as boolean;
+              return (
+                <SortableBlock
+                  key={block.id}
+                  id={block.id}
+                  zone="sidebar"
+                  isSelected={selectedBlockId === block.id}
+                  onRemove={() => removeBlockFromZone("sidebar", block.id)}
                 >
-                  ×
-                </button>
-              )}
-            </div>
-          );
-        })}
+                  <div className="bp-nav-item-row">
+                    <button
+                      className={`bp-nav-item${active ? " bp-nav-item--active" : ""}`}
+                      title={block.props.label as string}
+                      onClick={(e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
+                    >
+                      <Icon size={NAV_ICON_SIZE[iconKey] ?? 18} strokeWidth={active ? 2.2 : 1.5} />
+                      <AnimatePresence>
+                        {!collapsed && (
+                          <motion.span
+                            className="bp-nav-label"
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: "auto" }}
+                            exit={{ opacity: 0, width: 0 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <span
+                              className="bp-zone-editable"
+                              contentEditable
+                              suppressContentEditableWarning
+                              onClick={(e) => e.stopPropagation()}
+                              onBlur={(e) =>
+                                updateSidebarBlockProps(block.id, {
+                                  label: e.currentTarget.textContent ?? "",
+                                })
+                              }
+                            >
+                              {block.props.label as string}
+                            </span>
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </button>
+                  </div>
+                </SortableBlock>
+              );
+            }
+            /* Any other component type dropped into sidebar */
+            return (
+              <SortableBlock
+                key={block.id}
+                id={block.id}
+                zone="sidebar"
+                isSelected={selectedBlockId === block.id}
+                onRemove={() => removeBlockFromZone("sidebar", block.id)}
+              >
+                <div
+                  className="zone-block-sidebar"
+                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "sidebar"); }}
+                >
+                  <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
+                </div>
+              </SortableBlock>
+            );
+          })}
+        </ZoneDropContainer>
         {!collapsed && (
           <button className="bp-nav-add-btn" onClick={handleAddNavItem}>
             <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>
@@ -341,40 +417,70 @@ function DefaultChatArea({ messageKey }: { messageKey: number }) {
    ══════════════════════════════════════════════════════════ */
 function DashboardFooter() {
   const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const designSystem = useBuilder((s) => s.designSystem);
   const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
+  const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
 
   return (
     <footer className="bp-footer">
-      {footerBlocks.map((block) => {
-        if (block.type === "FooterText") {
+      <ZoneDropContainer zoneId="footer" blocks={footerBlocks} direction="horizontal">
+        {footerBlocks.map((block) => {
+          /* Native FooterText rendering */
+          if (block.type === "FooterText") {
+            return (
+              <SortableBlock
+                key={block.id}
+                id={block.id}
+                zone="footer"
+                compact
+                isSelected={selectedBlockId === block.id}
+                onRemove={() => removeBlockFromZone("footer", block.id)}
+              >
+                <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
+                  <span
+                    className="bp-zone-editable"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) =>
+                      updateFooterBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
+                    }
+                  >
+                    {block.props.label as string}
+                  </span>
+                  <span className="bp-footer-sep">&middot;</span>
+                  <span
+                    className="bp-zone-editable"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) =>
+                      updateFooterBlockProps(block.id, { version: e.currentTarget.textContent ?? "" })
+                    }
+                  >
+                    {block.props.version as string}
+                  </span>
+                </div>
+              </SortableBlock>
+            );
+          }
+          /* Any other component type dropped into footer */
           return (
-            <React.Fragment key={block.id}>
-              <span
-                className="bp-zone-editable"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) =>
-                  updateFooterBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
-                }
-              >
-                {block.props.label as string}
-              </span>
-              <span className="bp-footer-sep">&middot;</span>
-              <span
-                className="bp-zone-editable"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) =>
-                  updateFooterBlockProps(block.id, { version: e.currentTarget.textContent ?? "" })
-                }
-              >
-                {block.props.version as string}
-              </span>
-            </React.Fragment>
+            <SortableBlock
+              key={block.id}
+              id={block.id}
+              zone="footer"
+              compact
+              isSelected={selectedBlockId === block.id}
+              onRemove={() => removeBlockFromZone("footer", block.id)}
+            >
+              <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
+                <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
+              </div>
+            </SortableBlock>
           );
-        }
-        return null;
-      })}
+        })}
+      </ZoneDropContainer>
     </footer>
   );
 }
@@ -447,7 +553,7 @@ function PreviewToolbar() {
         ))}
       </div>
 
-      {/* Density */}
+      {/* Density + Code toggle */}
       <div className="preview-toolbar-group">
         {(designSystem === "salt"
           ? [{ key: "high", label: "High" }, { key: "medium", label: "Medium" }, { key: "low", label: "Low" }]
@@ -463,10 +569,6 @@ function PreviewToolbar() {
             {d.label}
           </button>
         ))}
-      </div>
-
-      {/* UI/Code mode toggle — positioned with primary builder controls */}
-      <div className="preview-toolbar-group">
         <button
           className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
           onClick={toggleCanvasViewMode}
@@ -515,13 +617,42 @@ function PreviewToolbar() {
    canvas (drop target) and the ComponentLibrary (drag source)
    so drag-and-drop works across the layout boundary.
    ══════════════════════════════════════════════════════════ */
+/* ── Helper: resolve which zone an "over" target belongs to ── */
+function resolveZone(overId: string | number, overData: Record<string, unknown> | undefined): ZoneId | null {
+  if (overData?.zone) return overData.zone as ZoneId;
+  const id = String(overId);
+  if (id.startsWith("zone-")) return id.replace("zone-", "") as ZoneId;
+  return null;
+}
+
+/* ── Custom collision detection: pointerWithin → closestCenter fallback ── */
+const multiZoneCollision: CollisionDetection = (args) => {
+  const pw = pointerWithin(args);
+  if (pw.length > 0) return pw;
+  return closestCenter(args);
+};
+
 function CanvasDndProvider({ children }: { children: React.ReactNode }) {
   const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
   const setBlocks = useBuilder((s) => s.setBlocks);
   const setSelectedComponents = useBuilder((s) => s.setSelectedComponents);
-  const setSelectedBlockId = useBuilder((s) => s.setSelectedBlockId);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const setZoneBlocks = useBuilder((s) => s.setZoneBlocks);
+  const addBlockToZone = useBuilder((s) => s.addBlockToZone);
+  const moveBlockBetweenZones = useBuilder((s) => s.moveBlockBetweenZones);
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  /* Track the dragged item's current zone + original position for cancel recovery */
+  const activeItemRef = useRef<{
+    id: string;
+    zone: ZoneId;
+    originalZone: ZoneId;
+    originalIndex: number;
+  } | null>(null);
 
   /* ── DnD sensors ── */
   const mouseSensor = useSensor(MouseSensor, {
@@ -536,7 +667,27 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const syncToStore = useCallback(
+  /* ── Helper: get zone blocks array by zone ID ── */
+  const getZoneArr = useCallback((zone: ZoneId): Block[] => {
+    switch (zone) {
+      case "body": return blocks;
+      case "header": return headerBlocks;
+      case "sidebar": return sidebarBlocks;
+      case "footer": return footerBlocks;
+    }
+  }, [blocks, headerBlocks, sidebarBlocks, footerBlocks]);
+
+  /* ── Find which zone a block ID lives in ── */
+  const findBlockZone = useCallback((blockId: string): ZoneId | null => {
+    if (blocks.some((b) => b.id === blockId)) return "body";
+    if (headerBlocks.some((b) => b.id === blockId)) return "header";
+    if (sidebarBlocks.some((b) => b.id === blockId)) return "sidebar";
+    if (footerBlocks.some((b) => b.id === blockId)) return "footer";
+    return null;
+  }, [blocks, headerBlocks, sidebarBlocks, footerBlocks]);
+
+  /* ── Body-only sync for selectedComponents ── */
+  const syncBodyToStore = useCallback(
     (updated: Block[]) => {
       setBlocks(updated);
       const ids = updated
@@ -548,37 +699,109 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveDragId(String(event.active.id));
-  }, []);
+    const id = String(event.active.id);
+    setActiveDragId(id);
+
+    /* If dragging an existing block, record its zone + index */
+    if (!event.active.data.current?.fromLibrary) {
+      const zone = (event.active.data.current?.zone as ZoneId) || findBlockZone(id);
+      if (zone) {
+        const arr = getZoneArr(zone);
+        const idx = arr.findIndex((b) => b.id === id);
+        activeItemRef.current = { id, zone, originalZone: zone, originalIndex: idx };
+      }
+    }
+  }, [findBlockZone, getZoneArr]);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || active.data.current?.fromLibrary) return;
+
+    const activeInfo = activeItemRef.current;
+    if (!activeInfo) return;
+
+    const sourceZone = activeInfo.zone;
+    const targetZone = resolveZone(over.id, over.data.current as Record<string, unknown> | undefined);
+    if (!targetZone || sourceZone === targetZone) return;
+
+    /* Cross-zone move: find target index */
+    const targetArr = getZoneArr(targetZone);
+    const overIndex = targetArr.findIndex((b) => b.id === String(over.id));
+    const toIndex = overIndex >= 0 ? overIndex : targetArr.length;
+
+    moveBlockBetweenZones(sourceZone, targetZone, activeInfo.id, toIndex);
+    activeItemRef.current = { ...activeInfo, zone: targetZone };
+  }, [getZoneArr, moveBlockBetweenZones]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveDragId(null);
       const { active, over } = event;
 
-      // Case 1: Library blueprint dropped onto canvas
+      /* Case 1: Library blueprint dropped onto a zone */
       if (active.data.current?.fromLibrary) {
+        if (!over) { activeItemRef.current = null; return; }
+
         const { type, defaults } = active.data.current as {
           type: string;
           defaults: Record<string, unknown>;
         };
+        const targetZone = resolveZone(over.id, over.data.current as Record<string, unknown> | undefined) || "body";
         const newId = makeBlockId();
-        const next = [{ id: newId, type, props: { ...defaults } }, ...blocks];
-        syncToStore(next);
-        setSelectedBlockId(newId);
+        const newBlock: Block = { id: newId, type, props: { ...defaults } };
+
+        const targetArr = getZoneArr(targetZone);
+        const overIndex = targetArr.findIndex((b) => b.id === String(over.id));
+        const insertAt = overIndex >= 0 ? overIndex : 0;
+
+        addBlockToZone(targetZone, newBlock, insertAt);
+
+        /* Only sync selectedComponents for body drops */
+        if (targetZone === "body") {
+          const s = useBuilder.getState();
+          const ids = s.blocks
+            .map((b) => BLOCK_TO_ID[b.type])
+            .filter(Boolean) as string[];
+          setSelectedComponents(ids);
+        }
+
+        setSelectedBlock(newId, targetZone);
+        activeItemRef.current = null;
         return;
       }
 
-      // Case 2: Reorder existing blocks
+      /* Case 2: Reorder within same zone */
       if (over && active.id !== over.id) {
-        const oldIndex = blocks.findIndex((b) => b.id === active.id);
-        const newIndex = blocks.findIndex((b) => b.id === over.id);
-        const next = arrayMove(blocks, oldIndex, newIndex);
-        syncToStore(next);
+        const activeInfo = activeItemRef.current;
+        const zone = activeInfo?.zone || "body";
+        const arr = getZoneArr(zone);
+        const oldIndex = arr.findIndex((b) => b.id === active.id);
+        const newIndex = arr.findIndex((b) => b.id === over.id);
+
+        if (oldIndex >= 0 && newIndex >= 0) {
+          const reordered = arrayMove(arr, oldIndex, newIndex);
+          if (zone === "body") {
+            syncBodyToStore(reordered);
+          } else {
+            setZoneBlocks(zone, reordered);
+          }
+        }
       }
+
+      activeItemRef.current = null;
     },
-    [blocks, syncToStore, setSelectedBlockId]
+    [getZoneArr, addBlockToZone, syncBodyToStore, setZoneBlocks, setSelectedBlock, setSelectedComponents]
   );
+
+  const handleDragCancel = useCallback(() => {
+    const info = activeItemRef.current;
+    if (info && info.zone !== info.originalZone) {
+      /* Restore block to original zone/index */
+      moveBlockBetweenZones(info.zone, info.originalZone, info.id, info.originalIndex);
+    }
+    setActiveDragId(null);
+    activeItemRef.current = null;
+  }, [moveBlockBetweenZones]);
 
   /* ── Resolve drag overlay content ── */
   const activeBlueprintLabel = activeDragId
@@ -588,9 +811,11 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={multiZoneCollision}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       {children}
 
@@ -623,12 +848,15 @@ export function PreviewSidePanel() {
   const designSystem = useBuilder((s) => s.designSystem);
   const density = useBuilder((s) => s.density);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const blocks = useBuilder((s) => s.blocks);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
   const isMobile = deviceMode === "mobile";
   const preset = PRESETS[deviceMode];
   const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
+  const isCodeView = canvasViewMode === "code";
 
   const handleSidebarToggle = useCallback(() => {
     setSidebarCollapsed((v) => !v);
@@ -653,29 +881,34 @@ export function PreviewSidePanel() {
               animate={{ width: frameWidth, maxHeight: preset.height }}
               transition={{ type: "spring", stiffness: 260, damping: 28 }}
             >
-              {/* SaaS Dashboard layout — scoped to the selected design system */}
-              <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-                <DashboardHeader compact={isMobile} />
+              {/* Code view — covers the entire dashboard area */}
+              {isCodeView ? (
+                <CodeViewer blocks={blocks} />
+              ) : (
+                /* SaaS Dashboard layout — scoped to the selected design system */
+                <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+                  <DashboardHeader compact={isMobile} />
 
-                <div className="bp-body">
-                  {!isMobile && (
-                    <DashboardSidebar
-                      collapsed={sidebarCollapsed}
-                      onToggle={handleSidebarToggle}
-                    />
-                  )}
-
-                  <main className="bp-main">
-                    {hasContent ? (
-                      <PreviewCanvas />
-                    ) : (
-                      <DefaultChatArea messageKey={previewKey} />
+                  <div className="bp-body">
+                    {!isMobile && (
+                      <DashboardSidebar
+                        collapsed={sidebarCollapsed}
+                        onToggle={handleSidebarToggle}
+                      />
                     )}
-                  </main>
-                </div>
 
-                <DashboardFooter />
-              </div>
+                    <main className="bp-main">
+                      {hasContent ? (
+                        <PreviewCanvas />
+                      ) : (
+                        <DefaultChatArea messageKey={previewKey} />
+                      )}
+                    </main>
+                  </div>
+
+                  <DashboardFooter />
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -701,9 +934,12 @@ export function StandalonePreview() {
   const messages = useBuilder((s) => s.messages);
   const previewKey = useBuilder((s) => s.previewKey);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const blocks = useBuilder((s) => s.blocks);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
+  const isCodeView = canvasViewMode === "code";
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
@@ -731,6 +967,9 @@ export function StandalonePreview() {
       <CanvasDndProvider>
         <div className="preview-builder-body">
           <div className="standalone-preview-canvas">
+            {isCodeView ? (
+              <CodeViewer blocks={blocks} />
+            ) : (
             <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
               <DashboardHeader compact={false} />
               <div className="bp-body">
@@ -748,6 +987,7 @@ export function StandalonePreview() {
               </div>
               <DashboardFooter />
             </div>
+            )}
           </div>
 
           {/* Right: Component Library Sidebar in standalone */}

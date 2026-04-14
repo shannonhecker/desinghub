@@ -36,11 +36,19 @@ export function ComponentLibrary() {
   const {
     toggleComponentLibrary,
     selectedBlockId,
+    selectedBlockZone,
     blocks,
+    headerBlocks,
+    sidebarBlocks,
+    footerBlocks,
+    updateBlockProps,
   } = useBuilder();
 
   const selectedBlock = selectedBlockId
-    ? blocks.find((b) => b.id === selectedBlockId)
+    ? (blocks.find((b) => b.id === selectedBlockId)
+      ?? headerBlocks.find((b) => b.id === selectedBlockId)
+      ?? sidebarBlocks.find((b) => b.id === selectedBlockId)
+      ?? footerBlocks.find((b) => b.id === selectedBlockId))
     : null;
   const FieldsComponent = selectedBlock
     ? TYPE_FIELDS[selectedBlock.type]
@@ -75,6 +83,32 @@ export function ComponentLibrary() {
               {selectedBlock.type.replace("Simulated", "")} Properties
             </div>
             <FieldsComponent blockId={selectedBlock.id} />
+
+            {/* Layout: column span — only for body blocks */}
+            {selectedBlockZone === "body" && (
+              <>
+                <div className="lib-section-divider" />
+                <div className="inspector-section-title">Layout</div>
+                <div className="inspector-field">
+                  <label className="inspector-field-label">Column Width</label>
+                  <div className="inspector-toggle-group">
+                    {([1, 2, 3] as const).map((span) => {
+                      const labels: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
+                      const current = Number(selectedBlock.props.colSpan) || 3;
+                      return (
+                        <button
+                          key={span}
+                          className={`inspector-toggle-btn${current === span ? " active" : ""}`}
+                          onClick={() => updateBlockProps(selectedBlock.id, { colSpan: span })}
+                        >
+                          {labels[span]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'bl
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
+export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 
 export interface ChatMessage {
   id: string;
@@ -45,6 +46,7 @@ interface BuilderState {
   // Canvas blocks & selection
   blocks: Block[];
   selectedBlockId: string | null;
+  selectedBlockZone: ZoneId | null;
   componentLibraryOpen: boolean;
   addMenuOpen: boolean;
   canvasViewMode: 'ui' | 'code';
@@ -92,6 +94,7 @@ interface BuilderState {
   setBlocks: (blocks: Block[]) => void;
   updateBlockProps: (id: string, props: Record<string, unknown>) => void;
   setSelectedBlockId: (id: string | null) => void;
+  setSelectedBlock: (id: string | null, zone: ZoneId | null) => void;
   toggleComponentLibrary: () => void;
   setComponentLibraryOpen: (v: boolean) => void;
   toggleAddMenu: () => void;
@@ -105,6 +108,13 @@ interface BuilderState {
   updateHeaderBlockProps: (id: string, props: Record<string, unknown>) => void;
   updateSidebarBlockProps: (id: string, props: Record<string, unknown>) => void;
   updateFooterBlockProps: (id: string, props: Record<string, unknown>) => void;
+
+  // Actions — Generic zone helpers
+  setZoneBlocks: (zone: ZoneId, blocks: Block[]) => void;
+  updateZoneBlockProps: (zone: ZoneId, blockId: string, props: Record<string, unknown>) => void;
+  addBlockToZone: (zone: ZoneId, block: Block, index?: number) => void;
+  removeBlockFromZone: (zone: ZoneId, blockId: string) => void;
+  moveBlockBetweenZones: (fromZone: ZoneId, toZone: ZoneId, blockId: string, toIndex: number) => void;
 
   // Actions — UI
   toggleSettings: () => void;
@@ -149,6 +159,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Canvas blocks & selection
   blocks: [],
   selectedBlockId: null,
+  selectedBlockZone: null,
   componentLibraryOpen: true,
   addMenuOpen: false,
   canvasViewMode: 'ui',
@@ -236,6 +247,7 @@ export const useBuilder = create<BuilderState>((set) => ({
       ),
     })),
   setSelectedBlockId: (id) => set({ selectedBlockId: id }),
+  setSelectedBlock: (id, zone) => set({ selectedBlockId: id, selectedBlockZone: zone }),
   toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
   setComponentLibraryOpen: (v) => set({ componentLibraryOpen: v }),
   toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
@@ -251,6 +263,54 @@ export const useBuilder = create<BuilderState>((set) => ({
     set((s) => ({ sidebarBlocks: s.sidebarBlocks.map((b) => b.id === id ? { ...b, props: { ...b.props, ...props } } : b) })),
   updateFooterBlockProps: (id, props) =>
     set((s) => ({ footerBlocks: s.footerBlocks.map((b) => b.id === id ? { ...b, props: { ...b.props, ...props } } : b) })),
+
+  // Generic zone helpers
+  setZoneBlocks: (zone, blocks) => {
+    switch (zone) {
+      case 'body': set({ blocks }); break;
+      case 'header': set({ headerBlocks: blocks }); break;
+      case 'sidebar': set({ sidebarBlocks: blocks }); break;
+      case 'footer': set({ footerBlocks: blocks }); break;
+    }
+  },
+  updateZoneBlockProps: (zone, blockId, props) => {
+    set((s) => {
+      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
+      return { [key]: (s[key] as Block[]).map((b) => b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b) };
+    });
+  },
+  addBlockToZone: (zone, block, index) => {
+    set((s) => {
+      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
+      const arr = [...(s[key] as Block[])];
+      if (index !== undefined && index >= 0) {
+        arr.splice(index, 0, block);
+      } else {
+        arr.unshift(block);
+      }
+      return { [key]: arr };
+    });
+  },
+  removeBlockFromZone: (zone, blockId) => {
+    set((s) => {
+      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
+      return { [key]: (s[key] as Block[]).filter((b) => b.id !== blockId) };
+    });
+  },
+  moveBlockBetweenZones: (fromZone, toZone, blockId, toIndex) => {
+    set((s) => {
+      const fromKey = fromZone === 'body' ? 'blocks' : fromZone === 'header' ? 'headerBlocks' : fromZone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
+      const toKey = toZone === 'body' ? 'blocks' : toZone === 'header' ? 'headerBlocks' : toZone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
+      const fromArr = s[fromKey] as Block[];
+      const block = fromArr.find((b) => b.id === blockId);
+      if (!block) return {};
+      const newFrom = fromArr.filter((b) => b.id !== blockId);
+      const toArr = fromKey === toKey ? newFrom : [...(s[toKey] as Block[])];
+      const clampedIndex = Math.min(toIndex, toArr.length);
+      toArr.splice(clampedIndex, 0, block);
+      return { [fromKey]: newFrom, [toKey]: toArr };
+    });
+  },
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

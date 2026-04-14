@@ -1,28 +1,33 @@
 /* ── Shared component ID ↔ block type mappings ── */
 
-/** Map store component IDs to block type strings */
+/** Map store component IDs to block type strings.
+ *  Wizard IDs now point to INDIVIDUAL block types (not compound groups)
+ *  so each block can be selected, swapped, or removed independently. */
 export const ID_TO_BLOCK: Record<string, string> = {
-  buttons: "Buttons",
-  cards: "Cards",
-  table: "DataTable",
-  inputs: "FormFields",
-  "text-fields": "FormFields",
-  "form-field": "FormFields",
-  tabs: "Tabs",
-  switches: "Toggles",
-  checkboxes: "Toggles",
-  radios: "Toggles",
-  badges: "Badges",
-  avatars: "Avatars",
+  /* Wizard IDs → individual Simulated blocks */
+  buttons: "SimulatedButton",
+  cards: "SimulatedCard",
+  table: "SimulatedDataTable",
+  inputs: "SimulatedTextInput",
+  "text-fields": "SimulatedTextInput",
+  "form-field": "SimulatedTextInput",
+  tabs: "SimulatedTabs",
+  switches: "SimulatedSwitch",
+  checkboxes: "SimulatedCheckbox",
+  radios: "SimulatedSwitch",
+  badges: "SimulatedBadge",
+  avatars: "SimulatedAvatar",
   alerts: "Alert",
-  "progress-bar": "Progress",
-  tooltips: "Tooltips",
-  progress: "StatsCards",
-  typography: "Typography",
+  "progress-bar": "SimulatedProgress",
+  tooltips: "SimulatedTooltip",
+  progress: "SimulatedStatCard",
+  typography: "SimulatedTitle",
+
+  /* Direct Simulated IDs (unchanged) */
   "sim-button": "SimulatedButton",
   "sim-title": "SimulatedTitle",
   "sim-text-input": "SimulatedTextInput",
-  "sim-alert": "SimulatedAlert",
+  "sim-alert": "Alert",
   "sim-data-table": "SimulatedDataTable",
   "sim-accordion": "SimulatedAccordion",
   "sim-breadcrumb": "SimulatedBreadcrumb",
@@ -30,10 +35,35 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-badge": "SimulatedBadge",
   "sim-chat-message": "SimulatedChatMessage",
   "sim-chart": "SimulatedChart",
+  "sim-stat-card": "SimulatedStatCard",
+};
+
+/** Compound expansion: some wizard IDs produce multiple individual blocks.
+ *  Each entry defines the block type + unique default props for each instance. */
+export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<string, unknown> }[]> = {
+  progress: [
+    { type: "SimulatedStatCard", props: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 } },
+    { type: "SimulatedStatCard", props: { label: "Users", value: "1,247", pct: 75, colSpan: 1 } },
+    { type: "SimulatedStatCard", props: { label: "Growth", value: "+18%", pct: 90, colSpan: 1 } },
+  ],
+  buttons: [
+    { type: "SimulatedButton", props: { variant: "primary", label: "Primary" } },
+    { type: "SimulatedButton", props: { variant: "secondary", label: "Secondary" } },
+  ],
+  cards: [
+    { type: "SimulatedCard", props: { title: "Analytics", content: "Track key metrics and performance indicators." } },
+    { type: "SimulatedCard", props: { title: "Reports", content: "Generate and export detailed reports." } },
+  ],
+  badges: [
+    { type: "SimulatedBadge", props: { label: "Active", status: "success" } },
+    { type: "SimulatedBadge", props: { label: "Pending", status: "warning" } },
+    { type: "SimulatedBadge", props: { label: "Closed", status: "default" } },
+  ],
 };
 
 /** Reverse: block type → canonical store ID */
 export const BLOCK_TO_ID: Record<string, string> = {
+  /* Legacy compound types (still valid for reverse lookup) */
   Buttons: "buttons",
   Cards: "cards",
   DataTable: "table",
@@ -50,15 +80,27 @@ export const BLOCK_TO_ID: Record<string, string> = {
   Dropdown: "dropdown",
   DatePicker: "date-picker",
   Typography: "typography",
-  SimulatedButton: "sim-button",
-  SimulatedTitle: "sim-title",
-  SimulatedTextInput: "sim-text-input",
-  SimulatedAlert: "sim-alert",
-  SimulatedDataTable: "sim-data-table",
+
+  /* Individual Simulated types */
+  SimulatedButton: "buttons",
+  SimulatedTitle: "typography",
+  SimulatedTextInput: "inputs",
+  SimulatedAlert: "sim-alert",  /* legacy alias */
+  SimulatedDataTable: "table",
   SimulatedAccordion: "sim-accordion",
   SimulatedBreadcrumb: "sim-breadcrumb",
-  SimulatedCard: "sim-card",
-  SimulatedBadge: "sim-badge",
+  SimulatedCard: "cards",
+  SimulatedBadge: "badges",
   SimulatedChatMessage: "sim-chat-message",
   SimulatedChart: "sim-chart",
+  SimulatedStatCard: "progress",
+  SimulatedCheckbox: "checkboxes",
+  SimulatedSwitch: "switches",
+  SimulatedDropdown: "dropdown",
+  SimulatedProgress: "progress-bar",
+  SimulatedAvatar: "avatars",
+  SimulatedTabs: "tabs",
+  SimulatedDialog: "dialog",
+  SimulatedTooltip: "tooltips",
+  SimulatedDatePicker: "date-picker",
 };

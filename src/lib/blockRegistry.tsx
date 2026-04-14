@@ -29,11 +29,23 @@ function InspectorField({
   );
 }
 
-/* ── Generic hook: read block + updater ── */
+/* ── Generic hook: read block + updater (searches all zones) ── */
 function useBlockProps(blockId: string) {
   const blocks = useBuilder((s) => s.blocks);
-  const update = useBuilder((s) => s.updateBlockProps);
-  const block = blocks.find((b) => b.id === blockId);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
+  const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
+  const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
+
+  let block = blocks.find((b) => b.id === blockId);
+  let update = updateBlockProps;
+  if (!block) { block = headerBlocks.find((b) => b.id === blockId); update = updateHeaderBlockProps; }
+  if (!block) { block = sidebarBlocks.find((b) => b.id === blockId); update = updateSidebarBlockProps; }
+  if (!block) { block = footerBlocks.find((b) => b.id === blockId); update = updateFooterBlockProps; }
+
   return {
     props: block?.props ?? {},
     set: (patch: Record<string, unknown>) => update(blockId, patch),
@@ -132,10 +144,10 @@ function ButtonFields({ blockId }: { blockId: string }) {
     <div>
       <TextField blockId={blockId} propKey="label" label="Label" />
       <SelectField blockId={blockId} propKey="variant" label="Variant" options={[
-        { value: "primary", label: "Primary / CTA" },
+        { value: "primary", label: "Primary (CTA)" },
         { value: "secondary", label: "Secondary" },
         { value: "outline", label: "Outline" },
-        { value: "ghost", label: "Text / Ghost" },
+        { value: "ghost", label: "Ghost / Text" },
       ]} />
     </div>
   );
@@ -360,6 +372,106 @@ function DatePickerFields({ blockId }: { blockId: string }) {
   );
 }
 
+/* ── Stat Card ── */
+
+function StatCardFields({ blockId }: { blockId: string }) {
+  const { props, set } = useBlockProps(blockId);
+  const pct = Number(props.pct ?? 60);
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <TextField blockId={blockId} propKey="value" label="Value" />
+      <InspectorField label={`Progress (${pct}%)`}>
+        <input
+          className="inspector-input"
+          type="range"
+          min={0}
+          max={100}
+          value={pct}
+          onChange={(e) => set({ pct: Number(e.target.value) })}
+          style={{ width: "100%" }}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
+/* ── Zone-specific types ── */
+
+function AppBrandFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Brand Name" />
+    </div>
+  );
+}
+
+function StatusPillFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Status Label" />
+    </div>
+  );
+}
+
+function NavItemFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Label" />
+      <SelectField blockId={blockId} propKey="icon" label="Icon" options={[
+        { value: "chat", label: "Chat" },
+        { value: "database", label: "Database" },
+        { value: "settings", label: "Settings" },
+        { value: "bar_chart", label: "Bar Chart" },
+        { value: "home", label: "Home" },
+        { value: "person", label: "Person" },
+        { value: "search", label: "Search" },
+        { value: "notifications", label: "Notifications" },
+      ]} />
+    </div>
+  );
+}
+
+function FooterTextFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="label" label="Text" />
+      <TextField blockId={blockId} propKey="version" label="Version" />
+    </div>
+  );
+}
+
+/* ── Batch 5: Highcharts ── */
+
+function HighchartTitleFields({ blockId }: { blockId: string }) {
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+    </div>
+  );
+}
+
+function HighchartGaugeFields({ blockId }: { blockId: string }) {
+  const { props, set } = useBlockProps(blockId);
+  const value = Number(props.value ?? 87);
+  return (
+    <div>
+      <TextField blockId={blockId} propKey="title" label="Title" />
+      <InspectorField label={`Value (${value}%)`}>
+        <input
+          className="inspector-input"
+          type="range"
+          min={0}
+          max={100}
+          value={value}
+          onChange={(e) => set({ value: Number(e.target.value) })}
+          style={{ width: "100%" }}
+        />
+      </InspectorField>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════
    Registry — the single source of truth
    ═══════════════════════════════════════════════════════════ */
@@ -513,6 +625,131 @@ const BLOCK_REGISTRY: BlockRegistryEntry[] = [
     icon: "calendar_today",
     defaults: { month: "October", year: 2026 },
     Fields: DatePickerFields,
+  },
+
+  /* ── Batch 5: Highcharts ── */
+  {
+    type: "HighchartLine",
+    label: "Line Chart",
+    icon: "show_chart",
+    defaults: { chartType: "line", title: "Monthly Revenue" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartArea",
+    label: "Area Chart",
+    icon: "area_chart",
+    defaults: { chartType: "area", title: "User Growth" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartColumn",
+    label: "Column Chart",
+    icon: "insert_chart",
+    defaults: { chartType: "column", title: "Sales by Region" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartPie",
+    label: "Pie Chart",
+    icon: "pie_chart",
+    defaults: { chartType: "pie", title: "Market Share" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartScatter",
+    label: "Scatter Plot",
+    icon: "scatter_plot",
+    defaults: { chartType: "scatter", title: "Risk vs Return" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartBar",
+    label: "Bar Chart",
+    icon: "align_horizontal_left",
+    defaults: { chartType: "bar", title: "Top Performers" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartDonut",
+    label: "Donut Chart",
+    icon: "donut_large",
+    defaults: { chartType: "donut", title: "Portfolio Allocation" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartSpline",
+    label: "Spline Chart",
+    icon: "timeline",
+    defaults: { chartType: "spline", title: "Temperature Trend" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartStackedColumn",
+    label: "Stacked Column",
+    icon: "stacked_bar_chart",
+    defaults: { chartType: "stacked-column", title: "Revenue Breakdown" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartGauge",
+    label: "Gauge",
+    icon: "speed",
+    defaults: { chartType: "gauge", title: "System Health", value: 87 },
+    Fields: HighchartGaugeFields,
+  },
+  {
+    type: "HighchartHeatmap",
+    label: "Heatmap",
+    icon: "grid_on",
+    defaults: { chartType: "heatmap", title: "Correlation Matrix" },
+    Fields: HighchartTitleFields,
+  },
+  {
+    type: "HighchartTreemap",
+    label: "Treemap",
+    icon: "grid_view",
+    defaults: { chartType: "treemap", title: "Portfolio Treemap" },
+    Fields: HighchartTitleFields,
+  },
+
+  /* ── Individual Stat Card ── */
+  {
+    type: "SimulatedStatCard",
+    label: "Stat Card",
+    icon: "monitoring",
+    defaults: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 },
+    Fields: StatCardFields,
+  },
+
+  /* ── Zone-specific types ── */
+  {
+    type: "AppBrand",
+    label: "App Brand",
+    icon: "branding_watermark",
+    defaults: { label: "App Name" },
+    Fields: AppBrandFields,
+  },
+  {
+    type: "StatusPill",
+    label: "Status Pill",
+    icon: "circle",
+    defaults: { label: "Active" },
+    Fields: StatusPillFields,
+  },
+  {
+    type: "NavItem",
+    label: "Nav Item",
+    icon: "menu",
+    defaults: { label: "New Item", icon: "chat", active: false },
+    Fields: NavItemFields,
+  },
+  {
+    type: "FooterText",
+    label: "Footer Text",
+    icon: "short_text",
+    defaults: { label: "Footer text", version: "v1.0" },
+    Fields: FooterTextFields,
   },
 ];
 

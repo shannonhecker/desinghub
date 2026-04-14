@@ -8,7 +8,11 @@ import { TYPE_FIELDS } from "@/lib/blockRegistry";
 export function PropertiesInspector() {
   const {
     selectedBlockId,
+    selectedBlockZone,
     blocks,
+    headerBlocks,
+    sidebarBlocks,
+    footerBlocks,
     mode,
     setMode,
     density,
@@ -16,7 +20,10 @@ export function PropertiesInspector() {
   } = useBuilder();
 
   const selectedBlock = selectedBlockId
-    ? blocks.find((b) => b.id === selectedBlockId)
+    ? (blocks.find((b) => b.id === selectedBlockId)
+      ?? headerBlocks.find((b) => b.id === selectedBlockId)
+      ?? sidebarBlocks.find((b) => b.id === selectedBlockId)
+      ?? footerBlocks.find((b) => b.id === selectedBlockId))
     : null;
 
   const FieldsComponent = selectedBlock
@@ -68,6 +75,9 @@ export function PropertiesInspector() {
       {selectedBlock && FieldsComponent ? (
         <div className="inspector-section">
           <div className="inspector-section-title">
+            {selectedBlockZone && selectedBlockZone !== "body" && (
+              <span className="inspector-zone-badge">{selectedBlockZone}</span>
+            )}
             {selectedBlock.type.replace("Simulated", "")} Properties
           </div>
           <FieldsComponent blockId={selectedBlock.id} />
