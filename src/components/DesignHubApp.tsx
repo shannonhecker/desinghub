@@ -1009,7 +1009,7 @@ export function DesignHubApp() {
         )}
 
         {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "m3" ? t.bg : t.bg2 }}>
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.bg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
