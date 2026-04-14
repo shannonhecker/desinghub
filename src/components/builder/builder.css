@@ -619,7 +619,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 8px 6px;
+  margin: 6px 8px 6px;
   padding: 9px 12px;
   background: var(--glass-white);
   border: 1px solid rgba(255, 255, 255, 0.14);
