@@ -132,18 +132,23 @@ function ThemeControls() {
 
   const radius = activeSystem === "m3" ? 12 : activeSystem === "fluent" ? 4 : 4;
 
-  /* Pill button — font and padding scale with density
-     Salt DS spacing: High=4px, Medium=6px, Low=8px, Touch=10px base gap
-     Touch target: Salt Touch ≥44px, but for config controls we scale padding
-     proportionally: vertical = gap, horizontal = gap+8 */
+  /* ToggleButtonGroup — uses each DS's native button classes:
+     Salt:   s-btn + s-btn-solid / s-btn-bordered
+     M3:     m3-btn + m3-btn-filled / m3-btn-outlined
+     Fluent: f-btn + f-btn-primary / f-btn-default */
   function CtrlBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+    const btnClass = activeSystem === "salt"
+      ? `s-btn ${active ? "s-btn-solid" : "s-btn-bordered"}`
+      : activeSystem === "m3"
+      ? `m3-btn ${active ? "m3-btn-filled" : "m3-btn-outlined"}`
+      : `f-btn ${active ? "f-btn-primary" : "f-btn-secondary"}`;
+
     return (
-      <button onClick={onClick} style={{
+      <button className={btnClass} onClick={onClick} style={{
         padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
-        fontSize: t.scale.labF, fontWeight: active ? 600 : 400, fontFamily: t.font,
-        background: active ? t.accentWeak : "transparent", color: active ? t.accentText : t.fg2,
-        border: `1px solid ${active ? t.accent + "40" : t.border}`, borderRadius: activeSystem === "m3" ? 20 : 4,
-        cursor: "pointer", transition: "all 150ms", lineHeight: 1.4,
+        fontSize: t.scale.labF, fontFamily: t.font,
+        cursor: "pointer", lineHeight: 1.4, minWidth: 0,
+        height: "auto",
       }}>
         {children}
       </button>
@@ -151,12 +156,10 @@ function ThemeControls() {
   }
 
   function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
-    /* Gap between label and buttons, and between buttons, both scale with density */
     const innerGap = Math.max(4, t.scale.gap - 2);
     const btnGap   = Math.max(4, t.scale.gap - 4);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: innerGap }}>
-        {/* fg2 ensures ≥4.5:1 contrast; label scales with density */}
         <div style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
         <div style={{ display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
       </div>
