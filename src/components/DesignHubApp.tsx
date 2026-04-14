@@ -742,28 +742,111 @@ function LandingGrid() {
     );
   }
 
-  /* ─── Salt / Fluent layout — card padding + fonts scale with density ─── */
+  /* ─── Salt / Fluent layout — same template as M3: hero + category sections ─── */
   const cardClass = activeSystem === "salt" ? "s-card" : "f-card";
-  const cardPad = t.scale.gap + 6;
+  const heroSize = Math.round(t.scale.tabH * 0.9);
+  const h2Size   = Math.round(t.scale.tabH * 0.45);
+  const bodySize = t.scale.navF + 2;
+  const outerPad = t.scale.gap * 4;
+
+  /* DS-specific feature pills */
+  const featurePills = activeSystem === "salt"
+    ? [
+        { icon: "layers", label: "3-Layer Tokens" },
+        { icon: "density_small", label: "4 Densities" },
+        { icon: "accessibility_new", label: "WCAG AA" },
+      ]
+    : [
+        { icon: "palette", label: "Brand Theming" },
+        { icon: "straighten", label: "3 Sizes" },
+        { icon: "accessibility_new", label: "WCAG AA" },
+      ];
+
   return (
-    <div style={{ padding: cardPad + 8, fontFamily: t.font }}>
-      <div style={{ marginBottom: cardPad + 10 }}>
-        <h1 style={{ fontSize: t.scale.navF + 14, fontWeight: 700, color: t.fg, marginBottom: 4 }}>{sysInfo.name}</h1>
-        <p style={{ fontSize: t.scale.navF, color: t.fg2 }}>{sysInfo.org} — {components.length} components across {categories.length} categories</p>
+    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: activeSystem === "salt" ? t.bg2 : t.bg2, minHeight: "100%" }}>
+      {/* Hero */}
+      <div style={{ marginBottom: outerPad, borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad - 8 }}>
+        <div style={{
+          fontSize: t.scale.labF, fontWeight: 700, color: t.accent,
+          letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4,
+        }}>
+          {sysInfo.org}
+        </div>
+        <h1 style={{
+          fontSize: heroSize, fontWeight: activeSystem === "salt" ? 700 : 600, color: t.fg,
+          lineHeight: 1.15, margin: `0 0 ${t.scale.gap + 8}px`, letterSpacing: "-0.25px",
+        }}>
+          {sysInfo.name}
+        </h1>
+        <p style={{ fontSize: bodySize, color: t.fg2, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+          {components.length} components across {categories.length} categories —
+          {activeSystem === "salt"
+            ? " accessible, density-aware, token-driven design system."
+            : " expressive, adaptive, and cross-platform design system."}
+        </p>
+        {/* Quick-stat pills */}
+        <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>
+          {[
+            { icon: "category", label: `${categories.length} Categories` },
+            { icon: "widgets", label: `${components.length} Components` },
+            ...featurePills,
+          ].map(s => (
+            <div key={s.label} style={{
+              display: "flex", alignItems: "center", gap: t.scale.gap - 2,
+              padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`,
+              borderRadius: activeSystem === "salt" ? 4 : 16,
+              background: t.bg, border: `1px solid ${t.border}`,
+              fontSize: t.scale.navF - 1, color: t.fg2, fontWeight: activeSystem === "salt" ? 600 : 500,
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: t.accent }}>{s.icon}</span>
+              {s.label}
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: t.scale.gap + 4 }}>
-        {components.map(c => {
-          const Preview = previews[c.id];
-          return (
-            <button key={c.id} className={cardClass} onClick={() => setSelectedComponent(c.id)}
-              style={{ width: "100%", textAlign: "left", padding: cardPad, fontFamily: t.font }}>
-              <div style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg }}>{c.name}</div>
-              <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.cat}</div>
-              {Preview && <div style={{ pointerEvents: "none", marginTop: t.scale.gap - 2 }}><Preview /></div>}
-            </button>
-          );
-        })}
-      </div>
+
+      {/* Category sections */}
+      {categories.map(cat => {
+        const catItems = components.filter(c => c.cat === cat);
+        return (
+          <div key={cat} style={{ marginBottom: outerPad }}>
+            {/* Category header */}
+            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap, marginBottom: t.scale.gap + 10 }}>
+              <h2 style={{ fontSize: h2Size, fontWeight: activeSystem === "salt" ? 700 : 600, color: t.fg, margin: 0 }}>{cat}</h2>
+              <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
+            </div>
+            {/* Component cards grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap + 2 }}>
+              {catItems.map(c => {
+                const Preview = previews[c.id];
+                return (
+                  <button key={c.id} className={cardClass}
+                    onClick={() => setSelectedComponent(c.id)}
+                    style={{ width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer" }}
+                  >
+                    {/* Preview area */}
+                    <div style={{
+                      background: t.bg, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      borderBottom: `1px solid ${t.border}`,
+                    }}>
+                      {Preview
+                        ? <div style={{ pointerEvents: "none", width: "100%" }}><Preview /></div>
+                        : <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.fg3, opacity: 0.4 }}>widgets</span>
+                      }
+                    </div>
+                    {/* Label area */}
+                    <div style={{ padding: `${t.scale.gap + 2}px ${t.scale.gap + 6}px ${t.scale.gap + 4}px` }}>
+                      <div style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg }}>{c.name}</div>
+                      <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
