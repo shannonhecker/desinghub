@@ -68,7 +68,6 @@ function CodeBlock({ code, theme: t }: { code: string; theme: ReturnType<typeof 
 export function CodePanel({ componentId }: { componentId: string }) {
   const { activeSystem } = useDesignHub();
   const t = useActiveTheme();
-  const [codeTab, setCodeTab] = useState<"react" | "html">("react");
   const components = getComponents(activeSystem);
   const comp = components.find((c) => c.id === componentId);
   const sysInfo = getSystemInfo(activeSystem);
@@ -76,53 +75,37 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const codeMap = activeSystem === "salt" ? SALT_CODE : activeSystem === "m3" ? M3_CODE : FLUENT_CODE;
   const snippets = codeMap[componentId];
 
-  /* DS-scoped tab + button classes */
-  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : "f-tab";
-  const btnCls = activeSystem === "salt" ? "s-btn s-btn-transparent" : activeSystem === "m3" ? "m3-btn m3-btn-text" : "f-btn f-btn-subtle";
+  if (!snippets) {
+    return (
+      <div style={{
+        padding: t.scale.gap * 4, textAlign: "center",
+        color: t.fg3, fontSize: t.scale.navF,
+        border: `1px dashed ${t.border}`, borderRadius: 8,
+      }}>
+        Code snippets for <strong style={{ color: t.fg }}>{comp?.name}</strong> coming soon.
+        <br />
+        <span>Check the {sysInfo.name} documentation for current API reference.</span>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: t.scale.gap * 4, fontFamily: t.font }}>
-      <button
-        className={btnCls}
-        onClick={() => useDesignHub.getState().setSelectedComponent(null)}
-        style={{ fontSize: t.scale.navF, color: t.accent, marginBottom: t.scale.gap * 2, cursor: "pointer" }}
-      >
-        ← Back to all
-      </button>
-      <h2 style={{ fontSize: t.scale.navF + 6, fontWeight: 700, color: t.fg, margin: `0 0 ${t.scale.gap}px` }}>
-        {comp?.name} — Code
-      </h2>
-      <p style={{ fontSize: t.scale.navF, color: t.fg2, margin: `0 0 ${t.scale.gap * 3}px` }}>
-        {sysInfo.name} implementation with correct imports and API
-      </p>
+    <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 3 }}>
+      {/* React + TypeScript */}
+      <div>
+        <h3 style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg, marginBottom: t.scale.gap }}>
+          React + TypeScript
+        </h3>
+        <CodeBlock code={snippets.react} theme={t} />
+      </div>
 
-      {snippets ? (
-        <>
-          <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: t.scale.gap * 2 }}>
-            {(["react", "html"] as const).map((tab) => (
-              <button
-                key={tab}
-                className={`${tabCls}${codeTab === tab ? " active" : ""}`}
-                onClick={() => setCodeTab(tab)}
-                style={{ fontFamily: t.font, fontSize: t.scale.navF }}
-              >
-                {tab === "react" ? "React + TypeScript" : "HTML + CSS"}
-              </button>
-            ))}
-          </div>
-          <CodeBlock code={snippets[codeTab]} theme={t} />
-        </>
-      ) : (
-        <div style={{
-          padding: t.scale.gap * 4, textAlign: "center",
-          color: t.fg3, fontSize: t.scale.navF,
-          border: `1px dashed ${t.border}`, borderRadius: 8,
-        }}>
-          Code snippets for <strong style={{ color: t.fg }}>{comp?.name}</strong> coming soon.
-          <br />
-          <span>Check the {sysInfo.name} documentation for current API reference.</span>
-        </div>
-      )}
+      {/* HTML + CSS */}
+      <div>
+        <h3 style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg, marginBottom: t.scale.gap }}>
+          HTML + CSS
+        </h3>
+        <CodeBlock code={snippets.html} theme={t} />
+      </div>
     </div>
   );
 }

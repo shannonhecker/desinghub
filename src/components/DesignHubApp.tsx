@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useDesignHub, type SystemId, type ActiveTab } from "@/store/useDesignHub";
 import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews, MATERIAL_COLORS } from "@/data/registry";
 import { ComponentPreview } from "./ComponentPreview";
-import { CodePanel } from "./CodePanel";
+
 import { TokenReference } from "./TokenReference";
-import { ChartsPage } from "./ChartsPage";
+
 import { AuditPanel } from "./AuditPanel";
 
 // Helper: get token values by system so all UI uses the active DS
@@ -470,17 +470,7 @@ function ContentTopBar() {
   const sysInfo = getSystemInfo(activeSystem);
 
   // Build breadcrumb path
-  let crumb = sysInfo.name;
-  if (selectedComponent) {
-    const comp = getComponents(activeSystem).find(c => c.id === selectedComponent);
-    if (comp) crumb = `${comp.cat} / ${comp.name}`;
-  } else if (activeTab === "charts") {
-    crumb = "Patterns / Charts & Dataviz";
-  } else if (activeTab === "tokens") {
-    crumb = "Tokens";
-  } else if (activeTab === "audit") {
-    crumb = "Audit";
-  }
+  const comp = selectedComponent ? getComponents(activeSystem).find(c => c.id === selectedComponent) : null;
 
   return (
     <div style={{
@@ -504,24 +494,24 @@ function ContentTopBar() {
         </span>
       </button>
 
-      {/* Breadcrumb — clickable segments */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: t.scale.navF - 1, color: t.fg2 }}>
-        {selectedComponent ? (
+      {/* Breadcrumb — DS-styled clickable segments */}
+      <nav style={{ display: "flex", alignItems: "center", gap: t.scale.gap, fontSize: t.scale.navF - 1, fontFamily: t.font }}>
+        {comp ? (
           <>
             <button onClick={() => setSelectedComponent(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: t.scale.navF - 1, color: t.accent, fontFamily: t.font }}>
+              style={{ background: "none", border: "none", cursor: "pointer", padding: `${t.scale.gap - 2}px 0`, fontSize: t.scale.navF - 1, color: t.accent, fontFamily: t.font }}>
               {sysInfo.name}
             </button>
-            <span style={{ color: t.fg3 }}>/</span>
-            <span style={{ color: t.fg, fontWeight: 500 }}>{crumb.split(" / ").pop()}</span>
+            <span style={{ color: t.fg3, fontSize: t.scale.labF }}>/</span>
+            <span style={{ color: t.fg, fontWeight: 500, padding: `${t.scale.gap - 2}px 0` }}>{comp.name}</span>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap - 2 }}>
-            <span style={{ color: t.fg, fontWeight: 500 }}>{crumb}</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap }}>
+            <span style={{ color: t.fg, fontWeight: 500 }}>{sysInfo.name}</span>
             <span style={{ fontSize: t.scale.labF - 1, color: t.fg3, fontWeight: 400 }}>Interactive Documentation</span>
           </div>
         )}
-      </div>
+      </nav>
     </div>
   );
 }
@@ -829,16 +819,14 @@ function MainContent() {
   if (selectedComponent === "tokens") return <TokenReference />;
   if (selectedComponent === "audit") return <AuditPanel />;
 
-  /* Charts & Dataviz — preview or code tab */
+  /* Charts & Dataviz — uses ChartsPage as preview, CodePanel as code */
   if (selectedComponent === "charts") {
-    if (activeTab === "code") return <CodePanel componentId="charts" />;
-    return <ChartsPage />;
+    return <ComponentPreview componentId="charts" />;
   }
 
   if (!selectedComponent) return <LandingGrid />;
   const components = getComponents(activeSystem);
   if (!components.find(c => c.id === selectedComponent)) return <LandingGrid />;
-  if (activeTab === "code") return <CodePanel componentId={selectedComponent} />;
   return <ComponentPreview componentId={selectedComponent} />;
 }
 
@@ -940,7 +928,6 @@ export function DesignHubApp() {
         {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
         <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "m3" ? t.bg : t.bg2 }}>
           <ContentTopBar />
-          {store.selectedComponent && store.selectedComponent !== "tokens" && store.selectedComponent !== "audit" && <TabBar />}
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
           </div>
