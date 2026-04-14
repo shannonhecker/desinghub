@@ -1,32 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COOKIE = "staging_auth";
+const COOKIE = "ausos_auth_token";
 
 /**
- * Staging auth middleware — cookie-based, redirects to a styled /login page.
- * Only active when STAGING_USER + STAGING_PASSWORD are set in the environment.
- * When those vars are absent (production, local dev without .env.local) it is
- * a complete no-op.
+ * Staging auth middleware — cookie-based, redirects to /login.
+ *
+ * Protected routes: /builder (and any sub-paths)
+ * Public routes:    /, /login, /landing, /ui-kit, /api/*, /_next/*, static assets
+ *
+ * Only active when STAGING_PASSWORD is set in the environment.
+ * When the env var is absent (local dev without .env.local) it is a complete no-op.
  */
 export function middleware(request: NextRequest) {
-  const expectedUser = process.env.STAGING_USER;
   const expectedPassword = process.env.STAGING_PASSWORD;
 
   // Skip entirely when not configured
-  if (!expectedUser || !expectedPassword) {
+  if (!expectedPassword) {
     return NextResponse.next();
   }
 
   const { pathname } = request.nextUrl;
 
-  // Always allow the login page through (avoid redirect loop)
-  if (pathname === "/login") {
+  // Public routes — always allow through
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/landing" ||
+    pathname === "/ui-kit"
+  ) {
     return NextResponse.next();
   }
 
   // Validate the cookie
   const token = request.cookies.get(COOKIE)?.value;
-  const expectedToken = btoa(`${expectedUser}:${expectedPassword}`);
+  const expectedToken = btoa(expectedPassword);
 
   if (token === expectedToken) {
     return NextResponse.next();

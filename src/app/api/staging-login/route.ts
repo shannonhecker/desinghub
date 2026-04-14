@@ -4,30 +4,23 @@ export const runtime = "edge";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
-  const user = (formData.get("user") as string | null) ?? "";
   const password = (formData.get("password") as string | null) ?? "";
 
-  const expectedUser = process.env.STAGING_USER;
   const expectedPassword = process.env.STAGING_PASSWORD;
 
-  if (
-    !expectedUser ||
-    !expectedPassword ||
-    user !== expectedUser ||
-    password !== expectedPassword
-  ) {
+  if (!expectedPassword || password !== expectedPassword) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  // Token = base64(user:password) — same security level as Basic Auth, stored httpOnly
-  const token = btoa(`${user}:${password}`);
+  // Token = base64(password) — validated by middleware on every request
+  const token = btoa(expectedPassword);
   const response = NextResponse.json({ ok: true });
 
-  response.cookies.set("staging_auth", token, {
+  response.cookies.set("ausos_auth_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60, // 1 hour — forces re-login on mobile where session cookies persist
+    maxAge: 60 * 60, // 1 hour — forces re-login on mobile
     path: "/",
   });
 

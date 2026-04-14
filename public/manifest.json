@@ -1,0 +1,22 @@
+{
+  "name": "ausōs — Design System Builder",
+  "short_name": "ausōs",
+  "description": "AI-powered design system builder for Salt DS, Material 3, and Fluent 2",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

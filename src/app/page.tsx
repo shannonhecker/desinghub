@@ -1,7 +1,7 @@
 "use client";
 
-import { BuilderApp } from "@/components/builder/BuilderApp";
+import { HeroHeader } from "@/components/HeroHeader";
 
 export default function Home() {
-  return <BuilderApp />;
+  return <HeroHeader />;
 }
