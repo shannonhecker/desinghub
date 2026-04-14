@@ -17,6 +17,7 @@ export const COMPS: ComponentDef[] = [
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing: simple, direct, human. Present tense, active voice, sentence case." },
   { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios." },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance." },
+  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "3 appearances: solid, bordered, transparent. 5 sentiments: accented, neutral, positive, caution, negative." },
   { id: "pills", name: "Pills / Tags", cat: "Components & Patterns", desc: "Toggle selection. Accent fill when active. Used for filters, categories, skills." },
   { id: "toggle-btn", name: "Toggle Button", cat: "Components & Patterns", desc: "Toggle on/off selection. Single-select and multi-select groups." },

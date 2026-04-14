@@ -3435,14 +3435,19 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--salt-content-secondary-foreground);
+  border: none;
+  background: transparent;
+  cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
+  transition: color 0.15s, background 0.15s;
 }
-.s-tab:hover { color: var(--salt-content-primary-foreground); }
-.s-tab-active {
+.s-tab:hover { color: var(--salt-content-primary-foreground); background: var(--salt-container-secondary-background, rgba(0,0,0,0.04)); }
+.s-tab.active, .s-tab-active {
   color: var(--salt-palette-accent);
   border-bottom-color: var(--salt-palette-accent);
   font-weight: 600;
+  background: transparent;
 }
 .s-tab-panel {
   padding: 16px 0;
@@ -3491,15 +3496,20 @@
   font-size: 14px;
   font-weight: 400;
   color: var(--colorNeutralForeground2);
+  border: none;
+  background: transparent;
+  cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   border-radius: 4px 4px 0 0;
+  transition: color 0.15s, background 0.15s;
 }
 .f-tab:hover { color: var(--colorNeutralForeground1); background: var(--colorNeutralBackground1Hover); }
-.f-tab-active {
+.f-tab.active, .f-tab-active {
   color: var(--colorBrandForeground1);
   border-bottom-color: var(--colorBrandStroke1);
   font-weight: 600;
+  background: transparent;
 }
 .f-tab-panel {
   padding: 16px 0;

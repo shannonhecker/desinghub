@@ -560,27 +560,7 @@ function ComponentList() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {/* Patterns — Charts & Dataviz (always visible unless search active) */}
-      {!searchQuery && (
-        <div style={{ marginBottom: 4 }}>
-          <div style={activeSystem === "m3"
-            ? { fontSize: t.scale.labF, fontWeight: 500, color: t.fg2, letterSpacing: "0.5px", padding: `${t.scale.gap + 4}px 16px ${t.scale.gap - 4}px`, textTransform: "uppercase" as const }
-            : { fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: "0.06em", padding: `${t.scale.gap}px 0 ${t.scale.gap - 2}px`, fontWeight: 700 }
-          }>Patterns</div>
-          <button
-            className={itemClass + (activeTab === "charts" && !selectedComponent ? " active" : "")}
-            onClick={() => { setSelectedComponent(null); setActiveTab("charts"); }}
-            style={{
-              display: "flex", alignItems: "center", gap: activeSystem === "m3" ? 12 : 6,
-              width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
-              ...activeItemStyle(activeTab === "charts" && !selectedComponent),
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: activeSystem === "m3" ? 18 : 14, color: activeTab === "charts" && !selectedComponent ? t.accentText : t.fg3, flexShrink: 0 }}>bar_chart</span>
-            Charts &amp; Dataviz
-          </button>
-        </div>
-      )}
+      {/* Charts & Dataviz is now a regular component in the list — no separate section needed */}
 
       {/* Component groups */}
       {grouped.map(g => (
@@ -843,11 +823,16 @@ function ContentHeader() {
 /* ── MAIN CONTENT ── */
 function MainContent() {
   const { activeTab, selectedComponent, activeSystem } = useDesignHub();
-  if (activeTab === "charts") return <ChartsPage />;
 
-  /* Tokens & Audit are now standalone Foundations pages, not tabs */
+  /* Tokens & Audit are standalone Foundations pages */
   if (selectedComponent === "tokens") return <TokenReference />;
   if (selectedComponent === "audit") return <AuditPanel />;
+
+  /* Charts & Dataviz — preview or code tab */
+  if (selectedComponent === "charts") {
+    if (activeTab === "code") return <CodePanel componentId="charts" />;
+    return <ChartsPage />;
+  }
 
   if (!selectedComponent) return <LandingGrid />;
   const components = getComponents(activeSystem);

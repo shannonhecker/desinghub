@@ -455,6 +455,48 @@ const SALT_CODE: Record<string, { react: string; html: string }> = {
   <div class="saltScrim"></div>
 </div>`,
   },
+  charts: {
+    react: `import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+
+// Salt DS themed chart — uses CSS variable bridge
+const theme = {
+  colors: [
+    "var(--salt-palette-accent)",
+    "var(--salt-status-positive-foreground)",
+    "var(--salt-status-warning-foreground)",
+    "var(--salt-status-negative-foreground)",
+  ],
+  chart: { backgroundColor: "transparent" },
+  title: { style: { color: "var(--salt-content-primary-foreground)" } },
+  xAxis: { gridLineColor: "transparent", lineColor: "var(--salt-separable-borderColor)" },
+  yAxis: { gridLineColor: "var(--salt-separable-borderColor)" },
+  tooltip: { backgroundColor: "var(--salt-container-primary-background)" },
+};
+
+<HighchartsReact
+  highcharts={Highcharts}
+  options={{
+    ...theme,
+    chart: { ...theme.chart, type: "line" },
+    title: { text: "Monthly Revenue" },
+    series: [{ name: "2024", data: [120, 134, 145, 152, 168, 185] }],
+  }}
+/>`,
+    html: `<!-- Highcharts CDN -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<div id="chart-container"></div>
+
+<script>
+Highcharts.chart('chart-container', {
+  chart: { type: 'line', backgroundColor: 'transparent' },
+  title: { text: 'Monthly Revenue' },
+  series: [{ name: '2024', data: [120, 134, 145, 152, 168, 185] }],
+  colors: ['#1B7F9E', '#36b37e', '#ffab00', '#de350b'],
+  credits: { enabled: false }
+});
+</script>`,
+  },
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -799,6 +841,47 @@ import Alert from "@mui/material/Alert";
   <div class="mdc-snackbar__surface">Changes saved!</div>
 </div>`,
   },
+  charts: {
+    react: `import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+
+// Material 3 themed chart — uses M3 color tokens
+const theme = {
+  colors: [
+    "var(--md-sys-color-primary)",
+    "var(--md-sys-color-tertiary)",
+    "var(--md-sys-color-secondary)",
+    "var(--md-sys-color-error)",
+  ],
+  chart: { backgroundColor: "transparent" },
+  title: { style: { color: "var(--md-sys-color-on-surface)" } },
+  xAxis: { lineColor: "var(--md-sys-color-outline-variant)" },
+  yAxis: { gridLineColor: "var(--md-sys-color-outline-variant)" },
+  tooltip: { backgroundColor: "var(--md-sys-color-surface-container-high)" },
+};
+
+<HighchartsReact
+  highcharts={Highcharts}
+  options={{
+    ...theme,
+    chart: { ...theme.chart, type: "column" },
+    title: { text: "Sales by Region" },
+    series: [{ name: "Q4", data: [480, 410, 340, 210] }],
+  }}
+/>`,
+    html: `<script src="https://code.highcharts.com/highcharts.js"></script>
+<div id="chart-container"></div>
+
+<script>
+Highcharts.chart('chart-container', {
+  chart: { type: 'column', backgroundColor: 'transparent' },
+  title: { text: 'Sales by Region' },
+  series: [{ name: 'Q4', data: [480, 410, 340, 210] }],
+  colors: ['#6750A4', '#7D5260', '#625B71', '#B3261E'],
+  credits: { enabled: false }
+});
+</script>`,
+  },
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -1141,6 +1224,53 @@ dispatchToast(
   <div role="listitem">1. Account</div>
   <div role="listitem" aria-current="step">2. Profile</div>
 </div>`,
+  },
+  charts: {
+    react: `import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+
+// Fluent 2 themed chart — uses Fluent color tokens
+const theme = {
+  colors: [
+    "var(--colorBrandBackground)",
+    "var(--colorPaletteGreenBackground3)",
+    "var(--colorPaletteYellowForeground2)",
+    "var(--colorPaletteRedBackground3)",
+  ],
+  chart: { backgroundColor: "transparent" },
+  title: { style: { color: "var(--colorNeutralForeground1)" } },
+  xAxis: { lineColor: "var(--colorNeutralStroke2)" },
+  yAxis: { gridLineColor: "var(--colorNeutralStroke2)" },
+  tooltip: { backgroundColor: "var(--colorNeutralBackground1)" },
+};
+
+<HighchartsReact
+  highcharts={Highcharts}
+  options={{
+    ...theme,
+    chart: { ...theme.chart, type: "area" },
+    title: { text: "User Growth" },
+    series: [
+      { name: "Free", data: [5000, 8200, 12400, 18000] },
+      { name: "Pro", data: [1200, 2400, 4100, 6800] },
+    ],
+  }}
+/>`,
+    html: `<script src="https://code.highcharts.com/highcharts.js"></script>
+<div id="chart-container"></div>
+
+<script>
+Highcharts.chart('chart-container', {
+  chart: { type: 'area', backgroundColor: 'transparent' },
+  title: { text: 'User Growth' },
+  series: [
+    { name: 'Free', data: [5000, 8200, 12400, 18000] },
+    { name: 'Pro', data: [1200, 2400, 4100, 6800] }
+  ],
+  colors: ['#0F6CBD', '#107C10', '#C19C00', '#D13438'],
+  credits: { enabled: false }
+});
+</script>`,
   },
 };
 

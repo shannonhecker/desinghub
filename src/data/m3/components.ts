@@ -1,6 +1,7 @@
 import type { ComponentDef } from '../salt/components';
 
 export const COMPS: ComponentDef[] = [
+  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "5 variants: Filled, Outlined, Text, Elevated, Tonal. Hover, focus, press, disabled states." },
   { id: "chips", name: "Chips", cat: "Components & Patterns", desc: "Click to toggle selected (fill + checkmark). Filter, assist, input, suggestion types." },
   { id: "fabs", name: "FAB", cat: "Components & Patterns", desc: "Floating Action Button. Hover raises elevation. 3 sizes." },
