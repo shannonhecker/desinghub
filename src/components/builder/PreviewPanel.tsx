@@ -77,9 +77,18 @@ function DeviceControls() {
   const chatOpen = useBuilder((s) => s.chatOpen);
   const toggleChat = useBuilder((s) => s.toggleChat);
   const designSystem = useBuilder((s) => s.designSystem);
+  const setDesignSystem = useBuilder((s) => s.setDesignSystem);
   const mode = useBuilder((s) => s.mode);
+  const setMode = useBuilder((s) => s.setMode);
   const interfaceType = useBuilder((s) => s.interfaceType);
   const selectedComponents = useBuilder((s) => s.selectedComponents);
+
+  const dsSystems: { key: "salt" | "m3" | "fluent" | "ausos"; label: string }[] = [
+    { key: "salt", label: "Salt DS" },
+    { key: "m3", label: "Material 3" },
+    { key: "fluent", label: "Fluent 2" },
+    { key: "ausos", label: "ausos" },
+  ];
 
   const preset = PRESETS[deviceMode];
   const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
@@ -130,7 +139,31 @@ function DeviceControls() {
         ))}
       </div>
 
+      {/* DS Switcher — center */}
+      <div className="preview-toolbar-group" style={{ flex: 1, justifyContent: "center" }}>
+        {dsSystems.map((s) => (
+          <button
+            key={s.key}
+            className={`preview-toolbar-btn${designSystem === s.key ? " preview-toolbar-btn-active" : ""}`}
+            onClick={() => setDesignSystem(s.key)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <span className="bp-dimensions">{preset.label}</span>
+
+      {/* Light/Dark mode toggle */}
+      <button
+        className="bp-device-btn"
+        onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+        title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+          {mode === "dark" ? "light_mode" : "dark_mode"}
+        </span>
+      </button>
 
       <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
         <RotateCcw size={15} strokeWidth={2} />
@@ -589,20 +622,7 @@ function PreviewToolbar() {
 
   return (
     <div className="preview-toolbar">
-      {/* UI Kit Switcher */}
-      <div className="preview-toolbar-group">
-        {systems.map((s) => (
-          <button
-            key={s.key}
-            className={`preview-toolbar-btn${designSystem === s.key ? " preview-toolbar-btn-active" : ""}`}
-            onClick={() => setDesignSystem(s.key)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Density + Code toggle */}
+      {/* Density */}
       <div className="preview-toolbar-group">
         {(designSystem === "salt"
           ? [{ key: "high", label: "High" }, { key: "medium", label: "Medium" }, { key: "low", label: "Low" }]

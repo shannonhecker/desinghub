@@ -104,7 +104,6 @@ export function ComponentLibrary() {
                 </div>
               </>
             )}
-            <div className="lib-section-divider" />
           </div>
         )}
 
