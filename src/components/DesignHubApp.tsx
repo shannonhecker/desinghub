@@ -533,7 +533,7 @@ function SidebarDSBrand() {
   const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : activeSystem === "fluent" ? "F2" : "A", bg: t.accent, color: t.accentFg };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 4}px ${t.scale.gap * 2 + 4}px` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap * 2, padding: `${t.scale.gap + 4}px ${t.scale.gap * 2 + 4}px` }}>
       <div style={{
         width: t.scale.navF + 14, height: t.scale.navF + 14, borderRadius: activeSystem === "m3" ? 10 : 6,
         background: badge.bg, color: badge.color,
@@ -920,7 +920,7 @@ function LandingGrid() {
     const heroSize = Math.round(t.scale.tabH * 0.9);   // Display Large → scales with density
     const h2Size   = Math.round(t.scale.tabH * 0.45);  // Headline Medium
     const bodySize = t.scale.navF + 2;
-    const outerPad = t.scale.gap * 4;
+    const outerPad = t.scale.gap * 5;
     return (
       <div style={{ padding: `${outerPad}px ${outerPad + 8}px ${outerPad}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
         {/* Hero */}
@@ -973,7 +973,7 @@ function LandingGrid() {
                 <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
               </div>
               {/* Component cards grid — gap + card internals scale with density */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap + 2 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>
                 {catItems.map(c => {
                   const Preview = previews[c.id];
                   return (
@@ -1013,7 +1013,7 @@ function LandingGrid() {
   const heroSize = Math.round(t.scale.tabH * 0.9);
   const h2Size   = Math.round(t.scale.tabH * 0.45);
   const bodySize = t.scale.navF + 2;
-  const outerPad = t.scale.gap * 4;
+  const outerPad = t.scale.gap * 5;
 
   /* DS-specific feature pills */
   const featurePills = activeSystem === "salt"
@@ -1091,15 +1091,19 @@ function LandingGrid() {
               <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
             </div>
             {/* Component cards grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap + 2 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>
               {catItems.map(c => {
                 const Preview = previews[c.id];
                 return (
-                  <button key={c.id} className={cardClass}
+                  <button key={c.id} className={activeSystem === "ausos" ? undefined : cardClass}
                     onClick={() => setSelectedComponent(c.id)}
                     style={{
                       width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
                       borderRadius: activeSystem === "ausos" ? 14 : 8,
+                      border: activeSystem === "ausos" ? `1px solid ${t.border}` : undefined,
+                      background: activeSystem === "ausos" ? t.T.cardBg : undefined,
+                      backdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
+                      WebkitBackdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
                       transition: "box-shadow 200ms, border-color 200ms",
                     }}
                   >
