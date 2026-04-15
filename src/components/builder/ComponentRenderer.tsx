@@ -53,6 +53,38 @@ interface ComponentRendererProps {
   [key: string]: unknown;
 }
 
+/* ── Zone-aware block lookup — searches all 4 zones ── */
+function useBlockInAnyZone(blockId?: string) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId)
+      ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId)
+      ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+
+  const zone = blockId
+    ? (blocks.some((b) => b.id === blockId) ? "body" as const
+      : headerBlocks.some((b) => b.id === blockId) ? "header" as const
+      : sidebarBlocks.some((b) => b.id === blockId) ? "sidebar" as const
+      : "footer" as const)
+    : "body" as const;
+
+  const update = (props: Record<string, unknown>) => {
+    if (blockId) updateZoneBlockProps(zone, blockId, props);
+  };
+
+  const isSelected = blockId != null && selectedBlockId === blockId;
+
+  return { block, update, isSelected };
+}
+
 /* ── Token reference for inline styles ── */
 const t = {
   primary: "var(--ds-primary)",
@@ -701,9 +733,7 @@ function SimulatedButtonBlock({
   label?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
 
   /* Variant-specific styles */
   const variantStyles: Record<string, React.CSSProperties> = {
@@ -747,7 +777,7 @@ function SimulatedButtonBlock({
       {isSelected && blockId ? (
         <InlineEditable
           value={label}
-          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          onChange={(v) => update({ label: v })}
           autoOpenComponentPanel
           style={{ outline: "none", minWidth: 20 }}
         />
@@ -769,16 +799,14 @@ function SimulatedTitleBlock({
   text?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
   if (isSelected && blockId) {
     return (
       <InlineEditable
         value={text}
-        onChange={(v) => updateBlockProps(blockId, { text: v })}
+        onChange={(v) => update({ text: v })}
         autoOpenComponentPanel
         className={`${prefix}-title ${prefix}-title-${level}`}
         style={{ display: "block", outline: "none" }}
@@ -806,9 +834,7 @@ function SimulatedTextInputBlock({
   placeholder?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
   return (
@@ -816,7 +842,7 @@ function SimulatedTextInputBlock({
       {isSelected && blockId ? (
         <InlineEditable
           value={label}
-          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          onChange={(v) => update({ label: v })}
           autoOpenComponentPanel
           className={`${prefix}-label`}
           style={{ outline: "none", display: "block" }}
@@ -830,7 +856,7 @@ function SimulatedTextInputBlock({
             type="text"
             className={`${prefix}-input`}
             value={placeholder}
-            onChange={(e) => updateBlockProps(blockId, { placeholder: e.target.value })}
+            onChange={(e) => update({ placeholder: e.target.value })}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
@@ -857,20 +883,16 @@ function SimulatedCardBlock({
   content?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
-  // When selected, render an editable shell directly so InlineEditable
-  // can be embedded; otherwise delegate to the pure SimulatedCard component.
   if (isSelected && blockId) {
     return (
       <div className={`${prefix}-sim-card`}>
         <div className={`${prefix}-sim-card-header`}>
           <InlineEditable
             value={title}
-            onChange={(v) => updateBlockProps(blockId, { title: v })}
+            onChange={(v) => update({ title: v })}
             autoOpenComponentPanel
             className={`${prefix}-sim-card-title`}
             style={{ outline: "none", display: "block" }}
@@ -879,7 +901,7 @@ function SimulatedCardBlock({
         <div className={`${prefix}-sim-card-body`}>
           <InlineEditable
             value={content}
-            onChange={(v) => updateBlockProps(blockId, { content: v })}
+            onChange={(v) => update({ content: v })}
             className={`${prefix}-sim-card-content`}
             style={{ outline: "none", display: "block" }}
           />
@@ -978,9 +1000,7 @@ function SimulatedBadgeBlock({
   status?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
   return (
@@ -988,7 +1008,7 @@ function SimulatedBadgeBlock({
       {isSelected && blockId ? (
         <InlineEditable
           value={label}
-          onChange={(v) => updateBlockProps(blockId, { label: v })}
+          onChange={(v) => update({ label: v })}
           autoOpenComponentPanel
           style={{ outline: "none", color: "inherit" }}
         />
@@ -1008,9 +1028,7 @@ function SimulatedChatMessageBlock({
   message?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const isUser = role === "user";
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
   const defaultMsg = isUser
@@ -1035,7 +1053,7 @@ function SimulatedChatMessageBlock({
         {isSelected && blockId ? (
           <InlineEditable
             value={displayMsg}
-            onChange={(v) => updateBlockProps(blockId, { message: v })}
+            onChange={(v) => update({ message: v })}
             autoOpenComponentPanel
             style={{ outline: "none" }}
           />
@@ -1066,9 +1084,7 @@ function SimulatedChartBlock({
   dataPoints?: string;
   blockId?: string;
 }) {
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const isSelected = blockId != null && selectedBlockId === blockId;
+  const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
 
   const parsed = dataPoints
@@ -1083,7 +1099,7 @@ function SimulatedChartBlock({
       {isSelected && blockId ? (
         <InlineEditable
           value={title}
-          onChange={(v) => updateBlockProps(blockId, { title: v })}
+          onChange={(v) => update({ title: v })}
           autoOpenComponentPanel
           className={`${prefix}-chart-title`}
           style={{ outline: "none", display: "block" }}
