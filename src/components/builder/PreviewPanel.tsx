@@ -618,6 +618,10 @@ function PreviewToolbar() {
             {d.label}
           </button>
         ))}
+      </div>
+
+      {/* Canvas Actions — code toggle, library toggle, download, save */}
+      <div className="preview-toolbar-group">
         <button
           className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
           onClick={toggleCanvasViewMode}
@@ -625,10 +629,6 @@ function PreviewToolbar() {
         >
           <span className="preview-toolbar-code-label">&lt;/&gt;</span>
         </button>
-      </div>
-
-      {/* Canvas Actions — library toggle, download, save */}
-      <div className="preview-toolbar-group">
         <button
           className={`preview-toolbar-btn${componentLibraryOpen ? " preview-toolbar-btn-active" : ""}`}
           onClick={toggleComponentLibrary}

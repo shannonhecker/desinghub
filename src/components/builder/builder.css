@@ -2039,15 +2039,14 @@
   height: 60px;
 }
 
-/* ── PREVIEW TOOLBAR (Liquid Glass) ── */
+/* ── PREVIEW TOOLBAR ── */
 .preview-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--glass-border-subtle);
-  background: var(--glass-white);
-  backdrop-filter: blur(16px);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--b-border);
+  background: var(--b-bg);
   flex-shrink: 0;
   gap: 8px;
   z-index: 2;
@@ -5496,9 +5495,8 @@
   display: flex;
   align-items: center;
   padding: 8px 16px;
-  background: var(--b-surface);
+  background: var(--b-bg);
   border-bottom: 1px solid var(--b-border);
-  backdrop-filter: var(--blur-sm);
   flex-shrink: 0;
   gap: 12px;
 }
@@ -5595,10 +5593,10 @@
 .bp-viewport-wrapper {
   flex: 1;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: center;
-  padding: 24px;
-  overflow: auto;
+  padding: 16px;
+  overflow: hidden;
   background: color-mix(in srgb, var(--b-bg2) 80%, transparent);
   background-image:
     radial-gradient(circle at 1px 1px, var(--b-border) 1px, transparent 0);
@@ -5617,8 +5615,9 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 480px;
+  min-height: 0;
   max-width: 100%;
+  flex: 1;
 }
 
 /* ── Dashboard skeleton inside the frame ── */
