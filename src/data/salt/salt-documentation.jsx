@@ -905,30 +905,50 @@ function ListBoxDemo(){
   </div>;
 }
 
+/* Salt-styled mini dropdown for calendar month/year selectors */
+function SaltMiniDropdown({value,options,onChange}){
+  const [open,setOpen]=useState(false);
+  return <div style={{position:"relative",display:"inline-block"}}>
+    <button className="s-btn s-btn-bordered" onClick={()=>setOpen(!open)} style={{fontSize:11,padding:"2px 8px",height:"auto",minWidth:0,gap:4,display:"inline-flex",alignItems:"center"}}>
+      {value}<SIcon name="chevronDown" size={8} color={T.fg2}/>
+    </button>
+    {open&&<>
+      <div style={{position:"fixed",inset:0,zIndex:19}} onClick={()=>setOpen(false)}/>
+      <div style={{position:"absolute",top:"100%",left:0,zIndex:20,marginTop:2,background:T.bg,border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",boxShadow:`0 2px 8px ${T.shadowMed}`,minWidth:80,maxHeight:140,overflowY:"auto"}}>
+        {options.map(o=><div key={o} onClick={()=>{onChange(o);setOpen(false);}} style={{padding:"4px 8px",fontSize:11,color:o===value?T.accent:T.fg,fontWeight:o===value?600:400,background:o===value?T.accentWeak:"transparent",cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"}} onMouseEnter={e=>e.currentTarget.style.background=T.bg2} onMouseLeave={e=>e.currentTarget.style.background=o===value?T.accentWeak:"transparent"}>{o}</div>)}
+      </div>
+    </>}
+  </div>;
+}
+
 function CalendarDemo(){
   const [sel,setSel]=useState(15);
   const [rangeStart,setRangeStart]=useState(10);
   const [rangeEnd,setRangeEnd]=useState(18);
   const [mode,setMode]=useState("single");
+  const [calMonth,setCalMonth]=useState("June");
+  const [calYear,setCalYear]=useState("2025");
   const days=["Mo","Tu","We","Th","Fr","Sa","Su"];
   const dates=Array.from({length:35},(_,i)=>i<2?29+i:i<33?i-1:null);
+  const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const years=["2024","2025","2026","2027"];
   const isInRange=(d)=>mode==="range"&&d&&d>=rangeStart&&d<=rangeEnd;
   const isStart=(d)=>mode==="range"&&d===rangeStart;
   const isEnd=(d)=>mode==="range"&&d===rangeEnd;
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",gap:4}}>
       {["single","range","multiselect"].map(m=>(
-        <button key={m} onClick={()=>setMode(m)} style={{padding:"3px 8px",borderRadius:"var(--cr,4px)",border:mode===m?`2px solid ${T.accent}`:`1px solid ${T.border}`,background:mode===m?T.accentWeak:"transparent",color:mode===m?T.accent:T.fg2,fontSize:10,fontFamily:FONT,cursor:"pointer",textTransform:"capitalize"}}>{m}</button>
+        <button key={m} onClick={()=>setMode(m)} className={`s-btn ${mode===m?"s-btn-solid":"s-btn-bordered"}`} style={{fontSize:10,padding:"3px 8px",height:"auto",minWidth:0,textTransform:"capitalize"}}>{m}</button>
       ))}
     </div>
     <div style={{maxWidth:240}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-        <button style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="chevronLeft" size={14} color={T.fg3}/></button>
+        <button className="s-btn s-btn-transparent" style={{padding:2,minWidth:0,height:"auto"}}><SIcon name="chevronLeft" size={14} color={T.fg3}/></button>
         <div style={{display:"flex",gap:4}}>
-          <select style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",fontSize:11,color:T.fg,background:T.bg,fontFamily:FONT,padding:"2px 6px"}}><option>June</option></select>
-          <select style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",fontSize:11,color:T.fg,background:T.bg,fontFamily:FONT,padding:"2px 6px"}}><option>2025</option></select>
+          <SaltMiniDropdown value={calMonth} options={months} onChange={setCalMonth}/>
+          <SaltMiniDropdown value={calYear} options={years} onChange={setCalYear}/>
         </div>
-        <button style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="chevronRight" size={14} color={T.fg3}/></button>
+        <button className="s-btn s-btn-transparent" style={{padding:2,minWidth:0,height:"auto"}}><SIcon name="chevronRight" size={14} color={T.fg3}/></button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,textAlign:"center"}}>
         {days.map(d=><div key={d} style={{fontSize:9,color:T.fg3,padding:3,fontFamily:FONT,fontWeight:600}}>{d}</div>)}
@@ -1117,8 +1137,8 @@ function DatePickerDemo(){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
           <button style={{background:"none",border:"none",cursor:"pointer",padding:2}}><SIcon name="chevronLeft" size={12} color={T.fg3}/></button>
           <div style={{display:"flex",gap:4}}>
-            <select style={{border:`1px solid ${T.border}`,borderRadius:2,fontSize:10,color:T.fg,background:T.bg,fontFamily:FONT,padding:"1px 4px"}}><option>June</option></select>
-            <select style={{border:`1px solid ${T.border}`,borderRadius:2,fontSize:10,color:T.fg,background:T.bg,fontFamily:FONT,padding:"1px 4px"}}><option>2025</option></select>
+            <SaltMiniDropdown value="June" options={["May","June","July","August"]} onChange={()=>{}}/>
+            <SaltMiniDropdown value="2025" options={["2024","2025","2026"]} onChange={()=>{}}/>
           </div>
           <button style={{background:"none",border:"none",cursor:"pointer",padding:2}}><SIcon name="chevronRight" size={12} color={T.fg3}/></button>
         </div>
