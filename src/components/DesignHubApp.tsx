@@ -653,10 +653,7 @@ function ComponentList() {
       {subcatGroups.map(g => (
         <div key={g.sub}>
           <button onClick={() => toggleGroup(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {g.sub}
-              <span style={{ fontSize: t.scale.labF - 1, color: t.fg3, fontWeight: 400 }}>{g.items.length}</span>
-            </span>
+            <span>{g.sub}</span>
             <span className="material-symbols-outlined" style={{
               fontSize: 14, color: t.fg3, transition: "transform 0.2s",
               transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)",
