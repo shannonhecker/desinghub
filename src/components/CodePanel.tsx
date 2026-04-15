@@ -45,13 +45,13 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
     <div className={cardClass} style={{
       position: "relative", overflow: "hidden", cursor: "default",
     }}>
-      <button className={btnCls} onClick={copy} style={{
+      <button className={btnCls} onClick={copy} aria-label="Copy code" style={{
         position: "absolute", top: 8, right: 8, padding: "4px 10px",
-        fontSize: 11, minWidth: "auto", height: "auto",
+        fontSize: 11, minWidth: "auto", minHeight: 24,
       }}>
-        {copied ? "Copied!" : "Copy"}
+        <span aria-live="polite">{copied ? "Copied!" : "Copy"}</span>
       </button>
-      <pre style={{
+      <pre aria-label="Code example" style={{
         padding: 16, margin: 0, overflow: "auto", fontSize: 12, lineHeight: 1.6,
         fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
         color: t.fg,

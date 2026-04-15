@@ -38,11 +38,13 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         <p style={{ fontSize: t.scale.navF, color: t.fg3, lineHeight: 1.5, marginBottom: 0 }}>{comp.desc}</p>
       </div>
 
-      {/* Tabs — below title */}
-      <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: t.scale.gap * 2 }}>
+      {/* Tabs — below title, ARIA tablist */}
+      <div role="tablist" aria-label="Component view" style={{ display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: t.scale.gap * 2 }}>
         {(["preview", "code"] as const).map((tab) => (
           <button
             key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
             className={`${tabCls}${activeTab === tab ? " active" : ""}`}
             onClick={() => setActiveTab(tab)}
             style={{ fontFamily: t.font, fontSize: t.scale.navF }}

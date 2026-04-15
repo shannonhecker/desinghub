@@ -67,9 +67,9 @@ const COLUMN_DEFS: ColDef[] = [
     flex: 0.8,
     filter: "agTextColumnFilter",
     cellStyle: (params: any) => {
-      if (params.value === "Active") return { color: "#36b37e", fontWeight: 600 };
-      if (params.value === "Pending") return { color: "#ffab00", fontWeight: 600 };
-      if (params.value === "Inactive") return { color: "#de350b", fontWeight: 600 };
+      if (params.value === "Active") return { color: "#1a7f37", fontWeight: 600 };
+      if (params.value === "Pending") return { color: "#b45309", fontWeight: 600 };
+      if (params.value === "Inactive") return { color: "#cf222e", fontWeight: 600 };
       return null;
     },
   },
@@ -245,18 +245,18 @@ export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridPr
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           <button className={btnCls} onClick={autoSizeAll}
-            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>fit_screen</span>
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>fit_screen</span>
             Auto Size
           </button>
           <button className={btnCls} onClick={resetColumns}
-            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>restart_alt</span>
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>restart_alt</span>
             Reset
           </button>
           <button className={btnCls} onClick={exportCsv}
-            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>download</span>
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>download</span>
             CSV
           </button>
         </div>

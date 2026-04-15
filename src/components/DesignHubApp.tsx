@@ -483,13 +483,14 @@ function ContentTopBar() {
       {/* Hamburger — toggles sidebar */}
       <button
         onClick={toggleSidebar}
+        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         style={{
           background: "none", border: "none", cursor: "pointer", padding: 4,
           display: "flex", alignItems: "center", color: t.fg2, borderRadius: 4,
           transition: "color 150ms",
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>
+        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>
           {sidebarOpen ? "chevron_left" : "menu"}
         </span>
       </button>
@@ -637,7 +638,7 @@ function ComponentList() {
       {/* Foundations — flat list */}
       {foundationItems.length > 0 && (
         <div>
-          <button onClick={() => toggleGroup("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
+          <button onClick={() => toggleGroup("Foundations")} aria-expanded={expandedGroups.has("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
             <span style={sectionHeaderStyle}>Foundations</span>
             <span className="material-symbols-outlined" style={{
               fontSize: 14, color: t.fg3, transition: "transform 0.2s",
@@ -652,7 +653,7 @@ function ComponentList() {
       <div style={sectionHeaderStyle}>Components & Patterns</div>
       {subcatGroups.map(g => (
         <div key={g.sub}>
-          <button onClick={() => toggleGroup(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
+          <button onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
             <span>{g.sub}</span>
             <span className="material-symbols-outlined" style={{
               fontSize: 14, color: t.fg3, transition: "transform 0.2s",
@@ -672,7 +673,7 @@ function ComponentList() {
         if (patternItems.length === 0) return null;
         return (
           <div>
-            <button onClick={() => toggleGroup("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
+            <button onClick={() => toggleGroup("Patterns")} aria-expanded={expandedGroups.has("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
               <span style={sectionHeaderStyle}>Patterns</span>
               <span className="material-symbols-outlined" style={{
                 fontSize: 14, color: t.fg3, transition: "transform 0.2s",
@@ -1114,13 +1115,13 @@ export function DesignHubApp() {
               padding: activeSystem === "m3" ? `${t.scale.gap - 2}px 8px ${t.scale.gap + 4}px` : `${t.scale.gap - 2}px 14px ${t.scale.gap + 4}px`,
               overflowY: "auto", flex: 1,
             }}>
-              <ComponentList />
+              <nav aria-label="Component navigation"><ComponentList /></nav>
             </div>
           </aside>
         )}
 
         {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
-        <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.bg }}>
+        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.bg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />

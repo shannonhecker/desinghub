@@ -131,8 +131,12 @@ export function SortableBlock({
         className="canvas-block-handle"
         {...listeners}
         title="Drag to reorder"
+        role="button"
+        tabIndex={0}
+        aria-roledescription="sortable"
+        aria-label="Drag handle"
       >
-        <span style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
+        <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
       </div>
 
       {/* Remove button */}
@@ -140,10 +144,10 @@ export function SortableBlock({
         <button
           className="canvas-block-remove"
           onClick={onRemove}
-          title="Remove block"
+          aria-label="Remove block"
           type="button"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>
             close
           </span>
         </button>
@@ -154,10 +158,10 @@ export function SortableBlock({
         <button
           className="canvas-block-swap"
           onClick={onSwapClick}
-          title="Swap component"
+          aria-label="Swap component"
           type="button"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>
             swap_horiz
           </span>
         </button>
