@@ -1429,15 +1429,104 @@ const M3_PREVIEWS = {
   "content-design": () => <div style={{ fontSize: 8, color: T.onSurfaceVariant, lineHeight: 1.3 }}>✓ Save<br/>✗ Click here</div>,
 };
 
+/* ── M3 PATTERN DEMOS ── */
+function M3PatDashboard(){
+  return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:"Roboto,sans-serif"}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+      {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
+        <div key={s.l} className="m3-card m3-card-elevated" style={{padding:12,borderRadius:12,cursor:"default"}}>
+          <div style={{fontSize:11,color:T.onSurfaceVariant}}>{s.l}</div>
+          <div style={{fontSize:18,fontWeight:500,color:T.onSurface}}>{s.v}</div>
+          <div style={{height:4,borderRadius:2,background:T.surfaceContainerHighest,marginTop:8}}><div style={{width:`${s.p}%`,height:"100%",borderRadius:2,background:T.primary}}/></div>
+        </div>
+      )}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:8}}>
+      <div className="m3-card m3-card-outlined" style={{padding:14,borderRadius:12,cursor:"default"}}>
+        <div style={{fontSize:12,fontWeight:500,color:T.onSurface,marginBottom:8}}>Monthly Revenue</div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
+          {[40,65,50,80,70,90,75].map((h,i)=><div key={i} style={{flex:1,background:T.primary,borderRadius:4,height:`${h}%`,opacity:0.6+i*0.05}}/>)}
+        </div>
+      </div>
+      <div className="m3-card m3-card-filled" style={{padding:14,borderRadius:12,cursor:"default"}}>
+        <div style={{fontSize:12,fontWeight:500,color:T.onSurface,marginBottom:8}}>By Region</div>
+        {[{l:"NA",w:80},{l:"EMEA",w:65},{l:"APAC",w:45}].map(r=>
+          <div key={r.l} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+            <span style={{fontSize:10,color:T.onSurfaceVariant,width:30}}>{r.l}</span>
+            <div style={{flex:1,height:6,borderRadius:3,background:T.surfaceContainerHighest}}><div style={{width:`${r.w}%`,height:"100%",borderRadius:3,background:T.tertiary}}/></div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>;
+}
+function M3PatForm(){
+  return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:"Roboto,sans-serif",maxWidth:320}}>
+    <div><label style={{fontSize:12,fontWeight:500,color:T.onSurfaceVariant}}>Full Name *</label><div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",marginTop:4,display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Jane Doe</div></div>
+    <div><label style={{fontSize:12,fontWeight:500,color:T.onSurfaceVariant}}>Email *</label><div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",marginTop:4,display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>jane@company.com</div></div>
+    <div style={{display:"flex",gap:8,marginTop:4}}><button className="m3-btn m3-btn-filled" style={{borderRadius:20}}>Submit</button><button className="m3-btn m3-btn-outlined" style={{borderRadius:20}}>Cancel</button></div>
+  </div>;
+}
+function M3PatListDetail(){
+  const [sel,setSel]=useState(0);
+  const items=[{t:"Dashboard Report",d:"Q4 revenue analysis"},{t:"User Metrics",d:"Monthly active users"},{t:"System Alerts",d:"Health monitoring"}];
+  return <div style={{display:"flex",border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:180,fontFamily:"Roboto,sans-serif"}}>
+    <div style={{width:160,background:T.surfaceContainerLow}}>
+      {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:"12px 16px",fontSize:13,cursor:"pointer",background:sel===i?T.secondaryContainer:"transparent",color:sel===i?T.onSecondaryContainer:T.onSurface,fontWeight:sel===i?500:400,borderRadius:sel===i?"0 28px 28px 0":"0"}}>{it.t}</div>)}
+    </div>
+    <div style={{flex:1,padding:16,background:T.surface}}>
+      <div style={{fontSize:16,fontWeight:500,color:T.onSurface,marginBottom:4}}>{items[sel].t}</div>
+      <div style={{fontSize:13,color:T.onSurfaceVariant}}>{items[sel].d}</div>
+      <div style={{marginTop:12,display:"flex",gap:8}}><button className="m3-btn m3-btn-tonal" style={{borderRadius:20,fontSize:12}}>Edit</button><button className="m3-btn m3-btn-text" style={{fontSize:12}}>Delete</button></div>
+    </div>
+  </div>;
+}
+function M3PatLogin(){
+  return <div style={{maxWidth:280,margin:"0 auto",fontFamily:"Roboto,sans-serif"}}>
+    <div style={{textAlign:"center",marginBottom:16}}>
+      <div style={{width:48,height:48,borderRadius:16,background:T.primaryContainer,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.onPrimaryContainer,fontSize:20,fontWeight:500,marginBottom:8}}>A</div>
+      <div style={{fontSize:22,fontWeight:400,color:T.onSurface}}>Welcome back</div>
+      <div style={{fontSize:14,color:T.onSurfaceVariant}}>Sign in to your account</div>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Email</div>
+      <div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Password</div>
+      <button className="m3-btn m3-btn-filled" style={{borderRadius:20,width:"100%",marginTop:4}}>Sign In</button>
+    </div>
+  </div>;
+}
+function M3PatWizard(){
+  const [step,setStep]=useState(1);
+  return <div style={{fontFamily:"Roboto,sans-serif"}}>
+    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16}}>
+      {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
+        {i>0&&<div style={{flex:1,height:2,background:i<=step?T.primary:T.outlineVariant}}/>}
+        <div onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}}>
+          <div style={{width:24,height:24,borderRadius:12,background:i<=step?T.primary:T.surfaceContainerHighest,color:i<=step?T.onPrimary:T.onSurfaceVariant,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500}}>{i<step?"✓":i+1}</div>
+          <span style={{fontSize:12,color:i===step?T.onSurface:T.onSurfaceVariant,fontWeight:i===step?500:400}}>{s}</span>
+        </div>
+      </React.Fragment>)}
+    </div>
+    <div className="m3-card m3-card-outlined" style={{padding:16,borderRadius:12,minHeight:60,cursor:"default"}}>
+      <div style={{fontSize:14,fontWeight:500,color:T.onSurface,marginBottom:8}}>Step {step+1}: {["Account","Profile","Review"][step]}</div>
+      <div style={{fontSize:13,color:T.onSurfaceVariant}}>{step===2?"Review your information and submit.":"Enter your details below."}</div>
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",marginTop:12}}>
+      <button className="m3-btn m3-btn-outlined" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{borderRadius:20,opacity:step===0?0.38:1}}>Back</button>
+      <button className="m3-btn m3-btn-filled" onClick={()=>setStep(Math.min(2,step+1))} style={{borderRadius:20}}>{step===2?"Submit":"Next"}</button>
+    </div>
+  </div>;
+}
+
 const COMPS = [
-  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: () => null },
-  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form.", render: () => null },
-  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane.", render: () => null },
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: M3PatDashboard },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form.", render: M3PatForm },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane.", render: M3PatListDetail },
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation drawer/rail, content area, and bottom nav.", render: () => null },
-  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons.", render: () => null },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons.", render: M3PatLogin },
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration.", render: () => null },
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination.", render: () => null },
-  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation.", render: () => null },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation.", render: M3PatWizard },
   { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: () => null },
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Hover, focus (Tab), press, and disabled states all respond to real interaction.", render: Buttons },

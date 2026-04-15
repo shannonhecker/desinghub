@@ -660,6 +660,196 @@ function DLContentDesign(){
   </div>;
 }
 
+/* ── PATTERN DEMOS ── */
+
+function PatDashboard(){
+  return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:FONT}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+      {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
+        <div key={s.l} style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:10}}>
+          <div style={{fontSize:10,color:T.fg3}}>{s.l}</div>
+          <div style={{fontSize:16,fontWeight:700,color:T.fg}}>{s.v}</div>
+          <div style={{height:3,borderRadius:2,background:T.border,marginTop:6}}><div style={{width:`${s.p}%`,height:"100%",borderRadius:2,background:T.accent}}/></div>
+        </div>
+      )}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:8}}>
+      <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:12}}>
+        <div style={{fontSize:11,fontWeight:600,color:T.fg,marginBottom:8}}>Monthly Revenue</div>
+        <div style={{display:"flex",alignItems:"flex-end",gap:4,height:60}}>
+          {[40,65,50,80,70,90,75].map((h,i)=><div key={i} style={{flex:1,background:T.accent,borderRadius:2,height:`${h}%`,opacity:0.7+i*0.04}}/>)}
+        </div>
+      </div>
+      <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:12}}>
+        <div style={{fontSize:11,fontWeight:600,color:T.fg,marginBottom:8}}>By Region</div>
+        {[{l:"NA",w:80},{l:"EMEA",w:65},{l:"APAC",w:45}].map(r=>
+          <div key={r.l} style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+            <span style={{fontSize:9,color:T.fg3,width:30}}>{r.l}</span>
+            <div style={{flex:1,height:6,borderRadius:3,background:T.border}}><div style={{width:`${r.w}%`,height:"100%",borderRadius:3,background:T.accent}}/></div>
+          </div>
+        )}
+      </div>
+    </div>
+    <div style={{fontSize:10,color:T.fg3}}>Analytical dashboard: stat cards + bar chart + horizontal bars. Components: Card, Progress, Charts.</div>
+  </div>;
+}
+
+function PatForm(){
+  const [valid,setValid]=useState(true);
+  return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+      <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Full Name <span style={{color:T.negative}}>*</span></label>
+      <input className="s-input" placeholder="Jane Doe" style={{fontSize:12}}/>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+      <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Email <span style={{color:T.negative}}>*</span></label>
+      <input className="s-input" placeholder="jane@company.com" style={{fontSize:12,borderColor:valid?undefined:T.negative}} onChange={e=>setValid(e.target.value.includes("@")||!e.target.value)}/>
+      {!valid&&<span style={{fontSize:10,color:T.negative}}>Please enter a valid email</span>}
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+      <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Department</label>
+      <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:"0 var(--pad,8px)",background:T.bg,fontSize:12,color:T.fg2}}>Select department...</div>
+    </div>
+    <div style={{display:"flex",gap:6,marginTop:4}}>
+      <button className="s-btn s-btn-solid" style={{fontSize:12}}>Submit</button>
+      <button className="s-btn s-btn-bordered" style={{fontSize:12}}>Cancel</button>
+    </div>
+    <div style={{fontSize:10,color:T.fg3}}>Form pattern: FormField + Input + Dropdown + Button bar. Validation with FormFieldHelperText.</div>
+  </div>;
+}
+
+function PatListDetail(){
+  const [sel,setSel]=useState(0);
+  const items=[{t:"Dashboard Report",d:"Q4 revenue analysis with regional breakdowns"},{t:"User Metrics",d:"Monthly active users and retention data"},{t:"System Alerts",d:"Infrastructure health and uptime monitoring"}];
+  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
+    <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
+      {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent"}}>{it.t}</div>)}
+    </div>
+    <div style={{flex:1,padding:12}}>
+      <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
+      <div style={{fontSize:11,color:T.fg3,lineHeight:1.5}}>{items[sel].d}</div>
+      <div style={{marginTop:12,display:"flex",gap:6}}>
+        <button className="s-btn s-btn-bordered" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Edit</button>
+        <button className="s-btn s-btn-transparent" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Delete</button>
+      </div>
+    </div>
+  </div>;
+}
+
+function PatAppShell(){
+  return <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",fontFamily:FONT,fontSize:10}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",background:T.bg2,borderBottom:`1px solid ${T.border}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:18,height:18,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:8,fontWeight:700}}>A</div><span style={{fontWeight:600,color:T.fg}}>App Name</span></div>
+      <div style={{display:"flex",gap:4}}><div style={{width:18,height:18,borderRadius:9,background:T.bg3}}/></div>
+    </div>
+    <div style={{display:"flex",height:100}}>
+      <div style={{width:48,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 0"}}>
+        {["home","dashboard","settings"].map(i=><div key={i} style={{width:28,height:22,borderRadius:3,background:i==="home"?T.accentWeak:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:12,color:i==="home"?T.accent:T.fg3}}>{i}</span></div>)}
+      </div>
+      <div style={{flex:1,padding:8,color:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>Main Content Area</div>
+    </div>
+    <div style={{padding:"4px 10px",borderTop:`1px solid ${T.border}`,color:T.fg3,fontSize:9,background:T.bg2}}>Footer · v1.0</div>
+  </div>;
+}
+
+function PatLogin(){
+  return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+    <div style={{textAlign:"center",marginBottom:12}}>
+      <div style={{width:36,height:36,borderRadius:8,background:T.accent,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:16,fontWeight:700,marginBottom:6}}>A</div>
+      <div style={{fontSize:14,fontWeight:700,color:T.fg}}>Welcome back</div>
+      <div style={{fontSize:11,color:T.fg3}}>Sign in to your account</div>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Email</label><input className="s-input" placeholder="you@company.com" style={{fontSize:11,marginTop:2}}/></div>
+      <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Password</label><input className="s-input" type="password" placeholder="••••••••" style={{fontSize:11,marginTop:2}}/></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox"/> Remember me</label><span style={{fontSize:10,color:T.accent,cursor:"pointer"}}>Forgot?</span></div>
+      <button className="s-btn s-btn-solid" style={{width:"100%",marginTop:4}}>Sign In</button>
+    </div>
+  </div>;
+}
+
+function PatSettings(){
+  const [tab,setTab]=useState(0);
+  const tabs=["General","Security","Notifications"];
+  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
+    <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
+      {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+    </div>
+    <div style={{flex:1,padding:12}}>
+      <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        <div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" defaultValue="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:10,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.accent,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.accentFg,position:"absolute",top:2,right:2}}/></div></div>
+      </div>
+    </div>
+  </div>;
+}
+
+function PatSearch(){
+  return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+    <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",background:T.bg}}>
+      <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
+      <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
+    </div>
+    <div style={{display:"flex",gap:4}}>
+      {["All","Actions","Inputs","Navigation"].map((f,i)=><button key={f} className={`s-btn ${i===0?"s-btn-solid":"s-btn-bordered"}`} style={{fontSize:9,padding:"2px 8px",height:"auto",minWidth:0}}>{f}</button>)}
+    </div>
+    {[{t:"Button",d:"3 appearances × 5 sentiments"},{t:"Input",d:"Bottom-border accent on focus"},{t:"Tabs",d:"Underline-style active indicator"}].map(r=>
+      <div key={r.t} style={{padding:8,border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div><div style={{fontSize:11,fontWeight:600,color:T.fg}}>{r.t}</div><div style={{fontSize:9,color:T.fg3}}>{r.d}</div></div>
+        <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
+      </div>
+    )}
+  </div>;
+}
+
+function PatWizard(){
+  const [step,setStep]=useState(1);
+  return <div style={{fontFamily:FONT}}>
+    <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
+      {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
+        {i>0&&<div style={{flex:1,height:2,background:i<=step?T.accent:T.border}}/>}
+        <div onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
+          <div style={{width:20,height:20,borderRadius:10,background:i<step?T.accent:i===step?T.accent:T.border,color:i<=step?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600}}>{i<step?"✓":i+1}</div>
+          <span style={{fontSize:10,color:i===step?T.fg:T.fg3,fontWeight:i===step?600:400}}>{s}</span>
+        </div>
+      </React.Fragment>)}
+    </div>
+    <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:12,minHeight:60}}>
+      <div style={{fontSize:11,fontWeight:600,color:T.fg,marginBottom:6}}>Step {step+1}: {["Account","Profile","Review"][step]}</div>
+      {step===0&&<div><label style={{fontSize:10,color:T.fg2}}>Email</label><input className="s-input" placeholder="you@co.com" style={{fontSize:11,marginTop:2}}/></div>}
+      {step===1&&<div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" placeholder="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>}
+      {step===2&&<div style={{fontSize:10,color:T.fg3}}>Review your information and submit.</div>}
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+      <button className="s-btn s-btn-bordered" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{fontSize:10,opacity:step===0?0.3:1}}>Back</button>
+      <button className="s-btn s-btn-solid" onClick={()=>setStep(Math.min(2,step+1))} style={{fontSize:10}}>{step===2?"Submit":"Next"}</button>
+    </div>
+  </div>;
+}
+
+function PatDataTable(){
+  const cols=["Name","Status","Amount","Date"];
+  const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
+  return <div style={{fontFamily:FONT}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+      <div style={{display:"flex",gap:4}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 8px",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",fontSize:10,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:12}}>filter_list</span>Filter</div>
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 8px",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",fontSize:10,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:12}}>search</span>Search</div>
+      </div>
+      <button className="s-btn s-btn-solid" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Export</button>
+    </div>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+      <thead><tr>{cols.map(c=><th key={c} style={{textAlign:"left",padding:"6px 8px",borderBottom:`2px solid ${T.border}`,color:T.fg2,fontWeight:600,fontSize:10}}>{c}</th>)}</tr></thead>
+      <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"6px 8px",borderBottom:`1px solid ${T.border}`,color:j===1?(c==="Active"?T.positive:T.caution):T.fg,fontWeight:j===1?600:400}}>{c}</td>)}</tr>)}</tbody>
+    </table>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,fontSize:10,color:T.fg3}}>
+      <span>Showing 1-3 of 24</span>
+      <div style={{display:"flex",gap:2}}>{[1,2,3,"...","8"].map(p=><button key={p} className={`s-btn ${p===1?"s-btn-solid":"s-btn-bordered"}`} style={{fontSize:9,padding:"2px 6px",height:"auto",minWidth:0}}>{p}</button>)}</div>
+    </div>
+  </div>;
+}
+
 /* ── COMPONENT REGISTRY ── */
 const CATS = ["Foundations","Components & Patterns","Patterns"];
 const COMPS = [
@@ -674,15 +864,15 @@ const COMPS = [
   {id:"dl-content",name:"Content Design",cat:"Foundations",desc:"UX writing: simple, direct, human. Present tense, active voice, sentence case.",render:DLContentDesign},
   {id:"tokens",name:"Tokens",cat:"Foundations",desc:"Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.",render:()=>null},
   {id:"audit",name:"Design Audit",cat:"Foundations",desc:"Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.",render:()=>null},
-  {id:"pat-dashboard",name:"Analytical Dashboard",cat:"Patterns",desc:"Stat cards, charts, and data tables composed into an analytics overview layout.",render:()=>null},
-  {id:"pat-form",name:"Forms",cat:"Patterns",desc:"Input fields, validation, labels, and button bar composed into a data entry form.",render:()=>null},
-  {id:"pat-list-detail",name:"List-Detail",cat:"Patterns",desc:"Master list alongside detail pane — email client, file browser, settings patterns.",render:()=>null},
-  {id:"pat-app-shell",name:"App Shell",cat:"Patterns",desc:"Header, sidebar navigation, content area, and footer composed into a full application layout.",render:()=>null},
-  {id:"pat-login",name:"Login / Auth",cat:"Patterns",desc:"Authentication form with brand header, inputs, validation, and action buttons.",render:()=>null},
-  {id:"pat-settings",name:"Settings Page",cat:"Patterns",desc:"Navigation sidebar with form sections for application configuration.",render:()=>null},
-  {id:"pat-search",name:"Search Results",cat:"Patterns",desc:"Search input with filterable result cards and pagination.",render:()=>null},
-  {id:"pat-wizard",name:"Wizard / Stepper",cat:"Patterns",desc:"Multi-step form with progress indicator, validation per step, and review.",render:()=>null},
-  {id:"pat-data-table",name:"Data Table Page",cat:"Patterns",desc:"Filter bar, sortable data grid, and pagination for tabular data views.",render:()=>null},
+  {id:"pat-dashboard",name:"Analytical Dashboard",cat:"Patterns",desc:"Stat cards, charts, and data tables composed into an analytics overview layout.",render:PatDashboard},
+  {id:"pat-form",name:"Forms",cat:"Patterns",desc:"Input fields, validation, labels, and button bar composed into a data entry form.",render:PatForm},
+  {id:"pat-list-detail",name:"List-Detail",cat:"Patterns",desc:"Master list alongside detail pane — email client, file browser, settings patterns.",render:PatListDetail},
+  {id:"pat-app-shell",name:"App Shell",cat:"Patterns",desc:"Header, sidebar navigation, content area, and footer composed into a full application layout.",render:PatAppShell},
+  {id:"pat-login",name:"Login / Auth",cat:"Patterns",desc:"Authentication form with brand header, inputs, validation, and action buttons.",render:PatLogin},
+  {id:"pat-settings",name:"Settings Page",cat:"Patterns",desc:"Navigation sidebar with form sections for application configuration.",render:PatSettings},
+  {id:"pat-search",name:"Search Results",cat:"Patterns",desc:"Search input with filterable result cards and pagination.",render:PatSearch},
+  {id:"pat-wizard",name:"Wizard / Stepper",cat:"Patterns",desc:"Multi-step form with progress indicator, validation per step, and review.",render:PatWizard},
+  {id:"pat-data-table",name:"Data Table Page",cat:"Patterns",desc:"Filter bar, sortable data grid, and pagination for tabular data views.",render:PatDataTable},
   {id:"charts",name:"Charts & Dataviz",cat:"Patterns",desc:"12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.",render:()=>null},
   {id:"buttons",name:"Buttons",cat:"Components & Patterns",desc:"3 appearances: solid, bordered, transparent. 5 sentiments: accented, neutral, positive, caution, negative. States: Default, Hover, Active, Disabled, Loading, Focus.",render:Buttons},
   {id:"pills",name:"Pills / Tags",cat:"Components & Patterns",desc:"Toggle selection. Accent fill when active. Used for filters, categories, skills.",render:PillsDemo},

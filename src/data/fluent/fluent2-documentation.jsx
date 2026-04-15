@@ -1180,15 +1180,77 @@ const COMPS = [
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing principles: simple, direct, human. Style rules for tense, voice, capitalization, punctuation, and accessibility.", render: FluentContentDesign },
   { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
-  // Components
-  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: () => null },
-  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: () => null },
-  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: () => null },
+  // Patterns
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function(){
+    return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:FONT}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+        {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
+          <div key={s.l} style={{background:T.bg1,border:`1px solid ${T.stroke2}`,borderRadius:4,padding:10}}>
+            <div style={{fontSize:10,color:T.fg3}}>{s.l}</div>
+            <div style={{fontSize:16,fontWeight:600,color:T.fg1}}>{s.v}</div>
+            <div style={{height:3,borderRadius:2,background:T.stroke2,marginTop:6}}><div style={{width:`${s.p}%`,height:"100%",borderRadius:2,background:T.brandBg}}/></div>
+          </div>
+        )}
+      </div>
+      <div style={{fontSize:10,color:T.fg3}}>Dashboard pattern: stat cards + charts + data tables.</div>
+    </div>;
+  }},
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function(){
+    return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+      <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Full Name *</label><div className="f-input" style={{marginTop:4}}>Jane Doe</div></div>
+      <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Email *</label><div className="f-input" style={{marginTop:4}}>jane@company.com</div></div>
+      <div style={{display:"flex",gap:8,marginTop:4}}><button className="f-btn f-btn-primary">Submit</button><button className="f-btn f-btn-secondary">Cancel</button></div>
+    </div>;
+  }},
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: function(){
+    const [sel,setSel]=useState(0);
+    const items=[{t:"Dashboard Report",d:"Q4 revenue analysis"},{t:"User Metrics",d:"Monthly active users"},{t:"System Alerts",d:"Health monitoring"}];
+    return <div style={{display:"flex",border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:160,fontFamily:FONT}}>
+      <div style={{width:150,background:T.bg2,borderRight:`1px solid ${T.stroke2}`}}>
+        {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:"8px 12px",fontSize:12,cursor:"pointer",background:sel===i?T.subtleBgSelected:"transparent",color:sel===i?T.brandFg1:T.fg1,fontWeight:sel===i?600:400}}>{it.t}</div>)}
+      </div>
+      <div style={{flex:1,padding:12}}><div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{items[sel].t}</div><div style={{fontSize:12,color:T.fg3,marginTop:4}}>{items[sel].d}</div></div>
+    </div>;
+  }},
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: () => null },
-  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: () => null },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function(){
+    return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+      <div style={{textAlign:"center",marginBottom:12}}>
+        <div style={{width:40,height:40,borderRadius:4,background:T.brandBg,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:18,fontWeight:600,marginBottom:6}}>A</div>
+        <div style={{fontSize:16,fontWeight:600,color:T.fg1}}>Welcome back</div>
+        <div style={{fontSize:12,color:T.fg3}}>Sign in to your account</div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        <div className="f-input" style={{fontSize:12}}>Email</div>
+        <div className="f-input" style={{fontSize:12}}>Password</div>
+        <button className="f-btn f-btn-primary" style={{width:"100%",marginTop:4}}>Sign In</button>
+      </div>
+    </div>;
+  }},
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: () => null },
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: () => null },
-  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: () => null },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function(){
+    const [step,setStep]=useState(1);
+    return <div style={{fontFamily:FONT}}>
+      <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
+        {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
+          {i>0&&<div style={{flex:1,height:2,background:i<=step?T.brandBg:T.stroke2}}/>}
+          <div onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
+            <div style={{width:22,height:22,borderRadius:11,background:i<=step?T.brandBg:T.stroke2,color:i<=step?T.fgOnBrand:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600}}>{i<step?"✓":i+1}</div>
+            <span style={{fontSize:11,color:i===step?T.fg1:T.fg3,fontWeight:i===step?600:400}}>{s}</span>
+          </div>
+        </React.Fragment>)}
+      </div>
+      <div style={{border:`1px solid ${T.stroke2}`,borderRadius:4,padding:12,minHeight:50}}>
+        <div style={{fontSize:13,fontWeight:600,color:T.fg1,marginBottom:4}}>Step {step+1}: {["Account","Profile","Review"][step]}</div>
+        <div style={{fontSize:11,color:T.fg3}}>{step===2?"Review your information.":"Enter your details."}</div>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+        <button className="f-btn f-btn-secondary" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{opacity:step===0?0.3:1}}>Back</button>
+        <button className="f-btn f-btn-primary" onClick={()=>setStep(Math.min(2,step+1))}>{step===2?"Submit":"Next"}</button>
+      </div>
+    </div>;
+  }},
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
   { id: "inputs", name: "Text Input", cat: "Components & Patterns", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
