@@ -401,15 +401,15 @@ function ThemeControls() {
     const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
 
     const AUSOS_ACCENTS = [
-      { name: "Violet", hex: "#7E6BC4", grad: "linear-gradient(135deg, #8D7DD0, #6F5CB5)" },
-      { name: "Indigo", hex: "#6366F1", grad: "linear-gradient(135deg, #818CF8, #4F46E5)" },
-      { name: "Blue", hex: "#3B82F6", grad: "linear-gradient(135deg, #60A5FA, #2563EB)" },
-      { name: "Teal", hex: "#14B8A6", grad: "linear-gradient(135deg, #2DD4BF, #0D9488)" },
-      { name: "Emerald", hex: "#10B981", grad: "linear-gradient(135deg, #34D399, #059669)" },
-      { name: "Rose", hex: "#F43F5E", grad: "linear-gradient(135deg, #FB7185, #E11D48)" },
-      { name: "Orange", hex: "#F97316", grad: "linear-gradient(135deg, #FB923C, #EA580C)" },
-      { name: "Amber", hex: "#F59E0B", grad: "linear-gradient(135deg, #FBBF24, #D97706)" },
-      { name: "Slate", hex: "#64748B", grad: "linear-gradient(135deg, #94A3B8, #475569)" },
+      { name: "Violet", hex: "#7E6BC4", grad: "linear-gradient(135deg, #8A7ABD, #6B5AA8)" },
+      { name: "Indigo", hex: "#5558B8", grad: "linear-gradient(135deg, #6668C0, #4A4CA5)" },
+      { name: "Blue", hex: "#4A74B0", grad: "linear-gradient(135deg, #5A84BA, #3D64A0)" },
+      { name: "Teal", hex: "#3D8A82", grad: "linear-gradient(135deg, #4D9A92, #2F7A72)" },
+      { name: "Emerald", hex: "#3A8868", grad: "linear-gradient(135deg, #4A9878, #2C7858)" },
+      { name: "Rose", hex: "#B04060", grad: "linear-gradient(135deg, #C05070, #9A3050)" },
+      { name: "Orange", hex: "#B06830", grad: "linear-gradient(135deg, #C07840, #9A5820)" },
+      { name: "Amber", hex: "#9A7A20", grad: "linear-gradient(135deg, #AA8A30, #8A6A10)" },
+      { name: "Slate", hex: "#5A6878", grad: "linear-gradient(135deg, #6A7888, #4A5868)" },
     ];
 
     return (
