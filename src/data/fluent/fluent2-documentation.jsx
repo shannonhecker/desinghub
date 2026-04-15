@@ -1212,7 +1212,21 @@ const COMPS = [
       <div style={{flex:1,padding:12}}><div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{items[sel].t}</div><div style={{fontSize:12,color:T.fg3,marginTop:4}}>{items[sel].d}</div></div>
     </div>;
   }},
-  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: () => null },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: function(){
+    return <div style={{border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",fontFamily:FONT,fontSize:11}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 12px",background:T.bg2,borderBottom:`1px solid ${T.stroke2}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:20,height:20,borderRadius:4,background:T.brandBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:9,fontWeight:600}}>A</div><span style={{fontWeight:600,color:T.fg1}}>App Name</span></div>
+        <div style={{width:20,height:20,borderRadius:10,background:T.bg4}}/>
+      </div>
+      <div style={{display:"flex",height:90}}>
+        <div style={{width:44,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"6px 0"}}>
+          {["home","dashboard","settings"].map((i,idx)=><div key={i} style={{width:32,height:24,borderRadius:4,background:idx===0?T.subtleBgSelected:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:14,color:idx===0?T.brandFg1:T.fg3}}>{i}</span></div>)}
+        </div>
+        <div style={{flex:1,padding:8,display:"flex",alignItems:"center",justifyContent:"center",color:T.fg3}}>Main Content</div>
+      </div>
+      <div style={{padding:"3px 12px",borderTop:`1px solid ${T.stroke2}`,background:T.bg2,fontSize:9,color:T.fg3}}>Footer · v1.0</div>
+    </div>;
+  }},
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function(){
     return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
       <div style={{textAlign:"center",marginBottom:12}}>
@@ -1227,8 +1241,37 @@ const COMPS = [
       </div>
     </div>;
   }},
-  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: () => null },
-  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: () => null },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: function(){
+    const [tab,setTab]=useState(0);
+    const tabs=["General","Security","Notifications"];
+    return <div style={{display:"flex",border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:150,fontFamily:FONT}}>
+      <div style={{width:120,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,padding:4}}>
+        {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 10px",fontSize:12,cursor:"pointer",borderRadius:4,background:tab===i?T.subtleBgSelected:"transparent",color:tab===i?T.brandFg1:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+      </div>
+      <div style={{flex:1,padding:12}}>
+        <div style={{fontSize:14,fontWeight:600,color:T.fg1,marginBottom:8}}>{tabs[tab]}</div>
+        <div className="f-input" style={{marginBottom:6,fontSize:11}}>Display Name</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.brandBg,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.fgOnBrand,position:"absolute",top:2,right:2}}/></div></div>
+      </div>
+    </div>;
+  }},
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: function(){
+    return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,background:T.bg1}}>
+        <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
+        <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
+      </div>
+      <div style={{display:"flex",gap:4}}>
+        {["All","Actions","Inputs","Navigation"].map((f,i)=><button key={f} className={`f-btn ${i===0?"f-btn-primary":"f-btn-secondary"}`} style={{fontSize:10,padding:"2px 8px",height:24,minWidth:0}}>{f}</button>)}
+      </div>
+      {[{t:"Button",d:"Primary, Default, Outline, Subtle"},{t:"Input",d:"Underline accent on focus"},{t:"Tabs",d:"Underline active indicator"}].map(r=>
+        <div key={r.t} style={{padding:8,border:`1px solid ${T.stroke2}`,borderRadius:4,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><div style={{fontSize:12,fontWeight:600,color:T.fg1}}>{r.t}</div><div style={{fontSize:10,color:T.fg3}}>{r.d}</div></div>
+          <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
+        </div>
+      )}
+    </div>;
+  }},
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function(){
     const [step,setStep]=useState(1);
     return <div style={{fontFamily:FONT}}>
@@ -1249,6 +1292,23 @@ const COMPS = [
         <button className="f-btn f-btn-secondary" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{opacity:step===0?0.3:1}}>Back</button>
         <button className="f-btn f-btn-primary" onClick={()=>setStep(Math.min(2,step+1))}>{step===2?"Submit":"Next"}</button>
       </div>
+    </div>;
+  }},
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function(){
+    const cols=["Name","Status","Amount","Date"];
+    const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
+    return <div style={{fontFamily:FONT}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+        <div style={{display:"flex",gap:4}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,fontSize:11,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:14}}>filter_list</span>Filter</div>
+          <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,fontSize:11,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:14}}>search</span>Search</div>
+        </div>
+        <button className="f-btn f-btn-primary" style={{fontSize:11,padding:"2px 10px",height:28,minWidth:0}}>Export</button>
+      </div>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,border:`1px solid ${T.stroke2}`,borderRadius:4}}>
+        <thead><tr>{cols.map(c=><th key={c} style={{textAlign:"left",padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:T.fg2,fontWeight:600,fontSize:11}}>{c}</th>)}</tr></thead>
+        <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:j===1?(c==="Active"?(T.successFg1||"#107C10"):(T.warningFg1||"#C19C00")):T.fg1,fontWeight:j===1?600:400}}>{c}</td>)}</tr>)}</tbody>
+      </table>
     </div>;
   }},
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },

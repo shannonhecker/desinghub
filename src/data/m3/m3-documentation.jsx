@@ -1518,16 +1518,108 @@ function M3PatWizard(){
   </div>;
 }
 
+function M3PatAppShell(){
+  return <div style={{border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",fontFamily:"Roboto,sans-serif",fontSize:11}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px",background:T.surface,borderBottom:`1px solid ${T.outlineVariant}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}><span className="material-symbols-outlined" style={{fontSize:18,color:T.onSurface}}>menu</span><span style={{fontSize:16,fontWeight:400,color:T.onSurface,letterSpacing:"-0.25px"}}>App Name</span></div>
+      <div style={{width:28,height:28,borderRadius:14,background:T.primaryContainer}}/>
+    </div>
+    <div style={{display:"flex",height:110}}>
+      <div style={{width:56,background:T.surfaceContainerLow,display:"flex",flexDirection:"column",alignItems:"center",gap:6,paddingTop:8}}>
+        {[{i:"home",a:true},{i:"dashboard",a:false},{i:"settings",a:false}].map(n=>
+          <div key={n.i} style={{width:40,padding:"4px 0",borderRadius:20,background:n.a?T.secondaryContainer:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+            <span className="material-symbols-outlined" style={{fontSize:18,color:n.a?T.onSecondaryContainer:T.onSurfaceVariant}}>{n.i}</span>
+          </div>
+        )}
+      </div>
+      <div style={{flex:1,padding:12,display:"flex",alignItems:"center",justifyContent:"center",color:T.onSurfaceVariant}}>Main Content Area</div>
+    </div>
+    <div style={{display:"flex",justifyContent:"space-around",padding:"6px 0",borderTop:`1px solid ${T.outlineVariant}`,background:T.surfaceContainer}}>
+      {["home","search","person"].map((i,idx)=><div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+        <div style={{width:32,height:18,borderRadius:9,background:idx===0?T.secondaryContainer:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:16,color:idx===0?T.onSecondaryContainer:T.onSurfaceVariant}}>{i}</span></div>
+      </div>)}
+    </div>
+  </div>;
+}
+function M3PatSettings(){
+  const [tab,setTab]=useState(0);
+  const tabs=["General","Security","Notifications"];
+  return <div style={{display:"flex",border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:160,fontFamily:"Roboto,sans-serif"}}>
+    <div style={{width:56,background:T.surfaceContainerLow,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:12}}>
+      {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{width:40,padding:"4px 0",borderRadius:20,background:tab===i?T.secondaryContainer:"transparent",display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer"}}>
+        <span className="material-symbols-outlined" style={{fontSize:18,color:tab===i?T.onSecondaryContainer:T.onSurfaceVariant}}>{["settings","lock","notifications"][i]}</span>
+      </div>)}
+    </div>
+    <div style={{flex:1,padding:16}}>
+      <div style={{fontSize:16,fontWeight:500,color:T.onSurface,marginBottom:12}}>{tabs[tab]}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        <div style={{height:40,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:13}}>Display Name</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:13,color:T.onSurfaceVariant}}>Dark Mode</span><div style={{width:32,height:18,borderRadius:9,background:T.primary,cursor:"pointer",position:"relative"}}><div style={{width:14,height:14,borderRadius:7,background:T.onPrimary,position:"absolute",top:2,right:2}}/></div></div>
+      </div>
+    </div>
+  </div>;
+}
+function M3PatSearch(){
+  return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:"Roboto,sans-serif"}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 16px",borderRadius:28,background:T.surfaceContainerHighest}}>
+      <span className="material-symbols-outlined" style={{fontSize:20,color:T.onSurfaceVariant}}>search</span>
+      <span style={{fontSize:14,color:T.onSurfaceVariant}}>Search components...</span>
+    </div>
+    <div style={{display:"flex",gap:6}}>
+      {["All","Actions","Inputs","Navigation"].map((f,i)=><button key={f} className={`m3-btn ${i===0?"m3-btn-filled":"m3-btn-outlined"}`} style={{borderRadius:20,fontSize:12,padding:"0 12px",height:28}}>{f}</button>)}
+    </div>
+    {[{t:"Button",d:"5 variants: Filled, Outlined, Text"},{t:"Text Field",d:"Filled and Outlined variants"},{t:"Tabs",d:"Primary indicator bar"}].map(r=>
+      <div key={r.t} className="m3-card m3-card-outlined" style={{padding:12,borderRadius:12,cursor:"default",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div><div style={{fontSize:13,fontWeight:500,color:T.onSurface}}>{r.t}</div><div style={{fontSize:11,color:T.onSurfaceVariant,marginTop:2}}>{r.d}</div></div>
+        <span className="material-symbols-outlined" style={{fontSize:18,color:T.onSurfaceVariant}}>chevron_right</span>
+      </div>
+    )}
+  </div>;
+}
+function M3PatFeed(){
+  return <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontFamily:"Roboto,sans-serif"}}>
+    {[{t:"Material 3 Expressive",d:"New components and motion",img:"palette"},{t:"Dynamic Color",d:"Personalized color themes",img:"colorize"},{t:"Adaptive Layouts",d:"Canonical layout patterns",img:"devices"},{t:"Design Tokens",d:"Systematic theming approach",img:"token"}].map(card=>
+      <div key={card.t} className="m3-card m3-card-filled" style={{borderRadius:12,overflow:"hidden",cursor:"default"}}>
+        <div style={{height:60,background:T.primaryContainer,display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:28,color:T.onPrimaryContainer}}>{card.img}</span></div>
+        <div style={{padding:12}}>
+          <div style={{fontSize:13,fontWeight:500,color:T.onSurface}}>{card.t}</div>
+          <div style={{fontSize:11,color:T.onSurfaceVariant,marginTop:2}}>{card.d}</div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+function M3PatDataTable(){
+  const cols=["Name","Status","Amount","Date"];
+  const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
+  return <div style={{fontFamily:"Roboto,sans-serif"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+      <div style={{display:"flex",gap:6}}>
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"6px 12px",borderRadius:20,background:T.surfaceContainerHighest,fontSize:12,color:T.onSurfaceVariant}}><span className="material-symbols-outlined" style={{fontSize:16}}>filter_list</span>Filter</div>
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"6px 12px",borderRadius:20,background:T.surfaceContainerHighest,fontSize:12,color:T.onSurfaceVariant}}><span className="material-symbols-outlined" style={{fontSize:16}}>search</span>Search</div>
+      </div>
+      <button className="m3-btn m3-btn-tonal" style={{borderRadius:20,fontSize:12}}>Export</button>
+    </div>
+    <div className="m3-card m3-card-outlined" style={{borderRadius:12,overflow:"hidden",cursor:"default"}}>
+    <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+      <thead><tr>{cols.map(c=><th key={c} style={{textAlign:"left",padding:"10px 16px",borderBottom:`1px solid ${T.outlineVariant}`,color:T.onSurfaceVariant,fontWeight:500,fontSize:12}}>{c}</th>)}</tr></thead>
+      <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"10px 16px",borderBottom:`1px solid ${T.outlineVariant}`,color:j===1?(c==="Active"?T.tertiary:T.error):T.onSurface,fontWeight:j===1?500:400}}>{c}</td>)}</tr>)}</tbody>
+    </table>
+    </div>
+  </div>;
+}
+
 const COMPS = [
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: M3PatDashboard },
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form.", render: M3PatForm },
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane.", render: M3PatListDetail },
-  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation drawer/rail, content area, and bottom nav.", render: () => null },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation rail, content area, and bottom nav.", render: M3PatAppShell },
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons.", render: M3PatLogin },
-  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration.", render: () => null },
-  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination.", render: () => null },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration.", render: M3PatSettings },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination.", render: M3PatSearch },
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation.", render: M3PatWizard },
-  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: () => null },
+  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: M3PatFeed },
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: M3PatDataTable },
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Hover, focus (Tab), press, and disabled states all respond to real interaction.", render: Buttons },
   { id: "text-fields", name: "Text Fields", cat: "Components & Patterns", desc: "Click to focus (border thickens + turns primary, label floats). Hover for state layer. Type to see input. Error variant has red border + icon.", render: TextFields },
