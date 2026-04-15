@@ -42,6 +42,12 @@ export const COMPS: ComponentDef[] = [
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Glass stat cards, charts, and data tables composed into an analytics overview." },
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Glass input fields, validation, and button bar composed into a data entry form." },
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside glass detail pane for navigation." },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, glass sidebar navigation, content area, and footer." },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, glass inputs, and accent button." },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections for configuration." },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search input with filterable glass result cards." },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress indicator and validation." },
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable glass data grid, and pagination." },
 ];
 
 export const CATS = ["Foundations", "Components & Patterns", "Patterns"];

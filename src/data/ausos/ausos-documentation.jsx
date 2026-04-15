@@ -793,6 +793,12 @@ const PREVIEWS = {
   "pat-dashboard": () => <div style={{display:"flex",gap:3}}>{["$42K","1.2K","+18%"].map((v,i)=><div key={i} style={{fontSize:7,fontWeight:700,color:T.fg,background:T.cardBg,border:`1px solid ${T.borderMd}`,borderRadius:4,padding:"3px 4px",lineHeight:1}}>{v}</div>)}</div>,
   "pat-form": () => <div style={{display:"flex",flexDirection:"column",gap:2}}><div style={{height:10,borderBottom:`1px solid ${T.borderStrong}`,borderRadius:"3px 3px 0 0",background:T.surface,width:60}}/><div style={{height:10,borderBottom:`1px solid ${T.borderStrong}`,borderRadius:"3px 3px 0 0",background:T.surface,width:60}}/></div>,
   "pat-list-detail": () => <div style={{display:"flex",gap:1,fontSize:7}}><div style={{width:24,background:T.surface,borderRadius:"3px 0 0 3px",padding:2,color:T.fg3}}>List</div><div style={{flex:1,padding:2,color:T.fg}}>Detail</div></div>,
+  "pat-app-shell": () => <div style={{display:"flex",flexDirection:"column",height:24,borderRadius:6,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}><div style={{height:6,background:T.surface}}/><div style={{display:"flex",flex:1}}><div style={{width:12,background:T.surface,borderRight:`1px solid ${T.borderMd}`}}/><div style={{flex:1}}/></div></div>,
+  "pat-login": () => <div style={{display:"flex",justifyContent:"center"}}><div style={{width:40,borderRadius:6,border:`1px solid ${T.borderMd}`,padding:3}}><div style={{height:4,borderRadius:3,background:T.accent,marginBottom:2}}/><div style={{height:6,borderRadius:3,background:T.surface,borderBottom:`1px solid ${T.borderStrong}`,marginBottom:2}}/><div style={{height:6,borderRadius:9999,background:T.accent}}/></div></div>,
+  "pat-settings": () => <div style={{display:"flex",gap:1,height:20}}><div style={{width:16}}>{["⚙","🔔"].map((i,idx)=><div key={idx} style={{fontSize:6,padding:1,color:idx===0?T.accent:T.fg3}}>{i}</div>)}</div><div style={{flex:1,border:`1px solid ${T.borderMd}`,borderRadius:6}}/></div>,
+  "pat-search": () => <div><div style={{height:10,borderRadius:6,background:T.surface,borderBottom:`1px solid ${T.borderStrong}`,padding:"0 3px",fontSize:6,color:T.fg3,display:"flex",alignItems:"center"}}>🔍 Search</div><div style={{display:"flex",gap:2,marginTop:2}}>{[1,2].map(i=><div key={i} style={{flex:1,height:8,borderRadius:4,background:T.cardBg,border:`1px solid ${T.borderMd}`}}/>)}</div></div>,
+  "pat-wizard": () => <div style={{display:"flex",gap:2,alignItems:"center"}}>{[1,2,3].map(s=><><div key={s} style={{width:10,height:10,borderRadius:5,background:s===1?T.accent:s===2?T.accentSurface:"transparent",border:`1.5px solid ${s<=2?T.accent:T.borderStrong}`,fontSize:5,color:s===1?T.accentFg:s===2?T.accent:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>{s}</div>{s<3&&<div style={{flex:1,height:1,background:s===1?T.accent:T.borderMd}}/>}</>)}</div>,
+  "pat-data-table": () => <div style={{borderRadius:6,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}><div style={{display:"flex",padding:2,borderBottom:`1px solid ${T.borderMd}`}}><span style={{flex:1,fontSize:6,fontWeight:600,color:T.fg3}}>Name</span><span style={{fontSize:6,fontWeight:600,color:T.fg3}}>Val</span></div><div style={{padding:2,fontSize:6,color:T.fg}}>Row 1</div></div>,
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -835,4 +841,55 @@ const COMPS = [
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Glass stat cards + charts + data tables.", render: PatDashboard },
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Glass input fields + validation + button bar.", render: PatForm },
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list + glass detail pane.", render: PatListDetail },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, glass sidebar, content area, footer.", render: function() {
+    return <div style={{fontFamily:FONT,borderRadius:12,border:`1px solid ${T.borderMd}`,overflow:"hidden",height:140}}>
+      <div style={{height:28,background:T.surface,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 10px",fontSize:11,fontWeight:600,color:T.fg}}>App Shell</div>
+      <div style={{display:"flex",flex:1,height:112}}>
+        <div style={{width:60,background:T.surface,borderRight:`1px solid ${T.border}`,padding:6}}>{["Home","Data","Settings"].map((n,i)=><div key={n} style={{padding:"4px 6px",fontSize:9,borderRadius:6,color:i===0?T.accent:T.fg3,background:i===0?T.accentSurface:"transparent",marginBottom:2}}>{n}</div>)}</div>
+        <div style={{flex:1,padding:10,fontSize:10,color:T.fg2}}>Content area</div>
+      </div>
+    </div>;
+  }},
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Auth form with glass inputs and accent button.", render: function() {
+    return <div style={{fontFamily:FONT,maxWidth:240,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:12}}><div style={{fontSize:16,fontWeight:700,color:T.fg}}>Sign in</div><div style={{fontSize:10,color:T.fg3}}>Enter your credentials</div></div>
+      <div className="a-input-wrap" style={{marginBottom:8}}><label className="a-input-label">Email</label><input className="a-input" readOnly defaultValue="user@example.com"/></div>
+      <div className="a-input-wrap" style={{marginBottom:12}}><label className="a-input-label">Password</label><input className="a-input" type="password" readOnly defaultValue="••••••••"/></div>
+      <button className="a-btn a-btn-primary" style={{width:"100%"}}>Sign in</button>
+    </div>;
+  }},
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections.", render: function() {
+    return <div style={{fontFamily:FONT,display:"flex",gap:12}}>
+      <div style={{width:80}}>{["General","Security","Notifs"].map((n,i)=><div key={n} className={`a-sidebar-item${i===0?" active":""}`} style={{fontSize:10,marginBottom:2}}>{n}</div>)}</div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:8}}>General</div>
+        <div className="a-input-wrap" style={{marginBottom:6}}><label className="a-input-label">Display Name</label><input className="a-input" readOnly defaultValue="Jane Doe"/></div>
+        <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:T.fg}}><button className={`a-switch on`} role="switch"><div className="a-sw-thumb"/></button>Dark mode</div>
+      </div>
+    </div>;
+  }},
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search input with filterable glass cards.", render: function() {
+    return <div style={{fontFamily:FONT}}>
+      <input className="a-input" readOnly defaultValue="Dashboard templates" style={{width:"100%",marginBottom:10}}/>
+      <div style={{display:"flex",gap:6,marginBottom:8}}>{["All","Free","Pro"].map((f,i)=><button key={f} className={`a-btn ${i===0?"a-btn-primary":"a-btn-ghost"}`} style={{height:24,fontSize:10,minWidth:0,padding:"0 10px"}}>{f}</button>)}</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>{["Dashboard Kit","Admin Panel"].map(t=><div key={t} className="a-card" style={{padding:8}}><div style={{fontSize:10,fontWeight:600,color:T.fg}}>{t}</div><div style={{fontSize:8,color:T.fg3}}>Template</div></div>)}</div>
+    </div>;
+  }},
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress indicator.", render: function() {
+    const steps=["Details","Review","Done"];
+    return <div style={{fontFamily:FONT}}>
+      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>{steps.map((s,i)=><><div key={s} style={{width:24,height:24,borderRadius:12,background:i===0?T.accent:i===1?T.accentSurface:"transparent",border:i>1?`2px solid ${T.borderStrong}`:"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600,color:i===0?T.accentFg:i===1?T.accent:T.fg3}}>{i+1}</div>{i<2&&<div style={{flex:1,height:2,borderRadius:1,background:i===0?T.accent:T.borderMd}}/>}</>)}</div>
+      <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:6}}>Step 1: Details</div>
+      <div className="a-input-wrap"><label className="a-input-label">Name</label><input className="a-input" readOnly defaultValue="My Project"/></div>
+    </div>;
+  }},
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable glass grid, pagination.", render: function() {
+    return <div style={{fontFamily:FONT}}>
+      <div style={{display:"flex",gap:6,marginBottom:8}}><input className="a-input" readOnly placeholder="Filter..." style={{flex:1}}/><button className="a-btn a-btn-primary" style={{minWidth:0,padding:"0 12px"}}>Export</button></div>
+      <div style={{borderRadius:10,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}>
+        <table className="a-table" style={{width:"100%"}}><thead><tr><th>Name</th><th>Status</th><th>Users</th></tr></thead>
+        <tbody>{[{n:"Dashboard",s:"Active",u:"1,247"},{n:"Reports",s:"Pending",u:"892"}].map(r=><tr key={r.n}><td style={{fontWeight:500}}>{r.n}</td><td><span className={`a-badge ${r.s==="Active"?"a-badge-success":"a-badge-warning"}`} style={{fontSize:9}}>{r.s}</span></td><td>{r.u}</td></tr>)}</tbody></table>
+      </div>
+    </div>;
+  }},
 ];

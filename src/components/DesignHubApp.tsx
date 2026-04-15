@@ -533,7 +533,7 @@ function SidebarDSBrand() {
   const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : activeSystem === "fluent" ? "F2" : "A", bg: t.accent, color: t.accentFg };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 2}px ${activeSystem === "m3" ? 16 : 14}px` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 4}px ${t.scale.gap * 2 + 4}px` }}>
       <div style={{
         width: t.scale.navF + 14, height: t.scale.navF + 14, borderRadius: activeSystem === "m3" ? 10 : 6,
         background: badge.bg, color: badge.color,
@@ -1273,19 +1273,19 @@ export function DesignHubApp() {
               <SidebarDSBrand />
             </div>
             {/* 2 — Theme controls (collapsible) */}
-            <div style={{ padding: `${t.scale.gap + 4}px ${t.scale.gap + 8}px ${t.scale.gap}px`, flexShrink: 0 }}>
+            <div style={{ padding: `${t.scale.gap + 6}px ${t.scale.gap * 2 + 4}px ${t.scale.gap + 2}px`, flexShrink: 0 }}>
               <ThemeControls />
             </div>
             {/* 3 — Sticky search */}
             <div style={{
-              padding: `${t.scale.gap}px ${t.scale.gap + 8}px ${t.scale.gap + 4}px`,
+              padding: `${t.scale.gap + 2}px ${t.scale.gap * 2 + 4}px ${t.scale.gap + 6}px`,
               flexShrink: 0,
             }}>
               <SidebarSearch />
             </div>
             {/* 4 — Scrollable component list */}
             <div style={{
-              padding: `${t.scale.gap}px ${t.scale.gap + 8}px ${t.scale.gap + 8}px`,
+              padding: `${t.scale.gap}px ${t.scale.gap * 2 + 4}px ${t.scale.gap * 2}px`,
               overflowY: "auto", flex: 1,
             }}>
               <nav aria-label="Component navigation"><ComponentList /></nav>
