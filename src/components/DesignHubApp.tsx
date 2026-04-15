@@ -517,8 +517,40 @@ function ContentTopBar() {
 }
 
 /* ── COMPONENT LIST — nav items only (search is now in SidebarSearch above) ── */
+/* ── Sub-category mapping for nested sidebar navigation ── */
+const COMPONENT_SUBCATS: Record<string, string> = {
+  /* Actions */
+  buttons: "Actions", pills: "Actions", "toggle-btn": "Actions", "segmented-btn": "Actions",
+  tag: "Actions", link: "Actions", links: "Actions", fabs: "Actions", "icon-buttons": "Actions",
+  chips: "Actions",
+  /* Inputs */
+  inputs: "Inputs", "text-fields": "Inputs", checkboxes: "Inputs", radios: "Inputs",
+  switches: "Inputs", slider: "Inputs", sliders: "Inputs", dropdown: "Inputs",
+  "form-field": "Inputs", "list-box": "Inputs", "combo-box": "Inputs",
+  "number-input": "Inputs", "multiline-input": "Inputs", calendar: "Inputs",
+  "date-picker": "Inputs", "date-pickers": "Inputs", "file-drop": "Inputs",
+  /* Navigation */
+  tabs: "Navigation", menu: "Navigation", menus: "Navigation", stepper: "Navigation",
+  pagination: "Navigation", "vert-nav": "Navigation", "nav-item": "Navigation",
+  "skip-link": "Navigation", "nav-bar": "Navigation",
+  /* Communication */
+  banners: "Communication", dialog: "Communication", dialogs: "Communication",
+  badges: "Communication", avatars: "Communication", tooltips: "Communication",
+  progress: "Communication", toast: "Communication", spinner: "Communication",
+  snackbar: "Communication", messagebars: "Communication",
+  /* Containment */
+  cards: "Containment", accordion: "Containment", dividers: "Containment",
+  drawer: "Containment", panel: "Containment", "data-grid": "Containment",
+  table: "Containment", overlay: "Containment", splitter: "Containment",
+  "static-list": "Containment", carousel: "Containment", "interactable-card": "Containment",
+  collapsible: "Containment", "bottom-sheets": "Containment",
+  /* Patterns */
+  charts: "Patterns",
+};
+const SUBCAT_ORDER = ["Actions", "Inputs", "Navigation", "Communication", "Containment", "Patterns"];
+
 function ComponentList() {
-  const { activeSystem, selectedComponent, setSelectedComponent, searchQuery, activeTab, setActiveTab } = useDesignHub();
+  const { activeSystem, selectedComponent, setSelectedComponent, searchQuery } = useDesignHub();
   const t = useActiveTheme();
   const components = getComponents(activeSystem);
   const categories = getCategories(activeSystem);
@@ -526,52 +558,116 @@ function ComponentList() {
   const filtered = searchQuery
     ? components.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.desc.toLowerCase().includes(searchQuery.toLowerCase()))
     : components;
-  const grouped = categories.map(cat => ({
-    cat,
-    items: filtered
-      .filter(c => c.cat === cat)
-      .sort((a, b) => cat === "Components & Patterns" ? a.name.localeCompare(b.name) : 0),
-  })).filter(g => g.items.length > 0);
 
-  // Use the DS's own sidebar-item / menu-item classes (no input class needed here)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", ...SUBCAT_ORDER]));
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group); else next.add(group);
+      return next;
+    });
+  };
+
+  /* DS-scoped nav classes */
   const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : "f-sidebar-item";
 
-  // Unified nav-item active styles per DS — all sizes from density scale
   const activeItemStyle = (active: boolean): React.CSSProperties => {
     if (activeSystem === "m3") {
       return active
         ? { background: t.accentWeak, color: t.accentText, fontWeight: 500, borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", minHeight: t.scale.navH }
         : { borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", background: "transparent", color: t.fg, minHeight: t.scale.navH };
     }
-    // Salt / Fluent — CSS class handles most styling; pass fontSize + color for contrast
     return active
       ? { background: t.accentWeak, color: t.accentText, fontWeight: 600, fontSize: t.scale.navF }
       : { fontSize: t.scale.navF, color: t.fg };
   };
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {/* Charts & Dataviz is now a regular component in the list — no separate section needed */}
+  /* Section header style */
+  const sectionHeaderStyle: React.CSSProperties = activeSystem === "m3"
+    ? { fontSize: t.scale.labF, fontWeight: 500, color: t.fg2, letterSpacing: "0.5px", padding: `${t.scale.gap + 4}px 16px ${t.scale.gap - 4}px`, textTransform: "uppercase" }
+    : { fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: "0.06em", padding: `${t.scale.gap}px 0 ${t.scale.gap - 2}px`, fontWeight: 700 };
 
-      {/* Component groups */}
-      {grouped.map(g => (
-        <div key={g.cat}>
-          <div style={activeSystem === "m3"
-            ? { fontSize: t.scale.labF, fontWeight: 500, color: t.fg2, letterSpacing: "0.5px", padding: `${t.scale.gap + 4}px 16px ${t.scale.gap - 4}px`, textTransform: "uppercase" as const }
-            : { fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: "0.06em", padding: `${t.scale.gap}px 0 ${t.scale.gap - 2}px`, fontWeight: 700 }
-          }>{g.cat}</div>
-          {g.items.map(c => (
-            <button key={c.id}
-              className={itemClass + (selectedComponent === c.id ? " active" : "")}
-              onClick={() => setSelectedComponent(selectedComponent === c.id ? null : c.id)}
-              style={{
-                display: "flex", alignItems: "center", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
-                ...activeItemStyle(selectedComponent === c.id),
-              }}
-            >{c.name}</button>
-          ))}
+  /* Collapsible group header style */
+  const groupHeaderStyle = (expanded: boolean): React.CSSProperties => ({
+    display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
+    background: "none", border: "none", cursor: "pointer",
+    padding: activeSystem === "m3" ? `${t.scale.gap}px 16px` : `${t.scale.gap}px 0`,
+    fontSize: t.scale.navF - 1, fontWeight: 600, color: t.fg2, fontFamily: t.font,
+  });
+
+  const renderItem = (c: { id: string; name: string }) => (
+    <button key={c.id}
+      className={itemClass + (selectedComponent === c.id ? " active" : "")}
+      onClick={() => setSelectedComponent(selectedComponent === c.id ? null : c.id)}
+      style={{
+        display: "flex", alignItems: "center", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
+        ...activeItemStyle(selectedComponent === c.id),
+      }}
+    >{c.name}</button>
+  );
+
+  /* Build Foundations group */
+  const foundationItems = filtered.filter(c => c.cat === "Foundations");
+
+  /* Build Components & Patterns with sub-categories */
+  const componentItems = filtered.filter(c => c.cat === "Components & Patterns");
+  const subcatGroups = SUBCAT_ORDER
+    .map(sub => ({
+      sub,
+      items: componentItems
+        .filter(c => COMPONENT_SUBCATS[c.id] === sub)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .filter(g => g.items.length > 0);
+
+  /* Uncategorized components (no subcat mapping) */
+  const mappedIds = new Set(componentItems.filter(c => COMPONENT_SUBCATS[c.id]).map(c => c.id));
+  const uncategorized = componentItems.filter(c => !mappedIds.has(c.id)).sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* Foundations — flat list */}
+      {foundationItems.length > 0 && (
+        <div>
+          <button onClick={() => toggleGroup("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
+            <span style={sectionHeaderStyle}>Foundations</span>
+            <span className="material-symbols-outlined" style={{
+              fontSize: 14, color: t.fg3, transition: "transform 0.2s",
+              transform: expandedGroups.has("Foundations") ? "rotate(0deg)" : "rotate(-90deg)",
+            }}>expand_more</span>
+          </button>
+          {expandedGroups.has("Foundations") && foundationItems.map(renderItem)}
+        </div>
+      )}
+
+      {/* Components & Patterns — nested sub-groups */}
+      <div style={sectionHeaderStyle}>Components & Patterns</div>
+      {subcatGroups.map(g => (
+        <div key={g.sub}>
+          <button onClick={() => toggleGroup(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {g.sub}
+              <span style={{ fontSize: t.scale.labF - 1, color: t.fg3, fontWeight: 400 }}>{g.items.length}</span>
+            </span>
+            <span className="material-symbols-outlined" style={{
+              fontSize: 14, color: t.fg3, transition: "transform 0.2s",
+              transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)",
+            }}>expand_more</span>
+          </button>
+          {expandedGroups.has(g.sub) && (
+            <div style={{ paddingLeft: activeSystem === "m3" ? 12 : 8 }}>
+              {g.items.map(renderItem)}
+            </div>
+          )}
         </div>
       ))}
+
+      {/* Uncategorized components */}
+      {uncategorized.length > 0 && (
+        <div style={{ paddingLeft: activeSystem === "m3" ? 12 : 8 }}>
+          {uncategorized.map(renderItem)}
+        </div>
+      )}
     </div>
   );
 }
@@ -763,7 +859,7 @@ function LandingGrid() {
       ];
 
   return (
-    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: activeSystem === "salt" ? t.bg2 : t.bg2, minHeight: "100%" }}>
+    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
       {/* Hero */}
       <div style={{ marginBottom: outerPad, borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad - 8 }}>
         <div style={{
