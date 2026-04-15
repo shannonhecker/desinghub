@@ -59,10 +59,10 @@ const THEMES = {
     cardBg: "rgba(255,255,255,0.06)", cardBgHover: "rgba(255,255,255,0.10)",
     // Text — solid colors for reliable contrast (4.5:1+)
     fg: "#E8EAED", fg2: "#9CA3AF", fg3: "#6B7280", fgDisabled: "#4B5563",
-    // Accent — violet (4.5:1+ on dark bg, 3:1+ with white text)
-    accent: "#9575F0", accentHover: "#A48AF5", accentActive: "#8B5CF6",
-    accentGradient: "linear-gradient(135deg, #9575F0 0%, #8B5CF6 50%, #7C3AED 100%)",
-    accentSurface: "rgba(149,117,240,0.10)", accentSurfaceHover: "rgba(149,117,240,0.16)",
+    // Accent — muted violet (darker, less vivid for better text contrast)
+    accent: "#7E6BC4", accentHover: "#8D7DD0", accentActive: "#6F5CB5",
+    accentGradient: "linear-gradient(135deg, #8D7DD0 0%, #7E6BC4 50%, #6F5CB5 100%)",
+    accentSurface: "rgba(126,107,196,0.10)", accentSurfaceHover: "rgba(126,107,196,0.16)",
     accentFg: "#ffffff",
     // Borders — WCAG 3:1 for UI components on dark bg
     border: "rgba(255,255,255,0.10)", borderMd: "rgba(255,255,255,0.20)", borderStrong: "#6B7280",

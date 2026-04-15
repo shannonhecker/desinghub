@@ -149,7 +149,7 @@ export function getSystemInfo(system: SystemId) {
     salt: { name: "Salt DS", org: "J.P. Morgan", color: "#1B7F9E", icon: "S" },
     m3: { name: "Material 3", org: "Google", color: "#6750A4", icon: "M" },
     fluent: { name: "Fluent 2", org: "Microsoft", color: "#0F6CBD", icon: "F" },
-    ausos: { name: "ausos DS", org: "ausos", color: "#9575F0", icon: "A" },
+    ausos: { name: "ausos DS", org: "ausos", color: "#7E6BC4", icon: "A" },
   };
   return info[system];
 }

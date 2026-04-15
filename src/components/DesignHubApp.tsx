@@ -401,7 +401,7 @@ function ThemeControls() {
     const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
 
     const AUSOS_ACCENTS = [
-      { name: "Violet", hex: "#9575F0", grad: "linear-gradient(135deg, #A78BFA, #7C3AED)" },
+      { name: "Violet", hex: "#7E6BC4", grad: "linear-gradient(135deg, #8D7DD0, #6F5CB5)" },
       { name: "Indigo", hex: "#6366F1", grad: "linear-gradient(135deg, #818CF8, #4F46E5)" },
       { name: "Blue", hex: "#3B82F6", grad: "linear-gradient(135deg, #60A5FA, #2563EB)" },
       { name: "Teal", hex: "#14B8A6", grad: "linear-gradient(135deg, #2DD4BF, #0D9488)" },
@@ -1222,7 +1222,7 @@ export function DesignHubApp() {
       {/* Header — 3-column, height + padding scale with density */}
       <header style={{
         display: "flex", alignItems: "center",
-        padding: `0 ${t.scale.gap + 4}px`,
+        padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
         borderBottom: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
         background: activeSystem === "ausos" ? "transparent" : t.bg,
         minHeight: t.scale.hdrH, flexShrink: 0,
