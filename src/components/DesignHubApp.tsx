@@ -391,6 +391,27 @@ function ThemeControls() {
   /* ── AUSOS DS ── */
   if (activeSystem === "ausos") {
     const { ausos, setAusosTheme, setAusosDensity } = store;
+    const [accentOpen, setAccentOpen] = useState(false);
+
+    const AUSOS_ACCENTS = [
+      { name: "Violet", hex: "#9575F0" },
+      { name: "Indigo", hex: "#6366F1" },
+      { name: "Blue", hex: "#3B82F6" },
+      { name: "Teal", hex: "#14B8A6" },
+      { name: "Emerald", hex: "#10B981" },
+      { name: "Rose", hex: "#F43F5E" },
+      { name: "Orange", hex: "#F97316" },
+      { name: "Amber", hex: "#F59E0B" },
+      { name: "Slate", hex: "#64748B" },
+    ];
+
+    const AUSOS_GRADIENTS = [
+      { name: "Aurora", value: "linear-gradient(135deg, #0b1120 0%, #0d1f2d 30%, #1a1035 65%, #120b20 100%)" },
+      { name: "Midnight", value: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" },
+      { name: "Ocean", value: "linear-gradient(135deg, #0a1628 0%, #0d2137 30%, #0a2540 65%, #0d1f30 100%)" },
+      { name: "Ember", value: "linear-gradient(135deg, #1a0a0a 0%, #2d1212 30%, #351520 65%, #200a15 100%)" },
+    ];
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         <button onClick={() => setOpen(v => !v)} style={{
@@ -408,6 +429,79 @@ function ThemeControls() {
               <CtrlBtn active={ausos.themeKey === "light"} onClick={() => setAusosTheme("light")}>Light</CtrlBtn>
               <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
             </ControlGroup>
+
+            {/* Accent Color Palette */}
+            <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2), position: "relative" }}>
+              <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Accent Color</div>
+              {accentOpen && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setAccentOpen(false)} />
+              )}
+              <button
+                onClick={() => setAccentOpen(v => !v)}
+                style={{
+                  display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", border: `1px solid ${accentOpen ? t.accent : t.border}`,
+                  borderRadius: 8, background: t.bg2 || t.bg, color: t.fg, cursor: "pointer",
+                  fontFamily: t.font, fontSize: 12, transition: "border-color 150ms",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: t.accent, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                  {AUSOS_ACCENTS.find(a => a.hex === t.accent)?.name || "Custom"}
+                </span>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>
+                  {accentOpen ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+              {accentOpen && (
+                <div style={{
+                  position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99,
+                  background: t.bg2 || t.bg, border: `1px solid ${t.border}`, borderRadius: 8,
+                  boxShadow: `0 4px 16px rgba(0,0,0,0.2)`, overflow: "hidden",
+                }}>
+                  {AUSOS_ACCENTS.map(a => (
+                    <button
+                      key={a.hex}
+                      onClick={() => { setAccentOpen(false); }}
+                      style={{
+                        display: "flex", width: "100%", alignItems: "center", gap: 8,
+                        padding: "8px 12px", border: "none", cursor: "pointer",
+                        fontFamily: t.font, fontSize: 12, textAlign: "left",
+                        background: t.accent === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent",
+                        color: t.accent === a.hex ? t.accent : t.fg, transition: "background 100ms",
+                      }}
+                    >
+                      <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.hex, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                      <span style={{ flex: 1 }}>{a.name}</span>
+                      {t.accent === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.accent }}>check</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Gradient Palette (dark only) */}
+            {ausos.themeKey === "dark" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2) }}>
+                <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Gradient</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {AUSOS_GRADIENTS.map(g => (
+                    <button
+                      key={g.name}
+                      style={{
+                        height: 32, borderRadius: 8, background: g.value,
+                        border: `2px solid ${t.border}`,
+                        cursor: "pointer", position: "relative", overflow: "hidden",
+                      }}
+                      title={g.name}
+                    >
+                      <span style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{g.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <ControlGroup label="Density">
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>

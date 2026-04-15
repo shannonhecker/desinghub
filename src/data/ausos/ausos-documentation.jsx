@@ -188,11 +188,11 @@ const buildCSS = (T) => `
 .a-radio.selected .a-radio-circle { border-color:${T.accent}; border-width:2px; }
 
 /* === SWITCH === */
-.a-switch { width:40px; height:22px; border-radius:11px; background:${T.surface}; border:1px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:all var(--a-dur-mid) var(--a-ease); padding:0; backdrop-filter:${T.glass}; }
-.a-switch:focus-visible { outline:2px solid ${T.fg3}; outline-offset:2px; }
-.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:8px; background:${T.fg3}; top:2px; left:2px; transition:all var(--a-dur-mid) var(--a-ease); }
+.a-switch { width:44px; height:24px; border-radius:12px; background:${T.borderMd}; border:2px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:all var(--a-dur-mid) var(--a-ease); padding:0; }
+.a-switch:focus-visible { outline:2px solid ${T.accent}; outline-offset:2px; }
+.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:8px; background:#ffffff; top:2px; left:2px; transition:all var(--a-dur-mid) var(--a-ease); box-shadow:0 1px 3px rgba(0,0,0,0.15); }
 .a-switch.on { background:${T.accent}; border-color:${T.accent}; }
-.a-switch.on .a-sw-thumb { left:20px; background:#ffffff; }
+.a-switch.on .a-sw-thumb { left:22px; background:#ffffff; }
 
 /* === TABS === */
 .a-tabs { display:flex; border-bottom:1px solid ${T.border}; gap:0; }
@@ -368,13 +368,25 @@ function DLElevation() {
 }
 
 function DLSpacing() {
-  const steps = [4, 8, 12, 16, 24, 32];
+  const steps = [
+    { value: 2, token: "spacing-25" },
+    { value: 4, token: "spacing-50" },
+    { value: 8, token: "spacing-100" },
+    { value: 12, token: "spacing-150" },
+    { value: 16, token: "spacing-200" },
+    { value: 24, token: "spacing-300" },
+    { value: 32, token: "spacing-400" },
+    { value: 40, token: "spacing-500" },
+    { value: 48, token: "spacing-600" },
+    { value: 64, token: "spacing-800" },
+  ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, fontFamily: FONT }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, fontFamily: FONT }}>
       {steps.map(s => (
-        <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 9, color: T.fg3, width: 30, textAlign: "right" }}>{s}px</span>
-          <div style={{ width: s * 4, height: 8, borderRadius: 4, background: T.accentSurface, border: `1px solid ${T.borderAccent}` }} />
+        <div key={s.value} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 11, color: T.fg3, width: 32, textAlign: "right", fontWeight: 600 }}>{s.value}</span>
+          <div style={{ width: s.value * 3, height: 12, borderRadius: 4, background: T.accent, opacity: 0.6 }} />
+          <span style={{ fontSize: 10, color: T.fg3, fontFamily: "monospace" }}>--a-{s.token}</span>
         </div>
       ))}
     </div>
