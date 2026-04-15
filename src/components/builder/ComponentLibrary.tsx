@@ -71,14 +71,9 @@ export function ComponentLibrary() {
       </div>
 
       <div className="lib-body">
-        <p className="lib-hint">Drag onto the canvas</p>
-        {LIBRARY_BLUEPRINTS.map((bp) => (
-          <BlueprintItem key={bp.id} blueprint={bp} />
-        ))}
-
+        {/* Properties inspector — shown at top when a block is selected */}
         {selectedBlock && FieldsComponent && (
           <div>
-            <div className="lib-section-divider" />
             <div className="inspector-section-title">
               {selectedBlock.type.replace("Simulated", "")} Properties
             </div>
@@ -109,8 +104,14 @@ export function ComponentLibrary() {
                 </div>
               </>
             )}
+            <div className="lib-section-divider" />
           </div>
         )}
+
+        <p className="lib-hint">Drag onto the canvas</p>
+        {LIBRARY_BLUEPRINTS.map((bp) => (
+          <BlueprintItem key={bp.id} blueprint={bp} />
+        ))}
       </div>
     </div>
   );
