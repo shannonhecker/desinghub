@@ -8,7 +8,7 @@ interface DesignHubState {
   salt: { themeKey: string; density: string };
   m3: { themeKey: string; density: number; customColor: string; isDarkCustom: boolean };
   fluent: { themeKey: string; size: string };
-  ausos: { themeKey: string; density: string };
+  ausos: { themeKey: string; density: string; accentColor: string };
   selectedComponent: string | null;
   searchQuery: string;
   activeTab: ActiveTab;
@@ -25,6 +25,7 @@ interface DesignHubState {
   setFluentSize: (s: string) => void;
   setAusosTheme: (key: string) => void;
   setAusosDensity: (d: string) => void;
+  setAusosAccent: (c: string) => void;
   setSelectedComponent: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
   setActiveTab: (t: ActiveTab) => void;
@@ -36,7 +37,7 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   salt: { themeKey: 'jpm-light', density: 'medium' },
   m3: { themeKey: 'light', density: 0, customColor: '#6750A4', isDarkCustom: false },
   fluent: { themeKey: 'light', size: 'medium' },
-  ausos: { themeKey: 'light', density: 'medium' },
+  ausos: { themeKey: 'light', density: 'medium', accentColor: '#9575F0' },
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',
@@ -53,6 +54,7 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   setFluentSize: (s) => set((st) => ({ fluent: { ...st.fluent, size: s } })),
   setAusosTheme: (key) => set((st) => ({ ausos: { ...st.ausos, themeKey: key } })),
   setAusosDensity: (d) => set((st) => ({ ausos: { ...st.ausos, density: d } })),
+  setAusosAccent: (c) => set((st) => ({ ausos: { ...st.ausos, accentColor: c } })),
   setSelectedComponent: (id) => set({ selectedComponent: id, activeTab: 'preview' }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),

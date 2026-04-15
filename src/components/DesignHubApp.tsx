@@ -14,13 +14,19 @@ import { AuditPanel } from "./AuditPanel";
 export function useActiveTheme() {
   const store = useDesignHub();
   const { activeSystem } = store;
-  const T = activeSystem === "salt"
+  let T = activeSystem === "salt"
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
     : activeSystem === "fluent"
     ? getTheme("fluent", store.fluent.themeKey)
     : getTheme("ausos", store.ausos.themeKey);
+
+  // Apply custom accent color for ausos
+  if (activeSystem === "ausos" && store.ausos.accentColor && store.ausos.accentColor !== T.accent) {
+    const c = store.ausos.accentColor;
+    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${c} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40` };
+  }
 
   activateTheme(activeSystem, T);
 
@@ -391,7 +397,7 @@ function ThemeControls() {
 
   /* ── AUSOS DS ── */
   if (activeSystem === "ausos") {
-    const { ausos, setAusosTheme, setAusosDensity } = store;
+    const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
 
     const AUSOS_ACCENTS = [
       { name: "Violet", hex: "#9575F0" },
@@ -446,8 +452,8 @@ function ThemeControls() {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: t.accent, flexShrink: 0, border: `1px solid ${t.border}` }} />
-                  {AUSOS_ACCENTS.find(a => a.hex === t.accent)?.name || "Custom"}
+                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: ausos.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                  {AUSOS_ACCENTS.find(a => a.hex === ausos.accentColor)?.name || "Custom"}
                 </span>
                 <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>
                   {accentOpen ? "expand_less" : "expand_more"}
@@ -462,18 +468,18 @@ function ThemeControls() {
                   {AUSOS_ACCENTS.map(a => (
                     <button
                       key={a.hex}
-                      onClick={() => { setAccentOpen(false); }}
+                      onClick={() => { setAusosAccent(a.hex); setAccentOpen(false); }}
                       style={{
                         display: "flex", width: "100%", alignItems: "center", gap: 8,
                         padding: "8px 12px", border: "none", cursor: "pointer",
                         fontFamily: t.font, fontSize: 12, textAlign: "left",
-                        background: t.accent === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent",
-                        color: t.accent === a.hex ? t.accent : t.fg, transition: "background 100ms",
+                        background: ausos.accentColor === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent",
+                        color: ausos.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms",
                       }}
                     >
                       <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.hex, flexShrink: 0, border: `1px solid ${t.border}` }} />
                       <span style={{ flex: 1 }}>{a.name}</span>
-                      {t.accent === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.accent }}>check</span>}
+                      {ausos.accentColor === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: a.hex }}>check</span>}
                     </button>
                   ))}
                 </div>
@@ -1127,7 +1133,7 @@ function LandingGrid() {
                   >
                     {/* Preview area */}
                     <div style={{
-                      background: t.bg2 || t.bg, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                      padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,
                     }}>
