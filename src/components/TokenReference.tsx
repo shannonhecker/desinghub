@@ -117,7 +117,6 @@ export function TokenReference() {
   const cardBg   = activeSystem === "salt" ? T.bg  : activeSystem === "m3" ? T.surfaceContainerLow : T.bg1;
   const border   = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
   const fg       = activeSystem === "salt" ? T.fg   : activeSystem === "m3" ? T.onSurface        : T.fg1;
-  const fg2      = activeSystem === "salt" ? T.fg2  : activeSystem === "m3" ? T.onSurfaceVariant : T.fg2;
   const fg3      = activeSystem === "salt" ? T.fg3  : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
   const accent   = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary        : T.brandBg;
   const bgToken  = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surface : T.bg1;
@@ -213,7 +212,7 @@ export function TokenReference() {
               width: 80, height: 80, borderRadius: activeSystem === "m3" ? 12 : 8,
               background: cardBg, boxShadow: s.shadow,
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, color: fg2, border: `1px solid ${border}`,
+              fontSize: 11, color: fg3, border: `1px solid ${border}`,
             }}>
               {s.label}
             </div>

@@ -15,22 +15,7 @@ import { useBuilder } from "@/store/useBuilder";
    computed styles at render time.
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Initialize Highcharts modules once ── */
-let modulesInit = false;
-function ensureModules() {
-  if (modulesInit || typeof window === "undefined") return;
-  modulesInit = true;
-  /* eslint-disable @typescript-eslint/no-require-imports */
-  [
-    require("highcharts/highcharts-more"),
-    require("highcharts/modules/solid-gauge"),
-    require("highcharts/modules/heatmap"),
-    require("highcharts/modules/treemap"),
-  ].forEach((m) => {
-    const init = typeof m === "function" ? m : m?.default;
-    if (typeof init === "function") init(Highcharts);
-  });
-}
+import { ensureHighchartsModules } from "@/lib/highchartsInit";
 
 /* ── Read --ds-* CSS variables from a DOM element ── */
 interface ThemeVars {
@@ -353,7 +338,7 @@ interface SimulatedHighchartProps {
 }
 
 export function SimulatedHighchart({ chartType, title, value, system }: SimulatedHighchartProps) {
-  ensureModules();
+  ensureHighchartsModules();
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [vars, setVars] = useState<ThemeVars | null>(null);

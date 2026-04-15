@@ -83,24 +83,6 @@ export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<st
 
 /** Reverse: block type → canonical store ID */
 export const BLOCK_TO_ID: Record<string, string> = {
-  /* Legacy compound types (still valid for reverse lookup) */
-  Buttons: "buttons",
-  Cards: "cards",
-  DataTable: "table",
-  FormFields: "inputs",
-  Tabs: "tabs",
-  Toggles: "switches",
-  Badges: "badges",
-  Avatars: "avatars",
-  Alert: "alerts",
-  Progress: "progress-bar",
-  Tooltips: "tooltips",
-  StatsCards: "progress",
-  Dialog: "dialog",
-  Dropdown: "dropdown",
-  DatePicker: "date-picker",
-  Typography: "typography",
-
   /* Individual Simulated types */
   SimulatedButton: "buttons",
   SimulatedTitle: "typography",

@@ -1,28 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getTheme, getFont, getSystemInfo, activateTheme } from "@/data/registry";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// Initialize Highcharts modules once via dynamic import
-let modulesLoaded = false;
-function ensureModules() {
-  if (modulesLoaded || typeof window === "undefined") return;
-  modulesLoaded = true;
-  /* eslint-disable @typescript-eslint/no-require-imports */
-  const mods = [
-    require("highcharts/highcharts-more"),
-    require("highcharts/modules/solid-gauge"),
-    require("highcharts/modules/heatmap"),
-    require("highcharts/modules/treemap"),
-  ];
-  mods.forEach((m) => {
-    const init = typeof m === "function" ? m : m?.default;
-    if (typeof init === "function") init(Highcharts);
-  });
-}
+import { ensureHighchartsModules } from "@/lib/highchartsInit";
 
 function getChartTheme(system: string, T: any, font: string): Partial<Highcharts.Options> {
   if (system === "salt") {
@@ -248,7 +232,7 @@ function ChartCard({ chart, theme, bg, border }: { chart: ChartDef; theme: Parti
 }
 
 export function ChartsPage() {
-  ensureModules();
+  ensureHighchartsModules();
   const store = useDesignHub();
   const { activeSystem } = store;
   const sysInfo = getSystemInfo(activeSystem);
@@ -269,11 +253,6 @@ export function ChartsPage() {
   const fg3 = activeSystem === "salt" ? T.fg3 : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
   const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
   const accent = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary : T.brandBg;
-  const accentFg = activeSystem === "salt" ? T.accentFg : activeSystem === "m3" ? T.onPrimary : T.fgOnBrand;
-
-  // Use the DS's chip/filter classes
-  const chipClass = activeSystem === "salt" ? "s-btn" : activeSystem === "m3" ? "m3-chip" : "f-btn";
-
   const categories = [...new Set(CHARTS.map(c => c.category))];
   const filtered = selectedCategory ? CHARTS.filter(c => c.category === selectedCategory) : CHARTS;
 

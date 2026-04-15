@@ -236,7 +236,6 @@ export function AuditPanel() {
   const positive = activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
   const negative = activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E")    : (T.dangerFg1 || "#D13438");
   const warning  = activeSystem === "salt" ? (T.caution || "#ffab00")  : activeSystem === "m3" ? (T.tertiary || "#7D5260") : (T.warningFg1 || "#C19C00");
-  const info     = accent;
 
   const issues = useMemo(() => (code ? runAudit(code, activeSystem, T) : []), [code, activeSystem, T]);
 
@@ -287,7 +286,7 @@ export function AuditPanel() {
                 <div style={{ fontSize: 11, color: fg3 }}>Warnings</div>
               </div>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: info }}>{infos.length}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: accent }}>{infos.length}</div>
                 <div style={{ fontSize: 11, color: fg3 }}>Info</div>
               </div>
             </div>
@@ -301,7 +300,7 @@ export function AuditPanel() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {issues.map((issue, i) => {
-                const sevColor = issue.severity === "critical" ? negative : issue.severity === "warning" ? warning : info;
+                const sevColor = issue.severity === "critical" ? negative : issue.severity === "warning" ? warning : accent;
                 return (
                 <div key={i} style={{
                   padding: 12, borderRadius: 6,
@@ -320,7 +319,7 @@ export function AuditPanel() {
                   </div>
                   <div style={{ fontSize: 12, color: fg }}>{issue.message}</div>
                   {issue.fix && (
-                    <div style={{ fontSize: 11, color: info, marginTop: 4 }}>Fix: {issue.fix}</div>
+                    <div style={{ fontSize: 11, color: accent, marginTop: 4 }}>Fix: {issue.fix}</div>
                   )}
                 </div>
                 );

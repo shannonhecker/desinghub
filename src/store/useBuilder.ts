@@ -61,7 +61,6 @@ interface BuilderState {
   previewOpen: boolean;
   chatOpen: boolean;
   sidebarCollapsed: boolean;
-  mobilePreviewOpen: boolean;
   previewKey: number;
   deviceMode: DeviceMode;
 
@@ -93,11 +92,9 @@ interface BuilderState {
   // Actions — Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
   updateBlockProps: (id: string, props: Record<string, unknown>) => void;
-  setSelectedBlockId: (id: string | null) => void;
   setSelectedBlock: (id: string | null, zone: ZoneId | null) => void;
   toggleComponentLibrary: () => void;
   setComponentLibraryOpen: (v: boolean) => void;
-  toggleAddMenu: () => void;
   setAddMenuOpen: (v: boolean) => void;
   toggleCanvasViewMode: () => void;
 
@@ -124,7 +121,6 @@ interface BuilderState {
   setChatOpen: (v: boolean) => void;
   setDeviceMode: (d: DeviceMode) => void;
   toggleSidebar: () => void;
-  toggleMobilePreview: () => void;
   bumpPreview: () => void;
 }
 
@@ -184,7 +180,6 @@ export const useBuilder = create<BuilderState>((set) => ({
   previewOpen: false,
   chatOpen: true,
   sidebarCollapsed: false,
-  mobilePreviewOpen: false,
   previewKey: 0,
   deviceMode: 'desktop',
 
@@ -246,11 +241,9 @@ export const useBuilder = create<BuilderState>((set) => ({
         b.id === id ? { ...b, props: { ...b.props, ...props } } : b
       ),
     })),
-  setSelectedBlockId: (id) => set({ selectedBlockId: id }),
   setSelectedBlock: (id, zone) => set({ selectedBlockId: id, selectedBlockZone: zone }),
   toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
   setComponentLibraryOpen: (v) => set({ componentLibraryOpen: v }),
-  toggleAddMenu: () => set((s) => ({ addMenuOpen: !s.addMenuOpen })),
   setAddMenuOpen: (v) => set({ addMenuOpen: v }),
   toggleCanvasViewMode: () => set((s) => ({ canvasViewMode: s.canvasViewMode === 'ui' ? 'code' : 'ui' })),
 
@@ -319,6 +312,5 @@ export const useBuilder = create<BuilderState>((set) => ({
   setChatOpen: (v) => set({ chatOpen: v }),
   setDeviceMode: (d) => set({ deviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-  toggleMobilePreview: () => set((s) => ({ mobilePreviewOpen: !s.mobilePreviewOpen })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
 }));

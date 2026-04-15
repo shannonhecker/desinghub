@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback, useRef, useState } from "react";
+import React, { useMemo, useCallback, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -211,7 +211,6 @@ function dsColors(system: DesignSystem, T: Record<string, any>) {
 export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridProps) {
   const agTheme = useMemo(() => buildAgTheme(system, T, density), [system, T, density]);
   const c = useMemo(() => dsColors(system, T), [system, T]);
-  const gridRef = useRef<AgGridReact>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
   const onGridReady = useCallback((params: GridReadyEvent) => {
@@ -266,7 +265,6 @@ export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridPr
       {/* AG Grid — all column management via native AG Grid features */}
       <div style={{ height, width: "100%" }}>
         <AgGridReact
-          ref={gridRef}
           theme={agTheme}
           rowData={ROW_DATA}
           columnDefs={COLUMN_DEFS}
