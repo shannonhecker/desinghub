@@ -28,6 +28,7 @@ type DesignSystem = "salt" | "m3" | "fluent";
 interface DSAgGridProps {
   system: DesignSystem;
   theme: Record<string, any>;
+  density?: string | number;
   height?: number;
 }
 
@@ -115,9 +116,15 @@ const DEFAULT_COL_DEF: ColDef = {
   minWidth: 80,
 };
 
-/* ── Map DS theme tokens → AG Grid theme params ── */
-function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
+/* ── Map DS theme tokens + density → AG Grid theme params ── */
+function buildAgTheme(system: DesignSystem, T: Record<string, any>, density?: string | number) {
+  /* Density-scaled values per DS */
   if (system === "salt") {
+    const d = density as string || "medium";
+    const scale = d === "high" ? { fs: 11, hFs: 10, sp: 4, rowH: 24 }
+      : d === "low" ? { fs: 13, hFs: 12, sp: 8, rowH: 36 }
+      : d === "touch" ? { fs: 14, hFs: 13, sp: 10, rowH: 44 }
+      : { fs: 12, hFs: 11, sp: 6, rowH: 28 }; /* medium */
     return themeQuartz.withParams({
       accentColor: T.accent || "#1B7F9E",
       backgroundColor: T.bg || "#101820",
@@ -128,15 +135,19 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
       rowHoverColor: T.bg2 || "#1C2830",
       selectedRowBackgroundColor: T.accentWeak || "rgba(27,127,158,0.12)",
       fontFamily: "Open Sans, sans-serif",
-      fontSize: 12,
-      headerFontSize: 11,
+      fontSize: scale.fs,
+      headerFontSize: scale.hFs,
       headerFontWeight: 600,
-      spacing: 6,
+      spacing: scale.sp,
       borderRadius: 4,
       wrapperBorderRadius: 4,
+      rowHeight: scale.rowH,
+      headerHeight: scale.rowH + 4,
     });
   }
   if (system === "m3") {
+    const d = (density as number) || 0;
+    const offset = d * 4; /* M3 density: 0=default, -1=-4px, -2=-8px, -3=-12px */
     return themeQuartz.withParams({
       accentColor: T.primary || "#6750A4",
       backgroundColor: T.surface || "#FFFBFE",
@@ -150,11 +161,18 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
       fontSize: 14,
       headerFontSize: 12,
       headerFontWeight: 500,
-      spacing: 8,
+      spacing: Math.max(4, 8 + offset),
       borderRadius: 12,
       wrapperBorderRadius: 12,
+      rowHeight: Math.max(28, 40 + offset),
+      headerHeight: Math.max(32, 44 + offset),
     });
   }
+  /* Fluent 2 */
+  const sz = density as string || "medium";
+  const scale = sz === "small" ? { fs: 12, hFs: 11, sp: 4, rowH: 24 }
+    : sz === "large" ? { fs: 14, hFs: 13, sp: 8, rowH: 40 }
+    : { fs: 13, hFs: 12, sp: 6, rowH: 32 }; /* medium */
   return themeQuartz.withParams({
     accentColor: T.brandBg || "#0F6CBD",
     backgroundColor: T.bg1 || "#FFFFFF",
@@ -165,12 +183,14 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
     rowHoverColor: T.subtleBgHover || "#F5F5F5",
     selectedRowBackgroundColor: T.subtleBgSelected || "#EBEBEB",
     fontFamily: "'Segoe UI', sans-serif",
-    fontSize: 13,
-    headerFontSize: 12,
+    fontSize: scale.fs,
+    headerFontSize: scale.hFs,
     headerFontWeight: 600,
-    spacing: 6,
+    spacing: scale.sp,
     borderRadius: 4,
     wrapperBorderRadius: 4,
+    rowHeight: scale.rowH,
+    headerHeight: scale.rowH + 4,
   });
 }
 
@@ -188,8 +208,8 @@ function dsColors(system: DesignSystem, T: Record<string, any>) {
 
 /* ═══════════════════════════════════════════════════════════ */
 
-export function DSAgGrid({ system, theme: T, height = 400 }: DSAgGridProps) {
-  const agTheme = useMemo(() => buildAgTheme(system, T), [system, T]);
+export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridProps) {
+  const agTheme = useMemo(() => buildAgTheme(system, T, density), [system, T, density]);
   const c = useMemo(() => dsColors(system, T), [system, T]);
   const gridRef = useRef<AgGridReact>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);

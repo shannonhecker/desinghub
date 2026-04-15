@@ -58,7 +58,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       ) : componentId === "charts" ? (
         <ChartsPage />
       ) : componentId === "ag-grid" ? (
-        <DSAgGrid system={activeSystem} theme={t.T} />
+        <DSAgGrid system={activeSystem} theme={t.T} density={densityOrSize} />
       ) : (
         <div style={{
           background: t.bg, borderRadius: activeSystem === "m3" ? 12 : 8,
