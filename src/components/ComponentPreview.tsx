@@ -100,7 +100,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         <DSAgGrid system={activeSystem} theme={t.T} density={densityOrSize} />
       ) : (
         <div style={{
-          background: t.bg, borderRadius: activeSystem === "m3" ? 12 : 8,
+          background: isAusos && t.T.gradient ? t.T.gradient : t.bg,
+          borderRadius: isAusos ? 14 : activeSystem === "m3" ? 12 : 8,
           border: `1px solid ${t.border}`, padding: pad, color: t.fg,
         }}>
           <style dangerouslySetInnerHTML={{ __html: css }} />

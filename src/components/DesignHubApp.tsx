@@ -1105,6 +1105,7 @@ function LandingGrid() {
                   >
                     {/* Preview area */}
                     <div style={{
+                      background: activeSystem === "ausos" && t.T.gradient ? t.T.gradient : undefined,
                       padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,
