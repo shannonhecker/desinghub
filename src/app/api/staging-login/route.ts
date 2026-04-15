@@ -1,4 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac } from "crypto";
+
+const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET || "design-hub-staging";
+
+export function hashToken(password: string): string {
+  return createHmac("sha256", TOKEN_SECRET).update(password).digest("hex");
+}
+
+// Note: middleware.ts uses the Web Crypto API equivalent (async) which produces
+// the same hex output for the same inputs, ensuring cookie compatibility.
 
 export async function POST(request: NextRequest) {
   let password = "";
@@ -19,8 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  // Token = base64(password) — validated by middleware on every request
-  const token = btoa(expectedPassword);
+  const token = hashToken(expectedPassword);
   const response = NextResponse.json({ ok: true });
 
   response.cookies.set("ausos_auth_token", token, {

@@ -60,7 +60,6 @@ export function useChatAPI() {
 
       // Add placeholder AI message
       store.addMessage("ai", "...");
-      const aiMsgIndex = store.messages.length; // index of the message we just added
 
       while (true) {
         const { done, value } = await reader.read();

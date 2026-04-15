@@ -38,6 +38,7 @@ const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
   { label: "Salt DS", value: "salt" },
   { label: "Material 3", value: "m3" },
   { label: "Fluent 2", value: "fluent" },
+  { label: "ausos DS", value: "ausos" },
 ];
 
 const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
@@ -272,6 +273,7 @@ const STYLE_RESPONSES: Record<DesignSystem, string> = {
   salt: "Salt DS — teal accents, Open Sans typography, and 4-level density scaling.",
   m3: "Material 3 — dynamic color, rounded surfaces, and the Roboto type scale.",
   fluent: "Fluent 2 — Segoe UI, brand blue palette, and compound components.",
+  ausos: "ausos DS — glassmorphism surfaces, muted teal accent, DM Sans typography, and frosted glass components.",
 };
 
 function getFreeformResponse(input: string): string {
@@ -511,17 +513,8 @@ export function ChatPanel() {
      ═══════════════════════════════════ */
 
   const renderChips = () => {
-    if (step === "type") {
-      return (
-        <div className="prompt-bubbles">
-          {TYPE_CHIPS.map((chip) => (
-            <button key={chip.label} className="prompt-bubble" onClick={() => handleTypeSelect(chip)}>
-              {chip.label}
-            </button>
-          ))}
-        </div>
-      );
-    }
+    // Type step: no chips — pattern cards above handle selection
+    if (step === "type") return null;
 
     if (step === "style") {
       return (

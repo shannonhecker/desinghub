@@ -34,6 +34,20 @@ function getChartTheme(system: string, T: any, font: string): Partial<Highcharts
       legend: { itemStyle: { color: T.onSurfaceVariant }, itemHoverStyle: { color: T.onSurface } },
     };
   }
+  // ausos DS
+  if (system === "ausos") {
+    return {
+      colors: T.chart || ["#9575F0", "#f46a9b", "#27aeef", "#87bc45", "#edbf33", "#ef9b20", "#b33dc6", "#ea5545", "#76b7b2", "#bdcf32"],
+      chart: { backgroundColor: "transparent", style: { fontFamily: font } },
+      title: { style: { color: T.fg, fontSize: "15px", fontWeight: "600" } },
+      subtitle: { style: { color: T.fg2 } },
+      xAxis: { gridLineColor: T.chartGrid || "rgba(255,255,255,0.06)", lineColor: T.borderMd, labels: { style: { color: T.chartText || T.fg3, fontSize: "11px" } }, title: { style: { color: T.fg2 } } },
+      yAxis: { gridLineColor: T.chartGrid || "rgba(255,255,255,0.06)", lineColor: T.borderMd, labels: { style: { color: T.chartText || T.fg3, fontSize: "11px" } }, title: { style: { color: T.fg2 } } },
+      tooltip: { backgroundColor: T.bg2, borderColor: T.borderMd, style: { color: T.fg, fontSize: "12px" }, borderRadius: 12 },
+      legend: { itemStyle: { color: T.fg2 }, itemHoverStyle: { color: T.fg } },
+      plotOptions: { series: { borderWidth: 0 } },
+    };
+  }
   // Fluent
   return {
     colors: [T.brandBg, T.dangerBg3, T.successBg3, T.warningBg3, "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"],
@@ -225,7 +239,7 @@ const CHARTS: ChartDef[] = [
 function ChartCard({ chart, theme, bg, border }: { chart: ChartDef; theme: Partial<Highcharts.Options>; bg: string; border: string }) {
   const options = useMemo(() => chart.getOptions(theme), [chart, theme]);
   return (
-    <div style={{ background: bg, borderRadius: 8, border: `1px solid ${border}`, overflow: "hidden" }}>
+    <div style={{ background: bg, borderRadius: 16, border: `1px solid ${border}`, overflow: "hidden" }}>
       <HighchartsReact highcharts={Highcharts} options={options} />
     </div>
   );
@@ -242,27 +256,24 @@ export function ChartsPage() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
+    : activeSystem === "ausos"
+    ? getTheme("ausos", store.ausos.themeKey)
     : getTheme("fluent", store.fluent.themeKey);
 
   activateTheme(activeSystem, T);
   const font = getFont(activeSystem);
   const chartTheme = useMemo(() => getChartTheme(activeSystem, T, font), [activeSystem, T, font]);
 
-  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surfaceContainerLow : T.bg2;
-  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : T.fg1;
+  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surfaceContainerLow : activeSystem === "ausos" ? T.surface : T.bg2;
+  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : activeSystem === "ausos" ? T.fg : T.fg1;
   const fg3 = activeSystem === "salt" ? T.fg3 : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
-  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
-  const accent = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary : T.brandBg;
+  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : activeSystem === "ausos" ? T.borderMd : T.stroke2;
   const categories = [...new Set(CHARTS.map(c => c.category))];
   const filtered = selectedCategory ? CHARTS.filter(c => c.category === selectedCategory) : CHARTS;
 
   return (
     <div style={{ padding: 24, fontFamily: font }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: fg, marginBottom: 4 }}>Charts & Data Visualization</h2>
-      <p style={{ fontSize: 13, color: fg3, marginBottom: 16 }}>
-        Highcharts themed with {sysInfo.name} tokens. Charts auto-adapt to theme, mode, and density.
-      </p>
-
+      {/* Category filter buttons — no repeated title (already shown in ComponentPreview header) */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {[null, ...categories].map(cat => {
           const isActive = selectedCategory === cat;
@@ -270,6 +281,15 @@ export function ChartsPage() {
             return (
               <button key={cat || "all"} className={`m3-chip ${isActive ? "selected" : ""}`}
                 onClick={() => setSelectedCategory(cat)} style={{ fontSize: 12 }}>
+                {cat || "All"}
+              </button>
+            );
+          }
+          if (activeSystem === "ausos") {
+            return (
+              <button key={cat || "all"} className={`a-btn ${isActive ? "a-btn-primary" : "a-btn-ghost"}`}
+                onClick={() => setSelectedCategory(cat)}
+                style={{ fontSize: 12, minWidth: "auto", padding: "0 14px", height: 30 }}>
                 {cat || "All"}
               </button>
             );

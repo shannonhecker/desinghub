@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE = "ausos_auth_token";
+const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET || "design-hub-staging";
+
+async function hashToken(password: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw", enc.encode(TOKEN_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(password));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 /**
  * Two-tier staging auth middleware:
@@ -15,7 +25,7 @@ const COOKIE = "ausos_auth_token";
  *
  * When STAGING_PASSWORD is absent, auth is disabled entirely.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const expectedPassword = process.env.STAGING_PASSWORD;
 
   // Skip entirely when not configured
@@ -45,9 +55,9 @@ export function middleware(request: NextRequest) {
 
   // --- Tier 2: Cookie-based visitor auth ---
   const token = request.cookies.get(COOKIE)?.value;
-  const expectedToken = btoa(expectedPassword);
+  const expectedToken = await hashToken(expectedPassword);
 
-  if (token === expectedToken) {
+  if (token && token === expectedToken) {
     return NextResponse.next();
   }
 

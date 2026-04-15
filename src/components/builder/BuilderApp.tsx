@@ -234,7 +234,7 @@ export function BuilderApp() {
 
             {/* Preview toggle */}
             <button
-              className={`preview-toggle-btn ${previewOpen ? "active" : ""}`}
+              className={`top-bar-btn preview-toggle-btn ${previewOpen ? "active" : ""}`}
               onClick={togglePreview}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>

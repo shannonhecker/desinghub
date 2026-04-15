@@ -23,7 +23,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
    - Built-in sorting, filtering, pagination
    ═══════════════════════════════════════════════════════════ */
 
-type DesignSystem = "salt" | "m3" | "fluent";
+type DesignSystem = "salt" | "m3" | "fluent" | "ausos";
 
 interface DSAgGridProps {
   system: DesignSystem;
@@ -166,6 +166,33 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>, density?: st
       wrapperBorderRadius: 12,
       rowHeight: Math.max(28, 40 + offset),
       headerHeight: Math.max(32, 44 + offset),
+    });
+  }
+  /* ausos DS */
+  if (system === "ausos") {
+    const d = density as string || "medium";
+    const scale = d === "high" ? { fs: 11, hFs: 10, sp: 6, rowH: 24 }
+      : d === "low" ? { fs: 14, hFs: 12, sp: 10, rowH: 40 }
+      : d === "touch" ? { fs: 15, hFs: 13, sp: 12, rowH: 48 }
+      : { fs: 13, hFs: 12, sp: 8, rowH: 32 }; /* medium */
+    return themeQuartz.withParams({
+      accentColor: T.accent || "#A78BFA",
+      backgroundColor: T.bg || "#0b1120",
+      foregroundColor: T.fg || "#E8EAED",
+      headerBackgroundColor: T.bg2 || "#0e1428",
+      headerTextColor: T.fg3 || "#6B7280",
+      borderColor: T.borderMd || "rgba(255,255,255,0.12)",
+      rowHoverColor: T.surfaceHover || "rgba(255,255,255,0.10)",
+      selectedRowBackgroundColor: T.accentSurface || "rgba(167,139,250,0.08)",
+      fontFamily: "'Inter', 'DM Sans', sans-serif",
+      fontSize: scale.fs,
+      headerFontSize: scale.hFs,
+      headerFontWeight: 500,
+      spacing: scale.sp,
+      borderRadius: 12,
+      wrapperBorderRadius: 16,
+      rowHeight: scale.rowH,
+      headerHeight: scale.rowH + 6,
     });
   }
   /* Fluent 2 */

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type DesignSystem = 'salt' | 'm3' | 'fluent';
+export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'ausos';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
@@ -129,6 +129,13 @@ const uid = (() => {
   return () => `msg-${++msgId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 })();
 
+const ZONE_KEYS: Record<ZoneId, 'blocks' | 'headerBlocks' | 'sidebarBlocks' | 'footerBlocks'> = {
+  body: 'blocks',
+  header: 'headerBlocks',
+  sidebar: 'sidebarBlocks',
+  footer: 'footerBlocks',
+};
+
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat — start empty so hero shows
   messages: [],
@@ -195,7 +202,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   clearChat: () => set({ messages: [], onboardingStep: 'type', pendingComponents: [] }),
 
   setDesignSystem: (ds) => {
-    const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light' };
+    const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'dark' };
     set({ designSystem: ds, themeKey: themeMap[ds] });
   },
   setMode: (m) => set((s) => {
@@ -259,22 +266,17 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Generic zone helpers
   setZoneBlocks: (zone, blocks) => {
-    switch (zone) {
-      case 'body': set({ blocks }); break;
-      case 'header': set({ headerBlocks: blocks }); break;
-      case 'sidebar': set({ sidebarBlocks: blocks }); break;
-      case 'footer': set({ footerBlocks: blocks }); break;
-    }
+    set({ [ZONE_KEYS[zone]]: blocks });
   },
   updateZoneBlockProps: (zone, blockId, props) => {
-    set((s) => {
-      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
-      return { [key]: (s[key] as Block[]).map((b) => b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b) };
-    });
+    const key = ZONE_KEYS[zone];
+    set((s) => ({
+      [key]: (s[key] as Block[]).map((b) => b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b),
+    }));
   },
   addBlockToZone: (zone, block, index) => {
+    const key = ZONE_KEYS[zone];
     set((s) => {
-      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
       const arr = [...(s[key] as Block[])];
       if (index !== undefined && index >= 0) {
         arr.splice(index, 0, block);
@@ -285,15 +287,13 @@ export const useBuilder = create<BuilderState>((set) => ({
     });
   },
   removeBlockFromZone: (zone, blockId) => {
-    set((s) => {
-      const key = zone === 'body' ? 'blocks' : zone === 'header' ? 'headerBlocks' : zone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
-      return { [key]: (s[key] as Block[]).filter((b) => b.id !== blockId) };
-    });
+    const key = ZONE_KEYS[zone];
+    set((s) => ({ [key]: (s[key] as Block[]).filter((b) => b.id !== blockId) }));
   },
   moveBlockBetweenZones: (fromZone, toZone, blockId, toIndex) => {
+    const fromKey = ZONE_KEYS[fromZone];
+    const toKey = ZONE_KEYS[toZone];
     set((s) => {
-      const fromKey = fromZone === 'body' ? 'blocks' : fromZone === 'header' ? 'headerBlocks' : fromZone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
-      const toKey = toZone === 'body' ? 'blocks' : toZone === 'header' ? 'headerBlocks' : toZone === 'sidebar' ? 'sidebarBlocks' : 'footerBlocks';
       const fromArr = s[fromKey] as Block[];
       const block = fromArr.find((b) => b.id === blockId);
       if (!block) return {};

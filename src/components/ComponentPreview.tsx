@@ -21,7 +21,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
 
   const DemoComponent = getDemoComponent(activeSystem, componentId);
 
-  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : "f-tab";
+  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : activeSystem === "ausos" ? "a-tab" : "f-tab";
+  const isAusos = activeSystem === "ausos";
 
   const pad = t.scale.gap * 4;
 
@@ -39,19 +40,55 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       </div>
 
       {/* Tabs — below title, ARIA tablist */}
-      <div role="tablist" aria-label="Component view" style={{ display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: t.scale.gap * 2 }}>
-        {(["preview", "code"] as const).map((tab) => (
-          <button
-            key={tab}
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={`${tabCls}${activeTab === tab ? " active" : ""}`}
-            onClick={() => setActiveTab(tab)}
-            style={{ fontFamily: t.font, fontSize: t.scale.navF }}
-          >
-            {tab === "preview" ? "Preview" : "Code"}
-          </button>
-        ))}
+      <div role="tablist" aria-label="Component view" style={{
+        display: "flex",
+        borderBottom: `1px solid ${t.border}`,
+        marginBottom: t.scale.gap * 2,
+      }}>
+        {(["preview", "code"] as const).map((tab) => {
+          const active = activeTab === tab;
+          return isAusos ? (
+            <button
+              key={tab}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                position: "relative",
+                height: t.scale.tabH,
+                padding: `0 ${t.scale.gap + 14}px`,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: t.scale.navF,
+                fontWeight: 500,
+                fontFamily: t.font,
+                color: active ? t.accent : t.fg3,
+                transition: "color 150ms",
+              }}
+            >
+              {tab === "preview" ? "Preview" : "Code"}
+              {active && (
+                <span style={{
+                  position: "absolute", bottom: 0, left: t.scale.gap + 6, right: t.scale.gap + 6,
+                  height: 2, borderRadius: 1,
+                  background: t.accent,
+                }} />
+              )}
+            </button>
+          ) : (
+            <button
+              key={tab}
+              role="tab"
+              aria-selected={active}
+              className={`${tabCls}${active ? " active" : ""}`}
+              onClick={() => setActiveTab(tab)}
+              style={{ fontFamily: t.font, fontSize: t.scale.navF }}
+            >
+              {tab === "preview" ? "Preview" : "Code"}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}

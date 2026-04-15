@@ -188,7 +188,7 @@ export function SortableBlock({
       {children}
 
       {/* Resize handle — right edge drag (body zone only) */}
-      {onColSpanChange && !compact && colSpan < 3 && (
+      {onColSpanChange && !compact && (
         <ResizeHandle colSpan={colSpan} onResize={onColSpanChange} />
       )}
     </div>

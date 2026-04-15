@@ -76,16 +76,14 @@ export function useCloudStorage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const {
-    messages,
-    blocks,
-    designSystem,
-    mode,
-    density,
-    interfaceType,
-    selectedComponents,
-    colorOverrides,
-  } = useBuilder();
+  const messages = useBuilder((s) => s.messages);
+  const blocks = useBuilder((s) => s.blocks);
+  const designSystem = useBuilder((s) => s.designSystem);
+  const mode = useBuilder((s) => s.mode);
+  const density = useBuilder((s) => s.density);
+  const interfaceType = useBuilder((s) => s.interfaceType);
+  const selectedComponents = useBuilder((s) => s.selectedComponents);
+  const colorOverrides = useBuilder((s) => s.colorOverrides);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -138,7 +136,7 @@ export function useCloudStorage() {
     try {
       const { db } = getFirebaseInstances();
       const u = await ensureAuth();
-      const snapshot: ProjectSnapshot = {
+      const projectSnapshot: ProjectSnapshot = {
         messages,
         blocks,
         designSystem,
@@ -153,7 +151,7 @@ export function useCloudStorage() {
         name,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        snapshot,
+        snapshot: projectSnapshot,
       });
       await fetchProjects(u.uid);
       return ref.id;

@@ -4,7 +4,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { AIAction } from "./parseAIResponse";
 import type { DesignSystem, BuilderMode } from "@/store/useBuilder";
 
-const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent"];
+const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "ausos"];
 const VALID_MODES = ["light", "dark"];
 const VALID_DENSITIES = ["high", "medium", "low", "touch"];
 

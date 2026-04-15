@@ -36,12 +36,19 @@ const DENSITY_OPTIONS: Record<DesignSystem, { value: string; label: string }[]> 
     { value: "medium", label: "Medium" },
     { value: "large", label: "Large" },
   ],
+  ausos: [
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
+    { value: "touch", label: "Touch" },
+  ],
 };
 
 const AVAILABLE_COMPONENTS: Record<DesignSystem, string[]> = {
   salt: ["buttons", "inputs", "cards", "tabs", "banners", "dialog", "badges", "avatars", "tooltips", "progress", "accordion", "form-field", "menu", "drawer", "table", "date-picker", "checkboxes", "radios", "switches", "slider"],
   m3: ["buttons", "text-fields", "chips", "cards", "switches", "checkboxes", "radios", "sliders", "fabs", "icon-buttons", "nav-bar", "tabs", "dialogs", "snackbar", "progress", "tooltips", "badges", "menus", "date-pickers"],
   fluent: ["buttons", "inputs", "checkboxes", "radios", "switches", "slider", "cards", "badges", "avatars", "tabs", "messagebars", "dialogs", "menus", "progress", "tooltips", "links", "dividers"],
+  ausos: ["buttons", "inputs", "cards", "tabs", "badges", "avatars", "checkboxes", "radios", "switches", "slider", "alerts", "progress", "tooltips", "dialog", "accordion", "table", "dropdowns"],
 };
 
 const COLOR_KEYS: Record<DesignSystem, { key: string; label: string }[]> = {
@@ -66,6 +73,14 @@ const COLOR_KEYS: Record<DesignSystem, { key: string; label: string }[]> = {
     { key: "fg1", label: "Foreground" },
     { key: "dangerBg3", label: "Danger" },
     { key: "successBg3", label: "Success" },
+  ],
+  ausos: [
+    { key: "accent", label: "Accent" },
+    { key: "bg", label: "Background" },
+    { key: "fg", label: "Foreground" },
+    { key: "successFg", label: "Success" },
+    { key: "dangerFg", label: "Error" },
+    { key: "warningFg", label: "Warning" },
   ],
 };
 

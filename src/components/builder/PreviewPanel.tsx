@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Monitor,
@@ -58,11 +58,6 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   database: Database,
   settings: Settings,
   bar_chart: BarChart3,
-};
-
-/** Icons that visually fill their bounding box more — render slightly smaller */
-const NAV_ICON_SIZE: Record<string, number> = {
-  bar_chart: 15,
 };
 
 /* ── Sample chat messages for the empty state ── */
@@ -251,15 +246,68 @@ function DashboardHeader({ compact }: { compact: boolean }) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   Dashboard Sidebar Resize Handle — drag to resize the nav sidebar
+   ══════════════════════════════════════════════════════════ */
+function DashboardSidebarResizeHandle({
+  width,
+  onWidthChange,
+}: {
+  width: number;
+  onWidthChange: (w: number) => void;
+}) {
+  const startRef = useRef<{ x: number; startWidth: number } | null>(null);
+  const [active, setActive] = useState(false);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startRef.current = { x: e.clientX, startWidth: width };
+    setActive(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [width]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!startRef.current) return;
+    const delta = e.clientX - startRef.current.x;
+    const newWidth = Math.max(120, Math.min(280, startRef.current.startWidth + delta));
+    onWidthChange(newWidth);
+  }, [onWidthChange]);
+
+  const handlePointerUp = useCallback(() => {
+    startRef.current = null;
+    setActive(false);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }, []);
+
+  return (
+    <div
+      className={`bp-sidebar-resize-handle${active ? " is-active" : ""}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      title="Drag to resize sidebar"
+    />
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    Dashboard Sidebar — collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
    ══════════════════════════════════════════════════════════ */
 function DashboardSidebar({
   collapsed,
   onToggle,
+  width = 180,
+  onWidthChange,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  width?: number;
+  onWidthChange?: (w: number) => void;
 }) {
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
   const designSystem = useBuilder((s) => s.designSystem);
@@ -287,7 +335,7 @@ function DashboardSidebar({
   return (
     <motion.aside
       className="bp-sidebar"
-      animate={{ width: collapsed ? 48 : 180 }}
+      animate={{ width: collapsed ? 48 : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       <nav className="bp-sidebar-nav">
@@ -312,7 +360,7 @@ function DashboardSidebar({
                       title={block.props.label as string}
                       onClick={(e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
                     >
-                      <Icon size={NAV_ICON_SIZE[iconKey] ?? 18} strokeWidth={active ? 2.2 : 1.5} />
+                      <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
                       <AnimatePresence>
                         {!collapsed && (
                           <motion.span
@@ -532,10 +580,11 @@ function PreviewToolbar() {
     setTimeout(() => setDownloading(false), 1500);
   };
 
-  const systems: { key: "salt" | "m3" | "fluent"; label: string }[] = [
+  const systems: { key: "salt" | "m3" | "fluent" | "ausos"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
     { key: "fluent", label: "Fluent 2" },
+    { key: "ausos", label: "ausos" },
   ];
 
   return (
@@ -862,6 +911,65 @@ export function PreviewSidePanel() {
     setSidebarCollapsed((v) => !v);
   }, []);
 
+  /* ── Component library sidebar resize ── */
+  const compBodyRef = useRef<HTMLDivElement>(null);
+  const [compSidebarWidth, setCompSidebarWidth] = useState(240);
+  const isCompDragging = useRef(false);
+  const [compDragActive, setCompDragActive] = useState(false);
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!isCompDragging.current || !compBodyRef.current) return;
+      e.preventDefault();
+      const rect = compBodyRef.current.getBoundingClientRect();
+      const newWidth = rect.right - e.clientX;
+      setCompSidebarWidth(Math.max(180, Math.min(400, newWidth)));
+    };
+    const onUp = () => {
+      if (isCompDragging.current) {
+        isCompDragging.current = false;
+        setCompDragActive(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isCompDragging.current || !compBodyRef.current) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = compBodyRef.current.getBoundingClientRect();
+      const newWidth = rect.right - touch.clientX;
+      setCompSidebarWidth(Math.max(180, Math.min(400, newWidth)));
+    };
+    const onTouchEnd = () => {
+      if (isCompDragging.current) {
+        isCompDragging.current = false;
+        setCompDragActive(false);
+        document.body.style.userSelect = "";
+      }
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
+  const startCompDrag = () => {
+    isCompDragging.current = true;
+    setCompDragActive(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+
+  /* ── Dashboard sidebar resize ── */
+  const [dashSidebarWidth, setDashSidebarWidth] = useState(180);
+
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
       {/* Device controls — always visible */}
@@ -872,7 +980,11 @@ export function PreviewSidePanel() {
 
       {/* Main builder area — DndContext wraps viewport + right sidebar */}
       <CanvasDndProvider>
-        <div className="preview-builder-body">
+        <div
+          className="preview-builder-body"
+          ref={compBodyRef}
+          style={componentLibraryOpen ? { "--comp-sidebar-width": `${compSidebarWidth}px` } as React.CSSProperties : undefined}
+        >
           {/* Center: Viewport */}
           <div className="bp-viewport-wrapper">
             {/* Device Frame — animated width */}
@@ -894,6 +1006,16 @@ export function PreviewSidePanel() {
                       <DashboardSidebar
                         collapsed={sidebarCollapsed}
                         onToggle={handleSidebarToggle}
+                        width={dashSidebarWidth}
+                        onWidthChange={setDashSidebarWidth}
+                      />
+                    )}
+
+                    {/* Resize handle for dashboard sidebar */}
+                    {!isMobile && !sidebarCollapsed && (
+                      <DashboardSidebarResizeHandle
+                        width={dashSidebarWidth}
+                        onWidthChange={setDashSidebarWidth}
                       />
                     )}
 
@@ -911,6 +1033,16 @@ export function PreviewSidePanel() {
               )}
             </motion.div>
           </div>
+
+          {/* Resize handle for component library */}
+          {componentLibraryOpen && (
+            <div
+              className={`comp-resize-handle${compDragActive ? " dragging" : ""}`}
+              onMouseDown={startCompDrag}
+              onTouchStart={startCompDrag}
+              aria-hidden="true"
+            />
+          )}
 
           {/* Right: Component Library Sidebar */}
           {componentLibraryOpen && (

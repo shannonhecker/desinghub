@@ -45,7 +45,7 @@ import {
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
-type DesignSystem = "salt" | "m3" | "fluent";
+type DesignSystem = "salt" | "m3" | "fluent" | "ausos";
 
 interface ComponentRendererProps {
   type: string;
@@ -54,27 +54,30 @@ interface ComponentRendererProps {
 }
 
 /* ── Zone-aware block lookup — searches all 4 zones ── */
+type ZoneId = "body" | "header" | "sidebar" | "footer";
+const ZONE_KEYS = ["blocks", "headerBlocks", "sidebarBlocks", "footerBlocks"] as const;
+const ZONE_IDS: ZoneId[] = ["body", "header", "sidebar", "footer"];
+
 function useBlockInAnyZone(blockId?: string) {
-  const blocks = useBuilder((s) => s.blocks);
-  const headerBlocks = useBuilder((s) => s.headerBlocks);
-  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
-  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = useBuilder((s) => {
+    if (!blockId) return null;
+    for (const key of ZONE_KEYS) {
+      const found = s[key].find((b) => b.id === blockId);
+      if (found) return found;
+    }
+    return null;
+  });
+
+  const zone: ZoneId = useBuilder((s) => {
+    if (!blockId) return "body";
+    for (let i = 0; i < ZONE_KEYS.length; i++) {
+      if (s[ZONE_KEYS[i]].some((b) => b.id === blockId)) return ZONE_IDS[i];
+    }
+    return "body";
+  });
+
   const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-
-  const block = blockId
-    ? (blocks.find((b) => b.id === blockId)
-      ?? headerBlocks.find((b) => b.id === blockId)
-      ?? sidebarBlocks.find((b) => b.id === blockId)
-      ?? footerBlocks.find((b) => b.id === blockId))
-    : null;
-
-  const zone = blockId
-    ? (blocks.some((b) => b.id === blockId) ? "body" as const
-      : headerBlocks.some((b) => b.id === blockId) ? "header" as const
-      : sidebarBlocks.some((b) => b.id === blockId) ? "sidebar" as const
-      : "footer" as const)
-    : "body" as const;
 
   const update = (props: Record<string, unknown>) => {
     if (blockId) updateZoneBlockProps(zone, blockId, props);

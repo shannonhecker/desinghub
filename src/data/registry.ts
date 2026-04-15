@@ -1,6 +1,35 @@
 import type { SystemId } from '@/store/useDesignHub';
 import type { ComponentDef } from './salt/components';
 
+/* ── Types for untyped JSX boundary ── */
+
+/** Common shape for raw component entries from the .jsx reference files */
+interface RawComponent {
+  id: string;
+  name: string;
+  cat: string;
+  desc: string;
+  [key: string]: unknown;
+}
+
+/** Theme token dictionaries — keys vary by DS, values are CSS strings but
+ *  the untyped JSX sources use mixed types, so we keep this permissive and
+ *  let consumers cast to string where needed for CSS properties. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ThemeTokens = Record<string, any>;
+
+/** Theme dictionary: themeKey → token set */
+type ThemeDict = Record<string, ThemeTokens>;
+
+/** Density map entry */
+interface DensityEntry {
+  h: number; sp: number; fs: number; fsS: number;
+  h1: number; h2: number; title: number; pad: number;
+  cr: number; icon: number; sideW: number; mainP: number;
+  cardMin: number; cardP: number; gap: number; topH: number;
+  srchH: number; logoS: number; catFs: number; demoP: number; demoCr: number;
+}
+
 // Import directly from the original reference files (complete implementations)
 import {
   SALT_THEMES, saltBuildCSS, SIcon, SALT_COMPS, SALT_FONT, SALT_FONT_HEAD,
@@ -19,19 +48,22 @@ import {
   getFluentSizeCSS
 } from './fluent/fluent2-documentation.jsx';
 
+import {
+  AUSOS_THEMES, ausosBuildCSS, AUSOS_COMPS, AUSOS_CATS, AIcon, AUSOS_FONT,
+  setAusosT, getAusosT, getAusosPreviews, getAusosDemoComponent,
+  getAusosDensityCSS
+} from './ausos/ausos-documentation.jsx';
+
 // Re-export for use in other modules
 export {
-  SIcon, M3Icon, FIcon,
+  SIcon, M3Icon, FIcon, AIcon,
   MATERIAL_COLORS, generateM3Theme,
-  getSaltPreviews, getFluentPreviews,
+  getSaltPreviews, getFluentPreviews, getAusosPreviews,
 };
 
 export function getComponents(system: SystemId): ComponentDef[] {
-  switch (system) {
-    case 'salt': return SALT_COMPS.map((c: any) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
-    case 'm3': return M3_COMPS.map((c: any) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
-    case 'fluent': return FLUENT_COMPS.map((c: any) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
-  }
+  const comps: RawComponent[] = system === 'salt' ? SALT_COMPS : system === 'm3' ? M3_COMPS : system === 'fluent' ? FLUENT_COMPS : AUSOS_COMPS;
+  return comps.map((c) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
 }
 
 export function getCategories(system: SystemId): string[] {
@@ -39,34 +71,34 @@ export function getCategories(system: SystemId): string[] {
     case 'salt': return ["Foundations", "Components & Patterns", "Patterns"];
     case 'm3': return M3_CATS;
     case 'fluent': return FLUENT_CATS;
+    case 'ausos': return AUSOS_CATS;
   }
 }
 
 export function getThemeKeys(system: SystemId): string[] {
-  switch (system) {
-    case 'salt': return Object.keys(SALT_THEMES as any);
-    case 'm3': return Object.keys(M3_THEMES as any);
-    case 'fluent': return Object.keys(FLUENT_THEMES as any);
-  }
+  const dict: ThemeDict = system === 'salt' ? SALT_THEMES : system === 'm3' ? M3_THEMES : system === 'fluent' ? FLUENT_THEMES : AUSOS_THEMES;
+  return Object.keys(dict);
 }
 
-export function getTheme(system: SystemId, themeKey: string, customColor?: string, isDarkCustom?: boolean): any {
-  const st = SALT_THEMES as any, mt = M3_THEMES as any, ft = FLUENT_THEMES as any;
+export function getTheme(system: SystemId, themeKey: string, customColor?: string, isDarkCustom?: boolean): ThemeTokens {
+  const st = SALT_THEMES as ThemeDict, mt = M3_THEMES as ThemeDict, ft = FLUENT_THEMES as ThemeDict, at = AUSOS_THEMES as ThemeDict;
   switch (system) {
     case 'salt': return st[themeKey] || st['jpm-light'];
     case 'm3':
       if (themeKey === 'custom') return generateM3Theme(customColor || '#6750A4', isDarkCustom || false);
       return mt[themeKey] || mt['light'];
     case 'fluent': return ft[themeKey] || ft['light'];
+    case 'ausos': return at[themeKey] || at['dark'];
   }
 }
 
 // Set the module-scoped T variable in each reference file so demos render with the right theme
-export function activateTheme(system: SystemId, theme: any) {
+export function activateTheme(system: SystemId, theme: ThemeTokens) {
   switch (system) {
     case 'salt': setSaltT(theme); break;
     case 'm3': setM3T(theme); break;
     case 'fluent': setFluentT(theme); break;
+    case 'ausos': setAusosT(theme); break;
   }
 }
 
@@ -76,6 +108,7 @@ export function getDemoComponent(system: SystemId, componentId: string): React.C
     case 'salt': return getSaltDemoComponent(componentId);
     case 'm3': return getM3DemoComponent(componentId);
     case 'fluent': return getFluentDemoComponent(componentId);
+    case 'ausos': return getAusosDemoComponent(componentId);
   }
 }
 
@@ -85,10 +118,11 @@ export function getPreviews(system: SystemId): Record<string, React.ComponentTyp
     case 'salt': return getSaltPreviews();
     case 'm3': return getM3Previews();
     case 'fluent': return getFluentPreviews();
+    case 'ausos': return getAusosPreviews();
   }
 }
 
-export function getFullCSS(system: SystemId, theme: any, densityOrSize: string | number): string {
+export function getFullCSS(system: SystemId, theme: ThemeTokens, densityOrSize: string | number): string {
   switch (system) {
     case 'salt': {
       const d = SALT_DENSITY_MAP[densityOrSize as string] || SALT_DENSITY_MAP.medium;
@@ -97,11 +131,17 @@ export function getFullCSS(system: SystemId, theme: any, densityOrSize: string |
     }
     case 'm3': return m3BuildCSS(theme) + getM3DensityCSS(densityOrSize as number);
     case 'fluent': return fluentBuildCSS(theme) + getFluentSizeCSS(densityOrSize as string);
+    case 'ausos': return ausosBuildCSS(theme) + getAusosDensityCSS(densityOrSize as string);
   }
 }
 
 export function getFont(system: SystemId): string {
-  switch (system) { case 'salt': return SALT_FONT; case 'm3': return "'Roboto', sans-serif"; case 'fluent': return FLUENT_FONT; }
+  switch (system) {
+    case 'salt': return SALT_FONT;
+    case 'm3': return "'Roboto', sans-serif";
+    case 'fluent': return FLUENT_FONT;
+    case 'ausos': return AUSOS_FONT;
+  }
 }
 
 export function getSystemInfo(system: SystemId) {
@@ -109,17 +149,25 @@ export function getSystemInfo(system: SystemId) {
     salt: { name: "Salt DS", org: "J.P. Morgan", color: "#1B7F9E", icon: "S" },
     m3: { name: "Material 3", org: "Google", color: "#6750A4", icon: "M" },
     fluent: { name: "Fluent 2", org: "Microsoft", color: "#0F6CBD", icon: "F" },
+    ausos: { name: "ausos DS", org: "ausos", color: "#9575F0", icon: "A" },
   };
   return info[system];
 }
 
 // Salt density map from the reference file
-const SALT_DENSITY_MAP: Record<string, any> = {
+const SALT_DENSITY_MAP: Record<string, DensityEntry> = {
   high:   { h:20, sp:4,  fs:11, fsS:10, h1:18, h2:14, title:24, pad:6,  cr:2, icon:10, sideW:200, mainP:16, cardMin:150, cardP:8,  gap:6,  topH:28, srchH:24, logoS:20, catFs:8,  demoP:12, demoCr:4 },
   medium: { h:28, sp:8,  fs:12, fsS:11, h1:24, h2:18, title:32, pad:8,  cr:4, icon:12, sideW:240, mainP:24, cardMin:180, cardP:12, gap:8,  topH:36, srchH:28, logoS:26, catFs:9,  demoP:20, demoCr:8 },
   low:    { h:36, sp:12, fs:14, fsS:12, h1:32, h2:24, title:40, pad:12, cr:6, icon:14, sideW:280, mainP:32, cardMin:210, cardP:16, gap:10, topH:44, srchH:32, logoS:30, catFs:10, demoP:28, demoCr:10 },
   touch:  { h:44, sp:16, fs:16, fsS:14, h1:42, h2:32, title:48, pad:16, cr:8, icon:16, sideW:300, mainP:40, cardMin:240, cardP:20, gap:14, topH:52, srchH:40, logoS:36, catFs:11, demoP:36, demoCr:12 },
 };
 
-export { SALT_DENSITY_MAP };
-export { SALT_THEMES, M3_THEMES, FLUENT_THEMES };
+const AUSOS_DENSITY_MAP: Record<string, DensityEntry> = {
+  high:   { h:20, sp:4,  fs:11, fsS:10, h1:18, h2:14, title:24, pad:6,  cr:6,  icon:10, sideW:200, mainP:16, cardMin:150, cardP:8,  gap:6,  topH:28, srchH:24, logoS:20, catFs:8,  demoP:12, demoCr:8 },
+  medium: { h:28, sp:8,  fs:12, fsS:11, h1:24, h2:18, title:32, pad:8,  cr:8,  icon:12, sideW:240, mainP:24, cardMin:180, cardP:12, gap:8,  topH:36, srchH:28, logoS:26, catFs:9,  demoP:20, demoCr:12 },
+  low:    { h:36, sp:12, fs:14, fsS:12, h1:32, h2:24, title:40, pad:12, cr:10, icon:14, sideW:280, mainP:32, cardMin:210, cardP:16, gap:10, topH:44, srchH:32, logoS:30, catFs:10, demoP:28, demoCr:14 },
+  touch:  { h:44, sp:16, fs:16, fsS:14, h1:42, h2:32, title:48, pad:16, cr:12, icon:16, sideW:300, mainP:40, cardMin:240, cardP:20, gap:14, topH:52, srchH:40, logoS:36, catFs:11, demoP:36, demoCr:16 },
+};
+
+export { SALT_DENSITY_MAP, AUSOS_DENSITY_MAP };
+export { SALT_THEMES, M3_THEMES, FLUENT_THEMES, AUSOS_THEMES };

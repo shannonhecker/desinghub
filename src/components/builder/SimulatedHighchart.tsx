@@ -334,7 +334,7 @@ interface SimulatedHighchartProps {
   chartType: HighchartType;
   title?: string;
   value?: number;
-  system: "salt" | "m3" | "fluent";
+  system: "salt" | "m3" | "fluent" | "ausos";
 }
 
 export function SimulatedHighchart({ chartType, title, value, system }: SimulatedHighchartProps) {

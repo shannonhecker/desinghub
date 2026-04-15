@@ -18,27 +18,31 @@ export function useActiveTheme() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
-    : getTheme("fluent", store.fluent.themeKey);
+    : activeSystem === "fluent"
+    ? getTheme("fluent", store.fluent.themeKey)
+    : getTheme("ausos", store.ausos.themeKey);
 
   activateTheme(activeSystem, T);
 
-  const densityOrSize = activeSystem === "salt" ? store.salt.density : activeSystem === "m3" ? store.m3.density : store.fluent.size;
+  const densityOrSize = activeSystem === "salt" ? store.salt.density : activeSystem === "m3" ? store.m3.density : activeSystem === "fluent" ? store.fluent.size : store.ausos.density;
   const css = getFullCSS(activeSystem, T, densityOrSize);
   const font = getFont(activeSystem);
 
   // Normalized token accessors
-  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surface : T.bg1;
-  const bg2 = activeSystem === "salt" ? T.bg2 : activeSystem === "m3" ? T.surfaceContainerLow : T.bg2;
-  const bg3 = activeSystem === "salt" ? T.bg3 : activeSystem === "m3" ? T.surfaceContainer : T.bg3;
-  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : T.fg1;
-  const fg2 = activeSystem === "salt" ? T.fg2 : activeSystem === "m3" ? T.onSurfaceVariant : T.fg2;
-  const fg3 = activeSystem === "salt" ? T.fg3 : activeSystem === "m3" ? T.outline : T.fg3;
-  const accent = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary : T.brandBg;
-  const accentFg = activeSystem === "salt" ? T.accentFg : activeSystem === "m3" ? T.onPrimary : T.fgOnBrand;
-  const accentWeak = activeSystem === "salt" ? T.accentWeak : activeSystem === "m3" ? T.primaryContainer : T.brandBg2;
-  const accentText = activeSystem === "salt" ? (T.accentText || T.accent) : activeSystem === "m3" ? T.primary : T.brandFg1;
-  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
-  const borderStrong = activeSystem === "salt" ? T.borderStrong : activeSystem === "m3" ? T.outline : T.strokeAccessible;
+  const n = (salt: string, m3: string, fluent: string, ausos: string) =>
+    activeSystem === "salt" ? T[salt] : activeSystem === "m3" ? T[m3] : activeSystem === "fluent" ? T[fluent] : T[ausos];
+  const bg = n("bg", "surface", "bg1", "bg");
+  const bg2 = n("bg2", "surfaceContainerLow", "bg2", "bg2");
+  const bg3 = n("bg3", "surfaceContainer", "bg3", "bg3");
+  const fg = n("fg", "onSurface", "fg1", "fg");
+  const fg2 = n("fg2", "onSurfaceVariant", "fg2", "fg2");
+  const fg3 = n("fg3", "outline", "fg3", "fg3");
+  const accent = n("accent", "primary", "brandBg", "accent");
+  const accentFg = n("accentFg", "onPrimary", "fgOnBrand", "accentFg");
+  const accentWeak = n("accentWeak", "primaryContainer", "brandBg2", "accentSurface");
+  const accentText = activeSystem === "salt" ? (T.accentText || T.accent) : activeSystem === "m3" ? T.primary : activeSystem === "fluent" ? T.brandFg1 : T.accent;
+  const border = n("border", "outlineVariant", "stroke2", "border");
+  const borderStrong = n("borderStrong", "outline", "strokeAccessible", "borderStrong");
 
   // Density-derived sizing — every px on the page scales with the active density/size
   const scale = (() => {
@@ -56,11 +60,18 @@ export function useActiveTheme() {
            : d === -1 ? { navH: 44, navF: 14, labF: 11, tabH: 44, hdrH: 52, gap: 9,  panelW: 256 }
            :            { navH: 48, navF: 14, labF: 11, tabH: 48, hdrH: 56, gap: 10, panelW: 268 }; // default
     }
-    // Fluent
+    if (activeSystem === "fluent") {
+      const d = densityOrSize as string;
+      return d === "small" ? { navH: 24, navF: 11, labF: 9,  tabH: 28, hdrH: 36, gap: 4,  panelW: 220 }
+           : d === "large" ? { navH: 40, navF: 14, labF: 11, tabH: 42, hdrH: 50, gap: 8,  panelW: 264 }
+           :                 { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 6,  panelW: 240 }; // medium
+    }
+    // ausos
     const d = densityOrSize as string;
-    return d === "small" ? { navH: 24, navF: 11, labF: 9,  tabH: 28, hdrH: 36, gap: 4,  panelW: 220 }
-         : d === "large" ? { navH: 40, navF: 14, labF: 11, tabH: 42, hdrH: 50, gap: 8,  panelW: 264 }
-         :                 { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 6,  panelW: 240 }; // medium
+    return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
+         : d === "low"   ? { navH: 36, navF: 13, labF: 11, tabH: 40, hdrH: 48, gap: 8,  panelW: 260 }
+         : d === "touch" ? { navH: 44, navF: 14, labF: 12, tabH: 48, hdrH: 56, gap: 10, panelW: 288 }
+         :                 { navH: 28, navF: 12, labF: 10, tabH: 32, hdrH: 40, gap: 6,  panelW: 240 }; // medium
   })();
 
   return { T, css, font, bg, bg2, bg3, fg, fg2, fg3, accent, accentFg, accentWeak, accentText, border, borderStrong, activeSystem, densityOrSize, scale };
@@ -102,11 +113,12 @@ function SystemSwitcher() {
     { id: "salt", label: "Salt DS" },
     { id: "m3", label: "Material 3" },
     { id: "fluent", label: "Fluent 2" },
+    { id: "ausos", label: "ausos" },
   ];
   // Use the DS's own button classes
-  const btnClass = activeSystem === "salt" ? "s-btn" : activeSystem === "m3" ? "m3-btn" : "f-btn";
-  const activeClass = activeSystem === "salt" ? "s-btn-solid" : activeSystem === "m3" ? "m3-btn-filled" : "f-btn-primary";
-  const inactiveClass = activeSystem === "salt" ? "s-btn-transparent" : activeSystem === "m3" ? "m3-btn-text" : "f-btn-subtle";
+  const btnClass = activeSystem === "salt" ? "s-btn" : activeSystem === "m3" ? "m3-btn" : activeSystem === "fluent" ? "f-btn" : "a-btn";
+  const activeClass = activeSystem === "salt" ? "s-btn-solid" : activeSystem === "m3" ? "m3-btn-filled" : activeSystem === "fluent" ? "f-btn-primary" : "a-btn-primary";
+  const inactiveClass = activeSystem === "salt" ? "s-btn-transparent" : activeSystem === "m3" ? "m3-btn-text" : activeSystem === "fluent" ? "f-btn-subtle" : "a-btn-ghost";
 
   return (
     <div style={{ display: "flex", gap: 4 }}>
@@ -141,6 +153,8 @@ function ThemeControls() {
       ? `s-btn ${active ? "s-btn-solid" : "s-btn-bordered"}`
       : activeSystem === "m3"
       ? `m3-btn ${active ? "m3-btn-filled" : "m3-btn-outlined"}`
+      : activeSystem === "ausos"
+      ? `a-btn ${active ? "a-btn-primary" : "a-btn-ghost"}`
       : `f-btn ${active ? "f-btn-primary" : "f-btn-secondary"}`;
 
     return (
@@ -374,6 +388,39 @@ function ThemeControls() {
     );
   }
 
+  /* ── AUSOS DS ── */
+  if (activeSystem === "ausos") {
+    const { ausos, setAusosTheme, setAusosDensity } = store;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        <button onClick={() => setOpen(v => !v)} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: `${t.scale.gap - 2}px 0`, background: "none", border: "none", cursor: "pointer",
+          fontSize: t.scale.labF, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
+          color: t.fg2, fontFamily: t.font,
+        }}>
+          Controls
+          <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
+        </button>
+        {open && (
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+            <ControlGroup label="Theme">
+              <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
+              <CtrlBtn active={ausos.themeKey === "light"} onClick={() => setAusosTheme("light")}>Light</CtrlBtn>
+            </ControlGroup>
+            <ControlGroup label="Density">
+              {(["high", "medium", "low", "touch"] as const).map(k => (
+                <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>
+                  {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
+                </CtrlBtn>
+              ))}
+            </ControlGroup>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   /* ── FLUENT 2 ── */
   const { fluent, setFluentTheme, setFluentSize } = store;
   return (
@@ -411,7 +458,7 @@ function SidebarDSBrand() {
   const sysInfo = getSystemInfo(activeSystem);
   const components = getComponents(activeSystem);
 
-  const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : "F2", bg: t.accent, color: t.accentFg };
+  const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : activeSystem === "fluent" ? "F2" : "A", bg: t.accent, color: t.accentFg };
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap + 2, padding: `${t.scale.gap + 2}px ${activeSystem === "m3" ? 16 : 14}px` }}>
@@ -449,9 +496,9 @@ function SidebarSearch() {
         onChange={e => setSearchQuery(e.target.value)}
         className={inputClass}
         style={{
-          background: activeSystem === "m3" ? t.bg : t.bg2,
+          background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg : t.bg2,
           color: t.fg, border: `1px solid ${t.border}`,
-          borderRadius: activeSystem === "m3" ? 28 : 4,
+          borderRadius: activeSystem === "ausos" ? 9999 : activeSystem === "m3" ? 28 : 4,
           padding: `${t.scale.gap - 1}px 10px ${t.scale.gap - 1}px 28px`,
           fontSize: t.scale.navF, fontFamily: t.font, outline: "none", width: "100%",
           boxSizing: "border-box" as const,
@@ -477,8 +524,7 @@ function ContentTopBar() {
       display: "flex", alignItems: "center", gap: t.scale.gap + 4,
       padding: `0 ${t.scale.gap + 12}px`,
       height: t.scale.tabH, flexShrink: 0,
-      borderBottom: `1px solid ${t.border}`,
-      background: activeSystem === "m3" ? t.bg : t.bg,
+      background: "transparent",
     }}>
       {/* Hamburger — toggles sidebar */}
       <button
@@ -526,23 +572,24 @@ const COMPONENT_SUBCATS: Record<string, string> = {
   chips: "Actions",
   /* Inputs */
   inputs: "Inputs", "text-fields": "Inputs", checkboxes: "Inputs", radios: "Inputs",
-  switches: "Inputs", slider: "Inputs", sliders: "Inputs", dropdown: "Inputs",
+  switches: "Inputs", slider: "Inputs", sliders: "Inputs", dropdown: "Inputs", dropdowns: "Inputs",
   "form-field": "Inputs", "list-box": "Inputs", "combo-box": "Inputs",
   "number-input": "Inputs", "multiline-input": "Inputs", calendar: "Inputs",
   "date-picker": "Inputs", "date-pickers": "Inputs", "file-drop": "Inputs",
   /* Navigation */
   tabs: "Navigation", menu: "Navigation", menus: "Navigation", stepper: "Navigation",
   pagination: "Navigation", "vert-nav": "Navigation", "nav-item": "Navigation",
-  "skip-link": "Navigation", "nav-bar": "Navigation",
+  "skip-link": "Navigation", "nav-bar": "Navigation", breadcrumbs: "Navigation",
   /* Communication */
   banners: "Communication", dialog: "Communication", dialogs: "Communication",
   badges: "Communication", avatars: "Communication", tooltips: "Communication",
   progress: "Communication", toast: "Communication", spinner: "Communication",
-  snackbar: "Communication", messagebars: "Communication",
+  snackbar: "Communication", messagebars: "Communication", alerts: "Communication",
   /* Containment */
   cards: "Containment", accordion: "Containment", dividers: "Containment",
   drawer: "Containment", panel: "Containment", "data-grid": "Containment",
-  table: "Containment", overlay: "Containment", splitter: "Containment",
+  table: "Containment", "data-table": "Containment", "ag-grid": "Containment",
+  overlay: "Containment", splitter: "Containment",
   "static-list": "Containment", carousel: "Containment", "interactable-card": "Containment",
   collapsible: "Containment", "bottom-sheets": "Containment",
 };
@@ -568,7 +615,7 @@ function ComponentList() {
   };
 
   /* DS-scoped nav classes */
-  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : "f-sidebar-item";
+  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : activeSystem === "fluent" ? "f-sidebar-item" : "a-sidebar-item";
 
   const activeItemStyle = (active: boolean, isChild = false): React.CSSProperties => {
     const indent = isChild ? (activeSystem === "m3" ? 12 : 8) : 0;
@@ -583,6 +630,12 @@ function ComponentList() {
       return active
         ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accentText, background: t.accentWeak, borderRadius: 4, paddingLeft: t.scale.gap + 6, marginLeft: indent }
         : { fontSize: t.scale.navF, color: t.fg, paddingLeft: t.scale.gap + 6, marginLeft: indent };
+    }
+    if (activeSystem === "ausos") {
+      /* ausos: clean minimal — subtle bg shift, no borders */
+      return active
+        ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accent, background: t.accentWeak, borderRadius: 6, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" }
+        : { fontSize: t.scale.navF, color: t.fg2, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" };
     }
     /* Salt: left accent border on active item */
     return active
@@ -738,6 +791,35 @@ function TabBar() {
     );
   }
 
+  /* ── ausos DS Tabs: M3-style underline with ausos theme ── */
+  if (activeSystem === "ausos") {
+    return (
+      <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
+        {tabs.map(tab => {
+          const active = activeTab === tab.id;
+          return (
+            <button key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                position: "relative", height: t.scale.tabH, padding: `0 ${t.scale.gap + 14}px`,
+                border: "none", background: "transparent", cursor: "pointer",
+                fontSize: t.scale.navF, fontWeight: 500, fontFamily: t.font,
+                color: active ? t.accent : t.fg3, transition: "color 150ms",
+              }}>
+              {tab.label}
+              {active && (
+                <span style={{
+                  position: "absolute", bottom: 0, left: t.scale.gap + 6, right: t.scale.gap + 6,
+                  height: 2, borderRadius: 1, background: t.accent,
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   /* ── Fluent 2 Tabs: f-tab class + font size from scale ── */
   return (
     <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, background: t.bg, flexShrink: 0 }}>
@@ -855,7 +937,7 @@ function LandingGrid() {
   }
 
   /* ─── Salt / Fluent layout — same template as M3: hero + category sections ─── */
-  const cardClass = activeSystem === "salt" ? "s-card" : "f-card";
+  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "ausos" ? "a-card" : "f-card";
   const heroSize = Math.round(t.scale.tabH * 0.9);
   const h2Size   = Math.round(t.scale.tabH * 0.45);
   const bodySize = t.scale.navF + 2;
@@ -865,6 +947,13 @@ function LandingGrid() {
   const featurePills = activeSystem === "salt"
     ? [
         { icon: "layers", label: "3-Layer Tokens" },
+        { icon: "density_small", label: "4 Densities" },
+        { icon: "accessibility_new", label: "WCAG AA" },
+      ]
+    : activeSystem === "ausos"
+    ? [
+        { icon: "blur_on", label: "Glassmorphism" },
+        { icon: "gradient", label: "Aurora Themes" },
         { icon: "density_small", label: "4 Densities" },
         { icon: "accessibility_new", label: "WCAG AA" },
       ]
@@ -894,6 +983,8 @@ function LandingGrid() {
           {components.length} components across {categories.length} categories —
           {activeSystem === "salt"
             ? " accessible, density-aware, token-driven design system."
+            : activeSystem === "ausos"
+            ? " glassmorphism-first, accessible, and token-driven design system."
             : " expressive, adaptive, and cross-platform design system."}
         </p>
         {/* Quick-stat pills */}
@@ -934,11 +1025,15 @@ function LandingGrid() {
                 return (
                   <button key={c.id} className={cardClass}
                     onClick={() => setSelectedComponent(c.id)}
-                    style={{ width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer" }}
+                    style={{
+                      width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
+                      borderRadius: activeSystem === "ausos" ? 16 : 8,
+                      transition: "box-shadow 200ms, border-color 200ms",
+                    }}
                   >
                     {/* Preview area */}
                     <div style={{
-                      background: t.bg, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                      background: t.bg2 || t.bg, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,
                     }}>
@@ -949,7 +1044,7 @@ function LandingGrid() {
                     </div>
                     {/* Label area */}
                     <div style={{ padding: `${t.scale.gap + 2}px ${t.scale.gap + 6}px ${t.scale.gap + 4}px` }}>
-                      <div style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg }}>{c.name}</div>
+                      <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg }}>{c.name}</div>
                       <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
                     </div>
                   </button>
@@ -1040,19 +1135,26 @@ export function DesignHubApp() {
     ? store.salt.themeKey.includes("dark")
     : activeSystem === "m3"
     ? store.m3.themeKey.startsWith("dark")
+    : activeSystem === "ausos"
+    ? store.ausos.themeKey === "dark"
     : store.fluent.themeKey === "dark";
   const logoFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0)";
 
+  const pageGradient = undefined;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: t.bg2, fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: pageGradient || t.bg2, fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Inject the DS CSS */}
       <style dangerouslySetInnerHTML={{ __html: t.css }} />
 
       {/* Header — 3-column, height + padding scale with density */}
       <header style={{
         display: "flex", alignItems: "center",
-        padding: `0 ${t.scale.gap + 4}px`, borderBottom: `1px solid ${t.border}`, background: t.bg,
+        padding: `0 ${t.scale.gap + 4}px`,
+        borderBottom: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
+        background: activeSystem === "ausos" ? "transparent" : t.bg,
         minHeight: t.scale.hdrH, flexShrink: 0,
+        position: "relative",
       }}>
         {/* Left — logo + title (hamburger moved to ContentTopBar) */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
@@ -1069,7 +1171,7 @@ export function DesignHubApp() {
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
           <span style={{
             fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
-            padding: `${t.scale.gap - 3}px ${t.scale.gap + 2}px`, borderRadius: activeSystem === "m3" ? 16 : 8, fontWeight: 600,
+            padding: `${t.scale.gap - 3}px ${t.scale.gap + 4}px`, borderRadius: 9999, fontWeight: 600,
           }}>
             {t.T.name || sysInfo.name}
           </span>
@@ -1077,7 +1179,7 @@ export function DesignHubApp() {
             display: "inline-flex", alignItems: "center", gap: 5,
             fontSize: t.scale.labF + 1, fontWeight: 600, color: t.accentFg,
             background: t.accent,
-            padding: `${t.scale.gap - 1}px ${t.scale.gap + 6}px`, borderRadius: 8, textDecoration: "none",
+            padding: `${t.scale.gap - 1}px ${t.scale.gap + 8}px`, borderRadius: 9999, textDecoration: "none",
           }}>
             AI Builder
           </Link>
@@ -1089,8 +1191,8 @@ export function DesignHubApp() {
         {sidebarOpen && (
           <aside style={{
             width: t.scale.panelW,
-            borderRight: `1px solid ${t.border}`,
-            background: activeSystem === "m3" ? t.bg2 : t.bg,
+            borderRight: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
+            background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg2 : t.bg,
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
@@ -1121,7 +1223,7 @@ export function DesignHubApp() {
         )}
 
         {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
-        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.bg }}>
+        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "ausos" ? "transparent" : t.bg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />

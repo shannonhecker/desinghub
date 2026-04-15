@@ -30,25 +30,31 @@ function InspectorField({
 }
 
 /* ── Generic hook: read block + updater (searches all zones) ── */
-function useBlockProps(blockId: string) {
-  const blocks = useBuilder((s) => s.blocks);
-  const headerBlocks = useBuilder((s) => s.headerBlocks);
-  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
-  const footerBlocks = useBuilder((s) => s.footerBlocks);
-  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
-  const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
-  const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
-  const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
+type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
+const ZONE_KEYS = ['blocks', 'headerBlocks', 'sidebarBlocks', 'footerBlocks'] as const;
+const ZONE_IDS: ZoneId[] = ['body', 'header', 'sidebar', 'footer'];
 
-  let block = blocks.find((b) => b.id === blockId);
-  let update = updateBlockProps;
-  if (!block) { block = headerBlocks.find((b) => b.id === blockId); update = updateHeaderBlockProps; }
-  if (!block) { block = sidebarBlocks.find((b) => b.id === blockId); update = updateSidebarBlockProps; }
-  if (!block) { block = footerBlocks.find((b) => b.id === blockId); update = updateFooterBlockProps; }
+function useBlockProps(blockId: string) {
+  const block = useBuilder((s) => {
+    for (const key of ZONE_KEYS) {
+      const found = s[key].find((b) => b.id === blockId);
+      if (found) return found;
+    }
+    return null;
+  });
+
+  const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+
+  const zone: ZoneId = useBuilder((s) => {
+    for (let i = 0; i < ZONE_KEYS.length; i++) {
+      if (s[ZONE_KEYS[i]].some((b) => b.id === blockId)) return ZONE_IDS[i];
+    }
+    return 'body';
+  });
 
   return {
     props: block?.props ?? {},
-    set: (patch: Record<string, unknown>) => update(blockId, patch),
+    set: (patch: Record<string, unknown>) => updateZoneBlockProps(zone, blockId, patch),
   };
 }
 

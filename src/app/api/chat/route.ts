@@ -1,6 +1,25 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "@/lib/chatSystem";
 
+const MAX_MESSAGES = 40;
+const MAX_CONTENT_LENGTH = 8000;
+
+function isValidMessage(m: unknown): m is { role: string; content: string } {
+  if (typeof m !== "object" || m === null) return false;
+  const msg = m as Record<string, unknown>;
+  return (
+    (msg.role === "user" || msg.role === "assistant") &&
+    typeof msg.content === "string" &&
+    msg.content.length <= MAX_CONTENT_LENGTH
+  );
+}
+
+let client: Anthropic | null = null;
+function getClient(apiKey: string): Anthropic {
+  if (!client) client = new Anthropic({ apiKey });
+  return client;
+}
+
 export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -10,15 +29,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const { messages } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON body" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
-  const client = new Anthropic({ apiKey });
+  const { messages } = body as Record<string, unknown>;
 
-  const stream = await client.messages.stream({
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
+    return new Response(
+      JSON.stringify({ error: `messages must be an array of 1-${MAX_MESSAGES} items` }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (!messages.every(isValidMessage)) {
+    return new Response(
+      JSON.stringify({ error: "Each message must have role (user|assistant) and content (string)" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const validatedMessages = messages as { role: "user" | "assistant"; content: string }[];
+  const anthropic = getClient(apiKey);
+
+  const stream = await anthropic.messages.stream({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
-    messages,
+    messages: validatedMessages,
   });
 
   const encoder = new TextEncoder();
