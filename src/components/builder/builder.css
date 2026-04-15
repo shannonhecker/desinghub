@@ -5160,10 +5160,8 @@
 .component-sidebar {
   width: var(--comp-sidebar-width, 240px);
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.40);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(255, 255, 255, 0.10);
+  background: var(--b-bg);
+  border-left: 1px solid var(--b-border2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -5435,10 +5433,8 @@
 
 /* ── Light mode overrides ── */
 .builder-light .component-sidebar {
-  background: rgba(255, 255, 255, 0.50);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left-color: rgba(0, 0, 0, 0.08);
+  background: var(--b-bg);
+  border-left-color: var(--b-border2);
 }
 .builder-light .component-library {
   background: transparent;
@@ -5822,7 +5818,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── Chat area ── */
