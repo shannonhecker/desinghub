@@ -5090,7 +5090,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-width: 0;
+}
 
 /* Component library fills its sidebar container */
 .component-library {
@@ -5653,12 +5653,6 @@
   background: transparent;
   color: var(--ds-fg-secondary);
   font-family: var(--ds-font);
-}
-/* Constrain all nav icons to uniform size */
-.bp-nav-item svg, .bp-nav-item .material-symbols-outlined {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
@@ -5708,8 +5702,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ── Chat area ── */
@@ -7163,18 +7156,17 @@
    ═══════════════════════════════════════════════════════════ */
 
 .zone-grid {
-  display: flex !important;
-  flex-wrap: wrap;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  align-items: flex-start;
-  align-content: flex-start;
+  align-items: start;
   min-height: 60px;
 }
 
 /* Empty grid state — visual dropzone */
 .zone-grid:empty::after {
   content: "Drag components here";
-  width: 100%;
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7221,13 +7213,8 @@
   transition: opacity 0.15s;
 }
 .canvas-block:hover .block-resize-handle,
-.block-resize-handle.is-resizing,
-.block-resize-handle:focus-visible {
+.block-resize-handle.is-resizing {
   opacity: 1;
-}
-.block-resize-handle:focus-visible .block-resize-grip {
-  background: rgba(94, 231, 223, 0.9);
-  box-shadow: 0 0 0 2px rgba(94, 231, 223, 0.5);
 }
 
 .block-resize-grip {
@@ -7443,36 +7430,3 @@
 [class*="-avatar-group-item"] { width: 36px; height: 36px; border-radius: 50%; background: var(--ds-primary); color: var(--ds-on-primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; border: 2px solid var(--ds-surface); margin-left: -8px; position: relative; }
 [class*="-avatar-group-item"]:first-child { margin-left: 0; }
 [class*="-avatar-group-overflow"] { background: var(--ds-border); color: var(--ds-fg-secondary); }
-
-/* ═══════════════════════════════════════════════════════════
-   Resizable panel handles (react-resizable-panels)
-   ═══════════════════════════════════════════════════════════ */
-.panel-resize-handle {
-  width: 4px;
-  background: transparent;
-  cursor: col-resize;
-  transition: background 0.15s;
-  position: relative;
-  flex-shrink: 0;
-}
-.panel-resize-handle:hover, .panel-resize-handle[data-resize-handle-active] {
-  background: rgba(94, 231, 223, 0.4);
-}
-.panel-resize-handle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 24px;
-  border-radius: 1px;
-  background: rgba(255,255,255,0.15);
-  transition: background 0.15s, height 0.15s;
-}
-.panel-resize-handle:hover::after, .panel-resize-handle[data-resize-handle-active]::after {
-  background: rgba(94, 231, 223, 0.8);
-  height: 40px;
-}
-.builder-light .panel-resize-handle::after { background: rgba(0,0,0,0.1); }
-.builder-light .panel-resize-handle:hover::after { background: rgba(94, 231, 223, 0.8); }

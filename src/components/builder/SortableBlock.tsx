@@ -13,48 +13,44 @@ function ResizeHandle({
   onResize,
 }: {
   colSpan: number;
-  onResize: (pct: number) => void;
+  onResize: (span: number) => void;
 }) {
   const [resizing, setResizing] = useState(false);
-  const startRef = useRef<{ x: number; startPct: number; containerWidth: number } | null>(null);
-
-  /* Current width percentage — derive from colSpan (legacy) or direct pct */
-  const currentPct = colSpan <= 3 ? Math.round(colSpan * 33.33) : colSpan;
+  const startRef = useRef<{ x: number; span: number; gridWidth: number } | null>(null);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const container = (e.currentTarget as HTMLElement).closest(".zone-grid") || (e.currentTarget as HTMLElement).parentElement?.parentElement;
-      const containerWidth = container ? container.clientWidth : 600;
-      startRef.current = { x: e.clientX, startPct: currentPct, containerWidth };
+
+      /* Measure the grid container width to calculate column thresholds */
+      const gridEl = (e.currentTarget as HTMLElement).closest(".zone-grid");
+      const gridWidth = gridEl ? gridEl.clientWidth : 600;
+
+      startRef.current = { x: e.clientX, span: colSpan, gridWidth };
       setResizing(true);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [currentPct]
+    [colSpan]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       if (!startRef.current) return;
-      const { x: startX, startPct: sp, containerWidth } = startRef.current;
-      const deltaPx = e.clientX - startX;
-      const deltaPct = (deltaPx / containerWidth) * 100;
-      const newPct = Math.max(20, Math.min(100, Math.round(sp + deltaPct)));
-      if (newPct !== currentPct) onResize(newPct);
+      const { x: startX, gridWidth } = startRef.current;
+      const colWidth = gridWidth / 3;
+      const delta = e.clientX - startX;
+      const deltaSpans = Math.round(delta / colWidth);
+      const newSpan = Math.max(1, Math.min(3, startRef.current.span + deltaSpans));
+      if (newSpan !== colSpan) onResize(newSpan);
     },
-    [currentPct, onResize]
+    [colSpan, onResize]
   );
 
   const handlePointerUp = useCallback(() => {
     startRef.current = null;
     setResizing(false);
   }, []);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "ArrowRight") { e.preventDefault(); onResize(Math.min(100, currentPct + 10)); }
-    if (e.key === "ArrowLeft") { e.preventDefault(); onResize(Math.max(20, currentPct - 10)); }
-  }, [currentPct, onResize]);
 
   return (
     <div
@@ -63,15 +59,7 @@ function ResizeHandle({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      onKeyDown={handleKeyDown}
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize block width"
-      aria-valuenow={currentPct}
-      aria-valuemin={20}
-      aria-valuemax={100}
-      tabIndex={0}
-      title={`Width: ${currentPct}% — drag to resize (or Arrow keys ±10%)`}
+      title="Drag to resize width"
     >
       <div className="block-resize-grip" />
     </div>
@@ -179,22 +167,20 @@ export function SortableBlock({
         </button>
       )}
 
-      {/* Width badge — click to cycle common widths */}
+      {/* Column span badge — click to cycle */}
       {onColSpanChange && !compact && (
         <button
           className="canvas-block-colspan"
           onClick={() => {
-            const cycle = [33, 50, 66, 100];
-            const current = colSpan <= 3 ? Math.round(colSpan * 33.33) : colSpan;
-            const idx = cycle.findIndex(v => v >= current);
-            const next = cycle[(idx + 1) % cycle.length];
-            onColSpanChange(next);
+            const cycle = [1, 2, 3];
+            const idx = cycle.indexOf(colSpan);
+            onColSpanChange(cycle[(idx + 1) % cycle.length]);
           }}
-          aria-label={`Width ${colSpan <= 3 ? Math.round(colSpan * 33.33) : colSpan}%`}
+          title={`Width: ${COL_SPAN_LABELS[colSpan] || "Full"} — click to cycle`}
           type="button"
         >
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.02em" }}>
-            {colSpan <= 3 ? COL_SPAN_LABELS[colSpan] || "Full" : `${colSpan}%`}
+            {COL_SPAN_LABELS[colSpan] || "Full"}
           </span>
         </button>
       )}

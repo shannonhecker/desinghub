@@ -995,7 +995,7 @@ const BLOCK_REGISTRY: BlockRegistryEntry[] = [
     type: "SimulatedStatCard",
     label: "Stat Card",
     icon: "monitoring",
-    defaults: { label: "Revenue", value: "$42.8K", pct: 60, widthPct: 33 },
+    defaults: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 },
     Fields: StatCardFields,
   },
 
