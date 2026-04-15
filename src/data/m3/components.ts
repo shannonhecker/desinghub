@@ -44,6 +44,7 @@ export const COMPS: ComponentDef[] = [
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination." },
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation." },
   { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social)." },
+  { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Material 3 tokens. Sorting, filtering, pagination, row selection." },
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views." },
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
 ];

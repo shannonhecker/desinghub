@@ -907,6 +907,7 @@ const COMPS = [
   {id:"pagination",name:"Pagination",cat:"Components & Patterns",desc:"Page navigation with prev/next. Truncation for large counts. Compact mode.",render:PaginationDemo},
   {id:"panel",name:"Panel",cat:"Components & Patterns",desc:"Contained section with optional header/close button.",render:PanelDemo},
   {id:"data-grid",name:"Data Grid",cat:"Components & Patterns",desc:"Primary/Secondary/Zebra fill. Column groups, multi-select, filter bar, sorting.",render:DataGridDemo},
+  {id:"ag-grid",name:"AG Grid",cat:"Components & Patterns",desc:"AG Grid data table themed with Salt DS tokens. Sorting, filtering, pagination, row selection.",render:()=>null},
   {id:"table",name:"Table",cat:"Components & Patterns",desc:"Semantic HTML table. Simpler than Data Grid. Column alignment, zebra striping.",render:TableDemo},
   {id:"vert-nav",name:"Vertical Navigation",cat:"Components & Patterns",desc:"Sidebar navigation with active indicator. Supports nesting, icons, badges.",render:VerticalNavDemo},
   {id:"overlay",name:"Overlay / Scrim",cat:"Components & Patterns",desc:"Overlay positions content above page. Scrim is semi-transparent backdrop.",render:OverlayScrimDemo},

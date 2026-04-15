@@ -6,6 +6,7 @@ import { getComponents, getFullCSS, getDemoComponent } from "@/data/registry";
 import { useActiveTheme } from "@/components/DesignHubApp";
 import { CodePanel } from "./CodePanel";
 import { ChartsPage } from "./ChartsPage";
+import { DSAgGrid } from "./DSAgGrid";
 
 export function ComponentPreview({ componentId }: { componentId: string }) {
   const store = useDesignHub();
@@ -56,6 +57,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         <CodePanel componentId={componentId} />
       ) : componentId === "charts" ? (
         <ChartsPage />
+      ) : componentId === "ag-grid" ? (
+        <DSAgGrid system={activeSystem} theme={t.T} />
       ) : (
         <div style={{
           background: t.bg, borderRadius: activeSystem === "m3" ? 12 : 8,

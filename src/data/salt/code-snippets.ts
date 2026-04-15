@@ -641,6 +641,52 @@ import { LocalizationProvider } from "@salt-ds/lab";
   </div>
 </nav>`,
   },
+  "ag-grid": {
+    react: `import { AgGridReact } from "ag-grid-react";
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Salt DS themed AG Grid
+const saltTheme = themeQuartz.withParams({
+  accentColor: "var(--salt-palette-accent)",
+  backgroundColor: "var(--salt-container-primary-background)",
+  foregroundColor: "var(--salt-content-primary-foreground)",
+  headerBackgroundColor: "var(--salt-container-secondary-background)",
+  headerTextColor: "var(--salt-content-secondary-foreground)",
+  borderColor: "var(--salt-separable-borderColor)",
+  fontFamily: "Open Sans, sans-serif",
+  fontSize: 12,
+  spacing: 6,
+  borderRadius: 4,
+});
+
+<div style={{ height: 400 }}>
+  <AgGridReact
+    theme={saltTheme}
+    rowData={data}
+    columnDefs={columnDefs}
+    rowSelection="multiple"
+    pagination
+  />
+</div>`,
+    html: `<!-- AG Grid + Salt DS Theme -->
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<div id="grid" style="height: 400px"></div>
+
+<script>
+const grid = agGrid.createGrid(document.getElementById('grid'), {
+  theme: agGrid.themeQuartz.withParams({
+    accentColor: '#1B7F9E',
+    backgroundColor: '#101820',
+    foregroundColor: '#E2E4E5',
+    borderColor: '#3C4850'
+  }),
+  rowData: [...],
+  columnDefs: [...]
+});
+</script>`,
+  },
   "toggle-btn": {
     react: `import { ToggleButton, ToggleButtonGroup } from "@salt-ds/core";
 

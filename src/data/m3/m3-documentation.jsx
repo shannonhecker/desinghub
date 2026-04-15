@@ -1621,6 +1621,7 @@ const COMPS = [
   { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: M3PatFeed },
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: M3PatDataTable },
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
+  { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Material 3 tokens. Sorting, filtering, pagination, row selection.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Hover, focus (Tab), press, and disabled states all respond to real interaction.", render: Buttons },
   { id: "text-fields", name: "Text Fields", cat: "Components & Patterns", desc: "Click to focus (border thickens + turns primary, label floats). Hover for state layer. Type to see input. Error variant has red border + icon.", render: TextFields },
   { id: "chips", name: "Chips", cat: "Components & Patterns", desc: "Click to toggle selected (fill + checkmark). Hover and focus-visible states via CSS.", render: Chips },

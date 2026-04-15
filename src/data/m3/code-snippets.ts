@@ -482,6 +482,52 @@ import DeleteIcon from "@mui/icons-material/Delete";
   </div>
 </div>`,
   },
+  "ag-grid": {
+    react: `import { AgGridReact } from "ag-grid-react";
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Material 3 themed AG Grid
+const m3Theme = themeQuartz.withParams({
+  accentColor: "var(--md-sys-color-primary)",
+  backgroundColor: "var(--md-sys-color-surface)",
+  foregroundColor: "var(--md-sys-color-on-surface)",
+  headerBackgroundColor: "var(--md-sys-color-surface-container-low)",
+  headerTextColor: "var(--md-sys-color-on-surface-variant)",
+  borderColor: "var(--md-sys-color-outline-variant)",
+  fontFamily: "Roboto, sans-serif",
+  fontSize: 14,
+  spacing: 8,
+  borderRadius: 12,
+});
+
+<div style={{ height: 400 }}>
+  <AgGridReact
+    theme={m3Theme}
+    rowData={data}
+    columnDefs={columnDefs}
+    rowSelection="multiple"
+    pagination
+  />
+</div>`,
+    html: `<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<div id="grid" style="height: 400px"></div>
+
+<script>
+const grid = agGrid.createGrid(document.getElementById('grid'), {
+  theme: agGrid.themeQuartz.withParams({
+    accentColor: '#6750A4',
+    backgroundColor: '#FFFBFE',
+    foregroundColor: '#1C1B1F',
+    borderColor: '#CAC4D0',
+    borderRadius: 12
+  }),
+  rowData: [...],
+  columnDefs: [...]
+});
+</script>`,
+  },
   "text-fields": {
     react: `import { TextField } from "@mui/material";
 

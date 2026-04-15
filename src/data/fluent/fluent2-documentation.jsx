@@ -1312,6 +1312,7 @@ const COMPS = [
     </div>;
   }},
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
+  { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Fluent 2 tokens. Sorting, filtering, pagination, row selection.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
   { id: "inputs", name: "Text Input", cat: "Components & Patterns", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
   { id: "checkboxes", name: "Checkbox", cat: "Components & Patterns", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },

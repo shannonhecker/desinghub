@@ -385,6 +385,52 @@ Highcharts.chart('chart-container', {
 });
 </script>`,
   },
+  "ag-grid": {
+    react: `import { AgGridReact } from "ag-grid-react";
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
+
+// Fluent 2 themed AG Grid
+const fluentTheme = themeQuartz.withParams({
+  accentColor: "var(--colorBrandBackground)",
+  backgroundColor: "var(--colorNeutralBackground1)",
+  foregroundColor: "var(--colorNeutralForeground1)",
+  headerBackgroundColor: "var(--colorNeutralBackground2)",
+  headerTextColor: "var(--colorNeutralForeground2)",
+  borderColor: "var(--colorNeutralStroke2)",
+  fontFamily: "'Segoe UI', sans-serif",
+  fontSize: 13,
+  spacing: 6,
+  borderRadius: 4,
+});
+
+<div style={{ height: 400 }}>
+  <AgGridReact
+    theme={fluentTheme}
+    rowData={data}
+    columnDefs={columnDefs}
+    rowSelection="multiple"
+    pagination
+  />
+</div>`,
+    html: `<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+<div id="grid" style="height: 400px"></div>
+
+<script>
+const grid = agGrid.createGrid(document.getElementById('grid'), {
+  theme: agGrid.themeQuartz.withParams({
+    accentColor: '#0F6CBD',
+    backgroundColor: '#FFFFFF',
+    foregroundColor: '#242424',
+    borderColor: '#E0E0E0',
+    borderRadius: 4
+  }),
+  rowData: [...],
+  columnDefs: [...]
+});
+</script>`,
+  },
   dialogs: {
     react: `import { Dialog, DialogSurface, DialogTitle,
   DialogBody, DialogActions, DialogTrigger,

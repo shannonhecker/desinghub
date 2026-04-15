@@ -59,6 +59,7 @@ export const COMPS: ComponentDef[] = [
   { id: "drawer", name: "Drawer", cat: "Components & Patterns", desc: "Slide-out panel. Left, Right, Top, Bottom." },
   { id: "panel", name: "Panel", cat: "Components & Patterns", desc: "Contained section with optional header/close button." },
   { id: "data-grid", name: "Data Grid", cat: "Components & Patterns", desc: "Primary/Secondary/Zebra fill. Column groups, sorting, filter." },
+  { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Salt DS tokens. Sorting, filtering, pagination, row selection." },
   { id: "table", name: "Table", cat: "Components & Patterns", desc: "Semantic HTML table. Column alignment, zebra striping." },
   { id: "overlay", name: "Overlay / Scrim", cat: "Components & Patterns", desc: "Content overlay + semi-transparent backdrop." },
   { id: "splitter", name: "Splitter", cat: "Components & Patterns", desc: "Drag handle to resize panes. Horizontal/vertical." },
