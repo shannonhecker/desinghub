@@ -1,15 +1,26 @@
 "use client";
 
-import React, { useMemo, useState, useCallback, useRef } from "react";
+import React, { useMemo, useCallback, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { AllCommunityModule, ModuleRegistry, themeQuartz, type ColDef } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  themeQuartz,
+  type ColDef,
+  type GridReadyEvent,
+  type GridApi,
+} from "ag-grid-community";
 
 /* Register AG Grid community modules once */
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 /* ═══════════════════════════════════════════════════════════
    DSAgGrid — AG Grid themed with Salt DS, M3, or Fluent 2
-   design tokens + column configuration panel.
+   design tokens. Uses AG Grid's native Community features:
+   - Column header menus (sort, pin, autosize)
+   - Drag-to-reorder columns in headers
+   - Column resize handles
+   - Built-in sorting, filtering, pagination
    ═══════════════════════════════════════════════════════════ */
 
 type DesignSystem = "salt" | "m3" | "fluent";
@@ -20,38 +31,89 @@ interface DSAgGridProps {
   height?: number;
 }
 
-/* ── Available columns for config panel ── */
-interface ColumnConfig {
-  field: string;
-  headerName: string;
-  visible: boolean;
-  sortable: boolean;
-  filter: boolean;
-  flex: number;
-}
-
-const ALL_COLUMNS: ColumnConfig[] = [
-  { field: "name", headerName: "Name", visible: true, sortable: true, filter: true, flex: 1.5 },
-  { field: "role", headerName: "Role", visible: true, sortable: true, filter: true, flex: 1 },
-  { field: "status", headerName: "Status", visible: true, sortable: true, filter: true, flex: 0.8 },
-  { field: "revenue", headerName: "Revenue", visible: true, sortable: true, filter: false, flex: 1 },
-  { field: "date", headerName: "Date", visible: true, sortable: true, filter: false, flex: 1 },
-  { field: "email", headerName: "Email", visible: false, sortable: true, filter: true, flex: 1.5 },
-  { field: "department", headerName: "Department", visible: false, sortable: true, filter: true, flex: 1 },
-  { field: "location", headerName: "Location", visible: false, sortable: false, filter: false, flex: 1 },
-];
-
 /* ── Sample data ── */
 const ROW_DATA = [
-  { name: "Jane Doe", role: "Designer", status: "Active", revenue: "$12,400", date: "Apr 12", email: "jane@co.com", department: "Design", location: "NYC" },
-  { name: "John Smith", role: "Developer", status: "Active", revenue: "$18,200", date: "Apr 11", email: "john@co.com", department: "Engineering", location: "SF" },
-  { name: "Alice Chen", role: "PM", status: "Pending", revenue: "$9,800", date: "Apr 10", email: "alice@co.com", department: "Product", location: "LON" },
-  { name: "Bob Wilson", role: "Analyst", status: "Active", revenue: "$15,600", date: "Apr 09", email: "bob@co.com", department: "Analytics", location: "NYC" },
-  { name: "Carol Davis", role: "Designer", status: "Inactive", revenue: "$7,200", date: "Apr 08", email: "carol@co.com", department: "Design", location: "SF" },
-  { name: "Dan Lee", role: "Developer", status: "Active", revenue: "$21,300", date: "Apr 07", email: "dan@co.com", department: "Engineering", location: "LON" },
-  { name: "Eve Park", role: "PM", status: "Active", revenue: "$16,900", date: "Apr 06", email: "eve@co.com", department: "Product", location: "NYC" },
-  { name: "Frank Ng", role: "Analyst", status: "Pending", revenue: "$11,400", date: "Apr 05", email: "frank@co.com", department: "Analytics", location: "SF" },
+  { name: "Jane Doe", role: "Designer", status: "Active", revenue: 12400, date: "2026-04-12", email: "jane@co.com", department: "Design" },
+  { name: "John Smith", role: "Developer", status: "Active", revenue: 18200, date: "2026-04-11", email: "john@co.com", department: "Engineering" },
+  { name: "Alice Chen", role: "PM", status: "Pending", revenue: 9800, date: "2026-04-10", email: "alice@co.com", department: "Product" },
+  { name: "Bob Wilson", role: "Analyst", status: "Active", revenue: 15600, date: "2026-04-09", email: "bob@co.com", department: "Analytics" },
+  { name: "Carol Davis", role: "Designer", status: "Inactive", revenue: 7200, date: "2026-04-08", email: "carol@co.com", department: "Design" },
+  { name: "Dan Lee", role: "Developer", status: "Active", revenue: 21300, date: "2026-04-07", email: "dan@co.com", department: "Engineering" },
+  { name: "Eve Park", role: "PM", status: "Active", revenue: 16900, date: "2026-04-06", email: "eve@co.com", department: "Product" },
+  { name: "Frank Ng", role: "Analyst", status: "Pending", revenue: 11400, date: "2026-04-05", email: "frank@co.com", department: "Analytics" },
 ];
+
+/* ── Column definitions using AG Grid's native API ── */
+const COLUMN_DEFS: ColDef[] = [
+  {
+    field: "name",
+    headerName: "Name",
+    flex: 1.5,
+    filter: "agTextColumnFilter",
+    pinned: "left" as const,
+    checkboxSelection: true,
+    headerCheckboxSelection: true,
+  },
+  {
+    field: "role",
+    headerName: "Role",
+    flex: 1,
+    filter: "agTextColumnFilter",
+  },
+  {
+    field: "status",
+    headerName: "Status",
+    flex: 0.8,
+    filter: "agTextColumnFilter",
+    cellStyle: (params: any) => {
+      if (params.value === "Active") return { color: "#36b37e", fontWeight: 600 };
+      if (params.value === "Pending") return { color: "#ffab00", fontWeight: 600 };
+      if (params.value === "Inactive") return { color: "#de350b", fontWeight: 600 };
+      return null;
+    },
+  },
+  {
+    field: "revenue",
+    headerName: "Revenue",
+    flex: 1,
+    filter: "agNumberColumnFilter",
+    valueFormatter: (params: any) => params.value ? `$${params.value.toLocaleString()}` : "",
+  },
+  {
+    field: "date",
+    headerName: "Date",
+    flex: 1,
+    filter: "agDateColumnFilter",
+    valueFormatter: (params: any) => {
+      if (!params.value) return "";
+      const d = new Date(params.value);
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    },
+  },
+  {
+    field: "email",
+    headerName: "Email",
+    flex: 1.5,
+    filter: "agTextColumnFilter",
+    hide: true,
+  },
+  {
+    field: "department",
+    headerName: "Department",
+    flex: 1,
+    filter: "agTextColumnFilter",
+    hide: true,
+  },
+];
+
+/* ── Default column definition — AG Grid Community features ── */
+const DEFAULT_COL_DEF: ColDef = {
+  sortable: true,
+  resizable: true,
+  filter: true,
+  floatingFilter: true,
+  minWidth: 80,
+};
 
 /* ── Map DS theme tokens → AG Grid theme params ── */
 function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
@@ -112,161 +174,90 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>) {
   });
 }
 
-/* ── DS-scoped style helpers ── */
+/* ── DS-scoped colors for toolbar ── */
 function dsColors(system: DesignSystem, T: Record<string, any>) {
   return {
     accent: system === "salt" ? (T.accent || "#1B7F9E") : system === "m3" ? (T.primary || "#6750A4") : (T.brandBg || "#0F6CBD"),
-    accentFg: system === "salt" ? (T.accentFg || "#fff") : system === "m3" ? (T.onPrimary || "#fff") : (T.fgOnBrand || "#fff"),
-    accentWeak: system === "salt" ? (T.accentWeak || "rgba(27,127,158,0.12)") : system === "m3" ? (T.secondaryContainer || "#E8DEF8") : (T.subtleBgSelected || "#EBEBEB"),
-    bg: system === "salt" ? (T.bg || "#101820") : system === "m3" ? (T.surface || "#FFFBFE") : (T.bg1 || "#fff"),
-    bg2: system === "salt" ? (T.bg2 || "#1C2830") : system === "m3" ? (T.surfaceContainerLow || "#F7F2FA") : (T.bg2 || "#FAFAFA"),
     fg: system === "salt" ? (T.fg || "#E2E4E5") : system === "m3" ? (T.onSurface || "#1C1B1F") : (T.fg1 || "#242424"),
     fg2: system === "salt" ? (T.fg2 || "#B0B4B8") : system === "m3" ? (T.onSurfaceVariant || "#49454F") : (T.fg2 || "#616161"),
     fg3: system === "salt" ? (T.fg3 || "#808488") : system === "m3" ? (T.outline || "#79747E") : (T.fg3 || "#9E9E9E"),
     border: system === "salt" ? (T.border || "#3C4850") : system === "m3" ? (T.outlineVariant || "#CAC4D0") : (T.stroke2 || "#E0E0E0"),
     font: system === "salt" ? "Open Sans, sans-serif" : system === "m3" ? "Roboto, sans-serif" : "'Segoe UI', sans-serif",
-    radius: system === "m3" ? 12 : 4,
   };
 }
 
 /* ═══════════════════════════════════════════════════════════ */
 
-export function DSAgGrid({ system, theme: T, height = 360 }: DSAgGridProps) {
+export function DSAgGrid({ system, theme: T, height = 400 }: DSAgGridProps) {
   const agTheme = useMemo(() => buildAgTheme(system, T), [system, T]);
   const c = useMemo(() => dsColors(system, T), [system, T]);
   const gridRef = useRef<AgGridReact>(null);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
-  const [columns, setColumns] = useState<ColumnConfig[]>(() => ALL_COLUMNS.map(col => ({ ...col })));
-  const [configOpen, setConfigOpen] = useState(false);
-
-  /* Derive AG Grid colDefs from config */
-  const colDefs: ColDef[] = useMemo(() =>
-    columns
-      .filter(col => col.visible)
-      .map(col => ({
-        field: col.field,
-        headerName: col.headerName,
-        flex: col.flex,
-        sortable: col.sortable,
-        filter: col.filter,
-      })),
-    [columns]
-  );
-
-  const toggleColumn = useCallback((field: string) => {
-    setColumns(prev => prev.map(col =>
-      col.field === field ? { ...col, visible: !col.visible } : col
-    ));
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    setGridApi(params.api);
   }, []);
 
-  const toggleSort = useCallback((field: string) => {
-    setColumns(prev => prev.map(col =>
-      col.field === field ? { ...col, sortable: !col.sortable } : col
-    ));
-  }, []);
+  /* Toolbar actions using AG Grid API */
+  const autoSizeAll = useCallback(() => {
+    gridApi?.autoSizeAllColumns();
+  }, [gridApi]);
 
-  const toggleFilter = useCallback((field: string) => {
-    setColumns(prev => prev.map(col =>
-      col.field === field ? { ...col, filter: !col.filter } : col
-    ));
-  }, []);
+  const resetColumns = useCallback(() => {
+    gridApi?.resetColumnState();
+  }, [gridApi]);
 
-  const moveColumn = useCallback((field: string, dir: -1 | 1) => {
-    setColumns(prev => {
-      const idx = prev.findIndex(col => col.field === field);
-      if (idx < 0) return prev;
-      const newIdx = idx + dir;
-      if (newIdx < 0 || newIdx >= prev.length) return prev;
-      const next = [...prev];
-      [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
-      return next;
-    });
-  }, []);
+  const exportCsv = useCallback(() => {
+    gridApi?.exportDataAsCsv();
+  }, [gridApi]);
 
-  /* DS-scoped button class */
+  /* DS button classes */
   const btnCls = system === "salt" ? "s-btn s-btn-bordered" : system === "m3" ? "m3-btn m3-btn-outlined" : "f-btn f-btn-secondary";
-  const btnPrimaryCls = system === "salt" ? "s-btn s-btn-solid" : system === "m3" ? "m3-btn m3-btn-filled" : "f-btn f-btn-primary";
 
   return (
     <div style={{ fontFamily: c.font }}>
-      {/* Toolbar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: c.fg }}>
-          {ROW_DATA.length} records · {columns.filter(col => col.visible).length} columns
+      {/* Toolbar — uses AG Grid API methods */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        marginBottom: 8, flexWrap: "wrap", gap: 6,
+      }}>
+        <div style={{ fontSize: 12, color: c.fg2 }}>
+          Drag column headers to reorder · Right-click header for options · Resize by dragging edges
         </div>
-        <button className={configOpen ? btnPrimaryCls : btnCls} onClick={() => setConfigOpen(!configOpen)}
-          style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4, padding: "4px 12px", height: "auto", minWidth: 0 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>tune</span>
-          Columns
-        </button>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button className={btnCls} onClick={autoSizeAll}
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>fit_screen</span>
+            Auto Size
+          </button>
+          <button className={btnCls} onClick={resetColumns}
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>restart_alt</span>
+            Reset
+          </button>
+          <button className={btnCls} onClick={exportCsv}
+            style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>download</span>
+            CSV
+          </button>
+        </div>
       </div>
 
-      {/* Column config panel */}
-      {configOpen && (
-        <div style={{
-          border: `1px solid ${c.border}`, borderRadius: c.radius, background: c.bg2,
-          padding: 12, marginBottom: 8, maxHeight: 200, overflowY: "auto",
-        }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: c.fg2, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Column Configuration
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {columns.map((col, idx) => (
-              <div key={col.field} style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "4px 8px",
-                borderRadius: c.radius > 4 ? 8 : 4, background: col.visible ? c.accentWeak : "transparent",
-                border: `1px solid ${col.visible ? c.accent + "30" : c.border}`,
-              }}>
-                {/* Visibility toggle */}
-                <button onClick={() => toggleColumn(col.field)} style={{
-                  width: 18, height: 18, borderRadius: 3, border: `1.5px solid ${col.visible ? c.accent : c.border}`,
-                  background: col.visible ? c.accent : "transparent", color: c.accentFg,
-                  display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0, flexShrink: 0,
-                }}>
-                  {col.visible && <span className="material-symbols-outlined" style={{ fontSize: 12 }}>check</span>}
-                </button>
-
-                {/* Column name */}
-                <span style={{ flex: 1, fontSize: 12, color: c.fg, fontWeight: col.visible ? 600 : 400 }}>{col.headerName}</span>
-
-                {/* Sort toggle */}
-                <button onClick={() => toggleSort(col.field)} title={col.sortable ? "Disable sort" : "Enable sort"}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2, opacity: col.sortable ? 1 : 0.3 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: col.sortable ? c.accent : c.fg3 }}>sort</span>
-                </button>
-
-                {/* Filter toggle */}
-                <button onClick={() => toggleFilter(col.field)} title={col.filter ? "Disable filter" : "Enable filter"}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2, opacity: col.filter ? 1 : 0.3 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: col.filter ? c.accent : c.fg3 }}>filter_list</span>
-                </button>
-
-                {/* Reorder */}
-                <button onClick={() => moveColumn(col.field, -1)} disabled={idx === 0}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 1, opacity: idx === 0 ? 0.2 : 0.6 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: c.fg3 }}>arrow_upward</span>
-                </button>
-                <button onClick={() => moveColumn(col.field, 1)} disabled={idx === columns.length - 1}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 1, opacity: idx === columns.length - 1 ? 0.2 : 0.6 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: c.fg3 }}>arrow_downward</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* AG Grid */}
+      {/* AG Grid — all column management via native AG Grid features */}
       <div style={{ height, width: "100%" }}>
         <AgGridReact
           ref={gridRef}
           theme={agTheme}
           rowData={ROW_DATA}
-          columnDefs={colDefs}
+          columnDefs={COLUMN_DEFS}
+          defaultColDef={DEFAULT_COL_DEF}
           rowSelection="multiple"
           animateRows
           pagination
           paginationPageSize={5}
+          onGridReady={onGridReady}
+          suppressDragLeaveHidesColumns
+          rowDragManaged
         />
       </div>
     </div>
