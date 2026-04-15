@@ -43,6 +43,22 @@ function extractTokens(theme: any, system: string): TokenEntry[] {
     for (const [cat, keys] of Object.entries(cats))
       for (const key of keys)
         if (theme[key]) tokens.push({ name: key, value: theme[key], category: cat });
+  } else if (system === "ausos") {
+    const cats: Record<string, string[]> = {
+      "Background": ["bg", "bg2", "bg3", "bg4"],
+      "Surface": ["surface", "surfaceHover", "surfaceActive", "surfaceMd", "surfaceLg"],
+      "Card": ["cardBg", "cardBgHover"],
+      "Foreground": ["fg", "fg2", "fg3", "fgDisabled"],
+      "Accent": ["accent", "accentHover", "accentActive", "accentFg", "accentSurface", "accentSurfaceHover"],
+      "Border": ["border", "borderMd", "borderStrong", "borderAccent"],
+      "Status — Danger": ["dangerBg", "dangerFg", "dangerBorder"],
+      "Status — Success": ["successBg", "successFg", "successBorder"],
+      "Status — Warning": ["warningBg", "warningFg", "warningBorder"],
+      "Status — Info": ["infoBg", "infoFg", "infoBorder"],
+    };
+    for (const [cat, keys] of Object.entries(cats))
+      for (const key of keys)
+        if (theme[key]) tokens.push({ name: key, value: theme[key], category: cat });
   } else {
     const cats: Record<string, string[]> = {
       "Background": ["bg1", "bg2", "bg3", "bg4", "bg5", "bg6", "bgInverted", "bgDisabled"],
@@ -105,6 +121,8 @@ export function TokenReference() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
+    : activeSystem === "ausos"
+    ? getTheme("ausos", store.ausos.themeKey)
     : getTheme("fluent", store.fluent.themeKey);
 
   activateTheme(activeSystem, T);
@@ -113,16 +131,18 @@ export function TokenReference() {
   const tokens = useMemo(() => extractTokens(T, activeSystem), [T, activeSystem]);
 
   // Derive semantic colors from active DS tokens
-  const pageBg   = activeSystem === "salt" ? T.bg2 : activeSystem === "m3" ? T.surface         : T.bg2;
-  const cardBg   = activeSystem === "salt" ? T.bg  : activeSystem === "m3" ? T.surfaceContainerLow : T.bg1;
-  const border   = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : T.stroke2;
-  const fg       = activeSystem === "salt" ? T.fg   : activeSystem === "m3" ? T.onSurface        : T.fg1;
-  const fg3      = activeSystem === "salt" ? T.fg3  : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
-  const accent   = activeSystem === "salt" ? T.accent : activeSystem === "m3" ? T.primary        : T.brandBg;
-  const bgToken  = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surface : T.bg1;
+  const n = (s: string, m: string, a: string, f: string) =>
+    activeSystem === "salt" ? T[s] : activeSystem === "m3" ? T[m] : activeSystem === "ausos" ? T[a] : T[f];
+  const pageBg   = n("bg2", "surface", "bg2", "bg2");
+  const cardBg   = n("bg", "surfaceContainerLow", "surface", "bg1");
+  const border   = n("border", "outlineVariant", "borderMd", "stroke2");
+  const fg       = n("fg", "onSurface", "fg", "fg1");
+  const fg3      = n("fg3", "onSurfaceVariant", "fg3", "fg3");
+  const accent   = n("accent", "primary", "accent", "brandBg");
+  const bgToken  = n("bg", "surface", "bg", "bg1");
 
-  const positive = activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
-  const negative = activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
+  const positive = activeSystem === "ausos" ? (T.successFg || "#4ADE80") : activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
+  const negative = activeSystem === "ausos" ? (T.dangerFg || "#F87171") : activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
   const swatchColors: SwatchColors = { cardBg, border, fg, fg3, positive, negative };
   const categories = [...new Set(tokens.map((t) => t.category))];
 

@@ -405,8 +405,8 @@ function ThemeControls() {
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
             <ControlGroup label="Theme">
-              <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
               <CtrlBtn active={ausos.themeKey === "light"} onClick={() => setAusosTheme("light")}>Light</CtrlBtn>
+              <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
             </ControlGroup>
             <ControlGroup label="Density">
               {(["high", "medium", "low", "touch"] as const).map(k => (
@@ -1027,7 +1027,7 @@ function LandingGrid() {
                     onClick={() => setSelectedComponent(c.id)}
                     style={{
                       width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
-                      borderRadius: activeSystem === "ausos" ? 16 : 8,
+                      borderRadius: activeSystem === "ausos" ? 14 : 8,
                       transition: "box-shadow 200ms, border-color 200ms",
                     }}
                   >
@@ -1143,7 +1143,7 @@ export function DesignHubApp() {
   const pageGradient = undefined;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: pageGradient || t.bg2, fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: activeSystem === "ausos" ? t.bg : (pageGradient || t.bg2), fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Inject the DS CSS */}
       <style dangerouslySetInnerHTML={{ __html: t.css }} />
 

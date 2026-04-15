@@ -36,7 +36,7 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   salt: { themeKey: 'jpm-light', density: 'medium' },
   m3: { themeKey: 'light', density: 0, customColor: '#6750A4', isDarkCustom: false },
   fluent: { themeKey: 'light', size: 'medium' },
-  ausos: { themeKey: 'dark', density: 'medium' },
+  ausos: { themeKey: 'light', density: 'medium' },
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',

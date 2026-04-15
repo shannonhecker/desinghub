@@ -202,7 +202,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   clearChat: () => set({ messages: [], onboardingStep: 'type', pendingComponents: [] }),
 
   setDesignSystem: (ds) => {
-    const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'dark' };
+    const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light' };
     set({ designSystem: ds, themeKey: themeMap[ds] });
   },
   setMode: (m) => set((s) => {
