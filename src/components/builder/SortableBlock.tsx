@@ -52,6 +52,11 @@ function ResizeHandle({
     setResizing(false);
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") { e.preventDefault(); onResize(Math.min(3, colSpan + 1)); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); onResize(Math.max(1, colSpan - 1)); }
+  }, [colSpan, onResize]);
+
   return (
     <div
       className={`block-resize-handle${resizing ? " is-resizing" : ""}`}
@@ -59,7 +64,15 @@ function ResizeHandle({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      title="Drag to resize width"
+      onKeyDown={handleKeyDown}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize block width"
+      aria-valuenow={colSpan}
+      aria-valuemin={1}
+      aria-valuemax={3}
+      tabIndex={0}
+      title="Drag to resize width (or use Arrow keys)"
     >
       <div className="block-resize-grip" />
     </div>

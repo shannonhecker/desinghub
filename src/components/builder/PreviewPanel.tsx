@@ -62,7 +62,7 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
 
 /** Icons that visually fill their bounding box more — render slightly smaller */
 const NAV_ICON_SIZE: Record<string, number> = {
-  bar_chart: 15,
+  bar_chart: 14,
 };
 
 /* ── Sample chat messages for the empty state ── */

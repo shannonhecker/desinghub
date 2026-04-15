@@ -5090,6 +5090,27 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  min-width: 180px;
+  max-width: 400px;
+  resize: horizontal;
+  direction: rtl;  /* resize handle on left edge */
+}
+.component-sidebar > * { direction: ltr; }
+/* Resize handle on component library left edge */
+.component-sidebar-resize {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  background: transparent;
+  transition: background 0.15s;
+}
+.component-sidebar-resize:hover, .component-sidebar-resize:active {
+  background: var(--b-accent, rgba(94, 231, 223, 0.4));
 }
 
 /* Component library fills its sidebar container */
@@ -5634,6 +5655,24 @@
   border-right: 1px solid var(--ds-border);
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
+  min-width: 48px;
+  max-width: 280px;
+}
+/* Resize handle on sidebar right edge */
+.bp-sidebar-resize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  background: transparent;
+  transition: background 0.15s;
+}
+.bp-sidebar-resize:hover, .bp-sidebar-resize:active {
+  background: var(--ds-primary, rgba(94, 231, 223, 0.4));
 }
 
 .bp-sidebar-nav {
@@ -5653,6 +5692,12 @@
   background: transparent;
   color: var(--ds-fg-secondary);
   font-family: var(--ds-font);
+}
+/* Constrain all nav icons to uniform size */
+.bp-nav-item svg, .bp-nav-item .material-symbols-outlined {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
@@ -7213,8 +7258,13 @@
   transition: opacity 0.15s;
 }
 .canvas-block:hover .block-resize-handle,
-.block-resize-handle.is-resizing {
+.block-resize-handle.is-resizing,
+.block-resize-handle:focus-visible {
   opacity: 1;
+}
+.block-resize-handle:focus-visible .block-resize-grip {
+  background: rgba(94, 231, 223, 0.9);
+  box-shadow: 0 0 0 2px rgba(94, 231, 223, 0.5);
 }
 
 .block-resize-grip {
