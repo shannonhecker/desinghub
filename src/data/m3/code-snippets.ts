@@ -380,4 +380,123 @@ Highcharts.chart('chart-container', {
 });
 </script>`,
   },
+  "bottom-sheets": {
+    react: `import { BottomSheet } from "@mui/material";
+
+<BottomSheet open={isOpen} onDismiss={() => setIsOpen(false)}>
+  <div style={{ padding: 24 }}>
+    <h3>Bottom Sheet</h3>
+    <p>Drag the handle to resize or dismiss.</p>
+  </div>
+</BottomSheet>`,
+    html: `<div class="mdc-bottom-sheet" role="dialog">
+  <div class="mdc-bottom-sheet__drag-handle"></div>
+  <div class="mdc-bottom-sheet__content">Content</div>
+</div>`,
+  },
+  "date-pickers": {
+    react: `import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
+<LocalizationProvider dateAdapter={AdapterDayjs}>
+  <DatePicker
+    label="Select date"
+    value={value}
+    onChange={(newValue) => setValue(newValue)}
+  />
+</LocalizationProvider>`,
+    html: `<div class="mdc-date-picker">
+  <input type="date" class="mdc-text-field__input" />
+</div>`,
+  },
+  fabs: {
+    react: `import { Fab } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+
+// Sizes: small, medium, large
+<Fab color="primary" aria-label="add">
+  <AddIcon />
+</Fab>
+<Fab variant="extended" color="primary">
+  <AddIcon sx={{ mr: 1 }} />
+  Create
+</Fab>`,
+    html: `<button class="mdc-fab" aria-label="Add">
+  <span class="material-symbols-outlined">add</span>
+</button>`,
+  },
+  "icon-buttons": {
+    react: `import { IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+// Variants: standard, outlined, filled, filled-tonal
+<IconButton aria-label="delete">
+  <DeleteIcon />
+</IconButton>
+<IconButton color="primary" aria-label="settings">
+  <SettingsIcon />
+</IconButton>`,
+    html: `<button class="mdc-icon-button" aria-label="Delete">
+  <span class="material-symbols-outlined">delete</span>
+</button>`,
+  },
+  "nav-bar": {
+    react: `import { BottomNavigation, BottomNavigationAction } from "@mui/material";
+
+<BottomNavigation
+  value={value}
+  onChange={(_, newValue) => setValue(newValue)}
+  showLabels
+>
+  <BottomNavigationAction label="Home" icon={<HomeIcon />} />
+  <BottomNavigationAction label="Search" icon={<SearchIcon />} />
+  <BottomNavigationAction label="Profile" icon={<PersonIcon />} />
+</BottomNavigation>`,
+    html: `<nav class="mdc-bottom-navigation">
+  <a class="mdc-bottom-navigation__action mdc-bottom-navigation__action--active">
+    <span class="material-symbols-outlined">home</span>
+    <span>Home</span>
+  </a>
+</nav>`,
+  },
+  snackbar: {
+    react: `import { Snackbar, Alert } from "@mui/material";
+
+<Snackbar
+  open={open}
+  autoHideDuration={4000}
+  onClose={handleClose}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+>
+  <Alert severity="success" onClose={handleClose}>
+    Changes saved successfully!
+  </Alert>
+</Snackbar>`,
+    html: `<div class="mdc-snackbar mdc-snackbar--open">
+  <div class="mdc-snackbar__surface">
+    <div class="mdc-snackbar__label">Changes saved!</div>
+    <div class="mdc-snackbar__actions">
+      <button class="mdc-button">Undo</button>
+    </div>
+  </div>
+</div>`,
+  },
+  "text-fields": {
+    react: `import { TextField } from "@mui/material";
+
+// Variants: filled (default), outlined
+<TextField label="Name" variant="filled" />
+<TextField label="Email" variant="outlined" />
+<TextField
+  label="Password"
+  type="password"
+  error
+  helperText="Required field"
+/>`,
+    html: `<div class="mdc-text-field mdc-text-field--filled">
+  <input class="mdc-text-field__input" />
+  <label class="mdc-floating-label">Name</label>
+</div>`,
+  },
 };

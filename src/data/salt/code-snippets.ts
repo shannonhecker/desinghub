@@ -489,4 +489,253 @@ Highcharts.chart('chart-container', {
 });
 </script>`,
   },
+  "combo-box": {
+    react: `import { ComboBox, Option } from "@salt-ds/core";
+
+<ComboBox>
+  <Option value="us">United States</Option>
+  <Option value="uk">United Kingdom</Option>
+  <Option value="ca">Canada</Option>
+</ComboBox>`,
+    html: `<div class="saltComboBox">
+  <input class="saltComboBox-input" placeholder="Search..." />
+  <div class="saltComboBox-list" role="listbox">
+    <div role="option">United States</div>
+  </div>
+</div>`,
+  },
+  "data-grid": {
+    react: `import { AgGridReact } from "ag-grid-react";
+import "@salt-ds/ag-grid-theme/salt-ag-theme.css";
+
+const columnDefs = [
+  { field: "name", sortable: true },
+  { field: "status" },
+  { field: "value", type: "numericColumn" },
+];
+
+<div className="ag-theme-salt" style={{ height: 300 }}>
+  <AgGridReact
+    rowData={data}
+    columnDefs={columnDefs}
+    rowSelection="multiple"
+  />
+</div>`,
+    html: `<div class="ag-theme-salt" style="height:300px">
+  <!-- ag-Grid renders here -->
+</div>`,
+  },
+  "date-picker": {
+    react: `import { DatePicker, DatePickerSingleInput,
+  DatePickerOverlay, DatePickerSinglePanel,
+  DatePickerActions } from "@salt-ds/lab";
+import { LocalizationProvider } from "@salt-ds/lab";
+
+<LocalizationProvider>
+  <DatePicker selectionVariant="single">
+    <DatePickerSingleInput />
+    <DatePickerOverlay>
+      <DatePickerSinglePanel />
+      <DatePickerActions />
+    </DatePickerOverlay>
+  </DatePicker>
+</LocalizationProvider>`,
+    html: `<div class="saltDatePicker">
+  <input class="saltInput" placeholder="DD MMM YYYY" />
+</div>`,
+  },
+  "file-drop": {
+    react: `import { FileDropZone, FileDropZoneIcon,
+  FileDropZoneTrigger } from "@salt-ds/core";
+
+<FileDropZone onDrop={handleDrop}>
+  <FileDropZoneIcon />
+  <strong>Drop files here or</strong>
+  <FileDropZoneTrigger />
+</FileDropZone>`,
+    html: `<div class="saltFileDropZone" role="button">
+  <span>Drop files here</span>
+</div>`,
+  },
+  "form-field": {
+    react: `import { FormField, FormFieldLabel,
+  FormFieldHelperText, Input } from "@salt-ds/core";
+
+<FormField validationStatus="error" necessity="required">
+  <FormFieldLabel>Email Address</FormFieldLabel>
+  <Input defaultValue="invalid" />
+  <FormFieldHelperText>Please enter a valid email</FormFieldHelperText>
+</FormField>`,
+    html: `<div class="saltFormField saltFormField-error">
+  <label class="saltFormFieldLabel">Email</label>
+  <input class="saltInput" />
+  <span class="saltFormFieldHelperText">Error message</span>
+</div>`,
+  },
+  "list-box": {
+    react: `import { ListBox, Option } from "@salt-ds/core";
+
+<ListBox>
+  <Option value="1">Apple</Option>
+  <Option value="2">Banana</Option>
+  <Option value="3" disabled>Cherry</Option>
+</ListBox>`,
+    html: `<div class="saltListBox" role="listbox">
+  <div role="option" aria-selected="true">Apple</div>
+  <div role="option">Banana</div>
+</div>`,
+  },
+  "multiline-input": {
+    react: `import { MultilineInput, FormField, FormFieldLabel } from "@salt-ds/core";
+
+<FormField>
+  <FormFieldLabel>Description</FormFieldLabel>
+  <MultilineInput
+    rows={4}
+    placeholder="Enter description..."
+    bordered
+  />
+</FormField>`,
+    html: `<textarea class="saltMultilineInput" rows="4"
+  placeholder="Enter description..."></textarea>`,
+  },
+  "number-input": {
+    react: `import { Input } from "@salt-ds/core";
+
+// Salt uses Input with type="number" + stepper buttons
+<FormField>
+  <FormFieldLabel>Quantity</FormFieldLabel>
+  <Input type="number" defaultValue={1} min={0} max={99} step={1} />
+</FormField>`,
+    html: `<input class="saltInput" type="number"
+  min="0" max="99" step="1" value="1" />`,
+  },
+  "nav-item": {
+    react: `import { NavigationItem } from "@salt-ds/core";
+
+<NavigationItem href="/dashboard" active>
+  Dashboard
+</NavigationItem>
+<NavigationItem href="/settings">
+  Settings
+</NavigationItem>`,
+    html: `<a class="saltNavigationItem saltNavigationItem-active"
+  href="/dashboard">Dashboard</a>`,
+  },
+  "vert-nav": {
+    react: `import { VerticalNavigation, VerticalNavigationItem,
+  VerticalNavigationGroup } from "@salt-ds/core";
+
+<VerticalNavigation>
+  <VerticalNavigationItem href="/" active>Home</VerticalNavigationItem>
+  <VerticalNavigationGroup label="Settings">
+    <VerticalNavigationItem href="/profile">Profile</VerticalNavigationItem>
+    <VerticalNavigationItem href="/security">Security</VerticalNavigationItem>
+  </VerticalNavigationGroup>
+</VerticalNavigation>`,
+    html: `<nav class="saltVerticalNavigation">
+  <a class="saltVerticalNavigationItem active" href="/">Home</a>
+  <div class="saltVerticalNavigationGroup">
+    <span>Settings</span>
+    <a href="/profile">Profile</a>
+  </div>
+</nav>`,
+  },
+  "toggle-btn": {
+    react: `import { ToggleButton, ToggleButtonGroup } from "@salt-ds/core";
+
+<ToggleButtonGroup>
+  <ToggleButton value="bold">Bold</ToggleButton>
+  <ToggleButton value="italic">Italic</ToggleButton>
+  <ToggleButton value="underline">Underline</ToggleButton>
+</ToggleButtonGroup>`,
+    html: `<div class="saltToggleButtonGroup" role="group">
+  <button class="saltToggleButton" aria-pressed="true">Bold</button>
+  <button class="saltToggleButton">Italic</button>
+</div>`,
+  },
+  "segmented-btn": {
+    react: `import { SegmentedButtonGroup, Button } from "@salt-ds/core";
+
+<SegmentedButtonGroup>
+  <Button>Day</Button>
+  <Button>Week</Button>
+  <Button>Month</Button>
+</SegmentedButtonGroup>`,
+    html: `<div class="saltSegmentedButtonGroup" role="group">
+  <button class="saltButton saltButton-solid">Day</button>
+  <button class="saltButton saltButton-bordered">Week</button>
+  <button class="saltButton saltButton-bordered">Month</button>
+</div>`,
+  },
+  "skip-link": {
+    react: `import { SkipLink } from "@salt-ds/core";
+
+<SkipLink targetId="main-content">
+  Skip to main content
+</SkipLink>`,
+    html: `<a class="saltSkipLink" href="#main-content">
+  Skip to main content
+</a>`,
+  },
+  carousel: {
+    react: `import { Carousel, CarouselSlide } from "@salt-ds/core";
+
+<Carousel>
+  <CarouselSlide>Slide 1 content</CarouselSlide>
+  <CarouselSlide>Slide 2 content</CarouselSlide>
+  <CarouselSlide>Slide 3 content</CarouselSlide>
+</Carousel>`,
+    html: `<div class="saltCarousel" role="region" aria-label="Carousel">
+  <div class="saltCarouselSlide">Slide 1</div>
+</div>`,
+  },
+  "interactable-card": {
+    react: `import { InteractableCard } from "@salt-ds/core";
+
+<InteractableCard onClick={handleClick} selected={isSelected}>
+  <h3>Card Title</h3>
+  <p>Click to select this card.</p>
+</InteractableCard>`,
+    html: `<div class="saltInteractableCard" role="button" tabindex="0">
+  <h3>Card Title</h3>
+  <p>Clickable card</p>
+</div>`,
+  },
+  collapsible: {
+    react: `import { Collapsible } from "@salt-ds/core";
+
+<Collapsible open={isOpen}>
+  <p>Collapsible content here.</p>
+</Collapsible>`,
+    html: `<div class="saltCollapsible" aria-expanded="true">
+  <p>Content</p>
+</div>`,
+  },
+  splitter: {
+    react: `import { Splitter, SplitterPanel } from "@salt-ds/core";
+
+<Splitter orientation="horizontal">
+  <SplitterPanel>Left pane</SplitterPanel>
+  <SplitterPanel>Right pane</SplitterPanel>
+</Splitter>`,
+    html: `<div class="saltSplitter">
+  <div class="saltSplitterPanel">Left</div>
+  <div class="saltSplitter-handle" role="separator"></div>
+  <div class="saltSplitterPanel">Right</div>
+</div>`,
+  },
+  "static-list": {
+    react: `import { StaticList, StaticListItem } from "@salt-ds/core";
+
+<StaticList>
+  <StaticListItem>Item 1</StaticListItem>
+  <StaticListItem>Item 2</StaticListItem>
+  <StaticListItem>Item 3</StaticListItem>
+</StaticList>`,
+    html: `<ul class="saltStaticList">
+  <li class="saltStaticListItem">Item 1</li>
+  <li class="saltStaticListItem">Item 2</li>
+</ul>`,
+  },
 };

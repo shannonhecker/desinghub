@@ -385,4 +385,89 @@ Highcharts.chart('chart-container', {
 });
 </script>`,
   },
+  dialogs: {
+    react: `import { Dialog, DialogSurface, DialogTitle,
+  DialogBody, DialogActions, DialogTrigger,
+  Button } from "@fluentui/react-components";
+
+<Dialog>
+  <DialogTrigger disableButtonEnhancement>
+    <Button>Open Dialog</Button>
+  </DialogTrigger>
+  <DialogSurface>
+    <DialogTitle>Confirm Action</DialogTitle>
+    <DialogBody>Are you sure you want to proceed?</DialogBody>
+    <DialogActions>
+      <DialogTrigger disableButtonEnhancement>
+        <Button appearance="secondary">Cancel</Button>
+      </DialogTrigger>
+      <Button appearance="primary">Confirm</Button>
+    </DialogActions>
+  </DialogSurface>
+</Dialog>`,
+    html: `<dialog class="fui-DialogSurface" open>
+  <h2 class="fui-DialogTitle">Confirm Action</h2>
+  <div class="fui-DialogBody">Are you sure?</div>
+  <div class="fui-DialogActions">
+    <button class="fui-Button">Cancel</button>
+    <button class="fui-Button fui-Button--primary">Confirm</button>
+  </div>
+</dialog>`,
+  },
+  links: {
+    react: `import { Link } from "@fluentui/react-components";
+
+<Link href="/dashboard">Dashboard</Link>
+<Link href="/settings" appearance="subtle">Settings</Link>
+<Link href="https://example.com" target="_blank" inline>
+  External Link
+</Link>`,
+    html: `<a class="fui-Link" href="/dashboard">Dashboard</a>`,
+  },
+  menus: {
+    react: `import { Menu, MenuTrigger, MenuPopover,
+  MenuList, MenuItem, MenuDivider,
+  Button } from "@fluentui/react-components";
+
+<Menu>
+  <MenuTrigger disableButtonEnhancement>
+    <Button>Options</Button>
+  </MenuTrigger>
+  <MenuPopover>
+    <MenuList>
+      <MenuItem>Edit</MenuItem>
+      <MenuItem>Duplicate</MenuItem>
+      <MenuDivider />
+      <MenuItem>Delete</MenuItem>
+    </MenuList>
+  </MenuPopover>
+</Menu>`,
+    html: `<div class="fui-MenuPopover" role="menu">
+  <div class="fui-MenuItem" role="menuitem">Edit</div>
+  <div class="fui-MenuItem" role="menuitem">Duplicate</div>
+  <hr class="fui-MenuDivider" />
+  <div class="fui-MenuItem" role="menuitem">Delete</div>
+</div>`,
+  },
+  messagebars: {
+    react: `import { MessageBar, MessageBarTitle,
+  MessageBarBody, MessageBarActions,
+  Button } from "@fluentui/react-components";
+
+// Intents: info, success, warning, error
+<MessageBar intent="success">
+  <MessageBarBody>
+    <MessageBarTitle>Success</MessageBarTitle>
+    Your changes have been saved.
+  </MessageBarBody>
+  <MessageBarActions>
+    <Button appearance="transparent" size="small">Undo</Button>
+  </MessageBarActions>
+</MessageBar>`,
+    html: `<div class="fui-MessageBar" role="alert">
+  <div class="fui-MessageBarBody">
+    <strong>Success</strong> Changes saved.
+  </div>
+</div>`,
+  },
 };
