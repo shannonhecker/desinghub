@@ -141,6 +141,7 @@ function ThemeControls() {
   const [open, setOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
+  const [accentOpen, setAccentOpen] = useState(false);
 
   const radius = activeSystem === "m3" ? 12 : activeSystem === "fluent" ? 4 : 4;
 
@@ -391,7 +392,6 @@ function ThemeControls() {
   /* ── AUSOS DS ── */
   if (activeSystem === "ausos") {
     const { ausos, setAusosTheme, setAusosDensity } = store;
-    const [accentOpen, setAccentOpen] = useState(false);
 
     const AUSOS_ACCENTS = [
       { name: "Violet", hex: "#9575F0" },
