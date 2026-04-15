@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createContext, useContext } from "react";
+import React, { useState, useEffect, useRef, createContext, useContext } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as M3_THEMES, buildCSS as m3BuildCSS, COMPS as M3_COMPS, CATS as M3_CATS, MATERIAL_COLORS, I as M3Icon };

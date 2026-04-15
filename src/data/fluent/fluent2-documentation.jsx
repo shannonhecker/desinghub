@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as FLUENT_THEMES, buildCSS as fluentBuildCSS, COMPS as FLUENT_COMPS, CATS as FLUENT_CATS, FIcon, FONT as FLUENT_FONT };

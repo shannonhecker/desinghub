@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
