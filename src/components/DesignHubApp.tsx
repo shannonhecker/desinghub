@@ -25,7 +25,8 @@ export function useActiveTheme() {
   // Apply custom accent color for ausos
   if (activeSystem === "ausos" && store.ausos.accentColor && store.ausos.accentColor !== T.accent) {
     const c = store.ausos.accentColor;
-    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${c} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40` };
+    const lighter = c + "CC";
+    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${lighter} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40` };
   }
 
   activateTheme(activeSystem, T);
@@ -400,15 +401,15 @@ function ThemeControls() {
     const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
 
     const AUSOS_ACCENTS = [
-      { name: "Violet", hex: "#9575F0" },
-      { name: "Indigo", hex: "#6366F1" },
-      { name: "Blue", hex: "#3B82F6" },
-      { name: "Teal", hex: "#14B8A6" },
-      { name: "Emerald", hex: "#10B981" },
-      { name: "Rose", hex: "#F43F5E" },
-      { name: "Orange", hex: "#F97316" },
-      { name: "Amber", hex: "#F59E0B" },
-      { name: "Slate", hex: "#64748B" },
+      { name: "Violet", hex: "#9575F0", grad: "linear-gradient(135deg, #A78BFA, #7C3AED)" },
+      { name: "Indigo", hex: "#6366F1", grad: "linear-gradient(135deg, #818CF8, #4F46E5)" },
+      { name: "Blue", hex: "#3B82F6", grad: "linear-gradient(135deg, #60A5FA, #2563EB)" },
+      { name: "Teal", hex: "#14B8A6", grad: "linear-gradient(135deg, #2DD4BF, #0D9488)" },
+      { name: "Emerald", hex: "#10B981", grad: "linear-gradient(135deg, #34D399, #059669)" },
+      { name: "Rose", hex: "#F43F5E", grad: "linear-gradient(135deg, #FB7185, #E11D48)" },
+      { name: "Orange", hex: "#F97316", grad: "linear-gradient(135deg, #FB923C, #EA580C)" },
+      { name: "Amber", hex: "#F59E0B", grad: "linear-gradient(135deg, #FBBF24, #D97706)" },
+      { name: "Slate", hex: "#64748B", grad: "linear-gradient(135deg, #94A3B8, #475569)" },
     ];
 
     const AUSOS_GRADIENTS = [
@@ -452,7 +453,7 @@ function ThemeControls() {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: ausos.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: AUSOS_ACCENTS.find(a => a.hex === ausos.accentColor)?.grad || ausos.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
                   {AUSOS_ACCENTS.find(a => a.hex === ausos.accentColor)?.name || "Custom"}
                 </span>
                 <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>
@@ -477,7 +478,7 @@ function ThemeControls() {
                         color: ausos.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms",
                       }}
                     >
-                      <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.hex, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                      <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.grad, flexShrink: 0, border: `1px solid ${t.border}` }} />
                       <span style={{ flex: 1 }}>{a.name}</span>
                       {ausos.accentColor === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: a.hex }}>check</span>}
                     </button>
