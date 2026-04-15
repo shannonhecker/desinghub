@@ -84,27 +84,40 @@ export function ComponentLibrary() {
             </div>
             <FieldsComponent blockId={selectedBlock.id} />
 
-            {/* Layout: column span — only for body blocks */}
+            {/* Layout: width — only for body blocks */}
             {selectedBlockZone === "body" && (
               <>
                 <div className="lib-section-divider" />
                 <div className="inspector-section-title">Layout</div>
                 <div className="inspector-field">
-                  <label className="inspector-field-label">Column Width</label>
+                  <label className="inspector-field-label">Width</label>
                   <div className="inspector-toggle-group">
-                    {([1, 2, 3] as const).map((span) => {
-                      const labels: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
-                      const current = Number(selectedBlock.props.colSpan) || 3;
+                    {([33, 50, 66, 100] as const).map((pct) => {
+                      const labels: Record<number, string> = { 33: "⅓", 50: "½", 66: "⅔", 100: "Full" };
+                      const currentPct = Number(selectedBlock.props.widthPct) || 100;
                       return (
                         <button
-                          key={span}
-                          className={`inspector-toggle-btn${current === span ? " active" : ""}`}
-                          onClick={() => updateBlockProps(selectedBlock.id, { colSpan: span })}
+                          key={pct}
+                          className={`inspector-toggle-btn${currentPct === pct ? " active" : ""}`}
+                          onClick={() => updateBlockProps(selectedBlock.id, { widthPct: pct })}
                         >
-                          {labels[span]}
+                          {labels[pct]}
                         </button>
                       );
                     })}
+                  </div>
+                  {/* Free width slider */}
+                  <input
+                    type="range"
+                    min={20}
+                    max={100}
+                    value={Number(selectedBlock.props.widthPct) || 100}
+                    onChange={(e) => updateBlockProps(selectedBlock.id, { widthPct: Number(e.target.value) })}
+                    className="inspector-input"
+                    style={{ width: "100%", marginTop: 6 }}
+                  />
+                  <div style={{ fontSize: 10, color: "var(--b-fg-secondary)", textAlign: "right", marginTop: 2 }}>
+                    {Number(selectedBlock.props.widthPct) || 100}%
                   </div>
                 </div>
               </>

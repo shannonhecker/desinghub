@@ -192,11 +192,11 @@ export function PreviewCanvas() {
 
       <ZoneDropContainer zoneId="body" blocks={blocks} direction="grid" className="canvas-drop-zone">
         {blocks.map((block) => {
-          const colSpan = Number(block.props.colSpan) || 3;
+          const widthPct = Number(block.props.widthPct) || 100;
           return (
           <div
             key={block.id}
-            style={{ position: "relative", gridColumn: `span ${colSpan}` }}
+            style={{ position: "relative", width: `${widthPct}%`, minWidth: 0 }}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedBlock(block.id, "body");
@@ -206,10 +206,10 @@ export function PreviewCanvas() {
               id={block.id}
               zone="body"
               isSelected={selectedBlockId === block.id}
-              colSpan={colSpan}
-              onColSpanChange={(span) => {
+              colSpan={Math.round(widthPct / 33.33) || 1}
+              onColSpanChange={(pct) => {
                 const next = blocks.map((b) =>
-                  b.id === block.id ? { ...b, props: { ...b.props, colSpan: span } } : b
+                  b.id === block.id ? { ...b, props: { ...b.props, widthPct: pct } } : b
                 );
                 syncToStore(next);
               }}

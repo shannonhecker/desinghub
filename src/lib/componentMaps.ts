@@ -62,9 +62,9 @@ export const ID_TO_BLOCK: Record<string, string> = {
  *  Each entry defines the block type + unique default props for each instance. */
 export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<string, unknown> }[]> = {
   progress: [
-    { type: "SimulatedStatCard", props: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 } },
-    { type: "SimulatedStatCard", props: { label: "Users", value: "1,247", pct: 75, colSpan: 1 } },
-    { type: "SimulatedStatCard", props: { label: "Growth", value: "+18%", pct: 90, colSpan: 1 } },
+    { type: "SimulatedStatCard", props: { label: "Revenue", value: "$42.8K", pct: 60, widthPct: 33 } },
+    { type: "SimulatedStatCard", props: { label: "Users", value: "1,247", pct: 75, widthPct: 33 } },
+    { type: "SimulatedStatCard", props: { label: "Growth", value: "+18%", pct: 90, widthPct: 33 } },
   ],
   buttons: [
     { type: "SimulatedButton", props: { variant: "primary", label: "Primary" } },

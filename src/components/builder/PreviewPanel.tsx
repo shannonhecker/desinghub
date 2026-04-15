@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
 import {
   Monitor,
   Tablet,
@@ -872,53 +873,60 @@ export function PreviewSidePanel() {
 
       {/* Main builder area — DndContext wraps viewport + right sidebar */}
       <CanvasDndProvider>
-        <div className="preview-builder-body">
+        <PanelGroup orientation="horizontal" className="preview-builder-body">
           {/* Center: Viewport */}
-          <div className="bp-viewport-wrapper">
-            {/* Device Frame — animated width */}
-            <motion.div
-              className="bp-device-frame"
-              animate={{ width: frameWidth, maxHeight: preset.height }}
-              transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            >
-              {/* Code view — covers the entire dashboard area */}
-              {isCodeView ? (
-                <CodeViewer blocks={blocks} />
-              ) : (
-                /* SaaS Dashboard layout — scoped to the selected design system */
-                <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-                  <DashboardHeader compact={isMobile} />
+          <Panel defaultSize={componentLibraryOpen ? 75 : 100} minSize={40}>
+            <div className="bp-viewport-wrapper">
+              {/* Device Frame — animated width */}
+              <motion.div
+                className="bp-device-frame"
+                animate={{ width: frameWidth, maxHeight: preset.height }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              >
+                {/* Code view — covers the entire dashboard area */}
+                {isCodeView ? (
+                  <CodeViewer blocks={blocks} />
+                ) : (
+                  /* SaaS Dashboard layout — scoped to the selected design system */
+                  <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+                    <DashboardHeader compact={isMobile} />
 
-                  <div className="bp-body">
-                    {!isMobile && (
-                      <DashboardSidebar
-                        collapsed={sidebarCollapsed}
-                        onToggle={handleSidebarToggle}
-                      />
-                    )}
-
-                    <main className="bp-main">
-                      {hasContent ? (
-                        <PreviewCanvas />
-                      ) : (
-                        <DefaultChatArea messageKey={previewKey} />
+                    <div className="bp-body">
+                      {!isMobile && (
+                        <DashboardSidebar
+                          collapsed={sidebarCollapsed}
+                          onToggle={handleSidebarToggle}
+                        />
                       )}
-                    </main>
+
+                      <main className="bp-main">
+                        {hasContent ? (
+                          <PreviewCanvas />
+                        ) : (
+                          <DefaultChatArea messageKey={previewKey} />
+                        )}
+                      </main>
+                    </div>
+
+                    <DashboardFooter />
                   </div>
+                )}
+              </motion.div>
+            </div>
+          </Panel>
 
-                  <DashboardFooter />
-                </div>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Right: Component Library Sidebar */}
+          {/* Resize handle + Component Library Sidebar */}
           {componentLibraryOpen && (
-            <aside className="component-sidebar">
-              <ComponentLibrary />
-            </aside>
+            <>
+              <PanelResizeHandle className="panel-resize-handle" />
+              <Panel defaultSize={25} minSize={15} maxSize={40}>
+                <aside className="component-sidebar" style={{ width: "100%", maxWidth: "none" }}>
+                  <ComponentLibrary />
+                </aside>
+              </Panel>
+            </>
           )}
-        </div>
+        </PanelGroup>
       </CanvasDndProvider>
     </div>
   );
