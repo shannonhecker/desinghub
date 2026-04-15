@@ -18,6 +18,22 @@ const TYPE_CHIPS: { label: string; value: InterfaceType }[] = [
   { label: "Portfolio", value: "portfolio" },
 ];
 
+/* ── Pattern cards for the zero-state guided start ── */
+const PATTERN_CARDS: { label: string; desc: string; icon: string; value: InterfaceType; components: string[] }[] = [
+  { label: "SaaS Dashboard", desc: "Stat cards, charts, data table, and navigation", icon: "dashboard", value: "dashboard",
+    components: ["progress", "table", "tabs", "cards", "progress-bar"] },
+  { label: "Login Form", desc: "Auth form with inputs, validation, and brand header", icon: "lock", value: "form",
+    components: ["inputs", "buttons", "sim-title"] },
+  { label: "Data Explorer", desc: "Filterable table with search, charts, and export", icon: "table_chart", value: "dashboard",
+    components: ["table", "inputs", "buttons", "progress"] },
+  { label: "Settings Page", desc: "Navigation tabs with form sections and toggles", icon: "settings", value: "form",
+    components: ["tabs", "inputs", "switches", "buttons"] },
+  { label: "Landing Page", desc: "Hero, feature cards, testimonials, and CTA", icon: "web", value: "landing",
+    components: ["cards", "buttons", "badges", "sim-title"] },
+  { label: "Chat Interface", desc: "Message bubbles, input bar, and user avatars", icon: "chat", value: "dashboard",
+    components: ["sim-chat-message", "inputs", "avatars", "buttons"] },
+];
+
 const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
   { label: "Salt DS", value: "salt" },
   { label: "Material 3", value: "m3" },
@@ -41,9 +57,13 @@ const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
 ];
 
 const REFINE_CHIPS = [
+  /* Theme */
   "Dark Mode", "Light Mode",
-  "Add Buttons", "Add Cards", "Add Heading",
-  "Build Dashboard", "Build Form",
+  /* Add components */
+  "Add Stat Cards", "Add Chart", "Add Data Table", "Add Buttons", "Add Cards",
+  /* Patterns */
+  "Build Dashboard", "Build Login Form", "Build Settings Page",
+  /* Manage */
   "Show All", "Clear All",
 ];
 
@@ -570,11 +590,30 @@ export function ChatPanel() {
         {/* Flex spacer — pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero title — only STEP_TYPE before first message */}
+        {/* Hero — pattern-first guided start */}
         {!hasMessages && step === "type" && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
-            <h1 className="hero-title">Where should we start?</h1>
+            <h1 className="hero-title">What are we building?</h1>
+            <p className="hero-subtitle">Pick a pattern to start, or describe what you need.</p>
+
+            {/* Pattern cards */}
+            <div className="pattern-cards-grid">
+              {PATTERN_CARDS.map((pat) => (
+                <button key={pat.label} className="pattern-card" onClick={() => {
+                  /* Set type, then auto-select components and advance */
+                  setInterfaceType(pat.value);
+                  setSelectedComponents(pat.components);
+                  setStep("style");
+                  addMessage("user", `Build me a ${pat.label}`);
+                  addMessage("ai", `Great choice! I'll set up a ${pat.label} with ${pat.desc.toLowerCase()}. Which design system should I use?`);
+                }}>
+                  <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">{pat.icon}</span>
+                  <span className="pattern-card-label">{pat.label}</span>
+                  <span className="pattern-card-desc">{pat.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -599,12 +638,15 @@ export function ChatPanel() {
               );
             })}
             {isGenerating && (
-              <div className="chat-msg chat-msg-ai">
-                <div className="typing-dots">
-                  <span />
-                  <span />
-                  <span />
+              <div className="chat-msg chat-msg-ai generating-state">
+                <div className="generating-header">
+                  <div className="generating-avatar">AI</div>
+                  <span className="generating-badge">Generating...</span>
                 </div>
+                <div className="generating-progress">
+                  <div className="generating-bar" />
+                </div>
+                <span className="generating-text">Drafting layout and applying design tokens...</span>
               </div>
             )}
             <div ref={chatEndRef} />
