@@ -93,14 +93,14 @@ const THEMES = {
     cardBg: "rgba(255,255,255,0.68)", cardBgHover: "rgba(255,255,255,0.82)",
     // Text — purple-tinted dark
     fg: "#2D1B4E", fg2: "#5C4A78", fg3: "#9688AD", fgDisabled: "#C4B8D6",
-    // Accent — soft violet
-    accent: "#8B5CF6", accentHover: "#7C3AED", accentActive: "#6D28D9",
-    accentGradient: "linear-gradient(135deg, #B49AFF 0%, #A78BFA 50%, #8B5CF6 100%)",
-    accentSurface: "rgba(139,92,246,0.06)", accentSurfaceHover: "rgba(139,92,246,0.10)",
+    // Accent — muted violet (matching dark theme tone)
+    accent: "#6B5AA8", accentHover: "#5C4B98", accentActive: "#4D3C88",
+    accentGradient: "linear-gradient(135deg, #7E6BC4 0%, #6B5AA8 50%, #5C4B98 100%)",
+    accentSurface: "rgba(107,90,168,0.06)", accentSurfaceHover: "rgba(107,90,168,0.10)",
     accentFg: "#FFFFFF",
     // Borders — WCAG 3:1 compliant for UI components
     border: "rgba(0,0,0,0.12)", borderMd: "rgba(0,0,0,0.25)", borderStrong: "#9688AD",
-    borderAccent: "#8B5CF6",
+    borderAccent: "rgba(107,90,168,0.25)",
     // Elevation — purple-tinted shadows
     shadow: "0 4px 20px rgba(100,60,180,0.06)", shadowLg: "0 8px 32px rgba(100,60,180,0.10)",
     glass: "blur(20px) saturate(130%)", glassLg: "blur(28px) saturate(140%)",
