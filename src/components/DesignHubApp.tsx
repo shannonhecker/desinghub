@@ -412,13 +412,6 @@ function ThemeControls() {
       { name: "Slate", hex: "#64748B", grad: "linear-gradient(135deg, #94A3B8, #475569)" },
     ];
 
-    const AUSOS_GRADIENTS = [
-      { name: "Aurora", value: "linear-gradient(135deg, #0b1120 0%, #0d1f2d 30%, #1a1035 65%, #120b20 100%)" },
-      { name: "Midnight", value: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" },
-      { name: "Ocean", value: "linear-gradient(135deg, #0a1628 0%, #0d2137 30%, #0a2540 65%, #0d1f30 100%)" },
-      { name: "Ember", value: "linear-gradient(135deg, #1a0a0a 0%, #2d1212 30%, #351520 65%, #200a15 100%)" },
-    ];
-
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         <button onClick={() => setOpen(v => !v)} style={{
@@ -486,28 +479,6 @@ function ThemeControls() {
                 </div>
               )}
             </div>
-
-            {/* Gradient Palette (dark only) */}
-            {ausos.themeKey === "dark" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2) }}>
-                <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Gradient</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                  {AUSOS_GRADIENTS.map(g => (
-                    <button
-                      key={g.name}
-                      style={{
-                        height: 32, borderRadius: 8, background: g.value,
-                        border: `2px solid ${t.border}`,
-                        cursor: "pointer", position: "relative", overflow: "hidden",
-                      }}
-                      title={g.name}
-                    >
-                      <span style={{ position: "absolute", bottom: 2, left: 0, right: 0, textAlign: "center", fontSize: 8, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{g.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <ControlGroup label="Density">
               {(["high", "medium", "low", "touch"] as const).map(k => (
@@ -1297,25 +1268,24 @@ export function DesignHubApp() {
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
-            {/* 1 — DS brand header (no separator — controls flow directly below) */}
-            <div style={{ flexShrink: 0 }}>
+            {/* 1 — DS brand header */}
+            <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.border}` }}>
               <SidebarDSBrand />
             </div>
             {/* 2 — Theme controls (collapsible) */}
-            <div style={{ padding: `${t.scale.gap}px 14px 0`, flexShrink: 0 }}>
+            <div style={{ padding: `${t.scale.gap + 4}px ${t.scale.gap + 8}px ${t.scale.gap}px`, flexShrink: 0 }}>
               <ThemeControls />
             </div>
-            {/* 3 — Sticky search — stays fixed while list below scrolls */}
+            {/* 3 — Sticky search */}
             <div style={{
-              padding: `${t.scale.gap}px ${activeSystem === "m3" ? 8 : 14}px`,
+              padding: `${t.scale.gap}px ${t.scale.gap + 8}px ${t.scale.gap + 4}px`,
               flexShrink: 0,
-              background: activeSystem === "m3" ? t.bg2 : t.bg,
             }}>
               <SidebarSearch />
             </div>
-            {/* 4 — Scrollable component list (no search inside) */}
+            {/* 4 — Scrollable component list */}
             <div style={{
-              padding: activeSystem === "m3" ? `${t.scale.gap - 2}px 8px ${t.scale.gap + 4}px` : `${t.scale.gap - 2}px 14px ${t.scale.gap + 4}px`,
+              padding: `${t.scale.gap}px ${t.scale.gap + 8}px ${t.scale.gap + 8}px`,
               overflowY: "auto", flex: 1,
             }}>
               <nav aria-label="Component navigation"><ComponentList /></nav>
