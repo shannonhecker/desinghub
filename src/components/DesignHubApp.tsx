@@ -569,15 +569,25 @@ function ComponentList() {
   /* DS-scoped nav classes */
   const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : "f-sidebar-item";
 
-  const activeItemStyle = (active: boolean): React.CSSProperties => {
+  const activeItemStyle = (active: boolean, isChild = false): React.CSSProperties => {
+    const indent = isChild ? (activeSystem === "m3" ? 12 : 8) : 0;
     if (activeSystem === "m3") {
+      /* M3: pill-shaped indicator, primaryContainer fill */
       return active
-        ? { background: t.accentWeak, color: t.accentText, fontWeight: 500, borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", minHeight: t.scale.navH }
-        : { borderRadius: 28, padding: `${t.scale.gap}px 16px`, fontSize: t.scale.navF, border: "none", background: "transparent", color: t.fg, minHeight: t.scale.navH };
+        ? { background: t.accentWeak, color: t.accentText, fontWeight: 500, borderRadius: 28, padding: `${t.scale.gap}px ${t.scale.gap + 10}px`, fontSize: t.scale.navF, border: "none", minHeight: t.scale.navH, marginLeft: indent }
+        : { borderRadius: 28, padding: `${t.scale.gap}px ${t.scale.gap + 10}px`, fontSize: t.scale.navF, border: "none", background: "transparent", color: t.fg, minHeight: t.scale.navH, marginLeft: indent };
     }
+    if (activeSystem === "fluent") {
+      /* Fluent: subtleBgSelected, brand text, 4px radius */
+      return active
+        ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accentText, background: t.accentWeak, borderRadius: 4, paddingLeft: t.scale.gap + 6, marginLeft: indent }
+        : { fontSize: t.scale.navF, color: t.fg, paddingLeft: t.scale.gap + 6, marginLeft: indent };
+    }
+    /* Salt: left accent border on active item */
     return active
-      ? { background: t.accentWeak, color: t.accentText, fontWeight: 600, fontSize: t.scale.navF }
-      : { fontSize: t.scale.navF, color: t.fg };
+      ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accentText, background: t.accentWeak,
+          borderLeft: `3px solid ${t.accent}`, borderRadius: "0 4px 4px 0", paddingLeft: t.scale.gap + 4, marginLeft: indent }
+      : { fontSize: t.scale.navF, color: t.fg, borderLeft: "3px solid transparent", paddingLeft: t.scale.gap + 4, marginLeft: indent };
   };
 
   /* Section header style */
@@ -593,13 +603,13 @@ function ComponentList() {
     fontSize: t.scale.navF - 1, fontWeight: 600, color: t.fg2, fontFamily: t.font,
   });
 
-  const renderItem = (c: { id: string; name: string }) => (
+  const renderItem = (c: { id: string; name: string }, isChild = false) => (
     <button key={c.id}
       className={itemClass + (selectedComponent === c.id ? " active" : "")}
       onClick={() => setSelectedComponent(selectedComponent === c.id ? null : c.id)}
       style={{
         display: "flex", alignItems: "center", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: t.font,
-        ...activeItemStyle(selectedComponent === c.id),
+        ...activeItemStyle(selectedComponent === c.id, isChild),
       }}
     >{c.name}</button>
   );
@@ -634,7 +644,7 @@ function ComponentList() {
               transform: expandedGroups.has("Foundations") ? "rotate(0deg)" : "rotate(-90deg)",
             }}>expand_more</span>
           </button>
-          {expandedGroups.has("Foundations") && foundationItems.map(renderItem)}
+          {expandedGroups.has("Foundations") && foundationItems.map(c => renderItem(c))}
         </div>
       )}
 
@@ -652,20 +662,12 @@ function ComponentList() {
               transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)",
             }}>expand_more</span>
           </button>
-          {expandedGroups.has(g.sub) && (
-            <div style={{ paddingLeft: activeSystem === "m3" ? 12 : 8 }}>
-              {g.items.map(renderItem)}
-            </div>
-          )}
+          {expandedGroups.has(g.sub) && g.items.map(c => renderItem(c, true))}
         </div>
       ))}
 
       {/* Uncategorized components */}
-      {uncategorized.length > 0 && (
-        <div style={{ paddingLeft: activeSystem === "m3" ? 12 : 8 }}>
-          {uncategorized.map(renderItem)}
-        </div>
-      )}
+      {uncategorized.length > 0 && uncategorized.map(c => renderItem(c, true))}
 
       {/* Patterns — third top-level group */}
       {(() => {
@@ -680,7 +682,7 @@ function ComponentList() {
                 transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)",
               }}>expand_more</span>
             </button>
-            {expandedGroups.has("Patterns") && patternItems.map(renderItem)}
+            {expandedGroups.has("Patterns") && patternItems.map(c => renderItem(c))}
           </div>
         );
       })()}
