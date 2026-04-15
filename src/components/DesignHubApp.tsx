@@ -544,10 +544,8 @@ const COMPONENT_SUBCATS: Record<string, string> = {
   table: "Containment", overlay: "Containment", splitter: "Containment",
   "static-list": "Containment", carousel: "Containment", "interactable-card": "Containment",
   collapsible: "Containment", "bottom-sheets": "Containment",
-  /* Patterns */
-  charts: "Patterns",
 };
-const SUBCAT_ORDER = ["Actions", "Inputs", "Navigation", "Communication", "Containment", "Patterns"];
+const SUBCAT_ORDER = ["Actions", "Inputs", "Navigation", "Communication", "Containment"];
 
 function ComponentList() {
   const { activeSystem, selectedComponent, setSelectedComponent, searchQuery } = useDesignHub();
@@ -559,7 +557,7 @@ function ComponentList() {
     ? components.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.desc.toLowerCase().includes(searchQuery.toLowerCase()))
     : components;
 
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", ...SUBCAT_ORDER]));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", "Patterns", ...SUBCAT_ORDER]));
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -668,6 +666,24 @@ function ComponentList() {
           {uncategorized.map(renderItem)}
         </div>
       )}
+
+      {/* Patterns — third top-level group */}
+      {(() => {
+        const patternItems = filtered.filter(c => c.cat === "Patterns").sort((a, b) => a.name.localeCompare(b.name));
+        if (patternItems.length === 0) return null;
+        return (
+          <div>
+            <button onClick={() => toggleGroup("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
+              <span style={sectionHeaderStyle}>Patterns</span>
+              <span className="material-symbols-outlined" style={{
+                fontSize: 14, color: t.fg3, transition: "transform 0.2s",
+                transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)",
+              }}>expand_more</span>
+            </button>
+            {expandedGroups.has("Patterns") && patternItems.map(renderItem)}
+          </div>
+        );
+      })()}
     </div>
   );
 }

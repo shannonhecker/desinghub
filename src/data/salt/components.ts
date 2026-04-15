@@ -66,6 +66,17 @@ export const COMPS: ComponentDef[] = [
   { id: "carousel", name: "Carousel", cat: "Components & Patterns", desc: "Slides with progress dots, autoplay, counter." },
   { id: "interactable-card", name: "Interactable Card", cat: "Components & Patterns", desc: "Clickable card with selection. Hover lift + focus ring." },
   { id: "collapsible", name: "Collapsible", cat: "Components & Patterns", desc: "Controlled open/close container. CSS transition." },
+  /* ── Patterns ── */
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview layout." },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, labels, and button bar composed into a data entry form." },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane — email client, file browser, settings patterns." },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, sidebar navigation, content area, and footer composed into a full application layout." },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, validation, and action buttons." },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections for application configuration." },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search input with filterable result cards and pagination." },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress indicator, validation per step, and review." },
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views." },
+  { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
 ];
 
-export const CATS = ["Foundations", "Components & Patterns"];
+export const CATS = ["Foundations", "Components & Patterns", "Patterns"];

@@ -31,6 +31,16 @@ export const COMPS: ComponentDef[] = [
   { id: "tooltips", name: "Tooltips", cat: "Components & Patterns", desc: "Hover-triggered. Inverted background. Fade-in." },
   { id: "links", name: "Links", cat: "Components & Patterns", desc: "Brand-colored text links. Underline on hover." },
   { id: "dividers", name: "Dividers", cat: "Components & Patterns", desc: "1px stroke2 line. Optional inset." },
+  /* ── Patterns ── */
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview." },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form." },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings." },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout." },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button." },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences." },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination." },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation." },
+  { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
 ];
 
-export const CATS = ["Foundations", "Components & Patterns"];
+export const CATS = ["Foundations", "Components & Patterns", "Patterns"];

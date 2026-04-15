@@ -1430,7 +1430,16 @@ const M3_PREVIEWS = {
 };
 
 const COMPS = [
-  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: () => null },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form.", render: () => null },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane.", render: () => null },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation drawer/rail, content area, and bottom nav.", render: () => null },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons.", render: () => null },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration.", render: () => null },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination.", render: () => null },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation.", render: () => null },
+  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: () => null },
+  { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Hover, focus (Tab), press, and disabled states all respond to real interaction.", render: Buttons },
   { id: "text-fields", name: "Text Fields", cat: "Components & Patterns", desc: "Click to focus (border thickens + turns primary, label floats). Hover for state layer. Type to see input. Error variant has red border + icon.", render: TextFields },
   { id: "chips", name: "Chips", cat: "Components & Patterns", desc: "Click to toggle selected (fill + checkmark). Hover and focus-visible states via CSS.", render: Chips },
@@ -1466,7 +1475,7 @@ const COMPS = [
   { id: "guide-mapping", name: "Component Mapping", cat: "Foundations", desc: "Which color token maps to which component — container, content, and state layer assignments.", render: ColorMappingGuide },
   { id: "guide-palette", name: "Full Palette", cat: "Foundations", desc: "All tokens in the current theme visualized. Switch themes to compare values side by side.", render: FullPalettePreview },
 ];
-const CATS = ["Foundations", "Components & Patterns"];
+const CATS = ["Foundations", "Components & Patterns", "Patterns"];
 
 /* ── APP ── */
 export default function App() {

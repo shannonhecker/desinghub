@@ -1164,7 +1164,7 @@ function FluentContentDesign() {
 }
 
 /* ── COMPONENT REGISTRY ── */
-const CATS = ["Foundations", "Components & Patterns"];
+const CATS = ["Foundations", "Components & Patterns", "Patterns"];
 const COMPS = [
   // Design Language
   { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Fluent System Icons — 4,000+ SVG icons in Regular and Filled variants. Tree-shakeable via fluentui react-icons.", render: DLIcons },
@@ -1181,7 +1181,15 @@ const COMPS = [
   { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Components
-  { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: () => null },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: () => null },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: () => null },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: () => null },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: () => null },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: () => null },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: () => null },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: () => null },
+  { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Secondary, Outline, Subtle, Transparent variants in 3 sizes. Hover darkens background.", render: Buttons },
   { id: "inputs", name: "Text Input", cat: "Components & Patterns", desc: "Labeled text input with bottom-border accent on focus. Fluent's signature underline pattern.", render: Inputs },
   { id: "checkboxes", name: "Checkbox", cat: "Components & Patterns", desc: "Click to toggle. Brand-colored fill when checked. Hover shows brand border.", render: Checkboxes },

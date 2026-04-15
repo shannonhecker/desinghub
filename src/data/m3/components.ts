@@ -34,6 +34,17 @@ export const COMPS: ComponentDef[] = [
   { id: "guide-theming", name: "Theming Principles", cat: "Foundations", desc: "HCT color space, tonal palettes, dark theme rules." },
   { id: "guide-mapping", name: "Component Mapping", cat: "Foundations", desc: "Which color token maps to which component." },
   { id: "guide-palette", name: "Full Palette", cat: "Foundations", desc: "All tokens in current theme visualized." },
+  /* ── Patterns ── */
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview." },
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form." },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane." },
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation drawer/rail, content area, and bottom nav." },
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons." },
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration." },
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination." },
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation." },
+  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social)." },
+  { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
 ];
 
-export const CATS = ["Foundations", "Components & Patterns"];
+export const CATS = ["Foundations", "Components & Patterns", "Patterns"];

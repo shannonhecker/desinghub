@@ -661,7 +661,7 @@ function DLContentDesign(){
 }
 
 /* ── COMPONENT REGISTRY ── */
-const CATS = ["Foundations","Components & Patterns"];
+const CATS = ["Foundations","Components & Patterns","Patterns"];
 const COMPS = [
   {id:"dl-color",name:"Color",cat:"Foundations",desc:"8 foundation ramps × 9 shades (incl. Brown). Named backgrounds (snow/marble/limestone/titanium + jet/granite/leather). 40 categorical colors. From Figma.",render:DLColor},
   {id:"dl-icons",name:"Iconography",cat:"Foundations",desc:"salt-ds icons — ~430 unique SVG icons in 2 styles (Default outline, Solid filled) across 15 categories. Density-responsive sizing.",render:DLIcons},
@@ -674,7 +674,16 @@ const COMPS = [
   {id:"dl-content",name:"Content Design",cat:"Foundations",desc:"UX writing: simple, direct, human. Present tense, active voice, sentence case.",render:DLContentDesign},
   {id:"tokens",name:"Tokens",cat:"Foundations",desc:"Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.",render:()=>null},
   {id:"audit",name:"Design Audit",cat:"Foundations",desc:"Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.",render:()=>null},
-  {id:"charts",name:"Charts & Dataviz",cat:"Components & Patterns",desc:"12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.",render:()=>null},
+  {id:"pat-dashboard",name:"Analytical Dashboard",cat:"Patterns",desc:"Stat cards, charts, and data tables composed into an analytics overview layout.",render:()=>null},
+  {id:"pat-form",name:"Forms",cat:"Patterns",desc:"Input fields, validation, labels, and button bar composed into a data entry form.",render:()=>null},
+  {id:"pat-list-detail",name:"List-Detail",cat:"Patterns",desc:"Master list alongside detail pane — email client, file browser, settings patterns.",render:()=>null},
+  {id:"pat-app-shell",name:"App Shell",cat:"Patterns",desc:"Header, sidebar navigation, content area, and footer composed into a full application layout.",render:()=>null},
+  {id:"pat-login",name:"Login / Auth",cat:"Patterns",desc:"Authentication form with brand header, inputs, validation, and action buttons.",render:()=>null},
+  {id:"pat-settings",name:"Settings Page",cat:"Patterns",desc:"Navigation sidebar with form sections for application configuration.",render:()=>null},
+  {id:"pat-search",name:"Search Results",cat:"Patterns",desc:"Search input with filterable result cards and pagination.",render:()=>null},
+  {id:"pat-wizard",name:"Wizard / Stepper",cat:"Patterns",desc:"Multi-step form with progress indicator, validation per step, and review.",render:()=>null},
+  {id:"pat-data-table",name:"Data Table Page",cat:"Patterns",desc:"Filter bar, sortable data grid, and pagination for tabular data views.",render:()=>null},
+  {id:"charts",name:"Charts & Dataviz",cat:"Patterns",desc:"12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.",render:()=>null},
   {id:"buttons",name:"Buttons",cat:"Components & Patterns",desc:"3 appearances: solid, bordered, transparent. 5 sentiments: accented, neutral, positive, caution, negative. States: Default, Hover, Active, Disabled, Loading, Focus.",render:Buttons},
   {id:"pills",name:"Pills / Tags",cat:"Components & Patterns",desc:"Toggle selection. Accent fill when active. Used for filters, categories, skills.",render:PillsDemo},
   {id:"inputs",name:"Text Input",cat:"Components & Patterns",desc:"Bottom-border accent on focus. Salt's signature flat-top input with strong baseline.",render:Inputs},
