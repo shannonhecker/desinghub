@@ -202,8 +202,8 @@ const buildCSS = (T) => `
 .a-tab:focus-visible { outline:2px solid ${T.accent}; outline-offset:-2px; }
 
 /* === CARD === */
-.a-card { border-radius:14px; background:${T.cardBg}; border:1px solid ${T.borderMd}; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; cursor:pointer; outline:none; transition:background var(--a-dur-fast) var(--a-ease), border-color var(--a-dur-fast) var(--a-ease), box-shadow var(--a-dur-mid) var(--a-ease); overflow:hidden; box-shadow:${T.insetHighlight}, 0 2px 12px rgba(0,0,0,0.12); }
-.a-card:hover { background:${T.cardBgHover}; border-color:${T.borderStrong}; box-shadow:${T.shadow}, ${T.insetHighlight}; }
+.a-card { border-radius:16px; background:${T.cardBg}; border:1px solid ${T.borderMd}; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; cursor:pointer; outline:none; transition:background var(--a-dur-fast) var(--a-ease), border-color var(--a-dur-fast) var(--a-ease), box-shadow var(--a-dur-mid) var(--a-ease); overflow:hidden; box-shadow:${T.insetHighlight}, 0 2px 8px rgba(0,0,0,0.08); }
+.a-card:hover { background:${T.cardBgHover}; border-color:${T.borderStrong}; box-shadow:${T.shadow}, ${T.insetHighlight}; transform:translateY(-1px); }
 .a-card:focus-visible { outline:2px solid ${T.accent}; outline-offset:2px; }
 
 /* === BADGE === */
@@ -233,7 +233,7 @@ const buildCSS = (T) => `
 
 /* === DIALOG === */
 .a-dialog-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
-.a-dialog { background:${T.bg2}; backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:16px; padding:24px; min-width:320px; box-shadow:${T.shadowLg}; font-family:${FONT}; }
+.a-dialog { background:${T.surfaceLg}; backdrop-filter:${T.glassLg}; -webkit-backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:20px; padding:28px; min-width:320px; box-shadow:${T.shadowLg}, ${T.insetHighlight}; font-family:${FONT}; }
 
 /* === DATA TABLE === */
 .a-table { width:100%; border-collapse:separate; border-spacing:0; font-family:${FONT}; font-size:12px; }
@@ -541,6 +541,7 @@ function Cards() {
     { t: "Conversion", v: "3.2%", change: "-0.4%", up: false, icon: "swap_horiz" },
   ];
   return (
+    <div style={{ background: T.gradient, borderRadius: 16, padding: 16 }}>
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, fontFamily: FONT }}>
       {cards.map(c => (
         <div key={c.t} className="a-card" style={{ padding: 16 }}>
@@ -552,6 +553,7 @@ function Cards() {
           <div style={{ fontSize: 11, color: c.up ? T.successFg : T.dangerFg, marginTop: 6, fontWeight: 500 }}>{c.change} from last month</div>
         </div>
       ))}
+    </div>
     </div>
   );
 }
@@ -633,8 +635,8 @@ function Dropdowns() {
 
 function DialogDemo() {
   return (
-    <div style={{ fontFamily: FONT }}>
-      <div className="a-dialog" style={{ position: "relative", maxWidth: 320 }}>
+    <div style={{ fontFamily: FONT, background: T.gradient, borderRadius: 16, padding: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div className="a-dialog" style={{ position: "relative", maxWidth: 300 }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: T.fg, marginBottom: 8 }}>Confirm action</div>
         <div style={{ fontSize: 12, color: T.fg2, marginBottom: 16 }}>Are you sure you want to proceed? This cannot be undone.</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
