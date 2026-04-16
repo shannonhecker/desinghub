@@ -3,88 +3,21 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId, type ActiveTab } from "@/store/useDesignHub";
-import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews, MATERIAL_COLORS } from "@/data/registry";
+import { getComponents, getCategories, getSystemInfo, getPreviews, MATERIAL_COLORS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
+import { useTheme, type ActiveTheme } from "@/contexts/ThemeContext";
 import { ComponentPreview } from "./ComponentPreview";
 
 import { TokenReference } from "./TokenReference";
 
 import { AuditPanel } from "./AuditPanel";
 
-// Helper: get token values by system so all UI uses the active DS
-export function useActiveTheme() {
-  const store = useDesignHub();
-  const { activeSystem } = store;
-  let T = activeSystem === "salt"
-    ? getTheme("salt", store.salt.themeKey)
-    : activeSystem === "m3"
-    ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
-    : activeSystem === "fluent"
-    ? getTheme("fluent", store.fluent.themeKey)
-    : getTheme("ausos", store.ausos.themeKey);
-
-  // Apply custom accent color for ausos
-  if (activeSystem === "ausos" && store.ausos.accentColor && store.ausos.accentColor !== T.accent) {
-    const c = store.ausos.accentColor;
-    const lighter = c + "CC";
-    const charts = T.chart ? [...T.chart] : [];
-    if (charts.length > 0) charts[0] = c;
-    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${lighter} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40`, infoFg: c, infoBorder: `${c}30`, chart: charts };
-  }
-
-  activateTheme(activeSystem, T);
-
-  const densityOrSize = activeSystem === "salt" ? store.salt.density : activeSystem === "m3" ? store.m3.density : activeSystem === "fluent" ? store.fluent.size : store.ausos.density;
-  const css = getFullCSS(activeSystem, T, densityOrSize);
-  const font = getFont(activeSystem);
-
-  // Normalized token accessors
-  const n = (salt: string, m3: string, fluent: string, ausos: string) =>
-    activeSystem === "salt" ? T[salt] : activeSystem === "m3" ? T[m3] : activeSystem === "fluent" ? T[fluent] : T[ausos];
-  const bg = n("bg", "surface", "bg1", "bg");
-  const bg2 = n("bg2", "surfaceContainerLow", "bg2", "bg2");
-  const bg3 = n("bg3", "surfaceContainer", "bg3", "bg3");
-  const fg = n("fg", "onSurface", "fg1", "fg");
-  const fg2 = n("fg2", "onSurfaceVariant", "fg2", "fg2");
-  const fg3 = n("fg3", "outline", "fg3", "fg3");
-  const accent = n("accent", "primary", "brandBg", "accent");
-  const accentFg = n("accentFg", "onPrimary", "fgOnBrand", "accentFg");
-  const accentWeak = n("accentWeak", "primaryContainer", "brandBg2", "accentSurface");
-  const accentText = activeSystem === "salt" ? (T.accentText || T.accent) : activeSystem === "m3" ? T.primary : activeSystem === "fluent" ? T.brandFg1 : T.accent;
-  const border = n("border", "outlineVariant", "stroke2", "border");
-  const borderStrong = n("borderStrong", "outline", "strokeAccessible", "borderStrong");
-
-  // Density-derived sizing — every px on the page scales with the active density/size
-  const scale = (() => {
-    if (activeSystem === "salt") {
-      const d = densityOrSize as string;
-      return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
-           : d === "low"   ? { navH: 36, navF: 13, labF: 11, tabH: 40, hdrH: 48, gap: 8,  panelW: 260 }
-           : d === "touch" ? { navH: 44, navF: 14, labF: 12, tabH: 48, hdrH: 56, gap: 10, panelW: 288 }
-           :                 { navH: 28, navF: 12, labF: 10, tabH: 32, hdrH: 40, gap: 6,  panelW: 240 }; // medium
-    }
-    if (activeSystem === "m3") {
-      const d = densityOrSize as number;
-      return d === -3 ? { navH: 36, navF: 12, labF: 10, tabH: 36, hdrH: 44, gap: 7,  panelW: 230 }
-           : d === -2 ? { navH: 40, navF: 13, labF: 10, tabH: 40, hdrH: 48, gap: 8,  panelW: 240 }
-           : d === -1 ? { navH: 44, navF: 14, labF: 11, tabH: 44, hdrH: 52, gap: 9,  panelW: 256 }
-           :            { navH: 48, navF: 14, labF: 11, tabH: 48, hdrH: 56, gap: 10, panelW: 268 }; // default
-    }
-    if (activeSystem === "fluent") {
-      const d = densityOrSize as string;
-      return d === "small" ? { navH: 24, navF: 11, labF: 9,  tabH: 28, hdrH: 36, gap: 4,  panelW: 220 }
-           : d === "large" ? { navH: 40, navF: 14, labF: 11, tabH: 42, hdrH: 50, gap: 8,  panelW: 264 }
-           :                 { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 6,  panelW: 240 }; // medium
-    }
-    // ausos
-    const d = densityOrSize as string;
-    return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
-         : d === "low"   ? { navH: 36, navF: 13, labF: 11, tabH: 40, hdrH: 48, gap: 8,  panelW: 260 }
-         : d === "touch" ? { navH: 44, navF: 14, labF: 12, tabH: 48, hdrH: 56, gap: 10, panelW: 288 }
-         :                 { navH: 28, navF: 12, labF: 10, tabH: 32, hdrH: 40, gap: 6,  panelW: 240 }; // medium
-  })();
-
-  return { T, css, font, bg, bg2, bg3, fg, fg2, fg3, accent, accentFg, accentWeak, accentText, border, borderStrong, activeSystem, densityOrSize, scale };
+/**
+ * @deprecated Use `useTheme()` from `@/contexts/ThemeContext` instead.
+ * Kept for backward compatibility with CodePanel and ComponentPreview.
+ */
+export function useActiveTheme(): ActiveTheme {
+  return useTheme();
 }
 
 /* ── M3 mode dropdown helpers ── */
@@ -118,7 +51,7 @@ function ModeIndicator({ value, customColor, border }: { value: string; customCo
 /* ── DS SWITCHER — uses active DS button classes ── */
 function SystemSwitcher() {
   const { activeSystem, setActiveSystem } = useDesignHub();
-  const theme = useActiveTheme();
+  const theme = useTheme();
   const systems: { id: SystemId; label: string }[] = [
     { id: "salt", label: "Salt DS" },
     { id: "m3", label: "Material 3" },
@@ -147,7 +80,7 @@ function SystemSwitcher() {
 function ThemeControls() {
   const store = useDesignHub();
   const { activeSystem } = store;
-  const t = useActiveTheme();
+  const t = useTheme();
   const [open, setOpen] = useState(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
@@ -529,9 +462,9 @@ function ThemeControls() {
 }
 
 /* ── SIDEBAR DS BRAND — badge + name + subtitle at the top of the drawer ── */
-function SidebarDSBrand() {
-  const { activeSystem } = useDesignHub();
-  const t = useActiveTheme();
+const SidebarDSBrand = React.memo(function SidebarDSBrand() {
+  const activeSystem = useDesignHub((s) => s.activeSystem);
+  const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
   const components = getComponents(activeSystem);
 
@@ -553,12 +486,14 @@ function SidebarDSBrand() {
       </div>
     </div>
   );
-}
+});
 
 /* ── SIDEBAR SEARCH — sticky between controls and scrollable list ── */
-function SidebarSearch() {
-  const { activeSystem, searchQuery, setSearchQuery } = useDesignHub();
-  const t = useActiveTheme();
+const SidebarSearch = React.memo(function SidebarSearch() {
+  const activeSystem = useDesignHub((s) => s.activeSystem);
+  const searchQuery = useDesignHub((s) => s.searchQuery);
+  const setSearchQuery = useDesignHub((s) => s.setSearchQuery);
+  const t = useTheme();
   const inputClass = activeSystem === "salt" ? "s-input" : activeSystem === "m3" ? "" : "f-input";
   return (
     <div style={{ position: "relative" }}>
@@ -584,13 +519,13 @@ function SidebarSearch() {
       />
     </div>
   );
-}
+});
 
 /* ── CONTENT TOP BAR — hamburger toggle + breadcrumb, replaces M3-only ContentHeader ── */
 function ContentTopBar() {
   const { activeSystem, activeTab, selectedComponent, setSelectedComponent } = useDesignHub();
   const { sidebarOpen, toggleSidebar } = useDesignHub();
-  const t = useActiveTheme();
+  const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
   // Build breadcrumb path
@@ -674,7 +609,7 @@ const SUBCAT_ORDER = ["Actions", "Inputs", "Navigation", "Communication", "Conta
 
 function ComponentList() {
   const { activeSystem, selectedComponent, setSelectedComponent, searchQuery } = useDesignHub();
-  const t = useActiveTheme();
+  const t = useTheme();
   const components = getComponents(activeSystem);
   const categories = getCategories(activeSystem);
 
@@ -819,9 +754,11 @@ function ComponentList() {
 }
 
 /* ── TAB BAR — each DS renders its own native tab spec ── */
-function TabBar() {
-  const { activeTab, setActiveTab, activeSystem } = useDesignHub();
-  const t = useActiveTheme();
+const TabBar = React.memo(function TabBar() {
+  const activeTab = useDesignHub((s) => s.activeTab);
+  const setActiveTab = useDesignHub((s) => s.setActiveTab);
+  const activeSystem = useDesignHub((s) => s.activeSystem);
+  const t = useTheme();
   const tabs: { id: ActiveTab; label: string }[] = [
     { id: "preview", label: "Preview" },
     { id: "code", label: "Code" },
@@ -908,13 +845,13 @@ function TabBar() {
       ))}
     </div>
   );
-}
+});
 
 /* ── LANDING GRID — uses DS card classes ── */
-function LandingGrid() {
-  const store = useDesignHub();
-  const { activeSystem, setSelectedComponent } = store;
-  const t = useActiveTheme();
+const LandingGrid = React.memo(function LandingGrid() {
+  const activeSystem = useDesignHub((s) => s.activeSystem);
+  const setSelectedComponent = useDesignHub((s) => s.setSelectedComponent);
+  const t = useTheme();
   const components = getComponents(activeSystem);
   const categories = getCategories(activeSystem);
   const sysInfo = getSystemInfo(activeSystem);
@@ -1140,12 +1077,12 @@ function LandingGrid() {
       })}
     </div>
   );
-}
+});
 
 /* ── CONTENT HEADER — breadcrumb + component title for M3 ── */
 function ContentHeader() {
   const { activeSystem, activeTab, selectedComponent, setSelectedComponent } = useDesignHub();
-  const t = useActiveTheme();
+  const t = useTheme();
   if (activeSystem !== "m3" || !selectedComponent) return null;
 
   const components = getComponents(activeSystem);
@@ -1208,7 +1145,7 @@ function MainContent() {
 export function DesignHubApp() {
   const store = useDesignHub();
   const { sidebarOpen, toggleSidebar, activeSystem } = store;
-  const t = useActiveTheme();
+  const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
   // DS-specific sidebar item class for the toggle button
