@@ -280,6 +280,214 @@ const ausosTheme = themeQuartz.withParams({
 <div id="grid" class="ag-theme-quartz" style="height: 400px"></div>`
   },
 
+  // ── New Components (gap fill) ──
+  pills: {
+    react: `<div style={{ display: "flex", gap: 6 }}>
+  <button className="a-pill active">All</button>
+  <button className="a-pill">Design</button>
+  <button className="a-pill">Code</button>
+</div>`,
+    html: `<div style="display: flex; gap: 6px">
+  <button class="a-pill active">All</button>
+  <button class="a-pill">Design</button>
+</div>`
+  },
+  "toggle-btn": {
+    react: `<button className={\`a-toggle-btn \${pressed ? "active" : ""}\`}
+  onClick={() => setPressed(!pressed)}>
+  <span className="material-symbols-outlined">format_bold</span>
+</button>`,
+    html: `<button class="a-toggle-btn active">Bold</button>`
+  },
+  "segmented-btn": {
+    react: `<div className="a-segmented-group">
+  <button className="a-seg-btn active">Day</button>
+  <button className="a-seg-btn">Week</button>
+  <button className="a-seg-btn">Month</button>
+</div>`,
+    html: `<div class="a-segmented-group">
+  <button class="a-seg-btn active">Day</button>
+  <button class="a-seg-btn">Week</button>
+</div>`
+  },
+  link: {
+    react: `<a className="a-link" href="#">Learn more
+  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
+</a>`,
+    html: `<a class="a-link" href="#">Learn more &rarr;</a>`
+  },
+  slider: {
+    react: `<div className="a-slider-wrap">
+  <label>Volume</label>
+  <input type="range" className="a-slider" min={0} max={100} value={50}
+    onChange={(e) => setValue(Number(e.target.value))} />
+</div>`,
+    html: `<label>Volume</label>
+<input type="range" class="a-slider" min="0" max="100" value="50" />`
+  },
+  "number-input": {
+    react: `<div className="a-number-input">
+  <label>Quantity</label>
+  <div className="a-number-input-wrap">
+    <button onClick={() => setVal(v => v - 1)}>-</button>
+    <input type="number" value={val} onChange={(e) => setVal(Number(e.target.value))} />
+    <button onClick={() => setVal(v => v + 1)}>+</button>
+  </div>
+</div>`,
+    html: `<div class="a-number-input-wrap">
+  <button>-</button>
+  <input type="number" value="1" />
+  <button>+</button>
+</div>`
+  },
+  "multiline-input": {
+    react: `<div className="a-form-field">
+  <label>Description</label>
+  <textarea className="a-textarea" rows={3}
+    placeholder="Enter description..." />
+</div>`,
+    html: `<label>Description</label>
+<textarea class="a-textarea" rows="3" placeholder="Enter description..."></textarea>`
+  },
+  "combo-box": {
+    react: `<div className="a-combo-box">
+  <input className="a-input" placeholder="Search countries..."
+    value={query} onChange={(e) => setQuery(e.target.value)} />
+  {open && (
+    <div className="a-combo-menu">
+      {filtered.map(item => (
+        <button key={item} className="a-combo-option">{item}</button>
+      ))}
+    </div>
+  )}
+</div>`,
+    html: `<input class="a-input" placeholder="Search..." />
+<div class="a-combo-menu">
+  <button class="a-combo-option">United States</button>
+  <button class="a-combo-option">Canada</button>
+</div>`
+  },
+  "list-box": {
+    react: `<div className="a-list-box" role="listbox">
+  {items.map(item => (
+    <button key={item} role="option"
+      className={\`a-list-item \${selected === item ? "selected" : ""}\`}
+      onClick={() => setSelected(item)}>
+      {item}
+    </button>
+  ))}
+</div>`,
+    html: `<div class="a-list-box" role="listbox">
+  <button class="a-list-item selected" role="option">Apple</button>
+  <button class="a-list-item" role="option">Banana</button>
+</div>`
+  },
+  "file-drop": {
+    react: `<div className="a-file-drop"
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}>
+  <span className="material-symbols-outlined">upload_file</span>
+  <p>Drag & drop files here</p>
+  <span className="a-file-drop-hint">.png, .jpg, .pdf</span>
+</div>`,
+    html: `<div class="a-file-drop">
+  <span class="material-symbols-outlined">upload_file</span>
+  <p>Drag &amp; drop files here</p>
+</div>`
+  },
+  dividers: {
+    react: `{/* Horizontal */}
+<hr className="a-divider" />
+
+{/* Vertical — inside a flex row */}
+<div style={{ display: "flex", alignItems: "stretch" }}>
+  <span>Left</span>
+  <div className="a-divider-v" />
+  <span>Right</span>
+</div>`,
+    html: `<hr class="a-divider" />
+<div class="a-divider-v" style="height: 24px"></div>`
+  },
+  spinner: {
+    react: `<div className="a-spinner" role="progressbar" aria-label="Loading">
+  <svg viewBox="0 0 24 24" width={24} height={24}>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"
+      fill="none" strokeDasharray="50 20" />
+  </svg>
+</div>`,
+    html: `<div class="a-spinner" role="progressbar">
+  <svg viewBox="0 0 24 24" width="24" height="24">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+      fill="none" stroke-dasharray="50 20" />
+  </svg>
+</div>`
+  },
+  toast: {
+    react: `<div className="a-toast a-toast-success">
+  <span className="material-symbols-outlined">check_circle</span>
+  <span>Changes saved successfully</span>
+  <button className="a-toast-close" onClick={dismiss}>
+    <span className="material-symbols-outlined">close</span>
+  </button>
+</div>`,
+    html: `<div class="a-toast a-toast-success">
+  <span class="material-symbols-outlined">check_circle</span>
+  <span>Changes saved</span>
+  <button class="a-toast-close">&times;</button>
+</div>`
+  },
+  stepper: {
+    react: `<div className="a-stepper">
+  <div className="a-step completed">
+    <div className="a-step-circle">1</div>
+    <span>Details</span>
+  </div>
+  <div className="a-step-line" />
+  <div className="a-step active">
+    <div className="a-step-circle">2</div>
+    <span>Review</span>
+  </div>
+  <div className="a-step-line" />
+  <div className="a-step">
+    <div className="a-step-circle">3</div>
+    <span>Done</span>
+  </div>
+</div>`,
+    html: `<div class="a-stepper">
+  <div class="a-step completed"><div class="a-step-circle">1</div><span>Details</span></div>
+  <div class="a-step-line"></div>
+  <div class="a-step active"><div class="a-step-circle">2</div><span>Review</span></div>
+</div>`
+  },
+  menu: {
+    react: `<div className="a-menu" role="menu">
+  <button className="a-menu-item" role="menuitem">
+    <span className="material-symbols-outlined">edit</span> Edit
+  </button>
+  <button className="a-menu-item" role="menuitem">
+    <span className="material-symbols-outlined">content_copy</span> Duplicate
+  </button>
+  <hr className="a-divider" />
+  <button className="a-menu-item danger" role="menuitem">
+    <span className="material-symbols-outlined">delete</span> Delete
+  </button>
+</div>`,
+    html: `<div class="a-menu" role="menu">
+  <button class="a-menu-item" role="menuitem">Edit</button>
+  <hr class="a-divider" />
+  <button class="a-menu-item danger" role="menuitem">Delete</button>
+</div>`
+  },
+  tag: {
+    react: `<span className="a-tag">
+  Design
+  <button className="a-tag-dismiss" onClick={onRemove}>
+    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+  </button>
+</span>`,
+    html: `<span class="a-tag">Design <button class="a-tag-dismiss">&times;</button></span>`
+  },
+
   // ── Foundations ──
   "dl-color": {
     react: `// ausos DS color tokens
