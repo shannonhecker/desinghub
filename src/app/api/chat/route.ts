@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "@/lib/chatSystem";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
@@ -15,8 +16,12 @@ function isValidMessage(m: unknown): m is { role: string; content: string } {
 }
 
 let client: Anthropic | null = null;
+let clientKey: string | null = null;
 function getClient(apiKey: string): Anthropic {
-  if (!client) client = new Anthropic({ apiKey });
+  if (!client || clientKey !== apiKey) {
+    client = new Anthropic({ apiKey });
+    clientKey = apiKey;
+  }
   return client;
 }
 
@@ -26,6 +31,22 @@ export async function POST(req: Request) {
     return new Response(
       JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }),
       { status: 503, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Rate limiting
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const limit = await checkRateLimit(ip);
+  if (!limit.allowed) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(limit.resetInSeconds),
+        },
+      }
     );
   }
 

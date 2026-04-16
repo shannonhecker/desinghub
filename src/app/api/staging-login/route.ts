@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
 
-const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET || "design-hub-staging";
+const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET ?? "";
 
 export function hashToken(password: string): string {
   return createHmac("sha256", TOKEN_SECRET).update(password).digest("hex");

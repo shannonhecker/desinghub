@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE = "ausos_auth_token";
-const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET || "design-hub-staging";
+const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET;
 
 async function hashToken(password: string): Promise<string> {
   const enc = new TextEncoder();
@@ -28,8 +28,8 @@ async function hashToken(password: string): Promise<string> {
 export async function middleware(request: NextRequest) {
   const expectedPassword = process.env.STAGING_PASSWORD;
 
-  // Skip entirely when not configured
-  if (!expectedPassword) {
+  // Skip entirely when not configured (password or token secret missing)
+  if (!expectedPassword || !TOKEN_SECRET) {
     return NextResponse.next();
   }
 

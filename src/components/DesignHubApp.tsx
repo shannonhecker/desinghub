@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId, type ActiveTab } from "@/store/useDesignHub";
 import { getComponents, getCategories, getTheme, getFullCSS, getFont, getSystemInfo, activateTheme, getPreviews, MATERIAL_COLORS } from "@/data/registry";
+import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { ComponentPreview } from "./ComponentPreview";
 
 import { TokenReference } from "./TokenReference";
@@ -1227,8 +1228,8 @@ export function DesignHubApp() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: activeSystem === "ausos" ? t.bg : (pageGradient || t.bg2), fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
-      {/* Inject the DS CSS */}
-      <style dangerouslySetInnerHTML={{ __html: t.css }} />
+      {/* Inject the DS CSS (sanitized to prevent injection) */}
+      <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
       {/* Header — 3-column, height + padding scale with density */}
       <header style={{

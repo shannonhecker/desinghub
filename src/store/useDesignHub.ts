@@ -48,13 +48,19 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   setSaltDensity: (d) => set((st) => ({ salt: { ...st.salt, density: d } })),
   setM3Theme: (key) => set((st) => ({ m3: { ...st.m3, themeKey: key } })),
   setM3Density: (d) => set((st) => ({ m3: { ...st.m3, density: d } })),
-  setM3CustomColor: (c) => set((st) => ({ m3: { ...st.m3, customColor: c } })),
+  setM3CustomColor: (c) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
+    set((st) => ({ m3: { ...st.m3, customColor: c } }));
+  },
   setM3DarkCustom: (d) => set((st) => ({ m3: { ...st.m3, isDarkCustom: d } })),
   setFluentTheme: (key) => set((st) => ({ fluent: { ...st.fluent, themeKey: key } })),
   setFluentSize: (s) => set((st) => ({ fluent: { ...st.fluent, size: s } })),
   setAusosTheme: (key) => set((st) => ({ ausos: { ...st.ausos, themeKey: key } })),
   setAusosDensity: (d) => set((st) => ({ ausos: { ...st.ausos, density: d } })),
-  setAusosAccent: (c) => set((st) => ({ ausos: { ...st.ausos, accentColor: c } })),
+  setAusosAccent: (c) => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
+    set((st) => ({ ausos: { ...st.ausos, accentColor: c } }));
+  },
   setSelectedComponent: (id) => set({ selectedComponent: id, activeTab: 'preview' }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),

@@ -279,4 +279,451 @@ const ausosTheme = themeQuartz.withParams({
     html: `<!-- AG Grid requires JavaScript initialization -->
 <div id="grid" class="ag-theme-quartz" style="height: 400px"></div>`
   },
+
+  // ── Foundations ──
+  "dl-color": {
+    react: `// ausos DS color tokens
+const colors = {
+  bg: "var(--a-bg)",           // #0b1120 (dark) / #FFFFFF (light)
+  surface: "var(--a-surface)", // Glass surface
+  fg: "var(--a-fg)",           // Primary text
+  fg2: "var(--a-fg2)",         // Secondary text
+  accent: "var(--a-accent)",   // Violet accent
+  border: "var(--a-border)",   // Decorative borders
+  borderStrong: "var(--a-border-strong)", // Input borders (3:1)
+};`,
+    html: `<!-- Use CSS custom properties for all colors -->
+<style>
+  .card { background: var(--a-surface); border: 1px solid var(--a-border); }
+  .text { color: var(--a-fg); }
+  .accent { color: var(--a-accent); }
+</style>`
+  },
+  "dl-icons": {
+    react: `// Material Symbols Outlined icons
+<span className="material-symbols-outlined">search</span>
+<span className="material-symbols-outlined">settings</span>
+<span className="material-symbols-outlined">home</span>
+
+// With ausos muted styling
+<span className="material-symbols-outlined"
+  style={{ fontSize: 20, color: "var(--a-fg2)" }}>
+  favorite
+</span>`,
+    html: `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+<span class="material-symbols-outlined">search</span>`
+  },
+  "dl-typography": {
+    react: `// ausos type scale — Inter font
+const typeScale = {
+  display:  { size: 48, weight: 300 },
+  headline: { size: 22, weight: 600 },
+  title:    { size: 16, weight: 600 },
+  body:     { size: 15, weight: 400 },
+  label:    { size: 12, weight: 500 },
+  caption:  { size: 11, weight: 400 },
+};
+
+<h1 style={{ fontSize: 48, fontWeight: 300 }}>Display</h1>
+<h2 style={{ fontSize: 22, fontWeight: 600 }}>Headline</h2>
+<p style={{ fontSize: 15, fontWeight: 400 }}>Body text</p>`,
+    html: `<style>
+  body { font-family: 'Inter', sans-serif; }
+  .display { font-size: 48px; font-weight: 300; }
+  .headline { font-size: 22px; font-weight: 600; }
+  .body { font-size: 15px; font-weight: 400; }
+</style>`
+  },
+  "dl-elevation": {
+    react: `// 4 glass elevation levels via backdrop-filter
+const elevations = {
+  level0: { backdropFilter: "none" },
+  level1: { backdropFilter: "blur(8px) saturate(140%)" },
+  level2: { backdropFilter: "blur(16px) saturate(140%)" },
+  level3: { backdropFilter: "blur(24px) saturate(150%)" },
+};
+
+<div style={{
+  background: "rgba(255,255,255,0.06)",
+  backdropFilter: "blur(16px) saturate(140%)",
+  border: "1px solid rgba(255,255,255,0.10)",
+}}>
+  Glass panel
+</div>`,
+    html: `<div style="backdrop-filter: blur(16px) saturate(140%);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);">
+  Glass panel
+</div>`
+  },
+  "dl-spacing": {
+    react: `// ausos spacing scale (4px base grid)
+const spacing = {
+  25: 2, 50: 4, 100: 8, 150: 12,
+  200: 16, 300: 24, 400: 32,
+  500: 40, 600: 48, 800: 64,
+};
+
+<div style={{ padding: "var(--a-spacing-200)" }}>16px padding</div>
+<div style={{ gap: "var(--a-spacing-100)" }}>8px gap</div>`,
+    html: `<div style="padding: 16px; gap: 8px;">
+  <!-- Use 4px grid multiples -->
+</div>`
+  },
+  "dl-tokens": {
+    react: `// 3-layer token architecture
+// Foundation → Semantic → Component
+
+// Foundation (raw values)
+const foundation = { teal500: "#7E6BC4", grey900: "#0b1120" };
+
+// Semantic (role-based)
+const semantic = {
+  accent: "var(--a-accent)",    // → foundation.violet
+  bg: "var(--a-bg)",            // → foundation.grey900
+  surface: "var(--a-surface)",  // → rgba(255,255,255,0.06)
+};
+
+// Component (scoped)
+// .a-btn-primary { background: var(--a-accent); }`,
+    html: `<style>
+:root {
+  --a-bg: #0b1120;
+  --a-surface: rgba(255,255,255,0.06);
+  --a-fg: #E8EAED;
+  --a-accent: #7E6BC4;
+  --a-border: rgba(255,255,255,0.06);
+}
+</style>`
+  },
+  "dl-a11y": {
+    react: `// WCAG 2.1 AA compliance
+// Text contrast: 4.5:1 minimum (normal), 3:1 (large/UI)
+// Touch targets: 44px minimum
+// Focus rings: 2px accent outline
+
+<button style={{
+  minHeight: 44,           // Touch target
+  outline: "none",
+}}>
+  {/* Focus ring via CSS */}
+</button>
+
+// CSS: .a-btn:focus-visible { outline: 2px solid var(--a-accent); }`,
+    html: `<!-- Accessibility checklist -->
+<!-- ✅ 4.5:1 text contrast -->
+<!-- ✅ 3:1 UI component contrast -->
+<!-- ✅ 44px touch targets -->
+<!-- ✅ 2px focus rings -->
+<!-- ✅ prefers-reduced-motion support -->`
+  },
+  "dl-density": {
+    react: `// 4 density levels
+const densities = {
+  high:   { height: 24, fontSize: 11, gap: 6 },
+  medium: { height: 32, fontSize: 13, gap: 8 },  // default
+  low:    { height: 40, fontSize: 14, gap: 10 },
+  touch:  { height: 48, fontSize: 15, gap: 14 },
+};
+
+<AusosProvider density="medium">
+  <App />
+</AusosProvider>`,
+    html: `<!-- Density scales all component sizes -->
+<div class="density-medium">
+  <button class="a-btn a-btn-primary">Medium (32px)</button>
+</div>`
+  },
+  "dl-content": {
+    react: `// Content design principles
+// ✅ Concise — say more with less
+// ✅ Present tense — "Save changes" not "Changes will be saved"
+// ✅ Active voice — "Enter your name" not "Your name should be entered"
+// ✅ Sentence case — "Sign in" not "Sign In"
+// ✅ No jargon — "Something went wrong" not "Error 500"`,
+    html: `<!-- UX writing guidelines -->
+<!-- Button: "Save" not "Submit" -->
+<!-- Error: "Connection lost" not "ERR_NETWORK" -->
+<!-- Empty: "No results yet" not "null" -->`
+  },
+  tokens: {
+    react: `// Token reference — import and use
+import { tokens } from "@ausos/core";
+
+// Color tokens
+tokens.color.bg;      // "#0b1120"
+tokens.color.accent;  // "#7E6BC4"
+tokens.color.fg;      // "#E8EAED"
+
+// Spacing tokens
+tokens.spacing[100];   // 8
+tokens.spacing[200];   // 16
+
+// Typography tokens
+tokens.type.display;   // { size: 48, weight: 300 }`,
+    html: `<style>
+  /* All tokens available as CSS custom properties */
+  .element {
+    color: var(--a-fg);
+    background: var(--a-surface);
+    padding: var(--a-spacing-200);
+    border-radius: var(--a-radius);
+  }
+</style>`
+  },
+  audit: {
+    react: `// Design audit — check your code for violations
+import { audit } from "@ausos/tools";
+
+const result = audit(myComponent);
+// Returns: {
+//   rawHex: ["#ff0000 on line 12"],  // Use tokens instead
+//   contrast: [{ ratio: 2.1, element: ".label" }],
+//   a11y: ["Missing aria-label on icon button"],
+// }`,
+    html: `<!-- Audit checks for: -->
+<!-- ❌ Raw hex values (use var(--a-*) tokens) -->
+<!-- ❌ Contrast below 4.5:1 -->
+<!-- ❌ Missing ARIA labels -->
+<!-- ❌ Touch targets below 44px -->`
+  },
+  charts: {
+    react: `import Highcharts from "highcharts";
+import HighchartsReact from "highcharts-react-official";
+
+// ausos chart theme
+const ausosTheme = {
+  colors: T.chart, // 10-color palette
+  chart: { backgroundColor: "transparent" },
+  xAxis: { gridLineColor: "var(--a-border)" },
+  yAxis: { gridLineColor: "var(--a-border)" },
+  tooltip: { borderRadius: 12 },
+};
+
+<HighchartsReact highcharts={Highcharts} options={{
+  ...ausosTheme,
+  series: [{ data: [1, 3, 2, 4] }],
+}} />`,
+    html: `<!-- Highcharts with ausos theme -->
+<div id="chart"></div>
+<script>
+  Highcharts.chart('chart', {
+    colors: ['#7E6BC4', '#f46a9b', '#27aeef'],
+    chart: { backgroundColor: 'transparent' },
+  });
+</script>`
+  },
+
+  // ── Patterns ──
+  "pat-dashboard": {
+    react: `// Analytical Dashboard pattern
+import { Card, Table, Badge, Progress } from "@ausos/core";
+
+<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+  <Card>
+    <div style={{ fontSize: 11, color: "var(--a-fg3)" }}>Revenue</div>
+    <div style={{ fontSize: 20, fontWeight: 700 }}>$42,800</div>
+    <Progress value={72} />
+    <span style={{ color: "var(--a-success)" }}>+12.5%</span>
+  </Card>
+  {/* ... more stat cards */}
+</div>
+
+<Table columns={cols} rows={data} />`,
+    html: `<div class="a-card" style="padding: 16px">
+  <small>Revenue</small>
+  <h2>$42,800</h2>
+  <div class="a-progress-track">
+    <div class="a-progress-fill" style="width: 72%"></div>
+  </div>
+</div>`
+  },
+  "pat-form": {
+    react: `import { FormField, Input, Button } from "@ausos/core";
+
+<form>
+  <FormField label="Full Name" required>
+    <Input placeholder="Jane Doe" />
+  </FormField>
+  <FormField label="Email" required>
+    <Input type="email" placeholder="jane@company.com" />
+  </FormField>
+  <div style={{ display: "flex", gap: 8 }}>
+    <Button appearance="primary">Submit</Button>
+    <Button appearance="secondary">Cancel</Button>
+  </div>
+</form>`,
+    html: `<form>
+  <div class="a-input-wrap">
+    <label class="a-input-label">Full Name</label>
+    <input class="a-input" placeholder="Jane Doe" />
+  </div>
+  <button class="a-btn a-btn-primary">Submit</button>
+</form>`
+  },
+  "pat-list-detail": {
+    react: `// List-Detail pattern
+<div style={{ display: "flex", gap: 1 }}>
+  <aside style={{ width: 240 }}>
+    <SidebarItem active>Dashboard Report</SidebarItem>
+    <SidebarItem>User Metrics</SidebarItem>
+    <SidebarItem>System Alerts</SidebarItem>
+  </aside>
+  <main style={{ flex: 1 }}>
+    <h2>Dashboard Report</h2>
+    <p>Q4 revenue analysis...</p>
+  </main>
+</div>`,
+    html: `<div style="display: flex">
+  <nav style="width: 240px">
+    <button class="a-sidebar-item active">Dashboard</button>
+    <button class="a-sidebar-item">Metrics</button>
+  </nav>
+  <main style="flex: 1">Content</main>
+</div>`
+  },
+  "pat-app-shell": {
+    react: `// App Shell pattern
+<div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+  <header className="a-header">App Name</header>
+  <div style={{ display: "flex", flex: 1 }}>
+    <nav style={{ width: 240 }}>
+      <SidebarItem icon="home" active>Home</SidebarItem>
+      <SidebarItem icon="data">Data</SidebarItem>
+      <SidebarItem icon="settings">Settings</SidebarItem>
+    </nav>
+    <main style={{ flex: 1 }}>Content</main>
+  </div>
+</div>`,
+    html: `<div style="display: flex; flex-direction: column; height: 100vh">
+  <header>App Shell</header>
+  <div style="display: flex; flex: 1">
+    <nav><button class="a-sidebar-item active">Home</button></nav>
+    <main>Content</main>
+  </div>
+</div>`
+  },
+  "pat-login": {
+    react: `import { Input, Button } from "@ausos/core";
+
+<div style={{ maxWidth: 400, margin: "0 auto" }}>
+  <h1>Sign in</h1>
+  <p>Enter your credentials</p>
+  <FormField label="Email">
+    <Input type="email" />
+  </FormField>
+  <FormField label="Password">
+    <Input type="password" />
+  </FormField>
+  <Button appearance="primary" fullWidth>Sign in</Button>
+</div>`,
+    html: `<div style="max-width: 400px; margin: 0 auto">
+  <h1>Sign in</h1>
+  <div class="a-input-wrap">
+    <label class="a-input-label">Email</label>
+    <input class="a-input" type="email" />
+  </div>
+  <button class="a-btn a-btn-primary" style="width: 100%">Sign in</button>
+</div>`
+  },
+  "pat-settings": {
+    react: `import { SidebarItem, Input, Switch } from "@ausos/core";
+
+<div style={{ display: "flex", gap: 24 }}>
+  <nav style={{ width: 200 }}>
+    <SidebarItem active>General</SidebarItem>
+    <SidebarItem>Security</SidebarItem>
+    <SidebarItem>Notifications</SidebarItem>
+  </nav>
+  <main>
+    <h2>General Settings</h2>
+    <FormField label="Display Name">
+      <Input defaultValue="Jane Doe" />
+    </FormField>
+    <Switch label="Dark mode" checked />
+  </main>
+</div>`,
+    html: `<div style="display: flex; gap: 24px">
+  <nav>
+    <button class="a-sidebar-item active">General</button>
+    <button class="a-sidebar-item">Security</button>
+  </nav>
+  <main>
+    <h2>General</h2>
+    <div class="a-input-wrap"><input class="a-input" value="Jane" /></div>
+  </main>
+</div>`
+  },
+  "pat-search": {
+    react: `import { Input, Button, Card } from "@ausos/core";
+
+<Input placeholder="Search templates..." fullWidth />
+<div style={{ display: "flex", gap: 8 }}>
+  <Button appearance="primary">All</Button>
+  <Button appearance="ghost">Free</Button>
+  <Button appearance="ghost">Pro</Button>
+</div>
+<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+  <Card>Dashboard Kit</Card>
+  <Card>Admin Panel</Card>
+</div>`,
+    html: `<input class="a-input" placeholder="Search..." />
+<div>
+  <button class="a-btn a-btn-primary">All</button>
+  <button class="a-btn a-btn-ghost">Free</button>
+</div>
+<div class="a-card">Dashboard Kit</div>`
+  },
+  "pat-wizard": {
+    react: `import { Stepper, Step, Input, Button } from "@ausos/core";
+
+<Stepper activeStep={0}>
+  <Step label="Details" />
+  <Step label="Review" />
+  <Step label="Done" />
+</Stepper>
+
+<h2>Step 1: Details</h2>
+<FormField label="Project Name">
+  <Input defaultValue="My Project" />
+</FormField>
+<Button appearance="primary">Next</Button>`,
+    html: `<div style="display: flex; gap: 8px; align-items: center">
+  <div class="a-badge a-badge-accent">1</div>
+  <div style="flex: 1; height: 2px; background: var(--a-accent)"></div>
+  <div class="a-badge a-badge-default">2</div>
+  <div style="flex: 1; height: 2px; background: var(--a-border)"></div>
+  <div class="a-badge a-badge-default">3</div>
+</div>`
+  },
+  "pat-data-table": {
+    react: `import { Input, Button, Table, Badge } from "@ausos/core";
+
+<div style={{ display: "flex", gap: 8 }}>
+  <Input placeholder="Filter..." style={{ flex: 1 }} />
+  <Button appearance="primary">Export</Button>
+</div>
+
+<Table
+  columns={[
+    { key: "name", header: "Project" },
+    { key: "status", header: "Status", render: (v) => <Badge variant={v === "Active" ? "success" : "warning"}>{v}</Badge> },
+    { key: "users", header: "Users" },
+    { key: "revenue", header: "Revenue", align: "right" },
+  ]}
+  rows={data}
+/>`,
+    html: `<input class="a-input" placeholder="Filter..." />
+<button class="a-btn a-btn-primary">Export</button>
+<table class="a-table">
+  <thead><tr><th>Project</th><th>Status</th><th>Users</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Dashboard</td>
+      <td><span class="a-badge a-badge-success">Active</span></td>
+      <td>1,247</td>
+    </tr>
+  </tbody>
+</table>`
+  },
 };
