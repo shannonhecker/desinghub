@@ -1567,7 +1567,6 @@ export function ComponentRenderer({ type, system, blockId, ...props }: Component
 
   return (
     <div>
-      <div className="canvas-block-label">{type}</div>
       <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
     </div>
   );
