@@ -488,6 +488,428 @@ const ausosTheme = themeQuartz.withParams({
     html: `<span class="a-tag">Design <button class="a-tag-dismiss">&times;</button></span>`
   },
 
+  // ── Salt parity aliases ──
+  banners: {
+    react: `import { Banner } from "@ausos/core";
+
+<Banner variant="info">
+  <span className="material-symbols-outlined">info</span>
+  Scheduled maintenance tonight at 11 PM UTC.
+</Banner>
+<Banner variant="success">Deployment succeeded.</Banner>
+<Banner variant="warning">API rate limit at 90%.</Banner>
+<Banner variant="danger">Service connection lost.</Banner>`,
+    html: `<div class="a-banner a-banner-info">
+  <span class="material-symbols-outlined">info</span>
+  Scheduled maintenance tonight at 11 PM UTC.
+</div>
+<div class="a-banner a-banner-success">Deployment succeeded.</div>
+<div class="a-banner a-banner-warning">API rate limit at 90%.</div>
+<div class="a-banner a-banner-danger">Service connection lost.</div>`
+  },
+  calendar: {
+    react: `import { Calendar } from "@ausos/core";
+
+<Calendar
+  value={selectedDate}
+  onChange={(date) => setSelectedDate(date)}
+/>
+
+{/* Range selection */}
+<Calendar
+  selectionVariant="range"
+  startDate={rangeStart}
+  endDate={rangeEnd}
+  onChange={({ start, end }) => { setRangeStart(start); setRangeEnd(end); }}
+/>`,
+    html: `<div class="a-calendar">
+  <div class="a-calendar-header">
+    <button class="a-btn a-btn-ghost">&lsaquo;</button>
+    <span>April 2026</span>
+    <button class="a-btn a-btn-ghost">&rsaquo;</button>
+  </div>
+  <table class="a-calendar-grid">
+    <thead><tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr></thead>
+    <tbody>
+      <tr><td class="a-cal-day">1</td><td class="a-cal-day">2</td><!-- ... --></tr>
+    </tbody>
+  </table>
+</div>`
+  },
+  carousel: {
+    react: `import { Carousel, CarouselSlide } from "@ausos/core";
+
+<Carousel autoplay interval={5000}>
+  <CarouselSlide>
+    <div className="a-card" style={{ padding: 24 }}>Slide 1</div>
+  </CarouselSlide>
+  <CarouselSlide>
+    <div className="a-card" style={{ padding: 24 }}>Slide 2</div>
+  </CarouselSlide>
+  <CarouselSlide>
+    <div className="a-card" style={{ padding: 24 }}>Slide 3</div>
+  </CarouselSlide>
+</Carousel>`,
+    html: `<div class="a-carousel">
+  <div class="a-carousel-track">
+    <div class="a-carousel-slide active"><div class="a-card">Slide 1</div></div>
+    <div class="a-carousel-slide"><div class="a-card">Slide 2</div></div>
+    <div class="a-carousel-slide"><div class="a-card">Slide 3</div></div>
+  </div>
+  <div class="a-carousel-dots">
+    <button class="a-dot active"></button>
+    <button class="a-dot"></button>
+    <button class="a-dot"></button>
+  </div>
+</div>`
+  },
+  collapsible: {
+    react: `import { Collapsible } from "@ausos/core";
+
+const [open, setOpen] = useState(false);
+
+<button className="a-btn a-btn-ghost" onClick={() => setOpen(!open)}>
+  {open ? "Hide" : "Show"} details
+</button>
+<Collapsible open={open}>
+  <div className="a-card" style={{ padding: 16 }}>
+    Collapsible content with smooth CSS transition.
+  </div>
+</Collapsible>`,
+    html: `<button class="a-btn a-btn-ghost">Show details</button>
+<div class="a-collapsible open">
+  <div class="a-collapsible-inner">
+    <div class="a-card" style="padding: 16px">
+      Collapsible content with smooth CSS transition.
+    </div>
+  </div>
+</div>`
+  },
+  "data-grid": {
+    react: `import { DataGrid } from "@ausos/core";
+
+<DataGrid
+  columns={[
+    { field: "name", headerName: "Name", width: 200 },
+    { field: "status", headerName: "Status", width: 120 },
+    { field: "revenue", headerName: "Revenue", width: 140, align: "right" },
+  ]}
+  rows={data}
+  sortable
+  filterable
+  groupBy="status"
+/>`,
+    html: `<div class="a-data-grid">
+  <div class="a-dg-header">
+    <div class="a-dg-cell">Name</div>
+    <div class="a-dg-cell">Status</div>
+    <div class="a-dg-cell">Revenue</div>
+  </div>
+  <div class="a-dg-row">
+    <div class="a-dg-cell">Dashboard</div>
+    <div class="a-dg-cell">Active</div>
+    <div class="a-dg-cell">$42,800</div>
+  </div>
+</div>`
+  },
+  dropdown: {
+    react: `import { Dropdown } from "@ausos/core";
+
+<Dropdown
+  placeholder="Select option"
+  options={["Option A", "Option B", "Option C"]}
+  value={selected}
+  onChange={(val) => setSelected(val)}
+/>`,
+    html: `<div class="a-dropdown">
+  <button class="a-dropdown-trigger">
+    Select option <span>&#9662;</span>
+  </button>
+  <div class="a-dropdown-menu">
+    <div class="a-dropdown-item">Option A</div>
+    <div class="a-dropdown-item">Option B</div>
+    <div class="a-dropdown-item">Option C</div>
+  </div>
+</div>`
+  },
+  drawer: {
+    react: `import { Drawer } from "@ausos/core";
+
+<Drawer open={drawerOpen} position="right" onClose={() => setDrawerOpen(false)}>
+  <Drawer.Header>
+    <h3>Drawer Title</h3>
+  </Drawer.Header>
+  <Drawer.Body>
+    <p>Slide-out glass panel content.</p>
+  </Drawer.Body>
+</Drawer>`,
+    html: `<div class="a-drawer-backdrop">
+  <aside class="a-drawer a-drawer-right open">
+    <div class="a-drawer-header">
+      <h3>Drawer Title</h3>
+      <button class="a-btn a-btn-ghost">&times;</button>
+    </div>
+    <div class="a-drawer-body">
+      <p>Slide-out glass panel content.</p>
+    </div>
+  </aside>
+</div>`
+  },
+  "form-field": {
+    react: `import { FormField, Input } from "@ausos/core";
+
+<FormField label="Email" helperText="We'll never share your email." required>
+  <Input type="email" placeholder="you@example.com" />
+</FormField>
+
+<FormField label="Password" validationStatus="error" errorMessage="Must be at least 8 characters.">
+  <Input type="password" />
+</FormField>`,
+    html: `<div class="a-form-field">
+  <label class="a-form-label">Email <span class="a-required">*</span></label>
+  <input class="a-input" type="email" placeholder="you@example.com" />
+  <span class="a-helper-text">We'll never share your email.</span>
+</div>
+<div class="a-form-field a-form-field-error">
+  <label class="a-form-label">Password</label>
+  <input class="a-input" type="password" />
+  <span class="a-error-text">Must be at least 8 characters.</span>
+</div>`
+  },
+  "interactable-card": {
+    react: `import { InteractableCard } from "@ausos/core";
+
+<InteractableCard
+  selected={isSelected}
+  onClick={() => setIsSelected(!isSelected)}
+>
+  <h4>Plan A</h4>
+  <p>10 users, 50 GB storage</p>
+</InteractableCard>`,
+    html: `<button class="a-card a-card-interactable selected" role="option" aria-selected="true">
+  <h4>Plan A</h4>
+  <p>10 users, 50 GB storage</p>
+</button>
+<button class="a-card a-card-interactable" role="option" aria-selected="false">
+  <h4>Plan B</h4>
+  <p>50 users, 200 GB storage</p>
+</button>`
+  },
+  "nav-item": {
+    react: `import { NavItem } from "@ausos/core";
+
+<nav className="a-nav">
+  <NavItem active icon="home">Home</NavItem>
+  <NavItem icon="analytics">Analytics</NavItem>
+  <NavItem icon="settings">Settings</NavItem>
+</nav>`,
+    html: `<nav class="a-nav">
+  <a class="a-nav-item active" href="/">
+    <span class="material-symbols-outlined">home</span> Home
+  </a>
+  <a class="a-nav-item" href="/analytics">
+    <span class="material-symbols-outlined">analytics</span> Analytics
+  </a>
+  <a class="a-nav-item" href="/settings">
+    <span class="material-symbols-outlined">settings</span> Settings
+  </a>
+</nav>`
+  },
+  overlay: {
+    react: `import { Overlay } from "@ausos/core";
+
+<Overlay open={showOverlay} onClose={() => setShowOverlay(false)}>
+  {/* Modal or drawer content renders on top */}
+  <div className="a-card" style={{ padding: 24 }}>
+    Content above the scrim.
+  </div>
+</Overlay>`,
+    html: `<div class="a-overlay open">
+  <div class="a-overlay-scrim"></div>
+  <div class="a-overlay-content">
+    <div class="a-card" style="padding: 24px">
+      Content above the scrim.
+    </div>
+  </div>
+</div>`
+  },
+  pagination: {
+    react: `import { Pagination } from "@ausos/core";
+
+<Pagination
+  page={currentPage}
+  count={42}
+  siblingCount={1}
+  onPageChange={(page) => setCurrentPage(page)}
+/>`,
+    html: `<nav class="a-pagination" aria-label="Pagination">
+  <button class="a-page-btn" aria-label="Previous">&lsaquo;</button>
+  <button class="a-page-btn active">1</button>
+  <button class="a-page-btn">2</button>
+  <button class="a-page-btn">3</button>
+  <span class="a-page-ellipsis">&hellip;</span>
+  <button class="a-page-btn">42</button>
+  <button class="a-page-btn" aria-label="Next">&rsaquo;</button>
+</nav>`
+  },
+  panel: {
+    react: `import { Panel } from "@ausos/core";
+
+<Panel>
+  <Panel.Header>
+    <h3>Panel Title</h3>
+    <button className="a-btn a-btn-ghost" onClick={onClose}>
+      <span className="material-symbols-outlined">close</span>
+    </button>
+  </Panel.Header>
+  <Panel.Body>
+    <p>Glass content section with optional header.</p>
+  </Panel.Body>
+</Panel>`,
+    html: `<section class="a-panel">
+  <div class="a-panel-header">
+    <h3>Panel Title</h3>
+    <button class="a-btn a-btn-ghost">&times;</button>
+  </div>
+  <div class="a-panel-body">
+    <p>Glass content section with optional header.</p>
+  </div>
+</section>`
+  },
+  "skip-link": {
+    react: `import { SkipLink } from "@ausos/core";
+
+{/* Place as first focusable element in the app */}
+<SkipLink targetId="main-content">Skip to main content</SkipLink>
+
+{/* ... header, nav ... */}
+<main id="main-content">
+  {/* Page content */}
+</main>`,
+    html: `<a class="a-skip-link" href="#main-content">Skip to main content</a>
+<!-- Header, nav, etc. -->
+<main id="main-content">
+  <!-- Page content -->
+</main>
+
+<style>
+  .a-skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 999;
+    padding: 8px 16px;
+    background: var(--a-accent);
+    color: var(--a-fg);
+    border-radius: var(--a-radius);
+  }
+  .a-skip-link:focus { left: 16px; top: 16px; }
+</style>`
+  },
+  splitter: {
+    react: `import { Splitter, SplitterPanel } from "@ausos/core";
+
+<Splitter orientation="horizontal">
+  <SplitterPanel defaultSize={30} minSize={20}>
+    <nav className="a-panel">Sidebar</nav>
+  </SplitterPanel>
+  <SplitterPanel defaultSize={70} minSize={30}>
+    <main className="a-panel">Content</main>
+  </SplitterPanel>
+</Splitter>`,
+    html: `<div class="a-splitter a-splitter-horizontal">
+  <div class="a-splitter-panel" style="width: 30%">
+    <nav class="a-panel">Sidebar</nav>
+  </div>
+  <div class="a-splitter-handle" role="separator" aria-orientation="vertical" tabindex="0"></div>
+  <div class="a-splitter-panel" style="width: 70%">
+    <main class="a-panel">Content</main>
+  </div>
+</div>`
+  },
+  "static-list": {
+    react: `import { StaticList, StaticListItem } from "@ausos/core";
+
+<StaticList>
+  <StaticListItem icon="check_circle" status="success">Build passed</StaticListItem>
+  <StaticListItem icon="warning" status="warning">3 deprecation warnings</StaticListItem>
+  <StaticListItem icon="error" status="danger">Lint failed</StaticListItem>
+</StaticList>`,
+    html: `<ul class="a-static-list">
+  <li class="a-static-list-item a-status-success">
+    <span class="material-symbols-outlined">check_circle</span> Build passed
+  </li>
+  <li class="a-static-list-item a-status-warning">
+    <span class="material-symbols-outlined">warning</span> 3 deprecation warnings
+  </li>
+  <li class="a-static-list-item a-status-danger">
+    <span class="material-symbols-outlined">error</span> Lint failed
+  </li>
+</ul>`
+  },
+  table: {
+    react: `import { Table, TableHead, TableBody, TableRow, TableCell } from "@ausos/core";
+
+<Table>
+  <TableHead>
+    <TableRow>
+      <TableCell header sortable>Name</TableCell>
+      <TableCell header sortable>Status</TableCell>
+      <TableCell header sortable align="right">Revenue</TableCell>
+    </TableRow>
+  </TableHead>
+  <TableBody>
+    <TableRow>
+      <TableCell>Dashboard</TableCell>
+      <TableCell>Active</TableCell>
+      <TableCell align="right">$42,800</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>`,
+    html: `<table class="a-table a-table-striped">
+  <thead>
+    <tr>
+      <th class="a-sortable">Name</th>
+      <th class="a-sortable">Status</th>
+      <th class="a-sortable" style="text-align: right">Revenue</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Dashboard</td><td>Active</td><td style="text-align: right">$42,800</td></tr>
+    <tr><td>Analytics</td><td>Pending</td><td style="text-align: right">$18,200</td></tr>
+  </tbody>
+</table>`
+  },
+  "vert-nav": {
+    react: `import { VerticalNav, NavItem, NavGroup } from "@ausos/core";
+
+<VerticalNav>
+  <NavItem icon="home" active>Home</NavItem>
+  <NavGroup label="Analytics" icon="analytics">
+    <NavItem>Overview</NavItem>
+    <NavItem>Reports</NavItem>
+  </NavGroup>
+  <NavItem icon="settings" badge={3}>Settings</NavItem>
+</VerticalNav>`,
+    html: `<nav class="a-vert-nav">
+  <a class="a-vnav-item active">
+    <span class="material-symbols-outlined">home</span> Home
+  </a>
+  <div class="a-vnav-group">
+    <button class="a-vnav-group-label">
+      <span class="material-symbols-outlined">analytics</span> Analytics
+    </button>
+    <div class="a-vnav-children">
+      <a class="a-vnav-item">Overview</a>
+      <a class="a-vnav-item">Reports</a>
+    </div>
+  </div>
+  <a class="a-vnav-item">
+    <span class="material-symbols-outlined">settings</span> Settings
+    <span class="a-badge a-badge-accent">3</span>
+  </a>
+</nav>`
+  },
+
   // ── Foundations ──
   "dl-color": {
     react: `// ausos DS color tokens

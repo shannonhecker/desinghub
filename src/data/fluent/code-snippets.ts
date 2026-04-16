@@ -516,4 +516,500 @@ const grid = agGrid.createGrid(document.getElementById('grid'), {
   </div>
 </div>`,
   },
+  "dl-tokens": {
+    react: `import { FluentProvider, webLightTheme,
+  webDarkTheme } from "@fluentui/react-components";
+
+// Fluent 2 tokens are CSS custom properties injected by FluentProvider
+// Colors: --colorBrandBackground, --colorNeutralForeground1, etc.
+// Typography: --fontFamilyBase, --fontSizeBase300, --fontWeightSemibold
+// Spacing: --spacingHorizontalM, --spacingVerticalL
+// Border radius: --borderRadiusMedium, --borderRadiusLarge
+
+<FluentProvider theme={webLightTheme}>
+  <App />
+</FluentProvider>`,
+    html: `<!-- Fluent 2 token architecture — CSS custom properties -->
+<style>
+  :root {
+    --colorBrandBackground: #0F6CBD;
+    --colorNeutralForeground1: #242424;
+    --colorNeutralBackground1: #FFFFFF;
+    --fontFamilyBase: 'Segoe UI', sans-serif;
+    --fontSizeBase300: 14px;
+    --spacingHorizontalM: 12px;
+    --spacingVerticalL: 16px;
+    --borderRadiusMedium: 4px;
+  }
+</style>`,
+  },
+  calendar: {
+    react: `import { Calendar } from "@fluentui/react-calendar-compat";
+
+<Calendar
+  showMonthPickerAsOverlay
+  onSelectDate={(date) => console.log(date)}
+/>`,
+    html: `<div class="f-Calendar" role="grid" aria-label="Calendar">
+  <table>
+    <thead><tr><th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+    </tbody>
+  </table>
+</div>`,
+  },
+  carousel: {
+    react: `import { Carousel, CarouselCard, CarouselNav,
+  CarouselNavButton } from "@fluentui/react-components";
+
+<Carousel>
+  <CarouselCard>
+    <img src="slide-1.png" alt="Slide 1" />
+  </CarouselCard>
+  <CarouselCard>
+    <img src="slide-2.png" alt="Slide 2" />
+  </CarouselCard>
+  <CarouselNav>
+    {() => <CarouselNavButton />}
+  </CarouselNav>
+</Carousel>`,
+    html: `<div class="f-Carousel" role="region" aria-roledescription="carousel">
+  <div class="f-CarouselCard" role="group" aria-label="Slide 1">
+    <img src="slide-1.png" alt="Slide 1" />
+  </div>
+  <nav class="f-CarouselNav">
+    <button aria-label="Previous">&lsaquo;</button>
+    <button aria-label="Next">&rsaquo;</button>
+  </nav>
+</div>`,
+  },
+  collapsible: {
+    react: `import { useState } from "react";
+import { Button } from "@fluentui/react-components";
+
+const [open, setOpen] = useState(false);
+
+<div>
+  <Button onClick={() => setOpen(!open)}>
+    {open ? "Hide" : "Show"} Content
+  </Button>
+  {open && (
+    <div className="f-Collapsible__body">
+      Collapsible content goes here.
+    </div>
+  )}
+</div>`,
+    html: `<div class="f-Collapsible">
+  <button class="f-Collapsible__trigger" aria-expanded="false">
+    Show Content
+  </button>
+  <div class="f-Collapsible__body" hidden>
+    Collapsible content goes here.
+  </div>
+</div>`,
+  },
+  "combo-box": {
+    react: `import { Combobox, Option } from "@fluentui/react-components";
+
+<Combobox placeholder="Search or select...">
+  <Option>Red</Option>
+  <Option>Green</Option>
+  <Option>Blue</Option>
+</Combobox>`,
+    html: `<div class="fui-Combobox" role="combobox" aria-expanded="false">
+  <input class="fui-Combobox__input" placeholder="Search or select..." />
+  <ul class="fui-Listbox" role="listbox">
+    <li role="option">Red</li>
+    <li role="option">Green</li>
+  </ul>
+</div>`,
+  },
+  "data-grid": {
+    react: `import { DataGrid, DataGridHeader, DataGridRow,
+  DataGridHeaderCell, DataGridBody,
+  DataGridCell } from "@fluentui/react-components";
+
+const columns = [
+  { columnId: "name", renderHeaderCell: () => "Name" },
+  { columnId: "status", renderHeaderCell: () => "Status" },
+];
+
+<DataGrid items={items} columns={columns} sortable>
+  <DataGridHeader>
+    <DataGridRow>
+      {({ renderHeaderCell }) => (
+        <DataGridHeaderCell>{renderHeaderCell()}</DataGridHeaderCell>
+      )}
+    </DataGridRow>
+  </DataGridHeader>
+  <DataGridBody>
+    {({ item }) => (
+      <DataGridRow>
+        <DataGridCell>{item.name}</DataGridCell>
+        <DataGridCell>{item.status}</DataGridCell>
+      </DataGridRow>
+    )}
+  </DataGridBody>
+</DataGrid>`,
+    html: `<table class="fui-DataGrid" role="grid">
+  <thead>
+    <tr><th role="columnheader" aria-sort="ascending">Name</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Jane Doe</td><td>Active</td></tr>
+  </tbody>
+</table>`,
+  },
+  "date-picker": {
+    react: `import { DatePicker } from "@fluentui/react-datepicker-compat";
+import { Field } from "@fluentui/react-components";
+
+<Field label="Start date">
+  <DatePicker
+    placeholder="Select a date..."
+    onSelectDate={(date) => console.log(date)}
+  />
+</Field>`,
+    html: `<div class="f-DatePicker">
+  <label class="fui-Label">Start date</label>
+  <input class="fui-Input" placeholder="Select a date..." />
+  <div class="f-DatePicker__calendar" role="dialog" hidden>
+    <!-- Calendar grid rendered here -->
+  </div>
+</div>`,
+  },
+  "file-drop": {
+    react: `import { makeStyles, tokens } from "@fluentui/react-components";
+
+const useStyles = makeStyles({
+  dropZone: {
+    border: \`2px dashed \${tokens.colorNeutralStroke1}\`,
+    borderRadius: tokens.borderRadiusMedium,
+    padding: tokens.spacingVerticalXXL,
+    textAlign: "center",
+    "&:hover": { borderColor: tokens.colorBrandStroke1 },
+  },
+});
+
+<div
+  className={styles.dropZone}
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={handleDrop}
+>
+  Drag & drop files here
+</div>`,
+    html: `<div class="f-FileDropZone" role="button" tabindex="0">
+  <p>Drag &amp; drop files here</p>
+  <input type="file" hidden />
+</div>`,
+  },
+  "form-field": {
+    react: `import { Field, Input } from "@fluentui/react-components";
+
+// validationState: success, warning, error
+<Field
+  label="Email"
+  validationState="error"
+  validationMessage="Please enter a valid email."
+  hint="We'll never share your email."
+>
+  <Input type="email" />
+</Field>`,
+    html: `<div class="fui-Field">
+  <label class="fui-Label">Email</label>
+  <input class="fui-Input" type="email" aria-invalid="true" />
+  <span class="fui-Field__validationMessage">Please enter a valid email.</span>
+</div>`,
+  },
+  "interactable-card": {
+    react: `import { Card, CardHeader } from "@fluentui/react-components";
+
+// Selectable card with interactive prop
+<Card
+  appearance="filled-alternative"
+  selected={isSelected}
+  onSelectionChange={handleSelect}
+>
+  <CardHeader
+    header="Selectable Card"
+    description="Click to select this card."
+  />
+</Card>`,
+    html: `<div class="fui-Card fui-Card--selectable" tabindex="0"
+  role="option" aria-selected="false">
+  <div class="fui-CardHeader">Selectable Card</div>
+</div>`,
+  },
+  "list-box": {
+    react: `import { Listbox, Option } from "@fluentui/react-components";
+
+<Listbox aria-label="Choose a color" multiselect>
+  <Option>Red</Option>
+  <Option>Green</Option>
+  <Option>Blue</Option>
+</Listbox>`,
+    html: `<ul class="fui-Listbox" role="listbox" aria-label="Choose a color"
+  aria-multiselectable="true">
+  <li class="fui-Option" role="option">Red</li>
+  <li class="fui-Option" role="option">Green</li>
+  <li class="fui-Option" role="option">Blue</li>
+</ul>`,
+  },
+  "multiline-input": {
+    react: `import { Textarea, Field } from "@fluentui/react-components";
+
+<Field label="Description">
+  <Textarea
+    placeholder="Enter details..."
+    appearance="outline"
+    resize="vertical"
+  />
+</Field>`,
+    html: `<div class="fui-Field">
+  <label class="fui-Label">Description</label>
+  <textarea class="fui-Textarea" placeholder="Enter details..."
+    rows="4"></textarea>
+</div>`,
+  },
+  "nav-item": {
+    react: `import { NavCategory, NavCategoryItem, NavItem,
+  NavSub } from "@fluentui/react-nav-preview";
+
+<NavItem href="/home" value="home" icon={<HomeIcon />}>
+  Home
+</NavItem>
+<NavCategory value="settings">
+  <NavCategoryItem icon={<SettingsIcon />}>Settings</NavCategoryItem>
+  <NavSub>
+    <NavItem href="/settings/general" value="general">General</NavItem>
+    <NavItem href="/settings/account" value="account">Account</NavItem>
+  </NavSub>
+</NavCategory>`,
+    html: `<nav class="f-Nav" role="navigation">
+  <a class="f-NavItem f-NavItem--active" href="/home">Home</a>
+  <a class="f-NavItem" href="/settings">Settings</a>
+</nav>`,
+  },
+  "number-input": {
+    react: `import { SpinButton, Field } from "@fluentui/react-components";
+
+<Field label="Quantity">
+  <SpinButton defaultValue={1} min={0} max={100} step={1} />
+</Field>`,
+    html: `<div class="fui-Field">
+  <label class="fui-Label">Quantity</label>
+  <div class="fui-SpinButton">
+    <input type="number" value="1" min="0" max="100" />
+    <button aria-label="Increment">+</button>
+    <button aria-label="Decrement">-</button>
+  </div>
+</div>`,
+  },
+  overlay: {
+    react: `import { Dialog, DialogSurface } from "@fluentui/react-components";
+import { makeStyles, tokens } from "@fluentui/react-components";
+
+// Fluent 2 uses Dialog's built-in backdrop as overlay
+<Dialog open={open} onOpenChange={(_, data) => setOpen(data.open)}>
+  <DialogSurface>
+    {/* Content behind the overlay scrim */}
+  </DialogSurface>
+</Dialog>`,
+    html: `<div class="f-Overlay" role="presentation"
+  style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000">
+</div>`,
+  },
+  panel: {
+    react: `import { Card, CardHeader, makeStyles,
+  tokens } from "@fluentui/react-components";
+
+const useStyles = makeStyles({
+  panel: {
+    padding: tokens.spacingVerticalL,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderRadius: tokens.borderRadiusMedium,
+  },
+});
+
+<div className={styles.panel}>
+  <h3>Panel Title</h3>
+  <p>Panel content goes here.</p>
+</div>`,
+    html: `<section class="f-Panel">
+  <header class="f-Panel__header"><h3>Panel Title</h3></header>
+  <div class="f-Panel__body">Panel content goes here.</div>
+</section>`,
+  },
+  pills: {
+    react: `import { InteractionTag, InteractionTagPrimary,
+  TagGroup } from "@fluentui/react-components";
+
+<TagGroup onDismiss={handleDismiss}>
+  <InteractionTag>
+    <InteractionTagPrimary hasSecondaryAction>
+      React
+    </InteractionTagPrimary>
+  </InteractionTag>
+  <InteractionTag>
+    <InteractionTagPrimary hasSecondaryAction>
+      TypeScript
+    </InteractionTagPrimary>
+  </InteractionTag>
+</TagGroup>`,
+    html: `<div class="fui-TagGroup" role="listbox">
+  <span class="fui-Tag" role="option">React
+    <button aria-label="Remove">&times;</button>
+  </span>
+  <span class="fui-Tag" role="option">TypeScript
+    <button aria-label="Remove">&times;</button>
+  </span>
+</div>`,
+  },
+  "segmented-btn": {
+    react: `import { ToggleButton, Toolbar } from "@fluentui/react-components";
+
+// Compose ToggleButton group for segmented control
+<Toolbar aria-label="View mode">
+  <ToggleButton appearance="primary" checked={view === "grid"}
+    onClick={() => setView("grid")}>Grid</ToggleButton>
+  <ToggleButton appearance="primary" checked={view === "list"}
+    onClick={() => setView("list")}>List</ToggleButton>
+  <ToggleButton appearance="primary" checked={view === "table"}
+    onClick={() => setView("table")}>Table</ToggleButton>
+</Toolbar>`,
+    html: `<div class="f-SegmentedButton" role="group" aria-label="View mode">
+  <button class="fui-ToggleButton fui-ToggleButton--checked">Grid</button>
+  <button class="fui-ToggleButton">List</button>
+  <button class="fui-ToggleButton">Table</button>
+</div>`,
+  },
+  "skip-link": {
+    react: `import { Link, makeStyles, tokens } from "@fluentui/react-components";
+
+const useStyles = makeStyles({
+  skipLink: {
+    position: "absolute",
+    left: "-10000px",
+    "&:focus": {
+      left: tokens.spacingHorizontalM,
+      top: tokens.spacingVerticalM,
+      zIndex: 1000,
+    },
+  },
+});
+
+<Link className={styles.skipLink} href="#main-content">
+  Skip to main content
+</Link>`,
+    html: `<a class="f-SkipLink" href="#main-content">
+  Skip to main content
+</a>
+<style>
+  .f-SkipLink { position: absolute; left: -10000px; }
+  .f-SkipLink:focus { left: 12px; top: 12px; z-index: 1000; }
+</style>`,
+  },
+  splitter: {
+    react: `import { makeStyles, tokens } from "@fluentui/react-components";
+
+// Fluent 2 has no built-in Splitter — compose with tokens
+const useStyles = makeStyles({
+  container: { display: "flex", height: "100%" },
+  pane: { overflow: "auto" },
+  handle: {
+    width: "4px",
+    cursor: "col-resize",
+    backgroundColor: tokens.colorNeutralStroke2,
+    "&:hover": { backgroundColor: tokens.colorBrandStroke1 },
+  },
+});
+
+<div className={styles.container}>
+  <div className={styles.pane} style={{ width: leftWidth }}>Left</div>
+  <div className={styles.handle} onMouseDown={startResize} />
+  <div className={styles.pane} style={{ flex: 1 }}>Right</div>
+</div>`,
+    html: `<div class="f-Splitter" style="display:flex;height:100%">
+  <div class="f-Splitter__pane" style="width:300px">Left</div>
+  <div class="f-Splitter__handle" role="separator"
+    aria-valuenow="300" tabindex="0"></div>
+  <div class="f-Splitter__pane" style="flex:1">Right</div>
+</div>`,
+  },
+  "static-list": {
+    react: `import { makeStyles, tokens } from "@fluentui/react-components";
+
+const useStyles = makeStyles({
+  list: { listStyle: "none", padding: 0, margin: 0 },
+  item: {
+    padding: \`\${tokens.spacingVerticalS} \${tokens.spacingHorizontalM}\`,
+    borderBottom: \`1px solid \${tokens.colorNeutralStroke2}\`,
+  },
+});
+
+<ul className={styles.list}>
+  <li className={styles.item}>Item One</li>
+  <li className={styles.item}>Item Two</li>
+  <li className={styles.item}>Item Three</li>
+</ul>`,
+    html: `<ul class="f-StaticList" role="list">
+  <li class="f-StaticList__item">Item One</li>
+  <li class="f-StaticList__item">Item Two</li>
+  <li class="f-StaticList__item">Item Three</li>
+</ul>`,
+  },
+  tag: {
+    react: `import { Tag, TagGroup } from "@fluentui/react-components";
+
+// appearance: filled, outline, brand
+<TagGroup onDismiss={handleDismiss}>
+  <Tag appearance="filled" dismissible>Design</Tag>
+  <Tag appearance="outline" dismissible>Engineering</Tag>
+  <Tag appearance="brand" dismissible>Product</Tag>
+</TagGroup>`,
+    html: `<div class="fui-TagGroup">
+  <span class="fui-Tag fui-Tag--filled">Design
+    <button class="fui-Tag__dismiss" aria-label="Remove">&times;</button>
+  </span>
+  <span class="fui-Tag fui-Tag--outline">Engineering
+    <button class="fui-Tag__dismiss" aria-label="Remove">&times;</button>
+  </span>
+</div>`,
+  },
+  "toggle-btn": {
+    react: `import { ToggleButton } from "@fluentui/react-components";
+
+<ToggleButton appearance="primary">Bold</ToggleButton>
+<ToggleButton appearance="subtle" icon={<StarIcon />}>
+  Favorite
+</ToggleButton>
+<ToggleButton appearance="outline" disabled>
+  Disabled
+</ToggleButton>`,
+    html: `<button class="fui-ToggleButton" aria-pressed="false">Bold</button>
+<button class="fui-ToggleButton fui-ToggleButton--checked"
+  aria-pressed="true">Favorite</button>`,
+  },
+  "vert-nav": {
+    react: `import { Nav, NavItem } from "@fluentui/react-nav-preview";
+import { HomeIcon, SettingsIcon, PersonIcon } from "@fluentui/react-icons";
+
+<Nav aria-label="Main navigation">
+  <NavItem href="/home" value="home" icon={<HomeIcon />}>
+    Home
+  </NavItem>
+  <NavItem href="/profile" value="profile" icon={<PersonIcon />}>
+    Profile
+  </NavItem>
+  <NavItem href="/settings" value="settings" icon={<SettingsIcon />}>
+    Settings
+  </NavItem>
+</Nav>`,
+    html: `<nav class="f-VertNav" role="navigation" aria-label="Main navigation">
+  <a class="f-VertNav__item f-VertNav__item--active" href="/home">Home</a>
+  <a class="f-VertNav__item" href="/profile">Profile</a>
+  <a class="f-VertNav__item" href="/settings">Settings</a>
+</nav>`,
+  },
 };
