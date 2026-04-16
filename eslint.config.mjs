@@ -11,10 +11,10 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      // Allow explicit any only with eslint-disable comment (already used sparingly)
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Explicit any requires eslint-disable comment (already used sparingly)
+      "@typescript-eslint/no-explicit-any": "error",
       // Catch unused vars (prefix _ to ignore)
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
   {
