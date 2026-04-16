@@ -2118,14 +2118,13 @@
 
 .preview-toolbar-btn-active {
   color: var(--b-fg);
-  background: var(--b-surface);
+  background: transparent;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--b-border);
 }
 
 .preview-toolbar-btn-active:hover {
   color: var(--b-fg);
-  background: var(--b-surface);
+  background: transparent;
 }
 
 .preview-toolbar-icon {
