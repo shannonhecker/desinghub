@@ -180,8 +180,8 @@ function ThemeControls() {
   }
 
   function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
-    const innerGap = Math.max(4, t.scale.gap - 2);
-    const btnGap   = Math.max(4, t.scale.gap - 4);
+    const innerGap = Math.max(8, t.scale.gap);
+    const btnGap   = Math.max(6, t.scale.gap - 2);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: innerGap }}>
         <div style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
@@ -209,7 +209,7 @@ function ThemeControls() {
           <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
         </button>
         {open && (
-          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
             <ControlGroup label="Theme">
               <CtrlBtn active={theme === "jpm"} onClick={() => set("jpm", mode)}>JPM Brand</CtrlBtn>
               <CtrlBtn active={theme === "legacy"} onClick={() => set("legacy", mode)}>Legacy</CtrlBtn>
@@ -258,7 +258,7 @@ function ThemeControls() {
           <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
         </button>
         {open && (
-          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
             {/* Mode — M3-native custom dropdown */}
             <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2), position: "relative" }}>
               <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Mode</div>
@@ -426,7 +426,7 @@ function ThemeControls() {
           <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
         </button>
         {open && (
-          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
             <ControlGroup label="Theme">
               <CtrlBtn active={ausos.themeKey === "light"} onClick={() => setAusosTheme("light")}>Light</CtrlBtn>
               <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
@@ -509,7 +509,7 @@ function ThemeControls() {
         <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
       </button>
       {open && (
-        <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
           <ControlGroup label="Theme">
             <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
             <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
@@ -1167,7 +1167,7 @@ function ContentHeader() {
         <span style={{ color: t.fg, fontWeight: 500 }}>{comp.name}</span>
       </div>
       {/* Component title row — title scales with density */}
-      <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 4, paddingBottom: t.scale.gap + 4 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
         <h2 style={{ fontSize: Math.round(t.scale.tabH * 0.55), fontWeight: 400, color: t.fg, margin: 0, letterSpacing: "-0.25px" }}>
           {comp.name}
         </h2>
