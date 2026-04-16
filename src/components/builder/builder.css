@@ -1983,7 +1983,7 @@
 .resize-handle {
   width: 8px;
   cursor: col-resize;
-  background: transparent;
+  background: var(--b-bg);
   position: relative;
   flex-shrink: 0;
   z-index: 2;
@@ -2009,7 +2009,7 @@
 .comp-resize-handle {
   width: 8px;
   cursor: col-resize;
-  background: transparent;
+  background: var(--b-bg);
   position: relative;
   flex-shrink: 0;
   z-index: 2;
