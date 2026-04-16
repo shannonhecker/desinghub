@@ -26,7 +26,9 @@ export function useActiveTheme() {
   if (activeSystem === "ausos" && store.ausos.accentColor && store.ausos.accentColor !== T.accent) {
     const c = store.ausos.accentColor;
     const lighter = c + "CC";
-    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${lighter} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40` };
+    const charts = T.chart ? [...T.chart] : [];
+    if (charts.length > 0) charts[0] = c;
+    T = { ...T, accent: c, accentHover: c, accentActive: c, accentGradient: `linear-gradient(135deg, ${lighter} 0%, ${c} 100%)`, accentSurface: `${c}14`, accentSurfaceHover: `${c}22`, borderAccent: `${c}40`, infoFg: c, infoBorder: `${c}30`, chart: charts };
   }
 
   activateTheme(activeSystem, T);
@@ -917,14 +919,15 @@ function LandingGrid() {
 
   /* ─── M3 layout: category sections, type scale + card sizes all follow density ─── */
   if (activeSystem === "m3") {
-    const heroSize = Math.round(t.scale.tabH * 0.9);   // Display Large → scales with density
-    const h2Size   = Math.round(t.scale.tabH * 0.45);  // Headline Medium
-    const bodySize = t.scale.navF + 2;
+    const heroSize = Math.round(t.scale.tabH * 1.2);   // Display — large, light weight
+    const h2Size   = Math.round(t.scale.tabH * 0.6);   // Headline — clear section break
+    const bodySize = t.scale.navF + 3;                  // Body — comfortable reading
+    const captionSize = t.scale.labF + 1;               // Caption — subtle metadata
     const outerPad = t.scale.gap * 5;
     return (
       <div style={{ padding: `${outerPad}px ${outerPad + 8}px ${outerPad}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
         {/* Hero */}
-        <div style={{ marginBottom: outerPad, borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad - 8 }}>
+        <div style={{ marginBottom: Math.round(outerPad * 1.5), borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad }}>
           <div style={{
             fontSize: t.scale.labF, fontWeight: 500, color: t.accent,
             letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4,
@@ -968,9 +971,9 @@ function LandingGrid() {
           return (
             <div key={cat} style={{ marginBottom: outerPad }}>
               {/* Category header */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap, marginBottom: t.scale.gap + 10 }}>
-                <h2 style={{ fontSize: h2Size, fontWeight: 400, color: t.fg, margin: 0 }}>{cat}</h2>
-                <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>
+                <h2 style={{ fontSize: h2Size, fontWeight: 600, color: t.fg, margin: 0 }}>{cat}</h2>
+                <span style={{ fontSize: captionSize || t.scale.labF, color: t.fg3 }}>{catItems.length}</span>
               </div>
               {/* Component cards grid — gap + card internals scale with density */}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>
@@ -1010,9 +1013,10 @@ function LandingGrid() {
 
   /* ─── Salt / Fluent layout — same template as M3: hero + category sections ─── */
   const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "ausos" ? "a-card" : "f-card";
-  const heroSize = Math.round(t.scale.tabH * 0.9);
-  const h2Size   = Math.round(t.scale.tabH * 0.45);
-  const bodySize = t.scale.navF + 2;
+  const heroSize = Math.round(t.scale.tabH * 1.2);   // Display
+  const h2Size   = Math.round(t.scale.tabH * 0.6);   // Headline
+  const bodySize = t.scale.navF + 3;                  // Body
+  const captionSize = t.scale.labF + 1;               // Caption
   const outerPad = t.scale.gap * 5;
 
   /* DS-specific feature pills */
@@ -1038,7 +1042,7 @@ function LandingGrid() {
   return (
     <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
       {/* Hero */}
-      <div style={{ marginBottom: outerPad, borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad - 8 }}>
+      <div style={{ marginBottom: Math.round(outerPad * 1.5), borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad }}>
         <div style={{
           fontSize: t.scale.labF, fontWeight: 700, color: t.accent,
           letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4,
@@ -1046,8 +1050,8 @@ function LandingGrid() {
           {sysInfo.org}
         </div>
         <h1 style={{
-          fontSize: heroSize, fontWeight: activeSystem === "salt" ? 700 : 600, color: t.fg,
-          lineHeight: 1.15, margin: `0 0 ${t.scale.gap + 8}px`, letterSpacing: "-0.25px",
+          fontSize: heroSize, fontWeight: activeSystem === "salt" ? 700 : 300, color: t.fg,
+          lineHeight: 1.15, margin: `0 0 ${t.scale.gap + 12}px`, letterSpacing: "-0.5px",
         }}>
           {sysInfo.name}
         </h1>
@@ -1086,9 +1090,9 @@ function LandingGrid() {
         return (
           <div key={cat} style={{ marginBottom: outerPad }}>
             {/* Category header */}
-            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap, marginBottom: t.scale.gap + 10 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>
               <h2 style={{ fontSize: h2Size, fontWeight: activeSystem === "salt" ? 700 : 600, color: t.fg, margin: 0 }}>{cat}</h2>
-              <span style={{ fontSize: t.scale.labF, color: t.fg2 }}>{catItems.length}</span>
+              <span style={{ fontSize: captionSize || t.scale.labF, color: t.fg3 }}>{catItems.length}</span>
             </div>
             {/* Component cards grid */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>

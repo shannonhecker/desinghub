@@ -102,9 +102,10 @@ const THEMES = {
     border: "rgba(0,0,0,0.12)", borderMd: "rgba(0,0,0,0.25)", borderStrong: "#9688AD",
     borderAccent: "rgba(107,90,168,0.25)",
     // Elevation — purple-tinted shadows
-    shadow: "0 4px 20px rgba(100,60,180,0.06)", shadowLg: "0 8px 32px rgba(100,60,180,0.10)",
+    shadow: "0 2px 8px rgba(100,60,180,0.06), 0 8px 24px rgba(100,60,180,0.04)",
+    shadowLg: "0 4px 12px rgba(100,60,180,0.08), 0 12px 36px rgba(100,60,180,0.06)",
     glass: "blur(20px) saturate(130%)", glassLg: "blur(28px) saturate(140%)",
-    insetHighlight: "none",
+    insetHighlight: "inset 0 1px 0 rgba(255,255,255,0.7)",
     // Status
     dangerBg: "rgba(239,68,68,0.06)", dangerFg: "#DC2626", dangerBorder: "rgba(239,68,68,0.10)",
     successBg: "rgba(16,185,129,0.06)", successFg: "#047857", successBorder: "rgba(16,185,129,0.10)",
@@ -140,6 +141,8 @@ const buildCSS = (T) => `
   --a-gradient: ${T.gradient};
   --a-gradient-subtle: ${T.gradientSubtle};
 }
+/* Smooth micro-transitions on all elements */
+*, *::before, *::after { transition: background-color 200ms, color 150ms, border-color 200ms, box-shadow 250ms, opacity 200ms, transform 200ms; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
@@ -733,16 +736,79 @@ function DatePickerDemo() {
 /* ── Pattern Demos ── */
 
 function PatDashboard() {
+  const stats = [
+    { label: "Total Revenue", value: "$42,800", change: "+12.5%", up: true, icon: "trending_up", sparkline: [30, 45, 35, 55, 48, 65, 72] },
+    { label: "Active Users", value: "1,247", change: "+8.3%", up: true, icon: "group", sparkline: [20, 28, 32, 30, 38, 42, 45] },
+    { label: "Conversion Rate", value: "3.2%", change: "-0.4%", up: false, icon: "swap_horiz", sparkline: [40, 38, 42, 35, 33, 30, 28] },
+    { label: "Avg. Session", value: "4m 32s", change: "+18%", up: true, icon: "timer", sparkline: [15, 22, 28, 35, 30, 40, 48] },
+  ];
+  const tableRows = [
+    { name: "Dashboard Pro", status: "Active", users: "2,104", revenue: "$12,400" },
+    { name: "Analytics Suite", status: "Active", users: "1,847", revenue: "$9,200" },
+    { name: "CRM Module", status: "Pending", users: "892", revenue: "$4,600" },
+    { name: "Reports Engine", status: "Active", users: "1,403", revenue: "$7,800" },
+  ];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, fontFamily: FONT }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {[{ l: "Revenue", v: "$42.8K", c: "+12%", up: true }, { l: "Users", v: "1,247", c: "+8%", up: true }, { l: "Growth", v: "+18%", c: "+3%", up: true }].map(s => (
-          <div key={s.l} className="a-card" style={{ padding: 14 }}>
-            <div style={{ fontSize: 10, color: T.fg3, fontWeight: 500 }}>{s.l}</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: T.fg, margin: "4px 0" }}>{s.v}</div>
-            <div style={{ fontSize: 10, color: s.up ? T.successFg : T.dangerFg, fontWeight: 500 }}>{s.c} vs last month</div>
+    <div style={{ background: T.gradient, borderRadius: 16, padding: 20 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: FONT }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: T.fg }}>Dashboard</div>
+            <div style={{ fontSize: 11, color: T.fg3, marginTop: 2 }}>Overview for April 2026</div>
           </div>
-        ))}
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className="a-btn a-btn-ghost" style={{ height: 28, fontSize: 11, minWidth: 0, padding: "0 10px" }}>Export</button>
+            <button className="a-btn a-btn-primary" style={{ height: 28, fontSize: 11, minWidth: 0, padding: "0 10px" }}>+ Add Widget</button>
+          </div>
+        </div>
+        {/* Stat Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          {stats.map(s => (
+            <div key={s.label} className="a-card" style={{ padding: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 10, color: T.fg3, fontWeight: 500 }}>{s.label}</span>
+                <AIcon name={s.icon} size={14} color={T.fg3} />
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: T.fg, letterSpacing: "-0.02em" }}>{s.value}</div>
+              {/* Mini sparkline */}
+              <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 20, margin: "8px 0 4px" }}>
+                {s.sparkline.map((v, i) => (
+                  <div key={i} style={{ flex: 1, height: `${(v / 80) * 100}%`, borderRadius: 2, background: i === s.sparkline.length - 1 ? T.accent : `${T.accent}40` }} />
+                ))}
+              </div>
+              <div style={{ fontSize: 10, color: s.up ? T.successFg : T.dangerFg, fontWeight: 500 }}>
+                {s.change} from last month
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Data Table */}
+        <div className="a-card" style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.fg }}>Recent Projects</div>
+          </div>
+          <table className="a-table" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Users</th>
+                <th style={{ textAlign: "right" }}>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows.map(r => (
+                <tr key={r.name}>
+                  <td style={{ fontWeight: 500 }}>{r.name}</td>
+                  <td><span className={`a-badge ${r.status === "Active" ? "a-badge-success" : "a-badge-warning"}`} style={{ fontSize: 10 }}>{r.status}</span></td>
+                  <td>{r.users}</td>
+                  <td style={{ textAlign: "right", fontWeight: 500 }}>{r.revenue}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
