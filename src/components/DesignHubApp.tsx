@@ -988,7 +988,7 @@ function LandingGrid() {
                     >
                       {/* Preview area */}
                       <div style={{
-                        background: t.bg2, padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                        background: t.bg2, padding: 20, minHeight: 60,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         borderBottom: `1px solid ${t.border}`,
                       }}>
@@ -998,7 +998,7 @@ function LandingGrid() {
                         }
                       </div>
                       {/* Label area */}
-                      <div style={{ padding: `${t.scale.gap + 2}px ${t.scale.gap + 6}px ${t.scale.gap + 4}px` }}>
+                      <div style={{ padding: "10px 14px 12px" }}>
                         <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: "0.1px" }}>{c.name}</div>
                         <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
                       </div>
@@ -1116,7 +1116,7 @@ function LandingGrid() {
                     {/* Preview area */}
                     <div style={{
                       background: activeSystem === "ausos" && t.T.gradient ? t.T.gradient : undefined,
-                      padding: t.scale.gap + 10, minHeight: t.scale.navH + 20,
+                      padding: 20, minHeight: 60,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,
                     }}>
@@ -1126,7 +1126,7 @@ function LandingGrid() {
                       }
                     </div>
                     {/* Label area */}
-                    <div style={{ padding: `${t.scale.gap + 2}px ${t.scale.gap + 6}px ${t.scale.gap + 4}px` }}>
+                    <div style={{ padding: "10px 14px 12px" }}>
                       <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg }}>{c.name}</div>
                       <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
                     </div>
