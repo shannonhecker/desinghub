@@ -11,6 +11,7 @@ import { GeminiSidebar } from "./GeminiSidebar";
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
+import { ExportPanel } from "./ExportPanel";
 import "./builder.css";
 
 const WaveScene = dynamic(
@@ -30,6 +31,9 @@ export function BuilderApp() {
 
   // ── Gemini sidebar ──
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // ── Export modal ──
+  const [exportOpen, setExportOpen] = useState(false);
 
   // ── My Projects modal ──
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -232,6 +236,12 @@ export function BuilderApp() {
               UI Kit
             </Link>
 
+            {/* Export */}
+            <button className="top-bar-btn" onClick={() => setExportOpen(true)} title="Export code">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>code</span>
+              Export
+            </button>
+
             {/* Preview toggle */}
             <button
               className={`top-bar-btn preview-toggle-btn ${previewOpen ? "active" : ""}`}
@@ -276,6 +286,9 @@ export function BuilderApp() {
       </div>
 
       <SettingsPanel />
+
+      {/* ── Export modal ── */}
+      {exportOpen && <ExportPanel onClose={() => setExportOpen(false)} />}
 
       {/* ── My Projects modal ── */}
       {projectsOpen && (

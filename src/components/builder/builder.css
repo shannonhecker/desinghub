@@ -2408,6 +2408,56 @@
 .preview-side-body::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
 
 /* ── My Projects modal ── */
+/* ── Export Modal ── */
+.export-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+.export-modal {
+  width: 600px; max-width: calc(100vw - 32px); max-height: 85vh;
+  background: var(--b-bg2); border: 1px solid var(--b-border2);
+  border-radius: var(--b-radius); box-shadow: var(--b-shadow);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.export-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--b-border);
+}
+.export-modal-title { font-size: 16px; font-weight: 600; color: var(--b-fg); }
+.export-modal-close { background: none; border: none; cursor: pointer; color: var(--b-fg3); padding: 4px; border-radius: 4px; }
+.export-format-row { display: flex; gap: 8px; padding: 16px 20px 0; }
+.export-format-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--b-border2); background: transparent; color: var(--b-fg2);
+  transition: all 0.15s;
+}
+.export-format-btn.active { background: var(--b-accent-surface); border-color: var(--b-accent); color: var(--b-accent); }
+.export-generate-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin: 16px 20px; padding: 10px; border-radius: 8px; border: none;
+  background: var(--b-accent); color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.export-generate-btn:hover { opacity: 0.9; }
+.export-code-wrapper {
+  margin: 0 20px; max-height: 350px; overflow: auto;
+  border-radius: 8px; border: 1px solid var(--b-border);
+}
+.export-code-pre {
+  margin: 0; padding: 16px; font-size: 11.5px; line-height: 1.6;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  background: var(--syn-bg); color: var(--syn-fg); white-space: pre; overflow-x: auto;
+}
+.export-actions { display: flex; gap: 8px; padding: 16px 20px; }
+.export-action-btn {
+  display: flex; align-items: center; gap: 4px; padding: 8px 14px;
+  border-radius: 6px; border: 1px solid var(--b-border2); background: transparent;
+  color: var(--b-fg2); font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.export-action-btn:hover { background: var(--b-bg3); }
+
 .projects-overlay {
   position: fixed;
   inset: 0;
