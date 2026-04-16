@@ -442,9 +442,11 @@ function ThemeControls() {
                 onClick={() => setAccentOpen(v => !v)}
                 style={{
                   display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 12px", border: `1px solid ${accentOpen ? t.accent : t.border}`,
-                  borderRadius: 8, background: t.bg2 || t.bg, color: t.fg, cursor: "pointer",
-                  fontFamily: t.font, fontSize: 12, transition: "border-color 150ms",
+                  padding: `${t.scale.gap}px ${t.scale.gap + 4}px`,
+                  border: `1px solid ${accentOpen ? t.accent : t.border}`,
+                  borderRadius: t.scale.gap, background: t.bg2 || t.bg, color: t.fg, cursor: "pointer",
+                  fontFamily: t.font, fontSize: t.scale.navF, transition: "border-color 150ms",
+                  height: t.scale.navH + 4,
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -458,7 +460,7 @@ function ThemeControls() {
               {accentOpen && (
                 <div style={{
                   position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99,
-                  background: t.bg2 || t.bg, border: `1px solid ${t.border}`, borderRadius: 8,
+                  background: t.bg2 || t.bg, border: `1px solid ${t.border}`, borderRadius: t.scale.gap,
                   boxShadow: `0 4px 16px rgba(0,0,0,0.2)`, overflow: "hidden",
                 }}>
                   {AUSOS_ACCENTS.map(a => (
@@ -467,8 +469,8 @@ function ThemeControls() {
                       onClick={() => { setAusosAccent(a.hex); setAccentOpen(false); }}
                       style={{
                         display: "flex", width: "100%", alignItems: "center", gap: 8,
-                        padding: "8px 12px", border: "none", cursor: "pointer",
-                        fontFamily: t.font, fontSize: 12, textAlign: "left",
+                        padding: `${t.scale.gap}px ${t.scale.gap + 4}px`, border: "none", cursor: "pointer",
+                        fontFamily: t.font, fontSize: t.scale.navF, textAlign: "left",
                         background: ausos.accentColor === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent",
                         color: ausos.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms",
                       }}
