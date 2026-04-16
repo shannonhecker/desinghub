@@ -183,6 +183,8 @@ export function TokenReference() {
             ? [4, 8, 12, 16, 20, 24, 32]
             : activeSystem === "m3"
             ? [4, 8, 12, 16, 24, 32, 48, 64]
+            : activeSystem === "ausos"
+            ? [2, 4, 8, 12, 16, 24, 32, 40, 48, 64]
             : [2, 4, 6, 8, 10, 12, 16, 20, 24, 32]
           ).map((s) => (
             <div key={s} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -204,6 +206,8 @@ export function TokenReference() {
             ? [{ label: "Display", size: 46 }, { label: "H1", size: 36 }, { label: "H2", size: 28 }, { label: "H3", size: 24 }, { label: "H4", size: 18 }, { label: "Body", size: 14 }, { label: "Label", size: 12 }, { label: "Caption", size: 11 }]
             : activeSystem === "m3"
             ? [{ label: "Display Large", size: 57 }, { label: "Display Medium", size: 45 }, { label: "Headline Large", size: 32 }, { label: "Title Large", size: 22 }, { label: "Title Medium", size: 16 }, { label: "Body Large", size: 16 }, { label: "Body Medium", size: 14 }, { label: "Label Large", size: 14 }, { label: "Label Small", size: 11 }]
+            : activeSystem === "ausos"
+            ? [{ label: "Display", size: 38 }, { label: "Headline", size: 19 }, { label: "Title", size: 16 }, { label: "Body", size: 15 }, { label: "Label", size: 12 }, { label: "Caption", size: 11 }]
             : [{ label: "Display", size: 40 }, { label: "Title 1", size: 28 }, { label: "Title 2", size: 24 }, { label: "Title 3", size: 20 }, { label: "Subtitle 1", size: 18 }, { label: "Body 1", size: 14 }, { label: "Caption 1", size: 12 }, { label: "Caption 2", size: 10 }]
           ).map((t) => (
             <div key={t.label} style={{
@@ -226,6 +230,8 @@ export function TokenReference() {
             ? [{ label: "100", shadow: `0 1px 3px ${T.shadow}` }, { label: "200", shadow: `0 2px 6px ${T.shadowMed}` }, { label: "300", shadow: `0 4px 12px ${T.shadowMed}` }, { label: "400", shadow: `0 8px 24px ${T.shadowHigh}` }]
             : activeSystem === "m3"
             ? [{ label: "Level 0", shadow: "none" }, { label: "Level 1", shadow: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)" }, { label: "Level 2", shadow: "0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)" }, { label: "Level 3", shadow: "0 1px 3px rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15)" }]
+            : activeSystem === "ausos"
+            ? [{ label: "Glass 0", shadow: T.insetHighlight || "none" }, { label: "Glass 1", shadow: `${T.shadow}` }, { label: "Glass 2", shadow: `${T.shadowLg}` }, { label: "Glass 3", shadow: `${T.shadowLg}, ${T.insetHighlight}` }]
             : [{ label: "2", shadow: `0 1px 2px ${T.shadowAmbient}` }, { label: "4", shadow: `0 2px 4px ${T.shadowAmbient}, 0 0 2px ${T.shadowKey}` }, { label: "8", shadow: `0 4px 8px ${T.shadowAmbient}, 0 0 2px ${T.shadowKey}` }, { label: "28", shadow: `0 14px 28px ${T.shadowAmbient}, 0 0 8px ${T.shadowKey}` }]
           ).map((s) => (
             <div key={s.label} style={{

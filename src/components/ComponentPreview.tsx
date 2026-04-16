@@ -8,6 +8,68 @@ import { CodePanel } from "./CodePanel";
 import { ChartsPage } from "./ChartsPage";
 import { DSAgGrid } from "./DSAgGrid";
 
+/* ── ausos Props Documentation ── */
+const AUSOS_PROPS: Record<string, { name: string; type: string; default: string; desc: string }[]> = {
+  buttons: [
+    { name: "appearance", type: '"primary" | "secondary" | "ghost" | "outline"', default: '"secondary"', desc: "Visual style variant" },
+    { name: "disabled", type: "boolean", default: "false", desc: "Disables interaction" },
+    { name: "onClick", type: "() => void", default: "—", desc: "Click handler" },
+    { name: "children", type: "ReactNode", default: "—", desc: "Button label content" },
+  ],
+  inputs: [
+    { name: "label", type: "string", default: "—", desc: "Field label above input" },
+    { name: "placeholder", type: "string", default: "—", desc: "Placeholder text" },
+    { name: "type", type: '"text" | "email" | "password" | "number"', default: '"text"', desc: "Input type" },
+    { name: "disabled", type: "boolean", default: "false", desc: "Disables input" },
+    { name: "value", type: "string", default: "—", desc: "Controlled value" },
+    { name: "onChange", type: "(e) => void", default: "—", desc: "Change handler" },
+  ],
+  cards: [
+    { name: "children", type: "ReactNode", default: "—", desc: "Card content" },
+    { name: "onClick", type: "() => void", default: "—", desc: "Makes card interactive" },
+    { name: "padding", type: "number | string", default: "16", desc: "Inner padding" },
+  ],
+  tabs: [
+    { name: "value", type: "string", default: "—", desc: "Active tab value" },
+    { name: "onChange", type: "(value) => void", default: "—", desc: "Tab change handler" },
+    { name: "children", type: "Tab[]", default: "—", desc: "Tab components" },
+  ],
+  badges: [
+    { name: "variant", type: '"accent" | "default" | "success" | "warning" | "danger"', default: '"default"', desc: "Status variant" },
+    { name: "children", type: "ReactNode", default: "—", desc: "Badge label" },
+  ],
+  switches: [
+    { name: "checked", type: "boolean", default: "false", desc: "Toggle state" },
+    { name: "onChange", type: "(checked) => void", default: "—", desc: "Toggle handler" },
+    { name: "label", type: "string", default: "—", desc: "Accessible label" },
+    { name: "disabled", type: "boolean", default: "false", desc: "Disables switch" },
+  ],
+  checkboxes: [
+    { name: "checked", type: "boolean", default: "false", desc: "Checked state" },
+    { name: "onChange", type: "(checked) => void", default: "—", desc: "Check handler" },
+    { name: "label", type: "string", default: "—", desc: "Checkbox label" },
+  ],
+  alerts: [
+    { name: "variant", type: '"info" | "success" | "warning" | "danger"', default: '"info"', desc: "Alert status" },
+    { name: "children", type: "ReactNode", default: "—", desc: "Alert message" },
+  ],
+  dialog: [
+    { name: "open", type: "boolean", default: "false", desc: "Controls visibility" },
+    { name: "onClose", type: "() => void", default: "—", desc: "Close handler" },
+    { name: "title", type: "string", default: "—", desc: "Dialog heading" },
+    { name: "children", type: "ReactNode", default: "—", desc: "Dialog body content" },
+  ],
+  progress: [
+    { name: "value", type: "number", default: "0", desc: "Progress percentage (0-100)" },
+    { name: "label", type: "string", default: "—", desc: "Progress label" },
+  ],
+  "date-picker": [
+    { name: "value", type: "Date", default: "—", desc: "Selected date" },
+    { name: "onChange", type: "(date) => void", default: "—", desc: "Date change handler" },
+    { name: "label", type: "string", default: "—", desc: "Field label" },
+  ],
+};
+
 export function ComponentPreview({ componentId }: { componentId: string }) {
   const store = useDesignHub();
   const { activeSystem, activeTab, setActiveTab } = store;
@@ -111,6 +173,32 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
               Demo loading...
             </div>
           )}
+        </div>
+      )}
+
+      {/* Props table — ausos DS only */}
+      {activeTab === "preview" && isAusos && AUSOS_PROPS[componentId] && (
+        <div style={{ marginTop: t.scale.gap * 3, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+          <div style={{ padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, color: t.fg }}>Props</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: t.font }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                {["Prop", "Type", "Default", "Description"].map(h => (
+                  <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 11, fontWeight: 600, color: t.fg3 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {AUSOS_PROPS[componentId].map((p: { name: string; type: string; default: string; desc: string }) => (
+                <tr key={p.name} style={{ borderBottom: `1px solid ${t.border}` }}>
+                  <td style={{ padding: "8px 12px", fontWeight: 500, color: t.fg }}>{p.name}</td>
+                  <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11, color: t.accent }}>{p.type}</td>
+                  <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11, color: t.fg3 }}>{p.default}</td>
+                  <td style={{ padding: "8px 12px", color: t.fg2 }}>{p.desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
