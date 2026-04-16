@@ -35,7 +35,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Light mode syntax — WCAG 4.5:1+ on white */
-.builder-light {
+.builder-light,
+.syn-light {
   --syn-bg: #f6f8fa;
   --syn-fg: #24292f;
   --syn-border: rgba(0, 0, 0, 0.08);
@@ -48,6 +49,13 @@ a { color: inherit; text-decoration: none; }
   --syn-btn-bg: rgba(0, 0, 0, 0.04);
   --syn-btn-fg: rgba(0, 0, 0, 0.5);
 }
+/* Scoped light syntax token overrides */
+.syn-light .syn-comment   { color: var(--syn-comment); }
+.syn-light .syn-keyword   { color: var(--syn-keyword); }
+.syn-light .syn-string    { color: var(--syn-string); }
+.syn-light .syn-component { color: var(--syn-component); }
+.syn-light .syn-prop      { color: var(--syn-prop); }
+.syn-light .syn-number    { color: var(--syn-number); }
 
 .code-block-wrapper {
   position: relative;

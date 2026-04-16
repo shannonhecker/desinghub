@@ -56,19 +56,9 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
   })();
 
   return (
-    <div className={cardClass} style={{
+    <div className={`${cardClass}${isLight ? " syn-light" : ""}`} style={{
       position: "relative", overflow: "hidden", cursor: "default",
     }}>
-      {isLight && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          .syn-comment { color: #6a737d !important; }
-          .syn-keyword { color: #cf222e !important; }
-          .syn-string { color: #0550ae !important; }
-          .syn-component { color: #116329 !important; }
-          .syn-prop { color: #6639ba !important; }
-          .syn-number { color: #0550ae !important; }
-        ` }} />
-      )}
       <button className={btnCls} onClick={copy} aria-label="Copy code" style={{
         position: "absolute", top: 8, right: 8, padding: "4px 10px",
         fontSize: 11, minWidth: "auto", minHeight: 24, zIndex: 2,
@@ -107,8 +97,8 @@ export function CodePanel({ componentId }: { componentId: string }) {
   if (!snippets) {
     return (
       <div style={{
-        padding: t.scale.gap * 4, textAlign: "center",
-        color: t.fg3, fontSize: t.scale.navF,
+        padding: 48, textAlign: "center",
+        color: t.fg3, fontSize: 14,
         border: `1px dashed ${t.border}`, borderRadius: 8,
       }}>
         Code snippets for <strong style={{ color: t.fg }}>{comp?.name}</strong> coming soon.
@@ -119,10 +109,10 @@ export function CodePanel({ componentId }: { componentId: string }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 3 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       {/* React + TypeScript */}
       <div>
-        <h3 style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg, marginBottom: t.scale.gap, fontFamily: t.font }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: t.fg, marginBottom: 12, fontFamily: t.font }}>
           React + TypeScript
         </h3>
         <CodeBlock code={snippets.react} theme={t} cardClass={cardCls} />
@@ -130,7 +120,7 @@ export function CodePanel({ componentId }: { componentId: string }) {
 
       {/* HTML + CSS */}
       <div>
-        <h3 style={{ fontSize: t.scale.navF, fontWeight: 600, color: t.fg, marginBottom: t.scale.gap, fontFamily: t.font }}>
+        <h3 style={{ fontSize: 14, fontWeight: 600, color: t.fg, marginBottom: 12, fontFamily: t.font }}>
           HTML + CSS
         </h3>
         <CodeBlock code={snippets.html} theme={t} cardClass={cardCls} />

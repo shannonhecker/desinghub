@@ -86,26 +86,26 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : activeSystem === "ausos" ? "a-tab" : "f-tab";
   const isAusos = activeSystem === "ausos";
 
-  const pad = t.scale.gap * 4;
+  const pad = 48;
 
   return (
-    <div style={{ padding: pad, fontFamily: t.font, color: t.fg }}>
-      {/* Title section — no back button, breadcrumb handles navigation */}
-      <div style={{ marginBottom: t.scale.gap }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.accentText, background: t.accentWeak, padding: "2px 8px", borderRadius: activeSystem === "m3" ? 16 : 8, fontWeight: 600 }}>
+    <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
+      {/* Title section */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 12, textTransform: "uppercase", color: t.accentText, background: t.accentWeak, padding: "3px 10px", borderRadius: 9999, fontWeight: 600, letterSpacing: "0.5px" }}>
             {comp.cat}
           </span>
         </div>
-        <h2 style={{ fontSize: t.scale.navF + 10, fontWeight: 700, color: t.fg, marginBottom: 4 }}>{comp.name}</h2>
-        <p style={{ fontSize: t.scale.navF, color: t.fg3, lineHeight: 1.5, marginBottom: 0 }}>{comp.desc}</p>
+        <h2 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h2>
+        <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
       </div>
 
       {/* Tabs — below title, ARIA tablist */}
       <div role="tablist" aria-label="Component view" style={{
         display: "flex",
         borderBottom: `1px solid ${t.border}`,
-        marginBottom: t.scale.gap * 2,
+        marginBottom: 32,
       }}>
         {(["preview", "code"] as const).map((tab) => {
           const active = activeTab === tab;
