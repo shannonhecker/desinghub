@@ -40,7 +40,7 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
   }
   highlighted += escaped.slice(lastIdx);
 
-  const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : "f-btn f-btn-secondary";
+  const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "ausos" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
   return (
     <div className={cardClass} style={{
@@ -77,7 +77,7 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const snippets = codeMap[componentId];
 
   /* DS card class for code block containers */
-  const cardCls = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card" : "f-card";
+  const cardCls = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card" : activeSystem === "ausos" ? "a-card" : "f-card";
 
   if (!snippets) {
     return (

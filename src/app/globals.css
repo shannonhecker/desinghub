@@ -34,6 +34,21 @@ a { color: inherit; text-decoration: none; }
   --syn-btn-fg: rgba(255, 255, 255, 0.5);
 }
 
+/* Light mode syntax — WCAG 4.5:1+ on white */
+.builder-light {
+  --syn-bg: #f6f8fa;
+  --syn-fg: #24292f;
+  --syn-border: rgba(0, 0, 0, 0.08);
+  --syn-comment: #6a737d;
+  --syn-keyword: #cf222e;
+  --syn-string: #0550ae;
+  --syn-component: #116329;
+  --syn-prop: #6639ba;
+  --syn-number: #0550ae;
+  --syn-btn-bg: rgba(0, 0, 0, 0.04);
+  --syn-btn-fg: rgba(0, 0, 0, 0.5);
+}
+
 .code-block-wrapper {
   position: relative;
 }
