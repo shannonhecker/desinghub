@@ -585,7 +585,7 @@ export function ChatPanel() {
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
       {/* Scrollable content area */}
-      <div className="chat-scroll">
+      <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer — pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
@@ -662,6 +662,7 @@ export function ChatPanel() {
             <textarea
               ref={inputRef}
               className="input-textarea"
+              aria-label="Chat message input"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onFocus={() => setFocused(true)}

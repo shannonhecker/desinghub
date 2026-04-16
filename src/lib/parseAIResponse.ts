@@ -1,8 +1,11 @@
 /* ── Parse AI response text into display text + actionable JSON blocks ── */
 
 export interface AIAction {
-  action: "setDesignSystem" | "setComponents" | "setDensity" | "setMode";
-  value: string | string[];
+  action:
+    | "setDesignSystem" | "setComponents" | "setDensity" | "setMode"
+    | "addBlock" | "removeBlock" | "moveBlock" | "updateBlockProps"
+    | "setThemeKey" | "setColorOverride" | "clearCanvas" | "setInterfaceType";
+  value: unknown;
 }
 
 /**

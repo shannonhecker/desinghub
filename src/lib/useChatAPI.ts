@@ -7,7 +7,8 @@ import { applyAIActions } from "./applyAIActions";
 
 /**
  * Hook that sends messages to the Claude API endpoint and streams the response.
- * Falls back gracefully if the API is unavailable.
+ * Uses requestAnimationFrame to batch streaming state updates at 60fps
+ * instead of per-SSE-chunk (~500+ updates per response).
  */
 export function useChatAPI() {
   const abortRef = useRef<AbortController | null>(null);
@@ -21,15 +22,9 @@ export function useChatAPI() {
       content: m.content,
     }));
 
-    // Add current message
-    history.push({ role: "user", content: userText });
-
-    // Add context about current state
+    // Add current message with context
     const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]]`;
-    history[history.length - 1] = {
-      role: "user",
-      content: `${context}\n\n${userText}`,
-    };
+    history.push({ role: "user", content: `${context}\n\n${userText}` });
 
     store.setGenerating(true);
 
@@ -37,6 +32,27 @@ export function useChatAPI() {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+
+    // RAF-batched accumulator
+    let accumulated = "";
+    let rafId: number | null = null;
+
+    const flushToStore = () => {
+      rafId = null;
+      const msgs = useBuilder.getState().messages;
+      const lastAi = msgs[msgs.length - 1];
+      if (lastAi && lastAi.role === "ai") {
+        useBuilder.setState({
+          messages: [...msgs.slice(0, -1), { ...lastAi, content: accumulated }],
+        });
+      }
+    };
+
+    const scheduleFlush = () => {
+      if (rafId === null) {
+        rafId = requestAnimationFrame(flushToStore);
+      }
+    };
 
     try {
       const basePath = (typeof window !== "undefined" && (window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath) || "";
@@ -51,12 +67,10 @@ export function useChatAPI() {
         throw new Error(`API error: ${res.status}`);
       }
 
-      // Read SSE stream
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No response body");
 
       const decoder = new TextDecoder();
-      let accumulated = "";
 
       // Add placeholder AI message
       store.addMessage("ai", "...");
@@ -77,17 +91,7 @@ export function useChatAPI() {
               const parsed = JSON.parse(data);
               if (parsed.text) {
                 accumulated += parsed.text;
-                // Update the last AI message in-place
-                const msgs = useBuilder.getState().messages;
-                const lastAi = msgs[msgs.length - 1];
-                if (lastAi && lastAi.role === "ai") {
-                  useBuilder.setState({
-                    messages: [
-                      ...msgs.slice(0, -1),
-                      { ...lastAi, content: accumulated },
-                    ],
-                  });
-                }
+                scheduleFlush();
               }
             } catch {
               // Skip malformed SSE data
@@ -95,6 +99,10 @@ export function useChatAPI() {
           }
         }
       }
+
+      // Final flush — cancel pending RAF and do a synchronous update
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      flushToStore();
 
       // Parse final response for actions
       const { displayText, actions } = parseAIResponse(accumulated);
@@ -104,10 +112,7 @@ export function useChatAPI() {
       const lastAi = finalMsgs[finalMsgs.length - 1];
       if (lastAi && lastAi.role === "ai") {
         useBuilder.setState({
-          messages: [
-            ...finalMsgs.slice(0, -1),
-            { ...lastAi, content: displayText },
-          ],
+          messages: [...finalMsgs.slice(0, -1), { ...lastAi, content: displayText }],
         });
       }
 
@@ -117,6 +122,9 @@ export function useChatAPI() {
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
+
+      // Cancel pending RAF on error
+      if (rafId !== null) cancelAnimationFrame(rafId);
 
       // On failure, update the AI message with error
       const msgs = useBuilder.getState().messages;
