@@ -1130,11 +1130,7 @@ export function StandalonePreview() {
                   onToggle={() => setSidebarCollapsed((v) => !v)}
                 />
                 <main className="bp-main">
-                  {hasContent ? (
-                    <PreviewCanvas />
-                  ) : (
-                    <DefaultChatArea messageKey={previewKey} />
-                  )}
+                  <PreviewCanvas />
                 </main>
               </div>
               <DashboardFooter />
