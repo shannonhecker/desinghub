@@ -939,8 +939,8 @@
   gap: 5px;
   padding: 6px 12px;
   border-radius: 9999px;
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
+  background: transparent;
+  border: none;
   color: var(--b-fg2);
   font-size: 12px;
   font-weight: 600;
@@ -952,10 +952,7 @@
   z-index: 1;
 }
 .top-bar-btn:hover {
-  background: var(--glass-white-md);
   color: var(--b-fg);
-  border-color: var(--glass-border);
-  transform: translateY(-1px);
 }
 .top-bar-btn.icon-only {
   padding: 0;
@@ -1955,8 +1952,8 @@
   gap: 5px;
   padding: 6px 12px;
   border-radius: 9999px;
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
+  background: transparent;
+  border: none;
   color: var(--b-fg2);
   font-size: 13px;
   font-weight: 600;
