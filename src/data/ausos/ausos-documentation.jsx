@@ -701,6 +701,35 @@ function DataTable() {
   );
 }
 
+function DatePickerDemo() {
+  const [sel, setSel] = useState(15);
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const weekdays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  return (
+    <div style={{ fontFamily: FONT, maxWidth: 280 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <AIcon name="chevron_left" size={18} color={T.fg3} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>April 2026</span>
+        <AIcon name="chevron_right" size={18} color={T.fg3} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, textAlign: "center" }}>
+        {weekdays.map(d => <div key={d} style={{ fontSize: 10, color: T.fg3, fontWeight: 600, padding: "4px 0" }}>{d}</div>)}
+        {/* Offset for April 2026 starting on Wednesday */}
+        {[null, null].map((_, i) => <div key={`e${i}`} />)}
+        {days.map(d => (
+          <button key={d} onClick={() => setSel(d)} style={{
+            width: 32, height: 32, borderRadius: 9999, border: "none", cursor: "pointer",
+            fontSize: 12, fontWeight: sel === d ? 600 : 400, fontFamily: FONT,
+            background: sel === d ? T.accent : "transparent",
+            color: sel === d ? T.accentFg : d === new Date().getDate() ? T.accent : T.fg,
+            transition: "background 0.15s, color 0.15s",
+          }}>{d}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Pattern Demos ── */
 
 function PatDashboard() {
@@ -788,6 +817,7 @@ const PREVIEWS = {
   dialog: () => <div style={{width:50,height:35,borderRadius:8,background:T.surface,border:`1px solid ${T.borderMd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,color:T.fg3}}>Modal</div>,
   accordion: () => <div style={{borderRadius:6,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}><div style={{padding:"3px 6px",fontSize:8,fontWeight:600,color:T.fg,background:T.surface}}>Section ▾</div></div>,
   breadcrumbs: () => <div style={{display:"flex",gap:2,fontSize:8,color:T.fg3}}>Home <span style={{opacity:0.4}}>/</span> <span style={{color:T.fg,fontWeight:500}}>Page</span></div>,
+  "date-picker": () => <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:1,padding:"4px 0"}}>{Array.from({length:7},(_,i)=><div key={i} style={{width:8,height:8,borderRadius:4,fontSize:5,textAlign:"center",background:i===3?T.accent:"transparent",color:i===3?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+10}</div>)}</div>,
   "data-table": () => <div style={{fontSize:7,color:T.fg3}}><div style={{display:"flex",gap:8,borderBottom:`1px solid ${T.borderMd}`,padding:"2px 0",fontWeight:600}}>Name<span>Status</span></div><div style={{display:"flex",gap:8,padding:"2px 0"}}>Item<span style={{color:T.successFg}}>✓</span></div></div>,
   "ag-grid": () => <div style={{fontSize:7,color:T.fg3,border:`1px solid ${T.borderMd}`,borderRadius:4,overflow:"hidden"}}><div style={{background:T.surface,padding:"2px 4px",fontWeight:600,borderBottom:`1px solid ${T.borderMd}`}}>AG Grid</div><div style={{padding:"2px 4px"}}>Data rows</div></div>,
   charts: () => <div style={{display:"flex",gap:2,alignItems:"flex-end",padding:"6px 0"}}>{[40,65,45,80,55].map((h,i)=><div key={i} style={{width:8,height:h/3,borderRadius:2,background:T.chart?T.chart[i%T.chart.length]:T.accent,opacity:0.8}}/>)}</div>,
@@ -837,6 +867,7 @@ const COMPS = [
   { id: "dialog", name: "Dialog", cat: "Components & Patterns", desc: "Glass modal with frosted backdrop.", render: DialogDemo },
   { id: "accordion", name: "Accordion", cat: "Components & Patterns", desc: "Collapsible glass sections.", render: Accordion },
   { id: "breadcrumbs", name: "Breadcrumbs", cat: "Components & Patterns", desc: "Subtle path navigation.", render: Breadcrumbs },
+  { id: "date-picker", name: "Date Picker", cat: "Components & Patterns", desc: "Calendar date selector with accent highlight.", render: DatePickerDemo },
   { id: "data-table", name: "Data Table", cat: "Components & Patterns", desc: "Glass-row striping with sortable headers.", render: DataTable },
   { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "Enterprise data grid with glass theming, sorting, filtering, and density scaling.", render: () => null },
   // Patterns

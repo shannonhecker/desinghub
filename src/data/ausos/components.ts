@@ -36,6 +36,7 @@ export const COMPS: ComponentDef[] = [
   { id: "dialog", name: "Dialog", cat: "Components & Patterns", desc: "Glass modal overlay with frosted backdrop. Centered card layout." },
   { id: "accordion", name: "Accordion", cat: "Components & Patterns", desc: "Collapsible glass sections with chevron indicator." },
   { id: "breadcrumbs", name: "Breadcrumbs", cat: "Components & Patterns", desc: "Subtle path navigation with separator dots." },
+  { id: "date-picker", name: "Date Picker", cat: "Components & Patterns", desc: "Calendar date selector with glass surface and accent highlight on selected date." },
   { id: "data-table", name: "Data Table", cat: "Components & Patterns", desc: "Glass-row striping with hover highlights and sortable headers." },
   { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "Enterprise data grid with glass theming, sorting, filtering, and density scaling." },
   // Patterns
