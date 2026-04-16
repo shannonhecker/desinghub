@@ -537,7 +537,7 @@ function SidebarDSBrand() {
   const badge = { label: activeSystem === "salt" ? "S" : activeSystem === "m3" ? "M3" : activeSystem === "fluent" ? "F2" : "A", bg: t.accent, color: t.accentFg };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: t.scale.gap * 2, padding: `${t.scale.gap * 2}px ${t.scale.gap * 3}px` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 24px" }}>
       <div style={{
         width: t.scale.navF + 14, height: t.scale.navF + 14, borderRadius: activeSystem === "m3" ? 10 : 6,
         background: badge.bg, color: badge.color,
@@ -921,11 +921,11 @@ function LandingGrid() {
 
   /* ─── M3 layout: category sections, type scale + card sizes all follow density ─── */
   if (activeSystem === "m3") {
-    const heroSize = Math.round(t.scale.tabH * 1.2);   // Display — large, light weight
-    const h2Size   = Math.round(t.scale.tabH * 0.6);   // Headline — clear section break
-    const bodySize = t.scale.navF + 3;                  // Body — comfortable reading
-    const captionSize = t.scale.labF + 1;               // Caption — subtle metadata
-    const outerPad = t.scale.gap * 5;
+    const heroSize = 48;    // Display — large, premium
+    const h2Size   = 22;   // Headline — clear section break
+    const bodySize = 16;   // Body — comfortable reading
+    const captionSize = 13; // Caption — subtle metadata
+    const outerPad = 48;
     return (
       <div style={{ padding: `${outerPad}px ${outerPad + 8}px ${outerPad}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
         {/* Hero */}
@@ -978,7 +978,7 @@ function LandingGrid() {
                 <span style={{ fontSize: captionSize || t.scale.labF, color: t.fg3 }}>{catItems.length}</span>
               </div>
               {/* Component cards grid — gap + card internals scale with density */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
                 {catItems.map(c => {
                   const Preview = previews[c.id];
                   return (
@@ -1015,11 +1015,11 @@ function LandingGrid() {
 
   /* ─── Salt / Fluent layout — same template as M3: hero + category sections ─── */
   const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "ausos" ? "a-card" : "f-card";
-  const heroSize = Math.round(t.scale.tabH * 1.2);   // Display
-  const h2Size   = Math.round(t.scale.tabH * 0.6);   // Headline
-  const bodySize = t.scale.navF + 3;                  // Body
-  const captionSize = t.scale.labF + 1;               // Caption
-  const outerPad = t.scale.gap * 5;
+  const heroSize = 48;    // Display — large, premium
+  const h2Size   = 22;   // Headline — clear section break
+  const bodySize = 16;   // Body — comfortable reading
+  const captionSize = 13; // Caption — subtle metadata
+  const outerPad = 48;
 
   /* DS-specific feature pills */
   const featurePills = activeSystem === "salt"
@@ -1097,7 +1097,7 @@ function LandingGrid() {
               <span style={{ fontSize: captionSize || t.scale.labF, color: t.fg3 }}>{catItems.length}</span>
             </div>
             {/* Component cards grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: t.scale.gap * 2 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
               {catItems.map(c => {
                 const Preview = previews[c.id];
                 return (
@@ -1305,19 +1305,19 @@ export function DesignHubApp() {
               <SidebarDSBrand />
             </div>
             {/* 2 — Theme controls (collapsible) */}
-            <div style={{ padding: `${t.scale.gap * 2 + 4}px ${t.scale.gap * 3}px ${t.scale.gap + 4}px`, flexShrink: 0 }}>
+            <div style={{ padding: "20px 24px 12px", flexShrink: 0 }}>
               <ThemeControls />
             </div>
             {/* 3 — Sticky search */}
             <div style={{
-              padding: `${t.scale.gap + 4}px ${t.scale.gap * 3}px ${t.scale.gap * 2}px`,
+              padding: "12px 24px 16px",
               flexShrink: 0,
             }}>
               <SidebarSearch />
             </div>
             {/* 4 — Scrollable component list */}
             <div style={{
-              padding: `${t.scale.gap}px ${t.scale.gap * 3}px ${t.scale.gap * 3}px`,
+              padding: "8px 24px 24px",
               overflowY: "auto", flex: 1,
             }}>
               <nav aria-label="Component navigation"><ComponentList /></nav>
