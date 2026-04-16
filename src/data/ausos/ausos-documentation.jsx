@@ -99,7 +99,7 @@ const THEMES = {
     accentSurface: "rgba(107,90,168,0.06)", accentSurfaceHover: "rgba(107,90,168,0.10)",
     accentFg: "#FFFFFF",
     // Borders — WCAG 3:1 compliant for UI components
-    border: "rgba(0,0,0,0.12)", borderMd: "rgba(0,0,0,0.25)", borderStrong: "#9688AD",
+    border: "rgba(0,0,0,0.06)", borderMd: "rgba(0,0,0,0.10)", borderStrong: "#9688AD",
     borderAccent: "rgba(107,90,168,0.25)",
     // Elevation — purple-tinted shadows
     shadow: "0 2px 8px rgba(100,60,180,0.06), 0 8px 24px rgba(100,60,180,0.04)",
