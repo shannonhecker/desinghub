@@ -1248,8 +1248,29 @@ export function DesignHubApp() {
           <SystemSwitcher />
         </div>
 
-        {/* Right — theme badge + AI Builder */}
+        {/* Right — dark/light toggle + theme badge + AI Builder */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
+          <button
+            onClick={() => {
+              if (activeSystem === "salt") {
+                const key = store.salt.themeKey;
+                const isDk = key.includes("dark");
+                store.setSaltTheme(isDk ? key.replace("dark", "light") : key.replace("light", "dark"));
+              } else if (activeSystem === "m3") {
+                store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
+              } else if (activeSystem === "ausos") {
+                store.setAusosTheme(store.ausos.themeKey === "dark" ? "light" : "dark");
+              } else {
+                store.setFluentTheme(store.fluent.themeKey === "dark" ? "light" : "dark");
+              }
+            }}
+            title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: t.fg2, display: "flex", alignItems: "center" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF + 2 }}>
+              {isDarkTheme ? "light_mode" : "dark_mode"}
+            </span>
+          </button>
           <span style={{
             fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
             padding: `${t.scale.gap - 3}px ${t.scale.gap + 4}px`, borderRadius: 9999, fontWeight: 600,

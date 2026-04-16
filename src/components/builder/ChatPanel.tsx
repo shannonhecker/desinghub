@@ -34,11 +34,11 @@ const PATTERN_CARDS: { label: string; desc: string; icon: string; value: Interfa
     components: ["sim-chat-message", "inputs", "avatars", "buttons"] },
 ];
 
-const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
-  { label: "Salt DS", value: "salt" },
-  { label: "Material 3", value: "m3" },
-  { label: "Fluent 2", value: "fluent" },
-  { label: "ausos DS", value: "ausos" },
+const STYLE_CHIPS: { label: string; value: DesignSystem; org: string; desc: string; color: string }[] = [
+  { label: "Salt DS", value: "salt", org: "J.P. Morgan", desc: "Token-driven, density-aware", color: "#1B7F9E" },
+  { label: "Material 3", value: "m3", org: "Google", desc: "Dynamic color, rounded surfaces", color: "#6750A4" },
+  { label: "Fluent 2", value: "fluent", org: "Microsoft", desc: "Compound components, brand blue", color: "#0F6CBD" },
+  { label: "ausos DS", value: "ausos", org: "ausos", desc: "Glassmorphism, aurora themes", color: "#7E6BC4" },
 ];
 
 const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
@@ -518,10 +518,16 @@ export function ChatPanel() {
 
     if (step === "style") {
       return (
-        <div className="prompt-bubbles">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, maxWidth: 440 }}>
           {STYLE_CHIPS.map((chip) => (
-            <button key={chip.label} className="prompt-bubble" onClick={() => handleStyleSelect(chip)}>
-              {chip.label}
+            <button key={chip.label} className="pattern-card" onClick={() => handleStyleSelect(chip)}
+              style={{ padding: 14, gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 5, background: chip.color, flexShrink: 0 }} />
+                <span className="pattern-card-label" style={{ fontSize: 13 }}>{chip.label}</span>
+              </div>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{chip.org}</span>
+              <span className="pattern-card-desc">{chip.desc}</span>
             </button>
           ))}
         </div>
@@ -594,9 +600,10 @@ export function ChatPanel() {
             <div className="pattern-cards-grid">
               {PATTERN_CARDS.map((pat) => (
                 <button key={pat.label} className="pattern-card" onClick={() => {
-                  /* Set type, then auto-select components and advance */
+                  /* Set type, auto-select components, open preview, and advance */
                   setInterfaceType(pat.value);
                   setSelectedComponents(pat.components);
+                  if (!previewOpen) setPreviewOpen(true);
                   setStep("style");
                   addMessage("user", `Build me a ${pat.label}`);
                   addMessage("ai", `Great choice! I'll set up a ${pat.label} with ${pat.desc.toLowerCase()}. Which design system should I use?`);

@@ -7,6 +7,7 @@ import { useActiveTheme } from "@/components/DesignHubApp";
 import { SALT_CODE } from "@/data/salt/code-snippets";
 import { M3_CODE } from "@/data/m3/code-snippets";
 import { FLUENT_CODE } from "@/data/fluent/code-snippets";
+import { AUSOS_CODE } from "@/data/ausos/code-snippets";
 
 /* ═══════════════════════════════════════════════════════════
    Code Block — single-pass tokenizer, CSS class highlighting
@@ -72,7 +73,7 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const comp = components.find((c) => c.id === componentId);
   const sysInfo = getSystemInfo(activeSystem);
 
-  const codeMap = activeSystem === "salt" ? SALT_CODE : activeSystem === "m3" ? M3_CODE : FLUENT_CODE;
+  const codeMap = activeSystem === "salt" ? SALT_CODE : activeSystem === "m3" ? M3_CODE : activeSystem === "ausos" ? AUSOS_CODE : FLUENT_CODE;
   const snippets = codeMap[componentId];
 
   /* DS card class for code block containers */
