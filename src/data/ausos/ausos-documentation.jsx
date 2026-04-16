@@ -65,7 +65,7 @@ const THEMES = {
     accentSurface: "rgba(126,107,196,0.10)", accentSurfaceHover: "rgba(126,107,196,0.16)",
     accentFg: "#ffffff",
     // Borders — WCAG 3:1 for UI components on dark bg
-    border: "rgba(255,255,255,0.10)", borderMd: "rgba(255,255,255,0.20)", borderStrong: "#6B7280",
+    border: "rgba(255,255,255,0.06)", borderMd: "rgba(255,255,255,0.10)", borderStrong: "#6B7280",
     borderAccent: "rgba(167,139,250,0.25)",
     // Elevation
     shadow: "0 4px 16px rgba(0,0,0,0.3)", shadowLg: "0 8px 32px rgba(0,0,0,0.4)",
