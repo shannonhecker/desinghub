@@ -42,20 +42,45 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
 
   const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "ausos" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
+  // Detect light theme — if bg luminance is high, use light syntax colors
+  const isLight = (() => {
+    const bg = t.bg;
+    if (!bg || bg.startsWith("rgba") || bg.startsWith("transparent")) return true;
+    const hex = bg.replace("#", "");
+    if (hex.length !== 6) return false;
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return lum > 0.5;
+  })();
+
   return (
     <div className={cardClass} style={{
       position: "relative", overflow: "hidden", cursor: "default",
     }}>
+      {isLight && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          .syn-comment { color: #6a737d !important; }
+          .syn-keyword { color: #cf222e !important; }
+          .syn-string { color: #0550ae !important; }
+          .syn-component { color: #116329 !important; }
+          .syn-prop { color: #6639ba !important; }
+          .syn-number { color: #0550ae !important; }
+        ` }} />
+      )}
       <button className={btnCls} onClick={copy} aria-label="Copy code" style={{
         position: "absolute", top: 8, right: 8, padding: "4px 10px",
-        fontSize: 11, minWidth: "auto", minHeight: 24,
+        fontSize: 11, minWidth: "auto", minHeight: 24, zIndex: 2,
+        background: isLight ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(4px)",
       }}>
         <span aria-live="polite">{copied ? "Copied!" : "Copy"}</span>
       </button>
       <pre aria-label="Code example" style={{
         padding: 16, margin: 0, overflow: "auto", fontSize: 12, lineHeight: 1.6,
         fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
-        color: t.fg,
+        color: isLight ? "#24292f" : t.fg,
       }}>
         <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
