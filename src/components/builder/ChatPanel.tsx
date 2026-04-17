@@ -2,23 +2,18 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { InterfaceType, DesignSystem, OnboardingStep } from "@/store/useBuilder";
+import type { InterfaceType, DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
 
 /* ═══════════════════════════════════════════
-   Progressive Disclosure — Step Configuration
+   Chat-first Builder — no mandatory wizard.
+   Pattern cards are quick-start chips shown
+   only while messages.length === 0. The text
+   input is always active and routes every
+   message through the "ready" (freeform) path.
    ═══════════════════════════════════════════ */
 
-const TYPE_CHIPS: { label: string; value: InterfaceType }[] = [
-  { label: "Dashboard", value: "dashboard" },
-  { label: "Landing Page", value: "landing" },
-  { label: "Form", value: "form" },
-  { label: "E-Commerce", value: "ecommerce" },
-  { label: "Blog", value: "blog" },
-  { label: "Portfolio", value: "portfolio" },
-];
-
-/* ── Pattern cards for the zero-state guided start ── */
+/* ── Pattern cards for the zero-state quick-start ── */
 const PATTERN_CARDS: { label: string; desc: string; icon: string; value: InterfaceType; components: string[] }[] = [
   { label: "SaaS Dashboard", desc: "Stat cards, charts, data table, and navigation", icon: "dashboard", value: "dashboard",
     components: ["progress", "table", "tabs", "cards", "progress-bar"] },
@@ -34,27 +29,12 @@ const PATTERN_CARDS: { label: string; desc: string; icon: string; value: Interfa
     components: ["sim-chat-message", "inputs", "avatars", "buttons"] },
 ];
 
-const STYLE_CHIPS: { label: string; value: DesignSystem; org: string; desc: string; color: string }[] = [
-  { label: "Salt DS", value: "salt", org: "J.P. Morgan", desc: "Token-driven, density-aware", color: "#1B7F9E" },
-  { label: "Material 3", value: "m3", org: "Google", desc: "Dynamic color, rounded surfaces", color: "#6750A4" },
-  { label: "Fluent 2", value: "fluent", org: "Microsoft", desc: "Compound components, brand blue", color: "#0F6CBD" },
-  { label: "ausos DS", value: "ausos", org: "ausos", desc: "Glassmorphism, aurora themes", color: "#7E6BC4" },
-];
-
-const COMPONENT_CHIPS: { label: string; ids: string[] }[] = [
-  { label: "KPI Cards", ids: ["progress"] },
-  { label: "Data Table", ids: ["table"] },
-  { label: "Form Fields", ids: ["inputs", "text-fields", "form-field"] },
-  { label: "Buttons", ids: ["buttons"] },
-  { label: "Cards", ids: ["cards"] },
-  { label: "Navigation", ids: ["tabs"] },
-  { label: "Toggles", ids: ["switches", "checkboxes", "radios"] },
-  { label: "Badges", ids: ["badges"] },
-  { label: "Avatars", ids: ["avatars"] },
-  { label: "Alerts", ids: ["alerts"] },
-  { label: "Progress", ids: ["progress-bar"] },
-  { label: "Tooltips", ids: ["tooltips"] },
-  { label: "Heading", ids: ["sim-title"] },
+/* ── DS quick-switch (subtle affordance in hero) ── */
+const STYLE_CHIPS: { label: string; value: DesignSystem; color: string }[] = [
+  { label: "Salt DS", value: "salt", color: "#1B7F9E" },
+  { label: "Material 3", value: "m3", color: "#6750A4" },
+  { label: "Fluent 2", value: "fluent", color: "#0F6CBD" },
+  { label: "ausos DS", value: "ausos", color: "#7E6BC4" },
 ];
 
 const REFINE_CHIPS = [
@@ -259,21 +239,11 @@ function processComponentCommand(
   return { response: "", newComponents: null };
 }
 
-/* ── AI response templates ── */
-const TYPE_RESPONSES: Record<InterfaceType, string> = {
-  dashboard: "Great choice! I'll set up a dashboard with analytics and data views.",
-  landing: "Nice! I'll create a landing page with hero sections and feature highlights.",
-  form: "Got it! I'll build a form layout with inputs, validation, and stepper flow.",
-  ecommerce: "Shopping time! I'll set up a product catalog with filters and cart.",
-  blog: "I'll design a blog with article cards, categories, and reading views.",
-  portfolio: "I'll create a portfolio with project showcase and contact sections.",
-};
-
-const STYLE_RESPONSES: Record<DesignSystem, string> = {
-  salt: "Salt DS — teal accents, Open Sans typography, and 4-level density scaling.",
-  m3: "Material 3 — dynamic color, rounded surfaces, and the Roboto type scale.",
-  fluent: "Fluent 2 — Segoe UI, brand blue palette, and compound components.",
-  ausos: "ausos DS — glassmorphism surfaces, muted teal accent, DM Sans typography, and frosted glass components.",
+const DS_LABEL: Record<DesignSystem, string> = {
+  salt: "Salt DS",
+  m3: "Material 3",
+  fluent: "Fluent 2",
+  ausos: "ausos DS",
 };
 
 function getFreeformResponse(input: string): string {
@@ -282,6 +252,7 @@ function getFreeformResponse(input: string): string {
   if (l.includes("salt")) return "Switched to Salt DS — teal accents and Open Sans typography.";
   if (l.includes("material") || l.includes("m3")) return "Switched to Material 3 — dynamic color and Roboto type scale.";
   if (l.includes("fluent")) return "Switched to Fluent 2 — Segoe UI and brand blue palette.";
+  if (l.includes("ausos")) return "Switched to ausos DS — glassmorphism surfaces and muted violet accent.";
   if (l.includes("color") || l.includes("accent")) return "I'll adjust the color palette for you.";
   if (l.includes("thank")) return "You're welcome! Let me know if you need anything else.";
   if (l.includes("help")) return "I can help! Try 'add buttons', 'remove cards', 'build a dashboard', 'dark mode', 'switch to Fluent', or 'what components do I have?'.";
@@ -296,11 +267,9 @@ export function ChatPanel() {
   const {
     messages, inputText, isVoiceActive, isGenerating,
     setInputText, addMessage, toggleVoice, setGenerating, bumpPreview,
-    designSystem, interfaceType, selectedComponents,
+    designSystem, selectedComponents,
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
-    onboardingStep: step, setOnboardingStep: setStep,
-    pendingComponents, setPendingComponents, togglePendingComponent,
   } = useBuilder();
 
   const { sendMessage: sendToAPI } = useChatAPI();
@@ -312,74 +281,32 @@ export function ChatPanel() {
   const hasText = inputText.trim().length > 0;
   const glowActive = focused || hasText;
 
-  /* Recover step state — if messages exist but step was lost (e.g. HMR) */
-  useEffect(() => {
-    if (messages.length > 0 && step === "type") {
-      const hasAiMsg = messages.some((m) => m.role === "ai");
-      if (hasAiMsg && selectedComponents.length > 0) {
-        setStep("ready"); // Wizard was completed, restore to ready
-      }
-    }
-  }, []); // Run once on mount
-
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   /* ═══════════════════════════════════
-     Step Handlers
+     Pattern card click — instant start.
+     Skips the old style/components wizard
+     and moves directly to the "ready" flow.
      ═══════════════════════════════════ */
 
-  const handleTypeSelect = (chip: (typeof TYPE_CHIPS)[number]) => {
+  const handlePatternSelect = (pat: (typeof PATTERN_CARDS)[number]) => {
     if (isGenerating) return;
-    addMessage("user", chip.label);
-    setInterfaceType(chip.value);
-    setGenerating(true);
-    setTimeout(() => {
-      addMessage("ai", `${TYPE_RESPONSES[chip.value]} Which design system would you like to use?`);
-      setGenerating(false);
-      setStep("style");
-    }, 600 + Math.random() * 600);
-  };
-
-  const handleStyleSelect = (chip: (typeof STYLE_CHIPS)[number]) => {
-    if (isGenerating) return;
-    addMessage("user", chip.label);
-    setDesignSystem(chip.value);
-    setGenerating(true);
-    setTimeout(() => {
-      addMessage("ai", `${STYLE_RESPONSES[chip.value]} Now select the components you need.`);
-      setGenerating(false);
-      setStep("components");
-    }, 600 + Math.random() * 600);
-  };
-
-  const handleComponentToggle = (chip: (typeof COMPONENT_CHIPS)[number]) => {
-    togglePendingComponent(chip.label);
-  };
-
-  const handleGeneratePreview = () => {
-    if (isGenerating || pendingComponents.length === 0) return;
-    const ids = COMPONENT_CHIPS.filter((c) => pendingComponents.includes(c.label)).flatMap((c) => c.ids);
-    setSelectedComponents(ids);
-    addMessage("user", `Generate with: ${pendingComponents.join(", ")}`);
-    setGenerating(true);
+    setInterfaceType(pat.value);
+    setSelectedComponents(pat.components);
     if (!previewOpen) setPreviewOpen(true);
-
-    const dsLabel = designSystem === "salt" ? "Salt DS" : designSystem === "m3" ? "Material 3" : "Fluent 2";
-    setTimeout(() => {
-      addMessage(
-        "ai",
-        `Your preview is ready! I've configured ${pendingComponents.length} component groups with ${dsLabel} styling. Switch themes, adjust components, or ask me anything to refine.`
-      );
-      setGenerating(false);
-      bumpPreview();
-      setStep("ready");
-    }, 800 + Math.random() * 800);
+    addMessage("user", `Build me a ${pat.label}`);
+    addMessage(
+      "ai",
+      `Great choice! I've set up a ${pat.label} with ${pat.desc.toLowerCase()} in ${DS_LABEL[designSystem]}. Tell me what to change — colors, components, layout, or switch design systems anytime.`
+    );
+    bumpPreview();
   };
 
   /* ═══════════════════════════════════
-     Free-form Send (STEP_READY + fallback)
+     Free-form Send — always treated as "ready"
+     (no wizard gating).
      ═══════════════════════════════════ */
 
   const handleSend = (text?: string) => {
@@ -389,116 +316,69 @@ export function ChatPanel() {
     setGenerating(true);
     const l = msg.toLowerCase();
 
-    /* ═══ UNIVERSAL: layout + component commands work in ANY step ═══ */
-
-    /* Layout generation — detect first (higher priority than single-component adds) */
+    /* ── Layout generation — highest priority ── */
     const layoutResult = processLayoutCommand(msg);
     if (layoutResult) {
       setSelectedComponents(layoutResult.ids);
       if (!previewOpen) setPreviewOpen(true);
-
-      const dsLabel = designSystem === "salt" ? "Salt DS" : designSystem === "m3" ? "Material 3" : "Fluent 2";
       const blockList = layoutResult.blocks.join(", ");
       setTimeout(() => {
         addMessage(
           "ai",
           `Generated a ${layoutResult.layoutType} layout with ${layoutResult.blocks.length} component groups: ${blockList}. ` +
-          `Using ${dsLabel} styling. Customize by saying 'add' or 'remove' any component.`
+          `Using ${DS_LABEL[designSystem]} styling. Customize by saying 'add' or 'remove' any component.`
         );
         setGenerating(false);
         bumpPreview();
-        if (step !== "ready") setStep("ready");
       }, 800 + Math.random() * 800);
       return;
     }
 
     const { response: compResponse, newComponents } = processComponentCommand(msg, selectedComponents);
 
-    /* Theme changes — work in any step */
+    /* ── Theme changes ── */
     let themeChanged = false;
     if (l.includes("dark"))  { setMode("dark");  themeChanged = true; }
     else if (l.includes("light")) { setMode("light"); themeChanged = true; }
 
-    /* Design system changes — work in any step */
+    /* ── Design system changes ── */
     let dsChanged = false;
-    if (l.includes("salt"))                         { setDesignSystem("salt");   dsChanged = true; }
+    if (l.includes("salt"))                               { setDesignSystem("salt");   dsChanged = true; }
     else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3");     dsChanged = true; }
-    else if (l.includes("fluent"))                  { setDesignSystem("fluent"); dsChanged = true; }
+    else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
+    else if (l.includes("ausos"))                          { setDesignSystem("ausos");  dsChanged = true; }
 
-    /* If component command matched, apply it and respond (regardless of step) */
+    /* ── Component command matched — apply and respond ── */
     if (newComponents !== null) {
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
-
       setTimeout(() => {
         addMessage("ai", compResponse);
         setGenerating(false);
         bumpPreview();
-        if (step !== "ready") setStep("ready");
       }, 600 + Math.random() * 800);
       return;
     }
 
-    /* ── STEP_READY: free-form refinement via Claude API ── */
-    if (step === "ready") {
-      if (!previewOpen) setPreviewOpen(true);
+    /* ── Freeform refinement ── */
+    if (!previewOpen) setPreviewOpen(true);
 
-      // If only a theme/DS toggle, respond locally (fast path)
-      if (themeChanged || dsChanged) {
-        const aiResponse = themeChanged
-          ? "Theme updated! The preview reflects the new mode."
-          : getFreeformResponse(msg);
-        setTimeout(() => {
-          addMessage("ai", aiResponse);
-          setGenerating(false);
-          bumpPreview();
-        }, 400);
-        return;
-      }
-
-      // Route to Claude API for intelligent responses
-      setGenerating(false); // sendToAPI manages its own generating state
-      sendToAPI(msg).then(() => bumpPreview());
+    // Local fast-path for theme/DS toggles
+    if (themeChanged || dsChanged) {
+      const aiResponse = themeChanged
+        ? "Theme updated! The preview reflects the new mode."
+        : getFreeformResponse(msg);
+      setTimeout(() => {
+        addMessage("ai", aiResponse);
+        setGenerating(false);
+        bumpPreview();
+      }, 400);
       return;
     }
 
-    /* ── Guided steps: try to match typed input to step options ── */
-    if (step === "type") {
-      const match = TYPE_CHIPS.find((c) => l.includes(c.value) || l.includes(c.label.toLowerCase()));
-      if (match) {
-        setInterfaceType(match.value);
-        setTimeout(() => {
-          addMessage("ai", `${TYPE_RESPONSES[match.value]} Which design system would you like to use?`);
-          setGenerating(false);
-          setStep("style");
-        }, 600 + Math.random() * 600);
-      } else {
-        setTimeout(() => {
-          addMessage("ai", "I can help with that! Please select a project type above to get started.");
-          setGenerating(false);
-        }, 400);
-      }
-    } else if (step === "style") {
-      const match = STYLE_CHIPS.find((c) => l.includes(c.value) || l.includes(c.label.toLowerCase()));
-      if (match) {
-        setDesignSystem(match.value);
-        setTimeout(() => {
-          addMessage("ai", `${STYLE_RESPONSES[match.value]} Now select the components you need.`);
-          setGenerating(false);
-          setStep("components");
-        }, 600 + Math.random() * 600);
-      } else {
-        setTimeout(() => {
-          addMessage("ai", "Please pick a design system — Salt DS, Material 3, or Fluent 2.");
-          setGenerating(false);
-        }, 400);
-      }
-    } else {
-      setTimeout(() => {
-        addMessage("ai", "Select the components you need above, then click Generate Preview.");
-        setGenerating(false);
-      }, 400);
-    }
+    // Route to Claude API for intelligent responses
+    setGenerating(false); // sendToAPI manages its own generating state
+    sendToAPI(msg).then(() => bumpPreview());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -509,78 +389,22 @@ export function ChatPanel() {
   };
 
   /* ═══════════════════════════════════
-     Render
+     Refinement chips — shown after first message
      ═══════════════════════════════════ */
 
-  const renderChips = () => {
-    // Type step: no chips — pattern cards above handle selection
-    if (step === "type") return null;
+  const renderRefineChips = () => (
+    <div className="prompt-bubbles">
+      {REFINE_CHIPS.map((label) => (
+        <button key={label} className="prompt-bubble" onClick={() => handleSend(label)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
-    if (step === "style") {
-      return (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, maxWidth: 440 }}>
-          {STYLE_CHIPS.map((chip) => (
-            <button key={chip.label} className="pattern-card" onClick={() => handleStyleSelect(chip)}
-              style={{ padding: 14, gap: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 5, background: chip.color, flexShrink: 0 }} />
-                <span className="pattern-card-label" style={{ fontSize: 13 }}>{chip.label}</span>
-              </div>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{chip.org}</span>
-              <span className="pattern-card-desc">{chip.desc}</span>
-            </button>
-          ))}
-        </div>
-      );
-    }
-
-    if (step === "components") {
-      return (
-        <div className="component-selector">
-          <div className="prompt-bubbles">
-            {COMPONENT_CHIPS.map((chip) => (
-              <button
-                key={chip.label}
-                className={`prompt-bubble ${pendingComponents.includes(chip.label) ? "selected" : ""}`}
-                onClick={() => handleComponentToggle(chip)}
-              >
-                {pendingComponents.includes(chip.label) && (
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>check</span>
-                )}
-                {chip.label}
-              </button>
-            ))}
-          </div>
-          {pendingComponents.length > 0 && (
-            <button className="generate-btn" onClick={handleGeneratePreview} disabled={isGenerating}>
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>auto_awesome</span>
-              Generate Preview ({pendingComponents.length})
-            </button>
-          )}
-        </div>
-      );
-    }
-
-    /* STEP_READY — refinement chips */
-    return (
-      <div className="prompt-bubbles">
-        {REFINE_CHIPS.map((label) => (
-          <button key={label} className="prompt-bubble" onClick={() => handleSend(label)}>
-            {label}
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  const placeholderText =
-    step === "type"
-      ? "Describe what you'd like to build..."
-      : step === "style"
-        ? "Type a design system name..."
-        : step === "components"
-          ? "Pick your components above..."
-          : "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'...";
+  const placeholderText = hasMessages
+    ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+    : "Describe what you'd like to build, or pick a pattern above...";
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
@@ -589,28 +413,36 @@ export function ChatPanel() {
         {/* Flex spacer — pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero — pattern-first guided start */}
-        {!hasMessages && step === "type" && (
+        {/* Hero — quick-start pattern cards, always available until first message */}
+        {!hasMessages && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
             <h1 className="hero-title">What are we building?</h1>
-            <p className="hero-subtitle">Pick a pattern to start, or describe what you need.</p>
+            <p className="hero-subtitle">Pick a pattern to start instantly, or describe what you need in the box below.</p>
 
             {/* Pattern cards */}
             <div className="pattern-cards-grid">
               {PATTERN_CARDS.map((pat) => (
-                <button key={pat.label} className="pattern-card" onClick={() => {
-                  /* Set type, auto-select components, open preview, and advance */
-                  setInterfaceType(pat.value);
-                  setSelectedComponents(pat.components);
-                  if (!previewOpen) setPreviewOpen(true);
-                  setStep("style");
-                  addMessage("user", `Build me a ${pat.label}`);
-                  addMessage("ai", `Great choice! I'll set up a ${pat.label} with ${pat.desc.toLowerCase()}. Which design system should I use?`);
-                }}>
+                <button key={pat.label} className="pattern-card" onClick={() => handlePatternSelect(pat)}>
                   <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">{pat.icon}</span>
                   <span className="pattern-card-label">{pat.label}</span>
                   <span className="pattern-card-desc">{pat.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* DS quick-switch — subtle, so users know they can pick a system upfront */}
+            <div className="hero-ds-row" role="group" aria-label="Choose a design system">
+              <span className="hero-ds-label">Design system:</span>
+              {STYLE_CHIPS.map((chip) => (
+                <button
+                  key={chip.value}
+                  className={`hero-ds-chip ${designSystem === chip.value ? "active" : ""}`}
+                  onClick={() => setDesignSystem(chip.value)}
+                  aria-pressed={designSystem === chip.value}
+                >
+                  <span className="hero-ds-dot" style={{ background: chip.color }} aria-hidden="true" />
+                  {chip.label}
                 </button>
               ))}
             </div>
@@ -633,7 +465,7 @@ export function ChatPanel() {
                       <button aria-label="Copy"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>content_copy</span></button>
                     </div>
                   )}
-                  {isLastAi && !isGenerating && renderChips()}
+                  {isLastAi && !isGenerating && renderRefineChips()}
                 </div>
               );
             })}
@@ -654,7 +486,7 @@ export function ChatPanel() {
         )}
       </div>
 
-      {/* Input — always pinned to bottom */}
+      {/* Input — always pinned to bottom, active from message 1 */}
       <div className="chat-input-bar">
         <div className="input-container">
           <div className={`input-glow ${glowActive ? "active" : ""}`} />
@@ -702,9 +534,6 @@ export function ChatPanel() {
             </div>
           </div>
         </div>
-
-        {/* Chips below chatbox — only for initial type selection */}
-        {!hasMessages && step === "type" && renderChips()}
       </div>
     </div>
   );

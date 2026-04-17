@@ -1213,6 +1213,77 @@
 .builder-light .pattern-card-label { color: #1a1a2e; }
 .builder-light .pattern-card-desc { color: rgba(0, 0, 0, 0.4); }
 
+/* ── Hero DS quick-switcher row ── */
+.hero-ds-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.hero-ds-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 4px;
+}
+.hero-ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.hero-ds-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+.hero-ds-chip.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+.hero-ds-chip:focus-visible {
+  outline: 2px solid var(--b-accent, #8b5cf6);
+  outline-offset: 2px;
+}
+.hero-ds-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+/* Light mode */
+.builder-light .hero-ds-row { border-top-color: rgba(0, 0, 0, 0.06); }
+.builder-light .hero-ds-label { color: rgba(0, 0, 0, 0.4); }
+.builder-light .hero-ds-chip {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.55);
+}
+.builder-light .hero-ds-chip:hover {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1a1a2e;
+}
+.builder-light .hero-ds-chip.active {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.18);
+  color: #1a1a2e;
+}
+
 /* ── Generating state ── */
 .generating-state {
   display: flex;

@@ -155,8 +155,10 @@ export const useBuilder = create<BuilderState>((set) => ({
   colorOverrides: {},
   hasOverrides: false,
 
-  // Onboarding state
-  onboardingStep: 'type',
+  // Onboarding state — default 'ready' so free-form chat works from message 1.
+  // Pattern cards still appear while messages.length === 0 for quick-start,
+  // but users can also type directly without being forced through a wizard.
+  onboardingStep: 'ready',
   pendingComponents: [],
 
   // Canvas blocks & selection
@@ -199,7 +201,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
-  clearChat: () => set({ messages: [], onboardingStep: 'type', pendingComponents: [] }),
+  clearChat: () => set({ messages: [], onboardingStep: 'ready', pendingComponents: [] }),
 
   setDesignSystem: (ds) => {
     const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light' };
