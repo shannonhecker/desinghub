@@ -43,6 +43,11 @@ interface BuilderState {
   onboardingStep: OnboardingStep;
   pendingComponents: string[];
 
+  // Active template (set when a pattern card is applied; null for ad-hoc canvases)
+  activeTemplateId: string | null;
+  // Regenerate-content status — true while /api/builder/generate-content is pending
+  isRegeneratingContent: boolean;
+
   // Canvas blocks & selection
   blocks: Block[];
   selectedBlockId: string | null;
@@ -88,6 +93,10 @@ interface BuilderState {
   setOnboardingStep: (s: OnboardingStep) => void;
   setPendingComponents: (c: string[]) => void;
   togglePendingComponent: (label: string) => void;
+
+  // Actions — Templates / regeneration
+  setActiveTemplateId: (id: string | null) => void;
+  setIsRegeneratingContent: (v: boolean) => void;
 
   // Actions — Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
@@ -161,6 +170,10 @@ export const useBuilder = create<BuilderState>((set) => ({
   onboardingStep: 'ready',
   pendingComponents: [],
 
+  // Template / regeneration state
+  activeTemplateId: null,
+  isRegeneratingContent: false,
+
   // Canvas blocks & selection
   blocks: [],
   selectedBlockId: null,
@@ -201,7 +214,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
-  clearChat: () => set({ messages: [], onboardingStep: 'ready', pendingComponents: [] }),
+  clearChat: () => set({ messages: [], onboardingStep: 'ready', pendingComponents: [], activeTemplateId: null }),
 
   setDesignSystem: (ds) => {
     const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light' };
@@ -242,6 +255,9 @@ export const useBuilder = create<BuilderState>((set) => ({
         ? s.pendingComponents.filter((c) => c !== label)
         : [...s.pendingComponents, label],
     })),
+
+  setActiveTemplateId: (id) => set({ activeTemplateId: id }),
+  setIsRegeneratingContent: (v) => set({ isRegeneratingContent: v }),
 
   setBlocks: (blocks) => set({ blocks }),
   updateBlockProps: (id, props) =>

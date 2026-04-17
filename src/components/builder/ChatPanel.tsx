@@ -5,6 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate } from "@/lib/builderTemplates";
+import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder — no mandatory wizard.
@@ -259,6 +260,8 @@ export function ChatPanel() {
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
     setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks,
+    activeTemplateId, setActiveTemplateId,
+    isRegeneratingContent, setIsRegeneratingContent,
   } = useBuilder();
 
   const { sendMessage: sendToAPI } = useChatAPI();
@@ -290,10 +293,43 @@ export function ChatPanel() {
     setSidebarBlocks(tpl.sidebar);
     setBlocks(tpl.body);
     setFooterBlocks(tpl.footer);
+    setActiveTemplateId(tpl.id); // enables Regenerate Data chip
     if (!previewOpen) setPreviewOpen(true);
     addMessage("user", `Build me a ${tpl.label}`);
     addMessage("ai", tpl.aiResponse);
     bumpPreview();
+  };
+
+  /* ═══════════════════════════════════
+     Regenerate Data — ask Claude for a
+     fresh pass of realistic mock content
+     for the currently-applied template.
+     Visible via a refine chip once a
+     template is active.
+     ═══════════════════════════════════ */
+  const handleRegenerateContent = async () => {
+    if (!activeTemplateId || isRegeneratingContent) return;
+    setIsRegeneratingContent(true);
+    addMessage("user", "Regenerate data");
+    addMessage("ai", "Generating fresh mock content…");
+    try {
+      const result = await regenerateTemplateContent(activeTemplateId);
+      // Replace the placeholder "Generating…" message with the real outcome
+      const msgs = useBuilder.getState().messages;
+      const lastAi = msgs[msgs.length - 1];
+      if (lastAi && lastAi.role === "ai" && lastAi.content === "Generating fresh mock content…") {
+        const content = result.ok
+          ? result.patched === 0
+            ? "No changes — the current content looked fine to me. Ask me for specific tweaks."
+            : `Refreshed ${result.patched} block${result.patched === 1 ? "" : "s"} with new mock content.`
+          : `Couldn't regenerate: ${result.error ?? "unknown error"}.`;
+        useBuilder.setState({
+          messages: [...msgs.slice(0, -1), { ...lastAi, content }],
+        });
+      }
+    } finally {
+      setIsRegeneratingContent(false);
+    }
   };
 
   /* ═══════════════════════════════════
@@ -442,6 +478,23 @@ export function ChatPanel() {
 
   const renderRefineChips = () => (
     <div className="prompt-bubbles">
+      {activeTemplateId && (
+        <button
+          className="prompt-bubble prompt-bubble-accent"
+          onClick={handleRegenerateContent}
+          disabled={isRegeneratingContent}
+          title="Ask Claude for fresh mock data for this template"
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
+            aria-hidden="true"
+          >
+            {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
+          </span>
+          {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
+        </button>
+      )}
       {REFINE_CHIPS.map((label) => (
         <button key={label} className="prompt-bubble" onClick={() => handleSend(label)}>
           {label}

@@ -1417,6 +1417,31 @@
   color: rgba(0, 0, 0, 0.85);
 }
 
+/* Accent chip — for distinguishing the Regenerate-data affordance
+   from the rest of the refinement chips. */
+.prompt-bubble.prompt-bubble-accent {
+  background: rgba(126, 107, 196, 0.14);
+  border-color: rgba(126, 107, 196, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+}
+.prompt-bubble.prompt-bubble-accent:hover:not(:disabled) {
+  background: rgba(126, 107, 196, 0.22);
+  border-color: rgba(126, 107, 196, 0.5);
+}
+.prompt-bubble.prompt-bubble-accent:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.builder-light .prompt-bubble.prompt-bubble-accent {
+  background: rgba(126, 107, 196, 0.1);
+  border-color: rgba(126, 107, 196, 0.35);
+  color: #4a3d90;
+}
+.builder-light .prompt-bubble.prompt-bubble-accent:hover:not(:disabled) {
+  background: rgba(126, 107, 196, 0.18);
+  border-color: rgba(126, 107, 196, 0.55);
+}
+
 /* Component selector wrapper */
 .component-selector {
   display: flex;
