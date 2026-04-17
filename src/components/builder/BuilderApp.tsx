@@ -12,6 +12,7 @@ import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import { ExportPanel } from "./ExportPanel";
+import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import "./builder.css";
 
 const WaveScene = dynamic(
@@ -28,6 +29,10 @@ export function BuilderApp() {
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+
+  /* Register Cmd+Z / Cmd+Shift+Z for canvas undo/redo.
+     Initialized once, scoped to the builder tree. */
+  useBuilderShortcuts();
 
   // ── Gemini sidebar ──
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

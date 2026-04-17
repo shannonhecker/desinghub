@@ -37,6 +37,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
+import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
@@ -620,8 +621,30 @@ function PreviewToolbar() {
     { key: "ausos", label: "ausos" },
   ];
 
+  const modKey = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
+
   return (
     <div className="preview-toolbar">
+      {/* Undo / Redo */}
+      <div className="preview-toolbar-group">
+        <button
+          className="preview-toolbar-btn"
+          onClick={() => canvasUndo()}
+          title={`Undo (${modKey}+Z)`}
+          aria-label="Undo"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">undo</span>
+        </button>
+        <button
+          className="preview-toolbar-btn"
+          onClick={() => canvasRedo()}
+          title={`Redo (${modKey}+Shift+Z)`}
+          aria-label="Redo"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">redo</span>
+        </button>
+      </div>
+
       {/* Density */}
       <div className="preview-toolbar-group">
         {(designSystem === "salt"
