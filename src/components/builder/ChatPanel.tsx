@@ -2,32 +2,20 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { InterfaceType, DesignSystem } from "@/store/useBuilder";
+import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
+import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate } from "@/lib/builderTemplates";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder — no mandatory wizard.
    Pattern cards are quick-start chips shown
-   only while messages.length === 0. The text
-   input is always active and routes every
-   message through the "ready" (freeform) path.
+   only while messages.length === 0. Clicking
+   a card instantly populates all four canvas
+   zones with a realistic template layout.
    ═══════════════════════════════════════════ */
 
-/* ── Pattern cards for the zero-state quick-start ── */
-const PATTERN_CARDS: { label: string; desc: string; icon: string; value: InterfaceType; components: string[] }[] = [
-  { label: "SaaS Dashboard", desc: "Stat cards, charts, data table, and navigation", icon: "dashboard", value: "dashboard",
-    components: ["progress", "table", "tabs", "cards", "progress-bar"] },
-  { label: "Login Form", desc: "Auth form with inputs, validation, and brand header", icon: "lock", value: "form",
-    components: ["inputs", "buttons", "sim-title"] },
-  { label: "Data Explorer", desc: "Filterable table with search, charts, and export", icon: "table_chart", value: "dashboard",
-    components: ["table", "inputs", "buttons", "progress"] },
-  { label: "Settings Page", desc: "Navigation tabs with form sections and toggles", icon: "settings", value: "form",
-    components: ["tabs", "inputs", "switches", "buttons"] },
-  { label: "Landing Page", desc: "Hero, feature cards, testimonials, and CTA", icon: "web", value: "landing",
-    components: ["cards", "buttons", "badges", "sim-title"] },
-  { label: "Chat Interface", desc: "Message bubbles, input bar, and user avatars", icon: "chat", value: "dashboard",
-    components: ["sim-chat-message", "inputs", "avatars", "buttons"] },
-];
+/* Pattern cards surface the four shipped templates. */
+const PATTERN_CARDS: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
 
 /* ── DS quick-switch (subtle affordance in hero) ── */
 const STYLE_CHIPS: { label: string; value: DesignSystem; color: string }[] = [
@@ -270,6 +258,7 @@ export function ChatPanel() {
     designSystem, selectedComponents,
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
+    setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks,
   } = useBuilder();
 
   const { sendMessage: sendToAPI } = useChatAPI();
@@ -286,22 +275,75 @@ export function ChatPanel() {
   }, [messages]);
 
   /* ═══════════════════════════════════
-     Pattern card click — instant start.
-     Skips the old style/components wizard
-     and moves directly to the "ready" flow.
+     Pattern card click — apply a full
+     realistic template in one step. All
+     four canvas zones (header, sidebar,
+     body, footer) are populated; existing
+     canvas machinery renders them natively.
      ═══════════════════════════════════ */
 
-  const handlePatternSelect = (pat: (typeof PATTERN_CARDS)[number]) => {
+  const handlePatternSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
-    setInterfaceType(pat.value);
-    setSelectedComponents(pat.components);
+    setInterfaceType(tpl.interfaceType);
+    setSelectedComponents(tpl.selectedComponents);
+    setHeaderBlocks(tpl.header);
+    setSidebarBlocks(tpl.sidebar);
+    setBlocks(tpl.body);
+    setFooterBlocks(tpl.footer);
     if (!previewOpen) setPreviewOpen(true);
-    addMessage("user", `Build me a ${pat.label}`);
+    addMessage("user", `Build me a ${tpl.label}`);
+    addMessage("ai", tpl.aiResponse);
+    bumpPreview();
+  };
+
+  /* ═══════════════════════════════════
+     Login → Dashboard flow: triggered
+     when the user types "show the
+     dashboard" after applying the login
+     template. Swaps body blocks to the
+     post-login dashboard layout so the
+     template honors its two-screen promise.
+     ═══════════════════════════════════ */
+
+  const tryAdvanceLoginFlow = (input: string): boolean => {
+    const l = input.toLowerCase();
+    if (!/\b(show|see|go to|next|show me|open)\b.*\bdashboard\b/i.test(l)) return false;
+    // Only advance if the current body looks like the login template
+    const { blocks } = useBuilder.getState();
+    const isLoginScreen = blocks.some((b) => b.id.includes("lf-signin"));
+    if (!isLoginScreen) return false;
+    setBlocks(getLoginDashboardBody());
+    // Update the header + sidebar to reflect a signed-in state
+    setHeaderBlocks([
+      { id: "tpl-lf2-brand", type: "AppBrand", props: { label: "Acme" } },
+      { id: "tpl-lf2-status", type: "StatusPill", props: { label: "Signed in" } },
+    ]);
+    setSidebarBlocks([
+      { id: "tpl-lf2-nav-1", type: "NavItem", props: { label: "Home", icon: "home", active: true } },
+      { id: "tpl-lf2-nav-2", type: "NavItem", props: { label: "Tasks", icon: "database", active: false } },
+      { id: "tpl-lf2-nav-3", type: "NavItem", props: { label: "Messages", icon: "chat", active: false } },
+      { id: "tpl-lf2-nav-4", type: "NavItem", props: { label: "Analytics", icon: "bar_chart", active: false } },
+      { id: "tpl-lf2-nav-5", type: "NavItem", props: { label: "Settings", icon: "settings", active: false } },
+    ]);
     addMessage(
       "ai",
-      `Great choice! I've set up a ${pat.label} with ${pat.desc.toLowerCase()} in ${DS_LABEL[designSystem]}. Tell me what to change — colors, components, layout, or switch design systems anytime.`
+      "Swapped to the **post-login dashboard** — this is where users land after signing in. Say 'back to login' to return, or ask me to add specific widgets."
     );
     bumpPreview();
+    return true;
+  };
+
+  const tryReturnToLogin = (input: string): boolean => {
+    const l = input.toLowerCase();
+    if (!/\b(back|return|go back|go to)\b.*\b(login|sign[- ]?in)\b/i.test(l)) return false;
+    const tpl = BUILDER_TEMPLATES["login-flow"];
+    setHeaderBlocks(tpl.header);
+    setSidebarBlocks(tpl.sidebar);
+    setBlocks(tpl.body);
+    setFooterBlocks(tpl.footer);
+    addMessage("ai", "Back to the login screen.");
+    bumpPreview();
+    return true;
   };
 
   /* ═══════════════════════════════════
@@ -315,6 +357,12 @@ export function ChatPanel() {
     addMessage("user", msg);
     setGenerating(true);
     const l = msg.toLowerCase();
+
+    /* ── Login → Dashboard flow transitions (template-aware) ── */
+    if (tryAdvanceLoginFlow(msg) || tryReturnToLogin(msg)) {
+      setGenerating(false);
+      return;
+    }
 
     /* ── Layout generation — highest priority ── */
     const layoutResult = processLayoutCommand(msg);

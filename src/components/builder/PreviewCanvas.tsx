@@ -100,10 +100,15 @@ export function PreviewCanvas() {
   /* Track whether we initialized from store already */
   const initializedRef = useRef(false);
 
-  /* ── Initialize blocks from selectedComponents on first mount ── */
+  /* ── Initialize blocks from selectedComponents on first mount ──
+     Skip when `blocks` already has content so rich template-applied
+     layouts are preserved (see src/lib/builderTemplates.ts). Without
+     this guard, opening the preview for the first time after a
+     template apply would rebuild a naive list from selectedComponents. */
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+    if (blocks.length > 0) return; // template-applied or restored layout — don't overwrite
 
     const seen = new Set<string>();
     const initial: Block[] = [];
@@ -127,7 +132,9 @@ export function PreviewCanvas() {
       }
     }
     setBlocks(initial);
-  }, [selectedComponents, setBlocks]);
+    // `blocks.length` is read inside to guard template-applied layouts;
+    // the initializedRef short-circuits re-runs so adding it here is safe.
+  }, [selectedComponents, setBlocks, blocks.length]);
 
   /* ── Sync blocks back to selectedComponents when blocks change ── */
   const syncToStore = useCallback(
