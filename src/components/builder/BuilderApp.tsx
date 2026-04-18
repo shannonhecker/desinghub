@@ -12,6 +12,7 @@ import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import { ExportPanel } from "./ExportPanel";
+import { TemplatesDrawer } from "./TemplatesDrawer";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import "./builder.css";
 
@@ -324,6 +325,10 @@ export function BuilderApp() {
       </div>
 
       <SettingsPanel />
+
+      {/* ── Templates drawer — opened via the hero's "Browse templates"
+           link, or programmatically from anywhere in the builder. ── */}
+      <TemplatesDrawer />
 
       {/* ── Export modal ── */}
       {exportOpen && <ExportPanel onClose={() => setExportOpen(false)} />}
