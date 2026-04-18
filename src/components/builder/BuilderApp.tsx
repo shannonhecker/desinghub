@@ -14,6 +14,7 @@ import { ExportPanel } from "./ExportPanel";
 import { TemplatesDrawer } from "./TemplatesDrawer";
 import { SessionsDrawer } from "./SessionsDrawer";
 import { SaveIndicator } from "./SaveIndicator";
+import { SlashInserter } from "./SlashInserter";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import "./builder.css";
@@ -302,6 +303,10 @@ export function BuilderApp() {
       {/* ── Sessions drawer — left slide-in, opened via the top-left
            menu hamburger. Replaces the old "My Projects" modal. ── */}
       <SessionsDrawer />
+
+      {/* ── Slash-command inserter — "/" anywhere outside inputs
+           opens a Notion-style component picker overlay. ── */}
+      <SlashInserter />
 
       {/* ── Export modal ── */}
       {exportOpen && <ExportPanel onClose={() => setExportOpen(false)} />}

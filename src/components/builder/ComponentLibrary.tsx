@@ -8,6 +8,7 @@ import { MiniPreview } from "./MiniPreview";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
+import { HoverPreview, type HoverPreviewState } from "./HoverPreview";
 
 /* ══════════════════════════════════════════════════════════
    Zone classification for drag-to-all-zones discoverability.
@@ -38,17 +39,28 @@ const ZONE_LABELS: Record<LibraryZone, { label: string; hint: string; icon: stri
 
 const ZONE_ORDER: LibraryZone[] = ["body", "header", "sidebar", "footer"];
 
+/* Shared state for hover-preview fly-out. Tiles call show()/hide();
+ *   the HoverPreview overlay reads the current state and positions
+ *   itself next to the active tile. Scoped to ComponentLibrary so a
+ *   second library instance (if ever mounted) doesn't clash. */
+interface HoverContextValue {
+  show: (state: HoverPreviewState) => void;
+  hide: () => void;
+}
+const HoverContext = React.createContext<HoverContextValue | null>(null);
+
+const HOVER_DELAY_MS = 300;
+
 /* ── Visual grid tile — stylized mini-preview + label.
  *   Drag-enabled via dnd-kit for drop-to-canvas.
- *   Click-to-add (Phase E.3) handled via an inner button wrapping
- *   the content so the drag-listener pointerdown + the click event
- *   don't fight each other — we suppress the click when a drag
- *   actually starts by checking movement distance. */
+ *   Click-to-add (Phase E.3) handled via pointer-displacement gating.
+ *   Hover preview (Phase E.4) via shared HoverContext. */
 function BlueprintItem({ blueprint, zone }: {
   blueprint: { id: string; type: string; label: string; icon: string; defaults: Record<string, unknown> };
   zone: LibraryZone;
 }) {
   const addBlockFromLibrary = useBuilder((s) => s.addBlockFromLibrary);
+  const hover = React.useContext(HoverContext);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: blueprint.id,
     data: {
@@ -64,8 +76,15 @@ function BlueprintItem({ blueprint, zone }: {
      displacement. A click fires only when pointerup lands within a
      few pixels of pointerdown — otherwise dnd-kit takes over. */
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const tileRef = React.useRef<HTMLDivElement | null>(null);
+  const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
+    /* Clicking a tile should instantly dismiss the hover preview so
+       it doesn't linger after the block is added. */
+    if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
+    hover?.hide();
   };
   const handlePointerUp = (e: React.PointerEvent) => {
     const start = pointerStartRef.current;
@@ -80,9 +99,31 @@ function BlueprintItem({ blueprint, zone }: {
     }
   };
 
+  const handleMouseEnter = () => {
+    if (!hover) return;
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      const el = tileRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      hover.show({
+        type: blueprint.type,
+        label: blueprint.label,
+        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+      });
+    }, HOVER_DELAY_MS);
+  };
+  const handleMouseLeave = () => {
+    if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
+    hover?.hide();
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el);
+        tileRef.current = el;
+      }}
       className={`lib-tile${isDragging ? " is-dragging" : ""}`}
       {...listeners}
       {...attributes}
@@ -93,6 +134,8 @@ function BlueprintItem({ blueprint, zone }: {
         listeners?.onPointerDown?.(e);
       }}
       onPointerUp={handlePointerUp}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       title={`${blueprint.label} — drag onto canvas or click to add`}
       role="button"
       tabIndex={0}
@@ -118,6 +161,18 @@ export function ComponentLibrary() {
     updateBlockProps,
   } = useBuilder();
 
+  /* Shared hover-preview state for all tiles in this panel instance.
+     Kept here (rather than in a tile) so the HoverPreview overlay
+     reads a single source of truth without per-tile portals. */
+  const [hoverState, setHoverState] = useState<HoverPreviewState | null>(null);
+  const hoverCtx = useMemo(
+    () => ({
+      show: (s: HoverPreviewState) => setHoverState(s),
+      hide: () => setHoverState(null),
+    }),
+    []
+  );
+
   const selectedBlock = selectedBlockId
     ? (blocks.find((b) => b.id === selectedBlockId)
       ?? headerBlocks.find((b) => b.id === selectedBlockId)
@@ -129,7 +184,12 @@ export function ComponentLibrary() {
     : null;
 
   return (
+    <HoverContext.Provider value={hoverCtx}>
     <div className="component-library">
+      {/* Hover-preview overlay — positioned via portal into document.body
+          so it escapes the sidebar's overflow clipping. */}
+      <HoverPreview state={hoverState} />
+
       <div className="lib-header">
         <span className="lib-header-title">Components</span>
         <button
@@ -192,6 +252,7 @@ export function ComponentLibrary() {
         <LibraryBrowser />
       </div>
     </div>
+    </HoverContext.Provider>
   );
 }
 
