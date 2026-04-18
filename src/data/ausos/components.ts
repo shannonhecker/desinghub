@@ -10,7 +10,7 @@ export const COMPS: ComponentDef[] = [
   { id: "dl-color", name: "Color", cat: "Foundations", desc: "Aurora palette with glassmorphism surfaces. Neutral accent, white-opacity layers, subtle borders. Signature gradient foundation." },
   { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols Outlined icons with muted white tones. Density-responsive sizing." },
   { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "DM Sans type scale. 10 styles from Caption to Display. White-opacity hierarchy on dark backgrounds." },
-  { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "4 glass elevation levels using backdrop-filter blur + white-opacity borders. No drop shadows — depth via transparency." },
+  { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "4 glass elevation levels using backdrop-filter blur + white-opacity borders. No drop shadows - depth via transparency." },
   { id: "dl-spacing", name: "Spacing", cat: "Foundations", desc: "4px base grid. Proportional scale (25-300). Adjusts with density." },
   { id: "dl-tokens", name: "Token Architecture", cat: "Foundations", desc: "Semantic CSS variables: --a-bg, --a-surface, --a-fg, --a-accent, --a-border. Glass tokens for blur + saturation." },
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA. 4.5:1 contrast on glass surfaces, focus rings, 44px touch targets, reduced motion support." },

@@ -13,60 +13,60 @@ const AUSOS_PROPS: Record<string, { name: string; type: string; default: string;
   buttons: [
     { name: "appearance", type: '"primary" | "secondary" | "ghost" | "outline"', default: '"secondary"', desc: "Visual style variant" },
     { name: "disabled", type: "boolean", default: "false", desc: "Disables interaction" },
-    { name: "onClick", type: "() => void", default: "—", desc: "Click handler" },
-    { name: "children", type: "ReactNode", default: "—", desc: "Button label content" },
+    { name: "onClick", type: "() => void", default: "-", desc: "Click handler" },
+    { name: "children", type: "ReactNode", default: "-", desc: "Button label content" },
   ],
   inputs: [
-    { name: "label", type: "string", default: "—", desc: "Field label above input" },
-    { name: "placeholder", type: "string", default: "—", desc: "Placeholder text" },
+    { name: "label", type: "string", default: "-", desc: "Field label above input" },
+    { name: "placeholder", type: "string", default: "-", desc: "Placeholder text" },
     { name: "type", type: '"text" | "email" | "password" | "number"', default: '"text"', desc: "Input type" },
     { name: "disabled", type: "boolean", default: "false", desc: "Disables input" },
-    { name: "value", type: "string", default: "—", desc: "Controlled value" },
-    { name: "onChange", type: "(e) => void", default: "—", desc: "Change handler" },
+    { name: "value", type: "string", default: "-", desc: "Controlled value" },
+    { name: "onChange", type: "(e) => void", default: "-", desc: "Change handler" },
   ],
   cards: [
-    { name: "children", type: "ReactNode", default: "—", desc: "Card content" },
-    { name: "onClick", type: "() => void", default: "—", desc: "Makes card interactive" },
+    { name: "children", type: "ReactNode", default: "-", desc: "Card content" },
+    { name: "onClick", type: "() => void", default: "-", desc: "Makes card interactive" },
     { name: "padding", type: "number | string", default: "16", desc: "Inner padding" },
   ],
   tabs: [
-    { name: "value", type: "string", default: "—", desc: "Active tab value" },
-    { name: "onChange", type: "(value) => void", default: "—", desc: "Tab change handler" },
-    { name: "children", type: "Tab[]", default: "—", desc: "Tab components" },
+    { name: "value", type: "string", default: "-", desc: "Active tab value" },
+    { name: "onChange", type: "(value) => void", default: "-", desc: "Tab change handler" },
+    { name: "children", type: "Tab[]", default: "-", desc: "Tab components" },
   ],
   badges: [
     { name: "variant", type: '"accent" | "default" | "success" | "warning" | "danger"', default: '"default"', desc: "Status variant" },
-    { name: "children", type: "ReactNode", default: "—", desc: "Badge label" },
+    { name: "children", type: "ReactNode", default: "-", desc: "Badge label" },
   ],
   switches: [
     { name: "checked", type: "boolean", default: "false", desc: "Toggle state" },
-    { name: "onChange", type: "(checked) => void", default: "—", desc: "Toggle handler" },
-    { name: "label", type: "string", default: "—", desc: "Accessible label" },
+    { name: "onChange", type: "(checked) => void", default: "-", desc: "Toggle handler" },
+    { name: "label", type: "string", default: "-", desc: "Accessible label" },
     { name: "disabled", type: "boolean", default: "false", desc: "Disables switch" },
   ],
   checkboxes: [
     { name: "checked", type: "boolean", default: "false", desc: "Checked state" },
-    { name: "onChange", type: "(checked) => void", default: "—", desc: "Check handler" },
-    { name: "label", type: "string", default: "—", desc: "Checkbox label" },
+    { name: "onChange", type: "(checked) => void", default: "-", desc: "Check handler" },
+    { name: "label", type: "string", default: "-", desc: "Checkbox label" },
   ],
   alerts: [
     { name: "variant", type: '"info" | "success" | "warning" | "danger"', default: '"info"', desc: "Alert status" },
-    { name: "children", type: "ReactNode", default: "—", desc: "Alert message" },
+    { name: "children", type: "ReactNode", default: "-", desc: "Alert message" },
   ],
   dialog: [
     { name: "open", type: "boolean", default: "false", desc: "Controls visibility" },
-    { name: "onClose", type: "() => void", default: "—", desc: "Close handler" },
-    { name: "title", type: "string", default: "—", desc: "Dialog heading" },
-    { name: "children", type: "ReactNode", default: "—", desc: "Dialog body content" },
+    { name: "onClose", type: "() => void", default: "-", desc: "Close handler" },
+    { name: "title", type: "string", default: "-", desc: "Dialog heading" },
+    { name: "children", type: "ReactNode", default: "-", desc: "Dialog body content" },
   ],
   progress: [
     { name: "value", type: "number", default: "0", desc: "Progress percentage (0-100)" },
-    { name: "label", type: "string", default: "—", desc: "Progress label" },
+    { name: "label", type: "string", default: "-", desc: "Progress label" },
   ],
   "date-picker": [
-    { name: "value", type: "Date", default: "—", desc: "Selected date" },
-    { name: "onChange", type: "(date) => void", default: "—", desc: "Date change handler" },
-    { name: "label", type: "string", default: "—", desc: "Field label" },
+    { name: "value", type: "Date", default: "-", desc: "Selected date" },
+    { name: "onChange", type: "(date) => void", default: "-", desc: "Date change handler" },
+    { name: "label", type: "string", default: "-", desc: "Field label" },
   ],
 };
 
@@ -101,7 +101,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
       </div>
 
-      {/* Tabs — below title, ARIA tablist */}
+      {/* Tabs - below title, ARIA tablist */}
       <div role="tablist" aria-label="Component view" style={{
         display: "flex",
         borderBottom: `1px solid ${t.border}`,
@@ -176,7 +176,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         </div>
       )}
 
-      {/* Props table — ausos DS only */}
+      {/* Props table - ausos DS only */}
       {activeTab === "preview" && isAusos && AUSOS_PROPS[componentId] && (
         <div style={{ marginTop: t.scale.gap * 3, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
           <div style={{ padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, color: t.fg }}>Props</div>

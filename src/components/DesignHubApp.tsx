@@ -23,14 +23,14 @@ export function useActiveTheme(): ActiveTheme {
   return useTheme();
 }
 
-/* ── MAIN APP — fully themed by active DS ── */
+/* ── MAIN APP - fully themed by active DS ── */
 export function DesignHubApp() {
   const store = useDesignHub();
   const { sidebarOpen, activeSystem } = store;
   const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
-  // Detect dark theme for logo color — logo is black SVG, invert to white in dark mode
+  // Detect dark theme for logo color - logo is black SVG, invert to white in dark mode
   const isDarkTheme = activeSystem === "salt"
     ? store.salt.themeKey.includes("dark")
     : activeSystem === "m3"
@@ -45,7 +45,7 @@ export function DesignHubApp() {
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
-      {/* Header — 3-column, height + padding scale with density */}
+      {/* Header - 3-column, height + padding scale with density */}
       <header style={{
         display: "flex", alignItems: "center",
         padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
@@ -54,18 +54,18 @@ export function DesignHubApp() {
         minHeight: t.scale.hdrH, flexShrink: 0,
         position: "relative",
       }}>
-        {/* Left — logo + title */}
+        {/* Left - logo + title */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
           <img src="/aologo.svg" alt="ausōs" style={{ height: t.scale.navF + 4, width: "auto", filter: logoFilter }} />
           <span style={{ fontSize: t.scale.navF + 1, fontWeight: 600, color: t.fg }}>UI Kit Overview</span>
         </div>
 
-        {/* Center — DS switcher, always centered */}
+        {/* Center - DS switcher, always centered */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <SystemSwitcher />
         </div>
 
-        {/* Right — dark/light toggle + theme badge + AI Builder */}
+        {/* Right - dark/light toggle + theme badge + AI Builder */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
           <button
             onClick={() => {
@@ -106,7 +106,7 @@ export function DesignHubApp() {
       </header>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar — DS brand → controls → sticky search → scrollable list */}
+        {/* Sidebar - DS brand → controls → sticky search → scrollable list */}
         {sidebarOpen && (
           <aside style={{
             width: t.scale.panelW,
@@ -130,7 +130,7 @@ export function DesignHubApp() {
           </aside>
         )}
 
-        {/* Main — ContentTopBar (hamburger + breadcrumb) always at top */}
+        {/* Main - ContentTopBar (hamburger + breadcrumb) always at top */}
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "ausos" ? "transparent" : t.bg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>

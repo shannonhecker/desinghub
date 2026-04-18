@@ -5,7 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage, type SavedProject } from "@/lib/firebase";
 
 /* ══════════════════════════════════════════════════════════
-   SessionsDrawer — left slide-in session browser.
+   SessionsDrawer - left slide-in session browser.
 
    Mirrors the TemplatesDrawer architecture (on the right) but
    for cloud-saved sessions. Users open it from the top-left
@@ -13,7 +13,7 @@ import { useCloudStorage, type SavedProject } from "@/lib/firebase";
    titles, delete/duplicate with a per-row menu, and start a
    fresh session via the big "+ New session" button at top.
 
-   Auto-save keeps the list current — every meaningful change
+   Auto-save keeps the list current - every meaningful change
    to a session updates its updatedAt timestamp via the
    /lib/useAutoSave hook.
    ══════════════════════════════════════════════════════════ */
@@ -89,7 +89,7 @@ export function SessionsDrawer() {
       useBuilder.setState({}); // no-op; placeholder while we rely on the fact
       /* The simplest rename: flip the title on THIS session via store
          only if it's the current session, else directly setDoc via
-         saveProject path. We use saveProject(next, { id }) — it grabs
+         saveProject path. We use saveProject(next, { id }) - it grabs
          the LIVE store snapshot, which is wrong for non-active
          sessions. So instead just skip store for now and update via
          a direct setDoc. */
@@ -99,7 +99,7 @@ export function SessionsDrawer() {
       if (project.id === currentSessionId) {
         useBuilder.getState().setSessionTitle(next);
       } else {
-        /* For non-active sessions, write via the save path with id —
+        /* For non-active sessions, write via the save path with id -
          *  saveProject will use the CURRENT store snapshot, which is
          *  wrong. Instead, load+rename+restore workflow is too heavy.
          *  Simplest pragmatic fix: just await saveProject with the
@@ -107,7 +107,7 @@ export function SessionsDrawer() {
          *  this MVP, require renaming only the active session. */
         // eslint-disable-next-line no-console
         console.warn(
-          "Renaming non-active sessions requires a direct Firestore write — " +
+          "Renaming non-active sessions requires a direct Firestore write - " +
             "skipped for now. Load the session first, then rename."
         );
       }
@@ -200,7 +200,7 @@ export function SessionsDrawer() {
           )}
           {!loading && !error && projects.length === 0 && (
             <div className="sessions-empty">
-              No sessions yet. Build something — it&apos;ll save automatically.
+              No sessions yet. Build something - it&apos;ll save automatically.
             </div>
           )}
           {!loading && !error && projects.length > 0 && filtered.length === 0 && (

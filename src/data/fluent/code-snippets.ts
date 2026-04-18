@@ -280,7 +280,7 @@ export const FLUENT_CODE: CodeSnippets = {
   pagination: {
     react: `import { Button } from "@fluentui/react-components";
 
-// Fluent 2 has no built-in Pagination — compose with Buttons
+// Fluent 2 has no built-in Pagination - compose with Buttons
 <div role="navigation" aria-label="Pagination">
   <Button appearance="subtle" icon={<ChevronLeftIcon />} />
   <Button appearance="primary">1</Button>
@@ -324,7 +324,7 @@ dispatchToast(
   stepper: {
     react: `import { Button } from "@fluentui/react-components";
 
-// Fluent 2 has no built-in Stepper — compose with tokens
+// Fluent 2 has no built-in Stepper - compose with tokens
 <div role="list" aria-label="Progress">
   <div role="listitem" aria-current="step">
     <span>1. Account</span>
@@ -342,7 +342,7 @@ dispatchToast(
     react: `import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// Fluent 2 themed chart — uses Fluent color tokens
+// Fluent 2 themed chart - uses Fluent color tokens
 const theme = {
   colors: [
     "var(--colorBrandBackground)",
@@ -529,7 +529,7 @@ const grid = agGrid.createGrid(document.getElementById('grid'), {
 <FluentProvider theme={webLightTheme}>
   <App />
 </FluentProvider>`,
-    html: `<!-- Fluent 2 token architecture — CSS custom properties -->
+    html: `<!-- Fluent 2 token architecture - CSS custom properties -->
 <style>
   :root {
     --colorBrandBackground: #0F6CBD;
@@ -913,7 +913,7 @@ const useStyles = makeStyles({
   splitter: {
     react: `import { makeStyles, tokens } from "@fluentui/react-components";
 
-// Fluent 2 has no built-in Splitter — compose with tokens
+// Fluent 2 has no built-in Splitter - compose with tokens
 const useStyles = makeStyles({
   container: { display: "flex", height: "100%" },
   pane: { overflow: "auto" },

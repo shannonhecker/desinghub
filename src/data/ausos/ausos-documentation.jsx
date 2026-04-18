@@ -39,7 +39,7 @@ export function getAusosDensityCSS(density) {
 /* ── AUSOS THEME PALETTES ──
    Following dark mode best practices:
    - Base bg near-black (#0b1120), surfaces step up 5-8% luminance each
-   - Primary text off-white (#E8EAED) not pure white — reduces eye strain
+   - Primary text off-white (#E8EAED) not pure white - reduces eye strain
    - Secondary text at 70% opacity, tertiary at 50%
    - Accent boosted 10-20% saturation for dark mode
    - All text meets WCAG AA 4.5:1 minimum contrast
@@ -49,22 +49,22 @@ export function getAusosDensityCSS(density) {
 const THEMES = {
   dark: {
     name: "Dark",
-    // Backgrounds — aurora gradient base
+    // Backgrounds - aurora gradient base
     bg: "#0b1120", bg2: "#0e1428", bg3: "#121830", bg4: "#171d3a",
     gradient: "linear-gradient(135deg, #0b1120 0%, #0d1f2d 30%, #1a1035 65%, #120b20 100%)",
     gradientSubtle: "linear-gradient(135deg, rgba(11,17,32,0.95) 0%, rgba(13,31,45,0.9) 30%, rgba(26,16,53,0.9) 65%, rgba(18,11,32,0.95) 100%)",
-    // Surfaces — glass with visible presence (higher opacity than before)
+    // Surfaces - glass with visible presence (higher opacity than before)
     surface: "rgba(255,255,255,0.06)", surfaceHover: "rgba(255,255,255,0.10)", surfaceActive: "rgba(255,255,255,0.14)",
     surfaceMd: "rgba(255,255,255,0.08)", surfaceLg: "rgba(255,255,255,0.10)",
     cardBg: "rgba(255,255,255,0.06)", cardBgHover: "rgba(255,255,255,0.10)",
-    // Text — solid colors for reliable contrast (4.5:1+)
+    // Text - solid colors for reliable contrast (4.5:1+)
     fg: "#E8EAED", fg2: "#9CA3AF", fg3: "#6B7280", fgDisabled: "#4B5563",
-    // Accent — muted violet (darker, less vivid for better text contrast)
+    // Accent - muted violet (darker, less vivid for better text contrast)
     accent: "#7E6BC4", accentHover: "#8D7DD0", accentActive: "#6F5CB5",
     accentGradient: "linear-gradient(135deg, #8D7DD0 0%, #7E6BC4 50%, #6F5CB5 100%)",
     accentSurface: "rgba(126,107,196,0.10)", accentSurfaceHover: "rgba(126,107,196,0.16)",
     accentFg: "#ffffff",
-    // Borders — WCAG 3:1 for UI components on dark bg
+    // Borders - WCAG 3:1 for UI components on dark bg
     border: "rgba(255,255,255,0.06)", borderMd: "rgba(255,255,255,0.10)", borderStrong: "#6B7280",
     borderAccent: "rgba(167,139,250,0.25)",
     // Elevation
@@ -83,25 +83,25 @@ const THEMES = {
   },
   light: {
     name: "Light",
-    // Backgrounds — white base with lavender depth layers
+    // Backgrounds - white base with lavender depth layers
     bg: "#FFFFFF", bg2: "#FAF8FE", bg3: "#F3EEFA", bg4: "#EDE6F5",
     gradient: "linear-gradient(135deg, #E8E0F8 0%, #DDE8F8 25%, #F0E2F0 50%, #E0E4F8 75%, #E8E0F5 100%)",
     gradientSubtle: "linear-gradient(135deg, #EDE6F5 0%, #E8EEF8 50%, #F0E8F5 100%)",
-    // Surfaces — white glass on lavender
+    // Surfaces - white glass on lavender
     surface: "rgba(255,255,255,0.72)", surfaceHover: "rgba(255,255,255,0.85)", surfaceActive: "rgba(255,255,255,0.95)",
     surfaceMd: "rgba(255,255,255,0.80)", surfaceLg: "rgba(255,255,255,0.88)",
     cardBg: "rgba(255,255,255,0.68)", cardBgHover: "rgba(255,255,255,0.82)",
-    // Text — purple-tinted dark
+    // Text - purple-tinted dark
     fg: "#2D1B4E", fg2: "#5C4A78", fg3: "#9688AD", fgDisabled: "#C4B8D6",
-    // Accent — muted violet (matching dark theme tone)
+    // Accent - muted violet (matching dark theme tone)
     accent: "#6B5AA8", accentHover: "#5C4B98", accentActive: "#4D3C88",
     accentGradient: "linear-gradient(135deg, #7E6BC4 0%, #6B5AA8 50%, #5C4B98 100%)",
     accentSurface: "rgba(107,90,168,0.06)", accentSurfaceHover: "rgba(107,90,168,0.10)",
     accentFg: "#FFFFFF",
-    // Borders — WCAG 3:1 compliant for UI components
+    // Borders - WCAG 3:1 compliant for UI components
     border: "rgba(0,0,0,0.06)", borderMd: "rgba(0,0,0,0.10)", borderStrong: "#9688AD",
     borderAccent: "rgba(107,90,168,0.25)",
-    // Elevation — purple-tinted shadows
+    // Elevation - purple-tinted shadows
     shadow: "0 2px 8px rgba(100,60,180,0.06), 0 8px 24px rgba(100,60,180,0.04)",
     shadowLg: "0 4px 12px rgba(100,60,180,0.08), 0 12px 36px rgba(100,60,180,0.06)",
     glass: "blur(20px) saturate(130%)", glassLg: "blur(28px) saturate(140%)",
@@ -147,7 +147,7 @@ const buildCSS = (T) => `
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-/* === BUTTONS (Glass system — no solid fills, depth via opacity) === */
+/* === BUTTONS (Glass system - no solid fills, depth via opacity) === */
 .a-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:72px; border-radius:9999px; padding:0 16px; font-family:${FONT}; font-size:13px; font-weight:500; cursor:pointer; border:1px solid ${T.border}; outline:none; position:relative; overflow:hidden; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; transition:all var(--a-dur-fast) var(--a-ease); box-shadow:${T.insetHighlight}; }
 .a-btn:focus-visible { outline:2px solid ${T.fg3}; outline-offset:2px; }
 .a-btn:disabled { opacity:0.35; cursor:default; pointer-events:none; }
@@ -284,7 +284,7 @@ function DLColor() {
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, fontFamily: FONT }}>
-      {/* Aurora gradient swatch — the signature foundation */}
+      {/* Aurora gradient swatch - the signature foundation */}
       <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${T.borderMd}` }}>
         <div style={{ height: 48, background: T.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Aurora Gradient</span>
@@ -400,20 +400,20 @@ function DLTokens() { return null; }
 function DLAccessibility() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT, fontSize: 12, color: T.fg2 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> WCAG 2.1 AA — 4.5:1 text contrast</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Focus rings — 2px accent outline</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Touch targets — 44px minimum</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Reduced motion — respects prefers-reduced-motion</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> WCAG 2.1 AA - 4.5:1 text contrast</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Focus rings - 2px accent outline</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Touch targets - 44px minimum</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}><AIcon name="check_circle" size={16} color={T.successFg} /> Reduced motion - respects prefers-reduced-motion</div>
     </div>
   );
 }
 
 function DLDensity() {
   const levels = [
-    { name: "High", h: 20, desc: "Compact — dense data views" },
-    { name: "Medium", h: 28, desc: "Default — balanced readability" },
-    { name: "Low", h: 36, desc: "Relaxed — comfortable spacing" },
-    { name: "Touch", h: 44, desc: "Mobile — 44px touch targets" },
+    { name: "High", h: 20, desc: "Compact - dense data views" },
+    { name: "Medium", h: 28, desc: "Default - balanced readability" },
+    { name: "Low", h: 36, desc: "Relaxed - comfortable spacing" },
+    { name: "Touch", h: 44, desc: "Mobile - 44px touch targets" },
   ];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT }}>
@@ -851,7 +851,7 @@ function PatListDetail() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   PREVIEWS — Small thumbnail cards for the landing grid
+   PREVIEWS - Small thumbnail cards for the landing grid
    ════════════════════════════════════════════════════════════ */
 const PREVIEWS = {
   /* Foundations */
@@ -900,7 +900,7 @@ const PREVIEWS = {
 };
 
 /* ════════════════════════════════════════════════════════════
-   COMPS ARRAY — The master component list with render functions
+   COMPS ARRAY - The master component list with render functions
    ════════════════════════════════════════════════════════════ */
 const COMPS = [
   // Foundations

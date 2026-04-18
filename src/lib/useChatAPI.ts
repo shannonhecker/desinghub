@@ -22,7 +22,7 @@ export function useChatAPI() {
       content: m.content,
     }));
 
-    // Add current message with context — includes the clicked/selected
+    // Add current message with context - includes the clicked/selected
     // block when the user has scoped their message to a specific element.
     const allZoneBlocks = [
       ...store.headerBlocks,
@@ -33,7 +33,7 @@ export function useChatAPI() {
     const selectedBlock = store.selectedBlockId
       ? allZoneBlocks.find((b) => b.id === store.selectedBlockId)
       : null;
-    // Serialize props safely — if anything non-JSON slipped in (function,
+    // Serialize props safely - if anything non-JSON slipped in (function,
     // circular ref, DOM node) we don't want to crash the chat pipeline.
     let propsJson = "{}";
     if (selectedBlock) {
@@ -125,7 +125,7 @@ export function useChatAPI() {
         }
       }
 
-      // Final flush — cancel pending RAF and do a synchronous update
+      // Final flush - cancel pending RAF and do a synchronous update
       if (rafId !== null) cancelAnimationFrame(rafId);
       flushToStore();
 

@@ -15,7 +15,7 @@ export function makeBlockId() {
 
 /* CanvasDropZone replaced by ZoneDropContainer */
 
-/* ── Code Viewer — full-page JSON schema display ── */
+/* ── Code Viewer - full-page JSON schema display ── */
 export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Block[] }) {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
@@ -72,7 +72,7 @@ export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Bl
       <pre className="canvas-code-pre">
         <code
           className="canvas-code-body"
-          dangerouslySetInnerHTML={{ __html: highlighted || '// No blocks yet — drag components onto the canvas' }}
+          dangerouslySetInnerHTML={{ __html: highlighted || '// No blocks yet - drag components onto the canvas' }}
         />
       </pre>
     </div>
@@ -80,7 +80,7 @@ export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Bl
 }
 
 /* ══════════════════════════════════════════════════════════
-   PreviewCanvas — sortable drop zone for builder blocks.
+   PreviewCanvas - sortable drop zone for builder blocks.
    DndContext is provided by the parent (CanvasDndProvider
    in PreviewPanel) so that the ComponentLibrary sidebar
    shares the same drag-and-drop context.
@@ -108,7 +108,7 @@ export function PreviewCanvas() {
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
-    if (blocks.length > 0) return; // template-applied or restored layout — don't overwrite
+    if (blocks.length > 0) return; // template-applied or restored layout - don't overwrite
 
     const seen = new Set<string>();
     const initial: Block[] = [];
@@ -187,7 +187,7 @@ export function PreviewCanvas() {
       className={`preview-${designSystem} preview-canvas-root density-${density}`}
       onClick={() => setSelectedBlock(null, null)}
     >
-      {/* Add component menu — triggered from toolbar */}
+      {/* Add component menu - triggered from toolbar */}
       {addMenuOpen && (
         <div style={{ position: "relative" }}>
           <SwapMenu

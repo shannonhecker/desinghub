@@ -172,7 +172,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Read the memoized theme from context. Must be called inside <ThemeProvider>.
- * This replaces the old useActiveTheme() — zero computation on re-render.
+ * This replaces the old useActiveTheme() - zero computation on re-render.
  */
 export function useTheme(): ActiveTheme {
   const ctx = useContext(ThemeContext);

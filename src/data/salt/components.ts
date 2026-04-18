@@ -15,7 +15,7 @@ export const COMPS: ComponentDef[] = [
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA core. 4.5:1 contrast, focus rings, 44px touch targets, screen reader tested, reduced motion." },
   { id: "dl-density", name: "Density", cat: "Foundations", desc: "4 levels: High (20px), Medium (28px), Low (36px), Touch (44px). All on 4px scaling grid." },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing: simple, direct, human. Present tense, active voice, sentence case." },
-  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios." },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios." },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance." },
   { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "3 appearances: solid, bordered, transparent. 5 sentiments: accented, neutral, positive, caution, negative." },
@@ -70,7 +70,7 @@ export const COMPS: ComponentDef[] = [
   /* ── Patterns ── */
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview layout." },
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, labels, and button bar composed into a data entry form." },
-  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane — email client, file browser, settings patterns." },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane - email client, file browser, settings patterns." },
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, sidebar navigation, content area, and footer composed into a full application layout." },
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, validation, and action buttons." },
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections for application configuration." },

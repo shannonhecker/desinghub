@@ -273,7 +273,7 @@ export function ChartsPage() {
 
   return (
     <div style={{ padding: 24, fontFamily: font }}>
-      {/* Category filter buttons — no repeated title (already shown in ComponentPreview header) */}
+      {/* Category filter buttons - no repeated title (already shown in ComponentPreview header) */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {[null, ...categories].map(cat => {
           const isActive = selectedCategory === cat;

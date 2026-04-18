@@ -10,7 +10,7 @@ import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 
 /* ═══════════════════════════════════════════
-   Chat-first Builder — no mandatory wizard.
+   Chat-first Builder - no mandatory wizard.
    Pattern cards are quick-start chips shown
    only while messages.length === 0. Clicking
    a card instantly populates all four canvas
@@ -64,7 +64,7 @@ const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[]
 ];
 
 /* ═══════════════════════════════════════════
-   Layout Presets — generate full page combos
+   Layout Presets - generate full page combos
    ═══════════════════════════════════════════ */
 
 const LAYOUT_PRESETS: Record<string, string[]> = {
@@ -218,7 +218,7 @@ function processComponentCommand(
   if ((isAdd || mentionedIds.length > 0) && mentionedIds.length > 0) {
     const newComps = [...new Set([...currentComponents, ...mentionedIds])];
     const total = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
-    // Handle count phrases — cosmetic only
+    // Handle count phrases - cosmetic only
     const countMatch = l.match(/\b(\d+|two|three|four|five|six|seven|eight|nine|ten)\s+\w+/);
     const countNote = countMatch ? " (showing component variations)" : "";
     return {
@@ -240,10 +240,10 @@ const DS_LABEL: Record<DesignSystem, string> = {
 function getFreeformResponse(input: string): string {
   const l = input.toLowerCase();
   if (l.includes("dark") || l.includes("light")) return "Theme updated! The preview reflects the new mode.";
-  if (l.includes("salt")) return "Switched to Salt DS — teal accents and Open Sans typography.";
-  if (l.includes("material") || l.includes("m3")) return "Switched to Material 3 — dynamic color and Roboto type scale.";
-  if (l.includes("fluent")) return "Switched to Fluent 2 — Segoe UI and brand blue palette.";
-  if (l.includes("ausos")) return "Switched to ausos DS — glassmorphism surfaces and muted violet accent.";
+  if (l.includes("salt")) return "Switched to Salt DS - teal accents and Open Sans typography.";
+  if (l.includes("material") || l.includes("m3")) return "Switched to Material 3 - dynamic color and Roboto type scale.";
+  if (l.includes("fluent")) return "Switched to Fluent 2 - Segoe UI and brand blue palette.";
+  if (l.includes("ausos")) return "Switched to ausos DS - glassmorphism surfaces and muted violet accent.";
   if (l.includes("color") || l.includes("accent")) return "I'll adjust the color palette for you.";
   if (l.includes("thank")) return "You're welcome! Let me know if you need anything else.";
   if (l.includes("help")) return "I can help! Try 'add buttons', 'remove cards', 'build a dashboard', 'dark mode', 'switch to Fluent', or 'what components do I have?'.";
@@ -322,7 +322,7 @@ export function ChatPanel() {
   }, [messages]);
 
   /* ═══════════════════════════════════
-     Pattern card click — stage the choice
+     Pattern card click - stage the choice
      and ask about design system as the
      next conversational turn. We DON'T
      apply blocks yet; that happens when
@@ -331,7 +331,7 @@ export function ChatPanel() {
 
   /** English "a/an" article that reads naturally for a label starting
    *  with a vowel sound (e.g. "an Analytics Dashboard" vs "a Settings
-   *  Page"). Not exhaustive — catches the five vowel letters which
+   *  Page"). Not exhaustive - catches the five vowel letters which
    *  covers every current template and is easy to reason about. */
   const articleFor = (label: string): string =>
     /^[aeiouAEIOU]/.test(label) ? "an" : "a";
@@ -344,7 +344,7 @@ export function ChatPanel() {
     addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
     /* Start a session keyed to the template name so auto-save kicks in
        immediately. If a session already exists (e.g. user returned to
@@ -363,7 +363,7 @@ export function ChatPanel() {
   const applyPendingIntentWithDs = (ds: DesignSystem) => {
     setDesignSystem(ds);
 
-    /* Case 1: a template was staged — apply its full zone payload now */
+    /* Case 1: a template was staged - apply its full zone payload now */
     if (pendingTemplateId) {
       const tpl = BUILDER_TEMPLATES[pendingTemplateId as TemplateId];
       if (tpl) {
@@ -383,7 +383,7 @@ export function ChatPanel() {
       return;
     }
 
-    /* Case 2: a freeform first message was staged — route it to the same
+    /* Case 2: a freeform first message was staged - route it to the same
        pipeline we use for any later message, now that a DS is set. */
     if (pendingFirstMessage) {
       const msg = pendingFirstMessage;
@@ -397,7 +397,7 @@ export function ChatPanel() {
   };
 
   /* ═══════════════════════════════════
-     Regenerate Data — ask Claude for a
+     Regenerate Data - ask Claude for a
      fresh pass of realistic mock content
      for the currently-applied template.
      Visible via a refine chip once a
@@ -416,7 +416,7 @@ export function ChatPanel() {
       if (lastAi && lastAi.role === "ai" && lastAi.content === "Generating fresh mock content…") {
         const content = result.ok
           ? result.patched === 0
-            ? "No changes — the current content looked fine to me. Ask me for specific tweaks."
+            ? "No changes - the current content looked fine to me. Ask me for specific tweaks."
             : `Refreshed ${result.patched} block${result.patched === 1 ? "" : "s"} with new mock content.`
           : `Couldn't regenerate: ${result.error ?? "unknown error"}.`;
         useBuilder.setState({
@@ -459,7 +459,7 @@ export function ChatPanel() {
     ]);
     addMessage(
       "ai",
-      "Swapped to the **post-login dashboard** — this is where users land after signing in. Say 'back to login' to return, or ask me to add specific widgets."
+      "Swapped to the **post-login dashboard** - this is where users land after signing in. Say 'back to login' to return, or ask me to add specific widgets."
     );
     bumpPreview();
     return true;
@@ -479,7 +479,7 @@ export function ChatPanel() {
   };
 
   /* ═══════════════════════════════════
-     Free-form Send — always treated as "ready"
+     Free-form Send - always treated as "ready"
      (no wizard gating).
      ═══════════════════════════════════ */
 
@@ -500,7 +500,7 @@ export function ChatPanel() {
       addMessage("user", msg);
       addMessage(
         "ai",
-        "Got it — which design system should I use for this?"
+        "Got it - which design system should I use for this?"
       );
       /* Start a session named from the user's first intent so the
          sessions drawer has a recognizable entry immediately. */
@@ -512,7 +512,7 @@ export function ChatPanel() {
     setGenerating(true);
     const l = msg.toLowerCase();
 
-    /* ── Click-to-edit scope — if a block is selected, skip the local
+    /* ── Click-to-edit scope - if a block is selected, skip the local
        keyword routing (which could mistake "button" in "change this
        button's label" for a layout/add-component command) and send
        straight to Claude with the selected_block context attached by
@@ -530,7 +530,7 @@ export function ChatPanel() {
       return;
     }
 
-    /* ── Layout generation — highest priority ── */
+    /* ── Layout generation - highest priority ── */
     const layoutResult = processLayoutCommand(msg);
     if (layoutResult) {
       setSelectedComponents(layoutResult.ids);
@@ -562,7 +562,7 @@ export function ChatPanel() {
     else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
     else if (l.includes("ausos"))                          { setDesignSystem("ausos");  dsChanged = true; }
 
-    /* ── Component command matched — apply and respond ── */
+    /* ── Component command matched - apply and respond ── */
     if (newComponents !== null) {
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
@@ -606,7 +606,7 @@ export function ChatPanel() {
   };
 
   /* ═══════════════════════════════════
-     Quick-reply DS chips — shown inside the
+     Quick-reply DS chips - shown inside the
      AI's "Which design system?" prompt when
      awaiting a DS pick. Clicking one advances
      the pending intent (template or freeform
@@ -633,7 +633,7 @@ export function ChatPanel() {
   );
 
   /* ═══════════════════════════════════
-     Refinement chips — shown after the
+     Refinement chips - shown after the
      canvas has been built (normal flow)
      ═══════════════════════════════════ */
 
@@ -665,15 +665,15 @@ export function ChatPanel() {
   );
 
   const placeholderText = selectedBlock
-    ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} — what should it say or do?`
+    ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
     : awaitingDs
       ? "Pick a design system above, or type a different request…"
       : hasMessages
-        ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+        ? "Ask me anything - 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
         : "Describe the app you want to build…";
 
   /* Auto-focus the textarea on initial mount so users can type right
-     away — matches v0 / Lovable / ChatGPT. Only fires once; subsequent
+     away - matches v0 / Lovable / ChatGPT. Only fires once; subsequent
      focus is left to the user. */
   useEffect(() => {
     if (!hasMessages) inputRef.current?.focus();
@@ -684,12 +684,12 @@ export function ChatPanel() {
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
       {/* Scrollable content area */}
       <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
-        {/* Flex spacer — pushes content to bottom when messages are few */}
+        {/* Flex spacer - pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero — compact empty state.
+        {/* Hero - compact empty state.
             Input is the primary action (larger, centered below).
-            Pattern cards are a tight secondary row (no SVG on card —
+            Pattern cards are a tight secondary row (no SVG on card -
             those live in the Browse Templates drawer). No DS picker
             here; DS is asked conversationally after the first turn. */}
         {!hasMessages && (
@@ -700,7 +700,7 @@ export function ChatPanel() {
               Describe the app you want, or start from a pattern.
             </p>
 
-            {/* Compact pattern cards — medium SVG thumbnail + icon/label/desc.
+            {/* Compact pattern cards - medium SVG thumbnail + icon/label/desc.
                 Thumbnail is a shrunk-down version of the Phase C wireframes
                 so users recognize the layout at a glance without the cards
                 dominating the hero. */}
@@ -726,7 +726,7 @@ export function ChatPanel() {
               ))}
             </div>
 
-            {/* Browse templates link — opens the drawer with the full
+            {/* Browse templates link - opens the drawer with the full
                 SVG-wireframe gallery relocated from the empty state. */}
             <button
               type="button"
@@ -778,9 +778,9 @@ export function ChatPanel() {
         )}
       </div>
 
-      {/* Input — always pinned to bottom, active from message 1 */}
+      {/* Input - always pinned to bottom, active from message 1 */}
       <div className="chat-input-bar">
-        {/* Scope chip — shown when a block is selected on the canvas, so
+        {/* Scope chip - shown when a block is selected on the canvas, so
             the user has a visible confirmation that their next message
             will be scoped to that element. */}
         {selectedBlock && selectedBlockLabel && (

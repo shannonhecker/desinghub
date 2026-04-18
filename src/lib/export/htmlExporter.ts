@@ -72,7 +72,7 @@ export function exportHTML(): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — ${s.designSystem.toUpperCase()}</title>
+  <title>Dashboard - ${s.designSystem.toUpperCase()}</title>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; }

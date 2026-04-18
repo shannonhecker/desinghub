@@ -15,10 +15,10 @@ async function hashToken(password: string): Promise<string> {
 /**
  * Two-tier staging auth middleware:
  *
- * 1. Admin (IP whitelist) — auto-access, no password needed.
+ * 1. Admin (IP whitelist) - auto-access, no password needed.
  *    Set ADMIN_IPS env var with comma-separated IPs.
  *
- * 2. Visitor — must log in with STAGING_PASSWORD via /login.
+ * 2. Visitor - must log in with STAGING_PASSWORD via /login.
  *
  * Protected routes: /builder (and any sub-paths)
  * Public routes:    /, /login, /landing, /ui-kit, /api/*, /_next/*, static assets
@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Public routes — always allow through
+  // Public routes - always allow through
   if (
     pathname === "/" ||
     pathname === "/login" ||

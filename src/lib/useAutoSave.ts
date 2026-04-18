@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * useAutoSave — subscribes to canvas-relevant store changes and
+ * useAutoSave - subscribes to canvas-relevant store changes and
  * upserts the current session to Firebase on a debounce.
  *
  * Contract:
  *  - No-op while `currentSessionId` is null (empty canvas, no session
- *    started yet — we don't pollute the project list with untouched
+ *    started yet - we don't pollute the project list with untouched
  *    sessions).
  *  - No-op while Firebase isn't configured (graceful degradation;
  *    local state is still the source of truth in-session).
@@ -47,7 +47,7 @@ const TRACKED_KEYS = [
   "sessionTitle",
 ] as const;
 
-/** Shallow fingerprint across tracked keys — uses reference equality
+/** Shallow fingerprint across tracked keys - uses reference equality
  *  on each slot and collapses into a pipe-separated hash string. Two
  *  identical state snapshots produce identical fingerprints. */
 function fingerprint(state: unknown): string {
@@ -112,7 +112,7 @@ export function useAutoSave() {
           id: s.currentSessionId,
           refresh: false, // list gets refreshed when the drawer opens
         });
-        /* Re-read — state may have mutated during the save */
+        /* Re-read - state may have mutated during the save */
         const after = useBuilder.getState();
         after.setLastSavedAt(Date.now());
         after.setSaveState("saved");
@@ -126,7 +126,7 @@ export function useAutoSave() {
       }
     }
 
-    /* Snapshot-compare via fingerprint — avoids relying on the
+    /* Snapshot-compare via fingerprint - avoids relying on the
      *  (state, prev) two-argument subscribe variant; we just recompute
      *  the fingerprint each notification and bail if nothing tracked
      *  changed. Slightly cheaper than deep-compare, cheaper than
@@ -140,7 +140,7 @@ export function useAutoSave() {
       /* No session yet → nothing to save */
       if (!state.currentSessionId) return;
 
-      /* Debounce — always reset timer so rapid edits collapse into one
+      /* Debounce - always reset timer so rapid edits collapse into one
        *  save. If a save is in flight, we still re-arm the debounce so
        *  the NEXT save captures post-completion state. */
       if (debounceRef.current) clearTimeout(debounceRef.current);

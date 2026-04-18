@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { MiniPreview } from "./MiniPreview";
 
 /* ══════════════════════════════════════════════════════════
-   HoverPreview — fly-out tooltip next to a hovered tile.
+   HoverPreview - fly-out tooltip next to a hovered tile.
    Rendered via portal to escape the sidebar's clipping.
 
    Activation contract:
@@ -68,13 +68,13 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
   SimulatedToggleButton: "Button that stays pressed/unpressed.",
   SimulatedSegmentedGroup: "Connected option row; single-select.",
   SimulatedTitle: "Heading H1–H4 with text content.",
-  HighchartLine: "Line chart — trend over time.",
-  HighchartArea: "Area chart — filled trend.",
-  HighchartColumn: "Vertical bar chart — comparison.",
+  HighchartLine: "Line chart - trend over time.",
+  HighchartArea: "Area chart - filled trend.",
+  HighchartColumn: "Vertical bar chart - comparison.",
   HighchartBar: "Horizontal bar chart.",
-  HighchartPie: "Pie chart — share of whole.",
-  HighchartDonut: "Donut chart — pie with center hole.",
-  HighchartScatter: "Scatter plot — XY points.",
+  HighchartPie: "Pie chart - share of whole.",
+  HighchartDonut: "Donut chart - pie with center hole.",
+  HighchartScatter: "Scatter plot - XY points.",
   HighchartSpline: "Smooth curve trend.",
   HighchartStackedColumn: "Stacked vertical bars.",
   HighchartGauge: "Gauge meter with value.",
@@ -98,7 +98,7 @@ export function HoverPreview({ state }: { state: HoverPreviewState | null }) {
   if (!mounted || !state) return null;
   if (typeof document === "undefined") return null;
 
-  /* Position to the left of the tile — the sidebar is on the right
+  /* Position to the left of the tile - the sidebar is on the right
      edge of the viewport so there's always room. Cap within the
      viewport with a small margin. */
   const POPOVER_W = 240;

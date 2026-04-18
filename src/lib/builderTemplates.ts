@@ -1,12 +1,12 @@
 import type { Block, InterfaceType } from "@/store/useBuilder";
 
 /* ══════════════════════════════════════════════════════════════
-   Builder Templates — realistic full-layout starting points.
+   Builder Templates - realistic full-layout starting points.
 
    Each template populates all four canvas zones (header, sidebar,
    body, footer) with recognizable content and realistic mock data
    rather than empty labels. Clicking a pattern card in the hero
-   applies one of these templates instantly — no wizard prompts.
+   applies one of these templates instantly - no wizard prompts.
 
    Zone contracts (enforced by UI):
    - headerBlocks   → AppBrand | StatusPill
@@ -32,7 +32,7 @@ export interface BuilderTemplate {
   interfaceType: InterfaceType;
   /** Component IDs, kept in sync with blocks for the library/chip UI. */
   selectedComponents: string[];
-  /** Zone block arrays — applied directly to the canvas state. */
+  /** Zone block arrays - applied directly to the canvas state. */
   header: Block[];
   sidebar: Block[];
   body: Block[];
@@ -41,7 +41,7 @@ export interface BuilderTemplate {
   aiResponse: string;
 }
 
-/* Simple ID factory — templates need stable ids for sortable keys
+/* Simple ID factory - templates need stable ids for sortable keys
    even when multiple templates are applied in sequence. */
 let tplCounter = 0;
 const tid = (prefix: string) => `tpl-${prefix}-${++tplCounter}`;
@@ -68,15 +68,15 @@ const analyticsDashboard: BuilderTemplate = {
     { id: tid("ad-nav-5"), type: "NavItem", props: { label: "Settings", icon: "settings", active: false } },
   ],
   body: [
-    /* KPI row — 3 × ⅓ width */
+    /* KPI row - 3 × ⅓ width */
     { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12, colSpan: 1 } },
     { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8, colSpan: 1 } },
     { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3, colSpan: 1 } },
-    /* Main chart — full width */
-    { id: tid("ad-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Revenue — last 30 days", colSpan: 3 } },
-    /* Data table — full width */
+    /* Main chart - full width */
+    { id: tid("ad-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Revenue - last 30 days", colSpan: 3 } },
+    /* Data table - full width */
     { id: tid("ad-table"), type: "SimulatedDataTable", props: { colSpan: 3 } },
-    /* Secondary row — ⅔ chart + ⅓ progress */
+    /* Secondary row - ⅔ chart + ⅓ progress */
     { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Daily events", colSpan: 2 } },
     { id: tid("ad-progress"), type: "SimulatedProgress", props: { label: "Monthly plan usage", value: 64, colSpan: 1 } },
   ],
@@ -131,7 +131,7 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-ftr"), type: "FooterText", props: { label: "Changes save automatically", version: "v1.0" } },
   ],
   aiResponse:
-    "Built a **Settings Page** with grouped sections — Profile (avatar + name + email), Preferences (three toggles), and a Danger Zone with a delete alert. Ask me to add a section, change the nav items, or switch design systems.",
+    "Built a **Settings Page** with grouped sections - Profile (avatar + name + email), Preferences (three toggles), and a Danger Zone with a delete alert. Ask me to add a section, change the nav items, or switch design systems.",
 };
 
 /* ──────────────────────────────────────────────────────────────
@@ -188,15 +188,15 @@ const loginFlow: BuilderTemplate = {
     { id: tid("lf-status"), type: "StatusPill", props: { label: "Secure" } },
   ],
   sidebar: [
-    /* Minimal sidebar for the login state — user hasn't authenticated yet */
+    /* Minimal sidebar for the login state - user hasn't authenticated yet */
     { id: tid("lf-nav-1"), type: "NavItem", props: { label: "Sign in", icon: "person", active: true } },
     { id: tid("lf-nav-2"), type: "NavItem", props: { label: "Create account", icon: "home", active: false } },
     { id: tid("lf-nav-3"), type: "NavItem", props: { label: "Help", icon: "chat", active: false } },
   ],
   body: [
-    /* Screen 1 — Login */
+    /* Screen 1 - Login */
     { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h1", colSpan: 3 } },
-    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back — enter your details to continue.", level: "h4", colSpan: 3 } },
+    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back - enter your details to continue.", level: "h4", colSpan: 3 } },
     { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com", colSpan: 3 } },
     { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password", colSpan: 3 } },
     { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false, colSpan: 2 } },
@@ -204,7 +204,7 @@ const loginFlow: BuilderTemplate = {
     { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary", colSpan: 3 } },
     { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline", colSpan: 3 } },
     { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline", colSpan: 3 } },
-    /* Flow hint — connects to the post-login dashboard */
+    /* Flow hint - connects to the post-login dashboard */
     { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info", colSpan: 3 } },
   ],
   footer: [
@@ -245,7 +245,7 @@ export function getLoginDashboardBody(): Block[] {
     { id: nid("kpi2"), type: "SimulatedStatCard", props: { label: "Tasks", value: "7 open", pct: -2, colSpan: 1 } },
     { id: nid("kpi3"), type: "SimulatedStatCard", props: { label: "Messages", value: "24", pct: 11, colSpan: 1 } },
     { id: nid("kpi4"), type: "SimulatedStatCard", props: { label: "Meetings today", value: "3", pct: 0, colSpan: 1 } },
-    { id: nid("chart"), type: "HighchartArea", props: { chartType: "area", title: "Activity — last 7 days", colSpan: 3 } },
+    { id: nid("chart"), type: "HighchartArea", props: { chartType: "area", title: "Activity - last 7 days", colSpan: 3 } },
     { id: nid("table"), type: "SimulatedDataTable", props: { colSpan: 3 } },
   ];
 }

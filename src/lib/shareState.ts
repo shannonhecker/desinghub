@@ -8,7 +8,7 @@
  *   - all four zone block arrays
  *
  * Chat messages, preview-open flags, and other UI state are NOT
- * included — the share URL represents a canvas, not a session.
+ * included - the share URL represents a canvas, not a session.
  *
  * Encoding is JSON → URL-safe base64 (no deflate/compress for now;
  * most templates encode to <3KB which stays well below URL limits.
@@ -18,7 +18,7 @@
 import type { Block, DesignSystem, BuilderMode } from "@/store/useBuilder";
 
 export interface SharedCanvas {
-  v: 1; // schema version — bumps allow older URLs to error cleanly
+  v: 1; // schema version - bumps allow older URLs to error cleanly
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
@@ -58,7 +58,7 @@ function urlSafeB64Decode(s: string): string | null {
   }
 }
 
-/* Caps — enforced against the DECODED payload, not the hash string
+/* Caps - enforced against the DECODED payload, not the hash string
  * (base64 has ~33% overhead so a large hash is still small decoded).
  * These prevent a malicious share URL from ballooning store state. */
 const MAX_JSON_BYTES = 200 * 1024;    // 200KB decoded JSON
@@ -90,7 +90,7 @@ function sanitizeValue(v: unknown, depth = 0): unknown {
     }
     return out;
   }
-  return null; // functions, symbols, bigints — drop
+  return null; // functions, symbols, bigints - drop
 }
 
 /** Validate a block has the shape { id, type, props } AND sanitize its
@@ -176,7 +176,7 @@ export function decodeShareState(hash: string): SharedCanvas | null {
 }
 
 /** Build a share URL from the current client-side state.
- *  Returns { url, tooLong } — tooLong is true when the URL exceeds
+ *  Returns { url, tooLong } - tooLong is true when the URL exceeds
  *  a platform-friendly cap (~3500 chars); caller should warn user. */
 export function buildShareUrl(state: SharedCanvas): { url: string; tooLong: boolean; hash: string } {
   const hash = encodeShareState(state);

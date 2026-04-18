@@ -81,7 +81,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
           <button
             className={`export-format-btn ${format === "vite" ? "active" : ""}`}
             onClick={() => { setFormat("vite"); setCode(""); }}
-            title="Self-extracting shell script — run `sh design-hub-app.sh` to bootstrap a working Vite + React + TS project"
+            title="Self-extracting shell script - run `sh design-hub-app.sh` to bootstrap a working Vite + React + TS project"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
             Vite project

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
-   WaveCanvas — Guilloché wave lines (ported from shannonhecker.com)
+   WaveCanvas - Guilloché wave lines (ported from shannonhecker.com)
    90 sine-wave lines with multi-frequency distortion
    ═══════════════════════════════════════════════════════════════ */
 

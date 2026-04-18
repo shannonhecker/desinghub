@@ -11,7 +11,7 @@ import {
 import type { ZoneId, Block } from "@/store/useBuilder";
 
 /* ══════════════════════════════════════════════════════════
-   ZoneDropContainer — shared droppable + SortableContext
+   ZoneDropContainer - shared droppable + SortableContext
    wrapper used by all four builder zones (header, sidebar,
    body, footer). Provides drop-target detection and
    sortable ordering within the zone.

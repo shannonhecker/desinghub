@@ -15,7 +15,7 @@ import {
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 /* ═══════════════════════════════════════════════════════════
-   DSAgGrid — AG Grid themed with Salt DS, M3, or Fluent 2
+   DSAgGrid - AG Grid themed with Salt DS, M3, or Fluent 2
    design tokens. Uses AG Grid's native Community features:
    - Column header menus (sort, pin, autosize)
    - Drag-to-reorder columns in headers
@@ -107,7 +107,7 @@ const COLUMN_DEFS: ColDef[] = [
   },
 ];
 
-/* ── Default column definition — AG Grid Community features ── */
+/* ── Default column definition - AG Grid Community features ── */
 const DEFAULT_COL_DEF: ColDef = {
   sortable: true,
   resizable: true,
@@ -262,7 +262,7 @@ export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridPr
 
   return (
     <div style={{ fontFamily: c.font }}>
-      {/* Toolbar — uses AG Grid API methods */}
+      {/* Toolbar - uses AG Grid API methods */}
       <div style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         marginBottom: 8, flexWrap: "wrap", gap: 6,
@@ -289,7 +289,7 @@ export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridPr
         </div>
       </div>
 
-      {/* AG Grid — all column management via native AG Grid features */}
+      {/* AG Grid - all column management via native AG Grid features */}
       <div style={{ height, width: "100%" }}>
         <AgGridReact
           theme={agTheme}

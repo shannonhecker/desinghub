@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
-   Liquid Morphing Orb — SVG feTurbulence + feDisplacementMap
+   Liquid Morphing Orb - SVG feTurbulence + feDisplacementMap
    ═══════════════════════════════════════════════════════════ */
 
 function LiquidOrb({ darkMode }: { darkMode: boolean }) {
@@ -97,7 +97,7 @@ function LiquidOrb({ darkMode }: { darkMode: boolean }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Hero Section — headline + orb
+   Hero Section - headline + orb
    ═══════════════════════════════════════════════════════════ */
 
 function HeroSection({ darkMode }: { darkMode: boolean }) {
@@ -319,7 +319,7 @@ function DevicePreview({ darkMode }: { darkMode: boolean }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Main Export — Hero + Preview
+   Main Export - Hero + Preview
    ═══════════════════════════════════════════════════════════ */
 
 export function LiquidHero({ darkMode = true }: { darkMode?: boolean }) {

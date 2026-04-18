@@ -33,7 +33,7 @@ let future: CanvasSnapshot[] = [];
 let lastCaptured: CanvasSnapshot | null = null;
 /** Monotonic counter: > 0 means an apply() is in-flight and the
  *  subscription should skip capture. Using a counter (not a boolean)
- *  handles overlapping applies cleanly — each apply() increments on
+ *  handles overlapping applies cleanly - each apply() increments on
  *  entry and decrements on its own RAF completion. */
 let applyingCount = 0;
 let pendingRaf: number | null = null;

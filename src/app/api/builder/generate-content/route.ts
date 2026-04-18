@@ -10,7 +10,7 @@
  *   body: { templateId: string, blocks: Array<{ id, type, props }> }
  *   response: { patches: Array<{ id, props: Record<string, unknown> }> }
  *
- * Non-streaming — the response is small (<2KB) and the client wants
+ * Non-streaming - the response is small (<2KB) and the client wants
  * the whole JSON before patching.
  */
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Rate limiting — content regen is cheap but still hits Claude.
+  // Rate limiting - content regen is cheap but still hits Claude.
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const limit = await checkRateLimit(ip);
   if (!limit.allowed) {
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Parse — be tolerant of markdown fences even though we asked for none
+    // Parse - be tolerant of markdown fences even though we asked for none
     let parsed: unknown;
     const raw = textBlock.text.trim();
     const cleaned = raw
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Filter to known block ids — safety against hallucinated ids
+    // Filter to known block ids - safety against hallucinated ids
     const blockIds = new Set((blocks as IncomingBlock[]).map((b) => b.id));
     const safePatches = result.patches.filter((p: unknown) => {
       if (typeof p !== "object" || p === null) return false;

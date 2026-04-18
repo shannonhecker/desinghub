@@ -25,7 +25,7 @@ export function GeminiSidebar({
 
   return (
     <aside className={`gemini-sidebar ${isOpen ? "gsb-open" : "gsb-closed"}`}>
-      {/* gsb-inner is always 260 px — the outer aside clips it to icon-rail width */}
+      {/* gsb-inner is always 260 px - the outer aside clips it to icon-rail width */}
       <div className="gsb-inner">
 
         {/* ── Close button ── */}
@@ -50,7 +50,7 @@ export function GeminiSidebar({
           <span className="gsb-btn-label">New chat</span>
         </button>
 
-        {/* ── Projects section — header + inline list ── */}
+        {/* ── Projects section - header + inline list ── */}
         <div className="gsb-section-label gsb-hide-when-closed">Projects</div>
 
         <div className="gsb-history-list gsb-hide-when-closed">

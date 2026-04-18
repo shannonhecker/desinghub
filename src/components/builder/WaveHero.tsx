@@ -9,7 +9,7 @@ import * as THREE from "three";
    Full-screen animated gradient with mouse-reactive distortion
    ══════════════════════════════════════════════════════ */
 
-/* ── Vertex shader — simple pass-through ── */
+/* ── Vertex shader - simple pass-through ── */
 const VERT = /* glsl */ `
 varying vec2 vUv;
 void main() {
@@ -17,7 +17,7 @@ void main() {
   vUv = uv;
 }`;
 
-/* ── Fragment shader — animated liquid gradient ── */
+/* ── Fragment shader - animated liquid gradient ── */
 const FRAG = /* glsl */ `
 uniform float uTime;
 uniform vec2 uResolution;
@@ -168,7 +168,7 @@ void main() {
 }`;
 
 /* ══════════════════════════════════════════════════════
-   TouchTexture — encodes mouse movement into a texture
+   TouchTexture - encodes mouse movement into a texture
    ══════════════════════════════════════════════════════ */
 class TouchTexture {
   size = 64;
@@ -249,7 +249,7 @@ class TouchTexture {
 }
 
 /* ══════════════════════════════════════════════════════
-   LiquidGradient — exported React component
+   LiquidGradient - exported React component
    ══════════════════════════════════════════════════════ */
 export function WaveScene() {
   const boxRef = useRef<HTMLDivElement>(null);

@@ -12,7 +12,7 @@ export const COMPS: ComponentDef[] = [
   { id: "dl-tokens", name: "Token Architecture", cat: "Foundations", desc: "CSS custom properties: --color*, --fontFamily*, --fontSize*, --spacing*." },
   { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Small 24px / Medium 32px / Large 40px. Height, padding, font adjust." },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing: simple, direct, human. Style rules for tense and voice." },
-  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios." },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios." },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance." },
   { id: "charts", name: "Charts & Dataviz", cat: "Components & Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap." },
   { id: "buttons", name: "Buttons", cat: "Components & Patterns", desc: "Primary, Default, Outline, Subtle variants in 3 sizes." },

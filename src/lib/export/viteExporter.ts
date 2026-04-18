@@ -109,7 +109,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 /* Minimal CSS for the simulated components used by reactExporter.
  * DS-agnostic token structure so the exported app runs out of the
  * box without needing the actual Salt / M3 / Fluent packages. */
-const STYLES_CSS = `/* ── Design tokens — swap these with real DS imports when ready ── */
+const STYLES_CSS = `/* ── Design tokens - swap these with real DS imports when ready ── */
 :root {
   --bg: #0b1120;
   --fg: #e7e2f7;
@@ -220,10 +220,10 @@ component.
 
 ## What's inside
 
-- \`src/App.tsx\` — your canvas, compiled to JSX
-- \`src/styles.css\` — DS-agnostic tokens + component primitives
-- \`vite.config.ts\` — Vite + React plugin
-- \`tsconfig.json\` — strict TypeScript
+- \`src/App.tsx\` - your canvas, compiled to JSX
+- \`src/styles.css\` - DS-agnostic tokens + component primitives
+- \`vite.config.ts\` - Vite + React plugin
+- \`tsconfig.json\` - strict TypeScript
 
 Happy building.
 `;
@@ -236,7 +236,7 @@ function appTsxSource(): string {
   return `import React from "react";\n\n${componentSource}\n`;
 }
 
-/** Safety caps — a generated Vite project should never exceed these
+/** Safety caps - a generated Vite project should never exceed these
  *  in practice, but hard limits keep a malicious canvas from producing
  *  a multi-megabyte shell script that crashes the user's editor. */
 const MAX_PROJECT_BYTES = 512 * 1024;  // 512KB cap on total script
@@ -244,15 +244,15 @@ const MAX_FILE_BYTES = 256 * 1024;     // 256KB per file
 
 /**
  * The heredoc uses a QUOTED delimiter (<<'EOF_N'), which means bash
- * performs NO variable, command, or arithmetic substitution inside —
+ * performs NO variable, command, or arithmetic substitution inside -
  * backticks, $(...), ${...}, etc. are literal text. The only way content
  * can break out of a quoted heredoc is if a line equals the delimiter
  * exactly. `uniqueDelim()` below guarantees the delimiter doesn't appear
  * in the file, so this function is effectively a defense-in-depth pass
- * plus a size cap — nothing else is needed for injection safety. */
+ * plus a size cap - nothing else is needed for injection safety. */
 function sanitizeForHeredoc(s: string): string {
   if (s.length > MAX_FILE_BYTES) {
-    // Truncate with a visible marker — far better than a broken project
+    // Truncate with a visible marker - far better than a broken project
     return s.slice(0, MAX_FILE_BYTES) + "\n/* ...truncated by Design Hub export (file exceeded size limit) ... */\n";
   }
   // Strip any NUL bytes (shouldn't appear but bash handles them oddly)
@@ -280,7 +280,7 @@ function buildProjectFiles(): ProjectFile[] {
 /** Build a unique heredoc delimiter for a given file's contents. */
 function uniqueDelim(contents: string, i: number): string {
   let d = `EOF_${i}`;
-  // Collision-avoidance — unlikely but cheap to check.
+  // Collision-avoidance - unlikely but cheap to check.
   while (contents.includes(`\n${d}\n`) || contents.startsWith(`${d}\n`) || contents.endsWith(`\n${d}`)) {
     d = `EOF_${i}_${Math.random().toString(36).slice(2, 6)}`;
   }
@@ -294,7 +294,7 @@ export function exportViteBootstrap(): string {
   const state = useBuilder.getState();
   const header = `#!/bin/sh
 # ─────────────────────────────────────────────────────────────────────
-# Design Hub — Vite project bootstrap
+# Design Hub - Vite project bootstrap
 # Generated: ${new Date().toISOString()}
 # Design system: ${state.designSystem}
 # Mode: ${state.mode}
@@ -334,7 +334,7 @@ echo "  ✔ ${f.path}"`;
   const provisional = header + fileSections;
   if (provisional.length > MAX_PROJECT_BYTES) {
     return `#!/bin/sh
-# Error — the exported project exceeded ${MAX_PROJECT_BYTES / 1024}KB.
+# Error - the exported project exceeded ${MAX_PROJECT_BYTES / 1024}KB.
 # This usually means the canvas has unusually large component content.
 # Trim your canvas and try again, or use the React / HTML export for
 # single-file output.

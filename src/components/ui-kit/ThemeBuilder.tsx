@@ -64,7 +64,7 @@ export function ThemeBuilder() {
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, color: t.fg }}>Theme Builder</h1>
           <p style={{ fontSize: 14, color: t.fg2, marginTop: 4 }}>
-            {sysInfo.name} — {overrideCount > 0 ? `${overrideCount} custom overrides` : "Base theme"}
+            {sysInfo.name} - {overrideCount > 0 ? `${overrideCount} custom overrides` : "Base theme"}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>

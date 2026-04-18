@@ -54,7 +54,7 @@ function getFirebaseInstances() {
 export interface ProjectSnapshot {
   messages: ChatMessage[];
   blocks: Block[];
-  /* Zone blocks — added v2 so auto-save can restore the full layout.
+  /* Zone blocks - added v2 so auto-save can restore the full layout.
    * Optional so older Firestore docs (pre-v2) still deserialize cleanly. */
   headerBlocks?: Block[];
   sidebarBlocks?: Block[];
@@ -65,7 +65,7 @@ export interface ProjectSnapshot {
   interfaceType: InterfaceType;
   selectedComponents: string[];
   colorOverrides: Record<string, string>;
-  /* Optional — the active template id so Regenerate-content knows
+  /* Optional - the active template id so Regenerate-content knows
    * which prompt to send after a session reload. */
   activeTemplateId?: string | null;
 }
@@ -148,7 +148,7 @@ export function useCloudStorage() {
    *    auto-saves update the same doc instead of creating duplicates.
    *
    *  When `refresh` is false (default true), skips the fetchProjects()
-   *  round-trip — useful for high-frequency auto-saves where re-fetching
+   *  round-trip - useful for high-frequency auto-saves where re-fetching
    *  the full list after every write is wasteful. */
   async function saveProject(
     name: string,

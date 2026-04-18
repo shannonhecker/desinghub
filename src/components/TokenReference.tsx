@@ -51,10 +51,10 @@ function extractTokens(theme: any, system: string): TokenEntry[] {
       "Foreground": ["fg", "fg2", "fg3", "fgDisabled"],
       "Accent": ["accent", "accentHover", "accentActive", "accentFg", "accentSurface", "accentSurfaceHover"],
       "Border": ["border", "borderMd", "borderStrong", "borderAccent"],
-      "Status — Danger": ["dangerBg", "dangerFg", "dangerBorder"],
-      "Status — Success": ["successBg", "successFg", "successBorder"],
-      "Status — Warning": ["warningBg", "warningFg", "warningBorder"],
-      "Status — Info": ["infoBg", "infoFg", "infoBorder"],
+      "Status - Danger": ["dangerBg", "dangerFg", "dangerBorder"],
+      "Status - Success": ["successBg", "successFg", "successBorder"],
+      "Status - Warning": ["warningBg", "warningFg", "warningBorder"],
+      "Status - Info": ["infoBg", "infoFg", "infoBorder"],
     };
     for (const [cat, keys] of Object.entries(cats))
       for (const key of keys)
@@ -152,7 +152,7 @@ export function TokenReference() {
         Token Reference
       </h2>
       <p style={{ fontSize: 13, color: fg3, marginBottom: 20 }}>
-        {sysInfo.name} — {tokens.length} tokens · {T.name || "Current theme"} · Contrast ratios against background ({bgToken})
+        {sysInfo.name} - {tokens.length} tokens · {T.name || "Current theme"} · Contrast ratios against background ({bgToken})
       </p>
 
       {/* Token grid */}

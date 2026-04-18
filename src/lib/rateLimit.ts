@@ -55,7 +55,7 @@ export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
     const count = (results?.[2] as number) ?? 0;
 
     if (count > MAX_REQUESTS) {
-      // Over limit — remove the request we just added
+      // Over limit - remove the request we just added
       await redis.zrem(key, requestId);
       // Find the oldest entry to calculate reset time
       const oldest = await redis.zrange(key, 0, 0, { withScores: true });

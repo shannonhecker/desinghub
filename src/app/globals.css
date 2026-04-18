@@ -18,7 +18,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ═══════════════════════════════════════════
-   Code Block — syntax highlighting tokens
+   Code Block - syntax highlighting tokens
    All colors via CSS custom properties
    ═══════════════════════════════════════════ */
 :root {
@@ -35,7 +35,7 @@ a { color: inherit; text-decoration: none; }
   --syn-btn-fg: rgba(255, 255, 255, 0.5);
 }
 
-/* Light mode syntax — WCAG 4.5:1+ on white */
+/* Light mode syntax - WCAG 4.5:1+ on white */
 .builder-light,
 .syn-light {
   --syn-bg: #f6f8fa;
@@ -101,4 +101,4 @@ a { color: inherit; text-decoration: none; }
 .syn-prop      { color: var(--syn-prop); }
 .syn-number    { color: var(--syn-number); }
 
-/* CodePanel layout classes removed — now uses inline DS theme styles */
+/* CodePanel layout classes removed - now uses inline DS theme styles */

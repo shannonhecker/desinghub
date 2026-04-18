@@ -6,7 +6,7 @@ import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 
 /* ══════════════════════════════════════════════════════════
-   SlashInserter — Notion-style quick component picker.
+   SlashInserter - Notion-style quick component picker.
 
    Trigger:
      - Press `/` anywhere while focus is NOT inside an editable
@@ -17,7 +17,7 @@ import { MiniPreview } from "./MiniPreview";
        keyboard-navigable list of components.
      - Arrow keys move selection, Enter inserts, Esc closes.
      - Selecting calls the same addBlockFromLibrary action used by
-       click-to-add in the panel — identical routing + side effects.
+       click-to-add in the panel - identical routing + side effects.
    ══════════════════════════════════════════════════════════ */
 
 function isEditableTarget(t: EventTarget | null): boolean {
@@ -52,7 +52,7 @@ export function SlashInserter() {
     setActiveIndex(0);
   }, [query]);
 
-  /* Global "/" hotkey — only when no editable element is focused.
+  /* Global "/" hotkey - only when no editable element is focused.
      Also handles Escape to close when open. */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

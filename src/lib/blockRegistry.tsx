@@ -4,9 +4,9 @@ import React from "react";
 import { useBuilder } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════════════════════
-   Block Registry — schema-driven single source of truth.
+   Block Registry - schema-driven single source of truth.
    Each block type declares its fields as data. A generic
-   SchemaFields component renders them — no hand-written
+   SchemaFields component renders them - no hand-written
    field components needed.
    ═══════════════════════════════════════════════════════════ */
 
@@ -47,7 +47,7 @@ function useBlockProps(blockId: string) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Field Schema — declarative field definitions
+   Field Schema - declarative field definitions
    ═══════════════════════════════════════════════════════════ */
 
 type FieldDef =
@@ -116,7 +116,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Block type definitions — data only, no hand-written components
+   Block type definitions - data only, no hand-written components
    ═══════════════════════════════════════════════════════════ */
 
 const STATUS_OPTIONS = [
@@ -323,7 +323,7 @@ const BLOCK_DEFS: BlockDef[] = [
 ];
 
 /* ═══════════════════════════════════════════════════════════
-   Lookup helpers — same public API as before
+   Lookup helpers - same public API as before
    ═══════════════════════════════════════════════════════════ */
 
 /** Library blueprints for drag-and-drop */
@@ -335,7 +335,7 @@ export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
   defaults: b.defaults,
 }));
 
-/** type → Fields component (for PropertiesInspector) — auto-generated from schema */
+/** type → Fields component (for PropertiesInspector) - auto-generated from schema */
 export const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> =
   Object.fromEntries(BLOCK_DEFS.map((b) => [
     b.type,

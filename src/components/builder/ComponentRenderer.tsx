@@ -53,7 +53,7 @@ interface ComponentRendererProps {
   [key: string]: unknown;
 }
 
-/* ── Zone-aware block lookup — searches all 4 zones ── */
+/* ── Zone-aware block lookup - searches all 4 zones ── */
 type ZoneId = "body" | "header" | "sidebar" | "footer";
 const ZONE_KEYS = ["blocks", "headerBlocks", "sidebarBlocks", "footerBlocks"] as const;
 const ZONE_IDS: ZoneId[] = ["body", "header", "sidebar", "footer"];
@@ -529,20 +529,20 @@ function TypographyBlock() {
       {/* Heading levels */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: t.fgTertiary, marginBottom: 2 }}>Headings</div>
-        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, color: t.fg }}>H1 — Page Title</div>
-        <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.3, color: t.fg }}>H2 — Section Heading</div>
-        <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: t.fg }}>H3 — Subsection</div>
-        <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, color: t.fg }}>H4 — Card Title</div>
+        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, color: t.fg }}>H1 - Page Title</div>
+        <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.3, color: t.fg }}>H2 - Section Heading</div>
+        <div style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: t.fg }}>H3 - Subsection</div>
+        <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, color: t.fg }}>H4 - Card Title</div>
       </div>
 
       {/* Body text */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: t.fgTertiary, marginBottom: 2 }}>Body Text</div>
         <div style={{ fontSize: 14, lineHeight: 1.6, color: t.fg }}>
-          Body 1 — Primary body text used for main content areas, article text, and descriptions. This is the default reading size.
+          Body 1 - Primary body text used for main content areas, article text, and descriptions. This is the default reading size.
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.5, color: t.fgSecondary }}>
-          Body 2 — Secondary body text for supporting content, card descriptions, and supplementary information.
+          Body 2 - Secondary body text for supporting content, card descriptions, and supplementary information.
         </div>
       </div>
 
@@ -550,9 +550,9 @@ function TypographyBlock() {
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: t.fgTertiary, marginBottom: 2 }}>Labels &amp; Captions</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "baseline" }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: t.fg }}>Label — Form Label</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: t.primary }}>Link — Inline link</span>
-          <span style={{ fontSize: 11, color: t.fgTertiary }}>Caption — Helper text</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: t.fg }}>Label - Form Label</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: t.primary }}>Link - Inline link</span>
+          <span style={{ fontSize: 11, color: t.fgTertiary }}>Caption - Helper text</span>
           <span style={{
             fontSize: 10,
             fontWeight: 700,
@@ -560,7 +560,7 @@ function TypographyBlock() {
             letterSpacing: 0.8,
             color: t.fgSecondary,
           }}>
-            Overline — Small label
+            Overline - Small label
           </span>
         </div>
       </div>
@@ -572,7 +572,7 @@ function TypographyBlock() {
         borderRadius: radius,
         padding: 16,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: t.fgTertiary, marginBottom: 8 }}>Preview — Mixed Usage</div>
+        <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: t.fgTertiary, marginBottom: 8 }}>Preview - Mixed Usage</div>
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: t.primary, marginBottom: 4 }}>Featured</div>
         <div style={{ fontSize: 16, fontWeight: 600, color: t.fg, marginBottom: 4 }}>Getting Started Guide</div>
         <div style={{ fontSize: 12, lineHeight: 1.5, color: t.fgSecondary, marginBottom: 8 }}>
@@ -1248,7 +1248,7 @@ function SimulatedBreadcrumbBlock({
 }: {
   system: DesignSystem;
 }) {
-  // TODO: SimulatedBreadcrumb doesn't accept path prop yet — wire when component is extended
+  // TODO: SimulatedBreadcrumb doesn't accept path prop yet - wire when component is extended
   return <SimulatedBreadcrumb system={system} />;
 }
 
@@ -1257,7 +1257,7 @@ function SimulatedAccordionBlock({
 }: {
   system: DesignSystem;
 }) {
-  // TODO: SimulatedAccordion doesn't accept title/content props yet — wire when component is extended
+  // TODO: SimulatedAccordion doesn't accept title/content props yet - wire when component is extended
   return <SimulatedAccordion system={system} />;
 }
 
@@ -1268,7 +1268,7 @@ function SimulatedDialogBlock({
 }: {
   system: DesignSystem;
 }) {
-  // TODO: SimulatedDialog doesn't accept title/message props yet — wire when component is extended
+  // TODO: SimulatedDialog doesn't accept title/message props yet - wire when component is extended
   return <SimulatedDialog system={system} />;
 }
 
@@ -1376,7 +1376,7 @@ function NavItemBlock({ blockId }: { blockId?: string }) {
   );
 }
 
-/* ── Batch 6 renderers — pass-through to SimulatedUI components ── */
+/* ── Batch 6 renderers - pass-through to SimulatedUI components ── */
 
 function SimulatedRadioGroupBlock({ system, ...props }: { system: DesignSystem; [k: string]: unknown }) {
   return <SimulatedRadioGroup system={system} label={props.label as string} optionsCsv={props.optionsCsv as string} defaultIndex={Number(props.defaultIndex ?? 0)} />;

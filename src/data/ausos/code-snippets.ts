@@ -399,7 +399,7 @@ const ausosTheme = themeQuartz.withParams({
     react: `{/* Horizontal */}
 <hr className="a-divider" />
 
-{/* Vertical — inside a flex row */}
+{/* Vertical - inside a flex row */}
 <div style={{ display: "flex", alignItems: "stretch" }}>
   <span>Left</span>
   <div className="a-divider-v" />
@@ -944,7 +944,7 @@ const colors = {
 <span class="material-symbols-outlined">search</span>`
   },
   "dl-typography": {
-    react: `// ausos type scale — Inter font
+    react: `// ausos type scale - Inter font
 const typeScale = {
   display:  { size: 48, weight: 300 },
   headline: { size: 22, weight: 600 },
@@ -1066,18 +1066,18 @@ const densities = {
   },
   "dl-content": {
     react: `// Content design principles
-// ✅ Concise — say more with less
-// ✅ Present tense — "Save changes" not "Changes will be saved"
-// ✅ Active voice — "Enter your name" not "Your name should be entered"
-// ✅ Sentence case — "Sign in" not "Sign In"
-// ✅ No jargon — "Something went wrong" not "Error 500"`,
+// ✅ Concise - say more with less
+// ✅ Present tense - "Save changes" not "Changes will be saved"
+// ✅ Active voice - "Enter your name" not "Your name should be entered"
+// ✅ Sentence case - "Sign in" not "Sign In"
+// ✅ No jargon - "Something went wrong" not "Error 500"`,
     html: `<!-- UX writing guidelines -->
 <!-- Button: "Save" not "Submit" -->
 <!-- Error: "Connection lost" not "ERR_NETWORK" -->
 <!-- Empty: "No results yet" not "null" -->`
   },
   tokens: {
-    react: `// Token reference — import and use
+    react: `// Token reference - import and use
 import { tokens } from "@ausos/core";
 
 // Color tokens
@@ -1102,7 +1102,7 @@ tokens.type.display;   // { size: 48, weight: 300 }`,
 </style>`
   },
   audit: {
-    react: `// Design audit — check your code for violations
+    react: `// Design audit - check your code for violations
 import { audit } from "@ausos/tools";
 
 const result = audit(myComponent);

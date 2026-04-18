@@ -1,4 +1,4 @@
-/** Canonical design system identifier — single source of truth for Salt/M3/Fluent/ausos */
+/** Canonical design system identifier - single source of truth for Salt/M3/Fluent/ausos */
 export type DesignSystemId = 'salt' | 'm3' | 'fluent' | 'ausos';
 
 /** Theme mode across all design systems */

@@ -71,7 +71,7 @@ const SAMPLE_MESSAGES = [
 ];
 
 /* ══════════════════════════════════════════════════════════
-   Device Controls — top bar with Desktop / Tablet / Mobile
+   Device Controls - top bar with Desktop / Tablet / Mobile
    ══════════════════════════════════════════════════════════ */
 function DeviceControls() {
   const deviceMode = useBuilder((s) => s.deviceMode);
@@ -142,7 +142,7 @@ function DeviceControls() {
         ))}
       </div>
 
-      {/* DS Switcher — center */}
+      {/* DS Switcher - center */}
       <div className="preview-toolbar-group" style={{ flex: 1, justifyContent: "center" }}>
         {dsSystems.map((s) => (
           <button
@@ -173,7 +173,7 @@ function DeviceControls() {
         <span>Refresh</span>
       </button>
 
-      {/* Pop out — opens preview in its own window */}
+      {/* Pop out - opens preview in its own window */}
       <button className="bp-popout-btn" onClick={handlePopOut} title="Pop out preview">
         <span className="material-symbols-outlined" style={{ fontSize: 15 }}>open_in_new</span>
       </button>
@@ -182,7 +182,7 @@ function DeviceControls() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Dashboard Header — sticky top bar inside device frame
+   Dashboard Header - sticky top bar inside device frame
    Driven by headerBlocks from store; labels are inline-editable
    ══════════════════════════════════════════════════════════ */
 function DashboardHeader({ compact }: { compact: boolean }) {
@@ -282,7 +282,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Dashboard Sidebar Resize Handle — drag to resize the nav sidebar
+   Dashboard Sidebar Resize Handle - drag to resize the nav sidebar
    ══════════════════════════════════════════════════════════ */
 function DashboardSidebarResizeHandle({
   width,
@@ -331,7 +331,7 @@ function DashboardSidebarResizeHandle({
 }
 
 /* ══════════════════════════════════════════════════════════
-   Dashboard Sidebar — collapsible nav
+   Dashboard Sidebar - collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
    ══════════════════════════════════════════════════════════ */
 function DashboardSidebar({
@@ -462,7 +462,7 @@ function DashboardSidebar({
 }
 
 /* ══════════════════════════════════════════════════════════
-   Default Chat — shown when canvas has no blocks
+   Default Chat - shown when canvas has no blocks
    ══════════════════════════════════════════════════════════ */
 function DefaultChatArea({ messageKey }: { messageKey: number }) {
   return (
@@ -570,7 +570,7 @@ function DashboardFooter() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Preview Toolbar — DS switcher + density + canvas actions
+   Preview Toolbar - DS switcher + density + canvas actions
    Consolidated: removed redundant Add button, repositioned
    code toggle next to primary builder controls.
    ══════════════════════════════════════════════════════════ */
@@ -673,7 +673,7 @@ function PreviewToolbar() {
         </button>
       </div>
 
-      {/* Compare DS — headline moat feature */}
+      {/* Compare DS - headline moat feature */}
       <div className="preview-toolbar-group">
         <button
           className={`preview-toolbar-btn preview-toolbar-compare${compareMode ? " preview-toolbar-btn-active" : ""}`}
@@ -705,7 +705,7 @@ function PreviewToolbar() {
         ))}
       </div>
 
-      {/* Canvas Actions — code toggle, library toggle, download, save */}
+      {/* Canvas Actions - code toggle, library toggle, download, save */}
       <div className="preview-toolbar-group">
         <button
           className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
@@ -726,7 +726,7 @@ function PreviewToolbar() {
           onClick={handleShare}
           title={
             shareState === "too-long"
-              ? "Canvas too large to share as a link — use Download instead"
+              ? "Canvas too large to share as a link - use Download instead"
               : shareState === "error"
               ? "Clipboard unavailable"
               : "Copy a shareable preview link"
@@ -747,7 +747,7 @@ function PreviewToolbar() {
             {downloading ? "hourglass_top" : "download"}
           </span>
         </button>
-        {/* Save button removed — auto-save handles persistence now.
+        {/* Save button removed - auto-save handles persistence now.
             The top-bar SaveIndicator shows save state. */}
       </div>
     </div>
@@ -755,7 +755,7 @@ function PreviewToolbar() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   CanvasDndProvider — shared DnD context wrapping both the
+   CanvasDndProvider - shared DnD context wrapping both the
    canvas (drop target) and the ComponentLibrary (drag source)
    so drag-and-drop works across the layout boundary.
    ══════════════════════════════════════════════════════════ */
@@ -961,7 +961,7 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
 
-      {/* Drag overlay — ghost preview while dragging from library */}
+      {/* Drag overlay - ghost preview while dragging from library */}
       <DragOverlay dropAnimation={null}>
         {activeBlueprintLabel ? (
           <div className="lib-drag-overlay">
@@ -977,7 +977,7 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   PreviewSidePanel — the main exported panel for BuilderApp
+   PreviewSidePanel - the main exported panel for BuilderApp
    Layout: [ DeviceControls ] [ Toolbar ] [ Viewport | ComponentSidebar ]
    DndContext wraps both the viewport and the right sidebar
    so dragging from the library onto the canvas works.
@@ -1066,13 +1066,13 @@ export function PreviewSidePanel() {
 
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
-      {/* Device controls — always visible */}
+      {/* Device controls - always visible */}
       <DeviceControls />
 
-      {/* Toolbar — always visible */}
+      {/* Toolbar - always visible */}
       <PreviewToolbar />
 
-      {/* Main builder area — DndContext wraps viewport + right sidebar */}
+      {/* Main builder area - DndContext wraps viewport + right sidebar */}
       <CanvasDndProvider>
         <div
           className="preview-builder-body"
@@ -1082,20 +1082,20 @@ export function PreviewSidePanel() {
           {/* Center: Viewport */}
           <div className="bp-viewport-wrapper">
             {compareMode ? (
-              /* Compare DS mode — 2x2 grid covering the full viewport */
+              /* Compare DS mode - 2x2 grid covering the full viewport */
               <CompareView />
             ) : (
-              /* Device Frame — animated width */
+              /* Device Frame - animated width */
               <motion.div
                 className="bp-device-frame"
                 animate={{ width: frameWidth, maxHeight: preset.height }}
                 transition={{ type: "spring", stiffness: 260, damping: 28 }}
               >
-                {/* Code view — covers the entire dashboard area */}
+                {/* Code view - covers the entire dashboard area */}
                 {isCodeView ? (
                   <CodeViewer blocks={blocks} />
                 ) : (
-                  /* SaaS Dashboard layout — scoped to the selected design system */
+                  /* SaaS Dashboard layout - scoped to the selected design system */
                   <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
                     <DashboardHeader compact={isMobile} />
 
@@ -1156,7 +1156,7 @@ export function PreviewSidePanel() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Standalone Preview — for pop-out window
+   Standalone Preview - for pop-out window
    ══════════════════════════════════════════════════════════ */
 export function StandalonePreview() {
   const designSystem = useBuilder((s) => s.designSystem);
@@ -1194,7 +1194,7 @@ export function StandalonePreview() {
       {/* DS / density toolbar */}
       <PreviewToolbar />
 
-      {/* Full dashboard canvas — DndContext wraps viewport + sidebar */}
+      {/* Full dashboard canvas - DndContext wraps viewport + sidebar */}
       <CanvasDndProvider>
         <div className="preview-builder-body">
           <div className="standalone-preview-canvas">

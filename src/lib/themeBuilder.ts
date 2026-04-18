@@ -1,5 +1,5 @@
 /**
- * Theme builder utilities — merge custom tokens with base themes,
+ * Theme builder utilities - merge custom tokens with base themes,
  * validate contrast ratios, and serialize/deserialize theme JSON.
  */
 

@@ -22,7 +22,7 @@ const DS_COLOR: Record<DesignSystem, string> = {
 };
 
 /* ══════════════════════════════════════════════════════════
-   SharedPreview — read-only renderer for /preview/share/[hash]
+   SharedPreview - read-only renderer for /preview/share/[hash]
    Shows a banner with share metadata, the live DS switcher (so
    viewers can preview the same layout across all four systems),
    and the four zones rendered via ComponentRenderer.
@@ -67,7 +67,7 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
           <span style={{ color: "var(--b-fg2)" }}>Design Hub</span>
         </div>
 
-        {/* DS switcher — viewers can compare across all four systems */}
+        {/* DS switcher - viewers can compare across all four systems */}
         <div className="shared-preview-ds-row" role="group" aria-label="Choose a design system to preview">
           {(Object.keys(DS_LABEL) as DesignSystem[]).map((ds) => (
             <button
@@ -121,7 +121,7 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
         </div>
       </header>
 
-      {/* Canvas — reuses the same bp-dashboard CSS classes so the themed
+      {/* Canvas - reuses the same bp-dashboard CSS classes so the themed
           styling flows identically to the Builder preview. */}
       <div className="shared-preview-body">
         <div className={`bp-dashboard preview-${activeDs} density-${density}`}>

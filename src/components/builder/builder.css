@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
-   Design Hub AI Builder — Minimal Chatbot with Animated Orb
+   Design Hub AI Builder - Minimal Chatbot with Animated Orb
    ═══════════════════════════════════════════════════════════ */
 
 /* ── VARIABLES ── */
 :root {
-  /* Builder chrome — aligned with ausos DS dark tokens */
+  /* Builder chrome - aligned with ausos DS dark tokens */
   --b-bg: #0b1120;
   --b-bg2: #0e1428;
   --b-bg3: #121830;
@@ -139,7 +139,7 @@
 }
 
 /* ══════════════════════════════════════════
-   Design System Token Definitions — Dark
+   Design System Token Definitions - Dark
    ══════════════════════════════════════════ */
 :root {
   /* ── Salt DS (Dark) ── */
@@ -295,7 +295,7 @@
   animation-duration: 17s;
   animation-delay: -8s;
 }
-/* Blob 3: gold → rose (center) — uses main-content::before */
+/* Blob 3: gold → rose (center) - uses main-content::before */
 .main-content::before {
   content: "";
   position: absolute;
@@ -497,7 +497,7 @@
    Gemini-style collapsible sidebar
    ══════════════════════════════════════════ */
 
-/* Sidebar — in flex flow, slides in by animating margin-left (pushes content) */
+/* Sidebar - in flex flow, slides in by animating margin-left (pushes content) */
 .gemini-sidebar {
   position: relative;
   z-index: 10;
@@ -523,7 +523,7 @@
   margin-left: 0;
 }
 
-/* Inner panel: fixed 260 px layout container — no background here */
+/* Inner panel: fixed 260 px layout container - no background here */
 .gsb-inner {
   width: 260px;
   height: 100%;
@@ -543,7 +543,7 @@
   height: 52px; /* matches top-bar height */
 }
 
-/* Hamburger — always the leftmost element so it stays visible in icon rail */
+/* Hamburger - always the leftmost element so it stays visible in icon rail */
 .gsb-hamburger {
   flex-shrink: 0;
   width: 36px;
@@ -771,7 +771,7 @@
   display: none;
 }
 
-/* New chat: plain icon — no glass box in the rail */
+/* New chat: plain icon - no glass box in the rail */
 .gemini-sidebar.gsb-closed .gsb-new-chat-btn {
   margin: 2px 7px 4px;
   padding: 9px;
@@ -792,7 +792,7 @@
   -webkit-backdrop-filter: blur(24px);
 }
 
-/* Light-mode sidebar text — darken all text/icons */
+/* Light-mode sidebar text - darken all text/icons */
 .builder-light .gsb-new-chat-btn {
   color: rgba(0, 0, 0, 0.75);
 }
@@ -839,7 +839,7 @@
   z-index: 1;
 }
 
-/* ── TOP BAR — transparent by default, glass on scroll ── */
+/* ── TOP BAR - transparent by default, glass on scroll ── */
 .top-bar {
   display: flex;
   align-items: center;
@@ -961,7 +961,7 @@
   justify-content: center;
 }
 
-/* Sidebar toggle — plain white icon, no border or background */
+/* Sidebar toggle - plain white icon, no border or background */
 .top-bar-btn.sidebar-toggle-btn,
 .top-bar-btn.sidebar-toggle-btn:hover {
   background: none;
@@ -981,7 +981,7 @@
 .top-bar-btn.sidebar-toggle-btn:hover {
   color: #ffffff;
 }
-/* Sidebar open — collapse button so logo slides into its place */
+/* Sidebar open - collapse button so logo slides into its place */
 .top-bar-btn.sidebar-toggle-btn.sb-hidden {
   opacity: 0;
   width: 0;
@@ -1063,7 +1063,7 @@
 }
 
 /* ── CHAT COLLAPSE / EXPAND TOGGLE BUTTON (Liquid Glass) ── */
-/* Legacy chat-collapse-btn — moved to preview-toolbar-collapse-btn */
+/* Legacy chat-collapse-btn - moved to preview-toolbar-collapse-btn */
 .chat-collapse-btn { display: none; }
 
 /* ── UNIFIED CHAT LAYOUT ── */
@@ -1075,7 +1075,7 @@
   min-width: 0;
 }
 
-/* Hero (initial) state — center the entire group vertically */
+/* Hero (initial) state - center the entire group vertically */
 .chat-layout.chat-hero-state {
   justify-content: center;
 }
@@ -1140,7 +1140,7 @@
 }
 .builder-light .hero-subtitle { color: rgba(0, 0, 0, 0.4); }
 
-/* ── Pattern cards grid — zero state (glassmorphism) ── */
+/* ── Pattern cards grid - zero state (glassmorphism) ── */
 .pattern-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1214,7 +1214,7 @@
 .builder-light .pattern-card-desc { color: rgba(0, 0, 0, 0.4); }
 
 /* ══════════════════════════════════════════════════════════
-   Compact pattern cards — the chat-first empty state (Phase D).
+   Compact pattern cards - the chat-first empty state (Phase D).
    Four cards in a tight horizontal row, no SVG wireframes on
    the card (those moved to the Browse Templates drawer).
    Icon + label + one-line desc only. Each card is ~100px tall.
@@ -1258,10 +1258,10 @@
   color: rgba(0, 0, 0, 0.5);
 }
 
-/* ── Medium-thumb variant — Phase E ──
+/* ── Medium-thumb variant - Phase E ──
    Pattern card with an SVG wireframe thumb on top + icon/label/desc
    below. Thumb is ~160×90 (16:9 aspect) so the full card lands at
-   ~165px tall — a middle ground between Phase C (too big) and Phase
+   ~165px tall - a middle ground between Phase C (too big) and Phase
    D text-only (too generic). */
 .pattern-card-thumb {
   display: flex;
@@ -1303,7 +1303,7 @@
   color: rgba(0, 0, 0, 0.7);
 }
 
-/* Browse templates link — understated, below the compact cards */
+/* Browse templates link - understated, below the compact cards */
 .hero-browse-link {
   display: inline-flex;
   align-items: center;
@@ -1331,7 +1331,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Templates drawer — opened from the hero "Browse templates"
+   Templates drawer - opened from the hero "Browse templates"
    link; shows the full SVG-wireframe gallery so users who
    want visual context can see it on demand without it
    dominating the empty state.
@@ -1452,7 +1452,7 @@
 
 .templates-drawer-card .pattern-card-preview {
   border-bottom: 1px solid var(--b-border2);
-  /* preview already has aspect-ratio from Phase C CSS — reused */
+  /* preview already has aspect-ratio from Phase C CSS - reused */
 }
 
 .templates-drawer-card-text {
@@ -1504,7 +1504,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Sessions drawer — left slide-in session browser.
+   Sessions drawer - left slide-in session browser.
    Mirrors TemplatesDrawer but on the left, with session rows
    instead of template cards.
    ══════════════════════════════════════════════════════════ */
@@ -1775,7 +1775,7 @@
 .builder-light .sessions-row.is-active { background: rgba(126, 107, 196, 0.08); }
 
 /* ══════════════════════════════════════════════════════════
-   Save indicator — calm badge in the top bar showing auto-save
+   Save indicator - calm badge in the top bar showing auto-save
    state. Always-visible once a session has started. Ticks
    every 15s.
    ══════════════════════════════════════════════════════════ */
@@ -1862,7 +1862,7 @@
   border-color: rgba(248, 113, 113, 0.25);
 }
 
-/* Quick-reply DS chips — rendered inside an AI message when awaiting
+/* Quick-reply DS chips - rendered inside an AI message when awaiting
    a design-system pick after the first turn. */
 .ds-reply-chips {
   margin-top: 8px;
@@ -2066,7 +2066,7 @@
 .builder-light .generating-progress { background: rgba(0,0,0,0.06); }
 .builder-light .generating-text { color: rgba(0,0,0,0.3); }
 
-/* Messages area — same max-width as input */
+/* Messages area - same max-width as input */
 .messages-area {
   width: 100%;
   max-width: 680px;
@@ -2076,7 +2076,7 @@
   padding-bottom: 16px;
 }
 
-/* ── PROMPT BUBBLES — Gemini dark pills ── */
+/* ── PROMPT BUBBLES - Gemini dark pills ── */
 .prompt-bubbles {
   display: flex;
   flex-wrap: wrap;
@@ -2145,7 +2145,7 @@
   color: rgba(0, 0, 0, 0.85);
 }
 
-/* Accent chip — for distinguishing the Regenerate-data affordance
+/* Accent chip - for distinguishing the Regenerate-data affordance
    from the rest of the refinement chips. */
 .prompt-bubble.prompt-bubble-accent {
   background: rgba(126, 107, 196, 0.14);
@@ -2179,7 +2179,7 @@
   margin-bottom: 28px;
 }
 
-/* Generate preview CTA (Liquid Glass — subtle) */
+/* Generate preview CTA (Liquid Glass - subtle) */
 .generate-btn {
   display: inline-flex;
   align-items: center;
@@ -2332,7 +2332,7 @@
   letter-spacing: 0.01em;
 }
 
-/* Mic button — dark subtle circle, muted icon */
+/* Mic button - dark subtle circle, muted icon */
 .mic-btn {
   width: 34px;
   height: 34px;
@@ -2364,7 +2364,7 @@
   50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
 
-/* ── SEND BUTTON — Gemini-style, no background ── */
+/* ── SEND BUTTON - Gemini-style, no background ── */
 .send-btn {
   width: 34px;
   height: 34px;
@@ -2414,7 +2414,7 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ── CHAT MESSAGES — Gemini-style clean layout ── */
+/* ── CHAT MESSAGES - Gemini-style clean layout ── */
 .chat-msg {
   max-width: 85%;
   padding: 12px 0;
@@ -2505,7 +2505,7 @@
   30% { opacity: 1; transform: scale(1); }
 }
 
-/* Chat bottom input — pinned, centered */
+/* Chat bottom input - pinned, centered */
 .chat-input-bar {
   padding: 24px 32px;
   flex-shrink: 0;
@@ -2833,7 +2833,7 @@
   border-color: rgba(22, 163, 74, 0.40);
 }
 
-/* ── Page-level copyright — in-flow inside .main-content, never overlaps ── */
+/* ── Page-level copyright - in-flow inside .main-content, never overlaps ── */
 .builder-copyright-fixed {
   flex-shrink: 0;
   text-align: center;
@@ -3346,7 +3346,7 @@
 }
 .export-generate-btn:hover { opacity: 0.9; }
 
-/* Helper note — appears under the Generate button for the Vite format */
+/* Helper note - appears under the Generate button for the Vite format */
 .export-helper-note {
   display: flex;
   align-items: flex-start;
@@ -3627,7 +3627,7 @@
 .sidebar-body::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Avatar — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Avatar - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared avatar base ── */
@@ -3735,7 +3735,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Dropdown — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Dropdown - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared dropdown base ── */
@@ -3963,7 +3963,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated DataTable — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated DataTable - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared table base ── */
@@ -3984,7 +3984,7 @@
 [class*="-td-name"] { font-weight: 600; }
 [class*="-td-muted"] { opacity: 0.6; }
 
-/* Status badges — shared */
+/* Status badges - shared */
 [class*="-status-badge"] {
   display: inline-block;
   padding: 2px 8px;
@@ -4106,7 +4106,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated DatePicker — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated DatePicker - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared datepicker base ── */
@@ -4278,7 +4278,7 @@
   font-weight: 600;
 }
 
-/* ── Dark mode overrides — Table + DatePicker ── */
+/* ── Dark mode overrides - Table + DatePicker ── */
 .builder-light .s-table-container { border-color: var(--salt-separable-borderColor); }
 .builder-light .s-th {
   background: var(--salt-container-secondary-background);
@@ -4409,7 +4409,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Dialog — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Dialog - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared overlay ── */
@@ -4533,7 +4533,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Tabs — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Tabs - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared tabs base ── */
@@ -4653,7 +4653,7 @@
   color: var(--colorNeutralForeground2);
 }
 
-/* ── Dark mode overrides — Dialog + Tabs + Buttons ── */
+/* ── Dark mode overrides - Dialog + Tabs + Buttons ── */
 .builder-light .s-dialog {
   background: var(--salt-container-primary-background);
   border-color: var(--salt-overlayable-borderColor);
@@ -4702,7 +4702,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Input — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Input - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared input base ── */
@@ -4823,7 +4823,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Checkbox — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Checkbox - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared checkbox base ── */
@@ -4900,7 +4900,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Simulated Switch — Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
+   Simulated Switch - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Shared switch base ── */
@@ -4938,7 +4938,7 @@
 }
 .s-switch-on .s-switch-thumb { left: 18px; }
 
-/* ── Material 3 Switch — larger track, icon-ready thumb ── */
+/* ── Material 3 Switch - larger track, icon-ready thumb ── */
 .m3-switch-container { font-family: 'Roboto', sans-serif; font-size: 14px; color: var(--md-sys-color-on-surface); }
 .m3-switch-track {
   width: 52px; height: 32px;
@@ -4963,7 +4963,7 @@
   background: var(--md-sys-color-on-primary);
 }
 
-/* ── Fluent 2 Switch — pill track ── */
+/* ── Fluent 2 Switch - pill track ── */
 .f-switch-container { font-family: 'Segoe UI', -apple-system, sans-serif; font-size: 14px; color: var(--colorNeutralForeground1); }
 .f-switch-track {
   width: 40px; height: 20px;
@@ -4978,7 +4978,7 @@
 }
 .f-switch-on .f-switch-thumb { left: 23px; }
 
-/* ── Dark mode overrides — Input, Checkbox, Switch ── */
+/* ── Dark mode overrides - Input, Checkbox, Switch ── */
 .builder-light .s-input {
   background: var(--salt-editable-primary-background);
   border-color: var(--salt-editable-borderColor);
@@ -5268,7 +5268,7 @@
 
 
 /* ════════════════════════════════════════════
-   ALERT / PROGRESS / TOOLTIP — Light Mode
+   ALERT / PROGRESS / TOOLTIP - Light Mode
    ════════════════════════════════════════════ */
 
 /* Salt light */
@@ -5335,7 +5335,7 @@
 }
 
 /* ══════════════════════════════════════════
-   SimulatedTitle — per design system
+   SimulatedTitle - per design system
    ══════════════════════════════════════════ */
 
 /* ── Shared reset ── */
@@ -5367,7 +5367,7 @@
 .f-title-h4 { font-size: 14px; font-weight: 600; line-height: 1.4; }
 
 /* ══════════════════════════════════════════
-   Breadcrumb — Salt DS / M3 / Fluent 2
+   Breadcrumb - Salt DS / M3 / Fluent 2
    ══════════════════════════════════════════ */
 
 /* ── Shared reset ── */
@@ -5448,7 +5448,7 @@
 }
 
 /* ══════════════════════════════════════════
-   Accordion — Salt DS / M3 / Fluent 2
+   Accordion - Salt DS / M3 / Fluent 2
    ══════════════════════════════════════════ */
 
 /* ── Salt DS ── */
@@ -5890,7 +5890,7 @@
 }
 
 /* ════════════��═════════════════════════════
-   LIQUID GLASS — @supports Fallback
+   LIQUID GLASS - @supports Fallback
    ══════════════════════════════════════════ */
 @supports not (backdrop-filter: blur(1px)) {
   .top-bar,
@@ -5914,7 +5914,7 @@
 }
 
 /* ════════════════════════════════���═════════
-   LIQUID GLASS — prefers-reduced-motion
+   LIQUID GLASS - prefers-reduced-motion
    ══════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   .hero-blob,
@@ -6089,7 +6089,7 @@
 }
 
 /* ════════════════════════════════════════════
-   LIQUID GLASS — Focus Visible
+   LIQUID GLASS - Focus Visible
    ══════════════════════════════════════════ */
 :focus-visible {
   outline: 2px solid var(--accent-aqua);
@@ -6115,7 +6115,7 @@
 }
 
 /* ══════════════════════════════════════════
-   COMPONENT LIBRARY — Drag-to-add panel
+   COMPONENT LIBRARY - Drag-to-add panel
    ══════════════════════════════════════════ */
 
 /* ── Builder body: viewport + right component sidebar ── */
@@ -6198,7 +6198,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Library browser — search + zone groups (Phase C.2 drag-to-zones)
+   Library browser - search + zone groups (Phase C.2 drag-to-zones)
    ══════════════════════════════════════════════════════════ */
 .lib-search {
   position: relative;
@@ -6591,6 +6591,11 @@
   background: rgba(255, 255, 255, 0.025);
   border-radius: 10px;
   overflow: hidden;
+  /* Parent .lib-body is a flex-column; ensure this element contributes
+     its own content height and doesn't get flex-shrunk to 0 when the
+     panel runs short on vertical space. */
+  flex-shrink: 0;
+  height: auto;
 }
 .builder-light .lib-templates {
   border-color: rgba(0, 0, 0, 0.06);
@@ -6821,7 +6826,7 @@
   white-space: nowrap;
 }
 
-/* Preview canvas root — uses only design system tokens */
+/* Preview canvas root - uses only design system tokens */
 .preview-canvas-root {
   background: var(--ds-bg);
   color: var(--ds-fg);
@@ -6857,7 +6862,7 @@
   --density-btn-padding: 12px 24px;
   --density-card-padding: 20px;
 }
-/* Touch: 44px base — finger-friendly, most spacious */
+/* Touch: 44px base - finger-friendly, most spacious */
 .density-touch {
   --density-padding: 28px;
   --density-font-size: 14px;
@@ -6941,7 +6946,7 @@
   background: var(--ds-primary-hover);
 }
 
-/* Selected block highlight — uses DS primary token */
+/* Selected block highlight - uses DS primary token */
 .canvas-block.is-selected {
   outline: 2px solid var(--ds-primary);
   outline-offset: 2px;
@@ -6996,7 +7001,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   BuilderPreview — Live Preview System
+   BuilderPreview - Live Preview System
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Root ── */
@@ -7107,7 +7112,7 @@
   border-color: var(--b-fg3);
 }
 
-/* ── Viewport Wrapper — centering stage ── */
+/* ── Viewport Wrapper - centering stage ── */
 .bp-viewport-wrapper {
   flex: 1;
   display: flex;
@@ -7119,7 +7124,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Compare DS mode — 2x2 grid of read-only mini canvases,
+   Compare DS mode - 2x2 grid of read-only mini canvases,
    one per design system. The mini canvases reuse the live
    block state; only the DS theme (via preview-${ds} class)
    differs between quadrants.
@@ -7303,7 +7308,7 @@
 }
 .builder-light .compare-mini-empty { color: rgba(0, 0, 0, 0.4); }
 
-/* Toolbar Compare button — pill with label, emphasizing the moat */
+/* Toolbar Compare button - pill with label, emphasizing the moat */
 .preview-toolbar-compare {
   padding-right: 12px !important;
   gap: 6px;
@@ -7315,7 +7320,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Shared preview (/preview/share/[hash]) — full-page read-only
+   Shared preview (/preview/share/[hash]) - full-page read-only
    ══════════════════════════════════════════════════════════ */
 .shared-preview {
   min-height: 100vh;
@@ -7524,7 +7529,7 @@
   letter-spacing: 0.03em;
 }
 
-/* ── Body — sidebar + main ── */
+/* ── Body - sidebar + main ── */
 .bp-body {
   flex: 1;
   display: flex;
@@ -7789,7 +7794,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   LiquidHero — Liquid Morphing Orb + Hero + Device Preview
+   LiquidHero - Liquid Morphing Orb + Hero + Device Preview
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Page shell ── */
@@ -8445,11 +8450,11 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   BUILDER RESPONSIVE — Mobile & Tablet Breakpoints
+   BUILDER RESPONSIVE - Mobile & Tablet Breakpoints
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Mobile sidebar backdrop ── */
-/* Hidden on desktop — shown only via media query below */
+/* Hidden on desktop - shown only via media query below */
 .sidebar-backdrop {
   display: none;
 }
@@ -8464,17 +8469,17 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   Mobile (≤ 767px) — full overhaul
+   Mobile (≤ 767px) - full overhaul
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
 
   /* ── Sidebar: fixed overlay instead of push layout ── */
-  /* No backdrop needed — sidebar pushes content */
+  /* No backdrop needed - sidebar pushes content */
   .sidebar-backdrop {
     display: none;
   }
 
-  /* Sidebar: push layout on mobile too — narrower width */
+  /* Sidebar: push layout on mobile too - narrower width */
   .gemini-sidebar {
     width: 220px;
     margin-left: -220px;
@@ -8519,7 +8524,7 @@
     width: 100% !important;
   }
 
-  /* Hide drag resize handles — not applicable in column layout */
+  /* Hide drag resize handles - not applicable in column layout */
   .resize-handle { display: none !important; }
   .comp-resize-handle { display: none !important; }
   .bp-sidebar-resize-handle { display: none !important; }
@@ -8532,7 +8537,7 @@
     padding: 6px 8px;
     gap: 0;
   }
-  /* "UI Kit" text and "Preview" text hide — keep only icon */
+  /* "UI Kit" text and "Preview" text hide - keep only icon */
   .top-bar-btn:not(.icon-only) .top-bar-btn-label,
   .top-bar-btn:not(.icon-only):not(.preview-toggle-btn) > :not(.material-symbols-outlined) {
     display: none;
@@ -8623,7 +8628,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedCard — three-DS variant
+   SimulatedCard - three-DS variant
    ═══════════════════════════════════════════════════════════ */
 
 /* Shared base */
@@ -8658,12 +8663,12 @@
   margin: 0;
 }
 
-/* Salt DS card — bordered/elevated feel */
+/* Salt DS card - bordered/elevated feel */
 .s-sim-card {
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
-/* M3 card — surface container tonal */
+/* M3 card - surface container tonal */
 .m3-sim-card {
   background: var(--md-sys-color-surface-container, var(--ds-surface));
   border-color: var(--md-sys-color-outline-variant, var(--ds-border));
@@ -8671,7 +8676,7 @@
 }
 .m3-sim-card-header { padding: 14px 16px 8px; }
 
-/* Fluent 2 card — neutral flat */
+/* Fluent 2 card - neutral flat */
 .f-sim-card {
   border-radius: 8px;
   border-color: var(--colorNeutralStroke2, var(--ds-border));
@@ -8679,7 +8684,7 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedBadge — three-DS variant
+   SimulatedBadge - three-DS variant
    ═══════════════════════════════════════════════════════════ */
 
 /* Shared base */
@@ -8695,7 +8700,7 @@
   font-family: var(--ds-font);
 }
 
-/* Status palette — resolved via DS surface */
+/* Status palette - resolved via DS surface */
 [class*="-sim-badge-default"] {
   background: var(--ds-hover);
   color: var(--ds-fg-secondary);
@@ -8730,10 +8735,10 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedChatMessage — three-DS variant
+   SimulatedChatMessage - three-DS variant
    ═══════════════════════════════════════════════════════════ */
 
-/* Shared wrapper — flex row, gap between avatar and bubble */
+/* Shared wrapper - flex row, gap between avatar and bubble */
 [class$="-chat-wrapper"] {
   display: flex;
   align-items: flex-end;
@@ -8760,7 +8765,7 @@
   color: var(--ds-on-primary, #fff);
 }
 
-/* User avatar — slightly muted */
+/* User avatar - slightly muted */
 [class$="-avatar-user"] {
   background: var(--ds-surface);
   color: var(--ds-fg-secondary);
@@ -8794,21 +8799,21 @@
 .s-chat-user   { border-bottom-right-radius: 2px; }
 .s-chat-system { border-bottom-left-radius: 2px; }
 
-/* M3 tweaks — expressive shape */
+/* M3 tweaks - expressive shape */
 .m3-chat-user   { border-bottom-right-radius: 2px; }
 .m3-chat-system {
   background: var(--md-sys-color-surface-container, var(--ds-surface));
   border-bottom-left-radius: 2px;
 }
 
-/* Fluent tweaks — square corners */
+/* Fluent tweaks - square corners */
 .f-chat-bubble { border-radius: 6px; }
 .f-chat-user   { border-bottom-right-radius: 0; }
 .f-chat-system { border-bottom-left-radius: 0; }
 
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedChart — three-DS bar chart
+   SimulatedChart - three-DS bar chart
    ═══════════════════════════════════════════════════════════ */
 
 [class$="-chart-container"] {
@@ -8863,13 +8868,13 @@
   text-align: center;
 }
 
-/* Salt DS — squared bar base */
+/* Salt DS - squared bar base */
 .s-chart-bar { border-radius: 2px 2px 0 0; }
 
-/* M3 — rounded expressive bars */
+/* M3 - rounded expressive bars */
 .m3-chart-bar { border-radius: 6px 6px 0 0; }
 
-/* Fluent — subtle fill tint on hover */
+/* Fluent - subtle fill tint on hover */
 .f-chart-bar {
   border-radius: 3px 3px 0 0;
   opacity: 0.9;
@@ -8877,7 +8882,7 @@
 .f-chart-column:hover .f-chart-bar { opacity: 1; }
 
 /* ══════════════════════════════════════════════════════════
-   CODE VIEW — copy button
+   CODE VIEW - copy button
    ══════════════════════════════════════════════════════════ */
 .canvas-code-copy-btn {
   display: inline-flex;
@@ -8902,10 +8907,10 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   ZONE EDITING — inline editable text inside header / sidebar / footer
+   ZONE EDITING - inline editable text inside header / sidebar / footer
    ══════════════════════════════════════════════════════════ */
 
-/* Editable hint — subtle underline on hover */
+/* Editable hint - subtle underline on hover */
 .bp-zone-editable {
   cursor: text;
   border-radius: 3px;
@@ -8920,7 +8925,7 @@
   box-shadow: 0 0 0 1px rgba(138, 171, 168, 0.3);
 }
 
-/* Sidebar nav item row — wraps button + remove button */
+/* Sidebar nav item row - wraps button + remove button */
 .bp-nav-item-row {
   position: relative;
   display: flex;
@@ -8987,10 +8992,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Multi-zone DnD — drop containers, compact blocks, zone badges
+   Multi-zone DnD - drop containers, compact blocks, zone badges
    ═══════════════════════════════════════════════════════════ */
 
-/* Zone drop containers — base */
+/* Zone drop containers - base */
 .zone-drop-container {
   min-height: 8px;
   transition: background 0.2s, box-shadow 0.2s;
@@ -9068,7 +9073,7 @@
   display: none;
 }
 
-/* Sidebar blocks — constrained width */
+/* Sidebar blocks - constrained width */
 .zone-block-sidebar {
   max-width: 100%;
   overflow: hidden;
@@ -9093,7 +9098,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Grid layout — body canvas uses a 3-column CSS grid
+   Grid layout - body canvas uses a 3-column CSS grid
    so blocks can sit side-by-side based on their colSpan.
    ═══════════════════════════════════════════════════════════ */
 
@@ -9105,7 +9110,7 @@
   min-height: 60px;
 }
 
-/* Empty grid state — visual dropzone */
+/* Empty grid state - visual dropzone */
 .zone-grid:empty::after {
   content: "Drag components here";
   grid-column: 1 / -1;
@@ -9134,12 +9139,12 @@
   box-shadow: 0 0 8px rgba(138, 171, 168, 0.4);
 }
 
-/* Sorting peer — subtle highlight when items shift during drag */
+/* Sorting peer - subtle highlight when items shift during drag */
 .canvas-block.is-sorting-peer {
   box-shadow: 0 0 0 1px rgba(138, 171, 168, 0.15);
 }
 
-/* ── Resize handle — right edge of blocks ── */
+/* ── Resize handle - right edge of blocks ── */
 .block-resize-handle {
   position: absolute;
   top: 0;
@@ -9204,7 +9209,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Batch 6 — Remaining UI Kit Components
+   Batch 6 - Remaining UI Kit Components
    All use --ds-* tokens, 3 prefix variants (s/m3/f)
    ═══════════════════════════════════════════════════════════ */
 
@@ -9299,7 +9304,7 @@
 [class*="-file-drop-hint"] { font-size: 10px; color: var(--ds-fg-tertiary); }
 
 /* ═══════════════════════════════════════════════════════════
-   Batch 7 — Tree, Rating, Skeleton, Searchbox, TokenizedInput,
+   Batch 7 - Tree, Rating, Skeleton, Searchbox, TokenizedInput,
    NavDrawer, Popover, Persona, AvatarGroup
    ═══════════════════════════════════════════════════════════ */
 

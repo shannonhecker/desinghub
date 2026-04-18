@@ -35,7 +35,7 @@ const FORBIDDEN_KEYS = new Set([
 const MAX_PROP_STRING_LENGTH = 2000;
 
 /**
- * Render-safe value sanitizer — identical in spirit to the one in
+ * Render-safe value sanitizer - identical in spirit to the one in
  * shareState.ts. We don't share the function to avoid coupling but
  * the rules match: only JSON primitives, shallow arrays, shallow
  * objects. Defense in depth against a hallucinated prop shape.
@@ -58,7 +58,7 @@ function sanitizePropValue(v: unknown, depth = 0): unknown {
     }
     return out;
   }
-  return null; // functions, symbols, bigints — drop
+  return null; // functions, symbols, bigints - drop
 }
 
 function stripForbidden(props: Record<string, unknown>): Record<string, unknown> {
@@ -101,7 +101,7 @@ export async function regenerateTemplateContent(
     return { ok: false, patched: 0, error: "No blocks to regenerate." };
   }
 
-  // Send a trimmed payload — server expects { id, type, props }
+  // Send a trimmed payload - server expects { id, type, props }
   const payload = all.map((b) => ({ id: b.id, type: b.type, props: b.props }));
 
   try {
@@ -132,7 +132,7 @@ export async function regenerateTemplateContent(
       return { ok: true, patched: 0 };
     }
 
-    // Apply patches to each zone — patches can target any block id
+    // Apply patches to each zone - patches can target any block id
     const nextHeader = applyPatches(headerBlocks, patches);
     const nextSidebar = applyPatches(sidebarBlocks, patches);
     const nextBody = applyPatches(blocks, patches);

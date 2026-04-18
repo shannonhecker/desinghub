@@ -1,5 +1,5 @@
 /**
- * Shared-canvas preview — read-only rendering of a Builder snapshot
+ * Shared-canvas preview - read-only rendering of a Builder snapshot
  * whose state is encoded in the URL hash (base64-JSON, produced by
  * buildShareUrl in src/lib/shareState.ts).
  *
@@ -41,7 +41,7 @@ export async function generateMetadata({
       }[state.designSystem]
     : "Design Hub";
   return {
-    title: `Shared preview — ${dsName}`,
+    title: `Shared preview - ${dsName}`,
     description: "A shared Design Hub canvas preview.",
   };
 }

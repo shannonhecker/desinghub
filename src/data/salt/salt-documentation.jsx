@@ -600,7 +600,7 @@ function DLSpacing(){
 
 function DLTokens(){
   return <div style={{display:"flex",flexDirection:"column",gap:16}}>
-    <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>Salt uses a 3-layer token architecture: <strong>Foundation</strong> (raw values) → <strong>Palette</strong> (light/dark switching) → <strong>Characteristic</strong> (semantic purpose). Only vanilla CSS variables — no third-party libraries.</div>
+    <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>Salt uses a 3-layer token architecture: <strong>Foundation</strong> (raw values) → <strong>Palette</strong> (light/dark switching) → <strong>Characteristic</strong> (semantic purpose). Only vanilla CSS variables - no third-party libraries.</div>
     {[["Foundation","--salt-color-green-100 = rgb(234,245,242)","Raw hex/rgb values, spacing px, font sizes"],
       ["Palette","--salt-palette-positive-weak = green-100 (light) / green-900 (dark)","Mode switching layer, most practical place to customize themes"],
       ["Characteristic","--salt-status-success-background = palette-positive-weak","Semantic intent: actionable, category, container, content, editable, focused, layout, navigable, overlayable, selectable, sentiment, separable, status, target, text"]
@@ -630,7 +630,7 @@ function DLAccessibility(){
 
 function DLContentDesign(){
   return <div style={{display:"flex",flexDirection:"column",gap:14}}>
-    <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>Words are a design material — as essential as color or iconography. Content design eases complex tasks by highlighting key decisions and simplifying interactions.</div>
+    <div style={{fontSize:12,color:T.fg3,fontFamily:FONT,lineHeight:1.5}}>Words are a design material - as essential as color or iconography. Content design eases complex tasks by highlighting key decisions and simplifying interactions.</div>
     {[["Keep it simple","Turn on notifications","You can enable the notification feature in settings"],
       ["Get to the point","3 trades executed","The 3 trades you initiated have been successfully executed"],
       ["Talk like a person","Something went wrong. Try again.","An unexpected error has occurred. Please retry."]
@@ -854,7 +854,7 @@ function PatDataTable(){
 const CATS = ["Foundations","Components & Patterns","Patterns"];
 const COMPS = [
   {id:"dl-color",name:"Color",cat:"Foundations",desc:"8 foundation ramps × 9 shades (incl. Brown). Named backgrounds (snow/marble/limestone/titanium + jet/granite/leather). 40 categorical colors. From Figma.",render:DLColor},
-  {id:"dl-icons",name:"Iconography",cat:"Foundations",desc:"salt-ds icons — ~430 unique SVG icons in 2 styles (Default outline, Solid filled) across 15 categories. Density-responsive sizing.",render:DLIcons},
+  {id:"dl-icons",name:"Iconography",cat:"Foundations",desc:"salt-ds icons - ~430 unique SVG icons in 2 styles (Default outline, Solid filled) across 15 categories. Density-responsive sizing.",render:DLIcons},
   {id:"dl-typography",name:"Typography",cat:"Foundations",desc:"Open Sans + Amplitude + PT Mono. 12 type styles. Line height 1.3×. Size adjusts with density.",render:DLTypography},
   {id:"dl-elevation",name:"Elevation",cat:"Foundations",desc:"5 shadow levels (lowest through medium). Shadow + z-index for depth. Dark mode doubles opacity.",render:DLElevation},
   {id:"dl-spacing",name:"Spacing",cat:"Foundations",desc:"4px base grid. Proportional scale (25–300). Fixed spacing for borders. Adjusts with density.",render:DLSpacing},
@@ -862,11 +862,11 @@ const COMPS = [
   {id:"dl-a11y",name:"Accessibility",cat:"Foundations",desc:"WCAG 2.1 AA core. 4.5:1 contrast, focus rings, 44px touch targets, screen reader tested, reduced motion.",render:DLAccessibility},
   {id:"dl-density",name:"Density",cat:"Foundations",desc:"4 levels: High (20px), Medium (28px), Low (36px), Touch (44px). All on 4px scaling grid.",render:DLDensity},
   {id:"dl-content",name:"Content Design",cat:"Foundations",desc:"UX writing: simple, direct, human. Present tense, active voice, sentence case.",render:DLContentDesign},
-  {id:"tokens",name:"Tokens",cat:"Foundations",desc:"Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.",render:()=>null},
+  {id:"tokens",name:"Tokens",cat:"Foundations",desc:"Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios.",render:()=>null},
   {id:"audit",name:"Design Audit",cat:"Foundations",desc:"Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.",render:()=>null},
   {id:"pat-dashboard",name:"Analytical Dashboard",cat:"Patterns",desc:"Stat cards, charts, and data tables composed into an analytics overview layout.",render:PatDashboard},
   {id:"pat-form",name:"Forms",cat:"Patterns",desc:"Input fields, validation, labels, and button bar composed into a data entry form.",render:PatForm},
-  {id:"pat-list-detail",name:"List-Detail",cat:"Patterns",desc:"Master list alongside detail pane — email client, file browser, settings patterns.",render:PatListDetail},
+  {id:"pat-list-detail",name:"List-Detail",cat:"Patterns",desc:"Master list alongside detail pane - email client, file browser, settings patterns.",render:PatListDetail},
   {id:"pat-app-shell",name:"App Shell",cat:"Patterns",desc:"Header, sidebar navigation, content area, and footer composed into a full application layout.",render:PatAppShell},
   {id:"pat-login",name:"Login / Auth",cat:"Patterns",desc:"Authentication form with brand header, inputs, validation, and action buttons.",render:PatLogin},
   {id:"pat-settings",name:"Settings Page",cat:"Patterns",desc:"Navigation sidebar with form sections for application configuration.",render:PatSettings},
@@ -931,8 +931,8 @@ const COMPS = [
 function FormField(){
   const validations=[
     {status:"Default",color:T.fg,border:T.borderStrong,icon:null,helper:"Helper text provides guidance"},
-    {status:"Error",color:T.negative,border:T.negative,icon:"error",helper:"Validation error — fix before continuing"},
-    {status:"Warning",color:T.caution,border:T.caution,icon:"warning",helper:"Warning — review this value"},
+    {status:"Error",color:T.negative,border:T.negative,icon:"error",helper:"Validation error - fix before continuing"},
+    {status:"Warning",color:T.caution,border:T.caution,icon:"warning",helper:"Warning - review this value"},
     {status:"Success",color:T.positive,border:T.positive,icon:"success",helper:"Validated successfully"},
   ];
   return <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -996,7 +996,7 @@ function ToastDemo(){
     {status:"Info",bg:T.infoWeak,border:T.info,icon:"info",msg:"New update available"},
     {status:"Success",bg:T.positiveWeak,border:T.positive,icon:"success",msg:"Changes saved successfully"},
     {status:"Warning",bg:T.cautionWeak,border:T.caution,icon:"warning",msg:"Session expires in 5 minutes"},
-    {status:"Error",bg:T.negativeWeak,border:T.negative,icon:"error",msg:"Failed to save — please retry"},
+    {status:"Error",bg:T.negativeWeak,border:T.negative,icon:"error",msg:"Failed to save - please retry"},
   ];
   const [visible,setVisible]=useState([true,true,true,true]);
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -1061,7 +1061,7 @@ function TagDemo(){
         </span>
       ))}
     </div>
-    <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>Removable labels for categorization. Separate from Pill — Tags are dismissible, Pills are selectable.</div>
+    <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>Removable labels for categorization. Separate from Pill - Tags are dismissible, Pills are selectable.</div>
   </div>;
 }
 
@@ -1365,7 +1365,7 @@ function DatePickerDemo(){
     <div style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT,marginTop:4}}>Composable Architecture</div>
     <div style={{display:"flex",flexDirection:"column",gap:4}}>
       {[
-        ["DatePicker","Context provider — wraps all children, manages selection state"],
+        ["DatePicker","Context provider - wraps all children, manages selection state"],
         ["DatePickerSingleInput","Input pre-wired to single date selection context"],
         ["DatePickerRangeInput","Dual inputs pre-wired to range selection context"],
         ["DatePickerOverlay","Overlay container for calendar dropdown"],
@@ -1626,7 +1626,7 @@ export default function App(){
   T=THEMES[themeKey];
   const CSS=buildCSS(T);
 
-  // Comprehensive density map — every dimension from the 4px grid
+  // Comprehensive density map - every dimension from the 4px grid
   const D = {
     high:   { h:20, sp:4,  fs:11, fsS:10, h1:18, h2:14, title:24, pad:6,  cr:2, icon:10, sideW:200, mainP:16, cardMin:150, cardP:8,  gap:6,  topH:28, srchH:24, logoS:20, catFs:8,  demoP:12, demoCr:4 },
     medium: { h:28, sp:8,  fs:12, fsS:11, h1:24, h2:18, title:32, pad:8,  cr:4, icon:12, sideW:240, mainP:24, cardMin:180, cardP:12, gap:8,  topH:36, srchH:28, logoS:26, catFs:9,  demoP:20, demoCr:8 },
@@ -1718,7 +1718,7 @@ export default function App(){
             <div style={{maxWidth:700,margin:"0 auto"}}>
               <h1 style={{fontSize:D.title,fontWeight:700,margin:`0 0 ${D.sp}px`,color:T.fg,lineHeight:1.1,fontFamily:FONT_HEAD}}>Salt <span style={{color:T.accent}}>Interactive Library</span></h1>
               <p style={{fontSize:D.fs,lineHeight:1.6,color:T.fg3,maxWidth:500,margin:`0 0 ${D.sp*0.75}px`}}>J.P. Morgan's open-source design system. WCAG 2.1 AA, 4-density system, token-driven CSS. Every element on this page responds to density changes.</p>
-              <p style={{fontSize:D.fsS,color:T.accent,margin:`0 0 ${D.sp*3}px`,fontWeight:600}}>Try: switch density (H·20 / M·28 / L·36 / T·44) — sidebar, cards, type, spacing all scale.</p>
+              <p style={{fontSize:D.fsS,color:T.accent,margin:`0 0 ${D.sp*3}px`,fontWeight:600}}>Try: switch density (H·20 / M·28 / L·36 / T·44) - sidebar, cards, type, spacing all scale.</p>
               <div style={{display:"grid",gridTemplateColumns:`repeat(auto-fill,minmax(${D.cardMin}px,1fr))`,gap:D.gap}}>
                 {COMPS.map(c=>{const P=PREVIEWS[c.id];return(
                   <button key={c.id} onClick={()=>setSel(c.id)} className="s-card" style={{width:"100%",textAlign:"left"}}>

@@ -216,7 +216,7 @@ function generateM3Theme(sourceHex, isDark = false) {
 /* helper: build T reference for compatibility */
 let T = THEMES.light;
 
-/* ── GLOBAL STYLES — function of active theme ── */
+/* ── GLOBAL STYLES - function of active theme ── */
 const buildCSS = (T) => `
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 * { box-sizing: border-box; }
@@ -843,7 +843,7 @@ function Progress() {
   useEffect(() => { const i = setInterval(() => setV(p => p >= 100 ? 0 : p + 0.5), 30); return () => clearInterval(i); }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
-      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Determinate — {Math.round(v)}%</span><div className="m3-progress-linear"><div className="m3-progress-linear-bar" style={{ width: `${v}%` }} /></div></div>
+      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Determinate - {Math.round(v)}%</span><div className="m3-progress-linear"><div className="m3-progress-linear-bar" style={{ width: `${v}%` }} /></div></div>
       <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Indeterminate</span><div className="m3-progress-linear m3-progress-indet"><div className="m3-progress-linear-bar" /></div></div>
       <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
         <svg width={48} height={48} viewBox="0 0 48 48" style={{ transform: "rotate(-90deg)" }}>
@@ -970,7 +970,7 @@ function ColorRolesGuide() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <p style={{ fontSize: 14, lineHeight: 1.7, color: T.onSurfaceVariant, margin: 0 }}>
-        Color roles are semantic assignments — they define <em>what a color is for</em>, not what it looks like. The same role maps to different hex values across light, dark, and contrast themes. Always use roles, never hardcode hex values.
+        Color roles are semantic assignments - they define <em>what a color is for</em>, not what it looks like. The same role maps to different hex values across light, dark, and contrast themes. Always use roles, never hardcode hex values.
       </p>
       {roles.map(r => (
         <div key={r.group}>
@@ -998,11 +998,11 @@ function ColorRolesGuide() {
 function SurfaceGuide() {
   const surfaces = [
     { name: "surface", color: T.surface, desc: "Page background, app canvas" },
-    { name: "surfaceContainerLowest", color: T.surfaceContainerLowest, desc: "Lowest depth — content cards" },
-    { name: "surfaceContainerLow", color: T.surfaceContainerLow, desc: "Low — sidebar, elevated cards" },
-    { name: "surfaceContainer", color: T.surfaceContainer, desc: "Default — nav bars, menus" },
-    { name: "surfaceContainerHigh", color: T.surfaceContainerHigh, desc: "High — search, dialogs, inputs" },
-    { name: "surfaceContainerHighest", color: T.surfaceContainerHighest, desc: "Highest — text field fills" },
+    { name: "surfaceContainerLowest", color: T.surfaceContainerLowest, desc: "Lowest depth - content cards" },
+    { name: "surfaceContainerLow", color: T.surfaceContainerLow, desc: "Low - sidebar, elevated cards" },
+    { name: "surfaceContainer", color: T.surfaceContainer, desc: "Default - nav bars, menus" },
+    { name: "surfaceContainerHigh", color: T.surfaceContainerHigh, desc: "High - search, dialogs, inputs" },
+    { name: "surfaceContainerHighest", color: T.surfaceContainerHighest, desc: "Highest - text field fills" },
   ];
   const outlines = [
     { name: "outline", color: T.outline, desc: "Input borders, strong dividers" },
@@ -1102,11 +1102,11 @@ function StateLayers() {
 function ThemingGuide() {
   const guidelines = [
     { icon: "palette", title: "5 Key Colors Generate Everything", desc: "Primary, Secondary, Tertiary, Neutral, and Neutral Variant. The M3 algorithm derives all tonal palettes (13 tones each) from these 5 source colors using the HCT color space." },
-    { icon: "tune", title: "HCT Color Space", desc: "Hue (0–360°) defines the color family. Chroma controls saturation/purity. Tone (0–100) controls lightness — this is the key to accessible contrast, as tone differences directly map to contrast ratios." },
+    { icon: "tune", title: "HCT Color Space", desc: "Hue (0–360°) defines the color family. Chroma controls saturation/purity. Tone (0–100) controls lightness - this is the key to accessible contrast, as tone differences directly map to contrast ratios." },
     { icon: "contrast", title: "Accessible by Default", desc: "M3 color pairings guarantee minimum 3:1 contrast. Primary/onPrimary, Container/onContainer pairs are built to meet WCAG AA. Tone differences of 40+ between paired roles ensure readability." },
     { icon: "dark_mode", title: "Dark Theme ≠ Inverted Colors", desc: "Dark themes don't simply invert the light palette. Surface uses very dark grays (not pure black), primary shifts to lighter tones (tone 80 vs 40), and containers use darker tones (tone 30 vs 90)." },
     { icon: "auto_awesome", title: "Dynamic Color", desc: "On Android 12+, M3 can extract colors from the user's wallpaper and generate a personalized scheme. The same tonal mapping ensures accessibility regardless of the source color." },
-    { icon: "swap_horiz", title: "Never Mix Pairs", desc: "Always pair primary with onPrimary, primaryContainer with onPrimaryContainer. Never pair primary with onPrimaryContainer — the contrast ratios aren't guaranteed to be accessible." },
+    { icon: "swap_horiz", title: "Never Mix Pairs", desc: "Always pair primary with onPrimary, primaryContainer with onPrimaryContainer. Never pair primary with onPrimaryContainer - the contrast ratios aren't guaranteed to be accessible." },
   ];
 
   return (
@@ -1138,9 +1138,9 @@ function ColorMappingGuide() {
     { component: "Text Field (Filled)", container: "surfaceContainerHighest", content: "onSurface", state: "onSurface @ 8%" },
     { component: "Card (Elevated)", container: "surfaceContainerLow", content: "onSurface", state: "onSurface @ 8%" },
     { component: "Navigation Bar", container: "surfaceContainer", content: "onSurfaceVariant", state: "onSurface @ 8%" },
-    { component: "Nav Active Pill", container: "secondaryContainer", content: "onSecondaryContainer", state: "—" },
-    { component: "Dialog", container: "surfaceContainerHigh", content: "onSurface", state: "—" },
-    { component: "Snackbar", container: "inverseSurface", content: "inverseOnSurface", state: "—" },
+    { component: "Nav Active Pill", container: "secondaryContainer", content: "onSecondaryContainer", state: "-" },
+    { component: "Dialog", container: "surfaceContainerHigh", content: "onSurface", state: "-" },
+    { component: "Snackbar", container: "inverseSurface", content: "inverseOnSurface", state: "-" },
     { component: "Chip (Selected)", container: "secondaryContainer", content: "onSecondaryContainer", state: "onSecondaryContainer @ 8%" },
     { component: "Switch (On)", container: "primary", content: "onPrimary", state: "primary @ 8%" },
     { component: "Error State", container: "error", content: "onError", state: "onError @ 8%" },
@@ -1149,7 +1149,7 @@ function ColorMappingGuide() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <p style={{ fontSize: 14, lineHeight: 1.7, color: T.onSurfaceVariant, margin: 0 }}>
-        Every M3 component maps to specific color roles. This table shows which token applies where — use it to ensure custom components follow the same patterns.
+        Every M3 component maps to specific color roles. This table shows which token applies where - use it to ensure custom components follow the same patterns.
       </p>
       <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${T.outlineVariant}40` }}>
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", padding: "8px 12px", fontSize: 10, fontWeight: 700, color: T.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.06em", background: T.surfaceContainerHigh }}>
@@ -1203,7 +1203,7 @@ function M3Icons() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ fontSize: 14, color: T.onSurfaceVariant, lineHeight: 1.6 }}>
-        Material Symbols — 2,500+ variable font icons in 3 styles (Outlined, Rounded, Sharp). Loaded via Google Fonts CDN with 4 adjustable axes.
+        Material Symbols - 2,500+ variable font icons in 3 styles (Outlined, Rounded, Sharp). Loaded via Google Fonts CDN with 4 adjustable axes.
       </div>
       <div style={{ fontSize: 16, fontWeight: 500, color: T.onSurface }}>3 Styles</div>
       <div style={{ display: "flex", gap: 16 }}>
@@ -1276,7 +1276,7 @@ function M3Accessibility() {
           <button className="m3-btn m3-btn-outlined">Then me</button>
           <button className="m3-btn m3-btn-tonal">Then me</button>
         </div>
-        <p style={{ fontSize: 12, color: T.onSurfaceVariant, margin: 0 }}>Press Tab — a 2px primary outline ring appears with 2px offset. Every interactive M3 component supports <code style={{ background: T.surfaceContainerHigh, padding: "1px 4px", borderRadius: 4, fontSize: 11 }}>:focus-visible</code>.</p>
+        <p style={{ fontSize: 12, color: T.onSurfaceVariant, margin: 0 }}>Press Tab - a 2px primary outline ring appears with 2px offset. Every interactive M3 component supports <code style={{ background: T.surfaceContainerHigh, padding: "1px 4px", borderRadius: 4, fontSize: 11 }}>:focus-visible</code>.</p>
       </div>
       <div>
         <div style={{ fontSize: 16, fontWeight: 500, color: T.onSurface, marginBottom: 8 }}>Touch Targets</div>
@@ -1291,7 +1291,7 @@ function M3Accessibility() {
       <div>
         <div style={{ fontSize: 16, fontWeight: 500, color: T.onSurface, marginBottom: 6 }}>Keyboard Patterns</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {[["Tab / Shift+Tab", "Move focus between elements"], ["Enter / Space", "Activate buttons, toggle switches/checkboxes"], ["Arrow keys", "Navigate radio groups, tabs, menus"], ["Escape", "Close dialogs, menus — return focus to trigger"]].map(([key, desc]) => (
+          {[["Tab / Shift+Tab", "Move focus between elements"], ["Enter / Space", "Activate buttons, toggle switches/checkboxes"], ["Arrow keys", "Navigate radio groups, tabs, menus"], ["Escape", "Close dialogs, menus - return focus to trigger"]].map(([key, desc]) => (
             <div key={key} style={{ display: "flex", gap: 8, padding: "5px 0", borderBottom: `1px solid ${T.outlineVariant}30` }}>
               <code style={{ fontSize: 11, background: T.surfaceContainerHigh, padding: "2px 6px", borderRadius: 6, fontFamily: "monospace", color: T.onSurface, whiteSpace: "nowrap", flexShrink: 0 }}>{key}</code>
               <span style={{ fontSize: 12, color: T.onSurfaceVariant }}>{desc}</span>
@@ -1337,7 +1337,7 @@ function M3ContentDesign() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "Roboto,sans-serif" }}>
       <p style={{ fontSize: 14, lineHeight: 1.7, color: T.onSurfaceVariant, margin: 0 }}>
-        Content design makes interfaces usable through clear, concise language. Words are a design material — as important as color, typography, and spacing.
+        Content design makes interfaces usable through clear, concise language. Words are a design material - as important as color, typography, and spacing.
       </p>
       <div>
         <div style={{ fontSize: 18, fontWeight: 400, color: T.onSurface, marginBottom: 12 }}>Writing Principles</div>
@@ -1384,7 +1384,7 @@ function M3ContentDesign() {
             ["Active voice", "\"You deleted 3 files\" not \"3 files were deleted\""],
             ["Second person", "\"Your files\" not \"My files\" (except for ownership emphasis)"],
             ["No periods in UI", "Skip periods on buttons, labels, headings, menu items"],
-            ["Numerals", "Use \"3\" not \"three\". Exception: mixing — \"Enter two 3s\""],
+            ["Numerals", "Use \"3\" not \"three\". Exception: mixing - \"Enter two 3s\""],
           ].map(([rule, example]) => (
             <div key={rule} style={{ display: "flex", gap: 10, padding: "6px 0", borderBottom: `1px solid ${T.outlineVariant}20` }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: T.onSurface, minWidth: 120 }}>{rule}</span>
@@ -1622,13 +1622,13 @@ function M3PatDataTable(){
 const COMPS = [
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: M3PatDashboard },
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Text fields, validation, and button bar composed into a data entry form.", render: M3PatForm },
-  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout — master list alongside detail pane.", render: M3PatListDetail },
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "M3 canonical layout - master list alongside detail pane.", render: M3PatListDetail },
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Top app bar, navigation rail, content area, and bottom nav.", render: M3PatAppShell },
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, text fields, and filled buttons.", render: M3PatLogin },
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation rail with form sections for application configuration.", render: M3PatSettings },
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search bar with filterable result cards and pagination.", render: M3PatSearch },
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with stepper indicator and validation.", render: M3PatWizard },
-  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout — scrollable grid of content cards (news, social).", render: M3PatFeed },
+  { id: "pat-feed", name: "Feed", cat: "Patterns", desc: "M3 canonical layout - scrollable grid of content cards (news, social).", render: M3PatFeed },
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: M3PatDataTable },
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Material 3 tokens. Sorting, filtering, pagination, row selection.", render: () => null },
@@ -1654,17 +1654,17 @@ const COMPS = [
   { id: "dividers", name: "Dividers", cat: "Components & Patterns", desc: "Full-width and inset dividers.", render: Dividers },
   { id: "date-pickers", name: "Date Pickers", cat: "Components & Patterns", desc: "Click days to select. Hover shows surface overlay. Focus-visible shows ring. Nav buttons interactive.", render: DatePicker },
   // Foundations
-  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols — 2,500+ variable font icons. 3 styles (Outlined/Rounded/Sharp), 4 axes (Fill, Weight, Grade, Optical Size).", render: M3Icons },
+  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols - 2,500+ variable font icons. 3 styles (Outlined/Rounded/Sharp), 4 axes (Fill, Weight, Grade, Optical Size).", render: M3Icons },
   { id: "a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG AA contrast, focus indicators, touch targets (48dp), keyboard patterns, ARIA roles, reduced motion.", render: M3Accessibility },
   { id: "content-design", name: "Content Design", cat: "Foundations", desc: "UX writing principles: concise, direct, useful. Content patterns for buttons, errors, empty states, confirmations.", render: M3ContentDesign },
-  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Guides
-  { id: "guide-color-roles", name: "Color Roles", cat: "Foundations", desc: "Primary, Secondary, Tertiary, Error — what each accent color group is for and where to use it.", render: ColorRolesGuide },
+  { id: "guide-color-roles", name: "Color Roles", cat: "Foundations", desc: "Primary, Secondary, Tertiary, Error - what each accent color group is for and where to use it.", render: ColorRolesGuide },
   { id: "guide-surfaces", name: "Surfaces & Depth", cat: "Foundations", desc: "Surface container scale, outline tokens, and inverse colors for building visual hierarchy.", render: SurfaceGuide },
-  { id: "guide-state-layers", name: "State Layers", cat: "Foundations", desc: "Hover (8%), Focus (12%), Pressed (12%), Dragged (16%) — how to apply interactive overlays.", render: StateLayers },
+  { id: "guide-state-layers", name: "State Layers", cat: "Foundations", desc: "Hover (8%), Focus (12%), Pressed (12%), Dragged (16%) - how to apply interactive overlays.", render: StateLayers },
   { id: "guide-theming", name: "Theming Principles", cat: "Foundations", desc: "HCT color space, tonal palettes, dark theme rules, dynamic color, and accessible pairing rules.", render: ThemingGuide },
-  { id: "guide-mapping", name: "Component Mapping", cat: "Foundations", desc: "Which color token maps to which component — container, content, and state layer assignments.", render: ColorMappingGuide },
+  { id: "guide-mapping", name: "Component Mapping", cat: "Foundations", desc: "Which color token maps to which component - container, content, and state layer assignments.", render: ColorMappingGuide },
   { id: "guide-palette", name: "Full Palette", cat: "Foundations", desc: "All tokens in the current theme visualized. Switch themes to compare values side by side.", render: FullPalettePreview },
 ];
 const CATS = ["Foundations", "Components & Patterns", "Patterns"];
@@ -1775,7 +1775,7 @@ export default function App() {
             <M3Dropdown
               label="Material Palette"
               value={themeKey === "custom" ? customColor : ""}
-              displayValue={themeKey === "custom" ? (MATERIAL_COLORS.find(c => c.hex === customColor)?.name || "Custom") + ` — ${customColor}` : "Choose a color…"}
+              displayValue={themeKey === "custom" ? (MATERIAL_COLORS.find(c => c.hex === customColor)?.name || "Custom") + ` - ${customColor}` : "Choose a color…"}
               items={MATERIAL_COLORS.map(c => ({ key: c.hex, label: c.name, hex: c.hex }))}
               onSelect={(item) => { setCustomColor(item.hex); setThemeKey("custom"); }}
               renderItem={(item, isSel) => (
@@ -1868,7 +1868,7 @@ export default function App() {
           ) : (
             <div style={{ maxWidth: 800, margin: "0 auto" }}>
               <h1 style={{ fontSize: 40, fontWeight: 400, margin: "0 0 10px", color: T.onSurface, lineHeight: 1.1 }}>Material 3 <span style={{ color: T.primary }}>Interactive Library</span></h1>
-              <p style={{ fontSize: 14, lineHeight: 1.6, color: T.onSurfaceVariant, maxWidth: 560, margin: "0 0 8px" }}>Every component responds to real interaction — hover, Tab for focus, click to press. Switch between all 6 Figma theme modes in the sidebar: Light, Dark, Medium Contrast, and High Contrast.</p>
+              <p style={{ fontSize: 14, lineHeight: 1.6, color: T.onSurfaceVariant, maxWidth: 560, margin: "0 0 8px" }}>Every component responds to real interaction - hover, Tab for focus, click to press. Switch between all 6 Figma theme modes in the sidebar: Light, Dark, Medium Contrast, and High Contrast.</p>
               <p style={{ fontSize: 12, color: T.primary, margin: `0 0 ${L.mainP}px`, fontWeight: 500 }}>Try it: switch to Dark theme in the sidebar. Hover buttons for state layers. Tab for focus rings. Click to toggle.</p>
               <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${L.cardMin}px, 1fr))`, gap: L.gap }}>
                 {COMPS.map(c => {

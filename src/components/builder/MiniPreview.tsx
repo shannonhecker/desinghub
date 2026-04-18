@@ -3,14 +3,14 @@
 import React from "react";
 
 /* ══════════════════════════════════════════════════════════
-   MiniPreview — stylized per-component-type mini-renders.
+   MiniPreview - stylized per-component-type mini-renders.
    Used in the component library tiles (80×50) and in the
    hover preview fly-out (240×140).
 
    Each "category" below renders a lightweight SVG shape that
    captures the component's silhouette well enough for users
    to recognize it at a glance. This is deliberately NOT a
-   real rendering — that would be 60+ full-component loads
+   real rendering - that would be 60+ full-component loads
    just for the panel.
 
    Categorization keeps us to ~10 shapes instead of 60 bespoke
@@ -154,7 +154,7 @@ function categoryFor(type: string): Category {
   return CATEGORY_BY_TYPE[type] ?? "generic";
 }
 
-/* ── Shape renderers — each fills the 80×50 viewBox and draws
+/* ── Shape renderers - each fills the 80×50 viewBox and draws
  *    a recognizable silhouette for the category. ── */
 
 function Action() {

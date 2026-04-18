@@ -51,7 +51,7 @@ const HoverContext = React.createContext<HoverContextValue | null>(null);
 
 const HOVER_DELAY_MS = 300;
 
-/* ── Visual grid tile — stylized mini-preview + label.
+/* ── Visual grid tile - stylized mini-preview + label.
  *   Drag-enabled via dnd-kit for drop-to-canvas.
  *   Click-to-add (Phase E.3) handled via pointer-displacement gating.
  *   Hover preview (Phase E.4) via shared HoverContext. */
@@ -67,14 +67,14 @@ function BlueprintItem({ blueprint, zone }: {
       fromLibrary: true,
       type: blueprint.type,
       defaults: blueprint.defaults,
-      /* Preferred zone — drag handler can use this as a hint if needed. */
+      /* Preferred zone - drag handler can use this as a hint if needed. */
       zone,
     },
   });
 
   /* Click-to-add: distinguish click vs drag by tracking pointer
      displacement. A click fires only when pointerup lands within a
-     few pixels of pointerdown — otherwise dnd-kit takes over. */
+     few pixels of pointerdown - otherwise dnd-kit takes over. */
   const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
   const tileRef = React.useRef<HTMLDivElement | null>(null);
   const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -136,7 +136,7 @@ function BlueprintItem({ blueprint, zone }: {
       onPointerUp={handlePointerUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      title={`${blueprint.label} — drag onto canvas or click to add`}
+      title={`${blueprint.label} - drag onto canvas or click to add`}
       role="button"
       tabIndex={0}
     >
@@ -186,7 +186,7 @@ export function ComponentLibrary() {
   return (
     <HoverContext.Provider value={hoverCtx}>
     <div className="component-library">
-      {/* Hover-preview overlay — positioned via portal into document.body
+      {/* Hover-preview overlay - positioned via portal into document.body
           so it escapes the sidebar's overflow clipping. */}
       <HoverPreview state={hoverState} />
 
@@ -205,7 +205,7 @@ export function ComponentLibrary() {
       </div>
 
       <div className="lib-body">
-        {/* Properties inspector — shown at top when a block is selected */}
+        {/* Properties inspector - shown at top when a block is selected */}
         {selectedBlock && FieldsComponent && (
           <div>
             <div className="inspector-section-title">
@@ -213,7 +213,7 @@ export function ComponentLibrary() {
             </div>
             <FieldsComponent blockId={selectedBlock.id} />
 
-            {/* Layout: column span — only for body blocks */}
+            {/* Layout: column span - only for body blocks */}
             {selectedBlockZone === "body" && (
               <>
                 <div className="lib-section-divider" />
@@ -241,12 +241,12 @@ export function ComponentLibrary() {
           </div>
         )}
 
-        {/* Templates accordion — collapsible section at the top so users
+        {/* Templates accordion - collapsible section at the top so users
             can swap the entire layout mid-flow without returning to the
             empty state. Renders a 2x2 grid of mini template cards. */}
         <TemplatesAccordion />
 
-        {/* Library — grouped by zone, searchable. Each blueprint can be
+        {/* Library - grouped by zone, searchable. Each blueprint can be
             dragged onto its preferred zone (though drop handling allows
             any zone). */}
         <LibraryBrowser />
@@ -256,7 +256,7 @@ export function ComponentLibrary() {
   );
 }
 
-/* ── Templates accordion — Phase E.3
+/* ── Templates accordion - Phase E.3
  *    Collapsible section at the top of the panel. When expanded,
  *    shows a 2x2 grid of mini pattern cards. Clicking one runs the
  *    same conversational DS-prompt flow as the hero pattern cards:
@@ -282,7 +282,7 @@ function TemplatesAccordion() {
     addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
     if (!currentSessionId) {
       ensureSessionStarted(titleFromTemplate(tpl.label));
@@ -338,7 +338,7 @@ function TemplatesAccordion() {
   );
 }
 
-/* ── Library browser — searchable + grouped by zone ── */
+/* ── Library browser - searchable + grouped by zone ── */
 function LibraryBrowser() {
   const [query, setQuery] = useState("");
 

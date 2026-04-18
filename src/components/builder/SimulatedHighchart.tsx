@@ -6,7 +6,7 @@ import HighchartsReact from "highcharts-react-official";
 import { useBuilder } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedHighchart — renders any of the 12 Highcharts
+   SimulatedHighchart - renders any of the 12 Highcharts
    chart types inside the builder canvas, themed via
    --ds-* CSS variables inherited from the preview wrapper.
 

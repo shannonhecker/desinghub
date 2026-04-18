@@ -52,7 +52,7 @@ function blockToJSX(block: Block, indent: string): string {
     case "HighchartLine": case "HighchartArea": case "HighchartColumn": case "HighchartPie":
     case "HighchartScatter": case "HighchartBar": case "HighchartDonut": case "HighchartSpline":
     case "HighchartStackedColumn": case "HighchartGauge": case "HighchartHeatmap": case "HighchartTreemap":
-      return `${indent}<div className="chart-placeholder">\n${indent}  {/* ${p.title || "Chart"} — integrate with Highcharts */}\n${indent}  <p>${p.title || "Chart"}</p>\n${indent}</div>`;
+      return `${indent}<div className="chart-placeholder">\n${indent}  {/* ${p.title || "Chart"} - integrate with Highcharts */}\n${indent}  <p>${p.title || "Chart"}</p>\n${indent}</div>`;
     case "AppBrand":
       return `${indent}<div className="app-brand">${p.label || "App"}</div>`;
     case "StatusPill":

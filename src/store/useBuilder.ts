@@ -45,19 +45,19 @@ interface BuilderState {
 
   // Active template (set when a pattern card is applied; null for ad-hoc canvases)
   activeTemplateId: string | null;
-  // Regenerate-content status — true while /api/builder/generate-content is pending
+  // Regenerate-content status - true while /api/builder/generate-content is pending
   isRegeneratingContent: boolean;
 
   // ── Conversational onboarding ("pending" flow) ──
   // When the user picks a template OR sends their first freeform message,
-  // we DON'T apply anything yet — we stage it here and prompt the user to
+  // we DON'T apply anything yet - we stage it here and prompt the user to
   // pick a design system as the next chat turn. Once the DS is chosen, the
   // pending intent is flushed: either the template is applied with that DS,
   // or the freeform message is routed to Claude with that DS set.
   pendingTemplateId: string | null;
   pendingFirstMessage: string | null;
 
-  // Templates drawer — slide-in gallery that shows the full SVG-wireframe
+  // Templates drawer - slide-in gallery that shows the full SVG-wireframe
   // cards (relocated from the empty state for visual clarity).
   templatesDrawerOpen: boolean;
 
@@ -94,18 +94,18 @@ interface BuilderState {
   previewKey: number;
   deviceMode: DeviceMode;
 
-  // Compare-DS mode — renders the current canvas in all four design systems
+  // Compare-DS mode - renders the current canvas in all four design systems
   // simultaneously (2x2 grid) so designers can compare visual output.
   compareMode: boolean;
 
-  // Actions — Chat
+  // Actions - Chat
   setInputText: (t: string) => void;
   addMessage: (role: 'user' | 'ai', content: string) => void;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
 
-  // Actions — Design
+  // Actions - Design
   setDesignSystem: (ds: DesignSystem) => void;
   setMode: (m: BuilderMode) => void;
   setDensity: (d: string) => void;
@@ -114,25 +114,25 @@ interface BuilderState {
   toggleComponent: (id: string) => void;
   setSelectedComponents: (ids: string[]) => void;
 
-  // Actions — Colors
+  // Actions - Colors
   setColorOverride: (key: string, value: string) => void;
   resetColors: () => void;
 
-  // Actions — Onboarding
+  // Actions - Onboarding
   setOnboardingStep: (s: OnboardingStep) => void;
   setPendingComponents: (c: string[]) => void;
   togglePendingComponent: (label: string) => void;
 
-  // Actions — Templates / regeneration
+  // Actions - Templates / regeneration
   setActiveTemplateId: (id: string | null) => void;
   setIsRegeneratingContent: (v: boolean) => void;
 
-  // Actions — Pending (conversational onboarding)
+  // Actions - Pending (conversational onboarding)
   setPendingTemplateId: (id: string | null) => void;
   setPendingFirstMessage: (msg: string | null) => void;
   clearPendingIntent: () => void;
 
-  // Actions — Templates drawer
+  // Actions - Templates drawer
   setTemplatesDrawerOpen: (v: boolean) => void;
   toggleTemplatesDrawer: () => void;
 
@@ -143,7 +143,7 @@ interface BuilderState {
    *  with its fields. */
   addBlockFromLibrary: (type: string, defaults: Record<string, unknown>) => void;
 
-  // Actions — Sessions + auto-save
+  // Actions - Sessions + auto-save
   setCurrentSessionId: (id: string | null) => void;
   setSessionTitle: (t: string | null) => void;
   setLastSavedAt: (t: number | null) => void;
@@ -153,14 +153,14 @@ interface BuilderState {
   toggleSessionsDrawer: () => void;
   /** Create a session ID + derive a title if one isn't already active.
    *  `seed` is either the first user message or the picked template's
-   *  label — used to auto-generate a readable session name. No-op if
+   *  label - used to auto-generate a readable session name. No-op if
    *  a session already exists. */
   ensureSessionStarted: (seed: string) => void;
   /** Tear down the current session and reset canvas state so the user
    *  can start a fresh build from the empty state. */
   startNewSession: () => void;
 
-  // Actions — Canvas blocks & selection
+  // Actions - Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
   updateBlockProps: (id: string, props: Record<string, unknown>) => void;
   setSelectedBlock: (id: string | null, zone: ZoneId | null) => void;
@@ -169,7 +169,7 @@ interface BuilderState {
   setAddMenuOpen: (v: boolean) => void;
   toggleCanvasViewMode: () => void;
 
-  // Actions — Zone blocks
+  // Actions - Zone blocks
   setHeaderBlocks: (blocks: Block[]) => void;
   setSidebarBlocks: (blocks: Block[]) => void;
   setFooterBlocks: (blocks: Block[]) => void;
@@ -177,14 +177,14 @@ interface BuilderState {
   updateSidebarBlockProps: (id: string, props: Record<string, unknown>) => void;
   updateFooterBlockProps: (id: string, props: Record<string, unknown>) => void;
 
-  // Actions — Generic zone helpers
+  // Actions - Generic zone helpers
   setZoneBlocks: (zone: ZoneId, blocks: Block[]) => void;
   updateZoneBlockProps: (zone: ZoneId, blockId: string, props: Record<string, unknown>) => void;
   addBlockToZone: (zone: ZoneId, block: Block, index?: number) => void;
   removeBlockFromZone: (zone: ZoneId, blockId: string) => void;
   moveBlockBetweenZones: (fromZone: ZoneId, toZone: ZoneId, blockId: string, toIndex: number) => void;
 
-  // Actions — UI
+  // Actions - UI
   toggleSettings: () => void;
   togglePreview: () => void;
   setPreviewOpen: (v: boolean) => void;
@@ -212,7 +212,7 @@ const ZONE_KEYS: Record<ZoneId, 'blocks' | 'headerBlocks' | 'sidebarBlocks' | 'f
 };
 
 export const useBuilder = create<BuilderState>((set) => ({
-  // Chat — start empty so hero shows
+  // Chat - start empty so hero shows
   messages: [],
   inputText: '',
   isVoiceActive: false,
@@ -230,7 +230,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   colorOverrides: {},
   hasOverrides: false,
 
-  // Onboarding state — default 'ready' so free-form chat works from message 1.
+  // Onboarding state - default 'ready' so free-form chat works from message 1.
   // Pattern cards still appear while messages.length === 0 for quick-start,
   // but users can also type directly without being forced through a wizard.
   onboardingStep: 'ready',
@@ -247,7 +247,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Templates drawer
   templatesDrawerOpen: false,
 
-  // Session + auto-save — starts unpopulated; populated on first action
+  // Session + auto-save - starts unpopulated; populated on first action
   currentSessionId: null,
   sessionTitle: null,
   lastSavedAt: null,
@@ -263,7 +263,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   addMenuOpen: false,
   canvasViewMode: 'ui',
 
-  // Zone blocks — default content matching the static dashboard layout
+  // Zone blocks - default content matching the static dashboard layout
   headerBlocks: [
     { id: 'hdr-brand', type: 'AppBrand', props: { label: 'AI Agent' } },
     { id: 'hdr-status', type: 'StatusPill', props: { label: 'Active' } },
@@ -392,8 +392,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleSessionsDrawer: () => set((s) => ({ sessionsDrawerOpen: !s.sessionsDrawerOpen })),
 
   ensureSessionStarted: (seed: string) => set((s) => {
-    if (s.currentSessionId) return {}; // already started — no-op
-    /* Client-side session id — uuid-lite. Firebase will confirm / issue
+    if (s.currentSessionId) return {}; // already started - no-op
+    /* Client-side session id - uuid-lite. Firebase will confirm / issue
      *  a canonical id on first save; this lets us start saving against
      *  a stable local identifier immediately. */
     const rand = Math.random().toString(36).slice(2, 10);
@@ -411,7 +411,7 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   startNewSession: () => set({
     /* Reset canvas + conversation state, but KEEP user-level preferences
-     *  like designSystem, density, mode — they're part of the user's
+     *  like designSystem, density, mode - they're part of the user's
      *  workspace setup, not part of the session. */
     messages: [],
     blocks: [],

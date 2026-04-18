@@ -5,7 +5,7 @@ import { useBuilder, type DesignSystem, type Block } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
 
 /* ══════════════════════════════════════════════════════════
-   Compare DS Mode — 2x2 grid showing the same canvas in all
+   Compare DS Mode - 2x2 grid showing the same canvas in all
    four design systems simultaneously.
 
    Purpose: non-technical users want to see "what does our
@@ -46,7 +46,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
 }: CompareQuadrantProps) {
   return (
     <div className={`compare-quadrant ${active ? "is-active" : ""}`}>
-      {/* Label bar — always interactive */}
+      {/* Label bar - always interactive */}
       <div className="compare-quadrant-header">
         <span className="compare-quadrant-dot" style={{ background: color }} aria-hidden="true" />
         <div className="compare-quadrant-meta">
@@ -65,7 +65,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
         )}
       </div>
 
-      {/* Mini dashboard — scoped by preview-${ds} class, read-only content */}
+      {/* Mini dashboard - scoped by preview-${ds} class, read-only content */}
       <div className={`compare-quadrant-body bp-dashboard preview-${ds} density-${density}`}>
         <header className="bp-header compare-mini-zone">
           {headerBlocks.map((b) => (
@@ -85,7 +85,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
           </nav>
           <main className="bp-main compare-mini-main">
             {bodyBlocks.length === 0 ? (
-              <div className="compare-mini-empty">No blocks yet — start building in the editor.</div>
+              <div className="compare-mini-empty">No blocks yet - start building in the editor.</div>
             ) : (
               <div className="compare-mini-grid">
                 {bodyBlocks.map((b) => {
@@ -141,7 +141,7 @@ export function CompareView() {
         <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 6 }}>
           dashboard
         </span>
-        Compare mode — same canvas, four design systems.
+        Compare mode - same canvas, four design systems.
         Click <strong>Open</strong> on any quadrant to keep building in that DS, or
         press the <kbd>Compare</kbd> toolbar button again to return to a single view.
       </div>

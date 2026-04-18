@@ -200,7 +200,7 @@ function ContrastAudit({ system, T }: { system: string; T: any }) {
 
   return (
     <div style={{ background: cardBg, borderRadius: 8, border: `1px solid ${cardBdr}`, padding: 16, marginTop: 16 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: titleFg, marginBottom: 12 }}>Contrast Audit — {T.name || "Current Theme"}</h3>
+      <h3 style={{ fontSize: 14, fontWeight: 600, color: titleFg, marginBottom: 12 }}>Contrast Audit - {T.name || "Current Theme"}</h3>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto auto auto", gap: "6px 12px", fontSize: 12 }}>
         <div style={{ color: labelFg, fontWeight: 600 }}>Foreground</div>
         <div style={{ color: labelFg, fontWeight: 600 }}>Background</div>

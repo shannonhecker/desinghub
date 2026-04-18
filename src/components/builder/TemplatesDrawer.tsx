@@ -11,7 +11,7 @@ import {
 import { TemplatePreview } from "./TemplatePreviews";
 
 /* ══════════════════════════════════════════════════════════
-   TemplatesDrawer — full visual gallery with SVG wireframes.
+   TemplatesDrawer - full visual gallery with SVG wireframes.
    Opened from the hero "Browse templates with previews" link
    so the compact empty state stays clean while preserving the
    rich previews we shipped in Phase C.
@@ -31,7 +31,7 @@ export function TemplatesDrawer() {
     isGenerating,
   } = useBuilder();
 
-  /* Esc to dismiss — standard drawer UX */
+  /* Esc to dismiss - standard drawer UX */
   useEffect(() => {
     if (!templatesDrawerOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -60,14 +60,14 @@ export function TemplatesDrawer() {
 
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
-    // Mirror handlePatternSelect in ChatPanel — stage and ask DS next.
+    // Mirror handlePatternSelect in ChatPanel - stage and ask DS next.
     const article = /^[aeiouAEIOU]/.test(tpl.label) ? "an" : "a";
     setPendingTemplateId(tpl.id);
     setPendingFirstMessage(null);
     addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
     setTemplatesDrawerOpen(false);
   };

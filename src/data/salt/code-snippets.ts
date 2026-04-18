@@ -451,7 +451,7 @@ export const SALT_CODE: CodeSnippets = {
     react: `import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// Salt DS themed chart — uses CSS variable bridge
+// Salt DS themed chart - uses CSS variable bridge
 const theme = {
   colors: [
     "var(--salt-palette-accent)",

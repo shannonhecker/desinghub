@@ -10,7 +10,7 @@ import { FLUENT_CODE } from "@/data/fluent/code-snippets";
 import { AUSOS_CODE } from "@/data/ausos/code-snippets";
 
 /* ═══════════════════════════════════════════════════════════
-   Code Block — single-pass tokenizer, CSS class highlighting
+   Code Block - single-pass tokenizer, CSS class highlighting
    ═══════════════════════════════════════════════════════════ */
 function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnType<typeof useActiveTheme>; cardClass: string }) {
   const [copied, setCopied] = useState(false);
@@ -20,7 +20,7 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
     setTimeout(() => setCopied(false), 2000);
   };
 
-  /* Single-pass tokenizer — avoids cascading regex corruption */
+  /* Single-pass tokenizer - avoids cascading regex corruption */
   const escaped = code
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -42,7 +42,7 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
 
   const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "ausos" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
-  // Detect light theme — if bg luminance is high, use light syntax colors
+  // Detect light theme - if bg luminance is high, use light syntax colors
   const isLight = (() => {
     const bg = t.bg;
     if (!bg || bg.startsWith("rgba") || bg.startsWith("transparent")) return true;
@@ -79,7 +79,7 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CodePanel — entry point
+   CodePanel - entry point
    ═══════════════════════════════════════════════════════════ */
 export function CodePanel({ componentId }: { componentId: string }) {
   const { activeSystem } = useDesignHub();

@@ -516,7 +516,7 @@ function DLIcons() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ fontFamily: FONT, fontSize: 14, color: T.fg2, lineHeight: 1.6 }}>
-        Fluent System Icons — 4,000+ SVG icons in Regular and Filled variants. Available via <code style={{ background: T.bg4, padding: "1px 4px", borderRadius: 2, fontSize: 12 }}>fluentui react-icons</code>. Icons tree-shake to only bundle what you import.
+        Fluent System Icons - 4,000+ SVG icons in Regular and Filled variants. Available via <code style={{ background: T.bg4, padding: "1px 4px", borderRadius: 2, fontSize: 12 }}>fluentui react-icons</code>. Icons tree-shake to only bundle what you import.
       </div>
 
       <div style={{ fontFamily: FONT, fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 4 }}>Variants: Regular + Filled</div>
@@ -574,7 +574,7 @@ function DLColor() {
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <div>
         <div style={{ fontFamily: FONT, fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 8 }}>Neutral Palette</div>
-        <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, marginBottom: 12, lineHeight: 1.5 }}>Grays that ground the interface — surfaces, text, and layout elements. Components get darker on interaction.</div>
+        <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, marginBottom: 12, lineHeight: 1.5 }}>Grays that ground the interface - surfaces, text, and layout elements. Components get darker on interaction.</div>
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           {neutrals.map(([name, hex]) => (
             <div key={name} title={`${name}: ${hex}`} style={{ width: 48, height: 48, borderRadius: 4, background: hex, border: `1px solid ${T.stroke2}`, display: "flex", alignItems: "flex-end", padding: 3 }}>
@@ -623,11 +623,11 @@ function DLColor() {
 }
 
 function DLTypography() {
-  // Official Fluent 2 type ramp — 17 named styles from @fluentui/tokens
+  // Official Fluent 2 type ramp - 17 named styles from @fluentui/tokens
   // Source: packages/tokens/src/global/typographyStyles.ts (microsoft/fluentui)
   // fontFamilyBase: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif
   // Naming pattern: base = Regular (400), Strong = Semibold (600), Stronger = Bold (700)
-  // Subtitle 1 lh = 28px (lineHeightBase500) — NOT 26px
+  // Subtitle 1 lh = 28px (lineHeightBase500) - NOT 26px
   const ramp = [
     // [name, cssKey, sizePx, lineHeightPx, weight]
     ["Display",            "display",          68, 92, 600],
@@ -707,9 +707,9 @@ function DLTypography() {
 
       {/* Weight showcase */}
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1, fontFamily: FONT, marginBottom: 8 }}>Weight Scale — fontWeightRegular / fontWeightMedium / fontWeightSemibold / fontWeightBold</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.fg1, fontFamily: FONT, marginBottom: 8 }}>Weight Scale - fontWeightRegular / fontWeightMedium / fontWeightSemibold / fontWeightBold</div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {[["Regular", 400, "body1"], ["Medium", 500, "—"], ["Semibold", 600, "body1Strong"], ["Bold", 700, "body1Stronger"]].map(([label, w, example]) => (
+          {[["Regular", 400, "body1"], ["Medium", 500, "-"], ["Semibold", 600, "body1Strong"], ["Bold", 700, "body1Stronger"]].map(([label, w, example]) => (
             <div key={label} style={{ flex: 1, minWidth: 120, padding: "10px 14px", borderRadius: 4, background: T.bg3, border: `1px solid ${T.stroke2}` }}>
               <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: w, color: T.fg1, lineHeight: 1.3 }}>Aa Bb</div>
               <div style={{ fontSize: 10, color: T.fg3, fontFamily: FONT, marginTop: 4 }}>{label} · {w}</div>
@@ -913,14 +913,14 @@ function DLAccessibility() {
       <div>
         <div style={{ fontFamily: FONT, fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 8 }}>Focus Management</div>
         <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.5, marginBottom: 10 }}>
-          Focus follows a "Z" pattern: left to right, top to bottom. Focus must never be "lost" after closing a dialog or temporary UI — it returns to the trigger element.
+          Focus follows a "Z" pattern: left to right, top to bottom. Focus must never be "lost" after closing a dialog or temporary UI - it returns to the trigger element.
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button className="f-btn f-btn-secondary">Tab to me</button>
           <button className="f-btn f-btn-secondary">Then me</button>
           <button className="f-btn f-btn-primary">Then me</button>
         </div>
-        <div style={{ fontSize: 11, color: T.fg3, fontFamily: FONT, marginTop: 6 }}>Try pressing Tab — the 2px focus ring appears without changing the button's color. This distinguishes keyboard from mouse interaction.</div>
+        <div style={{ fontSize: 11, color: T.fg3, fontFamily: FONT, marginTop: 6 }}>Try pressing Tab - the 2px focus ring appears without changing the button's color. This distinguishes keyboard from mouse interaction.</div>
       </div>
 
       {/* Contrast Demo */}
@@ -953,7 +953,7 @@ function DLAccessibility() {
             ["Tab / Shift+Tab", "Move focus between interactive elements"],
             ["Enter / Space", "Activate buttons, toggle checkboxes/switches"],
             ["Arrow keys", "Navigate within radio groups, tabs, menus"],
-            ["Escape", "Close dialogs, menus, popups — return focus to trigger"],
+            ["Escape", "Close dialogs, menus, popups - return focus to trigger"],
             ["Home / End", "Jump to first/last item in a list or menu"],
           ].map(([key, desc]) => (
             <div key={key} style={{ display: "flex", gap: 10, padding: "6px 0", borderBottom: `1px solid ${T.stroke3}` }}>
@@ -988,7 +988,7 @@ function DLAccessibility() {
       <div>
         <div style={{ fontFamily: FONT, fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 8 }}>High Contrast Mode</div>
         <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.5 }}>
-          Windows High Contrast Mode overrides all colors with system colors. Use the <code style={{ background: T.bg4, padding: "1px 4px", borderRadius: 2, fontSize: 11 }}>forced-colors: active</code> media query to ensure components remain visible and functional. Never rely solely on color to convey meaning — always pair with text, icons, or borders.
+          Windows High Contrast Mode overrides all colors with system colors. Use the <code style={{ background: T.bg4, padding: "1px 4px", borderRadius: 2, fontSize: 11 }}>forced-colors: active</code> media query to ensure components remain visible and functional. Never rely solely on color to convey meaning - always pair with text, icons, or borders.
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <div style={{ padding: "8px 16px", borderRadius: 4, background: "#000", color: "#FFFFFF", border: "2px solid #FFFFFF", fontSize: 12, fontFamily: FONT, fontWeight: 600 }}>HC Button</div>
@@ -1018,7 +1018,7 @@ function DLAccessibility() {
 function DLDensity() {
   const sizes = [
     { name: "Small", h: 24, pad: 8, fs: 12, usage: "High-density data tables, toolbars, dense dashboards" },
-    { name: "Medium", h: 32, pad: 12, fs: 14, usage: "Default for most UI — balanced density and comfort" },
+    { name: "Medium", h: 32, pad: 12, fs: 14, usage: "Default for most UI - balanced density and comfort" },
     { name: "Large", h: 40, pad: 16, fs: 14, usage: "Touch-friendly, onboarding flows, marketing CTAs" },
   ];
   const components = [
@@ -1033,7 +1033,7 @@ function DLDensity() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ fontSize: 12, color: T.fg3, fontFamily: FONT, lineHeight: 1.6 }}>
-        Fluent 2 uses <strong>component size variants</strong> (Small / Medium / Large) rather than a global numeric density scale. Each size adjusts height, padding, and sometimes font size — but icon sizes, horizontal gaps, and font weight stay consistent. Use the <strong>S · M · L</strong> toggle in the sidebar to see all components resize live.
+        Fluent 2 uses <strong>component size variants</strong> (Small / Medium / Large) rather than a global numeric density scale. Each size adjusts height, padding, and sometimes font size - but icon sizes, horizontal gaps, and font weight stay consistent. Use the <strong>S · M · L</strong> toggle in the sidebar to see all components resize live.
       </div>
 
       {/* Size comparison */}
@@ -1107,12 +1107,12 @@ function FluentContentDesign() {
   const tips = [
     { title: "Keep it simple", desc: "Use plain language. Short sentences and fragments are easier to scan.", do: "Turn on notifications", dont: "You can enable the notification feature in your account settings" },
     { title: "Get to the point fast", desc: "Make choices and next steps obvious. Prune every excess word.", do: "3 files deleted", dont: "The 3 files you selected have been successfully deleted from your storage" },
-    { title: "Talk like a person", desc: "Write informally, conversationally — like you're talking one-on-one.", do: "Something went wrong. Try again.", dont: "An unexpected error has occurred. Please retry the operation." },
+    { title: "Talk like a person", desc: "Write informally, conversationally - like you're talking one-on-one.", do: "Something went wrong. Try again.", dont: "An unexpected error has occurred. Please retry the operation." },
   ];
   const rules = [
     ["Present tense", "\"File uploads\" not \"File will upload\""],
     ["Active voice", "\"You saved the file\" not \"The file was saved\""],
-    ["Second person", "\"Your files\" — avoid \"I\", \"we\", \"us\""],
+    ["Second person", "\"Your files\" - avoid \"I\", \"we\", \"us\""],
     ["Sentence case", "Capitalize only first word + proper nouns"],
     ["No exclamation marks", "Use only for celebrations. Don't shout."],
     ["Minimal punctuation", "Skip periods on buttons, labels, headers"],
@@ -1122,7 +1122,7 @@ function FluentContentDesign() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, fontFamily: FONT }}>
       <div style={{ fontSize: 12, color: T.fg3, lineHeight: 1.6 }}>
-        Content design is thinking about how to give your audience the information they need when they need it. Words are a design material — as essential as color or iconography.
+        Content design is thinking about how to give your audience the information they need when they need it. Words are a design material - as essential as color or iconography.
       </div>
       <div>
         <div style={{ fontSize: 16, fontWeight: 600, color: T.fg1, marginBottom: 10 }}>Writing Principles</div>
@@ -1167,8 +1167,8 @@ function FluentContentDesign() {
 const CATS = ["Foundations", "Components & Patterns", "Patterns"];
 const COMPS = [
   // Design Language
-  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Fluent System Icons — 4,000+ SVG icons in Regular and Filled variants. Tree-shakeable via fluentui react-icons.", render: DLIcons },
-  { id: "dl-color", name: "Color", cat: "Foundations", desc: "Three palettes — Neutral (grays), Brand (blue), and Shared/Status (semantic). Components darken on interaction. Focus uses stroke, not color.", render: DLColor },
+  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Fluent System Icons - 4,000+ SVG icons in Regular and Filled variants. Tree-shakeable via fluentui react-icons.", render: DLIcons },
+  { id: "dl-color", name: "Color", cat: "Foundations", desc: "Three palettes - Neutral (grays), Brand (blue), and Shared/Status (semantic). Components darken on interaction. Focus uses stroke, not color.", render: DLColor },
   { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "Segoe UI type ramp with 16 styles. Clear semantic roles from Caption to Display. Regular and Semibold weights create hierarchy.", render: DLTypography },
   { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "Six shadow levels (shadow2–64) using key + ambient dual shadows. Dark theme doubles opacity. Windows uses strokes instead.", render: DLElevation },
   { id: "dl-shapes", name: "Shapes", cat: "Foundations", desc: "Four forms (Rectangle, Circle, Pill, Beak). Corner radius from None (0) to Circle (50%). Stroke thickness tokens (1–4px).", render: DLShapes },
@@ -1176,9 +1176,9 @@ const COMPS = [
   { id: "dl-motion", name: "Motion", cat: "Foundations", desc: "Duration tokens (50–400ms). Easing curves for entries (decelerate), exits (accelerate), and standard (easy ease).", render: DLMotion },
   // Foundations
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA compliance. Contrast checklist, focus management, keyboard patterns, ARIA semantics, High Contrast Mode support.", render: DLAccessibility },
-  { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Component size variants (Small 24px / Medium 32px / Large 40px). Height, padding, and font adjust — icons, gaps, and colors stay constant.", render: DLDensity },
+  { id: "dl-density", name: "Density & Size", cat: "Foundations", desc: "Component size variants (Small 24px / Medium 32px / Large 40px). Height, padding, and font adjust - icons, gaps, and colors stay constant.", render: DLDensity },
   { id: "dl-content", name: "Content Design", cat: "Foundations", desc: "UX writing principles: simple, direct, human. Style rules for tense, voice, capitalization, punctuation, and accessibility.", render: FluentContentDesign },
-  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens — colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Patterns
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function(){
@@ -1651,7 +1651,7 @@ export default function App() {
           ) : (
             <div style={{ maxWidth: 800, margin: "0 auto" }}>
               <h1 style={{ fontSize: sz.headFs + 12, fontWeight: 600, margin: `0 0 ${sz.gap}px`, color: T.fg1, lineHeight: 1.1 }}>Fluent 2 <span style={{ color: T.brandFg1 }}>Interactive Library</span></h1>
-              <p style={{ fontSize: sz.bodyFs, lineHeight: 1.6, color: T.fg3, maxWidth: 560, margin: `0 0 ${sz.gap - 2}px` }}>Microsoft's Fluent 2 design system components with real interactive states. Hover, focus, click — every state matches the official Fluent tokens.</p>
+              <p style={{ fontSize: sz.bodyFs, lineHeight: 1.6, color: T.fg3, maxWidth: 560, margin: `0 0 ${sz.gap - 2}px` }}>Microsoft's Fluent 2 design system components with real interactive states. Hover, focus, click - every state matches the official Fluent tokens.</p>
               <p style={{ fontSize: sz.sideFs - 1, color: T.brandFg1, margin: `0 0 ${sz.mainPad}px`, fontWeight: 600 }}>Try it: switch to Dark theme. Change size to Small for a dense layout. Tab for focus rings.</p>
               <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fill, minmax(${sz.cardMin}px, 1fr))`, gap: sz.gridGap }}>
                 {COMPS.map(c => {

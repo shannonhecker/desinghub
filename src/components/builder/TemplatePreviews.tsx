@@ -4,7 +4,7 @@ import React from "react";
 import type { TemplateId } from "@/lib/builderTemplates";
 
 /* ══════════════════════════════════════════════════════════
-   TemplatePreviews — tiny SVG wireframes rendered inside each
+   TemplatePreviews - tiny SVG wireframes rendered inside each
    pattern card so users see a hint of the actual layout before
    clicking. Replaces the single Material icon with a hand-crafted
    miniature that matches the template's real composition.
@@ -15,7 +15,7 @@ import type { TemplateId } from "@/lib/builderTemplates";
    ══════════════════════════════════════════════════════════ */
 
 const FG = "currentColor";
-const ACCENT = "#9484D6"; // muted violet, ausos accent — always visible over both modes
+const ACCENT = "#9484D6"; // muted violet, ausos accent - always visible over both modes
 const MUTED = "rgba(128, 128, 128, 0.35)";
 const BG_BAR = "rgba(128, 128, 128, 0.2)";
 
@@ -232,7 +232,7 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
 export function TemplatePreview({ id }: { id: TemplateId }) {
   const Preview = PREVIEWS[id];
   if (!Preview) return null;
-  /* No aria-hidden here — the inner SVG has role="img" with an
+  /* No aria-hidden here - the inner SVG has role="img" with an
      aria-label describing what the wireframe represents. The pattern
      card's own aria-label ("Apply X template") gives click context. */
   return (

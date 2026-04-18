@@ -5,7 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { relativeTimeLabel } from "@/lib/sessionTitle";
 
 /* ══════════════════════════════════════════════════════════
-   SaveIndicator — calm, always-visible reassurance that the
+   SaveIndicator - calm, always-visible reassurance that the
    user's session is safe.
 
    States:
@@ -34,7 +34,7 @@ export function SaveIndicator() {
     return () => clearInterval(id);
   }, [lastSavedAt, saveState]);
 
-  /* Retry handler — manually flips saveState to trigger the auto-save
+  /* Retry handler - manually flips saveState to trigger the auto-save
      hook to pick it up on the next change. If the user's state
      already matches what's on the server, they'll see "Saved just
      now" after the retry succeeds. */

@@ -51,7 +51,7 @@ const SAMPLE_MESSAGES = [
 ];
 
 /* ══════════════════════════════════════════════════════════
-   Device Controls — top bar above the viewport
+   Device Controls - top bar above the viewport
    ══════════════════════════════════════════════════════════ */
 function DeviceControls({
   device,
@@ -248,7 +248,7 @@ export function BuilderPreview() {
         onRefresh={handleRefresh}
       />
 
-      {/* Viewport wrapper — light gray bg */}
+      {/* Viewport wrapper - light gray bg */}
       <div className="bp-viewport-wrapper">
         {/* Device frame with animated size */}
         <motion.div

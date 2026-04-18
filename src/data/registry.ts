@@ -12,7 +12,7 @@ interface RawComponent {
   [key: string]: unknown;
 }
 
-/** Theme token dictionaries — keys vary by DS, values are CSS strings but
+/** Theme token dictionaries - keys vary by DS, values are CSS strings but
  *  the untyped JSX sources use mixed types, so we keep this permissive and
  *  let consumers cast to string where needed for CSS properties. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

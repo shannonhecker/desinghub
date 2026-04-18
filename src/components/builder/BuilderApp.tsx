@@ -32,7 +32,7 @@ export function BuilderApp() {
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
 
-  /* Auto-save subscription — kicks in the moment a session is started
+  /* Auto-save subscription - kicks in the moment a session is started
      (either by picking a template or sending a first message). */
   useAutoSave();
 
@@ -68,7 +68,7 @@ export function BuilderApp() {
         document.body.style.userSelect = "";
       }
     };
-    // Touch equivalents — allow the resize handle to be dragged on tablets
+    // Touch equivalents - allow the resize handle to be dragged on tablets
     const onTouchMove = (e: TouchEvent) => {
       if (!isDragging.current || !containerRef.current) return;
       e.preventDefault(); // prevents page scroll while resizing
@@ -136,7 +136,7 @@ export function BuilderApp() {
     }
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
-  /* ── Fork from shared preview — pick up ?shared=<hash> and apply ──
+  /* ── Fork from shared preview - pick up ?shared=<hash> and apply ──
      Triggered when a viewer clicks "Fork & edit" on /preview/share/[hash].
      Sets the full zone state, opens the preview, and clears the URL so
      reloads don't re-apply. Runs once on mount. */
@@ -164,12 +164,12 @@ export function BuilderApp() {
         const newUrl = window.location.pathname + window.location.hash;
         window.history.replaceState({}, "", newUrl);
       } catch {
-        /* Decoding or import failed — silently ignore; user lands on an empty builder */
+        /* Decoding or import failed - silently ignore; user lands on an empty builder */
       }
     })();
   }, []);
 
-  /* handleSaveProject + handleLoadProject removed — SessionsDrawer
+  /* handleSaveProject + handleLoadProject removed - SessionsDrawer
      owns session load/save/delete now, and auto-save handles persistence. */
 
   if (isStandalone) return <StandalonePreview />;
@@ -182,7 +182,7 @@ export function BuilderApp() {
         <WaveScene />
       </div>
 
-      {/* GeminiSidebar removed — replaced by SessionsDrawer (left slide-in).
+      {/* GeminiSidebar removed - replaced by SessionsDrawer (left slide-in).
           isSidebarOpen is kept in state only to preserve any related CSS
           hooks; it's no longer used to toggle a visible sidebar. */}
 
@@ -288,7 +288,7 @@ export function BuilderApp() {
           <PreviewSidePanel />
         </div>
 
-        {/* ── Copyright — in-flow below chat, never overlaps content ── */}
+        {/* ── Copyright - in-flow below chat, never overlaps content ── */}
         <div className="builder-copyright-fixed" aria-hidden="true">
           &copy; {new Date().getFullYear()} ausōs. All rights reserved.
         </div>
@@ -296,15 +296,15 @@ export function BuilderApp() {
 
       <SettingsPanel />
 
-      {/* ── Templates drawer — opened via the hero's "Browse templates"
+      {/* ── Templates drawer - opened via the hero's "Browse templates"
            link, or programmatically from anywhere in the builder. ── */}
       <TemplatesDrawer />
 
-      {/* ── Sessions drawer — left slide-in, opened via the top-left
+      {/* ── Sessions drawer - left slide-in, opened via the top-left
            menu hamburger. Replaces the old "My Projects" modal. ── */}
       <SessionsDrawer />
 
-      {/* ── Slash-command inserter — "/" anywhere outside inputs
+      {/* ── Slash-command inserter - "/" anywhere outside inputs
            opens a Notion-style component picker overlay. ── */}
       <SlashInserter />
 

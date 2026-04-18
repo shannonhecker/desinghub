@@ -5,7 +5,7 @@ import { WaveCanvas } from "./WaveCanvas";
 import "./hero.css";
 
 /* ═══════════════════════════════════════════════════════════════
-   HeroHeader — Editorial Layout + Guilloché Wave Lines
+   HeroHeader - Editorial Layout + Guilloché Wave Lines
    Outfit (display) × Space Grotesk (UI) · Wave canvas background
    ═══════════════════════════════════════════════════════════════ */
 

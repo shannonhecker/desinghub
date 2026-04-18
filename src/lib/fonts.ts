@@ -8,7 +8,7 @@ import {
 } from "next/font/google";
 
 /**
- * Self-hosted Google Fonts via next/font — eliminates CDN dependency,
+ * Self-hosted Google Fonts via next/font - eliminates CDN dependency,
  * enables automatic subsetting, and adds font-display: swap.
  *
  * Each font exports a className (for scoping) and a CSS variable.

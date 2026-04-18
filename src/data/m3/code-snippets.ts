@@ -343,7 +343,7 @@ import Alert from "@mui/material/Alert";
     react: `import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// Material 3 themed chart — uses M3 color tokens
+// Material 3 themed chart - uses M3 color tokens
 const theme = {
   colors: [
     "var(--md-sys-color-primary)",
@@ -795,7 +795,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
     react: `import { BottomNavigationAction } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 
-// Active indicator pill — used inside BottomNavigation or NavigationRail
+// Active indicator pill - used inside BottomNavigation or NavigationRail
 <BottomNavigationAction
   label="Home"
   icon={<HomeIcon />}
@@ -908,7 +908,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
   "skip-link": {
     react: `import { Link } from "@mui/material";
 
-{/* Visually hidden, appears on Tab focus — WCAG 2.4.1 */}
+{/* Visually hidden, appears on Tab focus - WCAG 2.4.1 */}
 <Link
   href="#main-content"
   sx={{
@@ -1007,7 +1007,7 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import HomeIcon from "@mui/icons-material/Home";
 import SettingsIcon from "@mui/icons-material/Settings";
 
-{/* Navigation Rail — permanent side nav with icon + label */}
+{/* Navigation Rail - permanent side nav with icon + label */}
 <Drawer variant="permanent" sx={{ width: 80 }}>
   <List>
     <ListItem disablePadding>
@@ -1040,7 +1040,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
   "dl-color": {
     react: `import { ThemeProvider, createTheme } from "@mui/material";
 
-// HCT color space — dynamic color from source seed
+// HCT color space - dynamic color from source seed
 const theme = createTheme({
   palette: {
     primary: { main: "#6750A4" },   // Source color
@@ -1089,11 +1089,11 @@ const theme = createTheme({
     react: `import { Paper } from "@mui/material";
 
 {/* M3 uses tonal color elevation, not drop shadows */}
-<Paper elevation={0}>Level 0 — Surface</Paper>
-<Paper elevation={1}>Level 1 — Surface Container Low</Paper>
-<Paper elevation={2}>Level 2 — Surface Container</Paper>
-<Paper elevation={3}>Level 3 — Surface Container High</Paper>
-<Paper elevation={4}>Level 4 — Surface Container Highest</Paper>`,
+<Paper elevation={0}>Level 0 - Surface</Paper>
+<Paper elevation={1}>Level 1 - Surface Container Low</Paper>
+<Paper elevation={2}>Level 2 - Surface Container</Paper>
+<Paper elevation={3}>Level 3 - Surface Container High</Paper>
+<Paper elevation={4}>Level 4 - Surface Container Highest</Paper>`,
     html: `<style>
 :root {
   --md-sys-color-surface: #FFFBFE;
@@ -1129,7 +1129,7 @@ const theme = createTheme({
 <div style="padding: var(--md-sys-spacing-md)">16px padding</div>`,
   },
   "dl-tokens": {
-    react: `// M3 design tokens — CSS custom properties
+    react: `// M3 design tokens - CSS custom properties
 // Color: --md-sys-color-primary, --md-sys-color-on-primary, etc.
 // Type:  --md-sys-typescale-body-large, etc.
 // Shape: --md-sys-shape-corner-medium (12px)
@@ -1204,7 +1204,7 @@ const denseTheme = createTheme({
 </div>`,
   },
   "dl-a11y": {
-    react: `// WCAG 2.1 AA — Material accessibility requirements:
+    react: `// WCAG 2.1 AA - Material accessibility requirements:
 // - 48dp minimum touch targets
 // - 4.5:1 text contrast, 3:1 for large text
 // - State layers provide visual feedback (hover 8%, focus 12%)

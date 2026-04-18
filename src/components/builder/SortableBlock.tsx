@@ -7,7 +7,7 @@ import type { ZoneId } from "@/store/useBuilder";
 
 const COL_SPAN_LABELS: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
 
-/* ── Resize handle — drag the right edge to change colSpan ── */
+/* ── Resize handle - drag the right edge to change colSpan ── */
 function ResizeHandle({
   colSpan,
   onResize,
@@ -153,7 +153,7 @@ export function SortableBlock({
         </button>
       )}
 
-      {/* Swap button — hidden in compact mode */}
+      {/* Swap button - hidden in compact mode */}
       {onSwapClick && !compact && (
         <button
           className="canvas-block-swap"
@@ -167,7 +167,7 @@ export function SortableBlock({
         </button>
       )}
 
-      {/* Column span badge — click to cycle */}
+      {/* Column span badge - click to cycle */}
       {onColSpanChange && !compact && (
         <button
           className="canvas-block-colspan"
@@ -176,7 +176,7 @@ export function SortableBlock({
             const idx = cycle.indexOf(colSpan);
             onColSpanChange(cycle[(idx + 1) % cycle.length]);
           }}
-          title={`Width: ${COL_SPAN_LABELS[colSpan] || "Full"} — click to cycle`}
+          title={`Width: ${COL_SPAN_LABELS[colSpan] || "Full"} - click to cycle`}
           type="button"
         >
           <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.02em" }}>
@@ -187,7 +187,7 @@ export function SortableBlock({
 
       {children}
 
-      {/* Resize handle — right edge drag (body zone only) */}
+      {/* Resize handle - right edge drag (body zone only) */}
       {onColSpanChange && !compact && (
         <ResizeHandle colSpan={colSpan} onResize={onColSpanChange} />
       )}
