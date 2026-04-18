@@ -31,7 +31,11 @@ interface CanvasSnapshot {
 let past: CanvasSnapshot[] = [];
 let future: CanvasSnapshot[] = [];
 let lastCaptured: CanvasSnapshot | null = null;
-let applying = false;
+/** Monotonic counter: > 0 means an apply() is in-flight and the
+ *  subscription should skip capture. Using a counter (not a boolean)
+ *  handles overlapping applies cleanly — each apply() increments on
+ *  entry and decrements on its own RAF completion. */
+let applyingCount = 0;
 let pendingRaf: number | null = null;
 let initialized = false;
 
@@ -60,11 +64,14 @@ function sameSnapshot(a: CanvasSnapshot, b: CanvasSnapshot): boolean {
 }
 
 function scheduleCapture() {
-  if (applying) return;
+  if (applyingCount > 0) return;
   if (pendingRaf !== null) return;
   if (typeof window === "undefined") return;
   pendingRaf = requestAnimationFrame(() => {
     pendingRaf = null;
+    // Re-check the guard at flush time in case an apply() started
+    // between scheduling and this callback.
+    if (applyingCount > 0) return;
     const current = snap();
     if (lastCaptured && sameSnapshot(lastCaptured, current)) return;
     if (lastCaptured) {
@@ -77,7 +84,7 @@ function scheduleCapture() {
 }
 
 function apply(snapshot: CanvasSnapshot) {
-  applying = true;
+  applyingCount++;
   useBuilder.setState({
     blocks: snapshot.blocks,
     headerBlocks: snapshot.headerBlocks,
@@ -89,9 +96,11 @@ function apply(snapshot: CanvasSnapshot) {
   lastCaptured = snapshot;
   useBuilder.getState().bumpPreview();
   // Release the guard on the next tick so the subscription's scheduled
-  // capture (which runs in a RAF) doesn't snapshot our restore.
+  // capture (which runs in a RAF) doesn't snapshot our restore. Uses
+  // a counter so overlapping undo/redo calls don't prematurely re-arm
+  // capture while a prior apply is still settling.
   requestAnimationFrame(() => {
-    applying = false;
+    applyingCount = Math.max(0, applyingCount - 1);
   });
 }
 
@@ -121,6 +130,7 @@ export function initBuilderHistory(): () => void {
     past = [];
     future = [];
     lastCaptured = null;
+    applyingCount = 0;
     if (pendingRaf !== null) {
       cancelAnimationFrame(pendingRaf);
       pendingRaf = null;

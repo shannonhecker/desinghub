@@ -32,10 +32,41 @@ const FORBIDDEN_KEYS = new Set([
   "status",
 ]);
 
+const MAX_PROP_STRING_LENGTH = 2000;
+
+/**
+ * Render-safe value sanitizer — identical in spirit to the one in
+ * shareState.ts. We don't share the function to avoid coupling but
+ * the rules match: only JSON primitives, shallow arrays, shallow
+ * objects. Defense in depth against a hallucinated prop shape.
+ */
+function sanitizePropValue(v: unknown, depth = 0): unknown {
+  if (depth > 2) return null;
+  if (v === null) return null;
+  if (typeof v === "string") return v.length > MAX_PROP_STRING_LENGTH ? v.slice(0, MAX_PROP_STRING_LENGTH) : v;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "boolean") return v;
+  if (Array.isArray(v)) return v.slice(0, 20).map((x) => sanitizePropValue(x, depth + 1));
+  if (typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    let n = 0;
+    for (const [k, val] of Object.entries(v)) {
+      if (n >= 20) break;
+      if (typeof k !== "string" || k.length > 80) continue;
+      out[k] = sanitizePropValue(val, depth + 1);
+      n++;
+    }
+    return out;
+  }
+  return null; // functions, symbols, bigints — drop
+}
+
 function stripForbidden(props: Record<string, unknown>): Record<string, unknown> {
   const clean: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) {
-    if (!FORBIDDEN_KEYS.has(key)) clean[key] = value;
+    if (FORBIDDEN_KEYS.has(key)) continue;
+    if (typeof key !== "string" || key.length > 80) continue;
+    clean[key] = sanitizePropValue(value);
   }
   return clean;
 }

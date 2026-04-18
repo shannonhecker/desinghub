@@ -236,15 +236,27 @@ function appTsxSource(): string {
   return `import React from "react";\n\n${componentSource}\n`;
 }
 
-/** Escape a string so it can be safely embedded in a bash heredoc
- *  where the delimiter is a literal 'EOF' (quoted, so no variable
- *  expansion). We only need to avoid the terminator sequence. */
+/** Safety caps — a generated Vite project should never exceed these
+ *  in practice, but hard limits keep a malicious canvas from producing
+ *  a multi-megabyte shell script that crashes the user's editor. */
+const MAX_PROJECT_BYTES = 512 * 1024;  // 512KB cap on total script
+const MAX_FILE_BYTES = 256 * 1024;     // 256KB per file
+
+/**
+ * The heredoc uses a QUOTED delimiter (<<'EOF_N'), which means bash
+ * performs NO variable, command, or arithmetic substitution inside —
+ * backticks, $(...), ${...}, etc. are literal text. The only way content
+ * can break out of a quoted heredoc is if a line equals the delimiter
+ * exactly. `uniqueDelim()` below guarantees the delimiter doesn't appear
+ * in the file, so this function is effectively a defense-in-depth pass
+ * plus a size cap — nothing else is needed for injection safety. */
 function sanitizeForHeredoc(s: string): string {
-  // The heredoc uses 'EOF_<N>'; if the user's content happens to contain that
-  // exact delimiter on its own line, the heredoc will close prematurely. We
-  // unique-ify by making delimiters per-file with a counter, and we still
-  // guard against collision by checking the content.
-  return s;
+  if (s.length > MAX_FILE_BYTES) {
+    // Truncate with a visible marker — far better than a broken project
+    return s.slice(0, MAX_FILE_BYTES) + "\n/* ...truncated by Design Hub export (file exceeded size limit) ... */\n";
+  }
+  // Strip any NUL bytes (shouldn't appear but bash handles them oddly)
+  return s.replace(/\0/g, "");
 }
 
 interface ProjectFile {
@@ -317,6 +329,19 @@ ${safe}${safe.endsWith("\n") ? "" : "\n"}${delim}
 echo "  ✔ ${f.path}"`;
     })
     .join("\n");
+
+  // Hard cap on total script size
+  const provisional = header + fileSections;
+  if (provisional.length > MAX_PROJECT_BYTES) {
+    return `#!/bin/sh
+# Error — the exported project exceeded ${MAX_PROJECT_BYTES / 1024}KB.
+# This usually means the canvas has unusually large component content.
+# Trim your canvas and try again, or use the React / HTML export for
+# single-file output.
+echo "Design Hub export too large (${provisional.length} bytes)"
+exit 1
+`;
+  }
 
   const footer = `
 

@@ -58,20 +58,73 @@ function urlSafeB64Decode(s: string): string | null {
   }
 }
 
-/* Validate a block has the shape { id, type, props } with primitive-safe values. */
-function isValidBlock(b: unknown): b is Block {
-  if (typeof b !== "object" || b === null) return false;
-  const blk = b as Record<string, unknown>;
-  return (
-    typeof blk.id === "string" &&
-    typeof blk.type === "string" &&
-    typeof blk.props === "object" &&
-    blk.props !== null
-  );
+/* Caps — enforced against the DECODED payload, not the hash string
+ * (base64 has ~33% overhead so a large hash is still small decoded).
+ * These prevent a malicious share URL from ballooning store state. */
+const MAX_JSON_BYTES = 200 * 1024;    // 200KB decoded JSON
+const MAX_BLOCKS_PER_ZONE = 120;
+const MAX_PROP_STRING_LENGTH = 4000;
+const MAX_PROP_KEYS = 50;
+
+/** Recursively deep-sanitize a value so only JSON-primitive, render-safe
+ *  shapes survive: strings (capped), finite numbers, booleans, null, and
+ *  shallow arrays/objects of those. Anything else (functions, symbols,
+ *  deeply nested objects) is dropped. */
+function sanitizeValue(v: unknown, depth = 0): unknown {
+  if (depth > 3) return null;
+  if (v === null) return null;
+  if (typeof v === "string") return v.length > MAX_PROP_STRING_LENGTH ? v.slice(0, MAX_PROP_STRING_LENGTH) : v;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (typeof v === "boolean") return v;
+  if (Array.isArray(v)) {
+    return v.slice(0, 40).map((x) => sanitizeValue(x, depth + 1));
+  }
+  if (typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    let count = 0;
+    for (const [k, val] of Object.entries(v)) {
+      if (count >= MAX_PROP_KEYS) break;
+      if (typeof k !== "string" || k.length > 80) continue;
+      out[k] = sanitizeValue(val, depth + 1);
+      count++;
+    }
+    return out;
+  }
+  return null; // functions, symbols, bigints — drop
 }
 
-function isValidBlockArray(a: unknown): a is Block[] {
-  return Array.isArray(a) && a.every(isValidBlock);
+/** Validate a block has the shape { id, type, props } AND sanitize its
+ *  props so render-time consumers never see arbitrary shapes. Mutates
+ *  the prop bag but returns the same id/type. Also clamps colSpan to
+ *  the 1-3 grid range so a malicious share can't break layout. */
+function validateAndSanitizeBlock(b: unknown): Block | null {
+  if (typeof b !== "object" || b === null) return null;
+  const blk = b as Record<string, unknown>;
+  if (typeof blk.id !== "string" || blk.id.length === 0 || blk.id.length > 120) return null;
+  if (typeof blk.type !== "string" || blk.type.length === 0 || blk.type.length > 80) return null;
+  if (typeof blk.props !== "object" || blk.props === null) return null;
+
+  const cleanProps = sanitizeValue(blk.props) as Record<string, unknown>;
+
+  // Clamp colSpan defensively so bad values don't break CSS grid
+  if ("colSpan" in cleanProps) {
+    const cs = Number(cleanProps.colSpan);
+    cleanProps.colSpan = Number.isFinite(cs) ? Math.max(1, Math.min(3, Math.floor(cs))) : 3;
+  }
+
+  return { id: blk.id, type: blk.type, props: cleanProps };
+}
+
+function validateAndSanitizeBlockArray(a: unknown): Block[] | null {
+  if (!Array.isArray(a)) return null;
+  if (a.length > MAX_BLOCKS_PER_ZONE) return null;
+  const out: Block[] = [];
+  for (const item of a) {
+    const clean = validateAndSanitizeBlock(item);
+    if (!clean) return null;
+    out.push(clean);
+  }
+  return out;
 }
 
 export function encodeShareState(s: SharedCanvas): string {
@@ -79,9 +132,11 @@ export function encodeShareState(s: SharedCanvas): string {
 }
 
 export function decodeShareState(hash: string): SharedCanvas | null {
-  if (!hash || hash.length > 32 * 1024) return null;
+  if (!hash || hash.length > 64 * 1024) return null; // hash string cap (loose)
   const json = urlSafeB64Decode(hash);
   if (!json) return null;
+  if (json.length > MAX_JSON_BYTES) return null;     // DECODED payload cap (tight)
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -94,23 +149,29 @@ export function decodeShareState(hash: string): SharedCanvas | null {
   if (obj.v !== 1) return null;
   if (typeof obj.designSystem !== "string" || !DESIGN_SYSTEMS.has(obj.designSystem as DesignSystem)) return null;
   if (typeof obj.mode !== "string" || !MODES.has(obj.mode as BuilderMode)) return null;
-  if (typeof obj.density !== "string") return null;
-  if (obj.activeTemplateId !== null && typeof obj.activeTemplateId !== "string") return null;
-  if (!isValidBlockArray(obj.headerBlocks)) return null;
-  if (!isValidBlockArray(obj.sidebarBlocks)) return null;
-  if (!isValidBlockArray(obj.blocks)) return null;
-  if (!isValidBlockArray(obj.footerBlocks)) return null;
+  if (typeof obj.density !== "string" || obj.density.length > 40) return null;
+  const activeTemplateId =
+    typeof obj.activeTemplateId === "string" && obj.activeTemplateId.length <= 80
+      ? obj.activeTemplateId
+      : null;
+
+  const headerBlocks  = validateAndSanitizeBlockArray(obj.headerBlocks);
+  const sidebarBlocks = validateAndSanitizeBlockArray(obj.sidebarBlocks);
+  const blocks        = validateAndSanitizeBlockArray(obj.blocks);
+  const footerBlocks  = validateAndSanitizeBlockArray(obj.footerBlocks);
+
+  if (!headerBlocks || !sidebarBlocks || !blocks || !footerBlocks) return null;
 
   return {
     v: 1,
     designSystem: obj.designSystem as DesignSystem,
     mode: obj.mode as BuilderMode,
     density: obj.density,
-    activeTemplateId: (obj.activeTemplateId as string | null) ?? null,
-    headerBlocks: obj.headerBlocks,
-    sidebarBlocks: obj.sidebarBlocks,
-    blocks: obj.blocks,
-    footerBlocks: obj.footerBlocks,
+    activeTemplateId,
+    headerBlocks,
+    sidebarBlocks,
+    blocks,
+    footerBlocks,
   };
 }
 

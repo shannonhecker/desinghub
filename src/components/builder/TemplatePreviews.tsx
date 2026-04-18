@@ -232,8 +232,11 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
 export function TemplatePreview({ id }: { id: TemplateId }) {
   const Preview = PREVIEWS[id];
   if (!Preview) return null;
+  /* No aria-hidden here — the inner SVG has role="img" with an
+     aria-label describing what the wireframe represents. The pattern
+     card's own aria-label ("Apply X template") gives click context. */
   return (
-    <div className="pattern-card-preview" aria-hidden="true">
+    <div className="pattern-card-preview">
       <Preview />
     </div>
   );

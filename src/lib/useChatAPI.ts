@@ -33,8 +33,20 @@ export function useChatAPI() {
     const selectedBlock = store.selectedBlockId
       ? allZoneBlocks.find((b) => b.id === store.selectedBlockId)
       : null;
+    // Serialize props safely — if anything non-JSON slipped in (function,
+    // circular ref, DOM node) we don't want to crash the chat pipeline.
+    let propsJson = "{}";
+    if (selectedBlock) {
+      try {
+        propsJson = JSON.stringify(selectedBlock.props);
+      } catch {
+        propsJson = '{"_error":"props not serializable"}';
+      }
+      // Cap context size so a huge prop doesn't blow the token budget
+      if (propsJson.length > 2000) propsJson = propsJson.slice(0, 1997) + "...";
+    }
     const selectedSuffix = selectedBlock
-      ? `, selected_block={id:"${selectedBlock.id}", type:"${selectedBlock.type}", zone:"${store.selectedBlockZone ?? ""}", props:${JSON.stringify(selectedBlock.props)}}`
+      ? `, selected_block={id:"${selectedBlock.id}", type:"${selectedBlock.type}", zone:"${store.selectedBlockZone ?? ""}", props:${propsJson}}`
       : "";
     const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}]`;
     history.push({ role: "user", content: `${context}\n\n${userText}` });

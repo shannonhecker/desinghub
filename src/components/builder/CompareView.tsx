@@ -39,7 +39,7 @@ interface CompareQuadrantProps {
   onOpen: () => void;
 }
 
-function CompareQuadrant({
+const CompareQuadrant = React.memo(function CompareQuadrant({
   ds, label, color, org, active, density,
   headerBlocks, sidebarBlocks, bodyBlocks, footerBlocks,
   onOpen,
@@ -118,7 +118,7 @@ function CompareQuadrant({
       </div>
     </div>
   );
-}
+});
 
 export function CompareView() {
   const blocks = useBuilder((s) => s.blocks);
