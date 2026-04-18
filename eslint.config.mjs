@@ -1,17 +1,20 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { createRequire } from "module";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
 
-const compat = new FlatCompat({ baseDirectory: __dirname });
+/* eslint-config-next 16 ships flat-config arrays at each entry point.
+   Importing them via require() keeps the return value intact (the FlatCompat
+   wrapper we used before threw a "Converting circular structure to JSON"
+   error because it tried to legacy-validate already-flat configs). */
+const nextCoreWebVitals = require("eslint-config-next/core-web-vitals");
+const nextTypescript = require("eslint-config-next/typescript");
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
     rules: {
-      // Explicit any requires eslint-disable comment (already used sparingly)
+      // Explicit any requires an eslint-disable comment (already used sparingly)
       "@typescript-eslint/no-explicit-any": "error",
       // Catch unused vars (prefix _ to ignore)
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
@@ -23,6 +26,13 @@ const eslintConfig = [
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
     },
+  },
+  {
+    /* Skip linting the multi-megabyte string-constant snippet data files.
+       They are literal `{ react: "...", html: "..." }` maps with no logic;
+       feeding them to the TS parser stalls eslint for minutes without
+       yielding actionable findings. */
+    ignores: ["src/data/**/code-snippets.ts"],
   },
 ];
 
