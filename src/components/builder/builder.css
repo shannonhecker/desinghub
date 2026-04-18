@@ -2679,6 +2679,33 @@
   cursor: pointer; transition: opacity 0.15s;
 }
 .export-generate-btn:hover { opacity: 0.9; }
+
+/* Helper note — appears under the Generate button for the Vite format */
+.export-helper-note {
+  display: flex;
+  align-items: flex-start;
+  margin: -4px 20px 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--b-fg2);
+  background: rgba(126, 107, 196, 0.08);
+  border: 1px solid rgba(126, 107, 196, 0.22);
+}
+.export-helper-note code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--b-fg);
+  margin: 0 2px;
+}
+.builder-light .export-helper-note code {
+  background: rgba(0, 0, 0, 0.08);
+  color: #15102a;
+}
+
 .export-code-wrapper {
   margin: 0 20px; max-height: 350px; overflow: auto;
   border-radius: 8px; border: 1px solid var(--b-border);

@@ -3,8 +3,9 @@
 import React, { useState, useCallback } from "react";
 import { exportReact } from "@/lib/export/reactExporter";
 import { exportHTML } from "@/lib/export/htmlExporter";
+import { exportViteBootstrap, viteBootstrapFilename } from "@/lib/export/viteExporter";
 
-type ExportFormat = "react" | "html";
+type ExportFormat = "react" | "html" | "vite";
 
 export function ExportPanel({ onClose }: { onClose: () => void }) {
   const [format, setFormat] = useState<ExportFormat>("react");
@@ -12,7 +13,10 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const generate = useCallback(() => {
-    const output = format === "react" ? exportReact() : exportHTML();
+    const output =
+      format === "react" ? exportReact()
+      : format === "html" ? exportHTML()
+      : exportViteBootstrap();
     setCode(output);
     setCopied(false);
   }, [format]);
@@ -26,13 +30,23 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
 
   const download = useCallback(() => {
     if (!code) return;
-    const ext = format === "react" ? "tsx" : "html";
-    const mime = format === "react" ? "text/typescript" : "text/html";
+    let filename: string;
+    let mime: string;
+    if (format === "react") {
+      filename = "dashboard.tsx";
+      mime = "text/typescript";
+    } else if (format === "html") {
+      filename = "dashboard.html";
+      mime = "text/html";
+    } else {
+      filename = viteBootstrapFilename();
+      mime = "application/x-sh";
+    }
     const blob = new Blob([code], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `dashboard.${ext}`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }, [code, format]);
@@ -64,13 +78,32 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>language</span>
             HTML
           </button>
+          <button
+            className={`export-format-btn ${format === "vite" ? "active" : ""}`}
+            onClick={() => { setFormat("vite"); setCode(""); }}
+            title="Self-extracting shell script — run `sh design-hub-app.sh` to bootstrap a working Vite + React + TS project"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
+            Vite project
+          </button>
         </div>
 
         {/* Generate button */}
         <button className="export-generate-btn" onClick={generate}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>magic_button</span>
-          Generate {format === "react" ? "React Component" : "HTML Page"}
+          Generate {
+            format === "react" ? "React Component"
+            : format === "html" ? "HTML Page"
+            : "Vite Project Bootstrap"
+          }
         </button>
+
+        {format === "vite" && code && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>terminal</span>
+            Download the script, then run <code>sh design-hub-app.sh</code> in an empty folder to bootstrap a working Vite + React + TS project.
+          </p>
+        )}
 
         {/* Code preview */}
         {code && (
@@ -89,7 +122,11 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
               </button>
               <button className="export-action-btn" onClick={download}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
-                Download .{format === "react" ? "tsx" : "html"}
+                Download {
+                  format === "react" ? ".tsx"
+                  : format === "html" ? ".html"
+                  : ".sh"
+                }
               </button>
             </div>
           </>
