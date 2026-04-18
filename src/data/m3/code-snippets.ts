@@ -1233,4 +1233,781 @@ const denseTheme = createTheme({
   <span class="material-symbols-outlined">close</span>
 </button>`,
   },
+  a11y: {
+    react: `// Material 3 a11y - builds on WCAG 2.1 AA
+// - Dynamic color ensures contrast across tonal surfaces
+// - State layers provide visible hover/focus/pressed feedback
+// - Touch targets >= 48dp
+// - Focus ring: 2px solid primary, 2px offset
+
+<IconButton aria-label="Settings">
+  <SettingsIcon />
+</IconButton>
+
+// Use MUI's built-in TransitionGroup for motion-reduce support`,
+    html: `<button class="mdc-icon-button" aria-label="Settings" style="min-width: 48px; min-height: 48px;">
+  <span class="material-symbols-outlined">settings</span>
+</button>`,
+  },
+  "content-design": {
+    react: `// M3 content design - warm, empowering, clear
+// - Sentence case everywhere except proper nouns
+// - Descriptive link text (not "click here")
+// - Progressive disclosure in forms
+// - Empty states explain what will appear
+
+<Typography variant="body2" color="text.secondary">
+  No tasks yet. Create one to get started.
+</Typography>`,
+    html: `<label class="mdc-text-field__label">Email address</label>
+<p class="mdc-text-field__helper-line">We'll never share your email.</p>`,
+  },
+  dialogs: {
+    react: `// Material 3 Dialog (full, basic, fullscreen)
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from "@mui/material";
+
+<Dialog open={open} onClose={onClose}>
+  <DialogTitle>Delete project?</DialogTitle>
+  <DialogContent>
+    This permanently removes all files. This cannot be undone.
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={onClose}>Cancel</Button>
+    <Button variant="filled" color="error">Delete</Button>
+  </DialogActions>
+</Dialog>`,
+    html: `<div class="mdc-dialog" role="alertdialog" aria-labelledby="title">
+  <div class="mdc-dialog__surface">
+    <h2 id="title" class="mdc-dialog__title">Delete project?</h2>
+    <div class="mdc-dialog__content">This cannot be undone.</div>
+    <div class="mdc-dialog__actions">
+      <button class="mdc-button">Cancel</button>
+      <button class="mdc-button mdc-button--filled">Delete</button>
+    </div>
+  </div>
+</div>`,
+  },
+  "dl-icons": {
+    react: `// Material Symbols - 2,500+ icons via variable font
+// Styles: Outlined, Rounded, Sharp
+// Fill (0 outline, 1 filled), Grade (-25..200), Opsz (20-48), Wght (100-700)
+
+<span className="material-symbols-outlined">search</span>
+<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+
+// MUI icon component
+import { Search } from "@mui/icons-material";
+<Search />`,
+    html: `<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+<span class="material-symbols-outlined">search</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>`,
+  },
+  "guide-color-roles": {
+    react: `// M3 color roles - semantic, not descriptive
+// primary / onPrimary / primaryContainer / onPrimaryContainer
+// secondary / tertiary / error / surface / onSurface
+
+import { useTheme } from "@mui/material";
+
+function MyCard() {
+  const theme = useTheme();
+  return (
+    <Card sx={{
+      bgcolor: "primaryContainer.main",
+      color: "onPrimaryContainer.main",
+    }}>
+      Primary container surface
+    </Card>
+  );
+}`,
+    html: `<div style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);">
+  Primary container
+</div>`,
+  },
+  "guide-mapping": {
+    react: `// M3 role mapping - each UI surface gets a semantic pairing
+// App bar     -> surface / onSurface
+// FAB         -> primaryContainer / onPrimaryContainer
+// Buttons     -> primary / onPrimary
+// Errors      -> errorContainer / onErrorContainer
+
+<AppBar sx={{ bgcolor: "surface.main", color: "onSurface.main" }} />
+<Fab sx={{ bgcolor: "primaryContainer.main", color: "onPrimaryContainer.main" }} />`,
+    html: `<header style="background: var(--md-sys-color-surface);">
+  <h1 style="color: var(--md-sys-color-on-surface);">App</h1>
+</header>`,
+  },
+  "guide-palette": {
+    react: `// M3 tonal palette - 13 tones (0-100) per color role
+// Generated from a source color via HCT color space
+
+// Derive at build time
+import { argbFromHex, themeFromSourceColor } from "@material/material-color-utilities";
+
+const theme = themeFromSourceColor(argbFromHex("#6750A4"));
+// theme.palettes.primary.tone(40) -> #6750A4 at tone 40`,
+    html: `<!-- 13 tones generated from source colour -->
+<style>
+  :root {
+    --md-ref-palette-primary0: #000000;
+    --md-ref-palette-primary10: #21005D;
+    --md-ref-palette-primary40: #6750A4;
+    --md-ref-palette-primary100: #FFFFFF;
+  }
+</style>`,
+  },
+  "guide-state-layers": {
+    react: `// M3 state layers - colour overlay on hover / focus / pressed
+// Opacity: hover 8%, focus 12%, pressed 12%, dragged 16%
+
+// MUI handles this automatically via component variants:
+<Button variant="filled">Hover me</Button>
+
+// Manual state layer
+<div
+  onMouseEnter={() => setHover(true)}
+  style={{
+    position: "relative",
+    "--state-opacity": hover ? 0.08 : 0,
+  }}
+>
+  <div className="state-layer" style={{
+    position: "absolute", inset: 0,
+    background: "currentColor",
+    opacity: "var(--state-opacity)",
+  }} />
+  Content
+</div>`,
+    html: `<style>
+  .mdc-button:hover::before { opacity: 0.08; }
+  .mdc-button:focus::before { opacity: 0.12; }
+  .mdc-button:active::before { opacity: 0.12; }
+</style>`,
+  },
+  "guide-surfaces": {
+    react: `// M3 surface elevation - 6 container levels
+// surface (0dp) -> surfaceContainerLowest (1dp) ... -> surfaceContainerHighest (4dp)
+// Each adds a tonal overlay (primary at 5-14% based on elevation)
+
+<Card sx={{ bgcolor: "surface.main" }}>Lowest surface</Card>
+<Card sx={{ bgcolor: "surfaceContainerLow.main" }}>Low</Card>
+<Card sx={{ bgcolor: "surfaceContainer.main" }}>Default</Card>
+<Card sx={{ bgcolor: "surfaceContainerHigh.main" }}>High</Card>`,
+    html: `<div style="background: var(--md-sys-color-surface-container);">Default surface</div>`,
+  },
+  "guide-theming": {
+    react: `// M3 theming - ThemeProvider + dynamic color
+
+import { ThemeProvider, createTheme } from "@mui/material";
+import { themeFromSourceColor, argbFromHex } from "@material/material-color-utilities";
+
+const md3Theme = themeFromSourceColor(argbFromHex("#6750A4"));
+const mui = createTheme({
+  palette: {
+    primary: { main: "#" + md3Theme.palettes.primary.tone(40).toString(16) },
+  },
+});
+
+<ThemeProvider theme={mui}><App /></ThemeProvider>`,
+    html: `<link rel="stylesheet" href="https://unpkg.com/@material-design/material-web/dist/styles.css" />
+<div class="md-sys-theme-primary">Themed</div>`,
+  },
+  menus: {
+    react: `// M3 Menu - dropdown from button or icon trigger
+import { Menu, MenuItem, IconButton } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+
+function OverflowMenu() {
+  const [anchor, setAnchor] = useState(null);
+  return (
+    <>
+      <IconButton onClick={e => setAnchor(e.currentTarget)}>
+        <MoreVertIcon />
+      </IconButton>
+      <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
+        <MenuItem onClick={handleEdit}>Edit</MenuItem>
+        <MenuItem onClick={handleDuplicate}>Duplicate</MenuItem>
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+      </Menu>
+    </>
+  );
+}`,
+    html: `<ul class="mdc-menu-surface" role="menu">
+  <li class="mdc-list-item" role="menuitem"><span>Edit</span></li>
+  <li class="mdc-list-item" role="menuitem"><span>Duplicate</span></li>
+  <li class="mdc-list-item" role="menuitem"><span>Delete</span></li>
+</ul>`,
+  },
+  sliders: {
+    react: `// M3 Slider - continuous or discrete
+import { Slider } from "@mui/material";
+
+<Slider defaultValue={50} />
+<Slider defaultValue={[20, 80]} />
+<Slider step={10} marks min={0} max={100} valueLabelDisplay="auto" />`,
+    html: `<div class="mdc-slider">
+  <input type="range" class="mdc-slider__input" min="0" max="100" value="50" />
+</div>`,
+  },
+  tokens: {
+    react: `// M3 design tokens - 3 tiers
+// Reference (md-ref-*)  - raw values (palettes, typescale)
+// System (md-sys-*)     - semantic roles (color, motion, elevation)
+// Component (md-comp-*) - component-specific tokens
+
+// System tokens you'll use most:
+const tokens = {
+  bg: "var(--md-sys-color-background)",
+  surface: "var(--md-sys-color-surface)",
+  primary: "var(--md-sys-color-primary)",
+  onPrimary: "var(--md-sys-color-on-primary)",
+  radius: "var(--md-sys-shape-corner-medium)",
+};`,
+    html: `<div style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);">
+  M3 tokenised surface
+</div>`,
+  },
+  audit: {
+    react: `// M3 audit checklist
+// - Colour role used (not raw hex)
+// - Touch target >= 48dp
+// - State layer visible on interactive elements
+// - Typescale from md-sys-typescale-* (not arbitrary px)
+// - Elevation uses tonal surface (not drop shadow in light mode)
+
+// Automated check
+const violations = document.querySelectorAll('[style*="#"]:not([style*="var(--md"])');
+console.warn(\`\${violations.length} hardcoded colour violations\`, violations);`,
+    html: `<!-- BAD  --><button style="background: #6750A4;">Click</button>
+<!-- GOOD --><button style="background: var(--md-sys-color-primary);">Click</button>`,
+  },
+  "pat-app-shell": {
+    react: `// App shell pattern
+import { Stack } from "@mui/material";
+
+function AppShell() {
+  return <Stack>{/* App shell */}</Stack>;
+}`,
+    html: `<!-- App shell: Header + sidebar + main + footer shell. Wraps your app with consistent chrome. -->
+<section class="pattern-app-shell">
+  <h2>App shell</h2>
+  <p>Header + sidebar + main + footer shell. Wraps your app with consistent chrome.</p>
+</section>`,
+  },
+  "pat-dashboard": {
+    react: `// Analytics Dashboard - full zone layout (matches Builder "Analytics Dashboard")
+import { AppBar, Toolbar, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
+         Card, CardContent, Typography, Stack, LinearProgress, Chip } from "@mui/material";
+import { Home, BarChart, Person, Storage, Settings } from "@mui/icons-material";
+
+function AnalyticsDashboard() {
+  const kpis = [
+    { label: "MRR", value: "$48,200", pct: 12 },
+    { label: "Active users", value: "12,847", pct: 8 },
+    { label: "Churn rate", value: "2.1%", pct: -3 },
+  ];
+
+  return (
+    <Stack sx={{ minHeight: "100vh", bgcolor: "surface.main" }}>
+      <AppBar position="static" color="surface" elevation={0}>
+        <Toolbar>
+          <Typography variant="titleLarge" sx={{ flex: 1 }}>Acme Analytics</Typography>
+          <Chip label="Live" color="primary" size="small" />
+        </Toolbar>
+      </AppBar>
+
+      <Stack direction="row" sx={{ flex: 1 }}>
+        <Drawer variant="permanent" PaperProps={{ sx: { width: 240, position: "relative" } }}>
+          <List>
+            <ListItemButton selected><ListItemIcon><Home /></ListItemIcon><ListItemText primary="Overview" /></ListItemButton>
+            <ListItemButton><ListItemIcon><BarChart /></ListItemIcon><ListItemText primary="Events" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Person /></ListItemIcon><ListItemText primary="Users" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Storage /></ListItemIcon><ListItemText primary="Funnels" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Settings /></ListItemIcon><ListItemText primary="Settings" /></ListItemButton>
+          </List>
+        </Drawer>
+
+        <Stack spacing={2} sx={{ flex: 1, p: 3 }}>
+          {/* KPI row */}
+          <Stack direction="row" spacing={2}>
+            {kpis.map((k) => (
+              <Card key={k.label} variant="filled" sx={{ flex: 1 }}>
+                <CardContent>
+                  <Typography variant="labelMedium">{k.label}</Typography>
+                  <Typography variant="displaySmall">{k.value}</Typography>
+                  <Typography color={k.pct >= 0 ? "primary" : "error"}>
+                    {k.pct >= 0 ? "+" : ""}{k.pct}%
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+
+          <Card variant="filled">
+            <CardContent>
+              <Typography variant="titleMedium">Revenue - last 30 days</Typography>
+              <AreaChart data={revenue} />
+            </CardContent>
+          </Card>
+
+          <Card variant="filled">
+            <CardContent>
+              <DataGrid rows={activityRows} columns={activityCols} />
+            </CardContent>
+          </Card>
+
+          <Stack direction="row" spacing={2}>
+            <Card variant="filled" sx={{ flex: 2 }}>
+              <CardContent><Typography>Daily events</Typography><ColumnChart /></CardContent>
+            </Card>
+            <Card variant="filled" sx={{ flex: 1 }}>
+              <CardContent>
+                <Typography>Monthly plan usage</Typography>
+                <LinearProgress variant="determinate" value={64} />
+              </CardContent>
+            </Card>
+          </Stack>
+        </Stack>
+      </Stack>
+
+      <Stack direction="row" sx={{ p: 1, borderTop: 1, borderColor: "outlineVariant.main" }}>
+        <Typography variant="bodySmall">Last updated 2 min ago - v2.4</Typography>
+      </Stack>
+    </Stack>
+  );
+}`,
+    html: `<!-- Analytics Dashboard - zone-based layout with KPI row, revenue chart, data table -->
+<div class="app-shell">
+  <header class="m3-top-app-bar">
+    <span class="m3-headline">Acme Analytics</span>
+    <span class="m3-chip m3-chip-assist">Live</span>
+  </header>
+
+  <aside class="m3-nav-drawer">
+    <a class="m3-nav-item m3-nav-active"><span class="material-symbols-outlined">home</span> Overview</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">bar_chart</span> Events</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">person</span> Users</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">database</span> Funnels</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">settings</span> Settings</a>
+  </aside>
+
+  <main class="shell-body">
+    <section class="grid-3">
+      <article class="m3-card"><small>MRR</small><h1>$48,200</h1><span class="pos">+12%</span></article>
+      <article class="m3-card"><small>Active users</small><h1>12,847</h1><span class="pos">+8%</span></article>
+      <article class="m3-card"><small>Churn rate</small><h1>2.1%</h1><span class="neg">-3%</span></article>
+    </section>
+
+    <article class="m3-card chart">Revenue - last 30 days</article>
+    <article class="m3-card datagrid">Activity table</article>
+
+    <section class="grid-2-1">
+      <article class="m3-card chart">Daily events</article>
+      <article class="m3-card"><small>Monthly plan usage</small><progress value="64" max="100"></progress></article>
+    </section>
+  </main>
+
+  <footer class="shell-footer">Last updated 2 min ago - v2.4</footer>
+</div>`,
+  },
+  "pat-data-table": {
+    react: `// CRM Contacts / Data Table Page - full zone layout (matches Builder "CRM Contacts")
+import { AppBar, Toolbar, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
+         Card, CardContent, TextField, MenuItem, Stack, Typography, Chip, InputAdornment } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { Search, Person, Storage, BarChart, Chat, Home } from "@mui/icons-material";
+
+function CRMContacts() {
+  return (
+    <Stack sx={{ minHeight: "100vh" }}>
+      <AppBar position="static" color="surface" elevation={0}>
+        <Toolbar>
+          <Typography variant="titleLarge" sx={{ flex: 1 }}>Contacts</Typography>
+          <Chip label="247 records" size="small" />
+        </Toolbar>
+      </AppBar>
+
+      <Stack direction="row" sx={{ flex: 1 }}>
+        <Drawer variant="permanent" PaperProps={{ sx: { width: 240, position: "relative" } }}>
+          <List>
+            <ListItemButton selected><ListItemIcon><Person /></ListItemIcon><ListItemText primary="All Contacts" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Storage /></ListItemIcon><ListItemText primary="Companies" /></ListItemButton>
+            <ListItemButton><ListItemIcon><BarChart /></ListItemIcon><ListItemText primary="Deals" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Chat /></ListItemIcon><ListItemText primary="Activities" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Home /></ListItemIcon><ListItemText primary="Reports" /></ListItemButton>
+          </List>
+        </Drawer>
+
+        <Stack spacing={2} sx={{ flex: 1, p: 3 }}>
+          {/* Search + filter row */}
+          <Stack direction="row" spacing={2}>
+            <TextField
+              placeholder="Search by name, company, email..."
+              sx={{ flex: 2 }}
+              InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
+            />
+            <TextField select defaultValue="all" sx={{ flex: 1 }}>
+              <MenuItem value="all">All statuses</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+            </TextField>
+          </Stack>
+
+          {/* Main data table */}
+          <Card variant="filled">
+            <DataGrid rows={contacts} columns={contactCols} autoHeight />
+          </Card>
+
+          {/* Pipeline KPIs */}
+          <Stack direction="row" spacing={2}>
+            {[
+              { label: "New this week", value: "24", pct: 12 },
+              { label: "Active leads", value: "89", pct: 5 },
+              { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 },
+            ].map((k) => (
+              <Card key={k.label} variant="filled" sx={{ flex: 1 }}>
+                <CardContent>
+                  <Typography variant="labelMedium">{k.label}</Typography>
+                  <Typography variant="displaySmall">{k.value}</Typography>
+                  <Typography color="primary">+{k.pct}%</Typography>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+        </Stack>
+      </Stack>
+    </Stack>
+  );
+}`,
+    html: `<!-- CRM Contacts / Data Table Page - search, filters, rich data table, pipeline stats -->
+<div class="app-shell">
+  <header class="m3-top-app-bar">
+    <span class="m3-headline">Contacts</span>
+    <span class="m3-chip m3-chip-assist">247 records</span>
+  </header>
+
+  <aside class="m3-nav-drawer">
+    <a class="m3-nav-item m3-nav-active"><span class="material-symbols-outlined">person</span> All Contacts</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">database</span> Companies</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">bar_chart</span> Deals</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">chat</span> Activities</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">home</span> Reports</a>
+  </aside>
+
+  <main class="shell-body">
+    <section class="grid-2-1">
+      <div class="m3-text-field m3-filled">
+        <span class="material-symbols-outlined">search</span>
+        <input type="search" placeholder="Search by name, company, email..." />
+      </div>
+      <div class="m3-text-field m3-filled">
+        <select><option>All statuses</option><option>Active</option><option>Pending</option></select>
+      </div>
+    </section>
+
+    <article class="m3-card datagrid">Contacts table</article>
+
+    <section class="grid-3">
+      <article class="m3-card"><small>New this week</small><h1>24</h1><span class="pos">+12%</span></article>
+      <article class="m3-card"><small>Active leads</small><h1>89</h1><span class="pos">+5%</span></article>
+      <article class="m3-card"><small>Deals closed (MTD)</small><h1>$12.4K</h1><span class="pos">+18%</span></article>
+    </section>
+  </main>
+
+  <footer class="shell-footer">Showing 247 of 1,247 contacts - v3.2</footer>
+</div>`,
+  },
+  "pat-form": {
+    react: `// Form pattern
+import { Stack } from "@mui/material";
+
+function Form() {
+  return <Stack>{/* Form */}</Stack>;
+}`,
+    html: `<!-- Form: Grouped sections with inputs, validation, and a save bar. -->
+<section class="pattern-form">
+  <h2>Form</h2>
+  <p>Grouped sections with inputs, validation, and a save bar.</p>
+</section>`,
+  },
+  "pat-list-detail": {
+    react: `// List + detail pattern
+import { Stack } from "@mui/material";
+
+function ListDetail() {
+  return <Stack>{/* List + detail */}</Stack>;
+}`,
+    html: `<!-- List + detail: Master list on the left, detail pane on the right. Standard CRM/email layout. -->
+<section class="pattern-list-detail">
+  <h2>List + detail</h2>
+  <p>Master list on the left, detail pane on the right. Standard CRM/email layout.</p>
+</section>`,
+  },
+  "pat-login": {
+    react: `// Login / Auth - full auth flow (matches Builder "Login -> Dashboard")
+import { AppBar, Toolbar, Card, CardContent, TextField, Button, Checkbox, FormControlLabel,
+         Stack, Typography, Link, Chip, Alert, AlertTitle } from "@mui/material";
+
+function Login() {
+  return (
+    <Stack sx={{ minHeight: "100vh" }}>
+      <AppBar position="static" color="surface" elevation={0}>
+        <Toolbar>
+          <Typography variant="titleLarge" sx={{ flex: 1 }}>Acme</Typography>
+          <Chip label="Secure" size="small" color="primary" />
+        </Toolbar>
+      </AppBar>
+
+      <Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center", p: 4 }}>
+        <Card variant="filled" sx={{ width: "100%", maxWidth: 420 }}>
+          <CardContent>
+            <Stack spacing={2}>
+              <Typography variant="headlineMedium">Sign in to Acme</Typography>
+              <Typography variant="bodyMedium" color="onSurfaceVariant">
+                Welcome back - enter your details to continue.
+              </Typography>
+
+              <TextField variant="filled" label="Work email" type="email" placeholder="you@company.com" />
+              <TextField variant="filled" label="Password" type="password" placeholder="Enter your password" />
+
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <FormControlLabel control={<Checkbox />} label="Keep me signed in for 30 days" />
+                <Link href="/forgot">Forgot password?</Link>
+              </Stack>
+
+              <Button variant="filled" size="large">Sign in</Button>
+              <Button variant="outlined">Continue with Google</Button>
+              <Button variant="outlined">Continue with GitHub</Button>
+
+              <Alert severity="info">
+                <AlertTitle>After sign-in</AlertTitle>
+                You land on the dashboard.
+              </Alert>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      <Stack direction="row" sx={{ p: 1, borderTop: 1, borderColor: "outlineVariant.main" }}>
+        <Typography variant="bodySmall">(c) 2026 Acme, Inc. - Privacy - Terms</Typography>
+      </Stack>
+    </Stack>
+  );
+}`,
+    html: `<!-- Login / Auth - auth card with email + password + OAuth + remember-me -->
+<div class="auth-shell">
+  <header class="m3-top-app-bar">
+    <span class="m3-headline">Acme</span>
+    <span class="m3-chip m3-chip-assist">Secure</span>
+  </header>
+
+  <main class="auth-body">
+    <form class="m3-card auth-card">
+      <h1 class="m3-headline-medium">Sign in to Acme</h1>
+      <p class="m3-body-medium">Welcome back - enter your details to continue.</p>
+
+      <label class="m3-text-field m3-filled">
+        <span>Work email</span>
+        <input type="email" placeholder="you@company.com" />
+      </label>
+      <label class="m3-text-field m3-filled">
+        <span>Password</span>
+        <input type="password" placeholder="Enter your password" />
+      </label>
+
+      <div class="auth-row">
+        <label><input type="checkbox" /> Keep me signed in for 30 days</label>
+        <a href="/forgot">Forgot password?</a>
+      </div>
+
+      <button class="m3-btn m3-btn-filled" type="submit">Sign in</button>
+      <button class="m3-btn m3-btn-outlined" type="button">Continue with Google</button>
+      <button class="m3-btn m3-btn-outlined" type="button">Continue with GitHub</button>
+
+      <div class="m3-alert m3-alert-info">
+        <strong>After sign-in</strong>
+        <p>You land on the dashboard.</p>
+      </div>
+    </form>
+  </main>
+
+  <footer class="shell-footer">(c) 2026 Acme, Inc. - Privacy - Terms</footer>
+</div>`,
+  },
+  "pat-search": {
+    react: `// Search pattern
+import { Stack } from "@mui/material";
+
+function Search() {
+  return <Stack>{/* Search */}</Stack>;
+}`,
+    html: `<!-- Search: Search input + filter chips + result list with empty / loading states. -->
+<section class="pattern-search">
+  <h2>Search</h2>
+  <p>Search input + filter chips + result list with empty / loading states.</p>
+</section>`,
+  },
+  "pat-settings": {
+    react: `// Settings Page - full zone layout (matches Builder "Settings Page")
+import { AppBar, Toolbar, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
+         Card, CardContent, TextField, Switch, FormControlLabel, Button, Avatar,
+         Alert, AlertTitle, Divider, Stack, Typography, Chip } from "@mui/material";
+import { Person, Notifications, Settings, Storage, Home } from "@mui/icons-material";
+
+function SettingsPage() {
+  return (
+    <Stack sx={{ minHeight: "100vh" }}>
+      <AppBar position="static" color="surface" elevation={0}>
+        <Toolbar>
+          <Typography variant="titleLarge" sx={{ flex: 1 }}>Workspace</Typography>
+          <Chip label="Saved" size="small" color="primary" />
+        </Toolbar>
+      </AppBar>
+
+      <Stack direction="row" sx={{ flex: 1 }}>
+        <Drawer variant="permanent" PaperProps={{ sx: { width: 240, position: "relative" } }}>
+          <List>
+            <ListItemButton selected><ListItemIcon><Person /></ListItemIcon><ListItemText primary="Profile" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Notifications /></ListItemIcon><ListItemText primary="Notifications" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Settings /></ListItemIcon><ListItemText primary="Security" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Storage /></ListItemIcon><ListItemText primary="Workspace" /></ListItemButton>
+            <ListItemButton><ListItemIcon><Home /></ListItemIcon><ListItemText primary="Billing" /></ListItemButton>
+          </List>
+        </Drawer>
+
+        <Stack spacing={3} sx={{ flex: 1, p: 3 }}>
+          {/* Profile section */}
+          <section>
+            <Typography variant="titleLarge" gutterBottom>Profile</Typography>
+            <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+              <Avatar sx={{ width: 56, height: 56 }}>SC</Avatar>
+              <Button variant="outlined">Change photo</Button>
+            </Stack>
+            <Stack spacing={2}>
+              <TextField variant="filled" label="Full name" placeholder="Sarah Chen" />
+              <TextField variant="filled" label="Work email" placeholder="sarah@acme.co" />
+            </Stack>
+          </section>
+
+          {/* Preferences section */}
+          <section>
+            <Typography variant="titleLarge" gutterBottom>Preferences</Typography>
+            <Stack>
+              <FormControlLabel control={<Switch defaultChecked />} label="Email notifications" />
+              <FormControlLabel control={<Switch />} label="Weekly digest email" />
+              <FormControlLabel control={<Switch />} label="Product updates & marketing" />
+            </Stack>
+          </section>
+
+          <Divider />
+
+          {/* Danger zone */}
+          <section>
+            <Typography variant="titleLarge" gutterBottom>Danger zone</Typography>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <AlertTitle>Delete account</AlertTitle>
+              This permanently removes your workspace and cannot be undone.
+            </Alert>
+            <Button variant="text" color="error">Delete account</Button>
+          </section>
+        </Stack>
+      </Stack>
+
+      <Stack direction="row" sx={{ p: 1, borderTop: 1, borderColor: "outlineVariant.main" }}>
+        <Typography variant="bodySmall">Changes save automatically - v1.0</Typography>
+      </Stack>
+    </Stack>
+  );
+}`,
+    html: `<!-- Settings Page - grouped sections with toggles, inputs, and a danger zone -->
+<div class="app-shell">
+  <header class="m3-top-app-bar">
+    <span class="m3-headline">Workspace</span>
+    <span class="m3-chip m3-chip-assist">Saved</span>
+  </header>
+
+  <aside class="m3-nav-drawer">
+    <a class="m3-nav-item m3-nav-active"><span class="material-symbols-outlined">person</span> Profile</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">notifications</span> Notifications</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">settings</span> Security</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">database</span> Workspace</a>
+    <a class="m3-nav-item"><span class="material-symbols-outlined">home</span> Billing</a>
+  </aside>
+
+  <main class="shell-body">
+    <section class="settings-group">
+      <h2 class="m3-title-large">Profile</h2>
+      <div class="avatar-row">
+        <div class="m3-avatar m3-avatar-lg">SC</div>
+        <button class="m3-btn m3-btn-outlined">Change photo</button>
+      </div>
+      <label class="m3-text-field m3-filled"><span>Full name</span><input placeholder="Sarah Chen" /></label>
+      <label class="m3-text-field m3-filled"><span>Work email</span><input placeholder="sarah@acme.co" /></label>
+    </section>
+
+    <section class="settings-group">
+      <h2 class="m3-title-large">Preferences</h2>
+      <label class="switch-row"><input type="checkbox" role="switch" checked /> Email notifications</label>
+      <label class="switch-row"><input type="checkbox" role="switch" /> Weekly digest email</label>
+      <label class="switch-row"><input type="checkbox" role="switch" /> Product updates & marketing</label>
+    </section>
+
+    <hr class="m3-divider" />
+
+    <section class="settings-group">
+      <h2 class="m3-title-large">Danger zone</h2>
+      <div class="m3-alert m3-alert-error">
+        <strong>Delete account</strong>
+        <p>This permanently removes your workspace and cannot be undone.</p>
+      </div>
+      <button class="m3-btn m3-btn-text m3-btn-error">Delete account</button>
+    </section>
+  </main>
+
+  <footer class="shell-footer">Changes save automatically - v1.0</footer>
+</div>`,
+  },
+  "pat-wizard": {
+    react: `// Wizard pattern
+import { Stack } from "@mui/material";
+
+function Wizard() {
+  return <Stack>{/* Wizard */}</Stack>;
+}`,
+    html: `<!-- Wizard: Multi-step flow with progress indicator + back/next controls. -->
+<section class="pattern-wizard">
+  <h2>Wizard</h2>
+  <p>Multi-step flow with progress indicator + back/next controls.</p>
+</section>`,
+  },
+  "pat-feed": {
+    react: `// M3 feed pattern - infinite scroll card list
+import { List, ListItem, Card, Avatar } from "@mui/material";
+import InfiniteScroll from "react-infinite-scroll-component";
+
+function Feed({ posts, loadMore, hasMore }) {
+  return (
+    <InfiniteScroll dataLength={posts.length} next={loadMore} hasMore={hasMore}>
+      <List>
+        {posts.map(p => (
+          <Card key={p.id} sx={{ mb: 2 }}>
+            <Stack direction="row" spacing={2}>
+              <Avatar src={p.author.avatar} />
+              <div>
+                <Typography variant="subtitle2">{p.author.name}</Typography>
+                <Typography>{p.content}</Typography>
+              </div>
+            </Stack>
+          </Card>
+        ))}
+      </List>
+    </InfiniteScroll>
+  );
+}`,
+    html: `<!-- Feed: Scrollable card list with posts, comments, and infinite scroll. -->
+<section class="pattern-feed">
+  <h2>Feed</h2>
+  <p>Scrollable card list with posts, comments, and infinite scroll.</p>
+</section>`,
+  },
 };

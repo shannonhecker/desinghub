@@ -9,6 +9,16 @@ import { M3_CODE } from "@/data/m3/code-snippets";
 import { FLUENT_CODE } from "@/data/fluent/code-snippets";
 import { AUSOS_CODE } from "@/data/ausos/code-snippets";
 
+/* Per-DS metadata used by the fallback renderer when a registered
+   component has no authored snippet yet. Keeps the Code panel useful
+   even for newly-added entries instead of dead-ending at "coming soon". */
+const SYSTEM_PACKAGES: Record<string, { pkg: string; docsUrl: string; componentBase: string }> = {
+  salt:   { pkg: "@salt-ds/core",          docsUrl: "https://www.saltdesignsystem.com/salt/components/", componentBase: "https://www.saltdesignsystem.com/salt/components/" },
+  m3:     { pkg: "@mui/material",          docsUrl: "https://m3.material.io/components",                 componentBase: "https://mui.com/material-ui/react-" },
+  fluent: { pkg: "@fluentui/react-components", docsUrl: "https://react.fluentui.dev/",                   componentBase: "https://react.fluentui.dev/?path=/docs/components-" },
+  ausos:  { pkg: "@ausos/core",            docsUrl: "#",                                                  componentBase: "#" },
+};
+
 /* ═══════════════════════════════════════════════════════════
    Code Block - single-pass tokenizer, CSS class highlighting
    ═══════════════════════════════════════════════════════════ */
@@ -94,16 +104,65 @@ export function CodePanel({ componentId }: { componentId: string }) {
   /* DS card class for code block containers */
   const cardCls = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card" : activeSystem === "ausos" ? "a-card" : "f-card";
 
+  /* ── Fallback for registered components with no authored snippet ──
+     Rather than a dead-end "coming soon" message, we render a minimal
+     skeleton: the DS package import, a placeholder component call, and
+     a link to the official docs. Users can still copy-paste a working
+     starting point instead of getting an empty panel. */
   if (!snippets) {
+    const meta = SYSTEM_PACKAGES[activeSystem] ?? SYSTEM_PACKAGES.salt;
+    const pascal = comp?.name?.replace(/[^A-Za-z0-9]+(.)/g, (_, c) => c.toUpperCase())
+      .replace(/^([a-z])/, (_, c) => c.toUpperCase()) ?? "Component";
+    const fallbackReact = `// ${comp?.name ?? "Component"} - authored snippet coming soon
+// This skeleton shows the DS package import + component shape.
+// See ${meta.docsUrl} for the full API reference.
+import { ${pascal} } from "${meta.pkg}";
+
+export function Example() {
+  return (
+    <${pascal}>
+      {/* Children / props - see the docs for this component's API */}
+    </${pascal}>
+  );
+}`;
+
     return (
-      <div style={{
-        padding: 48, textAlign: "center",
-        color: t.fg3, fontSize: 14,
-        border: `1px dashed ${t.border}`, borderRadius: 8,
-      }}>
-        Code snippets for <strong style={{ color: t.fg }}>{comp?.name}</strong> coming soon.
-        <br />
-        <span>Check the {sysInfo.name} documentation for current API reference.</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div
+          style={{
+            padding: 16,
+            background: t.bg2,
+            border: `1px solid ${t.border}`,
+            borderRadius: 8,
+            fontSize: 13,
+            color: t.fg2,
+            fontFamily: t.font,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span style={{ fontSize: 18 }} aria-hidden>[i]</span>
+          <span>
+            Authored code snippet for <strong style={{ color: t.fg }}>{comp?.name}</strong> is
+            pending. Below is a minimal skeleton - check the{" "}
+            <a
+              href={meta.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: t.accent, textDecoration: "underline" }}
+            >
+              {sysInfo.name} docs
+            </a>{" "}
+            for the full API.
+          </span>
+        </div>
+        <div>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: t.fg, marginBottom: 12, fontFamily: t.font }}>
+            React + TypeScript (skeleton)
+          </h3>
+          <CodeBlock code={fallbackReact} theme={t} cardClass={cardCls} />
+        </div>
       </div>
     );
   }
