@@ -48,6 +48,19 @@ interface BuilderState {
   // Regenerate-content status — true while /api/builder/generate-content is pending
   isRegeneratingContent: boolean;
 
+  // ── Conversational onboarding ("pending" flow) ──
+  // When the user picks a template OR sends their first freeform message,
+  // we DON'T apply anything yet — we stage it here and prompt the user to
+  // pick a design system as the next chat turn. Once the DS is chosen, the
+  // pending intent is flushed: either the template is applied with that DS,
+  // or the freeform message is routed to Claude with that DS set.
+  pendingTemplateId: string | null;
+  pendingFirstMessage: string | null;
+
+  // Templates drawer — slide-in gallery that shows the full SVG-wireframe
+  // cards (relocated from the empty state for visual clarity).
+  templatesDrawerOpen: boolean;
+
   // Canvas blocks & selection
   blocks: Block[];
   selectedBlockId: string | null;
@@ -101,6 +114,15 @@ interface BuilderState {
   // Actions — Templates / regeneration
   setActiveTemplateId: (id: string | null) => void;
   setIsRegeneratingContent: (v: boolean) => void;
+
+  // Actions — Pending (conversational onboarding)
+  setPendingTemplateId: (id: string | null) => void;
+  setPendingFirstMessage: (msg: string | null) => void;
+  clearPendingIntent: () => void;
+
+  // Actions — Templates drawer
+  setTemplatesDrawerOpen: (v: boolean) => void;
+  toggleTemplatesDrawer: () => void;
 
   // Actions — Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
@@ -182,6 +204,13 @@ export const useBuilder = create<BuilderState>((set) => ({
   activeTemplateId: null,
   isRegeneratingContent: false,
 
+  // Conversational onboarding state
+  pendingTemplateId: null,
+  pendingFirstMessage: null,
+
+  // Templates drawer
+  templatesDrawerOpen: false,
+
   // Canvas blocks & selection
   blocks: [],
   selectedBlockId: null,
@@ -223,7 +252,14 @@ export const useBuilder = create<BuilderState>((set) => ({
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
-  clearChat: () => set({ messages: [], onboardingStep: 'ready', pendingComponents: [], activeTemplateId: null }),
+  clearChat: () => set({
+    messages: [],
+    onboardingStep: 'ready',
+    pendingComponents: [],
+    activeTemplateId: null,
+    pendingTemplateId: null,
+    pendingFirstMessage: null,
+  }),
 
   setDesignSystem: (ds) => {
     const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light' };
@@ -267,6 +303,13 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   setActiveTemplateId: (id) => set({ activeTemplateId: id }),
   setIsRegeneratingContent: (v) => set({ isRegeneratingContent: v }),
+
+  setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
+  setPendingFirstMessage: (msg) => set({ pendingFirstMessage: msg }),
+  clearPendingIntent: () => set({ pendingTemplateId: null, pendingFirstMessage: null }),
+
+  setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
+  toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
   setBlocks: (blocks) => set({ blocks }),
   updateBlockProps: (id, props) =>

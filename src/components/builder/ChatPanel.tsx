@@ -6,7 +6,6 @@ import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
-import { TemplatePreview } from "./TemplatePreviews";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder — no mandatory wizard.
@@ -265,7 +264,14 @@ export function ChatPanel() {
     isRegeneratingContent, setIsRegeneratingContent,
     selectedBlockId, selectedBlockZone, setSelectedBlock,
     blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks,
+    pendingTemplateId, setPendingTemplateId,
+    pendingFirstMessage, setPendingFirstMessage,
+    clearPendingIntent,
+    setTemplatesDrawerOpen,
   } = useBuilder();
+
+  /* Whether the conversational onboarding is waiting on a DS pick. */
+  const awaitingDs = Boolean(pendingTemplateId || pendingFirstMessage);
 
   /* Derive the selected-block metadata for the scope chip.
      Falls back to null when nothing is selected. */
@@ -313,26 +319,61 @@ export function ChatPanel() {
   }, [messages]);
 
   /* ═══════════════════════════════════
-     Pattern card click — apply a full
-     realistic template in one step. All
-     four canvas zones (header, sidebar,
-     body, footer) are populated; existing
-     canvas machinery renders them natively.
+     Pattern card click — stage the choice
+     and ask about design system as the
+     next conversational turn. We DON'T
+     apply blocks yet; that happens when
+     the user picks a DS chip below.
      ═══════════════════════════════════ */
 
   const handlePatternSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
-    setInterfaceType(tpl.interfaceType);
-    setSelectedComponents(tpl.selectedComponents);
-    setHeaderBlocks(tpl.header);
-    setSidebarBlocks(tpl.sidebar);
-    setBlocks(tpl.body);
-    setFooterBlocks(tpl.footer);
-    setActiveTemplateId(tpl.id); // enables Regenerate Data chip
-    if (!previewOpen) setPreviewOpen(true);
+    setPendingTemplateId(tpl.id);
+    setPendingFirstMessage(null);
     addMessage("user", `Build me a ${tpl.label}`);
-    addMessage("ai", tpl.aiResponse);
-    bumpPreview();
+    addMessage(
+      "ai",
+      `Great choice — a ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+    );
+  };
+
+  /* Apply the currently-pending intent (template or freeform message) with
+     the chosen design system. Fires when the user clicks a DS chip on the
+     AI's follow-up prompt. */
+  const applyPendingIntentWithDs = (ds: DesignSystem) => {
+    setDesignSystem(ds);
+
+    /* Case 1: a template was staged — apply its full zone payload now */
+    if (pendingTemplateId) {
+      const tpl = BUILDER_TEMPLATES[pendingTemplateId as TemplateId];
+      if (tpl) {
+        setInterfaceType(tpl.interfaceType);
+        setSelectedComponents(tpl.selectedComponents);
+        setHeaderBlocks(tpl.header);
+        setSidebarBlocks(tpl.sidebar);
+        setBlocks(tpl.body);
+        setFooterBlocks(tpl.footer);
+        setActiveTemplateId(tpl.id);
+        if (!previewOpen) setPreviewOpen(true);
+        addMessage("user", DS_LABEL[ds]);
+        addMessage("ai", tpl.aiResponse);
+        bumpPreview();
+      }
+      clearPendingIntent();
+      return;
+    }
+
+    /* Case 2: a freeform first message was staged — route it to the same
+       pipeline we use for any later message, now that a DS is set. */
+    if (pendingFirstMessage) {
+      const msg = pendingFirstMessage;
+      clearPendingIntent();
+      if (!previewOpen) setPreviewOpen(true);
+      addMessage("user", DS_LABEL[ds]);
+      /* Re-use the local command pipeline (layout, components, theme)
+         and fall through to Claude for anything unmatched. */
+      setTimeout(() => handleSend(msg), 50);
+    }
   };
 
   /* ═══════════════════════════════════
@@ -425,6 +466,25 @@ export function ChatPanel() {
   const handleSend = (text?: string) => {
     const msg = (text || inputText).trim();
     if (!msg || isGenerating) return;
+
+    /* ── First-turn onboarding: if the user has no messages yet and
+       nothing staged, stage this as pendingFirstMessage and ask about
+       DS as the next conversational turn. Skipping this short-circuit
+       is important when:
+         - text was passed programmatically (from applyPendingIntentWithDs)
+         - a refine chip is clicked after the first message
+       We detect "first turn" as messages.length === 0. ── */
+    if (messages.length === 0 && !selectedBlockId) {
+      setPendingFirstMessage(msg);
+      setPendingTemplateId(null);
+      addMessage("user", msg);
+      addMessage(
+        "ai",
+        "Got it — which design system should I use for this?"
+      );
+      return;
+    }
+
     addMessage("user", msg);
     setGenerating(true);
     const l = msg.toLowerCase();
@@ -523,7 +583,35 @@ export function ChatPanel() {
   };
 
   /* ═══════════════════════════════════
-     Refinement chips — shown after first message
+     Quick-reply DS chips — shown inside the
+     AI's "Which design system?" prompt when
+     awaiting a DS pick. Clicking one advances
+     the pending intent (template or freeform
+     first message) with that DS applied.
+     ═══════════════════════════════════ */
+  const renderDsReplyChips = () => (
+    <div className="prompt-bubbles ds-reply-chips" role="group" aria-label="Choose a design system">
+      {STYLE_CHIPS.map((chip) => (
+        <button
+          key={chip.value}
+          className="prompt-bubble prompt-bubble-ds"
+          onClick={() => applyPendingIntentWithDs(chip.value)}
+          title={`Build this with ${chip.label}`}
+        >
+          <span
+            className="prompt-bubble-ds-dot"
+            style={{ background: chip.color }}
+            aria-hidden="true"
+          />
+          {chip.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  /* ═══════════════════════════════════
+     Refinement chips — shown after the
+     canvas has been built (normal flow)
      ═══════════════════════════════════ */
 
   const renderRefineChips = () => (
@@ -555,9 +643,19 @@ export function ChatPanel() {
 
   const placeholderText = selectedBlock
     ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} — what should it say or do?`
-    : hasMessages
-      ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
-      : "Describe what you'd like to build, or pick a pattern above...";
+    : awaitingDs
+      ? "Pick a design system above, or type a different request…"
+      : hasMessages
+        ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+        : "Describe the app you want to build…";
+
+  /* Auto-focus the textarea on initial mount so users can type right
+     away — matches v0 / Lovable / ChatGPT. Only fires once; subsequent
+     focus is left to the user. */
+  useEffect(() => {
+    if (!hasMessages) inputRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
@@ -566,49 +664,49 @@ export function ChatPanel() {
         {/* Flex spacer — pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero — quick-start pattern cards, always available until first message */}
+        {/* Hero — compact empty state.
+            Input is the primary action (larger, centered below).
+            Pattern cards are a tight secondary row (no SVG on card —
+            those live in the Browse Templates drawer). No DS picker
+            here; DS is asked conversationally after the first turn. */}
         {!hasMessages && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
             <h1 className="hero-title">What are we building?</h1>
-            <p className="hero-subtitle">Pick a pattern to start instantly, or describe what you need in the box below.</p>
+            <p className="hero-subtitle">
+              Describe the app you want, or start from a pattern.
+            </p>
 
-            {/* Pattern cards — each with a wireframe preview */}
-            <div className="pattern-cards-grid">
+            {/* Compact pattern cards — icon + label + one-line desc, single row */}
+            <div className="pattern-cards-grid pattern-cards-compact">
               {PATTERN_CARDS.map((pat) => (
                 <button
                   key={pat.label}
-                  className="pattern-card pattern-card-visual"
+                  className="pattern-card pattern-card-compact"
                   onClick={() => handlePatternSelect(pat)}
-                  aria-label={`Apply ${pat.label} template`}
+                  aria-label={`Start from the ${pat.label} template`}
                 >
-                  <TemplatePreview id={pat.id as TemplateId} />
-                  <div className="pattern-card-text">
-                    <div className="pattern-card-text-head">
-                      <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">{pat.icon}</span>
-                      <span className="pattern-card-label">{pat.label}</span>
-                    </div>
-                    <span className="pattern-card-desc">{pat.desc}</span>
-                  </div>
+                  <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">
+                    {pat.icon}
+                  </span>
+                  <span className="pattern-card-label">{pat.label}</span>
+                  <span className="pattern-card-desc">{pat.desc}</span>
                 </button>
               ))}
             </div>
 
-            {/* DS quick-switch — subtle, so users know they can pick a system upfront */}
-            <div className="hero-ds-row" role="group" aria-label="Choose a design system">
-              <span className="hero-ds-label">Design system:</span>
-              {STYLE_CHIPS.map((chip) => (
-                <button
-                  key={chip.value}
-                  className={`hero-ds-chip ${designSystem === chip.value ? "active" : ""}`}
-                  onClick={() => setDesignSystem(chip.value)}
-                  aria-pressed={designSystem === chip.value}
-                >
-                  <span className="hero-ds-dot" style={{ background: chip.color }} aria-hidden="true" />
-                  {chip.label}
-                </button>
-              ))}
-            </div>
+            {/* Browse templates link — opens the drawer with the full
+                SVG-wireframe gallery relocated from the empty state. */}
+            <button
+              type="button"
+              className="hero-browse-link"
+              onClick={() => setTemplatesDrawerOpen(true)}
+            >
+              Browse templates with previews
+              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginLeft: 4 }}>
+                arrow_forward
+              </span>
+            </button>
           </div>
         )}
 
@@ -628,7 +726,7 @@ export function ChatPanel() {
                       <button aria-label="Copy"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>content_copy</span></button>
                     </div>
                   )}
-                  {isLastAi && !isGenerating && renderRefineChips()}
+                  {isLastAi && !isGenerating && (awaitingDs ? renderDsReplyChips() : renderRefineChips())}
                 </div>
               );
             })}
