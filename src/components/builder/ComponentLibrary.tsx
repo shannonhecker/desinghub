@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useBuilder } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS, TYPE_FIELDS } from "@/lib/blockRegistry";
+import { MiniPreview } from "./MiniPreview";
 
 /* ══════════════════════════════════════════════════════════
    Zone classification for drag-to-all-zones discoverability.
@@ -34,7 +35,9 @@ const ZONE_LABELS: Record<LibraryZone, { label: string; hint: string; icon: stri
 
 const ZONE_ORDER: LibraryZone[] = ["body", "header", "sidebar", "footer"];
 
-/* ── Single draggable blueprint card ── */
+/* ── Visual grid tile — stylized mini-preview + label.
+ *   Replaces the list-row blueprint item. Kept draggable via dnd-kit;
+ *   click/hover behaviour ships in the next commit. ── */
 function BlueprintItem({ blueprint, zone }: {
   blueprint: { id: string; type: string; label: string; icon: string; defaults: Record<string, unknown> };
   zone: LibraryZone;
@@ -53,15 +56,15 @@ function BlueprintItem({ blueprint, zone }: {
   return (
     <div
       ref={setNodeRef}
-      className={`lib-blueprint${isDragging ? " is-dragging" : ""}`}
+      className={`lib-tile${isDragging ? " is-dragging" : ""}`}
       {...listeners}
       {...attributes}
       title={`${blueprint.label} — ${ZONE_LABELS[zone].hint.toLowerCase()}`}
     >
-      <span className="material-symbols-outlined lib-blueprint-icon">
-        {blueprint.icon}
-      </span>
-      <span className="lib-blueprint-label">{blueprint.label}</span>
+      <div className="lib-tile-preview">
+        <MiniPreview type={blueprint.type} />
+      </div>
+      <span className="lib-tile-label">{blueprint.label}</span>
     </div>
   );
 }
@@ -211,9 +214,11 @@ function LibraryBrowser() {
               <span className="lib-zone-count">{items.length}</span>
             </div>
             <div className="lib-zone-hint">{meta.hint}</div>
-            {items.map((bp) => (
-              <BlueprintItem key={bp.id} blueprint={bp} zone={zone} />
-            ))}
+            <div className="lib-tile-grid">
+              {items.map((bp) => (
+                <BlueprintItem key={bp.id} blueprint={bp} zone={zone} />
+              ))}
+            </div>
           </div>
         );
       })}
