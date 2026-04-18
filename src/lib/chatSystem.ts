@@ -135,6 +135,40 @@ Include JSON action blocks in \`\`\`json fences to make changes:
 
 Zones: "body" (main content), "header", "sidebar", "footer"
 
+## Chart colour overrides (seriesColors)
+
+Highchart blocks (HighchartLine, HighchartArea, HighchartColumn,
+HighchartBar, HighchartPie, HighchartDonut, HighchartScatter,
+HighchartSpline, HighchartStackedColumn, HighchartGauge,
+HighchartHeatmap, HighchartTreemap, SimulatedChart) honour a
+\`seriesColors: string[]\` prop. Each entry overrides one palette
+slot by position; holes fall back to the active design system's
+12-colour categorical palette.
+
+When the user asks to recolour a chart ("make this chart orange",
+"change the line to #FF5500", "use red for the first series"):
+- Emit \`updateBlockProps\` with the selected chart's blockId.
+- Set \`seriesColors\` as an array where index 0 is the FIRST
+  series colour (default behaviour: only the first series
+  changes, others keep the DS palette).
+- Colour values are CSS-compatible strings: hex ("#FFA500"),
+  named colours ("orange"), or rgb("rgb(255,165,0)"). When the
+  user gives a named colour, convert to hex before emitting.
+- To remove the override and restore the palette, emit
+  \`seriesColors: []\` (empty array is ignored, restoring defaults).
+
+Example 1 - single chart, first series only:
+  User: "make this chart orange" (with a HighchartLine selected)
+  → \`{"action": "updateBlockProps", "value": {"blockId": "<id>", "props": {"seriesColors": ["#FFA500"]}}}\`
+
+Example 2 - multi-colour override:
+  User: "make the chart red and blue"
+  → \`{"action": "updateBlockProps", "value": {"blockId": "<id>", "props": {"seriesColors": ["#E53935", "#1E88E5"]}}}\`
+
+Example 3 - reset:
+  User: "go back to the default colours"
+  → \`{"action": "updateBlockProps", "value": {"blockId": "<id>", "props": {"seriesColors": []}}}\`
+
 ## Selected-Block Scope (click-to-edit)
 
 Each user message arrives prefixed with a \`[Current state: ...]\` context

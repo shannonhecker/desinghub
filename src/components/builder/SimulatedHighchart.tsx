@@ -16,6 +16,8 @@ import { useBuilder } from "@/store/useBuilder";
    ═══════════════════════════════════════════════════════════ */
 
 import { ensureHighchartsModules } from "@/lib/highchartsInit";
+import { getPalette } from "@/lib/categoricalPalettes";
+import type { DesignSystem } from "@/store/useBuilder";
 
 /* ── Read --ds-* CSS variables from a DOM element ── */
 interface ThemeVars {
@@ -48,10 +50,22 @@ function readThemeVars(el: HTMLElement): ThemeVars {
   };
 }
 
-/* ── Build base Highcharts theme from resolved CSS vars ── */
-function baseTheme(v: ThemeVars): Partial<Highcharts.Options> {
+/* ── Build base Highcharts theme from resolved CSS vars ──
+ *   `palette` is the 12-colour categorical palette for the active DS,
+ *   merged from `/lib/categoricalPalettes.ts`. When a block specifies
+ *   its own `seriesColors` (per-chart override set by chat or picker),
+ *   those take precedence over this palette slot-for-slot. */
+function baseTheme(
+  v: ThemeVars,
+  palette: string[],
+  seriesColors?: string[]
+): Partial<Highcharts.Options> {
+  /* Overlay seriesColors onto the palette - keeps unspecified slots
+   *  filled by the DS palette instead of bleeding through to hardcoded
+   *  defaults. */
+  const colors = palette.map((p, i) => seriesColors?.[i] ?? p);
   return {
-    colors: [v.primary, v.positive, v.warning, v.negative, "#8B5CF6", "#EC4899", "#F59E0B", "#06B6D4"],
+    colors,
     chart: { backgroundColor: "transparent", style: { fontFamily: "inherit" }, height: 250 },
     title: { style: { color: v.fg, fontSize: "13px", fontWeight: "600" }, align: "left" },
     xAxis: {
@@ -334,10 +348,16 @@ interface SimulatedHighchartProps {
   chartType: HighchartType;
   title?: string;
   value?: number;
-  system: "salt" | "m3" | "fluent" | "ausos";
+  system: DesignSystem;
+  /** Per-chart colour override. Position-indexed — entry 0 overrides
+   *  the first series, entry 1 the second, etc. Holes in the array
+   *  fall back to the DS's categorical palette. Set via the chart
+   *  inspector or by Claude emitting `updateBlockProps` with this
+   *  array. */
+  seriesColors?: string[];
 }
 
-export function SimulatedHighchart({ chartType, title, value, system }: SimulatedHighchartProps) {
+export function SimulatedHighchart({ chartType, title, value, system, seriesColors }: SimulatedHighchartProps) {
   ensureHighchartsModules();
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -352,10 +372,26 @@ export function SimulatedHighchart({ chartType, title, value, system }: Simulate
     return () => cancelAnimationFrame(id);
   }, [system, mode]);
 
+  /* Resolve the DS categorical palette once per system change. */
+  const palette = useMemo(() => getPalette(system), [system]);
+
+  /* Memoise the colour-signature of seriesColors so useMemo below can
+   *  rely on a primitive dep rather than a fresh array reference. */
+  const seriesColorsKey = useMemo(
+    () => (seriesColors ? seriesColors.join("|") : ""),
+    [seriesColors],
+  );
+
   const options = useMemo(() => {
     if (!vars) return null;
-    return chartOptions(chartType, baseTheme(vars), vars, { title, value });
-  }, [vars, chartType, title, value]);
+    return chartOptions(
+      chartType,
+      baseTheme(vars, palette, seriesColors),
+      vars,
+      { title, value },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vars, chartType, title, value, palette, seriesColorsKey]);
 
   return (
     <div ref={wrapperRef} style={{ width: "100%", minHeight: 250 }}>

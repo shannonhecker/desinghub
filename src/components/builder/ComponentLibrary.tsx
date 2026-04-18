@@ -9,6 +9,7 @@ import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateI
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
 import { HoverPreview, type HoverPreviewState } from "./HoverPreview";
+import { CATEGORICAL_PALETTES, PALETTE_SLOT_LABELS, PALETTE_SLOT_NAMES } from "@/lib/categoricalPalettes";
 
 /* ══════════════════════════════════════════════════════════
    Zone classification for drag-to-all-zones discoverability.
@@ -238,6 +239,15 @@ export function ComponentLibrary() {
                 </div>
               </>
             )}
+
+            {/* Chart colours - only for Highchart blocks (P1.3).
+                Swatches are the active DS's 12-slot categorical palette
+                from /lib/categoricalPalettes.ts. Clicking sets the
+                first series colour; "Reset" clears the override so
+                the chart returns to the full DS palette. */}
+            {selectedBlock.type.startsWith("Highchart") && (
+              <ChartColoursSection block={selectedBlock} />
+            )}
           </div>
         )}
 
@@ -407,5 +417,128 @@ function LibraryBrowser() {
         );
       })}
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   ChartColoursSection (P1.3)
+
+   Inspector section shown only for Highchart blocks. Exposes the
+   active DS's 12-slot categorical palette as click-to-apply swatches
+   and lets the user pick a custom hex or reset the override.
+
+   Writes to block.props.seriesColors[0] (first-series-only per the
+   plan - "make this chart orange" is the common case). Multi-series
+   editing and chat recolour land in P1.4.
+   ══════════════════════════════════════════════════════════ */
+function ChartColoursSection({ block }: { block: { id: string; type: string; props: Record<string, unknown> } }) {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const updateBlockProps = useBuilder((s) => s.updateBlockProps);
+  const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+  const selectedBlockZone = useBuilder((s) => s.selectedBlockZone);
+  const palette = CATEGORICAL_PALETTES[designSystem];
+
+  const currentOverride = Array.isArray(block.props.seriesColors)
+    ? (block.props.seriesColors as unknown[])[0]
+    : undefined;
+  const activeColor = typeof currentOverride === "string" ? currentOverride : null;
+
+  /* Chart blocks live in the body zone; use updateZoneBlockProps when
+     available (covers any zone), fall back to updateBlockProps. */
+  const write = (props: Record<string, unknown>) => {
+    if (selectedBlockZone && selectedBlockZone !== "body") {
+      updateZoneBlockProps(selectedBlockZone, block.id, props);
+    } else {
+      updateBlockProps(block.id, props);
+    }
+  };
+
+  const applyFirstSeriesColor = (color: string | null) => {
+    if (color === null) {
+      write({ seriesColors: undefined });
+      return;
+    }
+    /* Preserve slots 1+ if user already customised multiple series. */
+    const existing = Array.isArray(block.props.seriesColors)
+      ? (block.props.seriesColors as unknown[])
+      : [];
+    const next = [...existing];
+    next[0] = color;
+    write({ seriesColors: next.filter((c) => typeof c === "string") });
+  };
+
+  const [customHex, setCustomHex] = useState(activeColor ?? "");
+
+  return (
+    <>
+      <div className="lib-section-divider" />
+      <div className="inspector-section-title">Colours</div>
+      <div className="inspector-field">
+        <label className="inspector-field-label">
+          {designSystem.toUpperCase()} palette
+          {activeColor && (
+            <button
+              type="button"
+              className="inspector-chart-reset"
+              onClick={() => applyFirstSeriesColor(null)}
+              title="Clear the override - chart returns to the full DS palette"
+            >
+              Reset
+            </button>
+          )}
+        </label>
+        <div className="inspector-chart-swatches" role="group" aria-label="Chart colour palette">
+          {palette.map((hex, i) => {
+            const slot = PALETTE_SLOT_NAMES[i];
+            const label = PALETTE_SLOT_LABELS[slot];
+            const isActive = activeColor?.toLowerCase() === hex.toLowerCase();
+            return (
+              <button
+                key={hex + i}
+                type="button"
+                className={`inspector-chart-swatch${isActive ? " is-active" : ""}`}
+                style={{ background: hex }}
+                onClick={() => applyFirstSeriesColor(hex)}
+                title={`${label} · ${hex}`}
+                aria-label={`Apply ${label} (${hex}) to first series`}
+                aria-pressed={isActive}
+              />
+            );
+          })}
+        </div>
+      </div>
+      <div className="inspector-field">
+        <label className="inspector-field-label" htmlFor={`chart-hex-${block.id}`}>
+          Custom hex
+        </label>
+        <div className="inspector-chart-hex-row">
+          <input
+            id={`chart-hex-${block.id}`}
+            type="text"
+            className="inspector-chart-hex-input"
+            placeholder="#7E6BC4"
+            value={customHex}
+            onChange={(e) => setCustomHex(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const v = customHex.trim();
+                if (/^#[0-9a-fA-F]{3,8}$/.test(v)) applyFirstSeriesColor(v);
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="inspector-chart-hex-apply"
+            onClick={() => {
+              const v = customHex.trim();
+              if (/^#[0-9a-fA-F]{3,8}$/.test(v)) applyFirstSeriesColor(v);
+            }}
+            title="Apply custom hex to the first series"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </>
   );
 }

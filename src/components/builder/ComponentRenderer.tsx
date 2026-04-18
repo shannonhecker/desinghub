@@ -1462,6 +1462,12 @@ function HighchartBlockRenderer({
   const chartType = (block?.props.chartType as HighchartType) ?? "line";
   const title = (block?.props.title as string) ?? "";
   const value = block?.props.value != null ? Number(block.props.value) : undefined;
+  /* Per-chart colour override (P1.2) - position-indexed palette
+     slots. Only pass when non-empty to preserve the palette default. */
+  const raw = block?.props.seriesColors;
+  const seriesColors = Array.isArray(raw)
+    ? (raw.filter((c) => typeof c === "string") as string[])
+    : undefined;
 
   return (
     <SimulatedHighchart
@@ -1469,6 +1475,7 @@ function HighchartBlockRenderer({
       title={title}
       value={value}
       system={system}
+      seriesColors={seriesColors}
     />
   );
 }
