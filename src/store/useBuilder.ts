@@ -61,6 +61,18 @@ interface BuilderState {
   // cards (relocated from the empty state for visual clarity).
   templatesDrawerOpen: boolean;
 
+  // ── Session + auto-save ──
+  // currentSessionId is null for a fresh canvas that hasn't yet been
+  // saved. It's populated the moment the user takes a meaningful first
+  // action (template pick or first message) via ensureSessionStarted().
+  // Once set, the auto-save hook starts writing to Firebase on change.
+  currentSessionId: string | null;
+  sessionTitle: string | null;
+  lastSavedAt: number | null;
+  saveState: 'idle' | 'saving' | 'saved' | 'error';
+  saveError: string | null;
+  sessionsDrawerOpen: boolean;
+
   // Canvas blocks & selection
   blocks: Block[];
   selectedBlockId: string | null;
@@ -123,6 +135,23 @@ interface BuilderState {
   // Actions — Templates drawer
   setTemplatesDrawerOpen: (v: boolean) => void;
   toggleTemplatesDrawer: () => void;
+
+  // Actions — Sessions + auto-save
+  setCurrentSessionId: (id: string | null) => void;
+  setSessionTitle: (t: string | null) => void;
+  setLastSavedAt: (t: number | null) => void;
+  setSaveState: (s: 'idle' | 'saving' | 'saved' | 'error') => void;
+  setSaveError: (e: string | null) => void;
+  setSessionsDrawerOpen: (v: boolean) => void;
+  toggleSessionsDrawer: () => void;
+  /** Create a session ID + derive a title if one isn't already active.
+   *  `seed` is either the first user message or the picked template's
+   *  label — used to auto-generate a readable session name. No-op if
+   *  a session already exists. */
+  ensureSessionStarted: (seed: string) => void;
+  /** Tear down the current session and reset canvas state so the user
+   *  can start a fresh build from the empty state. */
+  startNewSession: () => void;
 
   // Actions — Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
@@ -210,6 +239,14 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Templates drawer
   templatesDrawerOpen: false,
+
+  // Session + auto-save — starts unpopulated; populated on first action
+  currentSessionId: null,
+  sessionTitle: null,
+  lastSavedAt: null,
+  saveState: 'idle',
+  saveError: null,
+  sessionsDrawerOpen: false,
 
   // Canvas blocks & selection
   blocks: [],
@@ -310,6 +347,60 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
+
+  setCurrentSessionId: (id) => set({ currentSessionId: id }),
+  setSessionTitle: (t) => set({ sessionTitle: t }),
+  setLastSavedAt: (t) => set({ lastSavedAt: t }),
+  setSaveState: (s) => set({ saveState: s }),
+  setSaveError: (e) => set({ saveError: e }),
+  setSessionsDrawerOpen: (v) => set({ sessionsDrawerOpen: v }),
+  toggleSessionsDrawer: () => set((s) => ({ sessionsDrawerOpen: !s.sessionsDrawerOpen })),
+
+  ensureSessionStarted: (seed: string) => set((s) => {
+    if (s.currentSessionId) return {}; // already started — no-op
+    /* Client-side session id — uuid-lite. Firebase will confirm / issue
+     *  a canonical id on first save; this lets us start saving against
+     *  a stable local identifier immediately. */
+    const rand = Math.random().toString(36).slice(2, 10);
+    const id = `sess-${Date.now().toString(36)}-${rand}`;
+    const trimmed = seed.trim();
+    const title = trimmed.length > 48 ? trimmed.slice(0, 46).trimEnd() + "…" : trimmed || "Untitled session";
+    return {
+      currentSessionId: id,
+      sessionTitle: title,
+      lastSavedAt: null,
+      saveState: 'idle' as const,
+      saveError: null,
+    };
+  }),
+
+  startNewSession: () => set({
+    /* Reset canvas + conversation state, but KEEP user-level preferences
+     *  like designSystem, density, mode — they're part of the user's
+     *  workspace setup, not part of the session. */
+    messages: [],
+    blocks: [],
+    headerBlocks: [],
+    sidebarBlocks: [],
+    footerBlocks: [],
+    selectedComponents: [],
+    selectedBlockId: null,
+    selectedBlockZone: null,
+    activeTemplateId: null,
+    pendingTemplateId: null,
+    pendingFirstMessage: null,
+    inputText: '',
+    isGenerating: false,
+    currentSessionId: null,
+    sessionTitle: null,
+    lastSavedAt: null,
+    saveState: 'idle',
+    saveError: null,
+    sessionsDrawerOpen: false,
+    templatesDrawerOpen: false,
+    previewOpen: false,
+    onboardingStep: 'ready',
+  }),
 
   setBlocks: (blocks) => set({ blocks }),
   updateBlockProps: (id, props) =>

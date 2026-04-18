@@ -11,7 +11,9 @@ import {
   getFirestore,
   collection,
   addDoc,
+  getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   orderBy,
@@ -52,12 +54,20 @@ function getFirebaseInstances() {
 export interface ProjectSnapshot {
   messages: ChatMessage[];
   blocks: Block[];
+  /* Zone blocks — added v2 so auto-save can restore the full layout.
+   * Optional so older Firestore docs (pre-v2) still deserialize cleanly. */
+  headerBlocks?: Block[];
+  sidebarBlocks?: Block[];
+  footerBlocks?: Block[];
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
   interfaceType: InterfaceType;
   selectedComponents: string[];
   colorOverrides: Record<string, string>;
+  /* Optional — the active template id so Regenerate-content knows
+   * which prompt to send after a session reload. */
+  activeTemplateId?: string | null;
 }
 
 export interface SavedProject {
@@ -78,12 +88,16 @@ export function useCloudStorage() {
 
   const messages = useBuilder((s) => s.messages);
   const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
   const designSystem = useBuilder((s) => s.designSystem);
   const mode = useBuilder((s) => s.mode);
   const density = useBuilder((s) => s.density);
   const interfaceType = useBuilder((s) => s.interfaceType);
   const selectedComponents = useBuilder((s) => s.selectedComponents);
   const colorOverrides = useBuilder((s) => s.colorOverrides);
+  const activeTemplateId = useBuilder((s) => s.activeTemplateId);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -126,7 +140,20 @@ export function useCloudStorage() {
     }
   }
 
-  async function saveProject(name: string): Promise<string> {
+  /** Save or upsert a project.
+   *
+   *  - Called without `id`: creates a new Firestore doc via addDoc
+   *    (legacy "Save as..." behaviour).
+   *  - Called with `id`: upserts that id via setDoc, so repeated
+   *    auto-saves update the same doc instead of creating duplicates.
+   *
+   *  When `refresh` is false (default true), skips the fetchProjects()
+   *  round-trip — useful for high-frequency auto-saves where re-fetching
+   *  the full list after every write is wasteful. */
+  async function saveProject(
+    name: string,
+    opts?: { id?: string; refresh?: boolean }
+  ): Promise<string> {
     if (!isConfigured) {
       setError("Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_* vars to .env.local.");
       throw new Error("Firebase not configured");
@@ -139,22 +166,50 @@ export function useCloudStorage() {
       const projectSnapshot: ProjectSnapshot = {
         messages,
         blocks,
+        headerBlocks,
+        sidebarBlocks,
+        footerBlocks,
         designSystem,
         mode,
         density,
         interfaceType,
         selectedComponents,
         colorOverrides,
+        activeTemplateId,
       };
-      const ref = await addDoc(collection(db, "projects"), {
-        uid: u.uid,
-        name,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        snapshot: projectSnapshot,
-      });
-      await fetchProjects(u.uid);
-      return ref.id;
+
+      let savedId: string;
+      if (opts?.id) {
+        /* Upsert path: preserve createdAt on updates by reading existing
+         *  doc first, else stamp a fresh createdAt. */
+        const ref = doc(db, "projects", opts.id);
+        const existing = await getDoc(ref);
+        const createdAt = existing.exists()
+          ? (existing.data()?.createdAt as Timestamp | undefined) ?? Timestamp.now()
+          : Timestamp.now();
+        await setDoc(ref, {
+          uid: u.uid,
+          name,
+          createdAt,
+          updatedAt: Timestamp.now(),
+          snapshot: projectSnapshot,
+        });
+        savedId = opts.id;
+      } else {
+        const ref = await addDoc(collection(db, "projects"), {
+          uid: u.uid,
+          name,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          snapshot: projectSnapshot,
+        });
+        savedId = ref.id;
+      }
+
+      if (opts?.refresh !== false) {
+        await fetchProjects(u.uid);
+      }
+      return savedId;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Save failed";
       setError(msg);
@@ -169,14 +224,33 @@ export function useCloudStorage() {
     useBuilder.setState({
       messages: snapshot.messages,
       blocks: snapshot.blocks,
+      headerBlocks: snapshot.headerBlocks ?? [],
+      sidebarBlocks: snapshot.sidebarBlocks ?? [],
+      footerBlocks: snapshot.footerBlocks ?? [],
       designSystem: snapshot.designSystem,
       mode: snapshot.mode,
       density: snapshot.density,
       interfaceType: snapshot.interfaceType,
       selectedComponents: snapshot.selectedComponents,
       colorOverrides: snapshot.colorOverrides,
+      activeTemplateId: snapshot.activeTemplateId ?? null,
       hasOverrides: Object.keys(snapshot.colorOverrides).length > 0,
       onboardingStep: "ready",
+      /* Reattach the loaded project as the current session so subsequent
+       *  auto-saves update it in place instead of forking a copy. */
+      currentSessionId: project.id,
+      sessionTitle: project.name,
+      lastSavedAt: project.updatedAt.getTime(),
+      saveState: 'saved',
+      saveError: null,
+      /* Drawers + pending flows should close when loading a session */
+      sessionsDrawerOpen: false,
+      templatesDrawerOpen: false,
+      pendingTemplateId: null,
+      pendingFirstMessage: null,
+      selectedBlockId: null,
+      selectedBlockZone: null,
+      previewOpen: true,
     });
   }
 

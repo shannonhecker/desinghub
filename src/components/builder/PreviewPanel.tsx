@@ -588,17 +588,12 @@ function PreviewToolbar() {
   const selectedComponents = useBuilder((s) => s.selectedComponents);
   const colorOverrides = useBuilder((s) => s.colorOverrides);
 
-  const { saving, saveProject } = useCloudStorage();
+  /* handleQuickSave removed: auto-save now persists the canvas to the
+     current session on every change (see /lib/useAutoSave). The old
+     window.prompt flow and the toolbar Save button are gone. Users
+     manage sessions via the left SessionsDrawer instead. */
   const [downloading, setDownloading] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
-
-  const handleQuickSave = async () => {
-    const now = new Date();
-    const defaultName = `${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
-    const name = window.prompt("Save project as:", defaultName);
-    if (name === null) return;
-    try { await saveProject(name.trim() || defaultName); } catch { /* surfaced by hook */ }
-  };
 
   const handleShare = async () => {
     const s = useBuilder.getState();
@@ -752,16 +747,8 @@ function PreviewToolbar() {
             {downloading ? "hourglass_top" : "download"}
           </span>
         </button>
-        <button
-          className="preview-toolbar-btn"
-          onClick={handleQuickSave}
-          disabled={saving}
-          title="Save project"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">
-            {saving ? "hourglass_top" : "save"}
-          </span>
-        </button>
+        {/* Save button removed — auto-save handles persistence now.
+            The top-bar SaveIndicator shows save state. */}
       </div>
     </div>
   );

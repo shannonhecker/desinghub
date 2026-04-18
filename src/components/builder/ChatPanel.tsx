@@ -6,6 +6,7 @@ import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
+import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder — no mandatory wizard.
@@ -268,6 +269,7 @@ export function ChatPanel() {
     pendingFirstMessage, setPendingFirstMessage,
     clearPendingIntent,
     setTemplatesDrawerOpen,
+    ensureSessionStarted, setSessionTitle, currentSessionId,
   } = useBuilder();
 
   /* Whether the conversational onboarding is waiting on a DS pick. */
@@ -343,6 +345,15 @@ export function ChatPanel() {
       "ai",
       `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
+    /* Start a session keyed to the template name so auto-save kicks in
+       immediately. If a session already exists (e.g. user returned to
+       the empty state and picked a different template), update its
+       title to reflect the new focus. */
+    if (!currentSessionId) {
+      ensureSessionStarted(titleFromTemplate(tpl.label));
+    } else {
+      setSessionTitle(titleFromTemplate(tpl.label));
+    }
   };
 
   /* Apply the currently-pending intent (template or freeform message) with
@@ -490,6 +501,9 @@ export function ChatPanel() {
         "ai",
         "Got it — which design system should I use for this?"
       );
+      /* Start a session named from the user's first intent so the
+         sessions drawer has a recognizable entry immediately. */
+      ensureSessionStarted(titleFromMessage(msg));
       return;
     }
 

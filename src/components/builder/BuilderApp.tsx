@@ -5,15 +5,17 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
-import { useCloudStorage } from "@/lib/firebase";
-import type { SavedProject } from "@/lib/firebase";
-import { GeminiSidebar } from "./GeminiSidebar";
+/* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
+ * no direct import here since BuilderApp no longer owns the save/load UI. */
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import { ExportPanel } from "./ExportPanel";
 import { TemplatesDrawer } from "./TemplatesDrawer";
+import { SessionsDrawer } from "./SessionsDrawer";
+import { SaveIndicator } from "./SaveIndicator";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
+import { useAutoSave } from "@/lib/useAutoSave";
 import "./builder.css";
 
 const WaveScene = dynamic(
@@ -25,8 +27,13 @@ export function BuilderApp() {
   const {
     mode, previewOpen, togglePreview, setMode,
     setDesignSystem, setInterfaceType, setSelectedComponents,
-    chatOpen: isChatOpen, clearChat,
+    chatOpen: isChatOpen,
+    toggleSessionsDrawer, startNewSession,
   } = useBuilder();
+
+  /* Auto-save subscription — kicks in the moment a session is started
+     (either by picking a template or sending a first message). */
+  useAutoSave();
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
@@ -35,26 +42,8 @@ export function BuilderApp() {
      Initialized once, scoped to the builder tree. */
   useBuilderShortcuts();
 
-  // ── Gemini sidebar ──
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   // ── Export modal ──
   const [exportOpen, setExportOpen] = useState(false);
-
-  // ── My Projects modal ──
-  const [projectsOpen, setProjectsOpen] = useState(false);
-  const [saveNameInput, setSaveNameInput] = useState("");
-  const [saveStep, setSaveStep] = useState<"idle" | "naming" | "saving">("idle");
-
-  const {
-    projects,
-    loading: projectsLoading,
-    saving,
-    error: cloudError,
-    saveProject,
-    loadProject,
-    deleteProject,
-  } = useCloudStorage();
 
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -179,22 +168,8 @@ export function BuilderApp() {
     })();
   }, []);
 
-  const handleSaveProject = async () => {
-    const name = saveNameInput.trim() || `Project ${new Date().toLocaleDateString()}`;
-    setSaveStep("saving");
-    try {
-      await saveProject(name);
-      setSaveStep("idle");
-      setSaveNameInput("");
-    } catch {
-      setSaveStep("idle");
-    }
-  };
-
-  const handleLoadProject = (project: SavedProject) => {
-    loadProject(project);
-    setProjectsOpen(false);
-  };
+  /* handleSaveProject + handleLoadProject removed — SessionsDrawer
+     owns session load/save/delete now, and auto-save handles persistence. */
 
   if (isStandalone) return <StandalonePreview />;
 
@@ -206,24 +181,9 @@ export function BuilderApp() {
         <WaveScene />
       </div>
 
-      {/* Mobile sidebar backdrop — visible only on small screens when sidebar is open */}
-      {isSidebarOpen && (
-        <div
-          className="sidebar-backdrop"
-          onClick={() => setIsSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ── Gemini sidebar ── */}
-      <GeminiSidebar
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen((v) => !v)}
-        projects={projects}
-        loading={projectsLoading}
-        onProjectLoad={handleLoadProject}
-        onProjectsOpen={() => { setProjectsOpen(true); setSaveStep("idle"); }}
-      />
+      {/* GeminiSidebar removed — replaced by SessionsDrawer (left slide-in).
+          isSidebarOpen is kept in state only to preserve any related CSS
+          hooks; it's no longer used to toggle a visible sidebar. */}
 
       {/* ── Main content area ── */}
       <div className="main-content">
@@ -231,21 +191,21 @@ export function BuilderApp() {
         {/* ── Top bar ── */}
         <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
 
-          {/* Left: hamburger (hidden when open, keeps space) + logo */}
+          {/* Left: sessions toggle + logo + new-session + save indicator */}
           <div className="top-bar-left">
             <button
-              className={`top-bar-btn icon-only sidebar-toggle-btn ${isSidebarOpen ? "sb-hidden" : ""}`}
-              onClick={() => setIsSidebarOpen((v) => !v)}
-              title="Open sidebar"
-              aria-label="Open sidebar"
+              className="top-bar-btn icon-only sidebar-toggle-btn"
+              onClick={toggleSessionsDrawer}
+              title="Open sessions"
+              aria-label="Open sessions drawer"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
             </button>
             <button
               className="top-bar-logo top-bar-logo-btn"
-              onClick={clearChat}
-              title="New chat"
-              aria-label="New chat"
+              onClick={startNewSession}
+              title="Start a new session"
+              aria-label="Start a new session"
             >
               <img
                 src="/aologo.svg"
@@ -253,6 +213,15 @@ export function BuilderApp() {
                 className="ausos-logo-img"
               />
             </button>
+            <button
+              className="top-bar-btn icon-only top-bar-new-session"
+              onClick={startNewSession}
+              title="New session"
+              aria-label="Start a new session"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit_square</span>
+            </button>
+            <SaveIndicator />
           </div>
 
           {/* Right: all existing controls unchanged */}
@@ -330,85 +299,12 @@ export function BuilderApp() {
            link, or programmatically from anywhere in the builder. ── */}
       <TemplatesDrawer />
 
+      {/* ── Sessions drawer — left slide-in, opened via the top-left
+           menu hamburger. Replaces the old "My Projects" modal. ── */}
+      <SessionsDrawer />
+
       {/* ── Export modal ── */}
       {exportOpen && <ExportPanel onClose={() => setExportOpen(false)} />}
-
-      {/* ── My Projects modal ── */}
-      {projectsOpen && (
-        <div className="projects-overlay" onClick={() => setProjectsOpen(false)}>
-          <div className="projects-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="projects-modal-header">
-              <span className="projects-modal-title">My Projects</span>
-              <button className="projects-modal-close" onClick={() => setProjectsOpen(false)}>
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-              </button>
-            </div>
-
-            <div className="projects-save-row">
-              {saveStep === "naming" ? (
-                <>
-                  <input
-                    className="projects-name-input"
-                    placeholder="Project name…"
-                    value={saveNameInput}
-                    onChange={(e) => setSaveNameInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveProject();
-                      if (e.key === "Escape") setSaveStep("idle");
-                    }}
-                    autoFocus
-                  />
-                  <button className="projects-save-btn" onClick={handleSaveProject} disabled={saving}>
-                    {saving ? "Saving…" : "Save"}
-                  </button>
-                  <button className="projects-cancel-btn" onClick={() => setSaveStep("idle")}>
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <button className="projects-save-btn wide" onClick={() => setSaveStep("naming")}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>save</span>
-                  Save current design
-                </button>
-              )}
-            </div>
-
-            {cloudError && <div className="projects-error">{cloudError}</div>}
-
-            <div className="projects-list">
-              {projectsLoading ? (
-                <div className="projects-empty">Loading…</div>
-              ) : projects.length === 0 ? (
-                <div className="projects-empty">No saved projects yet.</div>
-              ) : (
-                projects.map((p) => (
-                  <div key={p.id} className="project-item">
-                    <div className="project-item-info" onClick={() => handleLoadProject(p)}>
-                      <span className="project-item-name">{p.name}</span>
-                      <span className="project-item-date">
-                        {p.updatedAt.toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                    <button
-                      className="project-item-delete"
-                      onClick={() => deleteProject(p.id)}
-                      title="Delete"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        delete
-                      </span>
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
