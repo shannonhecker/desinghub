@@ -1786,6 +1786,86 @@
   align-items: center;
 }
 
+/* ── Click-to-edit scope chip ──
+   Shown above the chat input whenever a block is selected on the canvas.
+   Signals the user's next message will be scoped to the element. */
+.chat-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: rgba(126, 107, 196, 0.14);
+  border: 1px solid rgba(126, 107, 196, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 100%;
+  animation: chat-scope-appear 0.2s ease-out;
+}
+@keyframes chat-scope-appear {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.chat-scope-icon {
+  font-size: 14px !important;
+  color: rgba(126, 107, 196, 0.95);
+  flex-shrink: 0;
+}
+.chat-scope-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
+}
+.chat-scope-text strong {
+  font-weight: 600;
+}
+.chat-scope-detail {
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 400;
+}
+.chat-scope-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.chat-scope-clear:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+.chat-scope-clear .material-symbols-outlined {
+  font-size: 14px !important;
+}
+
+/* Light mode */
+.builder-light .chat-scope-chip {
+  background: rgba(126, 107, 196, 0.1);
+  border-color: rgba(126, 107, 196, 0.35);
+  color: #3a2d75;
+}
+.builder-light .chat-scope-icon { color: #6b57b0; }
+.builder-light .chat-scope-detail { color: rgba(0, 0, 0, 0.55); }
+.builder-light .chat-scope-clear {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+}
+.builder-light .chat-scope-clear:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.9);
+}
+
 /* ── SETTINGS DRAWER (kept for color overrides) ── */
 .settings-overlay {
   position: fixed;

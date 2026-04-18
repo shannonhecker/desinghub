@@ -262,7 +262,41 @@ export function ChatPanel() {
     setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks,
     activeTemplateId, setActiveTemplateId,
     isRegeneratingContent, setIsRegeneratingContent,
+    selectedBlockId, selectedBlockZone, setSelectedBlock,
+    blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks,
   } = useBuilder();
+
+  /* Derive the selected-block metadata for the scope chip.
+     Falls back to null when nothing is selected. */
+  const selectedBlock = (() => {
+    if (!selectedBlockId) return null;
+    const zones = [...headerBlocks, ...sidebarBlocks, ...bodyBlocks, ...footerBlocks];
+    return zones.find((b) => b.id === selectedBlockId) ?? null;
+  })();
+
+  /* Human-readable label for the scope chip. Picks the first meaningful
+     prop that can act as a display identifier (label / text / title /
+     placeholder) and falls back to the block type. */
+  const selectedBlockLabel = (() => {
+    if (!selectedBlock) return null;
+    const p = selectedBlock.props as Record<string, unknown>;
+    const candidates = ["label", "text", "title", "placeholder", "value"];
+    for (const key of candidates) {
+      const v = p[key];
+      if (typeof v === "string" && v.trim()) {
+        const friendly = selectedBlock.type
+          .replace(/^Simulated/, "")
+          .replace(/([A-Z])/g, " $1")
+          .trim();
+        return { friendly, detail: v.length > 28 ? v.slice(0, 26) + "…" : v };
+      }
+    }
+    const friendly = selectedBlock.type
+      .replace(/^Simulated/, "")
+      .replace(/([A-Z])/g, " $1")
+      .trim();
+    return { friendly, detail: null as string | null };
+  })();
 
   const { sendMessage: sendToAPI } = useChatAPI();
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -394,6 +428,18 @@ export function ChatPanel() {
     setGenerating(true);
     const l = msg.toLowerCase();
 
+    /* ── Click-to-edit scope — if a block is selected, skip the local
+       keyword routing (which could mistake "button" in "change this
+       button's label" for a layout/add-component command) and send
+       straight to Claude with the selected_block context attached by
+       useChatAPI. ── */
+    if (selectedBlockId) {
+      if (!previewOpen) setPreviewOpen(true);
+      setGenerating(false); // sendToAPI manages its own generating state
+      sendToAPI(msg).then(() => bumpPreview());
+      return;
+    }
+
     /* ── Login → Dashboard flow transitions (template-aware) ── */
     if (tryAdvanceLoginFlow(msg) || tryReturnToLogin(msg)) {
       setGenerating(false);
@@ -469,6 +515,9 @@ export function ChatPanel() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (hasText && !isGenerating) handleSend();
+    } else if (e.key === "Escape" && selectedBlockId) {
+      // Esc clears the click-to-edit scope without submitting anything
+      setSelectedBlock(null, null);
     }
   };
 
@@ -503,9 +552,11 @@ export function ChatPanel() {
     </div>
   );
 
-  const placeholderText = hasMessages
-    ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
-    : "Describe what you'd like to build, or pick a pattern above...";
+  const placeholderText = selectedBlock
+    ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} — what should it say or do?`
+    : hasMessages
+      ? "Ask me anything — 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+      : "Describe what you'd like to build, or pick a pattern above...";
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
@@ -589,6 +640,31 @@ export function ChatPanel() {
 
       {/* Input — always pinned to bottom, active from message 1 */}
       <div className="chat-input-bar">
+        {/* Scope chip — shown when a block is selected on the canvas, so
+            the user has a visible confirmation that their next message
+            will be scoped to that element. */}
+        {selectedBlock && selectedBlockLabel && (
+          <div className="chat-scope-chip" role="status" aria-live="polite">
+            <span className="material-symbols-outlined chat-scope-icon" aria-hidden="true">
+              edit
+            </span>
+            <span className="chat-scope-text">
+              Editing <strong>{selectedBlockLabel.friendly}</strong>
+              {selectedBlockLabel.detail && (
+                <span className="chat-scope-detail"> · “{selectedBlockLabel.detail}”</span>
+              )}
+            </span>
+            <button
+              type="button"
+              className="chat-scope-clear"
+              onClick={() => setSelectedBlock(null, null)}
+              aria-label="Clear selection"
+              title="Clear selection (Esc)"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+          </div>
+        )}
         <div className="input-container">
           <div className={`input-glow ${glowActive ? "active" : ""}`} />
           <div className={`input-box ${focused ? "focused" : ""}`}>

@@ -22,8 +22,21 @@ export function useChatAPI() {
       content: m.content,
     }));
 
-    // Add current message with context
-    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]]`;
+    // Add current message with context — includes the clicked/selected
+    // block when the user has scoped their message to a specific element.
+    const allZoneBlocks = [
+      ...store.headerBlocks,
+      ...store.sidebarBlocks,
+      ...store.blocks,
+      ...store.footerBlocks,
+    ];
+    const selectedBlock = store.selectedBlockId
+      ? allZoneBlocks.find((b) => b.id === store.selectedBlockId)
+      : null;
+    const selectedSuffix = selectedBlock
+      ? `, selected_block={id:"${selectedBlock.id}", type:"${selectedBlock.type}", zone:"${store.selectedBlockZone ?? ""}", props:${JSON.stringify(selectedBlock.props)}}`
+      : "";
+    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}]`;
     history.push({ role: "user", content: `${context}\n\n${userText}` });
 
     store.setGenerating(true);
