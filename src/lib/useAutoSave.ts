@@ -47,41 +47,56 @@ const TRACKED_KEYS = [
   "sessionTitle",
 ] as const;
 
+/** Shallow fingerprint across tracked keys — uses reference equality
+ *  on each slot and collapses into a pipe-separated hash string. Two
+ *  identical state snapshots produce identical fingerprints. */
+function fingerprint(state: unknown): string {
+  const s = state as Record<string, unknown>;
+  /* WeakMap lets us stabilize object identity across reads without
+   *  stringifying (which would be expensive for messages[]). */
+  const parts: string[] = [];
+  for (const k of TRACKED_KEYS) {
+    const v = s[k];
+    /* For primitives, just coerce; for references, store as-is and
+     *  rely on strict-equal comparison of the resulting array index. */
+    if (v === null || v === undefined) { parts.push(""); continue; }
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+      parts.push(String(v));
+    } else {
+      /* Reference-stable fingerprint: every distinct reference gets a
+       *  unique id via a WeakMap. Store/slice updates replace the
+       *  reference whenever Zustand set() is called with new data,
+       *  so this picks up all real changes. */
+      parts.push(idFor(v as object));
+    }
+  }
+  return parts.join("|");
+}
+
+const refIds = new WeakMap<object, string>();
+let refCounter = 0;
+function idFor(o: object): string {
+  const existing = refIds.get(o);
+  if (existing) return existing;
+  const id = "r" + (++refCounter);
+  refIds.set(o, id);
+  return id;
+}
+
 export function useAutoSave() {
   const { saveProject } = useCloudStorage();
+  /* `saveProject` is a new closure on every render of the hook's
+   *  parent (useCloudStorage returns inline functions). To keep the
+   *  subscription stable across renders, we stash the latest closure
+   *  in a ref and read it from there inside the async path. The
+   *  useEffect below runs exactly once per mount. */
+  const saveProjectRef = useRef(saveProject);
+  saveProjectRef.current = saveProject;
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
-  const mountedRef = useRef(false);
 
   useEffect(() => {
-    if (mountedRef.current) return; // Strict Mode double-mount guard
-    mountedRef.current = true;
-
-    const unsub = useBuilder.subscribe((state, prev) => {
-      /* Cheap short-circuit: only act if a relevant slice changed */
-      const changed = TRACKED_KEYS.some((k) => {
-        return state[k as keyof typeof state] !== prev[k as keyof typeof prev];
-      });
-      if (!changed) return;
-
-      /* No session yet → nothing to save */
-      if (!state.currentSessionId) return;
-
-      /* Already mid-save? Let the in-flight save finish and the next
-       *  change tick will re-schedule. Avoids overlapping writes. */
-      if (savingRef.current) {
-        /* But do reset the debounce so we don't fire immediately on
-         *  save completion. */
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(scheduleSave, DEBOUNCE_MS);
-        return;
-      }
-
-      /* Debounce */
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(scheduleSave, DEBOUNCE_MS);
-    });
-
     async function scheduleSave() {
       debounceRef.current = null;
       const s = useBuilder.getState();
@@ -93,7 +108,7 @@ export function useAutoSave() {
       s.setSaveError(null);
 
       try {
-        await saveProject(s.sessionTitle ?? "Untitled session", {
+        await saveProjectRef.current(s.sessionTitle ?? "Untitled session", {
           id: s.currentSessionId,
           refresh: false, // list gets refreshed when the drawer opens
         });
@@ -111,10 +126,30 @@ export function useAutoSave() {
       }
     }
 
+    /* Snapshot-compare via fingerprint — avoids relying on the
+     *  (state, prev) two-argument subscribe variant; we just recompute
+     *  the fingerprint each notification and bail if nothing tracked
+     *  changed. Slightly cheaper than deep-compare, cheaper than
+     *  stringifying messages[]. */
+    let lastFingerprint = fingerprint(useBuilder.getState());
+    const unsub = useBuilder.subscribe((state) => {
+      const fp = fingerprint(state);
+      if (fp === lastFingerprint) return;
+      lastFingerprint = fp;
+
+      /* No session yet → nothing to save */
+      if (!state.currentSessionId) return;
+
+      /* Debounce — always reset timer so rapid edits collapse into one
+       *  save. If a save is in flight, we still re-arm the debounce so
+       *  the NEXT save captures post-completion state. */
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(scheduleSave, DEBOUNCE_MS);
+    });
+
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       unsub();
-      mountedRef.current = false;
     };
-  }, [saveProject]);
+  }, []);
 }
