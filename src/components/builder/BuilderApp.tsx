@@ -145,6 +145,39 @@ export function BuilderApp() {
     }
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
+  /* ── Fork from shared preview — pick up ?shared=<hash> and apply ──
+     Triggered when a viewer clicks "Fork & edit" on /preview/share/[hash].
+     Sets the full zone state, opens the preview, and clears the URL so
+     reloads don't re-apply. Runs once on mount. */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const hash = params.get("shared");
+    if (!hash) return;
+    (async () => {
+      try {
+        const { decodeShareState } = await import("@/lib/shareState");
+        const state = decodeShareState(hash);
+        if (!state) return;
+        const store = useBuilder.getState();
+        store.setDesignSystem(state.designSystem);
+        store.setMode(state.mode);
+        store.setDensity(state.density);
+        store.setHeaderBlocks(state.headerBlocks);
+        store.setSidebarBlocks(state.sidebarBlocks);
+        store.setBlocks(state.blocks);
+        store.setFooterBlocks(state.footerBlocks);
+        if (state.activeTemplateId) store.setActiveTemplateId(state.activeTemplateId);
+        store.setPreviewOpen(true);
+        // Clean the URL so reload doesn't trigger another apply
+        const newUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, "", newUrl);
+      } catch {
+        /* Decoding or import failed — silently ignore; user lands on an empty builder */
+      }
+    })();
+  }, []);
+
   const handleSaveProject = async () => {
     const name = saveNameInput.trim() || `Project ${new Date().toLocaleDateString()}`;
     setSaveStep("saving");

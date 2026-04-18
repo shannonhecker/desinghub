@@ -39,6 +39,7 @@ import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/us
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
 import { CompareView } from "./CompareView";
+import { buildShareUrl } from "@/lib/shareState";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
@@ -589,6 +590,7 @@ function PreviewToolbar() {
 
   const { saving, saveProject } = useCloudStorage();
   const [downloading, setDownloading] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
 
   const handleQuickSave = async () => {
     const now = new Date();
@@ -596,6 +598,34 @@ function PreviewToolbar() {
     const name = window.prompt("Save project as:", defaultName);
     if (name === null) return;
     try { await saveProject(name.trim() || defaultName); } catch { /* surfaced by hook */ }
+  };
+
+  const handleShare = async () => {
+    const s = useBuilder.getState();
+    const { url, tooLong } = buildShareUrl({
+      v: 1,
+      designSystem: s.designSystem,
+      mode: s.mode,
+      density: s.density,
+      activeTemplateId: s.activeTemplateId,
+      headerBlocks: s.headerBlocks,
+      sidebarBlocks: s.sidebarBlocks,
+      blocks: s.blocks,
+      footerBlocks: s.footerBlocks,
+    });
+    if (tooLong) {
+      setShareState("too-long");
+      setTimeout(() => setShareState("idle"), 3000);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
+    } catch {
+      setShareState("error");
+      setTimeout(() => setShareState("idle"), 2500);
+    }
   };
 
   const handleDownload = () => {
@@ -695,6 +725,22 @@ function PreviewToolbar() {
           title={componentLibraryOpen ? "Hide component library" : "Show component library"}
         >
           <span className="material-symbols-outlined preview-toolbar-icon">category</span>
+        </button>
+        <button
+          className="preview-toolbar-btn"
+          onClick={handleShare}
+          title={
+            shareState === "too-long"
+              ? "Canvas too large to share as a link — use Download instead"
+              : shareState === "error"
+              ? "Clipboard unavailable"
+              : "Copy a shareable preview link"
+          }
+          aria-label="Share preview link"
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">
+            {shareState === "copied" ? "check" : shareState === "too-long" || shareState === "error" ? "warning" : "share"}
+          </span>
         </button>
         <button
           className="preview-toolbar-btn"
