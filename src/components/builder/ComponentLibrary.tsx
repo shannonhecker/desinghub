@@ -5,6 +5,9 @@ import { useDraggable } from "@dnd-kit/core";
 import { useBuilder } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS, TYPE_FIELDS } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
+import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
+import { TemplatePreview } from "./TemplatePreviews";
+import { titleFromTemplate } from "@/lib/sessionTitle";
 
 /* ══════════════════════════════════════════════════════════
    Zone classification for drag-to-all-zones discoverability.
@@ -36,12 +39,16 @@ const ZONE_LABELS: Record<LibraryZone, { label: string; hint: string; icon: stri
 const ZONE_ORDER: LibraryZone[] = ["body", "header", "sidebar", "footer"];
 
 /* ── Visual grid tile — stylized mini-preview + label.
- *   Replaces the list-row blueprint item. Kept draggable via dnd-kit;
- *   click/hover behaviour ships in the next commit. ── */
+ *   Drag-enabled via dnd-kit for drop-to-canvas.
+ *   Click-to-add (Phase E.3) handled via an inner button wrapping
+ *   the content so the drag-listener pointerdown + the click event
+ *   don't fight each other — we suppress the click when a drag
+ *   actually starts by checking movement distance. */
 function BlueprintItem({ blueprint, zone }: {
   blueprint: { id: string; type: string; label: string; icon: string; defaults: Record<string, unknown> };
   zone: LibraryZone;
 }) {
+  const addBlockFromLibrary = useBuilder((s) => s.addBlockFromLibrary);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: blueprint.id,
     data: {
@@ -53,13 +60,42 @@ function BlueprintItem({ blueprint, zone }: {
     },
   });
 
+  /* Click-to-add: distinguish click vs drag by tracking pointer
+     displacement. A click fires only when pointerup lands within a
+     few pixels of pointerdown — otherwise dnd-kit takes over. */
+  const pointerStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const handlePointerDown = (e: React.PointerEvent) => {
+    pointerStartRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const handlePointerUp = (e: React.PointerEvent) => {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (!start) return;
+    const dx = Math.abs(e.clientX - start.x);
+    const dy = Math.abs(e.clientY - start.y);
+    /* Treat a movement of <5px as a click; anything larger is a drag
+       and will be handled by dnd-kit's onDragEnd. */
+    if (dx < 5 && dy < 5) {
+      addBlockFromLibrary(blueprint.type, blueprint.defaults);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       className={`lib-tile${isDragging ? " is-dragging" : ""}`}
       {...listeners}
       {...attributes}
-      title={`${blueprint.label} — ${ZONE_LABELS[zone].hint.toLowerCase()}`}
+      onPointerDown={(e) => {
+        handlePointerDown(e);
+        /* Forward to dnd-kit's listeners (they're spread above via
+           {...listeners}); dnd-kit reads the pointer event itself. */
+        listeners?.onPointerDown?.(e);
+      }}
+      onPointerUp={handlePointerUp}
+      title={`${blueprint.label} — drag onto canvas or click to add`}
+      role="button"
+      tabIndex={0}
     >
       <div className="lib-tile-preview">
         <MiniPreview type={blueprint.type} />
@@ -145,11 +181,98 @@ export function ComponentLibrary() {
           </div>
         )}
 
+        {/* Templates accordion — collapsible section at the top so users
+            can swap the entire layout mid-flow without returning to the
+            empty state. Renders a 2x2 grid of mini template cards. */}
+        <TemplatesAccordion />
+
         {/* Library — grouped by zone, searchable. Each blueprint can be
             dragged onto its preferred zone (though drop handling allows
             any zone). */}
         <LibraryBrowser />
       </div>
+    </div>
+  );
+}
+
+/* ── Templates accordion — Phase E.3
+ *    Collapsible section at the top of the panel. When expanded,
+ *    shows a 2x2 grid of mini pattern cards. Clicking one runs the
+ *    same conversational DS-prompt flow as the hero pattern cards:
+ *    stages a pending template and asks the AI for a DS pick. ── */
+function TemplatesAccordion() {
+  const [open, setOpen] = useState(false);
+  const addMessage = useBuilder((s) => s.addMessage);
+  const setPendingTemplateId = useBuilder((s) => s.setPendingTemplateId);
+  const setPendingFirstMessage = useBuilder((s) => s.setPendingFirstMessage);
+  const currentSessionId = useBuilder((s) => s.currentSessionId);
+  const ensureSessionStarted = useBuilder((s) => s.ensureSessionStarted);
+  const setSessionTitle = useBuilder((s) => s.setSessionTitle);
+  const activeTemplateId = useBuilder((s) => s.activeTemplateId);
+  const isGenerating = useBuilder((s) => s.isGenerating);
+
+  const templates: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
+
+  const handleSelect = (tpl: BuilderTemplate) => {
+    if (isGenerating) return;
+    const article = /^[aeiouAEIOU]/.test(tpl.label) ? "an" : "a";
+    setPendingTemplateId(tpl.id);
+    setPendingFirstMessage(null);
+    addMessage("user", `Build me ${article} ${tpl.label}`);
+    addMessage(
+      "ai",
+      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+    );
+    if (!currentSessionId) {
+      ensureSessionStarted(titleFromTemplate(tpl.label));
+    } else {
+      setSessionTitle(titleFromTemplate(tpl.label));
+    }
+  };
+
+  return (
+    <div className="lib-templates">
+      <button
+        type="button"
+        className="lib-templates-head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span
+          className={`material-symbols-outlined lib-templates-caret ${open ? "is-open" : ""}`}
+          aria-hidden="true"
+        >
+          chevron_right
+        </span>
+        <span className="lib-templates-label">Templates</span>
+        <span className="lib-templates-count">{templates.length}</span>
+        <span className="lib-templates-hint">Swap the whole layout</span>
+      </button>
+
+      {open && (
+        <div className="lib-templates-grid">
+          {templates.map((tpl) => {
+            const isActive = tpl.id === activeTemplateId;
+            return (
+              <button
+                key={tpl.id}
+                type="button"
+                className={`lib-template-card ${isActive ? "is-active" : ""}`}
+                onClick={() => handleSelect(tpl)}
+                title={`Switch to ${tpl.label}`}
+              >
+                <div className="lib-template-thumb">
+                  <TemplatePreview id={tpl.id as TemplateId} />
+                </div>
+                <span className="lib-template-label">
+                  {tpl.label}
+                  {isActive && <span className="lib-template-active-dot" aria-hidden="true" />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

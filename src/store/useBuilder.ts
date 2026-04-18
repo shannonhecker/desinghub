@@ -136,6 +136,13 @@ interface BuilderState {
   setTemplatesDrawerOpen: (v: boolean) => void;
   toggleTemplatesDrawer: () => void;
 
+  /** Click-to-add from the component library. Inserts a new block of
+   *  `type` at the end of the currently-active zone (selectedBlockZone),
+   *  falling back to "body" if nothing is selected. The new block
+   *  becomes the selected block so the properties inspector lights up
+   *  with its fields. */
+  addBlockFromLibrary: (type: string, defaults: Record<string, unknown>) => void;
+
   // Actions — Sessions + auto-save
   setCurrentSessionId: (id: string | null) => void;
   setSessionTitle: (t: string | null) => void;
@@ -347,6 +354,34 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
+
+  addBlockFromLibrary: (type, defaults) => {
+    /* Resolve the target zone: prefer the currently-selected block's zone
+       (so repeated clicks drop blocks next to the user's focus), fall back
+       to "body" which is the workspace's main canvas. Zone-specific types
+       get routed to their natural home regardless of selection: dropping
+       an AppBrand into the body would look wrong. */
+    const zoneByType: Record<string, ZoneId> = {
+      AppBrand: 'header',
+      StatusPill: 'header',
+      NavItem: 'sidebar',
+      FooterText: 'footer',
+    };
+    const state = useBuilder.getState();
+    const targetZone: ZoneId =
+      zoneByType[type] ?? state.selectedBlockZone ?? 'body';
+    const key = ZONE_KEYS[targetZone];
+    const id = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const newBlock: Block = { id, type, props: { ...defaults } };
+    const existing = state[key] as Block[];
+    set({ [key]: [...existing, newBlock] } as Partial<BuilderState>);
+    /* Select the newly-added block so the inspector jumps to it. */
+    set({ selectedBlockId: id, selectedBlockZone: targetZone });
+    /* Open the preview panel if it's closed so the user sees the block
+       land. Cheap no-op when already open. */
+    if (!state.previewOpen) set({ previewOpen: true });
+    state.bumpPreview();
+  },
 
   setCurrentSessionId: (id) => set({ currentSessionId: id }),
   setSessionTitle: (t) => set({ sessionTitle: t }),
