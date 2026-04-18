@@ -46,6 +46,89 @@ export function BuilderApp() {
   // ── Export modal ──
   const [exportOpen, setExportOpen] = useState(false);
 
+  /* Export dropdown state + share/download (P3.3) - merged from the
+     preview-bar overflow menu so users have ONE place to hand off a
+     canvas (share link / JSON / code / Vite). */
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [exportShareState, setExportShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
+  const [exportDownloading, setExportDownloading] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExportMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [exportMenuOpen]);
+
+  const handleExportShare = async () => {
+    const { buildShareUrl } = await import("@/lib/shareState");
+    const s = useBuilder.getState();
+    const { url, tooLong } = buildShareUrl({
+      v: 1,
+      designSystem: s.designSystem,
+      mode: s.mode,
+      density: s.density,
+      activeTemplateId: s.activeTemplateId,
+      headerBlocks: s.headerBlocks,
+      sidebarBlocks: s.sidebarBlocks,
+      blocks: s.blocks,
+      footerBlocks: s.footerBlocks,
+    });
+    if (tooLong) {
+      setExportShareState("too-long");
+      setTimeout(() => setExportShareState("idle"), 3000);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setExportShareState("copied");
+      setTimeout(() => setExportShareState("idle"), 2000);
+    } catch {
+      setExportShareState("error");
+      setTimeout(() => setExportShareState("idle"), 2500);
+    }
+    setExportMenuOpen(false);
+  };
+
+  const handleExportDownloadJson = () => {
+    setExportDownloading(true);
+    const s = useBuilder.getState();
+    const config = {
+      designSystem: s.designSystem, mode: s.mode, density: s.density,
+      interfaceType: s.interfaceType, selectedComponents: s.selectedComponents,
+      colorOverrides: s.colorOverrides,
+      headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
+      blocks: s.blocks, footerBlocks: s.footerBlocks,
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${s.interfaceType}-${s.designSystem}-canvas.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => setExportDownloading(false), 1500);
+    setExportMenuOpen(false);
+  };
+
+  const handleOpenExportModal = () => {
+    setExportMenuOpen(false);
+    setExportOpen(true);
+  };
+
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
   const [splitPos, setSplitPos] = useState(55);
@@ -236,16 +319,87 @@ export function BuilderApp() {
               UI Kit
             </Link>
 
-            {/* Export - opens the consolidated code / HTML / Vite modal */}
-            <button
-              className="top-bar-btn"
-              onClick={() => setExportOpen(true)}
-              title="Export the current canvas as code, HTML, or a Vite project"
-              aria-label="Export canvas"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">code</span>
-              Export
-            </button>
+            {/* Export dropdown - consolidates Share link, JSON download,
+                and the code / HTML / Vite modal into a single menu so
+                users have one place to hand off a canvas (P3.3). */}
+            <div className="top-bar-export-wrap" ref={exportMenuRef}>
+              <button
+                className={`top-bar-btn ${exportMenuOpen ? "active" : ""}`}
+                onClick={() => setExportMenuOpen((v) => !v)}
+                title="Export or share the current canvas"
+                aria-label="Export canvas"
+                aria-haspopup="menu"
+                aria-expanded={exportMenuOpen}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">ios_share</span>
+                Export
+                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginLeft: 2 }}>
+                  {exportMenuOpen ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+              {exportMenuOpen && (
+                <div className="top-bar-export-menu" role="menu">
+                  <button
+                    type="button"
+                    className="top-bar-export-item"
+                    role="menuitem"
+                    onClick={handleExportShare}
+                    title="Copy a shareable preview URL to the clipboard"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">
+                      {exportShareState === "copied" ? "check"
+                        : exportShareState === "too-long" || exportShareState === "error" ? "warning"
+                        : "link"}
+                    </span>
+                    <div className="top-bar-export-item-text">
+                      <span className="top-bar-export-item-title">
+                        {exportShareState === "copied" ? "Link copied to clipboard"
+                          : exportShareState === "too-long" ? "Canvas too large to share"
+                          : exportShareState === "error" ? "Clipboard unavailable"
+                          : "Copy share link"}
+                      </span>
+                      <span className="top-bar-export-item-desc">
+                        Stateless URL. Anyone with the link sees the canvas.
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="top-bar-export-item"
+                    role="menuitem"
+                    onClick={handleExportDownloadJson}
+                    disabled={exportDownloading}
+                    title="Download the canvas as a JSON config"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">
+                      {exportDownloading ? "hourglass_top" : "download"}
+                    </span>
+                    <div className="top-bar-export-item-text">
+                      <span className="top-bar-export-item-title">Download canvas JSON</span>
+                      <span className="top-bar-export-item-desc">
+                        Full state snapshot - blocks, DS, mode, density.
+                      </span>
+                    </div>
+                  </button>
+                  <div className="top-bar-export-divider" />
+                  <button
+                    type="button"
+                    className="top-bar-export-item"
+                    role="menuitem"
+                    onClick={handleOpenExportModal}
+                    title="Generate React / HTML / Vite project code"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">code_blocks</span>
+                    <div className="top-bar-export-item-text">
+                      <span className="top-bar-export-item-title">Export as code...</span>
+                      <span className="top-bar-export-item-desc">
+                        React TSX, HTML, or a full Vite project bootstrap.
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

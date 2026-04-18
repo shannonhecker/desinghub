@@ -383,22 +383,6 @@ function PreviewBar() {
               <span className="material-symbols-outlined" aria-hidden="true">category</span>
               {componentLibraryOpen ? "Hide component library" : "Show component library"}
             </button>
-            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleShare}>
-              <span className="material-symbols-outlined" aria-hidden="true">
-                {shareState === "copied" ? "check" : shareState === "too-long" || shareState === "error" ? "warning" : "share"}
-              </span>
-              {shareState === "copied" ? "Link copied"
-                : shareState === "too-long" ? "Canvas too large to share"
-                : shareState === "error" ? "Clipboard unavailable"
-                : "Copy share link"}
-            </button>
-            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleDownload} disabled={downloading}>
-              <span className="material-symbols-outlined" aria-hidden="true">
-                {downloading ? "hourglass_top" : "download"}
-              </span>
-              {downloading ? "Downloading…" : "Download JSON config"}
-            </button>
-            <div className="preview-bar-overflow-divider" />
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleRefresh}>
               <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
               Refresh preview
@@ -407,6 +391,10 @@ function PreviewBar() {
               <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
               Pop out to window
             </button>
+            <div className="preview-bar-overflow-divider" />
+            <div className="preview-bar-overflow-hint">
+              Share and download moved to the top-bar <strong>Export</strong> menu.
+            </div>
           </div>
         )}
       </div>
