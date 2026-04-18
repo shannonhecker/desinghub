@@ -69,6 +69,10 @@ interface BuilderState {
   previewKey: number;
   deviceMode: DeviceMode;
 
+  // Compare-DS mode — renders the current canvas in all four design systems
+  // simultaneously (2x2 grid) so designers can compare visual output.
+  compareMode: boolean;
+
   // Actions — Chat
   setInputText: (t: string) => void;
   addMessage: (role: 'user' | 'ai', content: string) => void;
@@ -131,6 +135,10 @@ interface BuilderState {
   setDeviceMode: (d: DeviceMode) => void;
   toggleSidebar: () => void;
   bumpPreview: () => void;
+
+  // Compare-DS
+  toggleCompareMode: () => void;
+  setCompareMode: (v: boolean) => void;
 }
 
 const uid = (() => {
@@ -204,6 +212,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   sidebarCollapsed: false,
   previewKey: 0,
   deviceMode: 'desktop',
+  compareMode: false,
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
@@ -331,4 +340,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setDeviceMode: (d) => set({ deviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
+
+  toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
+  setCompareMode: (v) => set({ compareMode: v }),
 }));

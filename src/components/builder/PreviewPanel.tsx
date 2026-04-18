@@ -38,6 +38,7 @@ import {
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
+import { CompareView } from "./CompareView";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
@@ -622,6 +623,8 @@ function PreviewToolbar() {
   ];
 
   const modKey = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
+  const compareMode = useBuilder((s) => s.compareMode);
+  const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
 
   return (
     <div className="preview-toolbar">
@@ -642,6 +645,20 @@ function PreviewToolbar() {
           aria-label="Redo"
         >
           <span className="material-symbols-outlined preview-toolbar-icon">redo</span>
+        </button>
+      </div>
+
+      {/* Compare DS — headline moat feature */}
+      <div className="preview-toolbar-group">
+        <button
+          className={`preview-toolbar-btn preview-toolbar-compare${compareMode ? " preview-toolbar-btn-active" : ""}`}
+          onClick={toggleCompareMode}
+          title={compareMode ? "Exit compare mode" : "Compare this canvas in all 4 design systems"}
+          aria-label="Toggle compare design systems"
+          aria-pressed={compareMode}
+        >
+          <span className="material-symbols-outlined preview-toolbar-icon">compare</span>
+          <span className="preview-toolbar-compare-label">Compare</span>
         </button>
       </div>
 
@@ -942,6 +959,7 @@ export function PreviewSidePanel() {
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const blocks = useBuilder((s) => s.blocks);
+  const compareMode = useBuilder((s) => s.compareMode);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const hasContent = messages.some((m) => m.role === "ai");
@@ -1030,51 +1048,56 @@ export function PreviewSidePanel() {
         >
           {/* Center: Viewport */}
           <div className="bp-viewport-wrapper">
-            {/* Device Frame — animated width */}
-            <motion.div
-              className="bp-device-frame"
-              animate={{ width: frameWidth, maxHeight: preset.height }}
-              transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            >
-              {/* Code view — covers the entire dashboard area */}
-              {isCodeView ? (
-                <CodeViewer blocks={blocks} />
-              ) : (
-                /* SaaS Dashboard layout — scoped to the selected design system */
-                <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-                  <DashboardHeader compact={isMobile} />
+            {compareMode ? (
+              /* Compare DS mode — 2x2 grid covering the full viewport */
+              <CompareView />
+            ) : (
+              /* Device Frame — animated width */
+              <motion.div
+                className="bp-device-frame"
+                animate={{ width: frameWidth, maxHeight: preset.height }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              >
+                {/* Code view — covers the entire dashboard area */}
+                {isCodeView ? (
+                  <CodeViewer blocks={blocks} />
+                ) : (
+                  /* SaaS Dashboard layout — scoped to the selected design system */
+                  <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+                    <DashboardHeader compact={isMobile} />
 
-                  <div className="bp-body">
-                    {!isMobile && (
-                      <DashboardSidebar
-                        collapsed={sidebarCollapsed}
-                        onToggle={handleSidebarToggle}
-                        width={dashSidebarWidth}
-                        onWidthChange={setDashSidebarWidth}
-                      />
-                    )}
-
-                    {/* Resize handle for dashboard sidebar */}
-                    {!isMobile && !sidebarCollapsed && (
-                      <DashboardSidebarResizeHandle
-                        width={dashSidebarWidth}
-                        onWidthChange={setDashSidebarWidth}
-                      />
-                    )}
-
-                    <main className="bp-main">
-                      {hasContent ? (
-                        <PreviewCanvas />
-                      ) : (
-                        <DefaultChatArea messageKey={previewKey} />
+                    <div className="bp-body">
+                      {!isMobile && (
+                        <DashboardSidebar
+                          collapsed={sidebarCollapsed}
+                          onToggle={handleSidebarToggle}
+                          width={dashSidebarWidth}
+                          onWidthChange={setDashSidebarWidth}
+                        />
                       )}
-                    </main>
-                  </div>
 
-                  <DashboardFooter />
-                </div>
-              )}
-            </motion.div>
+                      {/* Resize handle for dashboard sidebar */}
+                      {!isMobile && !sidebarCollapsed && (
+                        <DashboardSidebarResizeHandle
+                          width={dashSidebarWidth}
+                          onWidthChange={setDashSidebarWidth}
+                        />
+                      )}
+
+                      <main className="bp-main">
+                        {hasContent ? (
+                          <PreviewCanvas />
+                        ) : (
+                          <DefaultChatArea messageKey={previewKey} />
+                        )}
+                      </main>
+                    </div>
+
+                    <DashboardFooter />
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
 
           {/* Resize handle for component library */}

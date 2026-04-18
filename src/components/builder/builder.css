@@ -5817,6 +5817,202 @@
   background: var(--b-bg);
 }
 
+/* ══════════════════════════════════════════════════════════
+   Compare DS mode — 2x2 grid of read-only mini canvases,
+   one per design system. The mini canvases reuse the live
+   block state; only the DS theme (via preview-${ds} class)
+   differs between quadrants.
+   ══════════════════════════════════════════════════════════ */
+.compare-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px 12px 16px;
+  gap: 10px;
+  background: var(--b-bg);
+}
+.compare-view-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(126, 107, 196, 0.12);
+  border: 1px solid rgba(126, 107, 196, 0.28);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.compare-view-banner kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  margin: 0 2px;
+}
+.builder-light .compare-view-banner {
+  background: rgba(126, 107, 196, 0.08);
+  border-color: rgba(126, 107, 196, 0.28);
+  color: rgba(0, 0, 0, 0.7);
+}
+.builder-light .compare-view-banner kbd {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.compare-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+.compare-quadrant {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 12px;
+  border: 1px solid var(--b-border2);
+  background: var(--b-bg);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.compare-quadrant.is-active {
+  border-color: rgba(126, 107, 196, 0.55);
+  box-shadow: 0 0 0 1px rgba(126, 107, 196, 0.35);
+}
+.compare-quadrant-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--b-border2);
+  background: rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
+}
+.builder-light .compare-quadrant-header { background: rgba(0, 0, 0, 0.02); }
+.compare-quadrant-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.compare-quadrant-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.compare-quadrant-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--b-fg);
+  line-height: 1.2;
+}
+.compare-quadrant-org {
+  font-size: 10px;
+  color: var(--b-fg3);
+  line-height: 1.2;
+}
+.compare-quadrant-open {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(126, 107, 196, 0.18);
+  border: 1px solid rgba(126, 107, 196, 0.4);
+  color: var(--b-fg);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.compare-quadrant-open:hover {
+  background: rgba(126, 107, 196, 0.3);
+}
+.compare-quadrant-active-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(126, 107, 196, 0.25);
+  border: 1px solid rgba(126, 107, 196, 0.5);
+  color: var(--b-fg);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Scale + disable pointer events on the mini canvas body so users
+   don't accidentally interact with 4 previews simultaneously. Hover
+   and click still work on the header (Open button). */
+.compare-quadrant-body {
+  flex: 1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: top left;
+  /* Mini-canvas: aim for ~1.7x zoom-out so the full layout fits */
+  zoom: 0.6;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Firefox doesn't honor zoom; fall back to transform */
+@-moz-document url-prefix() {
+  .compare-quadrant-body {
+    zoom: 1;
+    transform: scale(0.6);
+    width: 166.67%;
+    height: 166.67%;
+  }
+}
+.compare-mini-zone {
+  padding: 6px 10px;
+}
+.compare-mini-sidebar {
+  min-width: 140px;
+  max-width: 180px;
+}
+.compare-mini-main {
+  padding: 8px 10px;
+  overflow: hidden;
+}
+.compare-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.compare-mini-block {
+  min-width: 0;
+}
+.compare-mini-empty {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+.builder-light .compare-mini-empty { color: rgba(0, 0, 0, 0.4); }
+
+/* Toolbar Compare button — pill with label, emphasizing the moat */
+.preview-toolbar-compare {
+  padding-right: 12px !important;
+  gap: 6px;
+}
+.preview-toolbar-compare-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 /* ── Device Frame ── */
 .bp-device-frame {
   background: var(--b-bg);
