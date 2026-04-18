@@ -8,6 +8,7 @@ import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderT
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
+import { FadingWords } from "./FadingWords";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder - no mandatory wizard.
@@ -748,7 +749,7 @@ export function ChatPanel() {
               const isLastAi = msg.role === "ai" && i === messages.length - 1;
               return (
                 <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
-                  {msg.content}
+                  {msg.role === "ai" ? <FadingWords text={msg.content} /> : msg.content}
                   {msg.role === "ai" && (
                     <div className="chat-msg-actions">
                       <button aria-label="Good response"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>thumb_up</span></button>
@@ -762,15 +763,17 @@ export function ChatPanel() {
               );
             })}
             {isGenerating && (
-              <div className="chat-msg chat-msg-ai generating-state">
-                <div className="generating-header">
-                  <div className="generating-avatar">AI</div>
-                  <span className="generating-badge">Generating...</span>
+              <div className="chat-msg chat-msg-ai generating-state" aria-live="polite" aria-label="AI is generating">
+                {/* Gemini-style shimmer pill (P2.1) - animated gradient
+                    halo replaces the old linear progress bar. The dot
+                    breathes on its own rhythm, text gets a slow swept
+                    highlight pass so the state feels alive without
+                    being loud. */}
+                <div className="generating-shimmer">
+                  <span className="generating-shimmer-dot" aria-hidden="true" />
+                  <span className="generating-shimmer-text">Thinking…</span>
                 </div>
-                <div className="generating-progress">
-                  <div className="generating-bar" />
-                </div>
-                <span className="generating-text">Drafting layout and applying design tokens...</span>
+                <span className="generating-text">Drafting layout and applying design tokens…</span>
               </div>
             )}
             <div ref={chatEndRef} />

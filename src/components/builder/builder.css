@@ -2111,59 +2111,153 @@
   color: #1a1a2e;
 }
 
-/* ── Generating state ── */
+/* ══════════════════════════════════════════════════════════
+   FadingWords - per-word fade-in for AI message text (P2.2)
+   Each .chat-word span gets a fade+slide animation on DOM
+   mount. Stable React keys mean previously-rendered words
+   keep their final state; only newly-appended spans at the
+   tail animate, which produces the ChatGPT/Claude streaming
+   feel.
+   ══════════════════════════════════════════════════════════ */
+.chat-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(2px);
+  animation: chat-word-in 280ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  animation-delay: 0ms; /* overridden inline per word */
+  will-change: opacity, transform;
+}
+@keyframes chat-word-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-word {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Generating state - Gemini-style shimmer (P2.1)
+   Replaces the old linear progress bar + pulsing badge with a
+   breathing gradient pill + swept text. Feels alive without
+   being loud.
+   ══════════════════════════════════════════════════════════ */
 .generating-state {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.generating-header {
-  display: flex;
+.generating-shimmer {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(126, 107, 196, 0.18) 0%,
+    rgba(148, 132, 214, 0.35) 40%,
+    rgba(96, 165, 250, 0.28) 70%,
+    rgba(126, 107, 196, 0.18) 100%
+  );
+  background-size: 240% 100%;
+  animation: generating-gradient-sweep 3.2s ease-in-out infinite;
+  border: 1px solid rgba(126, 107, 196, 0.25);
+  width: fit-content;
+  box-shadow: 0 0 22px rgba(126, 107, 196, 0.18);
 }
-.generating-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: var(--b-accent, #5ee7df);
-  color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
+@keyframes generating-gradient-sweep {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: -100% 50%; }
+}
+
+/* Pulsing dot on the left - breathes at a different rhythm
+   than the gradient so the pill has two layers of motion. */
+.generating-shimmer-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #b8a8ff, #7E6BC4 65%);
+  box-shadow: 0 0 10px rgba(184, 168, 255, 0.7);
+  animation: generating-dot-breathe 1.4s ease-in-out infinite;
   flex-shrink: 0;
 }
-.generating-badge {
-  font-size: 11px;
+@keyframes generating-dot-breathe {
+  0%, 100% { transform: scale(0.85); opacity: 0.7; }
+  50%      { transform: scale(1.15); opacity: 1;   }
+}
+
+/* Text with a slow left-to-right highlight sweep on top of the
+   base color - subtle, reads like a "thinking" cursor. */
+.generating-shimmer-text {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--b-accent, #5ee7df);
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(138, 171, 168, 0.1);
-  animation: pulse-opacity 1.5s ease-in-out infinite;
+  letter-spacing: 0.01em;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    #ffffff 50%,
+    rgba(255, 255, 255, 0.92) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: generating-text-sweep 2.6s ease-in-out infinite;
 }
-@keyframes pulse-opacity { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-.generating-progress {
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
+@keyframes generating-text-sweep {
+  0%, 100% { background-position: 100% 50%; }
+  50%      { background-position: 0%   50%; }
 }
-.generating-bar {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--b-accent, #5ee7df);
-  animation: generating-fill 3s ease-out forwards;
-}
-@keyframes generating-fill { 0% { width: 0%; } 100% { width: 90%; } }
+
+/* Secondary line retains the old muted "drafting…" copy */
 .generating-text {
   font-size: 11px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.4);
+  padding-left: 2px;
 }
-.builder-light .generating-progress { background: rgba(0,0,0,0.06); }
-.builder-light .generating-text { color: rgba(0,0,0,0.3); }
+
+/* Light-mode variants - recolour text gradient + softer glow */
+.builder-light .generating-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(126, 107, 196, 0.12) 0%,
+    rgba(148, 132, 214, 0.25) 40%,
+    rgba(96, 165, 250, 0.2) 70%,
+    rgba(126, 107, 196, 0.12) 100%
+  );
+  background-size: 240% 100%;
+  border-color: rgba(126, 107, 196, 0.25);
+  box-shadow: 0 0 18px rgba(126, 107, 196, 0.12);
+}
+.builder-light .generating-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    rgba(58, 45, 117, 0.88) 0%,
+    #3a2d75 50%,
+    rgba(58, 45, 117, 0.88) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.builder-light .generating-text { color: rgba(0, 0, 0, 0.45); }
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .generating-shimmer,
+  .generating-shimmer-dot,
+  .generating-shimmer-text {
+    animation: none;
+  }
+  .generating-shimmer { background-position: 0 50%; }
+  .generating-shimmer-text { background-position: 50% 50%; }
+}
 
 /* Messages area - same max-width as input */
 .messages-area {
@@ -5809,6 +5903,33 @@
   padding: 12px;
   margin-bottom: 8px;
   transition: border-color 0.2s, box-shadow 0.2s;
+  /* Spring-feel entrance on mount (P2.3). `backwards` means the
+     initial frame (scale 0.94 + faded) is applied immediately
+     so React's first paint is never a flash of the final state.
+     cubic-bezier overshoots slightly on the way up for a gentle
+     pop - no framer-motion needed for entry. */
+  animation: canvas-block-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes canvas-block-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+/* Sort reorder shouldn't re-trigger the entrance animation -
+   dnd-kit uses transform for reorder via .is-sorting-peer, and
+   is-dragging is the drag state. Both keep the final scale and
+   skip the in-animation replay. */
+.canvas-block.is-dragging,
+.canvas-block.is-sorting-peer {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-block { animation: none; }
 }
 .canvas-block:hover {
   border-color: var(--ds-border);
