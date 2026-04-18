@@ -1230,14 +1230,14 @@
   }
 }
 .pattern-card-compact {
-  padding: 12px 14px;
-  gap: 4px;
+  padding: 0; /* overridden; inner text block handles its own padding */
+  gap: 0;
   min-height: 88px;
-  /* Override the larger card gap/padding defaults */
+  overflow: hidden;
 }
 .pattern-card-compact .pattern-card-icon {
-  font-size: 18px !important;
-  margin-bottom: 2px;
+  font-size: 16px !important;
+  margin-bottom: 0;
 }
 .pattern-card-compact .pattern-card-label {
   font-size: 12px;
@@ -1256,6 +1256,51 @@
 }
 .builder-light .pattern-card-compact .pattern-card-desc {
   color: rgba(0, 0, 0, 0.5);
+}
+
+/* ── Medium-thumb variant — Phase E ──
+   Pattern card with an SVG wireframe thumb on top + icon/label/desc
+   below. Thumb is ~160×90 (16:9 aspect) so the full card lands at
+   ~165px tall — a middle ground between Phase C (too big) and Phase
+   D text-only (too generic). */
+.pattern-card-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.pattern-card-thumb .pattern-card-preview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  flex-shrink: 0;
+}
+.pattern-card-thumb:hover .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.72);
+}
+.pattern-card-compact-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px 12px;
+  text-align: left;
+}
+.pattern-card-compact-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Light-mode tweaks */
+.builder-light .pattern-card-thumb .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.55);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+}
+.builder-light .pattern-card-thumb:hover .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.7);
 }
 
 /* Browse templates link — understated, below the compact cards */

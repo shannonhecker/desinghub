@@ -7,6 +7,7 @@ import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
+import { TemplatePreview } from "./TemplatePreviews";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder — no mandatory wizard.
@@ -699,20 +700,28 @@ export function ChatPanel() {
               Describe the app you want, or start from a pattern.
             </p>
 
-            {/* Compact pattern cards — icon + label + one-line desc, single row */}
+            {/* Compact pattern cards — medium SVG thumbnail + icon/label/desc.
+                Thumbnail is a shrunk-down version of the Phase C wireframes
+                so users recognize the layout at a glance without the cards
+                dominating the hero. */}
             <div className="pattern-cards-grid pattern-cards-compact">
               {PATTERN_CARDS.map((pat) => (
                 <button
                   key={pat.label}
-                  className="pattern-card pattern-card-compact"
+                  className="pattern-card pattern-card-compact pattern-card-thumb"
                   onClick={() => handlePatternSelect(pat)}
                   aria-label={`Start from the ${pat.label} template`}
                 >
-                  <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">
-                    {pat.icon}
-                  </span>
-                  <span className="pattern-card-label">{pat.label}</span>
-                  <span className="pattern-card-desc">{pat.desc}</span>
+                  <TemplatePreview id={pat.id as TemplateId} />
+                  <div className="pattern-card-compact-text">
+                    <div className="pattern-card-compact-head">
+                      <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">
+                        {pat.icon}
+                      </span>
+                      <span className="pattern-card-label">{pat.label}</span>
+                    </div>
+                    <span className="pattern-card-desc">{pat.desc}</span>
+                  </div>
                 </button>
               ))}
             </div>
