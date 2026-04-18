@@ -5504,6 +5504,110 @@
   padding: 0 2px;
 }
 
+/* ══════════════════════════════════════════════════════════
+   Library browser — search + zone groups (Phase C.2 drag-to-zones)
+   ══════════════════════════════════════════════════════════ */
+.lib-search {
+  position: relative;
+  margin: 0 0 12px;
+}
+.lib-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px !important;
+  color: var(--b-fg3, rgba(255, 255, 255, 0.4));
+  pointer-events: none;
+}
+.lib-search-input {
+  width: 100%;
+  padding: 7px 28px 7px 30px;
+  border-radius: 8px;
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: var(--b-bg2, rgba(255, 255, 255, 0.03));
+  color: var(--b-fg);
+  font-family: inherit;
+  font-size: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lib-search-input:focus {
+  outline: none;
+  border-color: rgba(126, 107, 196, 0.55);
+  background: rgba(126, 107, 196, 0.08);
+}
+.lib-search-input::placeholder { color: var(--b-fg3); }
+.lib-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+}
+.lib-search-clear:hover { background: rgba(255, 255, 255, 0.15); }
+.builder-light .lib-search-clear { background: rgba(0, 0, 0, 0.06); }
+.builder-light .lib-search-clear:hover { background: rgba(0, 0, 0, 0.12); }
+
+.lib-empty {
+  padding: 24px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--b-fg3);
+  font-style: italic;
+}
+
+.lib-zone-group {
+  margin-bottom: 14px;
+}
+.lib-zone-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  margin-bottom: 2px;
+}
+.lib-zone-icon {
+  font-size: 14px !important;
+  color: rgba(126, 107, 196, 0.8);
+}
+.lib-zone-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--b-fg2);
+  flex: 1;
+}
+.lib-zone-count {
+  font-size: 10px;
+  color: var(--b-fg3);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.builder-light .lib-zone-count {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.lib-zone-hint {
+  font-size: 10px;
+  color: var(--b-fg3);
+  padding: 0 2px;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
 /* Inline editable text on canvas */
 .inline-editable {
   cursor: text;
