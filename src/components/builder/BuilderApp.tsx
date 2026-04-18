@@ -26,7 +26,7 @@ const WaveScene = dynamic(
 
 export function BuilderApp() {
   const {
-    mode, previewOpen, togglePreview, setMode,
+    mode, previewOpen, setMode,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen,
     toggleSessionsDrawer, startNewSession,
@@ -225,39 +225,26 @@ export function BuilderApp() {
             <SaveIndicator />
           </div>
 
-          {/* Right: all existing controls unchanged */}
+          {/* Right: UI Kit + Export. Dark/light toggle + Preview button
+              removed in Phase F.1 - theme lives in the preview toolbar,
+              and Preview toggle was redundant since the canvas is always
+              the workspace. */}
           <div className="top-bar-right">
-
-            {/* Dark / Light toggle */}
-            <button
-              className="top-bar-btn icon-only"
-              onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-              title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                {mode === "dark" ? "light_mode" : "dark_mode"}
-              </span>
-            </button>
-
             {/* UI Kit */}
-            <Link href="/ui-kit" className="top-bar-btn" title="UI Kit Overview">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>palette</span>
+            <Link href="/ui-kit" className="top-bar-btn" title="UI Kit overview" aria-label="Open UI Kit overview">
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">palette</span>
               UI Kit
             </Link>
 
-            {/* Export */}
-            <button className="top-bar-btn" onClick={() => setExportOpen(true)} title="Export code">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>code</span>
-              Export
-            </button>
-
-            {/* Preview toggle */}
+            {/* Export - opens the consolidated code / HTML / Vite modal */}
             <button
-              className={`top-bar-btn preview-toggle-btn ${previewOpen ? "active" : ""}`}
-              onClick={togglePreview}
+              className="top-bar-btn"
+              onClick={() => setExportOpen(true)}
+              title="Export the current canvas as code, HTML, or a Vite project"
+              aria-label="Export canvas"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>visibility</span>
-              Preview
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">code</span>
+              Export
             </button>
           </div>
         </div>

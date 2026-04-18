@@ -6580,6 +6580,146 @@
 .builder-light .lib-hover-preview-hint { color: #6b57b0; border-top-color: rgba(0, 0, 0, 0.06); }
 
 /* ══════════════════════════════════════════════════════════
+   PreviewBar - single consolidated toolbar (Phase F.2)
+   Replaces the old two-row .bp-controls + .preview-toolbar.
+   ══════════════════════════════════════════════════════════ */
+.preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: var(--b-bg, transparent);
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+.preview-bar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.preview-bar-group-ds, .preview-bar-group-density { gap: 0; }
+.preview-bar-spacer { flex: 1; min-width: 8px; }
+.preview-bar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--b-border2, rgba(255, 255, 255, 0.08));
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+.preview-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.72));
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.preview-bar-btn:hover { background: rgba(255, 255, 255, 0.06); color: var(--b-fg, #ffffff); }
+.preview-bar-btn-active {
+  background: rgba(126, 107, 196, 0.18) !important;
+  color: var(--b-fg, #ffffff) !important;
+}
+.builder-light .preview-bar-btn { color: rgba(0, 0, 0, 0.7); }
+.builder-light .preview-bar-btn:hover { background: rgba(0, 0, 0, 0.05); color: #15102a; }
+.builder-light .preview-bar-btn-active { background: rgba(126, 107, 196, 0.15) !important; color: #15102a !important; }
+
+.preview-bar-btn-icon { width: 28px; padding: 0; }
+.preview-bar-btn-pill {
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.1));
+  padding: 0 12px;
+  font-weight: 600;
+}
+.preview-bar-btn-pill.preview-bar-btn-active { border-color: rgba(126, 107, 196, 0.5); }
+.builder-light .preview-bar-btn-pill { border-color: rgba(0, 0, 0, 0.1); }
+.preview-bar-btn-ds { font-weight: 600; padding: 0 10px; }
+.preview-bar-btn-density { padding: 0 10px; min-width: 58px; justify-content: center; }
+.preview-bar-code-glyph {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.preview-bar-btn-label { margin-left: 4px; }
+
+/* Overflow menu */
+.preview-bar-overflow-wrap { position: relative; display: inline-flex; }
+.preview-bar-overflow {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(24, 22, 48, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  animation: preview-bar-overflow-in 0.12s ease-out;
+}
+@keyframes preview-bar-overflow-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.preview-bar-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.preview-bar-overflow-item:hover { background: rgba(255, 255, 255, 0.06); }
+.preview-bar-overflow-item:disabled { opacity: 0.5; cursor: wait; }
+.preview-bar-overflow-item .material-symbols-outlined {
+  font-size: 16px !important;
+  color: rgba(255, 255, 255, 0.65);
+}
+.preview-bar-overflow-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+.builder-light .preview-bar-overflow {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+}
+.builder-light .preview-bar-overflow-item { color: #15102a; }
+.builder-light .preview-bar-overflow-item:hover { background: rgba(0, 0, 0, 0.05); }
+.builder-light .preview-bar-overflow-item .material-symbols-outlined { color: rgba(0, 0, 0, 0.55); }
+.builder-light .preview-bar-overflow-divider { background: rgba(0, 0, 0, 0.06); }
+
+.bp-dimensions-sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
    Templates accordion (Phase E.3)
    Collapsible section at the top of the component panel that
    lets users swap the entire layout without returning to the

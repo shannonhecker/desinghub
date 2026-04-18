@@ -73,7 +73,21 @@ const SAMPLE_MESSAGES = [
 /* ══════════════════════════════════════════════════════════
    Device Controls - top bar with Desktop / Tablet / Mobile
    ══════════════════════════════════════════════════════════ */
-function DeviceControls() {
+/* ══════════════════════════════════════════════════════════
+   PreviewBar - single consolidated toolbar (Phase F.2)
+   Replaces the old two-row DeviceControls + PreviewToolbar.
+
+   Layout (left → right):
+     [← Chat]  [↶ ↷]  [🖥 📱 📞]  [Salt · M3 · Fluent · ausos]
+     [🌓]  [Compare]  [High · Medium · Low]  [</> Code]  [⋯]
+
+   Rare actions (Refresh, Pop-out, Library toggle, Share,
+   Download) moved behind the ⋯ overflow menu. Density labels
+   are normalised to High / Medium / Low across all DSes so
+   users see a consistent control regardless of which system
+   is active.
+   ══════════════════════════════════════════════════════════ */
+function PreviewBar() {
   const deviceMode = useBuilder((s) => s.deviceMode);
   const setDeviceMode = useBuilder((s) => s.setDeviceMode);
   const bumpPreview = useBuilder((s) => s.bumpPreview);
@@ -85,6 +99,40 @@ function DeviceControls() {
   const setMode = useBuilder((s) => s.setMode);
   const interfaceType = useBuilder((s) => s.interfaceType);
   const selectedComponents = useBuilder((s) => s.selectedComponents);
+  const colorOverrides = useBuilder((s) => s.colorOverrides);
+  const density = useBuilder((s) => s.density);
+  const setDensity = useBuilder((s) => s.setDensity);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
+  const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
+  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
+  const compareMode = useBuilder((s) => s.compareMode);
+  const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
+
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
+
+  const overflowRef = useRef<HTMLDivElement | null>(null);
+
+  /* Dismiss overflow menu on outside click + Esc */
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setOverflowOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOverflowOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [overflowOpen]);
 
   const dsSystems: { key: "salt" | "m3" | "fluent" | "ausos"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
@@ -94,11 +142,13 @@ function DeviceControls() {
   ];
 
   const preset = PRESETS[deviceMode];
-  const devices: { key: DeviceMode; Icon: typeof Monitor }[] = [
-    { key: "desktop", Icon: Monitor },
-    { key: "tablet", Icon: Tablet },
-    { key: "mobile", Icon: Smartphone },
+  const devices: { key: DeviceMode; Icon: typeof Monitor; label: string }[] = [
+    { key: "desktop", Icon: Monitor, label: "Desktop" },
+    { key: "tablet", Icon: Tablet, label: "Tablet" },
+    { key: "mobile", Icon: Smartphone, label: "Mobile" },
   ];
+
+  const modKey = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
 
   const handlePopOut = () => {
     const basePath =
@@ -113,70 +163,254 @@ function DeviceControls() {
       `${window.location.origin}${basePath}/builder?${params}`,
       "design-hub-preview", "width=900,height=700"
     );
+    setOverflowOpen(false);
   };
 
+  const handleShare = async () => {
+    const s = useBuilder.getState();
+    const { url, tooLong } = buildShareUrl({
+      v: 1,
+      designSystem: s.designSystem,
+      mode: s.mode,
+      density: s.density,
+      activeTemplateId: s.activeTemplateId,
+      headerBlocks: s.headerBlocks,
+      sidebarBlocks: s.sidebarBlocks,
+      blocks: s.blocks,
+      footerBlocks: s.footerBlocks,
+    });
+    if (tooLong) {
+      setShareState("too-long");
+      setTimeout(() => setShareState("idle"), 3000);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareState("copied");
+      setTimeout(() => setShareState("idle"), 2000);
+    } catch {
+      setShareState("error");
+      setTimeout(() => setShareState("idle"), 2500);
+    }
+    setOverflowOpen(false);
+  };
+
+  const handleDownload = () => {
+    setDownloading(true);
+    const config = {
+      designSystem, mode, density, interfaceType,
+      selectedComponents, colorOverrides,
+      generatedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${interfaceType}-${designSystem}-config.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setTimeout(() => setDownloading(false), 1500);
+    setOverflowOpen(false);
+  };
+
+  const handleRefresh = () => {
+    bumpPreview();
+    setOverflowOpen(false);
+  };
+
+  const handleToggleLibrary = () => {
+    toggleComponentLibrary();
+    setOverflowOpen(false);
+  };
+
+  /* Consistent density labels across DSes - replaces the old
+     DS-specific labels (HD/MD/LD vs Small/Medium/Large) that
+     confused users. */
+  const densityOptions = [
+    { key: "high",   label: "High",   hint: "Tight spacing" },
+    { key: "medium", label: "Medium", hint: "Default" },
+    { key: "low",    label: "Low",    hint: "Roomy spacing" },
+  ];
+
   return (
-    <div className="bp-controls">
-      {/* Chat collapse toggle */}
+    <div className="preview-bar">
+      {/* Chat collapse */}
       <button
-        className="preview-toolbar-collapse-btn"
+        className="preview-bar-btn preview-bar-btn-icon"
         onClick={toggleChat}
         title={chatOpen ? "Collapse chat" : "Expand chat"}
         aria-label={chatOpen ? "Collapse chat" : "Expand chat"}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
           {chatOpen ? "chevron_left" : "chevron_right"}
         </span>
       </button>
 
-      <div className="bp-controls-left">
-        {devices.map(({ key, Icon }) => (
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* Undo / Redo */}
+      <div className="preview-bar-group">
+        <button
+          className="preview-bar-btn preview-bar-btn-icon"
+          onClick={() => canvasUndo()}
+          title={`Undo · ${modKey}+Z`}
+          aria-label={`Undo (${modKey}+Z)`}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>undo</span>
+        </button>
+        <button
+          className="preview-bar-btn preview-bar-btn-icon"
+          onClick={() => canvasRedo()}
+          title={`Redo · ${modKey}+Shift+Z`}
+          aria-label={`Redo (${modKey}+Shift+Z)`}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>redo</span>
+        </button>
+      </div>
+
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* Device toggle */}
+      <div className="preview-bar-group">
+        {devices.map(({ key, Icon, label }) => (
           <button
             key={key}
-            className={`bp-device-btn${deviceMode === key ? " bp-device-btn--active" : ""}`}
+            className={`preview-bar-btn preview-bar-btn-icon${deviceMode === key ? " preview-bar-btn-active" : ""}`}
             onClick={() => setDeviceMode(key)}
-            title={key.charAt(0).toUpperCase() + key.slice(1)}
+            title={`${label} (${preset.label})`}
+            aria-label={`${label} viewport`}
+            aria-pressed={deviceMode === key}
           >
-            <Icon size={18} strokeWidth={deviceMode === key ? 2.2 : 1.6} />
+            <Icon size={16} strokeWidth={deviceMode === key ? 2.2 : 1.6} />
           </button>
         ))}
       </div>
 
-      {/* DS Switcher - center */}
-      <div className="preview-toolbar-group" style={{ flex: 1, justifyContent: "center" }}>
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* DS Switcher - center, labels visible */}
+      <div className="preview-bar-group preview-bar-group-ds" role="group" aria-label="Design system">
         {dsSystems.map((s) => (
           <button
             key={s.key}
-            className={`preview-toolbar-btn${designSystem === s.key ? " preview-toolbar-btn-active" : ""}`}
+            className={`preview-bar-btn preview-bar-btn-ds${designSystem === s.key ? " preview-bar-btn-active" : ""}`}
             onClick={() => setDesignSystem(s.key)}
+            title={`Switch canvas to ${s.label}`}
+            aria-label={`Switch to ${s.label}`}
+            aria-pressed={designSystem === s.key}
           >
             {s.label}
           </button>
         ))}
       </div>
 
-      <span className="bp-dimensions">{preset.label}</span>
+      {/* Spacer pushes remaining controls to the right on wide viewports */}
+      <span className="preview-bar-spacer" aria-hidden="true" />
 
-      {/* Light/Dark mode toggle */}
+      {/* Theme toggle - moved from Bar 1 so it lives with canvas controls */}
       <button
-        className="bp-device-btn"
+        className="preview-bar-btn preview-bar-btn-icon"
         onClick={() => setMode(mode === "dark" ? "light" : "dark")}
-        title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        title={mode === "dark" ? "Switch canvas to light mode" : "Switch canvas to dark mode"}
+        aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
           {mode === "dark" ? "light_mode" : "dark_mode"}
         </span>
       </button>
 
-      <button className="bp-refresh-btn" onClick={bumpPreview} title="Reset layout">
-        <RotateCcw size={15} strokeWidth={2} />
-        <span>Refresh</span>
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* Compare DS - headline moat feature */}
+      <button
+        className={`preview-bar-btn preview-bar-btn-pill${compareMode ? " preview-bar-btn-active" : ""}`}
+        onClick={toggleCompareMode}
+        title={compareMode ? "Exit compare mode" : "Compare this canvas in all 4 design systems"}
+        aria-label="Toggle compare design systems"
+        aria-pressed={compareMode}
+      >
+        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }}>compare</span>
+        Compare
       </button>
 
-      {/* Pop out - opens preview in its own window */}
-      <button className="bp-popout-btn" onClick={handlePopOut} title="Pop out preview">
-        <span className="material-symbols-outlined" style={{ fontSize: 15 }}>open_in_new</span>
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* Density - normalised labels across DSes */}
+      <div className="preview-bar-group preview-bar-group-density" role="group" aria-label="Canvas density">
+        {densityOptions.map((d) => (
+          <button
+            key={d.key}
+            className={`preview-bar-btn preview-bar-btn-density${density === d.key ? " preview-bar-btn-active" : ""}`}
+            onClick={() => setDensity(d.key)}
+            title={`${d.label} density · ${d.hint}`}
+            aria-label={`${d.label} density`}
+            aria-pressed={density === d.key}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+
+      <span className="preview-bar-sep" aria-hidden="true" />
+
+      {/* Code view toggle - prominent per user spec */}
+      <button
+        className={`preview-bar-btn preview-bar-btn-pill${canvasViewMode === "code" ? " preview-bar-btn-active" : ""}`}
+        onClick={toggleCanvasViewMode}
+        title={canvasViewMode === "code" ? "Show UI preview" : "Show JSON schema"}
+        aria-label={canvasViewMode === "code" ? "Show UI preview" : "Show code view"}
+        aria-pressed={canvasViewMode === "code"}
+      >
+        <span className="preview-bar-code-glyph" aria-hidden="true">&lt;/&gt;</span>
+        <span className="preview-bar-btn-label">Code</span>
       </button>
+
+      {/* ⋯ overflow menu - rare actions */}
+      <div className="preview-bar-overflow-wrap" ref={overflowRef}>
+        <button
+          className={`preview-bar-btn preview-bar-btn-icon${overflowOpen ? " preview-bar-btn-active" : ""}`}
+          onClick={() => setOverflowOpen((v) => !v)}
+          title="More actions"
+          aria-label="More canvas actions"
+          aria-haspopup="menu"
+          aria-expanded={overflowOpen}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18 }}>more_horiz</span>
+        </button>
+        {overflowOpen && (
+          <div className="preview-bar-overflow" role="menu">
+            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleToggleLibrary}>
+              <span className="material-symbols-outlined" aria-hidden="true">category</span>
+              {componentLibraryOpen ? "Hide component library" : "Show component library"}
+            </button>
+            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleShare}>
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {shareState === "copied" ? "check" : shareState === "too-long" || shareState === "error" ? "warning" : "share"}
+              </span>
+              {shareState === "copied" ? "Link copied"
+                : shareState === "too-long" ? "Canvas too large to share"
+                : shareState === "error" ? "Clipboard unavailable"
+                : "Copy share link"}
+            </button>
+            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleDownload} disabled={downloading}>
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {downloading ? "hourglass_top" : "download"}
+              </span>
+              {downloading ? "Downloading…" : "Download JSON config"}
+            </button>
+            <div className="preview-bar-overflow-divider" />
+            <button className="preview-bar-overflow-item" role="menuitem" onClick={handleRefresh}>
+              <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
+              Refresh preview
+            </button>
+            <button className="preview-bar-overflow-item" role="menuitem" onClick={handlePopOut}>
+              <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+              Pop out to window
+            </button>
+          </div>
+        )}
+      </div>
+      <span className="bp-dimensions-sr" aria-live="polite">{preset.label}</span>
     </div>
   );
 }
@@ -574,185 +808,9 @@ function DashboardFooter() {
    Consolidated: removed redundant Add button, repositioned
    code toggle next to primary builder controls.
    ══════════════════════════════════════════════════════════ */
-function PreviewToolbar() {
-  const designSystem = useBuilder((s) => s.designSystem);
-  const setDesignSystem = useBuilder((s) => s.setDesignSystem);
-  const density = useBuilder((s) => s.density);
-  const setDensity = useBuilder((s) => s.setDensity);
-  const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
-  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
-  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
-  const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
-  const mode = useBuilder((s) => s.mode);
-  const interfaceType = useBuilder((s) => s.interfaceType);
-  const selectedComponents = useBuilder((s) => s.selectedComponents);
-  const colorOverrides = useBuilder((s) => s.colorOverrides);
-
-  /* handleQuickSave removed: auto-save now persists the canvas to the
-     current session on every change (see /lib/useAutoSave). The old
-     window.prompt flow and the toolbar Save button are gone. Users
-     manage sessions via the left SessionsDrawer instead. */
-  const [downloading, setDownloading] = useState(false);
-  const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
-
-  const handleShare = async () => {
-    const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl({
-      v: 1,
-      designSystem: s.designSystem,
-      mode: s.mode,
-      density: s.density,
-      activeTemplateId: s.activeTemplateId,
-      headerBlocks: s.headerBlocks,
-      sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks,
-      footerBlocks: s.footerBlocks,
-    });
-    if (tooLong) {
-      setShareState("too-long");
-      setTimeout(() => setShareState("idle"), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareState("copied");
-      setTimeout(() => setShareState("idle"), 2000);
-    } catch {
-      setShareState("error");
-      setTimeout(() => setShareState("idle"), 2500);
-    }
-  };
-
-  const handleDownload = () => {
-    setDownloading(true);
-    const config = {
-      designSystem, mode, density, interfaceType,
-      selectedComponents, colorOverrides,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${interfaceType}-${designSystem}-config.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 1500);
-  };
-
-  const systems: { key: "salt" | "m3" | "fluent" | "ausos"; label: string }[] = [
-    { key: "salt", label: "Salt DS" },
-    { key: "m3", label: "Material 3" },
-    { key: "fluent", label: "Fluent 2" },
-    { key: "ausos", label: "ausos" },
-  ];
-
-  const modKey = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
-  const compareMode = useBuilder((s) => s.compareMode);
-  const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
-
-  return (
-    <div className="preview-toolbar">
-      {/* Undo / Redo */}
-      <div className="preview-toolbar-group">
-        <button
-          className="preview-toolbar-btn"
-          onClick={() => canvasUndo()}
-          title={`Undo (${modKey}+Z)`}
-          aria-label="Undo"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">undo</span>
-        </button>
-        <button
-          className="preview-toolbar-btn"
-          onClick={() => canvasRedo()}
-          title={`Redo (${modKey}+Shift+Z)`}
-          aria-label="Redo"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">redo</span>
-        </button>
-      </div>
-
-      {/* Compare DS - headline moat feature */}
-      <div className="preview-toolbar-group">
-        <button
-          className={`preview-toolbar-btn preview-toolbar-compare${compareMode ? " preview-toolbar-btn-active" : ""}`}
-          onClick={toggleCompareMode}
-          title={compareMode ? "Exit compare mode" : "Compare this canvas in all 4 design systems"}
-          aria-label="Toggle compare design systems"
-          aria-pressed={compareMode}
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">compare</span>
-          <span className="preview-toolbar-compare-label">Compare</span>
-        </button>
-      </div>
-
-      {/* Density */}
-      <div className="preview-toolbar-group">
-        {(designSystem === "salt"
-          ? [{ key: "high", label: "High" }, { key: "medium", label: "Medium" }, { key: "low", label: "Low" }]
-          : designSystem === "m3"
-          ? [{ key: "high", label: "HD" }, { key: "medium", label: "MD" }, { key: "low", label: "LD" }]
-          : [{ key: "high", label: "Small" }, { key: "medium", label: "Medium" }, { key: "low", label: "Large" }]
-        ).map((d) => (
-          <button
-            key={d.key}
-            className={`preview-toolbar-btn${density === d.key ? " preview-toolbar-btn-active" : ""}`}
-            onClick={() => setDensity(d.key)}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Canvas Actions - code toggle, library toggle, download, save */}
-      <div className="preview-toolbar-group">
-        <button
-          className={`preview-toolbar-btn${canvasViewMode === 'code' ? " preview-toolbar-btn-active preview-toolbar-code-active" : ""}`}
-          onClick={toggleCanvasViewMode}
-          title={canvasViewMode === 'code' ? "Show UI preview" : "Show JSON schema"}
-        >
-          <span className="preview-toolbar-code-label">&lt;/&gt;</span>
-        </button>
-        <button
-          className={`preview-toolbar-btn${componentLibraryOpen ? " preview-toolbar-btn-active" : ""}`}
-          onClick={toggleComponentLibrary}
-          title={componentLibraryOpen ? "Hide component library" : "Show component library"}
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">category</span>
-        </button>
-        <button
-          className="preview-toolbar-btn"
-          onClick={handleShare}
-          title={
-            shareState === "too-long"
-              ? "Canvas too large to share as a link - use Download instead"
-              : shareState === "error"
-              ? "Clipboard unavailable"
-              : "Copy a shareable preview link"
-          }
-          aria-label="Share preview link"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">
-            {shareState === "copied" ? "check" : shareState === "too-long" || shareState === "error" ? "warning" : "share"}
-          </span>
-        </button>
-        <button
-          className="preview-toolbar-btn"
-          onClick={handleDownload}
-          disabled={downloading}
-          title="Download config JSON"
-        >
-          <span className="material-symbols-outlined preview-toolbar-icon">
-            {downloading ? "hourglass_top" : "download"}
-          </span>
-        </button>
-        {/* Save button removed - auto-save handles persistence now.
-            The top-bar SaveIndicator shows save state. */}
-      </div>
-    </div>
-  );
-}
+/* PreviewToolbar removed in Phase F.2 - its contents were merged
+   into the new single-row PreviewBar above. Both call sites now
+   render <PreviewBar /> once. */
 
 /* ══════════════════════════════════════════════════════════
    CanvasDndProvider - shared DnD context wrapping both the
@@ -1066,11 +1124,8 @@ export function PreviewSidePanel() {
 
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
-      {/* Device controls - always visible */}
-      <DeviceControls />
-
-      {/* Toolbar - always visible */}
-      <PreviewToolbar />
+      {/* Single consolidated preview toolbar (Phase F.2) */}
+      <PreviewBar />
 
       {/* Main builder area - DndContext wraps viewport + right sidebar */}
       <CanvasDndProvider>
@@ -1191,8 +1246,8 @@ export function StandalonePreview() {
         </span>
       </div>
 
-      {/* DS / density toolbar */}
-      <PreviewToolbar />
+      {/* Single consolidated preview toolbar (Phase F.2) */}
+      <PreviewBar />
 
       {/* Full dashboard canvas - DndContext wraps viewport + sidebar */}
       <CanvasDndProvider>
