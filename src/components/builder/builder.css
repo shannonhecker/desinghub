@@ -1213,6 +1213,68 @@
 .builder-light .pattern-card-label { color: #1a1a2e; }
 .builder-light .pattern-card-desc { color: rgba(0, 0, 0, 0.4); }
 
+/* ── Visual pattern cards (Phase C template gallery) ──
+   Each card gets an inline SVG wireframe preview at the top so users
+   can see the template's actual composition before clicking. */
+.pattern-card-visual {
+  padding: 0;
+  overflow: hidden;
+  gap: 0;
+}
+.pattern-card-preview {
+  width: 100%;
+  aspect-ratio: 220 / 130;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.55);
+  display: block;
+  transition: background 0.25s, color 0.25s;
+}
+.pattern-card-visual:hover .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.72);
+}
+.pattern-card-preview svg {
+  display: block;
+}
+.pattern-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px 16px;
+  text-align: left;
+}
+.pattern-card-text-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pattern-card-visual .pattern-card-icon {
+  font-size: 16px !important;
+  margin-bottom: 0;
+}
+.pattern-card-visual .pattern-card-label {
+  font-size: 13px;
+}
+.pattern-card-visual .pattern-card-desc {
+  font-size: 11px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Light mode */
+.builder-light .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.5);
+}
+.builder-light .pattern-card-visual:hover .pattern-card-preview {
+  background: rgba(255, 255, 255, 0.75);
+  color: rgba(0, 0, 0, 0.7);
+}
+
 /* ── Hero DS quick-switcher row ── */
 .hero-ds-row {
   display: flex;
