@@ -326,14 +326,22 @@ export function ChatPanel() {
      the user picks a DS chip below.
      ═══════════════════════════════════ */
 
+  /** English "a/an" article that reads naturally for a label starting
+   *  with a vowel sound (e.g. "an Analytics Dashboard" vs "a Settings
+   *  Page"). Not exhaustive — catches the five vowel letters which
+   *  covers every current template and is easy to reason about. */
+  const articleFor = (label: string): string =>
+    /^[aeiouAEIOU]/.test(label) ? "an" : "a";
+
   const handlePatternSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
     setPendingTemplateId(tpl.id);
     setPendingFirstMessage(null);
-    addMessage("user", `Build me a ${tpl.label}`);
+    const article = articleFor(tpl.label);
+    addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice — a ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
   };
 

@@ -61,12 +61,13 @@ export function TemplatesDrawer() {
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
     // Mirror handlePatternSelect in ChatPanel — stage and ask DS next.
+    const article = /^[aeiouAEIOU]/.test(tpl.label) ? "an" : "a";
     setPendingTemplateId(tpl.id);
     setPendingFirstMessage(null);
-    addMessage("user", `Build me a ${tpl.label}`);
+    addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice — a ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Great choice — ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
     );
     setTemplatesDrawerOpen(false);
   };
