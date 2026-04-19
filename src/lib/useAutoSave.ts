@@ -24,7 +24,7 @@
 
 import { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import { useCloudStorage } from "./firebase";
+import { useCloudStorage, isFirebaseConfigured } from "./firebase";
 
 const DEBOUNCE_MS = 2500;
 
@@ -97,6 +97,13 @@ export function useAutoSave() {
   const savingRef = useRef(false);
 
   useEffect(() => {
+    /* Graceful degrade: when Firebase isn't configured, skip the
+       subscription entirely. Local (in-memory) state remains the
+       source of truth for the session, and SaveIndicator surfaces a
+       one-time dismissible hint so the user knows cloud sync is off
+       rather than silently failing. */
+    if (!isFirebaseConfigured) return;
+
     async function scheduleSave() {
       debounceRef.current = null;
       const s = useBuilder.getState();

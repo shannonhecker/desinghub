@@ -1952,6 +1952,27 @@
   background: rgba(248, 113, 113, 0.25);
 }
 
+/* "Cloud save off" info pill - calmer visual than the error state so
+   first-time users see it as informational rather than alarming. Uses
+   the neutral foreground-subtle palette with a soft background so it
+   reads as a gentle hint. Dismiss button piggybacks on --retry styles
+   but recoloured to match the neutral tone. */
+.save-indicator--off {
+  color: var(--b-fg2, rgba(255, 255, 255, 0.72));
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+.save-indicator--off .save-indicator-icon {
+  color: var(--b-fg3, rgba(255, 255, 255, 0.55));
+}
+.save-indicator--off .save-indicator-retry {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg2, rgba(255, 255, 255, 0.82));
+}
+.save-indicator--off .save-indicator-retry:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 /* Light mode */
 .builder-light .save-indicator { color: rgba(0, 0, 0, 0.55); }
 .builder-light .save-indicator--saved .save-indicator-icon { color: #2f9a68; }
@@ -1959,6 +1980,18 @@
   color: #b91c1c;
   background: rgba(248, 113, 113, 0.08);
   border-color: rgba(248, 113, 113, 0.25);
+}
+.builder-light .save-indicator--off {
+  color: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.builder-light .save-indicator--off .save-indicator-retry {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.72);
+}
+.builder-light .save-indicator--off .save-indicator-retry:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 /* Quick-reply DS chips - rendered inside an AI message when awaiting
@@ -9392,6 +9425,19 @@
 .bp-nav-item-row .bp-nav-item {
   flex: 1;
   min-width: 0;
+}
+
+/* The SortableBlock wrapper (.canvas-block) defaults to 12px padding
+   for body-zone blocks where the colSpan/remove/drag-handle chrome
+   needs breathing room. Sidebar nav items are much smaller and already
+   have their own 8px/10px padding via .bp-nav-item - the outer 12px
+   piles on top, pushing each icon ~22px from the canvas-block edge and
+   making the icons/labels feel misaligned versus the surrounding
+   sidebar. Strip the padding + bottom-margin here so nav items inherit
+   only the button's own padding and sit flush with the sidebar rail. */
+.bp-sidebar-nav .canvas-block {
+  padding: 0;
+  margin-bottom: 0;
 }
 
 /* Remove button on each nav item */

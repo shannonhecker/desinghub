@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { relativeTimeLabel } from "@/lib/sessionTitle";
+
+/* Dismiss key - once the user clicks × on the "Cloud save off" hint,
+   we remember the dismissal in sessionStorage so it doesn't re-appear
+   on every selection / edit. sessionStorage (not local) means it
+   re-shows in a new tab or after a browser restart. */
+const DISMISS_KEY = "design-hub:cloud-save-off-dismissed";
 
 /* ══════════════════════════════════════════════════════════
    SaveIndicator - calm, always-visible reassurance that the
@@ -13,6 +20,8 @@ import { relativeTimeLabel } from "@/lib/sessionTitle";
      - saving                                            → "Saving…"
      - saved + lastSavedAt populated                     → "Saved 2 min ago"
      - error                                             → "Couldn't save · Retry"
+     - Firebase unconfigured + session started           → "Cloud save off · dismiss"
+                                                           (one-time dismissible hint)
 
    The "X ago" label ticks itself on a 15-second interval so users
    see it freshen over time without manual refresh. Refreshing the
@@ -24,6 +33,19 @@ export function SaveIndicator() {
   const lastSavedAt = useBuilder((s) => s.lastSavedAt);
   const saveError = useBuilder((s) => s.saveError);
   const currentSessionId = useBuilder((s) => s.currentSessionId);
+
+  /* Local dismiss state for the "cloud save off" hint. Hydrates from
+     sessionStorage on mount so navigating around the Builder doesn't
+     re-show the hint once the user has acknowledged it. */
+  const [hintDismissed, setHintDismissed] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(DISMISS_KEY) === "1") setHintDismissed(true);
+  }, []);
+  const dismissHint = () => {
+    setHintDismissed(true);
+    try { sessionStorage.setItem(DISMISS_KEY, "1"); } catch { /* private-mode */ }
+  };
 
   /* Tick a local counter every 15s so relativeTimeLabel re-renders.
      Mounts only while we have something meaningful to tick. */
@@ -51,7 +73,39 @@ export function SaveIndicator() {
   };
 
   /* Don't render anything until a session has been started. */
-  if (!currentSessionId || saveState === "idle") return null;
+  if (!currentSessionId) return null;
+
+  /* Cloud save is off (no Firebase creds). Show a calm, dismissible
+     info pill once per session instead of letting saveState churn
+     through "saving → error" every 2.5s. Returning null after
+     dismissal means the top bar stays clean the rest of the session. */
+  if (!isFirebaseConfigured) {
+    if (hintDismissed) return null;
+    return (
+      <div className="save-indicator save-indicator--off" aria-live="polite" role="status">
+        <span className="material-symbols-outlined save-indicator-icon" aria-hidden="true">
+          cloud_off
+        </span>
+        <span>
+          Cloud save off
+          <span className="save-indicator-error-detail">
+            {" "}· add Firebase keys to sync across devices
+          </span>
+        </span>
+        <button
+          type="button"
+          className="save-indicator-retry"
+          onClick={dismissHint}
+          title="Dismiss"
+          aria-label="Dismiss cloud-save hint"
+        >
+          Dismiss
+        </button>
+      </div>
+    );
+  }
+
+  if (saveState === "idle") return null;
 
   if (saveState === "saving") {
     return (

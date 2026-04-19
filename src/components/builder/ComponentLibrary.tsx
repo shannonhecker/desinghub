@@ -52,6 +52,14 @@ const HoverContext = React.createContext<HoverContextValue | null>(null);
 
 const HOVER_DELAY_MS = 300;
 
+/* Click vs. drag threshold - MUST match the MouseSensor's
+   activationConstraint.distance in PreviewPanel.tsx (currently 10px).
+   If CLICK_TOLERANCE is lower than the drag activation distance, any
+   pointer movement in the gap triggers neither click nor drag, which
+   reads as "nothing happens" to the user on touchpads / jittery mice.
+   Keep these two numbers in lockstep. */
+const CLICK_TOLERANCE_PX = 10;
+
 /* ── Visual grid tile - stylized mini-preview + label.
  *   Drag-enabled via dnd-kit for drop-to-canvas.
  *   Click-to-add (Phase E.3) handled via pointer-displacement gating.
@@ -93,10 +101,15 @@ function BlueprintItem({ blueprint, zone }: {
     if (!start) return;
     const dx = Math.abs(e.clientX - start.x);
     const dy = Math.abs(e.clientY - start.y);
-    /* Treat a movement of <5px as a click; anything larger is a drag
-       and will be handled by dnd-kit's onDragEnd. */
-    if (dx < 5 && dy < 5) {
-      addBlockFromLibrary(blueprint.type, blueprint.defaults);
+    /* Anything below the dnd-kit activation distance is a click;
+       movement past that point is a drag that dnd-kit owns via
+       onDragEnd. Keep this in lockstep with MouseSensor's
+       activationConstraint.distance (see CLICK_TOLERANCE_PX note). */
+    if (dx < CLICK_TOLERANCE_PX && dy < CLICK_TOLERANCE_PX) {
+      /* Pass the tile's source zone so a Body-group tile always lands
+         in body even if the user's current selectedBlockZone is
+         elsewhere (e.g. they clicked a header block just before). */
+      addBlockFromLibrary(blueprint.type, blueprint.defaults, zone);
     }
   };
 

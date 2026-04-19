@@ -137,11 +137,18 @@ interface BuilderState {
   toggleTemplatesDrawer: () => void;
 
   /** Click-to-add from the component library. Inserts a new block of
-   *  `type` at the end of the currently-active zone (selectedBlockZone),
-   *  falling back to "body" if nothing is selected. The new block
-   *  becomes the selected block so the properties inspector lights up
-   *  with its fields. */
-  addBlockFromLibrary: (type: string, defaults: Record<string, unknown>) => void;
+   *  `type` at the end of the target zone. Resolution order:
+   *    1. `preferZone` when supplied (library tile's source zone)
+   *    2. zoneByType for types that only live in one zone (AppBrand, etc.)
+   *    3. `selectedBlockZone` so repeated clicks stack near the user's focus
+   *    4. "body" fallback
+   *  The new block becomes the selected block so the properties
+   *  inspector lights up with its fields. */
+  addBlockFromLibrary: (
+    type: string,
+    defaults: Record<string, unknown>,
+    preferZone?: ZoneId,
+  ) => void;
 
   // Actions - Sessions + auto-save
   setCurrentSessionId: (id: string | null) => void;
@@ -355,12 +362,16 @@ export const useBuilder = create<BuilderState>((set) => ({
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
-  addBlockFromLibrary: (type, defaults) => {
-    /* Resolve the target zone: prefer the currently-selected block's zone
-       (so repeated clicks drop blocks next to the user's focus), fall back
-       to "body" which is the workspace's main canvas. Zone-specific types
-       get routed to their natural home regardless of selection: dropping
-       an AppBrand into the body would look wrong. */
+  addBlockFromLibrary: (type, defaults, preferZone) => {
+    /* Resolve the target zone:
+       1. `preferZone` - explicit hint from the caller (e.g. a library
+          tile passes the zone heading it lives under, so a Body-group
+          tile always lands in body even when the current
+          selectedBlockZone points elsewhere).
+       2. zoneByType for types that only make sense in one zone.
+       3. `selectedBlockZone` so repeated clicks stack near the user's
+          focus when no explicit hint is given.
+       4. "body" as the workspace default. */
     const zoneByType: Record<string, ZoneId> = {
       AppBrand: 'header',
       StatusPill: 'header',
@@ -369,7 +380,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     };
     const state = useBuilder.getState();
     const targetZone: ZoneId =
-      zoneByType[type] ?? state.selectedBlockZone ?? 'body';
+      zoneByType[type] ?? preferZone ?? state.selectedBlockZone ?? 'body';
     const key = ZONE_KEYS[targetZone];
     const id = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const newBlock: Block = { id, type, props: { ...defaults } };

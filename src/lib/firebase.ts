@@ -34,7 +34,10 @@ import type {
 // ── Firebase config ─────────────────────────────────────────────────────────
 // Fill these in from Firebase Console → Project Settings → Your Apps → Web App
 // and set the corresponding NEXT_PUBLIC_FIREBASE_* vars in .env.local
-const isConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+/* Exported so modules that don't use the full hook (useAutoSave) can
+   short-circuit save attempts instead of waiting for saveProject to throw. */
+export const isFirebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+const isConfigured = isFirebaseConfigured;
 
 function getFirebaseInstances() {
   const firebaseConfig = {
