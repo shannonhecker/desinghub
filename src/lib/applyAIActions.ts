@@ -6,7 +6,7 @@ import type { DesignSystem, BuilderMode, InterfaceType, ZoneId } from "@/store/u
 import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
 import { pushSnapshot } from "@/store/useBuilderHistory";
 
-const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "ausos"];
+const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "ausos", "carbon"];
 const VALID_MODES = ["light", "dark"];
 const VALID_DENSITIES = ["high", "medium", "low", "touch"];
 const VALID_ZONES: ZoneId[] = ["body", "header", "sidebar", "footer"];

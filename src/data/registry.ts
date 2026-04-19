@@ -54,15 +54,30 @@ import {
   getAusosDensityCSS
 } from './ausos/ausos-documentation.jsx';
 
+import {
+  CARBON_THEMES, carbonBuildCSS, CARBON_COMPS, CARBON_CATS, CIcon, CARBON_FONT,
+  setCarbonT, getCarbonT, getCarbonPreviews, getCarbonDemoComponent,
+  getCarbonDensityCSS
+} from './carbon/carbon-documentation.jsx';
+
 // Re-export for use in other modules
 export {
-  SIcon, M3Icon, FIcon, AIcon,
+  SIcon, M3Icon, FIcon, AIcon, CIcon,
   MATERIAL_COLORS, generateM3Theme,
-  getSaltPreviews, getFluentPreviews, getAusosPreviews,
+  getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 
 export function getComponents(system: SystemId): ComponentDef[] {
-  const comps: RawComponent[] = system === 'salt' ? SALT_COMPS : system === 'm3' ? M3_COMPS : system === 'fluent' ? FLUENT_COMPS : AUSOS_COMPS;
+  /* Explicit switch keeps TS exhaustiveness happy under strict mode
+     and avoids nested ternaries that silently absorb new systems. */
+  let comps: RawComponent[];
+  switch (system) {
+    case 'salt': comps = SALT_COMPS; break;
+    case 'm3': comps = M3_COMPS; break;
+    case 'fluent': comps = FLUENT_COMPS; break;
+    case 'ausos': comps = AUSOS_COMPS; break;
+    case 'carbon': comps = CARBON_COMPS; break;
+  }
   return comps.map((c) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
 }
 
@@ -72,16 +87,24 @@ export function getCategories(system: SystemId): string[] {
     case 'm3': return M3_CATS;
     case 'fluent': return FLUENT_CATS;
     case 'ausos': return AUSOS_CATS;
+    case 'carbon': return CARBON_CATS;
   }
 }
 
 export function getThemeKeys(system: SystemId): string[] {
-  const dict: ThemeDict = system === 'salt' ? SALT_THEMES : system === 'm3' ? M3_THEMES : system === 'fluent' ? FLUENT_THEMES : AUSOS_THEMES;
+  let dict: ThemeDict;
+  switch (system) {
+    case 'salt': dict = SALT_THEMES; break;
+    case 'm3': dict = M3_THEMES; break;
+    case 'fluent': dict = FLUENT_THEMES; break;
+    case 'ausos': dict = AUSOS_THEMES; break;
+    case 'carbon': dict = CARBON_THEMES; break;
+  }
   return Object.keys(dict);
 }
 
 export function getTheme(system: SystemId, themeKey: string, customColor?: string, isDarkCustom?: boolean): ThemeTokens {
-  const st = SALT_THEMES as ThemeDict, mt = M3_THEMES as ThemeDict, ft = FLUENT_THEMES as ThemeDict, at = AUSOS_THEMES as ThemeDict;
+  const st = SALT_THEMES as ThemeDict, mt = M3_THEMES as ThemeDict, ft = FLUENT_THEMES as ThemeDict, at = AUSOS_THEMES as ThemeDict, ct = CARBON_THEMES as ThemeDict;
   switch (system) {
     case 'salt': return st[themeKey] || st['jpm-light'];
     case 'm3':
@@ -89,6 +112,7 @@ export function getTheme(system: SystemId, themeKey: string, customColor?: strin
       return mt[themeKey] || mt['light'];
     case 'fluent': return ft[themeKey] || ft['light'];
     case 'ausos': return at[themeKey] || at['dark'];
+    case 'carbon': return ct[themeKey] || ct['white'];
   }
 }
 
@@ -99,6 +123,7 @@ export function activateTheme(system: SystemId, theme: ThemeTokens) {
     case 'm3': setM3T(theme); break;
     case 'fluent': setFluentT(theme); break;
     case 'ausos': setAusosT(theme); break;
+    case 'carbon': setCarbonT(theme); break;
   }
 }
 
@@ -109,6 +134,7 @@ export function getDemoComponent(system: SystemId, componentId: string): React.C
     case 'm3': return getM3DemoComponent(componentId);
     case 'fluent': return getFluentDemoComponent(componentId);
     case 'ausos': return getAusosDemoComponent(componentId);
+    case 'carbon': return getCarbonDemoComponent(componentId);
   }
 }
 
@@ -119,6 +145,7 @@ export function getPreviews(system: SystemId): Record<string, React.ComponentTyp
     case 'm3': return getM3Previews();
     case 'fluent': return getFluentPreviews();
     case 'ausos': return getAusosPreviews();
+    case 'carbon': return getCarbonPreviews();
   }
 }
 
@@ -132,6 +159,7 @@ export function getFullCSS(system: SystemId, theme: ThemeTokens, densityOrSize: 
     case 'm3': return m3BuildCSS(theme) + getM3DensityCSS(densityOrSize as number);
     case 'fluent': return fluentBuildCSS(theme) + getFluentSizeCSS(densityOrSize as string);
     case 'ausos': return ausosBuildCSS(theme) + getAusosDensityCSS(densityOrSize as string);
+    case 'carbon': return carbonBuildCSS(theme) + getCarbonDensityCSS(densityOrSize as string);
   }
 }
 
@@ -141,6 +169,7 @@ export function getFont(system: SystemId): string {
     case 'm3': return "'Roboto', sans-serif";
     case 'fluent': return FLUENT_FONT;
     case 'ausos': return AUSOS_FONT;
+    case 'carbon': return CARBON_FONT;
   }
 }
 
@@ -150,6 +179,7 @@ export function getSystemInfo(system: SystemId) {
     m3: { name: "Material 3", org: "Google", color: "#6750A4", icon: "M" },
     fluent: { name: "Fluent 2", org: "Microsoft", color: "#0F6CBD", icon: "F" },
     ausos: { name: "ausos DS", org: "ausos", color: "#7E6BC4", icon: "A" },
+    carbon: { name: "Carbon DS", org: "IBM", color: "#0f62fe", icon: "C" },
   };
   return info[system];
 }
@@ -169,5 +199,18 @@ const AUSOS_DENSITY_MAP: Record<string, DensityEntry> = {
   touch:  { h:44, sp:16, fs:16, fsS:14, h1:42, h2:32, title:48, pad:16, cr:12, icon:16, sideW:300, mainP:40, cardMin:240, cardP:20, gap:14, topH:52, srchH:40, logoS:36, catFs:11, demoP:36, demoCr:16 },
 };
 
-export { SALT_DENSITY_MAP, AUSOS_DENSITY_MAP };
-export { SALT_THEMES, M3_THEMES, FLUENT_THEMES, AUSOS_THEMES };
+/* Carbon density map - Carbon spacing scale is 2px-based and tracks
+   a compact / normal / spacious / expressive ladder. Radius stays at
+   0 across the board (Carbon is flat/Swiss) - corner tokens exist
+   (radius-0..radius-3) but standard controls use 0. */
+const CARBON_DENSITY_MAP: Record<string, DensityEntry> = {
+  compact:  { h:24, sp:4,  fs:12, fsS:11, h1:20, h2:14, title:24, pad:6,  cr:0, icon:12, sideW:200, mainP:16, cardMin:160, cardP:8,  gap:6,  topH:32, srchH:24, logoS:22, catFs:9,  demoP:12, demoCr:0 },
+  normal:   { h:32, sp:8,  fs:14, fsS:12, h1:24, h2:18, title:28, pad:8,  cr:0, icon:14, sideW:256, mainP:24, cardMin:192, cardP:12, gap:8,  topH:40, srchH:32, logoS:26, catFs:10, demoP:20, demoCr:0 },
+  spacious: { h:48, sp:12, fs:16, fsS:14, h1:32, h2:24, title:40, pad:12, cr:0, icon:16, sideW:288, mainP:32, cardMin:224, cardP:16, gap:12, topH:56, srchH:48, logoS:32, catFs:11, demoP:32, demoCr:0 },
+  /* Alias so any caller that hands us "medium" (the generic density
+     label used elsewhere) still resolves to something sensible. */
+  medium:   { h:32, sp:8,  fs:14, fsS:12, h1:24, h2:18, title:28, pad:8,  cr:0, icon:14, sideW:256, mainP:24, cardMin:192, cardP:12, gap:8,  topH:40, srchH:32, logoS:26, catFs:10, demoP:20, demoCr:0 },
+};
+
+export { SALT_DENSITY_MAP, AUSOS_DENSITY_MAP, CARBON_DENSITY_MAP };
+export { SALT_THEMES, M3_THEMES, FLUENT_THEMES, AUSOS_THEMES, CARBON_THEMES };

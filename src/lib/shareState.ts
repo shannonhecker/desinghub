@@ -29,7 +29,7 @@ export interface SharedCanvas {
   footerBlocks: Block[];
 }
 
-const DESIGN_SYSTEMS = new Set<DesignSystem>(["salt", "m3", "fluent", "ausos"]);
+const DESIGN_SYSTEMS = new Set<DesignSystem>(["salt", "m3", "fluent", "ausos", "carbon"]);
 const MODES = new Set<BuilderMode>(["light", "dark"]);
 
 /* URL-safe base64: replace +/ with -_ and strip = padding. */

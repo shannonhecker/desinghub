@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 
 interface SimProps {
-  system: "salt" | "m3" | "fluent" | "ausos";
+  system: "salt" | "m3" | "fluent" | "ausos" | "carbon";
 }
 
 /* ═══════════════════════════════════════════

@@ -27,6 +27,7 @@ const STYLE_CHIPS: { label: string; value: DesignSystem; color: string }[] = [
   { label: "Material 3", value: "m3", color: "#6750A4" },
   { label: "Fluent 2", value: "fluent", color: "#0F6CBD" },
   { label: "ausos DS", value: "ausos", color: "#7E6BC4" },
+  { label: "Carbon DS", value: "carbon", color: "#0f62fe" },
 ];
 
 const REFINE_CHIPS = [
@@ -236,6 +237,7 @@ const DS_LABEL: Record<DesignSystem, string> = {
   m3: "Material 3",
   fluent: "Fluent 2",
   ausos: "ausos DS",
+  carbon: "Carbon DS",
 };
 
 function getFreeformResponse(input: string): string {

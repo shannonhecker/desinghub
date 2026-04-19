@@ -23,7 +23,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
    - Built-in sorting, filtering, pagination
    ═══════════════════════════════════════════════════════════ */
 
-type DesignSystem = "salt" | "m3" | "fluent" | "ausos";
+type DesignSystem = "salt" | "m3" | "fluent" | "ausos" | "carbon";
 
 interface DSAgGridProps {
   system: DesignSystem;

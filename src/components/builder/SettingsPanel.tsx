@@ -7,6 +7,8 @@ const DS_OPTIONS: { id: DesignSystem; label: string }[] = [
   { id: "salt", label: "Salt DS (J.P. Morgan)" },
   { id: "m3", label: "Material 3 (Google)" },
   { id: "fluent", label: "Fluent 2 (Microsoft)" },
+  { id: "ausos", label: "ausos DS" },
+  { id: "carbon", label: "Carbon DS (IBM)" },
 ];
 
 const INTERFACE_OPTIONS: { id: InterfaceType; label: string }[] = [
@@ -42,6 +44,13 @@ const DENSITY_OPTIONS: Record<DesignSystem, { value: string; label: string }[]> 
     { value: "low", label: "Low" },
     { value: "touch", label: "Touch" },
   ],
+  /* Carbon density ladder - mirrors Carbon's spacing-scale semantics
+     (compact = 24px control height, normal = 32px, spacious = 48px). */
+  carbon: [
+    { value: "compact", label: "Compact" },
+    { value: "normal", label: "Normal" },
+    { value: "spacious", label: "Spacious" },
+  ],
 };
 
 const AVAILABLE_COMPONENTS: Record<DesignSystem, string[]> = {
@@ -49,6 +58,7 @@ const AVAILABLE_COMPONENTS: Record<DesignSystem, string[]> = {
   m3: ["buttons", "text-fields", "chips", "cards", "switches", "checkboxes", "radios", "sliders", "fabs", "icon-buttons", "nav-bar", "tabs", "dialogs", "snackbar", "progress", "tooltips", "badges", "menus", "date-pickers"],
   fluent: ["buttons", "inputs", "checkboxes", "radios", "switches", "slider", "cards", "badges", "avatars", "tabs", "messagebars", "dialogs", "menus", "progress", "tooltips", "links", "dividers"],
   ausos: ["buttons", "inputs", "cards", "tabs", "badges", "avatars", "checkboxes", "radios", "switches", "slider", "alerts", "progress", "tooltips", "dialog", "accordion", "table", "dropdowns"],
+  carbon: ["buttons", "text-input", "checkboxes", "radios", "toggles", "dropdowns", "sliders", "tabs", "tags", "notifications", "modals", "tooltips", "accordion", "data-table", "progress-bar", "breadcrumb", "pagination", "tiles", "forms", "menus"],
 };
 
 const COLOR_KEYS: Record<DesignSystem, { key: string; label: string }[]> = {
@@ -81,6 +91,17 @@ const COLOR_KEYS: Record<DesignSystem, { key: string; label: string }[]> = {
     { key: "successFg", label: "Success" },
     { key: "dangerFg", label: "Error" },
     { key: "warningFg", label: "Warning" },
+  ],
+  /* Carbon uses semantic role tokens (interactive, text, support) rather
+     than raw color names. The "key" values here match fields on the
+     Carbon theme object so the color picker reads/writes the right slot. */
+  carbon: [
+    { key: "accent", label: "Interactive" },
+    { key: "bg", label: "Background" },
+    { key: "fg", label: "Text primary" },
+    { key: "positive", label: "Support success" },
+    { key: "negative", label: "Support error" },
+    { key: "warning", label: "Support warning" },
   ],
 };
 

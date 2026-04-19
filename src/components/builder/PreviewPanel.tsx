@@ -134,11 +134,12 @@ function PreviewBar() {
     };
   }, [overflowOpen]);
 
-  const dsSystems: { key: "salt" | "m3" | "fluent" | "ausos"; label: string }[] = [
+  const dsSystems: { key: "salt" | "m3" | "fluent" | "ausos" | "carbon"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
     { key: "fluent", label: "Fluent 2" },
     { key: "ausos", label: "ausos" },
+    { key: "carbon", label: "Carbon" },
   ];
 
   const preset = PRESETS[deviceMode];

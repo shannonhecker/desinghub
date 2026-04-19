@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type SystemId = 'salt' | 'm3' | 'fluent' | 'ausos';
+export type SystemId = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
 export type ActiveTab = 'preview' | 'code' | 'tokens' | 'charts' | 'audit';
 
 interface DesignHubState {
@@ -9,6 +9,10 @@ interface DesignHubState {
   m3: { themeKey: string; density: number; customColor: string; isDarkCustom: boolean };
   fluent: { themeKey: string; size: string };
   ausos: { themeKey: string; density: string; accentColor: string };
+  /* Carbon has 4 themes: white (default light), g10 (alt light), g90 (alt
+     dark), g100 (default dark). Density ladder: compact / normal / spacious
+     matching Carbon spacing-01..13 tokens. */
+  carbon: { themeKey: string; density: string };
   selectedComponent: string | null;
   searchQuery: string;
   activeTab: ActiveTab;
@@ -26,6 +30,8 @@ interface DesignHubState {
   setAusosTheme: (key: string) => void;
   setAusosDensity: (d: string) => void;
   setAusosAccent: (c: string) => void;
+  setCarbonTheme: (key: string) => void;
+  setCarbonDensity: (d: string) => void;
   setSelectedComponent: (id: string | null) => void;
   setSearchQuery: (q: string) => void;
   setActiveTab: (t: ActiveTab) => void;
@@ -38,6 +44,8 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   m3: { themeKey: 'light', density: 0, customColor: '#6750A4', isDarkCustom: false },
   fluent: { themeKey: 'light', size: 'medium' },
   ausos: { themeKey: 'light', density: 'medium', accentColor: '#7E6BC4' },
+  /* White is Carbon's canonical light theme; matches the docs-site default. */
+  carbon: { themeKey: 'white', density: 'normal' },
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',
@@ -61,6 +69,8 @@ export const useDesignHub = create<DesignHubState>((set) => ({
     if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
     set((st) => ({ ausos: { ...st.ausos, accentColor: c } }));
   },
+  setCarbonTheme: (key) => set((st) => ({ carbon: { ...st.carbon, themeKey: key } })),
+  setCarbonDensity: (d) => set((st) => ({ carbon: { ...st.carbon, density: d } })),
   setSelectedComponent: (id) => set({ selectedComponent: id, activeTab: 'preview' }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),

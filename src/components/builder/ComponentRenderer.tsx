@@ -45,7 +45,7 @@ import {
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
-type DesignSystem = "salt" | "m3" | "fluent" | "ausos";
+type DesignSystem = "salt" | "m3" | "fluent" | "ausos" | "carbon";
 
 interface ComponentRendererProps {
   type: string;

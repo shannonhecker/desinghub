@@ -103,6 +103,25 @@ export const CATEGORICAL_PALETTES: Record<DesignSystem, string[]> = {
     "#66A9A3", // teal
     "#D47E5E", // coral
   ],
+  /* Carbon - IBM: interactive blue + Carbon semantic support + IBM
+     data viz accents. Slot 0 is IBM's signature blue60 (#0f62fe);
+     status slots (positive/warning/negative) use Carbon's published
+     support-* palette. Additional slots draw from Carbon's data-viz
+     categorical palette to stay on-brand for charts. */
+  carbon: [
+    "#0f62fe", // accent - IBM blue60
+    "#24a148", // positive - green50
+    "#f1c21b", // warning - yellow30
+    "#da1e28", // negative - red60
+    "#0043ce", // info - blue70
+    "#8a3ffc", // violet - purple60
+    "#d12771", // pink - magenta60
+    "#1192e8", // cyan - cyan50
+    "#ff7eb6", // amber-substitute - magenta40 (Carbon data-viz)
+    "#42be65", // lime - green40
+    "#007d79", // teal - teal60
+    "#fa4d56", // coral - red50
+  ],
 };
 
 /** Return the DS's palette array or Salt's as a safe fallback. */

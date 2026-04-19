@@ -50,6 +50,14 @@ function computeScale(activeSystem: SystemId, densityOrSize: string | number): S
          : d === "large" ? { navH: 40, navF: 14, labF: 11, tabH: 42, hdrH: 50, gap: 8,  panelW: 264 }
          :                 { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 6,  panelW: 240 };
   }
+  if (activeSystem === "carbon") {
+    /* Carbon uses compact / normal / spacious ladder matching the
+       Carbon spacing scale. Matches CARBON_DENSITY_MAP in registry. */
+    const d = densityOrSize as string;
+    return d === "compact"  ? { navH: 24, navF: 11, labF: 9,  tabH: 28, hdrH: 36, gap: 4,  panelW: 220 }
+         : d === "spacious" ? { navH: 48, navF: 14, labF: 11, tabH: 48, hdrH: 56, gap: 10, panelW: 280 }
+         :                    { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 8,  panelW: 256 };
+  }
   // ausos
   const d = densityOrSize as string;
   return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
@@ -71,6 +79,8 @@ function computeTheme(
   ausosThemeKey: string,
   ausosDensity: string,
   ausosAccentColor: string,
+  carbonThemeKey: string,
+  carbonDensity: string,
 ): ActiveTheme {
   let T = activeSystem === "salt"
     ? getTheme("salt", saltThemeKey)
@@ -78,6 +88,8 @@ function computeTheme(
     ? getTheme("m3", m3ThemeKey, m3CustomColor, m3IsDarkCustom)
     : activeSystem === "fluent"
     ? getTheme("fluent", fluentThemeKey)
+    : activeSystem === "carbon"
+    ? getTheme("carbon", carbonThemeKey)
     : getTheme("ausos", ausosThemeKey);
 
   // Apply custom accent color for ausos
@@ -100,29 +112,42 @@ function computeTheme(
     activeSystem === "salt" ? saltDensity
     : activeSystem === "m3" ? m3Density
     : activeSystem === "fluent" ? fluentSize
+    : activeSystem === "carbon" ? carbonDensity
     : ausosDensity;
 
   const css = getFullCSS(activeSystem, T, densityOrSize);
   const font = getFont(activeSystem);
 
-  // Normalized token accessors
-  const n = (salt: string, m3: string, fluent: string, ausos: string) =>
-    activeSystem === "salt" ? T[salt] : activeSystem === "m3" ? T[m3] : activeSystem === "fluent" ? T[fluent] : T[ausos];
+  /* Normalized token accessors - one slot per system. Carbon's
+     theme tokens use the same field names as salt/ausos (bg, fg,
+     accent, etc.) so most carbon slots reuse salt's key names;
+     where Carbon diverges (layer/field tokens in Phase 2), we'll
+     override with a carbon-specific key. */
+  const n = (salt: string, m3: string, fluent: string, ausos: string, carbon: string) =>
+    activeSystem === "salt" ? T[salt]
+    : activeSystem === "m3" ? T[m3]
+    : activeSystem === "fluent" ? T[fluent]
+    : activeSystem === "carbon" ? T[carbon]
+    : T[ausos];
 
   return {
     T, css, font,
-    bg: n("bg", "surface", "bg1", "bg"),
-    bg2: n("bg2", "surfaceContainerLow", "bg2", "bg2"),
-    bg3: n("bg3", "surfaceContainer", "bg3", "bg3"),
-    fg: n("fg", "onSurface", "fg1", "fg"),
-    fg2: n("fg2", "onSurfaceVariant", "fg2", "fg2"),
-    fg3: n("fg3", "outline", "fg3", "fg3"),
-    accent: n("accent", "primary", "brandBg", "accent"),
-    accentFg: n("accentFg", "onPrimary", "fgOnBrand", "accentFg"),
-    accentWeak: n("accentWeak", "primaryContainer", "brandBg2", "accentSurface"),
-    accentText: activeSystem === "salt" ? (T.accentText || T.accent) : activeSystem === "m3" ? T.primary : activeSystem === "fluent" ? T.brandFg1 : T.accent,
-    border: n("border", "outlineVariant", "stroke2", "border"),
-    borderStrong: n("borderStrong", "outline", "strokeAccessible", "borderStrong"),
+    bg: n("bg", "surface", "bg1", "bg", "bg"),
+    bg2: n("bg2", "surfaceContainerLow", "bg2", "bg2", "bg2"),
+    bg3: n("bg3", "surfaceContainer", "bg3", "bg3", "bg3"),
+    fg: n("fg", "onSurface", "fg1", "fg", "fg"),
+    fg2: n("fg2", "onSurfaceVariant", "fg2", "fg2", "fg2"),
+    fg3: n("fg3", "outline", "fg3", "fg3", "fg3"),
+    accent: n("accent", "primary", "brandBg", "accent", "accent"),
+    accentFg: n("accentFg", "onPrimary", "fgOnBrand", "accentFg", "accentFg"),
+    accentWeak: n("accentWeak", "primaryContainer", "brandBg2", "accentSurface", "accentWeak"),
+    accentText: activeSystem === "salt" ? (T.accentText || T.accent)
+      : activeSystem === "m3" ? T.primary
+      : activeSystem === "fluent" ? T.brandFg1
+      : activeSystem === "carbon" ? T.accentText
+      : T.accent,
+    border: n("border", "outlineVariant", "stroke2", "border", "border"),
+    borderStrong: n("borderStrong", "outline", "strokeAccessible", "borderStrong", "borderStrong"),
     activeSystem,
     densityOrSize,
     scale: computeScale(activeSystem, densityOrSize),
@@ -147,6 +172,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const ausosThemeKey = useDesignHub((s) => s.ausos.themeKey);
   const ausosDensity = useDesignHub((s) => s.ausos.density);
   const ausosAccentColor = useDesignHub((s) => s.ausos.accentColor);
+  const carbonThemeKey = useDesignHub((s) => s.carbon.themeKey);
+  const carbonDensity = useDesignHub((s) => s.carbon.density);
 
   const theme = useMemo(
     () => computeTheme(
@@ -154,12 +181,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       m3ThemeKey, m3Density, m3CustomColor, m3IsDarkCustom,
       fluentThemeKey, fluentSize,
       ausosThemeKey, ausosDensity, ausosAccentColor,
+      carbonThemeKey, carbonDensity,
     ),
     [
       activeSystem, saltThemeKey, saltDensity,
       m3ThemeKey, m3Density, m3CustomColor, m3IsDarkCustom,
       fluentThemeKey, fluentSize,
       ausosThemeKey, ausosDensity, ausosAccentColor,
+      carbonThemeKey, carbonDensity,
     ],
   );
 

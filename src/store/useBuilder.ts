@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'ausos';
+export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
@@ -331,7 +331,12 @@ export const useBuilder = create<BuilderState>((set) => ({
   }),
 
   setDesignSystem: (ds) => {
-    const themeMap: Record<DesignSystem, string> = { salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light' };
+    /* Default theme key per DS - Carbon defaults to "white" (its
+       canonical light theme) since its other three themes (g10, g90,
+       g100) are variants the user picks explicitly. */
+    const themeMap: Record<DesignSystem, string> = {
+      salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light', carbon: 'white',
+    };
     set({ designSystem: ds, themeKey: themeMap[ds] });
   },
   setMode: (m) => set((s) => {
@@ -343,6 +348,15 @@ export const useBuilder = create<BuilderState>((set) => ({
     if (s.designSystem === 'm3') {
       if (m === 'dark' && !key.startsWith('dark')) return { mode: m, themeKey: 'dark' };
       if (m === 'light' && key.startsWith('dark')) return { mode: m, themeKey: 'light' };
+    }
+    if (s.designSystem === 'carbon') {
+      /* Carbon has 4 named themes (white/g10 light, g90/g100 dark).
+         Light-mode default is white; dark-mode default is g100. If the
+         user already has the other variant in that family, keep it. */
+      if (m === 'light') {
+        return { mode: m, themeKey: (key === 'g10') ? 'g10' : 'white' };
+      }
+      return { mode: m, themeKey: (key === 'g90') ? 'g90' : 'g100' };
     }
     return { mode: m, themeKey: m === 'dark' ? 'dark' : 'light' };
   }),

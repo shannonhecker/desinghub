@@ -12,6 +12,7 @@ const DS_LABEL: Record<DesignSystem, string> = {
   m3: "Material 3",
   fluent: "Fluent 2",
   ausos: "ausos DS",
+  carbon: "Carbon DS",
 };
 
 const DS_COLOR: Record<DesignSystem, string> = {
@@ -19,6 +20,7 @@ const DS_COLOR: Record<DesignSystem, string> = {
   m3: "#6750A4",
   fluent: "#0F6CBD",
   ausos: "#7E6BC4",
+  carbon: "#0f62fe",
 };
 
 /* ══════════════════════════════════════════════════════════

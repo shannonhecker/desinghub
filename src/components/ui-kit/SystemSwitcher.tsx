@@ -13,10 +13,26 @@ export function SystemSwitcher() {
     { id: "m3", label: "Material 3" },
     { id: "fluent", label: "Fluent 2" },
     { id: "ausos", label: "ausos" },
+    { id: "carbon", label: "Carbon" },
   ];
-  const btnClass = activeSystem === "salt" ? "s-btn" : activeSystem === "m3" ? "m3-btn" : activeSystem === "fluent" ? "f-btn" : "a-btn";
-  const activeClass = activeSystem === "salt" ? "s-btn-solid" : activeSystem === "m3" ? "m3-btn-filled" : activeSystem === "fluent" ? "f-btn-primary" : "a-btn-primary";
-  const inactiveClass = activeSystem === "salt" ? "s-btn-transparent" : activeSystem === "m3" ? "m3-btn-text" : activeSystem === "fluent" ? "f-btn-subtle" : "a-btn-ghost";
+  /* Button-class prefix picks the DS's own button styling for the
+     switcher itself so it visually matches whichever system is active.
+     Carbon uses .cb-btn - Phase 4 ships the full class rules. */
+  const btnClass = activeSystem === "salt" ? "s-btn"
+    : activeSystem === "m3" ? "m3-btn"
+    : activeSystem === "fluent" ? "f-btn"
+    : activeSystem === "carbon" ? "cb-btn"
+    : "a-btn";
+  const activeClass = activeSystem === "salt" ? "s-btn-solid"
+    : activeSystem === "m3" ? "m3-btn-filled"
+    : activeSystem === "fluent" ? "f-btn-primary"
+    : activeSystem === "carbon" ? "cb-btn-primary"
+    : "a-btn-primary";
+  const inactiveClass = activeSystem === "salt" ? "s-btn-transparent"
+    : activeSystem === "m3" ? "m3-btn-text"
+    : activeSystem === "fluent" ? "f-btn-subtle"
+    : activeSystem === "carbon" ? "cb-btn-ghost"
+    : "a-btn-ghost";
 
   return (
     <div style={{ display: "flex", gap: 4 }}>
