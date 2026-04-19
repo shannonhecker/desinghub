@@ -123,6 +123,13 @@ export async function regenerateTemplateContent(
       } catch {
         // ignore parse errors
       }
+      /* Rewrite the raw server diagnostic for the common "missing API
+         key" case. useBackendStatus + the AI-off banner usually catch
+         this before any call is made, but a fast click before the
+         health probe resolves can still land here. */
+      if (errorMsg === "ANTHROPIC_API_KEY not configured") {
+        errorMsg = "AI is off - add ANTHROPIC_API_KEY to .env.local and restart dev.";
+      }
       return { ok: false, patched: 0, error: errorMsg };
     }
 

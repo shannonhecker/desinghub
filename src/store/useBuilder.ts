@@ -73,6 +73,15 @@ interface BuilderState {
   saveError: string | null;
   sessionsDrawerOpen: boolean;
 
+  /* Backend health - populated by useBackendStatus() on Builder mount.
+     `null` = not yet fetched (treat as "assume everything works" so we
+     don't block the first paint). false = server reported the feature
+     is unconfigured; client uses this to disable AI-gated UI. */
+  backendStatus: {
+    anthropicConfigured: boolean | null;
+    firebaseConfigured: boolean | null;
+  };
+
   // Canvas blocks & selection
   blocks: Block[];
   selectedBlockId: string | null;
@@ -156,6 +165,7 @@ interface BuilderState {
   setLastSavedAt: (t: number | null) => void;
   setSaveState: (s: 'idle' | 'saving' | 'saved' | 'error') => void;
   setSaveError: (e: string | null) => void;
+  setBackendStatus: (s: { anthropicConfigured: boolean; firebaseConfigured: boolean }) => void;
   setSessionsDrawerOpen: (v: boolean) => void;
   toggleSessionsDrawer: () => void;
   /** Create a session ID + derive a title if one isn't already active.
@@ -261,6 +271,14 @@ export const useBuilder = create<BuilderState>((set) => ({
   saveState: 'idle',
   saveError: null,
   sessionsDrawerOpen: false,
+
+  /* Backend status defaults to unknown (null) so first-render UI
+     doesn't flicker into a "disabled" state while the health probe
+     is in flight. useBackendStatus() hydrates both fields on mount. */
+  backendStatus: {
+    anthropicConfigured: null,
+    firebaseConfigured: null,
+  },
 
   // Canvas blocks & selection
   blocks: [],
@@ -399,6 +417,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setLastSavedAt: (t) => set({ lastSavedAt: t }),
   setSaveState: (s) => set({ saveState: s }),
   setSaveError: (e) => set({ saveError: e }),
+  setBackendStatus: (s) => set({ backendStatus: s }),
   setSessionsDrawerOpen: (v) => set({ sessionsDrawerOpen: v }),
   toggleSessionsDrawer: () => set((s) => ({ sessionsDrawerOpen: !s.sessionsDrawerOpen })),
 

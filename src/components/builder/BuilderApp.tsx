@@ -17,6 +17,7 @@ import { SaveIndicator } from "./SaveIndicator";
 import { SlashInserter } from "./SlashInserter";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
+import { useBackendStatus } from "@/lib/useBackendStatus";
 import "./builder.css";
 
 const WaveScene = dynamic(
@@ -35,6 +36,12 @@ export function BuilderApp() {
   /* Auto-save subscription - kicks in the moment a session is started
      (either by picking a template or sending a first message). */
   useAutoSave();
+
+  /* One-shot /api/health probe to learn which backend-gated features
+     (Anthropic, Firebase) are configured. Populates the store so
+     ChatPanel / SaveIndicator can show calm "off" affordances instead
+     of letting the first API call fail loudly. */
+  useBackendStatus();
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);

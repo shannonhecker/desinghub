@@ -89,6 +89,20 @@ export function useChatAPI() {
       });
 
       if (!res.ok) {
+        /* Distinguish "AI feature disabled" (503 from the route's
+           missing-key guard) from other server errors. useBackendStatus
+           usually gates the UI before we reach here, but a fast send
+           before the health probe resolves can still land here. */
+        if (res.status === 503) {
+          let serverError = "";
+          try {
+            const body = (await res.json()) as { error?: string };
+            serverError = body.error ?? "";
+          } catch { /* ignore */ }
+          if (serverError === "ANTHROPIC_API_KEY not configured") {
+            throw new Error("AI_OFF");
+          }
+        }
         throw new Error(`API error: ${res.status}`);
       }
 
@@ -151,6 +165,15 @@ export function useChatAPI() {
       // Cancel pending RAF on error
       if (rafId !== null) cancelAnimationFrame(rafId);
 
+      /* Pick a user-facing message based on the specific failure.
+         "AI_OFF" is our internal sentinel for the missing-key case
+         (thrown above), everything else gets the generic connection
+         fallback. */
+      const errorMessage =
+        err instanceof Error && err.message === "AI_OFF"
+          ? "AI is off - add ANTHROPIC_API_KEY to .env.local and restart the dev server. Templates and manual edits still work."
+          : "I'm having trouble connecting right now. Please try again in a moment.";
+
       // On failure, update the AI message with error
       const msgs = useBuilder.getState().messages;
       const lastAi = msgs[msgs.length - 1];
@@ -158,9 +181,14 @@ export function useChatAPI() {
         useBuilder.setState({
           messages: [
             ...msgs.slice(0, -1),
-            { ...lastAi, content: "I'm having trouble connecting right now. Please try again in a moment." },
+            { ...lastAi, content: errorMessage },
           ],
         });
+      } else {
+        /* No placeholder message in flight (the error hit before we
+           could even add "..."). Surface the error as a new AI
+           message so the user still sees something. */
+        useBuilder.getState().addMessage("ai", errorMessage);
       }
     } finally {
       useBuilder.getState().setGenerating(false);

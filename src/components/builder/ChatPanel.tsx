@@ -274,8 +274,31 @@ export function ChatPanel() {
     ensureSessionStarted, setSessionTitle, currentSessionId,
   } = useBuilder();
 
+  /* Backend feature flags from useBackendStatus (mounted in BuilderApp).
+     `null` = probe still in flight - stay optimistic, don't disable
+     anything yet. `false` = server confirmed the key is missing, so
+     AI-gated UI (send button, Regenerate chip) should degrade calmly. */
+  const anthropicConfigured = useBuilder((s) => s.backendStatus.anthropicConfigured);
+  const aiDisabled = anthropicConfigured === false;
+
   /* Whether the conversational onboarding is waiting on a DS pick. */
   const awaitingDs = Boolean(pendingTemplateId || pendingFirstMessage);
+
+  /* One-time dismissible "AI features off" banner, mirrors the
+     SaveIndicator "Cloud save off" pattern. Hydrates from
+     sessionStorage so navigating around the Builder doesn't re-show
+     the banner on every render. */
+  const [aiHintDismissed, setAiHintDismissed] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("design-hub:ai-off-dismissed") === "1") {
+      setAiHintDismissed(true);
+    }
+  }, []);
+  const dismissAiHint = () => {
+    setAiHintDismissed(true);
+    try { sessionStorage.setItem("design-hub:ai-off-dismissed", "1"); } catch { /* private-mode */ }
+  };
 
   /* Derive the selected-block metadata for the scope chip.
      Falls back to null when nothing is selected. */
@@ -599,7 +622,9 @@ export function ChatPanel() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (hasText && !isGenerating) handleSend();
+      /* Same gating as the send button: no-op when AI is off, so the
+         user doesn't fire a request that will fail loudly. */
+      if (hasText && !isGenerating && !aiDisabled) handleSend();
     } else if (e.key === "Escape" && selectedBlockId) {
       // Esc clears the click-to-edit scope without submitting anything
       setSelectedBlock(null, null);
@@ -640,7 +665,11 @@ export function ChatPanel() {
 
   const renderRefineChips = () => (
     <div className="prompt-bubbles">
-      {activeTemplateId && (
+      {/* Regenerate chip is AI-gated - hide it entirely when ANTHROPIC_API_KEY
+          is absent so users aren't offered a button that will fail. The rest
+          of the refine chips stay since they route through handleSend, which
+          also gates on aiDisabled below. */}
+      {activeTemplateId && !aiDisabled && (
         <button
           className="prompt-bubble prompt-bubble-accent"
           onClick={handleRegenerateContent}
@@ -658,20 +687,28 @@ export function ChatPanel() {
         </button>
       )}
       {REFINE_CHIPS.map((label) => (
-        <button key={label} className="prompt-bubble" onClick={() => handleSend(label)}>
+        <button
+          key={label}
+          className="prompt-bubble"
+          onClick={() => handleSend(label)}
+          disabled={aiDisabled}
+          title={aiDisabled ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : undefined}
+        >
           {label}
         </button>
       ))}
     </div>
   );
 
-  const placeholderText = selectedBlock
-    ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
-    : awaitingDs
-      ? "Pick a design system above, or type a different request…"
-      : hasMessages
-        ? "Ask me anything - 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
-        : "Describe the app you want to build…";
+  const placeholderText = aiDisabled
+    ? "AI is off - templates + manual edits still work. Add ANTHROPIC_API_KEY to re-enable chat."
+    : selectedBlock
+      ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
+      : awaitingDs
+        ? "Pick a design system above, or type a different request…"
+        : hasMessages
+          ? "Ask me anything - 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+          : "Describe the app you want to build…";
 
   /* Auto-focus the textarea on initial mount so users can type right
      away - matches v0 / Lovable / ChatGPT. Only fires once; subsequent
@@ -683,6 +720,31 @@ export function ChatPanel() {
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
+      {/* AI-off banner - shown once per session when /api/health reports
+          ANTHROPIC_API_KEY is missing. Templates + manual component
+          editing still work, so this is an informational hint rather
+          than an error. Dismissable via the × button; sessionStorage
+          keeps it hidden for the rest of the tab's lifetime. */}
+      {aiDisabled && !aiHintDismissed && (
+        <div className="chat-ai-off-banner" role="status" aria-live="polite">
+          <span className="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+          <span className="chat-ai-off-text">
+            <strong>AI features are off.</strong> Templates and manual edits still work.
+            Add <code>ANTHROPIC_API_KEY</code> to <code>.env.local</code> and restart dev
+            to enable chat + Regenerate data.
+          </span>
+          <button
+            type="button"
+            className="chat-ai-off-dismiss"
+            onClick={dismissAiHint}
+            aria-label="Dismiss"
+            title="Dismiss"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </div>
+      )}
+
       {/* Scrollable content area */}
       <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer - pushes content to bottom when messages are few */}
@@ -834,8 +896,9 @@ export function ChatPanel() {
                   <button
                     className="send-btn"
                     onClick={() => handleSend()}
-                    disabled={isGenerating}
-                    aria-label="Send"
+                    disabled={isGenerating || aiDisabled}
+                    aria-label={aiDisabled ? "AI is off" : "Send"}
+                    title={aiDisabled ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : undefined}
                   >
                     <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                   </button>
