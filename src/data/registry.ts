@@ -68,17 +68,16 @@ export {
 };
 
 export function getComponents(system: SystemId): ComponentDef[] {
-  /* Explicit switch keeps TS exhaustiveness happy under strict mode
-     and avoids nested ternaries that silently absorb new systems. */
-  let comps: RawComponent[];
-  switch (system) {
-    case 'salt': comps = SALT_COMPS; break;
-    case 'm3': comps = M3_COMPS; break;
-    case 'fluent': comps = FLUENT_COMPS; break;
-    case 'ausos': comps = AUSOS_COMPS; break;
-    case 'carbon': comps = CARBON_COMPS; break;
-  }
-  return comps.map((c) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
+  /* Keyed lookup avoids the "used before assignment" strict-mode
+     error that a `let x; switch {...}` pattern can produce when TS
+     doesn't infer exhaustiveness across imports from .jsx. The
+     Record<SystemId, ...> type does the compile-time check for us -
+     adding a new SystemId fails here until the map gets a matching
+     entry. */
+  const compsBySystem: Record<SystemId, RawComponent[]> = {
+    salt: SALT_COMPS, m3: M3_COMPS, fluent: FLUENT_COMPS, ausos: AUSOS_COMPS, carbon: CARBON_COMPS,
+  };
+  return compsBySystem[system].map((c) => ({ id: c.id, name: c.name, cat: c.cat, desc: c.desc }));
 }
 
 export function getCategories(system: SystemId): string[] {
@@ -92,15 +91,10 @@ export function getCategories(system: SystemId): string[] {
 }
 
 export function getThemeKeys(system: SystemId): string[] {
-  let dict: ThemeDict;
-  switch (system) {
-    case 'salt': dict = SALT_THEMES; break;
-    case 'm3': dict = M3_THEMES; break;
-    case 'fluent': dict = FLUENT_THEMES; break;
-    case 'ausos': dict = AUSOS_THEMES; break;
-    case 'carbon': dict = CARBON_THEMES; break;
-  }
-  return Object.keys(dict);
+  const dictBySystem: Record<SystemId, ThemeDict> = {
+    salt: SALT_THEMES, m3: M3_THEMES, fluent: FLUENT_THEMES, ausos: AUSOS_THEMES, carbon: CARBON_THEMES,
+  };
+  return Object.keys(dictBySystem[system]);
 }
 
 export function getTheme(system: SystemId, themeKey: string, customColor?: string, isDarkCustom?: boolean): ThemeTokens {
