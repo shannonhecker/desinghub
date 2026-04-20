@@ -140,8 +140,14 @@ export const CIcon = ({ name, size = 16, ...rest }) => {
 
 /* Demo + preview registries. Return null/empty for Phase 1 - the UI
    Kit hides components with no demo, so the Carbon tab just shows
-   "No components yet" until Phase 2. */
-export function getCarbonDemoComponent(/* id */) { return null; }
+   "No components yet" until Phase 2.
+
+   NOTE: the `id` parameter is unused in the stub but MUST be declared
+   so TypeScript's inferred signature from the .jsx boundary matches
+   the call site in registry.ts (which passes componentId). Leaving
+   it off caused a strict-mode "Expected 0 arguments, but got 1"
+   build failure on Vercel. */
+export function getCarbonDemoComponent(id) { void id; return null; }
 export function getCarbonPreviews() { return {}; }
 
 /* Density offsets. Carbon uses 2px-based spacing (spacing-01 = 2px,
