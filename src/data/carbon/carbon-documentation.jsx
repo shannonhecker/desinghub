@@ -168,312 +168,570 @@ export const getCarbonT = () => T;
 /* ──────────────────────────────────────────────
    CSS BUILDER - injected into UI Kit iframe
    ──────────────────────────────────────────────
-   All rules use the active theme's token values.
-   Measurements are the exact ones from Carbon's
-   Style tabs (button/input/table/notification). */
+   Emits Carbon's canonical `--cds-*` token names (prefix confirmed
+   via carbon-design-system/carbon/packages/themes/scss/_config.scss
+   → `$prefix: 'cds'`). The four theme dicts become class-selector
+   blocks (`.cds--white`, `.cds--g10`, `.cds--g90`, `.cds--g100`) so
+   a preview wrapper can swap themes by changing a single className,
+   matching Carbon's own runtime theming model.
+
+   All component CSS rules below the theme blocks read from the
+   resolved `var(--cds-*)` values, so the class-selector cascade
+   handles theme switching with zero per-rule rewrites. The module
+   still exports `T` for JSX renderers (color dots, typography
+   specimens) that need raw token access.
+
+   Component geometry matches Carbon's Style tabs exactly:
+   - Button sizes 32/40/48/64/80 px (sm/md/lg/xl/2xl), 2px focus
+     outline in $focus, asymmetric padding, zero radius.
+   - Text Input / Number Input / Dropdown share a 40px field with a
+     1px bottom border in $border-strong-01 that swaps to a 2px
+     $focus bottom border on focus; no horizontal borders.
+   - Data Table rows 48px (md), header $layer-accent-01, zero
+     border-radius anywhere.
+   - Tile uses $layer-01, zero radius, $spacing-05 padding.
+   - Tag pill (1rem radius), 24px tall, $label-01 500 weight. */
 export function carbonBuildCSS(theme) {
   const t = theme || T;
-  /* IBM Plex Sans + Mono are registered globally via next/font
-     in src/lib/fonts.ts, so no @import needed here - saves a
-     network round-trip on first paint. */
+
+  /* Helper: emit the full token set for one theme dict. Used inside
+     each `.cds--<theme>` selector below so the cascade resolves
+     tokens automatically when the wrapper class changes. */
+  const themeTokens = (dict) => `
+      --cds-background: ${dict.background};
+      --cds-background-hover: ${dict.backgroundHover};
+      --cds-background-active: ${dict.layerActive01};
+      --cds-background-selected: ${dict.highlight};
+      --cds-background-inverse: ${dict.backgroundInverse};
+      --cds-background-brand: ${dict.backgroundBrand};
+      --cds-layer-01: ${dict.layer01};
+      --cds-layer-02: ${dict.layer02};
+      --cds-layer-03: ${dict.layer03};
+      --cds-layer-hover-01: ${dict.layerHover01};
+      --cds-layer-hover-02: ${dict.layerHover01};
+      --cds-layer-hover-03: ${dict.layerHover01};
+      --cds-layer-selected-01: ${dict.layerActive01};
+      --cds-layer-selected-02: ${dict.layerActive01};
+      --cds-layer-selected-03: ${dict.layerActive01};
+      --cds-layer-accent-01: ${dict.layerAccent01};
+      --cds-layer-accent-02: ${dict.layerAccent01};
+      --cds-layer-accent-03: ${dict.layerAccent01};
+      --cds-field-01: ${dict.field01};
+      --cds-field-02: ${dict.field02};
+      --cds-field-03: ${dict.field03};
+      --cds-field-hover-01: ${dict.fieldHover01};
+      --cds-field-hover-02: ${dict.fieldHover01};
+      --cds-field-hover-03: ${dict.fieldHover01};
+      --cds-border-subtle-00: ${dict.borderSubtle00};
+      --cds-border-subtle-01: ${dict.borderSubtle01};
+      --cds-border-subtle-02: ${dict.borderSubtle01};
+      --cds-border-subtle-03: ${dict.borderSubtle01};
+      --cds-border-strong-01: ${dict.borderStrong01};
+      --cds-border-strong-02: ${dict.borderStrong01};
+      --cds-border-strong-03: ${dict.borderStrong01};
+      --cds-border-interactive: ${dict.borderInteractive};
+      --cds-border-inverse: ${dict.borderInverse};
+      --cds-border-disabled: ${dict.borderDisabled};
+      --cds-text-primary: ${dict.textPrimary};
+      --cds-text-secondary: ${dict.textSecondary};
+      --cds-text-placeholder: ${dict.textPlaceholder};
+      --cds-text-on-color: ${dict.textOnColor};
+      --cds-text-helper: ${dict.textHelper};
+      --cds-text-error: ${dict.textError};
+      --cds-text-disabled: ${dict.textDisabled};
+      --cds-text-inverse: ${dict.textInverse};
+      --cds-icon-primary: ${dict.iconPrimary};
+      --cds-icon-secondary: ${dict.iconSecondary};
+      --cds-icon-interactive: ${dict.iconInteractive};
+      --cds-icon-on-color: ${dict.iconOnColor};
+      --cds-icon-inverse: ${dict.iconInverse};
+      --cds-link-primary: ${dict.linkPrimary};
+      --cds-link-primary-hover: ${dict.linkPrimaryHover};
+      --cds-link-secondary: ${dict.linkSecondary};
+      --cds-link-visited: ${dict.linkVisited};
+      --cds-link-inverse: ${dict.linkInverse};
+      --cds-support-error: ${dict.supportError};
+      --cds-support-success: ${dict.supportSuccess};
+      --cds-support-warning: ${dict.supportWarning};
+      --cds-support-info: ${dict.supportInfo};
+      --cds-focus: ${dict.focus};
+      --cds-focus-inset: ${dict.focusInset};
+      --cds-focus-inverse: ${dict.focusInverse};
+      --cds-interactive: ${dict.interactive};
+      --cds-highlight: ${dict.highlight};
+      --cds-toggle-off: ${dict.toggleOff};
+      --cds-overlay: ${dict.overlay};
+      --cds-skeleton-element: ${dict.skeletonElement};
+      --cds-button-primary: ${dict.buttonPrimary};
+      --cds-button-primary-hover: ${dict.buttonPrimaryHover};
+      --cds-button-primary-active: ${dict.buttonPrimaryActive};
+      --cds-button-secondary: ${dict.buttonSecondary};
+      --cds-button-secondary-hover: ${dict.buttonSecondaryHover};
+      --cds-button-secondary-active: ${dict.buttonSecondaryActive};
+      --cds-button-tertiary: ${dict.buttonTertiary};
+      --cds-button-tertiary-hover: ${dict.buttonTertiaryHover};
+      --cds-button-danger-primary: ${dict.buttonDangerPrimary};
+      --cds-button-danger-hover: ${dict.buttonDangerHover};
+      --cds-button-danger-active: ${dict.buttonDangerActive};
+      --cds-button-separator: ${dict.buttonSeparator};
+      --cds-shadow-raised: ${dict.shadowRaised};
+      --cds-shadow-floating: ${dict.shadowFloating};
+      /* Spacing scale (px) - Carbon scale-01..13. Exposed as tokens
+         so inline styles and consumer CSS can consume them. */
+      --cds-spacing-01: 2px; --cds-spacing-02: 4px; --cds-spacing-03: 8px;
+      --cds-spacing-04: 12px; --cds-spacing-05: 16px; --cds-spacing-06: 24px;
+      --cds-spacing-07: 32px; --cds-spacing-08: 40px; --cds-spacing-09: 48px;
+      --cds-spacing-10: 64px; --cds-spacing-11: 80px; --cds-spacing-12: 96px;
+      --cds-spacing-13: 160px;`;
+
+  /* IBM Plex Sans + Mono are registered globally via next/font in
+     src/lib/fonts.ts; the CSS variable --font-ibm-plex-sans flows in
+     via <html> so no @import is needed here. */
   return `
-    :root {
-      --cb-bg: ${t.background}; --cb-bg-hover: ${t.backgroundHover}; --cb-bg-inverse: ${t.backgroundInverse};
-      --cb-layer-01: ${t.layer01}; --cb-layer-02: ${t.layer02}; --cb-layer-03: ${t.layer03};
-      --cb-layer-hover-01: ${t.layerHover01}; --cb-layer-accent: ${t.layerAccent01};
-      --cb-field-01: ${t.field01}; --cb-field-02: ${t.field02}; --cb-field-hover-01: ${t.fieldHover01};
-      --cb-border-subtle: ${t.borderSubtle01}; --cb-border-strong: ${t.borderStrong01}; --cb-border-interactive: ${t.borderInteractive};
-      --cb-text-primary: ${t.textPrimary}; --cb-text-secondary: ${t.textSecondary};
-      --cb-text-placeholder: ${t.textPlaceholder}; --cb-text-helper: ${t.textHelper};
-      --cb-text-on-color: ${t.textOnColor}; --cb-text-error: ${t.textError}; --cb-text-inverse: ${t.textInverse};
-      --cb-icon-primary: ${t.iconPrimary}; --cb-icon-secondary: ${t.iconSecondary};
-      --cb-link-primary: ${t.linkPrimary}; --cb-link-hover: ${t.linkPrimaryHover}; --cb-link-visited: ${t.linkVisited};
-      --cb-support-error: ${t.supportError}; --cb-support-success: ${t.supportSuccess};
-      --cb-support-warning: ${t.supportWarning}; --cb-support-info: ${t.supportInfo};
-      --cb-focus: ${t.focus}; --cb-focus-inset: ${t.focusInset};
-      --cb-interactive: ${t.interactive}; --cb-highlight: ${t.highlight};
-      --cb-btn-primary: ${t.buttonPrimary}; --cb-btn-primary-hover: ${t.buttonPrimaryHover};
-      --cb-btn-secondary: ${t.buttonSecondary}; --cb-btn-secondary-hover: ${t.buttonSecondaryHover};
-      --cb-btn-tertiary: ${t.buttonTertiary}; --cb-btn-tertiary-hover: ${t.buttonTertiaryHover};
-      --cb-btn-danger: ${t.buttonDangerPrimary}; --cb-btn-danger-hover: ${t.buttonDangerHover};
-      --cb-btn-separator: ${t.buttonSeparator};
+    .cds--white {${themeTokens(CARBON_THEMES.white)}
+    }
+    .cds--g10 {${themeTokens(CARBON_THEMES.g10)}
+    }
+    .cds--g90 {${themeTokens(CARBON_THEMES.g90)}
+    }
+    .cds--g100 {${themeTokens(CARBON_THEMES.g100)}
+    }
+
+    /* Base / fallback :root tokens so rules still resolve if no
+       theme class is applied. Uses the currently active theme. */
+    :root {${themeTokens(t)}
     }
 
     * { box-sizing: border-box; }
-    body, .cb-root { font-family: ${CARBON_FONT}; color: var(--cb-text-primary); background: var(--cb-bg); }
+    body, .cb-root { font-family: ${CARBON_FONT}; color: var(--cds-text-primary); background: var(--cds-background); }
+
+    /* Carbon type scale - letter-spacing +0.32px at 12px, +0.16px at
+       14px, 0 at 16+. Applied inline wherever type tokens surface. */
 
     /* ═══ BUTTON ═══
-       Fluid buttons: padding-left 16px, padding-right 64px (asymmetric
-       by Carbon spec). Ghost / icon buttons use symmetric padding.
-       Sizes: 24/32/40/48/64/80. 14px/400 via $body-compact-01.
-       Zero corner radius. Focus is a 2px inset blue + 2px inset white. */
-    .cb-btn { display: inline-flex; align-items: center; justify-content: flex-start;
-      gap: 32px; height: 48px; padding: 0 64px 0 16px; border-radius: 0;
+       Kinds: primary / secondary / tertiary / ghost / danger /
+       danger--tertiary / danger--ghost. Sizes sm 32 / md 40 (default)
+       / lg 48 / xl 64 / 2xl 80. Padding 0 $spacing-05 (16px) with
+       right padding $spacing-10 (64px) when the button carries a
+       trailing renderIcon. 2px $focus outline on :focus-visible.
+       Zero border-radius. IBM Plex Sans 400, letter-spacing 0.16px. */
+    .cb-btn { display: inline-flex; align-items: center; justify-content: space-between;
+      gap: var(--cds-spacing-05); min-width: 0;
+      height: 40px; padding: 0 var(--cds-spacing-05); border-radius: 0;
       font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 18px;
+      letter-spacing: 0.16px;
       cursor: pointer; border: 1px solid transparent; background: transparent;
-      color: var(--cb-text-primary);
-      transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9);
-      outline: none; text-align: left; letter-spacing: 0.16px; white-space: nowrap; }
-    .cb-btn:focus-visible, .cb-btn:focus { box-shadow: inset 0 0 0 2px var(--cb-focus), inset 0 0 0 3px var(--cb-focus-inset); }
-    .cb-btn-primary { background: var(--cb-btn-primary); color: var(--cb-text-on-color); }
-    .cb-btn-primary:hover { background: var(--cb-btn-primary-hover); }
-    .cb-btn-secondary { background: var(--cb-btn-secondary); color: var(--cb-text-on-color); }
-    .cb-btn-secondary:hover { background: var(--cb-btn-secondary-hover); }
-    .cb-btn-tertiary { background: transparent; color: var(--cb-btn-tertiary); border-color: var(--cb-btn-tertiary); }
-    .cb-btn-tertiary:hover { background: var(--cb-btn-tertiary-hover); color: var(--cb-text-on-color); }
-    .cb-btn-ghost { background: transparent; color: var(--cb-link-primary); padding: 0 16px; gap: 8px; }
-    .cb-btn-ghost:hover { background: var(--cb-bg-hover); }
-    .cb-btn-danger { background: var(--cb-btn-danger); color: var(--cb-text-on-color); }
-    .cb-btn-danger:hover { background: var(--cb-btn-danger-hover); }
-    .cb-btn-xs { height: 24px; font-size: 12px; gap: 16px; padding: 0 16px 0 12px; }
-    .cb-btn-sm { height: 32px; gap: 16px; padding: 0 32px 0 12px; }
-    .cb-btn-md { height: 40px; gap: 32px; padding: 0 48px 0 16px; }
-    .cb-btn-lg { height: 48px; }
-    .cb-btn-xl { height: 64px; align-items: flex-start; padding-top: 14px; gap: 16px; padding-right: 16px; }
-    .cb-btn-2xl { height: 80px; align-items: flex-start; padding-top: 14px; gap: 16px; padding-right: 16px; }
-    .cb-btn-icon { width: 32px; padding: 0; justify-content: center; gap: 0; }
+      color: var(--cds-text-primary);
+      transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9),
+                  color 70ms cubic-bezier(0.2, 0, 0.38, 0.9);
+      outline: none; text-align: left; white-space: nowrap; }
+    .cb-btn:focus-visible, .cb-btn:focus { outline: 2px solid var(--cds-focus); outline-offset: -2px; box-shadow: inset 0 0 0 1px var(--cds-focus-inset); }
+    .cb-btn[data-icon] { padding-right: var(--cds-spacing-10); }
+    .cb-btn[disabled], .cb-btn:disabled { background: var(--cds-button-disabled, #c6c6c6); color: var(--cds-text-disabled); cursor: not-allowed; border-color: transparent; }
+
+    .cb-btn-primary { background: var(--cds-button-primary); color: var(--cds-text-on-color); }
+    .cb-btn-primary:hover { background: var(--cds-button-primary-hover); }
+    .cb-btn-primary:active { background: var(--cds-button-primary-active); }
+    .cb-btn-secondary { background: var(--cds-button-secondary); color: var(--cds-text-on-color); }
+    .cb-btn-secondary:hover { background: var(--cds-button-secondary-hover); }
+    .cb-btn-secondary:active { background: var(--cds-button-secondary-active); }
+    .cb-btn-tertiary { background: transparent; color: var(--cds-button-tertiary); border-color: var(--cds-button-tertiary); }
+    .cb-btn-tertiary:hover { background: var(--cds-button-tertiary-hover); color: var(--cds-text-on-color); }
+    .cb-btn-ghost { background: transparent; color: var(--cds-link-primary); border-color: transparent; }
+    .cb-btn-ghost:hover { background: var(--cds-background-hover); color: var(--cds-link-primary-hover); }
+    .cb-btn-danger, .cb-btn-danger--primary { background: var(--cds-button-danger-primary); color: var(--cds-text-on-color); }
+    .cb-btn-danger:hover, .cb-btn-danger--primary:hover { background: var(--cds-button-danger-hover); }
+    .cb-btn-danger:active, .cb-btn-danger--primary:active { background: var(--cds-button-danger-active); }
+    .cb-btn-danger--tertiary { background: transparent; color: var(--cds-button-danger-primary); border-color: var(--cds-button-danger-primary); }
+    .cb-btn-danger--tertiary:hover { background: var(--cds-button-danger-hover); color: var(--cds-text-on-color); border-color: var(--cds-button-danger-hover); }
+    .cb-btn-danger--ghost { background: transparent; color: var(--cds-button-danger-primary); }
+    .cb-btn-danger--ghost:hover { background: var(--cds-button-danger-hover); color: var(--cds-text-on-color); }
+
+    /* Sizes - Carbon ladder: 32/40/48/64/80. 2xl is 80px. */
+    .cb-btn-sm  { height: 32px; padding: 0 var(--cds-spacing-04); }
+    .cb-btn-md  { height: 40px; padding: 0 var(--cds-spacing-05); }
+    .cb-btn-lg  { height: 48px; padding: 0 var(--cds-spacing-05); }
+    .cb-btn-xl  { height: 64px; align-items: flex-start; padding: var(--cds-spacing-04) var(--cds-spacing-05); }
+    .cb-btn-2xl { height: 80px; align-items: flex-start; padding: var(--cds-spacing-04) var(--cds-spacing-05); }
+    .cb-btn-xs  { height: 24px; font-size: 12px; padding: 0 var(--cds-spacing-04); letter-spacing: 0.32px; }
+    .cb-btn-icon { width: 40px; padding: 0; justify-content: center; gap: 0; }
+    .cb-btn-sm.cb-btn-icon { width: 32px; }
+    .cb-btn-lg.cb-btn-icon { width: 48px; }
 
     /* ═══ TEXT INPUT ═══
-       Sizes: 32/40/48. 1px bottom border via $border-strong. Focus
-       swaps to 2px $focus inset. 16px horizontal padding, 14px body. */
-    .cb-input-wrap { display: flex; flex-direction: column; gap: 6px; }
-    .cb-input-label { font-size: 12px; line-height: 16px; letter-spacing: 0.32px; color: var(--cb-text-secondary); font-weight: 400; }
-    .cb-input { height: 40px; width: 100%; padding: 0 16px;
-      background: var(--cb-field-01); color: var(--cb-text-primary);
-      border: 0; border-bottom: 1px solid var(--cb-border-strong);
-      font-family: ${CARBON_FONT}; font-size: 14px; line-height: 18px;
+       md 40px tall (Carbon default). label-01 12/16/400 +0.32px above
+       the input; field-01 background; 1px bottom border in
+       $border-strong-01; on :focus the bottom border hides and a 2px
+       $focus bottom border appears (no horizontal borders - Carbon's
+       Text Input has only the bottom rule in the default variant).
+       Helper text uses helper-text-01 12/16; invalid state swaps to a
+       2px $support-error outline + leaves room for the ErrorFilled
+       icon the React renderer injects. */
+    .cb-input-wrap { display: flex; flex-direction: column; gap: var(--cds-spacing-02); }
+    .cb-input-label { font-size: 12px; line-height: 16px; letter-spacing: 0.32px; color: var(--cds-text-secondary); font-weight: 400; font-family: ${CARBON_FONT}; }
+    .cb-input { height: 40px; width: 100%; padding: 0 var(--cds-spacing-05);
+      background: var(--cds-field-01); color: var(--cds-text-primary);
+      border: 0; border-bottom: 1px solid var(--cds-border-strong-01);
+      font-family: ${CARBON_FONT}; font-size: 14px; line-height: 18px; letter-spacing: 0.16px;
       outline: none; border-radius: 0;
       transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-input:hover { background: var(--cb-field-hover-01); }
-    .cb-input:focus { outline: 2px solid var(--cb-focus); outline-offset: -2px; border-bottom-color: transparent; }
-    .cb-input::placeholder { color: var(--cb-text-placeholder); }
-    .cb-input-helper { font-size: 12px; line-height: 16px; color: var(--cb-text-helper); }
-    .cb-input-error-msg { font-size: 12px; line-height: 16px; color: var(--cb-text-error); }
-    .cb-input.error { outline: 2px solid var(--cb-support-error); outline-offset: -2px; border-bottom-color: transparent; }
+    .cb-input:hover { background: var(--cds-field-hover-01); }
+    .cb-input:focus, .cb-input:focus-visible { border-bottom: 2px solid var(--cds-focus); padding-bottom: 0; }
+    .cb-input::placeholder { color: var(--cds-text-placeholder); }
+    .cb-input-helper { font-size: 12px; line-height: 16px; letter-spacing: 0.32px; color: var(--cds-text-helper); font-family: ${CARBON_FONT}; }
+    .cb-input-error-msg { font-size: 12px; line-height: 16px; letter-spacing: 0.32px; color: var(--cds-text-error); font-family: ${CARBON_FONT}; }
+    .cb-input-invalid-wrap { position: relative; }
+    .cb-input-invalid-wrap .cb-input-invalid-icon { position: absolute; right: var(--cds-spacing-05); top: 50%; transform: translateY(-50%); color: var(--cds-support-error); pointer-events: none; }
+    .cb-input.error { outline: 2px solid var(--cds-support-error); outline-offset: -2px; border-bottom-color: transparent; padding-right: var(--cds-spacing-09); }
     .cb-input-sm { height: 32px; }
     .cb-input-lg { height: 48px; }
-    .cb-textarea { min-height: 88px; padding: 11px 16px; resize: vertical; }
+    .cb-textarea { min-height: 88px; padding: var(--cds-spacing-03) var(--cds-spacing-05); resize: vertical; }
     .cb-search-wrap { position: relative; }
-    .cb-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--cb-icon-secondary); pointer-events: none; }
-    .cb-search-wrap .cb-input { padding-left: 40px; }
+    .cb-search-icon { position: absolute; left: var(--cds-spacing-05); top: 50%; transform: translateY(-50%); color: var(--cds-icon-secondary); pointer-events: none; }
+    .cb-search-wrap .cb-input { padding-left: var(--cds-spacing-09); }
 
-    /* ═══ CHECKBOX ═══ */
-    .cb-checkbox, .cb-radio { display: inline-flex; align-items: center; gap: 8px;
-      font-family: ${CARBON_FONT}; font-size: 14px; color: var(--cb-text-primary); cursor: pointer; user-select: none; }
-    .cb-cb-box { width: 16px; height: 16px; border: 1px solid var(--cb-text-primary);
+    /* ═══ NUMBER INPUT ═══
+       Same 40px field shell as TextInput with a pair of square
+       stepper buttons on the trailing edge. Each stepper is
+       40×40 with $field-01 bg, $border-strong-01 left separator,
+       $icon-primary chevron, and Carbon's standard 70ms ease-out. */
+    .cb-number { position: relative; display: flex; align-items: stretch; width: 100%; height: 40px;
+      background: var(--cds-field-01); border-bottom: 1px solid var(--cds-border-strong-01); }
+    .cb-number:focus-within { border-bottom: 2px solid var(--cds-focus); }
+    .cb-number-input { flex: 1; min-width: 0; height: 100%; padding: 0 var(--cds-spacing-05);
+      background: transparent; color: var(--cds-text-primary); border: 0;
+      font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; outline: none; border-radius: 0; }
+    .cb-number-steppers { display: flex; flex-shrink: 0; height: 100%; border-left: 1px solid var(--cds-border-strong-01); }
+    .cb-number-step { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+      background: var(--cds-field-01); color: var(--cds-icon-primary); border: 0; cursor: pointer; border-radius: 0;
+      transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
+    .cb-number-step:hover { background: var(--cds-field-hover-01); }
+    .cb-number-step:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; }
+    .cb-number-step + .cb-number-step { border-left: 1px solid var(--cds-border-strong-01); }
+
+    /* ═══ DROPDOWN ═══
+       Shares the TextInput field shell (40px, 1px bottom border,
+       field-01 bg). Trailing chevron 16px in $icon-primary. Menu
+       opens immediately below the trigger with $layer-01 bg and no
+       gap, matching the Carbon select/dropdown pattern. */
+    .cb-dropdown { position: relative; }
+    .cb-dropdown-trigger { height: 40px; padding: 0 var(--cds-spacing-05); background: var(--cds-field-01);
+      color: var(--cds-text-primary); border: 0; border-bottom: 1px solid var(--cds-border-strong-01);
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; width: 100%; border-radius: 0;
+      transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
+    .cb-dropdown-trigger:hover { background: var(--cds-field-hover-01); }
+    .cb-dropdown-trigger:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; border-bottom-color: transparent; }
+    .cb-dropdown-chev { color: var(--cds-icon-primary); flex-shrink: 0; }
+    .cb-dropdown-menu { position: absolute; top: 100%; left: 0; right: 0; background: var(--cds-layer-01);
+      border-top: 1px solid var(--cds-border-subtle-01); box-shadow: var(--cds-shadow-floating); z-index: 10; }
+    .cb-dropdown-item { padding: 0 var(--cds-spacing-05); height: 40px; display: flex; align-items: center;
+      color: var(--cds-text-primary); font-family: ${CARBON_FONT}; font-size: 14px; cursor: pointer; }
+    .cb-dropdown-item:hover { background: var(--cds-layer-hover-01); }
+    .cb-dropdown-item.selected { background: var(--cds-layer-selected-01); }
+
+    /* ═══ CHECKBOX ═══
+       18×18 square, 2px border in $icon-primary. On check: $background-brand
+       fill with a Checkmark glyph in $icon-on-color. Label label-01 to
+       the right with $spacing-03 (8px) gap. */
+    .cb-checkbox, .cb-radio { display: inline-flex; align-items: center; gap: var(--cds-spacing-03);
+      font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; color: var(--cds-text-primary); cursor: pointer; user-select: none; }
+    .cb-cb-box { width: 18px; height: 18px; border: 2px solid var(--cds-icon-primary);
       background: transparent; border-radius: 0; display: inline-flex;
       align-items: center; justify-content: center; flex-shrink: 0;
       transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-cb-box.checked { background: var(--cb-text-primary); border-color: var(--cb-text-primary); }
-    .cb-cb-box.checked::after { content: "✓"; color: var(--cb-bg); font-size: 11px; line-height: 1; font-weight: 600; }
-    .cb-checkbox.disabled { color: var(--cb-text-placeholder); cursor: not-allowed; }
-    .cb-checkbox.disabled .cb-cb-box { border-color: var(--cb-text-placeholder); }
+    .cb-cb-box.checked { background: var(--cds-background-brand); border-color: var(--cds-background-brand); }
+    .cb-cb-box.checked::after { content: ""; width: 10px; height: 6px;
+      border-left: 2px solid var(--cds-icon-on-color); border-bottom: 2px solid var(--cds-icon-on-color);
+      transform: rotate(-45deg) translate(1px, -1px); }
+    .cb-cb-box:focus-visible, .cb-checkbox:focus-visible .cb-cb-box { outline: 2px solid var(--cds-focus); outline-offset: 1px; }
+    .cb-checkbox.disabled { color: var(--cds-text-disabled); cursor: not-allowed; }
+    .cb-checkbox.disabled .cb-cb-box { border-color: var(--cds-text-disabled); }
 
     /* ═══ RADIO ═══ */
-    .cb-radio-circle { width: 16px; height: 16px; border: 1px solid var(--cb-text-primary);
+    .cb-radio-circle { width: 18px; height: 18px; border: 2px solid var(--cds-icon-primary);
       border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cb-radio-circle.checked::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cb-text-primary); }
+    .cb-radio-circle.checked::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cds-icon-primary); }
 
-    /* ═══ TOGGLE ═══ */
-    .cb-toggle { display: inline-flex; align-items: center; gap: 12px; cursor: pointer;
-      font-family: ${CARBON_FONT}; font-size: 14px; color: var(--cb-text-primary); }
-    .cb-toggle-track { width: 32px; height: 16px; background: ${t.toggleOff}; border-radius: 8px;
-      position: relative; transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-toggle.on .cb-toggle-track { background: var(--cb-interactive); }
-    .cb-toggle-thumb { width: 10px; height: 10px; background: #ffffff; border-radius: 50%;
-      position: absolute; top: 3px; left: 3px;
+    /* ═══ TOGGLE ═══
+       48×24 pill. Off: $toggle-off bg. On: $support-success bg
+       (Carbon's on-state green across all four themes). Knob is a
+       20×20 white circle inset 2px. */
+    .cb-toggle { display: inline-flex; align-items: center; gap: var(--cds-spacing-04); cursor: pointer;
+      font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; color: var(--cds-text-primary); }
+    .cb-toggle-track { width: 48px; height: 24px; background: var(--cds-toggle-off); border-radius: 12px;
+      position: relative; transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); flex-shrink: 0; }
+    .cb-toggle.on .cb-toggle-track { background: var(--cds-support-success); }
+    .cb-toggle-thumb { width: 20px; height: 20px; background: #ffffff; border-radius: 50%;
+      position: absolute; top: 2px; left: 2px;
       transition: left 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-toggle.on .cb-toggle-thumb { left: 19px; }
+    .cb-toggle.on .cb-toggle-thumb { left: 26px; }
+    .cb-toggle:focus-within .cb-toggle-track { outline: 2px solid var(--cds-focus); outline-offset: 1px; }
 
-    /* ═══ TABS ═══ */
-    .cb-tabs { display: flex; border-bottom: 1px solid var(--cb-border-subtle); }
-    .cb-tab { padding: 10px 16px; font-family: ${CARBON_FONT}; font-size: 14px;
-      color: var(--cb-text-secondary); border: 0; background: transparent;
-      cursor: pointer; border-bottom: 2px solid transparent;
-      transition: color 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-bottom-color 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-tab:hover { color: var(--cb-text-primary); border-bottom-color: var(--cb-border-strong); }
-    .cb-tab.active { color: var(--cb-text-primary); border-bottom-color: var(--cb-interactive); font-weight: 600; }
+    /* ═══ TABS ═══
+       Tab buttons 40px tall. 2px bottom border $border-strong-01
+       along the entire tablist. Selected tab gets a 3px
+       $border-interactive underline that stacks above the subtle
+       rule (negative margin-bottom + overlapping z). Body text uses
+       body-compact-02 (14/18, 400). */
+    .cb-tabs { display: flex; border-bottom: 2px solid var(--cds-border-strong-01); position: relative; }
+    .cb-tab { position: relative; height: 40px; padding: 0 var(--cds-spacing-05);
+      font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 18px; letter-spacing: 0.16px;
+      color: var(--cds-text-secondary); border: 0; background: transparent;
+      cursor: pointer; margin-bottom: -2px;
+      transition: color 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
+    .cb-tab:hover { color: var(--cds-text-primary); background: var(--cds-layer-hover-01); }
+    .cb-tab:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; }
+    .cb-tab.active { color: var(--cds-text-primary); }
+    .cb-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+      height: 3px; background: var(--cds-border-interactive); }
 
-    /* ═══ TAG ═══ */
-    .cb-tag { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px;
-      background: var(--cb-layer-accent); color: var(--cb-text-primary);
-      font-family: ${CARBON_FONT}; font-size: 12px; font-weight: 400; border-radius: 16px; white-space: nowrap; }
-    .cb-tag-red    { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#ffd7d9" : "#7a1620"}; color: ${t.supportError}; }
-    .cb-tag-green  { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#defbe6" : "#044317"}; color: ${t.supportSuccess}; }
-    .cb-tag-yellow { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#fcf4d6" : "#483700"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#684e00" : t.supportWarning}; }
-    .cb-tag-blue   { background: #d0e2ff; color: var(--cb-interactive); }
-    .cb-tag-gray   { background: var(--cb-layer-accent); color: var(--cb-text-primary); }
+    /* ═══ TAG ═══
+       Pill: border-radius 1rem (16px). Height 24px. Padding
+       0 $spacing-03 (8px). label-01 at 500 weight. Colour variants
+       map to Carbon's tag palette (red/magenta/purple/blue/cyan/
+       teal/green/gray/cool-gray/warm-gray). Values use the pairs
+       published in Carbon's tag style page. */
+    .cb-tag { display: inline-flex; align-items: center; gap: var(--cds-spacing-02); height: 24px;
+      padding: 0 var(--cds-spacing-03); border-radius: 1rem;
+      background: var(--cds-layer-accent-01); color: var(--cds-text-primary);
+      font-family: ${CARBON_FONT}; font-size: 12px; font-weight: 500; letter-spacing: 0.32px; white-space: nowrap; }
+    .cb-tag-red        { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#ffd7d9" : "#7a1620"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#750e13" : "#ffd7d9"}; }
+    .cb-tag-magenta    { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#ffd6e8" : "#740937"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#740937" : "#ffd6e8"}; }
+    .cb-tag-purple     { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#e8daff" : "#491d8b"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#491d8b" : "#e8daff"}; }
+    .cb-tag-blue       { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#d0e2ff" : "#002d9c"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#002d9c" : "#d0e2ff"}; }
+    .cb-tag-cyan       { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#bae6ff" : "#003a6d"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#003a6d" : "#bae6ff"}; }
+    .cb-tag-teal       { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#9ef0f0" : "#004144"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#004144" : "#9ef0f0"}; }
+    .cb-tag-green      { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#a7f0ba" : "#044317"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#044317" : "#a7f0ba"}; }
+    .cb-tag-gray       { background: var(--cds-layer-accent-01); color: var(--cds-text-primary); }
+    .cb-tag-cool-gray  { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#dde1e6" : "#343a3f"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#121619" : "#dde1e6"}; }
+    .cb-tag-warm-gray  { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#e5e0df" : "#3c3838"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#171414" : "#e5e0df"}; }
+    .cb-tag-yellow     { background: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#fcf4d6" : "#483700"}; color: ${t.background === "#ffffff" || t.background === GRAY_10 ? "#684e00" : "#fcf4d6"}; }
 
-    /* ═══ TILE (card) ═══ */
-    .cb-tile { background: var(--cb-layer-01); border: 1px solid transparent;
-      padding: 16px; border-radius: 0; font-family: ${CARBON_FONT}; color: var(--cb-text-primary); }
+    /* ═══ TILE (card) ═══
+       No border-radius. $layer-01 bg. Padding $spacing-05 (16px).
+       Outline variant uses $border-subtle-01 for the 1px border. */
+    .cb-tile { background: var(--cds-layer-01); border: 1px solid transparent;
+      padding: var(--cds-spacing-05); border-radius: 0; font-family: ${CARBON_FONT}; color: var(--cds-text-primary); }
+    .cb-tile-outline { border-color: var(--cds-border-subtle-01); }
     .cb-tile-clickable { cursor: pointer; transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-tile-clickable:hover { background: var(--cb-layer-hover-01); }
-    .cb-tile-selectable.selected { outline: 2px solid var(--cb-interactive); outline-offset: -2px; }
+    .cb-tile-clickable:hover { background: var(--cds-layer-hover-01); }
+    .cb-tile-selectable.selected { outline: 2px solid var(--cds-interactive); outline-offset: -2px; }
+    .cb-tile:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; }
 
     /* ═══ NOTIFICATION ═══
        3px left border, icon on left, 48px min-height, 16px padding. */
-    .cb-notif { display: flex; align-items: flex-start; gap: 12px;
-      min-height: 48px; padding: 14px 16px; border-left: 3px solid var(--cb-interactive);
-      background: var(--cb-layer-01); color: var(--cb-text-primary);
+    .cb-notif { display: flex; align-items: flex-start; gap: var(--cds-spacing-04);
+      min-height: 48px; padding: var(--cds-spacing-04) var(--cds-spacing-05);
+      border-left: 3px solid var(--cds-interactive);
+      background: var(--cds-layer-01); color: var(--cds-text-primary);
       font-family: ${CARBON_FONT}; font-size: 14px; line-height: 18px; }
-    .cb-notif-success { border-left-color: var(--cb-support-success); }
-    .cb-notif-warning { border-left-color: var(--cb-support-warning); }
-    .cb-notif-error   { border-left-color: var(--cb-support-error); }
-    .cb-notif-info    { border-left-color: var(--cb-support-info); }
+    .cb-notif-success { border-left-color: var(--cds-support-success); }
+    .cb-notif-warning { border-left-color: var(--cds-support-warning); }
+    .cb-notif-error   { border-left-color: var(--cds-support-error); }
+    .cb-notif-info    { border-left-color: var(--cds-support-info); }
     .cb-notif-icon { flex-shrink: 0; margin-top: 1px; }
     .cb-notif-body { flex: 1; }
     .cb-notif-title { font-weight: 600; line-height: 18px; }
-    .cb-notif-sub { color: var(--cb-text-secondary); margin-top: 2px; }
+    .cb-notif-sub { color: var(--cds-text-secondary); margin-top: 2px; }
 
     /* ═══ PROGRESS BAR ═══ */
-    .cb-progress { display: flex; flex-direction: column; gap: 8px;
-      font-family: ${CARBON_FONT}; font-size: 12px; color: var(--cb-text-primary); }
+    .cb-progress { display: flex; flex-direction: column; gap: var(--cds-spacing-03);
+      font-family: ${CARBON_FONT}; font-size: 12px; letter-spacing: 0.32px; color: var(--cds-text-primary); }
     .cb-progress-label { display: flex; justify-content: space-between; }
-    .cb-progress-track { height: 4px; background: var(--cb-border-subtle); width: 100%; overflow: hidden; }
-    .cb-progress-fill { height: 100%; background: var(--cb-interactive);
+    .cb-progress-track { height: 4px; background: var(--cds-border-subtle-01); width: 100%; overflow: hidden; }
+    .cb-progress-fill { height: 100%; background: var(--cds-interactive);
       transition: width 200ms cubic-bezier(0.2, 0, 0.38, 0.9); }
 
     /* ═══ ACCORDION ═══ */
-    .cb-accordion { border-top: 1px solid var(--cb-border-subtle); }
-    .cb-accordion-item { border-bottom: 1px solid var(--cb-border-subtle); }
+    .cb-accordion { border-top: 1px solid var(--cds-border-subtle-01); }
+    .cb-accordion-item { border-bottom: 1px solid var(--cds-border-subtle-01); }
     .cb-accordion-head { display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0; cursor: pointer; font-family: ${CARBON_FONT}; font-size: 14px;
-      color: var(--cb-text-primary); transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-accordion-head:hover { background: var(--cb-layer-hover-01); }
-    .cb-accordion-body { padding: 0 0 16px 0; font-size: 14px; line-height: 20px; color: var(--cb-text-secondary); }
+      padding: var(--cds-spacing-04) 0; cursor: pointer; font-family: ${CARBON_FONT}; font-size: 14px;
+      color: var(--cds-text-primary); transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
+    .cb-accordion-head:hover { background: var(--cds-layer-hover-01); }
+    .cb-accordion-body { padding: 0 0 var(--cds-spacing-05) 0; font-size: 14px; line-height: 20px; color: var(--cds-text-secondary); }
 
     /* ═══ BREADCRUMB ═══ */
-    .cb-crumb { display: flex; align-items: center; gap: 8px;
-      font-family: ${CARBON_FONT}; font-size: 14px; color: var(--cb-text-secondary); }
-    .cb-crumb a { color: var(--cb-link-primary); text-decoration: none; cursor: pointer; }
-    .cb-crumb a:hover { color: var(--cb-link-hover); text-decoration: underline; }
-    .cb-crumb-sep { color: var(--cb-text-secondary); }
-    .cb-crumb-current { color: var(--cb-text-primary); }
+    .cb-crumb { display: flex; align-items: center; gap: var(--cds-spacing-03);
+      font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; color: var(--cds-text-secondary); }
+    .cb-crumb a { color: var(--cds-link-primary); text-decoration: none; cursor: pointer; }
+    .cb-crumb a:hover { color: var(--cds-link-primary-hover); text-decoration: underline; }
+    .cb-crumb-sep { color: var(--cds-text-secondary); }
+    .cb-crumb-current { color: var(--cds-text-primary); }
 
     /* ═══ DATA TABLE ═══
-       Row 48px default. 16px column padding. Header $layer-accent +
-       14px SemiBold. Rows have $border-subtle bottom. 14px/400 body. */
+       No border-radius. Row height 48px (md). Header row bg
+       $layer-accent-01 with heading-02 bold (14/600). Row hover bg
+       $layer-hover-01. Cell padding 0 $spacing-05 with
+       vertical-align centre. */
     .cb-table { width: 100%; border-collapse: collapse; font-family: ${CARBON_FONT};
-      font-size: 14px; color: var(--cb-text-primary); background: var(--cb-layer-01); }
-    .cb-table th { text-align: left; font-weight: 600; padding: 12px 16px; height: 48px;
-      border-bottom: 1px solid var(--cb-border-subtle);
-      background: var(--cb-layer-accent); color: var(--cb-text-primary); }
-    .cb-table td { padding: 14px 16px; height: 48px;
-      border-bottom: 1px solid var(--cb-border-subtle); }
-    .cb-table tr:hover td { background: var(--cb-layer-hover-01); }
-    .cb-table tr.selected td { background: var(--cb-highlight); }
+      font-size: 14px; line-height: 18px; letter-spacing: 0.16px;
+      color: var(--cds-text-primary); background: var(--cds-layer-01); border-radius: 0; }
+    .cb-table th { text-align: left; font-weight: 600; font-size: 14px; line-height: 18px;
+      padding: 0 var(--cds-spacing-05); height: 48px; vertical-align: middle;
+      border-bottom: 1px solid var(--cds-border-subtle-01);
+      background: var(--cds-layer-accent-01); color: var(--cds-text-primary); }
+    .cb-table td { padding: 0 var(--cds-spacing-05); height: 48px; vertical-align: middle;
+      border-bottom: 1px solid var(--cds-border-subtle-01); }
+    .cb-table tr:hover td { background: var(--cds-layer-hover-01); }
+    .cb-table tr.selected td { background: var(--cds-background-selected); }
 
     /* ═══ MODAL ═══ */
-    .cb-modal { max-width: 440px; background: var(--cb-layer-01);
-      border: 1px solid var(--cb-border-subtle); padding: 0;
-      font-family: ${CARBON_FONT}; color: var(--cb-text-primary); }
-    .cb-modal-header { padding: 16px 16px 12px; }
-    .cb-modal-label { font-size: 12px; letter-spacing: 0.32px; color: var(--cb-text-secondary); margin-bottom: 4px; }
-    .cb-modal-title { font-size: 20px; font-weight: 400; line-height: 28px; color: var(--cb-text-primary); margin-bottom: 12px; }
-    .cb-modal-body { padding: 0 16px 48px; font-size: 14px; line-height: 20px; color: var(--cb-text-secondary); max-width: 80%; }
+    .cb-modal { max-width: 440px; background: var(--cds-layer-01);
+      border: 1px solid var(--cds-border-subtle-01); padding: 0;
+      font-family: ${CARBON_FONT}; color: var(--cds-text-primary); }
+    .cb-modal-header { padding: var(--cds-spacing-05) var(--cds-spacing-05) var(--cds-spacing-04); }
+    .cb-modal-label { font-size: 12px; letter-spacing: 0.32px; color: var(--cds-text-secondary); margin-bottom: var(--cds-spacing-02); }
+    .cb-modal-title { font-size: 20px; font-weight: 400; line-height: 28px; color: var(--cds-text-primary); margin-bottom: var(--cds-spacing-04); }
+    .cb-modal-body { padding: 0 var(--cds-spacing-05) var(--cds-spacing-09); font-size: 14px; line-height: 20px; color: var(--cds-text-secondary); max-width: 80%; }
     .cb-modal-footer { display: grid; grid-template-columns: 1fr 1fr; }
-    .cb-modal-footer .cb-btn { height: 64px; border-radius: 0; gap: 16px; padding: 0 16px;
-      align-items: flex-start; padding-top: 14px; justify-content: flex-start; }
+    .cb-modal-footer .cb-btn { height: 64px; border-radius: 0; padding: var(--cds-spacing-04) var(--cds-spacing-05);
+      align-items: flex-start; justify-content: space-between; }
 
     /* ═══ LINK ═══ */
-    .cb-link { color: var(--cb-link-primary); text-decoration: underline;
-      font-family: ${CARBON_FONT}; font-size: 14px; cursor: pointer; }
-    .cb-link:hover { color: var(--cb-link-hover); }
-    .cb-link-visited { color: var(--cb-link-visited); }
+    .cb-link { color: var(--cds-link-primary); text-decoration: underline;
+      font-family: ${CARBON_FONT}; font-size: 14px; letter-spacing: 0.16px; cursor: pointer; }
+    .cb-link:hover { color: var(--cds-link-primary-hover); }
+    .cb-link-visited { color: var(--cds-link-visited); }
     .cb-link-inline { font-size: inherit; }
 
     /* ═══ TOOLTIP ═══ */
     .cb-tooltip { position: relative; display: inline-block; }
     .cb-tooltip-bubble { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-      background: var(--cb-bg-inverse); color: var(--cb-text-inverse); font-size: 12px;
-      padding: 8px 12px; white-space: nowrap; font-family: ${CARBON_FONT}; border-radius: 0;
-      box-shadow: ${t.shadowFloating}; pointer-events: none; }
+      background: var(--cds-background-inverse); color: var(--cds-text-inverse); font-size: 12px; letter-spacing: 0.32px;
+      padding: var(--cds-spacing-03) var(--cds-spacing-04); white-space: nowrap; font-family: ${CARBON_FONT}; border-radius: 0;
+      box-shadow: var(--cds-shadow-floating); pointer-events: none; }
 
     /* ═══ AVATAR (compose) ═══ */
     .cb-avatar { width: 32px; height: 32px; border-radius: 50%;
-      background: var(--cb-interactive); color: #ffffff; display: inline-flex;
+      background: var(--cds-interactive); color: #ffffff; display: inline-flex;
       align-items: center; justify-content: center; font-family: ${CARBON_FONT};
-      font-weight: 400; font-size: 12px; }
+      font-weight: 400; font-size: 12px; letter-spacing: 0.32px; }
     .cb-avatar-sm { width: 24px; height: 24px; font-size: 10px; }
-    .cb-avatar-lg { width: 48px; height: 48px; font-size: 16px; }
+    .cb-avatar-lg { width: 48px; height: 48px; font-size: 16px; letter-spacing: 0; }
 
     /* ═══ SLIDER ═══ */
-    .cb-slider { display: flex; flex-direction: column; gap: 8px;
-      font-family: ${CARBON_FONT}; font-size: 12px; color: var(--cb-text-primary); }
-    .cb-slider-track { position: relative; height: 4px; background: var(--cb-border-subtle); border-radius: 0; cursor: pointer; }
-    .cb-slider-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--cb-interactive); }
+    .cb-slider { display: flex; flex-direction: column; gap: var(--cds-spacing-03);
+      font-family: ${CARBON_FONT}; font-size: 12px; letter-spacing: 0.32px; color: var(--cds-text-primary); }
+    .cb-slider-track { position: relative; height: 4px; background: var(--cds-border-subtle-01); border-radius: 0; cursor: pointer; }
+    .cb-slider-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--cds-interactive); }
     .cb-slider-thumb { position: absolute; top: 50%; width: 14px; height: 14px;
-      background: var(--cb-interactive); border-radius: 50%; transform: translate(-50%, -50%);
-      border: 1px solid var(--cb-interactive); }
-
-    /* ═══ DROPDOWN ═══ */
-    .cb-dropdown { position: relative; }
-    .cb-dropdown-trigger { height: 40px; padding: 0 16px; background: var(--cb-field-01);
-      color: var(--cb-text-primary); border: 0; border-bottom: 1px solid var(--cb-border-strong);
-      display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer; font-family: ${CARBON_FONT}; font-size: 14px; width: 100%; border-radius: 0;
-      transition: background 70ms cubic-bezier(0.2, 0, 0.38, 0.9); }
-    .cb-dropdown-trigger:hover { background: var(--cb-field-hover-01); }
-    .cb-dropdown-chev { color: var(--cb-icon-primary); }
+      background: var(--cds-interactive); border-radius: 50%; transform: translate(-50%, -50%);
+      border: 1px solid var(--cds-interactive); }
 
     /* ═══ LOADING ═══ */
-    .cb-loading { width: 44px; height: 44px; border: 2px solid var(--cb-border-subtle);
-      border-top-color: var(--cb-interactive); border-radius: 50%;
+    .cb-loading { width: 44px; height: 44px; border: 2px solid var(--cds-border-subtle-01);
+      border-top-color: var(--cds-interactive); border-radius: 50%;
       animation: cb-spin 0.7s linear infinite; }
     .cb-loading-sm { width: 16px; height: 16px; border-width: 1.5px; }
     @keyframes cb-spin { to { transform: rotate(360deg); } }
 
     /* ═══ SKELETON ═══ */
-    .cb-skeleton { background: ${t.skeletonElement}; animation: cb-pulse 1.5s ease-in-out infinite; border-radius: 0; }
+    .cb-skeleton { background: var(--cds-skeleton-element); animation: cb-pulse 1.5s ease-in-out infinite; border-radius: 0; }
     @keyframes cb-pulse { 50% { opacity: 0.55; } }
 
     /* ═══ CONTENT SWITCHER ═══ */
-    .cb-switcher { display: inline-flex; border: 1px solid var(--cb-border-strong); background: transparent; }
-    .cb-switcher-btn { padding: 0 16px; height: 40px; font-family: ${CARBON_FONT}; font-size: 14px;
-      background: transparent; color: var(--cb-text-secondary); border: 0; cursor: pointer;
-      border-right: 1px solid var(--cb-border-strong); }
+    .cb-switcher { display: inline-flex; border: 1px solid var(--cds-border-strong-01); background: transparent; }
+    .cb-switcher-btn { padding: 0 var(--cds-spacing-05); height: 40px; font-family: ${CARBON_FONT};
+      font-size: 14px; letter-spacing: 0.16px;
+      background: transparent; color: var(--cds-text-secondary); border: 0; cursor: pointer;
+      border-right: 1px solid var(--cds-border-strong-01); }
     .cb-switcher-btn:last-child { border-right: 0; }
-    .cb-switcher-btn.active { background: var(--cb-text-primary); color: var(--cb-text-inverse); }
+    .cb-switcher-btn.active { background: var(--cds-text-primary); color: var(--cds-text-inverse); }
 
     /* ═══ PAGINATION ═══ */
     .cb-pagination { display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px; height: 40px; font-family: ${CARBON_FONT}; font-size: 12px;
-      color: var(--cb-text-primary); border-top: 1px solid var(--cb-border-subtle);
-      background: var(--cb-layer-01); }
+      padding: 0 var(--cds-spacing-05); height: 40px; font-family: ${CARBON_FONT}; font-size: 12px; letter-spacing: 0.32px;
+      color: var(--cds-text-primary); border-top: 1px solid var(--cds-border-subtle-01);
+      background: var(--cds-layer-01); }
 
     /* ═══ INLINE LOADING / FILE UPLOADER / POPOVER ═══ */
-    .cb-popover { background: var(--cb-layer-02); border: 1px solid var(--cb-border-subtle);
-      padding: 12px 16px; box-shadow: ${t.shadowFloating}; font-family: ${CARBON_FONT};
-      font-size: 12px; color: var(--cb-text-primary); }
+    .cb-popover { background: var(--cds-layer-02); border: 1px solid var(--cds-border-subtle-01);
+      padding: var(--cds-spacing-04) var(--cds-spacing-05); box-shadow: var(--cds-shadow-floating); font-family: ${CARBON_FONT};
+      font-size: 12px; letter-spacing: 0.32px; color: var(--cds-text-primary); }
 
     /* ═══ HEADER / SIDE NAV (UI Shell) ═══ */
-    .cb-header { height: 48px; background: var(--cb-bg-inverse); color: #ffffff;
+    .cb-header { height: 48px; background: var(--cds-background-inverse); color: #ffffff;
       display: flex; align-items: center; font-family: ${CARBON_FONT}; border-bottom: 1px solid ${GRAY_80};
-      padding: 0 16px; }
-    .cb-sidenav { width: 240px; background: var(--cb-layer-01); font-family: ${CARBON_FONT}; }
-    .cb-sidenav-item { padding: 14px 16px; color: var(--cb-text-secondary); font-size: 14px;
+      padding: 0 var(--cds-spacing-05); }
+    .cb-sidenav { width: 240px; background: var(--cds-layer-01); font-family: ${CARBON_FONT}; }
+    .cb-sidenav-item { padding: var(--cds-spacing-04) var(--cds-spacing-05); color: var(--cds-text-secondary); font-size: 14px;
       cursor: pointer; border-left: 3px solid transparent; }
-    .cb-sidenav-item:hover { background: var(--cb-layer-hover-01); color: var(--cb-text-primary); }
-    .cb-sidenav-item.active { border-left-color: var(--cb-interactive);
-      background: var(--cb-layer-hover-01); color: var(--cb-text-primary); font-weight: 600; }
+    .cb-sidenav-item:hover { background: var(--cds-layer-hover-01); color: var(--cds-text-primary); }
+    .cb-sidenav-item.active { border-left-color: var(--cds-interactive);
+      background: var(--cds-layer-hover-01); color: var(--cds-text-primary); font-weight: 600; }
   `;
 }
 
 /* ──────────────────────────────────────────────
-   ICON - Material Symbols wrapper (Phase 7 swaps
-   to @carbon/icons-react for native Carbon icons).
-   ────────────────────────────────────────────── */
-export const CIcon = ({ name, size = 16, color, ...rest }) => (
-  <span
-    className="material-symbols-outlined"
-    style={{ fontSize: size, color: color || T.iconPrimary, lineHeight: 1, verticalAlign: "middle" }}
-    aria-hidden="true"
-    {...rest}
-  >
-    {name}
-  </span>
-);
+   ICON - native Carbon icons via @carbon/icons-react.
+   ──────────────────────────────────────────────
+   CIcon keeps its existing call signature (a string `name`) so
+   demo code doesn't need rewriting. Names map to Carbon's icon
+   exports - either directly (Carbon naming: "ChevronDown") or via
+   a short Material-Symbols → Carbon alias table for legacy demo
+   strings like "chevron_down", "expand_more", "check_circle". */
+import * as CarbonIcons from "@carbon/icons-react";
+
+const CARBON_ICON_ALIASES = {
+  /* Material Symbols names used in the existing demo strings.
+     Every alias resolves to a real @carbon/icons-react export. */
+  search: "Search",
+  add: "Add",
+  close: "Close",
+  check: "Checkmark",
+  check_circle: "CheckmarkFilled",
+  cancel: "ErrorFilled",
+  error: "ErrorFilled",
+  warning: "WarningFilled",
+  info: "Information",
+  settings: "Settings",
+  person: "User",
+  home: "Home",
+  menu: "Menu",
+  delete: "TrashCan",
+  edit: "Edit",
+  download: "Download",
+  filter_alt: "Filter",
+  save: "Save",
+  notifications: "Notification",
+  bookmark: "Bookmark",
+  arrow_forward: "ArrowRight",
+  arrow_back: "ArrowLeft",
+  arrow_upward: "ArrowUp",
+  arrow_downward: "ArrowDown",
+  chevron_left: "ChevronLeft",
+  chevron_right: "ChevronRight",
+  chevron_up: "ChevronUp",
+  chevron_down: "ChevronDown",
+  expand_more: "ChevronDown",
+  expand_less: "ChevronUp",
+  remove: "Subtract",
+  calendar_today: "Calendar",
+  more_horiz: "OverflowMenuHorizontal",
+  more_vert: "OverflowMenuVertical",
+};
+
+export const CIcon = ({ name, size = 16, color, ...rest }) => {
+  /* Accept either an explicit Carbon name (e.g. "ChevronDown") or a
+     Material Symbols legacy string (e.g. "expand_more"). */
+  const resolved = CARBON_ICON_ALIASES[name] || name;
+  const IconComp = CarbonIcons[resolved];
+  if (!IconComp) {
+    /* Unknown icon - render a sized placeholder so layout stays
+       stable instead of crashing the preview. */
+    return <span style={{ display: "inline-block", width: size, height: size }} aria-hidden="true" />;
+  }
+  return (
+    <IconComp
+      size={size}
+      aria-hidden="true"
+      style={{ color: color || T.iconPrimary, verticalAlign: "middle", flexShrink: 0 }}
+      {...rest}
+    />
+  );
+};
 
 /* ──────────────────────────────────────────────
    SHARED DEMO HELPERS
@@ -1329,19 +1587,19 @@ const PREVIEWS = {
   "dl-typography": () => <div style={{ fontFamily: CARBON_FONT, padding: "6px 0" }}><span style={{ fontSize: 20, fontWeight: 300, color: T.textPrimary, lineHeight: 1 }}>Aa</span><span style={{ fontSize: 10, color: T.textSecondary, marginLeft: 6 }}>IBM Plex Sans</span></div>,
   "dl-spacing": () => <Col gap={2} style={{ padding: "6px 0" }}>{[4, 8, 16, 24, 32].map((s) => <div key={s} style={{ width: s * 2, height: 3, background: T.interactive, opacity: 0.7 }} />)}</Col>,
   "dl-elevation": () => <Row gap={6} style={{ padding: "6px 0", alignItems: "flex-end" }}>{[T.shadowRaised, T.shadowFloating].map((s, i) => <div key={i} style={{ width: 26, height: 18, background: T.layer01, boxShadow: s, border: `1px solid ${T.borderSubtle01}` }} />)}</Row>,
-  "dl-icons": () => <Row gap={4} style={{ padding: "6px 0" }}>{["search", "settings", "home"].map((i) => <span key={i} className="material-symbols-outlined" style={{ fontSize: 16, color: T.iconSecondary }}>{i}</span>)}</Row>,
+  "dl-icons": () => <Row gap={4} style={{ padding: "6px 0" }}>{["search", "settings", "home"].map((i) => <CIcon key={i} name={i} size={16} color={T.iconSecondary} />)}</Row>,
   "dl-tokens": () => <div style={{ fontSize: 9, color: T.textSecondary, fontFamily: "'IBM Plex Mono', monospace", padding: "6px 0", lineHeight: 1.5 }}>$interactive<br/>$layer-01<br/>$text-primary</div>,
   "dl-density": () => <Row gap={3} style={{ padding: "6px 0", alignItems: "flex-end" }}>{[16, 20, 24, 32].map((h) => <div key={h} style={{ width: 16, height: h, background: T.interactive, opacity: 0.7 }} />)}</Row>,
-  "dl-a11y": () => <Row gap={4} style={{ padding: "6px 0" }}><span className="material-symbols-outlined" style={{ fontSize: 16, color: T.supportSuccess }}>check_circle</span><span style={{ fontSize: 10, color: T.textSecondary, fontFamily: CARBON_FONT }}>WCAG 2.1 AA</span></Row>,
+  "dl-a11y": () => <Row gap={4} style={{ padding: "6px 0" }}><CIcon name="check_circle" size={16} color={T.supportSuccess} /><span style={{ fontSize: 10, color: T.textSecondary, fontFamily: CARBON_FONT }}>WCAG 2.1 AA</span></Row>,
   "dl-motion": () => <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: T.textSecondary, padding: "6px 0", lineHeight: 1.5 }}>70ms fast-01<br/>240ms moderate-02</div>,
   "dl-shape": () => <Row gap={6} style={{ padding: "6px 0" }}><div style={{ width: 24, height: 16, background: T.interactive }} /><div style={{ width: 24, height: 16, background: T.interactive, borderRadius: 16 }} /><div style={{ width: 16, height: 16, background: T.interactive, borderRadius: "50%" }} /></Row>,
   tokens: () => <Row gap={2} style={{ padding: "6px 0" }}>{[T.interactive, T.textPrimary, T.background, T.supportSuccess].map((c, i) => <div key={i} style={{ width: 14, height: 14, background: c, border: `1px solid ${T.borderSubtle01}` }} />)}</Row>,
-  audit: () => <Row gap={4} style={{ padding: "6px 0" }}>{["check_circle", "check_circle", "cancel"].map((n, i) => <span key={i} className="material-symbols-outlined" style={{ fontSize: 12, color: i < 2 ? T.supportSuccess : T.supportError }}>{n}</span>)}</Row>,
+  audit: () => <Row gap={4} style={{ padding: "6px 0" }}>{["check_circle", "check_circle", "cancel"].map((n, i) => <CIcon key={i} name={n} size={12} color={i < 2 ? T.supportSuccess : T.supportError} />)}</Row>,
   /* Components */
   buttons: () => <Row gap={4}><button style={{ height: 20, padding: "0 8px", background: T.interactive, color: "#fff", border: 0, fontSize: 10, fontFamily: CARBON_FONT }}>Primary</button><button style={{ height: 20, padding: "0 8px", background: T.buttonSecondary, color: "#fff", border: 0, fontSize: 10, fontFamily: CARBON_FONT }}>Secondary</button></Row>,
-  "icon-button": () => <Row gap={4}>{["search", "add", "settings"].map((n) => <div key={n} style={{ width: 22, height: 22, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}><span className="material-symbols-outlined" style={{ fontSize: 14, color: T.iconPrimary }}>{n}</span></div>)}</Row>,
+  "icon-button": () => <Row gap={4}>{["search", "add", "settings"].map((n) => <div key={n} style={{ width: 22, height: 22, background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}><CIcon name={n} size={14} color={T.iconPrimary} /></div>)}</Row>,
   inputs: () => <div style={{ height: 22, borderBottom: `1px solid ${T.borderStrong01}`, background: T.field01, padding: "0 8px", fontSize: 10, color: T.textPlaceholder, display: "flex", alignItems: "center", maxWidth: 130, fontFamily: CARBON_FONT }}>name@company.com</div>,
-  search: () => <div style={{ height: 22, borderBottom: `1px solid ${T.borderStrong01}`, background: T.field01, padding: "0 8px 0 24px", fontSize: 10, color: T.textPlaceholder, display: "flex", alignItems: "center", position: "relative", maxWidth: 130, fontFamily: CARBON_FONT }}><span className="material-symbols-outlined" style={{ position: "absolute", left: 6, fontSize: 12, color: T.iconSecondary }}>search</span>Find components</div>,
+  search: () => <div style={{ height: 22, borderBottom: `1px solid ${T.borderStrong01}`, background: T.field01, padding: "0 8px 0 24px", fontSize: 10, color: T.textPlaceholder, display: "flex", alignItems: "center", position: "relative", maxWidth: 130, fontFamily: CARBON_FONT }}><span style={{ position: "absolute", left: 6, top: "50%", transform: "translateY(-50%)", display: "inline-flex" }}><CIcon name="search" size={12} color={T.iconSecondary} /></span>Find components</div>,
   checkboxes: () => <Row gap={4}><div style={{ width: 14, height: 14, background: T.textPrimary, color: T.background, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✓</div><div style={{ width: 14, height: 14, border: `1px solid ${T.textPrimary}` }} /></Row>,
   radios: () => <Row gap={4}><div style={{ width: 14, height: 14, borderRadius: 7, border: `1px solid ${T.textPrimary}`, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ width: 7, height: 7, borderRadius: "50%", background: T.textPrimary }} /></div><div style={{ width: 14, height: 14, borderRadius: 7, border: `1px solid ${T.textPrimary}` }} /></Row>,
   switches: () => <div style={{ width: 32, height: 16, borderRadius: 8, background: T.interactive, position: "relative" }}><div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: 19 }} /></div>,
@@ -1383,7 +1641,7 @@ const COMPS = [
   { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "IBM Plex Sans + 17-step productive and expressive type scales. Pairs with Plex Serif and Mono.", render: DLTypography },
   { id: "dl-spacing", name: "Spacing", cat: "Foundations", desc: "2px-based scale. spacing-01 (2px) through spacing-10 (64px). Consistent rhythm across layouts.", render: DLSpacing },
   { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "Shadow tokens: $shadow-raised, $shadow-floating. Used for overlays; Carbon is visually flat.", render: DLElevation },
-  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "@carbon/icons-react ships 2,000+ SVG icons (16/20/24/32px). Using Material Symbols as a stand-in.", render: DLIcons },
+  { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "@carbon/icons-react ships 2,600+ SVG icons (16/20/24/32px). Per-icon named imports for full tree-shaking.", render: DLIcons },
   { id: "dl-tokens", name: "Token Architecture", cat: "Foundations", desc: "Semantic role tokens over primitives: $interactive, $layer, $field, $text, $support, $border, $focus.", render: DLTokens },
   { id: "dl-density", name: "Density", cat: "Foundations", desc: "Size ladder for controls: 24 / 32 / 40 / 48 / 64 / 80 px. Maps to XS / Small / Medium / Large / XL / 2XL.", render: DLDensity },
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA. Contrast, focus, touch targets, ARIA, keyboard nav, reduced-motion.", render: DLAccessibility },

@@ -227,11 +227,20 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       ) : componentId === "ag-grid" ? (
         <DSAgGrid system={activeSystem} theme={t.T} density={densityOrSize} />
       ) : (
-        <div style={{
-          background: isAusos && t.T.gradient ? t.T.gradient : isCarbon ? t.T.layer01 : t.bg,
-          borderRadius: isAusos ? 14 : activeSystem === "m3" ? 12 : isCarbon ? 0 : 8,
-          border: `1px solid ${t.border}`, padding: pad, color: t.fg,
-        }}>
+        <div
+          /* Carbon theming is applied via a wrapper className that
+             matches the Carbon runtime pattern (.cds--white /
+             .cds--g10 / .cds--g90 / .cds--g100). The className drives
+             the token cascade emitted by carbonBuildCSS, so swapping
+             the theme here hot-swaps every --cds-* variable without
+             rebuilding the CSS string. */
+          className={isCarbon ? `cds--${store.carbon.themeKey}` : undefined}
+          style={{
+            background: isAusos && t.T.gradient ? t.T.gradient : isCarbon ? t.T.layer01 : t.bg,
+            borderRadius: isAusos ? 14 : activeSystem === "m3" ? 12 : isCarbon ? 0 : 8,
+            border: `1px solid ${t.border}`, padding: pad, color: t.fg,
+          }}
+        >
           <style dangerouslySetInnerHTML={{ __html: css }} />
           {DemoComponent ? <DemoComponent /> : (
             <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,

@@ -42,6 +42,7 @@ import {
   SimulatedPopover,
   SimulatedPersona,
   SimulatedAvatarGroup,
+  SimIcon,
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
 
@@ -138,7 +139,7 @@ function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: s
   };
 
   if (isSelected && blockId) {
-    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
     return (
       <table className={`${prefix}-table`} style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
         <thead>
@@ -186,7 +187,7 @@ function FormFieldsBlock({ system, blockId }: { system: DesignSystem; blockId?: 
   const label2 = (block?.props.label2 as string) ?? "Password";
   const placeholder2 = (block?.props.placeholder2 as string) ?? "Enter password";
 
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   if (isSelected && blockId) {
     return (
@@ -277,7 +278,7 @@ function ButtonsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) 
   );
 }
 
-function CardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
+function CardsBlock({ system, blockId }: { system?: DesignSystem; blockId?: string }) {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const blocks = useBuilder((s) => s.blocks);
@@ -326,12 +327,12 @@ function CardsBlock({ blockId }: { system?: DesignSystem; blockId?: string }) {
                 hoveredCard === hoverKey ? `0 4px 12px ${t.primaryShadow}` : "none",
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 20, color: t.primary, marginBottom: 6, display: "block" }}
-            >
-              {card.icon}
-            </span>
+            <SimIcon
+              system={system ?? "salt"}
+              name={card.icon}
+              size={20}
+              style={{ color: t.primary, marginBottom: 6, display: "block" }}
+            />
             <div style={{ fontSize: 13, fontWeight: 600 }}>
               {isSelected && blockId ? (
                 <InlineEditable value={card.title} onChange={(v) => updateCardTitle(idx, v)} style={{ outline: "none" }} />
@@ -478,7 +479,7 @@ function DropdownBlock({ system, blockId }: { system: DesignSystem; blockId?: st
   };
 
   if (isSelected && blockId) {
-    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+    const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <InlineEditable
@@ -803,7 +804,7 @@ function SimulatedTitleBlock({
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   if (isSelected && blockId) {
     return (
@@ -838,7 +839,7 @@ function SimulatedTextInputBlock({
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <div className={`${prefix}-input-container`}>
@@ -887,7 +888,7 @@ function SimulatedCardBlock({
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   if (isSelected && blockId) {
     return (
@@ -1004,7 +1005,7 @@ function SimulatedBadgeBlock({
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <span className={`${prefix}-sim-badge ${prefix}-sim-badge-${status}`}>
@@ -1033,7 +1034,7 @@ function SimulatedChatMessageBlock({
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
   const isUser = role === "user";
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const defaultMsg = isUser
     ? "Can you help me build a dashboard?"
     : "Absolutely! I'll generate a layout for you now.";
@@ -1088,7 +1089,7 @@ function SimulatedChartBlock({
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   const parsed = dataPoints
     .split(",")
@@ -1306,7 +1307,7 @@ function SimulatedDatePickerBlock({
 
 /* ── Zone-specific renderers ── */
 
-function AppBrandBlock({ blockId }: { blockId?: string }) {
+function AppBrandBlock({ system, blockId }: { system?: DesignSystem; blockId?: string }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
@@ -1322,7 +1323,7 @@ function AppBrandBlock({ blockId }: { blockId?: string }) {
         width: 28, height: 28, borderRadius: "var(--ds-radius)", background: t.primary,
         display: "flex", alignItems: "center", justifyContent: "center", color: t.onPrimary, flexShrink: 0,
       }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>smart_toy</span>
+        <SimIcon system={system ?? "salt"} name="dashboard" size={16} />
       </div>
       <span style={{ fontSize: 13, fontWeight: 700, color: t.fg }}>{label}</span>
     </div>
@@ -1354,7 +1355,7 @@ function StatusPillBlock({ blockId }: { blockId?: string }) {
   );
 }
 
-function NavItemBlock({ blockId }: { blockId?: string }) {
+function NavItemBlock({ system, blockId }: { system?: DesignSystem; blockId?: string }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
@@ -1370,7 +1371,7 @@ function NavItemBlock({ blockId }: { blockId?: string }) {
       display: "flex", alignItems: "center", gap: 10, padding: "8px 10px",
       borderRadius: "var(--ds-radius)", color: t.fgSecondary, fontSize: 12, fontWeight: 500,
     }}>
-      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>{icon}</span>
+      <SimIcon system={system ?? "salt"} name={icon} size={18} />
       <span>{label}</span>
     </div>
   );

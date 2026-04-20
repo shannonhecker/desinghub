@@ -1,9 +1,112 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import * as CarbonIcons from "@carbon/icons-react";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent" | "ausos" | "carbon";
+}
+
+/* Map Material Symbols names (used by Salt / M3 / Fluent / ausos
+   simulators) to their @carbon/icons-react equivalents so the Carbon
+   branch renders native Carbon glyphs without duplicating every
+   block. Keys match the exact Material Symbols tokens used in this
+   file. */
+const CARBON_ICON_MAP: Record<string, string> = {
+  expand_more: "ChevronDown",
+  expand_less: "ChevronUp",
+  chevron_left: "ChevronLeft",
+  chevron_right: "ChevronRight",
+  chevron_up: "ChevronUp",
+  chevron_down: "ChevronDown",
+  close: "Close",
+  check: "Checkmark",
+  check_circle: "CheckmarkFilled",
+  search: "Search",
+  add: "Add",
+  remove: "Subtract",
+  delete: "TrashCan",
+  edit: "Edit",
+  settings: "Settings",
+  info: "Information",
+  warning: "WarningFilled",
+  error: "ErrorFilled",
+  calendar_today: "Calendar",
+  person: "User",
+  menu: "Menu",
+  arrow_upward: "ArrowUp",
+  arrow_downward: "ArrowDown",
+  arrow_forward: "ArrowRight",
+  arrow_back: "ArrowLeft",
+  home: "Home",
+  download: "Download",
+  upload: "Upload",
+  filter_alt: "Filter",
+  more_horiz: "OverflowMenuHorizontal",
+  more_vert: "OverflowMenuVertical",
+  favorite: "FavoriteFilled",
+  /* Material's `star` is the filled star, `star_border` is the outline.
+     Carbon's `StarFilled` / `Star` map inversely by convention. */
+  star: "StarFilled",
+  star_border: "Star",
+  notifications: "Notification",
+  bookmark: "Bookmark",
+  save: "Save",
+  attachment: "Attachment",
+  help: "Help",
+  lock: "Locked",
+  dashboard: "Dashboard",
+  folder: "Folder",
+  description: "Document",
+  cloud_upload: "Upload",
+  email: "Email",
+  mail: "Email",
+  phone: "Phone",
+  chat: "Chat",
+  group: "Group",
+  bar_chart: "ChartBar",
+  smart_toy: "Dashboard",
+};
+
+/* SimIcon - system-aware icon renderer. Salt / M3 / Fluent / ausos
+   all share the Material Symbols font (wired in src/app/layout.tsx),
+   so for those systems we render the legacy <span> glyph. Carbon
+   swaps to the matching @carbon/icons-react SVG component; unknown
+   names fall back to a sized blank so layout stays stable. */
+interface SimIconProps extends React.HTMLAttributes<HTMLElement> {
+  name: string;
+  system: SimProps["system"];
+  size?: number;
+  className?: string;
+}
+export function SimIcon({ name, system, size = 16, style, className, ...rest }: SimIconProps) {
+  if (system === "carbon") {
+    const CarbonName = CARBON_ICON_MAP[name];
+    const IconComp = CarbonName
+      ? (CarbonIcons as unknown as Record<string, React.ComponentType<{ size?: number; style?: React.CSSProperties; "aria-hidden"?: boolean }>>)[CarbonName]
+      : undefined;
+    if (!IconComp) {
+      return <span style={{ display: "inline-block", width: size, height: size, ...style }} aria-hidden="true" {...rest} />;
+    }
+    return (
+      <IconComp
+        size={size}
+        aria-hidden={true}
+        style={{ verticalAlign: "middle", flexShrink: 0, ...style }}
+        {...(className ? { className } : {})}
+      />
+    );
+  }
+  return (
+    <span
+      className={`material-symbols-outlined${className ? ` ${className}` : ""}`}
+      style={{ fontSize: size, lineHeight: 1, ...style }}
+      aria-hidden="true"
+      {...rest}
+    >
+      {name}
+    </span>
+  );
 }
 
 /* ═══════════════════════════════════════════
@@ -24,7 +127,7 @@ export function SimulatedAvatar({
   presence,
   src,
 }: AvatarProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <div className={`${prefix}-avatar ${prefix}-avatar-${size}`}>
@@ -68,7 +171,7 @@ export function SimulatedDropdown({
   items = DEFAULT_ITEMS,
   placeholder = "Select an option",
 }: DropdownProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>("settings");
   const ref = useRef<HTMLDivElement>(null);
@@ -101,12 +204,12 @@ export function SimulatedDropdown({
         <span className={selected ? "" : `${prefix}-dropdown-placeholder`}>
           {selectedLabel || placeholder}
         </span>
-        <span
-          className={`material-symbols-outlined ${prefix}-dropdown-chevron`}
-          style={{ fontSize: 18 }}
-        >
-          expand_more
-        </span>
+        <SimIcon
+          system={system}
+          name="expand_more"
+          size={18}
+          className={`${prefix}-dropdown-chevron`}
+        />
       </button>
       {open && (
         <div className={`${prefix}-dropdown-menu`}>
@@ -120,9 +223,7 @@ export function SimulatedDropdown({
             >
               {item.label}
               {selected === item.value && (
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  check
-                </span>
+                <SimIcon system={system} name="check" size={16} />
               )}
             </div>
           ))}
@@ -155,7 +256,7 @@ export function SimulatedDataTable({
   columns = DEFAULT_COLUMNS,
   data = DEFAULT_DATA,
 }: DataTableProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [sortCol, setSortCol] = useState<number | null>(null);
@@ -191,9 +292,12 @@ export function SimulatedDataTable({
               >
                 <span>{col}</span>
                 {sortCol === i && sortDir && (
-                  <span className={`material-symbols-outlined ${prefix}-th-icon`} style={{ fontSize: 14 }}>
-                    {sortDir === "asc" ? "arrow_upward" : "arrow_downward"}
-                  </span>
+                  <SimIcon
+                    system={system}
+                    name={sortDir === "asc" ? "arrow_upward" : "arrow_downward"}
+                    size={14}
+                    className={`${prefix}-th-icon`}
+                  />
                 )}
               </th>
             ))}
@@ -242,7 +346,7 @@ export function SimulatedDatePicker({
   year = 2026,
   today = 11,
 }: DatePickerProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [selectedDay, setSelectedDay] = useState<number>(15);
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
@@ -257,11 +361,11 @@ export function SimulatedDatePicker({
       {/* Header */}
       <div className={`${prefix}-datepicker-header`}>
         <button className={`${prefix}-datepicker-nav`} aria-label="Previous month">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>chevron_left</span>
+          <SimIcon system={system} name="chevron_left" size={18} />
         </button>
         <span className={`${prefix}-datepicker-title`}>{month} {year}</span>
         <button className={`${prefix}-datepicker-nav`} aria-label="Next month">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>chevron_right</span>
+          <SimIcon system={system} name="chevron_right" size={18} />
         </button>
       </div>
 
@@ -302,13 +406,13 @@ export function SimulatedDatePicker({
    ═══════════════════════════════════════════ */
 
 export function SimulatedDialog({ system }: SimProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div>
       <button className={`${prefix}-btn ${prefix}-btn-primary`} onClick={() => setIsOpen(true)}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+        <SimIcon system={system} name="delete" size={16} />
         Open Dialog
       </button>
 
@@ -318,7 +422,7 @@ export function SimulatedDialog({ system }: SimProps) {
             <div className={`${prefix}-dialog-header`}>
               <h2 className={`${prefix}-dialog-title`}>Confirm Deletion</h2>
               <button className={`${prefix}-dialog-close`} onClick={() => setIsOpen(false)} aria-label="Close">
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+                <SimIcon system={system} name="close" size={18} />
               </button>
             </div>
             <div className={`${prefix}-dialog-body`}>
@@ -361,7 +465,7 @@ export function SimulatedTabs({
   tabs = DEFAULT_TABS,
   contents = DEFAULT_CONTENTS,
 }: TabsProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [activeTab, setActiveTab] = useState(0);
 
   return (
@@ -404,7 +508,7 @@ export function SimulatedInput({
   type = "text",
   error = false,
 }: InputProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
 
@@ -448,7 +552,7 @@ export function SimulatedCheckbox({
   defaultChecked = false,
   children,
 }: CheckboxProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [checked, setChecked] = useState(defaultChecked);
 
   return (
@@ -484,7 +588,7 @@ export function SimulatedSwitch({
   defaultOn = false,
   children,
 }: SwitchProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [toggled, setToggled] = useState(defaultOn);
 
   return (
@@ -516,7 +620,7 @@ export function SimulatedAlert({
   title = "Update Available",
   message = "A new version of Design Hub is ready to install.",
 }: AlertProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [dismissed, setDismissed] = useState(false);
 
   const iconMap: Record<string, string> = {
@@ -531,9 +635,7 @@ export function SimulatedAlert({
   return (
     <div className={`${prefix}-alert ${prefix}-alert-${variant}`}>
       <div className={`${prefix}-alert-icon`}>
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-          {iconMap[variant]}
-        </span>
+        <SimIcon system={system} name={iconMap[variant]} size={20} />
       </div>
       <div className={`${prefix}-alert-content`}>
         <div className={`${prefix}-alert-title`}>{title}</div>
@@ -544,7 +646,7 @@ export function SimulatedAlert({
         onClick={() => setDismissed(true)}
         aria-label="Dismiss"
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+        <SimIcon system={system} name="close" size={16} />
       </button>
     </div>
   );
@@ -564,7 +666,7 @@ export function SimulatedProgress({
   label = "Uploading assets...",
   value = 50,
 }: ProgressProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const safeValue = Math.min(Math.max(value, 0), 100);
 
   return (
@@ -605,7 +707,7 @@ export function SimulatedTooltip({
   text = "This is a simulated tooltip",
   buttonLabel = "Hover me",
 }: TooltipProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -649,7 +751,7 @@ export function SimulatedTitle({
   level = "h2",
   text = "New Heading",
 }: TitleProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const cls = `${prefix}-title ${prefix}-title-${level}`;
 
   switch (level) {
@@ -665,7 +767,7 @@ export function SimulatedTitle({
    ═══════════════════════════════════════════ */
 
 export function SimulatedBreadcrumb({ system }: SimProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const path = ["Home", "Projects", "Design Hub"];
 
   return (
@@ -701,7 +803,7 @@ export function SimulatedBreadcrumb({ system }: SimProps) {
    ═══════════════════════════════════════════ */
 
 export function SimulatedAccordion({ system }: SimProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -742,7 +844,7 @@ export function SimulatedCard({
   title = "Card Title",
   content = "Card content goes here.",
 }: CardProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <div className={`${prefix}-sim-card`}>
@@ -772,7 +874,7 @@ export function SimulatedBadge({
   label = "Badge",
   status = "default",
 }: BadgeProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <span className={`${prefix}-sim-badge ${prefix}-sim-badge-${status}`}>
@@ -795,7 +897,7 @@ export function SimulatedChatMessage({
   role = "user",
   message,
 }: ChatMessageProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const isUser = role === "user";
   const defaultMsg = isUser
     ? "Can you help me build a dashboard?"
@@ -843,7 +945,7 @@ export function SimulatedChart({
   title = "Monthly Revenue",
   dataPoints = "40,70,45,90,65",
 }: ChartProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   const parsed = dataPoints
     .split(",")
@@ -888,7 +990,7 @@ export function SimulatedRadioGroup({
   optionsCsv = "Option A, Option B, Option C",
   defaultIndex = 0,
 }: RadioGroupProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const options = optionsCsv.split(",").map((s) => s.trim()).filter(Boolean);
   const [selected, setSelected] = useState(defaultIndex);
 
@@ -929,7 +1031,7 @@ export function SimulatedSlider({
   max = 100,
   value: initialValue = 50,
 }: SliderProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState(initialValue);
   const pct = ((value - min) / (max - min)) * 100;
 
@@ -975,7 +1077,7 @@ export function SimulatedNumberInput({
   max = 99,
   step = 1,
 }: NumberInputProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState(initialValue);
 
   return (
@@ -983,11 +1085,11 @@ export function SimulatedNumberInput({
       <label className={`${prefix}-number-label`}>{label}</label>
       <div className={`${prefix}-number-controls`}>
         <button className={`${prefix}-number-btn`} onClick={() => setValue((v) => Math.max(min, v - step))} disabled={value <= min}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>remove</span>
+          <SimIcon system={system} name="remove" size={16} />
         </button>
         <span className={`${prefix}-number-value`}>{value}</span>
         <button className={`${prefix}-number-btn`} onClick={() => setValue((v) => Math.min(max, v + step))} disabled={value >= max}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>add</span>
+          <SimIcon system={system} name="add" size={16} />
         </button>
       </div>
     </div>
@@ -1010,7 +1112,7 @@ export function SimulatedMultilineInput({
   placeholder = "Enter description...",
   rows = 3,
 }: MultilineInputProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState("");
 
   return (
@@ -1046,7 +1148,7 @@ export function SimulatedPill({
   status = "default",
   dismissible = true,
 }: PillProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
 
@@ -1055,7 +1157,7 @@ export function SimulatedPill({
       <span className={`${prefix}-pill-text`}>{label}</span>
       {dismissible && (
         <button className={`${prefix}-pill-dismiss`} onClick={() => setDismissed(true)}>
-          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+          <SimIcon system={system} name="close" size={12} />
         </button>
       )}
     </span>
@@ -1076,7 +1178,7 @@ export function SimulatedToggleButton({
   label = "Bold",
   defaultPressed = false,
 }: ToggleButtonProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [pressed, setPressed] = useState(defaultPressed);
 
   return (
@@ -1104,7 +1206,7 @@ export function SimulatedSegmentedGroup({
   optionsCsv = "Day, Week, Month",
   defaultIndex = 0,
 }: SegmentedGroupProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const options = optionsCsv.split(",").map((s) => s.trim()).filter(Boolean);
   const [selected, setSelected] = useState(defaultIndex);
 
@@ -1137,15 +1239,13 @@ export function SimulatedLink({
   text = "Learn more",
   showIcon = true,
 }: LinkProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   return (
     <span className={`${prefix}-link`}>
       {text}
       {showIcon && (
-        <span className="material-symbols-outlined" style={{ fontSize: 14, marginLeft: 2 }}>
-          arrow_forward
-        </span>
+        <SimIcon system={system} name="arrow_forward" size={14} style={{ marginLeft: 2 }} />
       )}
     </span>
   );
@@ -1165,7 +1265,7 @@ export function SimulatedListBox({
   itemsCsv = "Apple, Banana, Cherry, Date, Elderberry",
   multiSelect = false,
 }: ListBoxProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const items = itemsCsv.split(",").map((s) => s.trim()).filter(Boolean);
   const [selected, setSelected] = useState<Set<number>>(new Set([0]));
 
@@ -1195,7 +1295,7 @@ export function SimulatedListBox({
           {multiSelect && (
             <div className={`${prefix}-listbox-check`}>
               {selected.has(i) && (
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check</span>
+                <SimIcon system={system} name="check" size={14} />
               )}
             </div>
           )}
@@ -1220,7 +1320,7 @@ export function SimulatedComboBox({
   placeholder = "Search...",
   itemsCsv = "United States, United Kingdom, Canada, Australia, Germany",
 }: ComboBoxProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const items = itemsCsv.split(",").map((s) => s.trim()).filter(Boolean);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -1229,7 +1329,7 @@ export function SimulatedComboBox({
   return (
     <div className={`${prefix}-combobox`}>
       <div className={`${prefix}-combobox-input-wrap`}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16, opacity: 0.4 }}>search</span>
+        <SimIcon system={system} name="search" size={16} style={{ opacity: 0.4 }} />
         <input
           className={`${prefix}-combobox-input`}
           placeholder={placeholder}
@@ -1239,7 +1339,7 @@ export function SimulatedComboBox({
         />
         {query && (
           <button className={`${prefix}-combobox-clear`} onClick={() => { setQuery(""); setOpen(false); }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+            <SimIcon system={system} name="close" size={14} />
           </button>
         )}
       </div>
@@ -1274,7 +1374,7 @@ export function SimulatedFileDropZone({
   label = "Drag & drop files here",
   acceptTypes = ".png, .jpg, .pdf",
 }: FileDropZoneProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [dragOver, setDragOver] = useState(false);
 
   return (
@@ -1284,9 +1384,7 @@ export function SimulatedFileDropZone({
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => { e.preventDefault(); setDragOver(false); }}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: 32, opacity: 0.3 }}>
-        cloud_upload
-      </span>
+      <SimIcon system={system} name="upload" size={32} style={{ opacity: 0.3 }} />
       <span className={`${prefix}-file-drop-label`}>{label}</span>
       <span className={`${prefix}-file-drop-hint`}>Accepted: {acceptTypes}</span>
     </div>
@@ -1305,7 +1403,7 @@ export function SimulatedTree({
   system,
   itemsCsv = "Documents > Work > Reports, Documents > Personal, Images > Vacation, Images > Family",
 }: TreeProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["Documents", "Images"]));
 
   /* Parse tree from CSV format: "Parent > Child > Grandchild" */
@@ -1346,15 +1444,21 @@ export function SimulatedTree({
           }}
         >
           {hasChildren ? (
-            <span className="material-symbols-outlined" style={{ fontSize: 14, transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
-              chevron_right
-            </span>
+            <SimIcon
+              system={system}
+              name="chevron_right"
+              size={14}
+              style={{ transition: "transform 0.15s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+            />
           ) : (
             <span style={{ width: 14, display: "inline-block" }} />
           )}
-          <span className="material-symbols-outlined" style={{ fontSize: 16, opacity: 0.5 }}>
-            {hasChildren ? "folder" : "description"}
-          </span>
+          <SimIcon
+            system={system}
+            name={hasChildren ? "folder" : "description"}
+            size={16}
+            style={{ opacity: 0.5 }}
+          />
           <span className={`${prefix}-tree-label`}>{name}</span>
         </div>
         {isExpanded && children.map(child => (
@@ -1387,7 +1491,7 @@ export function SimulatedRating({
   value: initialValue = 3,
   label = "Rating",
 }: RatingProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState(initialValue);
   const [hover, setHover] = useState<number | null>(null);
 
@@ -1405,9 +1509,7 @@ export function SimulatedRating({
               onMouseEnter={() => setHover(i + 1)}
               onMouseLeave={() => setHover(null)}
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                {filled ? "star" : "star_border"}
-              </span>
+              <SimIcon system={system} name={filled ? "star" : "star_border"} size={20} />
             </button>
           );
         })}
@@ -1429,7 +1531,7 @@ export function SimulatedSkeleton({
   system,
   variant = "card",
 }: SkeletonProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
 
   if (variant === "avatar") {
     return (
@@ -1476,12 +1578,12 @@ export function SimulatedSearchbox({
   system,
   placeholder = "Search...",
 }: SearchboxProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [query, setQuery] = useState("");
 
   return (
     <div className={`${prefix}-searchbox`}>
-      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>search</span>
+      <SimIcon system={system} name="search" size={18} />
       <input
         className={`${prefix}-searchbox-input`}
         placeholder={placeholder}
@@ -1490,7 +1592,7 @@ export function SimulatedSearchbox({
       />
       {query && (
         <button className={`${prefix}-searchbox-clear`} onClick={() => setQuery("")}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+          <SimIcon system={system} name="close" size={16} />
         </button>
       )}
     </div>
@@ -1511,7 +1613,7 @@ export function SimulatedTokenizedInput({
   label = "Recipients",
   tokensCsv = "alice@co.com, bob@co.com",
 }: TokenizedInputProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [tokens, setTokens] = useState(tokensCsv.split(",").map(s => s.trim()).filter(Boolean));
   const [input, setInput] = useState("");
 
@@ -1530,7 +1632,7 @@ export function SimulatedTokenizedInput({
           <span key={i} className={`${prefix}-tokenized-chip`}>
             {t}
             <button onClick={() => setTokens(tokens.filter((_, j) => j !== i))} className={`${prefix}-tokenized-remove`}>
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>close</span>
+              <SimIcon system={system} name="close" size={12} />
             </button>
           </span>
         ))}
@@ -1558,7 +1660,7 @@ export function SimulatedNavDrawer({
   system,
   itemsCsv = "Home, Dashboard, Settings, Profile, Help",
 }: NavDrawerProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const items = itemsCsv.split(",").map(s => s.trim()).filter(Boolean);
   const [active, setActive] = useState(0);
   const icons = ["home", "dashboard", "settings", "person", "help"];
@@ -1571,7 +1673,7 @@ export function SimulatedNavDrawer({
           className={`${prefix}-nav-drawer-item${active === i ? ` ${prefix}-nav-drawer-active` : ""}`}
           onClick={() => setActive(i)}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{icons[i % icons.length]}</span>
+          <SimIcon system={system} name={icons[i % icons.length]} size={20} />
           <span>{item}</span>
         </button>
       ))}
@@ -1593,13 +1695,13 @@ export function SimulatedPopover({
   title = "Popover Title",
   content = "This is additional information displayed in a popover.",
 }: PopoverProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [open, setOpen] = useState(false);
 
   return (
     <div className={`${prefix}-popover-wrapper`}>
       <button className={`${prefix}-popover-trigger`} onClick={() => setOpen(!open)}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>info</span>
+        <SimIcon system={system} name="info" size={16} />
         Show Popover
       </button>
       {open && (
@@ -1607,7 +1709,7 @@ export function SimulatedPopover({
           <div className={`${prefix}-popover-header`}>
             <span className={`${prefix}-popover-title`}>{title}</span>
             <button className={`${prefix}-popover-close`} onClick={() => setOpen(false)}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+              <SimIcon system={system} name="close" size={14} />
             </button>
           </div>
           <div className={`${prefix}-popover-body`}>{content}</div>
@@ -1633,7 +1735,7 @@ export function SimulatedPersona({
   role = "Senior Designer",
   presence = "available",
 }: PersonaProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const presenceColors: Record<string, string> = {
     available: "var(--ds-status-positive, #22c55e)",
     busy: "var(--ds-status-negative, #ef4444)",
@@ -1669,7 +1771,7 @@ export function SimulatedAvatarGroup({
   namesCsv = "AB, CD, EF, GH, IJ, KL",
   max = 4,
 }: AvatarGroupProps) {
-  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : "f";
+  const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const names = namesCsv.split(",").map(s => s.trim()).filter(Boolean);
   const visible = names.slice(0, max);
   const overflow = names.length - max;
