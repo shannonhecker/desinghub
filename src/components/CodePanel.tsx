@@ -8,6 +8,7 @@ import { SALT_CODE } from "@/data/salt/code-snippets";
 import { M3_CODE } from "@/data/m3/code-snippets";
 import { FLUENT_CODE } from "@/data/fluent/code-snippets";
 import { AUSOS_CODE } from "@/data/ausos/code-snippets";
+import { CARBON_CODE } from "@/data/carbon/code-snippets";
 
 /* Per-DS metadata used by the fallback renderer when a registered
    component has no authored snippet yet. Keeps the Code panel useful
@@ -99,11 +100,19 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const comp = components.find((c) => c.id === componentId);
   const sysInfo = getSystemInfo(activeSystem);
 
-  const codeMap = activeSystem === "salt" ? SALT_CODE : activeSystem === "m3" ? M3_CODE : activeSystem === "ausos" ? AUSOS_CODE : FLUENT_CODE;
+  const codeMap = activeSystem === "salt" ? SALT_CODE
+    : activeSystem === "m3" ? M3_CODE
+    : activeSystem === "ausos" ? AUSOS_CODE
+    : activeSystem === "carbon" ? CARBON_CODE
+    : FLUENT_CODE;
   const snippets = codeMap[componentId];
 
   /* DS card class for code block containers */
-  const cardCls = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card" : activeSystem === "ausos" ? "a-card" : "f-card";
+  const cardCls = activeSystem === "salt" ? "s-card"
+    : activeSystem === "m3" ? "m3-card"
+    : activeSystem === "ausos" ? "a-card"
+    : activeSystem === "carbon" ? "cb-tile"
+    : "f-card";
 
   /* ── Fallback for registered components with no authored snippet ──
      Rather than a dead-end "coming soon" message, we render a minimal
