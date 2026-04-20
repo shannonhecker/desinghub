@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 
 export type SystemId = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
-export type ActiveTab = 'preview' | 'code' | 'tokens' | 'charts' | 'audit';
+/* Tabs shown on a component detail page. Carbon mirrors the
+   carbondesignsystem.com 5-tab shape: Overview / Usage / Style /
+   Code / Accessibility. Other DSes only use preview + code. */
+export type ActiveTab =
+  | 'preview' | 'code'
+  | 'tokens' | 'charts' | 'audit'
+  | 'usage' | 'style' | 'accessibility';
 
 interface DesignHubState {
   activeSystem: SystemId;
