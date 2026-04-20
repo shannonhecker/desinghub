@@ -8,6 +8,7 @@ function resetStore() {
     m3: { themeKey: "light", density: 0, customColor: "#6750A4", isDarkCustom: false },
     fluent: { themeKey: "light", size: "medium" },
     ausos: { themeKey: "light", density: "medium", accentColor: "#7E6BC4" },
+    carbon: { themeKey: "white", density: "normal" },
     selectedComponent: null,
     searchQuery: "",
     activeTab: "preview",

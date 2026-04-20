@@ -13,10 +13,11 @@ import { AUSOS_CODE } from "@/data/ausos/code-snippets";
    component has no authored snippet yet. Keeps the Code panel useful
    even for newly-added entries instead of dead-ending at "coming soon". */
 const SYSTEM_PACKAGES: Record<string, { pkg: string; docsUrl: string; componentBase: string }> = {
-  salt:   { pkg: "@salt-ds/core",          docsUrl: "https://www.saltdesignsystem.com/salt/components/", componentBase: "https://www.saltdesignsystem.com/salt/components/" },
-  m3:     { pkg: "@mui/material",          docsUrl: "https://m3.material.io/components",                 componentBase: "https://mui.com/material-ui/react-" },
-  fluent: { pkg: "@fluentui/react-components", docsUrl: "https://react.fluentui.dev/",                   componentBase: "https://react.fluentui.dev/?path=/docs/components-" },
-  ausos:  { pkg: "@ausos/core",            docsUrl: "#",                                                  componentBase: "#" },
+  salt:   { pkg: "@salt-ds/core",              docsUrl: "https://www.saltdesignsystem.com/salt/components/", componentBase: "https://www.saltdesignsystem.com/salt/components/" },
+  m3:     { pkg: "@mui/material",              docsUrl: "https://m3.material.io/components",                 componentBase: "https://mui.com/material-ui/react-" },
+  fluent: { pkg: "@fluentui/react-components", docsUrl: "https://react.fluentui.dev/",                       componentBase: "https://react.fluentui.dev/?path=/docs/components-" },
+  ausos:  { pkg: "@ausos/core",                docsUrl: "#",                                                  componentBase: "#" },
+  carbon: { pkg: "@carbon/react",              docsUrl: "https://carbondesignsystem.com/components/",         componentBase: "https://react.carbondesignsystem.com/?path=/docs/components-" },
 };
 
 /* ═══════════════════════════════════════════════════════════

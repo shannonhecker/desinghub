@@ -11,6 +11,7 @@ const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   m3: { provider: "ThemeProvider", importFrom: "@mui/material" },
   fluent: { provider: "FluentProvider", importFrom: "@fluentui/react-components" },
   ausos: { provider: "AusosProvider", importFrom: "@ausos/core" },
+  carbon: { provider: "Theme", importFrom: "@carbon/react" },
 };
 
 function blockToJSX(block: Block, indent: string): string {
