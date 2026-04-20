@@ -7,6 +7,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS, BLOCK_TO_ID } from "@/lib/componentMaps";
+import { computeItemStyle, deriveColSpan } from "@/lib/layoutResolver";
 
 let blockCounter = 0;
 export function makeBlockId() {
@@ -93,6 +94,9 @@ export function PreviewCanvas() {
     addMenuOpen, setAddMenuOpen,
     density,
   } = useBuilder();
+  /* Read the body zone's container layout via the new store
+     slice. The resolver uses this to size every block. */
+  const bodyZoneLayout = useBuilder((s) => s.zoneLayouts.body);
 
   /* ── Local UI state ── */
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
@@ -197,13 +201,20 @@ export function PreviewCanvas() {
         </div>
       )}
 
-      <ZoneDropContainer zoneId="body" blocks={blocks} direction="grid" className="canvas-drop-zone">
+      <ZoneDropContainer zoneId="body" blocks={blocks} className="canvas-drop-zone">
         {blocks.map((block) => {
-          const colSpan = Number(block.props.colSpan) || 3;
+          /* Pull the zone's layout mode from the store via the
+             resolver. computeItemStyle handles all width modes
+             (fill/auto/px/%/fr) + min/max + colSpan back-compat. */
+          const itemStyle = computeItemStyle(block, bodyZoneLayout);
+          /* deriveColSpan keeps the legacy colSpan-cycle button
+             working via a stable 1|2|3 integer. Sub-phase 4 wires
+             the px resize handle on top. */
+          const colSpan = deriveColSpan(block);
           return (
           <div
             key={block.id}
-            style={{ position: "relative", gridColumn: `span ${colSpan}` }}
+            style={itemStyle}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedBlock(block.id, "body");
@@ -215,6 +226,9 @@ export function PreviewCanvas() {
               isSelected={selectedBlockId === block.id}
               colSpan={colSpan}
               onColSpanChange={(span) => {
+                /* Legacy colSpan write - the resolver auto-translates
+                   to width on the next render. Later sub-phases will
+                   swap this for a direct layout.width write. */
                 const next = blocks.map((b) =>
                   b.id === block.id ? { ...b, props: { ...b.props, colSpan: span } } : b
                 );

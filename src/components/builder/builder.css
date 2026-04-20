@@ -9610,28 +9610,22 @@
   box-shadow: inset 0 2px 0 0 rgba(138, 171, 168, 0.5);
 }
 
-/* Header/footer zone: horizontal layout for the drop container */
+/* Zone-specific extras that layer on top of inline layout styles
+   from computeContainerStyle. Display + direction + gap are set
+   inline from the store's zoneLayouts, so these rules only keep
+   min-height (empty-state affordance) and header/footer's
+   justify-content: space-between (brand left, status right) which
+   isn't covered by the generic LayoutAlign enum. */
 .zone-drop-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
   flex: 1;
   min-height: 24px;
 }
 .zone-drop-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   flex: 1;
   min-height: 20px;
 }
-
-/* Sidebar zone: vertical layout */
 .zone-drop-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-height: 40px;
 }
 
@@ -9688,22 +9682,31 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Grid layout - body canvas uses a 3-column CSS grid
-   so blocks can sit side-by-side based on their colSpan.
+   Zone layout hooks - the body canvas used to hard-code a 3-col
+   grid, but since the flex layout system landed (sub-phases 1-3)
+   the container's display/gap/direction are set inline by
+   computeContainerStyle. We keep the .zone-grid / .zone-row /
+   .zone-stack class names as style hooks + test selectors, but
+   no longer set the layout declarations here - that would race
+   the inline styles from the resolver.
    ═══════════════════════════════════════════════════════════ */
 
-.zone-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  align-items: start;
+.zone-grid,
+.zone-row,
+.zone-stack {
   min-height: 60px;
+  align-items: start;
 }
 
-/* Empty grid state - visual dropzone */
-.zone-grid:empty::after {
+/* Empty body zone state - visual dropzone. Now applies to
+   zone-grid, zone-row, and zone-stack since the body zone's
+   flow mode is configurable. */
+.zone-grid:empty::after,
+.zone-row:empty::after,
+.zone-stack:empty::after {
   content: "Drag components here";
   grid-column: 1 / -1;
+  flex: 1 1 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9713,6 +9716,7 @@
   color: rgba(255, 255, 255, 0.2);
   font-size: 12px;
   font-weight: 500;
+  width: 100%;
 }
 
 /* ── Drop-between indicator ── */
