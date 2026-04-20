@@ -555,6 +555,109 @@ const headers = [
 </div>`,
   },
 
+  "dl-shape": {
+    react: `// Carbon corners are flat (0px) across controls. Only pills + avatars round.
+// Shape tokens:
+//   $border-radius-0  = 0px   - buttons, inputs, tiles (default)
+//   $border-radius-1  = 4px   - reserved
+//   $border-radius-pill = 16px - tags, notifications badges
+// Compose with border-radius: 50% for avatars.
+<div style={{ borderRadius: "var(--cds-border-radius)" }}>Sharp corner</div>
+<Tag>Pill (16px)</Tag>
+<Avatar style={{ borderRadius: "50%" }} />`,
+    html: `<style>
+  .sharp   { border-radius: 0; }
+  .pill    { border-radius: 16px; }
+  .circle  { border-radius: 50%; }
+</style>`,
+  },
+
+  "structured-list": {
+    react: `import { StructuredListWrapper, StructuredListHead, StructuredListRow,
+  StructuredListCell, StructuredListBody } from "@carbon/react";
+
+<StructuredListWrapper>
+  <StructuredListHead>
+    <StructuredListRow head>
+      <StructuredListCell head>Release</StructuredListCell>
+      <StructuredListCell head>Notes</StructuredListCell>
+    </StructuredListRow>
+  </StructuredListHead>
+  <StructuredListBody>
+    <StructuredListRow>
+      <StructuredListCell>v2.4</StructuredListCell>
+      <StructuredListCell>Popover + AI.</StructuredListCell>
+    </StructuredListRow>
+  </StructuredListBody>
+</StructuredListWrapper>`,
+    html: `<table class="cb-table">
+  <thead><tr><th>Release</th><th>Notes</th></tr></thead>
+  <tbody><tr><td>v2.4</td><td>Popover + AI.</td></tr></tbody>
+</table>`,
+  },
+
+  pagination: {
+    react: `import { Pagination } from "@carbon/react";
+
+<Pagination
+  pageSize={10}
+  pageSizes={[10, 20, 30, 40, 50]}
+  totalItems={247}
+  onChange={({ page, pageSize }) => console.log(page, pageSize)}
+/>`,
+    html: `<div class="cb-pagination">
+  <span>Items per page: 10</span>
+  <span>1 – 10 of 247</span>
+  <div><button aria-label="Prev">‹</button> <span>1 / 25</span> <button aria-label="Next">›</button></div>
+</div>`,
+  },
+
+  "content-switcher": {
+    react: `import { ContentSwitcher, Switch } from "@carbon/react";
+
+<ContentSwitcher onChange={(e) => console.log(e.name)}>
+  <Switch name="all" text="All" />
+  <Switch name="active" text="Active" />
+  <Switch name="archived" text="Archived" />
+</ContentSwitcher>`,
+    html: `<div class="cb-switcher">
+  <button class="cb-switcher-btn active">All</button>
+  <button class="cb-switcher-btn">Active</button>
+  <button class="cb-switcher-btn">Archived</button>
+</div>`,
+  },
+
+  skeleton: {
+    react: `import { SkeletonText, SkeletonPlaceholder, ButtonSkeleton } from "@carbon/react";
+
+<SkeletonText heading />
+<SkeletonText width="60%" />
+<SkeletonText width="80%" />
+<ButtonSkeleton size="lg" />`,
+    html: `<div class="cb-skeleton" style="height: 24px; width: 60%"></div>
+<div class="cb-skeleton" style="height: 16px; width: 90%"></div>
+<div class="cb-skeleton" style="height: 32px; width: 100px"></div>`,
+  },
+
+  popover: {
+    react: `import { Popover, PopoverContent } from "@carbon/react";
+import { useState } from "react";
+
+const [open, setOpen] = useState(false);
+
+<Popover open={open} align="bottom">
+  <button onClick={() => setOpen(!open)}>Anchor</button>
+  <PopoverContent className="p-4">
+    <p>Popover title</p>
+    <p>Context-rich content.</p>
+  </PopoverContent>
+</Popover>`,
+    html: `<div class="cb-popover" role="tooltip">
+  <strong>Popover title</strong>
+  <p>Context-rich content anchored to a trigger.</p>
+</div>`,
+  },
+
   /* ── Patterns ── */
   "pat-dashboard": {
     react: `import { Grid, Column, Tile, DataTable } from "@carbon/react";
@@ -607,6 +710,84 @@ function AnalyticsDashboard() {
     <button class="cb-btn cb-btn-primary">Save changes</button>
   </div>
 </form>`,
+  },
+
+  "pat-login": {
+    react: `import { Form, Stack, TextInput, PasswordInput, Button, Link } from "@carbon/react";
+import { ArrowRight } from "@carbon/icons-react";
+
+function Login() {
+  return (
+    <div style={{ maxWidth: 360 }}>
+      <h1>Log in</h1>
+      <p>Enter your IBMid to continue.</p>
+      <Form>
+        <Stack gap={5}>
+          <TextInput id="ibmid" labelText="IBMid" placeholder="name@example.com" />
+          <PasswordInput id="pwd" labelText="Password" />
+          <Button kind="primary" renderIcon={ArrowRight}>Continue</Button>
+          <Link href="/forgot">Forgot your IBMid?</Link>
+        </Stack>
+      </Form>
+    </div>
+  );
+}`,
+    html: `<form class="cb-login">
+  <h1>Log in</h1>
+  <p>Enter your IBMid to continue.</p>
+  <label class="cb-input-wrap"><span>IBMid</span><input class="cb-input" /></label>
+  <label class="cb-input-wrap"><span>Password</span><input class="cb-input" type="password" /></label>
+  <button class="cb-btn cb-btn-primary">Continue →</button>
+  <a class="cb-link">Forgot your IBMid?</a>
+</form>`,
+  },
+
+  "pat-list-detail": {
+    react: `// List + detail: selection on the left, details on the right.
+import { SideNav, SideNavItems, SideNavLink } from "@carbon/react";
+
+<div className="list-detail">
+  <SideNav aria-label="Projects" expanded>
+    <SideNavItems>
+      <SideNavLink isActive>Project Apollo</SideNavLink>
+      <SideNavLink>Project Zeus</SideNavLink>
+      <SideNavLink>Project Hermes</SideNavLink>
+    </SideNavItems>
+  </SideNav>
+  <main style={{ padding: 24 }}>
+    <h2>Project Apollo</h2>
+    <p>Last updated 3 hours ago.</p>
+  </main>
+</div>`,
+    html: `<div class="list-detail" style="display:flex;">
+  <aside>
+    <a class="cb-sidenav-item active">Project Apollo</a>
+    <a class="cb-sidenav-item">Project Zeus</a>
+    <a class="cb-sidenav-item">Project Hermes</a>
+  </aside>
+  <main>Detail pane…</main>
+</div>`,
+  },
+
+  "pat-search": {
+    react: `import { Search, Tag, StructuredListWrapper } from "@carbon/react";
+
+<Search labelText="Search" placeholder="Find components" />
+
+<div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+  <Tag type="blue" filter>Category: Foundations</Tag>
+  <Tag type="gray" filter>Type: Component</Tag>
+</div>
+
+<StructuredListWrapper>{/* results */}</StructuredListWrapper>`,
+    html: `<div class="cb-search-wrap">
+  <span class="cb-search-icon">🔍</span>
+  <input class="cb-input" placeholder="Find components" />
+</div>
+<div class="filter-row">
+  <span class="cb-tag cb-tag-blue">Category: Foundations ×</span>
+  <span class="cb-tag cb-tag-gray">Type: Component ×</span>
+</div>`,
   },
 
   "pat-app-shell": {
