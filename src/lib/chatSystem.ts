@@ -115,7 +115,7 @@ Include JSON action blocks in \`\`\`json fences to make changes:
 
 ### Canvas Block Actions
 \`\`\`json
-{"action": "addBlock", "value": {"type": "SimulatedCard", "zone": "body", "props": {"title": "Revenue", "content": "$42.8K"}}}
+{"action": "addBlock", "value": {"type": "SimulatedCard", "zone": "body", "props": {"title": "Revenue", "content": "$42.8K"}, "layout": {"width": "33.333%"}}}
 \`\`\`
 \`\`\`json
 {"action": "removeBlock", "value": {"blockId": "block-123"}}
@@ -132,6 +132,44 @@ Include JSON action blocks in \`\`\`json fences to make changes:
 \`\`\`json
 {"action": "setColorOverride", "value": {"key": "accent", "color": "#6750A4"}}
 \`\`\`
+
+### Layout Actions (Figma-style flex primitives)
+Every block can carry a \`layout\` object with width + alignment
+metadata. Use these to set per-block sizing or change a zone's flow.
+
+\`\`\`json
+{"action": "updateBlockLayout", "value": {"blockId": "block-123", "layout": {"width": "240px"}}}
+\`\`\`
+\`\`\`json
+{"action": "setZoneLayout", "value": {"zone": "body", "layout": {"mode": "grid", "columns": 4, "gap": 16}}}
+\`\`\`
+
+Layout fields (all optional):
+- \`width\` - "fill" (take remaining space) | "auto" (hug contents) |
+  "{N}px" (fixed) | "{N}%" (percentage) | "{N}fr" (grid fraction)
+- \`minWidth\` / \`maxWidth\` - "{N}px" clamps during resize
+- \`grow\` - 0 | 1 (flex-grow override; 1 lets fixed-width blocks expand)
+- \`align\` - "start" | "center" | "end" | "stretch" (cross-axis alignment)
+- \`margin\` - number (px, applied to all sides)
+
+Zone layout fields:
+- \`mode\` - "stack" (vertical) | "row" (horizontal with wrap) | "grid"
+- \`columns\` - grid mode only, 1-12
+- \`gap\` - px between children
+- \`padding\` - px inside the zone
+- \`wrap\` - true | false (row mode only)
+- \`align\` - "start" | "center" | "end" | "stretch"
+
+Common patterns:
+- Three-card KPI row: \`layout: {"width": "33.333%"}\` on each card
+- Fixed sidebar nav with 240px width: \`layout: {"width": "240px"}\`
+- Chart fills the row: \`layout: {"width": "fill"}\`
+- Dashboard with 4-col grid: \`setZoneLayout\` { zone: "body", layout: { mode: "grid", columns: 4 } }
+- Button hugs its label: \`layout: {"width": "auto"}\`
+
+Legacy: \`props.colSpan\` (1|2|3) is still accepted and translates to
+"33.333%" | "66.666%" | "fill" automatically. Prefer the new
+\`layout.width\` shape for new blocks.
 
 Zones: "body" (main content), "header", "sidebar", "footer"
 

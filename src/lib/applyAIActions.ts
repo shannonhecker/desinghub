@@ -69,13 +69,27 @@ export function applyAIActions(actions: AIAction[]): void {
       }
 
       case "addBlock": {
-        const v = action.value as { type?: string; zone?: ZoneId; index?: number; props?: Record<string, unknown> } | null;
+        const v = action.value as {
+          type?: string;
+          zone?: ZoneId;
+          index?: number;
+          props?: Record<string, unknown>;
+          /* New optional layout shape. Accepts any LayoutProps
+             fields: width, minWidth, maxWidth, grow, align, margin.
+             The resolver validates width strings at render time. */
+          layout?: Partial<import("@/store/useBuilder").LayoutProps>;
+        } | null;
         if (!v || typeof v.type !== "string") break;
         const zone: ZoneId = v.zone && VALID_ZONES.includes(v.zone) ? v.zone : "body";
         // Find defaults from registry
         const blueprint = LIBRARY_BLUEPRINTS.find((b) => b.type === v.type);
         const defaults = blueprint?.defaults ?? {};
-        const block = { id: uid(), type: v.type, props: { ...defaults, ...v.props } };
+        const block: import("@/store/useBuilder").Block = {
+          id: uid(),
+          type: v.type,
+          props: { ...defaults, ...v.props },
+          ...(v.layout ? { layout: v.layout } : {}),
+        };
         store.addBlockToZone(zone, block, v.index);
         break;
       }
@@ -133,6 +147,42 @@ export function applyAIActions(actions: AIAction[]): void {
         const zone = typeof action.value === "string" && VALID_ZONES.includes(action.value as ZoneId)
           ? action.value as ZoneId : "body";
         store.setZoneBlocks(zone, []);
+        break;
+      }
+
+      case "updateBlockLayout": {
+        /* Patch a specific block's layout metadata - width, min/max,
+           grow, align, margin. Claude uses this when the user asks
+           things like "make this card 240px wide" or "set the chart
+           to fill the row". */
+        const v = action.value as {
+          blockId?: string;
+          layout?: Partial<import("@/store/useBuilder").LayoutProps>;
+        } | null;
+        if (!v || typeof v.blockId !== "string" || !v.layout) break;
+        const st = useBuilder.getState();
+        for (const zone of VALID_ZONES) {
+          const key = zone === "body" ? "blocks" : `${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks";
+          const arr = zone === "body" ? st.blocks : st[key];
+          if (arr.some((b) => b.id === v.blockId)) {
+            store.updateBlockLayout(zone, v.blockId, v.layout);
+            break;
+          }
+        }
+        break;
+      }
+
+      case "setZoneLayout": {
+        /* Switch a zone between Stack / Row / Grid, or tweak its
+           gap / padding / wrap / align. Claude uses this for
+           "turn the body into a 4-column grid" or "stack the
+           sidebar vertically with 4px gap". */
+        const v = action.value as {
+          zone?: ZoneId;
+          layout?: Partial<import("@/store/useBuilder").ZoneLayout>;
+        } | null;
+        if (!v || !v.zone || !VALID_ZONES.includes(v.zone) || !v.layout) break;
+        store.setZoneLayout(v.zone, v.layout);
         break;
       }
     }
