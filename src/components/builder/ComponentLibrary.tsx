@@ -227,29 +227,12 @@ export function ComponentLibrary() {
             </div>
             <FieldsComponent blockId={selectedBlock.id} />
 
-            {/* Layout: column span - only for body blocks */}
+            {/* Layout panel - only meaningful for body blocks since
+                header/sidebar/footer flows inherit from the zone. */}
             {selectedBlockZone === "body" && (
               <>
                 <div className="lib-section-divider" />
-                <div className="inspector-section-title">Layout</div>
-                <div className="inspector-field">
-                  <label className="inspector-field-label">Column Width</label>
-                  <div className="inspector-toggle-group">
-                    {([1, 2, 3] as const).map((span) => {
-                      const labels: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
-                      const current = Number(selectedBlock.props.colSpan) || 3;
-                      return (
-                        <button
-                          key={span}
-                          className={`inspector-toggle-btn${current === span ? " active" : ""}`}
-                          onClick={() => updateBlockProps(selectedBlock.id, { colSpan: span })}
-                        >
-                          {labels[span]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <LayoutSection block={selectedBlock} zone={selectedBlockZone} />
               </>
             )}
 
@@ -276,6 +259,209 @@ export function ComponentLibrary() {
       </div>
     </div>
     </HoverContext.Provider>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   LayoutSection - width / min / max / grow / align / margin
+   ══════════════════════════════════════════════════════════
+   Surfaces the same LayoutProps that the two-handle resize
+   writes. Users pick a width MODE (Fill / Auto / Fixed / %
+   / fr), then type a value if the mode needs one. Min-width
+   and max-width accept bare numbers (treated as px) OR the
+   same mode tokens ("120px", "20%"). Grow is a toggle.
+   Align controls align-self. Margin is a single-number px.
+
+   Changes write through useBuilder().updateBlockLayout so the
+   store notifies subscribers and PreviewCanvas re-renders
+   via the layoutResolver. Legacy props.colSpan is left alone
+   here - the resolver translates it when layout.width is
+   absent, so editing the Layout panel is a progressive
+   migration per block. */
+function LayoutSection({
+  block,
+  zone,
+}: {
+  block: { id: string; type: string; props: Record<string, unknown>; layout?: import("@/store/useBuilder").LayoutProps };
+  zone: import("@/store/useBuilder").ZoneId;
+}) {
+  const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
+  const layout = block.layout ?? {};
+
+  /* Derive the current width "mode" from layout.width. Used by
+     the mode buttons to highlight the active option. */
+  const currentMode: "fill" | "auto" | "px" | "percent" | "fr" = (() => {
+    const w = layout.width;
+    if (w === "fill" || w === undefined) return "fill";
+    if (w === "auto") return "auto";
+    if (typeof w === "number") return "px";
+    if (typeof w === "string") {
+      if (w.endsWith("px")) return "px";
+      if (w.endsWith("%")) return "percent";
+      if (w.endsWith("fr")) return "fr";
+    }
+    return "fill";
+  })();
+
+  /* Numeric-only part of a LayoutWidth token, for editing. */
+  const parseWidthValue = (w: import("@/store/useBuilder").LayoutWidth | undefined): string => {
+    if (w === undefined || w === "fill" || w === "auto") return "";
+    if (typeof w === "number") return String(w);
+    return w.replace(/(px|%|fr)$/, "");
+  };
+
+  const setWidth = (mode: typeof currentMode, value?: string) => {
+    if (mode === "fill") {
+      updateBlockLayout(zone, block.id, { width: "fill" });
+    } else if (mode === "auto") {
+      updateBlockLayout(zone, block.id, { width: "auto" });
+    } else {
+      const n = value !== undefined ? value : parseWidthValue(layout.width) || (mode === "percent" ? "50" : mode === "fr" ? "1" : "240");
+      const next = mode === "px" ? `${n}px` : mode === "percent" ? `${n}%` : `${n}fr`;
+      updateBlockLayout(zone, block.id, { width: next as import("@/store/useBuilder").LayoutWidth });
+    }
+  };
+
+  const widthValue = parseWidthValue(layout.width);
+  const needsValue = currentMode === "px" || currentMode === "percent" || currentMode === "fr";
+
+  return (
+    <>
+      <div className="inspector-section-title">Layout</div>
+
+      {/* Width mode selector - 5 modes */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Width</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Width mode">
+          {([
+            ["fill", "Fill"],
+            ["auto", "Auto"],
+            ["px", "Px"],
+            ["percent", "%"],
+            ["fr", "Fr"],
+          ] as const).map(([m, label]) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={currentMode === m}
+              className={`inspector-toggle-btn${currentMode === m ? " active" : ""}`}
+              onClick={() => setWidth(m)}
+              title={
+                m === "fill" ? "Fill remaining row space"
+                : m === "auto" ? "Hug contents"
+                : m === "px" ? "Fixed pixel width"
+                : m === "percent" ? "Percentage of container"
+                : "Grid fractional unit (grid containers only)"
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Numeric input - only shown for modes that need a value */}
+      {needsValue && (
+        <div className="inspector-field">
+          <label className="inspector-field-label">
+            {currentMode === "px" ? "Value (px)" : currentMode === "percent" ? "Value (%)" : "Value (fr)"}
+          </label>
+          <input
+            type="number"
+            className="inspector-input"
+            value={widthValue}
+            min={currentMode === "percent" ? 1 : 0}
+            max={currentMode === "percent" ? 100 : undefined}
+            step={currentMode === "fr" ? 0.5 : 1}
+            onChange={(e) => setWidth(currentMode, e.target.value)}
+          />
+        </div>
+      )}
+
+      {/* Min / max width (px). Empty string clears the constraint. */}
+      <div className="inspector-field inspector-field-row">
+        <div style={{ flex: 1 }}>
+          <label className="inspector-field-label">Min width (px)</label>
+          <input
+            type="number"
+            className="inspector-input"
+            value={parseWidthValue(layout.minWidth)}
+            min={0}
+            placeholder="—"
+            onChange={(e) => {
+              const v = e.target.value;
+              updateBlockLayout(zone, block.id, {
+                minWidth: v === "" ? undefined : (`${v}px` as import("@/store/useBuilder").LayoutWidth),
+              });
+            }}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label className="inspector-field-label">Max width (px)</label>
+          <input
+            type="number"
+            className="inspector-input"
+            value={parseWidthValue(layout.maxWidth)}
+            min={0}
+            placeholder="—"
+            onChange={(e) => {
+              const v = e.target.value;
+              updateBlockLayout(zone, block.id, {
+                maxWidth: v === "" ? undefined : (`${v}px` as import("@/store/useBuilder").LayoutWidth),
+              });
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Grow toggle - flex-grow 0 vs 1 */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Grow</label>
+        <div className="inspector-toggle-group">
+          {([["0", "Off", 0 as const], ["1", "On", 1 as const]] as const).map(([, label, v]) => (
+            <button
+              key={label}
+              className={`inspector-toggle-btn${(layout.grow ?? 0) === v ? " active" : ""}`}
+              onClick={() => updateBlockLayout(zone, block.id, { grow: v })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Align-self on the cross axis */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Align</label>
+        <div className="inspector-toggle-group">
+          {(["start", "center", "end", "stretch"] as const).map((a) => (
+            <button
+              key={a}
+              className={`inspector-toggle-btn${(layout.align ?? "stretch") === a ? " active" : ""}`}
+              onClick={() => updateBlockLayout(zone, block.id, { align: a })}
+            >
+              {a === "start" ? "Top" : a === "center" ? "Center" : a === "end" ? "Bottom" : "Stretch"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Margin - single-value px; applied to all sides. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Margin (px)</label>
+        <input
+          type="number"
+          className="inspector-input"
+          value={layout.margin ?? ""}
+          min={0}
+          placeholder="0"
+          onChange={(e) => {
+            const v = e.target.value;
+            updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) });
+          }}
+        />
+      </div>
+    </>
   );
 }
 

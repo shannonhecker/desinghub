@@ -6344,6 +6344,18 @@
 .inspector-field:last-child {
   margin-bottom: 0;
 }
+/* Horizontal row variant - used when two short inputs need to
+   sit side-by-side (e.g. Min / Max width fields). */
+.inspector-field-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+.inspector-field-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 .inspector-field-label {
   font-size: 10px;
