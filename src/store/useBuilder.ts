@@ -7,6 +7,65 @@ export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 
+/* ══════════════════════════════════════════════════════════
+   Layout system (Figma-inspired flex primitives)
+   ══════════════════════════════════════════════════════════
+   Flexbox replaces the previous 3-column grid. Every block can
+   carry its own sizing + alignment props, and containers (zones
+   or nested LayoutGroup blocks) pick between Stack / Row / Grid
+   flow modes.
+
+   Width modes:
+     "fill"            - flex: 1 (take remaining row space)
+     "auto"            - flex: 0 0 auto; width follows content
+     "{N}px"           - fixed pixel width
+     "{N}%"            - percentage of container (flex-basis)
+     "{N}fr"           - CSS Grid fraction (only valid inside
+                         Grid-mode containers; Flex containers
+                         treat fr as fill + grow fraction)
+
+   colSpan is kept for backward compatibility. Old blocks with
+   colSpan: 1|2|3 get translated to width: "33%"|"66%"|"100%"
+   at render time. Templates are migrated in Phase 8.
+   ══════════════════════════════════════════════════════════ */
+
+/** String template used for width / minWidth / maxWidth props.
+   `number` as a bare value is accepted too and treated as px. */
+export type LayoutWidth =
+  | 'fill'
+  | 'auto'
+  | `${number}px`
+  | `${number}%`
+  | `${number}fr`
+  | number;
+
+/** Main-axis alignment applied to an item inside its container. */
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+
+/** Container flow mode. Stack = vertical flex, Row = horizontal
+   flex with wrap, Grid = CSS Grid with a column count. */
+export type LayoutMode = 'stack' | 'row' | 'grid';
+
+/** Optional per-block layout metadata. All fields are optional;
+   absent values fall back to container defaults. */
+export interface LayoutProps {
+  /** Width mode. Defaults to "fill" inside Row containers and
+     "fill" (stretched) inside Stack containers. */
+  width?: LayoutWidth;
+  /** Floor on computed width. Ignored for auto. */
+  minWidth?: LayoutWidth;
+  /** Cap on computed width. Ignored for auto. */
+  maxWidth?: LayoutWidth;
+  /** flex-grow override. 0 disables growing, 1 enables. */
+  grow?: 0 | 1;
+  /** align-self on the cross-axis. */
+  align?: LayoutAlign;
+  /** Margin helper - simplified to a single number (px) for now.
+     Per-side margins deliberately omitted to keep the prop
+     shape simple; users can add padding via LayoutGroup. */
+  margin?: number;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'ai';
@@ -18,6 +77,35 @@ export interface Block {
   id: string;
   type: string;
   props: Record<string, unknown>;
+  /* Optional layout metadata. When absent, the container's
+     default layout applies. LayoutGroup blocks have their own
+     internal children via props.children. */
+  layout?: LayoutProps;
+  /* Nested children - only populated for LayoutGroup blocks.
+     The renderer recurses into these blocks using the group's
+     direction / gap / padding. Other block types ignore it. */
+  children?: Block[];
+}
+
+/* Valid LayoutGroup direction values. Mirrors LayoutMode since
+   a LayoutGroup is effectively a zone-in-a-block. */
+export type LayoutGroupDirection = LayoutMode;
+
+/* Per-zone layout configuration (separate from individual block
+   layouts). Defaults stay backward-compatible: body defaults to
+   "row" with wrap, header/footer to "row", sidebar to "stack". */
+export interface ZoneLayout {
+  mode: LayoutMode;
+  /** Used only when mode === "grid" - column count (1–12). */
+  columns?: number;
+  /** Gap between items in px. Defaults via CSS. */
+  gap?: number;
+  /** Padding inside the zone in px. Optional. */
+  padding?: number;
+  /** For Row mode: whether items wrap to new lines. */
+  wrap?: boolean;
+  /** align-items on the cross-axis. */
+  align?: LayoutAlign;
 }
 
 interface BuilderState {
@@ -94,6 +182,11 @@ interface BuilderState {
   headerBlocks: Block[];
   sidebarBlocks: Block[];
   footerBlocks: Block[];
+
+  /* Per-zone layout configuration. Replaces the implicit
+     "body = 3-col grid" rule with an explicit, editable contract
+     per zone. Defaults keep visual parity with the old Builder. */
+  zoneLayouts: Record<ZoneId, ZoneLayout>;
 
   // UI state
   settingsOpen: boolean;
@@ -201,6 +294,14 @@ interface BuilderState {
   removeBlockFromZone: (zone: ZoneId, blockId: string) => void;
   moveBlockBetweenZones: (fromZone: ZoneId, toZone: ZoneId, blockId: string, toIndex: number) => void;
 
+  // Actions - Layout
+  /** Patch a specific block's layout props (width/min/max/grow/align/margin).
+     Merges into existing layout - pass undefined in a field to clear it. */
+  updateBlockLayout: (zone: ZoneId, blockId: string, patch: Partial<LayoutProps>) => void;
+  /** Patch a zone's container layout (mode/columns/gap/padding/wrap/align).
+     Used by the zone layout-mode picker. */
+  setZoneLayout: (zone: ZoneId, patch: Partial<ZoneLayout>) => void;
+
   // Actions - UI
   toggleSettings: () => void;
   togglePreview: () => void;
@@ -302,6 +403,18 @@ export const useBuilder = create<BuilderState>((set) => ({
   footerBlocks: [
     { id: 'ftr-0', type: 'FooterText', props: { label: 'Powered by Design Hub', version: 'v1.0' } },
   ],
+
+  /* Zone layout defaults - backward-compatible with the pre-flex
+     Builder: body now uses Row+wrap (visually replaces the old
+     3-column grid once block widths translate colSpan → percent),
+     header/footer stay horizontal, sidebar stays vertical. Users
+     can flip any of these via the zone layout-mode picker. */
+  zoneLayouts: {
+    body:    { mode: 'row',   gap: 12, wrap: true,  align: 'stretch' },
+    header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+    sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
+    footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+  },
 
   // UI state
   settingsOpen: false,
@@ -462,6 +575,12 @@ export const useBuilder = create<BuilderState>((set) => ({
     headerBlocks: [],
     sidebarBlocks: [],
     footerBlocks: [],
+    zoneLayouts: {
+      body:    { mode: 'row',   gap: 12, wrap: true,  align: 'stretch' },
+      header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+      sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
+      footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+    },
     selectedComponents: [],
     selectedBlockId: null,
     selectedBlockZone: null,
@@ -544,6 +663,28 @@ export const useBuilder = create<BuilderState>((set) => ({
       return { [fromKey]: newFrom, [toKey]: toArr };
     });
   },
+
+  /* Patch a block's layout metadata. Creates the layout object on
+     first write so old blocks without layout pick up new fields
+     cleanly. Pass `undefined` for a field to clear it. */
+  updateBlockLayout: (zone, blockId, patch) => {
+    const key = ZONE_KEYS[zone];
+    set((s) => ({
+      [key]: (s[key] as Block[]).map((b) =>
+        b.id === blockId
+          ? { ...b, layout: { ...(b.layout ?? {}), ...patch } }
+          : b,
+      ),
+    }));
+  },
+  /* Patch a zone's layout container config. Deep-merge over the
+     current zone layout. */
+  setZoneLayout: (zone, patch) => set((s) => ({
+    zoneLayouts: {
+      ...s.zoneLayouts,
+      [zone]: { ...s.zoneLayouts[zone], ...patch },
+    },
+  })),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

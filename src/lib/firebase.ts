@@ -29,6 +29,8 @@ import type {
   DesignSystem,
   BuilderMode,
   InterfaceType,
+  ZoneLayout,
+  ZoneId,
 } from "@/store/useBuilder";
 
 // ── Firebase config ─────────────────────────────────────────────────────────
@@ -62,6 +64,11 @@ export interface ProjectSnapshot {
   headerBlocks?: Block[];
   sidebarBlocks?: Block[];
   footerBlocks?: Block[];
+  /* Zone layout configs (flex/grid/stack + gap + wrap + padding).
+     Added with the flexbox layout system; optional so older docs
+     still deserialize - loadProject falls back to the store's
+     default zoneLayouts when absent. */
+  zoneLayouts?: Record<ZoneId, ZoneLayout>;
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
@@ -101,6 +108,7 @@ export function useCloudStorage() {
   const selectedComponents = useBuilder((s) => s.selectedComponents);
   const colorOverrides = useBuilder((s) => s.colorOverrides);
   const activeTemplateId = useBuilder((s) => s.activeTemplateId);
+  const zoneLayouts = useBuilder((s) => s.zoneLayouts);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -172,6 +180,7 @@ export function useCloudStorage() {
         headerBlocks,
         sidebarBlocks,
         footerBlocks,
+        zoneLayouts,
         designSystem,
         mode,
         density,
@@ -230,6 +239,12 @@ export function useCloudStorage() {
       headerBlocks: snapshot.headerBlocks ?? [],
       sidebarBlocks: snapshot.sidebarBlocks ?? [],
       footerBlocks: snapshot.footerBlocks ?? [],
+      /* Restore zone layouts if present in the snapshot; otherwise
+         fall through to whatever the store currently holds (the
+         default config). Pre-flex-layout sessions deserialize with
+         the defaults, which visually match the old 3-col behaviour
+         once colSpan → width translation runs. */
+      ...(snapshot.zoneLayouts ? { zoneLayouts: snapshot.zoneLayouts } : {}),
       designSystem: snapshot.designSystem,
       mode: snapshot.mode,
       density: snapshot.density,
