@@ -227,14 +227,13 @@ export function ComponentLibrary() {
             </div>
             <FieldsComponent blockId={selectedBlock.id} />
 
-            {/* Layout panel - only meaningful for body blocks since
-                header/sidebar/footer flows inherit from the zone. */}
-            {selectedBlockZone === "body" && (
-              <>
-                <div className="lib-section-divider" />
-                <LayoutSection block={selectedBlock} zone={selectedBlockZone} />
-              </>
-            )}
+            {/* Layout panel - per-block sizing + alignment.
+                Visible for any zone; header/sidebar/footer blocks
+                can now opt into fixed-width layouts too. */}
+            <div className="lib-section-divider" />
+            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
+            <div className="lib-section-divider" />
+            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
 
             {/* Chart colours - only for Highchart blocks (P1.3).
                 Swatches are the active DS's 12-slot categorical palette
@@ -460,6 +459,139 @@ function LayoutSection({
             updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) });
           }}
         />
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   ZoneLayoutSection - container flow picker
+   ══════════════════════════════════════════════════════════
+   Shows one section per selected zone describing how its
+   children flow. Three modes: Stack (vertical), Row (horizontal
+   with wrap), Grid (N columns). Grid exposes a column count.
+   Also exposes gap + padding + wrap + align for fine control.
+
+   Default values match each zone's traditional behaviour:
+     body    -> row + wrap + 12px gap + stretch align
+     header  -> row + no-wrap + 8px gap + center align
+     sidebar -> stack + 2px gap + stretch align
+     footer  -> row + no-wrap + 8px gap + center align
+
+   Writes go through useBuilder().setZoneLayout(zone, patch).
+   ZoneDropContainer reads the same slice + applies
+   computeContainerStyle, so picking a new mode immediately
+   re-flows the canvas. */
+function ZoneLayoutSection({ zone }: { zone: import("@/store/useBuilder").ZoneId }) {
+  const zoneLayout = useBuilder((s) => s.zoneLayouts[zone]);
+  const setZoneLayout = useBuilder((s) => s.setZoneLayout);
+  const label = zone.charAt(0).toUpperCase() + zone.slice(1);
+
+  return (
+    <>
+      <div className="inspector-section-title">{label} Zone Layout</div>
+
+      {/* Flow mode - stack / row / grid */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Flow</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Zone flow mode">
+          {([
+            ["stack", "Stack"],
+            ["row", "Row"],
+            ["grid", "Grid"],
+          ] as const).map(([m, lbl]) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={zoneLayout.mode === m}
+              className={`inspector-toggle-btn${zoneLayout.mode === m ? " active" : ""}`}
+              onClick={() => setZoneLayout(zone, { mode: m })}
+              title={
+                m === "stack" ? "Vertical column - children stack top-down"
+                : m === "row" ? "Horizontal row - children sit side-by-side, wrap at edge"
+                : "CSS Grid with a fixed column count - children snap to column boundaries"
+              }
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid column count - only shown in Grid mode */}
+      {zoneLayout.mode === "grid" && (
+        <div className="inspector-field">
+          <label className="inspector-field-label">Columns</label>
+          <input
+            type="number"
+            className="inspector-input"
+            min={1}
+            max={12}
+            value={zoneLayout.columns ?? 3}
+            onChange={(e) => setZoneLayout(zone, { columns: Math.max(1, Math.min(12, Number(e.target.value) || 3)) })}
+          />
+        </div>
+      )}
+
+      {/* Wrap toggle - Row mode only; Stack is always nowrap */}
+      {zoneLayout.mode === "row" && (
+        <div className="inspector-field">
+          <label className="inspector-field-label">Wrap</label>
+          <div className="inspector-toggle-group">
+            {([
+              [false, "Nowrap"],
+              [true, "Wrap"],
+            ] as const).map(([v, lbl]) => (
+              <button
+                key={lbl}
+                className={`inspector-toggle-btn${(zoneLayout.wrap ?? true) === v ? " active" : ""}`}
+                onClick={() => setZoneLayout(zone, { wrap: v })}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Gap - space between children in px */}
+      <div className="inspector-field inspector-field-row">
+        <div style={{ flex: 1 }}>
+          <label className="inspector-field-label">Gap (px)</label>
+          <input
+            type="number"
+            className="inspector-input"
+            min={0}
+            value={zoneLayout.gap ?? 0}
+            onChange={(e) => setZoneLayout(zone, { gap: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label className="inspector-field-label">Padding (px)</label>
+          <input
+            type="number"
+            className="inspector-input"
+            min={0}
+            value={zoneLayout.padding ?? 0}
+            onChange={(e) => setZoneLayout(zone, { padding: Math.max(0, Number(e.target.value) || 0) })}
+          />
+        </div>
+      </div>
+
+      {/* Align - align-items on the cross axis */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Align</label>
+        <div className="inspector-toggle-group">
+          {(["start", "center", "end", "stretch"] as const).map((a) => (
+            <button
+              key={a}
+              className={`inspector-toggle-btn${(zoneLayout.align ?? "stretch") === a ? " active" : ""}`}
+              onClick={() => setZoneLayout(zone, { align: a })}
+            >
+              {a === "start" ? "Top" : a === "center" ? "Center" : a === "end" ? "Bottom" : "Stretch"}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );
