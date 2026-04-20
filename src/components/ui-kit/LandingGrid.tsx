@@ -27,23 +27,32 @@ export const LandingGrid = React.memo(function LandingGrid() {
     ? [{ icon: "palette", label: "Dynamic Color" }, { icon: "accessibility_new", label: "WCAG AA" }]
     : activeSystem === "ausos"
     ? [{ icon: "blur_on", label: "Glassmorphism" }, { icon: "gradient", label: "Aurora Themes" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
+    : activeSystem === "carbon"
+    ? [{ icon: "grid_view", label: "2px Grid" }, { icon: "palette", label: "4 Themes" }, { icon: "density_small", label: "7 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }]
     : [{ icon: "palette", label: "Brand Theming" }, { icon: "straighten", label: "3 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }];
 
   const orgLabel = activeSystem === "m3" ? `Google · ${sysInfo.org}` : sysInfo.org;
-  const heroWeight = activeSystem === "salt" ? 700 : activeSystem === "m3" ? 400 : 300;
+  /* Carbon uses Plex Light 300 for display-01 - matches the
+     carbondesignsystem.com hero treatment exactly. Salt goes
+     heavy (700), M3 + Fluent sit at 400. */
+  const heroWeight = activeSystem === "salt" ? 700 : activeSystem === "m3" ? 400 : activeSystem === "carbon" ? 300 : 300;
   const descSuffix = activeSystem === "salt"
     ? " accessible, density-aware, token-driven design system."
     : activeSystem === "m3"
     ? " expressive, adaptive, and accessible design system."
     : activeSystem === "ausos"
     ? " glassmorphism-first, accessible, and token-driven design system."
+    : activeSystem === "carbon"
+    ? " IBM's open-source design system for products and digital experiences."
     : " expressive, adaptive, and cross-platform design system.";
 
-  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "ausos" ? undefined : "f-card";
-  const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "ausos" ? 14 : 8;
-  const pillRadius = activeSystem === "salt" ? 4 : 20;
-  const pillWeight = activeSystem === "salt" ? 600 : 500;
-  const catWeight = activeSystem === "salt" ? 700 : 600;
+  /* Carbon is flat: 0px radius on cards, no shadows, Plex Light
+     hero, tag-style pills (16px), $layer-accent pill bg. */
+  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "ausos" ? undefined : activeSystem === "carbon" ? "cb-tile" : "f-card";
+  const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "ausos" ? 14 : activeSystem === "carbon" ? 0 : 8;
+  const pillRadius = activeSystem === "salt" ? 4 : activeSystem === "carbon" ? 16 : 20;
+  const pillWeight = activeSystem === "salt" ? 600 : activeSystem === "carbon" ? 400 : 500;
+  const catWeight = activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 400 : 600;
 
   return (
     <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
@@ -63,7 +72,11 @@ export const LandingGrid = React.memo(function LandingGrid() {
             <div key={s.label} style={{
               display: "flex", alignItems: "center", gap: t.scale.gap - 2,
               padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: pillRadius,
-              background: activeSystem === "m3" ? t.bg2 : t.bg, border: `1px solid ${t.border}`,
+              /* Carbon pills use $layer-accent (no border, pill radius)
+                 so they read as Carbon tags; others keep their existing
+                 bordered-pill look. */
+              background: activeSystem === "carbon" ? (t.T.layerAccent01 || t.bg2) : activeSystem === "m3" ? t.bg2 : t.bg,
+              border: activeSystem === "carbon" ? "none" : `1px solid ${t.border}`,
               fontSize: t.scale.navF - 1, color: t.fg2, fontWeight: pillWeight,
             }}>
               <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: t.accent }}>{s.icon}</span>
@@ -91,15 +104,18 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     style={{
                       width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
                       borderRadius: cardRadius,
-                      border: activeSystem === "ausos" ? `1px solid ${t.border}` : undefined,
-                      background: activeSystem === "ausos" ? t.T.cardBg : undefined,
+                      border: activeSystem === "ausos" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
+                      background: activeSystem === "ausos" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
                       backdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
                       WebkitBackdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
-                      transition: "box-shadow 200ms, border-color 200ms",
+                      transition: "background 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-color 200ms",
                     }}
                   >
                     <div style={{
-                      background: activeSystem === "ausos" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : undefined,
+                      /* Carbon preview tile uses $layer-accent (a half-step
+                         deeper than layer-01 where the card body sits) to
+                         separate the preview visually without shadow. */
+                      background: activeSystem === "ausos" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
                       padding: 20, minHeight: 60,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,

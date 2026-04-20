@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, type LayoutProps, type LayoutWidth, type ZoneId } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS, TYPE_FIELDS } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
@@ -281,8 +281,8 @@ function LayoutSection({
   block,
   zone,
 }: {
-  block: { id: string; type: string; props: Record<string, unknown>; layout?: import("@/store/useBuilder").LayoutProps };
-  zone: import("@/store/useBuilder").ZoneId;
+  block: { id: string; type: string; props: Record<string, unknown>; layout?: LayoutProps };
+  zone: ZoneId;
 }) {
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
   const layout = block.layout ?? {};
@@ -303,7 +303,7 @@ function LayoutSection({
   })();
 
   /* Numeric-only part of a LayoutWidth token, for editing. */
-  const parseWidthValue = (w: import("@/store/useBuilder").LayoutWidth | undefined): string => {
+  const parseWidthValue = (w: LayoutWidth | undefined): string => {
     if (w === undefined || w === "fill" || w === "auto") return "";
     if (typeof w === "number") return String(w);
     return w.replace(/(px|%|fr)$/, "");
@@ -317,7 +317,7 @@ function LayoutSection({
     } else {
       const n = value !== undefined ? value : parseWidthValue(layout.width) || (mode === "percent" ? "50" : mode === "fr" ? "1" : "240");
       const next = mode === "px" ? `${n}px` : mode === "percent" ? `${n}%` : `${n}fr`;
-      updateBlockLayout(zone, block.id, { width: next as import("@/store/useBuilder").LayoutWidth });
+      updateBlockLayout(zone, block.id, { width: next as LayoutWidth });
     }
   };
 
@@ -390,7 +390,7 @@ function LayoutSection({
             onChange={(e) => {
               const v = e.target.value;
               updateBlockLayout(zone, block.id, {
-                minWidth: v === "" ? undefined : (`${v}px` as import("@/store/useBuilder").LayoutWidth),
+                minWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
               });
             }}
           />
@@ -406,7 +406,7 @@ function LayoutSection({
             onChange={(e) => {
               const v = e.target.value;
               updateBlockLayout(zone, block.id, {
-                maxWidth: v === "" ? undefined : (`${v}px` as import("@/store/useBuilder").LayoutWidth),
+                maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
               });
             }}
           />
@@ -482,7 +482,7 @@ function LayoutSection({
    ZoneDropContainer reads the same slice + applies
    computeContainerStyle, so picking a new mode immediately
    re-flows the canvas. */
-function ZoneLayoutSection({ zone }: { zone: import("@/store/useBuilder").ZoneId }) {
+function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const zoneLayout = useBuilder((s) => s.zoneLayouts[zone]);
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);

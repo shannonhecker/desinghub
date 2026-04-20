@@ -5,6 +5,8 @@ import {
   Inter,
   Open_Sans,
   Roboto,
+  IBM_Plex_Sans,
+  IBM_Plex_Mono,
 } from "next/font/google";
 
 /**
@@ -58,6 +60,28 @@ export const roboto = Roboto({
   variable: "--font-roboto",
 });
 
+/* IBM Plex Sans - Carbon DS typeface. Loaded self-hosted via
+   next/font so Carbon-themed pages render with Plex on first
+   paint without a CDN round-trip. Weights match Carbon's
+   productive + expressive scales: Light 300 for display
+   headings, Regular 400 for body, SemiBold 600 for section
+   headings. */
+export const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-ibm-plex-sans",
+});
+
+/* IBM Plex Mono - used by Carbon for code snippets, token
+   names, and data-grid monospace rows. */
+export const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-ibm-plex-mono",
+});
+
 /** All font CSS variables joined for <html> className */
 export const fontVariables = [
   outfit.variable,
@@ -66,4 +90,6 @@ export const fontVariables = [
   inter.variable,
   openSans.variable,
   roboto.variable,
+  ibmPlexSans.variable,
+  ibmPlexMono.variable,
 ].join(" ");

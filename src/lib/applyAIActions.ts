@@ -2,7 +2,7 @@
 
 import { useBuilder } from "@/store/useBuilder";
 import type { AIAction } from "./parseAIResponse";
-import type { DesignSystem, BuilderMode, InterfaceType, ZoneId } from "@/store/useBuilder";
+import type { DesignSystem, BuilderMode, InterfaceType, ZoneId, Block, LayoutProps, ZoneLayout } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
 import { pushSnapshot } from "@/store/useBuilderHistory";
 
@@ -77,18 +77,18 @@ export function applyAIActions(actions: AIAction[]): void {
           /* New optional layout shape. Accepts any LayoutProps
              fields: width, minWidth, maxWidth, grow, align, margin.
              The resolver validates width strings at render time. */
-          layout?: Partial<import("@/store/useBuilder").LayoutProps>;
+          layout?: Partial<LayoutProps>;
         } | null;
         if (!v || typeof v.type !== "string") break;
         const zone: ZoneId = v.zone && VALID_ZONES.includes(v.zone) ? v.zone : "body";
         // Find defaults from registry
         const blueprint = LIBRARY_BLUEPRINTS.find((b) => b.type === v.type);
         const defaults = blueprint?.defaults ?? {};
-        const block: import("@/store/useBuilder").Block = {
+        const block: Block = {
           id: uid(),
           type: v.type,
           props: { ...defaults, ...v.props },
-          ...(v.layout ? { layout: v.layout } : {}),
+          ...(v.layout ? { layout: v.layout as LayoutProps } : {}),
         };
         store.addBlockToZone(zone, block, v.index);
         break;
@@ -157,15 +157,17 @@ export function applyAIActions(actions: AIAction[]): void {
            to fill the row". */
         const v = action.value as {
           blockId?: string;
-          layout?: Partial<import("@/store/useBuilder").LayoutProps>;
+          layout?: Partial<LayoutProps>;
         } | null;
         if (!v || typeof v.blockId !== "string" || !v.layout) break;
+        const blockId: string = v.blockId;
+        const patch: Partial<LayoutProps> = v.layout;
         const st = useBuilder.getState();
         for (const zone of VALID_ZONES) {
           const key = zone === "body" ? "blocks" : `${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks";
           const arr = zone === "body" ? st.blocks : st[key];
-          if (arr.some((b) => b.id === v.blockId)) {
-            store.updateBlockLayout(zone, v.blockId, v.layout);
+          if (arr.some((b) => b.id === blockId)) {
+            store.updateBlockLayout(zone, blockId, patch);
             break;
           }
         }
@@ -179,7 +181,7 @@ export function applyAIActions(actions: AIAction[]): void {
            sidebar vertically with 4px gap". */
         const v = action.value as {
           zone?: ZoneId;
-          layout?: Partial<import("@/store/useBuilder").ZoneLayout>;
+          layout?: Partial<ZoneLayout>;
         } | null;
         if (!v || !v.zone || !VALID_ZONES.includes(v.zone) || !v.layout) break;
         store.setZoneLayout(v.zone, v.layout);

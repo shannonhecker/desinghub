@@ -18,7 +18,12 @@
 
 import React, { useState } from "react";
 
-export const CARBON_FONT = "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
+/* Font stack - next/font/google registers IBM Plex Sans at the
+   app root via the --font-ibm-plex-sans CSS variable, so the
+   stack picks it up immediately. The raw family name is kept as
+   a fallback for any consumer that inlines Carbon CSS outside
+   the app root (e.g. standalone preview iframes). */
+export const CARBON_FONT = "var(--font-ibm-plex-sans), 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
 
 /* ──────────────────────────────────────────────
    PRIMITIVE COLOURS (from @carbon/colors)
@@ -168,9 +173,10 @@ export const getCarbonT = () => T;
    Style tabs (button/input/table/notification). */
 export function carbonBuildCSS(theme) {
   const t = theme || T;
+  /* IBM Plex Sans + Mono are registered globally via next/font
+     in src/lib/fonts.ts, so no @import needed here - saves a
+     network round-trip on first paint. */
   return `
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
     :root {
       --cb-bg: ${t.background}; --cb-bg-hover: ${t.backgroundHover}; --cb-bg-inverse: ${t.backgroundInverse};
       --cb-layer-01: ${t.layer01}; --cb-layer-02: ${t.layer02}; --cb-layer-03: ${t.layer03};

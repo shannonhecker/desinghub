@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { useBuilder, type Block } from "@/store/useBuilder";
+import { useBuilder, type Block, type LayoutWidth } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
@@ -244,7 +244,7 @@ export function PreviewCanvas() {
                   if (b.id !== block.id) return b;
                   const { colSpan: _drop, ...restProps } = b.props;
                   void _drop;
-                  return { ...b, layout: { ...(b.layout ?? {}), width: w as import("@/store/useBuilder").LayoutWidth }, props: restProps };
+                  return { ...b, layout: { ...(b.layout ?? {}), width: w as LayoutWidth }, props: restProps };
                 });
                 setBlocks(next);
               }}
