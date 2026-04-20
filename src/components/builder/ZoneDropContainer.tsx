@@ -11,6 +11,7 @@ import {
 import type { ZoneId, Block, ZoneLayout } from "@/store/useBuilder";
 import { useBuilder } from "@/store/useBuilder";
 import { computeContainerStyle } from "@/lib/layoutResolver";
+import { InsertionSlot } from "./InsertionSlot";
 
 /* ══════════════════════════════════════════════════════════
    ZoneDropContainer - shared droppable + SortableContext
@@ -22,6 +23,12 @@ import { computeContainerStyle } from "@/lib/layoutResolver";
    the store's zoneLayouts[zoneId] config rather than a hard-
    coded prop. `direction` is kept as a legacy fallback for
    callers that haven't migrated yet.
+
+   When `experimentalLayout` is on, we interleave InsertionSlot
+   strips between every mapped child so users can add a new
+   block at any index with a + click. Slots themselves are
+   gated internally by the flag, so turning the flag off makes
+   them render nothing (no layout cost, no visual diff).
    ══════════════════════════════════════════════════════════ */
 
 interface ZoneDropContainerProps {
@@ -48,6 +55,7 @@ export function ZoneDropContainer({
 }: ZoneDropContainerProps) {
   const storeLayout = useBuilder((s) => s.zoneLayouts[zoneId]);
   const zoneLayout = zoneLayoutOverride ?? storeLayout;
+  const experimentalLayout = useBuilder((s) => s.experimentalLayout);
   const { setNodeRef, isOver } = useDroppable({
     id: `zone-${zoneId}`,
     data: { zone: zoneId },
@@ -67,10 +75,36 @@ export function ZoneDropContainer({
 
   const style = zoneLayout ? computeContainerStyle(zoneLayout) : undefined;
 
+  /* Interleave InsertionSlot strips between every mapped child.
+     `React.Children.toArray` preserves the caller's keys + strips
+     falsy children, which matches the existing behavior. We only
+     materialize slots when the flag is on so the non-experimental
+     path stays structurally identical to before. */
+  const childArray = React.Children.toArray(children);
+  const slotOrientation: "horizontal" | "vertical" = mode === "row" ? "vertical" : "horizontal";
+  const renderedChildren = experimentalLayout
+    ? childArray.flatMap((child, i) => [
+        <InsertionSlot
+          key={`slot-${zoneId}-${i}`}
+          zone={zoneId}
+          index={i}
+          orientation={slotOrientation}
+        />,
+        child,
+      ]).concat(
+        <InsertionSlot
+          key={`slot-${zoneId}-end`}
+          zone={zoneId}
+          index={childArray.length}
+          orientation={slotOrientation}
+        />,
+      )
+    : children;
+
   return (
     <div
       ref={setNodeRef}
-      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${className ? ` ${className}` : ""}`}
+      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${experimentalLayout ? " has-insertion-slots" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       data-layout-mode={mode}
     >
@@ -78,7 +112,7 @@ export function ZoneDropContainer({
         items={blocks.map((b) => b.id)}
         strategy={strategy}
       >
-        {children}
+        {renderedChildren}
       </SortableContext>
     </div>
   );

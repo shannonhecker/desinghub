@@ -225,6 +225,7 @@ export function PreviewCanvas() {
               zone="body"
               isSelected={selectedBlockId === block.id}
               colSpan={colSpan}
+              currentWidth={block.layout?.width}
               layoutHints={block.layout ? { minWidth: block.layout.minWidth, maxWidth: block.layout.maxWidth } : undefined}
               onColSpanChange={(span) => {
                 /* Legacy colSpan write - the resolver auto-translates
