@@ -9772,6 +9772,73 @@
   box-shadow: 0 0 8px rgba(138, 171, 168, 0.3);
 }
 
+/* ── Corner resize handle - percent width ──
+   Bottom-right corner grip. Complements the right-edge px
+   handle for responsive / layout-grid style resizing. */
+.block-resize-corner {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.canvas-block:hover .block-resize-corner,
+.block-resize-corner.is-resizing {
+  opacity: 1;
+}
+.block-resize-grip-corner {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgba(138, 171, 168, 0.7);
+  border-bottom: 2px solid rgba(138, 171, 168, 0.7);
+  border-bottom-right-radius: 2px;
+  transition: border-color 0.15s;
+}
+.block-resize-corner:hover .block-resize-grip-corner,
+.block-resize-corner.is-resizing .block-resize-grip-corner {
+  border-right-color: rgba(138, 171, 168, 1);
+  border-bottom-color: rgba(138, 171, 168, 1);
+}
+
+/* ── Value overlay shown during resize drag ──
+   Figma-style floating tooltip that displays the current
+   pixel or percent value. Positioned near the handle so the
+   user's cursor sits right on top of it. */
+.block-resize-overlay {
+  position: absolute;
+  top: -26px;
+  right: -6px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: rgba(15, 98, 254, 0.95); /* Carbon blue for visibility */
+  color: #ffffff;
+  font-family: 'SF Mono', 'IBM Plex Mono', 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  animation: block-resize-overlay-in 120ms ease-out;
+}
+.block-resize-corner .block-resize-overlay {
+  top: auto;
+  bottom: -26px;
+  right: -6px;
+}
+@keyframes block-resize-overlay-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Column span button on block chrome */
 .canvas-block-colspan {
   position: absolute;

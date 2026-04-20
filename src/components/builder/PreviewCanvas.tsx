@@ -225,14 +225,28 @@ export function PreviewCanvas() {
               zone="body"
               isSelected={selectedBlockId === block.id}
               colSpan={colSpan}
+              layoutHints={block.layout ? { minWidth: block.layout.minWidth, maxWidth: block.layout.maxWidth } : undefined}
               onColSpanChange={(span) => {
                 /* Legacy colSpan write - the resolver auto-translates
-                   to width on the next render. Later sub-phases will
-                   swap this for a direct layout.width write. */
+                   to width on the next render. The new width handle
+                   below bypasses this for continuous resizing. */
                 const next = blocks.map((b) =>
                   b.id === block.id ? { ...b, props: { ...b.props, colSpan: span } } : b
                 );
                 syncToStore(next);
+              }}
+              onWidthChange={(w) => {
+                /* Write the continuous width to block.layout.width so
+                   the resolver renders an exact pixel or percent value.
+                   Also clear the legacy colSpan to avoid stale values
+                   fighting the new width on next mount. */
+                const next = blocks.map((b) => {
+                  if (b.id !== block.id) return b;
+                  const { colSpan: _drop, ...restProps } = b.props;
+                  void _drop;
+                  return { ...b, layout: { ...(b.layout ?? {}), width: w as import("@/store/useBuilder").LayoutWidth }, props: restProps };
+                });
+                setBlocks(next);
               }}
               onSwapClick={() =>
                 setSwapTarget(swapTarget === block.id ? null : block.id)
