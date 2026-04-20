@@ -4,7 +4,10 @@ export interface AIAction {
   action:
     | "setDesignSystem" | "setComponents" | "setDensity" | "setMode"
     | "addBlock" | "removeBlock" | "moveBlock" | "updateBlockProps"
-    | "setThemeKey" | "setColorOverride" | "clearCanvas" | "setInterfaceType";
+    | "setThemeKey" | "setColorOverride" | "clearCanvas" | "setInterfaceType"
+    /* Layout system additions (sub-phase 9): width/min/max per block
+       + zone-level flow mode. Handled in applyAIActions.ts. */
+    | "updateBlockLayout" | "setZoneLayout";
   value: unknown;
 }
 
