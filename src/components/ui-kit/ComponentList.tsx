@@ -28,7 +28,11 @@ export function ComponentList() {
     });
   };
 
-  const itemClass = activeSystem === "salt" ? "s-sidebar-item" : activeSystem === "m3" ? "m3-menu-item" : activeSystem === "fluent" ? "f-sidebar-item" : "a-sidebar-item";
+  const itemClass = activeSystem === "salt" ? "s-sidebar-item"
+    : activeSystem === "m3" ? "m3-menu-item"
+    : activeSystem === "fluent" ? "f-sidebar-item"
+    : activeSystem === "carbon" ? "cb-sidenav-item"
+    : "a-sidebar-item";
 
   const activeItemStyle = (active: boolean, isChild = false): React.CSSProperties => {
     const indent = isChild ? (activeSystem === "m3" ? 12 : 8) : 0;
@@ -46,6 +50,16 @@ export function ComponentList() {
       return active
         ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accent, background: t.accentWeak, borderRadius: 6, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" }
         : { fontSize: t.scale.navF, color: t.fg2, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" };
+    }
+    if (activeSystem === "carbon") {
+      /* Carbon side-nav mirrors carbondesignsystem.com's left-border
+         active indicator: 3px $interactive border-left, $text-primary
+         text (SemiBold when active), $layer-hover background.
+         Inactive items have a 3px transparent border so active/inactive
+         don't shift horizontally. */
+      return active
+        ? { fontSize: 14, fontWeight: 600, color: t.fg, background: t.T.layerHover01 ?? t.bg2, borderLeft: `3px solid ${t.accent}`, borderRadius: 0, padding: "10px 16px", marginLeft: 0, paddingLeft: 16 + indent }
+        : { fontSize: 14, fontWeight: 400, color: t.fg2, borderLeft: "3px solid transparent", borderRadius: 0, padding: "10px 16px", marginLeft: 0, paddingLeft: 16 + indent };
     }
     return active
       ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accentText, background: t.accentWeak, borderLeft: `3px solid ${t.accent}`, borderRadius: "0 4px 4px 0", paddingLeft: t.scale.gap + 4, marginLeft: indent }

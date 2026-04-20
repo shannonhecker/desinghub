@@ -37,27 +37,50 @@ export function DesignHubApp() {
     ? store.m3.themeKey.startsWith("dark")
     : activeSystem === "ausos"
     ? store.ausos.themeKey === "dark"
+    : activeSystem === "carbon"
+    ? store.carbon.themeKey === "g90" || store.carbon.themeKey === "g100"
     : store.fluent.themeKey === "dark";
   const logoFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0)";
 
+  /* Carbon-specific chrome treatment - matches carbondesignsystem.com:
+     black UI Shell header (always $background-inverse), white text
+     on header regardless of main theme, Carbon-blue accent for the
+     active system switcher + AI Builder button. */
+  const isCarbon = activeSystem === "carbon";
+  const headerBg = isCarbon ? "#161616" /* $background-inverse */ : (activeSystem === "ausos" ? "transparent" : t.bg);
+  const headerFg = isCarbon ? "#ffffff" : t.fg;
+  const headerBorder = isCarbon ? "#393939" : (activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border);
+  /* Logo stays black on white headers, white on dark/Carbon headers. */
+  const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: activeSystem === "ausos" ? t.bg : t.bg2, fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh",
+      /* Carbon uses its own canvas bg (white / g100) so the main area
+         and the outer wrapper are the same colour, matching the
+         "no seam" aesthetic of carbondesignsystem.com. */
+      background: activeSystem === "ausos" ? t.bg : isCarbon ? t.bg : t.bg2,
+      fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
-      {/* Header - 3-column, height + padding scale with density */}
+      {/* Header - 3-column. Carbon renders as the IBM UI Shell:
+          black $background-inverse bar, 48px tall, white text, no
+          pill badges (Carbon uses flat text+tag pattern). Other
+          DSes keep their per-theme chrome. */}
       <header style={{
         display: "flex", alignItems: "center",
-        padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
-        borderBottom: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
-        background: activeSystem === "ausos" ? "transparent" : t.bg,
-        minHeight: t.scale.hdrH, flexShrink: 0,
+        padding: isCarbon ? "0 16px" : `${t.scale.gap}px ${t.scale.gap + 8}px`,
+        borderBottom: `1px solid ${headerBorder}`,
+        background: headerBg,
+        minHeight: isCarbon ? 48 : t.scale.hdrH, flexShrink: 0,
         position: "relative",
       }}>
         {/* Left - logo + title */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
-          <img src="/aologo.svg" alt="ausōs" style={{ height: t.scale.navF + 4, width: "auto", filter: logoFilter }} />
-          <span style={{ fontSize: t.scale.navF + 1, fontWeight: 600, color: t.fg }}>UI Kit Overview</span>
+          <img src="/aologo.svg" alt="ausōs" style={{ height: isCarbon ? 16 : t.scale.navF + 4, width: "auto", filter: resolvedLogoFilter }} />
+          <span style={{ fontSize: isCarbon ? 14 : t.scale.navF + 1, fontWeight: isCarbon ? 400 : 600, color: headerFg }}>
+            {isCarbon ? <><strong style={{ fontWeight: 600 }}>IBM</strong> Design Hub</> : "UI Kit Overview"}
+          </span>
         </div>
 
         {/* Center - DS switcher, always centered */}
@@ -77,28 +100,43 @@ export function DesignHubApp() {
                 store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
               } else if (activeSystem === "ausos") {
                 store.setAusosTheme(store.ausos.themeKey === "dark" ? "light" : "dark");
+              } else if (activeSystem === "carbon") {
+                /* Carbon toggles white ↔ g100 (canonical light/dark).
+                   Users pick g10/g90 explicitly via ThemeControls. */
+                const k = store.carbon.themeKey;
+                store.setCarbonTheme(k === "g100" || k === "g90" ? "white" : "g100");
               } else {
                 store.setFluentTheme(store.fluent.themeKey === "dark" ? "light" : "dark");
               }
             }}
             title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: t.fg2, display: "flex", alignItems: "center" }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: isCarbon ? "#c6c6c6" : t.fg2, display: "flex", alignItems: "center" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF + 2 }}>
               {isDarkTheme ? "light_mode" : "dark_mode"}
             </span>
           </button>
-          <span style={{
-            fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
-            padding: `${t.scale.gap - 3}px ${t.scale.gap + 4}px`, borderRadius: 9999, fontWeight: 600,
-          }}>
-            {t.T.name || sysInfo.name}
-          </span>
+          {isCarbon ? (
+            /* Carbon theme badge as a Carbon tag (gray, 16px pill). */
+            <span style={{ fontSize: 12, color: "#ffffff", background: "rgba(255,255,255,0.1)", padding: "3px 10px", borderRadius: 16, fontWeight: 400 }}>
+              {store.carbon.themeKey.toUpperCase()}
+            </span>
+          ) : (
+            <span style={{
+              fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
+              padding: `${t.scale.gap - 3}px ${t.scale.gap + 4}px`, borderRadius: 9999, fontWeight: 600,
+            }}>
+              {t.T.name || sysInfo.name}
+            </span>
+          )}
           <Link href="/" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: t.scale.labF + 1, fontWeight: 600, color: t.accentFg,
-            background: t.accent,
-            padding: `${t.scale.gap - 1}px ${t.scale.gap + 8}px`, borderRadius: 9999, textDecoration: "none",
+            fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
+            color: "#ffffff",
+            background: isCarbon ? "#0f62fe" : t.accent,
+            padding: isCarbon ? "10px 16px" : `${t.scale.gap - 1}px ${t.scale.gap + 8}px`,
+            borderRadius: isCarbon ? 0 : 9999,
+            textDecoration: "none",
           }}>
             AI Builder
           </Link>
@@ -111,7 +149,9 @@ export function DesignHubApp() {
           <aside style={{
             width: t.scale.panelW,
             borderRight: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
-            background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg2 : t.bg,
+            /* Carbon sidebar sits at $layer-01 (one step up from
+               canvas) matching the Carbon docs sidenav. */
+            background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg2 : isCarbon ? t.T.layer01 : t.bg,
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
