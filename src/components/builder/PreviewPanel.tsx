@@ -36,6 +36,8 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
+import { getTheme, getFullCSS } from "@/data/registry";
+import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
 import { CompareView } from "./CompareView";
@@ -47,6 +49,47 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
+
+/* ══════════════════════════════════════════════════════════
+   DSPreviewStyles - injects design-system CSS into the builder.
+   ══════════════════════════════════════════════════════════
+   Salt / M3 / Fluent / ausos ship their component styling through
+   pre-baked .s-*, .m3-*, .f-*, .a-* rules in builder.css, but the
+   Carbon .cb-* rules live in carbonBuildCSS() (so they can read the
+   active Carbon theme). We mirror the DesignHubApp pattern here and
+   dangerouslySetInnerHTML the sanitised Carbon CSS (tokens + .cb-*
+   rules) whenever designSystem === "carbon", so the /builder canvas
+   gets the same styling as /ui-kit. Returns null for other DSes - no
+   injection required. */
+function DSPreviewStyles() {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const themeKey = useBuilder((s) => s.themeKey);
+  const density = useBuilder((s) => s.density);
+
+  if (designSystem !== "carbon") return null;
+
+  /* Map Carbon theme keys. The builder store uses "white" / "g10" /
+     "g90" / "g100" for Carbon themes already (see useBuilder's
+     themeMap) so we can hand it through unchanged. Fall back to
+     "white" for any unexpected value. */
+  const resolvedTheme = ["white", "g10", "g90", "g100"].includes(themeKey) ? themeKey : "white";
+  const T = getTheme("carbon", resolvedTheme);
+
+  /* Map the builder's shared density labels (high/medium/low/touch)
+     to Carbon's ladder (compact / normal / spacious). "touch" is
+     rare in Carbon contexts - route it to spacious. */
+  const densityMap: Record<string, string> = {
+    high: "compact",
+    medium: "normal",
+    low: "spacious",
+    touch: "spacious",
+  };
+  const carbonDensity = densityMap[density] ?? "normal";
+
+  const css = getFullCSS("carbon", T, carbonDensity);
+
+  return <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(css) }} />;
+}
 
 /* ── Viewport presets ── */
 const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
@@ -1284,6 +1327,8 @@ export function PreviewSidePanel() {
 
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+      {/* Inject DS-specific CSS (Carbon tokens + .cb-* component rules). */}
+      <DSPreviewStyles />
       {/* Single consolidated preview toolbar (Phase F.2) */}
       <PreviewBar />
 
@@ -1389,6 +1434,8 @@ export function StandalonePreview() {
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
+      {/* Inject DS-specific CSS (Carbon tokens + .cb-* component rules). */}
+      <DSPreviewStyles />
       {/* Window chrome bar */}
       <div className="standalone-preview-header">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
