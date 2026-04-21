@@ -2,14 +2,14 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { DesignSystem, Block } from "@/store/useBuilder";
+import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
-import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS } from "@/lib/componentMaps";
+import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder - no mandatory wizard.
@@ -252,67 +252,6 @@ function getFreeformResponse(input: string): string {
   if (l.includes("thank")) return "You're welcome! Let me know if you need anything else.";
   if (l.includes("help")) return "I can help! Try 'add buttons', 'remove cards', 'build a dashboard', 'dark mode', 'switch to Fluent', or 'what components do I have?'.";
   return "I didn't catch that. Try 'add buttons', 'remove cards', 'build a dashboard', or 'dark mode'.";
-}
-
-/* ══════════════════════════════════════════════════════════
-   Chat → canvas bridge
-
-   processComponentCommand returns a new `selectedComponents`
-   array but never writes to the canvas `blocks` array. The
-   PreviewCanvas has a one-shot effect that mirrors
-   selectedComponents → blocks on first mount only, so chat
-   commands sent AFTER the preview has opened produced no
-   visible change.
-
-   This helper closes that gap: compute the delta between the
-   old + new id lists, then apply it to the body zone using
-   the same store actions the component library uses
-   (addBlockFromLibrary for adds, removeBlockFromZone for
-   removals). The selectedComponents array still gets updated
-   at the call site to keep the onboarding state consistent.
-   ══════════════════════════════════════════════════════════ */
-function applyChatComponentDelta(oldIds: string[], newIds: string[]): void {
-  const addedIds = newIds.filter((id) => !oldIds.includes(id));
-  const removedIds = oldIds.filter((id) => !newIds.includes(id));
-  if (addedIds.length === 0 && removedIds.length === 0) return;
-
-  const state = useBuilder.getState();
-
-  /* Adds first so a subsequent "remove" command in the same
-     delta operates on a stable post-add block list. */
-  for (const id of addedIds) {
-    const multi = ID_TO_MULTI_BLOCKS[id];
-    if (multi) {
-      for (const mb of multi) {
-        state.addBlockFromLibrary(mb.type, { ...mb.props }, "body");
-      }
-      continue;
-    }
-    const type = ID_TO_BLOCK[id];
-    if (type) {
-      state.addBlockFromLibrary(type, {}, "body");
-    }
-    /* Unknown id (e.g. legacy string from an old session) - skip
-       silently. The AI acknowledgement still surfaces, so the UX
-       stays smooth even if the mapping drifts. */
-  }
-
-  if (removedIds.length === 0) return;
-  const fresh = useBuilder.getState();
-  const typesToRemove = new Set<string>();
-  for (const id of removedIds) {
-    const multi = ID_TO_MULTI_BLOCKS[id];
-    if (multi) {
-      for (const mb of multi) typesToRemove.add(mb.type);
-      continue;
-    }
-    const type = ID_TO_BLOCK[id];
-    if (type) typesToRemove.add(type);
-  }
-  const doomed: Block[] = fresh.blocks.filter((b) => typesToRemove.has(b.type));
-  for (const b of doomed) {
-    fresh.removeBlockFromZone("body", b.id);
-  }
 }
 
 /* ═══════════════════════════════════════════
