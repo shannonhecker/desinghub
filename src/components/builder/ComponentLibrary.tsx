@@ -187,11 +187,25 @@ export function ComponentLibrary() {
     []
   );
 
+  /* Walk top-level blocks PLUS one level of LayoutGroup children
+     so nested blocks (inside a Group column) can be inspected too.
+     MVP is single-level nesting - no deeper recursion needed. */
+  const findSelected = (arr: typeof blocks) => {
+    for (const b of arr) {
+      if (b.id === selectedBlockId) return b;
+      if (b.children) {
+        for (const c of b.children) {
+          if (c.id === selectedBlockId) return c;
+        }
+      }
+    }
+    return undefined;
+  };
   const selectedBlock = selectedBlockId
-    ? (blocks.find((b) => b.id === selectedBlockId)
-      ?? headerBlocks.find((b) => b.id === selectedBlockId)
-      ?? sidebarBlocks.find((b) => b.id === selectedBlockId)
-      ?? footerBlocks.find((b) => b.id === selectedBlockId))
+    ? (findSelected(blocks)
+      ?? findSelected(headerBlocks)
+      ?? findSelected(sidebarBlocks)
+      ?? findSelected(footerBlocks))
     : null;
   const FieldsComponent = selectedBlock
     ? TYPE_FIELDS[selectedBlock.type]

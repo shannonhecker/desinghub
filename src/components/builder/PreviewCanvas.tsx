@@ -23,11 +23,20 @@ export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Bl
   const footerBlocks = useBuilder((s) => s.footerBlocks);
   const [copied, setCopied] = useState(false);
 
+  /* Recursively serialize a block + any nested LayoutGroup children
+     so the code view mirrors the real render tree (MVP is single
+     level deep, but the recursion is future-proof). */
+  type SerializedBlock = { id: string; type: string; props: Record<string, unknown>; children?: SerializedBlock[] };
+  const serialize = (b: import("@/store/useBuilder").Block): SerializedBlock => {
+    const out: SerializedBlock = { id: b.id, type: b.type, props: b.props };
+    if (b.children && b.children.length > 0) out.children = b.children.map(serialize);
+    return out;
+  };
   const schema = {
-    header: headerBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
-    sidebar: sidebarBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
-    main: blocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
-    footer: footerBlocks.map((b) => ({ id: b.id, type: b.type, props: b.props })),
+    header: headerBlocks.map(serialize),
+    sidebar: sidebarBlocks.map(serialize),
+    main: blocks.map(serialize),
+    footer: footerBlocks.map(serialize),
   };
   const json = JSON.stringify(schema, null, 2);
   const totalBlocks = headerBlocks.length + sidebarBlocks.length + blocks.length + footerBlocks.length;

@@ -132,6 +132,11 @@ function ResizeHandle({ colSpan, onResize, onWidth, minWidth, maxWidth, mode }: 
 interface SortableBlockProps {
   id: string;
   zone?: ZoneId;
+  /** When this block is a child of a LayoutGroup, the parent
+     group's id. The drag-end handler reads this off the sortable
+     data payload to route reorders into the correct children
+     array instead of the body zone. */
+  parentGroupId?: string;
   compact?: boolean;
   isSelected?: boolean;
   colSpan?: number;
@@ -149,6 +154,7 @@ interface SortableBlockProps {
 export function SortableBlock({
   id,
   zone,
+  parentGroupId,
   compact,
   isSelected,
   colSpan = 3,
@@ -168,7 +174,7 @@ export function SortableBlock({
     transition,
     isDragging,
     isSorting,
-  } = useSortable({ id, data: { zone } });
+  } = useSortable({ id, data: { zone, parentGroupId } });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),

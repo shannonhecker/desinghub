@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, type Block } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -25,24 +25,59 @@ type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 const ZONE_KEYS = ['blocks', 'headerBlocks', 'sidebarBlocks', 'footerBlocks'] as const;
 const ZONE_IDS: ZoneId[] = ['body', 'header', 'sidebar', 'footer'];
 
+/* Walks top-level blocks plus one level of LayoutGroup children
+   looking for the given id. Returns the block + the parent group's
+   id when the match is nested, or `parentGroupId: null` when the
+   match is top-level. */
+function findTopOrChild(blocks: Block[], id: string): { block: Block; parentGroupId: string | null } | null {
+  for (const b of blocks) {
+    if (b.id === id) return { block: b, parentGroupId: null };
+    if (b.children) {
+      for (const c of b.children) {
+        if (c.id === id) return { block: c, parentGroupId: b.id };
+      }
+    }
+  }
+  return null;
+}
+
 function useBlockProps(blockId: string) {
+  /* Split selectors so each returns either null, a primitive, or a
+     store-owned reference. Returning a fresh wrapper object
+     (`{ ...found, key }`) every render triggered React error #185
+     (infinite re-render loop) via Zustand's reference equality. */
   const block = useBuilder((s) => {
     for (const key of ZONE_KEYS) {
-      const found = s[key].find((b) => b.id === blockId);
-      if (found) return found;
+      const found = findTopOrChild(s[key] as Block[], blockId);
+      if (found) return found.block;
+    }
+    return null;
+  });
+  const parentGroupId = useBuilder((s) => {
+    for (const key of ZONE_KEYS) {
+      const found = findTopOrChild(s[key] as Block[], blockId);
+      if (found) return found.parentGroupId;
     }
     return null;
   });
   const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+  const updateGroupChildProps = useBuilder((s) => s.updateGroupChildProps);
   const zone: ZoneId = useBuilder((s) => {
     for (let i = 0; i < ZONE_KEYS.length; i++) {
-      if (s[ZONE_KEYS[i]].some((b) => b.id === blockId)) return ZONE_IDS[i];
+      const found = findTopOrChild(s[ZONE_KEYS[i]] as Block[], blockId);
+      if (found) return ZONE_IDS[i];
     }
     return 'body';
   });
   return {
     props: block?.props ?? {},
-    set: (patch: Record<string, unknown>) => updateZoneBlockProps(zone, blockId, patch),
+    set: (patch: Record<string, unknown>) => {
+      if (parentGroupId) {
+        updateGroupChildProps(parentGroupId, blockId, patch);
+      } else {
+        updateZoneBlockProps(zone, blockId, patch);
+      }
+    },
   };
 }
 
@@ -56,7 +91,11 @@ type FieldDef =
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
   | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string }
-  | { type: "static"; text: string };
+  | { type: "static"; text: string }
+  /** Custom action button rendered inline inside the inspector.
+     Used by LayoutGroup's "Ungroup" affordance. The action reads
+     the block's location in the store and mutates accordingly. */
+  | { type: "action"; label: string; action: "ungroup" };
 
 /* ── Generic SchemaFields renderer ── */
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
@@ -109,8 +148,53 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
           }
           case "static":
             return <div key={i} style={{ padding: "4px 0", fontSize: 11, opacity: 0.5 }}>{f.text}</div>;
+          case "action":
+            return <ActionButton key={i} blockId={blockId} label={f.label} action={f.action} />;
         }
       })}
+    </div>
+  );
+}
+
+/* ── Inspector action button (currently: Ungroup).
+      Finds the block's zone by walking all four zones and calls
+      the matching store mutation. Stays inside blockRegistry
+      so TYPE_FIELDS can declare actions declaratively. */
+function ActionButton({
+  blockId,
+  label,
+  action,
+}: {
+  blockId: string;
+  label: string;
+  action: "ungroup";
+}) {
+  const ungroupBlock = useBuilder((s) => s.ungroupBlock);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const zone: ZoneId = useBuilder((s) => {
+    for (let i = 0; i < ZONE_KEYS.length; i++) {
+      if (s[ZONE_KEYS[i]].some((b) => b.id === blockId)) return ZONE_IDS[i];
+    }
+    return "body";
+  });
+
+  const handleClick = () => {
+    if (action === "ungroup") {
+      ungroupBlock(zone, blockId);
+      setSelectedBlock(null, null);
+    }
+  };
+
+  return (
+    <div className="inspector-field">
+      <button
+        type="button"
+        className="inspector-toggle-btn"
+        style={{ width: "100%" }}
+        onClick={handleClick}
+      >
+        {label}
+      </button>
     </div>
   );
 }
@@ -143,6 +227,26 @@ interface BlockDef {
 }
 
 const BLOCK_DEFS: BlockDef[] = [
+  /* ── Layout primitives ── */
+  {
+    /* LayoutGroup: a container block that stacks (or rows) its
+       children as a single draggable/resizable unit. Body-only for
+       MVP; grid mode is explicitly out-of-scope. */
+    type: "LayoutGroup",
+    label: "Group column",
+    icon: "view_agenda",
+    defaults: { direction: "stack", gap: 12, padding: 0 },
+    fields: [
+      { type: "select", propKey: "direction", label: "Direction", options: [
+        { value: "stack", label: "Stack (vertical)" },
+        { value: "row", label: "Row (horizontal)" },
+      ] },
+      { type: "range", propKey: "gap", label: "Gap", min: 0, max: 48, suffix: "px" },
+      { type: "range", propKey: "padding", label: "Padding", min: 0, max: 48, suffix: "px" },
+      { type: "action", label: "Ungroup", action: "ungroup" },
+    ],
+  },
+
   /* ── UI Components ── */
   { type: "SimulatedButton", label: "Button", icon: "smart_button", defaults: { variant: "primary", label: "New Button" }, fields: [
     { type: "text", propKey: "label", label: "Label" },

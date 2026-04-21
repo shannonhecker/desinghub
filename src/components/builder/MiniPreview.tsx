@@ -24,6 +24,7 @@ const MUTED = "rgba(128, 128, 128, 0.35)";
 const BG = "rgba(128, 128, 128, 0.15)";
 
 type Category =
+  | "layout-group"  // LayoutGroup (Group column)
   | "action"        // Button, ToggleButton, SegmentedGroup
   | "input"         // TextInput, NumberInput, Searchbox, etc.
   | "binary"        // Checkbox, Switch
@@ -56,6 +57,9 @@ type Category =
   | "generic";
 
 const CATEGORY_BY_TYPE: Record<string, Category> = {
+  /* Layout primitives */
+  LayoutGroup: "layout-group",
+
   /* Actions */
   SimulatedButton: "action",
   SimulatedToggleButton: "action",
@@ -526,7 +530,22 @@ function Generic() {
   );
 }
 
+function LayoutGroupShape() {
+  /* Three stacked bars inside a container - reads immediately as
+     "a column of blocks". Matches the user's "3 progress bars
+     on top of each other" mental model for the feature. */
+  return (
+    <>
+      <rect x="18" y="8" width="44" height="34" rx="3" fill="none" stroke={ACCENT} strokeDasharray="2 2" strokeWidth="0.9" />
+      <rect x="22" y="12" width="36" height="7" rx="1.5" fill={ACCENT} opacity="0.55" />
+      <rect x="22" y="22" width="36" height="7" rx="1.5" fill={ACCENT} opacity="0.55" />
+      <rect x="22" y="32" width="36" height="7" rx="1.5" fill={ACCENT} opacity="0.55" />
+    </>
+  );
+}
+
 const RENDERERS: Record<Category, React.FC> = {
+  "layout-group": LayoutGroupShape,
   action: Action,
   input: Input,
   binary: Binary,
