@@ -729,6 +729,20 @@ export const useBuilder = create<BuilderState>((set) => ({
      ────────────────────────────────────────────────────────── */
 
   addBlockToGroup: (parentGroupId, block, index) => {
+    /* Defense-in-depth: reject nested LayoutGroup at the store level.
+       DnD gates (PreviewPanel handleDragEnd, ComponentRenderer renderer)
+       already block this, but an AI action or future direct caller
+       would bypass those. MVP supports one level deep only; enforcing
+       here keeps the serialization caps (MAX_BLOCK_DEPTH=2 in
+       shareState) from silently truncating on reload. */
+    if (block.type === "LayoutGroup") {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "[useBuilder] addBlockToGroup rejected: LayoutGroup blocks cannot be nested inside another group (MVP supports one level of nesting only).",
+        );
+      }
+      return;
+    }
     set((s) => {
       /* Walk every zone and replace the matching LayoutGroup block
          with a copy whose `children` array has the new block inserted
@@ -777,6 +791,16 @@ export const useBuilder = create<BuilderState>((set) => ({
       const srcArr = s[srcKey] as Block[];
       const block = srcArr.find((b) => b.id === blockId);
       if (!block) return {};
+      /* Same defense-in-depth guard as addBlockToGroup: never place a
+         LayoutGroup inside another group. */
+      if (block.type === "LayoutGroup") {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[useBuilder] moveBlockIntoGroup rejected: LayoutGroup blocks cannot be nested inside another group.",
+          );
+        }
+        return {};
+      }
       /* Drop source */
       const nextSrc = srcArr.filter((b) => b.id !== blockId);
       const patches: Partial<BuilderState> = { [srcKey]: nextSrc } as Partial<BuilderState>;

@@ -135,14 +135,27 @@ function validateAndSanitizeBlock(b: unknown, depth = 1): Block | null {
   /* Recurse into nested children for LayoutGroup blocks. Past the
      depth guard the children are dropped rather than the whole
      block so malicious deep nesting can't turn into a payload
-     rejection. */
-  if (Array.isArray(blk.children) && depth < MAX_BLOCK_DEPTH) {
-    const kids: Block[] = [];
-    for (const c of blk.children.slice(0, MAX_CHILDREN_PER_GROUP)) {
-      const cleanChild = validateAndSanitizeBlock(c, depth + 1);
-      if (cleanChild) kids.push(cleanChild);
+     rejection. Truncation is loud in dev so a legitimate deep
+     or wide group surfaces rather than silently losing data. */
+  if (Array.isArray(blk.children)) {
+    if (depth < MAX_BLOCK_DEPTH) {
+      const over = Math.max(0, blk.children.length - MAX_CHILDREN_PER_GROUP);
+      if (over > 0 && process.env.NODE_ENV !== "production") {
+        console.warn(
+          `[shareState] LayoutGroup \"${out.id}\" has ${blk.children.length} children; truncating to ${MAX_CHILDREN_PER_GROUP}. ${over} dropped.`,
+        );
+      }
+      const kids: Block[] = [];
+      for (const c of blk.children.slice(0, MAX_CHILDREN_PER_GROUP)) {
+        const cleanChild = validateAndSanitizeBlock(c, depth + 1);
+        if (cleanChild) kids.push(cleanChild);
+      }
+      if (kids.length > 0) out.children = kids;
+    } else if (blk.children.length > 0 && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[shareState] Block \"${out.id}\" at depth ${depth} exceeds MAX_BLOCK_DEPTH=${MAX_BLOCK_DEPTH}; ${blk.children.length} nested children dropped. (MVP supports one level of nesting only.)`,
+      );
     }
-    if (kids.length > 0) out.children = kids;
   }
 
   return out;
