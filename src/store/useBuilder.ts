@@ -200,6 +200,20 @@ interface BuilderState {
   // simultaneously (2x2 grid) so designers can compare visual output.
   compareMode: boolean;
 
+  // Track B prototype flag. Gates the experimental add + resize UX
+  // (in-canvas + slots, fuzzy SlashInserter, single-handle resize with
+  // HUD + chip rail + snap guides + ARIA). Default OFF; toggled ON for
+  // user-test Track B participants.
+  experimentalLayout: boolean;
+
+  // Slash inserter imperative state. When `inserterOpen` is true, the
+  // SlashInserter overlay is visible. When `inserterAnchor` is set, the
+  // inserter pins results to that zone and inserts at the anchor.index
+  // on commit. Anchor is null when the inserter was opened by a global
+  // shortcut rather than from a specific in-canvas + slot.
+  inserterOpen: boolean;
+  inserterAnchor: { zone: ZoneId; index: number } | null;
+
   // Actions - Chat
   setInputText: (t: string) => void;
   addMessage: (role: 'user' | 'ai', content: string) => void;
@@ -250,6 +264,7 @@ interface BuilderState {
     type: string,
     defaults: Record<string, unknown>,
     preferZone?: ZoneId,
+    index?: number,
   ) => void;
 
   // Actions - Sessions + auto-save
@@ -338,6 +353,16 @@ interface BuilderState {
   // Compare-DS
   toggleCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
+
+  // Track B prototype flag
+  setExperimentalLayout: (v: boolean) => void;
+
+  // Slash inserter imperative controls. `openInserter` with an anchor
+  // scopes the picker to a specific zone + index (used by InsertionSlot
+  // + buttons). `openInserter()` with no args falls back to the default
+  // append-to-zone behavior. `closeInserter` always clears both.
+  openInserter: (anchor?: { zone: ZoneId; index: number }) => void;
+  closeInserter: () => void;
 }
 
 const uid = (() => {
@@ -482,6 +507,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   previewKey: 0,
   deviceMode: 'desktop',
   compareMode: false,
+  experimentalLayout: false,
+  inserterOpen: false,
+  inserterAnchor: null,
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
@@ -565,7 +593,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
-  addBlockFromLibrary: (type, defaults, preferZone) => {
+  addBlockFromLibrary: (type, defaults, preferZone, index) => {
     /* Resolve the target zone:
        1. `preferZone` - explicit hint from the caller (e.g. a library
           tile passes the zone heading it lives under, so a Body-group
@@ -590,7 +618,17 @@ export const useBuilder = create<BuilderState>((set) => ({
     const id = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const newBlock: Block = { id, type, props: { ...defaults } };
     const existing = state[key] as Block[];
-    set({ [key]: [...existing, newBlock] } as Partial<BuilderState>);
+    /* When an explicit index is supplied (e.g. from an InsertionSlot +
+       button), splice the new block at that position. Otherwise fall
+       back to the original append behavior so every existing caller
+       keeps working. */
+    if (typeof index === 'number' && index >= 0 && index <= existing.length) {
+      const next = [...existing];
+      next.splice(index, 0, newBlock);
+      set({ [key]: next } as Partial<BuilderState>);
+    } else {
+      set({ [key]: [...existing, newBlock] } as Partial<BuilderState>);
+    }
     /* Select the newly-added block so the inspector jumps to it. */
     set({ selectedBlockId: id, selectedBlockZone: targetZone });
     /* Open the preview panel if it's closed so the user sees the block
@@ -893,4 +931,9 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
   setCompareMode: (v) => set({ compareMode: v }),
+
+  setExperimentalLayout: (v) => set({ experimentalLayout: v }),
+
+  openInserter: (anchor) => set({ inserterOpen: true, inserterAnchor: anchor ?? null }),
+  closeInserter: () => set({ inserterOpen: false, inserterAnchor: null }),
 }));

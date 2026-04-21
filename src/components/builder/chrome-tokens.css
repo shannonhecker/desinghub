@@ -1,0 +1,117 @@
+/* ════════════════════════════════════════════════════════════
+   Builder chrome tokens (neutral, mode-aware)
+   ════════════════════════════════════════════════════════════
+   Tool-chrome UI (InsertionSlot, ResizeHUD, SizeChipRail,
+   snap guides, popovers) renders *above* the canvas. It must
+   stay visually stable when the user swaps design systems
+   (Salt / MD3 / Fluent / Carbon) — those affect preview
+   content, not tool chrome. Figma / Framer do this too.
+
+   Namespace: --bc-* (builder-chrome).
+   Consumers: chrome components only. Never used inside
+   rendered blocks / preview content.
+   ════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Surfaces */
+  --bc-bg:          rgba(22, 24, 28, 0.96);
+  --bc-bg-raised:   rgba(30, 33, 38, 0.98);
+  --bc-bg-hover:    rgba(255, 255, 255, 0.06);
+  --bc-bg-active:   rgba(255, 255, 255, 0.10);
+  --bc-overlay:     rgba(0, 0, 0, 0.40);
+
+  /* Text */
+  --bc-fg:          rgba(245, 247, 250, 0.96);
+  --bc-fg-muted:    rgba(245, 247, 250, 0.62);
+  --bc-fg-subtle:   rgba(245, 247, 250, 0.40);
+  --bc-fg-on-accent: #0b0c0e;
+
+  /* Borders */
+  --bc-border:      rgba(255, 255, 255, 0.10);
+  --bc-border-strong: rgba(255, 255, 255, 0.20);
+
+  /* Accent (active state, selected chip, snap guide, + hover) */
+  --bc-accent:      #7cc4ff;
+  --bc-accent-muted: rgba(124, 196, 255, 0.24);
+  --bc-accent-ring: rgba(124, 196, 255, 0.50);
+
+  /* Feedback */
+  --bc-danger:      #ff7a7a;
+
+  /* Sizes */
+  --bc-size-hit:    32px;   /* Touch target minimum for handles + */
+  --bc-size-chip:   26px;   /* Chip rail item height */
+  --bc-size-slot:   4px;    /* InsertionSlot idle height */
+  --bc-size-slot-hover: 20px; /* InsertionSlot expanded height */
+  --bc-size-handle: 10px;   /* Resize handle width */
+
+  /* Spacing */
+  --bc-gap-xxs:     2px;
+  --bc-gap-xs:      4px;
+  --bc-gap-sm:      8px;
+  --bc-gap-md:      12px;
+  --bc-gap-lg:      16px;
+
+  /* Radii */
+  --bc-radius-xs:   3px;
+  --bc-radius-sm:   6px;
+  --bc-radius-md:   10px;
+  --bc-radius-pill: 999px;
+
+  /* Elevation */
+  --bc-shadow-sm:   0 1px 2px rgba(0, 0, 0, 0.24);
+  --bc-shadow-md:   0 6px 16px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.24);
+  --bc-shadow-lg:   0 16px 40px rgba(0, 0, 0, 0.48), 0 2px 6px rgba(0, 0, 0, 0.28);
+
+  /* Type */
+  --bc-type-label:  500 11px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bc-type-value:  600 12px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bc-type-tabular: 500 12px/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Motion */
+  --bc-ease:        cubic-bezier(0.22, 0.61, 0.36, 1);
+  --bc-duration-fast:   120ms;
+  --bc-duration-medium: 200ms;
+
+  /* Z-index lanes */
+  --bc-z-slot:      40;
+  --bc-z-guide:     45;
+  --bc-z-chip-rail: 50;
+  --bc-z-hud:       60;
+  --bc-z-popover:   70;
+}
+
+/* Light mode — scoped under .builder-light like the existing --syn-* tokens */
+.builder-light {
+  --bc-bg:          rgba(253, 253, 254, 0.98);
+  --bc-bg-raised:   rgba(255, 255, 255, 1);
+  --bc-bg-hover:    rgba(15, 17, 22, 0.05);
+  --bc-bg-active:   rgba(15, 17, 22, 0.08);
+  --bc-overlay:     rgba(15, 17, 22, 0.22);
+
+  --bc-fg:          rgba(20, 22, 26, 0.96);
+  --bc-fg-muted:    rgba(20, 22, 26, 0.64);
+  --bc-fg-subtle:   rgba(20, 22, 26, 0.40);
+  --bc-fg-on-accent: #0b0c0e;
+
+  --bc-border:      rgba(15, 17, 22, 0.12);
+  --bc-border-strong: rgba(15, 17, 22, 0.24);
+
+  --bc-accent:      #0b69d9;
+  --bc-accent-muted: rgba(11, 105, 217, 0.14);
+  --bc-accent-ring: rgba(11, 105, 217, 0.44);
+
+  --bc-danger:      #c81d1d;
+
+  --bc-shadow-sm:   0 1px 2px rgba(15, 17, 22, 0.08);
+  --bc-shadow-md:   0 6px 16px rgba(15, 17, 22, 0.12), 0 1px 3px rgba(15, 17, 22, 0.08);
+  --bc-shadow-lg:   0 16px 40px rgba(15, 17, 22, 0.16), 0 2px 6px rgba(15, 17, 22, 0.10);
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bc-duration-fast: 0ms;
+    --bc-duration-medium: 0ms;
+  }
+}

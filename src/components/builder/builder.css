@@ -2,6 +2,8 @@
    Design Hub AI Builder - Minimal Chatbot with Animated Orb
    ═══════════════════════════════════════════════════════════ */
 
+@import "./chrome-tokens.css";
+
 /* ── VARIABLES ── */
 :root {
   /* Builder chrome - aligned with ausos DS dark tokens */
@@ -10080,3 +10082,348 @@
 [class*="-avatar-group-item"] { width: 36px; height: 36px; border-radius: 50%; background: var(--ds-primary); color: var(--ds-on-primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; border: 2px solid var(--ds-surface); margin-left: -8px; position: relative; }
 [class*="-avatar-group-item"]:first-child { margin-left: 0; }
 [class*="-avatar-group-overflow"] { background: var(--ds-border); color: var(--ds-fg-secondary); }
+
+/* ════════════════════════════════════════════════════════════
+   ── experimental resize (flag: builder.experimentalLayout) ──
+   Track B prototype chrome: single right-edge slider handle,
+   ResizeHUD overlay, SizeChipRail, nearest-snap guide. Uses
+   --bc-* neutral chrome tokens (chrome-tokens.css) exclusively
+   so appearance is stable across DS swaps.
+   ════════════════════════════════════════════════════════════ */
+
+/* Screen-reader-only utility scoped to chrome. */
+.bc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Zone container needs to be a positioning parent for the
+   experimental flow so chip rails / potential in-zone overlays
+   position against it. Gated on the experimental block class so
+   the production path is untouched. */
+.zone-drop-container:has(.canvas-block--experimental) {
+  position: relative;
+}
+
+/* ── Experimental single handle ── */
+.block-resize-handle--experimental {
+  position: absolute;
+  top: 0;
+  right: calc(var(--bc-size-handle) * -0.5);
+  width: var(--bc-size-handle);
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Always visible (not hover-gated) so keyboard users have a
+     stable focus target. Low-contrast until hover / focus. */
+  opacity: 0.6;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+  outline: none;
+  border-radius: var(--bc-radius-sm);
+}
+.canvas-block:hover .block-resize-handle--experimental,
+.block-resize-handle--experimental:hover {
+  opacity: 1;
+}
+.block-resize-handle--experimental:focus-visible {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.block-resize-handle--experimental .block-resize-grip {
+  background: var(--bc-accent);
+}
+
+/* ── ResizeHUD pill ── */
+.bc-resize-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  padding: var(--bc-gap-xs) var(--bc-gap-sm);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  box-shadow: var(--bc-shadow-md);
+  font: var(--bc-type-tabular);
+  z-index: var(--bc-z-hud);
+  pointer-events: auto;
+  user-select: none;
+  transition: transform var(--bc-duration-fast) var(--bc-ease);
+}
+.bc-resize-hud__value {
+  padding-right: var(--bc-gap-xxs);
+  font: var(--bc-type-tabular);
+  color: var(--bc-fg);
+  min-width: 2ch;
+  text-align: right;
+}
+.bc-resize-hud__unit {
+  appearance: none;
+  border: 0;
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg-muted);
+  padding: 2px 6px;
+  border-radius: var(--bc-radius-pill);
+  font: var(--bc-type-label);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease),
+              color var(--bc-duration-fast) var(--bc-ease);
+}
+.bc-resize-hud__unit:hover,
+.bc-resize-hud__unit:focus-visible {
+  background: var(--bc-accent);
+  color: var(--bc-fg-on-accent);
+  outline: none;
+}
+
+/* ── SizeChipRail ── */
+.bc-chip-rail {
+  position: absolute;
+  top: calc(-1 * (var(--bc-size-chip) + var(--bc-gap-sm)));
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  padding: var(--bc-gap-xxs);
+  background: var(--bc-bg);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  box-shadow: var(--bc-shadow-sm);
+  z-index: var(--bc-z-chip-rail);
+  pointer-events: auto;
+  user-select: none;
+}
+.bc-chip {
+  appearance: none;
+  border: 0;
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg-muted);
+  height: var(--bc-size-chip);
+  padding: 0 10px;
+  border-radius: var(--bc-radius-pill);
+  font: var(--bc-type-label);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease),
+              color var(--bc-duration-fast) var(--bc-ease);
+  white-space: nowrap;
+}
+.bc-chip:hover {
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+}
+.bc-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.bc-chip.is-active {
+  background: var(--bc-accent);
+  color: var(--bc-fg-on-accent);
+}
+
+/* Inline custom editor inside the chip rail. */
+.bc-chip-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs);
+  padding: 0 var(--bc-gap-xs);
+  height: var(--bc-size-chip);
+  background: var(--bc-bg-raised);
+  border-radius: var(--bc-radius-pill);
+}
+.bc-chip-custom__input {
+  width: 56px;
+  height: calc(var(--bc-size-chip) - 8px);
+  padding: 0 6px;
+  background: var(--bc-bg);
+  color: var(--bc-fg);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-sm);
+  font: var(--bc-type-tabular);
+  /* Remove spinner arrows for a cleaner look. */
+  -moz-appearance: textfield;
+}
+.bc-chip-custom__input::-webkit-outer-spin-button,
+.bc-chip-custom__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.bc-chip-custom__input:focus-visible {
+  outline: none;
+  border-color: var(--bc-accent);
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.bc-chip-custom__unit,
+.bc-chip-custom__commit {
+  appearance: none;
+  border: 0;
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg-muted);
+  padding: 0 8px;
+  height: calc(var(--bc-size-chip) - 8px);
+  border-radius: var(--bc-radius-pill);
+  font: var(--bc-type-label);
+  cursor: pointer;
+}
+.bc-chip-custom__unit:hover,
+.bc-chip-custom__commit:hover {
+  background: var(--bc-accent);
+  color: var(--bc-fg-on-accent);
+}
+
+/* ── Snap guide (rendered during drag) ── */
+.bc-snap-guide {
+  width: 1px;
+  background: var(--bc-accent);
+  opacity: 0.64;
+  z-index: var(--bc-z-guide);
+  pointer-events: none;
+  transform: translateX(-0.5px);
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+}
+.bc-snap-guide.is-snapped {
+  opacity: 1;
+}
+.bc-snap-guide__label {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  font: var(--bc-type-label);
+  box-shadow: var(--bc-shadow-sm);
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SlashInserter - section headers (Track B / A2 upgrade)
+   ══════════════════════════════════════════════════════════ */
+.slash-section + .slash-section { margin-top: 2px; }
+.slash-section-label {
+  padding: 10px 12px 4px;
+  font: var(--bc-type-label);
+  color: var(--bc-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   InsertionSlot - in-canvas + strip between sortable children
+   ══════════════════════════════════════════════════════════
+   Tokens live in chrome-tokens.css (--bc-*). Never introduce
+   raw hex / Salt / MD3 tokens here - chrome must stay visually
+   stable when the user swaps design systems. */
+.insertion-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: var(--bc-z-slot);
+  transition: height var(--bc-duration-fast) var(--bc-ease),
+              width var(--bc-duration-fast) var(--bc-ease);
+  pointer-events: auto;
+}
+/* Horizontal strips sit between stacked items - full width, short. */
+.insertion-slot-horizontal {
+  width: 100%;
+  height: var(--bc-size-slot);
+  margin: calc(var(--bc-gap-xxs) * -1) 0;
+}
+.insertion-slot-horizontal:hover,
+.insertion-slot-horizontal:focus-within {
+  height: var(--bc-size-slot-hover);
+}
+/* Vertical strips sit between row items - full height, short. */
+.insertion-slot-vertical {
+  width: var(--bc-size-slot);
+  align-self: stretch;
+  margin: 0 calc(var(--bc-gap-xxs) * -1);
+}
+.insertion-slot-vertical:hover,
+.insertion-slot-vertical:focus-within {
+  width: var(--bc-size-slot-hover);
+}
+
+/* Idle center line - appears on hover-within-strip only, so zones
+   with no hover remain visually untouched. Uses accent-muted so
+   it reads as a soft hint rather than a hard divider. */
+.insertion-slot-line {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: transparent;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+  pointer-events: none;
+}
+.insertion-slot-horizontal .insertion-slot-line {
+  height: 1px;
+}
+.insertion-slot-vertical .insertion-slot-line {
+  width: 1px;
+}
+.insertion-slot:hover .insertion-slot-line,
+.insertion-slot:focus-within .insertion-slot-line {
+  background: var(--bc-accent-muted);
+}
+
+/* The + button - 24px circle, accent foreground on raised surface.
+   Lives in the center of the strip; only visible on hover/focus. */
+.insertion-slot-plus {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  background: var(--bc-bg-raised);
+  color: var(--bc-accent);
+  box-shadow: var(--bc-shadow-sm);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity var(--bc-duration-fast) var(--bc-ease),
+              transform var(--bc-duration-fast) var(--bc-ease),
+              box-shadow var(--bc-duration-fast) var(--bc-ease),
+              border-color var(--bc-duration-fast) var(--bc-ease);
+  flex-shrink: 0;
+}
+.insertion-slot:hover .insertion-slot-plus,
+.insertion-slot:focus-within .insertion-slot-plus {
+  opacity: 1;
+  transform: scale(1);
+}
+.insertion-slot-plus:hover {
+  border-color: var(--bc-accent-ring);
+  box-shadow: var(--bc-shadow-md);
+}
+.insertion-slot-plus:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+  opacity: 1;
+  transform: scale(1);
+}
+.insertion-slot-plus-icon {
+  font: var(--bc-type-value);
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  /* Optical nudge to center the glyph in the circle */
+  margin-top: -1px;
+}
