@@ -238,37 +238,11 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── LIQUID GRADIENT BACKGROUND ── */
-.liquid-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.5;
-  /* Radial mask centred at top → U-curve bottom edge */
-  -webkit-mask-image: radial-gradient(ellipse 110% 85% at 50% 0%, black 62%, transparent 90%);
-  mask-image: radial-gradient(ellipse 110% 85% at 50% 0%, black 62%, transparent 90%);
-}
-.liquid-bg .wave-canvas-wrap {
-  position: absolute;
-  inset: 0;
-}
-.liquid-bg .wave-canvas-wrap canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-}
-.liquid-bg:hover {
-  pointer-events: auto;
-}
-.builder-light .liquid-bg {
-  opacity: 0.45;
-}
-
-/* ── Original background blobs (purple, blue, gold/brown) ── */
+/* ── Static background gradient blobs (teal, purple, gold) ──
+   Static only — no drift animation. Provides warmth behind the glass
+   top bar without the busy motion from WaveScene/blob-drift.
+   Sizes use clamp() so they scale with viewport — puny on 4K and
+   overcrowded on 375px was the pre-refactor problem. */
 .builder-shell::before,
 .builder-shell::after {
   content: "";
@@ -276,42 +250,37 @@
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
-  filter: blur(100px);
-  animation: blob-drift 22s ease-in-out infinite alternate;
+  filter: blur(clamp(60px, 10vw, 120px));
 }
 /* Blob 1: teal → blue (top-left) */
 .builder-shell::before {
-  width: 650px;
-  height: 650px;
-  top: -220px;
-  left: -180px;
+  width: clamp(320px, 55vw, 760px);
+  height: clamp(320px, 55vw, 760px);
+  top: clamp(-280px, -18vw, -160px);
+  left: clamp(-220px, -15vw, -120px);
   background: radial-gradient(circle, rgba(80, 240, 220, 0.48), rgba(48, 120, 255, 0.40));
 }
 /* Blob 2: purple → pink (bottom-right) */
 .builder-shell::after {
-  width: 550px;
-  height: 550px;
-  bottom: -220px;
-  right: -120px;
+  width: clamp(280px, 48vw, 640px);
+  height: clamp(280px, 48vw, 640px);
+  bottom: clamp(-260px, -16vw, -140px);
+  right: clamp(-180px, -12vw, -80px);
   background: radial-gradient(circle, rgba(175, 130, 255, 0.42), rgba(240, 60, 160, 0.34));
-  animation-duration: 17s;
-  animation-delay: -8s;
 }
 /* Blob 3: gold → rose (center) - uses main-content::before */
 .main-content::before {
   content: "";
   position: absolute;
-  width: 380px;
-  height: 380px;
+  width: clamp(220px, 35vw, 460px);
+  height: clamp(220px, 35vw, 460px);
   top: 40%;
   left: 50%;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(clamp(60px, 10vw, 120px));
   pointer-events: none;
   z-index: 0;
   background: radial-gradient(circle, rgba(255, 205, 100, 0.34), rgba(250, 150, 190, 0.28));
-  animation: blob-drift 25s ease-in-out infinite alternate;
-  animation-delay: -13s;
 }
 .builder-light .builder-shell::before,
 .builder-light .builder-shell::after {
@@ -321,13 +290,6 @@
 .builder-light .main-content::before {
   opacity: 0.55;
   filter: blur(110px);
-}
-
-@keyframes blob-drift {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(60px, -40px) scale(1.08); }
-  66%  { transform: translate(-40px, 60px) scale(0.94); }
-  100% { transform: translate(30px, 30px) scale(1.04); }
 }
 
 /* ── SIDEBAR ── */
@@ -959,6 +921,18 @@
 .top-bar-btn.active {
   background: rgba(126, 107, 196, 0.18);
   color: var(--b-fg);
+}
+/* Ghost weight — for secondary chrome (drawer toggles, redundant
+   affordances) so the primary brand mark + action hold the anchor. */
+.top-bar-btn-ghost {
+  color: var(--dh-fg-muted);
+}
+.top-bar-btn-ghost:hover {
+  color: var(--dh-fg);
+  background: rgba(255, 255, 255, 0.04);
+}
+.builder-light .top-bar-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* Export dropdown (P3.3) - top-bar Export button opens a rich menu
@@ -2451,6 +2425,30 @@
   position: relative;
 }
 
+/* Local-command hint — shown below input when AI is off. One line,
+   muted, so it stays peripheral and discoverable without pulling focus. */
+.chat-input-hint {
+  padding: 6px 12px 0;
+  font-size: 11px;
+  color: var(--dh-fg-muted);
+  line-height: 1.45;
+}
+.chat-input-hint code {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: var(--dh-curve-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--dh-fg);
+}
+.builder-light .chat-input-hint code {
+  background: rgba(0, 0, 0, 0.05);
+}
+.chat-input-hint-sep {
+  opacity: 0.4;
+  margin: 0 2px;
+}
+
 .input-glow { display: none; }
 
 .input-box {
@@ -2820,93 +2818,6 @@
 .builder-light .chat-scope-clear:hover {
   background: rgba(0, 0, 0, 0.12);
   color: rgba(0, 0, 0, 0.9);
-}
-
-/* ── AI-off banner ──
-   Pinned to the top of the chat layout when /api/health reports the
-   Anthropic key is missing. Informational (not alarming) - templates
-   + manual edits still work. Matches the SaveIndicator "Cloud save
-   off" pattern: neutral surface, dismiss button, sessionStorage
-   persistence so it doesn't nag every re-render. */
-.chat-ai-off-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  margin: 10px 12px 0;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: var(--b-fg2, rgba(255, 255, 255, 0.78));
-  font-size: 12px;
-  line-height: 1.45;
-}
-.chat-ai-off-banner .material-symbols-outlined {
-  font-size: 16px !important;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.55));
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.chat-ai-off-text {
-  flex: 1;
-  min-width: 0;
-}
-.chat-ai-off-text strong {
-  color: var(--b-fg, rgba(255, 255, 255, 0.92));
-  font-weight: 600;
-  margin-right: 3px;
-}
-.chat-ai-off-text code {
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 11px;
-  color: var(--b-fg, rgba(255, 255, 255, 0.92));
-}
-.chat-ai-off-dismiss {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.5));
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
-}
-.chat-ai-off-dismiss:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--b-fg, rgba(255, 255, 255, 0.9));
-}
-.chat-ai-off-dismiss .material-symbols-outlined {
-  font-size: 14px !important;
-}
-
-/* Light mode */
-.builder-light .chat-ai-off-banner {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: rgba(0, 0, 0, 0.72);
-}
-.builder-light .chat-ai-off-banner .material-symbols-outlined {
-  color: rgba(0, 0, 0, 0.5);
-}
-.builder-light .chat-ai-off-text strong { color: rgba(0, 0, 0, 0.88); }
-.builder-light .chat-ai-off-text code {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.8);
-}
-.builder-light .chat-ai-off-dismiss {
-  color: rgba(0, 0, 0, 0.5);
-}
-.builder-light .chat-ai-off-dismiss:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.8);
 }
 
 /* ── SETTINGS DRAWER (kept for color overrides) ── */
@@ -6298,8 +6209,7 @@
    LIQUID GLASS - prefers-reduced-motion
    ══════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
-  .hero-blob,
-  .liquid-bg {
+  .hero-blob {
     animation: none !important;
   }
   *,
@@ -6337,6 +6247,76 @@
   letter-spacing: 0.06em;
   color: var(--b-fg-secondary, #888);
   margin-bottom: 6px;
+}
+
+/* ── Collapsible inspector sections ──
+   Each "{Type} Properties" / "Layout" / "Zone Layout" / "Colours"
+   header is now a button that toggles its body. Default open; state
+   persisted per section key in sessionStorage. Visually mirrors the
+   library category accordion style so the panel feels consistent. */
+.inspector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inspector-section {
+  display: flex;
+  flex-direction: column;
+}
+.inspector-section + .inspector-section {
+  border-top: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
+  padding-top: 8px;
+  margin-top: 2px;
+}
+.builder-light .inspector-section + .inspector-section {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+.inspector-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--dh-curve-sm, 6px);
+  color: var(--b-fg-secondary, #888);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  text-align: left;
+}
+.inspector-section-head:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
+}
+.inspector-section-head:focus-visible {
+  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline-offset: 2px;
+}
+.builder-light .inspector-section-head:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--dh-fg, rgba(15, 16, 30, 0.92));
+}
+.inspector-section-title-text {
+  flex: 1;
+}
+.inspector-section-caret {
+  font-size: 16px !important;
+  color: var(--b-fg3);
+  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  transform: rotate(0deg);
+  flex-shrink: 0;
+}
+.inspector-section-caret.is-open {
+  transform: rotate(90deg);
+}
+.inspector-section-body {
+  padding-top: 4px;
 }
 
 .inspector-toggle-group {
@@ -6690,9 +6670,34 @@
 /* ══════════════════════════════════════════════════════════
    Library browser - search + zone groups (Phase C.2 drag-to-zones)
    ══════════════════════════════════════════════════════════ */
+.lib-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .lib-search {
   position: relative;
   margin: 0 0 12px;
+}
+/* Sticky search — pins to the top edge of the scrolling .lib-body
+   once the user scrolls past the inspector/templates sections above
+   it. Backdrop-blur + tinted surface so tiles scroll under it
+   legibly. The negative top offset cancels .lib-body's top padding
+   so the search sits flush against the panel top. */
+.lib-search-sticky {
+  position: sticky;
+  top: -18px;
+  z-index: 4;
+  margin: -18px -18px 12px;
+  padding: 12px 18px;
+  background: var(--b-bg2, rgba(20, 20, 30, 0.82));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
+}
+.builder-light .lib-search-sticky {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom-color: rgba(0, 0, 0, 0.06);
 }
 .lib-search-icon {
   position: absolute;
@@ -6789,6 +6794,81 @@
   padding: 0 2px;
   margin-bottom: 6px;
   font-style: italic;
+}
+
+/* ── Library sub-category accordions (Actions, Inputs, …) ──
+   Collapse body-zone tiles into semantic buckets so users don't
+   scroll a wall of ~45 items to find what they need. Header style
+   mirrors TemplatesAccordion's caret-rotation for consistency. */
+.lib-category {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+.lib-category-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--dh-curve-sm, 6px);
+  color: var(--dh-fg-muted, rgba(255, 255, 255, 0.7));
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  text-align: left;
+}
+.lib-category-head:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
+}
+.lib-category-head:focus-visible {
+  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline-offset: 2px;
+}
+.builder-light .lib-category-head:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.lib-category-icon {
+  font-size: 14px !important;
+  color: var(--ds-primary, rgba(126, 107, 196, 0.85));
+  flex-shrink: 0;
+}
+.lib-category-label {
+  flex: 1;
+}
+.lib-category-count {
+  font-size: 10px;
+  color: var(--b-fg3);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 500;
+}
+.builder-light .lib-category-count {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+.lib-category-caret {
+  font-size: 16px !important;
+  color: var(--b-fg3);
+  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  transform: rotate(0deg);
+  flex-shrink: 0;
+}
+.lib-category-caret.is-open {
+  transform: rotate(90deg);
+}
+.lib-category-panel {
+  padding: 2px 0 6px;
 }
 
 /* Inline editable text on canvas */
@@ -7133,7 +7213,21 @@
 .preview-bar-btn-pill.preview-bar-btn-active { border-color: rgba(126, 107, 196, 0.5); }
 .builder-light .preview-bar-btn-pill { border-color: rgba(0, 0, 0, 0.1); }
 .preview-bar-btn-ds { font-weight: 600; padding: 0 10px; }
-.preview-bar-btn-density { padding: 0 10px; min-width: 58px; justify-content: center; }
+/* Density buttons are high-frequency but secondary — smaller min-width
+   and lighter baseline weight so they don't compete with DS + device
+   toggles, which are the primary canvas controls. Active state holds
+   the accent weight so the selected density still reads clearly. */
+.preview-bar-btn-density {
+  padding: 0 8px;
+  min-width: 44px;
+  justify-content: center;
+  font-weight: 500;
+  color: var(--dh-fg-muted);
+}
+.preview-bar-btn-density.preview-bar-btn-active {
+  font-weight: 600;
+  color: var(--dh-fg);
+}
 .preview-bar-code-glyph {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 12px;
@@ -7181,9 +7275,24 @@
 }
 .preview-bar-overflow-item:hover { background: rgba(255, 255, 255, 0.06); }
 .preview-bar-overflow-item:disabled { opacity: 0.5; cursor: wait; }
+.preview-bar-overflow-item.preview-bar-overflow-item-active {
+  background: rgba(126, 107, 196, 0.14);
+  color: var(--dh-fg);
+}
+.preview-bar-overflow-item.preview-bar-overflow-item-active .material-symbols-outlined {
+  color: var(--ds-primary, rgba(126, 107, 196, 0.9));
+}
 .preview-bar-overflow-item .material-symbols-outlined {
   font-size: 16px !important;
   color: rgba(255, 255, 255, 0.65);
+}
+.preview-bar-overflow-group-label {
+  padding: 6px 10px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dh-fg-muted);
 }
 .preview-bar-overflow-divider {
   height: 1px;
@@ -7198,6 +7307,10 @@
 .builder-light .preview-bar-overflow-item { color: #15102a; }
 .builder-light .preview-bar-overflow-item:hover { background: rgba(0, 0, 0, 0.05); }
 .builder-light .preview-bar-overflow-item .material-symbols-outlined { color: rgba(0, 0, 0, 0.55); }
+.builder-light .preview-bar-overflow-item.preview-bar-overflow-item-active {
+  background: rgba(126, 107, 196, 0.1);
+}
+.builder-light .preview-bar-overflow-group-label { color: rgba(0, 0, 0, 0.55); }
 .builder-light .preview-bar-overflow-divider { background: rgba(0, 0, 0, 0.06); }
 
 .bp-dimensions-sr {
@@ -8052,8 +8165,61 @@
 }
 .shared-preview-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* auto-fill with a 280px min gives us 1-col <640px, 2-col ~640–960px,
+     3-col ≥960px without needing explicit breakpoints. */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
+}
+
+/* Skeleton shapes for /preview/share/[hash]/loading.tsx. Tokenised so
+   they respect the active theme surface + fade smoothly into real
+   content when the server component resolves. */
+.shared-preview-skel-row {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.shared-preview-skel {
+  background: var(--b-surface, rgba(255, 255, 255, 0.08));
+  border-radius: var(--dh-curve-md);
+  animation: shared-preview-pulse 1.4s var(--dh-motion-ease, ease-in-out) infinite;
+}
+.shared-preview-skel-chip {
+  display: inline-block;
+  width: 72px;
+  height: 28px;
+  border-radius: var(--dh-curve-pill);
+}
+.shared-preview-skel-btn {
+  display: inline-block;
+  width: 108px;
+  height: 32px;
+}
+.shared-preview-skel-icon-btn {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dh-curve-sm);
+}
+.shared-preview-skel-card {
+  height: 180px;
+  border-radius: var(--dh-curve-lg);
+}
+@keyframes shared-preview-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shared-preview-skel {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+/* Honour the gridColumn: span N inline style authors set on individual
+   blocks — clamp the span to the actual column count so explicit "span 3"
+   doesn't leave gaps when only 1–2 columns fit. */
+.shared-preview-grid > * {
+  min-width: 0;
 }
 .shared-preview-empty {
   padding: 64px 20px;
@@ -9200,7 +9366,7 @@
   }
   .preview-toolbar::-webkit-scrollbar { display: none; }
   .preview-toolbar-group { flex-shrink: 0; }
-  .preview-toolbar-btn { padding: 4px 8px; min-height: 32px; font-size: 11px; }
+  .preview-toolbar-btn { padding: 10px 12px; min-height: 44px; min-width: 44px; font-size: 12px; }
 
   /* ── Viewport: full width, remove centering ── */
   .bp-viewport-wrapper {
@@ -9241,10 +9407,11 @@
     flex-direction: column;
   }
 
-  /* Increase touch targets to meet 44px minimum */
+  /* Increase touch targets to meet 44px minimum (WCAG 2.5.5 AAA) */
   .bp-nav-item   { min-height: 44px; }
-  .bp-device-btn { min-width: 40px; min-height: 36px; }
-  .top-bar-btn.icon-only { width: 40px; height: 40px; }
+  .bp-device-btn { min-width: 44px; min-height: 44px; }
+  .top-bar-btn.icon-only { width: 44px; height: 44px; }
+  .bp-refresh-btn { min-width: 44px; min-height: 44px; }
 }
 
 /* ── Very small phones (≤ 479px): strip non-essential top bar items ── */
@@ -9253,7 +9420,78 @@
   .top-bar-right > *:not(.preview-toggle-btn) { display: none; }
   .top-bar-right .preview-toggle-btn { display: flex; }
   .bp-controls-left { gap: 0; }
-  .preview-toolbar-btn { padding: 3px 6px; font-size: 10px; }
+  /* Keep 44px touch targets; only shrink padding — min-font size 11px */
+  .preview-toolbar-btn { padding: 8px 10px; font-size: 11px; min-height: 44px; min-width: 44px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Tablet (768–1024px) — Gemini sidebar becomes overlay drawer
+   Keeps chat + preview side-by-side but frees layout width
+   when the component palette is open.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .gemini-sidebar {
+    width: 240px;
+    margin-left: -240px;
+  }
+  .gemini-sidebar.gsb-open {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    margin-left: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+  .gemini-sidebar.gsb-closed {
+    margin-left: -240px;
+  }
+  .gsb-inner { width: 240px; }
+  /* Narrow the right-hand component library so canvas keeps breathing room */
+  .component-sidebar { width: var(--comp-sidebar-width, 200px); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Short viewports — landscape phones & small laptops
+   Chat was locking to 42vh (~157px on a 375h landscape phone).
+   Rebalance to keep preview usable.
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) and (max-height: 500px) {
+  .content-split.has-preview .chat-slide-open {
+    max-height: 50vh;
+    min-height: 120px;
+  }
+  .top-bar { padding: 6px 10px; }
+  .bp-controls { padding: 4px 10px; gap: 6px; }
+  .preview-toolbar { padding: 2px 10px; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Touch / no-hover devices — disarm "sticky :hover"
+   Many elements have hover-only visual shifts that stick
+   after tap on touch. Neutralise them on elements where the
+   active/pressed feedback already communicates state.
+   ══════════════════════════════════════════════════════════ */
+@media (hover: none) {
+  .bp-device-btn:hover,
+  .bp-nav-item:hover,
+  .bp-refresh-btn:hover,
+  .top-bar-btn:hover,
+  .preview-toolbar-btn:hover,
+  .preview-bar-btn:hover,
+  .comp-resize-handle:hover,
+  .resize-handle:hover,
+  .bp-sidebar-resize-handle:hover {
+    background: inherit;
+    box-shadow: none;
+    transform: none;
+  }
+  /* Resize handles are irrelevant without a pointer */
+  .comp-resize-handle,
+  .resize-handle,
+  .bp-sidebar-resize-handle {
+    cursor: default;
+  }
 }
 
 

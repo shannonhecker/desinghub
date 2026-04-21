@@ -105,4 +105,44 @@ describe("applyChatComponentDelta", () => {
     expect(useBuilder.getState().headerBlocks).toHaveLength(1);
     expect(useBuilder.getState().headerBlocks[0].id).toBe("hdr-btn");
   });
+
+  it("alsoRemoveIds removes blocks of the mapped types even when selectedComponents is empty", () => {
+    /* The bug scenario: user dragged a Card from the palette, then
+       chats "remove cards". selectedComponents was never populated,
+       so the delta is empty — alsoRemoveIds must drive removal. */
+    resetStore({
+      blocks: [{ id: "dragged-card", type: "SimulatedCard", props: {} }] as Block[],
+    });
+    applyChatComponentDelta([], [], { alsoRemoveIds: ["cards"] });
+    expect(useBuilder.getState().blocks).toHaveLength(0);
+  });
+
+  it("clearBody wipes every body block regardless of state", () => {
+    resetStore({
+      blocks: [
+        { id: "a", type: "SimulatedButton", props: {} },
+        { id: "b", type: "SimulatedCard", props: {} },
+        { id: "c", type: "SimulatedTabs", props: {} },
+      ] as Block[],
+      headerBlocks: [{ id: "hdr", type: "SimulatedButton", props: {} }] as Block[],
+      selectedComponents: ["tabs"],
+    });
+    applyChatComponentDelta(["tabs"], [], { clearBody: true });
+    expect(useBuilder.getState().blocks).toHaveLength(0);
+    /* Header (and other non-body zones) must survive. */
+    expect(useBuilder.getState().headerBlocks).toHaveLength(1);
+  });
+
+  it("alsoRemoveIds unions with delta-derived removals", () => {
+    /* Delta says drop "cards"; alsoRemoveIds adds "buttons" on top.
+       Both types should be stripped from the body zone. */
+    resetStore({
+      blocks: [
+        { id: "c1", type: "SimulatedCard", props: {} },
+        { id: "b1", type: "SimulatedButton", props: {} },
+      ] as Block[],
+    });
+    applyChatComponentDelta(["cards"], [], { alsoRemoveIds: ["buttons"] });
+    expect(useBuilder.getState().blocks).toHaveLength(0);
+  });
 });

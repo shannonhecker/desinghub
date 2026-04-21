@@ -19,17 +19,44 @@ import { useBuilder } from "@/store/useBuilder";
 import type { Block } from "@/store/useBuilder";
 import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS } from "@/lib/componentMaps";
 
+export interface ChatDeltaOptions {
+  /* IDs whose mapped block types should be removed from the body zone
+     regardless of whether they appear in the (oldIds → newIds) delta.
+     Use this when removal intent is explicit in the user's message
+     but the wizard `selectedComponents` array is out of sync with
+     what's actually on canvas (e.g. blocks dragged from the palette). */
+  alsoRemoveIds?: string[];
+  /* When true, wipe every block in the body zone. Used for "clear all"
+     style commands. Runs before adds so a combined clear+add still
+     works. Other zones (header/sidebar/footer) are untouched. */
+  clearBody?: boolean;
+}
+
 export function applyChatComponentDelta(
   oldIds: string[],
   newIds: string[],
+  opts: ChatDeltaOptions = {},
 ): void {
   const addedIds = newIds.filter((id) => !oldIds.includes(id));
-  const removedIds = oldIds.filter((id) => !newIds.includes(id));
-  if (addedIds.length === 0 && removedIds.length === 0) return;
+  const deltaRemovedIds = oldIds.filter((id) => !newIds.includes(id));
+  const explicitRemoveIds = opts.alsoRemoveIds ?? [];
+  const removedIds = Array.from(new Set([...deltaRemovedIds, ...explicitRemoveIds]));
+  const clearBody = opts.clearBody === true;
+
+  if (addedIds.length === 0 && removedIds.length === 0 && !clearBody) return;
+
+  /* "Clear body" runs first so that a combined clear-then-add still
+     leaves the canvas in the intended post-state. */
+  if (clearBody) {
+    const fresh = useBuilder.getState();
+    for (const b of [...fresh.blocks]) {
+      fresh.removeBlockFromZone("body", b.id);
+    }
+  }
 
   const state = useBuilder.getState();
 
-  /* Adds first so a subsequent "remove" in the same delta operates
+  /* Adds second so a subsequent "remove" in the same delta operates
      on a stable post-add block list. */
   for (const id of addedIds) {
     const multi = ID_TO_MULTI_BLOCKS[id];

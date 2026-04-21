@@ -266,3 +266,16 @@ When translating a Figma design to code, verify:
 | No focus ring | → `:focus-visible { outline: 2px solid var(--salt-palette-accent) }` |
 | Shadow in M3 light theme | → Use tonal surface elevation, not drop shadow |
 | Hardcoded dark colors | → Use semantic tokens that auto-switch per mode |
+
+---
+
+## Clarify-first (project-scoped)
+
+Global rule applies: ask one clarifying question per turn, every request (incl. auto mode), until nothing is left to ask. Escape: `"just do it"` / `"go"` / `"ship it"`. Full checklist in `~/.claude/skills/clarify-first/SKILL.md`.
+
+**Design-Hub-specific things to always clarify before building:**
+
+- **Which design system is this block/page using?** Salt DS, Material 3, or Fluent 2. Tokens and component names diverge across them — don't assume.
+- **Is this token-source work or block-level work?** Changes to `theme-next.css` / MD3 sys vars / Fluent design tokens ripple everywhere; block-level styling is scoped. Ask before touching the token layer.
+- **Cross-system intent:** if a new component is proposed, ask whether it should exist in all three systems eventually, even if only one is being implemented now.
+- **Builder state vs. preview state:** clarify whether the change affects the Zustand builder state, the DnD surface, or only the rendered preview.

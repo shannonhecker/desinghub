@@ -3,7 +3,13 @@
 import React, { useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { useBuilder, type LayoutProps, type LayoutWidth, type ZoneId } from "@/store/useBuilder";
-import { LIBRARY_BLUEPRINTS, TYPE_FIELDS } from "@/lib/blockRegistry";
+import {
+  LIBRARY_BLUEPRINTS,
+  TYPE_FIELDS,
+  LIBRARY_CATEGORY_ORDER,
+  categoryFor,
+  type LibraryCategory,
+} from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
@@ -233,27 +239,24 @@ export function ComponentLibrary() {
       </div>
 
       <div className="lib-body">
-        {/* Properties inspector - shown at top when a block is selected */}
+        {/* Properties inspector - shown at top when a block is selected.
+            Each section is collapsible so users can hide the ones they
+            don't need — state persists per section key in sessionStorage. */}
         {selectedBlock && FieldsComponent && (
-          <div>
-            <div className="inspector-section-title">
-              {selectedBlock.type.replace("Simulated", "")} Properties
-            </div>
-            <FieldsComponent blockId={selectedBlock.id} />
+          <div className="inspector-stack">
+            <InspectorSection
+              id={`props-${selectedBlock.type}`}
+              title={`${selectedBlock.type.replace("Simulated", "")} Properties`}
+            >
+              <FieldsComponent blockId={selectedBlock.id} />
+            </InspectorSection>
 
-            {/* Layout panel - per-block sizing + alignment.
-                Visible for any zone; header/sidebar/footer blocks
-                can now opt into fixed-width layouts too. */}
-            <div className="lib-section-divider" />
+            {/* Layout panel - per-block sizing + alignment. */}
             <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-            <div className="lib-section-divider" />
+
             <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
 
-            {/* Chart colours - only for Highchart blocks (P1.3).
-                Swatches are the active DS's 12-slot categorical palette
-                from /lib/categoricalPalettes.ts. Clicking sets the
-                first series colour; "Reset" clears the override so
-                the chart returns to the full DS palette. */}
+            {/* Chart colours - only for Highchart blocks (P1.3). */}
             {selectedBlock.type.startsWith("Highchart") && (
               <ChartColoursSection block={selectedBlock} />
             )}
@@ -339,9 +342,7 @@ function LayoutSection({
   const needsValue = currentMode === "px" || currentMode === "percent" || currentMode === "fr";
 
   return (
-    <>
-      <div className="inspector-section-title">Layout</div>
-
+    <InspectorSection id="layout" title="Layout">
       {/* Width mode selector - 5 modes */}
       <div className="inspector-field">
         <label className="inspector-field-label">Width</label>
@@ -474,7 +475,7 @@ function LayoutSection({
           }}
         />
       </div>
-    </>
+    </InspectorSection>
   );
 }
 
@@ -502,9 +503,7 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
 
   return (
-    <>
-      <div className="inspector-section-title">{label} Zone Layout</div>
-
+    <InspectorSection id={`zone-layout-${zone}`} title={`${label} Zone Layout`}>
       {/* Flow mode - stack / row / grid */}
       <div className="inspector-field">
         <label className="inspector-field-label">Flow</label>
@@ -607,7 +606,7 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
           ))}
         </div>
       </div>
-    </>
+    </InspectorSection>
   );
 }
 
@@ -693,12 +692,175 @@ function TemplatesAccordion() {
   );
 }
 
-/* ── Library browser - searchable + grouped by zone ── */
+/* ── Reusable inspector section ──
+   Every "{Type} Properties" / "Layout" / "Zone Layout" / "Colours"
+   header is now a clickable toggle with caret + aria-expanded. State
+   per-key in sessionStorage so users' preferred open/closed choices
+   persist while they work. Default open on first paint. */
+const INSPECTOR_EXPANDED_KEY = "dh-inspector-expanded";
+
+function readInspectorExpanded(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = sessionStorage.getItem(INSPECTOR_EXPANDED_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function InspectorSection({
+  id,
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpenState] = useState<boolean>(() => {
+    const saved = readInspectorExpanded();
+    return id in saved ? saved[id] : defaultOpen;
+  });
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    try {
+      const saved = readInspectorExpanded();
+      saved[id] = v;
+      sessionStorage.setItem(INSPECTOR_EXPANDED_KEY, JSON.stringify(saved));
+    } catch { /* private mode */ }
+  };
+  return (
+    <div className="inspector-section">
+      <button
+        type="button"
+        className="inspector-section-head"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={`${id}-panel`}
+      >
+        <span className="inspector-section-title-text">{title}</span>
+        <span
+          className={`material-symbols-outlined inspector-section-caret${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        >
+          chevron_right
+        </span>
+      </button>
+      {open && (
+        <div id={`${id}-panel`} className="inspector-section-body">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Reusable category accordion header ──
+   Button + icon + label + count + caret. Matches TemplatesAccordion's
+   interaction shape so the whole Library Browser feels consistent. */
+function CollapsibleGroup({
+  id,
+  icon,
+  label,
+  count,
+  hint,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  icon: string;
+  label: string;
+  count: number;
+  hint?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="lib-category">
+      <button
+        type="button"
+        className="lib-category-head"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`${id}-panel`}
+      >
+        <span className="material-symbols-outlined lib-category-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <span className="lib-category-label">{label}</span>
+        <span className="lib-category-count">{count}</span>
+        <span
+          className={`material-symbols-outlined lib-category-caret${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        >
+          chevron_right
+        </span>
+      </button>
+      {open && (
+        <div id={`${id}-panel`} className="lib-category-panel" role="region" aria-label={label}>
+          {hint && <div className="lib-zone-hint">{hint}</div>}
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Default expand state for category accordions — all open on first
+   paint, so users see the full palette until they choose to collapse.
+   Persisted per-key to sessionStorage. */
+const LIB_EXPANDED_STORAGE_KEY = "dh-lib-expanded";
+
+function readExpanded(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const saved = sessionStorage.getItem(LIB_EXPANDED_STORAGE_KEY);
+    if (!saved) return {};
+    const parsed = JSON.parse(saved);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/* ── Library browser — searchable, grouped by zone, body zone sub-
+   grouped by semantic category with expand/collapse accordions.
+   Search is sticky at the top; when a query is active, categories
+   with matches auto-expand and the rest collapse without touching
+   the user's saved state. */
 function LibraryBrowser() {
   const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded);
+
+  const persistExpanded = (next: Record<string, boolean>) => {
+    setExpanded(next);
+    try {
+      sessionStorage.setItem(LIB_EXPANDED_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* private mode / quota */
+    }
+  };
+
+  const toggleCategory = (key: string) => {
+    /* Toggle writes the explicit value (true/false) rather than
+       inverting from expanded[key] when that slot is undefined —
+       undefined currently renders as "open" via the defaulting
+       below, and the user's first click should always collapse. */
+    const current = expanded[key] !== false;
+    persistExpanded({ ...expanded, [key]: !current });
+  };
+
+  const q = query.trim().toLowerCase();
+  const hasQuery = q.length > 0;
 
   const grouped = useMemo(() => {
-    const q = query.trim().toLowerCase();
     const groups: Record<LibraryZone, typeof LIBRARY_BLUEPRINTS> = {
       body: [], header: [], sidebar: [], footer: [],
     };
@@ -708,14 +870,40 @@ function LibraryBrowser() {
       groups[zone].push(bp);
     }
     return groups;
-  }, [query]);
+  }, [q]);
+
+  /* Bucket the body zone by semantic category. Anything without a
+     category mapping falls into `misc` and renders last. */
+  const bodyByCategory = useMemo(() => {
+    const map = new Map<LibraryCategory, typeof LIBRARY_BLUEPRINTS>();
+    for (const cat of LIBRARY_CATEGORY_ORDER) map.set(cat.key, []);
+    const misc: typeof LIBRARY_BLUEPRINTS = [];
+    for (const bp of grouped.body) {
+      const cat = categoryFor(bp.type);
+      if (cat && map.has(cat)) {
+        map.get(cat)!.push(bp);
+      } else {
+        misc.push(bp);
+      }
+    }
+    return { map, misc };
+  }, [grouped.body]);
 
   const totalVisible = grouped.body.length + grouped.header.length + grouped.sidebar.length + grouped.footer.length;
 
+  /* Is a category visually open right now?
+     - When searching: open iff it has matches (ignores saved state)
+     - Otherwise: saved state, defaulting to true (open) */
+  const isCategoryOpen = (key: string, itemCount: number) => {
+    if (hasQuery) return itemCount > 0;
+    return expanded[key] !== false;
+  };
+
   return (
-    <div>
-      {/* Search input */}
-      <div className="lib-search">
+    <div className="lib-browser">
+      {/* Sticky search input — pins to top of .lib-body while the
+          user scrolls through categories. */}
+      <div className="lib-search lib-search-sticky">
         <span className="material-symbols-outlined lib-search-icon" aria-hidden="true">search</span>
         <input
           type="text"
@@ -738,10 +926,64 @@ function LibraryBrowser() {
       </div>
 
       {totalVisible === 0 && (
-        <div className="lib-empty">No components match "{query}".</div>
+        <div className="lib-empty">No components match &ldquo;{query}&rdquo;.</div>
       )}
 
-      {ZONE_ORDER.map((zone) => {
+      {/* Body zone — sub-grouped by category, each collapsible */}
+      {grouped.body.length > 0 && (
+        <div className="lib-zone-group">
+          <div className="lib-zone-head">
+            <span className="material-symbols-outlined lib-zone-icon" aria-hidden="true">
+              {ZONE_LABELS.body.icon}
+            </span>
+            <span className="lib-zone-label">{ZONE_LABELS.body.label}</span>
+            <span className="lib-zone-count">{grouped.body.length}</span>
+          </div>
+          <div className="lib-zone-hint">{ZONE_LABELS.body.hint}</div>
+          {LIBRARY_CATEGORY_ORDER.map((cat) => {
+            const items = bodyByCategory.map.get(cat.key) ?? [];
+            if (items.length === 0) return null;
+            const open = isCategoryOpen(cat.key, items.length);
+            return (
+              <CollapsibleGroup
+                key={cat.key}
+                id={`lib-cat-${cat.key}`}
+                icon={cat.icon}
+                label={cat.label}
+                count={items.length}
+                open={open}
+                onToggle={() => toggleCategory(cat.key)}
+              >
+                <div className="lib-tile-grid">
+                  {items.map((bp) => (
+                    <BlueprintItem key={bp.id} blueprint={bp} zone="body" />
+                  ))}
+                </div>
+              </CollapsibleGroup>
+            );
+          })}
+          {bodyByCategory.misc.length > 0 && (
+            <CollapsibleGroup
+              id="lib-cat-misc"
+              icon="more_horiz"
+              label="Other"
+              count={bodyByCategory.misc.length}
+              open={isCategoryOpen("misc", bodyByCategory.misc.length)}
+              onToggle={() => toggleCategory("misc")}
+            >
+              <div className="lib-tile-grid">
+                {bodyByCategory.misc.map((bp) => (
+                  <BlueprintItem key={bp.id} blueprint={bp} zone="body" />
+                ))}
+              </div>
+            </CollapsibleGroup>
+          )}
+        </div>
+      )}
+
+      {/* Non-body zones — 1–2 items each, rendered flat (sub-grouping
+          would be noise at this scale). */}
+      {(["header", "sidebar", "footer"] as LibraryZone[]).map((zone) => {
         const items = grouped[zone];
         if (items.length === 0) return null;
         const meta = ZONE_LABELS[zone];
@@ -815,9 +1057,7 @@ function ChartColoursSection({ block }: { block: { id: string; type: string; pro
   const [customHex, setCustomHex] = useState(activeColor ?? "");
 
   return (
-    <>
-      <div className="lib-section-divider" />
-      <div className="inspector-section-title">Colours</div>
+    <InspectorSection id="chart-colours" title="Colours">
       <div className="inspector-field">
         <label className="inspector-field-label">
           {designSystem.toUpperCase()} palette
@@ -884,6 +1124,6 @@ function ChartColoursSection({ block }: { block: { id: string; type: string; pro
           </button>
         </div>
       </div>
-    </>
+    </InspectorSection>
   );
 }

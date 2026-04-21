@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { fontVariables } from "@/lib/fonts";
 import "./globals.css";
@@ -18,6 +18,16 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "ausōs",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0e1a" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -124,9 +124,12 @@
   color: #fff;
 }
 
+/* Emphasis uses a sharper weight contrast (300 → 600) rather than a
+   middling 500 — reads as intentional typographic tension instead of
+   a muddled third weight. */
 .hero-headline em {
   font-style: normal;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .hero-headline-line1,
@@ -167,7 +170,10 @@
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.75;
-  color: rgba(255, 255, 255, 0.55);
+  /* 0.55 reads as 5.6:1 on the hero dark — AA but feels washed out
+     against the editorial typography. 0.7 bumps it to 7.8:1 (AAA) and
+     restores the voice. */
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
   max-width: 28rem;
 }
@@ -213,12 +219,18 @@
 .hero-cta:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  transform: var(--dh-motion-hover-lift);
   box-shadow: 0 8px 32px rgba(94, 231, 223, 0.08), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .hero-cta:active {
   transform: translateY(0) scale(0.98);
+}
+
+.hero-cta:focus-visible {
+  outline: 2px solid rgba(94, 231, 223, 0.9);
+  outline-offset: 3px;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .hero-cta svg {
@@ -257,7 +269,7 @@
   text-align: center;
   padding: 1.5rem 1.5rem clamp(32px, 12vh, 140px);
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.3);
@@ -278,6 +290,17 @@
 
 .hero-enter {
   animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Globals.css sets animation-duration: 0.01ms for all elements under reduced-motion,
+   which leaves these looping animations running one fast pass. Force-stop them. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob,
+  .hero-wave,
+  .hero-enter {
+    animation: none !important;
+  }
+  .hero-enter { opacity: 1; transform: none; }
 }
 
 /* ─── Mobile ─── */

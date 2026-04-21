@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
+import "./login.css";
 
 export default function LoginPage() {
   const [error, setError] = useState(false);
@@ -33,58 +34,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #0b1120 0%, #0d1f2d 30%, #1a1035 65%, #120b20 100%)",
-      fontFamily: "'DM Sans', 'Inter', sans-serif",
-      overflow: "hidden",
-      position: "relative",
-    }}>
-
-      {/* Ambient glows */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden",
-      }}>
-        <div style={{
-          position: "absolute", top: "10%", left: "15%",
-          width: 480, height: 480,
-          background: "radial-gradient(circle, rgba(26,140,160,0.18) 0%, transparent 70%)",
-          borderRadius: "50%", filter: "blur(40px)",
-        }} />
-        <div style={{
-          position: "absolute", bottom: "10%", right: "10%",
-          width: 400, height: 400,
-          background: "radial-gradient(circle, rgba(120,60,200,0.15) 0%, transparent 70%)",
-          borderRadius: "50%", filter: "blur(40px)",
-        }} />
+    <main id="main-content" className="login-shell">
+      <div className="login-ambient" aria-hidden="true">
+        <div className="login-ambient-blob login-ambient-blob-1" />
+        <div className="login-ambient-blob login-ambient-blob-2" />
       </div>
 
-      {/* Card */}
-      <div style={{
-        position: "relative", zIndex: 1,
-        width: "100%", maxWidth: 400,
-        margin: "0 16px",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.09)",
-        borderRadius: 20,
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        padding: "40px 36px",
-        boxShadow: "0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",
-      }}>
-
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+      <div className="login-card">
+        <div className="login-brand">
+          <div className="login-logo">
             <svg
-              height="36"
               viewBox="0 0 906 264"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              style={{ width: "auto" }}
+              role="img"
+              aria-label="ausōs"
             >
               <path fillRule="evenodd" clipRule="evenodd" d="M113.213 91.6077C124.431 91.6077 134.442 94.2288 143.246 99.4717C152.192 104.573 159.221 111.588 164.333 120.515C169.587 129.442 172.285 139.574 172.427 150.91V200.86C172.427 203.269 171.646 205.253 170.084 206.812C168.522 208.229 166.534 208.937 164.12 208.937C161.706 208.937 159.718 208.228 158.156 206.812C156.594 205.253 155.813 203.269 155.813 200.86V187.937C151.457 194.038 145.919 199.054 139.199 202.985C131.105 207.662 121.875 210 111.509 210C100.575 210 90.7774 207.449 82.1155 202.347C73.4537 197.105 66.5666 190.019 61.4547 181.092C56.4849 172.165 54 162.104 54 150.91C54 139.574 56.5558 129.442 61.6677 120.515C66.9216 111.588 74.022 104.573 82.9679 99.4717C91.9138 94.2288 101.996 91.6077 113.213 91.6077Z" fill="white"/>
               <path fillRule="evenodd" clipRule="evenodd" d="M252.787 91.4574C264.146 91.4574 274.228 94.011 283.032 99.1187C291.978 104.226 299.007 111.25 304.119 120.188C309.231 129.127 311.858 139.343 312 150.835C312 162.185 309.373 172.33 304.119 181.268C299.007 190.207 291.978 197.23 283.032 202.338C274.228 207.446 264.146 210 252.787 210C241.427 210 231.274 207.446 222.328 202.338C213.382 197.23 206.353 190.207 201.241 181.268C196.129 172.33 193.573 162.185 193.573 150.835C193.573 139.343 196.129 129.127 201.241 120.188C206.353 111.25 213.382 104.226 222.328 99.1187C231.274 94.0111 241.427 91.4574 252.787 91.4574Z" fill="white"/>
@@ -97,111 +61,43 @@ export default function LoginPage() {
               <path fillRule="evenodd" clipRule="evenodd" d="M738.932 92C740.643 92 742.088 92.5359 743.264 93.6076C744.548 94.6794 745.189 96.0726 745.189 97.7874C745.189 99.6093 744.548 101.057 743.264 102.128C742.088 103.093 740.643 103.575 738.932 103.575H697.38C695.669 103.575 694.171 103.093 692.888 102.128C691.711 101.057 691.123 99.6093 691.123 97.7874C691.123 96.0726 691.711 94.6794 692.888 93.6076C694.171 92.5359 695.669 92 697.38 92H738.932Z" fill="white"/>
             </svg>
           </div>
-          <p style={{
-            margin: 0, fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 400,
-          }}>
-            Enter password to continue
-          </p>
-          <p style={{
-            margin: "12px 0 0", fontSize: 11, color: "rgba(255,255,255,0.28)",
-            fontWeight: 400, lineHeight: 1.5,
-          }}>
+          <p className="login-tagline">Enter password to continue</p>
+          <p className="login-meta">
             This site is currently under development.<br />
             For enquiries, please{" "}
-            <a
-              href="mailto:shannonheckerchen@gmail.com"
-              style={{ color: "rgba(94,231,223,0.7)", textDecoration: "none" }}
-            >
-              contact me
-            </a>
+            <a href="mailto:shannonheckerchen@gmail.com">contact me</a>
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <form onSubmit={handleSubmit} className="login-form">
           <div>
-            <label style={{
-              display: "block", marginBottom: 6,
-              fontSize: 12, fontWeight: 600, letterSpacing: "0.04em",
-              color: "rgba(255,255,255,0.45)", textTransform: "uppercase",
-            }}>
+            <label htmlFor="login-password" className="login-field-label">
               Password
             </label>
             <input
+              id="login-password"
               name="password"
               type="password"
               required
               autoComplete="current-password"
               autoFocus
-              style={{
-                width: "100%", boxSizing: "border-box",
-                padding: "11px 14px",
-                background: "rgba(255,255,255,0.06)",
-                border: `1px solid ${error ? "rgba(220,80,80,0.5)" : "rgba(255,255,255,0.1)"}`,
-                borderRadius: 10,
-                color: "rgba(255,255,255,0.88)",
-                fontSize: 14, fontFamily: "inherit",
-                outline: "none",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = "rgba(94,231,223,0.45)";
-                e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = error ? "rgba(220,80,80,0.5)" : "rgba(255,255,255,0.1)";
-                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-              }}
+              aria-invalid={error || undefined}
+              aria-describedby={error ? "login-error" : undefined}
+              className={`login-input${error ? " has-error" : ""}`}
             />
           </div>
 
-          {/* Error message */}
           {error && (
-            <p style={{
-              margin: 0, padding: "10px 14px",
-              background: "rgba(220,80,80,0.1)",
-              border: "1px solid rgba(220,80,80,0.25)",
-              borderRadius: 8,
-              fontSize: 13, color: "rgba(255,120,120,0.9)",
-            }}>
+            <p id="login-error" className="login-error" role="alert">
               Incorrect password, try again.
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 6,
-              padding: "12px",
-              background: loading
-                ? "rgba(94,231,223,0.08)"
-                : "rgba(94,231,223,0.14)",
-              border: "1px solid rgba(94,231,223,0.22)",
-              borderRadius: 10,
-              color: loading ? "rgba(94,231,223,0.45)" : "rgba(94,231,223,0.92)",
-              fontSize: 14, fontWeight: 600, fontFamily: "inherit",
-              cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.15s",
-              letterSpacing: "0.01em",
-            }}
-            onMouseEnter={e => {
-              if (!loading) {
-                e.currentTarget.style.background = "rgba(94,231,223,0.22)";
-                e.currentTarget.style.boxShadow = "0 4px 16px rgba(94,231,223,0.12)";
-              }
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = loading
-                ? "rgba(94,231,223,0.08)"
-                : "rgba(94,231,223,0.14)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            {loading ? "Signing in\u2026" : "Sign in"}
+          <button type="submit" disabled={loading} className="login-submit">
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════
+   Login page — tokenized, theme-aware.
+   Shares the dark/ambient aesthetic of the builder
+   shell via --b-bg / --ds-primary, with rgba
+   alphas for the glass overlay (universal idiom).
+   ═══════════════════════════════════════════ */
+
+.login-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--b-bg, #0b1120);
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Subtle ambient accent glows — derived from the active DS primary
+   so the login feels continuous with the workbench palette. */
+.login-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.login-ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.login-ambient-blob-1 {
+  top: 10%;
+  left: 15%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle,
+    rgba(80, 240, 220, 0.18) 0%,
+    transparent 70%);
+}
+.login-ambient-blob-2 {
+  bottom: 10%;
+  right: 10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle,
+    rgba(175, 130, 255, 0.15) 0%,
+    transparent 70%);
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--dh-curve-lg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 40px 36px;
+  box-shadow: var(--dh-shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.login-logo svg {
+  height: 36px;
+  width: auto;
+}
+.login-tagline {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dh-fg-muted);
+  font-weight: 400;
+}
+.login-meta {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--dh-fg-disabled);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.login-meta a {
+  color: var(--ds-primary, #5ee7df);
+  text-decoration: none;
+  transition: opacity var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+.login-meta a:hover {
+  opacity: 0.8;
+}
+.login-meta a:focus-visible {
+  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--dh-fg-muted);
+  text-transform: uppercase;
+}
+
+.login-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--dh-curve-md);
+  color: var(--dh-fg);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    background var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    box-shadow var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+.login-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.login-input:focus-visible {
+  border-color: var(--ds-primary, rgba(94, 231, 223, 0.45));
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: var(--dh-shadow-focus);
+}
+.login-input.has-error {
+  border-color: rgba(220, 80, 80, 0.5);
+}
+
+.login-error {
+  margin: 0;
+  padding: 10px 14px;
+  background: rgba(220, 80, 80, 0.1);
+  border: 1px solid rgba(220, 80, 80, 0.25);
+  border-radius: var(--dh-curve-sm);
+  font-size: 13px;
+  color: rgba(255, 120, 120, 0.92);
+}
+
+.login-submit {
+  margin-top: 6px;
+  padding: 12px;
+  background: rgba(94, 231, 223, 0.14);
+  border: 1px solid rgba(94, 231, 223, 0.22);
+  border-radius: var(--dh-curve-md);
+  color: rgba(94, 231, 223, 0.92);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition:
+    background var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    box-shadow var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    transform var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+.login-submit:not(:disabled):hover {
+  background: rgba(94, 231, 223, 0.22);
+  box-shadow: 0 4px 16px rgba(94, 231, 223, 0.18);
+  transform: var(--dh-motion-hover-lift);
+}
+.login-submit:focus-visible {
+  outline: none;
+  box-shadow: var(--dh-shadow-focus);
+}
+.login-submit:disabled {
+  background: rgba(94, 231, 223, 0.08);
+  color: rgba(94, 231, 223, 0.45);
+  cursor: not-allowed;
+}
+
+/* Reduced motion: keep colour transitions, disable lift. */
+@media (prefers-reduced-motion: reduce) {
+  .login-submit:not(:disabled):hover {
+    transform: none;
+  }
+}

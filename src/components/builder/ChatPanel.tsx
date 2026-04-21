@@ -128,7 +128,18 @@ function processLayoutCommand(
 function processComponentCommand(
   input: string,
   currentComponents: string[],
-): { response: string; newComponents: string[] | null } {
+): {
+  response: string;
+  newComponents: string[] | null;
+  /* Explicit remove instructions — set when the user's message has
+     remove intent. Drives canvas removal directly instead of relying
+     on the (currentComponents → newComponents) delta, which misses
+     blocks that aren't tracked in selectedComponents (e.g. dragged
+     from the palette). */
+  alsoRemoveIds?: string[];
+  /* Wipe every body block — set by "clear all" style commands. */
+  clearBody?: boolean;
+} {
   const l = input.toLowerCase();
 
   /* ── List / query current components ── */
@@ -173,9 +184,16 @@ function processComponentCommand(
       .filter((g) => g.ids.some((id) => newComps.includes(id)))
       .map((g) => g.label);
     const uniqueRemaining = [...new Set(remaining)];
+    /* alsoRemoveIds = every known wizard ID NOT mentioned.
+       applyChatComponentDelta maps these to block types and strips
+       matches from the body zone — so this works even when blocks
+       were dragged in rather than added through the wizard. */
+    const allWizardIds = [...new Set(COMPONENT_KEYWORDS.flatMap((g) => g.ids))];
+    const alsoRemoveIds = allWizardIds.filter((id) => !mentionedIds.includes(id));
     return {
       response: `Removed everything except ${mentionedLabels.join(", ")}. ${uniqueRemaining.length} group${uniqueRemaining.length === 1 ? "" : "s"} remaining.`,
       newComponents: newComps,
+      alsoRemoveIds,
     };
   }
 
@@ -198,7 +216,11 @@ function processComponentCommand(
 
   /* ── Clear all ── */
   if (isClear)
-    return { response: "All components cleared. Tell me what to add or select from the options.", newComponents: [] };
+    return {
+      response: "All components cleared. Tell me what to add or select from the options.",
+      newComponents: [],
+      clearBody: true,
+    };
 
   /* ── Show all ── */
   if (isAll) {
@@ -214,6 +236,10 @@ function processComponentCommand(
     return {
       response: `Removed ${mentionedLabels.join(", ")}. ${remaining} group${remaining === 1 ? "" : "s"} remaining.`,
       newComponents: newComps,
+      /* Drive canvas removal explicitly — the (currentComponents →
+         newComps) delta is empty when the user hasn't populated
+         selectedComponents (e.g. blocks dragged from the palette). */
+      alsoRemoveIds: mentionedIds,
     };
   }
 
@@ -283,29 +309,9 @@ export function ChatPanel() {
      AI-gated UI (send button, Regenerate chip) should degrade calmly. */
   const anthropicConfigured = useBuilder((s) => s.backendStatus.anthropicConfigured);
   const aiDisabled = anthropicConfigured === false;
-  /* Gate dev-centric messaging (mentions .env.local, ANTHROPIC_API_KEY)
-     so it never reaches deployed builds. Next.js inlines NODE_ENV at
-     build time, so this is a constant on the client. */
-  const isDev = process.env.NODE_ENV === "development";
 
   /* Whether the conversational onboarding is waiting on a DS pick. */
   const awaitingDs = Boolean(pendingTemplateId || pendingFirstMessage);
-
-  /* One-time dismissible "AI features off" banner, mirrors the
-     SaveIndicator "Cloud save off" pattern. Hydrates from
-     sessionStorage so navigating around the Builder doesn't re-show
-     the banner on every render. */
-  const [aiHintDismissed, setAiHintDismissed] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem("design-hub:ai-off-dismissed") === "1") {
-      setAiHintDismissed(true);
-    }
-  }, []);
-  const dismissAiHint = () => {
-    setAiHintDismissed(true);
-    try { sessionStorage.setItem("design-hub:ai-off-dismissed", "1"); } catch { /* private-mode */ }
-  };
 
   /* Derive the selected-block metadata for the scope chip.
      Falls back to null when nothing is selected. */
@@ -549,6 +555,11 @@ export function ChatPanel() {
        straight to Claude with the selected_block context attached by
        useChatAPI. ── */
     if (selectedBlockId) {
+      if (aiDisabled) {
+        addMessage("ai", "Editing the selected block needs AI. Try \"add buttons\", \"add a nav bar\", or \"build a dashboard\" — those work without an API key.");
+        setGenerating(false);
+        return;
+      }
       if (!previewOpen) setPreviewOpen(true);
       setGenerating(false); // sendToAPI manages its own generating state
       sendToAPI(msg).then(() => bumpPreview());
@@ -583,7 +594,8 @@ export function ChatPanel() {
       return;
     }
 
-    const { response: compResponse, newComponents } = processComponentCommand(msg, selectedComponents);
+    const { response: compResponse, newComponents, alsoRemoveIds, clearBody } =
+      processComponentCommand(msg, selectedComponents);
 
     /* ── Theme changes ── */
     let themeChanged = false;
@@ -602,8 +614,11 @@ export function ChatPanel() {
       /* Write the delta to the canvas before updating the onboarding
          pick list. PreviewCanvas mirrors selectedComponents → blocks
          only on first mount, so without this the chat-add is
-         invisible whenever the preview is already open. */
-      applyChatComponentDelta(selectedComponents, newComponents);
+         invisible whenever the preview is already open. alsoRemoveIds
+         and clearBody carry explicit remove intent for cases where
+         selectedComponents doesn't reflect what's actually on canvas
+         (dragged blocks, loaded sessions, etc.). */
+      applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, clearBody });
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
       setTimeout(() => {
@@ -630,6 +645,15 @@ export function ChatPanel() {
       return;
     }
 
+    // No local command matched — anything else needs AI.
+    if (aiDisabled) {
+      setTimeout(() => {
+        addMessage("ai", "That one needs AI. Try phrases like \"add a nav bar\", \"add buttons\", or \"build a dashboard\" — those work without an API key.");
+        setGenerating(false);
+      }, 400);
+      return;
+    }
+
     // Route to Claude API for intelligent responses
     setGenerating(false); // sendToAPI manages its own generating state
     sendToAPI(msg).then(() => bumpPreview());
@@ -638,9 +662,7 @@ export function ChatPanel() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      /* Same gating as the send button: no-op when AI is off, so the
-         user doesn't fire a request that will fail loudly. */
-      if (hasText && !isGenerating && !aiDisabled) handleSend();
+      if (hasText && !isGenerating) handleSend();
     } else if (e.key === "Escape" && selectedBlockId) {
       // Esc clears the click-to-edit scope without submitting anything
       setSelectedBlock(null, null);
@@ -707,8 +729,6 @@ export function ChatPanel() {
           key={label}
           className="prompt-bubble"
           onClick={() => handleSend(label)}
-          disabled={aiDisabled}
-          title={aiDisabled ? (isDev ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : "Chat is unavailable") : undefined}
         >
           {label}
         </button>
@@ -716,17 +736,13 @@ export function ChatPanel() {
     </div>
   );
 
-  const placeholderText = aiDisabled
-    ? (isDev
-        ? "AI is off - templates + manual edits still work. Add ANTHROPIC_API_KEY to re-enable chat."
-        : "Chat is unavailable")
-    : selectedBlock
-      ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
-      : awaitingDs
-        ? "Pick a design system above, or type a different request…"
-        : hasMessages
-          ? "Ask me anything - 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
-          : "Describe the app you want to build…";
+  const placeholderText = selectedBlock
+    ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
+    : awaitingDs
+      ? "Pick a design system above, or type a different request…"
+      : hasMessages
+        ? "Ask me anything - 'add a nav bar', 'switch to dark mode', 'try Fluent'..."
+        : "Describe the app you want to build…";
 
   /* Auto-focus the textarea on initial mount so users can type right
      away - matches v0 / Lovable / ChatGPT. Only fires once; subsequent
@@ -738,36 +754,6 @@ export function ChatPanel() {
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
-      {/* AI-off banner - shown once per session when /api/health reports
-          ANTHROPIC_API_KEY is missing. Templates + manual component
-          editing still work, so this is an informational hint rather
-          than an error. Dismissable via the × button; sessionStorage
-          keeps it hidden for the rest of the tab's lifetime.
-          Gated on NODE_ENV === 'development' so the dev-centric copy
-          (mentions .env.local, ANTHROPIC_API_KEY) never leaks onto
-          deployed builds. On Vercel preview/production, aiDisabled
-          still disables send/Enter — we just don't surface the
-          configuration advice to end users. */}
-      {aiDisabled && !aiHintDismissed && isDev && (
-        <div className="chat-ai-off-banner" role="status" aria-live="polite">
-          <span className="material-symbols-outlined" aria-hidden="true">cloud_off</span>
-          <span className="chat-ai-off-text">
-            <strong>AI features are off.</strong> Templates and manual edits still work.
-            Add <code>ANTHROPIC_API_KEY</code> to <code>.env.local</code> and restart dev
-            to enable chat + Regenerate data.
-          </span>
-          <button
-            type="button"
-            className="chat-ai-off-dismiss"
-            onClick={dismissAiHint}
-            aria-label="Dismiss"
-            title="Dismiss"
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">close</span>
-          </button>
-        </div>
-      )}
-
       {/* Scrollable content area */}
       <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer - pushes content to bottom when messages are few */}
@@ -919,9 +905,8 @@ export function ChatPanel() {
                   <button
                     className="send-btn"
                     onClick={() => handleSend()}
-                    disabled={isGenerating || aiDisabled}
-                    aria-label={aiDisabled ? "Chat is unavailable" : "Send"}
-                    title={aiDisabled ? (isDev ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : "Chat is unavailable") : undefined}
+                    disabled={isGenerating}
+                    aria-label="Send"
                   >
                     <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                   </button>
@@ -939,6 +924,20 @@ export function ChatPanel() {
               </div>
             </div>
           </div>
+          {/* Local-command hint — only surfaced when AI is disabled.
+              Reveals the vocabulary that routes through processComponent-
+              Command without an API key, so users don't have to guess
+              what will work. Muted so it stays peripheral. */}
+          {aiDisabled && (
+            <div className="chat-input-hint" aria-hidden="true">
+              Try:{" "}
+              <code>add buttons</code>
+              <span className="chat-input-hint-sep"> · </span>
+              <code>add a nav bar</code>
+              <span className="chat-input-hint-sep"> · </span>
+              <code>build a dashboard</code>
+            </div>
+          )}
         </div>
       </div>
     </div>

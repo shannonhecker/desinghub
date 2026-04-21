@@ -377,37 +377,9 @@ function PreviewBar() {
         Compare
       </button>
 
-      <span className="preview-bar-sep" aria-hidden="true" />
-
-      {/* Density - normalised labels across DSes */}
-      <div className="preview-bar-group preview-bar-group-density" role="group" aria-label="Canvas density">
-        {densityOptions.map((d) => (
-          <button
-            key={d.key}
-            className={`preview-bar-btn preview-bar-btn-density${density === d.key ? " preview-bar-btn-active" : ""}`}
-            onClick={() => setDensity(d.key)}
-            title={`${d.label} density · ${d.hint}`}
-            aria-label={`${d.label} density`}
-            aria-pressed={density === d.key}
-          >
-            {d.label}
-          </button>
-        ))}
-      </div>
-
-      <span className="preview-bar-sep" aria-hidden="true" />
-
-      {/* Code view toggle - prominent per user spec */}
-      <button
-        className={`preview-bar-btn preview-bar-btn-pill${canvasViewMode === "code" ? " preview-bar-btn-active" : ""}`}
-        onClick={toggleCanvasViewMode}
-        title={canvasViewMode === "code" ? "Show UI preview" : "Show JSON schema"}
-        aria-label={canvasViewMode === "code" ? "Show UI preview" : "Show code view"}
-        aria-pressed={canvasViewMode === "code"}
-      >
-        <span className="preview-bar-code-glyph" aria-hidden="true">&lt;/&gt;</span>
-        <span className="preview-bar-btn-label">Code</span>
-      </button>
+      {/* Density + Code moved to the ⋯ overflow menu — they are power-user
+         toggles that don't need primary bar weight. Keeps the canvas
+         row focused on DS / device / mode / Compare. */}
 
       {/* Reopen component library — only visible when the panel is
          closed. When open, the in-panel × button handles close. */}
@@ -447,6 +419,35 @@ function PreviewBar() {
         </button>
         {overflowOpen && (
           <div className="preview-bar-overflow" role="menu">
+            <button
+              className={`preview-bar-overflow-item${canvasViewMode === "code" ? " preview-bar-overflow-item-active" : ""}`}
+              role="menuitemcheckbox"
+              aria-checked={canvasViewMode === "code"}
+              onClick={() => { toggleCanvasViewMode(); setOverflowOpen(false); }}
+            >
+              <span className="preview-bar-code-glyph" aria-hidden="true" style={{ fontSize: 13, width: 18, textAlign: "center" }}>&lt;/&gt;</span>
+              {canvasViewMode === "code" ? "Show UI preview" : "Show code view"}
+            </button>
+            <div className="preview-bar-overflow-divider" />
+            {/* Density submenu — checkmark on active. Normalised labels
+                across DSes (High / Medium / Low / Touch etc.). */}
+            <div className="preview-bar-overflow-group-label" aria-hidden="true">Density</div>
+            {densityOptions.map((d) => (
+              <button
+                key={d.key}
+                className={`preview-bar-overflow-item${density === d.key ? " preview-bar-overflow-item-active" : ""}`}
+                role="menuitemradio"
+                aria-checked={density === d.key}
+                onClick={() => { setDensity(d.key); setOverflowOpen(false); }}
+                title={d.hint}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  {density === d.key ? "check" : "density_medium"}
+                </span>
+                {d.label}
+              </button>
+            ))}
+            <div className="preview-bar-overflow-divider" />
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleToggleLibrary}>
               <span className="material-symbols-outlined" aria-hidden="true">category</span>
               {componentLibraryOpen ? "Hide component library" : "Show component library"}

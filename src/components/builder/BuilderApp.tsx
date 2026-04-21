@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
 /* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
@@ -19,11 +18,6 @@ import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import "./builder.css";
-
-const WaveScene = dynamic(
-  () => import("./WaveHero").then((m) => m.WaveScene),
-  { ssr: false }
-);
 
 export function BuilderApp() {
   const {
@@ -267,47 +261,43 @@ export function BuilderApp() {
   return (
     <div className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}>
 
-      {/* Liquid gradient background */}
-      <div className="liquid-bg" aria-hidden="true">
-        <WaveScene />
-      </div>
-
       {/* GeminiSidebar removed - replaced by SessionsDrawer (left slide-in).
           isSidebarOpen is kept in state only to preserve any related CSS
           hooks; it's no longer used to toggle a visible sidebar. */}
 
       {/* ── Main content area ── */}
-      <div className="main-content">
+      <main id="main-content" className="main-content">
 
         {/* ── Top bar ── */}
         <div className={`top-bar ${headerScrolled ? "scrolled" : ""}`}>
 
-          {/* Left: sessions toggle + logo + new-session + save indicator */}
+          {/* Left: sessions toggle (ghost) + brand logo + new-session + save indicator.
+              Hamburger stays muted so the brand mark holds primary anchor weight. */}
           <div className="top-bar-left">
             <button
-              className="top-bar-btn icon-only sidebar-toggle-btn"
+              className="top-bar-btn icon-only sidebar-toggle-btn top-bar-btn-ghost"
               onClick={toggleSessionsDrawer}
               title="Open sessions"
               aria-label="Open sessions drawer"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
             </button>
-            <button
-              className="top-bar-logo top-bar-logo-btn"
-              onClick={startNewSession}
-              title="Start a new session"
-              aria-label="Start a new session"
+            <Link
+              href="/"
+              className="top-bar-logo"
+              title="Design Hub home"
+              aria-label="Design Hub home"
             >
               <img
                 src="/aologo.svg"
                 alt="ausōs"
                 className="ausos-logo-img"
               />
-            </button>
+            </Link>
             <button
               className="top-bar-btn icon-only top-bar-new-session"
               onClick={startNewSession}
-              title="New session"
+              title="Start a new session"
               aria-label="Start a new session"
             >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit_square</span>
@@ -440,7 +430,7 @@ export function BuilderApp() {
         <div className="builder-copyright-fixed" aria-hidden="true">
           &copy; {new Date().getFullYear()} ausōs. All rights reserved.
         </div>
-      </div>
+      </main>
 
       <SettingsPanel />
 

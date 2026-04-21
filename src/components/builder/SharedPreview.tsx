@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { SharedCanvas } from "@/lib/shareState";
 import type { DesignSystem } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
+import { showToast } from "@/lib/toast";
 import "./builder.css";
 
 const DS_LABEL: Record<DesignSystem, string> = {
@@ -43,8 +44,9 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      showToast("Share link copied", { icon: "link" });
     } catch {
-      /* clipboard not available */
+      showToast("Clipboard unavailable", { icon: "warning" });
     }
   };
 
@@ -57,7 +59,7 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
   };
 
   return (
-    <div className={wrapperClass}>
+    <main id="main-content" className={wrapperClass}>
       {/* Chrome bar */}
       <header className="shared-preview-header">
         <div className="shared-preview-brand">
@@ -173,6 +175,6 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
           </footer>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

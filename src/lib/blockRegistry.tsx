@@ -439,6 +439,112 @@ export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
   defaults: b.defaults,
 }));
 
+/* ── Semantic sub-categories for the body-zone tile grid ──
+   Used by ComponentLibrary to break ~45 tiles into expand/collapse
+   accordions so users don't scroll an endless wall. Zone-specific
+   types (AppBrand, StatusPill, NavItem, FooterText) are not in this
+   map — they're grouped by zone already and don't need sub-cats. */
+export type LibraryCategory =
+  | "actions"
+  | "inputs"
+  | "data-display"
+  | "charts"
+  | "navigation"
+  | "feedback"
+  | "containment"
+  | "content";
+
+export const LIBRARY_CATEGORY_ORDER: {
+  key: LibraryCategory;
+  label: string;
+  icon: string;
+}[] = [
+  { key: "actions",      label: "Actions",      icon: "smart_button" },
+  { key: "inputs",       label: "Inputs",       icon: "input" },
+  { key: "data-display", label: "Data display", icon: "data_object" },
+  { key: "charts",       label: "Charts",       icon: "bar_chart" },
+  { key: "navigation",   label: "Navigation",   icon: "menu" },
+  { key: "feedback",     label: "Feedback",     icon: "info" },
+  { key: "containment",  label: "Containment",  icon: "inventory_2" },
+  { key: "content",      label: "Content",      icon: "subject" },
+];
+
+export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
+  /* Actions */
+  SimulatedButton: "actions",
+  SimulatedToggleButton: "actions",
+  SimulatedSegmentedGroup: "actions",
+  SimulatedLink: "actions",
+
+  /* Inputs */
+  SimulatedTextInput: "inputs",
+  SimulatedMultilineInput: "inputs",
+  SimulatedNumberInput: "inputs",
+  SimulatedDatePicker: "inputs",
+  SimulatedSlider: "inputs",
+  SimulatedCheckbox: "inputs",
+  SimulatedRadioGroup: "inputs",
+  SimulatedSwitch: "inputs",
+  SimulatedDropdown: "inputs",
+  SimulatedComboBox: "inputs",
+  SimulatedSearchbox: "inputs",
+  SimulatedRating: "inputs",
+  SimulatedTokenizedInput: "inputs",
+  SimulatedFileDropZone: "inputs",
+
+  /* Data display */
+  SimulatedDataTable: "data-display",
+  SimulatedStatCard: "data-display",
+  SimulatedListBox: "data-display",
+  SimulatedTree: "data-display",
+  SimulatedProgress: "data-display",
+  SimulatedAvatar: "data-display",
+  SimulatedAvatarGroup: "data-display",
+  SimulatedBadge: "data-display",
+  SimulatedPill: "data-display",
+  SimulatedPersona: "data-display",
+
+  /* Charts */
+  SimulatedChart: "charts",
+  HighchartLine: "charts",
+  HighchartArea: "charts",
+  HighchartColumn: "charts",
+  HighchartPie: "charts",
+  HighchartScatter: "charts",
+  HighchartBar: "charts",
+  HighchartDonut: "charts",
+  HighchartSpline: "charts",
+  HighchartStackedColumn: "charts",
+  HighchartGauge: "charts",
+  HighchartHeatmap: "charts",
+  HighchartTreemap: "charts",
+
+  /* Navigation */
+  SimulatedTabs: "navigation",
+  SimulatedBreadcrumb: "navigation",
+  SimulatedNavDrawer: "navigation",
+
+  /* Feedback */
+  Alert: "feedback",
+  SimulatedSkeleton: "feedback",
+  SimulatedTooltip: "feedback",
+  SimulatedPopover: "feedback",
+  SimulatedDialog: "feedback",
+
+  /* Containment */
+  SimulatedCard: "containment",
+  SimulatedAccordion: "containment",
+  LayoutGroup: "containment",
+
+  /* Content */
+  SimulatedTitle: "content",
+  SimulatedChatMessage: "content",
+};
+
+export function categoryFor(type: string): LibraryCategory | null {
+  return BLOCK_CATEGORY[type] ?? null;
+}
+
 /** type → Fields component (for PropertiesInspector) - auto-generated from schema */
 export const TYPE_FIELDS: Record<string, React.FC<{ blockId: string }>> =
   Object.fromEntries(BLOCK_DEFS.map((b) => [

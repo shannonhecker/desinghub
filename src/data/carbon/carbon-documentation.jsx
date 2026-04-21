@@ -17,6 +17,7 @@
    Plex Sans with 14px/400 as the baseline. ══════════════════════════════════════════════════════════ */
 
 import React, { useState, useEffect } from "react";
+import { showToast } from "@/lib/toast";
 
 /* Font stack - next/font/google registers IBM Plex Sans at the
    app root via the --font-ibm-plex-sans CSS variable, so the
@@ -2313,13 +2314,23 @@ function CodeSnippetDemo() {
   const snippet = `import { Button } from "@carbon/react";
 
 <Button kind="primary">Save</Button>`;
+
+  const copy = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(label, { icon: "content_copy" });
+    } catch {
+      showToast("Clipboard unavailable", { icon: "warning" });
+    }
+  };
+
   return (
     <Col gap={16}>
       <Section title="Inline">
         <Row gap={8}>
           <span className="cb-code-inline">
             npm install @carbon/react
-            <button className="cb-code-inline-btn" aria-label="Copy" onClick={() => navigator.clipboard?.writeText("npm install @carbon/react")}>
+            <button className="cb-code-inline-btn" aria-label="Copy install command" onClick={() => copy("npm install @carbon/react", "Install command copied")}>
               <CIcon name="copy" size={12} />
             </button>
           </span>
@@ -2327,7 +2338,7 @@ function CodeSnippetDemo() {
       </Section>
       <Section title="Multiline">
         <div className="cb-code-multi">
-          <button className="cb-btn cb-btn-ghost cb-btn-icon cb-code-copy" aria-label="Copy snippet" onClick={() => navigator.clipboard?.writeText(snippet)}>
+          <button className="cb-btn cb-btn-ghost cb-btn-icon cb-code-copy" aria-label="Copy snippet" onClick={() => copy(snippet, "Snippet copied")}>
             <CIcon name="copy" size={16} />
           </button>
           <pre>{snippet}</pre>
@@ -2335,7 +2346,7 @@ function CodeSnippetDemo() {
       </Section>
       <Section title="Terminal">
         <div className="cb-code-multi cb-code-terminal">
-          <button className="cb-btn cb-btn-ghost cb-btn-icon cb-code-copy" aria-label="Copy" onClick={() => navigator.clipboard?.writeText("$ carbon install")}>
+          <button className="cb-btn cb-btn-ghost cb-btn-icon cb-code-copy" aria-label="Copy command" onClick={() => copy("$ carbon install", "Command copied")}>
             <CIcon name="copy" size={16} />
           </button>
           <pre>$ carbon install</pre>
