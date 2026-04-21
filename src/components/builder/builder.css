@@ -9641,6 +9641,36 @@
   min-height: 40px;
 }
 
+/* ─── LayoutGroup drop container ───
+   Nested sibling to .zone-drop-container. The inline style from
+   computeGroupStyle handles flex direction / gap / padding; these
+   rules layer on the hit-area affordance (outline, hover glow,
+   empty-state hint) so users can see where the group is. */
+.group-drop-container {
+  position: relative;
+  border-radius: 6px;
+  outline: 1px dashed rgba(138, 171, 168, 0.35);
+  outline-offset: 2px;
+  transition: outline-color 0.18s ease, background 0.18s ease;
+  width: 100%;
+}
+.group-drop-container.is-over {
+  outline-color: rgba(138, 171, 168, 0.85);
+  background: rgba(138, 171, 168, 0.06);
+}
+.group-drop-container.is-empty {
+  align-items: center;
+  justify-content: center;
+}
+.group-drop-empty-hint {
+  font-size: 11px;
+  color: var(--ds-fg-tertiary, rgba(128, 128, 128, 0.8));
+  padding: 12px;
+  text-align: center;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
 /* Compact blocks (header/footer) */
 .zone-block-compact {
   padding: 2px !important;

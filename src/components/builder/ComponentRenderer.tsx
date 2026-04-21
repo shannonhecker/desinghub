@@ -44,6 +44,10 @@ import {
   SimulatedAvatarGroup,
 } from "./SimulatedUI";
 import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
+import { SortableBlock } from "./SortableBlock";
+import { GroupDropContainer } from "./GroupDropContainer";
+import { computeGroupItemStyle } from "@/lib/layoutResolver";
+import type { Block } from "@/store/useBuilder";
 
 type DesignSystem = "salt" | "m3" | "fluent" | "ausos" | "carbon";
 
@@ -58,12 +62,27 @@ type ZoneId = "body" | "header" | "sidebar" | "footer";
 const ZONE_KEYS = ["blocks", "headerBlocks", "sidebarBlocks", "footerBlocks"] as const;
 const ZONE_IDS: ZoneId[] = ["body", "header", "sidebar", "footer"];
 
+/* Find a block at top-level OR one level nested (inside a
+   LayoutGroup's children). Returns the block plus its parent
+   group id (or null when top-level). */
+function findAtTopOrOneDeep(arr: Block[], id: string): { block: Block; parentGroupId: string | null } | null {
+  for (const b of arr) {
+    if (b.id === id) return { block: b, parentGroupId: null };
+    if (b.children) {
+      for (const c of b.children) {
+        if (c.id === id) return { block: c, parentGroupId: b.id };
+      }
+    }
+  }
+  return null;
+}
+
 function useBlockInAnyZone(blockId?: string) {
-  const block = useBuilder((s) => {
+  const match = useBuilder((s) => {
     if (!blockId) return null;
     for (const key of ZONE_KEYS) {
-      const found = s[key].find((b) => b.id === blockId);
-      if (found) return found;
+      const found = findAtTopOrOneDeep(s[key] as Block[], blockId);
+      if (found) return { ...found, key };
     }
     return null;
   });
@@ -71,21 +90,27 @@ function useBlockInAnyZone(blockId?: string) {
   const zone: ZoneId = useBuilder((s) => {
     if (!blockId) return "body";
     for (let i = 0; i < ZONE_KEYS.length; i++) {
-      if (s[ZONE_KEYS[i]].some((b) => b.id === blockId)) return ZONE_IDS[i];
+      if (findAtTopOrOneDeep(s[ZONE_KEYS[i]] as Block[], blockId)) return ZONE_IDS[i];
     }
     return "body";
   });
 
   const updateZoneBlockProps = useBuilder((s) => s.updateZoneBlockProps);
+  const updateGroupChildProps = useBuilder((s) => s.updateGroupChildProps);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
 
   const update = (props: Record<string, unknown>) => {
-    if (blockId) updateZoneBlockProps(zone, blockId, props);
+    if (!blockId) return;
+    if (match?.parentGroupId) {
+      updateGroupChildProps(match.parentGroupId, blockId, props);
+    } else {
+      updateZoneBlockProps(zone, blockId, props);
+    }
   };
 
   const isSelected = blockId != null && selectedBlockId === blockId;
 
-  return { block, update, isSelected };
+  return { block: match?.block ?? null, update, isSelected };
 }
 
 /* ── Token reference for inline styles ── */
@@ -1482,6 +1507,71 @@ function HighchartBlockRenderer({
 
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* ══════════════════════════════════════════════════════════
+   LayoutGroupBlock - renders a flex container whose children
+   are themselves blocks. Each child gets its own SortableBlock
+   wrapper + recursive ComponentRenderer, so the full block API
+   (drag, select, remove) works inside the group.
+   ══════════════════════════════════════════════════════════ */
+function LayoutGroupBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const group = useBuilder((s) => {
+    if (!blockId) return null;
+    /* The LayoutGroup lives in the body zone (allowedZones: ['body']).
+       Still walk all four zones defensively so restorations from
+       share URLs / Firebase docs that stored it elsewhere render. */
+    for (const key of ZONE_KEYS) {
+      const found = s[key].find((b) => b.id === blockId);
+      if (found) return found;
+    }
+    return null;
+  });
+  const removeBlockFromGroup = useBuilder((s) => s.removeBlockFromGroup);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+
+  if (!group) {
+    return <div style={{ padding: 12, color: t.fgTertiary, fontSize: 12 }}>Missing group</div>;
+  }
+
+  const kids: Block[] = group.children ?? [];
+
+  return (
+    <GroupDropContainer group={group}>
+      {kids.map((child) => {
+        const itemStyle = computeGroupItemStyle(child, group);
+        return (
+          <div
+            key={child.id}
+            style={itemStyle}
+            onClick={(e) => {
+              e.stopPropagation();
+              /* Body is the zone the group itself lives in; children
+                 are inspected via the same code path since the
+                 inspector walks nested children too. */
+              setSelectedBlock(child.id, "body");
+            }}
+          >
+            <SortableBlock
+              id={child.id}
+              parentGroupId={group.id}
+              compact
+              isSelected={selectedBlockId === child.id}
+              onRemove={() => removeBlockFromGroup(group.id, child.id)}
+            >
+              <ComponentRenderer
+                type={child.type}
+                system={system}
+                blockId={child.id}
+                {...child.props}
+              />
+            </SortableBlock>
+          </div>
+        );
+      })}
+    </GroupDropContainer>
+  );
+}
+
 const RENDERERS: Record<string, React.FC<any>> = {
   Alert: AlertBlock,
   DataTable: DataTableBlock,
@@ -1554,6 +1644,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedPopover: SimulatedPopoverBlock,
   SimulatedPersona: SimulatedPersonaBlock,
   SimulatedAvatarGroup: SimulatedAvatarGroupBlock,
+  /* Layout primitives */
+  LayoutGroup: LayoutGroupBlock as React.FC<{ system: DesignSystem }>,
   /* Zone-specific types */
   AppBrand: AppBrandBlock as React.FC<{ system: DesignSystem }>,
   StatusPill: StatusPillBlock as React.FC<{ system: DesignSystem }>,

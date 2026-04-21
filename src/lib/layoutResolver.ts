@@ -163,6 +163,39 @@ export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperti
   return base;
 }
 
+/* Derive a ZoneLayout-shaped config from a LayoutGroup block's
+   props so the same computeContainerStyle helper styles both zones
+   and groups. Missing / invalid values fall through to sensible
+   defaults matching the LayoutGroup blueprint registered in
+   `blockRegistry.tsx`. */
+export function computeGroupStyle(block: Block): React.CSSProperties {
+  const rawDir = block.props.direction;
+  const mode: ZoneLayout["mode"] = rawDir === "row" || rawDir === "grid" ? rawDir : "stack";
+  const gapRaw = Number(block.props.gap);
+  const padRaw = Number(block.props.padding);
+  const synthetic: ZoneLayout = {
+    mode,
+    gap: Number.isFinite(gapRaw) ? gapRaw : 12,
+    padding: Number.isFinite(padRaw) ? padRaw : 0,
+    /* Stacks inside a group should never wrap to a second column,
+       and rows inside a group share the parent row's wrap setting
+       by default. */
+    wrap: mode === "stack" ? false : true,
+    align: mode === "stack" ? "stretch" : "start",
+  };
+  return computeContainerStyle(synthetic);
+}
+
+/* Compute the per-item style for a child of a LayoutGroup. Mirrors
+   computeItemStyle but uses a synthetic ZoneLayout so nested items
+   honour the group's own direction/gap instead of the body zone's. */
+export function computeGroupItemStyle(block: Block, group: Block): React.CSSProperties {
+  const rawDir = group.props.direction;
+  const mode: ZoneLayout["mode"] = rawDir === "row" || rawDir === "grid" ? rawDir : "stack";
+  const synthetic: ZoneLayout = { mode };
+  return computeItemStyle(block, synthetic);
+}
+
 /* Convenience: the current flex-colSpan for a block. Kept for the
    SortableBlock colSpan-cycle button until it's replaced by the
    Inspector width control in sub-phase 5. Returns 1|2|3 computed
