@@ -112,11 +112,14 @@ export function computeItemStyle(
     style.flex = `0 0 auto`;
     style.width = "auto";
   } else if (layout.width === "fill" || layout.width === undefined) {
-    /* Row mode: fill = take remaining row space (flex: 1).
+    /* Row mode: fill = take remaining row space, but respect content
+       minimum so blocks wrap to the next row instead of squishing to
+       zero. flex-basis: auto lets items report their intrinsic width,
+       so flex-wrap engages when the sum overflows the container.
        Stack mode: fill = stretch to container width (100%). */
     if (zoneLayout.mode === "row") {
-      style.flex = "1 1 0";
-      style.minWidth = minCss || "0";
+      style.flex = "1 1 auto";
+      style.minWidth = minCss || "min-content";
     } else {
       style.width = "100%";
     }

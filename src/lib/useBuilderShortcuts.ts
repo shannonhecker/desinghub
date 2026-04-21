@@ -3,6 +3,7 @@
  *
  * - Cmd+Z  / Ctrl+Z         → undo  (canvas state)
  * - Cmd+Shift+Z / Ctrl+Y    → redo
+ * - Cmd+.  / Ctrl+.         → toggle component library panel
  *
  * Listens on window; skipped when focus is inside an editable text
  * element so we don't hijack native editing undo in the chat input
@@ -16,6 +17,7 @@
 
 import { useEffect } from "react";
 import { initBuilderHistory, undo, redo } from "./builderHistory";
+import { useBuilder } from "@/store/useBuilder";
 
 function isEditableTarget(t: EventTarget | null): boolean {
   if (!(t instanceof HTMLElement)) return false;
@@ -42,6 +44,9 @@ export function useBuilderShortcuts() {
       } else if ((k === "z" && e.shiftKey) || k === "y") {
         e.preventDefault();
         redo();
+      } else if (e.key === ".") {
+        e.preventDefault();
+        useBuilder.getState().toggleComponentLibrary();
       }
     };
 
