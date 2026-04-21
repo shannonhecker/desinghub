@@ -42,10 +42,21 @@ function findTopOrChild(blocks: Block[], id: string): { block: Block; parentGrou
 }
 
 function useBlockProps(blockId: string) {
-  const match = useBuilder((s) => {
+  /* Split selectors so each returns either null, a primitive, or a
+     store-owned reference. Returning a fresh wrapper object
+     (`{ ...found, key }`) every render triggered React error #185
+     (infinite re-render loop) via Zustand's reference equality. */
+  const block = useBuilder((s) => {
     for (const key of ZONE_KEYS) {
       const found = findTopOrChild(s[key] as Block[], blockId);
-      if (found) return { ...found, key };
+      if (found) return found.block;
+    }
+    return null;
+  });
+  const parentGroupId = useBuilder((s) => {
+    for (const key of ZONE_KEYS) {
+      const found = findTopOrChild(s[key] as Block[], blockId);
+      if (found) return found.parentGroupId;
     }
     return null;
   });
@@ -59,10 +70,10 @@ function useBlockProps(blockId: string) {
     return 'body';
   });
   return {
-    props: match?.block.props ?? {},
+    props: block?.props ?? {},
     set: (patch: Record<string, unknown>) => {
-      if (match?.parentGroupId) {
-        updateGroupChildProps(match.parentGroupId, blockId, patch);
+      if (parentGroupId) {
+        updateGroupChildProps(parentGroupId, blockId, patch);
       } else {
         updateZoneBlockProps(zone, blockId, patch);
       }

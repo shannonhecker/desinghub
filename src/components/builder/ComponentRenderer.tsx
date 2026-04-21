@@ -78,11 +78,27 @@ function findAtTopOrOneDeep(arr: Block[], id: string): { block: Block; parentGro
 }
 
 function useBlockInAnyZone(blockId?: string) {
-  const match = useBuilder((s) => {
+  /* Return primitive / stable-reference values only from each selector.
+     Zustand uses reference equality by default; returning a fresh
+     `{ ...found, key }` object every render triggers an infinite
+     re-render loop (React error #185). Split the lookup so each
+     selector yields either null, a primitive, or a store-owned
+     reference that's stable until the underlying state actually
+     changes. */
+  const block = useBuilder((s) => {
     if (!blockId) return null;
     for (const key of ZONE_KEYS) {
       const found = findAtTopOrOneDeep(s[key] as Block[], blockId);
-      if (found) return { ...found, key };
+      if (found) return found.block;
+    }
+    return null;
+  });
+
+  const parentGroupId = useBuilder((s) => {
+    if (!blockId) return null;
+    for (const key of ZONE_KEYS) {
+      const found = findAtTopOrOneDeep(s[key] as Block[], blockId);
+      if (found) return found.parentGroupId;
     }
     return null;
   });
@@ -101,8 +117,8 @@ function useBlockInAnyZone(blockId?: string) {
 
   const update = (props: Record<string, unknown>) => {
     if (!blockId) return;
-    if (match?.parentGroupId) {
-      updateGroupChildProps(match.parentGroupId, blockId, props);
+    if (parentGroupId) {
+      updateGroupChildProps(parentGroupId, blockId, props);
     } else {
       updateZoneBlockProps(zone, blockId, props);
     }
@@ -110,7 +126,7 @@ function useBlockInAnyZone(blockId?: string) {
 
   const isSelected = blockId != null && selectedBlockId === blockId;
 
-  return { block: match?.block ?? null, update, isSelected };
+  return { block, update, isSelected };
 }
 
 /* ── Token reference for inline styles ── */
