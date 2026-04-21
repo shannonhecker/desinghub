@@ -366,6 +366,30 @@ function PreviewBar() {
         <span className="preview-bar-btn-label">Code</span>
       </button>
 
+      {/* Reopen component library — only visible when the panel is
+         closed. When open, the in-panel × button handles close. */}
+      {!componentLibraryOpen && (
+        <>
+          <span className="preview-bar-sep" aria-hidden="true" />
+          <button
+            className="preview-bar-btn preview-bar-btn-pill"
+            onClick={handleToggleLibrary}
+            title="Show component library (⌘.)"
+            aria-label="Show component library"
+            aria-pressed={false}
+          >
+            <span
+              className="material-symbols-outlined"
+              aria-hidden="true"
+              style={{ fontSize: 14, marginRight: 4 }}
+            >
+              category
+            </span>
+            Components
+          </button>
+        </>
+      )}
+
       {/* ⋯ overflow menu - rare actions */}
       <div className="preview-bar-overflow-wrap" ref={overflowRef}>
         <button
@@ -814,6 +838,17 @@ function resolveZone(overId: string | number, overData: Record<string, unknown> 
   return null;
 }
 
+/* ── Helper: resolve which LayoutGroup id (if any) an "over" target
+     belongs to. Returns the group id when the drop target is either
+     the group's droppable zone (`group-<id>`) OR a sortable child of
+     that group (its data payload carries `parentGroupId`). */
+function resolveGroupId(overId: string | number, overData: Record<string, unknown> | undefined): string | null {
+  if (overData?.parentGroupId) return overData.parentGroupId as string;
+  const id = String(overId);
+  if (id.startsWith("group-")) return id.replace("group-", "");
+  return null;
+}
+
 /* ── Custom collision detection: pointerWithin → closestCenter fallback ── */
 const multiZoneCollision: CollisionDetection = (args) => {
   const pw = pointerWithin(args);
@@ -832,15 +867,22 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
   const setZoneBlocks = useBuilder((s) => s.setZoneBlocks);
   const addBlockToZone = useBuilder((s) => s.addBlockToZone);
   const moveBlockBetweenZones = useBuilder((s) => s.moveBlockBetweenZones);
+  /* Group mutations - MVP for nested LayoutGroup blocks. */
+  const addBlockToGroup = useBuilder((s) => s.addBlockToGroup);
+  const moveBlockIntoGroup = useBuilder((s) => s.moveBlockIntoGroup);
+  const removeBlockFromGroup = useBuilder((s) => s.removeBlockFromGroup);
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
-  /* Track the dragged item's current zone + original position for cancel recovery */
+  /* Track the dragged item's current zone/group + original position
+     for cancel recovery. `parentGroupId` is non-null when the drag
+     originated from inside a LayoutGroup's children array. */
   const activeItemRef = useRef<{
     id: string;
     zone: ZoneId;
     originalZone: ZoneId;
     originalIndex: number;
+    parentGroupId?: string;
   } | null>(null);
 
   /* ── DnD sensors ── */
@@ -893,6 +935,27 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
 
     /* If dragging an existing block, record its zone + index */
     if (!event.active.data.current?.fromLibrary) {
+      const parentGroupId = event.active.data.current?.parentGroupId as string | undefined;
+      if (parentGroupId) {
+        /* Dragging a child of a LayoutGroup. The zone field is kept
+           as "body" for cancel recovery since body is where the group
+           lives; originalIndex is the child's index within the group. */
+        const state = useBuilder.getState();
+        const group =
+          state.blocks.find((b) => b.id === parentGroupId) ||
+          state.headerBlocks.find((b) => b.id === parentGroupId) ||
+          state.sidebarBlocks.find((b) => b.id === parentGroupId) ||
+          state.footerBlocks.find((b) => b.id === parentGroupId);
+        const idx = group?.children?.findIndex((c) => c.id === id) ?? -1;
+        activeItemRef.current = {
+          id,
+          zone: "body",
+          originalZone: "body",
+          originalIndex: idx,
+          parentGroupId,
+        };
+        return;
+      }
       const zone = (event.active.data.current?.zone as ZoneId) || findBlockZone(id);
       if (zone) {
         const arr = getZoneArr(zone);
@@ -909,8 +972,20 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
     const activeInfo = activeItemRef.current;
     if (!activeInfo) return;
 
+    /* Drags originating inside a LayoutGroup are MVP-locked to
+       add/reorder/ungroup. Skip cross-zone transfers entirely
+       while the source lives inside a group. */
+    if (activeInfo.parentGroupId) return;
+
+    /* Drags whose pointer is over a group (or a child of one) are
+       committed on dragEnd via moveBlockIntoGroup, not on hover.
+       Skipping here avoids oscillating between zone.add and
+       group.add during pointer movement. */
+    const overData = over.data.current as Record<string, unknown> | undefined;
+    if (resolveGroupId(over.id, overData)) return;
+
     const sourceZone = activeInfo.zone;
-    const targetZone = resolveZone(over.id, over.data.current as Record<string, unknown> | undefined);
+    const targetZone = resolveZone(over.id, overData);
     if (!targetZone || sourceZone === targetZone) return;
 
     /* Cross-zone move: find target index */
@@ -927,7 +1002,7 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
       setActiveDragId(null);
       const { active, over } = event;
 
-      /* Case 1: Library blueprint dropped onto a zone */
+      /* Case 1: Library blueprint dropped */
       if (active.data.current?.fromLibrary) {
         if (!over) { activeItemRef.current = null; return; }
 
@@ -935,7 +1010,34 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
           type: string;
           defaults: Record<string, unknown>;
         };
-        const targetZone = resolveZone(over.id, over.data.current as Record<string, unknown> | undefined) || "body";
+        const overData = over.data.current as Record<string, unknown> | undefined;
+
+        /* 1a. Drop into a LayoutGroup's interior. MVP rule: groups-in-
+           groups are out of scope, so LayoutGroup blueprints fall back
+           to body-zone behaviour even when the pointer is over a group. */
+        const groupId = resolveGroupId(over.id, overData);
+        if (groupId && type !== "LayoutGroup") {
+          const newId = makeBlockId();
+          const newBlock: Block = { id: newId, type, props: { ...defaults } };
+          /* If the hover target is a sortable child, insert just
+             before it; otherwise append at end. */
+          const state = useBuilder.getState();
+          const group =
+            state.blocks.find((b) => b.id === groupId) ||
+            state.headerBlocks.find((b) => b.id === groupId) ||
+            state.sidebarBlocks.find((b) => b.id === groupId) ||
+            state.footerBlocks.find((b) => b.id === groupId);
+          const kids = group?.children ?? [];
+          const overIdx = kids.findIndex((b) => b.id === String(over.id));
+          const insertAt = overIdx >= 0 ? overIdx : kids.length;
+          addBlockToGroup(groupId, newBlock, insertAt);
+          setSelectedBlock(newId, "body");
+          activeItemRef.current = null;
+          return;
+        }
+
+        /* 1b. Drop onto a top-level zone. */
+        const targetZone = resolveZone(over.id, overData) || "body";
         const newId = makeBlockId();
         const newBlock: Block = { id: newId, type, props: { ...defaults } };
 
@@ -959,9 +1061,68 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      /* Case 2: Reorder within same zone */
+      const activeInfo = activeItemRef.current;
+      const overData = over?.data.current as Record<string, unknown> | undefined;
+
+      /* Case 2: Existing block dragged. Four sub-cases: */
+
+      /* 2a. Source is inside a group - reorder within group only
+             (MVP: cross-zone moves from group are out of scope). */
+      if (activeInfo?.parentGroupId && over && active.id !== over.id) {
+        const srcGroupId = activeInfo.parentGroupId;
+        const overGroupId = resolveGroupId(over.id, overData);
+        if (overGroupId === srcGroupId) {
+          const state = useBuilder.getState();
+          const group =
+            state.blocks.find((b) => b.id === srcGroupId) ||
+            state.headerBlocks.find((b) => b.id === srcGroupId) ||
+            state.sidebarBlocks.find((b) => b.id === srcGroupId) ||
+            state.footerBlocks.find((b) => b.id === srcGroupId);
+          const kids = group?.children ?? [];
+          const oldIndex = kids.findIndex((c) => c.id === active.id);
+          const newIndex = kids.findIndex((c) => c.id === over.id);
+          if (oldIndex >= 0 && newIndex >= 0 && oldIndex !== newIndex) {
+            /* Remove-then-reinsert gives arrayMove semantics when
+               the re-insertion index matches the target index from
+               the original array (removal shifts elements before
+               splice-in, so this mirrors arr.splice semantics). */
+            const moved = kids[oldIndex];
+            removeBlockFromGroup(srcGroupId, String(active.id));
+            addBlockToGroup(srcGroupId, moved, newIndex);
+          }
+        }
+        activeItemRef.current = null;
+        return;
+      }
+
+      /* 2b. Source is a top-level block, destination is a group's
+             interior - move zone → group. */
+      if (over && activeInfo && !activeInfo.parentGroupId) {
+        const overGroupId = resolveGroupId(over.id, overData);
+        if (overGroupId && active.id !== overGroupId) {
+          const state = useBuilder.getState();
+          const group =
+            state.blocks.find((b) => b.id === overGroupId) ||
+            state.headerBlocks.find((b) => b.id === overGroupId) ||
+            state.sidebarBlocks.find((b) => b.id === overGroupId) ||
+            state.footerBlocks.find((b) => b.id === overGroupId);
+          const kids = group?.children ?? [];
+          const overIdx = kids.findIndex((b) => b.id === String(over.id));
+          const destIndex = overIdx >= 0 ? overIdx : kids.length;
+          /* Skip if the moved block is itself a LayoutGroup - no
+             groups inside groups (MVP). */
+          const arr = getZoneArr(activeInfo.zone);
+          const src = arr.find((b) => b.id === activeInfo.id);
+          if (src && src.type !== "LayoutGroup") {
+            moveBlockIntoGroup(activeInfo.zone, activeInfo.id, overGroupId, destIndex);
+            activeItemRef.current = null;
+            return;
+          }
+        }
+      }
+
+      /* 2c. Reorder within same zone (existing behaviour). */
       if (over && active.id !== over.id) {
-        const activeInfo = activeItemRef.current;
         const zone = activeInfo?.zone || "body";
         const arr = getZoneArr(zone);
         const oldIndex = arr.findIndex((b) => b.id === active.id);
@@ -979,7 +1140,17 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
 
       activeItemRef.current = null;
     },
-    [getZoneArr, addBlockToZone, syncBodyToStore, setZoneBlocks, setSelectedBlock, setSelectedComponents]
+    [
+      getZoneArr,
+      addBlockToZone,
+      addBlockToGroup,
+      moveBlockIntoGroup,
+      removeBlockFromGroup,
+      syncBodyToStore,
+      setZoneBlocks,
+      setSelectedBlock,
+      setSelectedComponents,
+    ]
   );
 
   const handleDragCancel = useCallback(() => {

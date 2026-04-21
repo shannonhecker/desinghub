@@ -294,6 +294,29 @@ interface BuilderState {
   removeBlockFromZone: (zone: ZoneId, blockId: string) => void;
   moveBlockBetweenZones: (fromZone: ZoneId, toZone: ZoneId, blockId: string, toIndex: number) => void;
 
+  /* ── Group (LayoutGroup) mutations ──
+     These operate on the nested `children` array of a LayoutGroup
+     block and walk all four zones to locate the parent group. They
+     are additive - existing zone mutations are unchanged. */
+  /** Insert a block as a child of the specified LayoutGroup. When
+     `index` is undefined the block is appended. */
+  addBlockToGroup: (parentGroupId: string, block: Block, index?: number) => void;
+  /** Remove a block from its parent LayoutGroup's children. */
+  removeBlockFromGroup: (parentGroupId: string, blockId: string) => void;
+  /** Move a block from a top-level zone into a LayoutGroup at
+     `destIndex` within the group's children. The block is removed
+     from the source zone (preserving its props/layout) before being
+     inserted into the group. */
+  moveBlockIntoGroup: (srcZone: ZoneId, blockId: string, groupId: string, destIndex: number) => void;
+  /** Ungroup: remove the LayoutGroup block from `zone` and splice
+     its children into the zone at the group's original index. Each
+     child's existing layout / props are preserved as-is. */
+  ungroupBlock: (zone: ZoneId, groupId: string) => void;
+  /** Update props on a LayoutGroup's child block (no zone ID
+     required - walks children to find it). Used by the inspector
+     when a nested block is selected. */
+  updateGroupChildProps: (parentGroupId: string, blockId: string, props: Record<string, unknown>) => void;
+
   // Actions - Layout
   /** Patch a specific block's layout props (width/min/max/grow/align/margin).
      Merges into existing layout - pass undefined in a field to clear it. */
@@ -328,6 +351,41 @@ const ZONE_KEYS: Record<ZoneId, 'blocks' | 'headerBlocks' | 'sidebarBlocks' | 'f
   sidebar: 'sidebarBlocks',
   footer: 'footerBlocks',
 };
+
+/* Zone ID order used when iterating every zone to find a nested
+   LayoutGroup block (e.g. group mutations that don't know which
+   zone the group lives in). */
+const ZONE_IDS: ZoneId[] = ['body', 'header', 'sidebar', 'footer'];
+
+/* ══════════════════════════════════════════════════════════
+   Recursive block finder - walks through blocks[] and nested
+   LayoutGroup.children[] looking for a block by ID. Returns
+   the block itself, the array that contains it (so mutations
+   know where to splice), and the parent LayoutGroup block
+   when the match is nested, or null when it's top-level.
+   ══════════════════════════════════════════════════════════ */
+export interface BlockFindResult {
+  block: Block;
+  parentArray: Block[];
+  parentBlock: Block | null;
+  index: number;
+}
+
+export function findBlockById(
+  blocks: Block[],
+  id: string,
+  parentBlock: Block | null = null,
+): BlockFindResult | null {
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.id === id) return { block: b, parentArray: blocks, parentBlock, index: i };
+    if (b.children && b.children.length > 0) {
+      const nested = findBlockById(b.children, id, b);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
 
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat - start empty so hero shows
@@ -522,6 +580,8 @@ export const useBuilder = create<BuilderState>((set) => ({
       StatusPill: 'header',
       NavItem: 'sidebar',
       FooterText: 'footer',
+      /* Body-only primitive - a grouped column of blocks. */
+      LayoutGroup: 'body',
     };
     const state = useBuilder.getState();
     const targetZone: ZoneId =
@@ -661,6 +721,142 @@ export const useBuilder = create<BuilderState>((set) => ({
       const clampedIndex = Math.min(toIndex, toArr.length);
       toArr.splice(clampedIndex, 0, block);
       return { [fromKey]: newFrom, [toKey]: toArr };
+    });
+  },
+
+  /* ──────────────────────────────────────────────────────────
+     Group mutations - operate on LayoutGroup.children
+     ────────────────────────────────────────────────────────── */
+
+  addBlockToGroup: (parentGroupId, block, index) => {
+    /* Defense-in-depth: reject nested LayoutGroup at the store level.
+       DnD gates (PreviewPanel handleDragEnd, ComponentRenderer renderer)
+       already block this, but an AI action or future direct caller
+       would bypass those. MVP supports one level deep only; enforcing
+       here keeps the serialization caps (MAX_BLOCK_DEPTH=2 in
+       shareState) from silently truncating on reload. */
+    if (block.type === "LayoutGroup") {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(
+          "[useBuilder] addBlockToGroup rejected: LayoutGroup blocks cannot be nested inside another group (MVP supports one level of nesting only).",
+        );
+      }
+      return;
+    }
+    set((s) => {
+      /* Walk every zone and replace the matching LayoutGroup block
+         with a copy whose `children` array has the new block inserted
+         at `index` (or appended when index is undefined). */
+      const patches: Partial<BuilderState> = {};
+      for (const zone of ZONE_IDS) {
+        const key = ZONE_KEYS[zone];
+        const arr = s[key] as Block[];
+        const i = arr.findIndex((b) => b.id === parentGroupId);
+        if (i === -1) continue;
+        const group = arr[i];
+        const kids = group.children ? [...group.children] : [];
+        const at = index === undefined ? kids.length : Math.max(0, Math.min(index, kids.length));
+        kids.splice(at, 0, block);
+        const nextArr = [...arr];
+        nextArr[i] = { ...group, children: kids };
+        (patches as Record<string, unknown>)[key] = nextArr;
+        break;
+      }
+      return patches;
+    });
+  },
+
+  removeBlockFromGroup: (parentGroupId, blockId) => {
+    set((s) => {
+      const patches: Partial<BuilderState> = {};
+      for (const zone of ZONE_IDS) {
+        const key = ZONE_KEYS[zone];
+        const arr = s[key] as Block[];
+        const i = arr.findIndex((b) => b.id === parentGroupId);
+        if (i === -1) continue;
+        const group = arr[i];
+        const kids = (group.children ?? []).filter((b) => b.id !== blockId);
+        const nextArr = [...arr];
+        nextArr[i] = { ...group, children: kids };
+        (patches as Record<string, unknown>)[key] = nextArr;
+        break;
+      }
+      return patches;
+    });
+  },
+
+  moveBlockIntoGroup: (srcZone, blockId, groupId, destIndex) => {
+    set((s) => {
+      const srcKey = ZONE_KEYS[srcZone];
+      const srcArr = s[srcKey] as Block[];
+      const block = srcArr.find((b) => b.id === blockId);
+      if (!block) return {};
+      /* Same defense-in-depth guard as addBlockToGroup: never place a
+         LayoutGroup inside another group. */
+      if (block.type === "LayoutGroup") {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(
+            "[useBuilder] moveBlockIntoGroup rejected: LayoutGroup blocks cannot be nested inside another group.",
+          );
+        }
+        return {};
+      }
+      /* Drop source */
+      const nextSrc = srcArr.filter((b) => b.id !== blockId);
+      const patches: Partial<BuilderState> = { [srcKey]: nextSrc } as Partial<BuilderState>;
+      /* Find the group in any zone (may be the same zone we just
+         removed from; read from the patched array). */
+      for (const zone of ZONE_IDS) {
+        const key = ZONE_KEYS[zone];
+        const arr = key === srcKey ? nextSrc : (s[key] as Block[]);
+        const i = arr.findIndex((b) => b.id === groupId);
+        if (i === -1) continue;
+        const group = arr[i];
+        const kids = group.children ? [...group.children] : [];
+        const at = Math.max(0, Math.min(destIndex, kids.length));
+        kids.splice(at, 0, block);
+        const nextArr = [...arr];
+        nextArr[i] = { ...group, children: kids };
+        (patches as Record<string, unknown>)[key] = nextArr;
+        break;
+      }
+      return patches;
+    });
+  },
+
+  ungroupBlock: (zone, groupId) => {
+    set((s) => {
+      const key = ZONE_KEYS[zone];
+      const arr = s[key] as Block[];
+      const i = arr.findIndex((b) => b.id === groupId);
+      if (i === -1) return {};
+      const group = arr[i];
+      const kids = group.children ?? [];
+      /* Splice the children into the zone at the group's index
+         (preserving their layout/props untouched). */
+      const nextArr = [...arr.slice(0, i), ...kids, ...arr.slice(i + 1)];
+      return { [key]: nextArr } as Partial<BuilderState>;
+    });
+  },
+
+  updateGroupChildProps: (parentGroupId, blockId, props) => {
+    set((s) => {
+      const patches: Partial<BuilderState> = {};
+      for (const zone of ZONE_IDS) {
+        const key = ZONE_KEYS[zone];
+        const arr = s[key] as Block[];
+        const i = arr.findIndex((b) => b.id === parentGroupId);
+        if (i === -1) continue;
+        const group = arr[i];
+        const kids = (group.children ?? []).map((b) =>
+          b.id === blockId ? { ...b, props: { ...b.props, ...props } } : b,
+        );
+        const nextArr = [...arr];
+        nextArr[i] = { ...group, children: kids };
+        (patches as Record<string, unknown>)[key] = nextArr;
+        break;
+      }
+      return patches;
     });
   },
 

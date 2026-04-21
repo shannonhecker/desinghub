@@ -9,6 +9,7 @@ import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
+import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder - no mandatory wizard.
@@ -282,6 +283,10 @@ export function ChatPanel() {
      AI-gated UI (send button, Regenerate chip) should degrade calmly. */
   const anthropicConfigured = useBuilder((s) => s.backendStatus.anthropicConfigured);
   const aiDisabled = anthropicConfigured === false;
+  /* Gate dev-centric messaging (mentions .env.local, ANTHROPIC_API_KEY)
+     so it never reaches deployed builds. Next.js inlines NODE_ENV at
+     build time, so this is a constant on the client. */
+  const isDev = process.env.NODE_ENV === "development";
 
   /* Whether the conversational onboarding is waiting on a DS pick. */
   const awaitingDs = Boolean(pendingTemplateId || pendingFirstMessage);
@@ -559,6 +564,10 @@ export function ChatPanel() {
     /* ── Layout generation - highest priority ── */
     const layoutResult = processLayoutCommand(msg);
     if (layoutResult) {
+      /* Apply the delta to the canvas before updating the onboarding
+         pick list so the body zone reflects the newly-generated
+         layout whether or not the preview was already open. */
+      applyChatComponentDelta(selectedComponents, layoutResult.ids);
       setSelectedComponents(layoutResult.ids);
       if (!previewOpen) setPreviewOpen(true);
       const blockList = layoutResult.blocks.join(", ");
@@ -590,6 +599,11 @@ export function ChatPanel() {
 
     /* ── Component command matched - apply and respond ── */
     if (newComponents !== null) {
+      /* Write the delta to the canvas before updating the onboarding
+         pick list. PreviewCanvas mirrors selectedComponents → blocks
+         only on first mount, so without this the chat-add is
+         invisible whenever the preview is already open. */
+      applyChatComponentDelta(selectedComponents, newComponents);
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
       setTimeout(() => {
@@ -694,7 +708,7 @@ export function ChatPanel() {
           className="prompt-bubble"
           onClick={() => handleSend(label)}
           disabled={aiDisabled}
-          title={aiDisabled ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : undefined}
+          title={aiDisabled ? (isDev ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : "Chat is unavailable") : undefined}
         >
           {label}
         </button>
@@ -703,7 +717,9 @@ export function ChatPanel() {
   );
 
   const placeholderText = aiDisabled
-    ? "AI is off - templates + manual edits still work. Add ANTHROPIC_API_KEY to re-enable chat."
+    ? (isDev
+        ? "AI is off - templates + manual edits still work. Add ANTHROPIC_API_KEY to re-enable chat."
+        : "Chat is unavailable")
     : selectedBlock
       ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
       : awaitingDs
@@ -726,8 +742,13 @@ export function ChatPanel() {
           ANTHROPIC_API_KEY is missing. Templates + manual component
           editing still work, so this is an informational hint rather
           than an error. Dismissable via the × button; sessionStorage
-          keeps it hidden for the rest of the tab's lifetime. */}
-      {aiDisabled && !aiHintDismissed && (
+          keeps it hidden for the rest of the tab's lifetime.
+          Gated on NODE_ENV === 'development' so the dev-centric copy
+          (mentions .env.local, ANTHROPIC_API_KEY) never leaks onto
+          deployed builds. On Vercel preview/production, aiDisabled
+          still disables send/Enter — we just don't surface the
+          configuration advice to end users. */}
+      {aiDisabled && !aiHintDismissed && isDev && (
         <div className="chat-ai-off-banner" role="status" aria-live="polite">
           <span className="material-symbols-outlined" aria-hidden="true">cloud_off</span>
           <span className="chat-ai-off-text">
@@ -899,8 +920,8 @@ export function ChatPanel() {
                     className="send-btn"
                     onClick={() => handleSend()}
                     disabled={isGenerating || aiDisabled}
-                    aria-label={aiDisabled ? "AI is off" : "Send"}
-                    title={aiDisabled ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : undefined}
+                    aria-label={aiDisabled ? "Chat is unavailable" : "Send"}
+                    title={aiDisabled ? (isDev ? "AI is off - add ANTHROPIC_API_KEY to .env.local" : "Chat is unavailable") : undefined}
                   >
                     <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                   </button>

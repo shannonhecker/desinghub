@@ -65,6 +65,12 @@ const MAX_JSON_BYTES = 200 * 1024;    // 200KB decoded JSON
 const MAX_BLOCKS_PER_ZONE = 120;
 const MAX_PROP_STRING_LENGTH = 4000;
 const MAX_PROP_KEYS = 50;
+/* Depth guard for nested LayoutGroup children. MVP allows a single
+   level of nesting (groups inside groups are out of scope), so a
+   max depth of 2 accepts top-level blocks and their direct
+   children. Anything deeper is truncated on sanitize. */
+const MAX_BLOCK_DEPTH = 2;
+const MAX_CHILDREN_PER_GROUP = 60;
 
 /** Recursively deep-sanitize a value so only JSON-primitive, render-safe
  *  shapes survive: strings (capped), finite numbers, booleans, null, and
@@ -96,8 +102,13 @@ function sanitizeValue(v: unknown, depth = 0): unknown {
 /** Validate a block has the shape { id, type, props } AND sanitize its
  *  props so render-time consumers never see arbitrary shapes. Mutates
  *  the prop bag but returns the same id/type. Also clamps colSpan to
- *  the 1-3 grid range so a malicious share can't break layout. */
-function validateAndSanitizeBlock(b: unknown): Block | null {
+ *  the 1-3 grid range so a malicious share can't break layout.
+ *
+ *  Recurses into nested `children` for LayoutGroup blocks so
+ *  nested layouts round-trip through share URLs. Depth is capped to
+ *  `MAX_BLOCK_DEPTH` (groups-in-groups are out of scope for MVP;
+ *  anything deeper is dropped). */
+function validateAndSanitizeBlock(b: unknown, depth = 1): Block | null {
   if (typeof b !== "object" || b === null) return null;
   const blk = b as Record<string, unknown>;
   if (typeof blk.id !== "string" || blk.id.length === 0 || blk.id.length > 120) return null;
@@ -112,7 +123,42 @@ function validateAndSanitizeBlock(b: unknown): Block | null {
     cleanProps.colSpan = Number.isFinite(cs) ? Math.max(1, Math.min(3, Math.floor(cs))) : 3;
   }
 
-  return { id: blk.id, type: blk.type, props: cleanProps };
+  const out: Block = { id: blk.id, type: blk.type, props: cleanProps };
+
+  /* Preserve layout metadata if present. The shape is a small
+     key/value bag (width/min/max/grow/align/margin) so the generic
+     sanitizer covers it cleanly. */
+  if (blk.layout && typeof blk.layout === "object") {
+    out.layout = sanitizeValue(blk.layout) as Block["layout"];
+  }
+
+  /* Recurse into nested children for LayoutGroup blocks. Past the
+     depth guard the children are dropped rather than the whole
+     block so malicious deep nesting can't turn into a payload
+     rejection. Truncation is loud in dev so a legitimate deep
+     or wide group surfaces rather than silently losing data. */
+  if (Array.isArray(blk.children)) {
+    if (depth < MAX_BLOCK_DEPTH) {
+      const over = Math.max(0, blk.children.length - MAX_CHILDREN_PER_GROUP);
+      if (over > 0 && process.env.NODE_ENV !== "production") {
+        console.warn(
+          `[shareState] LayoutGroup \"${out.id}\" has ${blk.children.length} children; truncating to ${MAX_CHILDREN_PER_GROUP}. ${over} dropped.`,
+        );
+      }
+      const kids: Block[] = [];
+      for (const c of blk.children.slice(0, MAX_CHILDREN_PER_GROUP)) {
+        const cleanChild = validateAndSanitizeBlock(c, depth + 1);
+        if (cleanChild) kids.push(cleanChild);
+      }
+      if (kids.length > 0) out.children = kids;
+    } else if (blk.children.length > 0 && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[shareState] Block \"${out.id}\" at depth ${depth} exceeds MAX_BLOCK_DEPTH=${MAX_BLOCK_DEPTH}; ${blk.children.length} nested children dropped. (MVP supports one level of nesting only.)`,
+      );
+    }
+  }
+
+  return out;
 }
 
 function validateAndSanitizeBlockArray(a: unknown): Block[] | null {
