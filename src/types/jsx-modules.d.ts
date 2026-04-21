@@ -5,6 +5,7 @@ declare module '*.jsx' {
   export const saltBuildCSS: any;
   export const SIcon: any;
   export const SALT_COMPS: any;
+  export const SALT_CATS: string[];
   export const SALT_FONT: string;
   export const SALT_FONT_HEAD: string;
   export function setSaltT(theme: any): void;

@@ -32,7 +32,7 @@ interface DensityEntry {
 
 // Import directly from the original reference files (complete implementations)
 import {
-  SALT_THEMES, saltBuildCSS, SIcon, SALT_COMPS, SALT_FONT, SALT_FONT_HEAD,
+  SALT_THEMES, saltBuildCSS, SIcon, SALT_COMPS, SALT_CATS, SALT_FONT, SALT_FONT_HEAD,
   setSaltT, getSaltT, getSaltPreviews, getSaltDemoComponent
 } from './salt/salt-documentation.jsx';
 
@@ -82,7 +82,7 @@ export function getComponents(system: SystemId): ComponentDef[] {
 
 export function getCategories(system: SystemId): string[] {
   switch (system) {
-    case 'salt': return ["Foundations", "Components & Patterns", "Patterns"];
+    case 'salt': return SALT_CATS;
     case 'm3': return M3_CATS;
     case 'fluent': return FLUENT_CATS;
     case 'ausos': return AUSOS_CATS;

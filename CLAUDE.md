@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Design System Rules — Figma-to-Code Integration
 
-This document defines the design system rules for translating Figma designs into production code. It covers three supported design systems: **Salt DS** (J.P. Morgan), **Material 3** (Google), and **Fluent 2** (Microsoft).
+This document defines the design system rules for translating Figma designs into production code. It covers five supported design systems: **Salt DS** (J.P. Morgan), **Material 3** (Google), **Fluent 2** (Microsoft), **Carbon DS** (IBM), and **ausos DS** (internal).
+
+Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): Salt 70, Carbon 68, M3 44, Fluent 40, ausos 40. These are Design Hub's own reference entries; the upstream-library counts below (e.g., "Salt DS (57 components)") refer to each DS's official package.
 
 ---
 
@@ -31,6 +33,16 @@ This document defines the design system rules for translating Figma designs into
 - **Format:** CSS custom properties via `--color*`, `--fontFamily*`, `--fontSize*`
 - **Key groups:** Neutral (bg1-6, fg1-4), Brand (bg/fg/stroke), Status (danger/success/warning)
 - Reference: `/mnt/skills/user/Fluent/references/tokens.md`
+
+### Carbon DS
+- **Format:** CSS custom properties via `--cds-*` (canonical IBM prefix)
+- **Key groups:** Background layers (`background`, `layer-01..03`), Text (`text-primary/secondary/placeholder`), Borders (`border-subtle-01..03`, `border-strong-01..03`), Interactive (`interactive`, `focus`), Support (`support-success/warning/error/info`)
+- **Density:** 4 levels — `compact` (24px) / `normal` (32px) / `spacious` (48px). Flat design (radius=0 across standard controls).
+
+### ausos DS
+- **Format:** CSS custom properties via `--a-*` prefix — semantic glassmorphism tokens
+- **Key groups:** `--a-bg`, `--a-surface` (white-opacity glass layers), `--a-fg`, `--a-accent`, `--a-border`. Elevation via `backdrop-filter: blur()` + opacity, not drop shadows
+- **Density:** Inherits Salt's 4-level scale (high/medium/low/touch)
 
 ### Rules
 ```
@@ -93,16 +105,37 @@ This document defines the design system rules for translating Figma designs into
   ```
 - Reference: `/mnt/skills/user/Fluent/references/fluent2-components.jsx`
 
+### Carbon DS
+- **Package:** `@carbon/react` + `@carbon/icons-react`
+- **Architecture:** CSS-token-driven. Flat (radius=0), 2px focus outline, `$support-*` semantic palette
+- **Key patterns:**
+  ```tsx
+  <Button kind="primary">Label</Button>  // primary | secondary | tertiary | ghost | danger | danger--primary | danger--tertiary | danger--ghost
+  <TextInput labelText="Label" invalid invalidText="Error" />
+  <Notification kind="error" title="..." subtitle="..." />
+  ```
+- Reference: `src/data/carbon/carbon-documentation.jsx`
+
+### ausos DS
+- **Package:** internal
+- **Architecture:** Glassmorphism — white-opacity surfaces + backdrop-blur elevation. Aurora palette foundation
+- **Key patterns:**
+  ```tsx
+  <button className="a-btn a-btn-primary">Label</button>
+  <div className="a-surface" style={{ backdropFilter: "blur(12px)" }}>...</div>
+  ```
+- Reference: `src/data/ausos/ausos-documentation.jsx`
+
 ---
 
 ## 3. Frameworks & Libraries
 
 | Layer | Technology |
 |---|---|
-| Framework | React 18+ |
+| Framework | React 18+ / Next.js 16 (Design Hub host) |
 | Language | TypeScript / JavaScript |
-| Styling | CSS custom properties (all 3 systems use vanilla CSS variables) |
-| Build | Vite / Webpack |
+| Styling | CSS custom properties (all 5 systems use vanilla CSS variables) |
+| Build | Next.js / Vite |
 
 ### Salt-specific
 ```tsx
@@ -124,6 +157,19 @@ import { ThemeProvider, createTheme } from "@mui/material";
 import { FluentProvider, webLightTheme } from "@fluentui/react-components";
 ```
 
+### Carbon-specific
+```tsx
+import { Button, TextInput } from "@carbon/react";
+import "@carbon/styles/css/styles.css";
+// Tokens live under `--cds-*` prefix after @carbon/styles is loaded.
+```
+
+### ausos-specific
+```tsx
+// Internal DS. Rendered via Design Hub's AUSOS_THEMES + ausosBuildCSS.
+// No external provider; tokens are injected per preview.
+```
+
 ---
 
 ## 4. Asset Management
@@ -141,6 +187,8 @@ import { FluentProvider, webLightTheme } from "@fluentui/react-components";
 | **Salt** | `@salt-ds/icons` | ~430 | React SVG components |
 | **M3** | Material Symbols | 2,500+ | Variable font (Google Fonts CDN) |
 | **Fluent** | `@fluentui/react-icons` | 4,000+ | React SVG, tree-shakeable |
+| **Carbon** | `@carbon/icons-react` | 2,000+ | React SVG, tree-shakeable per-icon imports |
+| **ausos** | Material Symbols | 2,500+ | Variable font — ausos piggybacks on M3's icon surface |
 
 ### Salt Icons
 ```tsx
@@ -160,12 +208,24 @@ import { Search24Regular, Search24Filled } from "@fluentui/react-icons";
 <Search24Regular />
 ```
 
+### Carbon Icons
+```tsx
+import { Search, Add, Settings } from "@carbon/icons-react";
+<Search size={16} />  // 16 | 20 | 24 | 32
+```
+
+### ausos Icons
+```html
+<span class="material-symbols-outlined">search</span>
+<!-- same font-based surface as M3; opacity adapts to glass surfaces -->
+```
+
 ---
 
 ## 6. Styling Approach
 
 ### CSS Methodology
-All three systems use **CSS custom properties** (design tokens). No CSS-in-JS required.
+All five systems use **CSS custom properties** (design tokens). No CSS-in-JS required.
 
 ### Salt Styling Pattern
 ```css
@@ -184,12 +244,16 @@ All three systems use **CSS custom properties** (design tokens). No CSS-in-JS re
 ### Responsive / Density
 - **Salt:** Density applied via `SaltProvider density="high|medium|low|touch"` — all tokens auto-scale
 - **M3:** Density offset via component prop `density={-1}` (each step = -4dp)
-- **Fluent:** Size prop on components: `size="small|medium|large"`
+- **Fluent:** Size prop on components: `size="small|medium|large"` (intentional — Fluent 2 spec uses component size variants, not a global density scale)
+- **Carbon:** Density tiers `compact` (24px) / `normal` (32px) / `spacious` (48px). 2px-based spacing scale. `medium` aliases to `normal` for cross-DS callers.
+- **ausos:** Inherits Salt's 4-level density (high/medium/low/touch)
 
 ### Dark Mode
 - **Salt:** `SaltProvider mode="dark"` — palette tokens auto-switch
-- **M3:** Theme object swap (light/dark scheme)
+- **M3:** Theme object swap (light/dark scheme); 6 variants (light, dark, plus medium- and high-contrast pairs)
 - **Fluent:** `FluentProvider theme={webDarkTheme}`
+- **Carbon:** Swap between `white` / `g10` / `g90` / `g100` themes (Design Hub exposes `jpm-light`/`jpm-dark`/`legacy-light`/`legacy-dark` overlays)
+- **ausos:** Glass surfaces adapt; primary theme is dark by default (inverts to light via `AUSOS_THEMES.light`)
 - **Rule:** Never hardcode dark-mode colors. All colors must come from tokens that auto-resolve.
 
 ---
@@ -250,6 +314,8 @@ When translating a Figma design to code, verify:
 - [ ] Salt: verify H/M/L/T densities don't break layout
 - [ ] M3: verify density offset (-1 to -3) renders correctly
 - [ ] Fluent: verify S/M/L sizes are consistent
+- [ ] Carbon: verify compact/normal/spacious tiers; `medium` alias resolves to `normal`
+- [ ] ausos: verify H/M/L/T densities (inherits Salt scale)
 
 ---
 
@@ -275,7 +341,7 @@ Global rule applies: ask one clarifying question per turn, every request (incl. 
 
 **Design-Hub-specific things to always clarify before building:**
 
-- **Which design system is this block/page using?** Salt DS, Material 3, or Fluent 2. Tokens and component names diverge across them — don't assume.
-- **Is this token-source work or block-level work?** Changes to `theme-next.css` / MD3 sys vars / Fluent design tokens ripple everywhere; block-level styling is scoped. Ask before touching the token layer.
-- **Cross-system intent:** if a new component is proposed, ask whether it should exist in all three systems eventually, even if only one is being implemented now.
+- **Which design system is this block/page using?** Salt DS, Material 3, Fluent 2, Carbon DS, or ausos DS. Tokens and component names diverge across all five — don't assume.
+- **Is this token-source work or block-level work?** Changes to `theme-next.css` / MD3 sys vars / Fluent design tokens / `--cds-*` / `--a-*` ripple everywhere; block-level styling is scoped. Ask before touching the token layer.
+- **Cross-system intent:** if a new component is proposed, ask whether it should exist in all five systems eventually, even if only one is being implemented now.
 - **Builder state vs. preview state:** clarify whether the change affects the Zustand builder state, the DnD surface, or only the rendered preview.
