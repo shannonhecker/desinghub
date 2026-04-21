@@ -366,6 +366,30 @@ function PreviewBar() {
         <span className="preview-bar-btn-label">Code</span>
       </button>
 
+      {/* Reopen component library — only visible when the panel is
+         closed. When open, the in-panel × button handles close. */}
+      {!componentLibraryOpen && (
+        <>
+          <span className="preview-bar-sep" aria-hidden="true" />
+          <button
+            className="preview-bar-btn preview-bar-btn-pill"
+            onClick={handleToggleLibrary}
+            title="Show component library (⌘.)"
+            aria-label="Show component library"
+            aria-pressed={false}
+          >
+            <span
+              className="material-symbols-outlined"
+              aria-hidden="true"
+              style={{ fontSize: 14, marginRight: 4 }}
+            >
+              category
+            </span>
+            Components
+          </button>
+        </>
+      )}
+
       {/* ⋯ overflow menu - rare actions */}
       <div className="preview-bar-overflow-wrap" ref={overflowRef}>
         <button
