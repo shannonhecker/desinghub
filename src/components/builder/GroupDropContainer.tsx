@@ -50,6 +50,11 @@ export function GroupDropContainer({ group, children }: GroupDropContainerProps)
     minHeight: kids.length === 0 ? 64 : undefined,
   };
 
+  const countLabel =
+    kids.length === 0
+      ? "empty, drop blocks here"
+      : `${kids.length} ${kids.length === 1 ? "block" : "blocks"}`;
+
   return (
     <div
       ref={setNodeRef}
@@ -57,6 +62,8 @@ export function GroupDropContainer({ group, children }: GroupDropContainerProps)
       style={containerStyle}
       data-layout-mode={mode}
       data-group-id={group.id}
+      role="group"
+      aria-label={`Group column — ${countLabel}`}
     >
       <SortableContext
         items={kids.map((b) => b.id)}
