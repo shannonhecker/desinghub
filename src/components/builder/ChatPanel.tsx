@@ -9,6 +9,7 @@ import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
+import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 
 /* ═══════════════════════════════════════════
    Chat-first Builder - no mandatory wizard.
@@ -563,6 +564,10 @@ export function ChatPanel() {
     /* ── Layout generation - highest priority ── */
     const layoutResult = processLayoutCommand(msg);
     if (layoutResult) {
+      /* Apply the delta to the canvas before updating the onboarding
+         pick list so the body zone reflects the newly-generated
+         layout whether or not the preview was already open. */
+      applyChatComponentDelta(selectedComponents, layoutResult.ids);
       setSelectedComponents(layoutResult.ids);
       if (!previewOpen) setPreviewOpen(true);
       const blockList = layoutResult.blocks.join(", ");
@@ -594,6 +599,11 @@ export function ChatPanel() {
 
     /* ── Component command matched - apply and respond ── */
     if (newComponents !== null) {
+      /* Write the delta to the canvas before updating the onboarding
+         pick list. PreviewCanvas mirrors selectedComponents → blocks
+         only on first mount, so without this the chat-add is
+         invisible whenever the preview is already open. */
+      applyChatComponentDelta(selectedComponents, newComponents);
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
       setTimeout(() => {
