@@ -17,6 +17,10 @@ const COL_SPAN_LABELS: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" 
    snap feels consistent on narrow and wide zones alike. */
 const SNAP_POINTS_PCT: readonly number[] = [25, 33, 50, 66, 75, 100];
 const SNAP_PULL_PX = 6;
+/* Hysteresis: once snapped, require the pointer to travel this
+   much past the snap point before unsnapping. Matches Figma-feel
+   — snap "sticks" until deliberately pulled away. */
+const SNAP_RELEASE_PX = 10;
 
 /* ════════════════════════════════════════════════════════════
    Resize handles — production path (two handles) vs experimental
@@ -191,6 +195,28 @@ function ExperimentalResize({
 
   const startRef = useRef<{ x: number; startWidth: number; containerWidth: number; containerRect: DOMRect } | null>(null);
 
+  /* Direct refs on the block + container so we can re-sample
+     getBoundingClientRect() on scroll/resize without doing a
+     closest() traversal every frame (P0-2). */
+  const blockElRef = useRef<HTMLElement | null>(null);
+  const containerElRef = useRef<HTMLElement | null>(null);
+
+  /* Running width for keyboard interactions (P0-1). We keep a
+     px value that represents the last committed width so that
+     successive arrow keys don't each re-measure a pre-drag
+     rect — especially important when currentWidth is a token
+     like "fill" / "auto" / "50%" that may not round-trip through
+     the resolver. Reset after ~300ms of keyboard inactivity so a
+     fresh keyboard interaction re-seeds from currentWidth. */
+  const keyboardWidthRef = useRef<number | null>(null);
+  const keyboardResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Snap hysteresis state (P0-3): once we snap to a point, require
+     the pointer to move further away than the capture threshold
+     before unsnapping. Prevents the 1–2px jitter band. */
+  const isSnappedRef = useRef<boolean>(false);
+  const lastSnapPctRef = useRef<number | null>(null);
+
   /* Seed unit from current width on mount / when the block
      changes so the HUD shows a sensible unit from the first
      pointer-down. */
@@ -208,7 +234,13 @@ function ExperimentalResize({
     if (typeof currentWidth === "number") setUnit("px");
   }, [currentWidth]);
 
-  /* Helper — compute width for emit + nearest-snap magnetic pull. */
+  /* Helper — compute width for emit + nearest-snap magnetic pull.
+     P0-3: add hysteresis so once snapped, the pointer has to
+     travel past a wider release threshold before the snap breaks
+     (matches Figma feel — snap "sticks" until deliberately pulled
+     away). Also emits the exact snap percent when snapped so the
+     guide label never disagrees with the width (33.333… stays
+     33.333 rather than rounding to 33). */
   const applyWidth = useCallback(
     (rawPx: number, containerWidth: number, activeUnit: "px" | "%") => {
       const minPx = minWidth ?? 80;
@@ -226,22 +258,80 @@ function ExperimentalResize({
           nearestPct = p;
         }
       }
-      /* Convert the SNAP_PULL_PX threshold to a percent window so
-         the magnetic pull feels the same on any container width. */
-      const pullPct = (SNAP_PULL_PX / containerWidth) * 100;
+
+      /* Convert thresholds to % windows so magnetic pull feels
+         the same on any container width. Capture at SNAP_PULL_PX
+         (6), release at SNAP_RELEASE_PX (10) — hysteresis gap. */
+      const capturePct = (SNAP_PULL_PX / containerWidth) * 100;
+      const releasePct = (SNAP_RELEASE_PX / containerWidth) * 100;
+
       let snappedPct: number | null = null;
-      if (bestDelta <= pullPct) {
+      const alreadySnapped =
+        isSnappedRef.current && lastSnapPctRef.current !== null;
+      const nearSameSnap =
+        alreadySnapped && lastSnapPctRef.current === nearestPct;
+
+      /* Decide whether we're currently inside a snap zone. If the
+         previous frame was snapped to THIS snap point, use the
+         wider release zone; otherwise use the tighter capture
+         zone. This prevents oscillation at the boundary. */
+      const threshold = nearSameSnap ? releasePct : capturePct;
+      if (bestDelta <= threshold) {
         snappedPct = nearestPct;
+        /* Use the exact snap-point px so the guide and emitted
+           width agree. */
         nextPx = Math.max(minPx, Math.min(maxPx, (nearestPct / 100) * containerWidth));
       }
 
-      const widthString = activeUnit === "px"
-        ? `${Math.round(nextPx)}px`
-        : `${Math.round((nextPx / containerWidth) * 100)}%`;
+      /* Commit the snap state for the next call. */
+      isSnappedRef.current = snappedPct !== null;
+      lastSnapPctRef.current = snappedPct;
+
+      /* When snapped, emit the EXACT snap-point value — otherwise
+         33.333% would round to 33 and disagree with the snap
+         guide label. Unsnapped: normal round to nearest integer. */
+      let widthString: string;
+      if (activeUnit === "px") {
+        widthString = `${Math.round(nextPx)}px`;
+      } else if (snappedPct !== null) {
+        /* Emit trimmed exact percent (e.g. "33.333333%") — strip
+           trailing zeros / decimal point for tidy output. */
+        const exact = snappedPct.toString();
+        widthString = `${exact}%`;
+      } else {
+        widthString = `${Math.round((nextPx / containerWidth) * 100)}%`;
+      }
 
       return { nextPx, widthString, snapPct: snappedPct, nearestPct };
     },
     [minWidth, maxWidth],
+  );
+
+  /* Resolve a LayoutWidth token to a concrete px value given a
+     container width. Used to seed keyboardWidthRef on the first
+     arrow key so the baseline is correct for tokens like "fill" /
+     "auto" / "50%" that don't round-trip cleanly through the
+     resolver. */
+  const resolveWidthToPx = useCallback(
+    (width: LayoutWidth | undefined, containerWidth: number, measuredPx: number): number => {
+      if (typeof width === "number") return width;
+      if (typeof width === "string") {
+        if (width.endsWith("px")) {
+          const n = parseFloat(width);
+          return Number.isFinite(n) ? n : measuredPx;
+        }
+        if (width.endsWith("%")) {
+          const n = parseFloat(width);
+          return Number.isFinite(n) ? (n / 100) * containerWidth : measuredPx;
+        }
+        /* "fill", "auto", "Nfr" — fall back to the measured px so
+           the first keystroke produces a delta consistent with the
+           visible rendering. */
+        return measuredPx;
+      }
+      return measuredPx;
+    },
+    [],
   );
 
   /* ── Pointer drag ── */
@@ -256,6 +346,16 @@ function ExperimentalResize({
       const startWidth = wrapperEl?.getBoundingClientRect().width ?? 240;
       const containerWidth = containerEl?.clientWidth ?? 720;
       const containerRect = containerEl?.getBoundingClientRect() ?? new DOMRect(0, 0, containerWidth, 0);
+
+      /* Cache refs so scroll/resize listeners can re-sample
+         without traversing the DOM every time (P0-2). */
+      blockElRef.current = blockEl;
+      containerElRef.current = containerEl;
+
+      /* Reset snap hysteresis at the start of each drag so we
+         don't carry state across separate interactions (P0-3). */
+      isSnappedRef.current = false;
+      lastSnapPctRef.current = null;
 
       startRef.current = { x: e.clientX, startWidth, containerWidth, containerRect };
       setDragState({ widthPx: startWidth, containerWidth, containerRect, snapPct: null });
@@ -278,8 +378,9 @@ function ExperimentalResize({
       setDragState({ widthPx: nextPx, containerWidth, containerRect, snapPct });
 
       /* Update the anchor rect so HUD tracks the resized block's
-         new top-right corner. */
-      const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
+         new top-right corner. Prefer the cached ref over closest(). */
+      const blockEl = blockElRef.current
+        ?? ((e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null);
       setAnchorRect(blockEl?.getBoundingClientRect() ?? null);
     },
     [applyWidth, onWidth, unit],
@@ -291,9 +392,64 @@ function ExperimentalResize({
     /* Keep anchorRect briefly so HUD can fade — simpler to just
        clear it immediately; HUD unmounts. */
     setAnchorRect(null);
+    /* Clear the cached DOM refs to avoid holding detached nodes. */
+    blockElRef.current = null;
+    containerElRef.current = null;
+    /* Reset snap hysteresis so the next drag starts fresh (P0-3). */
+    isSnappedRef.current = false;
+    lastSnapPctRef.current = null;
+    /* Reset keyboard baseline so the next keyboard interaction
+       re-seeds from the now-committed currentWidth (P0-1). */
+    keyboardWidthRef.current = null;
   }, []);
 
-  /* ── Keyboard resize (slider role) ── */
+  /* P0-2: During an active drag, re-sample the anchor rect and
+     containerRect whenever the window scrolls or resizes. Using
+     capture:true on scroll catches nested scroll containers too
+     (the builder canvas often lives inside a scrolling panel).
+     Listeners tear down when the drag ends. */
+  useEffect(() => {
+    if (!dragState) return;
+
+    const resample = () => {
+      const blockEl = blockElRef.current;
+      const containerEl = containerElRef.current;
+
+      if (blockEl) {
+        setAnchorRect(blockEl.getBoundingClientRect());
+      }
+
+      if (containerEl && startRef.current) {
+        const containerRect = containerEl.getBoundingClientRect();
+        const containerWidth = containerEl.clientWidth;
+        /* Update the source-of-truth containerRect in both
+           startRef (used by handlers) and dragState (used for the
+           snap guide portal). */
+        startRef.current = {
+          ...startRef.current,
+          containerRect,
+          containerWidth,
+        };
+        setDragState((prev) =>
+          prev ? { ...prev, containerRect, containerWidth } : prev,
+        );
+      }
+    };
+
+    window.addEventListener("scroll", resample, true);
+    window.addEventListener("resize", resample);
+    return () => {
+      window.removeEventListener("scroll", resample, true);
+      window.removeEventListener("resize", resample);
+    };
+  }, [dragState]);
+
+  /* ── Keyboard resize (slider role) ──
+     P0-1: Seed a running width ref from currentWidth on the first
+     keystroke (or after the debounce window elapses), then
+     advance the ref with each committed delta. This fixes drift
+     for tokens like "fill" / "auto" / "50%" where re-measuring
+     the wrapper each keystroke doesn't round-trip. */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
@@ -304,8 +460,18 @@ function ExperimentalResize({
       const blockEl = handleEl.closest(".canvas-block") as HTMLElement | null;
       const wrapperEl = blockEl?.parentElement as HTMLElement | null;
       const containerEl = wrapperEl?.closest(".zone-drop-container") as HTMLElement | null;
-      const startWidth = wrapperEl?.getBoundingClientRect().width ?? 240;
+      const measuredPx = wrapperEl?.getBoundingClientRect().width ?? 240;
       const containerWidth = containerEl?.clientWidth ?? 720;
+
+      /* Seed the running width ref if we don't have one yet. */
+      if (keyboardWidthRef.current === null) {
+        keyboardWidthRef.current = resolveWidthToPx(
+          currentWidth,
+          containerWidth,
+          measuredPx,
+        );
+      }
+      const startWidth = keyboardWidthRef.current;
 
       const sign = e.key === "ArrowRight" ? 1 : -1;
 
@@ -328,14 +494,41 @@ function ExperimentalResize({
       const { nextPx, widthString } = applyWidth(nextRaw, containerWidth, stepUnit);
       onWidth(widthString);
 
-      /* Announce new width in the active unit. */
+      /* Advance the running baseline with the clamped/snapped
+         result so the next keystroke builds on the committed
+         width, not a stale measurement. */
+      keyboardWidthRef.current = nextPx;
+
+      /* Debounce-reset the baseline after ~300ms of no keypress
+         so a fresh interaction re-seeds from currentWidth
+         (handles external edits between keystrokes). */
+      if (keyboardResetTimerRef.current) {
+        clearTimeout(keyboardResetTimerRef.current);
+      }
+      keyboardResetTimerRef.current = setTimeout(() => {
+        keyboardWidthRef.current = null;
+        keyboardResetTimerRef.current = null;
+      }, 300);
+
+      /* Announce the actual committed width (post-clamp, post-snap)
+         so the SR announcement aligns with aria-valuenow + visual. */
       const announced = stepUnit === "px"
         ? `Width ${Math.round(nextPx)} pixels`
         : `Width ${Math.round((nextPx / containerWidth) * 100)} percent`;
       setLiveMessage(announced);
     },
-    [applyWidth, onWidth, unit],
+    [applyWidth, onWidth, unit, currentWidth, resolveWidthToPx],
   );
+
+  /* Clean up the keyboard debounce timer on unmount. */
+  useEffect(() => {
+    return () => {
+      if (keyboardResetTimerRef.current) {
+        clearTimeout(keyboardResetTimerRef.current);
+        keyboardResetTimerRef.current = null;
+      }
+    };
+  }, []);
 
   /* Compute aria-valuenow + valuetext from the current width token.
      Falls back to 100 / full-width when no explicit width is set. */
