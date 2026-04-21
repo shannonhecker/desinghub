@@ -174,6 +174,15 @@ interface BuilderState {
   blocks: Block[];
   selectedBlockId: string | null;
   selectedBlockZone: ZoneId | null;
+  /* Multi-selection on the canvas. Always scoped to a single zone
+     — switching zones replaces the selection. `selectedBlockId`
+     mirrors the first entry so single-select inspector UIs keep
+     working without a rewrite. Empty array means nothing selected. */
+  selectedBlockIds: string[];
+  /* Open block context menu (right-click). Coords are viewport-
+     relative; the menu itself handles edge-clamping. `null` = no
+     menu open. */
+  blockContextMenu: { blockId: string; zone: ZoneId; x: number; y: number } | null;
   componentLibraryOpen: boolean;
   addMenuOpen: boolean;
   canvasViewMode: 'ui' | 'code';
@@ -289,6 +298,17 @@ interface BuilderState {
   setBlocks: (blocks: Block[]) => void;
   updateBlockProps: (id: string, props: Record<string, unknown>) => void;
   setSelectedBlock: (id: string | null, zone: ZoneId | null) => void;
+  /** Replace the multi-selection entirely. Passing [] clears. */
+  setSelection: (ids: string[], zone: ZoneId | null) => void;
+  /** Add or remove one id from the current selection (shift-click).
+     Switches zone + resets if `zone` differs from the current one. */
+  toggleBlockSelection: (id: string, zone: ZoneId) => void;
+  /** Clear every selection state (primary + multi). Bound to Esc. */
+  clearSelection: () => void;
+  /** Open the block context menu at viewport-relative (x, y). */
+  openBlockContextMenu: (blockId: string, zone: ZoneId, x: number, y: number) => void;
+  /** Close the block context menu. */
+  closeBlockContextMenu: () => void;
   toggleComponentLibrary: () => void;
   setComponentLibraryOpen: (v: boolean) => void;
   setAddMenuOpen: (v: boolean) => void;
@@ -327,6 +347,20 @@ interface BuilderState {
      its children into the zone at the group's original index. Each
      child's existing layout / props are preserved as-is. */
   ungroupBlock: (zone: ZoneId, groupId: string) => void;
+  /** Group N blocks in `zone` into a new LayoutGroup at the index of
+     the topmost selected block. Rejects if any block is already a
+     LayoutGroup (no nesting) or `ids` is empty. Default direction
+     is vertical stack (column). The new group becomes selected. */
+  groupBlocks: (zone: ZoneId, ids: string[], direction?: 'stack' | 'row') => void;
+  /** Duplicate N blocks in `zone`. Clones carry a new id, same type,
+     deep-copied props + layout + children. Clones insert immediately
+     after the last source block and become selected. */
+  duplicateBlocks: (zone: ZoneId, ids: string[]) => void;
+  /** Swap a block with its previous sibling (reorder up) in `zone`.
+     No-op if the block is already first. */
+  moveBlockUp: (zone: ZoneId, blockId: string) => void;
+  /** Swap a block with its next sibling (reorder down). No-op at end. */
+  moveBlockDown: (zone: ZoneId, blockId: string) => void;
   /** Update props on a LayoutGroup's child block (no zone ID
      required - walks children to find it). Used by the inspector
      when a nested block is selected. */
@@ -468,6 +502,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   blocks: [],
   selectedBlockId: null,
   selectedBlockZone: null,
+  selectedBlockIds: [],
+  blockContextMenu: null,
   componentLibraryOpen: true,
   addMenuOpen: false,
   canvasViewMode: 'ui',
@@ -630,7 +666,7 @@ export const useBuilder = create<BuilderState>((set) => ({
       set({ [key]: [...existing, newBlock] } as Partial<BuilderState>);
     }
     /* Select the newly-added block so the inspector jumps to it. */
-    set({ selectedBlockId: id, selectedBlockZone: targetZone });
+    set({ selectedBlockId: id, selectedBlockZone: targetZone, selectedBlockIds: [id] });
     /* Open the preview panel if it's closed so the user sees the block
        land. Cheap no-op when already open. */
     if (!state.previewOpen) set({ previewOpen: true });
@@ -682,6 +718,8 @@ export const useBuilder = create<BuilderState>((set) => ({
     selectedComponents: [],
     selectedBlockId: null,
     selectedBlockZone: null,
+    selectedBlockIds: [],
+    blockContextMenu: null,
     activeTemplateId: null,
     pendingTemplateId: null,
     pendingFirstMessage: null,
@@ -705,7 +743,46 @@ export const useBuilder = create<BuilderState>((set) => ({
         b.id === id ? { ...b, props: { ...b.props, ...props } } : b
       ),
     })),
-  setSelectedBlock: (id, zone) => set({ selectedBlockId: id, selectedBlockZone: zone }),
+  setSelectedBlock: (id, zone) =>
+    set({
+      selectedBlockId: id,
+      selectedBlockZone: zone,
+      selectedBlockIds: id ? [id] : [],
+    }),
+
+  setSelection: (ids, zone) =>
+    set({
+      selectedBlockIds: ids,
+      selectedBlockId: ids[0] ?? null,
+      selectedBlockZone: ids.length > 0 ? zone : null,
+    }),
+
+  toggleBlockSelection: (id, zone) =>
+    set((s) => {
+      /* Switching zones resets the multi-select — cross-zone groups
+         don't exist, and keeping stale ids from another zone would
+         confuse the group/duplicate actions. */
+      if (s.selectedBlockZone !== null && s.selectedBlockZone !== zone) {
+        return { selectedBlockIds: [id], selectedBlockId: id, selectedBlockZone: zone };
+      }
+      const has = s.selectedBlockIds.includes(id);
+      const next = has
+        ? s.selectedBlockIds.filter((x) => x !== id)
+        : [...s.selectedBlockIds, id];
+      return {
+        selectedBlockIds: next,
+        selectedBlockId: next[0] ?? null,
+        selectedBlockZone: next.length > 0 ? zone : null,
+      };
+    }),
+
+  clearSelection: () =>
+    set({ selectedBlockIds: [], selectedBlockId: null, selectedBlockZone: null }),
+
+  openBlockContextMenu: (blockId, zone, x, y) =>
+    set({ blockContextMenu: { blockId, zone, x, y } }),
+
+  closeBlockContextMenu: () => set({ blockContextMenu: null }),
   toggleComponentLibrary: () => set((s) => ({ componentLibraryOpen: !s.componentLibraryOpen })),
   setComponentLibraryOpen: (v) => set({ componentLibraryOpen: v }),
   setAddMenuOpen: (v) => set({ addMenuOpen: v }),
@@ -874,6 +951,102 @@ export const useBuilder = create<BuilderState>((set) => ({
          (preserving their layout/props untouched). */
       const nextArr = [...arr.slice(0, i), ...kids, ...arr.slice(i + 1)];
       return { [key]: nextArr } as Partial<BuilderState>;
+    });
+  },
+
+  groupBlocks: (zone, ids, direction = 'stack') => {
+    if (ids.length === 0) return;
+    set((s) => {
+      const key = ZONE_KEYS[zone];
+      const arr = s[key] as Block[];
+      /* Nesting guard: any selected block already a LayoutGroup → bail. */
+      const toGroup = arr.filter((b) => ids.includes(b.id));
+      if (toGroup.length === 0) return {};
+      if (toGroup.some((b) => b.type === 'LayoutGroup')) return {};
+      /* Find the lowest index so the new group takes that slot.
+         Filter pass keeps document order intact. */
+      const firstIndex = arr.findIndex((b) => ids.includes(b.id));
+      const remaining = arr.filter((b) => !ids.includes(b.id));
+      const groupId = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      const group: Block = {
+        id: groupId,
+        type: 'LayoutGroup',
+        props: { direction, gap: 12, padding: 0 },
+        children: toGroup,
+      };
+      const nextArr = [
+        ...remaining.slice(0, firstIndex),
+        group,
+        ...remaining.slice(firstIndex),
+      ];
+      return {
+        [key]: nextArr,
+        selectedBlockId: groupId,
+        selectedBlockIds: [groupId],
+        selectedBlockZone: zone,
+      } as Partial<BuilderState>;
+    });
+  },
+
+  duplicateBlocks: (zone, ids) => {
+    if (ids.length === 0) return;
+    set((s) => {
+      const key = ZONE_KEYS[zone];
+      const arr = s[key] as Block[];
+      /* Keep only ids that actually exist in this zone. Preserves
+         document order by iterating `arr`, not `ids`. */
+      const sources = arr.filter((b) => ids.includes(b.id));
+      if (sources.length === 0) return {};
+      const lastSourceIndex = arr.reduce(
+        (acc, b, i) => (ids.includes(b.id) ? i : acc),
+        -1,
+      );
+      /* Deep-clone with fresh ids at every level so DndKit keyed
+         renders treat clones as distinct nodes. */
+      const cloneBlock = (b: Block): Block => ({
+        ...b,
+        id: `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+        props: { ...b.props },
+        layout: b.layout ? { ...b.layout } : undefined,
+        children: b.children ? b.children.map(cloneBlock) : undefined,
+      });
+      const clones = sources.map(cloneBlock);
+      const nextArr = [
+        ...arr.slice(0, lastSourceIndex + 1),
+        ...clones,
+        ...arr.slice(lastSourceIndex + 1),
+      ];
+      const cloneIds = clones.map((c) => c.id);
+      return {
+        [key]: nextArr,
+        selectedBlockId: cloneIds[0] ?? null,
+        selectedBlockIds: cloneIds,
+        selectedBlockZone: zone,
+      } as Partial<BuilderState>;
+    });
+  },
+
+  moveBlockUp: (zone, blockId) => {
+    set((s) => {
+      const key = ZONE_KEYS[zone];
+      const arr = s[key] as Block[];
+      const i = arr.findIndex((b) => b.id === blockId);
+      if (i <= 0) return {};
+      const next = [...arr];
+      [next[i - 1], next[i]] = [next[i], next[i - 1]];
+      return { [key]: next } as Partial<BuilderState>;
+    });
+  },
+
+  moveBlockDown: (zone, blockId) => {
+    set((s) => {
+      const key = ZONE_KEYS[zone];
+      const arr = s[key] as Block[];
+      const i = arr.findIndex((b) => b.id === blockId);
+      if (i === -1 || i >= arr.length - 1) return {};
+      const next = [...arr];
+      [next[i], next[i + 1]] = [next[i + 1], next[i]];
+      return { [key]: next } as Partial<BuilderState>;
     });
   },
 

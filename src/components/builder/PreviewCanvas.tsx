@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useBuilder, type Block, type LayoutWidth } from "@/store/useBuilder";
 import { SortableBlock } from "./SortableBlock";
+import { MarqueeLayer } from "./MarqueeLayer";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
 import { ZoneDropContainer } from "./ZoneDropContainer";
@@ -210,6 +211,7 @@ export function PreviewCanvas() {
         </div>
       )}
 
+      <MarqueeLayer zone="body">
       <ZoneDropContainer zoneId="body" blocks={blocks} className="canvas-drop-zone">
         {blocks.map((block) => {
           /* Pull the zone's layout mode from the store via the
@@ -282,6 +284,7 @@ export function PreviewCanvas() {
           );
         })}
       </ZoneDropContainer>
+      </MarqueeLayer>
     </div>
   );
 }

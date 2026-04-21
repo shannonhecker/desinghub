@@ -14,6 +14,7 @@ import { TemplatesDrawer } from "./TemplatesDrawer";
 import { SessionsDrawer } from "./SessionsDrawer";
 import { SaveIndicator } from "./SaveIndicator";
 import { SlashInserter } from "./SlashInserter";
+import { BlockContextMenu } from "./BlockContextMenu";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
@@ -445,6 +446,9 @@ export function BuilderApp() {
       {/* ── Slash-command inserter - "/" anywhere outside inputs
            opens a Notion-style component picker overlay. ── */}
       <SlashInserter />
+
+      {/* ── Block context menu - singleton; renders only when open ── */}
+      <BlockContextMenu />
 
       {/* ── Export modal ── */}
       {exportOpen && <ExportPanel onClose={() => setExportOpen(false)} />}

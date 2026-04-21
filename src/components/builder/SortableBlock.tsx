@@ -712,6 +712,18 @@ export function SortableBlock({
   const experimentalLayout = useBuilder((s) => s.experimentalLayout);
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
   const zoneMode = zone ? (zoneLayouts[zone]?.mode ?? "row") : "row";
+  const selectedBlockIds = useBuilder((s) => s.selectedBlockIds);
+  const primarySelectedId = useBuilder((s) => s.selectedBlockId);
+  const toggleBlockSelection = useBuilder((s) => s.toggleBlockSelection);
+  const openBlockContextMenu = useBuilder((s) => s.openBlockContextMenu);
+  const setSelection = useBuilder((s) => s.setSelection);
+
+  /* Secondary highlight: block is in the multi-selection but isn't
+     the primary inspector focus. Dashed outline via CSS. */
+  const isSecondarySelected =
+    !!zone &&
+    selectedBlockIds.includes(id) &&
+    primarySelectedId !== id;
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -720,8 +732,10 @@ export function SortableBlock({
 
   const cls = [
     "canvas-block",
+    "sortable-block",
     isDragging && "is-dragging",
     isSelected && "is-selected",
+    isSecondarySelected && "is-selected-multi",
     compact && "zone-block-compact",
     experimentalLayout && "canvas-block--experimental",
     /* Drop indicator: show when another item is being sorted and this item is shifting */
@@ -729,6 +743,30 @@ export function SortableBlock({
   ]
     .filter(Boolean)
     .join(" ");
+
+  /* Shift-click: toggle membership of this block in the multi-
+     selection. Runs in capture phase so it wins over the parent's
+     onClick + stopPropagation. */
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (!zone) return;
+    if (!e.shiftKey) return;
+    e.stopPropagation();
+    e.preventDefault();
+    toggleBlockSelection(id, zone);
+  };
+
+  /* Right-click: open the context menu at cursor. If this block
+     isn't already in the current selection, replace selection with
+     just this block so menu actions target what the user clicked. */
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!zone) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedBlockIds.includes(id)) {
+      setSelection([id], zone);
+    }
+    openBlockContextMenu(id, zone, e.clientX, e.clientY);
+  };
 
   /* Parse minWidth/maxWidth hints (strings) to px for the drag
      clamp. Percent/fraction hints aren't converted here - we
@@ -749,7 +787,16 @@ export function SortableBlock({
   const resizableInProduction = !experimentalLayout && !!onColSpanChange && !compact;
 
   return (
-    <div ref={setNodeRef} style={style} className={cls} {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cls}
+      data-block-id={id}
+      data-zone={zone}
+      onClickCapture={handleClickCapture}
+      onContextMenu={handleContextMenu}
+      {...attributes}
+    >
       {/* Drop-between indicator line */}
       {isSorting && !isDragging && (
         <div className="block-drop-indicator" />

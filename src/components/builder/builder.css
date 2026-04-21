@@ -6796,6 +6796,159 @@
   font-style: italic;
 }
 
+/* ══════════════════════════════════════════════════════════
+   ContextMenu — canvas right-click + keyboard-triggered menus
+   ══════════════════════════════════════════════════════════ */
+.context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 220px;
+  padding: 4px;
+  background: var(--b-surface, rgba(22, 22, 34, 0.96));
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  border-radius: var(--dh-curve-md, 10px);
+  box-shadow: var(--dh-shadow-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  font-family: inherit;
+  animation: context-menu-in 140ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  outline: none;
+}
+.builder-light .context-menu {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+@keyframes context-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.context-menu-item-wrap {
+  position: relative;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--dh-curve-sm, 6px);
+  background: transparent;
+  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.context-menu-item.is-active,
+.context-menu-item:hover:not(.is-disabled) {
+  background: rgba(126, 107, 196, 0.14);
+}
+.builder-light .context-menu-item.is-active,
+.builder-light .context-menu-item:hover:not(.is-disabled) {
+  background: rgba(126, 107, 196, 0.1);
+}
+.context-menu-item.is-disabled {
+  color: var(--dh-fg-disabled);
+  cursor: default;
+}
+.context-menu-item.is-danger {
+  color: #f46a6a;
+}
+.context-menu-item.is-danger.is-active,
+.context-menu-item.is-danger:hover:not(.is-disabled) {
+  background: rgba(244, 106, 106, 0.14);
+}
+.context-menu-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: currentColor;
+}
+.context-menu-icon .material-symbols-outlined {
+  font-size: 16px !important;
+}
+.context-menu-label {
+  flex: 1;
+}
+.context-menu-shortcut {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--dh-fg-muted);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.context-menu-chevron {
+  font-size: 16px !important;
+  color: var(--dh-fg-muted);
+  flex-shrink: 0;
+}
+.context-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--b-border2, rgba(255, 255, 255, 0.08));
+}
+.builder-light .context-menu-separator {
+  background: rgba(0, 0, 0, 0.06);
+}
+.context-submenu {
+  position: absolute;
+  top: -4px;
+  left: calc(100% + 4px);
+  min-width: 200px;
+  padding: 4px;
+  background: var(--b-surface, rgba(22, 22, 34, 0.96));
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  border-radius: var(--dh-curve-md, 10px);
+  box-shadow: var(--dh-shadow-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: context-menu-in 120ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.context-submenu.is-flipped {
+  left: auto;
+  right: calc(100% + 4px);
+}
+.builder-light .context-submenu {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Marquee drag overlay — canvas rectangle-select
+   ══════════════════════════════════════════════════════════ */
+.marquee-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.marquee-rect {
+  position: absolute;
+  border: 1px solid rgba(126, 107, 196, 0.8);
+  background: rgba(126, 107, 196, 0.12);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Multi-select secondary highlight — a block that's in the selection
+   but isn't the primary (inspector) focus. Dashed so the eye can tell
+   it apart from the single .is-selected state. */
+.sortable-block.is-selected-multi {
+  outline: 2px dashed rgba(126, 107, 196, 0.7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.builder-light .sortable-block.is-selected-multi {
+  outline-color: rgba(126, 107, 196, 0.9);
+}
+
 /* ── Library sub-category accordions (Actions, Inputs, …) ──
    Collapse body-zone tiles into semantic buckets so users don't
    scroll a wall of ~45 items to find what they need. Header style

@@ -33,20 +33,84 @@ export function useBuilderShortcuts() {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
 
-      // Cmd/Ctrl + Z / Y
+      const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
+
+      /* Non-modifier shortcuts first (Delete / Backspace / Esc). */
+      if (!mod) {
+        if (e.key === "Delete" || e.key === "Backspace") {
+          const s = useBuilder.getState();
+          if (s.selectedBlockIds.length > 0 && s.selectedBlockZone) {
+            e.preventDefault();
+            const zone = s.selectedBlockZone;
+            s.selectedBlockIds.forEach((id) => s.removeBlockFromZone(zone, id));
+            s.clearSelection();
+          }
+          return;
+        }
+        if (e.key === "Escape") {
+          const s = useBuilder.getState();
+          if (s.blockContextMenu) {
+            e.preventDefault();
+            s.closeBlockContextMenu();
+          } else if (s.selectedBlockIds.length > 0) {
+            e.preventDefault();
+            s.clearSelection();
+          }
+          return;
+        }
+        return;
+      }
+
+      /* Cmd/Ctrl + Z / Y — undo/redo */
       if (k === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
-      } else if ((k === "z" && e.shiftKey) || k === "y") {
+        return;
+      }
+      if ((k === "z" && e.shiftKey) || k === "y") {
         e.preventDefault();
         redo();
-      } else if (e.key === ".") {
+        return;
+      }
+      if (e.key === ".") {
         e.preventDefault();
         useBuilder.getState().toggleComponentLibrary();
+        return;
+      }
+
+      /* ⌘G group / ⌘⇧G ungroup */
+      if (k === "g") {
+        e.preventDefault();
+        const s = useBuilder.getState();
+        if (!s.selectedBlockZone || s.selectedBlockIds.length === 0) return;
+        if (e.shiftKey) {
+          /* Ungroup the first LayoutGroup in the current selection. */
+          const zone = s.selectedBlockZone;
+          const arr =
+            zone === "body" ? s.blocks
+            : zone === "header" ? s.headerBlocks
+            : zone === "sidebar" ? s.sidebarBlocks
+            : s.footerBlocks;
+          const groupId = s.selectedBlockIds.find((id) => {
+            const b = arr.find((x) => x.id === id);
+            return b?.type === "LayoutGroup";
+          });
+          if (groupId) s.ungroupBlock(zone, groupId);
+        } else {
+          s.groupBlocks(s.selectedBlockZone, s.selectedBlockIds, "stack");
+        }
+        return;
+      }
+
+      /* ⌘D duplicate */
+      if (k === "d") {
+        const s = useBuilder.getState();
+        if (!s.selectedBlockZone || s.selectedBlockIds.length === 0) return;
+        e.preventDefault();
+        s.duplicateBlocks(s.selectedBlockZone, s.selectedBlockIds);
+        return;
       }
     };
 
