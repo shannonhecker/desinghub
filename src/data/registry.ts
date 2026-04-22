@@ -33,7 +33,8 @@ interface DensityEntry {
 // Import directly from the original reference files (complete implementations)
 import {
   SALT_THEMES, saltBuildCSS, SIcon, SALT_COMPS, SALT_CATS, SALT_FONT, SALT_FONT_HEAD,
-  setSaltT, getSaltT, getSaltPreviews, getSaltDemoComponent
+  setSaltT, getSaltT, getSaltPreviews, getSaltDemoComponent,
+  SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER,
 } from './salt/salt-documentation.jsx';
 
 import {
@@ -72,6 +73,7 @@ export {
   AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
   FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH,
   CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
+  SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER,
   getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 

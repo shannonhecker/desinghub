@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { saltTokenVars, SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER } from "./tokens";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, CATS as SALT_CATS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
+export { SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER };
 export function setSaltT(theme) { T = theme; }
 export function getSaltT() { return T; }
 export function getSaltPreviews() { return PREVIEWS; }
@@ -47,10 +49,16 @@ const FONT_HEAD = "'Open Sans', sans-serif"; // Amplitude is JPM-internal
 const FONT_CODE = "'PT Mono', monospace"; // Salt monospace/code font
 
 /* ── CSS ── */
+/* Mode detection from T.name — "JPM Brand Light" / "Legacy (UITK) Light"
+   both match Light; anything else resolves dark. saltTokenVars() emits
+   motion, curve (radius), elevation, and border-width vars. */
+const modeOf = (T) => (T?.name && /Light$/.test(T.name) ? "light" : "dark");
 const buildCSS = (T) => `
 * { box-sizing:border-box; margin:0; padding:0; }
-:root { --dur-fast:150ms; --dur-norm:200ms; --dur-slow:300ms; --ease:cubic-bezier(0.2,0,0,1); }
-/* Salt official duration tokens: instant=0ms, perceptible=300ms, notable=1000ms, cutoff=10000ms */
+/* Salt tokens — motion, curve (radius), elevation, border-width.
+   Mode-aware via saltTokenVars(). Legacy --dur-*/--ease short names
+   are also emitted for back-compat with existing class rules. */
+:root { ${saltTokenVars(modeOf(T))} }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0.01ms!important;animation-duration:0.01ms!important;}}
 
 .s-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--cr,4px);font-family:${FONT};font-weight:600;cursor:pointer;border:1px solid transparent;outline:none;transition:background var(--dur-fast) var(--ease),border-color var(--dur-fast) var(--ease);padding:0 var(--pad,12px);height:var(--h,28px);font-size:var(--fs,12px);}
@@ -74,8 +82,8 @@ const buildCSS = (T) => `
 .s-input::placeholder{color:${T.fg3};}
 .s-input:disabled{background:${T.bg2};color:${T.fgDis};border-color:${T.bg3};}
 
-.s-card{border-radius:var(--cr,6px);background:${T.bg};border:1px solid ${T.border};cursor:pointer;outline:none;transition:box-shadow var(--dur-norm) var(--ease),background var(--dur-fast) var(--ease);overflow:hidden;}
-.s-card:hover{box-shadow:0 2px 6px ${T.shadowMed};background:${T.bg2};}
+.s-card{border-radius:var(--cr,var(--salt-curve-300));background:${T.bg};border:1px solid ${T.border};cursor:pointer;outline:none;transition:box-shadow var(--dur-norm) var(--ease),background var(--dur-fast) var(--ease);overflow:hidden;}
+.s-card:hover{box-shadow:var(--salt-elev-medium);background:${T.bg2};}
 .s-card:focus-visible{outline:2px solid ${T.borderFocus};outline-offset:2px;}
 
 .s-tab{padding:8px 12px;font-size:var(--fs,12px);font-weight:400;font-family:${FONT};color:${T.fg2};background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;outline:none;transition:color var(--dur-fast),border-color var(--dur-fast);}
