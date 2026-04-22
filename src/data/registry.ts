@@ -39,7 +39,8 @@ import {
 import {
   M3_THEMES, m3BuildCSS, M3_COMPS, M3_CATS, MATERIAL_COLORS, M3Icon, M3_MOTION,
   generateM3Theme, setM3T, getM3T, getM3DemoComponent,
-  getM3DensityCSS, getM3LayoutDensity, getM3Previews
+  getM3DensityCSS, getM3LayoutDensity, getM3Previews,
+  M3_SHAPE, M3_TYPE, M3_DENSITY, M3_BORDER,
 } from './m3/m3-documentation.jsx';
 
 import {
@@ -66,7 +67,8 @@ import {
 // Re-export for use in other modules
 export {
   SIcon, M3Icon, FIcon, AIcon, CIcon,
-  MATERIAL_COLORS, generateM3Theme, M3_MOTION,
+  MATERIAL_COLORS, generateM3Theme,
+  M3_MOTION, M3_SHAPE, M3_TYPE, M3_DENSITY, M3_BORDER,
   AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
   FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH,
   CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
