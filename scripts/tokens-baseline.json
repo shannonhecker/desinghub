@@ -1,32 +1,32 @@
 {
-  "generatedAt": "2026-04-22T22:10:46.730Z",
+  "generatedAt": "2026-04-22T22:46:20.309Z",
   "perDs": {
     "salt": {
       "hex": 277,
       "rgba": 21,
       "px": 658,
-      "ms": 18,
+      "ms": 27,
       "files": 3
     },
     "m3": {
       "hex": 394,
       "rgba": 48,
       "px": 710,
-      "ms": 26,
+      "ms": 28,
       "files": 2
     },
     "fluent": {
       "hex": 242,
       "rgba": 22,
       "px": 467,
-      "ms": 15,
+      "ms": 19,
       "files": 2
     },
     "carbon": {
       "hex": 157,
       "rgba": 13,
       "px": 622,
-      "ms": 23,
+      "ms": 25,
       "files": 1
     },
     "ausos": {
@@ -48,7 +48,7 @@
     "hex": 1156,
     "rgba": 163,
     "px": 2721,
-    "ms": 90
+    "ms": 107
   },
   "files": [
     {
@@ -57,7 +57,7 @@
       "hex": 225,
       "rgba": 32,
       "px": 600,
-      "ms": 18,
+      "ms": 20,
       "samples": {
         "hex": [
           "#6750A4",
@@ -86,49 +86,12 @@
       }
     },
     {
-      "path": "src/data/carbon/carbon-documentation.jsx",
-      "ds": "carbon",
-      "hex": 157,
-      "rgba": 13,
-      "px": 622,
-      "ms": 23,
-      "samples": {
-        "hex": [
-          "#a6c8ff",
-          "#78a9ff",
-          "#4589ff",
-          "#0f62fe",
-          "#0043ce"
-        ],
-        "rgba": [
-          "rgba(1",
-          "rgba(2",
-          "rgba(0",
-          "rgba(6"
-        ],
-        "px": [
-          "2px",
-          "0px",
-          "14px",
-          "1px",
-          "6px"
-        ],
-        "ms": [
-          "70ms",
-          "200ms",
-          "110ms",
-          "150ms",
-          "240ms"
-        ]
-      }
-    },
-    {
       "path": "src/data/salt/salt-documentation.jsx",
       "ds": "salt",
       "hex": 204,
       "rgba": 15,
       "px": 582,
-      "ms": 13,
+      "ms": 22,
       "samples": {
         "hex": [
           "#FFFFFF",
@@ -159,12 +122,49 @@
       }
     },
     {
+      "path": "src/data/carbon/carbon-documentation.jsx",
+      "ds": "carbon",
+      "hex": 157,
+      "rgba": 13,
+      "px": 622,
+      "ms": 25,
+      "samples": {
+        "hex": [
+          "#a6c8ff",
+          "#78a9ff",
+          "#4589ff",
+          "#0f62fe",
+          "#0043ce"
+        ],
+        "rgba": [
+          "rgba(1",
+          "rgba(2",
+          "rgba(0",
+          "rgba(6"
+        ],
+        "px": [
+          "2px",
+          "0px",
+          "14px",
+          "1px",
+          "6px"
+        ],
+        "ms": [
+          "70ms",
+          "200ms",
+          "01ms",
+          "110ms",
+          "150ms"
+        ]
+      }
+    },
+    {
       "path": "src/data/fluent/fluent2-documentation.jsx",
       "ds": "fluent",
       "hex": 151,
       "rgba": 18,
       "px": 394,
-      "ms": 7,
+      "ms": 11,
       "samples": {
         "hex": [
           "#FFFFFF",

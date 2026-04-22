@@ -95,6 +95,7 @@ const buildCSS = (T) => `
 
 /* Fluent 2 Design Tokens */
 :root {
+  color-scheme: ${modeOf(T)};
   ${fluentTokenVars(modeOf(T))}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -141,21 +142,21 @@ const buildCSS = (T) => `
 /* === CHECKBOX === */
 .f-checkbox { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; outline:none; }
 .f-checkbox:focus-visible .f-cb-box { outline:2px solid ${T.fg1}; outline-offset:2px; }
-.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
+.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:background-color var(--f-dur-fast) var(--f-curve-easy-ease),border-color var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-checkbox:hover .f-cb-box { border-color:${T.brandBg}; }
 .f-checkbox.checked .f-cb-box { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-checkbox.checked:hover .f-cb-box { background:${T.brandBgHover}; border-color:${T.brandBgHover}; }
 
 /* === RADIO === */
 .f-radio { display:flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; padding:4px 0; outline:none; }
-.f-radio-circle { width:16px; height:16px; border-radius:8px; border:1px solid ${T.strokeAccessible}; display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
+.f-radio-circle { width:16px; height:16px; border-radius:8px; border:1px solid ${T.strokeAccessible}; display:flex; align-items:center; justify-content:center; transition:border-color var(--f-dur-fast) var(--f-curve-easy-ease),border-width var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-radio:hover .f-radio-circle { border-color:${T.brandBg}; }
 .f-radio.selected .f-radio-circle { border-color:${T.brandBg}; border-width:2px; }
 
 /* === SWITCH / TOGGLE === */
-.f-switch { width:40px; height:20px; border-radius:10px; background:${T.bg5}; border:1px solid ${T.strokeAccessible}; cursor:pointer; position:relative; outline:none; transition:all var(--f-dur-slow) var(--f-curve-decel-mid); padding:0; }
+.f-switch { width:40px; height:20px; border-radius:10px; background:${T.bg5}; border:1px solid ${T.strokeAccessible}; cursor:pointer; position:relative; outline:none; transition:background-color var(--f-dur-slow) var(--f-curve-decel-mid),border-color var(--f-dur-slow) var(--f-curve-decel-mid); padding:0; }
 .f-switch:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
-.f-switch .f-sw-thumb { position:absolute; width:14px; height:14px; border-radius:7px; background:${T.fg1}; top:2px; left:2px; transition:all var(--f-dur-slow) var(--f-curve-decel-mid); }
+.f-switch .f-sw-thumb { position:absolute; width:14px; height:14px; border-radius:7px; background:${T.fg1}; top:2px; left:2px; transition:left var(--f-dur-slow) var(--f-curve-decel-mid),background-color var(--f-dur-slow) var(--f-curve-decel-mid); }
 .f-switch.on { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-switch.on .f-sw-thumb { left:22px; background:${T.fgOnBrand}; }
 .f-switch:disabled { opacity:0.38; cursor:default; }
@@ -454,7 +455,7 @@ function ProgressDemo() {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div className="f-spinner" />
-        <span style={{ fontFamily: FONT, fontSize: 14, color: T.fg2 }}>Loading...</span>
+        <span role="status" aria-live="polite" style={{ fontFamily: FONT, fontSize: 14, color: T.fg2 }}>Loading&hellip;</span>
       </div>
       <input type="range" min={0} max={100} value={v} onChange={e => setV(+e.target.value)} style={{ width: 200 }} />
       <div style={{ marginTop: 4 }}>
@@ -1587,7 +1588,7 @@ export default function App() {
                 border: themeKey === key ? `2px solid ${T.brandBg}` : `1px solid ${T.stroke1}`,
                 background: themeKey === key ? T.brandBg2 : "transparent",
                 color: themeKey === key ? T.brandFg1 : T.fg2, fontWeight: themeKey === key ? 600 : 400,
-                transition: "all 150ms",
+                transition: "background-color 150ms, color 150ms, border-color 150ms",
               }}>
                 <FIcon name={key === "light" ? "sun" : "moon"} size={14} />
                 {theme.name}
@@ -1603,7 +1604,7 @@ export default function App() {
                 flex: 1, padding: `${sz.gap - 4}px 0`, border: "none", cursor: "pointer", fontFamily: FONT, fontSize: sz.sideFs - 3, fontWeight: size === key ? 600 : 400,
                 background: size === key ? T.brandBg : "transparent",
                 color: size === key ? T.fgOnBrand : T.fg2,
-                transition: "all 150ms",
+                transition: "background-color 150ms, color 150ms, border-color 150ms",
               }}>{label}</button>
             ))}
           </div>
