@@ -1,0 +1,200 @@
+name: Design review gate
+
+# Detects PR scope from changed paths, posts a scoped gate checklist
+# comment, and applies a design-review label. Full process:
+# docs/DESIGN-REVIEW.md.
+#
+# Skip by including [skip-review] in the PR title.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.title, '[skip-review]') }}
+    outputs:
+      scope: ${{ steps.detect.outputs.scope }}
+      ds_touched: ${{ steps.detect.outputs.ds_touched }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect PR scope from changed paths
+        id: detect
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "── changed files ──"
+          echo "$CHANGED"
+          echo "───────────────────"
+
+          SCOPE="none"
+          DS_TOUCHED=""
+
+          # Count which DS directories changed
+          for ds in salt m3 fluent carbon ausos; do
+            if echo "$CHANGED" | grep -qE "^src/data/${ds}/"; then
+              DS_TOUCHED="${DS_TOUCHED}${ds} "
+            fi
+          done
+          DS_COUNT=$(echo "$DS_TOUCHED" | wc -w | tr -d ' ')
+
+          # Classification ladder (most specific first)
+          if echo "$CHANGED" | grep -qE "^src/components/builder/|^src/store/"; then
+            SCOPE="builder"
+          elif [ "$DS_COUNT" -gt 1 ] || echo "$CHANGED" | grep -qE "^src/data/registry\.ts|^src/data/_shared/"; then
+            SCOPE="cross-ds"
+          elif [ "$DS_COUNT" -eq 1 ]; then
+            if echo "$CHANGED" | grep -qE "^src/data/[^/]+/tokens\.ts$" && ! echo "$CHANGED" | grep -qE "^src/data/[^/]+/[^/]+-documentation\.jsx$"; then
+              SCOPE="tokens-only"
+            else
+              SCOPE="single-ds"
+            fi
+          elif echo "$CHANGED" | grep -qE "^docs/|\.md$|^\.github/|^scripts/|^\.eslint/"; then
+            SCOPE="docs-or-infra"
+          fi
+
+          echo "scope=$SCOPE" >> "$GITHUB_OUTPUT"
+          echo "ds_touched=${DS_TOUCHED% }" >> "$GITHUB_OUTPUT"
+          echo ""
+          echo "→ scope: $SCOPE"
+          echo "→ ds_touched: ${DS_TOUCHED% }"
+
+  comment:
+    needs: scope
+    runs-on: ubuntu-latest
+    if: ${{ needs.scope.outputs.scope != 'none' && needs.scope.outputs.scope != 'docs-or-infra' }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const scope = '${{ needs.scope.outputs.scope }}';
+            const dsTouched = '${{ needs.scope.outputs.ds_touched }}' || 'none';
+
+            // Which gates apply for this scope?
+            const gateMap = {
+              'tokens-only':  { concept: false, design: true,  prehandoff: false, qa: true  },
+              'single-ds':    { concept: true,  design: true,  prehandoff: true,  qa: true  },
+              'cross-ds':     { concept: true,  design: true,  prehandoff: true,  qa: true  },
+              'builder':      { concept: true,  design: true,  prehandoff: true,  qa: true  },
+            };
+            const gates = gateMap[scope] || { concept: true, design: true, prehandoff: true, qa: true };
+
+            const scopeLabel = {
+              'tokens-only': 'Single-DS tokens.ts (values only) — Gate 2 + 4',
+              'single-ds':   `Single DS renderer (${dsTouched}) — all gates`,
+              'cross-ds':    'Cross-DS change (registry / _shared / 2+ DS) — all gates',
+              'builder':     'Builder surface (Sprint 2525492 protection) — all gates',
+            }[scope];
+
+            const check = (b) => b ? 'x' : ' ';
+            const body = [
+              '## 🎛️ Design review gate',
+              '',
+              `**Detected scope:** ${scopeLabel}`,
+              dsTouched !== 'none' ? `**DS touched:** \`${dsTouched}\`` : '',
+              '',
+              'Full process: [`docs/DESIGN-REVIEW.md`](../blob/main/docs/DESIGN-REVIEW.md). Scale gates down if the change is small.',
+              '',
+              '### Applicable gates',
+              `- [${check(gates.concept)}] **Gate 1 — Concept** — problem defined, user need grounded, alternatives considered`,
+              `- [${check(gates.design)}] **Gate 2 — Design** — tokens-only (no raw hex/px/ms), per-DS spec adherence, responsive/density variants`,
+              `- [${check(gates.prehandoff)}] **Gate 3 — Pre-handoff** — all states (empty/loading/error), WCAG 2.1 AA, dark mode verified`,
+              `- [${check(gates.qa)}] **Gate 4 — Implementation QA** — CI green, \`npm run tokens:audit\` exit 0, visual walkthrough done`,
+              '',
+              '### Scoped checklist',
+              '',
+              ...(gates.concept ? [
+                '**Concept**',
+                '- [ ] One-paragraph "why + what" in the PR description',
+                '- [ ] 2+ alternatives considered, or rationale for single direction',
+                '- [ ] Strategic alignment with 5-DS normalization philosophy',
+                '',
+              ] : []),
+              ...(gates.design ? [
+                '**Design**',
+                '- [ ] `npm run tokens:audit` exits 0 (no new literals)',
+                '- [ ] Per-DS spec names used (Salt characteristic / M3 shape / Fluent duration / Carbon motion / ausos glass)',
+                '- [ ] Hover / focus / pressed / disabled states all defined',
+                '- [ ] Density or size variants tested (where applicable)',
+                '',
+              ] : []),
+              ...(gates.prehandoff ? [
+                '**Pre-handoff (WCAG 2.1 AA)**',
+                '- [ ] Text contrast ≥ 4.5:1 (normal) / ≥ 3:1 (large / interactive)',
+                '- [ ] Focus visible via `:focus-visible` (no bare `outline: none`)',
+                '- [ ] Icon-only buttons carry `aria-label`',
+                '- [ ] Decorative icons `aria-hidden="true"`',
+                '- [ ] Keyboard navigation works (Tab, Arrow for compound widgets)',
+                '- [ ] Semantic HTML before ARIA (`<button>` for actions, `<a>` for nav)',
+                '- [ ] Empty / loading / error / long-content states handled',
+                '- [ ] Dark mode verified across affected DS themes',
+                '',
+              ] : []),
+              ...(gates.qa ? [
+                '**QA**',
+                '- [ ] `npm run typecheck` clean',
+                '- [ ] `npm run test` — 79/79 passing',
+                '- [ ] `npx eslint src` no new errors',
+                '- [ ] Screenshots attached for affected DS × theme permutations',
+                ...(scope === 'builder' ? [
+                  '- [ ] Builder smoke: multi-select, group-as-column, right-click menu, keyboard shortcuts all work',
+                ] : []),
+                '',
+              ] : []),
+              '---',
+              '<sub>Bypass: add `[skip-review]` to the PR title. CI gate still runs regardless.</sub>',
+            ].filter(Boolean).join('\n');
+
+            // Find existing bot comment to update (avoid duplicate spam on re-push)
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.data.find(c =>
+              c.user.type === 'Bot' && c.body?.startsWith('## 🎛️ Design review gate')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              core.info(`Updated existing comment #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              core.info('Posted new design-review comment');
+            }
+
+      - name: Apply design-review label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['design-review'],
+              });
+            } catch (e) {
+              core.warning(`Could not add label (create it in repo settings first): ${e.message}`);
+            }
