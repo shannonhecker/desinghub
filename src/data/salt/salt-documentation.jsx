@@ -187,14 +187,25 @@ function Checkboxes(){
   const [ch,setCh]=useState([true,false,false,false]);
   const labels=["Checked","Unchecked","Error","Disabled"];
   const colors=[T.accent,T.borderStrong,T.negative,T.fgDis];
+  const toggle=(i)=>{if(i<3){const n=[...ch];n[i]=!n[i];setCh(n);}};
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
       {labels.map((l,i)=>(
-        <label key={i} style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1}} onClick={()=>{if(i<3){const n=[...ch];n[i]=!n[i];setCh(n);}}}>
-          <div style={{width:16,height:16,borderRadius:3,border:`2px solid ${ch[i]?colors[i]:colors[i]}`,background:ch[i]?colors[i]:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <span
+          key={i}
+          role="checkbox"
+          aria-checked={ch[i]}
+          aria-disabled={i===3}
+          aria-invalid={i===2}
+          tabIndex={i===3?-1:0}
+          onClick={()=>toggle(i)}
+          onKeyDown={(e)=>{if((e.key===" "||e.key==="Enter")&&i<3){e.preventDefault();toggle(i);}}}
+          style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1,outline:"none"}}
+        >
+          <span aria-hidden="true" style={{width:16,height:16,borderRadius:3,border:`2px solid ${ch[i]?colors[i]:colors[i]}`,background:ch[i]?colors[i]:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
             {ch[i]&&<SIcon name="check" size={10} color={i===2?"#fff":T.accentFg}/>}
-          </div>{l}
-        </label>
+          </span>{l}
+        </span>
       ))}
     </div>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>States: Checked, Unchecked, Indeterminate, Error (negative), Disabled (40% opacity). Validation via Form Field wrapper.</div>
@@ -203,14 +214,30 @@ function Checkboxes(){
 
 function Radios(){
   const [sel,setSel]=useState(0);
+  const labels=["Option A","Option B","Error","Disabled"];
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
-    <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-      {["Option A","Option B","Error","Disabled"].map((l,i)=>(
-        <label key={i} style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1}} onClick={()=>{if(i<3)setSel(i);}}>
-          <div style={{width:16,height:16,borderRadius:8,border:`2px solid ${i===2?T.negative:sel===i?T.accent:T.borderStrong}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {sel===i&&<div style={{width:8,height:8,borderRadius:4,background:i===2?T.negative:T.accent}}/>}
-          </div>{l}
-        </label>
+    <div role="radiogroup" aria-label="Options" style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+      {labels.map((l,i)=>(
+        <span
+          key={i}
+          role="radio"
+          aria-checked={sel===i}
+          aria-disabled={i===3}
+          aria-invalid={i===2}
+          tabIndex={sel===i?0:-1}
+          onClick={()=>{if(i<3)setSel(i);}}
+          onKeyDown={(e)=>{
+            if(i>=3) return;
+            if(e.key===" "||e.key==="Enter"){e.preventDefault();setSel(i);}
+            else if(e.key==="ArrowDown"||e.key==="ArrowRight"){e.preventDefault();setSel((sel+1)%3);}
+            else if(e.key==="ArrowUp"||e.key==="ArrowLeft"){e.preventDefault();setSel((sel-1+3)%3);}
+          }}
+          style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1,outline:"none"}}
+        >
+          <span aria-hidden="true" style={{width:16,height:16,borderRadius:8,border:`2px solid ${i===2?T.negative:sel===i?T.accent:T.borderStrong}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {sel===i&&<span style={{width:8,height:8,borderRadius:4,background:i===2?T.negative:T.accent}}/>}
+          </span>{l}
+        </span>
       ))}
     </div>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>States: Selected, Unselected, Error (negative color), Disabled. Single selection within group.</div>
@@ -244,11 +271,30 @@ function SaltCards(){
 
 function TabsComp(){
   const [t,setT]=useState(0);
+  const labels=["Overview","Positions","Orders","History"];
   return <div>
-    <div style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
-      {["Overview","Positions","Orders","History"].map((l,i)=>(<button key={i} className={`s-tab${t===i?" active":""}`} onClick={()=>setT(i)}>{l}</button>))}
+    <div role="tablist" aria-label="Account sections" style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
+      {labels.map((l,i)=>(
+        <button
+          key={i}
+          type="button"
+          role="tab"
+          id={`s-tab-${i}`}
+          aria-selected={t===i}
+          aria-controls={`s-tabpanel-${i}`}
+          tabIndex={t===i?0:-1}
+          className={`s-tab${t===i?" active":""}`}
+          onClick={()=>setT(i)}
+          onKeyDown={(e)=>{
+            if(e.key==="ArrowRight") setT((t+1)%labels.length);
+            else if(e.key==="ArrowLeft") setT((t-1+labels.length)%labels.length);
+            else if(e.key==="Home") setT(0);
+            else if(e.key==="End") setT(labels.length-1);
+          }}
+        >{l}</button>
+      ))}
     </div>
-    <div style={{padding:12,fontSize:12,color:T.fg2,fontFamily:FONT}}>Content for "{["Overview","Positions","Orders","History"][t]}" tab.</div>
+    <div id={`s-tabpanel-${t}`} role="tabpanel" aria-labelledby={`s-tab-${t}`} style={{padding:12,fontSize:12,color:T.fg2,fontFamily:FONT}}>Content for &ldquo;{labels[t]}&rdquo; tab.</div>
   </div>;
 }
 
