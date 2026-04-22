@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
+import { m3ShapeVars, M3_SHAPE, M3_TYPE, M3_DENSITY, M3_BORDER } from "./tokens";
+
 export { THEMES as M3_THEMES, buildCSS as m3BuildCSS, COMPS as M3_COMPS, CATS as M3_CATS, MATERIAL_COLORS, I as M3Icon, M3_MOTION };
+export { M3_SHAPE, M3_TYPE, M3_DENSITY, M3_BORDER };
 export { generateM3Theme };
 export function setM3T(theme) { T = theme; }
 export function getM3T() { return T; }
@@ -252,30 +255,33 @@ const buildCSS = (T) => `
 .mi.xs { font-size:18px; }
 .mi.lg { font-size:36px; }
 
-/* === M3 MOTION TOKENS === */
+/* === M3 MOTION + SHAPE TOKENS === */
+/* Motion values mirror M3_MOTION (defined above); shape values come from
+   M3_SHAPE via m3ShapeVars(). Both are single-source in ./tokens.ts. */
 :root {
-  --m3-ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --m3-ease-standard-decel: cubic-bezier(0, 0, 0, 1);
-  --m3-ease-standard-accel: cubic-bezier(0.3, 0, 1, 1);
-  --m3-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --m3-ease-emphasized-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
-  --m3-ease-emphasized-accel: cubic-bezier(0.3, 0, 0.8, 0.15);
-  --m3-dur-short1: 50ms;
-  --m3-dur-short2: 100ms;
-  --m3-dur-short3: 150ms;
-  --m3-dur-short4: 200ms;
-  --m3-dur-medium1: 250ms;
-  --m3-dur-medium2: 300ms;
-  --m3-dur-medium4: 400ms;
-  --m3-dur-long1: 450ms;
-  --m3-dur-long2: 500ms;
+  --m3-ease-standard: ${M3_MOTION.easing.standard};
+  --m3-ease-standard-decel: ${M3_MOTION.easing.standardDecel};
+  --m3-ease-standard-accel: ${M3_MOTION.easing.standardAccel};
+  --m3-ease-emphasized: ${M3_MOTION.easing.emphasized};
+  --m3-ease-emphasized-decel: ${M3_MOTION.easing.emphasizedDecel};
+  --m3-ease-emphasized-accel: ${M3_MOTION.easing.emphasizedAccel};
+  --m3-dur-short1: ${M3_MOTION.duration.short1};
+  --m3-dur-short2: ${M3_MOTION.duration.short2};
+  --m3-dur-short3: ${M3_MOTION.duration.short3};
+  --m3-dur-short4: ${M3_MOTION.duration.short4};
+  --m3-dur-medium1: ${M3_MOTION.duration.medium1};
+  --m3-dur-medium2: ${M3_MOTION.duration.medium2};
+  --m3-dur-medium4: ${M3_MOTION.duration.medium4};
+  --m3-dur-long1: ${M3_MOTION.duration.long1};
+  --m3-dur-long2: ${M3_MOTION.duration.long2};
+  ${m3ShapeVars()}
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
 /* === BUTTONS === */
-.m3-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; border-radius:20px; padding:0 24px; font-family:Roboto,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.1px; cursor:pointer; border:none; outline:none; transition:box-shadow var(--m3-dur-short4) var(--m3-ease-standard), background var(--m3-dur-short3) var(--m3-ease-standard); position:relative; overflow:hidden; }
+.m3-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:40px; border-radius:var(--m3-shape-full); padding:0 24px; font-family:Roboto,sans-serif; font-size:14px; font-weight:500; letter-spacing:0.1px; cursor:pointer; border:none; outline:none; transition:box-shadow var(--m3-dur-short4) var(--m3-ease-standard), background var(--m3-dur-short3) var(--m3-ease-standard); position:relative; overflow:hidden; }
 .m3-btn::after { content:''; position:absolute; inset:0; border-radius:inherit; opacity:0; transition:opacity var(--m3-dur-short3) var(--m3-ease-standard); pointer-events:none; }
 .m3-btn:focus-visible { outline:2px solid ${T.primary}; outline-offset:2px; }
 
@@ -965,19 +971,19 @@ function Dividers() {
 function SearchBar() {
   const [v, setV] = useState("");
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 320, height: 56, padding: "0 16px", borderRadius: 28, background: T.surfaceContainerHigh, border: `1px solid ${T.outlineVariant}`, fontFamily: "Roboto,sans-serif", transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}` }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 320, height: 56, padding: "0 16px", borderRadius: M3_SHAPE["extra-large"], background: T.surfaceContainerHigh, border: `1px solid ${T.outlineVariant}`, fontFamily: "Roboto,sans-serif", transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}` }}>
       <I n="search" sm />
       <input
         value={v}
         onChange={e => setV(e.target.value)}
         placeholder="Search Material Design"
-        style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}
+        style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: M3_TYPE["body-large"].fontSize, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}
       />
       {v && (
         <button
           onClick={() => setV("")}
           className="m3-ib"
-          style={{ width: 32, height: 32, borderRadius: 16, border: "none", background: "transparent", color: T.onSurfaceVariant, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{ width: 32, height: 32, borderRadius: M3_SHAPE.full, border: "none", background: "transparent", color: T.onSurfaceVariant, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
           aria-label="Clear search"
         >
           <I n="cancel" xs />
@@ -991,7 +997,7 @@ function SegmentedButtons() {
   const opts = ["Day", "Week", "Month"];
   const [sel, setSel] = useState("Week");
   return (
-    <div style={{ display: "inline-flex", height: 40, borderRadius: 20, border: `1px solid ${T.outline}`, overflow: "hidden", fontFamily: "Roboto,sans-serif" }}>
+    <div style={{ display: "inline-flex", height: 40, borderRadius: M3_SHAPE.full, border: `1px solid ${T.outline}`, overflow: "hidden", fontFamily: "Roboto,sans-serif" }}>
       {opts.map((o, i) => {
         const active = sel === o;
         return (
@@ -1009,8 +1015,8 @@ function SegmentedButtons() {
               borderLeft: i === 0 ? "none" : `1px solid ${T.outline}`,
               background: active ? T.secondaryContainer : "transparent",
               color: active ? T.onSecondaryContainer : T.onSurface,
-              fontSize: 14,
-              fontWeight: 500,
+              fontSize: M3_TYPE["label-large"].fontSize,
+              fontWeight: M3_TYPE["label-large"].fontWeight,
               cursor: "pointer",
               transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}`,
               fontFamily: "Roboto,sans-serif",
@@ -1027,22 +1033,24 @@ function SegmentedButtons() {
 }
 
 function ShapeTokens() {
+  /* Derived from M3_SHAPE — source of truth lives in ./tokens.ts.
+     Displayed values show the CSS var name next to the live preview. */
   const shapes = [
-    { n: "None", v: "0dp", r: 0 },
-    { n: "Extra Small", v: "4dp", r: 4 },
-    { n: "Small", v: "8dp", r: 8 },
-    { n: "Medium", v: "12dp", r: 12 },
-    { n: "Large", v: "16dp", r: 16 },
-    { n: "Extra Large", v: "28dp", r: 28 },
+    { n: "None",        key: "none",        v: M3_SHAPE.none },
+    { n: "Extra Small", key: "extra-small", v: M3_SHAPE["extra-small"] },
+    { n: "Small",       key: "small",       v: M3_SHAPE.small },
+    { n: "Medium",      key: "medium",      v: M3_SHAPE.medium },
+    { n: "Large",       key: "large",       v: M3_SHAPE.large },
+    { n: "Extra Large", key: "extra-large", v: M3_SHAPE["extra-large"] },
   ];
   return (
     <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: "Roboto,sans-serif" }}>
       {shapes.map(s => (
         <div key={s.n} style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-          <div style={{ width: 56, height: 56, background: T.primaryContainer, borderRadius: s.r }} />
+          <div style={{ width: 56, height: 56, background: T.primaryContainer, borderRadius: s.v }} />
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{s.n}</div>
-            <div style={{ fontSize: 12, color: T.onSurfaceVariant, fontFamily: "Roboto,sans-serif" }}>{s.v}</div>
+            <div style={{ fontSize: M3_TYPE["label-large"].fontSize, fontWeight: M3_TYPE["label-large"].fontWeight, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{s.n}</div>
+            <div style={{ fontSize: M3_TYPE["body-small"].fontSize, color: T.onSurfaceVariant, fontFamily: "Roboto,sans-serif" }}>--m3-shape-{s.key}</div>
           </div>
         </div>
       ))}
@@ -1051,21 +1059,28 @@ function ShapeTokens() {
 }
 
 function DensityTokens() {
-  const cols = [
-    { name: "Default (0)", btn: {}, tf: {}, chip: {} },
-    { name: "Compact (-2)", btn: { height: 36, fontSize: 13, padding: "0 20px" }, tf: { height: 48, fontSize: 14 }, chip: { height: 28, fontSize: 13, padding: "0 12px" } },
-    { name: "Extra Compact (-4)", btn: { height: 32, fontSize: 12, padding: "0 16px" }, tf: { height: 40, fontSize: 13 }, chip: { height: 24, fontSize: 12, padding: "0 10px" } },
-  ];
+  /* Derived from M3_DENSITY — source of truth lives in ./tokens.ts.
+     Each column maps one density preset (default / -2 / -4) across a
+     button, text field, and chip. */
+  const densityLabel = (d) => `${d === "default" ? "Default" : d === "compact" ? "Compact" : "Extra Compact"} (${M3_DENSITY[d].offset})`;
+  const styleFromDensity = (d, kind) => {
+    const x = M3_DENSITY[d];
+    if (kind === "btn") return d === "default" ? {} : { height: x.btnH, fontSize: x.btnFs, padding: x.btnPad };
+    if (kind === "tf")  return d === "default" ? {} : { height: x.tfH, fontSize: x.tfFs };
+    if (kind === "chip") return d === "default" ? {} : { height: x.chipH, fontSize: x.chipFs, padding: x.chipPad };
+    return {};
+  };
+  const densities = ["default", "compact", "extra-compact"];
   return (
     <div style={{ display: "flex", gap: 32, flexWrap: "wrap", fontFamily: "Roboto,sans-serif" }}>
-      {cols.map(c => (
-        <div key={c.name} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{c.name}</div>
-          <button className="m3-btn m3-btn-filled" style={c.btn}>Button</button>
-          <div className="m3-tf m3-tf-filled" style={c.tf}>
+      {densities.map(d => (
+        <div key={d} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: M3_TYPE["title-small"].fontSize, fontWeight: 700, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{densityLabel(d)}</div>
+          <button className="m3-btn m3-btn-filled" style={styleFromDensity(d, "btn")}>Button</button>
+          <div className="m3-tf m3-tf-filled" style={styleFromDensity(d, "tf")}>
             <input className="m3-tf-content" placeholder="Email" style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontFamily: "Roboto,sans-serif", color: T.onSurface }} />
           </div>
-          <div className="m3-chip" style={c.chip}>Filter</div>
+          <div className="m3-chip" style={styleFromDensity(d, "chip")}>Filter</div>
         </div>
       ))}
     </div>
