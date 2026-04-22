@@ -739,7 +739,7 @@ function Checkboxes() {
       {["Notifications", "Email updates", "SMS alerts"].map((l, i) => (
         <div key={i} className={`m3-cb${checks[i] ? " checked" : ""}`} tabIndex={0} role="checkbox" aria-checked={checks[i]}
           onClick={() => toggle(i)}
-          onKeyDown={e => { if (e.key === " ") { e.preventDefault(); toggle(i); } }}>
+          onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(i); } }}>
           <div className="m3-cb-box">{checks[i] && <I n="check" style={{ color: T.onPrimary, fontSize: 14, zIndex: 1 }} />}</div>
           <span>{l}</span>
         </div>
@@ -750,13 +750,27 @@ function Checkboxes() {
 
 function Radios() {
   const [sel, setSel] = useState(1);
+  const labels = ["Small", "Medium", "Large"];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {["Small", "Medium", "Large"].map((l, i) => (
-        <label key={i} className={`m3-radio${sel === i ? " selected" : ""}`} tabIndex={0} onClick={() => setSel(i)} onKeyDown={e => e.key === " " && setSel(i)}>
+    <div role="radiogroup" aria-label="Size" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {labels.map((l, i) => (
+        <div
+          key={i}
+          className={`m3-radio${sel === i ? " selected" : ""}`}
+          role="radio"
+          aria-checked={sel === i}
+          tabIndex={sel === i ? 0 : -1}
+          onClick={() => setSel(i)}
+          onKeyDown={e => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSel(i); }
+            else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setSel((sel + 1) % labels.length); }
+            else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setSel((sel - 1 + labels.length) % labels.length); }
+          }}
+          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontFamily: "Roboto,sans-serif", fontSize: 14, color: T.onSurface, padding: "4px 0" }}
+        >
           <div className="m3-radio-circle">{sel === i && <div style={{ width: 10, height: 10, borderRadius: 5, background: T.primary, zIndex: 1 }} />}</div>
           {l}
-        </label>
+        </div>
       ))}
     </div>
   );
@@ -824,22 +838,28 @@ function TabsComp() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
       <div>
         <div style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant, marginBottom: 4 }}>Primary</div>
-        <div className="m3-tabs">
+        <div className="m3-tabs" role="tablist" aria-label="Primary tabs">
           {["Tab 1", "Tab 2", "Tab 3"].map((t, i) => (
-            <button key={i} className={`m3-tab${a1 === i ? " active" : ""}`} onClick={() => setA1(i)}>
+            <button key={i} type="button" role="tab" aria-selected={a1 === i} tabIndex={a1 === i ? 0 : -1} className={`m3-tab${a1 === i ? " active" : ""}`} onClick={() => setA1(i)} onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setA1((a1 + 1) % 3);
+              else if (e.key === "ArrowLeft") setA1((a1 - 1 + 3) % 3);
+            }}>
               <span style={{ zIndex: 1 }}>{t}</span>
-              {a1 === i && <div style={{ position: "absolute", bottom: 0, left: "25%", right: "25%", height: 3, borderRadius: "3px 3px 0 0", background: T.primary, zIndex: 1 }} />}
+              {a1 === i && <div aria-hidden="true" style={{ position: "absolute", bottom: 0, left: "25%", right: "25%", height: 3, borderRadius: "3px 3px 0 0", background: T.primary, zIndex: 1 }} />}
             </button>
           ))}
         </div>
       </div>
       <div>
         <div style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant, marginBottom: 4 }}>Secondary</div>
-        <div className="m3-tabs">
+        <div className="m3-tabs" role="tablist" aria-label="Secondary tabs">
           {["All", "Unread", "Starred"].map((t, i) => (
-            <button key={i} className={`m3-tab${a2 === i ? " active" : ""}`} onClick={() => setA2(i)}>
+            <button key={i} type="button" role="tab" aria-selected={a2 === i} tabIndex={a2 === i ? 0 : -1} className={`m3-tab${a2 === i ? " active" : ""}`} onClick={() => setA2(i)} onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setA2((a2 + 1) % 3);
+              else if (e.key === "ArrowLeft") setA2((a2 - 1 + 3) % 3);
+            }}>
               <span style={{ zIndex: 1 }}>{t}</span>
-              {a2 === i && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, borderRadius: "3px 3px 0 0", background: T.primary, zIndex: 1 }} />}
+              {a2 === i && <div aria-hidden="true" style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, borderRadius: "3px 3px 0 0", background: T.primary, zIndex: 1 }} />}
             </button>
           ))}
         </div>
