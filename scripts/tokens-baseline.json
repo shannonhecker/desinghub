@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T21:52:17.785Z",
+  "generatedAt": "2026-04-22T21:59:40.251Z",
   "perDs": {
     "salt": {
       "hex": 277,
@@ -25,8 +25,8 @@
     "carbon": {
       "hex": 157,
       "rgba": 13,
-      "px": 681,
-      "ms": 29,
+      "px": 622,
+      "ms": 23,
       "files": 1
     },
     "ausos": {
@@ -40,15 +40,15 @@
   "other": {
     "hex": 6,
     "rgba": 0,
-    "px": 1,
+    "px": 2,
     "ms": 0,
     "files": 1
   },
   "totals": {
     "hex": 1156,
     "rgba": 163,
-    "px": 2787,
-    "ms": 112
+    "px": 2729,
+    "ms": 106
   },
   "files": [
     {
@@ -86,43 +86,6 @@
       }
     },
     {
-      "path": "src/data/carbon/carbon-documentation.jsx",
-      "ds": "carbon",
-      "hex": 157,
-      "rgba": 13,
-      "px": 681,
-      "ms": 29,
-      "samples": {
-        "hex": [
-          "#a6c8ff",
-          "#78a9ff",
-          "#4589ff",
-          "#0f62fe",
-          "#0043ce"
-        ],
-        "rgba": [
-          "rgba(1",
-          "rgba(2",
-          "rgba(0",
-          "rgba(6"
-        ],
-        "px": [
-          "2px",
-          "0px",
-          "14px",
-          "1px",
-          "6px"
-        ],
-        "ms": [
-          "70ms",
-          "110ms",
-          "150ms",
-          "240ms",
-          "400ms"
-        ]
-      }
-    },
-    {
       "path": "src/data/salt/salt-documentation.jsx",
       "ds": "salt",
       "hex": 204,
@@ -155,6 +118,43 @@
           "300ms",
           "0ms",
           "1000ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/carbon/carbon-documentation.jsx",
+      "ds": "carbon",
+      "hex": 157,
+      "rgba": 13,
+      "px": 622,
+      "ms": 23,
+      "samples": {
+        "hex": [
+          "#a6c8ff",
+          "#78a9ff",
+          "#4589ff",
+          "#0f62fe",
+          "#0043ce"
+        ],
+        "rgba": [
+          "rgba(1",
+          "rgba(2",
+          "rgba(0",
+          "rgba(6"
+        ],
+        "px": [
+          "2px",
+          "0px",
+          "14px",
+          "1px",
+          "6px"
+        ],
+        "ms": [
+          "70ms",
+          "200ms",
+          "110ms",
+          "150ms",
+          "240ms"
         ]
       }
     },
@@ -330,6 +330,29 @@
       }
     },
     {
+      "path": "src/data/registry.ts",
+      "ds": "shared",
+      "hex": 6,
+      "rgba": 0,
+      "px": 2,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#6750A4",
+          "#1B7F9E",
+          "#0F6CBD",
+          "#7E6BC4",
+          "#0f62fe"
+        ],
+        "rgba": [],
+        "px": [
+          "4px",
+          "2px"
+        ],
+        "ms": []
+      }
+    },
+    {
       "path": "src/data/salt/components.ts",
       "ds": "salt",
       "hex": 0,
@@ -345,28 +368,6 @@
           "20px",
           "28px",
           "36px"
-        ],
-        "ms": []
-      }
-    },
-    {
-      "path": "src/data/registry.ts",
-      "ds": "shared",
-      "hex": 6,
-      "rgba": 0,
-      "px": 1,
-      "ms": 0,
-      "samples": {
-        "hex": [
-          "#6750A4",
-          "#1B7F9E",
-          "#0F6CBD",
-          "#7E6BC4",
-          "#0f62fe"
-        ],
-        "rgba": [],
-        "px": [
-          "2px"
         ],
         "ms": []
       }
