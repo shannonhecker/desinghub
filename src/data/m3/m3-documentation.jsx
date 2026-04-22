@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
-export { THEMES as M3_THEMES, buildCSS as m3BuildCSS, COMPS as M3_COMPS, CATS as M3_CATS, MATERIAL_COLORS, I as M3Icon };
+export { THEMES as M3_THEMES, buildCSS as m3BuildCSS, COMPS as M3_COMPS, CATS as M3_CATS, MATERIAL_COLORS, I as M3Icon, M3_MOTION };
 export { generateM3Theme };
 export function setM3T(theme) { T = theme; }
 export function getM3T() { return T; }
@@ -215,6 +215,32 @@ function generateM3Theme(sourceHex, isDark = false) {
 
 /* helper: build T reference for compatibility */
 let T = THEMES.light;
+
+/* ── M3 MOTION TOKENS (JS mirror of the --m3-dur-* / --m3-ease-* CSS vars
+   emitted by buildCSS below). Exposed so component APIs can reference
+   durations + easings semantically instead of hardcoding literals.
+   Names match the M3 spec. ── */
+const M3_MOTION = {
+  duration: {
+    short1: "50ms",
+    short2: "100ms",
+    short3: "150ms",
+    short4: "200ms",
+    medium1: "250ms",
+    medium2: "300ms",
+    medium4: "400ms",
+    long1: "450ms",
+    long2: "500ms",
+  },
+  easing: {
+    standard: "cubic-bezier(0.2, 0, 0, 1)",
+    standardDecel: "cubic-bezier(0, 0, 0, 1)",
+    standardAccel: "cubic-bezier(0.3, 0, 1, 1)",
+    emphasized: "cubic-bezier(0.2, 0, 0, 1)",
+    emphasizedDecel: "cubic-bezier(0.05, 0.7, 0.1, 1)",
+    emphasizedAccel: "cubic-bezier(0.3, 0, 0.8, 0.15)",
+  },
+};
 
 /* ── GLOBAL STYLES - function of active theme ── */
 const buildCSS = (T) => `

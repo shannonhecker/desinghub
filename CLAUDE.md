@@ -38,6 +38,9 @@ Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): S
 - **Format:** CSS custom properties via `--cds-*` (canonical IBM prefix)
 - **Key groups:** Background layers (`background`, `layer-01..03`), Text (`text-primary/secondary/placeholder`), Borders (`border-subtle-01..03`, `border-strong-01..03`), Interactive (`interactive`, `focus`), Support (`support-success/warning/error/info`)
 - **Density:** 4 levels — `compact` (24px) / `normal` (32px) / `spacious` (48px). Flat design (radius=0 across standard controls).
+- **Density note:** Carbon has TWO density layers that are intentionally separate — do NOT try to unify them.
+  - **Component internals:** 2px scale via `--cds-spacing-01`..`--cds-spacing-13` (defined in `carbon-documentation.jsx` `buildCSS`). Used by rendered Carbon components (buttons, inputs, notifications).
+  - **Preview/UI-Kit layout:** 4px scale in `registry.ts:CARBON_DENSITY_MAP`. Drives sidebar width, card min-widths, preview padding — matches the other DS's registry density maps so previews feel consistent across systems.
 
 ### ausos DS
 - **Format:** CSS custom properties via `--a-*` prefix — semantic glassmorphism tokens
@@ -245,7 +248,7 @@ All five systems use **CSS custom properties** (design tokens). No CSS-in-JS req
 - **Salt:** Density applied via `SaltProvider density="high|medium|low|touch"` — all tokens auto-scale
 - **M3:** Density offset via component prop `density={-1}` (each step = -4dp)
 - **Fluent:** Size prop on components: `size="small|medium|large"` (intentional — Fluent 2 spec uses component size variants, not a global density scale)
-- **Carbon:** Density tiers `compact` (24px) / `normal` (32px) / `spacious` (48px). 2px-based spacing scale. `medium` aliases to `normal` for cross-DS callers.
+- **Carbon:** Density tiers `compact` (24px) / `normal` (32px) / `spacious` (48px). 2px-based spacing scale. `medium` aliases to `normal` for cross-DS callers (two density layers — see Section 1 note).
 - **ausos:** Inherits Salt's 4-level density (high/medium/low/touch)
 
 ### Dark Mode

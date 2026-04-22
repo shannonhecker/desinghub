@@ -37,7 +37,7 @@ import {
 } from './salt/salt-documentation.jsx';
 
 import {
-  M3_THEMES, m3BuildCSS, M3_COMPS, M3_CATS, MATERIAL_COLORS, M3Icon,
+  M3_THEMES, m3BuildCSS, M3_COMPS, M3_CATS, MATERIAL_COLORS, M3Icon, M3_MOTION,
   generateM3Theme, setM3T, getM3T, getM3DemoComponent,
   getM3DensityCSS, getM3LayoutDensity, getM3Previews
 } from './m3/m3-documentation.jsx';
@@ -63,7 +63,7 @@ import {
 // Re-export for use in other modules
 export {
   SIcon, M3Icon, FIcon, AIcon, CIcon,
-  MATERIAL_COLORS, generateM3Theme,
+  MATERIAL_COLORS, generateM3Theme, M3_MOTION,
   getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 
