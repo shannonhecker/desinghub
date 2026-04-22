@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
+import { fluentTokenVars, FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH } from "./tokens";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as FLUENT_THEMES, buildCSS as fluentBuildCSS, COMPS as FLUENT_COMPS, CATS as FLUENT_CATS, FIcon, FONT as FLUENT_FONT };
+export { FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH };
 export function setFluentT(theme) { T = theme; }
 export function getFluentT() { return T; }
 export function getFluentPreviews() { return PREVIEWS; }
@@ -83,28 +85,24 @@ let T = THEMES.light;
 const FONT = "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif";
 
 /* ── GLOBAL STYLES ── */
+/* Mode detection — theme objects declare { name: 'Light'|'Dark' } and are
+   swapped via setFluentT(). fluentTokenVars() emits mode-aware CSS var
+   declarations for motion, radius, elevation, stroke-width. */
+const modeOf = (T) => (T?.name === "Dark" ? "dark" : "light");
 const buildCSS = (T) => `
 @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Fluent 2 Motion Tokens */
+/* Fluent 2 Design Tokens */
 :root {
-  --f-dur-ultra-fast: 50ms;
-  --f-dur-faster: 100ms;
-  --f-dur-fast: 150ms;
-  --f-dur-normal: 200ms;
-  --f-dur-gentle: 250ms;
-  --f-dur-slow: 300ms;
-  --f-curve-decel-mid: cubic-bezier(0.1, 0.9, 0.2, 1);
-  --f-curve-accel-mid: cubic-bezier(0.7, 0, 1, 0.5);
-  --f-curve-easy-ease: cubic-bezier(0.33, 0, 0.67, 1);
+  ${fluentTokenVars(modeOf(T))}
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
 /* === BUTTONS === */
-.f-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:96px; border-radius:4px; padding:0 12px; font-family:${FONT}; font-size:14px; font-weight:600; cursor:pointer; border:1px solid transparent; outline:none; position:relative; overflow:hidden; transition:background var(--f-dur-fast) var(--f-curve-easy-ease), border-color var(--f-dur-fast) var(--f-curve-easy-ease), color var(--f-dur-fast) var(--f-curve-easy-ease); }
+.f-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:96px; border-radius:var(--f-radius-sm); padding:0 12px; font-family:${FONT}; font-size:14px; font-weight:600; cursor:pointer; border:1px solid transparent; outline:none; position:relative; overflow:hidden; transition:background var(--f-dur-fast) var(--f-curve-easy-ease), border-color var(--f-dur-fast) var(--f-curve-easy-ease), color var(--f-dur-fast) var(--f-curve-easy-ease); }
 .f-btn:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
 .f-btn:disabled { opacity:0.38; cursor:default; pointer-events:none; }
 
@@ -134,7 +132,7 @@ const buildCSS = (T) => `
 /* === INPUT === */
 .f-input-wrap { display:flex; flex-direction:column; gap:4px; }
 .f-input-label { font-size:14px; font-weight:600; color:${T.fg1}; font-family:${FONT}; }
-.f-input { height:32px; border:1px solid ${T.stroke1}; border-bottom:2px solid ${T.strokeAccessible}; border-radius:4px; padding:0 10px; font-size:14px; font-family:${FONT}; color:${T.fg1}; background:${T.bg1}; outline:none; transition:border-color var(--f-dur-fast) var(--f-curve-easy-ease); }
+.f-input { height:32px; border:1px solid ${T.stroke1}; border-bottom:2px solid ${T.strokeAccessible}; border-radius:var(--f-radius-sm); padding:0 10px; font-size:14px; font-family:${FONT}; color:${T.fg1}; background:${T.bg1}; outline:none; transition:border-color var(--f-dur-fast) var(--f-curve-easy-ease); }
 .f-input:hover { border-color:${T.strokeAccessible}; }
 .f-input:focus { border-bottom:2px solid ${T.brandBg}; }
 .f-input::placeholder { color:${T.fg3}; }
@@ -143,7 +141,7 @@ const buildCSS = (T) => `
 /* === CHECKBOX === */
 .f-checkbox { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; outline:none; }
 .f-checkbox:focus-visible .f-cb-box { outline:2px solid ${T.fg1}; outline-offset:2px; }
-.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:3px; display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
+.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-checkbox:hover .f-cb-box { border-color:${T.brandBg}; }
 .f-checkbox.checked .f-cb-box { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-checkbox.checked:hover .f-cb-box { background:${T.brandBgHover}; border-color:${T.brandBgHover}; }
@@ -163,13 +161,13 @@ const buildCSS = (T) => `
 .f-switch:disabled { opacity:0.38; cursor:default; }
 
 /* === CARD === */
-.f-card { border-radius:8px; background:${T.cardBg}; border:1px solid ${T.stroke2}; cursor:pointer; outline:none; transition:background var(--f-dur-fast) var(--f-curve-easy-ease), box-shadow var(--f-dur-gentle) var(--f-curve-easy-ease); overflow:hidden; }
-.f-card:hover { background:${T.cardBgHover}; box-shadow:0 2px 4px ${T.shadowKey}, 0 0 2px ${T.shadowAmbient}; }
+.f-card { border-radius:var(--f-radius-lg); background:${T.cardBg}; border:1px solid ${T.stroke2}; cursor:pointer; outline:none; transition:background var(--f-dur-fast) var(--f-curve-easy-ease), box-shadow var(--f-dur-gentle) var(--f-curve-easy-ease); overflow:hidden; }
+.f-card:hover { background:${T.cardBgHover}; box-shadow:var(--f-shadow-4); }
 .f-card:active { background:${T.cardBgPressed}; box-shadow:none; }
 .f-card:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
 
 /* === BADGE === */
-.f-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; border-radius:10000px; padding:0 6px; font-size:12px; font-weight:600; font-family:${FONT}; }
+.f-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; border-radius:var(--f-radius-circular); padding:0 6px; font-size:12px; font-weight:600; font-family:${FONT}; }
 .f-badge-brand { background:${T.brandBg}; color:${T.fgOnBrand}; }
 .f-badge-danger { background:${T.dangerBg3}; color:white; }
 .f-badge-success { background:${T.successBg3}; color:white; }
@@ -177,7 +175,7 @@ const buildCSS = (T) => `
 .f-badge-subtle { background:${T.bg4}; color:${T.fg2}; }
 
 /* === AVATAR === */
-.f-avatar { width:32px; height:32px; border-radius:10000px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; font-family:${FONT}; color:${T.fgOnBrand}; background:${T.brandBg}; flex-shrink:0; }
+.f-avatar { width:32px; height:32px; border-radius:var(--f-radius-circular); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; font-family:${FONT}; color:${T.fgOnBrand}; background:${T.brandBg}; flex-shrink:0; }
 .f-avatar-sm { width:24px; height:24px; font-size:11px; }
 .f-avatar-lg { width:48px; height:48px; font-size:20px; }
 
@@ -186,14 +184,14 @@ const buildCSS = (T) => `
 
 /* === TOOLTIP === */
 .f-tooltip-wrap { position:relative; display:inline-block; }
-.f-tooltip-tip { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:${T.bgInverted}; color:${T.fgInverted}; border-radius:4px; padding:6px 10px; font-size:12px; font-family:${FONT}; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity var(--f-dur-fast) var(--f-curve-decel-mid); box-shadow:0 4px 8px ${T.shadowKey}, 0 0 2px ${T.shadowAmbient}; }
+.f-tooltip-tip { position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%); background:${T.bgInverted}; color:${T.fgInverted}; border-radius:var(--f-radius-sm); padding:6px 10px; font-size:12px; font-family:${FONT}; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity var(--f-dur-fast) var(--f-curve-decel-mid); box-shadow:var(--f-shadow-8); }
 .f-tooltip-wrap:hover .f-tooltip-tip { opacity:1; }
 
 /* === DIALOG === */
-.f-dialog { width:480px; max-width:90vw; border-radius:8px; background:${T.bg1}; box-shadow:0 14px 28px ${T.shadowKey}, 0 0 8px ${T.shadowAmbient}; padding:24px; font-family:${FONT}; border:1px solid ${T.stroke2}; }
+.f-dialog { width:480px; max-width:90vw; border-radius:var(--f-radius-lg); background:${T.bg1}; box-shadow:var(--f-shadow-28); padding:24px; font-family:${FONT}; border:1px solid ${T.stroke2}; }
 
 /* === PROGRESS === */
-.f-progress { width:100%; height:2px; border-radius:1px; background:${T.bg5}; overflow:hidden; }
+.f-progress { width:100%; height:2px; border-radius:1px; background:${T.bg5}; overflow:hidden; } /* 1px radius is sub-visual; not worth tokenising */
 .f-progress-bar { height:100%; background:${T.brandBg}; border-radius:1px; transition:width var(--f-dur-slow) var(--f-curve-easy-ease); }
 
 /* === SPINNER === */
@@ -208,21 +206,21 @@ const buildCSS = (T) => `
 .f-tab:focus-visible { outline:2px solid ${T.fg1}; outline-offset:-2px; }
 
 /* === SLIDER === */
-.f-slider input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:${T.bg5}; border-radius:2px; outline:none; cursor:pointer; }
-.f-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:10px; background:${T.brandBg}; border:2px solid ${T.bg1}; box-shadow:0 1px 2px ${T.shadowKey}; cursor:pointer; transition:transform var(--f-dur-fast); }
+.f-slider input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:${T.bg5}; border-radius:var(--f-radius-xs); outline:none; cursor:pointer; }
+.f-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:var(--f-radius-circular); background:${T.brandBg}; border:2px solid ${T.bg1}; box-shadow:var(--f-shadow-2); cursor:pointer; transition:transform var(--f-dur-fast); }
 .f-slider input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
 .f-slider input[type=range]:focus-visible::-webkit-slider-thumb { outline:2px solid ${T.fg1}; outline-offset:2px; }
 
 /* === MESSAGE BAR === */
-.f-msgbar { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:4px; font-family:${FONT}; font-size:14px; }
+.f-msgbar { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:var(--f-radius-sm); font-family:${FONT}; font-size:14px; }
 .f-msgbar-info { background:${T.brandBg2}; color:${T.brandFg2}; border:1px solid ${T.brandStroke1}40; }
 .f-msgbar-success { background:${T.successBg1}; color:${T.successFg1}; }
 .f-msgbar-warning { background:${T.warningBg1}; color:${T.warningFg1}; }
 .f-msgbar-danger { background:${T.dangerBg1}; color:${T.dangerFg1}; }
 
 /* === MENU === */
-.f-menu { width:200px; border-radius:4px; background:${T.bg1}; box-shadow:0 4px 8px ${T.shadowKey}, 0 0 2px ${T.shadowAmbient}; padding:4px; font-family:${FONT}; border:1px solid ${T.stroke2}; }
-.f-menu-item { padding:8px 10px; font-size:14px; color:${T.fg1}; cursor:pointer; border-radius:4px; transition:background var(--f-dur-faster); border:none; width:100%; text-align:left; background:transparent; font-family:${FONT}; outline:none; }
+.f-menu { width:200px; border-radius:var(--f-radius-sm); background:${T.bg1}; box-shadow:var(--f-shadow-8); padding:4px; font-family:${FONT}; border:1px solid ${T.stroke2}; }
+.f-menu-item { padding:8px 10px; font-size:14px; color:${T.fg1}; cursor:pointer; border-radius:var(--f-radius-sm); transition:background var(--f-dur-faster); border:none; width:100%; text-align:left; background:transparent; font-family:${FONT}; outline:none; }
 .f-menu-item:hover { background:${T.subtleBgHover}; }
 .f-menu-item:active { background:${T.subtleBgPressed}; }
 .f-menu-item:focus-visible { outline:2px solid ${T.fg1}; outline-offset:-2px; }
@@ -232,7 +230,7 @@ const buildCSS = (T) => `
 .f-link:hover { text-decoration:underline; color:${T.brandFg2}; }
 
 /* === SIDEBAR NAV === */
-.f-sidebar-item { display:block; width:100%; padding:8px 12px; border-radius:4px; border:none; background:transparent; cursor:pointer; font-family:${FONT}; font-size:13px; text-align:left; color:${T.fg2}; transition:background var(--f-dur-faster) var(--f-curve-easy-ease); outline:none; }
+.f-sidebar-item { display:block; width:100%; padding:8px 12px; border-radius:var(--f-radius-sm); border:none; background:transparent; cursor:pointer; font-family:${FONT}; font-size:13px; text-align:left; color:${T.fg2}; transition:background var(--f-dur-faster) var(--f-curve-easy-ease); outline:none; }
 .f-sidebar-item:hover { background:${T.subtleBgHover}; color:${T.fg1}; }
 .f-sidebar-item.active { background:${T.subtleBgSelected}; color:${T.brandFg1}; font-weight:600; }
 `;
