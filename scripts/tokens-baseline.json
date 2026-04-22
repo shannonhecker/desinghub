@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T21:15:32.057Z",
+  "generatedAt": "2026-04-22T21:43:26.452Z",
   "perDs": {
     "salt": {
       "hex": 277,
@@ -31,9 +31,9 @@
     },
     "ausos": {
       "hex": 80,
-      "rgba": 61,
-      "px": 276,
-      "ms": 11,
+      "rgba": 59,
+      "px": 262,
+      "ms": 8,
       "files": 1
     }
   },
@@ -46,9 +46,9 @@
   },
   "totals": {
     "hex": 1156,
-    "rgba": 165,
-    "px": 2828,
-    "ms": 121
+    "rgba": 163,
+    "px": 2814,
+    "ms": 118
   },
   "files": [
     {
@@ -196,9 +196,9 @@
       "path": "src/data/ausos/ausos-documentation.jsx",
       "ds": "ausos",
       "hex": 80,
-      "rgba": 61,
-      "px": 276,
-      "ms": 11,
+      "rgba": 59,
+      "px": 262,
+      "ms": 8,
       "samples": {
         "hex": [
           "#0b1120",
@@ -221,10 +221,9 @@
           "16px"
         ],
         "ms": [
+          "200ms",
           "150ms",
           "250ms",
-          "350ms",
-          "200ms",
           "01ms"
         ]
       }
