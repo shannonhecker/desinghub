@@ -139,6 +139,7 @@ const buildCSS = (T) => `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  color-scheme: ${modeOf(T)};
   ${ausosTokenVars(modeOf(T))}
   --a-gradient: ${T.gradient};
   --a-gradient-subtle: ${T.gradientSubtle};
@@ -150,7 +151,7 @@ const buildCSS = (T) => `
 }
 
 /* === BUTTONS (Glass system - no solid fills, depth via opacity) === */
-.a-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:72px; border-radius:var(--a-radius-full); padding:0 16px; font-family:${FONT}; font-size:13px; font-weight:500; cursor:pointer; border:1px solid ${T.border}; outline:none; position:relative; overflow:hidden; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; transition:all var(--a-dur-fast) var(--a-ease); box-shadow:${T.insetHighlight}; }
+.a-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:72px; border-radius:var(--a-radius-full); padding:0 16px; font-family:${FONT}; font-size:13px; font-weight:500; cursor:pointer; border:1px solid ${T.border}; outline:none; position:relative; overflow:hidden; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; transition:background-color var(--a-dur-fast) var(--a-ease),border-color var(--a-dur-fast) var(--a-ease),color var(--a-dur-fast) var(--a-ease),box-shadow var(--a-dur-fast) var(--a-ease); box-shadow:${T.insetHighlight}; }
 .a-btn:focus-visible { outline:2px solid ${T.fg3}; outline-offset:2px; }
 .a-btn:disabled { opacity:0.35; cursor:default; pointer-events:none; }
 
@@ -182,26 +183,26 @@ const buildCSS = (T) => `
 /* === CHECKBOX === */
 .a-checkbox { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:13px; color:${T.fg}; outline:none; }
 .a-checkbox:focus-visible .a-cb-box { outline:2px solid ${T.fg3}; outline-offset:2px; }
-.a-cb-box { width:18px; height:18px; border:1px solid ${T.borderStrong}; border-radius:5px; display:flex; align-items:center; justify-content:center; transition:all var(--a-dur-fast) var(--a-ease); flex-shrink:0; background:${T.surface}; }
+.a-cb-box { width:18px; height:18px; border:1px solid ${T.borderStrong}; border-radius:5px; display:flex; align-items:center; justify-content:center; transition:background-color var(--a-dur-fast) var(--a-ease),border-color var(--a-dur-fast) var(--a-ease); flex-shrink:0; background:${T.surface}; }
 .a-checkbox:hover .a-cb-box { border-color:${T.accent}; }
 .a-checkbox.checked .a-cb-box { background:${T.accent}; border-color:${T.accent}; }
 
 /* === RADIO === */
 .a-radio { display:flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:13px; color:${T.fg}; padding:3px 0; outline:none; }
-.a-radio-circle { width:18px; height:18px; border-radius:9px; border:1px solid ${T.borderStrong}; display:flex; align-items:center; justify-content:center; transition:all var(--a-dur-fast) var(--a-ease); flex-shrink:0; background:${T.surface}; }
+.a-radio-circle { width:18px; height:18px; border-radius:9px; border:1px solid ${T.borderStrong}; display:flex; align-items:center; justify-content:center; transition:border-color var(--a-dur-fast) var(--a-ease),border-width var(--a-dur-fast) var(--a-ease); flex-shrink:0; background:${T.surface}; }
 .a-radio:hover .a-radio-circle { border-color:${T.accent}; }
 .a-radio.selected .a-radio-circle { border-color:${T.accent}; border-width:2px; }
 
 /* === SWITCH === */
-.a-switch { width:44px; height:24px; border-radius:var(--a-radius-lg); background:${T.borderMd}; border:2px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:all var(--a-dur-mid) var(--a-ease); padding:0; }
+.a-switch { width:44px; height:24px; border-radius:var(--a-radius-lg); background:${T.borderMd}; border:2px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:background-color var(--a-dur-mid) var(--a-ease),border-color var(--a-dur-mid) var(--a-ease); padding:0; }
 .a-switch:focus-visible { outline:2px solid ${T.accent}; outline-offset:2px; }
-.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:var(--a-radius-md); background:#ffffff; top:2px; left:2px; transition:all var(--a-dur-mid) var(--a-ease); box-shadow:var(--a-shadow-sm); }
+.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:var(--a-radius-md); background:#ffffff; top:2px; left:2px; transition:left var(--a-dur-mid) var(--a-ease),background-color var(--a-dur-mid) var(--a-ease); box-shadow:var(--a-shadow-sm); }
 .a-switch.on { background:${T.accent}; border-color:${T.accent}; }
 .a-switch.on .a-sw-thumb { left:22px; background:#ffffff; }
 
 /* === TABS === */
 .a-tabs { display:flex; border-bottom:1px solid ${T.border}; gap:0; }
-.a-tab { padding:8px 14px; font-family:${FONT}; font-size:13px; font-weight:500; color:${T.fg3}; cursor:pointer; background:transparent; border:none; border-bottom:2px solid transparent; transition:all var(--a-dur-fast) var(--a-ease); outline:none; }
+.a-tab { padding:8px 14px; font-family:${FONT}; font-size:13px; font-weight:500; color:${T.fg3}; cursor:pointer; background:transparent; border:none; border-bottom:2px solid transparent; transition:color var(--a-dur-fast) var(--a-ease),background-color var(--a-dur-fast) var(--a-ease),border-color var(--a-dur-fast) var(--a-ease); outline:none; }
 .a-tab:hover { color:${T.fg}; background:${T.surface}; }
 .a-tab.active { color:${T.fg}; border-bottom-color:${T.accent}; font-weight:600; }
 .a-tab:focus-visible { outline:2px solid ${T.accent}; outline-offset:-2px; }
@@ -261,7 +262,7 @@ const buildCSS = (T) => `
 .a-dropdown-item:hover { background:${T.surface}; }
 
 /* === SIDEBAR ITEM === */
-.a-sidebar-item { display:flex; align-items:center; gap:10px; padding:8px 12px; font-family:${FONT}; font-size:12px; font-weight:500; color:${T.fg2}; border-radius:6px; cursor:pointer; transition:all var(--a-dur-fast) var(--a-ease); border:none; background:transparent; width:100%; text-align:left; outline:none; }
+.a-sidebar-item { display:flex; align-items:center; gap:10px; padding:8px 12px; font-family:${FONT}; font-size:12px; font-weight:500; color:${T.fg2}; border-radius:6px; cursor:pointer; transition:color var(--a-dur-fast) var(--a-ease),background-color var(--a-dur-fast) var(--a-ease); border:none; background:transparent; width:100%; text-align:left; outline:none; }
 .a-sidebar-item:hover { background:${T.surface}; color:${T.fg}; }
 .a-sidebar-item.active { background:${T.accentSurface}; color:${T.accent}; }
 `;
@@ -510,15 +511,17 @@ function Radios() {
 function Switches() {
   const [on1, setOn1] = useState(true);
   const [on2, setOn2] = useState(false);
+  const id1 = React.useId();
+  const id2 = React.useId();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, fontFamily: FONT }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button className={`a-switch${on1 ? " on" : ""}`} onClick={() => setOn1(!on1)} role="switch" aria-checked={on1}><div className="a-sw-thumb" /></button>
-        <span style={{ fontSize: 13, color: T.fg }}>Dark mode</span>
+        <button type="button" className={`a-switch${on1 ? " on" : ""}`} onClick={() => setOn1(!on1)} role="switch" aria-checked={on1} aria-labelledby={id1}><div className="a-sw-thumb" /></button>
+        <span id={id1} style={{ fontSize: 13, color: T.fg }}>Dark mode</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button className={`a-switch${on2 ? " on" : ""}`} onClick={() => setOn2(!on2)} role="switch" aria-checked={on2}><div className="a-sw-thumb" /></button>
-        <span style={{ fontSize: 13, color: T.fg }}>Notifications</span>
+        <button type="button" className={`a-switch${on2 ? " on" : ""}`} onClick={() => setOn2(!on2)} role="switch" aria-checked={on2} aria-labelledby={id2}><div className="a-sw-thumb" /></button>
+        <span id={id2} style={{ fontSize: 13, color: T.fg }}>Notifications</span>
       </div>
     </div>
   );
@@ -589,10 +592,10 @@ function Avatars() {
 function Alerts() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT }}>
-      <div className="a-alert a-alert-info"><AIcon name="info" size={16} color={T.infoFg} /><span>New update available.</span></div>
-      <div className="a-alert a-alert-success"><AIcon name="check_circle" size={16} color={T.successFg} /><span>Changes saved successfully.</span></div>
-      <div className="a-alert a-alert-warning"><AIcon name="warning" size={16} color={T.warningFg} /><span>API rate limit approaching.</span></div>
-      <div className="a-alert a-alert-danger"><AIcon name="error" size={16} color={T.dangerFg} /><span>Connection failed.</span></div>
+      <div className="a-alert a-alert-info" role="status" aria-live="polite"><AIcon name="info" size={16} color={T.infoFg} /><span>New update available.</span></div>
+      <div className="a-alert a-alert-success" role="status" aria-live="polite"><AIcon name="check_circle" size={16} color={T.successFg} /><span>Changes saved successfully.</span></div>
+      <div className="a-alert a-alert-warning" role="alert" aria-live="assertive"><AIcon name="warning" size={16} color={T.warningFg} /><span>API rate limit approaching.</span></div>
+      <div className="a-alert a-alert-danger" role="alert" aria-live="assertive"><AIcon name="error" size={16} color={T.dangerFg} /><span>Connection failed. Check your network and retry.</span></div>
     </div>
   );
 }
@@ -655,14 +658,15 @@ function DialogDemo() {
 
 function Accordion() {
   const [open, setOpen] = useState(true);
+  const bodyId = React.useId();
   return (
     <div style={{ fontFamily: FONT, maxWidth: 320 }}>
       <div className="a-accordion">
-        <button className="a-accordion-header" onClick={() => setOpen(!open)}>
+        <button type="button" className="a-accordion-header" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={bodyId}>
           <span>What is ausos DS?</span>
           <AIcon name={open ? "expand_less" : "expand_more"} size={16} color={T.fg3} />
         </button>
-        {open && <div className="a-accordion-body">A glassmorphism design system with frosted surfaces, muted accents, and semantic token architecture.</div>}
+        {open && <div id={bodyId} className="a-accordion-body">A glassmorphism design system with frosted surfaces, muted accents, and semantic token architecture.</div>}
       </div>
     </div>
   );
@@ -870,7 +874,7 @@ const PREVIEWS = {
   audit: () => <div style={{display:"flex",gap:2,padding:"6px 0"}}>{["check","check","close"].map((i,idx)=><span key={idx} className="material-symbols-outlined" style={{fontSize:12,color:idx<2?T.successFg:T.dangerFg}}>{i}</span>)}</div>,
   /* Components */
   buttons: () => <div style={{display:"flex",gap:4}}><button className="a-btn a-btn-primary" style={{height:20,fontSize:9,minWidth:0,padding:"0 8px"}}>Primary</button><button className="a-btn a-btn-secondary" style={{height:20,fontSize:9,minWidth:0,padding:"0 8px"}}>Secondary</button></div>,
-  inputs: () => <div style={{height:18,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"4px 4px 0 0",background:T.surface,padding:"0 6px",fontSize:9,color:T.fg3,display:"flex",alignItems:"center",maxWidth:120}}>Enter text...</div>,
+  inputs: () => <div style={{height:18,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"4px 4px 0 0",background:T.surface,padding:"0 6px",fontSize:9,color:T.fg3,display:"flex",alignItems:"center",maxWidth:120}}>Enter text&hellip;</div>,
   checkboxes: () => <div style={{display:"flex",gap:4}}><div style={{width:14,height:14,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:10,color:"#fff"}}>✓</span></div><div style={{width:14,height:14,borderRadius:4,border:`2px solid ${T.borderStrong}`}}/></div>,
   radios: () => <div style={{display:"flex",gap:4}}><div style={{width:14,height:14,borderRadius:7,border:`2px solid ${T.accent}`,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:6,height:6,borderRadius:3,background:T.accent}}/></div><div style={{width:14,height:14,borderRadius:7,border:`2px solid ${T.borderStrong}`}}/></div>,
   switches: () => <div style={{width:28,height:16,borderRadius:8,background:T.accent,position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:"#fff",position:"absolute",top:3,left:15,boxShadow:"0 1px 2px rgba(0,0,0,0.2)"}}/></div>,
@@ -881,7 +885,7 @@ const PREVIEWS = {
   alerts: () => <div style={{display:"flex",gap:3,padding:"4px 0"}}>{[T.infoFg,T.successFg,T.warningFg,T.dangerFg].map((c,i)=><div key={i} style={{width:8,height:8,borderRadius:4,background:c}}/>)}</div>,
   progress: () => <div style={{padding:"6px 0"}}><div style={{height:4,borderRadius:2,background:T.borderMd,overflow:"hidden"}}><div style={{width:"65%",height:"100%",borderRadius:2,background:T.accent}}/></div></div>,
   tooltips: () => <div style={{fontSize:8,color:T.fg,background:T.surface,border:`1px solid ${T.borderMd}`,borderRadius:6,padding:"3px 6px"}}>Tooltip</div>,
-  dropdowns: () => <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:8,color:T.fg3,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"4px 4px 0 0",background:T.surface,padding:"3px 6px",maxWidth:100}}><span>Select...</span><span style={{fontSize:10}}>▾</span></div>,
+  dropdowns: () => <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:8,color:T.fg3,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"4px 4px 0 0",background:T.surface,padding:"3px 6px",maxWidth:100}}><span>Select&hellip;</span><span style={{fontSize:10}} aria-hidden="true">▾</span></div>,
   dialog: () => <div style={{width:50,height:35,borderRadius:8,background:T.surface,border:`1px solid ${T.borderMd}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,color:T.fg3}}>Modal</div>,
   accordion: () => <div style={{borderRadius:6,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}><div style={{padding:"3px 6px",fontSize:8,fontWeight:600,color:T.fg,background:T.surface}}>Section ▾</div></div>,
   breadcrumbs: () => <div style={{display:"flex",gap:2,fontSize:8,color:T.fg3}}>Home <span style={{opacity:0.4}}>/</span> <span style={{color:T.fg,fontWeight:500}}>Page</span></div>,
@@ -986,7 +990,7 @@ const COMPS = [
   }},
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable glass grid, pagination.", render: function() {
     return <div style={{fontFamily:FONT}}>
-      <div style={{display:"flex",gap:6,marginBottom:8}}><input className="a-input" readOnly placeholder="Filter..." style={{flex:1}}/><button className="a-btn a-btn-primary" style={{minWidth:0,padding:"0 12px"}}>Export</button></div>
+      <div style={{display:"flex",gap:6,marginBottom:8}}><input className="a-input" aria-label="Filter" type="search" autoComplete="off" spellCheck={false} readOnly placeholder="Filter&hellip;" style={{flex:1}}/><button type="button" className="a-btn a-btn-primary" style={{minWidth:0,padding:"0 12px"}}>Export</button></div>
       <div style={{borderRadius:10,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}>
         <table className="a-table" style={{width:"100%"}}><thead><tr><th>Name</th><th>Status</th><th>Users</th></tr></thead>
         <tbody>{[{n:"Dashboard",s:"Active",u:"1,247"},{n:"Reports",s:"Pending",u:"892"}].map(r=><tr key={r.n}><td style={{fontWeight:500}}>{r.n}</td><td><span className={`a-badge ${r.s==="Active"?"a-badge-success":"a-badge-warning"}`} style={{fontSize:9}}>{r.s}</span></td><td>{r.u}</td></tr>)}</tbody></table>
