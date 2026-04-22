@@ -1672,17 +1672,17 @@ function PaginationDemo() {
 
 function ModalDemo() {
   return (
-    <div className="cb-modal" role="dialog" aria-label="Delete confirmation">
+    <div className="cb-modal" role="dialog" aria-modal="true" aria-labelledby="cb-modal-title" aria-describedby="cb-modal-desc">
       <div className="cb-modal-header">
         <div className="cb-modal-label">Danger zone</div>
-        <div className="cb-modal-title">Delete this project?</div>
+        <h2 id="cb-modal-title" className="cb-modal-title" style={{ margin: 0, fontSize: 20, fontWeight: 400, lineHeight: "28px", color: "var(--cds-text-primary)" }}>Delete this project?</h2>
       </div>
-      <div className="cb-modal-body">
+      <div className="cb-modal-body" id="cb-modal-desc">
         This permanently removes the project and all deployments. This action cannot be undone.
       </div>
       <div className="cb-modal-footer">
-        <button className="cb-btn cb-btn-secondary">Cancel</button>
-        <button className="cb-btn cb-btn-danger">Delete</button>
+        <button type="button" className="cb-btn cb-btn-secondary">Cancel</button>
+        <button type="button" className="cb-btn cb-btn-danger">Delete</button>
       </div>
     </div>
   );
@@ -1721,10 +1721,10 @@ function AvatarsDemo() {
 function LinksDemo() {
   return (
     <Col>
-      <a className="cb-link">Read the documentation</a>
-      <a className="cb-link cb-link-visited">Visited link</a>
+      <a className="cb-link" href="#carbon-docs">Read the documentation</a>
+      <a className="cb-link cb-link-visited" href="#carbon-visited">Visited link</a>
       <span style={{ fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary }}>
-        Inline <a className="cb-link cb-link-inline">Carbon Design System</a> link inside body text.
+        Inline <a className="cb-link cb-link-inline" href="#carbon-ds">Carbon Design System</a> link inside body text.
       </span>
     </Col>
   );
@@ -2244,7 +2244,11 @@ function SkipLinkDemo() {
         Press <kbd style={{ background: T.layer02, padding: "2px 6px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>Tab</kbd> to reveal the skip link.
       </div>
       <a className="cb-skip-link" href="#main-content">Skip to main content</a>
-      <div style={{ padding: 16, background: T.layer01, fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary, border: `1px solid ${T.borderSubtle01}` }} id="main-content">
+      <div
+        id="main-content"
+        tabIndex={-1}
+        style={{ padding: 16, background: T.layer01, fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary, border: `1px solid ${T.borderSubtle01}`, scrollMarginTop: 64 }}
+      >
         Main content area. Skip link routes keyboard focus here, per WCAG 2.4.1.
       </div>
     </Col>
@@ -2396,25 +2400,43 @@ function PatAppShell() {
 }
 
 function PatLogin() {
+  const idEmail = React.useId();
+  const idPwd = React.useId();
   return (
-    <div style={{ maxWidth: 360, fontFamily: CARBON_FONT }}>
+    <form style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
       <div style={{ fontSize: 32, fontWeight: 400, color: T.textPrimary, marginBottom: 12 }}>Log in</div>
-      <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your IBMid to continue.</div>
+      <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your <span translate="no">IBMid</span> to continue.</div>
       <Col gap={16}>
         <div className="cb-input-wrap">
-          <label className="cb-input-label">IBMid</label>
-          <input className="cb-input" placeholder="name@example.com" />
+          <label className="cb-input-label" htmlFor={idEmail}>IBMid</label>
+          <input
+            id={idEmail}
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            className="cb-input"
+            placeholder="name@example.com"
+          />
         </div>
         <div className="cb-input-wrap">
-          <label className="cb-input-label">Password</label>
-          <input className="cb-input" type="password" placeholder="••••••••" />
+          <label className="cb-input-label" htmlFor={idPwd}>Password</label>
+          <input
+            id={idPwd}
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            className="cb-input"
+            aria-label="Password"
+          />
         </div>
-        <button className="cb-btn cb-btn-primary" style={{ width: "100%", justifyContent: "space-between" }}>
-          Continue <CIcon name="arrow_forward" size={16} color="#ffffff" />
+        <button type="submit" className="cb-btn cb-btn-primary" style={{ width: "100%", justifyContent: "space-between" }}>
+          Continue <CIcon name="arrow_forward" size={16} color="#ffffff" aria-hidden="true" />
         </button>
-        <a className="cb-link">Forgot your IBMid?</a>
+        <a className="cb-link" href="#forgot-ibmid">Forgot your <span translate="no">IBMid</span>?</a>
       </Col>
-    </div>
+    </form>
   );
 }
 

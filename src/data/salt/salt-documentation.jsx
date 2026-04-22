@@ -777,7 +777,7 @@ function PatListDetail(){
   const items=[{t:"Dashboard Report",d:"Q4 revenue analysis with regional breakdowns"},{t:"User Metrics",d:"Monthly active users and retention data"},{t:"System Alerts",d:"Infrastructure health and uptime monitoring"}];
   return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
     <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
-      {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent"}}>{it.t}</div>)}
+      {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
     </div>
     <div style={{flex:1,padding:12}}>
       <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
@@ -816,7 +816,7 @@ function PatLogin(){
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Email</label><input className="s-input" placeholder="you@company.com" style={{fontSize:11,marginTop:2}}/></div>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Password</label><input className="s-input" type="password" placeholder="••••••••" style={{fontSize:11,marginTop:2}}/></div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox"/> Remember me</label><span style={{fontSize:10,color:T.accent,cursor:"pointer"}}>Forgot?</span></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox" name="remember"/> Remember me</label><a href="#forgot-password" style={{fontSize:10,color:T.accent,textDecoration:"none"}}>Forgot your password?</a></div>
       <button className="s-btn s-btn-solid" style={{width:"100%",marginTop:4}}>Sign In</button>
     </div>
   </div>;
@@ -827,7 +827,7 @@ function PatSettings(){
   const tabs=["General","Security","Notifications"];
   return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
     <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
-      {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+      {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
     </div>
     <div style={{flex:1,padding:12}}>
       <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
@@ -863,10 +863,10 @@ function PatWizard(){
     <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
       {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
         {i>0&&<div style={{flex:1,height:2,background:i<=step?T.accent:T.border}}/>}
-        <div onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
-          <div style={{width:20,height:20,borderRadius:10,background:i<step?T.accent:i===step?T.accent:T.border,color:i<=step?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600}}>{i<step?"✓":i+1}</div>
+        <button type="button" onClick={()=>setStep(i)} aria-current={i===step?"step":undefined} aria-label={`Step ${i+1}: ${s}${i<step?" (complete)":""}`} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",background:"transparent",border:"none",padding:0,fontFamily:FONT}}>
+          <span aria-hidden="true" style={{width:20,height:20,borderRadius:10,background:i<step?T.accent:i===step?T.accent:T.border,color:i<=step?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600}}>{i<step?"✓":i+1}</span>
           <span style={{fontSize:10,color:i===step?T.fg:T.fg3,fontWeight:i===step?600:400}}>{s}</span>
-        </div>
+        </button>
       </React.Fragment>)}
     </div>
     <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:12,minHeight:60}}>
@@ -1059,7 +1059,7 @@ function ToastDemo(){
         <SIcon name={t.icon} size={16} color={t.border}/>
         <span style={{flex:1}}>{t.msg}</span>
         <span style={{fontSize:9,color:T.fg3,background:T.bg2,padding:"1px 4px",borderRadius:2}}>{t.status}</span>
-        <button onClick={()=>{const v=[...visible];v[i]=false;setVisible(v);}} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="close" size={14} color={T.fg3}/></button>
+        <button type="button" aria-label="Dismiss notification" onClick={()=>{const v=[...visible];v[i]=false;setVisible(v);}} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="close" size={14} color={T.fg3}/></button>
       </div>
     ))}
     {visible.some(v=>!v)&&<button className="s-btn s-btn-bordered" onClick={()=>setVisible([true,true,true,true])} style={{alignSelf:"flex-start"}}>Reset All</button>}
@@ -1111,7 +1111,7 @@ function TagDemo(){
     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
       {tags.map((t,i)=>(
         <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:99,border:`1px solid ${T.border}`,fontSize:11,color:T.fg,fontFamily:FONT,background:T.bg2}}>
-          {t}<button onClick={()=>setTags(tags.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><SIcon name="close" size={10} color={T.fg3}/></button>
+          {t}<button type="button" aria-label={`Remove ${t}`} onClick={()=>setTags(tags.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><SIcon name="close" size={10} color={T.fg3}/></button>
         </span>
       ))}
     </div>
@@ -1125,7 +1125,7 @@ function DrawerDemo(){
     <button className="s-btn s-btn-solid" onClick={()=>setOpen(!open)} style={{alignSelf:"flex-start"}}>{open?"Close":"Open"} Drawer</button>
     {open&&<div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:120}}>
       <div style={{width:200,background:T.bg,borderRight:`1px solid ${T.border}`,padding:12,display:"flex",flexDirection:"column",gap:6}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:600,color:T.fg,fontFamily:FONT}}>Drawer</span><button onClick={()=>setOpen(false)} style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="close" size={14} color={T.fg3}/></button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:600,color:T.fg,fontFamily:FONT}}>Drawer</span><button type="button" aria-label="Close drawer" onClick={()=>setOpen(false)} style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="close" size={14} color={T.fg3}/></button></div>
         <div style={{fontSize:11,color:T.fg3,fontFamily:FONT}}>Panel content here</div>
       </div>
       <div style={{flex:1,background:T.bg2,padding:12,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:11,color:T.fg3}}>Main content</span></div>
