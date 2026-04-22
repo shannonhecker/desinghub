@@ -482,10 +482,19 @@ function Inputs() {
 
 function Checkboxes() {
   const [checks, setChecks] = useState([true, false, true]);
+  const toggle = (i) => { const n = [...checks]; n[i] = !n[i]; setChecks(n); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT }}>
       {["Option A", "Option B", "Option C"].map((label, i) => (
-        <div key={label} className={`a-checkbox${checks[i] ? " checked" : ""}`} onClick={() => { const n = [...checks]; n[i] = !n[i]; setChecks(n); }} tabIndex={0} role="checkbox" aria-checked={checks[i]}>
+        <div
+          key={label}
+          className={`a-checkbox${checks[i] ? " checked" : ""}`}
+          onClick={() => toggle(i)}
+          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(i); } }}
+          tabIndex={0}
+          role="checkbox"
+          aria-checked={checks[i]}
+        >
           <div className="a-cb-box">{checks[i] && <AIcon name="check" size={12} color={T.accentFg} />}</div>
           {label}
         </div>
@@ -496,10 +505,23 @@ function Checkboxes() {
 
 function Radios() {
   const [sel, setSel] = useState(0);
+  const labels = ["Small", "Medium", "Large"];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, fontFamily: FONT }}>
-      {["Small", "Medium", "Large"].map((label, i) => (
-        <div key={label} className={`a-radio${sel === i ? " selected" : ""}`} onClick={() => setSel(i)} tabIndex={0} role="radio" aria-checked={sel === i}>
+    <div role="radiogroup" aria-label="Size" style={{ display: "flex", flexDirection: "column", gap: 4, fontFamily: FONT }}>
+      {labels.map((label, i) => (
+        <div
+          key={label}
+          className={`a-radio${sel === i ? " selected" : ""}`}
+          onClick={() => setSel(i)}
+          onKeyDown={(e) => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSel(i); }
+            else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setSel((sel + 1) % labels.length); }
+            else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setSel((sel - 1 + labels.length) % labels.length); }
+          }}
+          tabIndex={sel === i ? 0 : -1}
+          role="radio"
+          aria-checked={sel === i}
+        >
           <div className="a-radio-circle">{sel === i && <div style={{ width: 8, height: 8, borderRadius: 4, background: T.accent }} />}</div>
           {label}
         </div>
@@ -532,12 +554,28 @@ function Tabs() {
   const tabs = ["General", "Security", "Billing", "Notifications"];
   return (
     <div style={{ fontFamily: FONT }}>
-      <div className="a-tabs">
+      <div className="a-tabs" role="tablist" aria-label="Settings sections">
         {tabs.map((t, i) => (
-          <button key={t} className={`a-tab${active === i ? " active" : ""}`} onClick={() => setActive(i)}>{t}</button>
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            id={`a-tab-${i}`}
+            aria-selected={active === i}
+            aria-controls={`a-tabpanel-${i}`}
+            tabIndex={active === i ? 0 : -1}
+            className={`a-tab${active === i ? " active" : ""}`}
+            onClick={() => setActive(i)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setActive((active + 1) % tabs.length);
+              else if (e.key === "ArrowLeft") setActive((active - 1 + tabs.length) % tabs.length);
+              else if (e.key === "Home") setActive(0);
+              else if (e.key === "End") setActive(tabs.length - 1);
+            }}
+          >{t}</button>
         ))}
       </div>
-      <div style={{ padding: "12px 0", fontSize: 12, color: T.fg2 }}>Content for {tabs[active]} tab.</div>
+      <div id={`a-tabpanel-${active}`} role="tabpanel" aria-labelledby={`a-tab-${active}`} style={{ padding: "12px 0", fontSize: 12, color: T.fg2 }}>Content for {tabs[active]} tab.</div>
     </div>
   );
 }
@@ -624,18 +662,39 @@ function Tooltips() {
 
 function Dropdowns() {
   const [open, setOpen] = useState(false);
+  const [sel, setSel] = useState("Option A");
+  const listboxId = React.useId();
+  const options = ["Option A", "Option B", "Option C"];
   return (
     <div style={{ fontFamily: FONT, position: "relative", display: "inline-block" }}>
-      <button className="a-dropdown-trigger" onClick={() => setOpen(!open)}>
-        <span>Select option</span>
+      <button
+        type="button"
+        className="a-dropdown-trigger"
+        onClick={() => setOpen(!open)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+      >
+        <span>{sel}</span>
         <AIcon name={open ? "expand_less" : "expand_more"} size={16} color={T.fg3} />
       </button>
       {open && (
-        <div className="a-dropdown-menu">
-          {["Option A", "Option B", "Option C"].map(o => (
-            <div key={o} className="a-dropdown-item" onClick={() => setOpen(false)}>{o}</div>
+        <ul id={listboxId} className="a-dropdown-menu" role="listbox" aria-label="Select option">
+          {options.map(o => (
+            <li
+              key={o}
+              role="option"
+              aria-selected={sel === o}
+              tabIndex={0}
+              className="a-dropdown-item"
+              onClick={() => { setSel(o); setOpen(false); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSel(o); setOpen(false); }
+                else if (e.key === "Escape") setOpen(false);
+              }}
+            >{o}</li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -714,26 +773,46 @@ function DatePickerDemo() {
   const [sel, setSel] = useState(15);
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const weekdays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  const monthFormatter = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+  const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const todayDay = new Date().getDate();
   return (
     <div style={{ fontFamily: FONT, maxWidth: 280 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <AIcon name="chevron_left" size={18} color={T.fg3} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>April 2026</span>
-        <AIcon name="chevron_right" size={18} color={T.fg3} />
+        <button type="button" aria-label="Previous month" style={{ background: "transparent", border: "none", padding: 4, cursor: "pointer", borderRadius: 4, color: T.fg3 }}>
+          <AIcon name="chevron_left" size={18} color={T.fg3} />
+        </button>
+        <span aria-live="polite" style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>{monthFormatter.format(new Date(2026, 3, 1))}</span>
+        <button type="button" aria-label="Next month" style={{ background: "transparent", border: "none", padding: 4, cursor: "pointer", borderRadius: 4, color: T.fg3 }}>
+          <AIcon name="chevron_right" size={18} color={T.fg3} />
+        </button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, textAlign: "center" }}>
-        {weekdays.map(d => <div key={d} style={{ fontSize: 10, color: T.fg3, fontWeight: 600, padding: "4px 0" }}>{d}</div>)}
+      <div role="grid" aria-label={monthFormatter.format(new Date(2026, 3, 1))} style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, textAlign: "center" }}>
+        {weekdays.map(d => <div key={d} role="columnheader" style={{ fontSize: 10, color: T.fg3, fontWeight: 600, padding: "4px 0" }}>{d}</div>)}
         {/* Offset for April 2026 starting on Wednesday */}
-        {[null, null].map((_, i) => <div key={`e${i}`} />)}
-        {days.map(d => (
-          <button key={d} onClick={() => setSel(d)} style={{
-            width: 32, height: 32, borderRadius: 9999, border: "none", cursor: "pointer",
-            fontSize: 12, fontWeight: sel === d ? 600 : 400, fontFamily: FONT,
-            background: sel === d ? T.accent : "transparent",
-            color: sel === d ? T.accentFg : d === new Date().getDate() ? T.accent : T.fg,
-            transition: "background 0.15s, color 0.15s",
-          }}>{d}</button>
-        ))}
+        {[null, null].map((_, i) => <div key={`e${i}`} role="gridcell" aria-hidden="true" />)}
+        {days.map(d => {
+          const isSelected = sel === d;
+          const isToday = d === todayDay;
+          const fullDate = dayFormatter.format(new Date(2026, 3, d));
+          return (
+            <button
+              key={d}
+              type="button"
+              role="gridcell"
+              aria-label={fullDate}
+              aria-pressed={isSelected}
+              aria-current={isToday ? "date" : undefined}
+              onClick={() => setSel(d)}
+              style={{
+                width: 32, height: 32, borderRadius: 9999, border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: isSelected ? 600 : 400, fontFamily: FONT,
+                background: isSelected ? T.accent : "transparent",
+                color: isSelected ? T.accentFg : isToday ? T.accent : T.fg,
+                transition: "background-color 150ms, color 150ms",
+              }}>{d}</button>
+          );
+        })}
       </div>
     </div>
   );

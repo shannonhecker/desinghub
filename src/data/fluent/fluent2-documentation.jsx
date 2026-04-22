@@ -301,7 +301,15 @@ function Checkboxes() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {["Notifications", "Email updates", "SMS alerts"].map((l, i) => (
-        <div key={i} className={`f-checkbox${checks[i] ? " checked" : ""}`} tabIndex={0} role="checkbox" aria-checked={checks[i]} onClick={() => toggle(i)} onKeyDown={e => e.key === " " && (e.preventDefault(), toggle(i))}>
+        <div
+          key={i}
+          className={`f-checkbox${checks[i] ? " checked" : ""}`}
+          tabIndex={0}
+          role="checkbox"
+          aria-checked={checks[i]}
+          onClick={() => toggle(i)}
+          onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(i); } }}
+        >
           <div className="f-cb-box">{checks[i] && <FIcon name="check" size={12} color={T.fgOnBrand} />}</div>
           <span>{l}</span>
         </div>
@@ -312,10 +320,23 @@ function Checkboxes() {
 
 function Radios() {
   const [sel, setSel] = useState(0);
+  const labels = ["Option A", "Option B", "Option C"];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {["Option A", "Option B", "Option C"].map((l, i) => (
-        <div key={i} className={`f-radio${sel === i ? " selected" : ""}`} tabIndex={0} role="radio" aria-checked={sel === i} onClick={() => setSel(i)} onKeyDown={e => e.key === " " && setSel(i)}>
+    <div role="radiogroup" aria-label="Options" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {labels.map((l, i) => (
+        <div
+          key={i}
+          className={`f-radio${sel === i ? " selected" : ""}`}
+          tabIndex={sel === i ? 0 : -1}
+          role="radio"
+          aria-checked={sel === i}
+          onClick={() => setSel(i)}
+          onKeyDown={e => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSel(i); }
+            else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setSel((sel + 1) % labels.length); }
+            else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setSel((sel - 1 + labels.length) % labels.length); }
+          }}
+        >
           <div className="f-radio-circle">{sel === i && <div style={{ width: 8, height: 8, borderRadius: 4, background: T.brandBg }} />}</div>
           <span>{l}</span>
         </div>
@@ -388,14 +409,31 @@ function Avatars() {
 
 function Tabs() {
   const [tab, setTab] = useState(0);
+  const labels = ["Overview", "Activity", "Files", "Settings"];
   return (
     <div>
-      <div className="f-tablist">
-        {["Overview", "Activity", "Files", "Settings"].map((l, i) => (
-          <button key={i} className={`f-tab${tab === i ? " active" : ""}`} onClick={() => setTab(i)}>{l}</button>
+      <div className="f-tablist" role="tablist" aria-label="Project sections">
+        {labels.map((l, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={tab === i}
+            tabIndex={tab === i ? 0 : -1}
+            id={`f-tab-${i}`}
+            aria-controls={`f-tabpanel-${i}`}
+            className={`f-tab${tab === i ? " active" : ""}`}
+            onClick={() => setTab(i)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setTab((tab + 1) % labels.length);
+              else if (e.key === "ArrowLeft") setTab((tab - 1 + labels.length) % labels.length);
+              else if (e.key === "Home") setTab(0);
+              else if (e.key === "End") setTab(labels.length - 1);
+            }}
+          >{l}</button>
         ))}
       </div>
-      <div style={{ padding: 16, fontSize: 14, color: T.fg2, fontFamily: FONT }}>Content for "{["Overview", "Activity", "Files", "Settings"][tab]}" tab.</div>
+      <div id={`f-tabpanel-${tab}`} role="tabpanel" aria-labelledby={`f-tab-${tab}`} style={{ padding: 16, fontSize: 14, color: T.fg2, fontFamily: FONT }}>Content for &ldquo;{labels[tab]}&rdquo; tab.</div>
     </div>
   );
 }

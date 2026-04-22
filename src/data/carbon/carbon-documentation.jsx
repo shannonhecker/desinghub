@@ -1436,13 +1436,29 @@ function TabsDemo() {
   const tabs = ["Overview", "Usage", "Style", "Accessibility", "Code"];
   return (
     <Col>
-      <div className="cb-tabs">
+      <div className="cb-tabs" role="tablist" aria-label="Component documentation">
         {tabs.map((t, idx) => (
-          <button key={t} className={`cb-tab${idx === i ? " active" : ""}`} onClick={() => setI(idx)}>{t}</button>
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            id={`cb-tab-${idx}`}
+            aria-selected={idx === i}
+            aria-controls={`cb-tabpanel-${idx}`}
+            tabIndex={idx === i ? 0 : -1}
+            className={`cb-tab${idx === i ? " active" : ""}`}
+            onClick={() => setI(idx)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setI((i + 1) % tabs.length);
+              else if (e.key === "ArrowLeft") setI((i - 1 + tabs.length) % tabs.length);
+              else if (e.key === "Home") setI(0);
+              else if (e.key === "End") setI(tabs.length - 1);
+            }}
+          >{t}</button>
         ))}
       </div>
-      <div style={{ padding: "16px 0", fontFamily: CARBON_FONT, fontSize: 14, color: T.textSecondary }}>
-        {tabs[i]} panel content — Carbon tabs live above their associated panels and use a 2px interactive underline.
+      <div id={`cb-tabpanel-${i}`} role="tabpanel" aria-labelledby={`cb-tab-${i}`} style={{ padding: "16px 0", fontFamily: CARBON_FONT, fontSize: 14, color: T.textSecondary }}>
+        {tabs[i]} panel content &mdash; Carbon tabs live above their associated panels and use a 2px interactive underline.
       </div>
     </Col>
   );
