@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { ausosTokenVars, AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER } from "./tokens";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as AUSOS_THEMES, buildCSS as ausosBuildCSS, COMPS as AUSOS_COMPS, CATS as AUSOS_CATS, AIcon, FONT as AUSOS_FONT };
+export { AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER };
 export function setAusosT(theme) { T = theme; }
 export function getAusosT() { return T; }
 export function getAusosPreviews() { return PREVIEWS; }
@@ -128,16 +130,16 @@ function AIcon({ name, size = 18, color }) {
 }
 
 /* ── GLOBAL STYLES ── */
+/* Mode detection — theme objects declare { name: 'Dark'|'Light' } and are
+   swapped via setAusosT(). ausosTokenVars() emits mode-aware CSS var
+   declarations for motion, opacity-glass, radius, and shadow. */
+const modeOf = (T) => (T?.name === "Light" ? "light" : "dark");
 const buildCSS = (T) => `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --a-dur-fast: 150ms;
-  --a-dur-mid: 250ms;
-  --a-dur-slow: 350ms;
-  --a-ease: cubic-bezier(0.22, 0.68, 0, 1);
-  --a-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  ${ausosTokenVars(modeOf(T))}
   --a-gradient: ${T.gradient};
   --a-gradient-subtle: ${T.gradientSubtle};
 }
@@ -148,7 +150,7 @@ const buildCSS = (T) => `
 }
 
 /* === BUTTONS (Glass system - no solid fills, depth via opacity) === */
-.a-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:72px; border-radius:9999px; padding:0 16px; font-family:${FONT}; font-size:13px; font-weight:500; cursor:pointer; border:1px solid ${T.border}; outline:none; position:relative; overflow:hidden; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; transition:all var(--a-dur-fast) var(--a-ease); box-shadow:${T.insetHighlight}; }
+.a-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:32px; min-width:72px; border-radius:var(--a-radius-full); padding:0 16px; font-family:${FONT}; font-size:13px; font-weight:500; cursor:pointer; border:1px solid ${T.border}; outline:none; position:relative; overflow:hidden; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; transition:all var(--a-dur-fast) var(--a-ease); box-shadow:${T.insetHighlight}; }
 .a-btn:focus-visible { outline:2px solid ${T.fg3}; outline-offset:2px; }
 .a-btn:disabled { opacity:0.35; cursor:default; pointer-events:none; }
 
@@ -191,9 +193,9 @@ const buildCSS = (T) => `
 .a-radio.selected .a-radio-circle { border-color:${T.accent}; border-width:2px; }
 
 /* === SWITCH === */
-.a-switch { width:44px; height:24px; border-radius:12px; background:${T.borderMd}; border:2px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:all var(--a-dur-mid) var(--a-ease); padding:0; }
+.a-switch { width:44px; height:24px; border-radius:var(--a-radius-lg); background:${T.borderMd}; border:2px solid ${T.borderStrong}; cursor:pointer; position:relative; outline:none; transition:all var(--a-dur-mid) var(--a-ease); padding:0; }
 .a-switch:focus-visible { outline:2px solid ${T.accent}; outline-offset:2px; }
-.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:8px; background:#ffffff; top:2px; left:2px; transition:all var(--a-dur-mid) var(--a-ease); box-shadow:0 1px 3px rgba(0,0,0,0.15); }
+.a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:var(--a-radius-md); background:#ffffff; top:2px; left:2px; transition:all var(--a-dur-mid) var(--a-ease); box-shadow:var(--a-shadow-sm); }
 .a-switch.on { background:${T.accent}; border-color:${T.accent}; }
 .a-switch.on .a-sw-thumb { left:22px; background:#ffffff; }
 
@@ -205,12 +207,12 @@ const buildCSS = (T) => `
 .a-tab:focus-visible { outline:2px solid ${T.accent}; outline-offset:-2px; }
 
 /* === CARD === */
-.a-card { border-radius:16px; background:${T.cardBg}; border:1px solid ${T.borderMd}; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; cursor:pointer; outline:none; transition:background var(--a-dur-fast) var(--a-ease), border-color var(--a-dur-fast) var(--a-ease), box-shadow var(--a-dur-mid) var(--a-ease); overflow:hidden; box-shadow:${T.insetHighlight}, 0 2px 8px rgba(0,0,0,0.08); }
-.a-card:hover { background:${T.cardBgHover}; border-color:${T.borderStrong}; box-shadow:${T.shadow}, ${T.insetHighlight}; transform:translateY(-1px); }
+.a-card { border-radius:var(--a-radius-xl); background:${T.cardBg}; border:1px solid ${T.borderMd}; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; cursor:pointer; outline:none; transition:background var(--a-dur-fast) var(--a-ease), border-color var(--a-dur-fast) var(--a-ease), box-shadow var(--a-dur-mid) var(--a-ease); overflow:hidden; box-shadow:${T.insetHighlight}, var(--a-shadow-sm); }
+.a-card:hover { background:${T.cardBgHover}; border-color:${T.borderStrong}; box-shadow:var(--a-shadow-md), ${T.insetHighlight}; transform:translateY(-1px); }
 .a-card:focus-visible { outline:2px solid ${T.accent}; outline-offset:2px; }
 
 /* === BADGE === */
-.a-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:22px; border-radius:10000px; padding:0 10px; font-size:11px; font-weight:500; font-family:${FONT}; backdrop-filter:${T.glass}; border:1px solid transparent; }
+.a-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:22px; border-radius:var(--a-radius-full); padding:0 10px; font-size:11px; font-weight:500; font-family:${FONT}; backdrop-filter:${T.glass}; border:1px solid transparent; }
 .a-badge-accent { background:${T.accentSurface}; color:${T.fg2}; border-color:${T.borderMd}; }
 .a-badge-default { background:${T.surface}; color:${T.fg3}; border-color:${T.border}; }
 .a-badge-danger { background:${T.dangerBg}; color:${T.dangerFg}; border-color:${T.dangerBorder}; }
@@ -221,22 +223,22 @@ const buildCSS = (T) => `
 .a-avatar { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; font-family:${FONT}; font-weight:600; font-size:12px; color:${T.fg2}; background:${T.surface}; border:1px solid ${T.borderMd}; }
 
 /* === ALERT === */
-.a-alert { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:12px; font-family:${FONT}; font-size:12px; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; border:1px solid; box-shadow:${T.insetHighlight}; }
+.a-alert { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; border-radius:var(--a-radius-lg); font-family:${FONT}; font-size:12px; backdrop-filter:${T.glass}; -webkit-backdrop-filter:${T.glass}; border:1px solid; box-shadow:${T.insetHighlight}; }
 .a-alert-info { background:${T.infoBg}; color:${T.infoFg}; border-color:${T.infoBorder}; }
 .a-alert-success { background:${T.successBg}; color:${T.successFg}; border-color:${T.successBorder}; }
 .a-alert-warning { background:${T.warningBg}; color:${T.warningFg}; border-color:${T.warningBorder}; }
 .a-alert-danger { background:${T.dangerBg}; color:${T.dangerFg}; border-color:${T.dangerBorder}; }
 
 /* === PROGRESS === */
-.a-progress-track { height:4px; border-radius:2px; background:${T.surface}; overflow:hidden; }
-.a-progress-fill { height:100%; border-radius:2px; background:${T.accent}; transition:width var(--a-dur-mid) var(--a-ease); }
+.a-progress-track { height:4px; border-radius:var(--a-radius-xs); background:${T.surface}; overflow:hidden; }
+.a-progress-fill { height:100%; border-radius:var(--a-radius-xs); background:${T.accent}; transition:width var(--a-dur-mid) var(--a-ease); }
 
 /* === TOOLTIP === */
-.a-tooltip { position:absolute; background:${T.surfaceLg}; backdrop-filter:${T.glassLg}; -webkit-backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:8px; padding:6px 10px; font-family:${FONT}; font-size:11px; color:${T.fg}; box-shadow:${T.shadowLg}; white-space:nowrap; }
+.a-tooltip { position:absolute; background:${T.surfaceLg}; backdrop-filter:${T.glassLg}; -webkit-backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:var(--a-radius-md); padding:6px 10px; font-family:${FONT}; font-size:11px; color:${T.fg}; box-shadow:var(--a-shadow-lg); white-space:nowrap; }
 
 /* === DIALOG === */
 .a-dialog-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
-.a-dialog { background:${T.surfaceLg}; backdrop-filter:${T.glassLg}; -webkit-backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:20px; padding:28px; min-width:320px; box-shadow:${T.shadowLg}, ${T.insetHighlight}; font-family:${FONT}; }
+.a-dialog { background:${T.surfaceLg}; backdrop-filter:${T.glassLg}; -webkit-backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:var(--a-radius-2xl); padding:28px; min-width:320px; box-shadow:var(--a-shadow-lg), ${T.insetHighlight}; font-family:${FONT}; }
 
 /* === DATA TABLE === */
 .a-table { width:100%; border-collapse:separate; border-spacing:0; font-family:${FONT}; font-size:12px; }
@@ -254,7 +256,7 @@ const buildCSS = (T) => `
 .a-dropdown { position:relative; display:inline-block; }
 .a-dropdown-trigger { display:flex; align-items:center; justify-content:space-between; gap:8px; height:40px; padding:0 14px; border:none; border-bottom:2px solid ${T.borderStrong}; border-radius:10px 10px 0 0; background:${T.surface}; backdrop-filter:${T.glass}; color:${T.fg}; font-family:${FONT}; font-size:13px; cursor:pointer; transition:border-color var(--a-dur-fast); }
 .a-dropdown-trigger:hover { border-bottom-color:${T.fg2}; }
-.a-dropdown-menu { position:absolute; top:calc(100% + 4px); left:0; right:0; background:${T.bg2}; backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:14px; box-shadow:${T.shadowLg}; overflow:hidden; z-index:10; }
+.a-dropdown-menu { position:absolute; top:calc(100% + 4px); left:0; right:0; background:${T.bg2}; backdrop-filter:${T.glassLg}; border:1px solid ${T.borderMd}; border-radius:14px; box-shadow:var(--a-shadow-lg); overflow:hidden; z-index:10; }
 .a-dropdown-item { padding:7px 10px; font-size:12px; color:${T.fg}; cursor:pointer; transition:background var(--a-dur-fast); }
 .a-dropdown-item:hover { background:${T.surface}; }
 
