@@ -259,6 +259,7 @@ const buildCSS = (T) => `
 /* Motion values mirror M3_MOTION (defined above); shape values come from
    M3_SHAPE via m3ShapeVars(). Both are single-source in ./tokens.ts. */
 :root {
+  color-scheme: ${/Dark/i.test(T?.name || "") ? "dark" : "light"};
   --m3-ease-standard: ${M3_MOTION.easing.standard};
   --m3-ease-standard-decel: ${M3_MOTION.easing.standardDecel};
   --m3-ease-standard-accel: ${M3_MOTION.easing.standardAccel};
@@ -339,7 +340,7 @@ const buildCSS = (T) => `
 .m3-tf-filled .m3-tf-content { padding-top:8px; }
 .m3-tf-outlined .m3-tf-content { padding-top:0; }
 
-.m3-tf-label { position:absolute; left:0; top:50%; transform:translateY(-50%); font-size:16px; color:${T.onSurfaceVariant}; font-family:Roboto,sans-serif; transition:all var(--m3-dur-short3) var(--m3-ease-standard) cubic-bezier(0.2,0,0,1); pointer-events:none; letter-spacing:0.5px; line-height:16px; }
+.m3-tf-label { position:absolute; left:0; top:50%; transform:translateY(-50%); font-size:16px; color:${T.onSurfaceVariant}; font-family:Roboto,sans-serif; transition:top var(--m3-dur-short3) var(--m3-ease-standard),transform var(--m3-dur-short3) var(--m3-ease-standard),font-size var(--m3-dur-short3) var(--m3-ease-standard),letter-spacing var(--m3-dur-short3) var(--m3-ease-standard),color var(--m3-dur-short3) var(--m3-ease-standard),background-color var(--m3-dur-short3) var(--m3-ease-standard),padding var(--m3-dur-short3) var(--m3-ease-standard); pointer-events:none; letter-spacing:0.5px; line-height:16px; }
 
 /* Label moves up when focused or has value */
 .m3-tf-filled:focus-within .m3-tf-label,
@@ -385,9 +386,9 @@ const buildCSS = (T) => `
 .m3-card-outlined:hover { background:${T.surfaceContainerLowest}; box-shadow:0 1px 3px 1px rgba(0,0,0,0.06), 0 1px 2px 0 rgba(0,0,0,0.08); }
 
 /* === SWITCH === */
-.m3-switch { width:52px; height:32px; border-radius:16px; position:relative; cursor:pointer; border:2px solid ${T.outline}; background:${T.surfaceContainerHighest}; padding:0; outline:none; transition:all var(--m3-dur-short4) var(--m3-ease-standard); }
+.m3-switch { width:52px; height:32px; border-radius:16px; position:relative; cursor:pointer; border:2px solid ${T.outline}; background:${T.surfaceContainerHighest}; padding:0; outline:none; transition:background-color var(--m3-dur-short4) var(--m3-ease-standard),border-color var(--m3-dur-short4) var(--m3-ease-standard); }
 .m3-switch:focus-visible { outline:2px solid ${T.primary}; outline-offset:2px; }
-.m3-switch .thumb { position:absolute; border-radius:999px; background:${T.outline}; transition:all var(--m3-dur-short4) var(--m3-ease-standard) cubic-bezier(0.2,0,0,1); display:flex; align-items:center; justify-content:center; font-size:11px; }
+.m3-switch .thumb { position:absolute; border-radius:999px; background:${T.outline}; transition:width var(--m3-dur-short4) var(--m3-ease-standard),height var(--m3-dur-short4) var(--m3-ease-standard),left var(--m3-dur-short4) var(--m3-ease-standard),top var(--m3-dur-short4) var(--m3-ease-standard),background-color var(--m3-dur-short4) var(--m3-ease-standard),color var(--m3-dur-short4) var(--m3-ease-standard); display:flex; align-items:center; justify-content:center; font-size:11px; }
 .m3-switch:not(.on) .thumb { width:16px; height:16px; top:6px; left:6px; }
 .m3-switch:not(.on):hover .thumb { width:24px; height:24px; top:2px; left:2px; }
 .m3-switch:not(.on):active .thumb { width:28px; height:28px; top:0; left:0; }
@@ -397,7 +398,7 @@ const buildCSS = (T) => `
 .m3-switch.on:active .thumb { width:28px; height:28px; top:0; left:20px; }
 .m3-switch:disabled { opacity:0.38; cursor:default; }
 /* State layer circle */
-.m3-switch::before { content:''; position:absolute; width:40px; height:40px; border-radius:20px; top:-6px; transition:all var(--m3-dur-short4) var(--m3-ease-standard), background var(--m3-dur-short3) var(--m3-ease-standard); background:transparent; pointer-events:none; }
+.m3-switch::before { content:''; position:absolute; width:40px; height:40px; border-radius:20px; top:-6px; transition:left var(--m3-dur-short4) var(--m3-ease-standard),opacity var(--m3-dur-short4) var(--m3-ease-standard),background-color var(--m3-dur-short3) var(--m3-ease-standard); background:transparent; pointer-events:none; }
 .m3-switch:not(.on)::before { left:-2px; }
 .m3-switch.on::before { left:14px; }
 .m3-switch:hover::before { background:${T.onSurface}14; }
@@ -534,7 +535,7 @@ const buildCSS = (T) => `
 
 /* === DATE PICKER === */
 .m3-dp { border-radius:28px; background:${T.surfaceContainerHigh}; padding:16px; font-family:Roboto,sans-serif; }
-.m3-dp-day { width:32px; height:32px; border-radius:16px; border:none; cursor:pointer; font-size:13px; font-family:Roboto,sans-serif; background:transparent; color:${T.onSurface}; display:flex; align-items:center; justify-content:center; margin:1px auto; transition:all var(--m3-dur-short2) var(--m3-ease-standard); outline:none; }
+.m3-dp-day { width:32px; height:32px; border-radius:16px; border:none; cursor:pointer; font-size:13px; font-family:Roboto,sans-serif; background:transparent; color:${T.onSurface}; display:flex; align-items:center; justify-content:center; margin:1px auto; transition:background-color var(--m3-dur-short2) var(--m3-ease-standard),color var(--m3-dur-short2) var(--m3-ease-standard); outline:none; }
 .m3-dp-day:hover { background:${T.onSurface}14; }
 .m3-dp-day:focus-visible { outline:2px solid ${T.primary}; }
 .m3-dp-day.sel { background:${T.primary}; color:${T.onPrimary}; font-weight:600; }
@@ -542,7 +543,7 @@ const buildCSS = (T) => `
 `;
 
 /* ── ICON HELPER ── */
-const I = ({ n, filled, sm, xs, lg, style }) => <span className={`mi${filled ? " filled" : ""}${sm ? " sm" : ""}${xs ? " xs" : ""}${lg ? " lg" : ""}`} style={style}>{n}</span>;
+const I = ({ n, filled, sm, xs, lg, style }) => <span aria-hidden="true" className={`mi${filled ? " filled" : ""}${sm ? " sm" : ""}${xs ? " xs" : ""}${lg ? " lg" : ""}`} style={style}>{n}</span>;
 
 /* ── CUSTOM M3 DROPDOWN ── */
 function M3Dropdown({ label, value, displayValue, items, onSelect, renderItem }) {
@@ -790,11 +791,11 @@ function IconButtons() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <button className={`m3-ib m3-ib-std${s[0] ? " sel" : ""}`} onClick={() => toggle(0)}>{s[0] ? <I n="favorite" filled /> : <I n="favorite" />}</button>
-        <button className={`m3-ib m3-ib-filled${s[1] ? " sel" : ""}`} onClick={() => toggle(1)}><I n="edit" /></button>
-        <button className={`m3-ib m3-ib-tonal${s[2] ? " sel" : ""}`} onClick={() => toggle(2)}><I n="notifications" /></button>
-        <button className={`m3-ib m3-ib-out${s[3] ? " sel" : ""}`} onClick={() => toggle(3)}><I n="star" /></button>
-        <button className="m3-ib m3-ib-std" disabled><I n="more_vert" /></button>
+        <button type="button" className={`m3-ib m3-ib-std${s[0] ? " sel" : ""}`} onClick={() => toggle(0)} aria-label="Favorite" aria-pressed={s[0]}>{s[0] ? <I n="favorite" filled /> : <I n="favorite" />}</button>
+        <button type="button" className={`m3-ib m3-ib-filled${s[1] ? " sel" : ""}`} onClick={() => toggle(1)} aria-label="Edit" aria-pressed={s[1]}><I n="edit" /></button>
+        <button type="button" className={`m3-ib m3-ib-tonal${s[2] ? " sel" : ""}`} onClick={() => toggle(2)} aria-label="Notifications" aria-pressed={s[2]}><I n="notifications" /></button>
+        <button type="button" className={`m3-ib m3-ib-out${s[3] ? " sel" : ""}`} onClick={() => toggle(3)} aria-label="Star" aria-pressed={s[3]}><I n="star" /></button>
+        <button type="button" className="m3-ib m3-ib-std" disabled aria-label="More options"><I n="more_vert" /></button>
       </div>
     </div>
   );
@@ -863,9 +864,9 @@ function Dialog() {
 function Snackbars() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <div className="m3-snackbar"><span className="m3-snackbar-text">Photo saved</span></div>
-      <div className="m3-snackbar"><span className="m3-snackbar-text">Conversation archived</span><button className="m3-snackbar-action">Undo</button></div>
-      <div className="m3-snackbar"><span className="m3-snackbar-text">Can't connect</span><button className="m3-snackbar-action">Retry</button><button className="m3-snackbar-close"><I n="close" sm /></button></div>
+      <div className="m3-snackbar" role="status" aria-live="polite"><span className="m3-snackbar-text">Photo saved</span></div>
+      <div className="m3-snackbar" role="status" aria-live="polite"><span className="m3-snackbar-text">Conversation archived</span><button type="button" className="m3-snackbar-action">Undo</button></div>
+      <div className="m3-snackbar" role="status" aria-live="polite"><span className="m3-snackbar-text">Can&rsquo;t connect</span><button type="button" className="m3-snackbar-action">Retry</button><button type="button" className="m3-snackbar-close" aria-label="Dismiss"><I n="close" sm /></button></div>
     </div>
   );
 }
@@ -875,8 +876,8 @@ function Progress() {
   useEffect(() => { const i = setInterval(() => setV(p => p >= 100 ? 0 : p + 0.5), 30); return () => clearInterval(i); }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
-      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Determinate - {Math.round(v)}%</span><div className="m3-progress-linear"><div className="m3-progress-linear-bar" style={{ width: `${v}%` }} /></div></div>
-      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Indeterminate</span><div className="m3-progress-linear m3-progress-indet"><div className="m3-progress-linear-bar" /></div></div>
+      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant, fontVariantNumeric: "tabular-nums" }}>Determinate &mdash; {Math.round(v)}%</span><div className="m3-progress-linear" role="progressbar" aria-valuenow={Math.round(v)} aria-valuemin={0} aria-valuemax={100} aria-label="Determinate progress"><div className="m3-progress-linear-bar" style={{ width: `${v}%` }} /></div></div>
+      <div><span style={{ fontFamily: "Roboto,sans-serif", fontSize: 12, color: T.onSurfaceVariant }}>Indeterminate</span><div className="m3-progress-linear m3-progress-indet" role="progressbar" aria-label="Loading"><div className="m3-progress-linear-bar" /></div></div>
       <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
         <svg width={48} height={48} viewBox="0 0 48 48" style={{ transform: "rotate(-90deg)" }}>
           <circle cx={24} cy={24} r={18} fill="none" stroke={T.surfaceContainerHighest} strokeWidth={4} />
@@ -944,7 +945,7 @@ function DatePicker() {
     <div className="m3-dp" style={{ width: 260 }}>
       <div style={{ padding: "4px 0 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 14, color: T.onSurfaceVariant }}>April 2026</span>
-        <div style={{ display: "flex", gap: 2 }}><button className="m3-ib m3-ib-std"><I n="chevron_left" /></button><button className="m3-ib m3-ib-std"><I n="chevron_right" /></button></div>
+        <div style={{ display: "flex", gap: 2 }}><button type="button" className="m3-ib m3-ib-std" aria-label="Previous month"><I n="chevron_left" /></button><button type="button" className="m3-ib m3-ib-std" aria-label="Next month"><I n="chevron_right" /></button></div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1, textAlign: "center" }}>
         {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <div key={i} style={{ fontSize: 11, color: T.onSurfaceVariant, padding: 4, fontWeight: 500 }}>{d}</div>)}
@@ -970,17 +971,24 @@ function Dividers() {
 
 function SearchBar() {
   const [v, setV] = useState("");
+  const searchId = React.useId();
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 320, height: 56, padding: "0 16px", borderRadius: M3_SHAPE["extra-large"], background: T.surfaceContainerHigh, border: `1px solid ${T.outlineVariant}`, fontFamily: "Roboto,sans-serif", transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}` }}>
-      <I n="search" sm />
+    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 320, height: 56, padding: "0 16px", borderRadius: M3_SHAPE["extra-large"], background: T.surfaceContainerHigh, border: `1px solid ${T.outlineVariant}`, fontFamily: "Roboto,sans-serif", transition: `background-color ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}` }}>
+      <label htmlFor={searchId} style={{ display: "inline-flex" }}><I n="search" sm /><span style={{ position: "absolute", left: -9999 }}>Search Material Design</span></label>
       <input
+        id={searchId}
+        type="search"
+        name="search"
+        autoComplete="off"
+        spellCheck={false}
         value={v}
         onChange={e => setV(e.target.value)}
-        placeholder="Search Material Design"
+        placeholder="e.g. buttons&hellip;"
         style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: M3_TYPE["body-large"].fontSize, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}
       />
       {v && (
         <button
+          type="button"
           onClick={() => setV("")}
           className="m3-ib"
           style={{ width: 32, height: 32, borderRadius: M3_SHAPE.full, border: "none", background: "transparent", color: T.onSurfaceVariant, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -997,12 +1005,13 @@ function SegmentedButtons() {
   const opts = ["Day", "Week", "Month"];
   const [sel, setSel] = useState("Week");
   return (
-    <div style={{ display: "inline-flex", height: 40, borderRadius: M3_SHAPE.full, border: `1px solid ${T.outline}`, overflow: "hidden", fontFamily: "Roboto,sans-serif" }}>
+    <div role="group" aria-label="Time range" style={{ display: "inline-flex", height: 40, borderRadius: M3_SHAPE.full, border: `1px solid ${T.outline}`, overflow: "hidden", fontFamily: "Roboto,sans-serif" }}>
       {opts.map((o, i) => {
         const active = sel === o;
         return (
           <button
             key={o}
+            type="button"
             onClick={() => setSel(o)}
             style={{
               minWidth: 88,
@@ -1078,7 +1087,7 @@ function DensityTokens() {
           <div style={{ fontSize: M3_TYPE["title-small"].fontSize, fontWeight: 700, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{densityLabel(d)}</div>
           <button className="m3-btn m3-btn-filled" style={styleFromDensity(d, "btn")}>Button</button>
           <div className="m3-tf m3-tf-filled" style={styleFromDensity(d, "tf")}>
-            <input className="m3-tf-content" placeholder="Email" style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontFamily: "Roboto,sans-serif", color: T.onSurface }} />
+            <input className="m3-tf-content" aria-label="Email" type="email" autoComplete="email" spellCheck={false} placeholder="you@example.com" style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontFamily: "Roboto,sans-serif", color: T.onSurface }} />
           </div>
           <div className="m3-chip" style={styleFromDensity(d, "chip")}>Filter</div>
         </div>
@@ -1972,7 +1981,7 @@ export default function App() {
                   border: density === d.scale ? `2px solid ${T.primary}` : `1px solid ${T.outlineVariant}60`,
                   background: density === d.scale ? T.primaryContainer : "transparent",
                   color: density === d.scale ? T.onPrimaryContainer : T.onSurfaceVariant,
-                  transition: "all 150ms cubic-bezier(0.2,0,0,1)",
+                  transition: "background-color 150ms cubic-bezier(0.2,0,0,1), color 150ms cubic-bezier(0.2,0,0,1), border-color 150ms cubic-bezier(0.2,0,0,1)",
                 }}>
                   <I n={d.icon} sm />
                   <span style={{ fontSize: 9, fontWeight: density === d.scale ? 600 : 400 }}>{d.label}</span>
@@ -1988,7 +1997,7 @@ export default function App() {
           </>}
           <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 28, background: T.surfaceContainerHigh, marginBottom: 10 }}>
             <I n="search" sm style={{ color: T.onSurfaceVariant }} />
-            <input type="text" placeholder="Search…" value={q} onChange={e => setQ(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: T.onSurface, width: "100%", fontFamily: "Roboto,sans-serif" }} />
+            <input type="search" aria-label="Search components" name="search" autoComplete="off" spellCheck={false} placeholder="Search&hellip;" value={q} onChange={e => setQ(e.target.value)} style={{ border: "none", background: "transparent", outline: "none", fontSize: 13, color: T.onSurface, width: "100%", fontFamily: "Roboto,sans-serif" }} />
           </div>
         </div>
         <div style={{ flex: 1, overflow: "auto", padding: "0 6px 14px", minWidth: L.sideW }}>

@@ -719,6 +719,21 @@ export function carbonBuildCSS(theme) {
     @keyframes cb-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cb-slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
+    /* Respect prefers-reduced-motion — pause keyframe animations */
+    @media (prefers-reduced-motion: reduce) {
+      .cb-loading, .cb-skeleton,
+      .cb-drawer-backdrop, .cb-drawer,
+      .cb-notification-toast {
+        animation: none !important;
+      }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
     /* ═══ SKIP LINK (WCAG 2.4.1) ═══
        Off-screen until :focus, then renders as a primary-style link
        in the top-left so keyboard users can jump to main content. */
@@ -1350,7 +1365,7 @@ function InputsDemo() {
       </div>
       <div className="cb-input-wrap">
         <label className="cb-input-label">Message</label>
-        <textarea className="cb-input cb-textarea" placeholder="Type a longer response..." />
+        <textarea className="cb-input cb-textarea" placeholder="Type a longer response&hellip;" />
       </div>
     </Col>
   );
@@ -1796,7 +1811,7 @@ function TextareaDemo() {
         <label className="cb-input-label">Message</label>
         <textarea
           className="cb-textarea-field"
-          placeholder="Type a longer response..."
+          placeholder="Type a longer response&hellip;"
           maxLength={max}
           value={v}
           onChange={(e) => setV(e.target.value)}
@@ -1824,7 +1839,7 @@ function ComboBoxDemo() {
         <div className="cb-combobox-trigger">
           <input
             className="cb-combobox-input"
-            placeholder="Type to search..."
+            placeholder="Type to search&hellip;"
             value={q}
             onChange={(e) => { setQ(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
@@ -2458,7 +2473,7 @@ function PatDataTable() {
         <div style={{ background: T.layer01, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${T.borderSubtle01}` }}>
           <div className="cb-search-wrap" style={{ flex: 1 }}>
             <span className="cb-search-icon"><CIcon name="search" size={16} /></span>
-            <input className="cb-input cb-input-sm" placeholder="Filter by name..." />
+            <input className="cb-input cb-input-sm" aria-label="Filter by name" type="search" autoComplete="off" spellCheck={false} placeholder="Filter by name&hellip;" />
           </div>
           <button className="cb-btn cb-btn-ghost cb-btn-sm" aria-label="Filter">
             <CIcon name="filter_alt" size={16} />

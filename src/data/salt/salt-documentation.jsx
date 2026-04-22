@@ -222,8 +222,8 @@ function Switches(){
   return <div style={{display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
     {[[a,setA,"Wi-Fi"],[b,setB,"Bluetooth"]].map(([v,set,l],i)=>(
       <div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
-        <button onClick={()=>set(!v)} role="switch" aria-checked={v} style={{width:36,height:18,borderRadius:9,background:v?T.accent:T.bg3,border:`1px solid ${v?T.accent:T.borderStrong}`,cursor:"pointer",position:"relative",outline:"none",padding:0,transition:"all 200ms cubic-bezier(0.2,0,0,1)"}}>
-          <div style={{position:"absolute",width:12,height:12,borderRadius:6,background:v?T.accentFg:T.fg,top:2,left:v?20:2,transition:"all 200ms cubic-bezier(0.2,0,0,1)"}}/>
+        <button onClick={()=>set(!v)} role="switch" aria-checked={v} aria-label="Toggle switch" style={{width:36,height:18,borderRadius:9,background:v?T.accent:T.bg3,border:`1px solid ${v?T.accent:T.borderStrong}`,cursor:"pointer",position:"relative",outline:"none",padding:0,transition:"background-color 200ms cubic-bezier(0.2,0,0,1), border-color 200ms cubic-bezier(0.2,0,0,1)"}}>
+          <div style={{position:"absolute",width:12,height:12,borderRadius:6,background:v?T.accentFg:T.fg,top:2,left:v?20:2,transition:"left 200ms cubic-bezier(0.2,0,0,1), background-color 200ms cubic-bezier(0.2,0,0,1)"}}/>
         </button>
         <span style={{fontFamily:FONT,fontSize:12,color:T.fg}}>{l}</span>
       </div>
@@ -257,9 +257,9 @@ function Banners(){
     {[["info",T.infoWeak,T.infoFg,T.info,"Server maintenance scheduled for tonight."],
       ["positive",T.positiveWeak,T.positiveFg,T.positive,"Trade executed successfully."],
       ["caution",T.cautionWeak,T.cautionFg,T.caution,"Market data may be delayed."],
-      ["negative",T.negativeWeak,T.negativeFg,T.negative,"Connection lost. Retrying..."]
+      ["negative",T.negativeWeak,T.negativeFg,T.negative,"Connection lost. Retrying…"]
     ].map(([k,bg,fg,border,msg])=>(
-      <div key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:4,background:bg,color:fg,fontFamily:FONT,fontSize:12,borderLeft:`3px solid ${border}`}}>{msg}</div>
+      <div key={k} role={k==="negative"?"alert":"status"} aria-live={k==="negative"?"assertive":"polite"} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:4,background:bg,color:fg,fontFamily:FONT,fontSize:12,borderLeft:`3px solid ${border}`}}>{msg}</div>
     ))}
   </div>;
 }
@@ -332,7 +332,7 @@ function ProgressDemo(){
     <div style={{width:"100%",height:4,borderRadius:2,background:T.bg3}}><div style={{width:`${v}%`,height:"100%",borderRadius:2,background:T.accent,transition:"width 300ms"}}/></div></div>
     <div style={{display:"flex",alignItems:"center",gap:8}}>
       <div style={{width:24,height:24,border:`3px solid ${T.bg3}`,borderTopColor:T.accent,borderRadius:12,animation:"s-spin 0.6s linear infinite"}}/>
-      <span style={{fontFamily:FONT,fontSize:12,color:T.fg2}}>Loading...</span>
+      <span role="status" aria-live="polite" style={{fontFamily:FONT,fontSize:12,color:T.fg2}}>Loading&hellip;</span>
     </div>
     <style>{`@keyframes s-spin{to{transform:rotate(360deg);}}`}</style>
     <input type="range" min={0} max={100} value={v} onChange={e=>setV(+e.target.value)} style={{width:180}}/>
@@ -359,7 +359,7 @@ function PillsDemo(){
   const toggle=i=>setPills(p=>{const n=[...p];n[i]={...n[i],a:!n[i].a};return n;});
   return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
     {pills.map((p,i)=>(
-      <button key={i} onClick={()=>toggle(i)} style={{height:22,padding:"0 10px",borderRadius:11,border:`1px solid ${p.a?T.accent:T.border}`,background:p.a?T.accentWeak:"transparent",color:p.a?T.accent:T.fg2,fontSize:11,fontWeight:p.a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms",outline:"none"}}>{p.l}</button>
+      <button key={i} onClick={()=>toggle(i)} style={{height:22,padding:"0 10px",borderRadius:11,border:`1px solid ${p.a?T.accent:T.border}`,background:p.a?T.accentWeak:"transparent",color:p.a?T.accent:T.fg2,fontSize:11,fontWeight:p.a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms",outline:"none"}}>{p.l}</button>
     ))}
   </div>;
 }
@@ -853,7 +853,7 @@ function PatDataTable(){
     </table>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,fontSize:10,color:T.fg3}}>
       <span>Showing 1-3 of 24</span>
-      <div style={{display:"flex",gap:2}}>{[1,2,3,"...","8"].map(p=><button key={p} className={`s-btn ${p===1?"s-btn-solid":"s-btn-bordered"}`} style={{fontSize:9,padding:"2px 6px",height:"auto",minWidth:0}}>{p}</button>)}</div>
+      <div style={{display:"flex",gap:2}}>{[1,2,3,"…","8"].map(p=><button key={p} type="button" className={`s-btn ${p===1?"s-btn-solid":"s-btn-bordered"}`} aria-label={p==="…"?"More pages":`Page ${p}`} aria-current={p===1?"page":undefined} style={{fontSize:9,padding:"2px 6px",height:"auto",minWidth:0}}>{p}</button>)}</div>
     </div>
   </div>;
 }
@@ -1451,7 +1451,7 @@ function ComboBoxDemo(){
       <div style={{display:"flex",flexDirection:"column",gap:2}}>
         <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Fruit</label>
         <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${open?T.accent:T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"0 var(--pad,8px)"}}>
-          <input value={val} onChange={e=>{setVal(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder="Type to filter..." style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
+          <input aria-label="Combobox filter" type="text" autoComplete="off" spellCheck={false} value={val} onChange={e=>{setVal(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder="Type to filter&hellip;" style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
           <button onClick={()=>setOpen(!open)} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="chevronDown" size={12} color={T.fg3}/></button>
         </div>
       </div>
@@ -1508,7 +1508,7 @@ function NumberInputDemo(){
 function MultilineInputDemo(){
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Description</label>
-    <textarea style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text..." defaultValue="Line 1
+    <textarea aria-label="Multi-line text" style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text&hellip;" defaultValue="Line 1
 Line 2
 Line 3"/>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>
@@ -1667,7 +1667,7 @@ export default function App(){
           <div style={{display:"flex",gap:D.sp/2,marginBottom:D.sp*0.75}}>
             {[["jpm","JPM Brand","#1B7F9E"],["legacy","Legacy","#0078CF"]].map(([id,label,color])=>{
               const a=THEMES[themeKey].theme===id;
-              return <button key={id} onClick={()=>setThemeKey(id+(themeKey.includes("dark")?"-dark":"-light"))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${color}`:`1px solid ${T.border}`,background:a?color+"18":"transparent",color:a?color:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms"}}>{label}</button>;
+              return <button key={id} onClick={()=>setThemeKey(id+(themeKey.includes("dark")?"-dark":"-light"))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${color}`:`1px solid ${T.border}`,background:a?color+"18":"transparent",color:a?color:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms"}}>{label}</button>;
             })}
           </div>
 
@@ -1675,14 +1675,14 @@ export default function App(){
           <div style={{display:"flex",gap:D.sp/2,marginBottom:D.sp}}>
             {[["light","☀ Light"],["dark","☾ Dark"]].map(([m,l])=>{
               const a=themeKey.includes(m);
-              return <button key={m} onClick={()=>setThemeKey(themeKey.replace(/light|dark/,m))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${T.accent}`:`1px solid ${T.border}`,background:a?T.accentWeak:"transparent",color:a?T.accent:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms"}}>{l}</button>;
+              return <button key={m} onClick={()=>setThemeKey(themeKey.replace(/light|dark/,m))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${T.accent}`:`1px solid ${T.border}`,background:a?T.accentWeak:"transparent",color:a?T.accent:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms"}}>{l}</button>;
             })}
           </div>
 
           <div style={{fontSize:D.catFs,fontWeight:600,color:T.fg3,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:D.sp/4}}>Density</div>
           <div style={{display:"flex",gap:0,marginBottom:D.sp,borderRadius:D.cr,overflow:"hidden",border:`1px solid ${T.border}`}}>
             {[["high","H·20"],["medium","M·28"],["low","L·36"],["touch","T·44"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setDensity(k)} style={{flex:1,height:D.h,border:"none",cursor:"pointer",fontFamily:FONT,fontSize:D.catFs,fontWeight:density===k?600:400,background:density===k?T.accent:"transparent",color:density===k?T.accentFg:T.fg2,transition:"all 150ms"}}>{l}</button>
+              <button key={k} onClick={()=>setDensity(k)} style={{flex:1,height:D.h,border:"none",cursor:"pointer",fontFamily:FONT,fontSize:D.catFs,fontWeight:density===k?600:400,background:density===k?T.accent:"transparent",color:density===k?T.accentFg:T.fg2,transition:"background-color 150ms, color 150ms"}}>{l}</button>
             ))}
           </div>
 
