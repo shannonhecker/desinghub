@@ -18,6 +18,12 @@
 
 import React, { useState, useEffect } from "react";
 import { showToast } from "@/lib/toast";
+import {
+  carbonStaticTokenVars, carbonTypeClasses,
+  CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
+} from "./tokens";
+
+export { CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER };
 
 /* Font stack - next/font/google registers IBM Plex Sans at the
    app root via the --font-ibm-plex-sans CSS variable, so the
@@ -195,7 +201,13 @@ export const getCarbonT = () => T;
 export function carbonBuildCSS(theme) {
   const t = theme || T;
 
-  /* Helper: emit the full token set for one theme dict. Used inside
+  /* Mode/motion/spacing/radius/type tokens resolve via static emitters
+     (tokens.ts — token-definition file, exempt from no-hardcoded-tokens).
+     Color tokens stay in the themeTokens() helper below because they're
+     per-theme and must be emitted inside each `.cds--<theme>` selector. */
+  const staticTokens = carbonStaticTokenVars();
+
+  /* Helper: emit the full color-token set for one theme dict. Used inside
      each `.cds--<theme>` selector below so the cascade resolves
      tokens automatically when the wrapper class changes. */
   const themeTokens = (dict) => `
@@ -277,27 +289,6 @@ export function carbonBuildCSS(theme) {
       --cds-button-separator: ${dict.buttonSeparator};
       --cds-shadow-raised: ${dict.shadowRaised};
       --cds-shadow-floating: ${dict.shadowFloating};
-      /* Spacing scale (px) - Carbon scale-01..13. Exposed as tokens
-         so inline styles and consumer CSS can consume them. */
-      --cds-spacing-01: 2px; --cds-spacing-02: 4px; --cds-spacing-03: 8px;
-      --cds-spacing-04: 12px; --cds-spacing-05: 16px; --cds-spacing-06: 24px;
-      --cds-spacing-07: 32px; --cds-spacing-08: 40px; --cds-spacing-09: 48px;
-      --cds-spacing-10: 64px; --cds-spacing-11: 80px; --cds-spacing-12: 96px;
-      --cds-spacing-13: 160px;
-      /* Motion tokens - Carbon productive + expressive duration scale. */
-      --cds-duration-fast-01: 70ms; --cds-duration-fast-02: 110ms;
-      --cds-duration-moderate-01: 150ms; --cds-duration-moderate-02: 240ms;
-      --cds-duration-slow-01: 400ms; --cds-duration-slow-02: 700ms;
-      --cds-motion-standard-productive: cubic-bezier(0.2, 0, 0.38, 0.9);
-      --cds-motion-standard-expressive: cubic-bezier(0.4, 0.14, 0.3, 1);
-      --cds-motion-entrance-productive: cubic-bezier(0, 0, 0.38, 0.9);
-      --cds-motion-entrance-expressive: cubic-bezier(0, 0, 0.3, 1);
-      --cds-motion-exit-productive: cubic-bezier(0.2, 0, 1, 0.9);
-      --cds-motion-exit-expressive: cubic-bezier(0.4, 0.14, 1, 1);
-      /* Shape tokens - Carbon is flat by default. radius-0 on controls,
-         radius-1 on tiles, radius-pill on tags. */
-      --cds-radius-0: 0; --cds-radius-1: 2px; --cds-radius-2: 4px; --cds-radius-3: 8px;
-      --cds-radius-pill: 16px;
       /* Z-index tokens - Carbon's layering ladder. */
       --cds-z-dropdown: 700; --cds-z-floating: 800; --cds-z-header: 1000;
       --cds-z-overlay: 6000; --cds-z-modal: 9000;`;
@@ -316,8 +307,11 @@ export function carbonBuildCSS(theme) {
     }
 
     /* Base / fallback :root tokens so rules still resolve if no
-       theme class is applied. Uses the currently active theme. */
-    :root {${themeTokens(t)}
+       theme class is applied. Uses the currently active theme.
+       staticTokens emits motion/spacing/radius/type vars once (not
+       per-theme — they are theme-agnostic); themeTokens(t) supplies
+       color + shadow for the active theme. */
+    :root {${staticTokens}${themeTokens(t)}
     }
 
     * { box-sizing: border-box; }
@@ -325,38 +319,10 @@ export function carbonBuildCSS(theme) {
 
     /* ═══ TYPE SCALE ═══
        Canonical @carbon/type productive + expressive type styles.
-       Letter-spacing +0.32px at 12px, +0.16px at 14px, 0 at 16+.
-       Body = productive (14/20). Body-compact = dense (14/18).
-       Heading 01..07 matches carbondesignsystem.com type scale. */
-    .cds--type-body-01 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 1.42857; letter-spacing: 0.16px; }
-    .cds--type-body-02 { font-family: ${CARBON_FONT}; font-size: 16px; font-weight: 400; line-height: 1.5; letter-spacing: 0; }
-    .cds--type-body-compact-01 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 1.28572; letter-spacing: 0.16px; }
-    .cds--type-body-compact-02 { font-family: ${CARBON_FONT}; font-size: 16px; font-weight: 400; line-height: 1.375; letter-spacing: 0; }
-    .cds--type-heading-01 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 600; line-height: 1.42857; letter-spacing: 0.16px; }
-    .cds--type-heading-02 { font-family: ${CARBON_FONT}; font-size: 16px; font-weight: 600; line-height: 1.5; letter-spacing: 0; }
-    .cds--type-heading-03 { font-family: ${CARBON_FONT}; font-size: 20px; font-weight: 400; line-height: 1.4; letter-spacing: 0; }
-    .cds--type-heading-04 { font-family: ${CARBON_FONT}; font-size: 28px; font-weight: 400; line-height: 1.28572; letter-spacing: 0; }
-    .cds--type-heading-05 { font-family: ${CARBON_FONT}; font-size: 32px; font-weight: 400; line-height: 1.25; letter-spacing: 0; }
-    .cds--type-heading-06 { font-family: ${CARBON_FONT}; font-size: 42px; font-weight: 300; line-height: 1.19; letter-spacing: 0; }
-    .cds--type-heading-07 { font-family: ${CARBON_FONT}; font-size: 54px; font-weight: 300; line-height: 1.19; letter-spacing: 0; }
-    .cds--type-heading-compact-01 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 600; line-height: 1.28572; letter-spacing: 0.16px; }
-    .cds--type-heading-compact-02 { font-family: ${CARBON_FONT}; font-size: 16px; font-weight: 600; line-height: 1.375; letter-spacing: 0; }
-    .cds--type-heading-compact-03 { font-family: ${CARBON_FONT}; font-size: 20px; font-weight: 400; line-height: 1.4; letter-spacing: 0; }
-    .cds--type-heading-compact-04 { font-family: ${CARBON_FONT}; font-size: 28px; font-weight: 400; line-height: 1.28572; letter-spacing: 0; }
-    .cds--type-heading-compact-05 { font-family: ${CARBON_FONT}; font-size: 32px; font-weight: 400; line-height: 1.25; letter-spacing: 0; }
-    .cds--type-heading-compact-06 { font-family: ${CARBON_FONT}; font-size: 42px; font-weight: 300; line-height: 1.19; letter-spacing: 0; }
-    .cds--type-heading-compact-07 { font-family: ${CARBON_FONT}; font-size: 54px; font-weight: 300; line-height: 1.19; letter-spacing: 0; }
-    .cds--type-label-01 { font-family: ${CARBON_FONT}; font-size: 12px; font-weight: 400; line-height: 1.33333; letter-spacing: 0.32px; }
-    .cds--type-label-02 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 1.28572; letter-spacing: 0.16px; }
-    .cds--type-helper-text-01 { font-family: ${CARBON_FONT}; font-size: 12px; font-weight: 400; line-height: 1.33333; letter-spacing: 0.32px; }
-    .cds--type-helper-text-02 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 1.28572; letter-spacing: 0.16px; }
-    .cds--type-code-01 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 400; line-height: 1.33333; letter-spacing: 0.32px; }
-    .cds--type-code-02 { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 400; line-height: 1.42857; letter-spacing: 0.32px; }
-    .cds--type-legal-01 { font-family: ${CARBON_FONT}; font-size: 12px; font-weight: 400; line-height: 1.33333; letter-spacing: 0.32px; }
-    .cds--type-legal-02 { font-family: ${CARBON_FONT}; font-size: 14px; font-weight: 400; line-height: 1.28572; letter-spacing: 0.16px; }
-
-    /* Carbon type scale - letter-spacing +0.32px at 12px, +0.16px at
-       14px, 0 at 16+. Applied inline wherever type tokens surface. */
+       Generated from CARBON_TYPE in ./tokens.ts — source of truth.
+       Each class resolves --cds-type-{fs,fw,lh,ls}-<name> vars.
+       Letter-spacing rule: +0.32px at 12px, +0.16px at 14px, 0 at 16+. */
+    ${carbonTypeClasses(CARBON_FONT)}
 
     /* ═══ BUTTON ═══
        Kinds: primary / secondary / tertiary / ghost / danger /
