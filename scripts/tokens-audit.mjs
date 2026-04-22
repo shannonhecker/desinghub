@@ -54,6 +54,7 @@ const ALLOWLIST_VARIABLE_NAMES = [
 
 const ALLOWLIST_FILENAMES = [
   'code-snippets.ts',
+  'tokens.ts',
 ];
 
 /** Recursively collect .ts / .tsx / .jsx files under dir. */

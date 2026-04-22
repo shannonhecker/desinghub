@@ -39,6 +39,15 @@ const eslintConfig = [
     },
   },
   {
+    /* Token-definition files are the sole legal home for raw ms / px /
+       rgba values — consumers must reference them via CSS vars. See
+       docs/TOKENS.md § Intentional literals. */
+    files: ["src/data/**/tokens.ts"],
+    rules: {
+      "design-hub/no-hardcoded-tokens": "off",
+    },
+  },
+  {
     /* Skip linting the multi-megabyte string-constant snippet data files.
        They are literal `{ react: "...", html: "..." }` maps with no logic;
        feeding them to the TS parser stalls eslint for minutes without

@@ -51,7 +51,8 @@ import {
 import {
   AUSOS_THEMES, ausosBuildCSS, AUSOS_COMPS, AUSOS_CATS, AIcon, AUSOS_FONT,
   setAusosT, getAusosT, getAusosPreviews, getAusosDemoComponent,
-  getAusosDensityCSS
+  getAusosDensityCSS,
+  AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
 } from './ausos/ausos-documentation.jsx';
 
 import {
@@ -64,6 +65,7 @@ import {
 export {
   SIcon, M3Icon, FIcon, AIcon, CIcon,
   MATERIAL_COLORS, generateM3Theme, M3_MOTION,
+  AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
   getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 
