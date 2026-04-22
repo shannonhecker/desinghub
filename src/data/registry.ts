@@ -59,7 +59,8 @@ import {
 import {
   CARBON_THEMES, carbonBuildCSS, CARBON_COMPS, CARBON_CATS, CIcon, CARBON_FONT,
   setCarbonT, getCarbonT, getCarbonPreviews, getCarbonDemoComponent,
-  getCarbonDensityCSS
+  getCarbonDensityCSS,
+  CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
 } from './carbon/carbon-documentation.jsx';
 
 // Re-export for use in other modules
@@ -68,6 +69,7 @@ export {
   MATERIAL_COLORS, generateM3Theme, M3_MOTION,
   AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
   FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH,
+  CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
   getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 
@@ -197,10 +199,21 @@ const AUSOS_DENSITY_MAP: Record<string, DensityEntry> = {
   touch:  { h:44, sp:16, fs:16, fsS:14, h1:42, h2:32, title:48, pad:16, cr:12, icon:16, sideW:300, mainP:40, cardMin:240, cardP:20, gap:14, topH:52, srchH:40, logoS:36, catFs:11, demoP:36, demoCr:16 },
 };
 
-/* Carbon density map - Carbon spacing scale is 2px-based and tracks
-   a compact / normal / spacious / expressive ladder. Radius stays at
-   0 across the board (Carbon is flat/Swiss) - corner tokens exist
-   (radius-0..radius-3) but standard controls use 0. */
+/* Carbon density map — Carbon's PREVIEW-CHROME scale (4px-based).
+   Drives sidebar width, card min-widths, preview padding. This is
+   DIFFERENT from Carbon's internal --cds-spacing-* ladder (2px-based)
+   which is defined in carbon-documentation.jsx and used by rendered
+   Carbon components.
+
+   Per Q4 (2026-04-22): the numeric values below live conceptually
+   under the --bc-* builder-chrome namespace. See aliases:
+     sp: 4  → var(--bc-preview-carbon-gap-compact)
+     sp: 8  → var(--bc-preview-carbon-gap-normal)
+     sp: 12 → var(--bc-preview-carbon-gap-spacious)
+   (exposed in src/components/builder/chrome-tokens.css).
+
+   Radius stays at 0 across the board — Carbon is flat/Swiss.
+   Corner tokens exist (--cds-radius-0..3) but standard controls use 0. */
 const CARBON_DENSITY_MAP: Record<string, DensityEntry> = {
   compact:  { h:24, sp:4,  fs:12, fsS:11, h1:20, h2:14, title:24, pad:6,  cr:0, icon:12, sideW:200, mainP:16, cardMin:160, cardP:8,  gap:6,  topH:32, srchH:24, logoS:22, catFs:9,  demoP:12, demoCr:0 },
   normal:   { h:32, sp:8,  fs:14, fsS:12, h1:24, h2:18, title:28, pad:8,  cr:0, icon:14, sideW:256, mainP:24, cardMin:192, cardP:12, gap:8,  topH:40, srchH:32, logoS:26, catFs:10, demoP:20, demoCr:0 },

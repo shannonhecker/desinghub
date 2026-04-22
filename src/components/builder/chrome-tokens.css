@@ -79,6 +79,22 @@
   --bc-z-chip-rail: 50;
   --bc-z-hud:       60;
   --bc-z-popover:   70;
+
+  /* ─── Preview-chrome scale (per-DS) ───────────────────────────────
+     These aliases expose the preview-chrome layer values as tokens so
+     it's explicit which density-map numbers are DS internals versus
+     Design Hub preview chrome. Carbon's CARBON_DENSITY_MAP (4px scale)
+     resolves here — NOT to the Carbon DS 2px --cds-spacing-* ladder.
+
+     Per Q4 (2026-04-22): preview chrome belongs in the --bc-* namespace
+     to reinforce the "builder chrome ≠ DS tokens" boundary.
+     Documented in CLAUDE.md § Carbon density note. */
+  --bc-preview-carbon-gap-compact:  4px;
+  --bc-preview-carbon-gap-normal:   8px;
+  --bc-preview-carbon-gap-spacious: 12px;
+  --bc-preview-carbon-pad-compact:  6px;
+  --bc-preview-carbon-pad-normal:   8px;
+  --bc-preview-carbon-pad-spacious: 12px;
 }
 
 /* Light mode — scoped under .builder-light like the existing --syn-* tokens */
