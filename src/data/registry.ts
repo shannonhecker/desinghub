@@ -45,7 +45,8 @@ import {
 import {
   FLUENT_THEMES, fluentBuildCSS, FLUENT_COMPS, FLUENT_CATS, FIcon, FLUENT_FONT,
   setFluentT, getFluentT, getFluentPreviews, getFluentDemoComponent,
-  getFluentSizeCSS
+  getFluentSizeCSS,
+  FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH,
 } from './fluent/fluent2-documentation.jsx';
 
 import {
@@ -66,6 +67,7 @@ export {
   SIcon, M3Icon, FIcon, AIcon, CIcon,
   MATERIAL_COLORS, generateM3Theme, M3_MOTION,
   AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER,
+  FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH,
   getSaltPreviews, getFluentPreviews, getAusosPreviews, getCarbonPreviews,
 };
 
