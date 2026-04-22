@@ -5,6 +5,7 @@ declare module '*.jsx' {
   export const saltBuildCSS: any;
   export const SIcon: any;
   export const SALT_COMPS: any;
+  export const SALT_CATS: string[];
   export const SALT_FONT: string;
   export const SALT_FONT_HEAD: string;
   export function setSaltT(theme: any): void;
@@ -18,6 +19,10 @@ declare module '*.jsx' {
   export const M3_CATS: string[];
   export const MATERIAL_COLORS: any[];
   export const M3Icon: any;
+  export const M3_MOTION: {
+    duration: Record<string, string>;
+    easing: Record<string, string>;
+  };
   export function generateM3Theme(hex: string, isDark: boolean): any;
   export function setM3T(theme: any): void;
   export function getM3T(): any;

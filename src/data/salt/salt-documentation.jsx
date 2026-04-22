@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
-export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
+export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, CATS as SALT_CATS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
 export function setSaltT(theme) { T = theme; }
 export function getSaltT() { return T; }
 export function getSaltPreviews() { return PREVIEWS; }
