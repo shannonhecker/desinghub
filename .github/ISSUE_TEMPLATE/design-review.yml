@@ -1,0 +1,106 @@
+name: Design review request
+description: Request a design review for a new component, pattern, or cross-DS change in Design Hub
+title: "[Review] "
+labels: ["design-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to request a structured design review. Full process: [`docs/DESIGN-REVIEW.md`](../blob/main/docs/DESIGN-REVIEW.md).
+        For trivial changes, just open a PR — the template does most of the work.
+
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Which review gate is this at?
+      description: Where are you in the process? See `docs/DESIGN-REVIEW.md § Gates`.
+      options:
+        - "Gate 1 — Concept (before design)"
+        - "Gate 2 — Design (designing now, want feedback)"
+        - "Gate 3 — Pre-handoff (designed, before merge)"
+        - "Gate 4 — Implementation QA (merged, verifying)"
+        - "Unsure / advisory only"
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: What part of Design Hub does this touch?
+      multiple: true
+      options:
+        - Salt DS
+        - Material 3
+        - Fluent 2
+        - Carbon DS
+        - ausos DS
+        - Shared (src/data/_shared)
+        - Registry wiring (src/data/registry.ts)
+        - Builder surface (src/components/builder)
+        - Docs only
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What gap does this fill? Who benefits?
+      placeholder: "Design Hub users comparing M3 shape tokens across density offsets can't easily see the full ladder — there's no visual reference alongside the values."
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Proposed approach
+      description: Briefly, what are you planning? If Gate 1, include the concepts you've explored.
+      placeholder: |
+        - Add a ShapeTokens component that renders 7 swatches (none → full) with visible CSS var name.
+        - Derive the array from M3_SHAPE in tokens.ts so the demo stays in sync with the spec.
+        - Alt considered: inline table of values — rejected because visual preview > numeric.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Figma frames, existing components to match, competitor patterns, WCAG criteria numbers.
+      placeholder: |
+        - Figma: figma.com/design/…/m3-components?node-id=123:456
+        - Matches pattern from: M3 spec https://m3.material.io/styles/shape/overview
+        - WCAG reference: 1.4.3 Contrast (Minimum)
+
+  - type: checkboxes
+    id: gates-self-review
+    attributes:
+      label: Self-review — which criteria already pass?
+      description: Check boxes you've already verified. Review will focus on unchecked items.
+      options:
+        - label: Solves a clear user problem
+        - label: Tokens only — no raw hex/px/ms
+        - label: Hover/focus/pressed/disabled states defined
+        - label: WCAG AA contrast verified
+        - label: Keyboard navigation works
+        - label: Dark mode renders correctly
+        - label: Long/empty content states handled
+        - label: Matches per-DS spec conventions
+        - label: No impact on Builder Sprint 2525492 features
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / open questions
+      description: What could go wrong? What do you want the reviewer to weigh in on?
+      placeholder: "Unsure if shape-extra-large (28px) is visually distinguishable from large (16px) at small preview sizes."
+
+  - type: input
+    id: pr-link
+    attributes:
+      label: Related PR (if any)
+      description: Link the PR if one exists.
+      placeholder: "https://github.com/shannonhecker/desinghub/pull/NN"
