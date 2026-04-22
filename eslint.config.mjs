@@ -28,14 +28,26 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-  /* design-hub/no-hardcoded-tokens — P0 token-migration guardrail.
-     Severity is `warn` during P0→P5; flips to `error` per-DS as each
-     phase lands, and globally at P6. See docs/TOKENS.md. */
+  /* design-hub/no-hardcoded-tokens — token-migration guardrail.
+     Severity posture after P6 (2026-04-22):
+       - warn  for src/data/**\/*.{ts,tsx,jsx} (existing files with
+         pre-migration literals — CI catches NEW literals via the
+         tokens-audit baseline diff, not via ESLint errors)
+       - off   for src/data/**\/tokens.ts (token-definition files)
+       - error for src/data/_shared/** (canonical shared layer —
+         must never contain raw values)
+     See docs/TOKENS.md § Enforcement posture. */
   {
     files: ["src/data/**/*.{ts,tsx,jsx}"],
     plugins: { "design-hub": designHubPlugin },
     rules: {
       "design-hub/no-hardcoded-tokens": "warn",
+    },
+  },
+  {
+    files: ["src/data/_shared/**/*.{ts,tsx}"],
+    rules: {
+      "design-hub/no-hardcoded-tokens": "error",
     },
   },
   {
