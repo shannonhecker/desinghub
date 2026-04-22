@@ -522,9 +522,9 @@ function Tooltips() {
 function Links() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT, fontSize: 14 }}>
-      <a className="f-link" href="#" onClick={e => e.preventDefault()}>Standard link</a>
-      <a className="f-link" href="#" onClick={e => e.preventDefault()}>Learn more about Fluent 2</a>
-      <span style={{ color: T.fg2 }}>Text with an <a className="f-link" href="#" onClick={e => e.preventDefault()}>inline link</a> inside it.</span>
+      <a className="f-link" href="#fluent-docs">Read the Fluent 2 docs</a>
+      <a className="f-link" href="#fluent-more">Learn more about Fluent 2</a>
+      <span style={{ color: T.fg2 }}>Text with an <a className="f-link" href="#fluent-inline">inline link</a> inside it.</span>
     </div>
   );
 }
