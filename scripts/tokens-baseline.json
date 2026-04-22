@@ -1,0 +1,376 @@
+{
+  "generatedAt": "2026-04-22T21:15:32.057Z",
+  "perDs": {
+    "salt": {
+      "hex": 277,
+      "rgba": 21,
+      "px": 661,
+      "ms": 25,
+      "files": 3
+    },
+    "m3": {
+      "hex": 394,
+      "rgba": 48,
+      "px": 715,
+      "ms": 35,
+      "files": 2
+    },
+    "fluent": {
+      "hex": 242,
+      "rgba": 22,
+      "px": 494,
+      "ms": 21,
+      "files": 2
+    },
+    "carbon": {
+      "hex": 157,
+      "rgba": 13,
+      "px": 681,
+      "ms": 29,
+      "files": 1
+    },
+    "ausos": {
+      "hex": 80,
+      "rgba": 61,
+      "px": 276,
+      "ms": 11,
+      "files": 1
+    }
+  },
+  "other": {
+    "hex": 6,
+    "rgba": 0,
+    "px": 1,
+    "ms": 0,
+    "files": 1
+  },
+  "totals": {
+    "hex": 1156,
+    "rgba": 165,
+    "px": 2828,
+    "ms": 121
+  },
+  "files": [
+    {
+      "path": "src/data/m3/m3-documentation.jsx",
+      "ds": "m3",
+      "hex": 225,
+      "rgba": 32,
+      "px": 605,
+      "ms": 27,
+      "samples": {
+        "hex": [
+          "#6750A4",
+          "#FFFFFF",
+          "#EADDFF",
+          "#21005D",
+          "#625B71"
+        ],
+        "rgba": [
+          "rgba(0"
+        ],
+        "px": [
+          "24px",
+          "12px",
+          "10px",
+          "20px",
+          "18px"
+        ],
+        "ms": [
+          "50ms",
+          "100ms",
+          "150ms",
+          "200ms",
+          "250ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/carbon/carbon-documentation.jsx",
+      "ds": "carbon",
+      "hex": 157,
+      "rgba": 13,
+      "px": 681,
+      "ms": 29,
+      "samples": {
+        "hex": [
+          "#a6c8ff",
+          "#78a9ff",
+          "#4589ff",
+          "#0f62fe",
+          "#0043ce"
+        ],
+        "rgba": [
+          "rgba(1",
+          "rgba(2",
+          "rgba(0",
+          "rgba(6"
+        ],
+        "px": [
+          "2px",
+          "0px",
+          "14px",
+          "1px",
+          "6px"
+        ],
+        "ms": [
+          "70ms",
+          "110ms",
+          "150ms",
+          "240ms",
+          "400ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/salt/salt-documentation.jsx",
+      "ds": "salt",
+      "hex": 204,
+      "rgba": 15,
+      "px": 585,
+      "ms": 20,
+      "samples": {
+        "hex": [
+          "#FFFFFF",
+          "#F5F7F8",
+          "#E2E4E5",
+          "#101820",
+          "#000000"
+        ],
+        "rgba": [
+          "rgba(0",
+          "rgba(2",
+          "rgb(2"
+        ],
+        "px": [
+          "6px",
+          "4px",
+          "1px",
+          "12px",
+          "28px"
+        ],
+        "ms": [
+          "150ms",
+          "200ms",
+          "300ms",
+          "0ms",
+          "1000ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/fluent/fluent2-documentation.jsx",
+      "ds": "fluent",
+      "hex": 151,
+      "rgba": 18,
+      "px": 421,
+      "ms": 13,
+      "samples": {
+        "hex": [
+          "#FFFFFF",
+          "#FAFAFA",
+          "#F5F5F5",
+          "#F0F0F0",
+          "#EBEBEB"
+        ],
+        "rgba": [
+          "rgba(0"
+        ],
+        "px": [
+          "5px",
+          "8px",
+          "12px",
+          "10px",
+          "14px"
+        ],
+        "ms": [
+          "50ms",
+          "100ms",
+          "150ms",
+          "200ms",
+          "250ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/ausos/ausos-documentation.jsx",
+      "ds": "ausos",
+      "hex": 80,
+      "rgba": 61,
+      "px": 276,
+      "ms": 11,
+      "samples": {
+        "hex": [
+          "#0b1120",
+          "#E8EAED",
+          "#0e1428",
+          "#121830",
+          "#171d3a"
+        ],
+        "rgba": [
+          "rgba(1",
+          "rgba(2",
+          "rgba(0",
+          "rgba(7"
+        ],
+        "px": [
+          "6px",
+          "10px",
+          "8px",
+          "14px",
+          "16px"
+        ],
+        "ms": [
+          "150ms",
+          "250ms",
+          "350ms",
+          "200ms",
+          "01ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/m3/themes.ts",
+      "ds": "m3",
+      "hex": 169,
+      "rgba": 16,
+      "px": 110,
+      "ms": 8,
+      "samples": {
+        "hex": [
+          "#6750A4",
+          "#FFFFFF",
+          "#EADDFF",
+          "#21005D",
+          "#625B71"
+        ],
+        "rgba": [
+          "rgba(0"
+        ],
+        "px": [
+          "8px",
+          "40px",
+          "48px",
+          "20px",
+          "24px"
+        ],
+        "ms": [
+          "50ms",
+          "100ms",
+          "150ms",
+          "200ms",
+          "300ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/fluent/themes.ts",
+      "ds": "fluent",
+      "hex": 91,
+      "rgba": 4,
+      "px": 73,
+      "ms": 8,
+      "samples": {
+        "hex": [
+          "#FFFFFF",
+          "#FAFAFA",
+          "#F5F5F5",
+          "#F0F0F0",
+          "#EBEBEB"
+        ],
+        "rgba": [
+          "rgba(0"
+        ],
+        "px": [
+          "6px",
+          "32px",
+          "96px",
+          "4px",
+          "12px"
+        ],
+        "ms": [
+          "50ms",
+          "100ms",
+          "150ms",
+          "200ms",
+          "250ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/salt/themes.ts",
+      "ds": "salt",
+      "hex": 73,
+      "rgba": 6,
+      "px": 68,
+      "ms": 5,
+      "samples": {
+        "hex": [
+          "#FFFFFF",
+          "#F5F7F8",
+          "#E2E4E5",
+          "#101820",
+          "#000000"
+        ],
+        "rgba": [
+          "rgba(0"
+        ],
+        "px": [
+          "6px",
+          "4px",
+          "1px",
+          "12px",
+          "28px"
+        ],
+        "ms": [
+          "150ms",
+          "200ms",
+          "300ms",
+          "01ms"
+        ]
+      }
+    },
+    {
+      "path": "src/data/salt/components.ts",
+      "ds": "salt",
+      "hex": 0,
+      "rgba": 0,
+      "px": 8,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "4px",
+          "44px",
+          "20px",
+          "28px",
+          "36px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/data/registry.ts",
+      "ds": "shared",
+      "hex": 6,
+      "rgba": 0,
+      "px": 1,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#6750A4",
+          "#1B7F9E",
+          "#0F6CBD",
+          "#7E6BC4",
+          "#0f62fe"
+        ],
+        "rgba": [],
+        "px": [
+          "2px"
+        ],
+        "ms": []
+      }
+    }
+  ]
+}
