@@ -1,4 +1,5 @@
 import { createRequire } from "module";
+import designHubPlugin from "./.eslint/plugin.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -25,6 +26,16 @@ const eslintConfig = [
     files: ["src/data/**/*.jsx"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  /* design-hub/no-hardcoded-tokens — P0 token-migration guardrail.
+     Severity is `warn` during P0→P5; flips to `error` per-DS as each
+     phase lands, and globally at P6. See docs/TOKENS.md. */
+  {
+    files: ["src/data/**/*.{ts,tsx,jsx}"],
+    plugins: { "design-hub": designHubPlugin },
+    rules: {
+      "design-hub/no-hardcoded-tokens": "warn",
     },
   },
   {

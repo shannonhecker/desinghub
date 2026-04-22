@@ -9,7 +9,12 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "tokens:audit": "node scripts/tokens-audit.mjs",
+    "tokens:audit:write": "node scripts/tokens-audit.mjs --write",
+    "tokens:audit:json": "node scripts/tokens-audit.mjs --json",
+    "ss": "node scripts/screenshot-matrix.mjs",
+    "ss:baseline": "node scripts/screenshot-matrix.mjs --save"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
