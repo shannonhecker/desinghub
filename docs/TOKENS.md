@@ -153,11 +153,43 @@ npx playwright install chromium
 
 ---
 
+## Enforcement posture (after P6)
+
+Three layers running in parallel:
+
+### 1. `scripts/tokens-audit.mjs` — the hard gate
+
+Runs in both **pre-commit hook** (`.githooks/pre-commit`) and **GitHub Actions CI** (`.github/workflows/ci.yml`). Compares literal counts against `scripts/tokens-baseline.json` and **fails if any count rose**. This is the primary enforcement — if you add a hex / rgba / px / ms literal anywhere in `src/data/**` outside the allowlist, the commit is blocked.
+
+Allowlist (literals skipped by the audit):
+- Filename: `**/tokens.ts`, `**/code-snippets.ts`
+- Variable-declarator ancestry: `MATERIAL_COLORS`, any `*_DENSITY_MAP` / `*_SIZE_MAP`
+- Line suppression: `// tokens-audit-ignore` at end of a line
+- Block suppression: `// tokens-audit-ignore-block` / `// tokens-audit-ignore-end`
+
+### 2. ESLint rule `design-hub/no-hardcoded-tokens`
+
+AST-visible literals flagged in-editor:
+
+| Path | Severity | Rationale |
+|---|---|---|
+| `src/data/**/*.{ts,tsx,jsx}` | `warn` | Existing pre-migration literals surface in editor; CI doesn't fail on them |
+| `src/data/_shared/**` | **`error`** | Canonical shared layer must never contain raw values |
+| `src/data/**/tokens.ts` | `off` | Token-definition files ARE the source of truth |
+
+When a DS documentation file reaches zero warnings (via focused polish PRs), add an override to flip that path to `error` and keep it clean.
+
+### 3. Pre-commit hook
+
+Installed automatically via `npm install` (triggers `prepare` script: `git config core.hooksPath .githooks`). Runs the token audit on any commit touching `src/data/**`. Bypass with `git commit --no-verify` for emergencies only.
+
+---
+
 ## Contributing
 
 **Before writing a hex color, spacing value, font size, duration, or radius:**
 
 1. Check if the active DS already has a matching token (`grep --<ds>- src/data/<ds>/*.jsx`).
-2. If it doesn't, **name the token first**, add it to the DS's theme object / motion export, then use it in the renderer.
+2. If it doesn't, **name the token first**, add it to the DS's `tokens.ts` file, then consume via `var(--<ds>-*)` in the renderer.
 3. Never introduce a token that isn't backed by a primitive in `src/data/_shared/primitives.ts` (unless the value is genuinely DS-specific — e.g. a Carbon semantic color).
-4. Run `npm run tokens:audit` before opening a PR — CI will too.
+4. Run `npm run tokens:audit` before opening a PR — pre-commit hook and CI both run it.

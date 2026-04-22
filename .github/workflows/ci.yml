@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Lint
+        run: npx eslint src --max-warnings=10000
+        # --max-warnings is a soft cap. The current baseline sits at ~2810
+        # design-hub/no-hardcoded-tokens warnings. New violations should
+        # be caught by the tokens-audit step below, not by this soft cap.
+        # Raise the cap if legitimate new files push us over.
+
+      - name: Token audit (reject new literals)
+        run: npm run tokens:audit
+        # Fails if hex / rgba / px / ms literal count rose vs.
+        # scripts/tokens-baseline.json. This is the hard gate —
+        # PRs that ADD hardcoded design values cannot merge.

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Design Hub — pre-commit hook.
+#
+# Runs the token audit to block commits that introduce new
+# hardcoded design values. Fast path: skips if no src/data files
+# are staged (audit only cares about that tree).
+#
+# Install by pointing git at this directory:
+#   git config core.hooksPath .githooks
+# (run once per clone — handled automatically by `npm run prepare`).
+
+set -e
+
+# Only run the audit if any src/data/** files are staged.
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^src/data/'; then
+  echo "→ tokens-audit (pre-commit)"
+  if ! node scripts/tokens-audit.mjs; then
+    echo ""
+    echo "✗ Commit blocked: new hardcoded design values detected."
+    echo "  Use var(--<ds>-*) from the token system (see docs/TOKENS.md)."
+    echo "  If the literal is intentional, either:"
+    echo "    - move it into a tokens.ts file (exempt by filename), or"
+    echo "    - add // tokens-audit-ignore at end of the line."
+    echo ""
+    echo "  To bypass this hook (emergency only):"
+    echo "    git commit --no-verify"
+    exit 1
+  fi
+fi

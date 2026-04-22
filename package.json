@@ -14,7 +14,8 @@
     "tokens:audit:write": "node scripts/tokens-audit.mjs --write",
     "tokens:audit:json": "node scripts/tokens-audit.mjs --json",
     "ss": "node scripts/screenshot-matrix.mjs",
-    "ss:baseline": "node scripts/screenshot-matrix.mjs --save"
+    "ss:baseline": "node scripts/screenshot-matrix.mjs --save",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
