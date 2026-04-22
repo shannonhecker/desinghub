@@ -95,6 +95,7 @@ const buildCSS = (T) => `
 
 /* Fluent 2 Design Tokens */
 :root {
+  color-scheme: ${modeOf(T)};
   ${fluentTokenVars(modeOf(T))}
 }
 @media (prefers-reduced-motion: reduce) {
@@ -141,21 +142,21 @@ const buildCSS = (T) => `
 /* === CHECKBOX === */
 .f-checkbox { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; outline:none; }
 .f-checkbox:focus-visible .f-cb-box { outline:2px solid ${T.fg1}; outline-offset:2px; }
-.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
+.f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:background-color var(--f-dur-fast) var(--f-curve-easy-ease),border-color var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-checkbox:hover .f-cb-box { border-color:${T.brandBg}; }
 .f-checkbox.checked .f-cb-box { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-checkbox.checked:hover .f-cb-box { background:${T.brandBgHover}; border-color:${T.brandBgHover}; }
 
 /* === RADIO === */
 .f-radio { display:flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; padding:4px 0; outline:none; }
-.f-radio-circle { width:16px; height:16px; border-radius:8px; border:1px solid ${T.strokeAccessible}; display:flex; align-items:center; justify-content:center; transition:all var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
+.f-radio-circle { width:16px; height:16px; border-radius:8px; border:1px solid ${T.strokeAccessible}; display:flex; align-items:center; justify-content:center; transition:border-color var(--f-dur-fast) var(--f-curve-easy-ease),border-width var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-radio:hover .f-radio-circle { border-color:${T.brandBg}; }
 .f-radio.selected .f-radio-circle { border-color:${T.brandBg}; border-width:2px; }
 
 /* === SWITCH / TOGGLE === */
-.f-switch { width:40px; height:20px; border-radius:10px; background:${T.bg5}; border:1px solid ${T.strokeAccessible}; cursor:pointer; position:relative; outline:none; transition:all var(--f-dur-slow) var(--f-curve-decel-mid); padding:0; }
+.f-switch { width:40px; height:20px; border-radius:10px; background:${T.bg5}; border:1px solid ${T.strokeAccessible}; cursor:pointer; position:relative; outline:none; transition:background-color var(--f-dur-slow) var(--f-curve-decel-mid),border-color var(--f-dur-slow) var(--f-curve-decel-mid); padding:0; }
 .f-switch:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
-.f-switch .f-sw-thumb { position:absolute; width:14px; height:14px; border-radius:7px; background:${T.fg1}; top:2px; left:2px; transition:all var(--f-dur-slow) var(--f-curve-decel-mid); }
+.f-switch .f-sw-thumb { position:absolute; width:14px; height:14px; border-radius:7px; background:${T.fg1}; top:2px; left:2px; transition:left var(--f-dur-slow) var(--f-curve-decel-mid),background-color var(--f-dur-slow) var(--f-curve-decel-mid); }
 .f-switch.on { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-switch.on .f-sw-thumb { left:22px; background:${T.fgOnBrand}; }
 .f-switch:disabled { opacity:0.38; cursor:default; }
@@ -300,7 +301,15 @@ function Checkboxes() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {["Notifications", "Email updates", "SMS alerts"].map((l, i) => (
-        <div key={i} className={`f-checkbox${checks[i] ? " checked" : ""}`} tabIndex={0} role="checkbox" aria-checked={checks[i]} onClick={() => toggle(i)} onKeyDown={e => e.key === " " && (e.preventDefault(), toggle(i))}>
+        <div
+          key={i}
+          className={`f-checkbox${checks[i] ? " checked" : ""}`}
+          tabIndex={0}
+          role="checkbox"
+          aria-checked={checks[i]}
+          onClick={() => toggle(i)}
+          onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(i); } }}
+        >
           <div className="f-cb-box">{checks[i] && <FIcon name="check" size={12} color={T.fgOnBrand} />}</div>
           <span>{l}</span>
         </div>
@@ -311,10 +320,23 @@ function Checkboxes() {
 
 function Radios() {
   const [sel, setSel] = useState(0);
+  const labels = ["Option A", "Option B", "Option C"];
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {["Option A", "Option B", "Option C"].map((l, i) => (
-        <div key={i} className={`f-radio${sel === i ? " selected" : ""}`} tabIndex={0} role="radio" aria-checked={sel === i} onClick={() => setSel(i)} onKeyDown={e => e.key === " " && setSel(i)}>
+    <div role="radiogroup" aria-label="Options" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      {labels.map((l, i) => (
+        <div
+          key={i}
+          className={`f-radio${sel === i ? " selected" : ""}`}
+          tabIndex={sel === i ? 0 : -1}
+          role="radio"
+          aria-checked={sel === i}
+          onClick={() => setSel(i)}
+          onKeyDown={e => {
+            if (e.key === " " || e.key === "Enter") { e.preventDefault(); setSel(i); }
+            else if (e.key === "ArrowDown" || e.key === "ArrowRight") { e.preventDefault(); setSel((sel + 1) % labels.length); }
+            else if (e.key === "ArrowUp" || e.key === "ArrowLeft") { e.preventDefault(); setSel((sel - 1 + labels.length) % labels.length); }
+          }}
+        >
           <div className="f-radio-circle">{sel === i && <div style={{ width: 8, height: 8, borderRadius: 4, background: T.brandBg }} />}</div>
           <span>{l}</span>
         </div>
@@ -387,14 +409,31 @@ function Avatars() {
 
 function Tabs() {
   const [tab, setTab] = useState(0);
+  const labels = ["Overview", "Activity", "Files", "Settings"];
   return (
     <div>
-      <div className="f-tablist">
-        {["Overview", "Activity", "Files", "Settings"].map((l, i) => (
-          <button key={i} className={`f-tab${tab === i ? " active" : ""}`} onClick={() => setTab(i)}>{l}</button>
+      <div className="f-tablist" role="tablist" aria-label="Project sections">
+        {labels.map((l, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={tab === i}
+            tabIndex={tab === i ? 0 : -1}
+            id={`f-tab-${i}`}
+            aria-controls={`f-tabpanel-${i}`}
+            className={`f-tab${tab === i ? " active" : ""}`}
+            onClick={() => setTab(i)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setTab((tab + 1) % labels.length);
+              else if (e.key === "ArrowLeft") setTab((tab - 1 + labels.length) % labels.length);
+              else if (e.key === "Home") setTab(0);
+              else if (e.key === "End") setTab(labels.length - 1);
+            }}
+          >{l}</button>
         ))}
       </div>
-      <div style={{ padding: 16, fontSize: 14, color: T.fg2, fontFamily: FONT }}>Content for "{["Overview", "Activity", "Files", "Settings"][tab]}" tab.</div>
+      <div id={`f-tabpanel-${tab}`} role="tabpanel" aria-labelledby={`f-tab-${tab}`} style={{ padding: 16, fontSize: 14, color: T.fg2, fontFamily: FONT }}>Content for &ldquo;{labels[tab]}&rdquo; tab.</div>
     </div>
   );
 }
@@ -454,7 +493,7 @@ function ProgressDemo() {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div className="f-spinner" />
-        <span style={{ fontFamily: FONT, fontSize: 14, color: T.fg2 }}>Loading...</span>
+        <span role="status" aria-live="polite" style={{ fontFamily: FONT, fontSize: 14, color: T.fg2 }}>Loading&hellip;</span>
       </div>
       <input type="range" min={0} max={100} value={v} onChange={e => setV(+e.target.value)} style={{ width: 200 }} />
       <div style={{ marginTop: 4 }}>
@@ -483,9 +522,9 @@ function Tooltips() {
 function Links() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: FONT, fontSize: 14 }}>
-      <a className="f-link" href="#" onClick={e => e.preventDefault()}>Standard link</a>
-      <a className="f-link" href="#" onClick={e => e.preventDefault()}>Learn more about Fluent 2</a>
-      <span style={{ color: T.fg2 }}>Text with an <a className="f-link" href="#" onClick={e => e.preventDefault()}>inline link</a> inside it.</span>
+      <a className="f-link" href="#fluent-docs">Read the Fluent 2 docs</a>
+      <a className="f-link" href="#fluent-more">Learn more about Fluent 2</a>
+      <span style={{ color: T.fg2 }}>Text with an <a className="f-link" href="#fluent-inline">inline link</a> inside it.</span>
     </div>
   );
 }
@@ -1587,7 +1626,7 @@ export default function App() {
                 border: themeKey === key ? `2px solid ${T.brandBg}` : `1px solid ${T.stroke1}`,
                 background: themeKey === key ? T.brandBg2 : "transparent",
                 color: themeKey === key ? T.brandFg1 : T.fg2, fontWeight: themeKey === key ? 600 : 400,
-                transition: "all 150ms",
+                transition: "background-color 150ms, color 150ms, border-color 150ms",
               }}>
                 <FIcon name={key === "light" ? "sun" : "moon"} size={14} />
                 {theme.name}
@@ -1603,7 +1642,7 @@ export default function App() {
                 flex: 1, padding: `${sz.gap - 4}px 0`, border: "none", cursor: "pointer", fontFamily: FONT, fontSize: sz.sideFs - 3, fontWeight: size === key ? 600 : 400,
                 background: size === key ? T.brandBg : "transparent",
                 color: size === key ? T.fgOnBrand : T.fg2,
-                transition: "all 150ms",
+                transition: "background-color 150ms, color 150ms, border-color 150ms",
               }}>{label}</button>
             ))}
           </div>

@@ -187,14 +187,25 @@ function Checkboxes(){
   const [ch,setCh]=useState([true,false,false,false]);
   const labels=["Checked","Unchecked","Error","Disabled"];
   const colors=[T.accent,T.borderStrong,T.negative,T.fgDis];
+  const toggle=(i)=>{if(i<3){const n=[...ch];n[i]=!n[i];setCh(n);}};
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
     <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
       {labels.map((l,i)=>(
-        <label key={i} style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1}} onClick={()=>{if(i<3){const n=[...ch];n[i]=!n[i];setCh(n);}}}>
-          <div style={{width:16,height:16,borderRadius:3,border:`2px solid ${ch[i]?colors[i]:colors[i]}`,background:ch[i]?colors[i]:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <span
+          key={i}
+          role="checkbox"
+          aria-checked={ch[i]}
+          aria-disabled={i===3}
+          aria-invalid={i===2}
+          tabIndex={i===3?-1:0}
+          onClick={()=>toggle(i)}
+          onKeyDown={(e)=>{if((e.key===" "||e.key==="Enter")&&i<3){e.preventDefault();toggle(i);}}}
+          style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1,outline:"none"}}
+        >
+          <span aria-hidden="true" style={{width:16,height:16,borderRadius:3,border:`2px solid ${ch[i]?colors[i]:colors[i]}`,background:ch[i]?colors[i]:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
             {ch[i]&&<SIcon name="check" size={10} color={i===2?"#fff":T.accentFg}/>}
-          </div>{l}
-        </label>
+          </span>{l}
+        </span>
       ))}
     </div>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>States: Checked, Unchecked, Indeterminate, Error (negative), Disabled (40% opacity). Validation via Form Field wrapper.</div>
@@ -203,14 +214,30 @@ function Checkboxes(){
 
 function Radios(){
   const [sel,setSel]=useState(0);
+  const labels=["Option A","Option B","Error","Disabled"];
   return <div style={{display:"flex",flexDirection:"column",gap:12}}>
-    <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-      {["Option A","Option B","Error","Disabled"].map((l,i)=>(
-        <label key={i} style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1}} onClick={()=>{if(i<3)setSel(i);}}>
-          <div style={{width:16,height:16,borderRadius:8,border:`2px solid ${i===2?T.negative:sel===i?T.accent:T.borderStrong}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            {sel===i&&<div style={{width:8,height:8,borderRadius:4,background:i===2?T.negative:T.accent}}/>}
-          </div>{l}
-        </label>
+    <div role="radiogroup" aria-label="Options" style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+      {labels.map((l,i)=>(
+        <span
+          key={i}
+          role="radio"
+          aria-checked={sel===i}
+          aria-disabled={i===3}
+          aria-invalid={i===2}
+          tabIndex={sel===i?0:-1}
+          onClick={()=>{if(i<3)setSel(i);}}
+          onKeyDown={(e)=>{
+            if(i>=3) return;
+            if(e.key===" "||e.key==="Enter"){e.preventDefault();setSel(i);}
+            else if(e.key==="ArrowDown"||e.key==="ArrowRight"){e.preventDefault();setSel((sel+1)%3);}
+            else if(e.key==="ArrowUp"||e.key==="ArrowLeft"){e.preventDefault();setSel((sel-1+3)%3);}
+          }}
+          style={{display:"flex",alignItems:"center",gap:6,cursor:i===3?"default":"pointer",fontSize:12,fontFamily:FONT,color:i===2?T.negative:i===3?T.fgDis:T.fg,opacity:i===3?0.5:1,outline:"none"}}
+        >
+          <span aria-hidden="true" style={{width:16,height:16,borderRadius:8,border:`2px solid ${i===2?T.negative:sel===i?T.accent:T.borderStrong}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            {sel===i&&<span style={{width:8,height:8,borderRadius:4,background:i===2?T.negative:T.accent}}/>}
+          </span>{l}
+        </span>
       ))}
     </div>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>States: Selected, Unselected, Error (negative color), Disabled. Single selection within group.</div>
@@ -222,8 +249,8 @@ function Switches(){
   return <div style={{display:"flex",gap:20,alignItems:"center",flexWrap:"wrap"}}>
     {[[a,setA,"Wi-Fi"],[b,setB,"Bluetooth"]].map(([v,set,l],i)=>(
       <div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
-        <button onClick={()=>set(!v)} role="switch" aria-checked={v} style={{width:36,height:18,borderRadius:9,background:v?T.accent:T.bg3,border:`1px solid ${v?T.accent:T.borderStrong}`,cursor:"pointer",position:"relative",outline:"none",padding:0,transition:"all 200ms cubic-bezier(0.2,0,0,1)"}}>
-          <div style={{position:"absolute",width:12,height:12,borderRadius:6,background:v?T.accentFg:T.fg,top:2,left:v?20:2,transition:"all 200ms cubic-bezier(0.2,0,0,1)"}}/>
+        <button onClick={()=>set(!v)} role="switch" aria-checked={v} aria-label="Toggle switch" style={{width:36,height:18,borderRadius:9,background:v?T.accent:T.bg3,border:`1px solid ${v?T.accent:T.borderStrong}`,cursor:"pointer",position:"relative",outline:"none",padding:0,transition:"background-color 200ms cubic-bezier(0.2,0,0,1), border-color 200ms cubic-bezier(0.2,0,0,1)"}}>
+          <div style={{position:"absolute",width:12,height:12,borderRadius:6,background:v?T.accentFg:T.fg,top:2,left:v?20:2,transition:"left 200ms cubic-bezier(0.2,0,0,1), background-color 200ms cubic-bezier(0.2,0,0,1)"}}/>
         </button>
         <span style={{fontFamily:FONT,fontSize:12,color:T.fg}}>{l}</span>
       </div>
@@ -244,11 +271,30 @@ function SaltCards(){
 
 function TabsComp(){
   const [t,setT]=useState(0);
+  const labels=["Overview","Positions","Orders","History"];
   return <div>
-    <div style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
-      {["Overview","Positions","Orders","History"].map((l,i)=>(<button key={i} className={`s-tab${t===i?" active":""}`} onClick={()=>setT(i)}>{l}</button>))}
+    <div role="tablist" aria-label="Account sections" style={{display:"flex",borderBottom:`1px solid ${T.border}`}}>
+      {labels.map((l,i)=>(
+        <button
+          key={i}
+          type="button"
+          role="tab"
+          id={`s-tab-${i}`}
+          aria-selected={t===i}
+          aria-controls={`s-tabpanel-${i}`}
+          tabIndex={t===i?0:-1}
+          className={`s-tab${t===i?" active":""}`}
+          onClick={()=>setT(i)}
+          onKeyDown={(e)=>{
+            if(e.key==="ArrowRight") setT((t+1)%labels.length);
+            else if(e.key==="ArrowLeft") setT((t-1+labels.length)%labels.length);
+            else if(e.key==="Home") setT(0);
+            else if(e.key==="End") setT(labels.length-1);
+          }}
+        >{l}</button>
+      ))}
     </div>
-    <div style={{padding:12,fontSize:12,color:T.fg2,fontFamily:FONT}}>Content for "{["Overview","Positions","Orders","History"][t]}" tab.</div>
+    <div id={`s-tabpanel-${t}`} role="tabpanel" aria-labelledby={`s-tab-${t}`} style={{padding:12,fontSize:12,color:T.fg2,fontFamily:FONT}}>Content for &ldquo;{labels[t]}&rdquo; tab.</div>
   </div>;
 }
 
@@ -257,9 +303,9 @@ function Banners(){
     {[["info",T.infoWeak,T.infoFg,T.info,"Server maintenance scheduled for tonight."],
       ["positive",T.positiveWeak,T.positiveFg,T.positive,"Trade executed successfully."],
       ["caution",T.cautionWeak,T.cautionFg,T.caution,"Market data may be delayed."],
-      ["negative",T.negativeWeak,T.negativeFg,T.negative,"Connection lost. Retrying..."]
+      ["negative",T.negativeWeak,T.negativeFg,T.negative,"Connection lost. Retrying…"]
     ].map(([k,bg,fg,border,msg])=>(
-      <div key={k} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:4,background:bg,color:fg,fontFamily:FONT,fontSize:12,borderLeft:`3px solid ${border}`}}>{msg}</div>
+      <div key={k} role={k==="negative"?"alert":"status"} aria-live={k==="negative"?"assertive":"polite"} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",borderRadius:4,background:bg,color:fg,fontFamily:FONT,fontSize:12,borderLeft:`3px solid ${border}`}}>{msg}</div>
     ))}
   </div>;
 }
@@ -332,7 +378,7 @@ function ProgressDemo(){
     <div style={{width:"100%",height:4,borderRadius:2,background:T.bg3}}><div style={{width:`${v}%`,height:"100%",borderRadius:2,background:T.accent,transition:"width 300ms"}}/></div></div>
     <div style={{display:"flex",alignItems:"center",gap:8}}>
       <div style={{width:24,height:24,border:`3px solid ${T.bg3}`,borderTopColor:T.accent,borderRadius:12,animation:"s-spin 0.6s linear infinite"}}/>
-      <span style={{fontFamily:FONT,fontSize:12,color:T.fg2}}>Loading...</span>
+      <span role="status" aria-live="polite" style={{fontFamily:FONT,fontSize:12,color:T.fg2}}>Loading&hellip;</span>
     </div>
     <style>{`@keyframes s-spin{to{transform:rotate(360deg);}}`}</style>
     <input type="range" min={0} max={100} value={v} onChange={e=>setV(+e.target.value)} style={{width:180}}/>
@@ -359,7 +405,7 @@ function PillsDemo(){
   const toggle=i=>setPills(p=>{const n=[...p];n[i]={...n[i],a:!n[i].a};return n;});
   return <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
     {pills.map((p,i)=>(
-      <button key={i} onClick={()=>toggle(i)} style={{height:22,padding:"0 10px",borderRadius:11,border:`1px solid ${p.a?T.accent:T.border}`,background:p.a?T.accentWeak:"transparent",color:p.a?T.accent:T.fg2,fontSize:11,fontWeight:p.a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms",outline:"none"}}>{p.l}</button>
+      <button key={i} onClick={()=>toggle(i)} style={{height:22,padding:"0 10px",borderRadius:11,border:`1px solid ${p.a?T.accent:T.border}`,background:p.a?T.accentWeak:"transparent",color:p.a?T.accent:T.fg2,fontSize:11,fontWeight:p.a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms",outline:"none"}}>{p.l}</button>
     ))}
   </div>;
 }
@@ -731,7 +777,7 @@ function PatListDetail(){
   const items=[{t:"Dashboard Report",d:"Q4 revenue analysis with regional breakdowns"},{t:"User Metrics",d:"Monthly active users and retention data"},{t:"System Alerts",d:"Infrastructure health and uptime monitoring"}];
   return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
     <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
-      {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent"}}>{it.t}</div>)}
+      {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
     </div>
     <div style={{flex:1,padding:12}}>
       <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
@@ -770,7 +816,7 @@ function PatLogin(){
     <div style={{display:"flex",flexDirection:"column",gap:8}}>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Email</label><input className="s-input" placeholder="you@company.com" style={{fontSize:11,marginTop:2}}/></div>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Password</label><input className="s-input" type="password" placeholder="••••••••" style={{fontSize:11,marginTop:2}}/></div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox"/> Remember me</label><span style={{fontSize:10,color:T.accent,cursor:"pointer"}}>Forgot?</span></div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox" name="remember"/> Remember me</label><a href="#forgot-password" style={{fontSize:10,color:T.accent,textDecoration:"none"}}>Forgot your password?</a></div>
       <button className="s-btn s-btn-solid" style={{width:"100%",marginTop:4}}>Sign In</button>
     </div>
   </div>;
@@ -781,7 +827,7 @@ function PatSettings(){
   const tabs=["General","Security","Notifications"];
   return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
     <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
-      {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+      {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
     </div>
     <div style={{flex:1,padding:12}}>
       <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
@@ -817,10 +863,10 @@ function PatWizard(){
     <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
       {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
         {i>0&&<div style={{flex:1,height:2,background:i<=step?T.accent:T.border}}/>}
-        <div onClick={()=>setStep(i)} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
-          <div style={{width:20,height:20,borderRadius:10,background:i<step?T.accent:i===step?T.accent:T.border,color:i<=step?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600}}>{i<step?"✓":i+1}</div>
+        <button type="button" onClick={()=>setStep(i)} aria-current={i===step?"step":undefined} aria-label={`Step ${i+1}: ${s}${i<step?" (complete)":""}`} style={{display:"flex",alignItems:"center",gap:4,cursor:"pointer",background:"transparent",border:"none",padding:0,fontFamily:FONT}}>
+          <span aria-hidden="true" style={{width:20,height:20,borderRadius:10,background:i<step?T.accent:i===step?T.accent:T.border,color:i<=step?T.accentFg:T.fg3,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:600}}>{i<step?"✓":i+1}</span>
           <span style={{fontSize:10,color:i===step?T.fg:T.fg3,fontWeight:i===step?600:400}}>{s}</span>
-        </div>
+        </button>
       </React.Fragment>)}
     </div>
     <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:12,minHeight:60}}>
@@ -853,7 +899,7 @@ function PatDataTable(){
     </table>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,fontSize:10,color:T.fg3}}>
       <span>Showing 1-3 of 24</span>
-      <div style={{display:"flex",gap:2}}>{[1,2,3,"...","8"].map(p=><button key={p} className={`s-btn ${p===1?"s-btn-solid":"s-btn-bordered"}`} style={{fontSize:9,padding:"2px 6px",height:"auto",minWidth:0}}>{p}</button>)}</div>
+      <div style={{display:"flex",gap:2}}>{[1,2,3,"…","8"].map(p=><button key={p} type="button" className={`s-btn ${p===1?"s-btn-solid":"s-btn-bordered"}`} aria-label={p==="…"?"More pages":`Page ${p}`} aria-current={p===1?"page":undefined} style={{fontSize:9,padding:"2px 6px",height:"auto",minWidth:0}}>{p}</button>)}</div>
     </div>
   </div>;
 }
@@ -1013,7 +1059,7 @@ function ToastDemo(){
         <SIcon name={t.icon} size={16} color={t.border}/>
         <span style={{flex:1}}>{t.msg}</span>
         <span style={{fontSize:9,color:T.fg3,background:T.bg2,padding:"1px 4px",borderRadius:2}}>{t.status}</span>
-        <button onClick={()=>{const v=[...visible];v[i]=false;setVisible(v);}} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="close" size={14} color={T.fg3}/></button>
+        <button type="button" aria-label="Dismiss notification" onClick={()=>{const v=[...visible];v[i]=false;setVisible(v);}} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="close" size={14} color={T.fg3}/></button>
       </div>
     ))}
     {visible.some(v=>!v)&&<button className="s-btn s-btn-bordered" onClick={()=>setVisible([true,true,true,true])} style={{alignSelf:"flex-start"}}>Reset All</button>}
@@ -1065,7 +1111,7 @@ function TagDemo(){
     <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
       {tags.map((t,i)=>(
         <span key={i} style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:99,border:`1px solid ${T.border}`,fontSize:11,color:T.fg,fontFamily:FONT,background:T.bg2}}>
-          {t}<button onClick={()=>setTags(tags.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><SIcon name="close" size={10} color={T.fg3}/></button>
+          {t}<button type="button" aria-label={`Remove ${t}`} onClick={()=>setTags(tags.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",padding:0,display:"flex"}}><SIcon name="close" size={10} color={T.fg3}/></button>
         </span>
       ))}
     </div>
@@ -1079,7 +1125,7 @@ function DrawerDemo(){
     <button className="s-btn s-btn-solid" onClick={()=>setOpen(!open)} style={{alignSelf:"flex-start"}}>{open?"Close":"Open"} Drawer</button>
     {open&&<div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:120}}>
       <div style={{width:200,background:T.bg,borderRight:`1px solid ${T.border}`,padding:12,display:"flex",flexDirection:"column",gap:6}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:600,color:T.fg,fontFamily:FONT}}>Drawer</span><button onClick={()=>setOpen(false)} style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="close" size={14} color={T.fg3}/></button></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:13,fontWeight:600,color:T.fg,fontFamily:FONT}}>Drawer</span><button type="button" aria-label="Close drawer" onClick={()=>setOpen(false)} style={{background:"none",border:"none",cursor:"pointer"}}><SIcon name="close" size={14} color={T.fg3}/></button></div>
         <div style={{fontSize:11,color:T.fg3,fontFamily:FONT}}>Panel content here</div>
       </div>
       <div style={{flex:1,background:T.bg2,padding:12,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:11,color:T.fg3}}>Main content</span></div>
@@ -1451,7 +1497,7 @@ function ComboBoxDemo(){
       <div style={{display:"flex",flexDirection:"column",gap:2}}>
         <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Fruit</label>
         <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${open?T.accent:T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"0 var(--pad,8px)"}}>
-          <input value={val} onChange={e=>{setVal(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder="Type to filter..." style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
+          <input aria-label="Combobox filter" type="text" autoComplete="off" spellCheck={false} value={val} onChange={e=>{setVal(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder="Type to filter&hellip;" style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
           <button onClick={()=>setOpen(!open)} style={{background:"none",border:"none",cursor:"pointer",padding:0}}><SIcon name="chevronDown" size={12} color={T.fg3}/></button>
         </div>
       </div>
@@ -1508,7 +1554,7 @@ function NumberInputDemo(){
 function MultilineInputDemo(){
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Description</label>
-    <textarea style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text..." defaultValue="Line 1
+    <textarea aria-label="Multi-line text" style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text&hellip;" defaultValue="Line 1
 Line 2
 Line 3"/>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>
@@ -1667,7 +1713,7 @@ export default function App(){
           <div style={{display:"flex",gap:D.sp/2,marginBottom:D.sp*0.75}}>
             {[["jpm","JPM Brand","#1B7F9E"],["legacy","Legacy","#0078CF"]].map(([id,label,color])=>{
               const a=THEMES[themeKey].theme===id;
-              return <button key={id} onClick={()=>setThemeKey(id+(themeKey.includes("dark")?"-dark":"-light"))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${color}`:`1px solid ${T.border}`,background:a?color+"18":"transparent",color:a?color:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms"}}>{label}</button>;
+              return <button key={id} onClick={()=>setThemeKey(id+(themeKey.includes("dark")?"-dark":"-light"))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${color}`:`1px solid ${T.border}`,background:a?color+"18":"transparent",color:a?color:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms"}}>{label}</button>;
             })}
           </div>
 
@@ -1675,14 +1721,14 @@ export default function App(){
           <div style={{display:"flex",gap:D.sp/2,marginBottom:D.sp}}>
             {[["light","☀ Light"],["dark","☾ Dark"]].map(([m,l])=>{
               const a=themeKey.includes(m);
-              return <button key={m} onClick={()=>setThemeKey(themeKey.replace(/light|dark/,m))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${T.accent}`:`1px solid ${T.border}`,background:a?T.accentWeak:"transparent",color:a?T.accent:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"all 150ms"}}>{l}</button>;
+              return <button key={m} onClick={()=>setThemeKey(themeKey.replace(/light|dark/,m))} style={{flex:1,height:D.h,borderRadius:D.cr,border:a?`2px solid ${T.accent}`:`1px solid ${T.border}`,background:a?T.accentWeak:"transparent",color:a?T.accent:T.fg2,fontSize:D.fsS,fontWeight:a?600:400,fontFamily:FONT,cursor:"pointer",transition:"background-color 150ms, color 150ms, border-color 150ms"}}>{l}</button>;
             })}
           </div>
 
           <div style={{fontSize:D.catFs,fontWeight:600,color:T.fg3,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:D.sp/4}}>Density</div>
           <div style={{display:"flex",gap:0,marginBottom:D.sp,borderRadius:D.cr,overflow:"hidden",border:`1px solid ${T.border}`}}>
             {[["high","H·20"],["medium","M·28"],["low","L·36"],["touch","T·44"]].map(([k,l])=>(
-              <button key={k} onClick={()=>setDensity(k)} style={{flex:1,height:D.h,border:"none",cursor:"pointer",fontFamily:FONT,fontSize:D.catFs,fontWeight:density===k?600:400,background:density===k?T.accent:"transparent",color:density===k?T.accentFg:T.fg2,transition:"all 150ms"}}>{l}</button>
+              <button key={k} onClick={()=>setDensity(k)} style={{flex:1,height:D.h,border:"none",cursor:"pointer",fontFamily:FONT,fontSize:D.catFs,fontWeight:density===k?600:400,background:density===k?T.accent:"transparent",color:density===k?T.accentFg:T.fg2,transition:"background-color 150ms, color 150ms"}}>{l}</button>
             ))}
           </div>
 

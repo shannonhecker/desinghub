@@ -693,8 +693,10 @@ export function carbonBuildCSS(theme) {
     .cb-sidenav { width: 256px; background: var(--cds-layer-01); font-family: ${CARBON_FONT}; display: flex; flex-direction: column; }
     .cb-sidenav.rail { width: 48px; }
     .cb-sidenav-item { padding: var(--cds-spacing-04) var(--cds-spacing-05); color: var(--cds-text-secondary); font-size: 14px; letter-spacing: 0.16px;
-      cursor: pointer; border-left: 2px solid transparent; display: flex; align-items: center; gap: var(--cds-spacing-04); min-height: 32px;
+      cursor: pointer; border: none; border-left: 2px solid transparent; display: flex; align-items: center; gap: var(--cds-spacing-04); min-height: 32px;
+      background: transparent; width: 100%; text-align: left; font-family: inherit; font-weight: 400; outline: none;
       transition: background var(--cds-duration-fast-02) var(--cds-motion-standard-productive), color var(--cds-duration-fast-02) var(--cds-motion-standard-productive); }
+    .cb-sidenav-item:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; }
     .cb-sidenav-item:hover { background: var(--cds-layer-hover-01); color: var(--cds-text-primary); }
     .cb-sidenav-item.active { border-left-color: var(--cds-border-interactive);
       background: var(--cds-layer-hover-01); color: var(--cds-text-primary); font-weight: 600; }
@@ -718,6 +720,21 @@ export function carbonBuildCSS(theme) {
       border-top: 1px solid var(--cds-border-subtle-01); }
     @keyframes cb-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cb-slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+    /* Respect prefers-reduced-motion — pause keyframe animations */
+    @media (prefers-reduced-motion: reduce) {
+      .cb-loading, .cb-skeleton,
+      .cb-drawer-backdrop, .cb-drawer,
+      .cb-notification-toast {
+        animation: none !important;
+      }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
 
     /* ═══ SKIP LINK (WCAG 2.4.1) ═══
        Off-screen until :focus, then renders as a primary-style link
@@ -1350,7 +1367,7 @@ function InputsDemo() {
       </div>
       <div className="cb-input-wrap">
         <label className="cb-input-label">Message</label>
-        <textarea className="cb-input cb-textarea" placeholder="Type a longer response..." />
+        <textarea className="cb-input cb-textarea" placeholder="Type a longer response&hellip;" />
       </div>
     </Col>
   );
@@ -1421,13 +1438,29 @@ function TabsDemo() {
   const tabs = ["Overview", "Usage", "Style", "Accessibility", "Code"];
   return (
     <Col>
-      <div className="cb-tabs">
+      <div className="cb-tabs" role="tablist" aria-label="Component documentation">
         {tabs.map((t, idx) => (
-          <button key={t} className={`cb-tab${idx === i ? " active" : ""}`} onClick={() => setI(idx)}>{t}</button>
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            id={`cb-tab-${idx}`}
+            aria-selected={idx === i}
+            aria-controls={`cb-tabpanel-${idx}`}
+            tabIndex={idx === i ? 0 : -1}
+            className={`cb-tab${idx === i ? " active" : ""}`}
+            onClick={() => setI(idx)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight") setI((i + 1) % tabs.length);
+              else if (e.key === "ArrowLeft") setI((i - 1 + tabs.length) % tabs.length);
+              else if (e.key === "Home") setI(0);
+              else if (e.key === "End") setI(tabs.length - 1);
+            }}
+          >{t}</button>
         ))}
       </div>
-      <div style={{ padding: "16px 0", fontFamily: CARBON_FONT, fontSize: 14, color: T.textSecondary }}>
-        {tabs[i]} panel content — Carbon tabs live above their associated panels and use a 2px interactive underline.
+      <div id={`cb-tabpanel-${i}`} role="tabpanel" aria-labelledby={`cb-tab-${i}`} style={{ padding: "16px 0", fontFamily: CARBON_FONT, fontSize: 14, color: T.textSecondary }}>
+        {tabs[i]} panel content &mdash; Carbon tabs live above their associated panels and use a 2px interactive underline.
       </div>
     </Col>
   );
@@ -1641,17 +1674,17 @@ function PaginationDemo() {
 
 function ModalDemo() {
   return (
-    <div className="cb-modal" role="dialog" aria-label="Delete confirmation">
+    <div className="cb-modal" role="dialog" aria-modal="true" aria-labelledby="cb-modal-title" aria-describedby="cb-modal-desc">
       <div className="cb-modal-header">
         <div className="cb-modal-label">Danger zone</div>
-        <div className="cb-modal-title">Delete this project?</div>
+        <h2 id="cb-modal-title" className="cb-modal-title" style={{ margin: 0, fontSize: 20, fontWeight: 400, lineHeight: "28px", color: "var(--cds-text-primary)" }}>Delete this project?</h2>
       </div>
-      <div className="cb-modal-body">
+      <div className="cb-modal-body" id="cb-modal-desc">
         This permanently removes the project and all deployments. This action cannot be undone.
       </div>
       <div className="cb-modal-footer">
-        <button className="cb-btn cb-btn-secondary">Cancel</button>
-        <button className="cb-btn cb-btn-danger">Delete</button>
+        <button type="button" className="cb-btn cb-btn-secondary">Cancel</button>
+        <button type="button" className="cb-btn cb-btn-danger">Delete</button>
       </div>
     </div>
   );
@@ -1690,10 +1723,10 @@ function AvatarsDemo() {
 function LinksDemo() {
   return (
     <Col>
-      <a className="cb-link">Read the documentation</a>
-      <a className="cb-link cb-link-visited">Visited link</a>
+      <a className="cb-link" href="#carbon-docs">Read the documentation</a>
+      <a className="cb-link cb-link-visited" href="#carbon-visited">Visited link</a>
       <span style={{ fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary }}>
-        Inline <a className="cb-link cb-link-inline">Carbon Design System</a> link inside body text.
+        Inline <a className="cb-link cb-link-inline" href="#carbon-ds">Carbon Design System</a> link inside body text.
       </span>
     </Col>
   );
@@ -1796,7 +1829,7 @@ function TextareaDemo() {
         <label className="cb-input-label">Message</label>
         <textarea
           className="cb-textarea-field"
-          placeholder="Type a longer response..."
+          placeholder="Type a longer response&hellip;"
           maxLength={max}
           value={v}
           onChange={(e) => setV(e.target.value)}
@@ -1824,7 +1857,7 @@ function ComboBoxDemo() {
         <div className="cb-combobox-trigger">
           <input
             className="cb-combobox-input"
-            placeholder="Type to search..."
+            placeholder="Type to search&hellip;"
             value={q}
             onChange={(e) => { setQ(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
@@ -2137,24 +2170,28 @@ function SideNavDemo() {
       <nav className="cb-sidenav" aria-label="Side navigation">
         <div className="cb-sidenav-group-label">Main</div>
         {[["Home", "home"], ["Dashboard", "bar_chart"], ["Reports", "delete"], ["Settings", "settings"]].map(([l, icon]) => (
-          <div
+          <button
             key={l}
+            type="button"
             className={`cb-sidenav-item${active === l ? " active" : ""}`}
+            aria-current={active === l ? "page" : undefined}
             onClick={() => setActive(l)}
           >
-            <CIcon name={icon} size={16} color={active === l ? T.iconPrimary : T.iconSecondary} />
+            <CIcon name={icon} size={16} color={active === l ? T.iconPrimary : T.iconSecondary} aria-hidden="true" />
             <span>{l}</span>
-          </div>
+          </button>
         ))}
         <div className="cb-sidenav-group-label">Admin</div>
         {["Users", "Integrations", "Billing"].map((l) => (
-          <div
+          <button
             key={l}
+            type="button"
             className={`cb-sidenav-item${active === l ? " active" : ""}`}
+            aria-current={active === l ? "page" : undefined}
             onClick={() => setActive(l)}
           >
             <span>{l}</span>
-          </div>
+          </button>
         ))}
       </nav>
       <div style={{ flex: 1, padding: 24, background: T.background, fontSize: 14, color: T.textSecondary }}>
@@ -2213,7 +2250,11 @@ function SkipLinkDemo() {
         Press <kbd style={{ background: T.layer02, padding: "2px 6px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>Tab</kbd> to reveal the skip link.
       </div>
       <a className="cb-skip-link" href="#main-content">Skip to main content</a>
-      <div style={{ padding: 16, background: T.layer01, fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary, border: `1px solid ${T.borderSubtle01}` }} id="main-content">
+      <div
+        id="main-content"
+        tabIndex={-1}
+        style={{ padding: 16, background: T.layer01, fontFamily: CARBON_FONT, fontSize: 14, color: T.textPrimary, border: `1px solid ${T.borderSubtle01}`, scrollMarginTop: 64 }}
+      >
         Main content area. Skip link routes keyboard focus here, per WCAG 2.4.1.
       </div>
     </Col>
@@ -2365,25 +2406,43 @@ function PatAppShell() {
 }
 
 function PatLogin() {
+  const idEmail = React.useId();
+  const idPwd = React.useId();
   return (
-    <div style={{ maxWidth: 360, fontFamily: CARBON_FONT }}>
+    <form style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
       <div style={{ fontSize: 32, fontWeight: 400, color: T.textPrimary, marginBottom: 12 }}>Log in</div>
-      <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your IBMid to continue.</div>
+      <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your <span translate="no">IBMid</span> to continue.</div>
       <Col gap={16}>
         <div className="cb-input-wrap">
-          <label className="cb-input-label">IBMid</label>
-          <input className="cb-input" placeholder="name@example.com" />
+          <label className="cb-input-label" htmlFor={idEmail}>IBMid</label>
+          <input
+            id={idEmail}
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            spellCheck={false}
+            className="cb-input"
+            placeholder="name@example.com"
+          />
         </div>
         <div className="cb-input-wrap">
-          <label className="cb-input-label">Password</label>
-          <input className="cb-input" type="password" placeholder="••••••••" />
+          <label className="cb-input-label" htmlFor={idPwd}>Password</label>
+          <input
+            id={idPwd}
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            className="cb-input"
+            aria-label="Password"
+          />
         </div>
-        <button className="cb-btn cb-btn-primary" style={{ width: "100%", justifyContent: "space-between" }}>
-          Continue <CIcon name="arrow_forward" size={16} color="#ffffff" />
+        <button type="submit" className="cb-btn cb-btn-primary" style={{ width: "100%", justifyContent: "space-between" }}>
+          Continue <CIcon name="arrow_forward" size={16} color="#ffffff" aria-hidden="true" />
         </button>
-        <a className="cb-link">Forgot your IBMid?</a>
+        <a className="cb-link" href="#forgot-ibmid">Forgot your <span translate="no">IBMid</span>?</a>
       </Col>
-    </div>
+    </form>
   );
 }
 
@@ -2458,7 +2517,7 @@ function PatDataTable() {
         <div style={{ background: T.layer01, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: `1px solid ${T.borderSubtle01}` }}>
           <div className="cb-search-wrap" style={{ flex: 1 }}>
             <span className="cb-search-icon"><CIcon name="search" size={16} /></span>
-            <input className="cb-input cb-input-sm" placeholder="Filter by name..." />
+            <input className="cb-input cb-input-sm" aria-label="Filter by name" type="search" autoComplete="off" spellCheck={false} placeholder="Filter by name&hellip;" />
           </div>
           <button className="cb-btn cb-btn-ghost cb-btn-sm" aria-label="Filter">
             <CIcon name="filter_alt" size={16} />
