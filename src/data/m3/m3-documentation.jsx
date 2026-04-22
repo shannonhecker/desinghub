@@ -962,6 +962,116 @@ function Dividers() {
   );
 }
 
+function SearchBar() {
+  const [v, setV] = useState("");
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 320, height: 56, padding: "0 16px", borderRadius: 28, background: T.surfaceContainerHigh, border: `1px solid ${T.outlineVariant}`, fontFamily: "Roboto,sans-serif", transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}` }}>
+      <I n="search" sm />
+      <input
+        value={v}
+        onChange={e => setV(e.target.value)}
+        placeholder="Search Material Design"
+        style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 16, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}
+      />
+      {v && (
+        <button
+          onClick={() => setV("")}
+          className="m3-ib"
+          style={{ width: 32, height: 32, borderRadius: 16, border: "none", background: "transparent", color: T.onSurfaceVariant, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          aria-label="Clear search"
+        >
+          <I n="cancel" xs />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function SegmentedButtons() {
+  const opts = ["Day", "Week", "Month"];
+  const [sel, setSel] = useState("Week");
+  return (
+    <div style={{ display: "inline-flex", height: 40, borderRadius: 20, border: `1px solid ${T.outline}`, overflow: "hidden", fontFamily: "Roboto,sans-serif" }}>
+      {opts.map((o, i) => {
+        const active = sel === o;
+        return (
+          <button
+            key={o}
+            onClick={() => setSel(o)}
+            style={{
+              minWidth: 88,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "0 16px",
+              border: "none",
+              borderLeft: i === 0 ? "none" : `1px solid ${T.outline}`,
+              background: active ? T.secondaryContainer : "transparent",
+              color: active ? T.onSecondaryContainer : T.onSurface,
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: `background ${M3_MOTION.duration.short3} ${M3_MOTION.easing.standard}`,
+              fontFamily: "Roboto,sans-serif",
+            }}
+            aria-pressed={active}
+          >
+            {active && <I n="check" xs />}
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ShapeTokens() {
+  const shapes = [
+    { n: "None", v: "0dp", r: 0 },
+    { n: "Extra Small", v: "4dp", r: 4 },
+    { n: "Small", v: "8dp", r: 8 },
+    { n: "Medium", v: "12dp", r: 12 },
+    { n: "Large", v: "16dp", r: 16 },
+    { n: "Extra Large", v: "28dp", r: 28 },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: "Roboto,sans-serif" }}>
+      {shapes.map(s => (
+        <div key={s.n} style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+          <div style={{ width: 56, height: 56, background: T.primaryContainer, borderRadius: s.r }} />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{s.n}</div>
+            <div style={{ fontSize: 12, color: T.onSurfaceVariant, fontFamily: "Roboto,sans-serif" }}>{s.v}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DensityTokens() {
+  const cols = [
+    { name: "Default (0)", btn: {}, tf: {}, chip: {} },
+    { name: "Compact (-2)", btn: { height: 36, fontSize: 13, padding: "0 20px" }, tf: { height: 48, fontSize: 14 }, chip: { height: 28, fontSize: 13, padding: "0 12px" } },
+    { name: "Extra Compact (-4)", btn: { height: 32, fontSize: 12, padding: "0 16px" }, tf: { height: 40, fontSize: 13 }, chip: { height: 24, fontSize: 12, padding: "0 10px" } },
+  ];
+  return (
+    <div style={{ display: "flex", gap: 32, flexWrap: "wrap", fontFamily: "Roboto,sans-serif" }}>
+      {cols.map(c => (
+        <div key={c.name} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: T.onSurface, fontFamily: "Roboto,sans-serif" }}>{c.name}</div>
+          <button className="m3-btn m3-btn-filled" style={c.btn}>Button</button>
+          <div className="m3-tf m3-tf-filled" style={c.tf}>
+            <input className="m3-tf-content" placeholder="Email" style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontFamily: "Roboto,sans-serif", color: T.onSurface }} />
+          </div>
+          <div className="m3-chip" style={c.chip}>Filter</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════
    THEME & COLOR GUIDANCE PAGES
    ═══════════════════════════════════════════ */
@@ -1679,12 +1789,16 @@ const COMPS = [
   { id: "bottom-sheets", name: "Bottom Sheets", cat: "Components & Patterns", desc: "Drag handle and content layout.", render: BottomSheet },
   { id: "dividers", name: "Dividers", cat: "Components & Patterns", desc: "Full-width and inset dividers.", render: Dividers },
   { id: "date-pickers", name: "Date Pickers", cat: "Components & Patterns", desc: "Click days to select. Hover shows surface overlay. Focus-visible shows ring. Nav buttons interactive.", render: DatePicker },
+  { id: "search-bar", name: "Search Bar", cat: "Components & Patterns", desc: "Pill-shaped search input with leading icon and clearable input. Type to filter; clear button appears when input has value.", render: SearchBar },
+  { id: "segmented-buttons", name: "Segmented Buttons", cat: "Components & Patterns", desc: "Connected single-select group. Selected segment fills with secondary container and shows a leading check icon.", render: SegmentedButtons },
   // Foundations
   { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols - 2,500+ variable font icons. 3 styles (Outlined/Rounded/Sharp), 4 axes (Fill, Weight, Grade, Optical Size).", render: M3Icons },
   { id: "a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG AA contrast, focus indicators, touch targets (48dp), keyboard patterns, ARIA roles, reduced motion.", render: M3Accessibility },
   { id: "content-design", name: "Content Design", cat: "Foundations", desc: "UX writing principles: concise, direct, useful. Content patterns for buttons, errors, empty states, confirmations.", render: M3ContentDesign },
   { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
+  { id: "shape-tokens", name: "Shape Tokens", cat: "Foundations", desc: "M3 shape scale from None (0dp) through Extra Large (28dp). Applied via border-radius on container-shaped surfaces.", render: ShapeTokens },
+  { id: "density-tokens", name: "Density Tokens", cat: "Foundations", desc: "Density offset -2 and -4 reduce heights and type scale for data-rich layouts. Default is 0.", render: DensityTokens },
   // Guides
   { id: "guide-color-roles", name: "Color Roles", cat: "Foundations", desc: "Primary, Secondary, Tertiary, Error - what each accent color group is for and where to use it.", render: ColorRolesGuide },
   { id: "guide-surfaces", name: "Surfaces & Depth", cat: "Foundations", desc: "Surface container scale, outline tokens, and inverse colors for building visual hierarchy.", render: SurfaceGuide },
