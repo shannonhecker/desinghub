@@ -693,8 +693,10 @@ export function carbonBuildCSS(theme) {
     .cb-sidenav { width: 256px; background: var(--cds-layer-01); font-family: ${CARBON_FONT}; display: flex; flex-direction: column; }
     .cb-sidenav.rail { width: 48px; }
     .cb-sidenav-item { padding: var(--cds-spacing-04) var(--cds-spacing-05); color: var(--cds-text-secondary); font-size: 14px; letter-spacing: 0.16px;
-      cursor: pointer; border-left: 2px solid transparent; display: flex; align-items: center; gap: var(--cds-spacing-04); min-height: 32px;
+      cursor: pointer; border: none; border-left: 2px solid transparent; display: flex; align-items: center; gap: var(--cds-spacing-04); min-height: 32px;
+      background: transparent; width: 100%; text-align: left; font-family: inherit; font-weight: 400; outline: none;
       transition: background var(--cds-duration-fast-02) var(--cds-motion-standard-productive), color var(--cds-duration-fast-02) var(--cds-motion-standard-productive); }
+    .cb-sidenav-item:focus-visible { outline: 2px solid var(--cds-focus); outline-offset: -2px; }
     .cb-sidenav-item:hover { background: var(--cds-layer-hover-01); color: var(--cds-text-primary); }
     .cb-sidenav-item.active { border-left-color: var(--cds-border-interactive);
       background: var(--cds-layer-hover-01); color: var(--cds-text-primary); font-weight: 600; }
@@ -2168,24 +2170,28 @@ function SideNavDemo() {
       <nav className="cb-sidenav" aria-label="Side navigation">
         <div className="cb-sidenav-group-label">Main</div>
         {[["Home", "home"], ["Dashboard", "bar_chart"], ["Reports", "delete"], ["Settings", "settings"]].map(([l, icon]) => (
-          <div
+          <button
             key={l}
+            type="button"
             className={`cb-sidenav-item${active === l ? " active" : ""}`}
+            aria-current={active === l ? "page" : undefined}
             onClick={() => setActive(l)}
           >
-            <CIcon name={icon} size={16} color={active === l ? T.iconPrimary : T.iconSecondary} />
+            <CIcon name={icon} size={16} color={active === l ? T.iconPrimary : T.iconSecondary} aria-hidden="true" />
             <span>{l}</span>
-          </div>
+          </button>
         ))}
         <div className="cb-sidenav-group-label">Admin</div>
         {["Users", "Integrations", "Billing"].map((l) => (
-          <div
+          <button
             key={l}
+            type="button"
             className={`cb-sidenav-item${active === l ? " active" : ""}`}
+            aria-current={active === l ? "page" : undefined}
             onClick={() => setActive(l)}
           >
             <span>{l}</span>
-          </div>
+          </button>
         ))}
       </nav>
       <div style={{ flex: 1, padding: 24, background: T.background, fontSize: 14, color: T.textSecondary }}>
