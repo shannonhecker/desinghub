@@ -4,11 +4,11 @@ import { useDesignHub } from "../useDesignHub";
 function resetStore() {
   useDesignHub.setState({
     activeSystem: "salt",
-    salt: { themeKey: "jpm-light", density: "medium" },
-    m3: { themeKey: "light", density: 0, customColor: "#6750A4", isDarkCustom: false },
-    fluent: { themeKey: "light", size: "medium" },
-    ausos: { themeKey: "light", density: "medium", accentColor: "#7E6BC4" },
-    carbon: { themeKey: "white", density: "normal" },
+    salt: { themeKey: "jpm-dark", density: "medium" },
+    m3: { themeKey: "dark", density: 0, customColor: "#6750A4", isDarkCustom: true },
+    fluent: { themeKey: "dark", size: "medium" },
+    ausos: { themeKey: "dark", density: "medium", accentColor: "#7E6BC4" },
+    carbon: { themeKey: "g100", density: "normal" },
     selectedComponent: null,
     searchQuery: "",
     activeTab: "preview",
