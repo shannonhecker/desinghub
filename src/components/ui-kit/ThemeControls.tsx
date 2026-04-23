@@ -101,15 +101,23 @@ export function ThemeControls() {
       next.focus();
       next.click();
     };
+    /* 4-item groups (Salt/ausos 4-tier density; Carbon 4 themes; M3 4
+       density levels) wrapped 3+1 in flex layout, orphaning one chip.
+       Switch to 2×2 grid at ≥4 children so rows are always balanced. */
+    const childCount = React.Children.count(children);
+    const useGrid = childCount >= 4;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: innerGap }}>
         <div id={labelId} style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
         <div ref={groupRef} role="radiogroup" aria-labelledby={labelId} onKeyDown={onKeyDown}
-             style={{ display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }}>
+             style={useGrid
+               ? { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: btnGap, alignItems: "stretch" }
+               : { display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }
+             }>
           {children}
         </div>
         {hint && (
-          <div style={{ fontSize: 10, color: t.fg3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginTop: -2, opacity: 0.8 }}>
+          <div style={{ fontSize: 11, color: t.fg3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginTop: -2 }}>
             {hint}
           </div>
         )}

@@ -85,9 +85,16 @@ export function ContentTopBar() {
             {dsOpen && (
               <div role="listbox" aria-label="Design system" style={{
                 position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 99,
-                minWidth: 180, background: t.bg2 || t.bg, border: `1px solid ${t.border}`,
+                minWidth: 180,
+                /* ausos' t.bg2 is a glass layer — can read thin over its
+                   gradient/beam bg. Prefer its cardBg (opaque glass fill)
+                   when present so the dropdown stays legible. */
+                background: t.T.cardBg || t.bg2 || t.bg,
+                border: `1px solid ${t.border}`,
                 borderRadius: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", overflow: "hidden",
                 fontFamily: t.font,
+                backdropFilter: t.T.glass as string | undefined,
+                WebkitBackdropFilter: t.T.glass as string | undefined,
               }}>
                 {DS_OPTIONS.map(opt => {
                   const isSelected = activeSystem === opt.id;
@@ -132,7 +139,6 @@ export function ContentTopBar() {
         ) : (
           <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap }}>
             <span style={{ color: t.fg, fontWeight: 500 }}>{sysInfo.name}</span>
-            <span style={{ fontSize: t.scale.labF - 1, color: t.fg3, fontWeight: 400 }}>Interactive Documentation</span>
           </div>
         )}
       </nav>

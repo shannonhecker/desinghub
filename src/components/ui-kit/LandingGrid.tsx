@@ -67,11 +67,11 @@ export const LandingGrid = React.memo(function LandingGrid() {
         <p style={{ fontSize: t.scale.navF + 1, color: t.fg2, lineHeight: 1.5, maxWidth: 560, margin: "0 0 10px", fontWeight: 500 }}>
           Preview, compare, and copy tokens across five design systems.
         </p>
-        <p style={{ fontSize: bodySize, color: t.fg3, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+        <p style={{ fontSize: bodySize, color: t.fg2, opacity: 0.85, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
           {components.length} components across {categories.length} categories -{descSuffix}
         </p>
         <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>
-          {[{ icon: "category", label: `${categories.length} Categories` }, { icon: "widgets", label: `${components.length} Components` }, ...featurePills].map(s => (
+          {featurePills.map(s => (
             <div key={s.label} style={{
               display: "flex", alignItems: "center", gap: t.scale.gap - 2,
               padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: pillRadius,
