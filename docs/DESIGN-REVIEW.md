@@ -4,6 +4,7 @@ The 4-gate review process for Design Hub changes. Scale up or down based on scop
 
 Related references:
 - `docs/TOKENS.md` — token schema + migration status, token-audit gate
+- `docs/GATE-WALKTHROUGH.md` — hands-on Part A–E manual walkthrough for Gate 3 / 4
 - `CLAUDE.md` — design system rules, intentional-literal list, clarify-first
 
 ---
