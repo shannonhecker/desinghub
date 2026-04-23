@@ -91,7 +91,7 @@ export function ComponentList() {
   const componentItems = filtered.filter(c => c.cat === "Components & Patterns");
 
   const helperStyle: React.CSSProperties = {
-    fontSize: 10, color: t.fg3, letterSpacing: "0.04em",
+    fontSize: 11, color: t.fg3, letterSpacing: "0.04em",
     padding: activeSystem === "m3" ? "0 16px 4px" : "0 0 4px",
     fontWeight: 400,
   };
