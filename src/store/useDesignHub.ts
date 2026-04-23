@@ -46,12 +46,15 @@ interface DesignHubState {
 
 export const useDesignHub = create<DesignHubState>((set) => ({
   activeSystem: 'salt',
-  salt: { themeKey: 'jpm-light', density: 'medium' },
-  m3: { themeKey: 'light', density: 0, customColor: '#6750A4', isDarkCustom: false },
-  fluent: { themeKey: 'light', size: 'medium' },
-  ausos: { themeKey: 'light', density: 'medium', accentColor: '#7E6BC4' },
-  /* White is Carbon's canonical light theme; matches the docs-site default. */
-  carbon: { themeKey: 'white', density: 'normal' },
+  /* Dark-default across all 5 DS — matches the ausos.ai brand (dark-first
+     hero + builder mode='dark' in useBuilder). Users can still switch to
+     any light theme via the per-DS theme picker. */
+  salt: { themeKey: 'jpm-dark', density: 'medium' },
+  m3: { themeKey: 'dark', density: 0, customColor: '#6750A4', isDarkCustom: true },
+  fluent: { themeKey: 'dark', size: 'medium' },
+  ausos: { themeKey: 'dark', density: 'medium', accentColor: '#7E6BC4' },
+  /* g100 is Carbon's canonical dark theme (pairs with g90, white, g10). */
+  carbon: { themeKey: 'g100', density: 'normal' },
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',
