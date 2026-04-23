@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-04-22T23:03:12.815Z",
+  "generatedAt": "2026-04-23T00:15:18.516Z",
   "perDs": {
     "salt": {
-      "hex": 277,
-      "rgba": 21,
-      "px": 658,
-      "ms": 27,
-      "files": 3
+      "hex": 204,
+      "rgba": 15,
+      "px": 590,
+      "ms": 22,
+      "files": 2
     },
     "m3": {
       "hex": 394,
@@ -16,11 +16,11 @@
       "files": 2
     },
     "fluent": {
-      "hex": 242,
-      "rgba": 22,
-      "px": 467,
-      "ms": 19,
-      "files": 2
+      "hex": 151,
+      "rgba": 18,
+      "px": 394,
+      "ms": 11,
+      "files": 1
     },
     "carbon": {
       "hex": 157,
@@ -45,10 +45,10 @@
     "files": 1
   },
   "totals": {
-    "hex": 1156,
-    "rgba": 163,
-    "px": 2725,
-    "ms": 109
+    "hex": 992,
+    "rgba": 153,
+    "px": 2584,
+    "ms": 96
   },
   "files": [
     {
@@ -259,73 +259,6 @@
           "150ms",
           "200ms",
           "300ms"
-        ]
-      }
-    },
-    {
-      "path": "src/data/fluent/themes.ts",
-      "ds": "fluent",
-      "hex": 91,
-      "rgba": 4,
-      "px": 73,
-      "ms": 8,
-      "samples": {
-        "hex": [
-          "#FFFFFF",
-          "#FAFAFA",
-          "#F5F5F5",
-          "#F0F0F0",
-          "#EBEBEB"
-        ],
-        "rgba": [
-          "rgba(0"
-        ],
-        "px": [
-          "6px",
-          "32px",
-          "96px",
-          "4px",
-          "12px"
-        ],
-        "ms": [
-          "50ms",
-          "100ms",
-          "150ms",
-          "200ms",
-          "250ms"
-        ]
-      }
-    },
-    {
-      "path": "src/data/salt/themes.ts",
-      "ds": "salt",
-      "hex": 73,
-      "rgba": 6,
-      "px": 68,
-      "ms": 5,
-      "samples": {
-        "hex": [
-          "#FFFFFF",
-          "#F5F7F8",
-          "#E2E4E5",
-          "#101820",
-          "#000000"
-        ],
-        "rgba": [
-          "rgba(0"
-        ],
-        "px": [
-          "6px",
-          "4px",
-          "1px",
-          "12px",
-          "28px"
-        ],
-        "ms": [
-          "150ms",
-          "200ms",
-          "300ms",
-          "01ms"
         ]
       }
     },
