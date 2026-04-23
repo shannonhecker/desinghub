@@ -150,14 +150,17 @@ export function DesignHubApp() {
             </span>
           </button>
           {isCarbon ? (
-            /* Carbon theme badge as a Carbon tag (gray, 16px pill). */
-            <span style={{ fontSize: 12, color: "#ffffff", background: "rgba(255,255,255,0.1)", padding: "3px 10px", borderRadius: 16, fontWeight: 400 }}>
+            /* Carbon theme label — plain text, not a pill. The pill
+               treatment drew the eye to what's really just a status
+               label. */
+            <span style={{ fontSize: 11, color: "#c6c6c6", letterSpacing: "0.06em", fontWeight: 400 }}>
               {store.carbon.themeKey.toUpperCase()}
             </span>
           ) : (
+            /* Same rationale for the other DSes: drop the accent-weak
+               pill, keep a plain label. */
             <span style={{
-              fontSize: t.scale.labF, color: t.accentText, background: t.accentWeak,
-              padding: `${t.scale.gap - 3}px ${t.scale.gap + 4}px`, borderRadius: 9999, fontWeight: 600,
+              fontSize: t.scale.labF, color: t.fg2, letterSpacing: "0.04em", fontWeight: 500,
             }}>
               {t.T.name || sysInfo.name}
             </span>

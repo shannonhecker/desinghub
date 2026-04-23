@@ -266,15 +266,20 @@ export function AuditPanel() {
         contrast ratios, accessibility, and dark mode compliance.
       </p>
 
+      {/* Pre-computed Contrast Audit — always visible as a reference,
+          promoted above the paste-area so the page isn't dominated by
+          an empty textarea on first visit. */}
+      <ContrastAudit system={activeSystem} T={T} />
+
       <textarea
         value={code}
         onChange={(e) => setCode(e.target.value)}
         placeholder={`Paste your ${sysInfo.name} React/JSX code here...`}
         style={{
-          width: "100%", height: 200, background: cardBg, color: fg,
+          width: "100%", height: 120, minHeight: 120, background: cardBg, color: fg,
           border: `1px solid ${border}`, borderRadius: 8, padding: 16, fontSize: 13,
           fontFamily: "'SF Mono', 'Fira Code', monospace", lineHeight: 1.6,
-          resize: "vertical", outline: "none",
+          resize: "vertical", outline: "none", marginTop: 16,
         }}
       />
 
@@ -344,8 +349,6 @@ export function AuditPanel() {
         </div>
       )}
 
-      {/* Contrast Audit */}
-      <ContrastAudit system={activeSystem} T={T} />
     </div>
   );
 }

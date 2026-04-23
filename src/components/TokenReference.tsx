@@ -93,7 +93,10 @@ function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: s
       <div style={{
         width: 32, height: 32, borderRadius: 6, flexShrink: 0,
         background: isColor ? token.value : "transparent",
-        border: `1px solid ${colors.border}`,
+        /* Swatches need to delineate against dark cards (bg5 #000000 on
+           near-black cards vanished). Using fg3 — one step more contrast
+           than the default border token while staying themed. */
+        border: `1px solid ${colors.fg3}`,
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: colors.fg }}>{token.name}</div>

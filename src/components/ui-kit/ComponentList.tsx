@@ -20,6 +20,17 @@ export function ComponentList() {
     : components;
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", "Tools", "Patterns", ...SUBCAT_ORDER]));
+
+  /* Section-helper captions ("Atomic UI controls" etc.) onboard first-time
+     visitors; returning users don't need them. Show only on first session
+     then auto-hide. */
+  const [showHelpers, setShowHelpers] = useState(true);
+  React.useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("ui-kit-sidebar-helpers-seen")) setShowHelpers(false);
+      else window.sessionStorage.setItem("ui-kit-sidebar-helpers-seen", "1");
+    } catch {/* storage unavailable — keep helpers visible */}
+  }, []);
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -119,13 +130,19 @@ export function ComponentList() {
             <span style={sectionHeaderStyle}>Tools</span>
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
           </button>
-          {expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code</div>}
+          {showHelpers && expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code</div>}
           {expandedGroups.has("Tools") && toolItems.map(c => renderItem(c))}
         </div>
       )}
 
+      {filtered.length === 0 && searchQuery && (
+        <div style={{ padding: "16px 0", color: t.fg3, fontSize: t.scale.labF, fontStyle: "italic" }}>
+          No matches for &ldquo;{searchQuery}&rdquo;
+        </div>
+      )}
+
       <div style={sectionHeaderStyle}>Components</div>
-      <div style={helperStyle}>Atomic UI controls</div>
+      {showHelpers && <div style={helperStyle}>Atomic UI controls</div>}
       {subcatGroups.map(g => (
         <div key={g.sub}>
           <button onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
@@ -147,7 +164,7 @@ export function ComponentList() {
               <span style={sectionHeaderStyle}>Patterns & Flows</span>
               <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
             </button>
-            {expandedGroups.has("Patterns") && <div style={helperStyle}>Page layouts &amp; multi-component flows</div>}
+            {showHelpers && expandedGroups.has("Patterns") && <div style={helperStyle}>Page layouts &amp; multi-component flows</div>}
             {expandedGroups.has("Patterns") && patternItems.map(c => renderItem(c))}
           </div>
         );

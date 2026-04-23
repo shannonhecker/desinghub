@@ -40,6 +40,18 @@ export function ThemeControls() {
   /* Screen-reader announcement of the current theme+density summary.
      Updates on any store change; assistive tech reads the new state so
      users know the toggle landed. */
+  /* Density legend ("compact · comfortable · spacious") reveals the
+     normalized scale on first session, then auto-hides — same pattern
+     as ComponentList sidebar helpers. Returning users already know the
+     mapping; keeping it permanently is chrome. */
+  const [showHint, setShowHint] = useState(true);
+  React.useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("ui-kit-density-legend-seen")) setShowHint(false);
+      else window.sessionStorage.setItem("ui-kit-density-legend-seen", "1");
+    } catch {/* storage unavailable — keep hint visible */}
+  }, []);
+
   const summary = React.useMemo(() => {
     if (activeSystem === "salt") return `Salt ${store.salt.themeKey}, density ${store.salt.density}`;
     if (activeSystem === "m3") return `Material 3 ${store.m3.themeKey}, density ${store.m3.density}`;
@@ -157,7 +169,7 @@ export function ThemeControls() {
               <CtrlBtn active={mode === "light"} onClick={() => set(theme, "light")}>Light</CtrlBtn>
               <CtrlBtn active={mode === "dark"} onClick={() => set(theme, "dark")}>Dark</CtrlBtn>
             </ControlGroup>
-            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
+            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
@@ -250,7 +262,7 @@ export function ThemeControls() {
               )}
             </div>
 
-            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
+            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
               {([[0, "Default"], [-1, "Comfortable"], [-2, "Compact"], [-3, "Dense"]] as [number, string][]).map(([d, label]) => (
                 <CtrlBtn key={d} active={m3.density === d} onClick={() => setM3Density(d)}>{label}</CtrlBtn>
               ))}
@@ -302,7 +314,7 @@ export function ThemeControls() {
                 </div>
               )}
             </div>
-            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
+            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
@@ -331,7 +343,7 @@ export function ThemeControls() {
                 </CtrlBtn>
               ))}
             </ControlGroup>
-            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
+            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
               {(["compact", "normal", "spacious"] as const).map(k => (
                 <CtrlBtn key={k} active={carbon.density === k} onClick={() => setCarbonDensity(k)}>
                   {k === "compact" ? "Compact" : k === "normal" ? "Normal" : "Spacious"}
@@ -356,7 +368,7 @@ export function ThemeControls() {
             <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
             <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
           </ControlGroup>
-          <ControlGroup label="Size" hint="compact  ·  comfortable  ·  spacious">
+          <ControlGroup label="Size" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
             {([["small","S.24"],["medium","M.32"],["large","L.40"]] as const).map(([k,l]) => (
               <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)}>{l}</CtrlBtn>
             ))}
