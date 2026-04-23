@@ -66,15 +66,27 @@ export function DesignHubApp() {
       {/* Header - 3-column. Carbon renders as the IBM UI Shell:
           black $background-inverse bar, 48px tall, white text, no
           pill badges (Carbon uses flat text+tag pattern). Other
-          DSes keep their per-theme chrome. */}
-      <header style={{
-        display: "flex", alignItems: "center",
-        padding: isCarbon ? "0 16px" : `${t.scale.gap}px ${t.scale.gap + 8}px`,
-        borderBottom: `1px solid ${headerBorder}`,
-        background: headerBg,
-        minHeight: isCarbon ? 48 : t.scale.hdrH, flexShrink: 0,
-        position: "relative",
-      }}>
+          DSes keep their per-theme chrome.
+
+          Carbon theme-class wrapper: Carbon's theme tokens
+          (--cds-button-primary, --cds-link-primary, etc.) are
+          scoped under `.cds--<themeKey>` selectors by the Carbon
+          CSS emitter. Without a matching ancestor class, only the
+          :root fallback values apply — which leaves the SystemSwitcher's
+          `.cb-btn-ghost` labels using unscoped or mismatched tokens.
+          Applying the theme class here gives the SystemSwitcher +
+          ThemeControls the correct Carbon theme context. */}
+      <header
+        className={isCarbon ? `cds--${store.carbon.themeKey}` : undefined}
+        style={{
+          display: "flex", alignItems: "center",
+          padding: isCarbon ? "0 16px" : `${t.scale.gap}px ${t.scale.gap + 8}px`,
+          borderBottom: `1px solid ${headerBorder}`,
+          background: headerBg,
+          minHeight: isCarbon ? 48 : t.scale.hdrH, flexShrink: 0,
+          position: "relative",
+        }}
+      >
         {/* Left - logo + title */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
           <img src="/aologo.svg" alt="ausōs" style={{ height: isCarbon ? 16 : t.scale.navF + 4, width: "auto", filter: resolvedLogoFilter }} />
