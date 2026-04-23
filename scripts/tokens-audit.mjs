@@ -55,6 +55,8 @@ const ALLOWLIST_VARIABLE_NAMES = [
 const ALLOWLIST_FILENAMES = [
   'code-snippets.ts',
   'tokens.ts',
+  'brand.ts',      /* token-definition file: src/data/_shared/brand.ts */
+  'primitives.ts', /* token-definition file: src/data/_shared/primitives.ts */
 ];
 
 /** Recursively collect .ts / .tsx / .jsx files under dir. */

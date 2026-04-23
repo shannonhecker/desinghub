@@ -86,7 +86,11 @@ const eslintConfig = [
     /* Token-definition files are the sole legal home for raw ms / px /
        rgba values — consumers must reference them via CSS vars. See
        docs/TOKENS.md § Intentional literals. */
-    files: ["src/data/**/tokens.ts"],
+    files: [
+      "src/data/**/tokens.ts",
+      "src/data/_shared/brand.ts",
+      "src/data/_shared/primitives.ts",
+    ],
     rules: {
       "design-hub/no-hardcoded-tokens": "off",
     },
