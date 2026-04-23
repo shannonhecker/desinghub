@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef } from "react";
 import { WaveCanvas } from "./WaveCanvas";
 import { heroEnterTimeline } from "@/lib/motion";
 import "./hero.css";
+
+/* Dynamic import — Three.js + WebGLRenderer touch `document` / `window`
+   during construction and must not run on the server. */
+const HeroBeam = dynamic(() => import("./hero-beam/HeroBeam"), { ssr: false });
 
 /* ═══════════════════════════════════════════════════════════════
    HeroHeader - Editorial Layout + Guilloché Wave Lines
@@ -26,7 +31,10 @@ export function HeroHeader() {
   return (
     <section className="hero" ref={sectionRef}>
 
-      {/* ═══ Background ═══ */}
+      {/* ═══ WebGL beam (deepest background layer) ═══ */}
+      <HeroBeam />
+
+      {/* ═══ Background (CSS aurora blobs, blended over beam) ═══ */}
       <div className="hero-bg" aria-hidden="true">
         <div className="hero-blob hero-blob--1" />
         <div className="hero-blob hero-blob--2" />
