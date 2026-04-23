@@ -275,32 +275,45 @@
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* ─── Entrance ─── */
-
-@keyframes hero-enter {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* ─── Entrance ───
+   Initial state only. GSAP (src/lib/motion.ts heroEnterTimeline) drives
+   the entrance tween via the data-hero-enter selector. For no-JS / pre-
+   hydration, the @keyframes fallback below snaps elements to the final
+   state so the page isn't blank. */
 
 .hero-enter {
-  animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  opacity: 0;
+  transform: translateY(16px);
 }
 
-/* Globals.css sets animation-duration: 0.01ms for all elements under reduced-motion,
-   which leaves these looping animations running one fast pass. Force-stop them. */
+/* No-JS / hydration-failure fallback — CSS keyframe snaps to final state
+   after a brief delay so no-JS users see content. Any modern JS-capable
+   browser will kick in GSAP before this completes. */
+@keyframes hero-enter-fallback {
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero-enter {
+  animation: hero-enter-fallback 0.01ms 0.8s forwards;
+}
+
+/* Once GSAP hydrates, the .js-enhanced class kills the CSS fallback so
+   the two motion paths don't race. */
+.js-enhanced .hero-enter {
+  animation: none;
+}
+
+/* Reduced-motion override — static final state, no animation at all.
+   (GSAP's isReducedMotion() guard already skips the tween; CSS doubles up.) */
 @media (prefers-reduced-motion: reduce) {
   .hero-blob,
-  .hero-wave,
-  .hero-enter {
+  .hero-wave {
     animation: none !important;
   }
-  .hero-enter { opacity: 1; transform: none; }
+  .hero-enter {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ─── Mobile ─── */
