@@ -89,8 +89,31 @@ a { color: inherit; text-decoration: none; }
    - --b-* tokens are builder-shell-scoped (see builder.css).
    - --dh-* tokens are app-global and resolve in both modes via
      the .builder-light marker class.
+   - --dh-brand-* / --aurora-* / --beam-color-* are emitted below
+     — see src/data/_shared/brand.ts for the source of truth.
    ═══════════════════════════════════════════ */
 :root {
+  /* ─── Brand (ausos.ai) — see src/data/_shared/brand.ts ─── */
+  --dh-brand-bg-deep: #0b0e1a;
+  --dh-brand-primary: #6750a4;
+  --dh-brand-primary-soft: #b490f5;
+  --dh-brand-fg: #ffffff;
+  --dh-brand-fg-muted: rgba(255, 255, 255, 0.7);
+  --dh-brand-fg-disabled: rgba(255, 255, 255, 0.38);
+
+  /* ─── Aurora blob palette ─── */
+  --aurora-blob-1-inner: #5ee7df;
+  --aurora-blob-1-outer: #3b82f6;
+  --aurora-blob-2-inner: #b490f5;
+  --aurora-blob-2-outer: #8b5cf6;
+  --aurora-blob-3-inner: #f7a8c4;
+  --aurora-blob-3-outer: #d946ef;
+
+  /* ─── Beam shader semantic aliases ─── */
+  --beam-color-a: var(--dh-brand-primary);
+  --beam-color-b: var(--dh-brand-primary-soft);
+  --beam-color-bg: var(--dh-brand-bg-deep);
+
   /* ── Radius scale ── */
   --dh-curve-sm: 6px;
   --dh-curve-md: 10px;

@@ -10,8 +10,8 @@
   min-height: 100vh;
   min-height: 100dvh;
   overflow: hidden;
-  background: #0b0e1a;
-  color: #fff;
+  background: var(--dh-brand-bg-deep);
+  color: var(--dh-brand-fg);
   display: flex;
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
@@ -55,7 +55,7 @@
 .hero-blob--1 {
   width: 60vw; height: 60vw;
   max-width: 800px; max-height: 800px;
-  background: radial-gradient(circle, #5ee7df, #3b82f6);
+  background: radial-gradient(circle, var(--aurora-blob-1-inner), var(--aurora-blob-1-outer));
   top: -25%; left: -20%;
   animation: hero-drift 24s ease-in-out infinite alternate;
 }
@@ -63,7 +63,7 @@
 .hero-blob--2 {
   width: 50vw; height: 50vw;
   max-width: 650px; max-height: 650px;
-  background: radial-gradient(circle, #b490f5, #8b5cf6);
+  background: radial-gradient(circle, var(--aurora-blob-2-inner), var(--aurora-blob-2-outer));
   bottom: -20%; right: -15%;
   animation: hero-drift 19s ease-in-out infinite alternate-reverse;
   animation-delay: -7s;
@@ -72,7 +72,7 @@
 .hero-blob--3 {
   width: 35vw; height: 35vw;
   max-width: 420px; max-height: 420px;
-  background: radial-gradient(circle, #f7a8c4, #d946ef);
+  background: radial-gradient(circle, var(--aurora-blob-3-inner), var(--aurora-blob-3-outer));
   top: 45%; left: 55%;
   opacity: 0.15;
   animation: hero-drift 22s ease-in-out infinite alternate;
@@ -138,7 +138,7 @@
   line-height: 1.12;
   letter-spacing: -0.025em;
   margin: 0;
-  color: #fff;
+  color: var(--dh-brand-fg);
 }
 
 /* Emphasis uses a sharper weight contrast (300 → 600) rather than a
