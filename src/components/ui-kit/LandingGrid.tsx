@@ -64,7 +64,10 @@ export const LandingGrid = React.memo(function LandingGrid() {
         <h1 style={{ fontSize: heroSize, fontWeight: heroWeight, color: t.fg, lineHeight: 1.15, margin: `0 0 ${t.scale.gap + (activeSystem === "m3" ? 8 : 12)}px`, letterSpacing: activeSystem === "m3" ? "-0.25px" : "-0.5px" }}>
           {sysInfo.name}
         </h1>
-        <p style={{ fontSize: bodySize, color: t.fg2, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+        <p style={{ fontSize: t.scale.navF + 1, color: t.fg2, lineHeight: 1.5, maxWidth: 560, margin: "0 0 10px", fontWeight: 500 }}>
+          Preview, compare, and copy tokens across five design systems.
+        </p>
+        <p style={{ fontSize: bodySize, color: t.fg3, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
           {components.length} components across {categories.length} categories -{descSuffix}
         </p>
         <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>

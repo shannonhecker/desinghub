@@ -19,7 +19,7 @@ export function ComponentList() {
     ? components.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.desc.toLowerCase().includes(searchQuery.toLowerCase()))
     : components;
 
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", "Patterns", ...SUBCAT_ORDER]));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set(["Foundations", "Tools", "Patterns", ...SUBCAT_ORDER]));
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -85,8 +85,16 @@ export function ComponentList() {
     >{c.name}</button>
   );
 
-  const foundationItems = filtered.filter(c => c.cat === "Foundations");
+  const TOOL_IDS = new Set(["tokens", "audit"]);
+  const foundationItems = filtered.filter(c => c.cat === "Foundations" && !TOOL_IDS.has(c.id));
+  const toolItems = filtered.filter(c => c.cat === "Foundations" && TOOL_IDS.has(c.id));
   const componentItems = filtered.filter(c => c.cat === "Components & Patterns");
+
+  const helperStyle: React.CSSProperties = {
+    fontSize: 10, color: t.fg3, letterSpacing: "0.04em",
+    padding: activeSystem === "m3" ? "0 16px 4px" : "0 0 4px",
+    fontWeight: 400,
+  };
   const subcatGroups = SUBCAT_ORDER
     .map(sub => ({ sub, items: componentItems.filter(c => COMPONENT_SUBCATS[c.id] === sub).sort((a, b) => a.name.localeCompare(b.name)) }))
     .filter(g => g.items.length > 0);
@@ -105,7 +113,19 @@ export function ComponentList() {
         </div>
       )}
 
-      <div style={sectionHeaderStyle}>Components & Patterns</div>
+      {toolItems.length > 0 && (
+        <div>
+          <button onClick={() => toggleGroup("Tools")} aria-expanded={expandedGroups.has("Tools")} style={groupHeaderStyle(expandedGroups.has("Tools"))}>
+            <span style={sectionHeaderStyle}>Tools</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
+          </button>
+          {expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code</div>}
+          {expandedGroups.has("Tools") && toolItems.map(c => renderItem(c))}
+        </div>
+      )}
+
+      <div style={sectionHeaderStyle}>Components</div>
+      <div style={helperStyle}>Atomic UI controls</div>
       {subcatGroups.map(g => (
         <div key={g.sub}>
           <button onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
@@ -124,9 +144,10 @@ export function ComponentList() {
         return (
           <div>
             <button onClick={() => toggleGroup("Patterns")} aria-expanded={expandedGroups.has("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
-              <span style={sectionHeaderStyle}>Patterns</span>
+              <span style={sectionHeaderStyle}>Patterns & Flows</span>
               <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
             </button>
+            {expandedGroups.has("Patterns") && <div style={helperStyle}>Page layouts &amp; multi-component flows</div>}
             {expandedGroups.has("Patterns") && patternItems.map(c => renderItem(c))}
           </div>
         );

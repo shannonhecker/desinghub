@@ -26,10 +26,25 @@ const SYSTEM_PACKAGES: Record<string, { pkg: string; docsUrl: string; componentB
    ═══════════════════════════════════════════════════════════ */
 function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnType<typeof useActiveTheme>; cardClass: string }) {
   const [copied, setCopied] = useState(false);
+  const [tokenToast, setTokenToast] = useState<string | null>(null);
   const copy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  /* Event-delegated click on any `.syn-token-copyable` span inside the
+     code block copies its data-token value. Powers the click-to-copy
+     affordance on `var(--...)` references — users can grab the token
+     name without selecting it by hand. */
+  const onCodeClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("syn-token-copyable")) return;
+    const token = target.getAttribute("data-token");
+    if (!token) return;
+    navigator.clipboard.writeText(token);
+    setTokenToast(token);
+    setTimeout(() => setTokenToast(null), 2000);
   };
 
   /* Single-pass tokenizer - avoids cascading regex corruption */
@@ -51,6 +66,14 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
     lastIdx = tokenRe.lastIndex;
   }
   highlighted += escaped.slice(lastIdx);
+
+  /* Second pass: wrap CSS-var references so they become clickable.
+     Runs AFTER highlighting so nested token refs inside strings still
+     get interactivity (nested spans are valid HTML). */
+  highlighted = highlighted.replace(
+    /\bvar\(--[a-zA-Z0-9_-]+\)/g,
+    (match) => `<span class="syn-token-copyable" data-token="${match.replace(/"/g, "&quot;")}">${match}</span>`
+  );
 
   const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "ausos" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
@@ -84,8 +107,20 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
         fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
         color: isLight ? "#24292f" : t.fg,
       }}>
-        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
+        <code onClick={onCodeClick} dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
+      {tokenToast && (
+        <div role="status" aria-live="polite" style={{
+          position: "absolute", bottom: 8, right: 8,
+          padding: "6px 10px", fontSize: 11, fontFamily: "'SF Mono', 'Fira Code', monospace",
+          background: isLight ? "rgba(36,41,47,0.92)" : "rgba(255,255,255,0.92)",
+          color: isLight ? "#ffffff" : "#24292f",
+          borderRadius: 4, boxShadow: "0 2px 8px rgba(0,0,0,0.25)", zIndex: 3,
+          pointerEvents: "none",
+        }}>
+          Copied {tokenToast}
+        </div>
+      )}
     </div>
   );
 }

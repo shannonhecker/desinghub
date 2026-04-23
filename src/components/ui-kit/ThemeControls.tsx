@@ -37,6 +37,28 @@ export function ThemeControls() {
   const [modeOpen, setModeOpen] = useState(false);
   const [accentOpen, setAccentOpen] = useState(false);
 
+  /* Screen-reader announcement of the current theme+density summary.
+     Updates on any store change; assistive tech reads the new state so
+     users know the toggle landed. */
+  const summary = React.useMemo(() => {
+    if (activeSystem === "salt") return `Salt ${store.salt.themeKey}, density ${store.salt.density}`;
+    if (activeSystem === "m3") return `Material 3 ${store.m3.themeKey}, density ${store.m3.density}`;
+    if (activeSystem === "ausos") return `ausos ${store.ausos.themeKey}, density ${store.ausos.density}`;
+    if (activeSystem === "carbon") return `Carbon ${store.carbon.themeKey}, density ${store.carbon.density}`;
+    return `Fluent ${store.fluent.themeKey}, size ${store.fluent.size}`;
+  }, [activeSystem, store.salt.themeKey, store.salt.density, store.m3.themeKey, store.m3.density, store.ausos.themeKey, store.ausos.density, store.carbon.themeKey, store.carbon.density, store.fluent.themeKey, store.fluent.size]);
+  const [announce, setAnnounce] = useState("");
+  const prevSummary = React.useRef(summary);
+  React.useEffect(() => {
+    if (prevSummary.current !== summary) setAnnounce(summary);
+    prevSummary.current = summary;
+  }, [summary]);
+  const announceJsx = (
+    <div role="status" aria-live="polite" style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: 0 }}>
+      {announce}
+    </div>
+  );
+
   function CtrlBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
     const btnClass = activeSystem === "salt"
       ? `s-btn ${active ? "s-btn-solid" : "s-btn-bordered"}`
@@ -49,24 +71,48 @@ export function ThemeControls() {
       : `f-btn ${active ? "f-btn-primary" : "f-btn-secondary"}`;
 
     return (
-      <button className={btnClass} onClick={onClick} aria-pressed={active} style={{
-        padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
-        fontSize: t.scale.labF, fontFamily: t.font,
-        cursor: "pointer", lineHeight: 1.4, minWidth: 0,
-        height: "auto",
-      }}>
+      <button className={btnClass} onClick={onClick}
+        role="radio" aria-checked={active} tabIndex={active ? 0 : -1}
+        style={{
+          padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
+          fontSize: t.scale.labF, fontFamily: t.font,
+          cursor: "pointer", lineHeight: 1.4, minWidth: 0,
+          height: "auto",
+        }}>
         {children}
       </button>
     );
   }
 
-  function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  function ControlGroup({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
     const innerGap = Math.max(8, t.scale.gap);
     const btnGap   = Math.max(6, t.scale.gap - 2);
+    const labelId = React.useId();
+    const groupRef = React.useRef<HTMLDivElement>(null);
+    const onKeyDown = (e: React.KeyboardEvent) => {
+      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+      e.preventDefault();
+      const buttons = Array.from(groupRef.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]') || []);
+      if (buttons.length === 0) return;
+      const idx = buttons.findIndex(b => b === document.activeElement);
+      const start = idx < 0 ? 0 : idx;
+      const dir = (e.key === "ArrowLeft" || e.key === "ArrowUp") ? -1 : 1;
+      const next = buttons[(start + dir + buttons.length) % buttons.length];
+      next.focus();
+      next.click();
+    };
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: innerGap }}>
-        <div style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
-        <div style={{ display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }}>{children}</div>
+        <div id={labelId} style={{ fontSize: t.scale.labF, textTransform: "uppercase" as const, color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>{label}</div>
+        <div ref={groupRef} role="radiogroup" aria-labelledby={labelId} onKeyDown={onKeyDown}
+             style={{ display: "flex", gap: btnGap, flexWrap: "wrap", alignItems: "center" }}>
+          {children}
+        </div>
+        {hint && (
+          <div style={{ fontSize: 10, color: t.fg3, letterSpacing: "0.06em", textTransform: "uppercase" as const, marginTop: -2, opacity: 0.8 }}>
+            {hint}
+          </div>
+        )}
       </div>
     );
   }
@@ -91,6 +137,7 @@ export function ThemeControls() {
     const set = (th: string, m: string) => setSaltTheme(`${th}-${m}`);
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {announceJsx}
         {collapseHeader}
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
@@ -102,7 +149,7 @@ export function ThemeControls() {
               <CtrlBtn active={mode === "light"} onClick={() => set(theme, "light")}>Light</CtrlBtn>
               <CtrlBtn active={mode === "dark"} onClick={() => set(theme, "dark")}>Dark</CtrlBtn>
             </ControlGroup>
-            <ControlGroup label="Density">
+            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
@@ -125,6 +172,7 @@ export function ThemeControls() {
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {announceJsx}
         {collapseHeader}
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
@@ -194,7 +242,7 @@ export function ThemeControls() {
               )}
             </div>
 
-            <ControlGroup label="Density">
+            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
               {([[0, "Default"], [-1, "Comfortable"], [-2, "Compact"], [-3, "Dense"]] as [number, string][]).map(([d, label]) => (
                 <CtrlBtn key={d} active={m3.density === d} onClick={() => setM3Density(d)}>{label}</CtrlBtn>
               ))}
@@ -210,6 +258,7 @@ export function ThemeControls() {
     const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {announceJsx}
         {collapseHeader}
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
@@ -245,7 +294,7 @@ export function ThemeControls() {
                 </div>
               )}
             </div>
-            <ControlGroup label="Density">
+            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
@@ -263,6 +312,7 @@ export function ThemeControls() {
     const { carbon, setCarbonTheme, setCarbonDensity } = store;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {announceJsx}
         {collapseHeader}
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
@@ -273,7 +323,7 @@ export function ThemeControls() {
                 </CtrlBtn>
               ))}
             </ControlGroup>
-            <ControlGroup label="Density">
+            <ControlGroup label="Density" hint="compact  ·  comfortable  ·  spacious">
               {(["compact", "normal", "spacious"] as const).map(k => (
                 <CtrlBtn key={k} active={carbon.density === k} onClick={() => setCarbonDensity(k)}>
                   {k === "compact" ? "Compact" : k === "normal" ? "Normal" : "Spacious"}
@@ -290,6 +340,7 @@ export function ThemeControls() {
   const { fluent, setFluentTheme, setFluentSize } = store;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {announceJsx}
       {collapseHeader}
       {open && (
         <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
@@ -297,7 +348,7 @@ export function ThemeControls() {
             <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
             <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
           </ControlGroup>
-          <ControlGroup label="Size">
+          <ControlGroup label="Size" hint="compact  ·  comfortable  ·  spacious">
             {([["small","S.24"],["medium","M.32"],["large","L.40"]] as const).map(([k,l]) => (
               <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)}>{l}</CtrlBtn>
             ))}

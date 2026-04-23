@@ -163,8 +163,8 @@ export function DesignHubApp() {
             </span>
           )}
           <Link href="/" target="_blank" rel="noopener noreferrer"
-            aria-label="Open AI Builder"
-            title="AI Builder"
+            aria-label="Open Builder"
+            title="Open Builder"
             style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
@@ -176,7 +176,7 @@ export function DesignHubApp() {
             }}>
             {isNarrow ? (
               <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">auto_awesome</span>
-            ) : "AI Builder"}
+            ) : "Open Builder"}
           </Link>
         </div>
       </header>
