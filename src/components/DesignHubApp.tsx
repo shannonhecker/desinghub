@@ -30,6 +30,23 @@ export function DesignHubApp() {
   const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
+  const [isNarrow, setIsNarrow] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = () => setIsNarrow(mq.matches);
+    handler();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  const didAutoCloseRef = React.useRef(false);
+  React.useEffect(() => {
+    if (isNarrow && sidebarOpen && !didAutoCloseRef.current) {
+      didAutoCloseRef.current = true;
+      store.toggleSidebar();
+    }
+    if (!isNarrow) didAutoCloseRef.current = false;
+  }, [isNarrow, sidebarOpen, store]);
+
   // Detect dark theme for logo color - logo is black SVG, invert to white in dark mode
   const isDarkTheme = activeSystem === "salt"
     ? store.salt.themeKey.includes("dark")
@@ -95,10 +112,14 @@ export function DesignHubApp() {
           </span>
         </div>
 
-        {/* Center - DS switcher, always centered */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <SystemSwitcher />
-        </div>
+        {/* Center - DS switcher. Hidden on narrow viewports; sidebar list
+            remains the way to navigate inside the active DS, and the header
+            theme-name chip (right side) still shows which DS is active. */}
+        {!isNarrow && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <SystemSwitcher />
+          </div>
+        )}
 
         {/* Right - dark/light toggle + theme badge + AI Builder */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
@@ -141,16 +162,21 @@ export function DesignHubApp() {
               {t.T.name || sysInfo.name}
             </span>
           )}
-          <Link href="/" target="_blank" rel="noopener noreferrer" style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
-            color: "#ffffff",
-            background: isCarbon ? "#0f62fe" : t.accent,
-            padding: isCarbon ? "10px 16px" : `${t.scale.gap - 1}px ${t.scale.gap + 8}px`,
-            borderRadius: isCarbon ? 0 : 9999,
-            textDecoration: "none",
-          }}>
-            AI Builder
+          <Link href="/" target="_blank" rel="noopener noreferrer"
+            aria-label="Open AI Builder"
+            title="AI Builder"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
+              color: "#ffffff",
+              background: isCarbon ? "#0f62fe" : t.accent,
+              padding: isNarrow ? "8px 10px" : isCarbon ? "10px 16px" : `${t.scale.gap - 1}px ${t.scale.gap + 8}px`,
+              borderRadius: isCarbon ? 0 : 9999,
+              textDecoration: "none",
+            }}>
+            {isNarrow ? (
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">auto_awesome</span>
+            ) : "AI Builder"}
           </Link>
         </div>
       </header>

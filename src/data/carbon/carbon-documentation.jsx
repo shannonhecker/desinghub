@@ -99,7 +99,7 @@ const white = {
   toggleOff: GRAY_50, overlay: "rgba(22,22,22,0.5)", skeletonElement: GRAY_30,
   // Button-specific
   buttonPrimary: BLUE_60, buttonPrimaryHover: "#0353e9", buttonPrimaryActive: "#002d9c",
-  buttonSecondary: GRAY_80, buttonSecondaryHover: "#474747", buttonSecondaryActive: GRAY_70,
+  buttonSecondary: GRAY_80, buttonSecondaryHover: "#474747", buttonSecondaryActive: GRAY_60,
   buttonTertiary: BLUE_60, buttonTertiaryHover: BLUE_70,
   buttonDangerPrimary: RED_60, buttonDangerHover: "#b81921", buttonDangerActive: "#750e13",
   buttonSeparator: GRAY_20,
@@ -149,7 +149,7 @@ const g90 = {
   highlight: "#002d9c", interactive: BLUE_50,
   toggleOff: GRAY_60, overlay: "rgba(0,0,0,0.65)", skeletonElement: GRAY_70,
   buttonPrimary: BLUE_60, buttonPrimaryHover: "#0353e9", buttonPrimaryActive: "#002d9c",
-  buttonSecondary: GRAY_10, buttonSecondaryHover: "#e5e5e5", buttonSecondaryActive: GRAY_30,
+  buttonSecondary: GRAY_60, buttonSecondaryHover: "#606060", buttonSecondaryActive: GRAY_80,
   buttonTertiary: "#ffffff", buttonTertiaryHover: GRAY_10,
   buttonDangerPrimary: RED_60, buttonDangerHover: "#b81921", buttonDangerActive: "#750e13",
   buttonSeparator: GRAY_100,
@@ -352,7 +352,7 @@ export function carbonBuildCSS(theme) {
     .cb-btn-secondary:hover { background: var(--cds-button-secondary-hover); }
     .cb-btn-secondary:active { background: var(--cds-button-secondary-active); }
     .cb-btn-tertiary { background: transparent; color: var(--cds-button-tertiary); border-color: var(--cds-button-tertiary); }
-    .cb-btn-tertiary:hover { background: var(--cds-button-tertiary-hover); color: var(--cds-text-on-color); }
+    .cb-btn-tertiary:hover { background: var(--cds-button-tertiary-hover); color: var(--cds-text-inverse); }
     .cb-btn-ghost { background: transparent; color: var(--cds-link-primary); border-color: transparent; }
     .cb-btn-ghost:hover { background: var(--cds-background-hover); color: var(--cds-link-primary-hover); }
     .cb-btn-danger, .cb-btn-danger--primary { background: var(--cds-button-danger-primary); color: var(--cds-text-on-color); }

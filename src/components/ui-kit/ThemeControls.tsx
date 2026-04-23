@@ -44,10 +44,12 @@ export function ThemeControls() {
       ? `m3-btn ${active ? "m3-btn-filled" : "m3-btn-outlined"}`
       : activeSystem === "ausos"
       ? `a-btn ${active ? "a-btn-primary" : "a-btn-ghost"}`
+      : activeSystem === "carbon"
+      ? `cb-btn ${active ? "cb-btn-primary" : "cb-btn-tertiary"}`
       : `f-btn ${active ? "f-btn-primary" : "f-btn-secondary"}`;
 
     return (
-      <button className={btnClass} onClick={onClick} style={{
+      <button className={btnClass} onClick={onClick} aria-pressed={active} style={{
         padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
         fontSize: t.scale.labF, fontFamily: t.font,
         cursor: "pointer", lineHeight: 1.4, minWidth: 0,
@@ -247,6 +249,34 @@ export function ThemeControls() {
               {(["high", "medium", "low", "touch"] as const).map(k => (
                 <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
+                </CtrlBtn>
+              ))}
+            </ControlGroup>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── CARBON DS ── */
+  if (activeSystem === "carbon") {
+    const { carbon, setCarbonTheme, setCarbonDensity } = store;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {collapseHeader}
+        {open && (
+          <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
+            <ControlGroup label="Theme">
+              {(["white", "g10", "g90", "g100"] as const).map(k => (
+                <CtrlBtn key={k} active={carbon.themeKey === k} onClick={() => setCarbonTheme(k)}>
+                  {k.toUpperCase()}
+                </CtrlBtn>
+              ))}
+            </ControlGroup>
+            <ControlGroup label="Density">
+              {(["compact", "normal", "spacious"] as const).map(k => (
+                <CtrlBtn key={k} active={carbon.density === k} onClick={() => setCarbonDensity(k)}>
+                  {k === "compact" ? "Compact" : k === "normal" ? "Normal" : "Spacious"}
                 </CtrlBtn>
               ))}
             </ControlGroup>

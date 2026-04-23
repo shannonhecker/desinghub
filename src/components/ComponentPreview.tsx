@@ -107,13 +107,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
 
   return (
     <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
-      {/* Title section */}
+      {/* Title section — category already conveyed by breadcrumb in ContentTopBar */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 12, textTransform: "uppercase", color: t.accentText, background: t.accentWeak, padding: "3px 10px", borderRadius: 9999, fontWeight: 600, letterSpacing: "0.5px" }}>
-            {comp.cat}
-          </span>
-        </div>
         <h2 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h2>
         <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
       </div>
