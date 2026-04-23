@@ -1,17 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { WaveCanvas } from "./WaveCanvas";
+import { heroEnterTimeline } from "@/lib/motion";
 import "./hero.css";
 
 /* ═══════════════════════════════════════════════════════════════
    HeroHeader - Editorial Layout + Guilloché Wave Lines
    Outfit (display) × Space Grotesk (UI) · Wave canvas background
+   Entrance orchestration via GSAP timeline (src/lib/motion.ts).
    ═══════════════════════════════════════════════════════════════ */
 
 export function HeroHeader() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    /* Mark JS as hydrated so the CSS fallback entrance disables itself
+       (see hero.css § Entrance). */
+    document.documentElement.classList.add("js-enhanced");
+    const tl = heroEnterTimeline(sectionRef.current);
+    return () => { tl?.kill(); };
+  }, []);
+
   return (
-    <section className="hero">
+    <section className="hero" ref={sectionRef}>
 
       {/* ═══ Background ═══ */}
       <div className="hero-bg" aria-hidden="true">
@@ -30,7 +43,7 @@ export function HeroHeader() {
       <div className="hero-main">
 
         {/* Logo wordmark + label */}
-        <div className="hero-brand hero-enter" style={{ animationDelay: "0.1s" }}>
+        <div className="hero-brand hero-enter" data-hero-enter>
           <svg height="38" viewBox="0 0 906 264" fill="none" xmlns="http://www.w3.org/2000/svg" className="hero-wordmark">
             <path fillRule="evenodd" clipRule="evenodd" d="M113.213 91.6077C124.431 91.6077 134.442 94.2288 143.246 99.4717C152.192 104.573 159.221 111.588 164.333 120.515C169.587 129.442 172.285 139.574 172.427 150.91V200.86C172.427 203.269 171.646 205.253 170.084 206.812C168.522 208.229 166.534 208.937 164.12 208.937C161.706 208.937 159.718 208.228 158.156 206.812C156.594 205.253 155.813 203.269 155.813 200.86V187.937C151.457 194.038 145.919 199.054 139.199 202.985C131.105 207.662 121.875 210 111.509 210C100.575 210 90.7774 207.449 82.1155 202.347C73.4537 197.105 66.5666 190.019 61.4547 181.092C56.4849 172.165 54 162.104 54 150.91C54 139.574 56.5558 129.442 61.6677 120.515C66.9216 111.588 74.022 104.573 82.9679 99.4717C91.9138 94.2288 101.996 91.6077 113.213 91.6077Z" fill="white"/>
             <path fillRule="evenodd" clipRule="evenodd" d="M252.787 91.4574C264.146 91.4574 274.228 94.011 283.032 99.1187C291.978 104.226 299.007 111.25 304.119 120.188C309.231 129.127 311.858 139.343 312 150.835C312 162.185 309.373 172.33 304.119 181.268C299.007 190.207 291.978 197.23 283.032 202.338C274.228 207.446 264.146 210 252.787 210C241.427 210 231.274 207.446 222.328 202.338C213.382 197.23 206.353 190.207 201.241 181.268C196.129 172.33 193.573 162.185 193.573 150.835C193.573 139.343 196.129 129.127 201.241 120.188C206.353 111.25 213.382 104.226 222.328 99.1187C231.274 94.0111 241.427 91.4574 252.787 91.4574Z" fill="white"/>
@@ -45,33 +58,33 @@ export function HeroHeader() {
         </div>
 
         {/* Headline */}
-        <h1 className="hero-headline hero-enter" style={{ animationDelay: "0.3s" }}>
+        <h1 className="hero-headline hero-enter" data-hero-enter>
           <span className="hero-headline-line1">Design <em>systems,</em></span>
           <span className="hero-headline-line2">crafted by AI.</span>
         </h1>
 
         {/* Divider */}
-        <div className="hero-divider hero-enter" style={{ animationDelay: "0.45s" }} />
+        <div className="hero-divider hero-enter" data-hero-enter />
 
         {/* Body */}
-        <p className="hero-body hero-enter" style={{ animationDelay: "0.5s" }}>
+        <p className="hero-body hero-enter" data-hero-enter>
           Prototype across Salt DS, Material 3, and Fluent 2{" "}
           <br className="hero-br-desktop" />
           in a single AI-powered workspace.
         </p>
 
         {/* CTA */}
-        <Link href="/login" className="hero-cta-link hero-enter" style={{ animationDelay: "0.65s" }}>
+        <Link href="/login" className="hero-cta-link hero-enter" data-hero-enter>
           <button className="hero-cta">
             <span>Start Building</span>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M4 9H14M14 9L9.5 4.5M14 9L9.5 13.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         </Link>
 
         {/* Design system labels */}
-        <div className="hero-systems hero-enter" style={{ animationDelay: "0.8s" }}>
+        <div className="hero-systems hero-enter" data-hero-enter>
           <span>Salt DS</span>
           <span className="hero-sys-sep">/</span>
           <span>Material 3</span>
@@ -81,7 +94,7 @@ export function HeroHeader() {
       </div>
 
       {/* ═══ Footer ═══ */}
-      <footer className="hero-footer hero-enter" style={{ animationDelay: "0.9s" }}>
+      <footer className="hero-footer hero-enter" data-hero-enter>
         <span>&copy; 2026 aus&#333;s</span>
       </footer>
     </section>
