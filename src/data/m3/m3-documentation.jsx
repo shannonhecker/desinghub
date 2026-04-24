@@ -327,7 +327,10 @@ const buildCSS = (T) => `
 
 .m3-tf-outlined { background:transparent; border-radius:4px; border:1px solid ${T.outline}; }
 .m3-tf-outlined:hover { border-color:${T.onSurface}; }
-.m3-tf-outlined:focus-within { border:3px solid ${T.primary}; padding:0 14px; }
+/* M3 canonical: outlined text field focus-state uses 2dp border, not 3dp.
+   Padding compensates for the 1dp border-width increase (16→15px) to keep
+   the input contents aligned with the label. */
+.m3-tf-outlined:focus-within { border:2px solid ${T.primary}; padding:0 15px; }
 .m3-tf-outlined.m3-tf-error { border:2px solid ${T.error}; padding:0 15px; }
 .m3-tf-outlined.m3-tf-disabled { opacity:0.38; pointer-events:none; border-color:${T.onSurface}1f; }
 
@@ -481,7 +484,12 @@ const buildCSS = (T) => `
 .m3-tab:hover::after { opacity:0.08; }
 .m3-tab:active::after { opacity:0.12; }
 .m3-tab:focus-visible { outline:2px solid ${T.primary}; outline-offset:-2px; }
-.m3-tab.active { color:${T.primary}; font-weight:600; }
+/* M3 primary tabs: active tab carries a 3dp indicator in $primary at the
+   bottom edge. Using inset box-shadow so the 3dp doesn't shift the tab's
+   48dp layout height. Canonical border-radius on the indicator is 3dp
+   top-only; box-shadow inset approximates this since the indicator sits
+   on the container's border. */
+.m3-tab.active { color:${T.primary}; font-weight:600; box-shadow: inset 0 -3px 0 0 ${T.primary}; }
 
 /* === SLIDER === */
 .m3-slider { position:relative; height:40px; display:flex; align-items:center; width:100%; }
