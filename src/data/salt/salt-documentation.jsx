@@ -56,8 +56,8 @@ const modeOf = (T) => (T?.name && /Light$/.test(T.name) ? "light" : "dark");
 const buildCSS = (T) => `
 * { box-sizing:border-box; margin:0; padding:0; }
 /* Salt tokens — motion, curve (radius), elevation, border-width.
-   Mode-aware via saltTokenVars(). Legacy --dur-*/--ease short names
-   are also emitted for back-compat with existing class rules. */
+   Mode-aware via saltTokenVars(). Legacy --dur- and --ease short
+   names are also emitted for back-compat with existing class rules. */
 :root { ${saltTokenVars(modeOf(T))} }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0.01ms!important;animation-duration:0.01ms!important;}}
 
@@ -1687,7 +1687,30 @@ export default function App(){
     low:    { h:36, sp:12, fs:14, fsS:12, h1:32, h2:24, title:40, pad:12, cr:6, icon:14, sideW:280, mainP:32, cardMin:210, cardP:16, gap:10, topH:44, srchH:32, logoS:30, catFs:10, demoP:28, demoCr:10 },
     touch:  { h:44, sp:16, fs:16, fsS:14, h1:42, h2:32, title:48, pad:16, cr:8, icon:16, sideW:300, mainP:40, cardMin:240, cardP:20, gap:14, topH:52, srchH:40, logoS:36, catFs:11, demoP:36, demoCr:12 },
   }[density];
-  const dCSS=`:root{--h:${D.h}px;--pad:${D.pad}px;--fs:${D.fs}px;--cr:${D.cr}px;}
+  /* Density-scoped root CSS. Emits:
+     - --h/--pad/--fs/--cr: short-form density variables consumed by button/input/card classes in buildCSS.
+     - --salt-spacing-25..900: canonical Salt spacing scale (base = D.sp, which
+       equals --salt-size-base). Needed for code snippets that reference
+       `var(--salt-spacing-100)` rather than hardcoding px.
+     - --salt-text-size-*: density-scaled type sizes. Canonical per
+       @salt-ds/theme naming (size-small, size-body, size-h1/h2/display). */
+  const dCSS=`:root{
+    --h:${D.h}px;--pad:${D.pad}px;--fs:${D.fs}px;--cr:${D.cr}px;
+    --salt-spacing-25:${D.sp*0.25}px;
+    --salt-spacing-50:${D.sp*0.5}px;
+    --salt-spacing-100:${D.sp}px;
+    --salt-spacing-150:${D.sp*1.5}px;
+    --salt-spacing-200:${D.sp*2}px;
+    --salt-spacing-300:${D.sp*3}px;
+    --salt-spacing-500:${D.sp*5}px;
+    --salt-spacing-700:${D.sp*7}px;
+    --salt-spacing-900:${D.sp*9}px;
+    --salt-text-size-small:${D.fsS}px;
+    --salt-text-size-body:${D.fs}px;
+    --salt-text-size-h2:${D.h2}px;
+    --salt-text-size-h1:${D.h1}px;
+    --salt-text-size-display:${D.title}px;
+  }
     .s-sidebar-item{padding:${Math.max(4,D.sp-2)}px ${D.sp}px;font-size:${D.fs}px;border-radius:${D.cr}px;}`;
 
   const fl=COMPS.filter(c=>!q||c.name.toLowerCase().includes(q.toLowerCase()));
