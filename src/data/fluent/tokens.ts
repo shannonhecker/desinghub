@@ -82,6 +82,27 @@ export const FLUENT_STROKE_WIDTH = {
   thickest: '3px',                         // 3px — spinner rings, emphasis
 } as const;
 
+/* ── SPACING (Fluent 2 spec) ────────────────────────────────────────────
+   Canonical values from @fluentui/tokens. `sNudge` and `mNudge` are
+   Fluent-specific half-step rungs used for icon alignment within buttons
+   and fields. All values apply to both --spacingHorizontal-* and
+   --spacingVertical-*; separate namespaces exist so a component can
+   scale on one axis independently (e.g. compact horizontal + roomy
+   vertical). */
+export const FLUENT_SPACING = {
+  none:   '0px',
+  xxs:    '2px',
+  xs:     '4px',
+  sNudge: '6px',
+  s:      '8px',
+  mNudge: '10px',
+  m:      '12px',
+  l:      '16px',
+  xl:     '20px',
+  xxl:    '24px',
+  xxxl:   '32px',
+} as const;
+
 /* ── CSS-var injection ──────────────────────────────────────────────────
    Emits all Fluent tokens as `--f-*` declarations for :root. */
 export function fluentTokenVars(mode: 'light' | 'dark'): string {
@@ -119,6 +140,100 @@ export function fluentTokenVars(mode: 'light' | 'dark'): string {
     `--f-stroke-width-thin: ${sw.thin};`,
     `--f-stroke-width-thicker: ${sw.thicker};`,
     `--f-stroke-width-thickest: ${sw.thickest};`,
+    /* Canonical Fluent 2 spacing tokens — horizontal + vertical axes. */
+    `--spacingHorizontalNone: ${FLUENT_SPACING.none};`,
+    `--spacingHorizontalXXS: ${FLUENT_SPACING.xxs};`,
+    `--spacingHorizontalXS: ${FLUENT_SPACING.xs};`,
+    `--spacingHorizontalSNudge: ${FLUENT_SPACING.sNudge};`,
+    `--spacingHorizontalS: ${FLUENT_SPACING.s};`,
+    `--spacingHorizontalMNudge: ${FLUENT_SPACING.mNudge};`,
+    `--spacingHorizontalM: ${FLUENT_SPACING.m};`,
+    `--spacingHorizontalL: ${FLUENT_SPACING.l};`,
+    `--spacingHorizontalXL: ${FLUENT_SPACING.xl};`,
+    `--spacingHorizontalXXL: ${FLUENT_SPACING.xxl};`,
+    `--spacingHorizontalXXXL: ${FLUENT_SPACING.xxxl};`,
+    `--spacingVerticalNone: ${FLUENT_SPACING.none};`,
+    `--spacingVerticalXXS: ${FLUENT_SPACING.xxs};`,
+    `--spacingVerticalXS: ${FLUENT_SPACING.xs};`,
+    `--spacingVerticalSNudge: ${FLUENT_SPACING.sNudge};`,
+    `--spacingVerticalS: ${FLUENT_SPACING.s};`,
+    `--spacingVerticalMNudge: ${FLUENT_SPACING.mNudge};`,
+    `--spacingVerticalM: ${FLUENT_SPACING.m};`,
+    `--spacingVerticalL: ${FLUENT_SPACING.l};`,
+    `--spacingVerticalXL: ${FLUENT_SPACING.xl};`,
+    `--spacingVerticalXXL: ${FLUENT_SPACING.xxl};`,
+    `--spacingVerticalXXXL: ${FLUENT_SPACING.xxxl};`,
+    /* Canonical Fluent 2 radius aliases — our --f-radius-* prefix stays,
+       these are parity aliases so Fluent-shaped code snippets (e.g.
+       `border-radius: var(--borderRadiusMedium)`) resolve correctly. */
+    `--borderRadiusNone: ${r.none};`,
+    `--borderRadiusSmall: ${r.sm};`,
+    `--borderRadiusMedium: ${r.md};`,
+    `--borderRadiusLarge: ${r.lg};`,
+    `--borderRadiusXLarge: ${r.xl};`,
+    `--borderRadiusCircular: ${r.circular};`,
+  ].join(' ');
+}
+
+/* ── COLOR TOKENS (mode-aware, theme-driven) ────────────────────────────
+   Canonical Fluent 2 colour-role names from @fluentui/tokens. Our THEMES
+   object uses short-form keys (bg1..6, fg1..4, brandBg, etc.); this
+   helper maps them to the canonical `--colorNeutral*` / `--colorBrand*`
+   / `--colorPalette*` var names so code snippets that reference
+   `var(--colorBrandBackground)` or `var(--colorNeutralForeground1)` —
+   the form Fluent documentation uses — resolve correctly. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function fluentColorVars(T: any): string {
+  return [
+    `--colorNeutralBackground1: ${T.bg1};`,
+    `--colorNeutralBackground2: ${T.bg2};`,
+    `--colorNeutralBackground3: ${T.bg3};`,
+    `--colorNeutralBackground4: ${T.bg4};`,
+    `--colorNeutralBackground5: ${T.bg5};`,
+    `--colorNeutralBackground6: ${T.bg6};`,
+    `--colorNeutralBackgroundInverted: ${T.bgInverted};`,
+    `--colorNeutralBackgroundStatic: ${T.bgStatic};`,
+    `--colorNeutralBackgroundDisabled: ${T.bgDisabled};`,
+    `--colorSubtleBackground: ${T.subtleBg};`,
+    `--colorSubtleBackgroundHover: ${T.subtleBgHover};`,
+    `--colorSubtleBackgroundPressed: ${T.subtleBgPressed};`,
+    `--colorSubtleBackgroundSelected: ${T.subtleBgSelected};`,
+    `--colorNeutralForeground1: ${T.fg1};`,
+    `--colorNeutralForeground2: ${T.fg2};`,
+    `--colorNeutralForeground3: ${T.fg3};`,
+    `--colorNeutralForeground4: ${T.fg4};`,
+    `--colorNeutralForegroundDisabled: ${T.fgDisabled};`,
+    `--colorNeutralForegroundInverted: ${T.fgInverted};`,
+    `--colorNeutralForegroundOnBrand: ${T.fgOnBrand};`,
+    `--colorBrandBackground: ${T.brandBg};`,
+    `--colorBrandBackgroundHover: ${T.brandBgHover};`,
+    `--colorBrandBackgroundPressed: ${T.brandBgPressed};`,
+    `--colorBrandBackgroundSelected: ${T.brandBgSelected};`,
+    `--colorBrandBackground2: ${T.brandBg2};`,
+    `--colorBrandForeground1: ${T.brandFg1};`,
+    `--colorBrandForeground2: ${T.brandFg2};`,
+    `--colorBrandForegroundLink: ${T.brandFgLink};`,
+    `--colorBrandStroke1: ${T.brandStroke1};`,
+    `--colorNeutralStroke1: ${T.stroke1};`,
+    `--colorNeutralStroke2: ${T.stroke2};`,
+    `--colorNeutralStroke3: ${T.stroke3};`,
+    `--colorNeutralStrokeAccessible: ${T.strokeAccessible};`,
+    `--colorNeutralStrokeDisabled: ${T.strokeDisabled};`,
+    `--colorPaletteRedBackground1: ${T.dangerBg1};`,
+    `--colorPaletteRedBackground3: ${T.dangerBg3};`,
+    `--colorPaletteRedForeground1: ${T.dangerFg1};`,
+    `--colorPaletteGreenBackground1: ${T.successBg1};`,
+    `--colorPaletteGreenBackground3: ${T.successBg3};`,
+    `--colorPaletteGreenForeground1: ${T.successFg1};`,
+    `--colorPaletteMarigoldBackground1: ${T.warningBg1};`,
+    `--colorPaletteMarigoldBackground3: ${T.warningBg3};`,
+    `--colorPaletteMarigoldForeground1: ${T.warningFg1};`,
+    `--shadow2: var(--f-shadow-2);`,
+    `--shadow4: var(--f-shadow-4);`,
+    `--shadow8: var(--f-shadow-8);`,
+    `--shadow16: var(--f-shadow-16);`,
+    `--shadow28: var(--f-shadow-28);`,
+    `--shadow64: var(--f-shadow-64);`,
   ].join(' ');
 }
 
@@ -127,3 +242,4 @@ export type FluentDurationKey = keyof typeof FLUENT_MOTION.durations;
 export type FluentRadiusKey = keyof typeof FLUENT_RADIUS;
 export type FluentShadowKey = keyof typeof FLUENT_SHADOW.light;
 export type FluentStrokeKey = keyof typeof FLUENT_STROKE_WIDTH;
+export type FluentSpacingKey = keyof typeof FLUENT_SPACING;
