@@ -157,7 +157,26 @@ export function getFullCSS(system: SystemId, theme: ThemeTokens, densityOrSize: 
   switch (system) {
     case 'salt': {
       const d = SALT_DENSITY_MAP[densityOrSize as string] || SALT_DENSITY_MAP.medium;
-      return saltBuildCSS(theme) + `:root{--h:${d.h}px;--pad:${d.pad}px;--fs:${d.fs}px;--cr:${d.cr}px;}
+      /* Emit canonical Salt spacing and type tokens so code snippets
+         that reference `var(--salt-spacing-*)` or `var(--salt-text-*)`
+         resolve. These scale with active density (base = d.sp). */
+      return saltBuildCSS(theme) + `:root{
+        --h:${d.h}px;--pad:${d.pad}px;--fs:${d.fs}px;--cr:${d.cr}px;
+        --salt-spacing-25:${d.sp*0.25}px;
+        --salt-spacing-50:${d.sp*0.5}px;
+        --salt-spacing-100:${d.sp}px;
+        --salt-spacing-150:${d.sp*1.5}px;
+        --salt-spacing-200:${d.sp*2}px;
+        --salt-spacing-300:${d.sp*3}px;
+        --salt-spacing-500:${d.sp*5}px;
+        --salt-spacing-700:${d.sp*7}px;
+        --salt-spacing-900:${d.sp*9}px;
+        --salt-text-size-small:${d.fsS}px;
+        --salt-text-size-body:${d.fs}px;
+        --salt-text-size-h2:${d.h2}px;
+        --salt-text-size-h1:${d.h1}px;
+        --salt-text-size-display:${d.title}px;
+      }
         .s-sidebar-item{padding:${Math.max(4,d.sp-2)}px ${d.sp}px;font-size:${d.fs}px;border-radius:${d.cr}px;}`;
     }
     case 'm3': return m3BuildCSS(theme) + getM3DensityCSS(densityOrSize as number);
