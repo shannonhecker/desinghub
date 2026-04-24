@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { fluentTokenVars, FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH } from "./tokens";
+import { fluentTokenVars, fluentColorVars, FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH, FLUENT_SPACING } from "./tokens";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as FLUENT_THEMES, buildCSS as fluentBuildCSS, COMPS as FLUENT_COMPS, CATS as FLUENT_CATS, FIcon, FONT as FLUENT_FONT };
@@ -93,10 +93,15 @@ const buildCSS = (T) => `
 @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Fluent 2 Design Tokens */
+/* Fluent 2 Design Tokens — emits both the short-form --f-* aliases used
+   throughout our stylesheet AND the canonical Fluent 2 names from
+   @fluentui/tokens (--colorNeutralBackground1, --spacingHorizontalM,
+   --borderRadiusMedium, etc.) so code snippets referencing those
+   canonical names resolve against our token values. */
 :root {
   color-scheme: ${modeOf(T)};
   ${fluentTokenVars(modeOf(T))}
+  ${fluentColorVars(T)}
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
