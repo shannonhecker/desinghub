@@ -69,5 +69,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\.[\\w]+$).*)"],
+  matcher: ["/((?!api|_next|$|landing$|login$|ui-kit$|.*\\.[\\w]+$).*)"],
 };

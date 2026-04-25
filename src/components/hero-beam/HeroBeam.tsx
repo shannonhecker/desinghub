@@ -1,45 +1,12 @@
 "use client";
 
-/* ═══════════════════════════════════════════════════════════════
-   HeroBeam - WebGL fragment shader light beam
-   ───────────────────────────────────────────────────────────────
-   Neuform-tier atmospheric beam for the ausos.ai hero. Rendered as
-   a full-viewport <canvas> behind the CSS aurora blobs, noise, and
-   guilloché wave layers.
-
-   What the shader does:
-     - Emits a soft vertical volumetric beam from the top, tinted
-       with brand colors that shift subtly along the beam axis.
-     - Layers three octaves of value-noise (cheap fbm) over the
-       beam for texture + shimmer.
-     - Responds to mouse parallax — the beam's x-origin drifts
-       toward the pointer, giving a subtle 3D feel.
-     - Respects prefers-reduced-motion — renders a single static
-       frame instead of animating.
-
-   Performance:
-     - Uses an orthographic camera + full-screen quad (1 triangle
-       strip, 2 faces). No geometry allocation per frame.
-     - DevicePixelRatio clamped to 2 to avoid 4K * retina blow-up.
-     - Antialiasing disabled (edge AA irrelevant for a full-screen
-       gradient shader).
-     - Intersection-observer pauses the RAF loop when the canvas
-       scrolls out of the viewport.
-
-   Mounting:
-     - Must be dynamically imported in a "use client" ancestor
-       because Three.js and WebGL are not SSR-safe.
-     - Expected z-index: −1 (below hero-bg blobs). See hero.css.
-   ═══════════════════════════════════════════════════════════════ */
-
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { isReducedMotion } from "@/lib/motion";
 
-/* ── Shader source ──────────────────────────────────────────────── */
-
 const VERT = /* glsl */ `
   varying vec2 vUv;
+
   void main() {
     vUv = uv;
     gl_Position = vec4(position.xy, 0.0, 1.0);
@@ -50,18 +17,20 @@ const FRAG = /* glsl */ `
   precision highp float;
 
   varying vec2 vUv;
-  uniform vec2  u_resolution;
-  uniform vec2  u_mouse;       // normalised [0..1]
-  uniform float u_time;        // seconds
-  uniform vec3  u_colorA;      // beam core color
-  uniform vec3  u_colorB;      // beam edge color
-  uniform vec3  u_colorBg;     // background color (matches hero bg)
-  uniform float u_intensity;   // 0..1 opacity cap
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+  uniform float u_time;
+  uniform vec3 u_bg;
+  uniform vec3 u_cyan;
+  uniform vec3 u_blue;
+  uniform vec3 u_violet;
+  uniform vec3 u_amber;
+  uniform vec3 u_rose;
 
-  /* ── Hash / noise helpers (cheap value-noise fbm) ─────────────── */
   float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
   }
+
   float noise(vec2 p) {
     vec2 i = floor(p);
     vec2 f = fract(p);
@@ -72,85 +41,140 @@ const FRAG = /* glsl */ `
       u.y
     );
   }
+
   float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 3; i++) {
-      v += a * noise(p);
-      p *= 2.02;
-      a *= 0.5;
+    float value = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+      value += amp * noise(p);
+      p *= 2.07;
+      amp *= 0.5;
     }
-    return v;
+    return value;
+  }
+
+  mat2 rotate2d(float a) {
+    float s = sin(a);
+    float c = cos(a);
+    return mat2(c, -s, s, c);
+  }
+
+  float auroraBand(vec2 p, float center, float width, float halo, float phase) {
+    float organic = fbm(vec2(p.x * 1.25 + phase * 0.08, p.y * 2.4 - phase * 0.05));
+    float drift = sin(p.x * 1.4 + phase) * 0.105;
+    drift += sin(p.x * 3.2 - phase * 0.42) * 0.054;
+    drift += (organic - 0.5) * 0.18;
+    float d = abs(p.y - center + drift);
+    float veil = smoothstep(width + halo, 0.0, d);
+    float body = smoothstep(width, 0.0, d) * 0.34;
+    return (veil * 0.54 + body) * mix(0.78, 1.16, organic);
   }
 
   void main() {
-    /* Aspect-corrected UV centered on origin. */
     vec2 uv = vUv;
-    float aspect = u_resolution.x / u_resolution.y;
+    float aspect = u_resolution.x / max(u_resolution.y, 1.0);
+    vec2 p = (uv - 0.5) * vec2(aspect, 1.0);
 
-    /* Beam origin — drifts slightly with mouse + time. */
-    float beamX = 0.5 + (u_mouse.x - 0.5) * 0.08 + sin(u_time * 0.15) * 0.02;
+    vec2 parallax = (u_mouse - 0.5) * vec2(0.14, -0.08);
+    vec2 q = rotate2d(-0.58) * (p + parallax);
+    vec2 flow = q + vec2(u_time * 0.024, -u_time * 0.012);
 
-    /* Horizontal distance from beam axis, width narrows from top to bottom. */
-    float height = uv.y;
-    float beamWidth = mix(0.08, 0.22, 1.0 - height); /* wider at bottom, tighter at top */
-    float dx = (uv.x - beamX) * aspect;
-    float beamCore = smoothstep(beamWidth, 0.0, abs(dx));
-    float beamHalo = smoothstep(beamWidth * 2.6, 0.0, abs(dx)) * 0.6;
+    float field = fbm(flow * vec2(1.35, 2.8));
+    float shimmer = mix(0.86, 1.08, field);
+    float bandMask = smoothstep(-1.62, -1.0, q.x) * (1.0 - smoothstep(0.78, 1.46, q.x));
 
-    /* Beam dims toward the bottom of the viewport. */
-    float verticalFalloff = smoothstep(0.05, 0.95, 1.0 - height);
-    float beam = (beamCore + beamHalo) * verticalFalloff;
+    float lowerVeil = auroraBand(q, -0.24, 0.105, 0.36, u_time * 0.18) * 0.52;
+    float mainVeil = auroraBand(q, -0.06, 0.135, 0.46, u_time * 0.22 + 1.4) * 0.72;
+    float upperVeil = auroraBand(q, 0.22, 0.12, 0.40, u_time * 0.16 + 3.2) * 0.36;
+    float warmVeil = auroraBand(q, 0.04, 0.16, 0.50, -u_time * 0.14 + 2.1) * 0.22;
 
-    /* fbm noise field — animated drift along the beam axis. */
-    vec2 np = vec2(uv.x * 3.0 + u_time * 0.05, uv.y * 4.0 - u_time * 0.09);
-    float n = fbm(np);
-    float shimmer = mix(0.85, 1.15, n);
-    beam *= shimmer;
+    lowerVeil *= shimmer * bandMask;
+    mainVeil *= (0.92 + field * 0.18) * bandMask;
+    upperVeil *= (0.86 + field * 0.2) * bandMask;
+    warmVeil *= (0.82 + field * 0.16) * bandMask;
 
-    /* Color: gradient from core → edge → background. */
-    vec3 beamColor = mix(u_colorB, u_colorA, smoothstep(0.0, 1.0, beam));
-    vec3 col = mix(u_colorBg, beamColor, clamp(beam * u_intensity, 0.0, 1.0));
+    float broadSweep = smoothstep(0.58, 0.0, abs(q.y + sin(q.x * 1.6 - u_time * 0.12) * 0.24 + (field - 0.5) * 0.24));
+    broadSweep *= smoothstep(-1.38, -0.72, q.x) * (1.0 - smoothstep(0.58, 1.3, q.x));
 
-    /* Subtle vignette to keep corners molten rather than flat. */
-    float vignette = smoothstep(1.2, 0.4, length((uv - 0.5) * vec2(aspect, 1.0)));
-    col = mix(u_colorBg, col, vignette);
+    vec3 coolBlend = mix(u_cyan, u_blue, smoothstep(-0.38, 0.2, q.y + field * 0.18));
+    coolBlend = mix(coolBlend, u_violet, smoothstep(0.08, 0.52, q.y + field * 0.2) * 0.52);
+    vec3 warmBlend = mix(u_amber, u_rose, smoothstep(-0.08, 0.46, q.y + field * 0.16));
 
-    gl_FragColor = vec4(col, 1.0);
+    vec3 col = u_bg;
+    col += coolBlend * mainVeil * 0.58;
+    col += mix(u_cyan, u_blue, 0.42) * lowerVeil * 0.34;
+    col += mix(u_violet, u_rose, 0.36) * upperVeil * 0.22;
+    col += warmBlend * warmVeil * 0.18;
+    col += mix(coolBlend, warmBlend, smoothstep(-0.18, 0.42, q.y)) * broadSweep * 0.13;
+
+    float vignette = smoothstep(1.12, 0.32, length((uv - 0.5) * vec2(aspect, 1.0)));
+    col = mix(u_bg, col, vignette);
+
+    float grain = hash(uv * u_resolution + floor(u_time * 24.0)) - 0.5;
+    col += grain * 0.006;
+
+    gl_FragColor = vec4(max(col, vec3(0.0)), 1.0);
   }
 `;
 
-/* ── Theme-aware color resolution ───────────────────────────────── */
+interface BeamColors {
+  bg: THREE.Color;
+  cyan: THREE.Color;
+  blue: THREE.Color;
+  violet: THREE.Color;
+  amber: THREE.Color;
+  rose: THREE.Color;
+}
 
-/**
- * Reads CSS custom properties for the beam colors. Falls back to
- * sensible hard-coded values if the vars aren't defined yet (which
- * is fine — they'll land in a later brand-tokens PR).
- *
- * Expected vars (to be added in P4):
- *   --beam-color-a  : beam core   (default #6750a4 — M3 primary / ausos violet)
- *   --beam-color-b  : beam edge   (default #b490f5 — ausos soft violet)
- *   --beam-color-bg : hero bg     (default #0b0e1a — hero bg literal)
- */
-function readBeamColors(): { a: THREE.Color; b: THREE.Color; bg: THREE.Color } {
-  if (typeof window === "undefined") {
-    return {
-      a: new THREE.Color("#6750a4"),
-      b: new THREE.Color("#b490f5"),
-      bg: new THREE.Color("#0b0e1a"),
-    };
-  }
-  const root = getComputedStyle(document.documentElement);
+function readBeamColors(scope: Element): BeamColors {
+  const styles = getComputedStyle(scope);
   const read = (prop: string, fallback: string) =>
-    new THREE.Color((root.getPropertyValue(prop).trim() || fallback));
+    new THREE.Color(styles.getPropertyValue(prop).trim() || fallback);
+
   return {
-    a: read("--beam-color-a", "#6750a4"),
-    b: read("--beam-color-b", "#b490f5"),
-    bg: read("--beam-color-bg", "#0b0e1a"),
+    bg: read("--landing-bg", "#05070d"),
+    cyan: read("--landing-cyan", "#5ee7df"),
+    blue: read("--landing-blue", "#3b82f6"),
+    violet: read("--landing-violet", "#b490f5"),
+    amber: read("--landing-amber", "#ffad5c"),
+    rose: read("--landing-rose", "#f78ab8"),
   };
 }
 
-/* ── Component ──────────────────────────────────────────────────── */
+function createWebGLRenderer(mount: HTMLElement): THREE.WebGLRenderer | null {
+  const canvas = document.createElement("canvas");
+  let context: WebGLRenderingContext | WebGL2RenderingContext | null = null;
+
+  try {
+    context =
+      canvas.getContext("webgl2", {
+        alpha: false,
+        antialias: false,
+        powerPreference: "default",
+      }) ??
+      canvas.getContext("webgl", {
+        alpha: false,
+        antialias: false,
+        powerPreference: "default",
+      });
+
+    if (!context) {
+      mount.dataset.webgl = "unavailable";
+      return null;
+    }
+
+    return new THREE.WebGLRenderer({
+      canvas,
+      context,
+      alpha: false,
+      antialias: false,
+      powerPreference: "default",
+    });
+  } catch {
+    mount.dataset.webgl = "unavailable";
+    return null;
+  }
+}
 
 export function HeroBeam() {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -159,33 +183,29 @@ export function HeroBeam() {
     if (!mountRef.current) return;
     const mount = mountRef.current;
 
-    /* ── Renderer ── */
-    const renderer = new THREE.WebGLRenderer({
-      alpha: false,
-      antialias: false,
-      powerPreference: "default",
-    });
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(mount.clientWidth, mount.clientHeight, false);
+    const renderer = createWebGLRenderer(mount);
+    if (!renderer) return;
+
+    mount.dataset.webgl = "available";
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.domElement.style.display = "block";
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
     mount.appendChild(renderer.domElement);
 
-    /* ── Scene ── */
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    const colors = readBeamColors();
+    const colors = readBeamColors(mount);
     const uniforms = {
-      u_resolution: { value: new THREE.Vector2(mount.clientWidth, mount.clientHeight) },
-      u_mouse:      { value: new THREE.Vector2(0.5, 0.5) },
-      u_time:       { value: 0 },
-      u_colorA:     { value: colors.a },
-      u_colorB:     { value: colors.b },
-      u_colorBg:    { value: colors.bg },
-      u_intensity:  { value: 0.85 },
+      u_resolution: { value: new THREE.Vector2(1, 1) },
+      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      u_time: { value: 0 },
+      u_bg: { value: colors.bg },
+      u_cyan: { value: colors.cyan },
+      u_blue: { value: colors.blue },
+      u_violet: { value: colors.violet },
+      u_amber: { value: colors.amber },
+      u_rose: { value: colors.rose },
     };
 
     const geometry = new THREE.PlaneGeometry(2, 2);
@@ -196,70 +216,92 @@ export function HeroBeam() {
       depthWrite: false,
       depthTest: false,
     });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    scene.add(new THREE.Mesh(geometry, material));
 
-    /* ── Resize ── */
+    let targetMx = 0.5;
+    let targetMy = 0.5;
+    let isVisible = true;
+    let raf: number | null = null;
+    const reduced = isReducedMotion();
+    const start = performance.now();
+
     const resize = () => {
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
+      const w = Math.max(1, mount.clientWidth);
+      const h = Math.max(1, mount.clientHeight);
       renderer.setSize(w, h, false);
       uniforms.u_resolution.value.set(w, h);
+      if (reduced) render(performance.now());
     };
-    const ro = new ResizeObserver(resize);
-    ro.observe(mount);
 
-    /* ── Mouse parallax (smoothed toward target) ── */
-    let targetMx = 0.5, targetMy = 0.5;
-    const onMove = (e: MouseEvent) => {
-      targetMx = e.clientX / window.innerWidth;
-      targetMy = e.clientY / window.innerHeight;
+    const render = (now: number) => {
+      uniforms.u_time.value = (now - start) / 1000;
+      uniforms.u_mouse.value.x += (targetMx - uniforms.u_mouse.value.x) * 0.055;
+      uniforms.u_mouse.value.y += (targetMy - uniforms.u_mouse.value.y) * 0.055;
+      renderer.render(scene, camera);
+    };
+
+    const tick = (now: number) => {
+      raf = null;
+      if (!isVisible) return;
+      render(now);
+      raf = requestAnimationFrame(tick);
+    };
+
+    const startLoop = () => {
+      if (!reduced && raf === null) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
+
+    const stopLoop = () => {
+      if (raf !== null) cancelAnimationFrame(raf);
+      raf = null;
+    };
+
+    const onMove = (event: MouseEvent) => {
+      targetMx = event.clientX / window.innerWidth;
+      targetMy = event.clientY / window.innerHeight;
     };
     window.addEventListener("mousemove", onMove, { passive: true });
 
-    /* ── Pause when off-screen ── */
-    let isVisible = true;
+    const ro = new ResizeObserver(resize);
+    ro.observe(mount);
+    resize();
+
     const io = new IntersectionObserver(
-      (entries) => { isVisible = entries[0]?.isIntersecting ?? true; },
+      (entries) => {
+        isVisible = entries[0]?.isIntersecting ?? true;
+        if (isVisible) {
+          render(performance.now());
+          startLoop();
+        } else {
+          stopLoop();
+        }
+      },
       { threshold: 0 },
     );
     io.observe(mount);
 
-    /* ── Theme-change listener ── */
     const onThemeChange = () => {
-      const c = readBeamColors();
-      uniforms.u_colorA.value.copy(c.a);
-      uniforms.u_colorB.value.copy(c.b);
-      uniforms.u_colorBg.value.copy(c.bg);
+      const next = readBeamColors(mount);
+      uniforms.u_bg.value.copy(next.bg);
+      uniforms.u_cyan.value.copy(next.cyan);
+      uniforms.u_blue.value.copy(next.blue);
+      uniforms.u_violet.value.copy(next.violet);
+      uniforms.u_amber.value.copy(next.amber);
+      uniforms.u_rose.value.copy(next.rose);
+      render(performance.now());
     };
     window.addEventListener("theme-changed", onThemeChange);
 
-    /* ── Render loop ── */
-    const reduced = isReducedMotion();
-    let raf: number | null = null;
-    const start = performance.now();
-
-    const tick = (now: number) => {
-      if (!isVisible) { raf = requestAnimationFrame(tick); return; }
-      const t = (now - start) / 1000;
-      uniforms.u_time.value = t;
-      // Smooth mouse toward target
-      uniforms.u_mouse.value.x += (targetMx - uniforms.u_mouse.value.x) * 0.06;
-      uniforms.u_mouse.value.y += (targetMy - uniforms.u_mouse.value.y) * 0.06;
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(tick);
-    };
-
     if (reduced) {
-      /* Single static frame. */
-      renderer.render(scene, camera);
+      render(performance.now());
     } else {
-      raf = requestAnimationFrame(tick);
+      startLoop();
     }
 
-    /* ── Cleanup ── */
     return () => {
-      if (raf !== null) cancelAnimationFrame(raf);
+      stopLoop();
       ro.disconnect();
       io.disconnect();
       window.removeEventListener("mousemove", onMove);
@@ -267,9 +309,7 @@ export function HeroBeam() {
       geometry.dispose();
       material.dispose();
       renderer.dispose();
-      if (renderer.domElement.parentNode) {
-        renderer.domElement.parentNode.removeChild(renderer.domElement);
-      }
+      renderer.domElement.remove();
     };
   }, []);
 

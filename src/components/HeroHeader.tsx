@@ -2,109 +2,599 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useRef } from "react";
-import { WaveCanvas } from "./WaveCanvas";
-import { heroEnterTimeline } from "@/lib/motion";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Download,
+  Layers3,
+  MonitorSmartphone,
+  Pause,
+  PanelsTopLeft,
+  Play,
+  Share2,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
+import { HeroBeam } from "./hero-beam/HeroBeam";
+import { heroEnterTimeline, revealOnScroll } from "@/lib/motion";
 import "./hero.css";
 
-/* Dynamic import — Three.js + WebGLRenderer touch `document` / `window`
-   during construction and must not run on the server. */
-const HeroBeam = dynamic(() => import("./hero-beam/HeroBeam"), { ssr: false });
+const LandingScrollFlight = dynamic(() => import("./LandingScrollFlight"), { ssr: false });
 
-/* ═══════════════════════════════════════════════════════════════
-   HeroHeader - Editorial Layout + Guilloché Wave Lines
-   Outfit (display) × Space Grotesk (UI) · Wave canvas background
-   Entrance orchestration via GSAP timeline (src/lib/motion.ts).
-   ═══════════════════════════════════════════════════════════════ */
+const systems = [
+  { name: "Salt DS", detail: "Enterprise trading workflows" },
+  { name: "Material 3", detail: "Adaptive product surfaces" },
+  { name: "Fluent 2", detail: "Microsoft-style app patterns" },
+  { name: "Carbon", detail: "Data-dense IBM interfaces" },
+  { name: "ausos", detail: "Glass-native AI workspaces" },
+];
 
-export function HeroHeader() {
-  const sectionRef = useRef<HTMLElement | null>(null);
+const workflow = [
+  {
+    eyebrow: "01",
+    title: "Prompt the interface",
+    body: "Describe the product surface, audience, and components you need.",
+  },
+  {
+    eyebrow: "02",
+    title: "Compare systems",
+    body: "Review the same concept across Salt DS, Material 3, Fluent 2, Carbon, and ausos.",
+  },
+  {
+    eyebrow: "03",
+    title: "Refine and ship",
+    body: "Tune theme, density, preview states, share the result, and export when ready.",
+  },
+];
+
+const features = [
+  {
+    icon: Sparkles,
+    title: "AI prompt workflow",
+    body: "Generate structured interface drafts from natural language, then keep refining in the builder.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Theme and density controls",
+    body: "Switch modes, contrast levels, and density scales without rebuilding the same screen.",
+  },
+  {
+    icon: MonitorSmartphone,
+    title: "Responsive previews",
+    body: "Check desktop, tablet, and mobile layouts inside the same workspace.",
+  },
+  {
+    icon: Share2,
+    title: "Shareable previews",
+    body: "Create a compact preview link for review without exposing the whole workspace.",
+  },
+  {
+    icon: Download,
+    title: "Export options",
+    body: "Move from generated canvas to HTML, React, or Vite project handoff paths.",
+  },
+  {
+    icon: PanelsTopLeft,
+    title: "Component coverage",
+    body: "Explore buttons, forms, navigation, data grids, charts, overlays, and layout primitives.",
+  },
+];
+
+const DEMO_STEP_DURATION_MS = 6000;
+
+const previewSystems = [
+  { key: "salt", label: "Salt" },
+  { key: "m3", label: "M3" },
+  { key: "fluent", label: "Fluent" },
+  { key: "carbon", label: "Carbon" },
+  { key: "ausos", label: "ausos" },
+] as const;
+
+type PreviewSystemKey = (typeof previewSystems)[number]["key"];
+type PreviewLayout = "trade" | "material" | "command" | "carbon" | "glass";
+
+type PreviewDemoStep = {
+  id: string;
+  phase: "prompt" | "generate" | "compare" | "tune" | "share";
+  system: PreviewSystemKey;
+  layout: PreviewLayout;
+  status: string;
+  prompt: string;
+  toolbar: [string, string, string];
+  surfaceLabel: string;
+  title: string;
+  body: string;
+  metrics: Array<{ label: string; value: string }>;
+  rows: Array<{ label: string; value: string; meta: string }>;
+  chart: number[];
+  shareLabel: string;
+  exportLabel: string;
+};
+
+const previewDemoSteps: PreviewDemoStep[] = [
+  {
+    id: "prompt",
+    phase: "prompt",
+    system: "salt",
+    layout: "trade",
+    status: "Prompt ready",
+    prompt: "Build a Salt DS trading operations board with status, exposure, and approval queues.",
+    toolbar: ["Desktop", "Dark", "Dense"],
+    surfaceLabel: "Salt DS surface",
+    title: "Trading Operations",
+    body: "Compact controls, visible risk signals, and high-density rows for enterprise review.",
+    metrics: [
+      { label: "Exposure", value: "$84.2m" },
+      { label: "Orders", value: "128" },
+      { label: "Health", value: "97%" },
+    ],
+    rows: [
+      { label: "EMEA flow", value: "$21.4m", meta: "+4.2%" },
+      { label: "APAC risk", value: "Low", meta: "2 alerts" },
+      { label: "Approvals", value: "18", meta: "6 urgent" },
+    ],
+    chart: [48, 72, 58, 86, 66, 94],
+    shareLabel: "Desk review ready",
+    exportLabel: "Salt variant",
+  },
+  {
+    id: "generate",
+    phase: "generate",
+    system: "m3",
+    layout: "material",
+    status: "Generating UI",
+    prompt: "Generate the same product view in Material 3 with adaptive cards and soft hierarchy.",
+    toolbar: ["Tablet", "Light", "Comfortable"],
+    surfaceLabel: "Material 3 variant",
+    title: "Growth Snapshot",
+    body: "Rounded surfaces, tonal emphasis, and campaign cards arranged for quick decisions.",
+    metrics: [
+      { label: "Leads", value: "3.4k" },
+      { label: "CTR", value: "8.7%" },
+      { label: "Spend", value: "$12k" },
+    ],
+    rows: [
+      { label: "Organic", value: "42%", meta: "+8%" },
+      { label: "Paid search", value: "31%", meta: "+3%" },
+      { label: "Lifecycle", value: "27%", meta: "steady" },
+    ],
+    chart: [54, 78, 64, 90, 72, 98],
+    shareLabel: "M3 preview live",
+    exportLabel: "Tokens mapped",
+  },
+  {
+    id: "compare",
+    phase: "compare",
+    system: "fluent",
+    layout: "command",
+    status: "Comparing systems",
+    prompt: "Show the same dashboard in Fluent with softer navigation and compact states.",
+    toolbar: ["Desktop", "Dark", "Comfortable"],
+    surfaceLabel: "Fluent variant",
+    title: "Service Command Center",
+    body: "Incidents, queue pressure, and SLA signals shift into a calmer enterprise layout.",
+    metrics: [
+      { label: "Incidents", value: "24" },
+      { label: "SLA", value: "99.1%" },
+      { label: "Queue", value: "36" },
+    ],
+    rows: [
+      { label: "Billing queue", value: "12", meta: "triage" },
+      { label: "Platform SLA", value: "99.1%", meta: "on track" },
+      { label: "Field ops", value: "8", meta: "watch" },
+    ],
+    chart: [62, 46, 74, 68, 88, 58],
+    shareLabel: "Compare link live",
+    exportLabel: "Variant saved",
+  },
+  {
+    id: "tune",
+    phase: "tune",
+    system: "carbon",
+    layout: "carbon",
+    status: "Tuning theme",
+    prompt: "Tune the approved view as a Carbon data workspace for dense enterprise reporting.",
+    toolbar: ["Desktop", "High contrast", "Dense"],
+    surfaceLabel: "Carbon data view",
+    title: "Release Readiness",
+    body: "Square panels, crisp dividers, and clear operational states for handoff review.",
+    metrics: [
+      { label: "Checks", value: "32" },
+      { label: "Ready", value: "96%" },
+      { label: "Exports", value: "3" },
+    ],
+    rows: [
+      { label: "Accessibility", value: "Pass", meta: "AA" },
+      { label: "Regression", value: "31/32", meta: "1 review" },
+      { label: "Package", value: "React", meta: "ready" },
+    ],
+    chart: [72, 54, 82, 48, 76, 88],
+    shareLabel: "Carbon review",
+    exportLabel: "React export",
+  },
+  {
+    id: "share",
+    phase: "share",
+    system: "ausos",
+    layout: "glass",
+    status: "Ready to share",
+    prompt: "Package the ausos AI workspace with glass panels, preview link, and clean handoff.",
+    toolbar: ["Desktop", "Glass", "Balanced"],
+    surfaceLabel: "ausos workspace",
+    title: "AI Builder Handoff",
+    body: "Translucent panels, prompt context, and share states stay polished without hiding content.",
+    metrics: [
+      { label: "Prompts", value: "14" },
+      { label: "Variants", value: "5" },
+      { label: "Shared", value: "Live" },
+    ],
+    rows: [
+      { label: "Preview room", value: "Open", meta: "3 viewers" },
+      { label: "Design notes", value: "Synced", meta: "AI summary" },
+      { label: "Export path", value: "Vite", meta: "queued" },
+    ],
+    chart: [66, 82, 74, 92, 80, 96],
+    shareLabel: "Share link copied",
+    exportLabel: "ausos handoff",
+  },
+];
+
+function usePrefersReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    /* Mark JS as hydrated so the CSS fallback entrance disables itself
-       (see hero.css § Entrance). */
+    if (typeof window === "undefined" || !window.matchMedia) return;
+
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(query.matches);
+
+    updatePreference();
+    query.addEventListener("change", updatePreference);
+    return () => query.removeEventListener("change", updatePreference);
+  }, []);
+
+  return reducedMotion;
+}
+
+function PreviewSurface({ step }: { step: PreviewDemoStep }) {
+  return (
+    <div className={`preview-layout preview-layout--${step.layout}`}>
+      <div className="preview-hero-card">
+        <span>{step.surfaceLabel}</span>
+        <strong>{step.title}</strong>
+        <p>{step.body}</p>
+      </div>
+      <div className="preview-metrics">
+        {step.metrics.map((metric) => (
+          <div className="preview-metric-card" key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>{metric.value}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="preview-detail-list" aria-label={`${step.surfaceLabel} details`}>
+        {step.rows.map((row) => (
+          <div className="preview-detail-row" key={row.label}>
+            <span>{row.label}</span>
+            <strong>{row.value}</strong>
+            <em>{row.meta}</em>
+          </div>
+        ))}
+      </div>
+      <div className="preview-chart" aria-hidden="true">
+        {step.chart.map((height, index) => (
+          <span
+            key={`${step.id}-${index}`}
+            style={{
+              height: `${height}%`,
+              animationDelay: `${index * 0.12}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroPreviewDemo() {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+  const step = previewDemoSteps[stepIndex];
+  const demoPaused = isPaused || reducedMotion;
+
+  useEffect(() => {
+    if (reducedMotion) {
+      setStepIndex(0);
+      return;
+    }
+
+    if (isPaused) return;
+
+    const advanceStep = () => {
+      setStepIndex((current) => (current + 1) % previewDemoSteps.length);
+    };
+    const intervalId = window.setInterval(advanceStep, DEMO_STEP_DURATION_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isPaused, reducedMotion]);
+
+  const controlLabel = reducedMotion
+    ? "Preview demo paused for reduced motion"
+    : isPaused
+      ? "Play preview demo"
+      : "Pause preview demo";
+
+  return (
+    <div
+      className="hero-product hero-enter"
+      data-hero-enter
+      data-preview-stage={step.phase}
+      data-preview-system={step.system}
+      data-preview-layout={step.layout}
+      data-preview-paused={demoPaused ? "true" : "false"}
+      aria-label="Design Hub preview demo"
+    >
+      <div className="preview-topbar">
+        <div className="preview-dots" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <span className="preview-title">Design Hub Builder</span>
+        <span className="preview-status" aria-live="polite">
+          {step.status}
+        </span>
+        <button
+          className="preview-demo-control"
+          type="button"
+          aria-label={controlLabel}
+          title={controlLabel}
+          disabled={reducedMotion}
+          onClick={() => setIsPaused((paused) => !paused)}
+        >
+          {isPaused || reducedMotion ? (
+            <Play size={14} strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <Pause size={14} strokeWidth={2} aria-hidden="true" />
+          )}
+        </button>
+        <span className="preview-progress-track" aria-hidden="true">
+          <span />
+        </span>
+      </div>
+      <div className="preview-shell">
+        <aside className="preview-sidebar" aria-label="System tabs">
+          {previewSystems.map((system) => (
+            <span
+              className={`preview-tab${system.key === step.system ? " preview-tab--active" : ""}`}
+              key={system.key}
+              aria-current={system.key === step.system ? "true" : undefined}
+            >
+              {system.label}
+            </span>
+          ))}
+        </aside>
+        <div className="preview-canvas">
+          <div className="preview-prompt">
+            <Sparkles size={14} strokeWidth={2} aria-hidden="true" />
+            <span className="preview-copy-swap" key={`prompt-${step.id}`}>
+              {step.prompt}
+            </span>
+          </div>
+          <div className="preview-board" key={`board-${step.id}`}>
+            <div className="preview-toolbar">
+              {step.toolbar.map((item) => (
+                <span className="preview-copy-swap" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+            <PreviewSurface step={step} />
+          </div>
+        </div>
+      </div>
+      <div className="preview-float preview-float--share">
+        <Share2 size={15} strokeWidth={2} aria-hidden="true" />
+        <span className="preview-copy-swap" key={`share-${step.id}`}>
+          {step.shareLabel}
+        </span>
+      </div>
+      <div className="preview-float preview-float--export">
+        <Download size={15} strokeWidth={2} aria-hidden="true" />
+        <span className="preview-copy-swap" key={`export-${step.id}`}>
+          {step.exportLabel}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function HeroHeader() {
+  const mainRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
     document.documentElement.classList.add("js-enhanced");
-    const tl = heroEnterTimeline(sectionRef.current);
-    return () => { tl?.kill(); };
+    const tl = heroEnterTimeline(mainRef.current);
+
+    const cleanups = Array.from(
+      mainRef.current?.querySelectorAll<HTMLElement>("[data-reveal-group]") ?? [],
+    ).map((group) =>
+      revealOnScroll(group.querySelectorAll("[data-reveal]"), {
+        start: "top 82%",
+        end: "top 58%",
+        offset: 28,
+        stagger: 0.07,
+      }),
+    );
+
+    return () => {
+      tl?.kill();
+      cleanups.forEach((cleanup) => cleanup());
+    };
   }, []);
 
   return (
-    <section className="hero" ref={sectionRef}>
+    <main id="main-content" className="hero landing-page" ref={mainRef}>
+      <LandingScrollFlight />
+      <section className="hero-stage" aria-labelledby="landing-title">
+        <HeroBeam />
+        <div className="hero-ambient" aria-hidden="true" />
+        <div className="hero-noise" aria-hidden="true" />
 
-      {/* ═══ WebGL beam (deepest background layer) ═══ */}
-      <HeroBeam />
+        <nav className="landing-nav hero-enter" data-hero-enter aria-label="Primary">
+          <Link href="/" className="landing-brand" aria-label="ausos home">
+            <span className="landing-brand-mark" aria-hidden="true">
+              <img src="/aologo.svg" alt="" className="landing-brand-logo" />
+            </span>
+            <span>ausos</span>
+          </Link>
+          <div className="landing-nav-links" aria-label="Landing sections">
+            <a href="#systems">Systems</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#features">Features</a>
+            <a href="#export">Export</a>
+          </div>
+          <Link href="/login" className="landing-nav-cta">
+            <span>Start</span>
+            <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
+          </Link>
+        </nav>
 
-      {/* ═══ Background (CSS aurora blobs, blended over beam) ═══ */}
-      <div className="hero-bg" aria-hidden="true">
-        <div className="hero-blob hero-blob--1" />
-        <div className="hero-blob hero-blob--2" />
-        <div className="hero-blob hero-blob--3" />
-      </div>
-      <div className="hero-noise" aria-hidden="true" />
+        <div className="hero-layout">
+          <div className="hero-copy">
+            <div className="hero-kicker hero-enter" data-hero-enter>
+              <Sparkles size={16} strokeWidth={1.8} aria-hidden="true" />
+              AI design system workspace
+            </div>
+            <h1 id="landing-title" className="hero-headline hero-enter" data-hero-enter>
+              Design systems that move from prompt to production.
+            </h1>
+            <p className="hero-body hero-enter" data-hero-enter>
+              Prototype product interfaces across Salt DS, Material 3, Fluent 2, Carbon,
+              and ausos in one AI-powered builder.
+            </p>
+            <div className="hero-actions hero-enter" data-hero-enter>
+              <Link href="/login" className="landing-btn landing-btn--primary">
+                <span>Start Building</span>
+                <ArrowRight size={17} strokeWidth={2} aria-hidden="true" />
+              </Link>
+              <a href="#workflow" className="landing-btn landing-btn--ghost">
+                <Layers3 size={17} strokeWidth={1.8} aria-hidden="true" />
+                <span>View Workflow</span>
+              </a>
+            </div>
+            <div className="hero-system-row hero-enter" data-hero-enter aria-label="Supported design systems">
+              {systems.map((system) => (
+                <span key={system.name}>{system.name}</span>
+              ))}
+            </div>
+          </div>
 
-      {/* ═══ Wave Lines ═══ */}
-      <div className="hero-wave" aria-hidden="true">
-        <WaveCanvas />
-      </div>
-
-      {/* ═══ Main Content ═══ */}
-      <div className="hero-main">
-
-        {/* Logo wordmark + label */}
-        <div className="hero-brand hero-enter" data-hero-enter>
-          <svg height="38" viewBox="0 0 906 264" fill="none" xmlns="http://www.w3.org/2000/svg" className="hero-wordmark">
-            <path fillRule="evenodd" clipRule="evenodd" d="M113.213 91.6077C124.431 91.6077 134.442 94.2288 143.246 99.4717C152.192 104.573 159.221 111.588 164.333 120.515C169.587 129.442 172.285 139.574 172.427 150.91V200.86C172.427 203.269 171.646 205.253 170.084 206.812C168.522 208.229 166.534 208.937 164.12 208.937C161.706 208.937 159.718 208.228 158.156 206.812C156.594 205.253 155.813 203.269 155.813 200.86V187.937C151.457 194.038 145.919 199.054 139.199 202.985C131.105 207.662 121.875 210 111.509 210C100.575 210 90.7774 207.449 82.1155 202.347C73.4537 197.105 66.5666 190.019 61.4547 181.092C56.4849 172.165 54 162.104 54 150.91C54 139.574 56.5558 129.442 61.6677 120.515C66.9216 111.588 74.022 104.573 82.9679 99.4717C91.9138 94.2288 101.996 91.6077 113.213 91.6077Z" fill="white"/>
-            <path fillRule="evenodd" clipRule="evenodd" d="M252.787 91.4574C264.146 91.4574 274.228 94.011 283.032 99.1187C291.978 104.226 299.007 111.25 304.119 120.188C309.231 129.127 311.858 139.343 312 150.835C312 162.185 309.373 172.33 304.119 181.268C299.007 190.207 291.978 197.23 283.032 202.338C274.228 207.446 264.146 210 252.787 210C241.427 210 231.274 207.446 222.328 202.338C213.382 197.23 206.353 190.207 201.241 181.268C196.129 172.33 193.573 162.185 193.573 150.835C193.573 139.343 196.129 129.127 201.241 120.188C206.353 111.25 213.382 104.226 222.328 99.1187C231.274 94.0111 241.427 91.4574 252.787 91.4574Z" fill="white"/>
-            <path d="M271.904 54C274.176 54 276.093 54.7099 277.655 56.1287C279.359 57.5475 280.211 59.392 280.211 61.662C280.211 64.0739 279.359 65.9894 277.655 67.4082C276.093 68.6852 274.176 69.3234 271.904 69.3234H233.456C231.184 69.3234 229.196 68.6852 227.492 67.4082C225.93 65.9894 225.149 64.074 225.149 61.662C225.149 59.392 225.93 57.5475 227.492 56.1287C229.196 54.7099 231.184 54 233.456 54H271.904Z" fill="white"/>
-            <path d="M556.707 121.098C558.525 121.098 560.023 121.687 561.199 122.866C562.376 123.938 562.964 125.385 562.964 127.207V202.766C562.964 204.695 562.376 206.249 561.199 207.428C560.023 208.5 558.525 209.036 556.707 209.036C554.889 209.035 553.392 208.499 552.215 207.428C551.146 206.249 550.611 204.695 550.611 202.766V197.287C547.777 200.561 544.355 203.298 540.343 205.498C534.674 208.499 528.364 210 521.411 210C513.818 210 507.026 208.446 501.036 205.338C495.047 202.123 490.287 197.461 486.758 191.352C483.335 185.243 481.624 177.794 481.624 169.005V127.207C481.624 125.492 482.212 124.045 483.389 122.866C484.565 121.687 486.009 121.098 487.72 121.098C489.538 121.098 491.036 121.687 492.212 122.866C493.389 124.045 493.977 125.492 493.977 127.207V169.005C493.977 175.65 495.207 181.116 497.667 185.403C500.234 189.69 503.657 192.905 507.935 195.049C512.32 197.192 517.24 198.264 522.695 198.264C527.936 198.264 532.642 197.246 536.814 195.21C541.092 193.173 544.461 190.387 546.921 186.85C549.304 183.424 550.533 179.545 550.607 175.214L550.611 174.793V127.207C550.611 125.385 551.146 123.938 552.215 122.866C553.392 121.687 554.889 121.098 556.707 121.098Z" fill="white"/>
-            <path fillRule="evenodd" clipRule="evenodd" d="M414.601 120.294C423.051 120.294 430.591 122.277 437.222 126.243C443.96 130.101 449.255 135.406 453.105 142.158C457.063 148.91 459.095 156.573 459.202 165.147V202.926C459.202 204.748 458.613 206.249 457.437 207.428C456.26 208.5 454.763 209.036 452.945 209.036C451.127 209.035 449.629 208.5 448.453 207.428C447.276 206.249 446.688 204.748 446.688 202.926V193.152C443.407 197.767 439.236 201.561 434.174 204.534C428.077 208.071 421.125 209.839 413.317 209.839C405.082 209.839 397.702 207.91 391.177 204.051C384.653 200.086 379.466 194.727 375.615 187.975C371.872 181.223 370 173.614 370 165.147C370 156.573 371.925 148.91 375.776 142.158C379.733 135.406 385.081 130.101 391.819 126.243C398.557 122.277 406.152 120.294 414.601 120.294ZM414.601 131.548C408.505 131.548 402.996 133.048 398.076 136.049C393.156 138.943 389.252 142.908 386.364 147.946C383.476 152.983 382.033 158.717 382.033 165.147C382.033 171.47 383.476 177.204 386.364 182.348C389.252 187.386 393.156 191.351 398.076 194.245C402.996 197.139 408.505 198.586 414.601 198.586C420.804 198.586 426.313 197.139 431.126 194.245C436.046 191.351 439.896 187.386 442.677 182.348C445.565 177.204 447.009 171.47 447.009 165.147C447.009 158.717 445.565 152.983 442.677 147.946C439.896 142.908 436.046 138.943 431.126 136.049C426.313 133.048 420.804 131.548 414.601 131.548Z" fill="white"/>
-            <path d="M622.126 120.294C629.292 120.294 635.442 121.527 640.576 123.992C645.817 126.457 650.041 129.779 653.25 133.959C654.32 135.352 654.748 136.799 654.534 138.3C654.32 139.8 653.464 141.033 651.967 141.997C650.683 142.747 649.186 143.015 647.474 142.801C645.87 142.479 644.48 141.676 643.303 140.389C640.629 137.281 637.527 135.031 633.998 133.638C630.468 132.137 626.404 131.387 621.805 131.387C615.922 131.387 611.216 132.62 607.687 135.085C604.157 137.442 602.392 140.443 602.392 144.087C602.392 146.552 603.034 148.696 604.317 150.518C605.708 152.34 608.008 153.947 611.216 155.341C614.532 156.734 619.131 157.913 625.013 158.877C633.035 160.163 639.346 162.092 643.945 164.665C648.651 167.13 651.967 170.077 653.892 173.507C655.924 176.829 656.94 180.473 656.94 184.439C656.94 189.476 655.443 193.924 652.448 197.782C649.56 201.533 645.496 204.481 640.255 206.624C635.121 208.768 629.185 209.839 622.447 209.839C616.136 209.839 609.879 208.768 603.676 206.624C597.473 204.481 592.445 201.265 588.595 196.978C587.419 195.692 586.937 194.245 587.151 192.637C587.365 191.03 588.167 189.637 589.557 188.458C591.055 187.386 592.606 186.957 594.21 187.171C595.815 187.386 597.152 188.083 598.221 189.261C600.788 192.262 604.157 194.567 608.328 196.174C612.606 197.782 617.313 198.586 622.447 198.586C630.361 198.586 636.083 197.246 639.613 194.567C643.143 191.78 644.961 188.458 645.068 184.599C645.068 180.741 643.249 177.579 639.613 175.114C635.976 172.542 629.987 170.559 621.644 169.166C610.842 167.451 602.927 164.451 597.9 160.164C592.873 155.877 590.36 150.786 590.36 144.891C590.36 139.425 591.803 134.87 594.691 131.226C597.579 127.582 601.43 124.849 606.243 123.027C611.056 121.205 616.35 120.294 622.126 120.294Z" fill="white"/>
-            <path fillRule="evenodd" clipRule="evenodd" d="M718.236 120.294C726.793 120.294 734.387 122.223 741.018 126.082C747.756 129.94 753.051 135.245 756.901 141.997C760.752 148.749 762.73 156.466 762.837 165.147C762.837 173.721 760.859 181.384 756.901 188.136C753.051 194.888 747.756 200.193 741.018 204.051C734.387 207.91 726.793 209.839 718.236 209.839C709.68 209.839 702.032 207.91 695.294 204.051C688.556 200.193 683.261 194.888 679.411 188.136C675.561 181.384 673.635 173.721 673.635 165.147C673.635 156.466 675.561 148.749 679.411 141.997C683.261 135.245 688.556 129.94 695.294 126.082C702.032 122.223 709.68 120.294 718.236 120.294ZM718.236 131.548C712.033 131.548 706.471 132.995 701.551 135.888C696.631 138.782 692.727 142.801 689.839 147.946C687.058 152.983 685.668 158.717 685.668 165.147C685.668 171.577 687.058 177.311 689.839 182.348C692.727 187.386 696.631 191.351 701.551 194.245C706.471 197.139 712.033 198.586 718.236 198.586C724.44 198.586 730.001 197.139 734.921 194.245C739.841 191.351 743.692 187.386 746.473 182.348C749.254 177.311 750.644 171.577 750.644 165.147C750.644 158.717 749.254 152.983 746.473 147.946C743.692 142.801 739.841 138.782 734.921 135.888C730.001 132.995 724.44 131.548 718.236 131.548Z" fill="white"/>
-            <path d="M817.186 120.294C824.352 120.294 830.502 121.527 835.636 123.992C840.877 126.457 845.101 129.779 848.31 133.959C849.379 135.352 849.807 136.799 849.594 138.3C849.38 139.8 848.524 141.033 847.027 141.997C845.743 142.747 844.246 143.015 842.534 142.801C840.93 142.479 839.54 141.676 838.363 140.389C835.689 137.281 832.587 135.031 829.058 133.638C825.528 132.137 821.464 131.387 816.865 131.387C810.982 131.387 806.276 132.62 802.747 135.085C799.217 137.442 797.452 140.443 797.452 144.087C797.452 146.552 798.094 148.696 799.377 150.518C800.768 152.34 803.067 153.947 806.276 155.341C809.592 156.734 814.191 157.913 820.073 158.877C828.095 160.163 834.406 162.092 839.005 164.665C843.711 167.13 847.026 170.077 848.952 173.507C850.984 176.829 852 180.473 852 184.439C852 189.476 850.502 193.924 847.508 197.782C844.62 201.533 840.555 204.481 835.315 206.624C830.181 208.768 824.245 209.839 817.507 209.839C811.196 209.839 804.939 208.768 798.736 206.624C792.533 204.481 787.505 201.265 783.655 196.978C782.478 195.692 781.997 194.245 782.211 192.637C782.425 191.03 783.227 189.637 784.617 188.458C786.115 187.386 787.666 186.957 789.27 187.171C790.874 187.386 792.211 188.083 793.281 189.261C795.848 192.262 799.217 194.567 803.388 196.174C807.666 197.782 812.373 198.586 817.507 198.586C825.421 198.586 831.143 197.246 834.673 194.567C838.202 191.78 840.021 188.458 840.128 184.599C840.128 180.741 838.309 177.579 834.673 175.114C831.036 172.542 825.047 170.559 816.704 169.166C805.902 167.451 797.987 164.451 792.96 160.164C787.933 155.877 785.42 150.786 785.42 144.891C785.42 139.425 786.863 134.87 789.751 131.226C792.639 127.582 796.49 124.849 801.303 123.027C806.116 121.205 811.41 120.294 817.186 120.294Z" fill="white"/>
-            <path fillRule="evenodd" clipRule="evenodd" d="M738.932 92C740.643 92 742.088 92.5359 743.264 93.6076C744.548 94.6794 745.189 96.0726 745.189 97.7874C745.189 99.6093 744.548 101.057 743.264 102.128C742.088 103.093 740.643 103.575 738.932 103.575H697.38C695.669 103.575 694.171 103.093 692.888 102.128C691.711 101.057 691.123 99.6093 691.123 97.7874C691.123 96.0726 691.711 94.6794 692.888 93.6076C694.171 92.5359 695.669 92 697.38 92H738.932Z" fill="white"/>
-          </svg>
+          <HeroPreviewDemo />
         </div>
+      </section>
 
-        {/* Headline */}
-        <h1 className="hero-headline hero-enter" data-hero-enter>
-          <span className="hero-headline-line1">Design <em>systems,</em></span>
-          <span className="hero-headline-line2">crafted by AI.</span>
-        </h1>
+      <section className="proof-strip" data-reveal-group aria-label="Product proof points">
+        <div className="proof-item" data-reveal>
+          <strong>5</strong>
+          <span>design systems</span>
+        </div>
+        <div className="proof-item" data-reveal>
+          <strong>Theme</strong>
+          <span>mode, contrast, density</span>
+        </div>
+        <div className="proof-item" data-reveal>
+          <strong>Preview</strong>
+          <span>desktop, tablet, mobile</span>
+        </div>
+        <div className="proof-item" data-reveal>
+          <strong>Export</strong>
+          <span>HTML, React, Vite</span>
+        </div>
+      </section>
 
-        {/* Divider */}
-        <div className="hero-divider hero-enter" data-hero-enter />
+      <section id="systems" className="landing-section systems-section" data-reveal-group>
+        <div className="section-heading" data-reveal>
+          <span className="section-kicker">Systems</span>
+          <h2>One prompt surface for five distinct design languages.</h2>
+          <p>
+            Keep each system character intact while exploring the same product idea across
+            enterprise, material, fluent, carbon, and glass-native interfaces.
+          </p>
+        </div>
+        <div className="system-grid">
+          {systems.map((system) => (
+            <article className="system-card" key={system.name} data-reveal>
+              <span className="system-card-dot" aria-hidden="true" />
+              <h3>{system.name}</h3>
+              <p>{system.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        {/* Body */}
-        <p className="hero-body hero-enter" data-hero-enter>
-          Prototype across Salt DS, Material 3, and Fluent 2{" "}
-          <br className="hero-br-desktop" />
-          in a single AI-powered workspace.
-        </p>
+      <section id="workflow" className="landing-section workflow-section" data-reveal-group>
+        <div className="section-heading" data-reveal>
+          <span className="section-kicker">Workflow</span>
+          <h2>From first prompt to design-system handoff.</h2>
+        </div>
+        <div className="workflow-grid">
+          {workflow.map((item) => (
+            <article className="workflow-step" key={item.eyebrow} data-reveal>
+              <span>{item.eyebrow}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        {/* CTA */}
-        <Link href="/login" className="hero-cta-link hero-enter" data-hero-enter>
-          <button className="hero-cta">
+      <section id="features" className="landing-section features-section" data-reveal-group>
+        <div className="section-heading" data-reveal>
+          <span className="section-kicker">Features</span>
+          <h2>Built for design engineers who need to compare, refine, and hand off.</h2>
+        </div>
+        <div className="feature-grid">
+          {features.map(({ icon: Icon, title, body }) => (
+            <article className="feature-card" key={title} data-reveal>
+              <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="export" className="landing-section export-section" data-reveal-group>
+        <div className="export-panel" data-reveal>
+          <div>
+            <span className="section-kicker">Ready</span>
+            <h2>Start with a prompt. Leave with a system-aware interface.</h2>
+            <p>
+              Build, preview, share, and export from a single workspace tuned for real
+              product UI.
+            </p>
+          </div>
+          <ul className="export-list" aria-label="Supported handoff paths">
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Share previews</li>
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
+          </ul>
+          <Link href="/login" className="landing-btn landing-btn--primary">
             <span>Start Building</span>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M4 9H14M14 9L9.5 4.5M14 9L9.5 13.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </Link>
-
-        {/* Design system labels */}
-        <div className="hero-systems hero-enter" data-hero-enter>
-          <span>Salt DS</span>
-          <span className="hero-sys-sep">/</span>
-          <span>Material 3</span>
-          <span className="hero-sys-sep">/</span>
-          <span>Fluent 2</span>
+            <ArrowRight size={17} strokeWidth={2} aria-hidden="true" />
+          </Link>
         </div>
-      </div>
+      </section>
 
-      {/* ═══ Footer ═══ */}
-      <footer className="hero-footer hero-enter" data-hero-enter>
-        <span>&copy; 2026 aus&#333;s</span>
+      <footer className="landing-footer">
+        <span>ausos</span>
+        <span>AI-powered design system builder</span>
       </footer>
-    </section>
+    </main>
   );
 }

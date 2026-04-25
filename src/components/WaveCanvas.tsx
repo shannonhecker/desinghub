@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isReducedMotion } from "@/lib/motion";
 
 /* ═══════════════════════════════════════════════════════════════
    WaveCanvas - Guilloché wave lines (ported from shannonhecker.com)
@@ -29,8 +30,9 @@ export function WaveCanvas({ className, style }: { className?: string; style?: R
 
     let lines: Line[] = [];
     let waveGrad: CanvasGradient | null = null;
-    let raf: number;
+    let raf: number | null = null;
     let t0: number | null = null;
+    const reduced = isReducedMotion();
 
     function buildGrad(W: number) {
       const g = ctx!.createLinearGradient(0, 0, W, 0);
@@ -65,6 +67,7 @@ export function WaveCanvas({ className, style }: { className?: string; style?: R
       ctx!.lineCap  = "round";
       ctx!.lineJoin = "round";
       build(r.width, r.height);
+      if (reduced) draw(performance.now());
     }
 
     function edgeFade(W: number, H: number) {
@@ -101,21 +104,31 @@ export function WaveCanvas({ className, style }: { className?: string; style?: R
                    + ln.amp        * Math.sin(phi       + nx * Math.PI * 4.0)
                    + ln.amp * 0.28 * Math.sin(phi * 1.5 + nx * Math.PI * 8.0 + 1.4)
                    + ln.amp * 0.10 * Math.sin(phi * 2.1 + nx * Math.PI * 12.0 + 2.8);
-          s === 0 ? ctx!.moveTo(px, py) : ctx!.lineTo(px, py);
+          if (s === 0) {
+            ctx!.moveTo(px, py);
+          } else {
+            ctx!.lineTo(px, py);
+          }
         }
         ctx!.stroke();
       }
       edgeFade(W, H);
-      raf = requestAnimationFrame(draw);
+      if (!reduced) {
+        raf = requestAnimationFrame(draw);
+      }
     }
 
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
-    raf = requestAnimationFrame(draw);
+    if (reduced) {
+      draw(performance.now());
+    } else {
+      raf = requestAnimationFrame(draw);
+    }
 
     return () => {
-      cancelAnimationFrame(raf);
+      if (raf !== null) cancelAnimationFrame(raf);
       ro.disconnect();
     };
   }, []);
