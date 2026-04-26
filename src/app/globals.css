@@ -1,6 +1,6 @@
 html { color-scheme: light dark; }
 html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; }
-html:has(.hero), body:has(.hero) { height: auto; overflow: auto; background: #020302; }
+html:has(.hero), body:has(.hero) { height: auto; overflow: auto; background: var(--dh-page-bg-deep); }
 body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -109,16 +109,62 @@ a { color: inherit; text-decoration: none; }
   --aurora-blob-3-inner: #f7a8c4;
   --aurora-blob-3-outer: #d946ef;
 
+  /* ─── Landing accents (hero stage marker glyphs + atmospheric tints).
+         TODO: fold into src/data/_shared/brand.ts as ACCENTS export. ─── */
+  --dh-accent-mint:  #c5f4de;
+  --dh-accent-acid:  #d9f272;
+  --dh-accent-blue:  #86bdf0;
+  --dh-accent-rose:  #df9b93;
+  --dh-accent-amber: #ffad5c;
+
+  /* ─── Page surface (hero + login deeper backgrounds).
+         Distinct from --dh-brand-bg-deep which is for marketing chrome. ─── */
+  --dh-page-bg-deep: #020302;
+  --dh-page-bg-soft: #060806;
+
+  /* ─── Per-system preview accents (used by .hero-product theme overrides).
+         Values mirror each DS's canonical primary/secondary pair. ─── */
+  --dh-preview-on-accent: #061016;
+  --dh-preview-salt-a:    #5ee7df;
+  --dh-preview-salt-b:    #49a7ff;
+  --dh-preview-m3-a:      #d0bcff;
+  --dh-preview-m3-b:      #ffb4ab;
+  --dh-preview-fluent-a:  #60cdff;
+  --dh-preview-fluent-b:  #0f6cbd;
+  --dh-preview-carbon-a:  #78a9ff;
+  --dh-preview-carbon-b:  #42be65;
+  --dh-preview-ausos-a:   #b490f5;
+  --dh-preview-ausos-b:   #5ee7df;
+  --dh-preview-sweep:     #f78ab8;
+
+  /* ─── Inline warning chip (caution badge on demo carousel). ─── */
+  --dh-warn-bg: #f6d778;
+  --dh-warn-fg: #221b00;
+
+  /* ─── Light cream surface (CTA pill on dark hero). ─── */
+  --dh-surface-cream: #eef3ec;
+
+  /* ─── Login submit cyan ramp (bright CTA on dark login). ─── */
+  --dh-submit-cyan-from:       #f8ffff;
+  --dh-submit-cyan-mid:        #a8fbf2;
+  --dh-submit-cyan-to:         #58d8cf;
+  --dh-submit-cyan-fg:         #031014;
+  --dh-submit-cyan-from-hover: #ffffff;
+  --dh-submit-cyan-mid-hover:  #b9fff8;
+  --dh-submit-cyan-to-hover:   #70e7dd;
+
   /* ─── Beam shader semantic aliases ─── */
   --beam-color-a: var(--dh-brand-primary);
   --beam-color-b: var(--dh-brand-primary-soft);
   --beam-color-bg: var(--dh-brand-bg-deep);
 
   /* ── Radius scale ── */
-  --dh-curve-sm: 6px;
-  --dh-curve-md: 10px;
-  --dh-curve-lg: 16px;
+  --dh-curve-xs:   4px;
+  --dh-curve-sm:   6px;
+  --dh-curve-md:   10px;
+  --dh-curve-lg:   16px;
   --dh-curve-pill: 28px;
+  --dh-curve-full: 9999px;
 
   /* ── Shadow scale ── */
   --dh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 1px rgba(0, 0, 0, 0.14);
@@ -139,6 +185,20 @@ a { color: inherit; text-decoration: none; }
 
   /* ── Touch target (WCAG 2.5.5 AAA) ── */
   --dh-touch-target: 44px;
+
+  /* ── Spacing — 4/8 rhythm.
+        Off-grid layout literals (6/10/14/18/22/28/36/44 px) snap to
+        the nearest grid token. ── */
+  --dh-space-4:  4px;
+  --dh-space-8:  8px;
+  --dh-space-12: 12px;
+  --dh-space-16: 16px;
+  --dh-space-20: 20px;
+  --dh-space-24: 24px;
+  --dh-space-32: 32px;
+  --dh-space-40: 40px;
+  --dh-space-48: 48px;
+  --dh-space-64: 64px;
 
   /* Breakpoint constants (for team reference — CSS media queries can't
      use vars): sm 640px, md 768px, lg 1024px, xl 1440px */
