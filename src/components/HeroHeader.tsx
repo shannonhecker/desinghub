@@ -373,15 +373,11 @@ function useContentParallax(disabled: boolean) {
 }
 
 function ContentAtmosphere() {
-  return (
-    <div className="content-atmosphere" aria-hidden="true">
-      <span />
-      <span />
-      <span />
-      <span />
-      <span />
-    </div>
-  );
+  // Glows live entirely on .content-atmosphere::before / ::after via the
+  // per-section --glow-* CSS vars. The previous 5-span dot/line pattern
+  // was repeated across every section and read as tile-y; removed to keep
+  // each section's gradient feeling unique.
+  return <div className="content-atmosphere" aria-hidden="true" />;
 }
 
 /**
@@ -449,20 +445,84 @@ function TopoLines() {
 }
 
 /**
- * Demo orbit — elliptical ring around the preview-shell (matches img 3
- * wallet orbit). The ring rotates slowly; on each step change a small
- * spark traverses to the new active tab.
+ * Reusable orbit ring — slow-rotating dashed ellipse with a single spark
+ * traversing the perimeter. Rendered behind a content surface; sized via
+ * `inset` from the matching CSS variant class. Same SVG drives the
+ * Systems section background and (in earlier iterations) the demo shell.
  */
-function DemoOrbit({ paused }: { paused: boolean }) {
+function OrbitRing({
+  variant,
+  paused,
+}: {
+  variant: "systems";
+  paused?: boolean;
+}) {
+  const className =
+    `orbit-ring orbit-ring--${variant}` +
+    (paused ? " orbit-ring--paused" : "");
   return (
     <svg
-      className={`demo-orbit${paused ? " demo-orbit--paused" : ""}`}
+      className={className}
       viewBox="0 0 800 480"
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <ellipse cx="400" cy="240" rx="380" ry="220" className="demo-orbit-ring" />
-      <ellipse cx="400" cy="240" rx="380" ry="220" className="demo-orbit-spark" />
+      <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__path" />
+      <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__spark" />
+    </svg>
+  );
+}
+
+/**
+ * Studio constellation — six dots laid out as a 3x2 network behind the
+ * features grid, connected by thin dotted edges. Three sparks travel
+ * different edges on staggered timers (primes-ish, so they never line
+ * up). Distinct visual family from `OrbitRing` (lines + multi-spark vs
+ * ellipse + single-spark) but shares the same colour palette.
+ *
+ * Edge topology (kept simple to avoid visual noise):
+ *
+ *   [1]──[2]──[3]
+ *    │ ╲  │  ╱ │
+ *   [4]──[5]──[6]
+ */
+function StudioConstellation() {
+  return (
+    <svg
+      className="studio-constellation"
+      viewBox="0 0 1200 480"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      {/* Row edges (top & bottom) */}
+      <line className="studio-edge" x1="200" y1="140" x2="600" y2="140" />
+      <line className="studio-edge" x1="600" y1="140" x2="1000" y2="140" />
+      <line className="studio-edge" x1="200" y1="340" x2="600" y2="340" />
+      <line className="studio-edge" x1="600" y1="340" x2="1000" y2="340" />
+      {/* Vertical hubs */}
+      <line className="studio-edge" x1="200" y1="140" x2="200" y2="340" />
+      <line className="studio-edge" x1="600" y1="140" x2="600" y2="340" />
+      <line className="studio-edge" x1="1000" y1="140" x2="1000" y2="340" />
+      {/* Cross-diagonal accents */}
+      <line className="studio-edge studio-edge--accent" x1="200" y1="140" x2="600" y2="340" />
+      <line className="studio-edge studio-edge--accent" x1="1000" y1="140" x2="600" y2="340" />
+
+      {/* Three traveling sparks on different edges, staggered timers. */}
+      <line className="studio-spark studio-spark--1" x1="200" y1="140" x2="600" y2="140" />
+      <line className="studio-spark studio-spark--2" x1="600" y1="140" x2="600" y2="340" />
+      <line className="studio-spark studio-spark--3" x1="200" y1="340" x2="1000" y2="340" />
+
+      {/* Dots at each card-center for a constellation feel. */}
+      {[
+        [200, 140],
+        [600, 140],
+        [1000, 140],
+        [200, 340],
+        [600, 340],
+        [1000, 340],
+      ].map(([cx, cy]) => (
+        <circle key={`${cx}-${cy}`} className="studio-node" cx={cx} cy={cy} r="3" />
+      ))}
     </svg>
   );
 }
@@ -608,7 +668,6 @@ function HeroPreviewDemo() {
       data-preview-paused={demoPaused ? "true" : "false"}
       aria-label="Design Hub preview demo"
     >
-      <DemoOrbit paused={demoPaused} />
       <div className="preview-topbar">
         <div className="preview-dots" aria-hidden="true">
           <span />
@@ -770,10 +829,6 @@ export function HeroHeader() {
             </div>
           ))}
 
-          <a className="stage-play" href="#demo" aria-label="Jump to live builder demo">
-            <Play size={18} fill="currentColor" strokeWidth={1.8} aria-hidden="true" />
-          </a>
-
           <div className="hero-copy">
             <div className="hero-kicker" data-hero-enter>
               <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
@@ -788,11 +843,11 @@ export function HeroHeader() {
               Material 3, Fluent 2, Carbon, and ausos from one quiet AI workspace.
             </p>
             <div className="hero-actions" data-hero-enter>
-              <Link href="/login" className="landing-btn landing-btn--dark">
+              <Link href="/login" className="landing-btn landing-btn--outline">
                 <span>Open App</span>
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
               </Link>
-              <a href="#workflow" className="landing-btn landing-btn--light">
+              <a href="#demo" className="landing-btn landing-btn--light">
                 <span>Discover More</span>
               </a>
             </div>
@@ -847,14 +902,17 @@ export function HeroHeader() {
             review surfaces and glass-native AI workspaces.
           </p>
         </div>
-        <div className="system-grid content-card-grid" ref={systemGridRef}>
-          {systems.map((system) => (
-            <article className="system-card content-card" data-system={system.key} key={system.name}>
-              <span className="system-card-signal">{system.signal}</span>
-              <h3>{system.name}</h3>
-              <p>{system.detail}</p>
-            </article>
-          ))}
+        <div className="system-grid-wrap">
+          <OrbitRing variant="systems" />
+          <div className="system-grid content-card-grid" ref={systemGridRef}>
+            {systems.map((system) => (
+              <article className="system-card content-card" data-system={system.key} key={system.name}>
+                <span className="system-card-signal">{system.signal}</span>
+                <h3>{system.name}</h3>
+                <p>{system.detail}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -885,14 +943,17 @@ export function HeroHeader() {
             review, and export all sit inside the same workspace.
           </p>
         </div>
-        <div className="feature-grid content-card-grid" ref={featureGridRef}>
-          {features.map(({ icon: Icon, title, body }) => (
-            <article className="feature-card content-card" key={title}>
-              <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </article>
-          ))}
+        <div className="feature-grid-wrap">
+          <StudioConstellation />
+          <div className="feature-grid content-card-grid" ref={featureGridRef}>
+            {features.map(({ icon: Icon, title, body }) => (
+              <article className="feature-card content-card" key={title}>
+                <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
