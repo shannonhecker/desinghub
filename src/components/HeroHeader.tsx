@@ -631,9 +631,10 @@ function PreviewSurface({ step }: { step: PreviewDemoStep }) {
 function HeroPreviewDemo() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const step = previewDemoSteps[stepIndex];
-  const demoPaused = isPaused || reducedMotion;
+  const demoPaused = isPaused || reducedMotion || isHovering;
 
   useEffect(() => {
     if (reducedMotion) {
@@ -641,14 +642,14 @@ function HeroPreviewDemo() {
       return;
     }
 
-    if (isPaused) return;
+    if (isPaused || isHovering) return;
 
     const intervalId = window.setInterval(() => {
       setStepIndex((current) => (current + 1) % previewDemoSteps.length);
     }, DEMO_STEP_DURATION_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isPaused, reducedMotion]);
+  }, [isPaused, isHovering, reducedMotion]);
 
   const controlLabel = reducedMotion
     ? "Preview demo paused for reduced motion"
@@ -664,6 +665,10 @@ function HeroPreviewDemo() {
       data-preview-layout={step.layout}
       data-preview-paused={demoPaused ? "true" : "false"}
       aria-label="Design Hub preview demo"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      onFocusCapture={() => setIsHovering(true)}
+      onBlurCapture={() => setIsHovering(false)}
     >
       <div className="preview-topbar">
         <div className="preview-dots" aria-hidden="true">

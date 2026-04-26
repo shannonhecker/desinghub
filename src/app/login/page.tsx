@@ -114,7 +114,8 @@ export default function LoginPage() {
 
             {error && (
               <p id="login-error" className="login-error" role="alert">
-                Incorrect password, try again.
+                Incorrect password, try again. Need access?{" "}
+                <a href="mailto:shannonheckerchen@gmail.com">Email Shannon</a>.
               </p>
             )}
 
@@ -124,10 +125,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="login-meta">
-            This preview is under development. For access, email{" "}
-            <a href="mailto:shannonheckerchen@gmail.com">Shannon</a>.
-          </p>
+          <p className="login-meta">This preview is under development.</p>
         </section>
       </div>
     </main>
