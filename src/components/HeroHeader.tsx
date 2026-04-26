@@ -454,19 +454,32 @@ function OrbitRing({
   variant: "systems";
   paused?: boolean;
 }) {
-  const className =
+  const base =
     `orbit-ring orbit-ring--${variant}` +
     (paused ? " orbit-ring--paused" : "");
+  // Two SVGs (not one) so the dashed ring stays behind the cards (z-index 0)
+  // while the bright spark glides above them (z-index 2). SVG paint order is
+  // DOM-order within a single <svg>, so CSS z-index can only split layers
+  // by giving each <ellipse> its own SVG context.
   return (
-    <svg
-      className={className}
-      viewBox="0 0 800 480"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__path" />
-      <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__spark" />
-    </svg>
+    <>
+      <svg
+        className={`${base} orbit-ring--ring-only`}
+        viewBox="0 0 800 480"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__path" />
+      </svg>
+      <svg
+        className={`${base} orbit-ring--spark-only`}
+        viewBox="0 0 800 480"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <ellipse cx="400" cy="240" rx="380" ry="220" className="orbit-ring__spark" />
+      </svg>
+    </>
   );
 }
 

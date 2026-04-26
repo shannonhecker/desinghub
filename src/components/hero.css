@@ -554,10 +554,15 @@
     box-shadow 180ms var(--ease);
 }
 
-.hero .landing-btn,
-.hero .landing-btn:visited,
+/* Dark text only on filled variants. The bare `.hero .landing-btn`
+   selector used to live here as a catchall — but it overrode
+   `.landing-btn--outline { color: var(--dh-brand-fg) }` via cascade
+   specificity, forcing dark text on the transparent button. Restrict
+   to --dark / --light so the outline variant keeps its white text. */
 .hero .landing-btn--dark,
-.hero .landing-btn--light {
+.hero .landing-btn--dark:visited,
+.hero .landing-btn--light,
+.hero .landing-btn--light:visited {
   color: var(--dh-page-bg-deep);
 }
 
@@ -2391,16 +2396,25 @@
   50%      { background-position: 28% 50%; }
 }
 
-/* Card hover tilt — only on hover-capable devices with fine pointer. */
+/* Card hover — tilt + lift, plus a subtle outline highlight + gentle
+   aurora-mint glow. Only on hover-capable devices with fine pointer
+   (touch + reduced-motion stay calm). */
 @media (hover: hover) and (pointer: fine) {
   .content-card {
     transition:
       transform var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease),
+      border-color var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease),
       box-shadow var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease);
   }
   .content-card:hover {
     transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
-    box-shadow: var(--dh-shadow-lg);
+    border-color: rgba(255, 255, 255, 0.22);
+    /* Layered shadow: existing depth + a soft mint outer glow that
+       echoes the orbit spark + login submit aurora. RGB literals mirror
+       --aurora-blob-1-inner (#5ee7df). */
+    box-shadow:
+      var(--dh-shadow-lg),
+      0 0 24px rgba(94, 231, 223, 0.16);
   }
 }
 
@@ -2422,6 +2436,13 @@
 
 .orbit-ring--systems {
   inset: -8% -4%;
+}
+
+/* Ring sits at z-index 0 (behind .system-grid which is z-index 1).
+   Spark gets promoted to z-index 2 so it glides above the cards like
+   a comet — visible regardless of card occlusion. */
+.orbit-ring--spark-only {
+  z-index: 2;
 }
 
 .orbit-ring__path {
