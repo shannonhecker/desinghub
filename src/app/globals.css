@@ -150,14 +150,16 @@ a { color: inherit; text-decoration: none; }
   /* ─── Light cream surface (CTA pill on dark hero). ─── */
   --dh-surface-cream: #eef3ec;
 
-  /* ─── Login submit cyan ramp (bright CTA on dark login). ─── */
-  --dh-submit-cyan-from:       #f8ffff;
-  --dh-submit-cyan-mid:        #a8fbf2;
-  --dh-submit-cyan-to:         #58d8cf;
-  --dh-submit-cyan-fg:         #031014;
-  --dh-submit-cyan-from-hover: #ffffff;
-  --dh-submit-cyan-mid-hover:  #b9fff8;
-  --dh-submit-cyan-to-hover:   #70e7dd;
+  /* ─── Login submit aurora ramp (bright CTA on dark login).
+         Anchors to the brand aurora palette so the login button reads as
+         a continuation of the marketing surface, not a separate skin. ─── */
+  --dh-submit-cyan-from:       var(--aurora-blob-1-inner);    /* #5ee7df */
+  --dh-submit-cyan-mid:        var(--dh-brand-primary-soft);  /* #b490f5 */
+  --dh-submit-cyan-to:         var(--dh-brand-primary-soft);  /* #b490f5 */
+  --dh-submit-cyan-fg:         var(--dh-page-bg-deep);
+  --dh-submit-cyan-from-hover: var(--aurora-blob-1-inner);
+  --dh-submit-cyan-mid-hover:  var(--aurora-blob-2-outer);    /* #8b5cf6 */
+  --dh-submit-cyan-to-hover:   var(--aurora-blob-2-outer);
 
   /* ─── Beam shader semantic aliases ─── */
   --beam-color-a: var(--dh-brand-primary);
