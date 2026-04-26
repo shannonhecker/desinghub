@@ -122,8 +122,7 @@
 
 .landing-nav,
 .hero-copy,
-.stage-marker,
-.stage-logo-rail {
+.stage-marker {
   position: relative;
   z-index: 4;
 }
@@ -609,21 +608,6 @@
 .landing-btn--light:hover {
   background: var(--dh-surface-cream);
   border-color: rgba(255, 255, 255, 0.92);
-}
-
-.stage-logo-rail {
-  position: absolute;
-  right: var(--dh-space-40);
-  bottom: var(--dh-space-40);
-  left: var(--dh-space-40);
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(18px, 4vw, 52px);
-  color: rgba(244, 248, 241, 0.42);
-  font-size: 0.78rem;
-  font-weight: 800;
 }
 
 .proof-strip,
@@ -1567,12 +1551,15 @@
   filter: blur(30px);
 }
 
+/* RGB tokens are tunable per section so individual sections can pick up
+   a warm or cool tint without forking the rendering rule. Defaults
+   reuse the hero's gray-spot palette. */
 .content-atmosphere::before {
   top: var(--glow-a-y);
   left: var(--glow-a-x);
   width: var(--glow-a-w);
   height: var(--glow-a-h);
-  background: rgba(221, 239, 218, var(--glow-a-alpha));
+  background: rgba(var(--glow-a-rgb, 221, 239, 218), var(--glow-a-alpha));
   transform: translate3d(-50%, 0, 0);
 }
 
@@ -1581,7 +1568,7 @@
   left: var(--glow-b-x);
   width: var(--glow-b-w);
   height: var(--glow-b-h);
-  background: rgba(197, 244, 222, var(--glow-b-alpha));
+  background: rgba(var(--glow-b-rgb, 197, 244, 222), var(--glow-b-alpha));
   transform: translate3d(-50%, -50%, 0);
 }
 
@@ -1647,7 +1634,11 @@
   --glow-b-y: 80%;
   --glow-b-w: min(190px, 16vw);
   --glow-b-h: 110px;
-  --glow-b-alpha: 0.018;
+  --glow-b-alpha: 0.034;
+  /* Closing-section warmth — pink/magenta from --aurora-blob-3-inner so
+     the bottom of the page reads as the "invite" section. RGB literals
+     mirror globals.css's --aurora-blob-3-inner (#f7a8c4). */
+  --glow-b-rgb: 247, 168, 196;
 }
 
 /* .content-atmosphere span rules removed — the 5-span dot/line pattern
@@ -2152,19 +2143,6 @@
     flex: 1 1 150px;
   }
 
-  .stage-logo-rail {
-    right: var(--dh-space-16);
-    bottom: var(--dh-space-24);
-    left: var(--dh-space-16);
-    flex-wrap: wrap;
-    gap: var(--dh-space-12) var(--dh-space-20);
-    font-size: 0.72rem;
-  }
-
-  .stage-logo-rail span:nth-child(n+5) {
-    display: none;
-  }
-
   .proof-strip {
     grid-template-columns: 1fr;
     margin-top: 0;
@@ -2368,9 +2346,11 @@
   stroke-width: 1;
   stroke-dasharray: 2 6;
   stroke-linecap: round;
+  /* topo-drift caps at 4 iterations (~96s) so the page settles after
+     initial reveal — calm-on-idle per the design principle. */
   animation:
     topo-draw 4s var(--dh-motion-ease) both,
-    topo-drift 24s linear infinite;
+    topo-drift 24s linear 4;
 }
 
 .topo-line--1 { animation-delay: 0s, 0s; }
@@ -2560,9 +2540,10 @@
 }
 
 /* Beam-fall — turns the 5 static .stage-motion-lines spans into
-   staggered falling vertical light beams (matches reference img 1). */
+   staggered falling vertical light beams (matches reference img 1).
+   Caps at 6 iterations (~48s) so the hero settles after initial reveal. */
 .stage-motion-lines span {
-  animation: beam-fall 8s var(--dh-motion-ease) infinite;
+  animation: beam-fall 8s var(--dh-motion-ease) 6;
 }
 .stage-motion-lines span:nth-child(1) { animation-delay: 0s; }
 .stage-motion-lines span:nth-child(2) { animation-delay: 1.6s; }

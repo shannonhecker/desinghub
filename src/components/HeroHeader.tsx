@@ -128,8 +128,6 @@ const proof = [
   { value: "Handoff", label: "share links plus HTML, React, and Vite exports" },
 ];
 
-const partnerLogos = ["Vercel", "loom", "Cash App", "Loops", "zapier", "ramp", "Raycast"];
-
 const DEMO_STEP_DURATION_MS = 6000;
 
 const previewSystems = [
@@ -793,7 +791,7 @@ export function HeroHeader() {
             </div>
 
             <Link href="/login" className="landing-nav-cta">
-              <span>Create Account</span>
+              <span>Enter Studio</span>
               <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
             </Link>
           </nav>
@@ -831,7 +829,6 @@ export function HeroHeader() {
             <div className="hero-kicker" data-hero-enter>
               <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
               Unlock your system stack
-              <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
             </div>
             <h1 id="landing-title" className="hero-headline" data-hero-enter>
               ausos for <span>Design Flow</span>
@@ -842,7 +839,7 @@ export function HeroHeader() {
             </p>
             <div className="hero-actions" data-hero-enter>
               <Link href="/login" className="landing-btn landing-btn--outline">
-                <span>Open App</span>
+                <span>Enter Studio</span>
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
               </Link>
               <a href="#demo" className="landing-btn landing-btn--light">
@@ -851,11 +848,6 @@ export function HeroHeader() {
             </div>
           </div>
 
-          <div className="stage-logo-rail" aria-label="Previewed with modern product teams">
-            {partnerLogos.map((logo) => (
-              <span key={logo}>{logo}</span>
-            ))}
-          </div>
         </div>
       </section>
 
