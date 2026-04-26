@@ -123,7 +123,6 @@
 .landing-nav,
 .hero-copy,
 .stage-marker,
-.stage-play,
 .stage-corner-note,
 .stage-logo-rail {
   position: relative;
@@ -480,26 +479,6 @@
   right: 8%;
 }
 
-.stage-play {
-  position: absolute;
-  top: 20.5%;
-  left: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transform: translateX(-50%);
-  cursor: pointer;
-  text-decoration: none;
-}
-
 .hero-copy {
   width: min(800px, 100%);
   margin: clamp(104px, 18vh, 154px) auto 0;
@@ -616,6 +595,21 @@
 
 .landing-btn--dark:hover {
   background: rgba(241, 245, 238, 0.98);
+}
+
+/* Secondary outline variant — transparent fill, soft white border, white
+   text. Used for the secondary action (Open App) so the filled "Discover
+   More" pill carries the primary CTA weight on the hero. */
+.landing-btn--outline {
+  color: var(--dh-brand-fg);
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: none;
+}
+
+.landing-btn--outline:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.55);
 }
 
 .landing-btn--light {
@@ -1475,20 +1469,8 @@
   }
 }
 
-@keyframes content-sparkle-line {
-  0%,
-  100% {
-    opacity: 0.08;
-    transform: translate3d(-18px, 0, 0);
-  }
-  45% {
-    opacity: 0.34;
-  }
-  72% {
-    opacity: 0.16;
-    transform: translate3d(26px, 0, 0);
-  }
-}
+/* @keyframes content-sparkle-line removed — only consumer was the
+   ContentAtmosphere span pattern, which is gone. */
 
 @keyframes stage-line-fall {
   0% {
@@ -1590,6 +1572,17 @@
   .preview-layout--glass .preview-chart {
     grid-column: span 4;
   }
+}
+
+/* Anchor offsets for smooth-scroll targets — keeps section headings off
+   the very top edge after Discover More / nav-link clicks. */
+.landing-section,
+#demo,
+#systems,
+#workflow,
+#features,
+#export {
+  scroll-margin-top: var(--dh-space-32);
 }
 
 .landing-section {
@@ -1716,61 +1709,9 @@
   --glow-b-alpha: 0.018;
 }
 
-.content-atmosphere span {
-  position: absolute;
-  display: block;
-  opacity: 0.24;
-  transform: translate3d(0, calc(var(--spark-shift, 0px) * 0.2), 0);
-}
-
-.content-atmosphere span:nth-child(1),
-.content-atmosphere span:nth-child(3),
-.content-atmosphere span:nth-child(5) {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: rgba(237, 248, 239, 0.36);
-  box-shadow: 0 0 10px rgba(221, 239, 218, 0.18);
-}
-
-.content-atmosphere span:nth-child(1) {
-  top: 14%;
-  left: 11%;
-}
-
-.content-atmosphere span:nth-child(3) {
-  top: 48%;
-  right: 12%;
-  opacity: 0.18;
-}
-
-.content-atmosphere span:nth-child(5) {
-  right: 36%;
-  bottom: 12%;
-  opacity: 0.14;
-}
-
-.content-atmosphere span:nth-child(2),
-.content-atmosphere span:nth-child(4) {
-  width: 190px;
-  height: 1px;
-  border-radius: var(--dh-curve-full);
-  background: linear-gradient(90deg, transparent, rgba(239, 255, 245, 0.075), transparent);
-  box-shadow: 0 0 14px rgba(221, 239, 218, 0.035);
-  animation: content-sparkle-line 8s ease-in-out infinite;
-}
-
-.content-atmosphere span:nth-child(2) {
-  top: 30%;
-  left: -4%;
-}
-
-.content-atmosphere span:nth-child(4) {
-  right: -8%;
-  bottom: 24%;
-  width: 160px;
-  animation-delay: -3.2s;
-}
+/* .content-atmosphere span rules removed — the 5-span dot/line pattern
+   repeated across every section and read as tile-y. Section glows now
+   come exclusively from ::before/::after blobs above. */
 
 .section-heading {
   max-width: 760px;
@@ -2066,7 +2007,6 @@
 
 .landing-btn:focus-visible,
 .landing-nav a:focus-visible,
-.stage-play:focus-visible,
 .preview-demo-control:focus-visible,
 .hero a:focus-visible {
   outline: 2px solid rgba(197, 244, 222, 0.95);
@@ -2113,10 +2053,6 @@
   .stage-motion-lines,
   .stage-marker {
     display: none;
-  }
-
-  .stage-play {
-    top: 18%;
   }
 
   .hero-copy {
@@ -2253,10 +2189,6 @@
     width: 76vw;
   }
 
-  .stage-play {
-    top: 108px;
-  }
-
   .hero-copy {
     margin-top: 122px;
     padding: 0 var(--dh-space-4) 162px;
@@ -2315,11 +2247,6 @@
     inset: 0 calc(-1 * var(--dh-space-16)) calc(-1 * var(--dh-space-48));
     opacity: 0.22;
     transform: none;
-  }
-
-  .content-atmosphere span:nth-child(2),
-  .content-atmosphere span:nth-child(4) {
-    display: none;
   }
 
   .content-parallax-heading,
@@ -2563,19 +2490,27 @@
   }
 }
 
-/* Demo orbit — slow-rotating dashed ellipse around the preview shell,
-   plus a single spark that traverses the orbit. */
-.demo-orbit {
+/* Orbit ring — slow-rotating dashed ellipse + a single spark that
+   traverses the orbit. Reusable: variant class controls placement.
+   Currently rendered behind the .system-grid. */
+.system-grid-wrap {
+  position: relative;
+}
+
+.orbit-ring {
   position: absolute;
-  inset: -3% -1%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.55;
   width: auto;
   height: auto;
 }
 
-.demo-orbit-ring {
+.orbit-ring--systems {
+  inset: -8% -4%;
+}
+
+.orbit-ring__path {
   fill: none;
   stroke: rgba(196, 244, 222, 0.18);
   stroke-width: 1;
@@ -2585,7 +2520,7 @@
   transform-origin: center;
 }
 
-.demo-orbit-spark {
+.orbit-ring__spark {
   fill: none;
   stroke: var(--dh-accent-mint);
   stroke-width: 1.6;
@@ -2595,9 +2530,15 @@
   filter: drop-shadow(0 0 4px var(--aurora-blob-1-inner));
 }
 
-.demo-orbit--paused .demo-orbit-ring,
-.demo-orbit--paused .demo-orbit-spark {
+.orbit-ring--paused .orbit-ring__path,
+.orbit-ring--paused .orbit-ring__spark {
   animation-play-state: paused;
+}
+
+/* Keep the .system-grid above the orbit so cards aren't traced over. */
+.system-grid-wrap > .system-grid {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes orbit-spin {
@@ -2609,6 +2550,81 @@
   12%  { opacity: 1; }
   88%  { opacity: 1; }
   100% { stroke-dashoffset: -1200; opacity: 0; }
+}
+
+/* Studio constellation — six dots in a 3x2 network behind the features
+   grid, connected by thin dotted edges. Three sparks travel different
+   edges on staggered timers. Distinct visual family from the orbit. */
+.feature-grid-wrap {
+  position: relative;
+}
+
+.studio-constellation {
+  position: absolute;
+  inset: -4% -2%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  width: auto;
+  height: auto;
+}
+
+.studio-edge {
+  stroke: rgba(232, 238, 232, 0.16);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+  fill: none;
+}
+
+.studio-edge--accent {
+  stroke: rgba(196, 244, 222, 0.10);
+  stroke-dasharray: 1 8;
+}
+
+.studio-node {
+  fill: var(--dh-accent-mint);
+  opacity: 0.55;
+}
+
+.studio-spark {
+  fill: none;
+  stroke: var(--dh-accent-mint);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px var(--aurora-blob-1-inner));
+  /* Each spark draws a 24px segment that glides along its line.
+     Path length for the configured edges is ~400-800px; using a
+     long dash + short visible window gives a single moving dot. */
+}
+
+.studio-spark--1 {
+  stroke-dasharray: 18 600;
+  animation: studio-spark-travel 5.5s var(--dh-motion-ease) infinite;
+  animation-delay: 0s;
+}
+
+.studio-spark--2 {
+  stroke-dasharray: 18 400;
+  animation: studio-spark-travel 4.6s var(--dh-motion-ease) infinite;
+  animation-delay: 1.4s;
+}
+
+.studio-spark--3 {
+  stroke-dasharray: 18 1100;
+  animation: studio-spark-travel 7.3s var(--dh-motion-ease) infinite;
+  animation-delay: 2.8s;
+}
+
+.feature-grid-wrap > .feature-grid {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes studio-spark-travel {
+  0%   { stroke-dashoffset: 0; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { stroke-dashoffset: -1100; opacity: 0; }
 }
 
 /* Beam-fall — turns the 5 static .stage-motion-lines spans into
@@ -2630,7 +2646,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .content-atmosphere span,
   .hero-product,
   .stage-track::after,
   .stage-motion-lines span,
@@ -2650,8 +2665,12 @@
   .preview-chart span,
   .preview-float,
   .topo-line,
-  .demo-orbit-ring,
-  .demo-orbit-spark,
+  .orbit-ring__path,
+  .orbit-ring__spark,
+  .studio-spark,
+  .studio-spark--1,
+  .studio-spark--2,
+  .studio-spark--3,
   .hero-headline span {
     animation: none !important;
   }
@@ -2677,7 +2696,6 @@
   }
 
   .content-atmosphere,
-  .content-atmosphere span,
   .content-parallax-heading,
   .content-card-grid,
   .content-card {

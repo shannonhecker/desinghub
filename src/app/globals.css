@@ -18,6 +18,12 @@ a { color: inherit; text-decoration: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 
+/* ── Smooth scroll for hero anchor links (Discover More → #demo).
+      Falls back to native snap when the user has reduced-motion on. ── */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
 /* ── Toast (see src/lib/toast.ts) ── */
 .dh-toast-root {
   position: fixed;
