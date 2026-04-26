@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
   Download,
-  Layers3,
   MonitorSmartphone,
   Pause,
   PanelsTopLeft,
@@ -16,70 +14,121 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { HeroBeam } from "./hero-beam/HeroBeam";
-import { heroEnterTimeline, revealOnScroll } from "@/lib/motion";
 import "./hero.css";
 
-const LandingScrollFlight = dynamic(() => import("./LandingScrollFlight"), { ssr: false });
+const navItems = [
+  { label: "Home", href: "#main-content" },
+  { label: "Demo", href: "#demo" },
+  { label: "Systems", href: "#systems" },
+  { label: "Workflow", href: "#workflow" },
+  { label: "Studio", href: "#features" },
+  { label: "Export", href: "#export" },
+];
 
 const systems = [
-  { name: "Salt DS", detail: "Enterprise trading workflows" },
-  { name: "Material 3", detail: "Adaptive product surfaces" },
-  { name: "Fluent 2", detail: "Microsoft-style app patterns" },
-  { name: "Carbon", detail: "Data-dense IBM interfaces" },
-  { name: "ausos", detail: "Glass-native AI workspaces" },
+  {
+    key: "salt",
+    name: "Salt DS",
+    detail: "Dense operational surfaces with precise spacing, clear state, and trader-grade controls.",
+    signal: "High density",
+  },
+  {
+    key: "m3",
+    name: "Material 3",
+    detail: "Adaptive surfaces, tonal hierarchy, and expressive product rhythm from one prompt.",
+    signal: "Adaptive",
+  },
+  {
+    key: "fluent",
+    name: "Fluent 2",
+    detail: "Calm command patterns for dashboards, forms, navigation, and review workflows.",
+    signal: "Command",
+  },
+  {
+    key: "carbon",
+    name: "Carbon",
+    detail: "Crisp enterprise layouts for data grids, reporting, release checks, and handoff.",
+    signal: "Data first",
+  },
+  {
+    key: "ausos",
+    name: "ausos",
+    detail: "Glass-native AI workspace patterns that keep prompts, variants, and exports visible.",
+    signal: "AI native",
+  },
 ];
 
 const workflow = [
   {
     eyebrow: "01",
-    title: "Prompt the interface",
-    body: "Describe the product surface, audience, and components you need.",
+    title: "Prompt",
+    body: "Describe the product surface, audience, density, and design-system direction.",
   },
   {
     eyebrow: "02",
-    title: "Compare systems",
-    body: "Review the same concept across Salt DS, Material 3, Fluent 2, Carbon, and ausos.",
+    title: "Generate",
+    body: "Get a structured interface draft with real controls, data, and responsive states.",
   },
   {
     eyebrow: "03",
-    title: "Refine and ship",
-    body: "Tune theme, density, preview states, share the result, and export when ready.",
+    title: "Compare",
+    body: "Move the same idea through Salt, Material, Fluent, Carbon, and ausos treatments.",
+  },
+  {
+    eyebrow: "04",
+    title: "Ship",
+    body: "Share the selected direction or export clean HTML, React, and Vite handoff paths.",
   },
 ];
 
 const features = [
   {
     icon: Sparkles,
-    title: "AI prompt workflow",
-    body: "Generate structured interface drafts from natural language, then keep refining in the builder.",
+    title: "Prompt canvas",
+    body: "Turn a product brief into a visible interface direction while the context stays close.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Theme and density controls",
-    body: "Switch modes, contrast levels, and density scales without rebuilding the same screen.",
+    title: "Theme studio",
+    body: "Tune mode, contrast, density, and token choices without rebuilding the surface.",
   },
   {
     icon: MonitorSmartphone,
-    title: "Responsive previews",
-    body: "Check desktop, tablet, and mobile layouts inside the same workspace.",
+    title: "Responsive frames",
+    body: "Review desktop, tablet, and mobile layouts inside the same focused workspace.",
   },
   {
     icon: Share2,
-    title: "Shareable previews",
-    body: "Create a compact preview link for review without exposing the whole workspace.",
+    title: "Review links",
+    body: "Send compact previews that are polished enough for critique and stakeholder review.",
   },
   {
     icon: Download,
-    title: "Export options",
-    body: "Move from generated canvas to HTML, React, or Vite project handoff paths.",
+    title: "Export routes",
+    body: "Move from generated canvas to HTML, React, or Vite without losing system intent.",
   },
   {
     icon: PanelsTopLeft,
-    title: "Component coverage",
-    body: "Explore buttons, forms, navigation, data grids, charts, overlays, and layout primitives.",
+    title: "Component depth",
+    body: "Compose navigation, forms, charts, data grids, overlays, and layout primitives.",
   },
 ];
+
+const markers = [
+  { key: "salt", label: "Salt", meta: "20.4s", position: "top-left", glyph: "01" },
+  { key: "m3", label: "Material", meta: "2.8k", position: "top-right", glyph: "02" },
+  { key: "fluent", label: "Fluent", meta: "19.3k", position: "left", glyph: "03" },
+  { key: "carbon", label: "Carbon", meta: "1.4k", position: "right", glyph: "04" },
+];
+
+const proof = [
+  { value: "5", label: "design languages from one brief" },
+  { value: "Token-aware", label: "mode, contrast, and density controls" },
+  { value: "Responsive", label: "desktop, tablet, and mobile previews" },
+  { value: "Handoff", label: "share links plus HTML, React, and Vite exports" },
+];
+
+const partnerLogos = ["Vercel", "loom", "Cash App", "Loops", "zapier", "ramp", "Raycast"];
 
 const DEMO_STEP_DURATION_MS = 6000;
 
@@ -257,6 +306,83 @@ function usePrefersReducedMotion() {
   return reducedMotion;
 }
 
+function useContentParallax(disabled: boolean) {
+  const rootRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (typeof window === "undefined" || !root) return;
+
+    const resetMotion = () => {
+      root.style.setProperty("--content-shift", "0px");
+      root.style.setProperty("--spark-shift", "0px");
+      root.style.setProperty("--card-lift", "0px");
+      root.style.setProperty("--heading-shift", "0px");
+      root.style.setProperty("--content-depth", "0");
+    };
+
+    if (disabled) {
+      resetMotion();
+      return;
+    }
+
+    let frameId = 0;
+    const mobileQuery = window.matchMedia("(max-width: 640px)");
+
+    const updateMotion = () => {
+      frameId = 0;
+
+      if (mobileQuery.matches) {
+        resetMotion();
+        return;
+      }
+
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const viewportHeight = Math.max(window.innerHeight, 1);
+      const rawProgress = (scrollY - viewportHeight * 0.5) / (viewportHeight * 2.8);
+      const progress = Math.min(1, Math.max(0, rawProgress));
+      const eased = progress * progress * (3 - 2 * progress);
+
+      root.style.setProperty("--content-shift", `${(-18 * eased).toFixed(2)}px`);
+      root.style.setProperty("--spark-shift", `${(scrollY * 0.075).toFixed(2)}px`);
+      root.style.setProperty("--card-lift", `${(-8 * eased).toFixed(2)}px`);
+      root.style.setProperty("--heading-shift", `${(-12 * eased).toFixed(2)}px`);
+      root.style.setProperty("--content-depth", eased.toFixed(3));
+    };
+
+    const requestUpdate = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(updateMotion);
+    };
+
+    updateMotion();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    mobileQuery.addEventListener("change", requestUpdate);
+
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", requestUpdate);
+      window.removeEventListener("resize", requestUpdate);
+      mobileQuery.removeEventListener("change", requestUpdate);
+    };
+  }, [disabled]);
+
+  return rootRef;
+}
+
+function ContentAtmosphere() {
+  return (
+    <div className="content-atmosphere" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
 function PreviewSurface({ step }: { step: PreviewDemoStep }) {
   return (
     <div className={`preview-layout preview-layout--${step.layout}`}>
@@ -312,14 +438,11 @@ function HeroPreviewDemo() {
 
     if (isPaused) return;
 
-    const advanceStep = () => {
+    const intervalId = window.setInterval(() => {
       setStepIndex((current) => (current + 1) % previewDemoSteps.length);
-    };
-    const intervalId = window.setInterval(advanceStep, DEMO_STEP_DURATION_MS);
+    }, DEMO_STEP_DURATION_MS);
 
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    return () => window.clearInterval(intervalId);
   }, [isPaused, reducedMotion]);
 
   const controlLabel = reducedMotion
@@ -330,8 +453,7 @@ function HeroPreviewDemo() {
 
   return (
     <div
-      className="hero-product hero-enter"
-      data-hero-enter
+      className="hero-product"
       data-preview-stage={step.phase}
       data-preview-system={step.system}
       data-preview-layout={step.layout}
@@ -363,7 +485,7 @@ function HeroPreviewDemo() {
           )}
         </button>
         <span className="preview-progress-track" aria-hidden="true">
-          <span />
+          <span key={step.id} />
         </span>
       </div>
       <div className="preview-shell">
@@ -414,122 +536,143 @@ function HeroPreviewDemo() {
 }
 
 export function HeroHeader() {
-  const mainRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    document.documentElement.classList.add("js-enhanced");
-    const tl = heroEnterTimeline(mainRef.current);
-
-    const cleanups = Array.from(
-      mainRef.current?.querySelectorAll<HTMLElement>("[data-reveal-group]") ?? [],
-    ).map((group) =>
-      revealOnScroll(group.querySelectorAll("[data-reveal]"), {
-        start: "top 82%",
-        end: "top 58%",
-        offset: 28,
-        stagger: 0.07,
-      }),
-    );
-
-    return () => {
-      tl?.kill();
-      cleanups.forEach((cleanup) => cleanup());
-    };
-  }, []);
+  const reducedMotion = usePrefersReducedMotion();
+  const landingRef = useContentParallax(reducedMotion);
 
   return (
-    <main id="main-content" className="hero landing-page" ref={mainRef}>
-      <LandingScrollFlight />
+    <main id="main-content" className="hero landing-page" ref={landingRef}>
       <section className="hero-stage" aria-labelledby="landing-title">
-        <HeroBeam />
-        <div className="hero-ambient" aria-hidden="true" />
-        <div className="hero-noise" aria-hidden="true" />
+        <div className="hero-stage-shell">
+          <nav className="landing-nav" aria-label="Primary">
+            <Link href="/" className="landing-brand" aria-label="ausos home">
+              <span className="landing-brand-mark" aria-hidden="true">
+                <img src="/aologo.svg" alt="" className="landing-brand-logo" />
+              </span>
+            </Link>
 
-        <nav className="landing-nav hero-enter" data-hero-enter aria-label="Primary">
-          <Link href="/" className="landing-brand" aria-label="ausos home">
-            <span className="landing-brand-mark" aria-hidden="true">
-              <img src="/aologo.svg" alt="" className="landing-brand-logo" />
-            </span>
-            <span>ausos</span>
-          </Link>
-          <div className="landing-nav-links" aria-label="Landing sections">
-            <a href="#systems">Systems</a>
-            <a href="#workflow">Workflow</a>
-            <a href="#features">Features</a>
-            <a href="#export">Export</a>
-          </div>
-          <Link href="/login" className="landing-nav-cta">
-            <span>Start</span>
-            <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
-          </Link>
-        </nav>
-
-        <div className="hero-layout">
-          <div className="hero-copy">
-            <div className="hero-kicker hero-enter" data-hero-enter>
-              <Sparkles size={16} strokeWidth={1.8} aria-hidden="true" />
-              AI design system workspace
-            </div>
-            <h1 id="landing-title" className="hero-headline hero-enter" data-hero-enter>
-              Design systems that move from prompt to production.
-            </h1>
-            <p className="hero-body hero-enter" data-hero-enter>
-              Prototype product interfaces across Salt DS, Material 3, Fluent 2, Carbon,
-              and ausos in one AI-powered builder.
-            </p>
-            <div className="hero-actions hero-enter" data-hero-enter>
-              <Link href="/login" className="landing-btn landing-btn--primary">
-                <span>Start Building</span>
-                <ArrowRight size={17} strokeWidth={2} aria-hidden="true" />
-              </Link>
-              <a href="#workflow" className="landing-btn landing-btn--ghost">
-                <Layers3 size={17} strokeWidth={1.8} aria-hidden="true" />
-                <span>View Workflow</span>
-              </a>
-            </div>
-            <div className="hero-system-row hero-enter" data-hero-enter aria-label="Supported design systems">
-              {systems.map((system) => (
-                <span key={system.name}>{system.name}</span>
+            <div className="landing-nav-links" aria-label="Landing sections">
+              {navItems.map((item) => (
+                <a href={item.href} key={item.href}>
+                  {item.label}
+                </a>
               ))}
             </div>
+
+            <Link href="/login" className="landing-nav-cta">
+              <span>Create Account</span>
+              <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            </Link>
+          </nav>
+
+          <div className="stage-light stage-light--right" aria-hidden="true" />
+          <div className="stage-light stage-light--left" aria-hidden="true" />
+          <div className="stage-grid" aria-hidden="true" />
+
+          <div className="stage-track stage-track--top-left" aria-hidden="true" />
+          <div className="stage-track stage-track--left" aria-hidden="true" />
+          <div className="stage-track stage-track--right" aria-hidden="true" />
+          <div className="stage-track stage-track--bottom" aria-hidden="true" />
+          <div className="stage-motion-lines" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
           </div>
 
+          {markers.map((marker) => (
+            <div className={`stage-marker stage-marker--${marker.position}`} key={marker.key}>
+              <span className="stage-marker-icon" aria-hidden="true">
+                {marker.glyph}
+              </span>
+              <span>
+                <strong>{marker.label}</strong>
+                <em>{marker.meta}</em>
+              </span>
+            </div>
+          ))}
+
+          <a className="stage-play" href="#demo" aria-label="Jump to live builder demo">
+            <Play size={18} fill="currentColor" strokeWidth={1.8} aria-hidden="true" />
+          </a>
+
+          <div className="hero-copy">
+            <div className="hero-kicker">
+              <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
+              Unlock your system stack
+              <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
+            </div>
+            <h1 id="landing-title" className="hero-headline">
+              ausos for <span>Design Flow</span>
+            </h1>
+            <p className="hero-body">
+              Prototype, compare, and hand off production-ready interfaces across Salt DS,
+              Material 3, Fluent 2, Carbon, and ausos from one quiet AI workspace.
+            </p>
+            <div className="hero-actions">
+              <Link href="/login" className="landing-btn landing-btn--dark">
+                <span>Open App</span>
+                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+              </Link>
+              <a href="#workflow" className="landing-btn landing-btn--light">
+                <span>Discover More</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="stage-corner-note stage-corner-note--left">
+            <span aria-hidden="true">+</span>
+            <strong>02/03</strong>
+            <em>Scroll down</em>
+          </div>
+
+          <div className="stage-corner-note stage-corner-note--right">
+            <strong>Design horizons</strong>
+            <span aria-hidden="true" />
+          </div>
+
+          <div className="stage-logo-rail" aria-label="Previewed with modern product teams">
+            {partnerLogos.map((logo) => (
+              <span key={logo}>{logo}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="proof-strip" aria-label="Product proof points">
+        {proof.map((item) => (
+          <div className="proof-item" key={item.value}>
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </section>
+
+      <section id="demo" className="landing-section demo-section" aria-labelledby="demo-title">
+        <ContentAtmosphere />
+        <div className="section-heading demo-heading content-parallax-heading">
+          <span className="section-kicker">Live demo</span>
+          <h2 id="demo-title">See the builder move from prompt to handoff.</h2>
+        </div>
+        <div className="demo-frame content-card-grid">
           <HeroPreviewDemo />
         </div>
       </section>
 
-      <section className="proof-strip" data-reveal-group aria-label="Product proof points">
-        <div className="proof-item" data-reveal>
-          <strong>5</strong>
-          <span>design systems</span>
-        </div>
-        <div className="proof-item" data-reveal>
-          <strong>Theme</strong>
-          <span>mode, contrast, density</span>
-        </div>
-        <div className="proof-item" data-reveal>
-          <strong>Preview</strong>
-          <span>desktop, tablet, mobile</span>
-        </div>
-        <div className="proof-item" data-reveal>
-          <strong>Export</strong>
-          <span>HTML, React, Vite</span>
-        </div>
-      </section>
-
-      <section id="systems" className="landing-section systems-section" data-reveal-group>
-        <div className="section-heading" data-reveal>
+      <section id="systems" className="landing-section systems-section">
+        <ContentAtmosphere />
+        <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Systems</span>
-          <h2>One prompt surface for five distinct design languages.</h2>
+          <h2>One interface idea, five distinct product languages.</h2>
           <p>
-            Keep each system character intact while exploring the same product idea across
-            enterprise, material, fluent, carbon, and glass-native interfaces.
+            ausos keeps each system's rhythm intact, from dense trading screens to softer
+            review surfaces and glass-native AI workspaces.
           </p>
         </div>
-        <div className="system-grid">
+        <div className="system-grid content-card-grid">
           {systems.map((system) => (
-            <article className="system-card" key={system.name} data-reveal>
-              <span className="system-card-dot" aria-hidden="true" />
+            <article className="system-card content-card" data-system={system.key} key={system.name}>
+              <span className="system-card-signal">{system.signal}</span>
               <h3>{system.name}</h3>
               <p>{system.detail}</p>
             </article>
@@ -537,14 +680,15 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section id="workflow" className="landing-section workflow-section" data-reveal-group>
-        <div className="section-heading" data-reveal>
+      <section id="workflow" className="landing-section workflow-section">
+        <ContentAtmosphere />
+        <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Workflow</span>
-          <h2>From first prompt to design-system handoff.</h2>
+          <h2>A focused path from prompt to handoff.</h2>
         </div>
-        <div className="workflow-grid">
+        <div className="workflow-grid content-card-grid">
           {workflow.map((item) => (
-            <article className="workflow-step" key={item.eyebrow} data-reveal>
+            <article className="workflow-step content-card" key={item.eyebrow}>
               <span>{item.eyebrow}</span>
               <h3>{item.title}</h3>
               <p>{item.body}</p>
@@ -553,14 +697,19 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section id="features" className="landing-section features-section" data-reveal-group>
-        <div className="section-heading" data-reveal>
-          <span className="section-kicker">Features</span>
-          <h2>Built for design engineers who need to compare, refine, and hand off.</h2>
+      <section id="features" className="landing-section features-section">
+        <ContentAtmosphere />
+        <div className="section-heading content-parallax-heading">
+          <span className="section-kicker">Studio</span>
+          <h2>Polished enough for critique, practical enough for production.</h2>
+          <p>
+            The product work stays visible: prompt context, system comparison, responsive
+            review, and export all sit inside the same workspace.
+          </p>
         </div>
-        <div className="feature-grid">
+        <div className="feature-grid content-card-grid">
           {features.map(({ icon: Icon, title, body }) => (
-            <article className="feature-card" key={title} data-reveal>
+            <article className="feature-card content-card" key={title}>
               <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
               <h3>{title}</h3>
               <p>{body}</p>
@@ -569,14 +718,15 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section id="export" className="landing-section export-section" data-reveal-group>
-        <div className="export-panel" data-reveal>
+      <section id="export" className="landing-section export-section">
+        <ContentAtmosphere />
+        <div className="export-panel content-card">
           <div>
-            <span className="section-kicker">Ready</span>
+            <span className="section-kicker">Private studio</span>
             <h2>Start with a prompt. Leave with a system-aware interface.</h2>
             <p>
-              Build, preview, share, and export from a single workspace tuned for real
-              product UI.
+              Build the first direction, compare it across product languages, and carry the
+              selected surface into review, sharing, and export.
             </p>
           </div>
           <ul className="export-list" aria-label="Supported handoff paths">
@@ -584,16 +734,16 @@ export function HeroHeader() {
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
           </ul>
-          <Link href="/login" className="landing-btn landing-btn--primary">
-            <span>Start Building</span>
-            <ArrowRight size={17} strokeWidth={2} aria-hidden="true" />
+          <Link href="/login" className="landing-btn landing-btn--light">
+            <span>Enter Studio</span>
+            <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
           </Link>
         </div>
       </section>
 
       <footer className="landing-footer">
         <span>ausos</span>
-        <span>AI-powered design system builder</span>
+        <span>AI-powered design-system builder</span>
       </footer>
     </main>
   );
