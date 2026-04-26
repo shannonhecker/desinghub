@@ -2464,10 +2464,176 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   PR2 motion polish — halo, topo, headline sweep, beam-fall,
+   card hover tilt, demo orbit. All gated for reduced-motion below.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Halo pointer — soft radial glow follows cursor on desktop. JS sets
+   --hero-mouse-x / --hero-mouse-y from useHaloPointer. */
+.hero {
+  --hero-mouse-x: 50%;
+  --hero-mouse-y: 35%;
+}
+
+.hero-halo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    640px 380px at var(--hero-mouse-x) var(--hero-mouse-y),
+    rgba(196, 244, 222, 0.09) 0%,
+    rgba(180, 144, 245, 0.04) 32%,
+    transparent 72%
+  );
+  mix-blend-mode: screen;
+  transition: background var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease);
+}
+
+/* Topographic contour SVG — replaces the old .stage-track corner divs.
+   Three dotted paths draw in on mount, then drift slowly. */
+.topo-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+.topo-line {
+  fill: none;
+  stroke: rgba(232, 238, 232, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+  animation:
+    topo-draw 4s var(--dh-motion-ease) both,
+    topo-drift 24s linear infinite;
+}
+
+.topo-line--1 { animation-delay: 0s, 0s; }
+.topo-line--2 { animation-delay: 0.3s, -8s; opacity: 0.72; }
+.topo-line--3 { animation-delay: 0.6s, -16s; opacity: 0.55; }
+
+@keyframes topo-draw {
+  from { stroke-dashoffset: 1200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes topo-drift {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -32; }
+}
+
+/* Headline gradient sweep — right-edge fade + slow horizontal sweep.
+   Nested span inherits ".hero-headline span" base color rule above. */
+.hero-headline span {
+  background: linear-gradient(
+    90deg,
+    var(--dh-brand-fg) 0%,
+    var(--dh-brand-fg) 55%,
+    rgba(232, 238, 232, 0.55) 92%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: headline-sweep 9s var(--dh-motion-ease) infinite;
+}
+
+@keyframes headline-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 28% 50%; }
+}
+
+/* Card hover tilt — only on hover-capable devices with fine pointer. */
+@media (hover: hover) and (pointer: fine) {
+  .content-card {
+    transition:
+      transform var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease),
+      box-shadow var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease);
+  }
+  .content-card:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-2px);
+    box-shadow: var(--dh-shadow-lg);
+  }
+}
+
+/* Demo orbit — slow-rotating dashed ellipse around the preview shell,
+   plus a single spark that traverses the orbit. */
+.demo-orbit {
+  position: absolute;
+  inset: -3% -1%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  width: auto;
+  height: auto;
+}
+
+.demo-orbit-ring {
+  fill: none;
+  stroke: rgba(196, 244, 222, 0.18);
+  stroke-width: 1;
+  stroke-dasharray: 2 8;
+  animation: orbit-spin 60s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.demo-orbit-spark {
+  fill: none;
+  stroke: var(--dh-accent-mint);
+  stroke-width: 1.6;
+  stroke-dasharray: 24 1176;
+  stroke-linecap: round;
+  animation: orbit-spark 9s var(--dh-motion-ease) infinite;
+  filter: drop-shadow(0 0 4px var(--aurora-blob-1-inner));
+}
+
+.demo-orbit--paused .demo-orbit-ring,
+.demo-orbit--paused .demo-orbit-spark {
+  animation-play-state: paused;
+}
+
+@keyframes orbit-spin {
+  to { stroke-dashoffset: -1200; }
+}
+
+@keyframes orbit-spark {
+  0%   { stroke-dashoffset: 0; opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { stroke-dashoffset: -1200; opacity: 0; }
+}
+
+/* Beam-fall — turns the 5 static .stage-motion-lines spans into
+   staggered falling vertical light beams (matches reference img 1). */
+.stage-motion-lines span {
+  animation: beam-fall 8s var(--dh-motion-ease) infinite;
+}
+.stage-motion-lines span:nth-child(1) { animation-delay: 0s; }
+.stage-motion-lines span:nth-child(2) { animation-delay: 1.6s; }
+.stage-motion-lines span:nth-child(3) { animation-delay: 3.2s; }
+.stage-motion-lines span:nth-child(4) { animation-delay: 4.8s; }
+.stage-motion-lines span:nth-child(5) { animation-delay: 6.4s; }
+
+@keyframes beam-fall {
+  0%   { opacity: 0; transform: translateY(-30%); }
+  20%  { opacity: 0.6; }
+  80%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(60%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .content-atmosphere span,
   .hero-product,
   .stage-track::after,
+  .stage-motion-lines span,
   .stage-motion-lines span::after,
   .preview-progress-track span,
   .preview-copy-swap,
@@ -2482,8 +2648,16 @@
   .preview-detail-row,
   .preview-chart,
   .preview-chart span,
-  .preview-float {
+  .preview-float,
+  .topo-line,
+  .demo-orbit-ring,
+  .demo-orbit-spark,
+  .hero-headline span {
     animation: none !important;
+  }
+
+  .hero-headline span {
+    background-position: 0% 50%;
   }
 
   .preview-progress-track span {
@@ -2492,6 +2666,14 @@
 
   .preview-tab--active {
     transform: none;
+  }
+
+  .hero-halo {
+    transition: none;
+  }
+
+  .content-card:hover {
+    transform: none !important;
   }
 
   .content-atmosphere,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
+import { heroEnterTimeline, revealOnScroll } from "@/lib/motion";
 import "./hero.css";
 
 const navItems = [
@@ -383,6 +384,153 @@ function ContentAtmosphere() {
   );
 }
 
+/**
+ * Halo pointer — sets --hero-mouse-x / --hero-mouse-y on the hero root
+ * via RAF on pointermove, used by .hero-halo to position a soft radial
+ * glow behind the headline (matches the aurora halo in reference img 1).
+ *
+ * Disabled on touch + reduced-motion + small viewports.
+ */
+function useHaloPointer(
+  disabled: boolean,
+  rootRef: RefObject<HTMLElement | null>,
+) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (typeof window === "undefined" || !root || disabled) return;
+    if (window.matchMedia("(hover: none)").matches) return;
+    if (window.matchMedia("(max-width: 768px)").matches) return;
+
+    let frameId = 0;
+    let pendingX = 50;
+    let pendingY = 35;
+
+    const apply = () => {
+      frameId = 0;
+      root.style.setProperty("--hero-mouse-x", `${pendingX.toFixed(1)}%`);
+      root.style.setProperty("--hero-mouse-y", `${pendingY.toFixed(1)}%`);
+    };
+
+    const onMove = (event: PointerEvent) => {
+      const rect = root.getBoundingClientRect();
+      pendingX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 100;
+      pendingY = ((event.clientY - rect.top) / Math.max(rect.height, 1)) * 100;
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(apply);
+    };
+
+    apply();
+    root.addEventListener("pointermove", onMove);
+    return () => {
+      if (frameId) window.cancelAnimationFrame(frameId);
+      root.removeEventListener("pointermove", onMove);
+    };
+  }, [disabled, rootRef]);
+}
+
+/**
+ * Topographic contour SVG — replaces the prior .stage-track divs with
+ * inline SVG paths whose stroke-dashoffset draws in on mount and slowly
+ * drifts after, evoking the dotted contour map in reference img 1.
+ */
+function TopoLines() {
+  return (
+    <svg
+      className="topo-svg"
+      viewBox="0 0 1200 600"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path className="topo-line topo-line--1" d="M-20,180 C220,140 360,260 560,210 C740,170 900,290 1220,240" />
+      <path className="topo-line topo-line--2" d="M-20,360 C200,330 340,440 540,400 C760,360 920,470 1220,430" />
+      <path className="topo-line topo-line--3" d="M-20,500 C180,470 320,560 520,520 C760,470 940,560 1220,540" />
+    </svg>
+  );
+}
+
+/**
+ * Demo orbit — elliptical ring around the preview-shell (matches img 3
+ * wallet orbit). The ring rotates slowly; on each step change a small
+ * spark traverses to the new active tab.
+ */
+function DemoOrbit({ paused }: { paused: boolean }) {
+  return (
+    <svg
+      className={`demo-orbit${paused ? " demo-orbit--paused" : ""}`}
+      viewBox="0 0 800 480"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <ellipse cx="400" cy="240" rx="380" ry="220" className="demo-orbit-ring" />
+      <ellipse cx="400" cy="240" rx="380" ry="220" className="demo-orbit-spark" />
+    </svg>
+  );
+}
+
+/**
+ * Count-up — animates a numeric value from 0 to `target` over `duration`
+ * ms when the element enters the viewport. Skips animation under
+ * reduced-motion (renders the final value immediately).
+ *
+ * Returns a ref to attach to the displaying element. The element's
+ * textContent is updated directly to avoid React re-renders per frame.
+ */
+function useCountUp(
+  target: number | null,
+  reducedMotion: boolean,
+  duration = 1200,
+) {
+  const ref = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || target === null) return;
+
+    if (reducedMotion || typeof window === "undefined") {
+      el.textContent = String(target);
+      return;
+    }
+
+    let frameId = 0;
+    let startedAt = 0;
+    let running = false;
+
+    const tick = (now: number) => {
+      frameId = 0;
+      if (!startedAt) startedAt = now;
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(target * eased);
+      el.textContent = String(value);
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !running) {
+            running = true;
+            startedAt = 0;
+            frameId = window.requestAnimationFrame(tick);
+            observer.disconnect();
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      if (frameId) window.cancelAnimationFrame(frameId);
+    };
+  }, [target, reducedMotion, duration]);
+
+  return ref;
+}
+
 function PreviewSurface({ step }: { step: PreviewDemoStep }) {
   return (
     <div className={`preview-layout preview-layout--${step.layout}`}>
@@ -460,6 +608,7 @@ function HeroPreviewDemo() {
       data-preview-paused={demoPaused ? "true" : "false"}
       aria-label="Design Hub preview demo"
     >
+      <DemoOrbit paused={demoPaused} />
       <div className="preview-topbar">
         <div className="preview-dots" aria-hidden="true">
           <span />
@@ -538,12 +687,39 @@ function HeroPreviewDemo() {
 export function HeroHeader() {
   const reducedMotion = usePrefersReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
+  const proofRef = useRef<HTMLElement | null>(null);
+  const systemGridRef = useRef<HTMLDivElement | null>(null);
+  const workflowGridRef = useRef<HTMLDivElement | null>(null);
+  const featureGridRef = useRef<HTMLDivElement | null>(null);
+
+  useHaloPointer(reducedMotion, landingRef);
+
+  useEffect(() => {
+    const root = landingRef.current;
+    if (!root) return;
+    const tl = heroEnterTimeline(root);
+    return () => {
+      tl?.kill();
+    };
+  }, [landingRef]);
+
+  useEffect(() => {
+    const cleanups = [
+      proofRef.current && revealOnScroll(proofRef.current.querySelectorAll(".proof-item"), { stagger: 0.05 }),
+      systemGridRef.current && revealOnScroll(systemGridRef.current.querySelectorAll(".system-card")),
+      workflowGridRef.current && revealOnScroll(workflowGridRef.current.querySelectorAll(".workflow-step")),
+      featureGridRef.current && revealOnScroll(featureGridRef.current.querySelectorAll(".feature-card")),
+    ];
+    return () => {
+      for (const c of cleanups) if (typeof c === "function") c();
+    };
+  }, []);
 
   return (
     <main id="main-content" className="hero landing-page" ref={landingRef}>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
-          <nav className="landing-nav" aria-label="Primary">
+          <nav className="landing-nav" aria-label="Primary" data-hero-enter>
             <Link href="/" className="landing-brand" aria-label="ausos home">
               <span className="landing-brand-mark" aria-hidden="true">
                 <img src="/aologo.svg" alt="" className="landing-brand-logo" />
@@ -564,14 +740,12 @@ export function HeroHeader() {
             </Link>
           </nav>
 
+          <div className="hero-halo" aria-hidden="true" />
           <div className="stage-light stage-light--right" aria-hidden="true" />
           <div className="stage-light stage-light--left" aria-hidden="true" />
           <div className="stage-grid" aria-hidden="true" />
 
-          <div className="stage-track stage-track--top-left" aria-hidden="true" />
-          <div className="stage-track stage-track--left" aria-hidden="true" />
-          <div className="stage-track stage-track--right" aria-hidden="true" />
-          <div className="stage-track stage-track--bottom" aria-hidden="true" />
+          <TopoLines />
           <div className="stage-motion-lines" aria-hidden="true">
             <span />
             <span />
@@ -581,7 +755,11 @@ export function HeroHeader() {
           </div>
 
           {markers.map((marker) => (
-            <div className={`stage-marker stage-marker--${marker.position}`} key={marker.key}>
+            <div
+              className={`stage-marker stage-marker--${marker.position}`}
+              key={marker.key}
+              data-hero-enter
+            >
               <span className="stage-marker-icon" aria-hidden="true">
                 {marker.glyph}
               </span>
@@ -597,19 +775,19 @@ export function HeroHeader() {
           </a>
 
           <div className="hero-copy">
-            <div className="hero-kicker">
+            <div className="hero-kicker" data-hero-enter>
               <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
               Unlock your system stack
               <ArrowRight size={12} strokeWidth={2} aria-hidden="true" />
             </div>
-            <h1 id="landing-title" className="hero-headline">
+            <h1 id="landing-title" className="hero-headline" data-hero-enter>
               ausos for <span>Design Flow</span>
             </h1>
-            <p className="hero-body">
+            <p className="hero-body" data-hero-enter>
               Prototype, compare, and hand off production-ready interfaces across Salt DS,
               Material 3, Fluent 2, Carbon, and ausos from one quiet AI workspace.
             </p>
-            <div className="hero-actions">
+            <div className="hero-actions" data-hero-enter>
               <Link href="/login" className="landing-btn landing-btn--dark">
                 <span>Open App</span>
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
@@ -639,7 +817,7 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section className="proof-strip" aria-label="Product proof points">
+      <section className="proof-strip" aria-label="Product proof points" ref={proofRef}>
         {proof.map((item) => (
           <div className="proof-item" key={item.value}>
             <strong>{item.value}</strong>
@@ -669,7 +847,7 @@ export function HeroHeader() {
             review surfaces and glass-native AI workspaces.
           </p>
         </div>
-        <div className="system-grid content-card-grid">
+        <div className="system-grid content-card-grid" ref={systemGridRef}>
           {systems.map((system) => (
             <article className="system-card content-card" data-system={system.key} key={system.name}>
               <span className="system-card-signal">{system.signal}</span>
@@ -686,7 +864,7 @@ export function HeroHeader() {
           <span className="section-kicker">Workflow</span>
           <h2>A focused path from prompt to handoff.</h2>
         </div>
-        <div className="workflow-grid content-card-grid">
+        <div className="workflow-grid content-card-grid" ref={workflowGridRef}>
           {workflow.map((item) => (
             <article className="workflow-step content-card" key={item.eyebrow}>
               <span>{item.eyebrow}</span>
@@ -707,7 +885,7 @@ export function HeroHeader() {
             review, and export all sit inside the same workspace.
           </p>
         </div>
-        <div className="feature-grid content-card-grid">
+        <div className="feature-grid content-card-grid" ref={featureGridRef}>
           {features.map(({ icon: Icon, title, body }) => (
             <article className="feature-card content-card" key={title}>
               <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
