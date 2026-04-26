@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import React, { useState, FormEvent } from "react";
-import { ArrowRight, LockKeyhole, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import "./login.css";
 
 export default function LoginPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,17 +85,31 @@ export default function LoginPage() {
               <label htmlFor="login-password" className="login-field-label">
                 Password
               </label>
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                autoFocus
-                aria-invalid={error || undefined}
-                aria-describedby={error ? "login-error" : undefined}
-                className={`login-input${error ? " has-error" : ""}`}
-              />
+              <div className="login-input-wrap">
+                <input
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  autoComplete="current-password"
+                  aria-invalid={error || undefined}
+                  aria-describedby={error ? "login-error" : undefined}
+                  className={`login-input${error ? " has-error" : ""}`}
+                />
+                <button
+                  type="button"
+                  className="login-pw-toggle"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((v) => !v)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={16} strokeWidth={1.8} aria-hidden="true" />
+                  ) : (
+                    <Eye size={16} strokeWidth={1.8} aria-hidden="true" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (

@@ -18,7 +18,6 @@ import { heroEnterTimeline, revealOnScroll } from "@/lib/motion";
 import "./hero.css";
 
 const navItems = [
-  { label: "Home", href: "#main-content" },
   { label: "Demo", href: "#demo" },
   { label: "Systems", href: "#systems" },
   { label: "Workflow", href: "#workflow" },
@@ -116,10 +115,10 @@ const features = [
 ];
 
 const markers = [
-  { key: "salt", label: "Salt", meta: "20.4s", position: "top-left", glyph: "01" },
-  { key: "m3", label: "Material", meta: "2.8k", position: "top-right", glyph: "02" },
-  { key: "fluent", label: "Fluent", meta: "19.3k", position: "left", glyph: "03" },
-  { key: "carbon", label: "Carbon", meta: "1.4k", position: "right", glyph: "04" },
+  { key: "salt", label: "Salt", position: "top-left", glyph: "01" },
+  { key: "m3", label: "Material", position: "top-right", glyph: "02" },
+  { key: "fluent", label: "Fluent", position: "left", glyph: "03" },
+  { key: "carbon", label: "Carbon", position: "right", glyph: "04" },
 ];
 
 const proof = [
@@ -824,7 +823,6 @@ export function HeroHeader() {
               </span>
               <span>
                 <strong>{marker.label}</strong>
-                <em>{marker.meta}</em>
               </span>
             </div>
           ))}
@@ -851,17 +849,6 @@ export function HeroHeader() {
                 <span>Discover More</span>
               </a>
             </div>
-          </div>
-
-          <div className="stage-corner-note stage-corner-note--left">
-            <span aria-hidden="true">+</span>
-            <strong>02/03</strong>
-            <em>Scroll down</em>
-          </div>
-
-          <div className="stage-corner-note stage-corner-note--right">
-            <strong>Design horizons</strong>
-            <span aria-hidden="true" />
           </div>
 
           <div className="stage-logo-rail" aria-label="Previewed with modern product teams">
