@@ -23,14 +23,29 @@ async function hashToken(password: string): Promise<string> {
  * Protected routes: /builder (and any sub-paths)
  * Public routes:    /, /login, /landing, /ui-kit, /api/*, /_next/*, static assets
  *
- * When STAGING_PASSWORD is absent, auth is disabled entirely.
+ * Configuration:
+ *   - STAGING_PASSWORD absent  → auth disabled (public mode)
+ *   - STAGING_PASSWORD present + STAGING_TOKEN_SECRET absent → fail-closed
+ *     (every request redirected to /login). Previously this state silently
+ *     bypassed auth, which was a security hole.
  */
 export async function middleware(request: NextRequest) {
   const expectedPassword = process.env.STAGING_PASSWORD;
 
-  // Skip entirely when not configured (password or token secret missing)
-  if (!expectedPassword || !TOKEN_SECRET) {
+  // No password configured → public mode, no auth required.
+  if (!expectedPassword) {
     return NextResponse.next();
+  }
+
+  // Misconfiguration: password set but secret missing → fail closed.
+  // Redirect every protected request to /login. The login route will
+  // also short-circuit and render the form (which can't actually
+  // authenticate without TOKEN_SECRET — operator must set both).
+  if (!TOKEN_SECRET) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    return NextResponse.redirect(loginUrl);
   }
 
   const { pathname } = request.nextUrl;

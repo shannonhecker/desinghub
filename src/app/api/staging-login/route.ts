@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET ?? "";
 
@@ -11,6 +12,33 @@ export function hashToken(password: string): string {
 // the same hex output for the same inputs, ensuring cookie compatibility.
 
 export async function POST(request: NextRequest) {
+  // Rate limit before any password work — blocks brute-force attempts at
+  // the same 20-req/60s window the chat + builder routes use.
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const limit = await checkRateLimit(ip);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.resetInSeconds) },
+      },
+    );
+  }
+
+  // Misconfiguration guard: password gate enabled but no signing secret.
+  // Reject explicitly rather than minting a useless cookie.
+  const expectedPassword = process.env.STAGING_PASSWORD;
+  if (expectedPassword && !TOKEN_SECRET) {
+    return NextResponse.json(
+      { error: "Auth misconfigured: STAGING_TOKEN_SECRET is required when STAGING_PASSWORD is set." },
+      { status: 503 },
+    );
+  }
+
   let password = "";
 
   // Support both JSON and FormData bodies
@@ -23,8 +51,6 @@ export async function POST(request: NextRequest) {
     password = (formData.get("password") as string | null) ?? "";
   }
 
-  const expectedPassword = process.env.STAGING_PASSWORD;
-
   if (!expectedPassword || password !== expectedPassword) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
@@ -34,7 +60,10 @@ export async function POST(request: NextRequest) {
 
   response.cookies.set("ausos_auth_token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    // Browsers reject `secure: true` cookies on http://localhost, which would
+    // break local dev. Everywhere else (preview, staging, production) the
+    // cookie must be HTTPS-only to prevent token leakage.
+    secure: process.env.NODE_ENV !== "development",
     sameSite: "lax",
     maxAge: 60 * 60,
     path: "/",
