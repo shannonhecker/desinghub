@@ -282,10 +282,14 @@
   text-transform: uppercase;
 }
 
+.login-input-wrap {
+  position: relative;
+}
+
 .login-input {
   width: 100%;
   min-height: 46px;
-  padding: 0 var(--dh-space-12);
+  padding: 0 var(--dh-space-40) 0 var(--dh-space-12);
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: var(--dh-curve-md);
   outline: none;
@@ -311,6 +315,39 @@
 
 .login-input.has-error {
   border-color: rgba(255, 120, 120, 0.62);
+}
+
+.login-pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: var(--dh-space-8);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--dh-curve-sm);
+  background: transparent;
+  color: var(--login-soft);
+  cursor: pointer;
+  transition:
+    color 180ms var(--login-ease),
+    background 180ms var(--login-ease),
+    border-color 180ms var(--login-ease);
+}
+
+.login-pw-toggle:hover {
+  color: var(--login-text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.login-pw-toggle:focus-visible {
+  border-color: rgba(94, 231, 223, 0.62);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(94, 231, 223, 0.18);
 }
 
 .login-error {
