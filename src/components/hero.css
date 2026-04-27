@@ -27,7 +27,12 @@
   min-height: 100vh;
   isolation: isolate;
   overflow-x: clip;
-  background: linear-gradient(180deg, var(--dh-page-bg-soft) 0%, var(--dh-page-bg-deep) 38%, var(--page-bg) 100%);
+  background:
+    linear-gradient(120deg, rgba(94, 231, 223, 0.08), transparent 32%),
+    radial-gradient(ellipse at 14% 8%, rgba(180, 144, 245, 0.16), transparent 38rem),
+    radial-gradient(ellipse at 86% 12%, rgba(247, 138, 184, 0.11), transparent 40rem),
+    radial-gradient(ellipse at 42% 92%, rgba(255, 173, 92, 0.07), transparent 34rem),
+    linear-gradient(180deg, var(--dh-page-bg-deep), var(--dh-brand-bg-deep) 48%, var(--page-bg));
   color: var(--text);
   font-family: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -44,10 +49,9 @@
 
 .hero::before {
   background:
-    radial-gradient(ellipse at 84% 5%, rgba(213, 230, 216, 0.11), transparent 25rem),
-    radial-gradient(ellipse at 5% 74%, rgba(220, 235, 226, 0.07), transparent 23rem),
-    radial-gradient(ellipse at 51% 28%, rgba(244, 250, 241, 0.028), transparent 34rem),
-    radial-gradient(ellipse at 54% 108%, rgba(112, 156, 144, 0.04), transparent 42rem);
+    radial-gradient(ellipse at 16% 72%, rgba(94, 231, 223, 0.18), transparent 32rem),
+    radial-gradient(ellipse at 64% 18%, rgba(180, 144, 245, 0.18), transparent 38rem),
+    radial-gradient(ellipse at 88% 66%, rgba(247, 138, 184, 0.1), transparent 34rem);
 }
 
 .hero::after {
@@ -233,7 +237,7 @@
   right: -10%;
   width: min(460px, 42vw);
   height: 310px;
-  background: rgba(221, 239, 218, 0.18);
+  background: rgba(180, 144, 245, 0.18);
 }
 
 .stage-light--left {
@@ -241,7 +245,7 @@
   bottom: 58px;
   width: min(360px, 38vw);
   height: 210px;
-  background: rgba(220, 233, 226, 0.12);
+  background: rgba(94, 231, 223, 0.16);
 }
 
 .stage-grid {
@@ -771,6 +775,54 @@
   --preview-surface-strong: rgba(180, 144, 245, 0.1);
   --preview-border: rgba(180, 144, 245, 0.22);
   --preview-radius: var(--dh-curve-md);
+}
+
+.hero-product[data-preview-mode="light"] {
+  --preview-on-accent: #ffffff;
+  --preview-surface: rgba(255, 255, 255, 0.92);
+  --preview-surface-strong: rgba(255, 255, 255, 0.72);
+  --preview-border: rgba(41, 35, 58, 0.13);
+
+  border-color: rgba(103, 80, 164, 0.18);
+  background:
+    radial-gradient(ellipse at 18% 100%, rgba(103, 80, 164, 0.11), transparent 34rem),
+    radial-gradient(ellipse at 92% 4%, rgba(179, 38, 30, 0.075), transparent 32rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 246, 252, 0.9)),
+    #fefbff;
+  box-shadow:
+    0 34px 100px rgba(28, 24, 38, 0.18),
+    0 0 70px rgba(103, 80, 164, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-system="salt"] {
+  --preview-accent: #007681;
+  --preview-accent-2: #2563eb;
+  --preview-border: rgba(0, 118, 129, 0.18);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-system="m3"] {
+  --preview-accent: #6750a4;
+  --preview-accent-2: #b3261e;
+  --preview-border: rgba(103, 80, 164, 0.18);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-system="fluent"] {
+  --preview-accent: #0f6cbd;
+  --preview-accent-2: #0078d4;
+  --preview-border: rgba(15, 108, 189, 0.18);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-system="carbon"] {
+  --preview-accent: #0f62fe;
+  --preview-accent-2: #24a148;
+  --preview-border: rgba(15, 98, 254, 0.18);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-system="ausos"] {
+  --preview-accent: #6750a4;
+  --preview-accent-2: #007681;
+  --preview-border: rgba(103, 80, 164, 0.18);
 }
 
 .hero-product[data-preview-paused="true"],
@@ -1332,6 +1384,109 @@
   bottom: var(--dh-space-16);
   left: var(--dh-space-16);
   animation-delay: -2.2s;
+}
+
+.hero-product[data-preview-mode="light"] .preview-topbar {
+  border-bottom-color: rgba(41, 35, 58, 0.1);
+}
+
+.hero-product[data-preview-mode="light"] .preview-dots span {
+  background: rgba(41, 35, 58, 0.22);
+}
+
+.hero-product[data-preview-mode="light"] .preview-title {
+  color: rgba(29, 27, 32, 0.76);
+}
+
+.hero-product[data-preview-mode="light"] .preview-status {
+  color: var(--preview-accent);
+}
+
+.hero-product[data-preview-mode="light"] .preview-demo-control {
+  border-color: rgba(41, 35, 58, 0.12);
+  background: rgba(255, 255, 255, 0.74);
+  color: rgba(29, 27, 32, 0.68);
+  box-shadow: 0 1px 2px rgba(28, 24, 38, 0.06);
+}
+
+.hero-product[data-preview-mode="light"] .preview-demo-control:hover {
+  border-color: rgba(103, 80, 164, 0.26);
+  background: #ffffff;
+  color: var(--preview-accent);
+}
+
+.hero-product[data-preview-mode="light"] .preview-progress-track {
+  background: rgba(103, 80, 164, 0.1);
+}
+
+.hero-product[data-preview-mode="light"] .preview-sidebar {
+  border-right-color: rgba(41, 35, 58, 0.1);
+}
+
+.hero-product[data-preview-mode="light"] .preview-tab {
+  color: rgba(29, 27, 32, 0.52);
+}
+
+.hero-product[data-preview-mode="light"] .preview-tab--active {
+  color: var(--preview-on-accent);
+  background: var(--preview-accent);
+}
+
+.hero-product[data-preview-mode="light"] .preview-prompt,
+.hero-product[data-preview-mode="light"] .preview-toolbar {
+  color: rgba(29, 27, 32, 0.62);
+}
+
+.hero-product[data-preview-mode="light"] .preview-board {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.hero-product[data-preview-mode="light"] .preview-toolbar span,
+.hero-product[data-preview-mode="light"] .preview-hero-card,
+.hero-product[data-preview-mode="light"] .preview-metrics div,
+.hero-product[data-preview-mode="light"] .preview-detail-list {
+  box-shadow: 0 1px 2px rgba(28, 24, 38, 0.04);
+}
+
+.hero-product[data-preview-mode="light"] .preview-hero-card strong,
+.hero-product[data-preview-mode="light"] .preview-metrics strong,
+.hero-product[data-preview-mode="light"] .preview-detail-row strong {
+  color: #1d1b20;
+}
+
+.hero-product[data-preview-mode="light"] .preview-hero-card p {
+  color: rgba(29, 27, 32, 0.64);
+}
+
+.hero-product[data-preview-mode="light"] .preview-metrics span,
+.hero-product[data-preview-mode="light"] .preview-detail-row span {
+  color: rgba(29, 27, 32, 0.54);
+}
+
+.hero-product[data-preview-mode="light"] .preview-detail-row {
+  background: rgba(103, 80, 164, 0.055);
+}
+
+.hero-product[data-preview-mode="light"] .preview-chart {
+  background:
+    linear-gradient(rgba(41, 35, 58, 0.08) 1px, transparent 1px),
+    rgba(103, 80, 164, 0.045);
+  background-size: 100% 25%;
+}
+
+.hero-product[data-preview-mode="light"] .preview-float {
+  border-color: rgba(41, 35, 58, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+  color: rgba(29, 27, 32, 0.74);
+  box-shadow: 0 18px 44px rgba(28, 24, 38, 0.16);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-stage="prompt"] .preview-prompt {
+  background: color-mix(in srgb, var(--preview-accent) 8%, white);
+}
+
+.hero-product[data-preview-mode="light"][data-preview-stage="tune"] .preview-toolbar span {
+  color: rgba(29, 27, 32, 0.66);
 }
 
 @keyframes preview-progress {
@@ -2074,14 +2229,19 @@
 
 @media (max-width: 640px) {
   .hero {
-    background: linear-gradient(180deg, var(--dh-page-bg-soft) 0%, var(--dh-page-bg-deep) 48%, var(--dh-page-bg-deep) 100%);
+    background:
+      linear-gradient(120deg, rgba(94, 231, 223, 0.08), transparent 32%),
+      radial-gradient(ellipse at 14% 8%, rgba(180, 144, 245, 0.16), transparent 38rem),
+      radial-gradient(ellipse at 86% 12%, rgba(247, 138, 184, 0.11), transparent 40rem),
+      radial-gradient(ellipse at 42% 92%, rgba(255, 173, 92, 0.07), transparent 34rem),
+      linear-gradient(180deg, var(--dh-page-bg-deep), var(--dh-brand-bg-deep) 48%, var(--page-bg));
   }
 
   .hero::before {
     background:
-      radial-gradient(ellipse at 74% 2%, rgba(206, 229, 207, 0.075), transparent 19rem),
-      radial-gradient(ellipse at 0% 76%, rgba(221, 232, 225, 0.052), transparent 18rem),
-      radial-gradient(ellipse at 48% 32%, rgba(244, 250, 241, 0.025), transparent 21rem);
+      radial-gradient(ellipse at 16% 72%, rgba(94, 231, 223, 0.18), transparent 32rem),
+      radial-gradient(ellipse at 64% 18%, rgba(180, 144, 245, 0.18), transparent 38rem),
+      radial-gradient(ellipse at 88% 66%, rgba(247, 138, 184, 0.1), transparent 34rem);
   }
 
   .hero-stage {

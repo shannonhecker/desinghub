@@ -143,6 +143,7 @@ type PreviewLayout = "trade" | "material" | "command" | "carbon" | "glass";
 
 type PreviewDemoStep = {
   id: string;
+  mode: "light" | "dark";
   phase: "prompt" | "generate" | "compare" | "tune" | "share";
   system: PreviewSystemKey;
   layout: PreviewLayout;
@@ -162,12 +163,13 @@ type PreviewDemoStep = {
 const previewDemoSteps: PreviewDemoStep[] = [
   {
     id: "prompt",
+    mode: "light",
     phase: "prompt",
     system: "salt",
     layout: "trade",
     status: "Prompt ready",
     prompt: "Build a Salt DS trading operations board with status, exposure, and approval queues.",
-    toolbar: ["Desktop", "Dark", "Dense"],
+    toolbar: ["Desktop", "Light", "Dense"],
     surfaceLabel: "Salt DS surface",
     title: "Trading Operations",
     body: "Compact controls, visible risk signals, and high-density rows for enterprise review.",
@@ -187,6 +189,7 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "generate",
+    mode: "light",
     phase: "generate",
     system: "m3",
     layout: "material",
@@ -212,6 +215,7 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "compare",
+    mode: "dark",
     phase: "compare",
     system: "fluent",
     layout: "command",
@@ -237,6 +241,7 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "tune",
+    mode: "dark",
     phase: "tune",
     system: "carbon",
     layout: "carbon",
@@ -262,6 +267,7 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "share",
+    mode: "dark",
     phase: "share",
     system: "ausos",
     layout: "glass",
@@ -648,6 +654,7 @@ function HeroPreviewDemo() {
   const [isHovering, setIsHovering] = useState(false);
   const reducedMotion = useReducedMotion();
   const step = previewDemoSteps[stepIndex];
+  const previewMode = step.mode;
   const demoPaused = isPaused || reducedMotion || isHovering;
 
   useEffect(() => {
@@ -677,6 +684,7 @@ function HeroPreviewDemo() {
       data-preview-stage={step.phase}
       data-preview-system={step.system}
       data-preview-layout={step.layout}
+      data-preview-mode={previewMode}
       data-preview-paused={demoPaused ? "true" : "false"}
       aria-label="Design Hub preview demo"
       onMouseEnter={() => setIsHovering(true)}
