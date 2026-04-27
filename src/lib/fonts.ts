@@ -16,6 +16,15 @@ import {
  * Each font exports a className (for scoping) and a CSS variable.
  * The variables are applied to <html> so all existing CSS `font-family`
  * references continue to work via the browser's font matching.
+ *
+ * Preload strategy:
+ *   - Outfit + Space Grotesk: preload (used by landing + login + global
+ *     chrome — first-paint critical).
+ *   - Other 6: preload: false (used only inside the builder / per-DS
+ *     rendering surfaces). Their @font-face declarations are still
+ *     emitted so the CSS variables resolve correctly when those routes
+ *     render, but the browser doesn't <link rel="preload"> them on
+ *     every route — saves ~200KB on landing LCP.
  */
 
 export const outfit = Outfit({
@@ -30,6 +39,7 @@ export const dmSans = DM_Sans({
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
   variable: "--font-dm-sans",
+  preload: false,
 });
 
 export const spaceGrotesk = Space_Grotesk({
@@ -44,6 +54,7 @@ export const inter = Inter({
   weight: ["400", "500", "600", "700"],
   display: "swap",
   variable: "--font-inter",
+  preload: false,
 });
 
 export const openSans = Open_Sans({
@@ -51,6 +62,7 @@ export const openSans = Open_Sans({
   weight: ["400", "600", "700"],
   display: "swap",
   variable: "--font-open-sans",
+  preload: false,
 });
 
 export const roboto = Roboto({
@@ -58,6 +70,7 @@ export const roboto = Roboto({
   weight: ["400", "500", "700"],
   display: "swap",
   variable: "--font-roboto",
+  preload: false,
 });
 
 /* IBM Plex Sans - Carbon DS typeface. Loaded self-hosted via
@@ -71,6 +84,7 @@ export const ibmPlexSans = IBM_Plex_Sans({
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
   variable: "--font-ibm-plex-sans",
+  preload: false,
 });
 
 /* IBM Plex Mono - used by Carbon for code snippets, token
@@ -80,6 +94,7 @@ export const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   display: "swap",
   variable: "--font-ibm-plex-mono",
+  preload: false,
 });
 
 /** All font CSS variables joined for <html> className */
