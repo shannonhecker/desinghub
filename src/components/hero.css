@@ -2511,6 +2511,14 @@
   height: auto;
 }
 
+/* Lines + nodes (default z-index: 0) sit behind the .feature-grid
+   (z-index: 1) so card content reads cleanly. The bright traveling
+   sparks get promoted to z-index: 2 so they glide above cards like
+   the orbit spark on the Systems section (PR #54 pattern). */
+.studio-constellation--sparks-only {
+  z-index: 2;
+}
+
 .studio-edge {
   stroke: rgba(232, 238, 232, 0.16);
   stroke-width: 1;
