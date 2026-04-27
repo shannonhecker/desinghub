@@ -1,14 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getSystemInfo } from "@/data/registry";
 import { useActiveTheme } from "@/components/DesignHubApp";
-import { SALT_CODE } from "@/data/salt/code-snippets";
-import { M3_CODE } from "@/data/m3/code-snippets";
-import { FLUENT_CODE } from "@/data/fluent/code-snippets";
-import { AUSOS_CODE } from "@/data/ausos/code-snippets";
-import { CARBON_CODE } from "@/data/carbon/code-snippets";
+import type { CodeSnippets } from "@/data/salt/types";
+
+/* Per-DS code-snippet modules are dynamic-imported per active system.
+   Eagerly importing all five shipped ~238KB of JSX strings on the
+   /ui-kit initial JS even when only one system was active at a time —
+   this loader resolves the active DS's snippets on demand and caches
+   the result in module scope so subsequent activations are free.
+
+   Cache lives at module scope (not in component state) so it survives
+   re-renders and persists between component mounts within the same
+   page-lifetime. */
+const codeMapLoaders: Record<string, () => Promise<CodeSnippets>> = {
+  salt:   () => import("@/data/salt/code-snippets").then((m) => m.SALT_CODE),
+  m3:     () => import("@/data/m3/code-snippets").then((m) => m.M3_CODE),
+  fluent: () => import("@/data/fluent/code-snippets").then((m) => m.FLUENT_CODE),
+  ausos:  () => import("@/data/ausos/code-snippets").then((m) => m.AUSOS_CODE),
+  carbon: () => import("@/data/carbon/code-snippets").then((m) => m.CARBON_CODE),
+};
+const codeMapCache: Record<string, CodeSnippets> = {};
 
 /* Per-DS metadata used by the fallback renderer when a registered
    component has no authored snippet yet. Keeps the Code panel useful
@@ -135,12 +149,57 @@ export function CodePanel({ componentId }: { componentId: string }) {
   const comp = components.find((c) => c.id === componentId);
   const sysInfo = getSystemInfo(activeSystem);
 
-  const codeMap = activeSystem === "salt" ? SALT_CODE
-    : activeSystem === "m3" ? M3_CODE
-    : activeSystem === "ausos" ? AUSOS_CODE
-    : activeSystem === "carbon" ? CARBON_CODE
-    : FLUENT_CODE;
-  const snippets = codeMap[componentId];
+  /* Dynamic code-snippet load. Cache check is synchronous when a system
+     has been activated previously, so DS-switching after first load
+     feels identical to the prior eager-import behavior. */
+  const [codeMap, setCodeMap] = useState<CodeSnippets | null>(
+    () => codeMapCache[activeSystem] ?? null,
+  );
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    const cached = codeMapCache[activeSystem];
+    if (cached) {
+      setCodeMap(cached);
+      return;
+    }
+    const loader = codeMapLoaders[activeSystem];
+    if (!loader) {
+      setCodeMap({});
+      return;
+    }
+    setCodeMap(null);
+    loader().then((map) => {
+      if (cancelledRef.current) return;
+      codeMapCache[activeSystem] = map;
+      setCodeMap(map);
+    });
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [activeSystem]);
+
+  const snippets = codeMap?.[componentId];
+
+  /* While the active system's snippet module is loading on first
+     activation, render a quiet placeholder. Subsequent activations
+     hit the cache and render synchronously. */
+  if (codeMap === null) {
+    return (
+      <div
+        aria-live="polite"
+        style={{
+          padding: 16,
+          color: t.fg2,
+          fontSize: 13,
+          fontFamily: t.font,
+        }}
+      >
+        Loading {sysInfo.name} snippets…
+      </div>
+    );
+  }
 
   /* DS card class for code block containers */
   const cardCls = activeSystem === "salt" ? "s-card"
