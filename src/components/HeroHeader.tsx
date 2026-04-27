@@ -484,43 +484,57 @@ function OrbitRing({
  *   [4]──[5]──[6]
  */
 function StudioConstellation() {
+  // Two SVGs (not one) so the dotted edges + nodes stay behind the
+  // feature cards (z-index 0) while the bright traveling sparks glide
+  // above them (z-index 2). SVG paint order is DOM-order within a single
+  // <svg>, so CSS z-index can only split layers by giving each group its
+  // own SVG context. Same trick as OrbitRing in PR #54.
   return (
-    <svg
-      className="studio-constellation"
-      viewBox="0 0 1200 480"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      {/* Row edges (top & bottom) */}
-      <line className="studio-edge" x1="200" y1="140" x2="600" y2="140" />
-      <line className="studio-edge" x1="600" y1="140" x2="1000" y2="140" />
-      <line className="studio-edge" x1="200" y1="340" x2="600" y2="340" />
-      <line className="studio-edge" x1="600" y1="340" x2="1000" y2="340" />
-      {/* Vertical hubs */}
-      <line className="studio-edge" x1="200" y1="140" x2="200" y2="340" />
-      <line className="studio-edge" x1="600" y1="140" x2="600" y2="340" />
-      <line className="studio-edge" x1="1000" y1="140" x2="1000" y2="340" />
-      {/* Cross-diagonal accents */}
-      <line className="studio-edge studio-edge--accent" x1="200" y1="140" x2="600" y2="340" />
-      <line className="studio-edge studio-edge--accent" x1="1000" y1="140" x2="600" y2="340" />
+    <>
+      <svg
+        className="studio-constellation studio-constellation--lines-only"
+        viewBox="0 0 1200 480"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        {/* Row edges (top & bottom) */}
+        <line className="studio-edge" x1="200" y1="140" x2="600" y2="140" />
+        <line className="studio-edge" x1="600" y1="140" x2="1000" y2="140" />
+        <line className="studio-edge" x1="200" y1="340" x2="600" y2="340" />
+        <line className="studio-edge" x1="600" y1="340" x2="1000" y2="340" />
+        {/* Vertical hubs */}
+        <line className="studio-edge" x1="200" y1="140" x2="200" y2="340" />
+        <line className="studio-edge" x1="600" y1="140" x2="600" y2="340" />
+        <line className="studio-edge" x1="1000" y1="140" x2="1000" y2="340" />
+        {/* Cross-diagonal accents */}
+        <line className="studio-edge studio-edge--accent" x1="200" y1="140" x2="600" y2="340" />
+        <line className="studio-edge studio-edge--accent" x1="1000" y1="140" x2="600" y2="340" />
 
-      {/* Three traveling sparks on different edges, staggered timers. */}
-      <line className="studio-spark studio-spark--1" x1="200" y1="140" x2="600" y2="140" />
-      <line className="studio-spark studio-spark--2" x1="600" y1="140" x2="600" y2="340" />
-      <line className="studio-spark studio-spark--3" x1="200" y1="340" x2="1000" y2="340" />
+        {/* Dots at each card-center for a constellation feel. */}
+        {[
+          [200, 140],
+          [600, 140],
+          [1000, 140],
+          [200, 340],
+          [600, 340],
+          [1000, 340],
+        ].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} className="studio-node" cx={cx} cy={cy} r="3" />
+        ))}
+      </svg>
 
-      {/* Dots at each card-center for a constellation feel. */}
-      {[
-        [200, 140],
-        [600, 140],
-        [1000, 140],
-        [200, 340],
-        [600, 340],
-        [1000, 340],
-      ].map(([cx, cy]) => (
-        <circle key={`${cx}-${cy}`} className="studio-node" cx={cx} cy={cy} r="3" />
-      ))}
-    </svg>
+      <svg
+        className="studio-constellation studio-constellation--sparks-only"
+        viewBox="0 0 1200 480"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        {/* Three traveling sparks on different edges, staggered timers. */}
+        <line className="studio-spark studio-spark--1" x1="200" y1="140" x2="600" y2="140" />
+        <line className="studio-spark studio-spark--2" x1="600" y1="140" x2="600" y2="340" />
+        <line className="studio-spark studio-spark--3" x1="200" y1="340" x2="1000" y2="340" />
+      </svg>
+    </>
   );
 }
 
