@@ -14,7 +14,7 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
-import { heroEnterTimeline, revealOnScroll } from "@/lib/motion";
+import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
 import "./hero.css";
 
 const navItems = [
@@ -287,22 +287,9 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
 ];
 
-function usePrefersReducedMotion() {
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setReducedMotion(query.matches);
-
-    updatePreference();
-    query.addEventListener("change", updatePreference);
-    return () => query.removeEventListener("change", updatePreference);
-  }, []);
-
-  return reducedMotion;
-}
+/* usePrefersReducedMotion was a duplicate of useReducedMotion in
+   src/lib/motion.ts. Consolidated — the canonical hook now lives in
+   the motion module alongside heroEnterTimeline + revealOnScroll. */
 
 function useContentParallax(disabled: boolean) {
   const rootRef = useRef<HTMLElement | null>(null);
@@ -645,7 +632,7 @@ function HeroPreviewDemo() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const reducedMotion = usePrefersReducedMotion();
+  const reducedMotion = useReducedMotion();
   const step = previewDemoSteps[stepIndex];
   const demoPaused = isPaused || reducedMotion || isHovering;
 
@@ -759,7 +746,7 @@ function HeroPreviewDemo() {
 }
 
 export function HeroHeader() {
-  const reducedMotion = usePrefersReducedMotion();
+  const reducedMotion = useReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
   const proofRef = useRef<HTMLElement | null>(null);
   const systemGridRef = useRef<HTMLDivElement | null>(null);

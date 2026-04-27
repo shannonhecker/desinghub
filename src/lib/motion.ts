@@ -18,6 +18,7 @@
  *     content-context animations but not hot paths.
  */
 
+import { useEffect, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -58,6 +59,33 @@ export const EASE_LINEAR = "none"; // GSAP's linear keyword
 export function isReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
+/**
+ * React-aware version of {@link isReducedMotion}. Subscribes to changes
+ * in the user's prefers-reduced-motion preference so components re-render
+ * when the OS / browser setting flips. Use in client components; for
+ * one-shot snapshots inside non-React modules call `isReducedMotion()`.
+ *
+ * SSR-safe: returns `false` until mounted, then reads the live media
+ * query and registers a `change` listener that survives the lifetime
+ * of the component.
+ */
+export function useReducedMotion(): boolean {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return reducedMotion;
 }
 
 /* ── Hero entrance orchestrator ─────────────────────────────────────────── */
