@@ -4,6 +4,135 @@
 
 @import "./chrome-tokens.css";
 
+/* --------------------------------------------------------------------------
+   Builder chrome polish
+   Tone down ambient blobs and align app chrome with the calmer ausos landing
+   language. Design-system preview surfaces keep their own tokens below.
+   -------------------------------------------------------------------------- */
+
+.builder-shell.builder-shell {
+  --b-bg: #070b14;
+  --b-bg2: #0b1020;
+  --b-bg3: #111827;
+  --b-sidebar: rgba(7, 11, 20, 0.86);
+  --b-surface: rgba(255, 255, 255, 0.05);
+  --b-surface2: rgba(255, 255, 255, 0.075);
+  --b-border: rgba(255, 255, 255, 0.075);
+  --b-border2: rgba(255, 255, 255, 0.12);
+  --b-fg: rgba(244, 248, 241, 0.92);
+  --b-fg2: rgba(238, 242, 237, 0.64);
+  --b-fg3: rgba(238, 242, 237, 0.42);
+  --b-accent: #b490f5;
+  --b-accent2: #c5f4de;
+  --b-accent3: #d7f8e8;
+  --b-pink: #df9b93;
+  --b-cyan: #5ee7df;
+  --b-accent-glow: rgba(180, 144, 245, 0.18);
+  --b-gradient: linear-gradient(135deg, rgba(197, 244, 222, 0.92), rgba(180, 144, 245, 0.9));
+  --b-gradient2: linear-gradient(135deg, rgba(197, 244, 222, 0.86), rgba(180, 144, 245, 0.82));
+  --b-radius: 12px;
+  --b-radius-sm: 8px;
+  --b-radius-lg: 16px;
+  --b-glass: rgba(7, 8, 13, 0.56);
+  --b-shadow: 0 20px 70px rgba(0, 0, 0, 0.28);
+}
+
+.builder-shell.builder-shell::before {
+  opacity: 0.34;
+  filter: blur(clamp(72px, 10vw, 128px));
+  background: radial-gradient(circle, rgba(94, 231, 223, 0.24), rgba(59, 130, 246, 0.12), transparent 68%);
+}
+
+.builder-shell.builder-shell::after {
+  opacity: 0.3;
+  filter: blur(clamp(76px, 10vw, 132px));
+  background: radial-gradient(circle, rgba(180, 144, 245, 0.22), rgba(247, 138, 184, 0.1), transparent 68%);
+}
+
+.builder-shell.builder-shell .main-content::before {
+  opacity: 0.18;
+  filter: blur(clamp(72px, 10vw, 130px));
+  background: radial-gradient(circle, rgba(197, 244, 222, 0.14), rgba(180, 144, 245, 0.08), transparent 70%);
+}
+
+.builder-shell.builder-shell .top-bar {
+  border-bottom-color: rgba(255, 255, 255, 0.075);
+  background: rgba(5, 7, 12, 0.58);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.builder-shell.builder-shell .top-bar.scrolled {
+  background: rgba(5, 7, 12, 0.74);
+  box-shadow:
+    0 18px 54px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.builder-shell.builder-shell .top-bar-btn,
+.builder-shell.builder-shell .gsb-icon-btn,
+.builder-shell.builder-shell .gsb-new-chat-btn,
+.builder-shell.builder-shell .gsb-nav-btn {
+  border-radius: var(--b-radius-sm);
+  transition:
+    transform 180ms var(--dh-motion-ease),
+    color 180ms var(--dh-motion-ease),
+    background 180ms var(--dh-motion-ease),
+    border-color 180ms var(--dh-motion-ease),
+    box-shadow 180ms var(--dh-motion-ease);
+}
+
+.builder-shell.builder-shell .top-bar-btn:hover,
+.builder-shell.builder-shell .gsb-icon-btn:hover,
+.builder-shell.builder-shell .gsb-new-chat-btn:hover,
+.builder-shell.builder-shell .gsb-nav-btn:hover {
+  transform: translateY(-1px);
+}
+
+.builder-shell.builder-shell .top-bar-export-menu,
+.builder-shell.builder-shell .sessions-drawer,
+.builder-shell.builder-shell .templates-drawer,
+.builder-shell.builder-shell .settings-panel,
+.builder-shell.builder-shell .export-panel {
+  border-color: rgba(255, 255, 255, 0.09);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.068), rgba(255, 255, 255, 0.026)),
+    rgba(7, 8, 13, 0.9);
+  box-shadow:
+    0 28px 92px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.builder-shell.builder-shell .resize-handle {
+  opacity: 0.72;
+}
+
+.builder-shell.builder-shell.builder-light {
+  --b-bg: #eef3f7;
+  --b-bg2: #f5f7fb;
+  --b-bg3: #e8edf5;
+  --b-sidebar: rgba(255, 255, 255, 0.72);
+  --b-surface: rgba(255, 255, 255, 0.78);
+  --b-surface2: rgba(255, 255, 255, 0.9);
+  --b-border: rgba(15, 23, 42, 0.08);
+  --b-border2: rgba(15, 23, 42, 0.12);
+  --b-fg: rgba(15, 16, 30, 0.9);
+  --b-fg2: rgba(15, 16, 30, 0.62);
+  --b-fg3: rgba(15, 16, 30, 0.42);
+  --b-accent-glow: rgba(180, 144, 245, 0.12);
+}
+
+.builder-shell.builder-shell.builder-light .top-bar {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow:
+    0 16px 42px rgba(20, 14, 45, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
 /* ── VARIABLES ── */
 :root {
   /* Builder chrome - aligned with ausos DS dark tokens */
@@ -12473,4 +12602,3 @@
   background: var(--cds-layer-accent-01, var(--ds-surface-hover));
   color: var(--cds-text-primary, var(--ds-fg));
 }
-

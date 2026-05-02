@@ -1,3 +1,164 @@
+/* --------------------------------------------------------------------------
+   Login polish pass
+   Keep the private-studio mood, but align gradient intensity, card treatment,
+   controls, and motion with the calmer landing page.
+   -------------------------------------------------------------------------- */
+
+.login-shell.login-shell {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(180, 144, 245, 0.11), transparent 40rem),
+    radial-gradient(ellipse at 14% 32%, rgba(94, 231, 223, 0.07), transparent 30rem),
+    radial-gradient(ellipse at 86% 42%, rgba(247, 138, 184, 0.052), transparent 34rem),
+    linear-gradient(180deg, #020302 0%, #070710 46%, #030403 100%);
+}
+
+.login-shell.login-shell .login-ambient-field-1 {
+  opacity: 0.4;
+  filter: blur(78px) saturate(0.96);
+  background:
+    radial-gradient(ellipse at 18% 72%, rgba(94, 231, 223, 0.11), transparent 32rem),
+    radial-gradient(ellipse at 64% 18%, rgba(180, 144, 245, 0.12), transparent 38rem),
+    radial-gradient(ellipse at 88% 66%, rgba(247, 138, 184, 0.055), transparent 34rem);
+  animation-duration: 28s;
+}
+
+.login-shell.login-shell .login-ambient-field-2 {
+  opacity: 0.18;
+  filter: blur(58px);
+  background:
+    linear-gradient(118deg, transparent 22%, rgba(94, 231, 223, 0.1) 40%, transparent 58%),
+    linear-gradient(148deg, transparent 34%, rgba(180, 144, 245, 0.09) 52%, transparent 72%);
+  animation-duration: 32s;
+}
+
+.login-shell.login-shell .login-gridline {
+  opacity: 0.07;
+  background-size: 80px 80px;
+}
+
+.login-shell.login-shell .login-layout {
+  width: min(1040px, 100%);
+  gap: var(--dh-space-40);
+}
+
+.login-shell.login-shell .login-kicker {
+  min-height: 30px;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--dh-curve-full);
+  background: rgba(5, 7, 8, 0.5);
+  color: rgba(244, 248, 241, 0.76);
+  text-transform: none;
+}
+
+.login-shell.login-shell .login-story h1 {
+  max-width: 680px;
+  font-size: clamp(3.1rem, 6vw, 5.4rem);
+  line-height: 0.96;
+  text-shadow: none;
+}
+
+.login-shell.login-shell .login-story p {
+  color: rgba(238, 242, 237, 0.66);
+  line-height: 1.68;
+}
+
+.login-shell.login-shell .login-proof-row span {
+  min-height: 30px;
+  border-color: rgba(255, 255, 255, 0.085);
+  border-radius: var(--dh-curve-full);
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(244, 248, 241, 0.62);
+  text-transform: none;
+}
+
+.login-shell.login-shell .login-card {
+  border-color: rgba(255, 255, 255, 0.095);
+  border-radius: var(--dh-curve-md);
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(197, 244, 222, 0.07), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
+    rgba(6, 8, 13, 0.9);
+  box-shadow:
+    0 36px 110px rgba(0, 0, 0, 0.46),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.login-shell.login-shell .login-card::before {
+  opacity: 0.42;
+  background: linear-gradient(135deg, rgba(197, 244, 222, 0.08), transparent 42%, rgba(180, 144, 245, 0.06));
+}
+
+.login-shell.login-shell .login-lock {
+  border-color: rgba(197, 244, 222, 0.18);
+  background: rgba(197, 244, 222, 0.055);
+  color: rgba(197, 244, 222, 0.86);
+}
+
+.login-shell.login-shell .login-card-header p,
+.login-shell.login-shell .login-meta {
+  color: rgba(238, 242, 237, 0.54);
+}
+
+.login-shell.login-shell .login-field-label {
+  color: rgba(238, 242, 237, 0.58);
+  text-transform: none;
+}
+
+.login-shell.login-shell .login-input {
+  border-color: rgba(255, 255, 255, 0.095);
+  border-radius: var(--dh-curve-md);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.login-shell.login-shell .login-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.login-shell.login-shell .login-input:focus-visible {
+  border-color: rgba(197, 244, 222, 0.48);
+  background: rgba(255, 255, 255, 0.062);
+  box-shadow: 0 0 0 4px rgba(197, 244, 222, 0.12);
+}
+
+.login-shell.login-shell .login-submit {
+  border-color: rgba(255, 255, 255, 0.76);
+  border-radius: var(--dh-curve-md);
+  background: rgba(241, 244, 239, 0.94);
+  color: #020302;
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  transition:
+    transform 220ms var(--login-ease),
+    border-color 220ms var(--login-ease),
+    background 220ms var(--login-ease),
+    box-shadow 220ms var(--login-ease);
+}
+
+.login-shell.login-shell .login-submit:not(:disabled):hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.9);
+  background: var(--dh-surface-cream);
+  box-shadow:
+    0 20px 52px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.login-shell.login-shell .login-pw-toggle:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+@media (max-width: 840px) {
+  .login-shell.login-shell .login-layout {
+    gap: var(--dh-space-32);
+  }
+
+  .login-shell.login-shell .login-story h1 {
+    font-size: clamp(2.8rem, 11vw, 4.1rem);
+  }
+}
+
 .login-shell {
   /* Local aliases → globals.css brand tokens. No raw hex below this point. */
   --login-bg: var(--dh-page-bg-deep);

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -13,11 +13,13 @@ import {
   Share2,
   SlidersHorizontal,
   Sparkles,
+  X,
 } from "lucide-react";
 import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
 import "./hero.css";
 
-const ACCESS_EMAIL = "mailto:shannonheckerchen@gmail.com?subject=ausos%20studio%20access";
+const ACCESS_EMAIL = "shannonheckerchen@gmail.com";
+const ACCESS_MAILTO = `mailto:${ACCESS_EMAIL}?subject=ausos%20studio%20access`;
 
 const navItems = [
   { label: "Demo", href: "#demo" },
@@ -130,6 +132,51 @@ const proof = [
   { value: "Review links", label: "private previews ready for stakeholder critique" },
 ];
 
+const bentoProof = [
+  {
+    key: "systems",
+    title: "Compare system directions",
+    body: "Move the same product brief through enterprise, Material, Fluent, Carbon, and ausos treatments.",
+    visual: ["Salt", "M3", "Fluent", "Carbon", "ausos"],
+  },
+  {
+    key: "frames",
+    title: "Responsive from the start",
+    body: "Review desktop, tablet, and mobile frames before a direction leaves the studio.",
+    visual: ["Desktop", "Tablet", "Mobile"],
+  },
+  {
+    key: "handoff",
+    title: "Handoff-ready outputs",
+    body: "Carry the selected interface into React, HTML, or Vite without losing system intent.",
+    visual: ["React", "HTML", "Vite"],
+  },
+  {
+    key: "review",
+    title: "Private review rooms",
+    body: "Share a polished preview link while the prompt, variants, and export context stay visible.",
+    visual: ["Preview", "Notes", "Export"],
+  },
+];
+
+const audienceCards = [
+  {
+    title: "Product teams",
+    body: "Explore product surfaces before committing design and engineering time.",
+    tags: ["Dashboards", "Forms", "Flows"],
+  },
+  {
+    title: "Design-system owners",
+    body: "Stress-test how one interface behaves across density, tone, and component rules.",
+    tags: ["Tokens", "States", "Patterns"],
+  },
+  {
+    title: "Founders and agencies",
+    body: "Turn a rough product brief into review-ready UI for pitches, demos, and handoff.",
+    tags: ["Pitch", "Preview", "Export"],
+  },
+];
+
 const DEMO_STEP_DURATION_MS = 6000;
 
 const previewSystems = [
@@ -161,6 +208,18 @@ type PreviewDemoStep = {
   shareLabel: string;
   exportLabel: string;
 };
+
+type AccessRequestSource = "hero" | "export";
+
+type AccessRequestStatus = "idle" | "submitting" | "success" | "error";
+
+function trackLandingEvent(event: string, params?: Record<string, string>) {
+  if (typeof window === "undefined") return;
+  const target = window as Window & {
+    dataLayer?: Array<Record<string, unknown>>;
+  };
+  target.dataLayer?.push({ event, ...params });
+}
 
 const previewDemoSteps: PreviewDemoStep[] = [
   {
@@ -534,6 +593,153 @@ function PreviewSurface({ step }: { step: PreviewDemoStep }) {
   );
 }
 
+function RequestAccessModal({
+  open,
+  source,
+  onClose,
+}: {
+  open: boolean;
+  source: AccessRequestSource;
+  onClose: () => void;
+}) {
+  const [status, setStatus] = useState<AccessRequestStatus>("idle");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  useEffect(() => {
+    if (open) {
+      setStatus("idle");
+      setMessage("");
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus("submitting");
+    setMessage("");
+    trackLandingEvent("access_request_submit", { source });
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      name: String(formData.get("name") || ""),
+      email: String(formData.get("email") || ""),
+      company: String(formData.get("company") || ""),
+      useCase: String(formData.get("useCase") || ""),
+      note: String(formData.get("note") || ""),
+      source,
+    };
+
+    try {
+      const response = await fetch("/api/access-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        stored?: boolean;
+        emailed?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to send request.");
+      }
+
+      form.reset();
+      setStatus("success");
+      setMessage(
+        result.emailed
+          ? "Request sent. Shannon will follow up with access details."
+          : result.stored
+          ? "Request sent. Shannon will follow up with access details."
+          : "Request entered. Email Shannon if you want to ensure delivery.",
+      );
+      trackLandingEvent("access_request_success", {
+        source,
+        stored: result.stored ? "true" : "false",
+        emailed: result.emailed ? "true" : "false",
+      });
+    } catch {
+      setStatus("error");
+      setMessage(`Something went wrong. Email ${ACCESS_EMAIL} for access.`);
+      trackLandingEvent("access_request_error", { source });
+    }
+  };
+
+  return (
+    <div className="access-modal" role="dialog" aria-modal="true" aria-labelledby="access-title">
+      <button className="access-modal__scrim" type="button" aria-label="Close access form" onClick={onClose} />
+      <section className="access-modal__panel">
+        <button className="access-modal__close" type="button" aria-label="Close access form" onClick={onClose}>
+          <X size={15} strokeWidth={2} aria-hidden="true" />
+        </button>
+        <span className="section-kicker">Private preview</span>
+        <h2 id="access-title">Request studio access.</h2>
+        <p>
+          Tell me where ausos fits in your workflow. I will use this to prioritize
+          access and shape the builder around real product work.
+        </p>
+
+        <form className="access-form" onSubmit={handleSubmit}>
+          <label>
+            <span>Name</span>
+            <input name="name" autoComplete="name" required />
+          </label>
+          <label>
+            <span>Email</span>
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <label>
+            <span>Company or team</span>
+            <input name="company" autoComplete="organization" />
+          </label>
+          <label>
+            <span>Main use case</span>
+            <select name="useCase" defaultValue="product-team" required>
+              <option value="product-team">Product team prototyping</option>
+              <option value="design-system">Design-system exploration</option>
+              <option value="agency">Agency or client demos</option>
+              <option value="founder">Founder product mockups</option>
+            </select>
+          </label>
+          <label className="access-form__wide">
+            <span>What would you like to build?</span>
+            <textarea name="note" rows={3} />
+          </label>
+
+          {message && (
+            <p className={`access-form__message access-form__message--${status}`} role="status">
+              {message}
+            </p>
+          )}
+
+          <button className="landing-btn landing-btn--light access-form__submit" type="submit" disabled={status === "submitting"}>
+            <span>{status === "submitting" ? "Sending..." : "Send Request"}</span>
+            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </form>
+
+        <p className="access-modal__fallback">
+          Prefer email? <a href={ACCESS_MAILTO}>Email Shannon</a>.
+        </p>
+      </section>
+    </div>
+  );
+}
+
 function HeroPreviewDemo() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -606,6 +812,24 @@ function HeroPreviewDemo() {
           <span key={step.id} />
         </span>
       </div>
+      <div className="preview-stepper" aria-label="Demo flow">
+        {previewDemoSteps.map((demoStep, index) => (
+          <button
+            type="button"
+            className={`preview-step${index === stepIndex ? " preview-step--active" : ""}`}
+            key={demoStep.id}
+            aria-pressed={index === stepIndex}
+            onClick={() => {
+              setStepIndex(index);
+              setIsPaused(true);
+              trackLandingEvent("demo_step_select", { step: demoStep.phase });
+            }}
+          >
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            {demoStep.phase}
+          </button>
+        ))}
+      </div>
       <div className="preview-shell">
         <aside className="preview-sidebar" aria-label="System tabs">
           {previewSystems.map((system) => (
@@ -656,12 +880,18 @@ function HeroPreviewDemo() {
 export function HeroHeader() {
   const reducedMotion = useReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
+  const [accessModalSource, setAccessModalSource] = useState<AccessRequestSource | null>(null);
   const proofRef = useRef<HTMLElement | null>(null);
   const systemGridRef = useRef<HTMLDivElement | null>(null);
   const workflowGridRef = useRef<HTMLDivElement | null>(null);
   const featureGridRef = useRef<HTMLDivElement | null>(null);
 
   useHaloPointer(reducedMotion, landingRef);
+
+  const openAccessModal = (source: AccessRequestSource) => {
+    setAccessModalSource(source);
+    trackLandingEvent("access_request_open", { source });
+  };
 
   useEffect(() => {
     const root = landingRef.current;
@@ -703,7 +933,7 @@ export function HeroHeader() {
               ))}
             </div>
 
-            <Link href="/login" className="landing-nav-cta">
+            <Link href="/login" className="landing-nav-cta" onClick={() => trackLandingEvent("enter_studio_click", { source: "nav" })}>
               <span>Enter Studio</span>
               <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
             </Link>
@@ -744,24 +974,78 @@ export function HeroHeader() {
               AI design-system builder
             </div>
             <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              AI design-system builder for <span>product teams</span>
+              Turn product briefs into <span>system-ready UI</span>
             </h1>
             <p className="hero-body" data-hero-enter>
-              Turn one product brief into responsive Salt DS, Material 3, Fluent 2,
-              Carbon, and ausos interface directions ready for comparison, review, and handoff.
+              Use a quiet AI workspace to generate responsive Salt DS, Material 3, Fluent 2,
+              Carbon, and ausos interface directions for comparison, review, and handoff.
             </p>
             <div className="hero-actions" data-hero-enter>
-              <a href={ACCESS_EMAIL} className="landing-btn landing-btn--light">
+              <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
                 <span>Request Access</span>
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-              </a>
-              <a href="#demo" className="landing-btn landing-btn--outline">
+              </button>
+              <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
                 <span>View Demo</span>
               </a>
             </div>
             <p className="hero-body" data-hero-enter>
               Private preview. Already have a password? Use Enter Studio in the top navigation.
             </p>
+          </div>
+
+          <div className="hero-ai-showcase" aria-hidden="true" data-hero-enter>
+            <div className="hero-ai-orbit hero-ai-orbit--one" />
+            <div className="hero-ai-orbit hero-ai-orbit--two" />
+            <div className="hero-ai-beam hero-ai-beam--one" />
+            <div className="hero-ai-beam hero-ai-beam--two" />
+            <div className="hero-ai-node hero-ai-node--prompt">
+              <span>Prompt</span>
+            </div>
+            <div className="hero-ai-node hero-ai-node--systems">
+              <span>5 systems</span>
+            </div>
+            <div className="hero-ai-node hero-ai-node--export">
+              <span>Export</span>
+            </div>
+            <div className="hero-ai-product">
+              <div className="hero-ai-product-top">
+                <span />
+                <span />
+                <span />
+                <strong>ausos studio</strong>
+              </div>
+              <div className="hero-ai-product-body">
+                <aside>
+                  <span className="is-active">Salt</span>
+                  <span>M3</span>
+                  <span>Fluent</span>
+                  <span>Carbon</span>
+                  <span>ausos</span>
+                </aside>
+                <div className="hero-ai-canvas">
+                  <div className="hero-ai-prompt">
+                    <Sparkles size={14} strokeWidth={1.8} />
+                    Design a review-ready product dashboard
+                  </div>
+                  <div className="hero-ai-card hero-ai-card--wide">
+                    <span>Generated surface</span>
+                    <strong>Revenue Operations</strong>
+                    <p>System-aware layout with responsive states and handoff notes.</p>
+                  </div>
+                  <div className="hero-ai-metrics">
+                    <div><span>Variants</span><strong>5</strong></div>
+                    <div><span>Frames</span><strong>3</strong></div>
+                    <div><span>Ready</span><strong>96%</strong></div>
+                  </div>
+                  <div className="hero-ai-chart">
+                    {[54, 76, 62, 88, 70, 94].map((height, index) => (
+                      <span key={index} style={{ height: `${height}%` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -773,6 +1057,68 @@ export function HeroHeader() {
             <span>{item.label}</span>
           </div>
         ))}
+      </section>
+
+      <section className="landing-section bento-section" aria-labelledby="bento-title">
+        <ContentAtmosphere />
+        <div className="section-heading content-parallax-heading">
+          <span className="section-kicker">Product proof</span>
+          <h2 id="bento-title">Every output stays tied to real interface work.</h2>
+          <p>
+            ausos is built around the pieces teams review: system language, responsive
+            framing, export path, and the context behind each decision.
+          </p>
+        </div>
+        <div className="proof-bento content-card-grid">
+          {bentoProof.map((item) => (
+            <article className={`proof-bento-card proof-bento-card--${item.key} content-card`} key={item.key}>
+              <div className="proof-bento-visual" aria-hidden="true">
+                {item.visual.map((label) => (
+                  <span key={label}>
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section audience-section" aria-labelledby="audience-title">
+        <ContentAtmosphere />
+        <div className="audience-layout">
+          <div className="section-heading content-parallax-heading">
+            <span className="section-kicker">Built for</span>
+            <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
+            <p>
+              ausos is being built by Shannon for early product exploration: the moment
+              when a brief needs to become a credible interface direction fast.
+            </p>
+          </div>
+          <div className="audience-founder content-card">
+            <span>Founder note</span>
+            <p>
+              The goal is not another generic AI mockup surface. It is a practical studio
+              for comparing design-system directions with enough structure to critique,
+              share, and hand off.
+            </p>
+          </div>
+        </div>
+        <div className="audience-grid content-card-grid">
+          {audienceCards.map((card) => (
+            <article className="audience-card content-card" key={card.title}>
+              <h3>{card.title}</h3>
+              <p>{card.body}</p>
+              <div aria-label={`${card.title} examples`}>
+                {card.tags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="demo" className="landing-section demo-section" aria-labelledby="demo-title">
@@ -868,10 +1214,10 @@ export function HeroHeader() {
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
           </ul>
-          <a href={ACCESS_EMAIL} className="landing-btn landing-btn--light">
+          <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("export")}>
             <span>Request Access</span>
             <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
-          </a>
+          </button>
         </div>
       </section>
 
@@ -879,6 +1225,11 @@ export function HeroHeader() {
         <span>ausos</span>
         <span>AI-powered design-system builder</span>
       </footer>
+      <RequestAccessModal
+        open={accessModalSource !== null}
+        source={accessModalSource ?? "hero"}
+        onClose={() => setAccessModalSource(null)}
+      />
     </main>
   );
 }
