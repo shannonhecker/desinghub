@@ -6,9 +6,9 @@ import "./globals.css";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
-  title: "ausos - AI Design-System Workspace",
+  title: "ausos - AI Design-System Builder for Product Teams",
   description:
-    "Prototype, compare, and hand off production-ready interfaces across Salt DS, Material 3, Fluent 2, Carbon, and ausos.",
+    "Turn one product brief into responsive Salt DS, Material 3, Fluent 2, Carbon, and ausos interface directions for comparison, review, and handoff.",
   icons: {
     icon: "/favicon.svg",
     apple: "/apple-touch-icon.png",
