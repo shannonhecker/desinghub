@@ -17,6 +17,8 @@ import {
 import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
 import "./hero.css";
 
+const ACCESS_EMAIL = "mailto:shannonheckerchen@gmail.com?subject=ausos%20studio%20access";
+
 const navItems = [
   { label: "Demo", href: "#demo" },
   { label: "Systems", href: "#systems" },
@@ -122,10 +124,10 @@ const markers = [
 ];
 
 const proof = [
-  { value: "5", label: "design languages from one brief" },
-  { value: "Token-aware", label: "mode, contrast, and density controls" },
+  { value: "5 systems", label: "Salt, Material, Fluent, Carbon, and ausos from one brief" },
   { value: "Responsive", label: "desktop, tablet, and mobile previews" },
-  { value: "Handoff", label: "share links plus HTML, React, and Vite exports" },
+  { value: "Exports", label: "React, HTML, and Vite handoff paths" },
+  { value: "Review links", label: "private previews ready for stakeholder critique" },
 ];
 
 const DEMO_STEP_DURATION_MS = 6000;
@@ -293,10 +295,6 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
 ];
 
-/* usePrefersReducedMotion was a duplicate of useReducedMotion in
-   src/lib/motion.ts. Consolidated — the canonical hook now lives in
-   the motion module alongside heroEnterTimeline + revealOnScroll. */
-
 function useContentParallax(disabled: boolean) {
   const rootRef = useRef<HTMLElement | null>(null);
 
@@ -363,20 +361,9 @@ function useContentParallax(disabled: boolean) {
 }
 
 function ContentAtmosphere() {
-  // Glows live entirely on .content-atmosphere::before / ::after via the
-  // per-section --glow-* CSS vars. The previous 5-span dot/line pattern
-  // was repeated across every section and read as tile-y; removed to keep
-  // each section's gradient feeling unique.
   return <div className="content-atmosphere" aria-hidden="true" />;
 }
 
-/**
- * Halo pointer — sets --hero-mouse-x / --hero-mouse-y on the hero root
- * via RAF on pointermove, used by .hero-halo to position a soft radial
- * glow behind the headline (matches the aurora halo in reference img 1).
- *
- * Disabled on touch + reduced-motion + small viewports.
- */
 function useHaloPointer(
   disabled: boolean,
   rootRef: RefObject<HTMLElement | null>,
@@ -414,11 +401,6 @@ function useHaloPointer(
   }, [disabled, rootRef]);
 }
 
-/**
- * Topographic contour SVG — replaces the prior .stage-track divs with
- * inline SVG paths whose stroke-dashoffset draws in on mount and slowly
- * drifts after, evoking the dotted contour map in reference img 1.
- */
 function TopoLines() {
   return (
     <svg
@@ -434,12 +416,6 @@ function TopoLines() {
   );
 }
 
-/**
- * Reusable orbit ring — slow-rotating dashed ellipse with a single spark
- * traversing the perimeter. Rendered behind a content surface; sized via
- * `inset` from the matching CSS variant class. Same SVG drives the
- * Systems section background and (in earlier iterations) the demo shell.
- */
 function OrbitRing({
   variant,
   paused,
@@ -450,10 +426,7 @@ function OrbitRing({
   const base =
     `orbit-ring orbit-ring--${variant}` +
     (paused ? " orbit-ring--paused" : "");
-  // Two SVGs (not one) so the dashed ring stays behind the cards (z-index 0)
-  // while the bright spark glides above them (z-index 2). SVG paint order is
-  // DOM-order within a single <svg>, so CSS z-index can only split layers
-  // by giving each <ellipse> its own SVG context.
+
   return (
     <>
       <svg
@@ -476,25 +449,7 @@ function OrbitRing({
   );
 }
 
-/**
- * Studio constellation — six dots laid out as a 3x2 network behind the
- * features grid, connected by thin dotted edges. Three sparks travel
- * different edges on staggered timers (primes-ish, so they never line
- * up). Distinct visual family from `OrbitRing` (lines + multi-spark vs
- * ellipse + single-spark) but shares the same colour palette.
- *
- * Edge topology (kept simple to avoid visual noise):
- *
- *   [1]──[2]──[3]
- *    │ ╲  │  ╱ │
- *   [4]──[5]──[6]
- */
 function StudioConstellation() {
-  // Two SVGs (not one) so the dotted edges + nodes stay behind the
-  // feature cards (z-index 0) while the bright traveling sparks glide
-  // above them (z-index 2). SVG paint order is DOM-order within a single
-  // <svg>, so CSS z-index can only split layers by giving each group its
-  // own SVG context. Same trick as OrbitRing in PR #54.
   return (
     <>
       <svg
@@ -503,20 +458,16 @@ function StudioConstellation() {
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        {/* Row edges (top & bottom) */}
         <line className="studio-edge" x1="200" y1="140" x2="600" y2="140" />
         <line className="studio-edge" x1="600" y1="140" x2="1000" y2="140" />
         <line className="studio-edge" x1="200" y1="340" x2="600" y2="340" />
         <line className="studio-edge" x1="600" y1="340" x2="1000" y2="340" />
-        {/* Vertical hubs */}
         <line className="studio-edge" x1="200" y1="140" x2="200" y2="340" />
         <line className="studio-edge" x1="600" y1="140" x2="600" y2="340" />
         <line className="studio-edge" x1="1000" y1="140" x2="1000" y2="340" />
-        {/* Cross-diagonal accents */}
         <line className="studio-edge studio-edge--accent" x1="200" y1="140" x2="600" y2="340" />
         <line className="studio-edge studio-edge--accent" x1="1000" y1="140" x2="600" y2="340" />
 
-        {/* Dots at each card-center for a constellation feel. */}
         {[
           [200, 140],
           [600, 140],
@@ -535,77 +486,12 @@ function StudioConstellation() {
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        {/* Three traveling sparks on different edges, staggered timers. */}
         <line className="studio-spark studio-spark--1" x1="200" y1="140" x2="600" y2="140" />
         <line className="studio-spark studio-spark--2" x1="600" y1="140" x2="600" y2="340" />
         <line className="studio-spark studio-spark--3" x1="200" y1="340" x2="1000" y2="340" />
       </svg>
     </>
   );
-}
-
-/**
- * Count-up — animates a numeric value from 0 to `target` over `duration`
- * ms when the element enters the viewport. Skips animation under
- * reduced-motion (renders the final value immediately).
- *
- * Returns a ref to attach to the displaying element. The element's
- * textContent is updated directly to avoid React re-renders per frame.
- */
-function useCountUp(
-  target: number | null,
-  reducedMotion: boolean,
-  duration = 1200,
-) {
-  const ref = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || target === null) return;
-
-    if (reducedMotion || typeof window === "undefined") {
-      el.textContent = String(target);
-      return;
-    }
-
-    let frameId = 0;
-    let startedAt = 0;
-    let running = false;
-
-    const tick = (now: number) => {
-      frameId = 0;
-      if (!startedAt) startedAt = now;
-      const progress = Math.min(1, (now - startedAt) / duration);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const value = Math.round(target * eased);
-      el.textContent = String(value);
-      if (progress < 1) {
-        frameId = window.requestAnimationFrame(tick);
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && !running) {
-            running = true;
-            startedAt = 0;
-            frameId = window.requestAnimationFrame(tick);
-            observer.disconnect();
-          }
-        }
-      },
-      { threshold: 0.4 },
-    );
-    observer.observe(el);
-
-    return () => {
-      observer.disconnect();
-      if (frameId) window.cancelAnimationFrame(frameId);
-    };
-  }, [target, reducedMotion, duration]);
-
-  return ref;
 }
 
 function PreviewSurface({ step }: { step: PreviewDemoStep }) {
@@ -855,26 +741,28 @@ export function HeroHeader() {
           <div className="hero-copy">
             <div className="hero-kicker" data-hero-enter>
               <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
-              Unlock your system stack
+              AI design-system builder
             </div>
             <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              ausos for <span>Design Flow</span>
+              AI design-system builder for <span>product teams</span>
             </h1>
             <p className="hero-body" data-hero-enter>
-              Prototype, compare, and hand off production-ready interfaces across Salt DS,
-              Material 3, Fluent 2, Carbon, and ausos from one quiet AI workspace.
+              Turn one product brief into responsive Salt DS, Material 3, Fluent 2,
+              Carbon, and ausos interface directions ready for comparison, review, and handoff.
             </p>
             <div className="hero-actions" data-hero-enter>
-              <Link href="/login" className="landing-btn landing-btn--outline">
-                <span>Enter Studio</span>
+              <a href={ACCESS_EMAIL} className="landing-btn landing-btn--light">
+                <span>Request Access</span>
                 <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-              </Link>
-              <a href="#demo" className="landing-btn landing-btn--light">
-                <span>Discover More</span>
+              </a>
+              <a href="#demo" className="landing-btn landing-btn--outline">
+                <span>View Demo</span>
               </a>
             </div>
+            <p className="hero-body" data-hero-enter>
+              Private preview. Already have a password? Use Enter Studio in the top navigation.
+            </p>
           </div>
-
         </div>
       </section>
 
@@ -892,6 +780,7 @@ export function HeroHeader() {
         <div className="section-heading demo-heading content-parallax-heading">
           <span className="section-kicker">Live demo</span>
           <h2 id="demo-title">See the builder move from prompt to handoff.</h2>
+          <p>Follow the complete loop: Prompt -&gt; Generate -&gt; Compare -&gt; Tune -&gt; Export.</p>
         </div>
         <div className="demo-frame content-card-grid">
           <HeroPreviewDemo />
@@ -979,10 +868,10 @@ export function HeroHeader() {
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
           </ul>
-          <Link href="/login" className="landing-btn landing-btn--light">
-            <span>Enter Studio</span>
+          <a href={ACCESS_EMAIL} className="landing-btn landing-btn--light">
+            <span>Request Access</span>
             <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
-          </Link>
+          </a>
         </div>
       </section>
 
