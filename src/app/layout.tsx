@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { fontVariables } from "@/lib/fonts";
 import "./globals.css";
+import "./conversion.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
