@@ -5,6 +5,8 @@ import React, { useState, FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import "./login.css";
 
+const ACCESS_EMAIL = "mailto:shannonheckerchen@gmail.com?subject=ausos%20studio%20access";
+
 export default function LoginPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -58,8 +60,8 @@ export default function LoginPage() {
           </div>
           <h1 id="login-title">Enter the design-system studio.</h1>
           <p>
-            Continue into the working builder where prompts become Salt DS, Material 3,
-            Fluent 2, Carbon, and ausos interface directions.
+            Use your private-preview password to open the working builder, where prompts
+            become Salt DS, Material 3, Fluent 2, Carbon, and ausos interface directions.
           </p>
           <div className="login-proof-row" aria-label="Studio capabilities">
             <span>Prompt</span>
@@ -76,7 +78,7 @@ export default function LoginPage() {
             </div>
             <div>
               <h2>Studio password</h2>
-              <p>Use the staging password to continue.</p>
+              <p>Use your private-preview password, or request access below.</p>
             </div>
           </div>
 
@@ -115,7 +117,7 @@ export default function LoginPage() {
             {error && (
               <p id="login-error" className="login-error" role="alert">
                 Incorrect password, try again. Need access?{" "}
-                <a href="mailto:shannonheckerchen@gmail.com">Email Shannon</a>.
+                <a href={ACCESS_EMAIL}>Email Shannon</a>.
               </p>
             )}
 
@@ -125,7 +127,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="login-meta">This preview is under development.</p>
+          <p className="login-meta">
+            This preview is under development. Need access? <a href={ACCESS_EMAIL}>Email Shannon</a>.
+          </p>
         </section>
       </div>
     </main>
