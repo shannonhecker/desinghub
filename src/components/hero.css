@@ -27,12 +27,15 @@
   min-height: 100vh;
   isolation: isolate;
   overflow-x: clip;
+  /* OKLab interpolation + tinted-zero end-stops to remove 8-bit sRGB
+     banding on the aurora ramps. See globals.css `--dh-noise-overlay`
+     for the dither layer that tops this stack. */
   background:
-    linear-gradient(120deg, rgba(94, 231, 223, 0.08), transparent 32%),
-    radial-gradient(ellipse at 14% 8%, rgba(180, 144, 245, 0.16), transparent 38rem),
-    radial-gradient(ellipse at 86% 12%, rgba(247, 138, 184, 0.11), transparent 40rem),
-    radial-gradient(ellipse at 42% 92%, rgba(255, 173, 92, 0.07), transparent 34rem),
-    linear-gradient(180deg, var(--dh-page-bg-deep), var(--dh-brand-bg-deep) 48%, var(--page-bg));
+    linear-gradient(120deg in oklab, rgba(94, 231, 223, 0.08), rgba(94, 231, 223, 0) 32%),
+    radial-gradient(ellipse at 14% 8% in oklab, rgba(180, 144, 245, 0.16), rgba(180, 144, 245, 0) 38rem),
+    radial-gradient(ellipse at 86% 12% in oklab, rgba(247, 138, 184, 0.11), rgba(247, 138, 184, 0) 40rem),
+    radial-gradient(ellipse at 42% 92% in oklab, rgba(255, 173, 92, 0.07), rgba(255, 173, 92, 0) 34rem),
+    linear-gradient(180deg in oklab, var(--dh-page-bg-deep), var(--dh-brand-bg-deep) 48%, var(--page-bg));
   color: var(--text);
   font-family: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -49,18 +52,25 @@
 
 .hero::before {
   background:
-    radial-gradient(ellipse at 16% 72%, rgba(94, 231, 223, 0.18), transparent 32rem),
-    radial-gradient(ellipse at 64% 18%, rgba(180, 144, 245, 0.18), transparent 38rem),
-    radial-gradient(ellipse at 88% 66%, rgba(247, 138, 184, 0.1), transparent 34rem);
+    radial-gradient(ellipse at 16% 72% in oklab, rgba(94, 231, 223, 0.18), rgba(94, 231, 223, 0) 32rem),
+    radial-gradient(ellipse at 64% 18% in oklab, rgba(180, 144, 245, 0.18), rgba(180, 144, 245, 0) 38rem),
+    radial-gradient(ellipse at 88% 66% in oklab, rgba(247, 138, 184, 0.1), rgba(247, 138, 184, 0) 34rem);
 }
 
+/* `.hero::after` now carries TWO things at once: the legacy starfield
+   speckle (kept at much lower alpha so it reads as faint specks not a
+   pattern) and the SVG turbulence dither that breaks up the gradient
+   banding. Multiple background-images stack from top → bottom — noise
+   sits above the speckle so the dither dominates flat areas. */
 .hero::after {
-  opacity: 0.075;
+  opacity: 1;
   background-image:
-    radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.58) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 42% 66%, rgba(255, 255, 255, 0.34) 0 1px, transparent 1.5px);
-  background-size: 260px 210px, 340px 260px, 420px 310px;
+    var(--dh-noise-overlay),
+    radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.044) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.032) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 42% 66%, rgba(255, 255, 255, 0.026) 0 1px, transparent 1.5px);
+  background-size: 200px 200px, 260px 210px, 340px 260px, 420px 310px;
+  mix-blend-mode: overlay;
 }
 
 .hero *,
