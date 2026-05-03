@@ -962,9 +962,6 @@ export function HeroHeader() {
       </nav>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
-            </Link>
-          </nav>
-
           <div className="hero-halo" aria-hidden="true" />
           <div className="stage-light stage-light--right" aria-hidden="true" />
           <div className="stage-light stage-light--left" aria-hidden="true" />
@@ -1119,14 +1116,16 @@ export function HeroHeader() {
 
       <section className="landing-section audience-section section-band" aria-labelledby="audience-title">
         <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Built for</span>
-          <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
-          <p>
-            ausos is being built by Shannon for early product exploration: the moment
-            when a brief needs to become a credible interface direction fast.
-          </p>
-          <blockquote className="section-pullquote">
+        <div className="audience-header">
+          <div className="section-heading content-parallax-heading">
+            <span className="section-kicker">Built for</span>
+            <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
+            <p>
+              ausos is being built by Shannon for early product exploration: the moment
+              when a brief needs to become a credible interface direction fast.
+            </p>
+          </div>
+          <blockquote className="section-pullquote audience-pullquote">
             <span className="section-pullquote-label">Founder note</span>
             <p>
               The goal is not another generic AI mockup surface. It is a practical studio

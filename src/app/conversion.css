@@ -1078,12 +1078,45 @@
   font-style: normal;
 }
 
-/* ── Audience rows — 3-column typographic block ───────────────────────── */
+/* ── Audience header — heading on the left, founder note top-right ───── */
+.hero.landing-page .audience-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(40px, 5vw, 80px);
+}
+
+.hero.landing-page .audience-header .section-heading {
+  /* Heading column already has its own internal spacing; nothing more
+     needed beyond letting it sit naturally in the left grid cell. */
+  margin: 0;
+}
+
+.hero.landing-page .audience-pullquote {
+  /* Override the default top margin from .section-pullquote so the note
+     aligns with the kicker pill in the heading column. */
+  margin-top: var(--dh-space-32);
+  align-self: start;
+}
+
+@media (max-width: 920px) {
+  .hero.landing-page .audience-header {
+    grid-template-columns: 1fr;
+    gap: var(--dh-space-32);
+  }
+
+  .hero.landing-page .audience-pullquote {
+    margin-top: 0;
+  }
+}
+
+/* ── Audience rows — 3-column typographic block (now full-width below
+       the header, so columns get real breathing room) ─────────────────── */
 .hero.landing-page .audience-rows {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--dh-space-32);
-  margin-top: clamp(56px, 8vh, 96px);
+  gap: clamp(32px, 4vw, 56px);
+  margin-top: clamp(72px, 10vh, 128px);
 }
 
 .hero.landing-page .audience-row {
