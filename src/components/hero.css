@@ -26,7 +26,7 @@
   position: relative;
   min-height: 100vh;
   isolation: isolate;
-  overflow-x: clip;
+  overflow: clip;
   background:
     linear-gradient(120deg, rgba(94, 231, 223, 0.08), transparent 32%),
     radial-gradient(ellipse at 14% 8%, rgba(180, 144, 245, 0.16), transparent 38rem),
@@ -2523,6 +2523,259 @@
   transition: background var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease);
 }
 
+/* Hero beam pillar — central blue light shaft descending from the top of
+   the stage, with a wide soft halo, drifting dust particles, and a landing
+   glow at the bottom where it meets the showcase. Sits at z-index 0 so it
+   reads behind the cursor halo (z-index 1), grid (z-index 2), and copy. */
+.hero-beam-pillar {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-beam-pillar-particles {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0.8px, transparent 1.4px);
+  background-size: 64px 88px;
+  background-position: 0 0;
+  opacity: 0.55;
+  -webkit-mask-image: radial-gradient(ellipse 30% 60% at 50% 38%, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+          mask-image: radial-gradient(ellipse 30% 60% at 50% 38%, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+  animation: hero-beam-pillar-particles 24s linear infinite;
+}
+
+/* Top aura — wide soft halo fanning down from the top of the stage.
+   No clip-path (hard polygon edges read as flat triangles); instead a
+   tightly-focused radial gradient produces a naturally curved fade. */
+.hero-beam-pillar-aura-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 78%;
+  background: radial-gradient(
+    ellipse 78% 60% at 50% 0%,
+    rgba(220, 236, 252, 0.55) 0%,
+    rgba(134, 189, 240, 0.4) 22%,
+    rgba(134, 189, 240, 0.18) 48%,
+    rgba(134, 189, 240, 0.06) 72%,
+    transparent 100%
+  );
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  animation: hero-beam-pillar-aura-top 7s ease-in-out infinite;
+}
+
+/* Bottom flare — wide soft spread fanning up from the floor where the
+   beam meets the showcase. */
+.hero-beam-pillar-aura-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: radial-gradient(
+    ellipse 92% 58% at 50% 100%,
+    rgba(220, 236, 252, 0.6) 0%,
+    rgba(134, 189, 240, 0.42) 22%,
+    rgba(134, 189, 240, 0.2) 48%,
+    rgba(134, 189, 240, 0.06) 75%,
+    transparent 100%
+  );
+  filter: blur(16px);
+  mix-blend-mode: screen;
+  animation: hero-beam-pillar-aura-bottom 6.2s ease-in-out infinite;
+}
+
+/* Aurora ray curtain — explicit per-ray <span>s positioned by inline
+   style. Two groups: top rays fanning down from the upper edge to
+   ~waist, and bottom rays fanning up from the floor splaying outward
+   around the showcase. Each ray's x position, width, height, blur,
+   alpha, and shimmer delay are set per-ray in the JSX. */
+.hero-beam-pillar-rays-top,
+.hero-beam-pillar-rays-bottom {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.hero-beam-ray {
+  position: absolute;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, calc(var(--ray-alpha, 0.85) * 0.12)) 14%,
+    rgba(255, 255, 255, calc(var(--ray-alpha, 0.85) * 0.55)) 26%,
+    rgba(220, 236, 252, var(--ray-alpha, 0.85)) 42%,
+    rgba(196, 222, 248, calc(var(--ray-alpha, 0.85) * 0.85)) 62%,
+    rgba(134, 189, 240, calc(var(--ray-alpha, 0.85) * 0.4)) 84%,
+    transparent 100%
+  );
+  animation: hero-beam-ray-shimmer 5.4s ease-in-out infinite;
+  animation-delay: var(--ray-delay, 0s);
+}
+
+.hero-beam-ray--down {
+  /* Mirrored gradient for the bottom-fan rays — bright near the waist,
+     fading toward the floor. */
+  background: linear-gradient(
+    to top,
+    transparent 0%,
+    rgba(255, 255, 255, calc(var(--ray-alpha, 0.85) * 0.9)) 10%,
+    rgba(220, 236, 252, var(--ray-alpha, 0.85)) 32%,
+    rgba(196, 222, 248, calc(var(--ray-alpha, 0.85) * 0.8)) 60%,
+    rgba(134, 189, 240, calc(var(--ray-alpha, 0.85) * 0.35)) 84%,
+    transparent 100%
+  );
+}
+
+@keyframes hero-beam-ray-shimmer {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+/* Waist hot-spot — bright focal point where the cones meet (~62%). */
+.hero-beam-pillar-waist {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  width: clamp(220px, 22vw, 380px);
+  height: clamp(220px, 22vw, 380px);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.75) 8%,
+    rgba(220, 236, 252, 0.55) 22%,
+    rgba(134, 189, 240, 0.32) 45%,
+    rgba(134, 189, 240, 0.1) 68%,
+    transparent 100%
+  );
+  filter: blur(8px);
+  mix-blend-mode: screen;
+  animation: hero-beam-pillar-waist 5s ease-in-out infinite;
+}
+
+/* Central bright shaft — thin vertical line of light running the full
+   height of the stage, brightest in the upper-middle. Reads as the
+   spine of the beam. */
+.hero-beam-pillar-shaft {
+  position: absolute;
+  top: -6%;
+  left: 50%;
+  width: clamp(40px, 3vw, 64px);
+  height: 108%;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(255, 255, 255, 0.9) 18%,
+      rgba(220, 236, 252, 1) 32%,
+      rgba(255, 255, 255, 0.8) 50%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(220, 236, 252, 0.95) 22%,
+      rgba(220, 236, 252, 0.85) 50%,
+      rgba(196, 222, 248, 0.65) 78%,
+      rgba(134, 189, 240, 0.35) 100%
+    );
+  background-size: 100% 60%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0% -60%, 0% 0%;
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  animation: hero-beam-pillar-shaft 3.8s linear infinite;
+}
+
+.hero-beam-pillar-floor {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: clamp(560px, 60vw, 1120px);
+  height: 320px;
+  transform: translateX(-50%) translateY(34%);
+  background: radial-gradient(
+    ellipse 50% 50% at 50% 50%,
+    rgba(134, 189, 240, 0.4) 0%,
+    rgba(134, 189, 240, 0.16) 32%,
+    rgba(134, 189, 240, 0.04) 60%,
+    transparent 100%
+  );
+  filter: blur(40px);
+  mix-blend-mode: screen;
+  animation: hero-beam-pillar-floor 6.8s ease-in-out infinite;
+}
+
+@keyframes hero-beam-pillar-particles {
+  from { background-position: 0 0; }
+  to { background-position: 0 600px; }
+}
+
+/* Top aura: gentle pulse breathing in/out. */
+@keyframes hero-beam-pillar-aura-top {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+/* Bottom flare: pulse + slight horizontal scale, suggesting light
+   spilling outward as it lands. */
+@keyframes hero-beam-pillar-aura-bottom {
+  0%, 100% { opacity: 0.85; transform: scaleX(1); }
+  50%      { opacity: 1;    transform: scaleX(1.08); }
+}
+
+/* Waist hot-spot: pulse on scale + opacity. Reads as the focal point. */
+@keyframes hero-beam-pillar-waist {
+  0%, 100% { opacity: 0.88; transform: translate(-50%, -50%) scale(1); }
+  50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.18); }
+}
+
+/* Central shaft: bright pulse travels down the full height while the
+   persistent core column underneath stays put. Faster cadence than the
+   auras so it reads as focused light rushing through the spine. */
+@keyframes hero-beam-pillar-shaft {
+  from { background-position: 0% -60%, 0% 0%; }
+  to   { background-position: 0% 140%, 0% 0%; }
+}
+
+@keyframes hero-beam-pillar-floor {
+  0%, 100% { opacity: 0.85; transform: translateX(-50%) translateY(34%) scale(1); }
+  50%      { opacity: 1;    transform: translateX(-50%) translateY(34%) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-beam-pillar-particles,
+  .hero-beam-pillar-aura-top,
+  .hero-beam-pillar-aura-bottom,
+  .hero-beam-ray,
+  .hero-beam-pillar-waist,
+  .hero-beam-pillar-shaft,
+  .hero-beam-pillar-floor {
+    animation: none;
+  }
+}
+
+/* Lift hero copy and stage markers above the beam pillar (z-index 0).
+   Without this, the absolutely-positioned beam paints over the static
+   copy regardless of document order. */
+.hero-stage-shell .hero-copy {
+  position: relative;
+  z-index: 3;
+}
+
+.hero-stage-shell .stage-marker {
+  z-index: 3;
+}
+
 /* Topographic contour SVG — replaces the old .stage-track corner divs.
    Three dotted paths draw in on mount, then drift slowly. */
 .topo-svg {
@@ -4344,10 +4597,26 @@
   --radius: var(--dh-curve-md);
 
   background:
+    /* upper hero washes (already in place) */
     radial-gradient(ellipse at 50% -10%, rgba(180, 144, 245, 0.115), transparent 42rem),
     radial-gradient(ellipse at 12% 28%, rgba(94, 231, 223, 0.075), transparent 34rem),
     radial-gradient(ellipse at 86% 42%, rgba(247, 138, 184, 0.055), transparent 36rem),
-    linear-gradient(180deg, #020302 0%, #070710 44%, #030403 100%);
+    /* atmospheric continuation into the proof strip + bento sections
+       so the area below the hero stage doesn't read as a dark box */
+    radial-gradient(ellipse 80% 22% at 50% 16%, rgba(54, 100, 200, 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 16% at 22% 20%, rgba(94, 231, 223, 0.07), transparent 75%),
+    radial-gradient(ellipse 60% 16% at 78% 22%, rgba(180, 144, 245, 0.07), transparent 75%),
+    /* keep the linear gradient bluer through the upper-mid page so the
+       proof strip / bento area sits in the brighter band, not the
+       darker tail */
+    linear-gradient(
+      180deg,
+      #020302 0%,
+      #050616 22%,
+      #070710 50%,
+      #050616 75%,
+      #030403 100%
+    );
   color: var(--text);
 }
 
@@ -4376,6 +4645,9 @@
   min-height: 100svh;
 }
 
+/* No fade overlay at the bottom of the hero stage — the rays each
+   fade out via their own gradient and the hero's atmospheric
+   background continues seamlessly into the next section. */
 .hero.landing-page .hero-stage::after {
   content: none;
 }

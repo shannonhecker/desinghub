@@ -57,7 +57,7 @@ const systems = [
   {
     key: "carbon",
     name: "Carbon",
-    detail: "Crisp enterprise layouts for data grids, reporting, release checks, and handoff.",
+    detail: "IBM UI Shell chrome with the four canonical theme keys (white, g10, g90, g100), flat-radius grammar, and the electric-blue interactive accent. Replicated to match carbondesignsystem.com.",
     signal: "Data first",
   },
   {
@@ -72,22 +72,22 @@ const workflow = [
   {
     eyebrow: "01",
     title: "Prompt",
-    body: "Describe the product surface, audience, density, and design-system direction.",
+    body: "Describe the surface. Use the slash-command inserter (\"/\") to drop a known component, or pick a starting template.",
   },
   {
     eyebrow: "02",
     title: "Generate",
-    body: "Get a structured interface draft with real controls, data, and responsive states.",
+    body: "The canvas builds across header, sidebar, body, and footer zones using each system's real components — not generic placeholders.",
   },
   {
     eyebrow: "03",
     title: "Compare",
-    body: "Move the same idea through Salt, Material, Fluent, Carbon, and ausos treatments.",
+    body: "Switch the same canvas through Salt, Material 3, Fluent 2, Carbon, and ausos. Tokens, density, and chrome update in place.",
   },
   {
     eyebrow: "04",
     title: "Ship",
-    body: "Share the selected direction or export clean HTML, React, and Vite handoff paths.",
+    body: "Export three ways: stateless share link, JSON canvas snapshot, or a React TSX / HTML / Vite project. Sessions auto-save in the background.",
   },
 ];
 
@@ -902,7 +902,7 @@ export function HeroHeader() {
   useHaloPointer(reducedMotion, landingRef);
 
   useEffect(() => {
-    const onScroll = () => setNavScrolled(window.scrollY > 80);
+    const onScroll = () => setNavScrolled(window.scrollY > 200);
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
@@ -962,6 +962,73 @@ export function HeroHeader() {
       </nav>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
+          <div className="hero-beam-pillar" aria-hidden="true">
+            <div className="hero-beam-pillar-particles" />
+            <div className="hero-beam-pillar-aura-top" />
+            <div className="hero-beam-pillar-aura-bottom" />
+            <div className="hero-beam-pillar-rays-top">
+              {Array.from({ length: 12 }, (_, i) => {
+                // 6 rays on the left (i=0..5) and 6 on the right (i=6..11),
+                // leaving the centre clear for the title.
+                const side = i < 6 ? -1 : 1;
+                const idx = i < 6 ? i : i - 6; // 0..5 within the side
+                // Spread each side from ~14% to ~36% out from centre.
+                const xPct = side * (14 + idx * 4.4);
+                const dist = Math.abs(xPct) / 36; // 0..1 normalised
+                const heightPct = 92 - dist * 30;
+                const widthPx = 5 + ((i * 17) % 4);
+                const blur = 1.6 + dist * 3;
+                const alpha = 0.92 - dist * 0.32;
+                const delay = ((i * 0.137) % 1) * 5.4;
+                return (
+                  <span
+                    key={`top-${i}`}
+                    className="hero-beam-ray"
+                    style={{
+                      left: `calc(50% + ${xPct}%)`,
+                      top: 0,
+                      width: `${widthPx}px`,
+                      height: `${heightPct}%`,
+                      filter: `blur(${blur}px)`,
+                      ["--ray-alpha" as string]: alpha,
+                      ["--ray-delay" as string]: `${delay}s`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="hero-beam-pillar-rays-bottom">
+              {Array.from({ length: 12 }, (_, i) => {
+                // 6 rays per side, mirroring the top fan.
+                const side = i < 6 ? -1 : 1;
+                const idx = i < 6 ? i : i - 6;
+                const xPct = side * (16 + idx * 5.2);
+                const dist = Math.abs(xPct) / 42;
+                const heightPct = 84 - dist * 24;
+                const widthPx = 5 + ((i * 19) % 4);
+                const blur = 1.6 + dist * 3;
+                const alpha = 0.88 - dist * 0.3;
+                const delay = ((i * 0.179) % 1) * 5.4;
+                return (
+                  <span
+                    key={`bot-${i}`}
+                    className="hero-beam-ray hero-beam-ray--down"
+                    style={{
+                      left: `calc(50% + ${xPct}%)`,
+                      bottom: 0,
+                      width: `${widthPx}px`,
+                      height: `${heightPct}%`,
+                      filter: `blur(${blur}px)`,
+                      ["--ray-alpha" as string]: alpha,
+                      ["--ray-delay" as string]: `${delay}s`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="hero-beam-pillar-waist" />
+            <div className="hero-beam-pillar-floor" />
+          </div>
           <div className="hero-halo" aria-hidden="true" />
           <div className="stage-light stage-light--right" aria-hidden="true" />
           <div className="stage-light stage-light--left" aria-hidden="true" />
@@ -994,14 +1061,13 @@ export function HeroHeader() {
           <div className="hero-copy">
             <div className="hero-kicker" data-hero-enter>
               <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
-              AI design-system builder
+              AI builder for five enterprise design systems
             </div>
             <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              Turn product briefs into <span>system-ready UI</span>
+              Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or ausos</span>
             </h1>
             <p className="hero-body" data-hero-enter>
-              Use a quiet AI workspace to generate responsive Salt DS, Material 3, Fluent 2,
-              Carbon, and ausos interface directions for comparison, review, and handoff.
+              ausōs turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
             </p>
             <div className="hero-actions" data-hero-enter>
               <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
