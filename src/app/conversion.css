@@ -1078,35 +1078,18 @@
   font-style: normal;
 }
 
-/* ── Audience header — heading on the left, founder note top-right ───── */
-.hero.landing-page .audience-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(40px, 5vw, 80px);
-}
-
-.hero.landing-page .audience-header .section-heading {
-  /* Heading column already has its own internal spacing; nothing more
-     needed beyond letting it sit naturally in the left grid cell. */
-  margin: 0;
-}
-
+/* ── Audience pull-quote — sits right-aligned between heading and 3-up ── */
 .hero.landing-page .audience-pullquote {
-  /* Override the default top margin from .section-pullquote so the note
-     aligns with the kicker pill in the heading column. */
-  margin-top: var(--dh-space-32);
-  align-self: start;
+  /* Title is full-width above; founder note floats right under it as
+     a small column, then 3-up audience grid takes the full width below. */
+  margin: clamp(40px, 6vh, 64px) 0 0 auto;
+  max-width: 480px;
 }
 
-@media (max-width: 920px) {
-  .hero.landing-page .audience-header {
-    grid-template-columns: 1fr;
-    gap: var(--dh-space-32);
-  }
-
+@media (max-width: 720px) {
   .hero.landing-page .audience-pullquote {
-    margin-top: 0;
+    max-width: 100%;
+    margin: var(--dh-space-32) 0 0;
   }
 }
 
