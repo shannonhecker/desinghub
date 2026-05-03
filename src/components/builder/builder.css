@@ -12609,3 +12609,101 @@
   background: var(--cds-layer-accent-01, var(--ds-surface-hover));
   color: var(--cds-text-primary, var(--ds-fg));
 }
+
+/* ── Builder theme quick-controls (top-bar DS/mode/density) ─────────────
+   Inline DS dropdown + mode toggle + density dropdown, sized to match
+   .top-bar-btn so they sit cleanly next to UI Kit / Export. */
+.builder-theme-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.builder-theme-menu__select {
+  height: 28px;
+  padding: 0 22px 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background:
+    rgba(0, 0, 0, 0)
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>")
+    no-repeat right 6px center;
+  color: var(--ds-fg, #e6e8ef);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 150ms ease;
+}
+
+.builder-theme-menu__select:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.builder-theme-menu__select:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 1px;
+}
+
+.builder-theme-menu__select option {
+  /* Native option list inherits OS chrome; the background here is only
+     the fallback for browsers that respect option backgrounds. */
+  background: #15161c;
+  color: #e6e8ef;
+}
+
+.builder-theme-menu__mode {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ds-fg, #e6e8ef);
+  cursor: pointer;
+  outline: none;
+  transition: background-color 150ms ease;
+}
+
+.builder-theme-menu__mode:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.builder-theme-menu__mode:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 1px;
+}
+
+.builder-light .builder-theme-menu {
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.builder-light .builder-theme-menu__select,
+.builder-light .builder-theme-menu__mode {
+  color: rgba(20, 22, 30, 0.86);
+}
+
+.builder-light .builder-theme-menu__select:hover,
+.builder-light .builder-theme-menu__mode:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 720px) {
+  /* Hide density on narrow viewports — DS + mode are the load-bearing
+     two; density still reachable via SettingsPanel. */
+  .builder-theme-menu__select:last-of-type {
+    display: none;
+  }
+}
