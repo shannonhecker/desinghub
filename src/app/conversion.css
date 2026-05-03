@@ -1196,21 +1196,42 @@
 
 .hero.landing-page .proof-row-visual {
   display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-16);
+  align-items: stretch;
+  justify-content: center;
+}
+
+.hero.landing-page .proof-row-graphic {
+  display: block;
+  width: 100%;
+}
+
+.hero.landing-page .proof-row-graphic .bento-graphic {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 184px;
+}
+
+.hero.landing-page .proof-row-chips {
+  display: flex;
   flex-wrap: wrap;
-  gap: var(--dh-space-12);
+  gap: var(--dh-space-8);
   align-items: center;
 }
 
+.hero.landing-page .proof-row-chips span,
 .hero.landing-page .proof-row-visual span {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 var(--dh-space-16);
+  min-height: 30px;
+  padding: 0 var(--dh-space-12);
   border: 1px solid rgba(255, 255, 255, 0.085);
   border-radius: var(--dh-curve-pill);
   background: rgba(255, 255, 255, 0.025);
   color: rgba(238, 242, 237, 0.78);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.005em;
 }

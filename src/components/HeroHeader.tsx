@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
+import { getBentoGraphic } from "./landing/BentoGraphics";
 import "./hero.css";
 
 const ACCESS_EMAIL = "shannonheckerchen@gmail.com";
@@ -1172,10 +1173,15 @@ export function HeroHeader() {
               data-flip={index % 2 === 1 ? "true" : "false"}
               key={item.key}
             >
-              <div className="proof-row-visual" aria-hidden="true">
-                {item.visual.map((label) => (
-                  <span key={label}>{label}</span>
-                ))}
+              <div className="proof-row-visual">
+                <div className="proof-row-graphic" aria-hidden="false">
+                  {getBentoGraphic(item.key)}
+                </div>
+                <div className="proof-row-chips" aria-hidden="true">
+                  {item.visual.map((label) => (
+                    <span key={label}>{label}</span>
+                  ))}
+                </div>
               </div>
               <div className="proof-row-copy">
                 <h3>{item.title}</h3>
