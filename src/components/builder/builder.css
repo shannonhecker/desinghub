@@ -4972,16 +4972,20 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* ── Fluent 2 Tabs ── */
-.f-tabs-container {
+/* ── Fluent 2 Tabs (scoped to .builder-shell) ──
+   These overrides exist to harmonise the builder's internal Fluent surfaces
+   with the dialog/button overrides further down. They MUST stay scoped to
+   .builder-shell so they don't leak into /ui-kit, where the Fluent docs
+   inject their own .f-tab rules via buildCSS. */
+.builder-shell .f-tabs-container {
   font-family: 'Segoe UI', -apple-system, sans-serif;
   color: var(--colorNeutralForeground1);
 }
-.f-tab-list {
+.builder-shell .f-tab-list {
   border-bottom: 1px solid var(--colorNeutralStroke2);
   gap: 4px;
 }
-.f-tab {
+.builder-shell .f-tab {
   padding: 8px 12px;
   font-size: 14px;
   font-weight: 400;
@@ -4994,15 +4998,17 @@
   border-radius: 4px 4px 0 0;
   transition: color 0.15s, background 0.15s;
 }
-.f-tab:hover { color: var(--colorNeutralForeground1); background: var(--colorNeutralBackground1Hover, rgba(128,128,128,0.08)); }
-.f-tab.active, .f-tab-active {
-  color: var(--colorBrandForeground1);
-  border-bottom-color: var(--colorBrandStroke1);
+.builder-shell .f-tab:hover { color: var(--colorNeutralForeground1); background: var(--colorTransparentBackgroundHover, rgba(128,128,128,0.08)); }
+.builder-shell .f-tab.active,
+.builder-shell .f-tab-active {
+  color: var(--colorNeutralForeground1);
+  border-bottom-color: var(--colorCompoundBrandStroke);
   font-weight: 600;
   background: transparent;
 }
-.f-tab.active:hover, .f-tab-active:hover { background: transparent; }
-.f-tab-panel {
+.builder-shell .f-tab.active:hover,
+.builder-shell .f-tab-active:hover { background: var(--colorTransparentBackgroundHover, rgba(128,128,128,0.08)); }
+.builder-shell .f-tab-panel {
   padding: 16px 0;
   font-size: 14px;
   color: var(--colorNeutralForeground2);
@@ -5053,6 +5059,7 @@
 .builder-light .f-tab-list { border-color: var(--colorNeutralStroke2); }
 .builder-light .f-tab { color: var(--colorNeutralForeground2); }
 .builder-light .f-tab:hover { color: var(--colorNeutralForeground1); background: var(--colorNeutralBackground1Hover); }
+.builder-light .f-tab.active, .builder-light .f-tab-active { color: var(--colorNeutralForeground1); border-bottom-color: var(--colorCompoundBrandStroke); }
 .builder-light .f-tab-panel { color: var(--colorNeutralForeground2); }
 
 
