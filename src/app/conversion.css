@@ -5,10 +5,10 @@
    -------------------------------------------------------------------------- */
 
 .hero.landing-page .hero-actions + .hero-body {
-  border-color: rgba(255, 255, 255, 0.095);
-  background: rgba(5, 7, 8, 0.42);
+  border-color: transparent;
+  background: none;
   color: rgba(244, 248, 241, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: none;
 }
 
 .hero.landing-page .demo-step-list,
@@ -367,16 +367,16 @@
   max-width: min(620px, 100%);
   min-height: 28px;
   margin-top: var(--dh-space-16);
-  padding: 0 var(--dh-space-12);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--dh-curve-full);
-  background: rgba(5, 7, 5, 0.48);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
   color: rgba(244, 248, 241, 0.78);
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.35;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .hero .section-heading p {
@@ -1608,12 +1608,12 @@
 }
 
 .hero.landing-page .landing-nav--sticky.landing-nav--scrolled .landing-nav-links {
-  background: rgba(255, 255, 255, 0.035);
+  background: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
   min-height: 32px;
-  border-color: rgba(255, 255, 255, 0.07);
+  border-color: transparent;
 }
 
 .hero.landing-page .landing-nav--sticky.landing-nav--scrolled .landing-brand {
