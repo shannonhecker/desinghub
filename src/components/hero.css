@@ -242,20 +242,13 @@
   filter: blur(36px);
 }
 
-.stage-light--right {
-  top: var(--dh-space-64);
-  right: -10%;
-  width: min(460px, 42vw);
-  height: 310px;
-  background: rgba(180, 144, 245, 0.18);
-}
-
+/* Spotlights removed — relying on the hero gradient stack alone for
+   atmosphere. Rules kept as `display: none` rather than deleted so the
+   JSX `<div className="stage-light stage-light--right" />` etc. don't
+   leave layout artefacts; cleanup of the JSX itself is a follow-up. */
+.stage-light--right,
 .stage-light--left {
-  left: -5%;
-  bottom: 58px;
-  width: min(360px, 38vw);
-  height: 210px;
-  background: rgba(94, 231, 223, 0.16);
+  display: none;
 }
 
 .stage-grid {
@@ -4353,11 +4346,14 @@
   --soft: rgba(238, 242, 237, 0.46);
   --radius: var(--dh-curve-md);
 
+  /* This block is the live landing-page background (overrides the base
+     `.hero` rule). OKLab interpolation + same-hue zero-alpha end-stops
+     to kill the 8-bit sRGB banding on the aurora ramps. */
   background:
-    radial-gradient(ellipse at 50% -10%, rgba(180, 144, 245, 0.115), transparent 42rem),
-    radial-gradient(ellipse at 12% 28%, rgba(94, 231, 223, 0.075), transparent 34rem),
-    radial-gradient(ellipse at 86% 42%, rgba(247, 138, 184, 0.055), transparent 36rem),
-    linear-gradient(180deg, #020302 0%, #070710 44%, #030403 100%);
+    radial-gradient(ellipse at 50% -10% in oklab, rgba(180, 144, 245, 0.115), rgba(180, 144, 245, 0) 42rem),
+    radial-gradient(ellipse at 12% 28% in oklab, rgba(94, 231, 223, 0.075), rgba(94, 231, 223, 0) 34rem),
+    radial-gradient(ellipse at 86% 42% in oklab, rgba(247, 138, 184, 0.055), rgba(247, 138, 184, 0) 36rem),
+    linear-gradient(180deg in oklab, #020302 0%, #070710 44%, #030403 100%);
   color: var(--text);
 }
 
@@ -4367,18 +4363,24 @@
   transform: none;
   animation: none;
   background:
-    radial-gradient(ellipse at 18% 74%, rgba(94, 231, 223, 0.09), transparent 34rem),
-    radial-gradient(ellipse at 66% 22%, rgba(180, 144, 245, 0.105), transparent 40rem),
-    radial-gradient(ellipse at 88% 70%, rgba(247, 138, 184, 0.055), transparent 34rem);
+    radial-gradient(ellipse at 18% 74% in oklab, rgba(94, 231, 223, 0.09), rgba(94, 231, 223, 0) 34rem),
+    radial-gradient(ellipse at 66% 22% in oklab, rgba(180, 144, 245, 0.105), rgba(180, 144, 245, 0) 40rem),
+    radial-gradient(ellipse at 88% 70% in oklab, rgba(247, 138, 184, 0.055), rgba(247, 138, 184, 0) 34rem);
 }
 
+/* Landing-page override of `.hero::after`. Re-declares `background` so we
+   need to re-stack the noise dither here too — without this the noise
+   layer from .hero::after is overwritten and only applies on non-landing
+   surfaces. Speckle alphas reduced to compensate for the higher overall
+   opacity (was 0.045 globally; now opacity 1 with per-stop alphas). */
 .hero.landing-page::after {
-  opacity: 0.045;
-  background:
-    radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.58) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 42% 66%, rgba(255, 255, 255, 0.34) 0 1px, transparent 1.5px);
-  background-size: 320px 260px, 420px 320px, 520px 380px;
+  opacity: 1;
+  background-image:
+    var(--dh-noise-overlay),
+    radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.026) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.019) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 42% 66%, rgba(255, 255, 255, 0.015) 0 1px, transparent 1.5px);
+  background-size: 200px 200px, 320px 260px, 420px 320px, 520px 380px;
   mask-image: none;
 }
 

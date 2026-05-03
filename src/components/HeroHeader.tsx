@@ -940,8 +940,6 @@ export function HeroHeader() {
           </nav>
 
           <div className="hero-halo" aria-hidden="true" />
-          <div className="stage-light stage-light--right" aria-hidden="true" />
-          <div className="stage-light stage-light--left" aria-hidden="true" />
           <div className="stage-grid" aria-hidden="true" />
 
           <TopoLines />
