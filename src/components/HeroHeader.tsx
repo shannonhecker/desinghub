@@ -5,14 +5,20 @@ import { useEffect, useRef, useState, type FormEvent, type RefObject } from "rea
 import {
   ArrowRight,
   CheckCircle2,
+  Code2,
   Download,
+  Eye,
+  Layers,
   MonitorSmartphone,
+  Palette,
   Pause,
   PanelsTopLeft,
   Play,
+  Rocket,
   Share2,
   SlidersHorizontal,
   Sparkles,
+  Users,
   X,
 } from "lucide-react";
 import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
@@ -126,10 +132,10 @@ const markers = [
 ];
 
 const proof = [
-  { value: "5 systems", label: "Salt, Material, Fluent, Carbon, and ausos from one brief" },
-  { value: "Responsive", label: "desktop, tablet, and mobile previews" },
-  { value: "Exports", label: "React, HTML, and Vite handoff paths" },
-  { value: "Review links", label: "private previews ready for stakeholder critique" },
+  { icon: Layers, value: "5 systems", label: "Salt, Material, Fluent, Carbon, and ausos from one brief" },
+  { icon: MonitorSmartphone, value: "Responsive", label: "desktop, tablet, and mobile previews" },
+  { icon: Code2, value: "Exports", label: "React, HTML, and Vite handoff paths" },
+  { icon: Eye, value: "Review links", label: "private previews ready for stakeholder critique" },
 ];
 
 const bentoProof = [
@@ -161,16 +167,19 @@ const bentoProof = [
 
 const audienceCards = [
   {
+    icon: Users,
     title: "Product teams",
     body: "Explore product surfaces before committing design and engineering time.",
     tags: ["Dashboards", "Forms", "Flows"],
   },
   {
+    icon: Palette,
     title: "Design-system owners",
     body: "Stress-test how one interface behaves across density, tone, and component rules.",
     tags: ["Tokens", "States", "Patterns"],
   },
   {
+    icon: Rocket,
     title: "Founders and agencies",
     body: "Turn a rough product brief into review-ready UI for pitches, demos, and handoff.",
     tags: ["Pitch", "Preview", "Export"],
@@ -881,12 +890,23 @@ export function HeroHeader() {
   const reducedMotion = useReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
   const [accessModalSource, setAccessModalSource] = useState<AccessRequestSource | null>(null);
+  /* Sticky nav scroll-state — adds `landing-nav--scrolled` once the user
+     has moved past the hero's first viewport, which triggers the
+     condensed visual treatment (denser bg, smaller chip, tighter chrome). */
+  const [navScrolled, setNavScrolled] = useState(false);
   const proofRef = useRef<HTMLElement | null>(null);
-  const systemGridRef = useRef<HTMLDivElement | null>(null);
-  const workflowGridRef = useRef<HTMLDivElement | null>(null);
-  const featureGridRef = useRef<HTMLDivElement | null>(null);
+  const systemGridRef = useRef<HTMLUListElement | null>(null);
+  const workflowGridRef = useRef<HTMLOListElement | null>(null);
+  const featureGridRef = useRef<HTMLDListElement | null>(null);
 
   useHaloPointer(reducedMotion, landingRef);
+
+  useEffect(() => {
+    const onScroll = () => setNavScrolled(window.scrollY > 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const openAccessModal = (source: AccessRequestSource) => {
     setAccessModalSource(source);
@@ -916,26 +936,32 @@ export function HeroHeader() {
 
   return (
     <main id="main-content" className="hero landing-page" ref={landingRef}>
+      <nav
+        className={`landing-nav landing-nav--sticky${navScrolled ? " landing-nav--scrolled" : ""}`}
+        aria-label="Primary"
+        data-hero-enter
+      >
+        <Link href="/" className="landing-brand" aria-label="ausos home">
+          <span className="landing-brand-mark" aria-hidden="true">
+            <img src="/aologo.svg" alt="" className="landing-brand-logo" />
+          </span>
+        </Link>
+
+        <div className="landing-nav-links" aria-label="Landing sections">
+          {navItems.map((item) => (
+            <a href={item.href} key={item.href}>
+              {item.label}
+            </a>
+          ))}
+        </div>
+
+        <Link href="/login" className="landing-nav-cta" onClick={() => trackLandingEvent("enter_studio_click", { source: "nav" })}>
+          <span>Enter Studio</span>
+          <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+        </Link>
+      </nav>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
-          <nav className="landing-nav" aria-label="Primary" data-hero-enter>
-            <Link href="/" className="landing-brand" aria-label="ausos home">
-              <span className="landing-brand-mark" aria-hidden="true">
-                <img src="/aologo.svg" alt="" className="landing-brand-logo" />
-              </span>
-            </Link>
-
-            <div className="landing-nav-links" aria-label="Landing sections">
-              {navItems.map((item) => (
-                <a href={item.href} key={item.href}>
-                  {item.label}
-                </a>
-              ))}
-            </div>
-
-            <Link href="/login" className="landing-nav-cta" onClick={() => trackLandingEvent("enter_studio_click", { source: "nav" })}>
-              <span>Enter Studio</span>
-              <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
             </Link>
           </nav>
 
@@ -1050,16 +1076,17 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section className="proof-strip" aria-label="Product proof points" ref={proofRef}>
-        {proof.map((item) => (
-          <div className="proof-item" key={item.value}>
-            <strong>{item.value}</strong>
-            <span>{item.label}</span>
+      <section className="proof-strip-flow" aria-label="Product proof points" ref={proofRef}>
+        {proof.map(({ icon: Icon, value, label }) => (
+          <div className="proof-flow-item" key={value}>
+            <Icon size={20} strokeWidth={1.8} aria-hidden="true" className="proof-flow-icon" />
+            <strong>{value}</strong>
+            <span>{label}</span>
           </div>
         ))}
       </section>
 
-      <section className="landing-section bento-section" aria-labelledby="bento-title">
+      <section className="landing-section bento-section section-band" aria-labelledby="bento-title">
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Product proof</span>
@@ -1069,50 +1096,55 @@ export function HeroHeader() {
             framing, export path, and the context behind each decision.
           </p>
         </div>
-        <div className="proof-bento content-card-grid">
-          {bentoProof.map((item) => (
-            <article className={`proof-bento-card proof-bento-card--${item.key} content-card`} key={item.key}>
-              <div className="proof-bento-visual" aria-hidden="true">
+        <div className="proof-rows">
+          {bentoProof.map((item, index) => (
+            <article
+              className={`proof-row proof-row--${item.key}`}
+              data-flip={index % 2 === 1 ? "true" : "false"}
+              key={item.key}
+            >
+              <div className="proof-row-visual" aria-hidden="true">
                 {item.visual.map((label) => (
-                  <span key={label}>
-                    {label}
-                  </span>
+                  <span key={label}>{label}</span>
                 ))}
               </div>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
+              <div className="proof-row-copy">
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="landing-section audience-section" aria-labelledby="audience-title">
+      <section className="landing-section audience-section section-band" aria-labelledby="audience-title">
         <ContentAtmosphere />
-        <div className="audience-layout">
-          <div className="section-heading content-parallax-heading">
-            <span className="section-kicker">Built for</span>
-            <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
-            <p>
-              ausos is being built by Shannon for early product exploration: the moment
-              when a brief needs to become a credible interface direction fast.
-            </p>
-          </div>
-          <div className="audience-founder content-card">
-            <span>Founder note</span>
+        <div className="section-heading content-parallax-heading">
+          <span className="section-kicker">Built for</span>
+          <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
+          <p>
+            ausos is being built by Shannon for early product exploration: the moment
+            when a brief needs to become a credible interface direction fast.
+          </p>
+          <blockquote className="section-pullquote">
+            <span className="section-pullquote-label">Founder note</span>
             <p>
               The goal is not another generic AI mockup surface. It is a practical studio
               for comparing design-system directions with enough structure to critique,
               share, and hand off.
             </p>
-          </div>
+          </blockquote>
         </div>
-        <div className="audience-grid content-card-grid">
-          {audienceCards.map((card) => (
-            <article className="audience-card content-card" key={card.title}>
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
-              <div aria-label={`${card.title} examples`}>
-                {card.tags.map((tag) => (
+        <div className="audience-rows">
+          {audienceCards.map(({ icon: Icon, title, body, tags }) => (
+            <article className="audience-row" key={title}>
+              <span className="audience-row-icon" aria-hidden="true">
+                <Icon size={22} strokeWidth={1.7} />
+              </span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+              <div className="audience-row-tags" aria-label={`${title} examples`}>
+                {tags.map((tag) => (
                   <span key={tag}>{tag}</span>
                 ))}
               </div>
@@ -1133,7 +1165,7 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section id="systems" className="landing-section systems-section">
+      <section id="systems" className="landing-section systems-section section-band">
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Systems</span>
@@ -1143,38 +1175,39 @@ export function HeroHeader() {
             review surfaces and glass-native AI workspaces.
           </p>
         </div>
-        <div className="system-grid-wrap">
+        <div className="system-bar-wrap">
           <OrbitRing variant="systems" />
-          <div className="system-grid content-card-grid" ref={systemGridRef}>
+          <ul className="system-bar" ref={systemGridRef}>
             {systems.map((system) => (
-              <article className="system-card content-card" data-system={system.key} key={system.name}>
-                <span className="system-card-signal">{system.signal}</span>
-                <h3>{system.name}</h3>
-                <p>{system.detail}</p>
-              </article>
+              <li className="system-row" data-system={system.key} key={system.name}>
+                <span className="system-row-dot" aria-hidden="true" />
+                <h3 className="system-row-name">{system.name}</h3>
+                <span className="system-row-signal">{system.signal}</span>
+                <p className="system-row-detail">{system.detail}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      <section id="workflow" className="landing-section workflow-section">
+      <section id="workflow" className="landing-section workflow-section section-band">
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Workflow</span>
           <h2>A focused path from prompt to handoff.</h2>
         </div>
-        <div className="workflow-grid content-card-grid" ref={workflowGridRef}>
+        <ol className="workflow-flow" ref={workflowGridRef}>
           {workflow.map((item) => (
-            <article className="workflow-step content-card" key={item.eyebrow}>
-              <span>{item.eyebrow}</span>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
-            </article>
+            <li className="workflow-step-flow" key={item.eyebrow}>
+              <span className="workflow-numeral" aria-hidden="true">{item.eyebrow}</span>
+              <h3 className="workflow-title">{item.title}</h3>
+              <p className="workflow-body">{item.body}</p>
+            </li>
           ))}
-        </div>
+        </ol>
       </section>
 
-      <section id="features" className="landing-section features-section">
+      <section id="features" className="landing-section features-section section-band">
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Studio</span>
@@ -1184,37 +1217,37 @@ export function HeroHeader() {
             review, and export all sit inside the same workspace.
           </p>
         </div>
-        <div className="feature-grid-wrap">
+        <div className="feature-list-wrap">
           <StudioConstellation />
-          <div className="feature-grid content-card-grid" ref={featureGridRef}>
+          <dl className="feature-list" ref={featureGridRef}>
             {features.map(({ icon: Icon, title, body }) => (
-              <article className="feature-card content-card" key={title}>
-                <Icon size={21} strokeWidth={1.8} aria-hidden="true" />
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
+              <div className="feature-list-row" key={title}>
+                <dt className="feature-list-term">
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                  <span>{title}</span>
+                </dt>
+                <dd className="feature-list-detail">{body}</dd>
+              </div>
             ))}
-          </div>
+          </dl>
         </div>
       </section>
 
-      <section id="export" className="landing-section export-section">
+      <section id="export" className="landing-section export-section section-band section-band--cta">
         <ContentAtmosphere />
-        <div className="export-panel content-card">
-          <div>
-            <span className="section-kicker">Private studio</span>
-            <h2>Start with a prompt. Leave with a system-aware interface.</h2>
-            <p>
-              Build the first direction, compare it across product languages, and carry the
-              selected surface into review, sharing, and export.
-            </p>
-          </div>
-          <ul className="export-list" aria-label="Supported handoff paths">
+        <div className="export-cta">
+          <span className="section-kicker">Private studio</span>
+          <h2>Start with a prompt. Leave with a system-aware interface.</h2>
+          <p>
+            Build the first direction, compare it across product languages, and carry the
+            selected surface into review, sharing, and export.
+          </p>
+          <ul className="export-cta-list" aria-label="Supported handoff paths">
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Share previews</li>
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
             <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
           </ul>
-          <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("export")}>
+          <button type="button" className="landing-btn landing-btn--light export-cta-btn" onClick={() => openAccessModal("export")}>
             <span>Request Access</span>
             <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
           </button>

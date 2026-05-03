@@ -982,3 +982,604 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Landing — typography-first, Stripe-like de-cardification (post hero).
+   These classes drive every section BELOW the hero. The legacy card
+   classes (`.audience-card`, `.proof-bento-card`, `.system-card`,
+   `.workflow-step`, `.feature-card`, `.export-panel`) are no longer
+   referenced by JSX but their CSS rules remain in this file and in
+   hero.css as orphans pending a follow-up cleanup PR. They cause no
+   harm — nothing matches them.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Section band — vertical rhythm + colour-only separation ───────────── */
+.hero.landing-page .section-band {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  margin: 0 auto;
+  padding-block: clamp(120px, 14vh, 200px);
+  padding-inline: clamp(24px, 6vw, 96px);
+}
+
+.hero.landing-page .section-band > * {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: min(1180px, 100%);
+  margin-inline: auto;
+}
+
+/* Subtle aurora wash behind alternating bands.
+   Even-indexed bands (1st, 3rd, 5th of the de-cardified sections)
+   pick up a faint violet tint; odd ones cyan. Both fade out at top
+   and bottom so adjacent sections blend, and the user never sees a
+   hard edge between them. */
+.hero.landing-page .audience-section.section-band::before,
+.hero.landing-page .systems-section.section-band::before,
+.hero.landing-page .features-section.section-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0% in oklab, rgba(180, 144, 245, 0.045), rgba(180, 144, 245, 0) 60%),
+    radial-gradient(ellipse at 50% 100% in oklab, rgba(180, 144, 245, 0.03), rgba(180, 144, 245, 0) 50%);
+}
+
+.hero.landing-page .bento-section.section-band::before,
+.hero.landing-page .workflow-section.section-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0% in oklab, rgba(94, 231, 223, 0.04), rgba(94, 231, 223, 0) 60%),
+    radial-gradient(ellipse at 50% 100% in oklab, rgba(94, 231, 223, 0.025), rgba(94, 231, 223, 0) 50%);
+}
+
+/* Final CTA band gets a stronger accent so it reads as the close. */
+.hero.landing-page .section-band--cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 50% in oklab, rgba(94, 231, 223, 0.07), rgba(94, 231, 223, 0) 70%);
+}
+
+/* ── Inline pull-quote (Founder note) ─────────────────────────────────── */
+.hero.landing-page .section-pullquote {
+  margin: var(--dh-space-32) 0 0;
+  padding-left: var(--dh-space-20);
+  border-left: 2px solid rgba(94, 231, 223, 0.5);
+  max-width: 60ch;
+}
+
+.hero.landing-page .section-pullquote-label {
+  display: inline-block;
+  margin-bottom: var(--dh-space-8);
+  color: rgba(94, 231, 223, 0.78);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero.landing-page .section-pullquote p {
+  margin: 0;
+  color: var(--muted, rgba(238, 242, 237, 0.72));
+  font-size: 1.05rem;
+  line-height: 1.7;
+  font-style: normal;
+}
+
+/* ── Audience rows — 3-column typographic block ───────────────────────── */
+.hero.landing-page .audience-rows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--dh-space-32);
+  margin-top: clamp(56px, 8vh, 96px);
+}
+
+.hero.landing-page .audience-row {
+  position: relative;
+  padding: var(--dh-space-24) var(--dh-space-12) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .audience-row h3 {
+  margin: 0 0 var(--dh-space-8);
+  color: var(--dh-brand-fg);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.hero.landing-page .audience-row p {
+  margin: 0 0 var(--dh-space-16);
+  max-width: 36ch;
+  color: var(--muted, rgba(238, 242, 237, 0.7));
+  font-size: 0.94rem;
+  line-height: 1.62;
+}
+
+.hero.landing-page .audience-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dh-space-8);
+}
+
+.hero.landing-page .audience-row-tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--dh-space-12);
+  border-radius: var(--dh-curve-full);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 242, 237, 0.62);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* ── Proof rows — alternating mockup/copy ─────────────────────────────── */
+.hero.landing-page .proof-rows {
+  display: grid;
+  gap: clamp(96px, 14vh, 168px);
+  margin-top: clamp(72px, 10vh, 120px);
+}
+
+.hero.landing-page .proof-row {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: center;
+  gap: clamp(48px, 6vw, 96px);
+}
+
+.hero.landing-page .proof-row[data-flip="true"] {
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+}
+
+.hero.landing-page .proof-row[data-flip="true"] .proof-row-visual {
+  order: 2;
+}
+
+.hero.landing-page .proof-row[data-flip="true"] .proof-row-copy {
+  order: 1;
+}
+
+.hero.landing-page .proof-row-visual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dh-space-12);
+  align-items: center;
+}
+
+.hero.landing-page .proof-row-visual span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--dh-space-16);
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: var(--dh-curve-pill);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(238, 242, 237, 0.78);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+.hero.landing-page .proof-row-copy h3 {
+  margin: 0 0 var(--dh-space-12);
+  max-width: 18ch;
+  color: var(--dh-brand-fg);
+  font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.hero.landing-page .proof-row-copy p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--muted, rgba(238, 242, 237, 0.72));
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+/* ── Systems bar — typographic stack ──────────────────────────────────── */
+.hero.landing-page .system-bar-wrap {
+  position: relative;
+  margin-top: clamp(56px, 8vh, 96px);
+}
+
+.hero.landing-page .system-bar {
+  position: relative;
+  z-index: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.hero.landing-page .system-row {
+  display: grid;
+  grid-template-columns: 16px minmax(160px, 0.8fr) auto minmax(0, 2fr);
+  align-items: baseline;
+  gap: clamp(20px, 3vw, 40px);
+  padding: clamp(24px, 3vh, 36px) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .system-row:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .system-row-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--system-row-dot, var(--aurora-blob-1-inner));
+  align-self: center;
+}
+
+.hero.landing-page .system-row[data-system="salt"]   { --system-row-dot: var(--dh-preview-salt-a); }
+.hero.landing-page .system-row[data-system="m3"]     { --system-row-dot: var(--dh-preview-m3-a); }
+.hero.landing-page .system-row[data-system="fluent"] { --system-row-dot: var(--dh-preview-fluent-a); }
+.hero.landing-page .system-row[data-system="carbon"] { --system-row-dot: var(--dh-preview-carbon-a); }
+.hero.landing-page .system-row[data-system="ausos"]  { --system-row-dot: var(--dh-preview-ausos-a); }
+
+.hero.landing-page .system-row-name {
+  margin: 0;
+  color: var(--dh-brand-fg);
+  font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.hero.landing-page .system-row-signal {
+  color: rgba(94, 231, 223, 0.72);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hero.landing-page .system-row-detail {
+  margin: 0;
+  color: var(--muted, rgba(238, 242, 237, 0.7));
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+/* ── Workflow flow — numbered, no boxes ───────────────────────────────── */
+.hero.landing-page .workflow-flow {
+  list-style: none;
+  margin: clamp(56px, 8vh, 96px) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 48px);
+}
+
+.hero.landing-page .workflow-step-flow {
+  position: relative;
+  padding-top: var(--dh-space-24);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .workflow-numeral {
+  display: block;
+  margin-bottom: var(--dh-space-16);
+  font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  font-size: clamp(2.6rem, 4.4vw, 3.6rem);
+  line-height: 0.96;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg in oklab, var(--aurora-blob-1-inner), var(--dh-brand-primary-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero.landing-page .workflow-title {
+  margin: 0 0 var(--dh-space-8);
+  color: var(--dh-brand-fg);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.hero.landing-page .workflow-body {
+  margin: 0;
+  max-width: 32ch;
+  color: var(--muted, rgba(238, 242, 237, 0.7));
+  font-size: 0.94rem;
+  line-height: 1.62;
+}
+
+/* ── Features list — 2-column typographic ────────────────────────────── */
+.hero.landing-page .feature-list-wrap {
+  position: relative;
+  margin-top: clamp(56px, 8vh, 96px);
+}
+
+.hero.landing-page .feature-list {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(48px, 6vw, 96px);
+  row-gap: 0;
+}
+
+.hero.landing-page .feature-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--dh-space-8);
+  padding: var(--dh-space-24) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .feature-list-term {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-space-12);
+  margin: 0;
+  color: var(--dh-brand-fg);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.hero.landing-page .feature-list-term svg {
+  color: var(--aurora-blob-1-inner);
+  flex-shrink: 0;
+}
+
+.hero.landing-page .feature-list-detail {
+  margin: 0;
+  max-width: 50ch;
+  color: var(--muted, rgba(238, 242, 237, 0.72));
+  font-size: 0.96rem;
+  line-height: 1.62;
+}
+
+/* ── Export CTA — typographic, no card ────────────────────────────────── */
+.hero.landing-page .export-cta {
+  display: grid;
+  gap: var(--dh-space-24);
+  text-align: center;
+  justify-items: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.hero.landing-page .export-cta h2 {
+  margin: 0;
+  font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  font-size: clamp(2.4rem, 4.8vw, 4rem);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--dh-brand-fg);
+  text-wrap: balance;
+}
+
+.hero.landing-page .export-cta p {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--muted, rgba(238, 242, 237, 0.72));
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.hero.landing-page .export-cta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--dh-space-24);
+}
+
+.hero.landing-page .export-cta-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-space-8);
+  color: rgba(238, 242, 237, 0.84);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.hero.landing-page .export-cta-list svg {
+  color: var(--aurora-blob-1-inner);
+  flex-shrink: 0;
+}
+
+.hero.landing-page .export-cta-btn {
+  margin-top: var(--dh-space-12);
+}
+
+/* ── Mobile (≤ 720px): everything stacks single-column ────────────────── */
+@media (max-width: 720px) {
+  .hero.landing-page .audience-rows {
+    grid-template-columns: 1fr;
+    gap: var(--dh-space-24);
+  }
+
+  .hero.landing-page .proof-row,
+  .hero.landing-page .proof-row[data-flip="true"] {
+    grid-template-columns: 1fr;
+    gap: var(--dh-space-32);
+  }
+
+  .hero.landing-page .proof-row[data-flip="true"] .proof-row-visual,
+  .hero.landing-page .proof-row[data-flip="true"] .proof-row-copy {
+    order: 0;
+  }
+
+  .hero.landing-page .system-row {
+    grid-template-columns: 12px 1fr;
+    grid-template-rows: auto auto auto;
+    gap: var(--dh-space-8) var(--dh-space-12);
+  }
+
+  .hero.landing-page .system-row-name { grid-column: 2; }
+  .hero.landing-page .system-row-signal { grid-column: 2; }
+  .hero.landing-page .system-row-detail { grid-column: 2; }
+
+  .hero.landing-page .workflow-flow {
+    grid-template-columns: 1fr;
+    gap: var(--dh-space-16);
+  }
+
+  .hero.landing-page .feature-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Audience row icon — adds graphic punctuation to typographic blocks ── */
+.hero.landing-page .audience-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--dh-space-16);
+  border-radius: var(--dh-curve-md);
+  background:
+    linear-gradient(135deg in oklab, rgba(94, 231, 223, 0.16), rgba(180, 144, 245, 0.14));
+  color: var(--aurora-blob-1-inner);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero.landing-page .audience-row > h3 {
+  margin-top: 0;
+}
+
+/* ── Proof strip flow — typographic stat row, no card chrome ─────────── */
+.hero.landing-page .proof-strip-flow {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(24px, 3vw, 48px);
+  width: min(1180px, 100%);
+  margin: clamp(40px, 6vh, 72px) auto 0;
+  padding: clamp(32px, 5vh, 56px) clamp(24px, 6vw, 96px);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .proof-flow-item {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: var(--dh-space-8);
+  align-content: start;
+}
+
+.hero.landing-page .proof-flow-icon {
+  color: var(--aurora-blob-1-inner);
+  margin-bottom: var(--dh-space-4);
+}
+
+.hero.landing-page .proof-flow-item strong {
+  font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--dh-brand-fg);
+  line-height: 1.1;
+}
+
+.hero.landing-page .proof-flow-item span {
+  color: var(--muted, rgba(238, 242, 237, 0.72));
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .hero.landing-page .proof-strip-flow {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--dh-space-24);
+    padding-block: var(--dh-space-32);
+  }
+}
+
+/* ── Sticky landing nav — condenses on scroll ─────────────────────────── */
+.hero.landing-page .landing-nav--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: var(--dh-space-16) clamp(20px, 4vw, 40px);
+  background: transparent;
+  transition:
+    background 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    backdrop-filter 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    padding 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    border-color 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Scrolled state — solid blur, condensed padding, full-bleed pill */
+.hero.landing-page .landing-nav--sticky.landing-nav--scrolled {
+  width: 100%;
+  max-width: none;
+  padding: var(--dh-space-8) clamp(20px, 4vw, 40px);
+  background: rgba(8, 12, 18, 0.78);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.32);
+}
+
+.hero.landing-page .landing-nav--sticky.landing-nav--scrolled .landing-nav-links {
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  min-height: 32px;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.hero.landing-page .landing-nav--sticky.landing-nav--scrolled .landing-brand {
+  width: 36px;
+  height: 36px;
+}
+
+.hero.landing-page .landing-nav--sticky.landing-nav--scrolled .landing-brand-mark {
+  width: 28px;
+  height: 22px;
+}
+
+@media (max-width: 720px) {
+  .hero.landing-page .landing-nav--sticky .landing-nav-links {
+    display: none;
+  }
+}
+
+/* ── Reduced-motion: no new animations introduced; existing reveals
+       continue to honour `prefers-reduced-motion: reduce`. ── */
+@media (prefers-reduced-motion: reduce) {
+  .hero.landing-page .landing-nav--sticky {
+    transition: none;
+  }
+}
