@@ -1078,6 +1078,24 @@
   font-style: normal;
 }
 
+/* ── Override legacy section width / grid constraints from earlier
+       conversion-polish passes. Those rules constrained
+       .audience-section + .proof-bento-section to ~1120px and
+       made .audience-section a 2-column grid (heading left, card right).
+       After de-cardification the section is a plain vertical block
+       that wants the full viewport width to host the .section-band
+       padding system. Higher specificity (combined classes) wins
+       cleanly without deleting the legacy rules. ── */
+.hero.landing-page .audience-section.section-band,
+.hero.landing-page .proof-bento-section.section-band,
+.hero.landing-page .bento-section.section-band {
+  display: block;
+  width: 100%;
+  max-width: none;
+  grid-template-columns: none;
+  gap: 0;
+}
+
 /* ── Audience pull-quote — sits right-aligned between heading and 3-up ── */
 .hero.landing-page .audience-pullquote {
   /* Title is full-width above; founder note floats right under it as
