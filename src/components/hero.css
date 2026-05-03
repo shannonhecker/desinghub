@@ -4200,10 +4200,11 @@
 }
 
 .hero.landing-page .hero-headline {
-  max-width: 920px;
+  max-width: 880px;
   color: rgba(245, 248, 255, 0.96);
-  font-size: clamp(3.2rem, 6.2vw, 6.6rem);
-  line-height: 0.98;
+  font-size: clamp(2.4rem, 4.8vw, 4.4rem);
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .hero.landing-page .hero-headline span {
@@ -4659,10 +4660,11 @@
 }
 
 .hero.landing-page .hero-headline {
-  max-width: 940px;
+  max-width: 880px;
   color: var(--dh-brand-fg);
-  font-size: clamp(3.25rem, 6.9vw, 7rem);
-  line-height: 0.94;
+  font-size: clamp(2.4rem, 4.8vw, 4.4rem);
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .hero.landing-page .hero-headline span {
