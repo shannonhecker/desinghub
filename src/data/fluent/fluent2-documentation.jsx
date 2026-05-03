@@ -149,22 +149,36 @@ const buildCSS = (T) => `
 .f-checkbox:focus-visible .f-cb-box { outline:2px solid ${T.fg1}; outline-offset:2px; }
 .f-cb-box { width:16px; height:16px; border:1px solid ${T.strokeAccessible}; border-radius:var(--f-radius-3xs); display:flex; align-items:center; justify-content:center; transition:background-color var(--f-dur-fast) var(--f-curve-easy-ease),border-color var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-checkbox:hover .f-cb-box { border-color:${T.brandBg}; }
+.f-checkbox:active .f-cb-box { border-color:${T.brandBgPressed}; }
 .f-checkbox.checked .f-cb-box { background:${T.brandBg}; border-color:${T.brandBg}; }
 .f-checkbox.checked:hover .f-cb-box { background:${T.brandBgHover}; border-color:${T.brandBgHover}; }
+.f-checkbox.checked:active .f-cb-box { background:${T.brandBgPressed}; border-color:${T.brandBgPressed}; }
+.f-checkbox.disabled, .f-checkbox:disabled { color:${T.fgDisabled}; cursor:default; pointer-events:none; }
+.f-checkbox.disabled .f-cb-box, .f-checkbox:disabled .f-cb-box { border-color:${T.strokeDisabled}; background:${T.bgDisabled}; }
 
 /* === RADIO === */
 .f-radio { display:flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:14px; color:${T.fg1}; padding:4px 0; outline:none; }
+.f-radio:focus-visible .f-radio-circle { outline:2px solid ${T.fg1}; outline-offset:2px; }
 .f-radio-circle { width:16px; height:16px; border-radius:8px; border:1px solid ${T.strokeAccessible}; display:flex; align-items:center; justify-content:center; transition:border-color var(--f-dur-fast) var(--f-curve-easy-ease),border-width var(--f-dur-fast) var(--f-curve-easy-ease); flex-shrink:0; }
 .f-radio:hover .f-radio-circle { border-color:${T.brandBg}; }
+.f-radio:active .f-radio-circle { border-color:${T.brandBgPressed}; }
 .f-radio.selected .f-radio-circle { border-color:${T.brandBg}; border-width:2px; }
+.f-radio.selected:hover .f-radio-circle { border-color:${T.brandBgHover}; }
+.f-radio.selected:active .f-radio-circle { border-color:${T.brandBgPressed}; }
+.f-radio.disabled, .f-radio:disabled { color:${T.fgDisabled}; cursor:default; pointer-events:none; }
+.f-radio.disabled .f-radio-circle, .f-radio:disabled .f-radio-circle { border-color:${T.strokeDisabled}; }
 
 /* === SWITCH / TOGGLE === */
 .f-switch { width:40px; height:20px; border-radius:10px; background:${T.bg5}; border:1px solid ${T.strokeAccessible}; cursor:pointer; position:relative; outline:none; transition:background-color var(--f-dur-slow) var(--f-curve-decel-mid),border-color var(--f-dur-slow) var(--f-curve-decel-mid); padding:0; }
+.f-switch:hover { border-color:${T.fg1}; }
+.f-switch:active { background:${T.bg6}; }
 .f-switch:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; }
 .f-switch .f-sw-thumb { position:absolute; width:14px; height:14px; border-radius:7px; background:${T.fg1}; top:2px; left:2px; transition:left var(--f-dur-slow) var(--f-curve-decel-mid),background-color var(--f-dur-slow) var(--f-curve-decel-mid); }
 .f-switch.on { background:${T.brandBg}; border-color:${T.brandBg}; }
+.f-switch.on:hover { background:${T.brandBgHover}; border-color:${T.brandBgHover}; }
+.f-switch.on:active { background:${T.brandBgPressed}; border-color:${T.brandBgPressed}; }
 .f-switch.on .f-sw-thumb { left:22px; background:${T.fgOnBrand}; }
-.f-switch:disabled { opacity:0.38; cursor:default; }
+.f-switch:disabled { opacity:0.38; cursor:default; pointer-events:none; }
 
 /* === CARD === */
 .f-card { border-radius:var(--f-radius-lg); background:${T.cardBg}; border:1px solid ${T.stroke2}; cursor:pointer; outline:none; transition:background var(--f-dur-fast) var(--f-curve-easy-ease), box-shadow var(--f-dur-gentle) var(--f-curve-easy-ease); overflow:hidden; }
@@ -204,17 +218,29 @@ const buildCSS = (T) => `
 @keyframes f-spin { to { transform:rotate(360deg); } }
 .f-spinner { width:28px; height:28px; border:3px solid ${T.bg5}; border-top-color:${T.brandBg}; border-radius:50%; animation:f-spin 0.6s linear infinite; }
 
-/* === TAB === */
+/* === TAB ===
+   Matches Fluent UI v9 transparent-appearance Tab states (rest / hover /
+   pressed / selected / selected+hover / selected+pressed / disabled /
+   focus). Selected text stays NEUTRAL — brand color belongs on the
+   indicator (border-bottom), not the label, per
+   useTabStyles.styles.ts in the @fluentui/react-tabs package. */
 .f-tablist { display:flex; border-bottom:1px solid ${T.stroke2}; }
-.f-tab { padding:10px 16px; font-size:14px; font-weight:400; font-family:${FONT}; color:${T.fg2}; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; outline:none; transition:color var(--f-dur-fast), border-color var(--f-dur-fast); }
-.f-tab:hover { color:${T.fg1}; }
-.f-tab.active { color:${T.brandFg1}; border-bottom-color:${T.brandBg}; font-weight:600; }
+.f-tab { padding:10px 16px; font-size:14px; font-weight:400; font-family:${FONT}; color:${T.fg2}; background:transparent; border:none; border-bottom:2px solid transparent; cursor:pointer; outline:none; transition:color var(--f-dur-fast), background var(--f-dur-fast), border-color var(--f-dur-fast); }
+.f-tab:hover { color:${T.fg1}; background:${T.subtleBgHover}; }
+.f-tab:active { color:${T.fg1}; background:${T.subtleBgPressed}; }
+.f-tab.active { color:${T.fg1}; border-bottom-color:${T.brandStroke1}; font-weight:600; }
+.f-tab.active:hover { color:${T.fg1}; background:${T.subtleBgHover}; border-bottom-color:${T.brandStroke1}; }
+.f-tab.active:active { color:${T.fg1}; background:${T.subtleBgPressed}; border-bottom-color:${T.brandStroke1}; }
+.f-tab:disabled { color:${T.fgDisabled}; cursor:default; pointer-events:none; }
 .f-tab:focus-visible { outline:2px solid ${T.fg1}; outline-offset:-2px; }
 
 /* === SLIDER === */
-.f-slider input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:${T.bg5}; border-radius:var(--f-radius-xs); outline:none; cursor:pointer; }
-.f-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:var(--f-radius-circular); background:${T.brandBg}; border:2px solid ${T.bg1}; box-shadow:var(--f-shadow-2); cursor:pointer; transition:transform var(--f-dur-fast); }
-.f-slider input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
+.f-slider input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:${T.bg5}; border-radius:var(--f-radius-xs); outline:none; cursor:pointer; transition:background var(--f-dur-fast); }
+.f-slider input[type=range]:hover { background:${T.bg6}; }
+.f-slider input[type=range]:disabled { opacity:0.38; cursor:default; }
+.f-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:var(--f-radius-circular); background:${T.brandBg}; border:2px solid ${T.bg1}; box-shadow:var(--f-shadow-2); cursor:pointer; transition:transform var(--f-dur-fast), background var(--f-dur-fast); }
+.f-slider input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); background:${T.brandBgHover}; }
+.f-slider input[type=range]::-webkit-slider-thumb:active { transform:scale(1.05); background:${T.brandBgPressed}; }
 .f-slider input[type=range]:focus-visible::-webkit-slider-thumb { outline:2px solid ${T.fg1}; outline-offset:2px; }
 
 /* === MESSAGE BAR === */
@@ -234,11 +260,18 @@ const buildCSS = (T) => `
 /* === LINK === */
 .f-link { color:${T.brandFgLink}; text-decoration:none; font-family:${FONT}; cursor:pointer; transition:color var(--f-dur-fast); }
 .f-link:hover { text-decoration:underline; color:${T.brandFg2}; }
+.f-link:active { text-decoration:underline; color:${T.brandBgPressed}; }
+.f-link:focus-visible { outline:2px solid ${T.fg1}; outline-offset:2px; border-radius:var(--f-radius-3xs); }
+.f-link:disabled, .f-link.disabled { color:${T.fgDisabled}; cursor:default; pointer-events:none; text-decoration:none; }
 
 /* === SIDEBAR NAV === */
-.f-sidebar-item { display:block; width:100%; padding:8px 12px; border-radius:var(--f-radius-sm); border:none; background:transparent; cursor:pointer; font-family:${FONT}; font-size:13px; text-align:left; color:${T.fg2}; transition:background var(--f-dur-faster) var(--f-curve-easy-ease); outline:none; }
+.f-sidebar-item { display:block; width:100%; padding:8px 12px; border-radius:var(--f-radius-sm); border:none; background:transparent; cursor:pointer; font-family:${FONT}; font-size:13px; text-align:left; color:${T.fg2}; transition:background var(--f-dur-faster) var(--f-curve-easy-ease), color var(--f-dur-faster) var(--f-curve-easy-ease); outline:none; }
 .f-sidebar-item:hover { background:${T.subtleBgHover}; color:${T.fg1}; }
+.f-sidebar-item:active { background:${T.subtleBgPressed}; color:${T.fg1}; }
+.f-sidebar-item:focus-visible { outline:2px solid ${T.fg1}; outline-offset:-2px; }
 .f-sidebar-item.active { background:${T.subtleBgSelected}; color:${T.brandFg1}; font-weight:600; }
+.f-sidebar-item.active:hover { background:${T.subtleBgSelected}; color:${T.brandFg1}; }
+.f-sidebar-item:disabled, .f-sidebar-item.disabled { color:${T.fgDisabled}; cursor:default; pointer-events:none; background:transparent; }
 `;
 
 /* ── FLUENT ICONS (SVG inline) ── */
