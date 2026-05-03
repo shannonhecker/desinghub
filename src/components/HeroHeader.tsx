@@ -7,12 +7,14 @@ import {
   CheckCircle2,
   Download,
   MonitorSmartphone,
+  Moon,
   Pause,
   PanelsTopLeft,
   Play,
   Share2,
   SlidersHorizontal,
   Sparkles,
+  Sun,
   X,
 } from "lucide-react";
 import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
@@ -192,7 +194,6 @@ type PreviewLayout = "trade" | "material" | "command" | "carbon" | "glass";
 
 type PreviewDemoStep = {
   id: string;
-  mode: "light" | "dark";
   phase: "prompt" | "generate" | "compare" | "tune" | "share";
   system: PreviewSystemKey;
   layout: PreviewLayout;
@@ -224,7 +225,6 @@ function trackLandingEvent(event: string, params?: Record<string, string>) {
 const previewDemoSteps: PreviewDemoStep[] = [
   {
     id: "prompt",
-    mode: "light",
     phase: "prompt",
     system: "salt",
     layout: "trade",
@@ -250,7 +250,6 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "generate",
-    mode: "light",
     phase: "generate",
     system: "m3",
     layout: "material",
@@ -276,7 +275,6 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "compare",
-    mode: "light",
     phase: "compare",
     system: "fluent",
     layout: "command",
@@ -302,7 +300,6 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "tune",
-    mode: "light",
     phase: "tune",
     system: "carbon",
     layout: "carbon",
@@ -328,7 +325,6 @@ const previewDemoSteps: PreviewDemoStep[] = [
   },
   {
     id: "share",
-    mode: "light",
     phase: "share",
     system: "ausos",
     layout: "glass",
@@ -744,9 +740,13 @@ function HeroPreviewDemo() {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  /* Global theme state for the demo carousel — flips every step's surface
+     between dark (default — matches the deep landing aesthetic) and light
+     (the existing `[data-preview-mode="light"]` overrides). User toggles
+     via the topbar Sun/Moon button. */
+  const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("dark");
   const reducedMotion = useReducedMotion();
   const step = previewDemoSteps[stepIndex];
-  const previewMode = step.mode;
   const demoPaused = isPaused || reducedMotion || isHovering;
 
   useEffect(() => {
@@ -776,7 +776,7 @@ function HeroPreviewDemo() {
       data-preview-stage={step.phase}
       data-preview-system={step.system}
       data-preview-layout={step.layout}
-      data-preview-mode={previewMode}
+      data-preview-mode={previewTheme}
       data-preview-paused={demoPaused ? "true" : "false"}
       aria-label="Design Hub preview demo"
       onMouseEnter={() => setIsHovering(true)}
@@ -794,6 +794,25 @@ function HeroPreviewDemo() {
         <span className="preview-status" aria-live="polite">
           {step.status}
         </span>
+        <button
+          className="preview-theme-toggle"
+          type="button"
+          aria-label={previewTheme === "dark" ? "Switch demo to light theme" : "Switch demo to dark theme"}
+          aria-pressed={previewTheme === "light"}
+          title={previewTheme === "dark" ? "Switch to light" : "Switch to dark"}
+          onClick={() => {
+            setPreviewTheme((t) => (t === "dark" ? "light" : "dark"));
+            trackLandingEvent("demo_theme_toggle", {
+              to: previewTheme === "dark" ? "light" : "dark",
+            });
+          }}
+        >
+          {previewTheme === "dark" ? (
+            <Sun size={14} strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <Moon size={14} strokeWidth={2} aria-hidden="true" />
+          )}
+        </button>
         <button
           className="preview-demo-control"
           type="button"

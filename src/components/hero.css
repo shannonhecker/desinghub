@@ -896,7 +896,8 @@
   animation: preview-dot-breathe 2.8s ease-in-out infinite alternate;
 }
 
-.preview-demo-control {
+.preview-demo-control,
+.preview-theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -913,7 +914,8 @@
     border-color 180ms var(--ease);
 }
 
-.preview-demo-control:hover {
+.preview-demo-control:hover,
+.preview-theme-toggle:hover {
   border-color: rgba(255, 255, 255, 0.24);
   background: rgba(255, 255, 255, 0.08);
   color: var(--dh-brand-fg);
@@ -1402,14 +1404,16 @@
   color: var(--preview-accent);
 }
 
-.hero-product[data-preview-mode="light"] .preview-demo-control {
+.hero-product[data-preview-mode="light"] .preview-demo-control,
+.hero-product[data-preview-mode="light"] .preview-theme-toggle {
   border-color: rgba(41, 35, 58, 0.12);
   background: rgba(255, 255, 255, 0.74);
   color: rgba(29, 27, 32, 0.68);
   box-shadow: 0 1px 2px rgba(28, 24, 38, 0.06);
 }
 
-.hero-product[data-preview-mode="light"] .preview-demo-control:hover {
+.hero-product[data-preview-mode="light"] .preview-demo-control:hover,
+.hero-product[data-preview-mode="light"] .preview-theme-toggle:hover {
   border-color: rgba(103, 80, 164, 0.26);
   background: #ffffff;
   color: var(--preview-accent);
@@ -2128,6 +2132,7 @@
 .landing-btn:focus-visible,
 .landing-nav a:focus-visible,
 .preview-demo-control:focus-visible,
+.preview-theme-toggle:focus-visible,
 .hero a:focus-visible {
   /* 1.0 alpha for guaranteed ≥3:1 contrast against the dark hero bg
      even on the new transparent .landing-btn--outline variant. */
@@ -2380,7 +2385,8 @@
     display: none;
   }
 
-  .preview-demo-control {
+  .preview-demo-control,
+  .preview-theme-toggle {
     width: 30px;
     height: 30px;
   }
@@ -2864,7 +2870,8 @@
   .landing-btn,
   .landing-nav a,
   .landing-nav-cta,
-  .preview-demo-control {
+  .preview-demo-control,
+  .preview-theme-toggle {
     transition-duration: 0.01ms !important;
   }
 }
