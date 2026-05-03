@@ -4217,7 +4217,10 @@
 }
 
 .hero.landing-page .landing-nav-links,
-.hero.landing-page .hero-kicker,
+.hero.landing-page .hero-kicker {
+  background: none;
+  border-color: transparent;
+}
 .hero.landing-page .stage-marker-icon {
   background: rgba(5, 7, 20, 0.56);
   border-color: rgba(219, 226, 243, 0.14);
@@ -4330,8 +4333,8 @@
 }
 
 .hero.landing-page .section-kicker {
-  border-color: rgba(54, 68, 172, 0.12);
-  background: rgba(255, 255, 255, 0.66);
+  border-color: transparent;
+  background: none;
   color: rgba(17, 23, 53, 0.62);
 }
 
@@ -4683,7 +4686,11 @@
 
 .hero.landing-page .landing-nav-links,
 .hero.landing-page .hero-kicker,
-.hero.landing-page .section-kicker,
+.hero.landing-page .section-kicker {
+  border-color: transparent;
+  background: none;
+  color: rgba(244, 248, 241, 0.76);
+}
 .hero.landing-page .stage-marker-icon {
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(5, 7, 8, 0.5);
