@@ -31,8 +31,8 @@
 .hero.landing-page .demo-step-chips button[aria-current="true"],
 .hero.landing-page .demo-step-list .is-active,
 .hero.landing-page .demo-step-chips .is-active {
-  border-color: rgba(197, 244, 222, 0.24);
-  background: rgba(197, 244, 222, 0.075);
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.075);
   color: rgba(255, 255, 255, 0.92);
 }
 
@@ -54,9 +54,9 @@
   min-height: 258px;
   padding: var(--dh-space-24);
   border: 1px solid rgba(255, 255, 255, 0.078);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background:
-    radial-gradient(ellipse at 22% 0%, rgba(197, 244, 222, 0.065), transparent 42%),
+    radial-gradient(ellipse at 22% 0%, rgba(255, 255, 255, 0.065), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
     rgba(7, 8, 13, 0.64);
   box-shadow:
@@ -73,7 +73,7 @@
   min-height: 132px;
   border-color: rgba(255, 255, 255, 0.085);
   background:
-    linear-gradient(135deg, rgba(197, 244, 222, 0.075), rgba(180, 144, 245, 0.052)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.052)),
     rgba(255, 255, 255, 0.03);
 }
 
@@ -119,14 +119,14 @@
   padding: var(--dh-space-24);
   border-color: rgba(255, 255, 255, 0.085);
   background:
-    radial-gradient(circle at 18% 10%, rgba(197, 244, 222, 0.08), transparent 36%),
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.08), transparent 36%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
     rgba(7, 8, 13, 0.66);
 }
 
 .hero.landing-page .audience-founder span {
-  border-color: rgba(197, 244, 222, 0.16);
-  background: rgba(197, 244, 222, 0.048);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.048);
 }
 
 .hero.landing-page .audience-founder p {
@@ -147,21 +147,21 @@
   padding: var(--dh-space-24);
   border-color: rgba(255, 255, 255, 0.08);
   background:
-    radial-gradient(circle at 16% 0%, var(--audience-accent, rgba(197, 244, 222, 0.07)), transparent 34%),
+    radial-gradient(circle at 16% 0%, var(--audience-accent, rgba(255, 255, 255, 0.07)), transparent 34%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.018)),
     rgba(7, 8, 13, 0.64);
 }
 
 .hero.landing-page .audience-card:nth-child(1) {
-  --audience-accent: rgba(94, 231, 223, 0.095);
+  --audience-accent: rgba(255, 255, 255, 0.095);
 }
 
 .hero.landing-page .audience-card:nth-child(2) {
-  --audience-accent: rgba(180, 144, 245, 0.095);
+  --audience-accent: rgba(255, 255, 255, 0.095);
 }
 
 .hero.landing-page .audience-card:nth-child(3) {
-  --audience-accent: rgba(197, 244, 222, 0.09);
+  --audience-accent: rgba(255, 255, 255, 0.09);
 }
 
 .hero.landing-page .audience-card h3 {
@@ -197,9 +197,9 @@
 .access-modal,
 .request-access-modal {
   border-color: rgba(255, 255, 255, 0.1);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background:
-    radial-gradient(ellipse at 18% 0%, rgba(197, 244, 222, 0.075), transparent 34%),
+    radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.075), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
     rgba(6, 8, 13, 0.92);
   box-shadow:
@@ -406,7 +406,7 @@
   min-height: 34px;
   padding: 0 var(--dh-space-8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--dh-curve-full);
+  border-radius: var(--dh-curve-xs);
   background: rgba(255, 255, 255, 0.045);
   color: rgba(255, 255, 255, 0.66);
   font: inherit;
@@ -422,7 +422,7 @@
 }
 
 .preview-step span {
-  color: rgba(197, 244, 222, 0.7);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.62rem;
 }
 
@@ -492,10 +492,10 @@
   min-height: 176px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background:
-    radial-gradient(ellipse at 18% 0%, rgba(94, 231, 223, 0.12), transparent 15rem),
-    radial-gradient(ellipse at 88% 20%, rgba(180, 144, 245, 0.1), transparent 16rem),
+    radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.12), transparent 15rem),
+    radial-gradient(ellipse at 88% 20%, rgba(255, 255, 255, 0.1), transparent 16rem),
     rgba(255, 255, 255, 0.035);
 }
 
@@ -524,7 +524,7 @@
   margin: 4px 0;
   padding: 0 var(--dh-space-12);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--dh-curve-full);
+  border-radius: var(--dh-curve-xs);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.045)),
     rgba(255, 255, 255, 0.055);
@@ -603,10 +603,10 @@
 
 @media (hover: hover) and (pointer: fine) {
   .proof-bento-card:hover .proof-bento-visual span {
-    border-color: rgba(197, 244, 222, 0.24);
+    border-color: rgba(255, 255, 255, 0.24);
     box-shadow:
       0 12px 32px rgba(0, 0, 0, 0.22),
-      0 0 18px rgba(94, 231, 223, 0.11);
+      0 0 18px rgba(255, 255, 255, 0.11);
   }
 }
 
@@ -647,7 +647,7 @@
   padding: var(--dh-space-24);
   border-color: rgba(255, 255, 255, 0.09);
   background:
-    radial-gradient(circle at 18% 10%, rgba(197, 244, 222, 0.11), transparent 36%),
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.11), transparent 36%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025));
 }
 
@@ -656,10 +656,10 @@
   align-items: center;
   min-height: 24px;
   padding: 0 var(--dh-space-8);
-  border: 1px solid rgba(197, 244, 222, 0.18);
-  border-radius: var(--dh-curve-full);
-  background: rgba(197, 244, 222, 0.055);
-  color: rgba(197, 244, 222, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--dh-curve-xs);
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 0.66rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -686,12 +686,12 @@
   padding: var(--dh-space-24);
   border-color: rgba(255, 255, 255, 0.085);
   background:
-    radial-gradient(circle at 16% 0%, var(--audience-accent, rgba(197, 244, 222, 0.08)), transparent 34%),
+    radial-gradient(circle at 16% 0%, var(--audience-accent, rgba(255, 255, 255, 0.08)), transparent 34%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.066), rgba(255, 255, 255, 0.022));
 }
 
 .audience-card:nth-child(1) {
-  --audience-accent: rgba(94, 231, 223, 0.12);
+  --audience-accent: rgba(255, 255, 255, 0.12);
 }
 
 .audience-card:nth-child(2) {
@@ -699,7 +699,7 @@
 }
 
 .audience-card:nth-child(3) {
-  --audience-accent: rgba(197, 244, 222, 0.12);
+  --audience-accent: rgba(255, 255, 255, 0.12);
 }
 
 .audience-card h3 {
@@ -730,7 +730,7 @@
   min-height: 26px;
   padding: 0 var(--dh-space-8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--dh-curve-full);
+  border-radius: var(--dh-curve-xs);
   background: rgba(255, 255, 255, 0.045);
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.66rem;
@@ -756,7 +756,7 @@
   inset: 0;
   border: 0;
   background:
-    radial-gradient(ellipse at 50% 20%, rgba(94, 231, 223, 0.12), transparent 42rem),
+    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.12), transparent 42rem),
     rgba(2, 3, 2, 0.78);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -770,10 +770,10 @@
   overflow: auto;
   padding: var(--dh-space-32);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background:
-    radial-gradient(ellipse at 18% 0%, rgba(94, 231, 223, 0.13), transparent 28rem),
-    radial-gradient(ellipse at 94% 12%, rgba(180, 144, 245, 0.12), transparent 28rem),
+    radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.13), transparent 28rem),
+    radial-gradient(ellipse at 94% 12%, rgba(255, 255, 255, 0.12), transparent 28rem),
     linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.045)),
     rgba(6, 9, 16, 0.94);
   box-shadow:
@@ -792,7 +792,7 @@
   min-height: 32px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--dh-curve-full);
+  border-radius: var(--dh-curve-xs);
   background: rgba(255, 255, 255, 0.045);
   color: rgba(255, 255, 255, 0.78);
   font: inherit;
@@ -850,7 +850,7 @@
 .access-form textarea {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   outline: none;
   background: rgba(255, 255, 255, 0.055);
   color: rgba(255, 255, 255, 0.94);
@@ -873,7 +873,7 @@
 .access-form select:focus-visible,
 .access-form textarea:focus-visible,
 .access-modal__close:focus-visible {
-  outline: 2px solid rgba(197, 244, 222, 1);
+  outline: 2px solid rgba(255, 255, 255, 1);
   outline-offset: 3px;
 }
 
@@ -887,7 +887,7 @@
   margin: 0;
   padding: var(--dh-space-12);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.82);
   font-size: 0.84rem;
@@ -895,8 +895,8 @@
 }
 
 .access-form__message--success {
-  border-color: rgba(94, 231, 223, 0.28);
-  background: rgba(94, 231, 223, 0.09);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .access-form__message--error {
@@ -931,7 +931,7 @@
     width: auto;
     min-height: 0;
     padding: 6px var(--dh-space-12);
-    border-radius: var(--dh-curve-md);
+    border-radius: var(--dh-curve-sm);
     font-size: 0.72rem;
     line-height: 1.45;
   }
@@ -1025,8 +1025,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 0% in oklab, rgba(180, 144, 245, 0.045), rgba(180, 144, 245, 0) 60%),
-    radial-gradient(ellipse at 50% 100% in oklab, rgba(180, 144, 245, 0.03), rgba(180, 144, 245, 0) 50%);
+    radial-gradient(ellipse at 50% 0% in oklab, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(ellipse at 50% 100% in oklab, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 50%);
 }
 
 .hero.landing-page .bento-section.section-band::before,
@@ -1037,8 +1037,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 0% in oklab, rgba(94, 231, 223, 0.04), rgba(94, 231, 223, 0) 60%),
-    radial-gradient(ellipse at 50% 100% in oklab, rgba(94, 231, 223, 0.025), rgba(94, 231, 223, 0) 50%);
+    radial-gradient(ellipse at 50% 0% in oklab, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(ellipse at 50% 100% in oklab, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 50%);
 }
 
 /* Final CTA band gets a stronger accent so it reads as the close. */
@@ -1049,21 +1049,21 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 50% in oklab, rgba(94, 231, 223, 0.07), rgba(94, 231, 223, 0) 70%);
+    radial-gradient(ellipse at 50% 50% in oklab, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 70%);
 }
 
 /* ── Inline pull-quote (Founder note) ─────────────────────────────────── */
 .hero.landing-page .section-pullquote {
   margin: var(--dh-space-32) 0 0;
   padding-left: var(--dh-space-20);
-  border-left: 2px solid rgba(94, 231, 223, 0.5);
+  border-left: 2px solid rgba(255, 255, 255, 0.5);
   max-width: 60ch;
 }
 
 .hero.landing-page .section-pullquote-label {
   display: inline-block;
   margin-bottom: var(--dh-space-8);
-  color: rgba(94, 231, 223, 0.78);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1161,7 +1161,7 @@
   align-items: center;
   min-height: 26px;
   padding: 0 var(--dh-space-12);
-  border-radius: var(--dh-curve-full);
+  border-radius: var(--dh-curve-xs);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(238, 242, 237, 0.62);
   font-size: 0.74rem;
@@ -1228,7 +1228,7 @@
   min-height: 30px;
   padding: 0 var(--dh-space-12);
   border: 1px solid rgba(255, 255, 255, 0.085);
-  border-radius: var(--dh-curve-pill);
+  border-radius: var(--dh-curve-xs);
   background: rgba(255, 255, 255, 0.025);
   color: rgba(238, 242, 237, 0.78);
   font-size: 0.74rem;
@@ -1311,7 +1311,7 @@
 }
 
 .hero.landing-page .system-row-signal {
-  color: rgba(94, 231, 223, 0.72);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1523,9 +1523,9 @@
   width: 44px;
   height: 44px;
   margin-bottom: var(--dh-space-16);
-  border-radius: var(--dh-curve-md);
+  border-radius: var(--dh-curve-sm);
   background:
-    linear-gradient(135deg in oklab, rgba(94, 231, 223, 0.16), rgba(180, 144, 245, 0.14));
+    linear-gradient(135deg in oklab, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.14));
   color: var(--aurora-blob-1-inner);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
