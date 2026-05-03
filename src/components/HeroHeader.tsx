@@ -968,11 +968,14 @@ export function HeroHeader() {
             <div className="hero-beam-pillar-aura-bottom" />
             <div className="hero-beam-pillar-rays-top">
               {Array.from({ length: 12 }, (_, i) => {
-                // 6 rays on the left (i=0..5) and 6 on the right (i=6..11),
-                // leaving the centre clear for the title.
+                // 4 rays per side (idx 2..5). The two innermost rays per
+                // side (idx 0 and 1) are skipped so the headline area
+                // stays clean — they were reading as distracting vertical
+                // lines behind the title.
                 const side = i < 6 ? -1 : 1;
                 const idx = i < 6 ? i : i - 6; // 0..5 within the side
-                // Spread each side from ~14% to ~36% out from centre.
+                if (idx <= 1) return null;
+                // Spread each side from ~22.8% to ~36% out from centre.
                 const xPct = side * (14 + idx * 4.4);
                 const dist = Math.abs(xPct) / 36; // 0..1 normalised
                 const heightPct = 92 - dist * 30;
@@ -999,9 +1002,12 @@ export function HeroHeader() {
             </div>
             <div className="hero-beam-pillar-rays-bottom">
               {Array.from({ length: 12 }, (_, i) => {
-                // 6 rays per side, mirroring the top fan.
+                // 5 rays per side, mirroring the top fan but with the
+                // innermost ray (idx 0) skipped so the bottom fan also
+                // clears the headline area on shorter viewports.
                 const side = i < 6 ? -1 : 1;
                 const idx = i < 6 ? i : i - 6;
+                if (idx === 0) return null;
                 const xPct = side * (16 + idx * 5.2);
                 const dist = Math.abs(xPct) / 42;
                 const heightPct = 84 - dist * 24;
