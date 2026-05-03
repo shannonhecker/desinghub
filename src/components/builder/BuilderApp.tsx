@@ -261,6 +261,10 @@ export function BuilderApp() {
 
   return (
     <div className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}>
+      {/* Skip link — visually hidden until keyboard focused. WCAG 2.1
+          2.4.1 Bypass Blocks. Sends users past the top-bar straight to
+          the chat + canvas split inside <main id="main-content">. */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
 
       {/* GeminiSidebar removed - replaced by SessionsDrawer (left slide-in).
           isSidebarOpen is kept in state only to preserve any related CSS

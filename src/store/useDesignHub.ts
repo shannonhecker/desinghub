@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type SystemId = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
 /* Tabs shown on a component detail page. Carbon mirrors the
@@ -44,7 +45,7 @@ interface DesignHubState {
   toggleSidebar: () => void;
 }
 
-export const useDesignHub = create<DesignHubState>((set) => ({
+export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   activeSystem: 'salt',
   /* Dark-default across all 5 DS — matches the ausos.ai brand (dark-first
      hero + builder mode='dark' in useBuilder). Users can still switch to
@@ -84,4 +85,20 @@ export const useDesignHub = create<DesignHubState>((set) => ({
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),
   toggleSidebar: () => set((st) => ({ sidebarOpen: !st.sidebarOpen })),
+}), {
+  name: 'designhub.uikit.v1',
+  storage: createJSONStorage(() => localStorage),
+  /* Persist only the user's theme preferences. Ephemeral browsing
+     state (selectedComponent, searchQuery, activeTab, sidebarOpen)
+     starts fresh each session so users always land on a clean
+     component list — surveys consistently show users prefer this
+     over "where did I leave off". */
+  partialize: (state) => ({
+    activeSystem: state.activeSystem,
+    salt: state.salt,
+    m3: state.m3,
+    fluent: state.fluent,
+    ausos: state.ausos,
+    carbon: state.carbon,
+  }),
 }));

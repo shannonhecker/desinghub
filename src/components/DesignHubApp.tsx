@@ -38,6 +38,32 @@ export function DesignHubApp() {
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  /* Keyboard shortcuts — Cmd/Ctrl+1..5 cycle through the five DSes
+     in the order they appear in SystemSwitcher (Salt 1, M3 2, Fluent
+     3, Carbon 4, ausos 5). Mirrors Builder's Cmd+Z/Cmd+Shift+Z
+     undo-redo binding pattern. Skipped when focus is in an editable
+     field so users can still type "1" in the search box. */
+  React.useEffect(() => {
+    const SYSTEM_KEYS: SystemId[] = ["salt", "m3", "fluent", "carbon", "ausos"];
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const target = e.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) {
+          return;
+        }
+      }
+      const num = parseInt(e.key, 10);
+      if (Number.isInteger(num) && num >= 1 && num <= SYSTEM_KEYS.length) {
+        e.preventDefault();
+        store.setActiveSystem(SYSTEM_KEYS[num - 1]);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [store]);
   const didAutoCloseRef = React.useRef(false);
   React.useEffect(() => {
     if (isNarrow && sidebarOpen && !didAutoCloseRef.current) {
@@ -77,6 +103,10 @@ export function DesignHubApp() {
          "no seam" aesthetic of carbondesignsystem.com. */
       background: activeSystem === "ausos" ? t.bg : isCarbon ? t.bg : t.bg2,
       fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
+      {/* Skip link — visually hidden until keyboard focused. WCAG 2.1
+          2.4.1 Bypass Blocks. Sends users past the header + sidebar
+          straight to MainContent. */}
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
