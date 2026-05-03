@@ -968,11 +968,14 @@ export function HeroHeader() {
             <div className="hero-beam-pillar-aura-bottom" />
             <div className="hero-beam-pillar-rays-top">
               {Array.from({ length: 12 }, (_, i) => {
-                // 6 rays on the left (i=0..5) and 6 on the right (i=6..11),
-                // leaving the centre clear for the title.
+                // 5 rays on the left (i=0..4) and 5 on the right (i=6..10),
+                // leaving the centre clear for the title. Innermost ray
+                // (idx 0) is skipped on each side so the closest ray no
+                // longer overlays the headline text.
                 const side = i < 6 ? -1 : 1;
                 const idx = i < 6 ? i : i - 6; // 0..5 within the side
-                // Spread each side from ~14% to ~36% out from centre.
+                if (idx === 0) return null;
+                // Spread each side from ~18.4% to ~36% out from centre.
                 const xPct = side * (14 + idx * 4.4);
                 const dist = Math.abs(xPct) / 36; // 0..1 normalised
                 const heightPct = 92 - dist * 30;
