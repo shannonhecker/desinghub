@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Fuse from "fuse.js";
 import { useBuilder, type ZoneId } from "@/store/useBuilder";
-import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
+import { LIBRARY_BLUEPRINTS, BLOCK_CATEGORY, LIBRARY_CATEGORY_ORDER } from "@/lib/blockRegistry";
+import { getDSVariantPresets } from "@/lib/dsVariantPresets";
 import { MiniPreview } from "./MiniPreview";
 
 /* ══════════════════════════════════════════════════════════
@@ -118,6 +119,7 @@ interface ResultSection {
 export function SlashInserter() {
   const open = useBuilder((s) => s.inserterOpen);
   const anchor = useBuilder((s) => s.inserterAnchor);
+  const designSystem = useBuilder((s) => s.designSystem);
   const closeInserter = useBuilder((s) => s.closeInserter);
   const openInserter = useBuilder((s) => s.openInserter);
   const addBlockFromLibrary = useBuilder((s) => s.addBlockFromLibrary);
@@ -128,11 +130,35 @@ export function SlashInserter() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  /* Build a Fuse index once. LIBRARY_BLUEPRINTS is a module-level
-     constant so this memo effectively runs once per page load. */
+  /* DS-aware variant presets — pre-baked Blueprint-shaped entries that
+     produce a specific DS-canonical variant on insert (e.g. Salt
+     "Accented Solid" button, Carbon "Danger" button). Updates whenever
+     the user switches DS via SettingsPanel or BuilderThemeMenu. */
+  const dsVariantBlueprints: Blueprint[] = useMemo(
+    () =>
+      getDSVariantPresets(designSystem).map((p) => ({
+        id: p.id,
+        type: p.baseType,
+        label: p.label,
+        icon: p.icon,
+        defaults: p.defaults,
+      })),
+    [designSystem],
+  );
+
+  /* Combined searchable list: base blueprints + DS variants. Variants
+     come AFTER bases in the order, so when a user types "button"
+     fuzzy-search ranks the generic SimulatedButton first, then the DS
+     variants for the active system. */
+  const searchableBlueprints: Blueprint[] = useMemo(
+    () => [...LIBRARY_BLUEPRINTS, ...dsVariantBlueprints],
+    [dsVariantBlueprints],
+  );
+
+  /* Build a Fuse index. Re-builds when DS changes (different variant set). */
   const fuse = useMemo(
     () =>
-      new Fuse(LIBRARY_BLUEPRINTS, {
+      new Fuse(searchableBlueprints, {
         keys: [
           { name: "label", weight: 0.7 },
           { name: "type", weight: 0.3 },
@@ -141,7 +167,7 @@ export function SlashInserter() {
         ignoreLocation: true,
         includeScore: false,
       }),
-    [],
+    [searchableBlueprints],
   );
 
   /* Parse ">zone query" prefix. Returns the scoped zone (or null) and
@@ -159,12 +185,13 @@ export function SlashInserter() {
   }, [query]);
 
   /* Base candidate list. Fuzzy-ranked by Fuse when there's a query,
-     otherwise registry order. Honors ">zone" scoping when present. */
+     otherwise registry order with DS variants appended. Honors
+     ">zone" scoping when present. */
   const candidates = useMemo(() => {
     const raw = fuseQuery.trim();
     let list: Blueprint[];
     if (!raw) {
-      list = LIBRARY_BLUEPRINTS.slice(0, 60);
+      list = [...LIBRARY_BLUEPRINTS.slice(0, 60), ...dsVariantBlueprints];
     } else {
       list = fuse.search(raw).map((r) => r.item);
     }
@@ -172,7 +199,7 @@ export function SlashInserter() {
       list = list.filter((bp) => isBlueprintInZone(bp, scopedZone));
     }
     return list;
-  }, [fuse, fuseQuery, scopedZone]);
+  }, [fuse, fuseQuery, scopedZone, dsVariantBlueprints]);
 
   /* Group results into sections. Rules:
        - If query is empty and no scopedZone: show "Recent" first (if
@@ -224,8 +251,8 @@ export function SlashInserter() {
       return [{ key: "results", label: "Results", items: candidates }];
     }
 
-    /* Empty query: recents + zone sections. Pin anchor-zone first if
-       one exists. */
+    /* Empty query: recents + DS variants + zone sections. Pin
+       anchor-zone first if one exists. */
     const out: ResultSection[] = [];
 
     if (recents.length > 0) {
@@ -238,6 +265,24 @@ export function SlashInserter() {
       }
     }
 
+    /* DS variants — show pre-baked variants for the active design
+       system. Surfaces UI Kit-style variant taxonomy (Salt
+       "Accented Solid", Carbon "Danger", etc.) so users don't have to
+       guess prop combinations. */
+    if (dsVariantBlueprints.length > 0) {
+      const dsLabel =
+        designSystem === "salt" ? "Salt" :
+        designSystem === "m3" ? "Material 3" :
+        designSystem === "fluent" ? "Fluent 2" :
+        designSystem === "carbon" ? "Carbon" :
+        "ausos";
+      out.push({
+        key: `ds-variants-${designSystem}`,
+        label: `${dsLabel} variants`,
+        items: dsVariantBlueprints,
+      });
+    }
+
     const zoneOrder: ZoneId[] = anchor?.zone
       ? [anchor.zone, ...ZONE_ORDER.filter((z) => z !== anchor.zone)]
       : ZONE_ORDER;
@@ -245,12 +290,44 @@ export function SlashInserter() {
     for (const zone of zoneOrder) {
       const items = candidates.filter((bp) => isBlueprintInZone(bp, zone));
       if (items.length === 0) continue;
-      const label = anchor?.zone === zone ? `In ${ZONE_LABEL[zone]}` : ZONE_LABEL[zone];
-      out.push({ key: `zone-${zone}`, label, items });
+      const zonePrefix = anchor?.zone === zone ? "In " : "";
+
+      /* Body zone is the biggest dumping ground — split it by UI Kit
+         category (actions / inputs / data-display / etc.) so users
+         can find what they want without scrolling a flat list. Other
+         zones (header / sidebar / footer) stay as one section since
+         they only carry zone-specific types. */
+      if (zone === "body") {
+        for (const cat of LIBRARY_CATEGORY_ORDER) {
+          const catItems = items.filter((bp) => BLOCK_CATEGORY[bp.type] === cat.key);
+          if (catItems.length === 0) continue;
+          out.push({
+            key: `zone-${zone}-${cat.key}`,
+            label: `${zonePrefix}${ZONE_LABEL[zone]} · ${cat.label}`,
+            items: catItems,
+          });
+        }
+        /* Items in body without a categorisation fall into a tail bucket. */
+        const uncategorised = items.filter((bp) => !BLOCK_CATEGORY[bp.type]);
+        if (uncategorised.length > 0) {
+          out.push({
+            key: `zone-${zone}-other`,
+            label: `${zonePrefix}${ZONE_LABEL[zone]} · Other`,
+            items: uncategorised,
+          });
+        }
+        continue;
+      }
+
+      out.push({
+        key: `zone-${zone}`,
+        label: `${zonePrefix}${ZONE_LABEL[zone]}`,
+        items,
+      });
     }
 
     return out;
-  }, [anchor, candidates, fuseQuery, recents, scopedZone]);
+  }, [anchor, candidates, fuseQuery, recents, scopedZone, dsVariantBlueprints, designSystem]);
 
   /* Flattened rows for keyboard nav - every row across all sections
      gets a monotonic index. A row's section membership comes from
