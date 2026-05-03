@@ -5316,3 +5316,75 @@
     animation: none !important;
   }
 }
+
+/* ── Hero motion suite — three coordinated animations on the hero
+   stage. Coordinated so the cumulative motion stays calm: each loop
+   cycles at a different period so they drift in and out of phase
+   instead of pulsing together. Honors prefers-reduced-motion via the
+   global override at line 2367 (animation: none).
+   ─────────────────────────────────────────────────────────────── */
+
+/* 1) Stronger stage motion lines — wider strips, denser glow, faster
+      fall. The base rule at line 344 stays; we override the visible
+      props here so the lines read as clear ambient motion rather
+      than incidental specks. */
+.hero.landing-page .stage-motion-lines {
+  opacity: 0.85;
+}
+
+.hero.landing-page .stage-motion-lines span {
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+}
+
+.hero.landing-page .stage-motion-lines span::after {
+  width: 4px;
+  height: 32%;
+  animation-duration: 4.2s;
+}
+
+/* 2) Headline gradient sweep — slowly shift the background-position
+      so the bright-to-dim gradient drifts left-to-right under the
+      span text. background-size already 180% in the base rule, so
+      there's headroom to translate. */
+.hero.landing-page .hero-headline span {
+  animation: hero-headline-sweep 9s ease-in-out infinite;
+}
+
+@keyframes hero-headline-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 80% 50%; }
+}
+
+/* 3) Aurora-style background drift — extra layer behind the hero
+      that slowly drifts. Doesn't replace the existing .hero
+      background; sits on top via .hero::after-like positioning. We
+      reuse the existing .hero-halo div in HeroHeader.tsx (already
+      aria-hidden) to host this. */
+.hero.landing-page .hero-halo {
+  background:
+    radial-gradient(60% 50% at 30% 40%, rgba(255, 255, 255, 0.05), transparent 70%),
+    radial-gradient(50% 40% at 70% 60%, rgba(220, 236, 252, 0.04), transparent 70%);
+  background-size: 200% 200%;
+  animation: hero-aurora-drift 18s ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+@keyframes hero-aurora-drift {
+  0%, 100% { background-position: 0% 0%, 100% 100%; }
+  50%      { background-position: 100% 50%, 0% 50%; }
+}
+
+/* 4) Stronger ray shimmer — wider opacity range and faster cycle so
+      the rays clearly pulse instead of barely breathing. Overrides
+      the base @keyframes hero-beam-ray-shimmer at line 2635. */
+.hero.landing-page .hero-beam-ray {
+  animation-name: hero-beam-ray-shimmer-strong;
+  animation-duration: 3.6s;
+}
+
+@keyframes hero-beam-ray-shimmer-strong {
+  0%, 100% { opacity: 0.42; }
+  50%      { opacity: 1; }
+}
