@@ -1564,11 +1564,14 @@
   }
 }
 
-/* ── Sticky landing nav — frosted glass from load, always visible ───
+/* ── Fixed landing nav — transparent at rest, frosted glass on scroll ──
    Uses position: fixed (not sticky) because .hero has `overflow: clip`
    (hero.css:29) which creates a containing block that traps
    position: sticky descendants. Fixed is viewport-relative and
-   unaffected by ancestor overflow/clip/transform. */
+   unaffected by ancestor overflow/clip/transform.
+   Background is transparent by default for a clean hero entry; the
+   .landing-nav--scrolled modifier (added by HeroHeader.tsx when
+   scrollY > 200) brings in the frosted-glass treatment. */
 .hero.landing-page .landing-nav--sticky {
   position: fixed;
   top: 0;
@@ -1582,10 +1585,10 @@
   max-width: none;
   margin: 0;
   padding: var(--dh-space-12) clamp(20px, 4vw, 40px);
-  background: rgba(8, 12, 18, 0.42);
-  -webkit-backdrop-filter: blur(18px) saturate(1.05);
-          backdrop-filter: blur(18px) saturate(1.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border-bottom: 1px solid transparent;
   box-shadow: none;
   transition:
     background 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -1594,8 +1597,8 @@
     border-color 220ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-/* Scrolled state — slightly denser bg + tighter padding for compaction.
-   Background presence is now identical at rest; only density changes. */
+/* Scrolled state — frosted glass kicks in once .landing-nav--scrolled
+   is applied, plus tighter padding for compaction. */
 .hero.landing-page .landing-nav--sticky.landing-nav--scrolled {
   padding: var(--dh-space-8) clamp(20px, 4vw, 40px);
   background: rgba(8, 12, 18, 0.62);
