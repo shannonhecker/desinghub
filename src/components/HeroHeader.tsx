@@ -963,86 +963,17 @@ export function HeroHeader() {
       </nav>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
-          <div className="hero-beam-pillar" aria-hidden="true">
-            <div className="hero-beam-pillar-particles" />
-            <div className="hero-beam-pillar-aura-top" />
-            <div className="hero-beam-pillar-aura-bottom" />
-            <div className="hero-beam-pillar-rays-top">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 4 rays per side (idx 2..5). The two innermost rays per
-                // side (idx 0 and 1) are skipped so the headline area
-                // stays clean — they were reading as distracting vertical
-                // lines behind the title.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6; // 0..5 within the side
-                if (idx <= 1) return null;
-                // Spread each side from ~22.8% to ~36% out from centre.
-                const xPct = side * (14 + idx * 4.4);
-                const dist = Math.abs(xPct) / 36; // 0..1 normalised
-                const heightPct = 92 - dist * 30;
-                const widthPx = 5 + ((i * 17) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.92 - dist * 0.32;
-                const delay = ((i * 0.137) % 1) * 5.4;
-                return (
-                  <span
-                    key={`top-${i}`}
-                    className="hero-beam-ray"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      top: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-rays-bottom">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 5 rays per side, mirroring the top fan but with the
-                // innermost ray (idx 0) skipped so the bottom fan also
-                // clears the headline area on shorter viewports.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6;
-                if (idx === 0) return null;
-                const xPct = side * (16 + idx * 5.2);
-                const dist = Math.abs(xPct) / 42;
-                const heightPct = 84 - dist * 24;
-                const widthPx = 5 + ((i * 19) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.88 - dist * 0.3;
-                const delay = ((i * 0.179) % 1) * 5.4;
-                return (
-                  <span
-                    key={`bot-${i}`}
-                    className="hero-beam-ray hero-beam-ray--down"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      bottom: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-waist" />
-            <div className="hero-beam-pillar-floor" />
-          </div>
+          {/* Beam pillar (vertical rays + aura), topo curves, and stage
+              motion lines removed — the cumulative effect read as noise
+              behind the headline. The hero now relies on the page-level
+              gradient (.hero background in hero.css), the stage-light
+              radial glows, and the stage-grid mesh for atmosphere. */}
           <div className="hero-halo" aria-hidden="true" />
           <div className="stage-light stage-light--right" aria-hidden="true" />
           <div className="stage-light stage-light--left" aria-hidden="true" />
           <div className="stage-grid" aria-hidden="true" />
 
-          <TopoLines />
-          <div className="stage-motion-lines" aria-hidden="true">
+          <div className="stage-motion-lines stage-motion-lines--hidden" aria-hidden="true">
             <span />
             <span />
             <span />

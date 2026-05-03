@@ -5316,3 +5316,12 @@
     animation: none !important;
   }
 }
+
+/* Hide the legacy stage-motion-lines decorative strip — kept in DOM
+   without rendering so any CSS that targets the container by index
+   doesn't break, but no actual lines paint. Combined with the beam
+   pillar removal, the hero stage now reads as a single calm gradient. */
+.stage-motion-lines.stage-motion-lines--hidden,
+.stage-motion-lines.stage-motion-lines--hidden span {
+  display: none !important;
+}
