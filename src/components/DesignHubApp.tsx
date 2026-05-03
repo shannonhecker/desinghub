@@ -30,6 +30,49 @@ export function DesignHubApp() {
   const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
+  /* Hydrate from URL params on mount — Builder → UI Kit handoff
+     passes ?ds=&mode=&density=&themeKey= so the UI Kit opens on the
+     same configuration the user was just exploring in Builder. The
+     params reflect Builder's flat state shape (single mode/density/
+     themeKey); we map them onto UI Kit's per-DS state slots. Run
+     once on mount; URL is left alone after hydration. */
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ds = params.get("ds") as SystemId | null;
+    const mode = params.get("mode");
+    const density = params.get("density");
+    const themeKey = params.get("themeKey");
+
+    if (ds && ["salt", "m3", "fluent", "carbon", "ausos"].includes(ds)) {
+      store.setActiveSystem(ds);
+    }
+    /* themeKey is per-DS so apply to whichever DS is now active. */
+    const targetDs = ds ?? activeSystem;
+    if (themeKey) {
+      if (targetDs === "salt") store.setSaltTheme(themeKey);
+      else if (targetDs === "m3") store.setM3Theme(themeKey);
+      else if (targetDs === "fluent") store.setFluentTheme(themeKey);
+      else if (targetDs === "carbon") store.setCarbonTheme(themeKey);
+      else if (targetDs === "ausos") store.setAusosTheme(themeKey);
+    } else if (mode) {
+      /* Fallback: use mode (light/dark) when no themeKey was passed. */
+      if (targetDs === "salt") store.setSaltTheme(mode === "dark" ? "jpm-dark" : "jpm-light");
+      else if (targetDs === "m3") store.setM3Theme(mode === "dark" ? "dark" : "light");
+      else if (targetDs === "fluent") store.setFluentTheme(mode === "dark" ? "dark" : "light");
+      else if (targetDs === "carbon") store.setCarbonTheme(mode === "dark" ? "g100" : "white");
+      else if (targetDs === "ausos") store.setAusosTheme(mode === "dark" ? "dark" : "light");
+    }
+    if (density) {
+      if (targetDs === "salt") store.setSaltDensity(density);
+      else if (targetDs === "fluent") store.setFluentSize(density);
+      else if (targetDs === "carbon") store.setCarbonDensity(density);
+      else if (targetDs === "ausos") store.setAusosDensity(density);
+      /* M3 density is numeric (-3..0); skip non-numeric handoff. */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [isNarrow, setIsNarrow] = React.useState(false);
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -165,7 +208,27 @@ export function DesignHubApp() {
               {t.T.name || sysInfo.name}
             </span>
           )}
-          <Link href="/" target="_blank" rel="noopener noreferrer"
+          {/* Open Builder — passes current ds/mode/density/themeKey
+              so the Builder lands on the same configuration the user
+              is already exploring in UI Kit. */}
+          <Link
+            href={(() => {
+              const ds = activeSystem;
+              const mode = isDarkTheme ? "dark" : "light";
+              const themeKey =
+                ds === "salt" ? store.salt.themeKey :
+                ds === "m3" ? store.m3.themeKey :
+                ds === "fluent" ? store.fluent.themeKey :
+                ds === "carbon" ? store.carbon.themeKey :
+                store.ausos.themeKey;
+              const density =
+                ds === "salt" ? store.salt.density :
+                ds === "fluent" ? store.fluent.size :
+                ds === "carbon" ? store.carbon.density :
+                ds === "ausos" ? store.ausos.density :
+                String(store.m3.density);
+              return `/builder?ds=${ds}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`;
+            })()}
             aria-label="Open Builder"
             title="Open Builder"
             style={{

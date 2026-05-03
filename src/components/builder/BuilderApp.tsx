@@ -23,6 +23,7 @@ import "./builder.css";
 export function BuilderApp() {
   const {
     mode, previewOpen, setMode,
+    designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen,
     toggleSessionsDrawer, startNewSession,
@@ -205,12 +206,22 @@ export function BuilderApp() {
     document.body.style.userSelect = "none";
   };
 
-  /* ── Pop-out mode ── */
+  /* ── Pop-out mode + handoff from /ui-kit ──
+     Two URL-param flows live in this effect:
+       - ?preview=1 — pop-out PreviewPanel (existing)
+       - ?ds=&mode=&density=&themeKey= — handoff from UI Kit so the
+         user lands on the same DS/mode/density they were exploring.
+     The handoff flow is fire-and-forget: read params, apply state,
+     leave URL alone (no replaceState) so the link stays bookmarkable
+     and screenshot-friendly. */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const ds = params.get("ds") as DesignSystem | null;
+    const m = params.get("mode") as BuilderMode | null;
+    const density = params.get("density");
+    const themeKey = params.get("themeKey");
+
     if (params.get("preview") === "1") {
-      const ds = params.get("ds") as DesignSystem | null;
-      const m = params.get("mode") as BuilderMode | null;
       const t = params.get("type") as InterfaceType | null;
       const c = params.get("components");
       if (ds) setDesignSystem(ds);
@@ -218,7 +229,15 @@ export function BuilderApp() {
       if (t) setInterfaceType(t);
       if (c) setSelectedComponents(c.split(","));
       setIsStandalone(true);
+      return;
     }
+
+    /* Handoff from UI Kit. Apply ds first so its themeMap doesn't
+       overwrite a more specific themeKey we received. */
+    if (ds) setDesignSystem(ds);
+    if (themeKey) useBuilder.getState().setThemeKey(themeKey);
+    if (m) setMode(m);
+    if (density) useBuilder.getState().setDensity(density);
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
   /* ── Fork from shared preview - pick up ?shared=<hash> and apply ──
@@ -311,8 +330,15 @@ export function BuilderApp() {
               and Preview toggle was redundant since the canvas is always
               the workspace. */}
           <div className="top-bar-right">
-            {/* UI Kit */}
-            <Link href="/ui-kit" className="top-bar-btn" title="UI Kit overview" aria-label="Open UI Kit overview">
+            {/* UI Kit — passes current ds/mode/density/themeKey so
+                UI Kit lands on the same configuration the user is
+                already exploring in Builder. */}
+            <Link
+              href={`/ui-kit?ds=${designSystem}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`}
+              className="top-bar-btn"
+              title="UI Kit overview"
+              aria-label="Open UI Kit overview"
+            >
               <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">palette</span>
               UI Kit
             </Link>
