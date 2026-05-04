@@ -2,7 +2,13 @@
 
 import React, { useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { useBuilder, type LayoutProps, type LayoutWidth, type ZoneId } from "@/store/useBuilder";
+import {
+  useBuilder,
+  resolveDestinationZone,
+  type LayoutProps,
+  type LayoutWidth,
+  type ZoneId,
+} from "@/store/useBuilder";
 import {
   LIBRARY_BLUEPRINTS,
   TYPE_FIELDS,
@@ -75,6 +81,8 @@ function BlueprintItem({ blueprint, zone }: {
   zone: LibraryZone;
 }) {
   const addBlockFromLibrary = useBuilder((s) => s.addBlockFromLibrary);
+  const setLibraryHoverZone = useBuilder((s) => s.setLibraryHoverZone);
+  const selectedBlockZone = useBuilder((s) => s.selectedBlockZone);
   const hover = React.useContext(HoverContext);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: blueprint.id,
@@ -100,6 +108,9 @@ function BlueprintItem({ blueprint, zone }: {
        it doesn't linger after the block is added. */
     if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
     hover?.hide();
+    /* Issue #79: clear zone highlight when the click/drag starts so
+       dnd-kit's own indicators take over. */
+    setLibraryHoverZone(null);
   };
   const handlePointerUp = (e: React.PointerEvent) => {
     const start = pointerStartRef.current;
@@ -120,6 +131,10 @@ function BlueprintItem({ blueprint, zone }: {
   };
 
   const handleMouseEnter = () => {
+    /* Issue #79: preview where the tile would land if clicked, so the
+       zone-resolution rule (zoneByType > preferZone > selectedBlockZone
+       > body) is visible without explanation. */
+    setLibraryHoverZone(resolveDestinationZone(blueprint.type, zone, selectedBlockZone));
     if (!hover) return;
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
@@ -134,6 +149,7 @@ function BlueprintItem({ blueprint, zone }: {
     }, HOVER_DELAY_MS);
   };
   const handleMouseLeave = () => {
+    setLibraryHoverZone(null);
     if (hoverTimerRef.current) { clearTimeout(hoverTimerRef.current); hoverTimerRef.current = null; }
     hover?.hide();
   };

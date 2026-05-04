@@ -6172,6 +6172,23 @@
   color: var(--ds-fg, #fff);
 }
 
+/* Issue #80: one-shot mount pulse on the drag handle so first-time
+   users see the affordance flash briefly. The class is added by
+   SortableBlock for 600ms after mount, then removed. */
+@keyframes dh-drag-handle-pulse {
+  0%   { opacity: 0; transform: scale(0.92); }
+  50%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.92); }
+}
+.canvas-block.is-newly-mounted .canvas-block-handle {
+  animation: dh-drag-handle-pulse 480ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)) 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-block.is-newly-mounted .canvas-block-handle {
+    animation: none;
+  }
+}
+
 .canvas-block-swap {
   position: absolute;
   top: 6px;
@@ -10168,7 +10185,25 @@
 /* Zone drop containers - base */
 .zone-drop-container {
   min-height: 8px;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s, box-shadow 0.2s, outline-color 0.12s;
+}
+
+/* Issue #79: zone preview when a library tile is being hovered. The
+   tile's onMouseEnter sets `libraryHoverZone` in the store; the
+   matching ZoneDropContainer reads it and applies this class. The
+   outline is intentionally distinct from the dnd-kit `.is-over` glow
+   so the user perceives "click would land here" vs "drop is being
+   tracked here." */
+.zone-drop-container.is-library-hover-target {
+  outline: 2px dashed rgba(138, 171, 168, 0.6);
+  outline-offset: 2px;
+  background: rgba(138, 171, 168, 0.04);
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-drop-container {
+    transition: none;
+  }
 }
 
 /* Drop hover indicators per zone */

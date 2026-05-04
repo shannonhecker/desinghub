@@ -730,6 +730,16 @@ export function SortableBlock({
     transition,
   };
 
+  /* Issue #80: one-shot pulse on the drag handle when a block first
+     mounts, so a brand-new block teaches the affordance. Class is
+     applied for 600ms then removed. CSS keyframe respects
+     prefers-reduced-motion (no animation if user prefers it). */
+  const [isNewlyMounted, setIsNewlyMounted] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setIsNewlyMounted(false), 600);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const cls = [
     "canvas-block",
     "sortable-block",
@@ -738,6 +748,7 @@ export function SortableBlock({
     isSecondarySelected && "is-selected-multi",
     compact && "zone-block-compact",
     experimentalLayout && "canvas-block--experimental",
+    isNewlyMounted && "is-newly-mounted",
     /* Drop indicator: show when another item is being sorted and this item is shifting */
     isSorting && !isDragging && "is-sorting-peer",
   ]

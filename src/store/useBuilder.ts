@@ -7,6 +7,27 @@ export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 
+/* Issue #79: shared zone-resolution rule. Used by `addBlockFromLibrary`
+   for actual placement and by ComponentLibrary tile-hover to preview
+   *where* a clicked tile would land. Keeping the logic in one place
+   means the preview can never disagree with the placement. */
+const ZONE_BY_TYPE: Readonly<Record<string, ZoneId>> = {
+  AppBrand: 'header',
+  StatusPill: 'header',
+  NavItem: 'sidebar',
+  FooterText: 'footer',
+  /* Body-only primitive — a grouped column of blocks. */
+  LayoutGroup: 'body',
+};
+
+export function resolveDestinationZone(
+  type: string,
+  preferZone: ZoneId | undefined,
+  selectedBlockZone: ZoneId | null,
+): ZoneId {
+  return ZONE_BY_TYPE[type] ?? preferZone ?? selectedBlockZone ?? 'body';
+}
+
 /* ══════════════════════════════════════════════════════════
    Layout system (Figma-inspired flex primitives)
    ══════════════════════════════════════════════════════════
@@ -187,6 +208,13 @@ interface BuilderState {
   addMenuOpen: boolean;
   canvasViewMode: 'ui' | 'code';
 
+  /* Issue #79: zone preview while a library tile is hovered.
+     Set when the cursor enters a tile in ComponentLibrary, cleared on
+     leave or once a real drag/click starts. ZoneDropContainer reads
+     this and applies an outline to the matching zone so users can see
+     where a clicked tile would land before they click. */
+  libraryHoverZone: ZoneId | null;
+
   // Zone blocks (header / sidebar / footer)
   headerBlocks: Block[];
   sidebarBlocks: Block[];
@@ -209,10 +237,12 @@ interface BuilderState {
   // simultaneously (2x2 grid) so designers can compare visual output.
   compareMode: boolean;
 
-  // Track B prototype flag. Gates the experimental add + resize UX
-  // (in-canvas + slots, fuzzy SlashInserter, single-handle resize with
-  // HUD + chip rail + snap guides + ARIA). Default OFF; toggled ON for
-  // user-test Track B participants.
+  // Issue #77: was a Track B prototype flag, now ON by default. Gates
+  // the single-handle resize (with HUD + chip rail + snap guides + ARIA),
+  // in-canvas + slots, and fuzzy SlashInserter. The simulator + heuristic
+  // eval found the legacy two-handle (px / %) resize was the worst
+  // gesture across 5 of 8 personas. This flag stays as a kill-switch
+  // for one sprint in case regressions surface; remove once stable.
   experimentalLayout: boolean;
 
   // Slash inserter imperative state. When `inserterOpen` is true, the
@@ -275,6 +305,8 @@ interface BuilderState {
     preferZone?: ZoneId,
     index?: number,
   ) => void;
+  /* Issue #79: set/clear the hovered library zone. */
+  setLibraryHoverZone: (zone: ZoneId | null) => void;
 
   // Actions - Sessions + auto-save
   setCurrentSessionId: (id: string | null) => void;
@@ -507,6 +539,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   componentLibraryOpen: true,
   addMenuOpen: false,
   canvasViewMode: 'ui',
+  libraryHoverZone: null,
 
   // Zone blocks - default content matching the static dashboard layout
   headerBlocks: [
@@ -543,7 +576,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   previewKey: 0,
   deviceMode: 'desktop',
   compareMode: false,
-  experimentalLayout: false,
+  /* Issue #77: ON by default — single-handle resize, in-canvas + slots,
+     fuzzy SlashInserter. Kill-switch retained one sprint. */
+  experimentalLayout: true,
   inserterOpen: false,
   inserterAnchor: null,
 
@@ -630,26 +665,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
   addBlockFromLibrary: (type, defaults, preferZone, index) => {
-    /* Resolve the target zone:
-       1. `preferZone` - explicit hint from the caller (e.g. a library
-          tile passes the zone heading it lives under, so a Body-group
-          tile always lands in body even when the current
-          selectedBlockZone points elsewhere).
-       2. zoneByType for types that only make sense in one zone.
-       3. `selectedBlockZone` so repeated clicks stack near the user's
-          focus when no explicit hint is given.
-       4. "body" as the workspace default. */
-    const zoneByType: Record<string, ZoneId> = {
-      AppBrand: 'header',
-      StatusPill: 'header',
-      NavItem: 'sidebar',
-      FooterText: 'footer',
-      /* Body-only primitive - a grouped column of blocks. */
-      LayoutGroup: 'body',
-    };
     const state = useBuilder.getState();
-    const targetZone: ZoneId =
-      zoneByType[type] ?? preferZone ?? state.selectedBlockZone ?? 'body';
+    const targetZone = resolveDestinationZone(type, preferZone, state.selectedBlockZone);
     const key = ZONE_KEYS[targetZone];
     const id = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
     const newBlock: Block = { id, type, props: { ...defaults } };
@@ -672,6 +689,8 @@ export const useBuilder = create<BuilderState>((set) => ({
     if (!state.previewOpen) set({ previewOpen: true });
     state.bumpPreview();
   },
+
+  setLibraryHoverZone: (zone) => set({ libraryHoverZone: zone }),
 
   setCurrentSessionId: (id) => set({ currentSessionId: id }),
   setSessionTitle: (t) => set({ sessionTitle: t }),
