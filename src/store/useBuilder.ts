@@ -106,6 +106,11 @@ export interface Block {
      The renderer recurses into these blocks using the group's
      direction / gap / padding. Other block types ignore it. */
   children?: Block[];
+  /* Issue #13: per-block colour overrides. Block-level wins over
+     the global `colorOverrides`. Keyed identically (e.g. 'accent',
+     'primary', 'brandBg' per DS). Renderer wraps the block subtree
+     with an inline style that scopes the accent CSS var. */
+  colorOverrides?: Record<string, string>;
 }
 
 /* Valid LayoutGroup direction values. Mirrors LayoutMode since
@@ -245,6 +250,12 @@ interface BuilderState {
   // for one sprint in case regressions surface; remove once stable.
   experimentalLayout: boolean;
 
+  // User-adjustable canvas chrome rhythm. Drives padding on canvas
+  // wrapper, every zone, every block wrapper, and the inter-block gap.
+  // Per-DS native values resolved via lib/structurePadding.ts.
+  // Orthogonal to density (which drives component sizing).
+  structurePadding: 'small' | 'medium' | 'large';
+
   // Slash inserter imperative state. When `inserterOpen` is true, the
   // SlashInserter overlay is visible. When `inserterAnchor` is set, the
   // inserter pins results to that zone and inserts at the anchor.index
@@ -272,6 +283,12 @@ interface BuilderState {
   // Actions - Colors
   setColorOverride: (key: string, value: string) => void;
   resetColors: () => void;
+  /* Issue #14: fine-grained reset for one override key. */
+  resetColorKey: (key: string) => void;
+  /* Issue #13: per-block colour override. Looks up the block by zone
+     + id and writes/clears one key on its `colorOverrides` map. */
+  setBlockColorOverride: (zone: ZoneId, blockId: string, key: string, value: string) => void;
+  resetBlockColorOverride: (zone: ZoneId, blockId: string, key: string) => void;
 
   // Actions - Onboarding
   setOnboardingStep: (s: OnboardingStep) => void;
@@ -422,6 +439,9 @@ interface BuilderState {
 
   // Track B prototype flag
   setExperimentalLayout: (v: boolean) => void;
+
+  // Structure padding control (per-DS S/M/L)
+  setStructurePadding: (size: 'small' | 'medium' | 'large') => void;
 
   // Slash inserter imperative controls. `openInserter` with an anchor
   // scopes the picker to a specific zone + index (used by InsertionSlot
@@ -579,6 +599,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   /* Issue #77: ON by default — single-handle resize, in-canvas + slots,
      fuzzy SlashInserter. Kill-switch retained one sprint. */
   experimentalLayout: true,
+  structurePadding: 'medium',
   inserterOpen: false,
   inserterAnchor: null,
 
@@ -644,6 +665,34 @@ export const useBuilder = create<BuilderState>((set) => ({
   setColorOverride: (key, value) =>
     set((s) => ({ colorOverrides: { ...s.colorOverrides, [key]: value }, hasOverrides: true })),
   resetColors: () => set({ colorOverrides: {}, hasOverrides: false }),
+  resetColorKey: (key) =>
+    set((s) => {
+      const next = { ...s.colorOverrides };
+      delete next[key];
+      return { colorOverrides: next, hasOverrides: Object.keys(next).length > 0 };
+    }),
+
+  setBlockColorOverride: (zone, blockId, key, value) =>
+    set((s) => {
+      const arrKey = ZONE_KEYS[zone];
+      const arr = (s[arrKey] as Block[]).map((b) =>
+        b.id === blockId ? { ...b, colorOverrides: { ...(b.colorOverrides ?? {}), [key]: value } } : b,
+      );
+      return { [arrKey]: arr } as Partial<BuilderState>;
+    }),
+  resetBlockColorOverride: (zone, blockId, key) =>
+    set((s) => {
+      const arrKey = ZONE_KEYS[zone];
+      const arr = (s[arrKey] as Block[]).map((b) => {
+        if (b.id !== blockId || !b.colorOverrides) return b;
+        const next = { ...b.colorOverrides };
+        delete next[key];
+        return Object.keys(next).length > 0
+          ? { ...b, colorOverrides: next }
+          : (() => { const { colorOverrides: _, ...rest } = b; return rest as Block; })();
+      });
+      return { [arrKey]: arr } as Partial<BuilderState>;
+    }),
 
   setOnboardingStep: (s) => set({ onboardingStep: s }),
   setPendingComponents: (c) => set({ pendingComponents: c }),
@@ -1125,6 +1174,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   setCompareMode: (v) => set({ compareMode: v }),
 
   setExperimentalLayout: (v) => set({ experimentalLayout: v }),
+  setStructurePadding: (size) => set({ structurePadding: size }),
 
   openInserter: (anchor) => set({ inserterOpen: true, inserterAnchor: anchor ?? null }),
   closeInserter: () => set({ inserterOpen: false, inserterAnchor: null }),

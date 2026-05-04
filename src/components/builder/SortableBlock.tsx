@@ -6,6 +6,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
 import { useBuilder } from "@/store/useBuilder";
+import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
 import { ResizeHUD } from "./ResizeHUD";
 import { SizeChipRail } from "./SizeChipRail";
 
@@ -718,6 +719,22 @@ export function SortableBlock({
   const openBlockContextMenu = useBuilder((s) => s.openBlockContextMenu);
   const setSelection = useBuilder((s) => s.setSelection);
 
+  /* Issue #13: per-block accent override. Look the block up in the
+     store (zone + id). If it has its own `colorOverrides.<accentKey>`,
+     scope the per-DS accent CSS var on this block's subtree so the
+     rendered DS component picks up the local hex instead of global. */
+  const designSystemForAccent = useBuilder((s) => s.designSystem);
+  const blockOverrideAccent = useBuilder((s) => {
+    if (!zone) return undefined;
+    const arr = zone === "body" ? s.blocks
+      : zone === "header" ? s.headerBlocks
+      : zone === "sidebar" ? s.sidebarBlocks
+      : s.footerBlocks;
+    const found = arr.find((b) => b.id === id);
+    if (!found?.colorOverrides) return undefined;
+    return found.colorOverrides[ACCENT_KEY_BY_DS[s.designSystem]];
+  });
+
   /* Secondary highlight: block is in the multi-selection but isn't
      the primary inspector focus. Dashed outline via CSS. */
   const isSecondarySelected =
@@ -728,6 +745,12 @@ export function SortableBlock({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+    /* Issue #13: per-block accent override scopes the per-DS accent
+       CSS var to this block's subtree. Without this property, the
+       block inherits the global var from :root. */
+    ...(blockOverrideAccent
+      ? ({ [ACCENT_VAR_BY_DS[designSystemForAccent]]: blockOverrideAccent } as React.CSSProperties)
+      : {}),
   };
 
   /* Issue #80: one-shot pulse on the drag handle when a block first
@@ -916,8 +939,10 @@ export function SortableBlock({
 
       {children}
 
-      {/* Production path: dual handles (right-edge px + corner percent). */}
-      {resizableInProduction && (
+      {/* Production path: dual handles (right-edge px + corner percent).
+          Issue #8: gated on `isSelected` so idle / hovered blocks don't
+          render the handle (matches chip-rail's existing visibility). */}
+      {isSelected && resizableInProduction && (
         <>
           <ResizeHandle
             colSpan={colSpan}
@@ -940,7 +965,8 @@ export function SortableBlock({
 
       {/* Experimental path: single right-edge handle + HUD +
           snap guide. Corner handle is removed. */}
-      {resizableInExperimental && zone && (
+      {/* Issue #8: same gate as the production handle above. */}
+      {isSelected && resizableInExperimental && zone && (
         <ExperimentalResize
           zone={zone}
           blockId={id}

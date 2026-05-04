@@ -3106,6 +3106,35 @@
 .color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
 .color-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
 
+/* Issue #11: per-DS accent preset swatch grid in SettingsPanel.
+   One-click presets sit alongside the native color input which acts
+   as the custom-hex fallback. */
+.accent-preset-row {
+  display: inline-flex;
+  gap: 6px;
+  margin-right: 8px;
+}
+.accent-preset-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  outline: 1px solid var(--b-border);
+  outline-offset: -1px;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.accent-preset-swatch:hover { transform: scale(1.08); }
+.accent-preset-swatch.is-active {
+  border-color: var(--b-fg);
+  outline-color: transparent;
+}
+.accent-preset-swatch:focus-visible {
+  outline: 2px solid var(--b-accent2, #5ee7df);
+  outline-offset: 2px;
+}
+
 /* ── EXPORT BAR ── */
 .export-bar {
   display: flex;
@@ -7974,8 +8003,9 @@
   --density-card-padding: 8px;
 }
 
-/* Apply density tokens to canvas blocks */
-.preview-canvas-root .canvas-block { padding: var(--density-card-padding, 12px); margin-bottom: var(--density-gap, 8px); }
+/* Apply structure padding (S/M/L) to canvas blocks; density-card-padding
+   stays as fallback for callers that don't yet emit --dh-pad-block. */
+.preview-canvas-root .canvas-block { padding: var(--dh-pad-block, var(--density-card-padding, 12px)); margin-bottom: var(--dh-pad-gap, var(--density-gap, 8px)); }
 .preview-canvas-root .s-input,
 .preview-canvas-root .m3-input,
 .preview-canvas-root .f-input { padding: var(--density-input-padding, 6px 12px); font-size: var(--density-font-size, 13px); }
@@ -8567,7 +8597,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  /* Was `10px 16px`. Variables emitted by BuilderApp's structure-padding
+     effect; ratio (vertical 1× : horizontal 1.6×) preserves the original
+     visual rhythm at the new medium-default values. */
+  padding: var(--dh-pad-zone, 10px) calc(var(--dh-pad-zone, 10px) * 1.6);
   background: var(--ds-surface);
   border-bottom: 1px solid var(--ds-border);
   flex-shrink: 0;
@@ -8654,7 +8687,9 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 6px;
+  /* Was `8px 6px`. Slightly tighter horizontal than vertical to keep
+     the sidebar feeling like a rail. */
+  padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 0.75);
 }
 
 .bp-nav-item {
@@ -8864,7 +8899,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  /* Was `8px 16px`. Same ratio as header. */
+  padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
   border-top: 1px solid var(--ds-border);
   background: var(--ds-surface);
   font-size: 10px;
@@ -10185,6 +10221,9 @@
 /* Zone drop containers - base */
 .zone-drop-container {
   min-height: 8px;
+  /* Inter-block gap inside each zone scales with structure padding (S/M/L).
+     Falls back to 8px when --dh-pad-gap isn't set (legacy callers). */
+  gap: var(--dh-pad-gap, 8px);
   transition: background 0.2s, box-shadow 0.2s, outline-color 0.12s;
 }
 

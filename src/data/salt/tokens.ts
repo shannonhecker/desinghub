@@ -149,6 +149,17 @@ export function saltTokenVars(mode: 'light' | 'dark'): string {
   ].join(' ');
 }
 
+/* ── Structure padding (S/M/L) ────────────────────────────────────────
+   User-adjustable canvas chrome rhythm. Per Salt's H/M/L step, with
+   slightly tighter inter-block gap than canvas margin. */
+import type { StructurePaddingScale } from "../_shared/structure";
+
+export const SALT_STRUCTURE_PADDING: StructurePaddingScale = {
+  small:  { canvas: 8,  zone: 8,  block: 4,  gap: 8  },
+  medium: { canvas: 16, zone: 12, block: 8,  gap: 12 },
+  large:  { canvas: 24, zone: 16, block: 12, gap: 16 },
+};
+
 /* ── Types ───────────────────────────────────────────────────────────── */
 export type SaltCurveKey = keyof typeof SALT_CURVE;
 export type SaltMotionKey = keyof typeof SALT_MOTION.durations;

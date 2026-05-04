@@ -90,6 +90,17 @@ export function m3ShapeVars(): string {
   ].join(' ');
 }
 
+/* ── Structure padding (S/M/L) ────────────────────────────────────────
+   User-adjustable canvas chrome rhythm. Material 3 prefers softer,
+   4px-aligned spacing with generous canvas margin. */
+import type { StructurePaddingScale } from "../_shared/structure";
+
+export const M3_STRUCTURE_PADDING: StructurePaddingScale = {
+  small:  { canvas: 12, zone: 8,  block: 8,  gap: 12 },
+  medium: { canvas: 20, zone: 16, block: 12, gap: 16 },
+  large:  { canvas: 32, zone: 24, block: 16, gap: 24 },
+};
+
 /* ── Types ───────────────────────────────────────────────────────────── */
 export type M3ShapeKey = keyof typeof M3_SHAPE;
 export type M3TypeKey = keyof typeof M3_TYPE;

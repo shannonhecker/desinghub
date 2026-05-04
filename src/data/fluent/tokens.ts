@@ -264,6 +264,17 @@ export function fluentColorVars(T: any): string {
   ].join(' ');
 }
 
+/* ── Structure padding (S/M/L) ────────────────────────────────────────
+   User-adjustable canvas chrome rhythm. Fluent uses an 8px base with
+   half-step nudges; structure padding stays close to that rhythm. */
+import type { StructurePaddingScale } from "../_shared/structure";
+
+export const FLUENT_STRUCTURE_PADDING: StructurePaddingScale = {
+  small:  { canvas: 8,  zone: 8,  block: 8,  gap: 8  },
+  medium: { canvas: 12, zone: 12, block: 12, gap: 12 },
+  large:  { canvas: 20, zone: 16, block: 16, gap: 16 },
+};
+
 /* ── Re-export types ──────────────────────────────────────────────────── */
 export type FluentDurationKey = keyof typeof FLUENT_MOTION.durations;
 export type FluentRadiusKey = keyof typeof FLUENT_RADIUS;

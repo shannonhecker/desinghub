@@ -55,8 +55,9 @@ const ALLOWLIST_VARIABLE_NAMES = [
 const ALLOWLIST_FILENAMES = [
   'code-snippets.ts',
   'tokens.ts',
-  'brand.ts',      /* token-definition file: src/data/_shared/brand.ts */
-  'primitives.ts', /* token-definition file: src/data/_shared/primitives.ts */
+  'brand.ts',         /* token-definition file: src/data/_shared/brand.ts */
+  'primitives.ts',    /* token-definition file: src/data/_shared/primitives.ts */
+  'accentPresets.ts', /* per-DS accent swatch presets: src/data/_shared/accentPresets.ts */
 ];
 
 /** Recursively collect .ts / .tsx / .jsx files under dir. */
