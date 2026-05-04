@@ -133,7 +133,7 @@ export function SlashInserter() {
   /* DS-aware variant presets — pre-baked Blueprint-shaped entries that
      produce a specific DS-canonical variant on insert (e.g. Salt
      "Accented Solid" button, Carbon "Danger" button). Updates whenever
-     the user switches DS via SettingsPanel or BuilderThemeMenu. */
+     the user switches DS via SettingsPanel. */
   const dsVariantBlueprints: Blueprint[] = useMemo(
     () =>
       getDSVariantPresets(designSystem).map((p) => ({

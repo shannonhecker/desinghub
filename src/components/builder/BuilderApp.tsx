@@ -6,7 +6,6 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
 /* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
  * no direct import here since BuilderApp no longer owns the save/load UI. */
-import { BuilderThemeMenu } from "./BuilderThemeMenu";
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
@@ -335,13 +334,6 @@ export function BuilderApp() {
               and Preview toggle was redundant since the canvas is always
               the workspace. */}
           <div className="top-bar-right">
-            {/* Theme quick-controls — DS / mode / density. Surfaces
-                the same controls UI Kit puts in its sidebar so users
-                don't need to open the SettingsPanel for common
-                switches. SettingsPanel still owns full per-DS theme
-                key picking + accent color etc. */}
-            <BuilderThemeMenu />
-
             {/* UI Kit — passes current ds/mode/density/themeKey so
                 UI Kit lands on the same configuration the user is
                 already exploring in Builder. */}
