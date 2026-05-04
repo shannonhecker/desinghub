@@ -46,6 +46,7 @@ import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
 import { ComponentRenderer } from "./ComponentRenderer";
+import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
@@ -497,7 +498,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                 zone="header"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => removeBlockFromZone("header", block.id)}
+                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
               >
                 <div
                   className="bp-header-brand"
@@ -530,7 +531,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                 zone="header"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => removeBlockFromZone("header", block.id)}
+                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
               >
                 <div
                   className="bp-status-pill"
@@ -559,7 +560,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
               zone="header"
               compact
               isSelected={selectedBlockId === block.id}
-              onRemove={() => removeBlockFromZone("header", block.id)}
+              onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
             >
               <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
@@ -679,7 +680,7 @@ function DashboardSidebar({
                   id={block.id}
                   zone="sidebar"
                   isSelected={selectedBlockId === block.id}
-                  onRemove={() => removeBlockFromZone("sidebar", block.id)}
+                  onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
                 >
                   <div className="bp-nav-item-row">
                     <button
@@ -725,7 +726,7 @@ function DashboardSidebar({
                 id={block.id}
                 zone="sidebar"
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => removeBlockFromZone("sidebar", block.id)}
+                onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
               >
                 <div
                   className="zone-block-sidebar"
@@ -811,7 +812,7 @@ function DashboardFooter() {
                 zone="footer"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => removeBlockFromZone("footer", block.id)}
+                onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
               >
                 <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                   <span
@@ -847,7 +848,7 @@ function DashboardFooter() {
               zone="footer"
               compact
               isSelected={selectedBlockId === block.id}
-              onRemove={() => removeBlockFromZone("footer", block.id)}
+              onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
             >
               <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
@@ -1048,7 +1049,14 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
 
       /* Case 1: Library blueprint dropped */
       if (active.data.current?.fromLibrary) {
-        if (!over) { activeItemRef.current = null; return; }
+        if (!over) {
+          activeItemRef.current = null;
+          /* Issue #76: invalid library drop used to fail silently — block
+             snapped back with no explanation. Tell the user a zone is
+             expected. */
+          showToast("Couldn't drop here — try inside a zone on the canvas", { icon: "error" });
+          return;
+        }
 
         const { type, defaults } = active.data.current as {
           type: string;

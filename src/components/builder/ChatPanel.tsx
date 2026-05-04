@@ -821,14 +821,11 @@ export function ChatPanel() {
               return (
                 <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
                   {msg.role === "ai" ? <FadingWords text={msg.content} /> : msg.content}
-                  {msg.role === "ai" && (
-                    <div className="chat-msg-actions">
-                      <button aria-label="Good response"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>thumb_up</span></button>
-                      <button aria-label="Bad response"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>thumb_down</span></button>
-                      <button aria-label="Regenerate"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>refresh</span></button>
-                      <button aria-label="Copy"><span className="material-symbols-outlined" style={{ fontSize: 18 }}>content_copy</span></button>
-                    </div>
-                  )}
+                  {/* Per-AI-message action row (regenerate / thumbs / copy)
+                     was wired to UI only; click handlers were placeholders.
+                     Hidden until properly wired (issue #73). Silent no-ops
+                     on user clicks erode trust — half-built UI is worse
+                     than missing UI. */}
                   {isLastAi && !isGenerating && (awaitingDs ? renderDsReplyChips() : renderRefineChips())}
                 </div>
               );
