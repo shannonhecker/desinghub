@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
+import { showToast } from "@/lib/toast";
 import {
   SimulatedAlert,
   SimulatedDataTable,
@@ -1573,7 +1574,7 @@ function LayoutGroupBlock({ system, blockId }: { system: DesignSystem; blockId?:
               parentGroupId={group.id}
               compact
               isSelected={selectedBlockId === child.id}
-              onRemove={() => removeBlockFromGroup(group.id, child.id)}
+              onRemove={() => { removeBlockFromGroup(group.id, child.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
             >
               <ComponentRenderer
                 type={child.type}

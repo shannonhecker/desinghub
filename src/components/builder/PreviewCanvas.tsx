@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useBuilder, type Block, type LayoutWidth } from "@/store/useBuilder";
+import { showToast } from "@/lib/toast";
 import { SortableBlock } from "./SortableBlock";
 import { MarqueeLayer } from "./MarqueeLayer";
 import { ComponentRenderer } from "./ComponentRenderer";
@@ -190,6 +191,8 @@ export function PreviewCanvas() {
       const next = blocks.filter((b) => b.id !== id);
       syncToStore(next);
       if (selectedBlockId === id) setSelectedBlock(null, null);
+      /* Issue #75: snackbar referencing ⌘Z so users learn undo. */
+      showToast("Block deleted · ⌘Z to undo", { icon: "delete" });
     },
     [blocks, syncToStore, selectedBlockId, setSelectedBlock]
   );

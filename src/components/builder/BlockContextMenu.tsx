@@ -134,7 +134,13 @@ export function BlockContextMenu() {
       shortcut: "⌫",
       danger: true,
       onClick: () => {
+        const n = activeIds.length;
         activeIds.forEach((id) => removeBlockFromZone(zone, id));
+        /* Issue #75: snackbar referencing ⌘Z so users learn undo exists. */
+        showToast(
+          n > 1 ? `${n} blocks deleted · ⌘Z to undo` : "Block deleted · ⌘Z to undo",
+          { icon: "delete" },
+        );
       },
     },
     "separator",

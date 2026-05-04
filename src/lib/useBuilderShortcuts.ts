@@ -18,6 +18,7 @@
 import { useEffect } from "react";
 import { initBuilderHistory, undo, redo } from "./builderHistory";
 import { useBuilder } from "@/store/useBuilder";
+import { showToast } from "./toast";
 
 function isEditableTarget(t: EventTarget | null): boolean {
   if (!(t instanceof HTMLElement)) return false;
@@ -44,8 +45,15 @@ export function useBuilderShortcuts() {
           if (s.selectedBlockIds.length > 0 && s.selectedBlockZone) {
             e.preventDefault();
             const zone = s.selectedBlockZone;
+            const n = s.selectedBlockIds.length;
             s.selectedBlockIds.forEach((id) => s.removeBlockFromZone(zone, id));
             s.clearSelection();
+            /* Issue #75: snackbar after every removal so users learn
+               undo exists. ⌘Z restoration is in builderHistory. */
+            showToast(
+              n > 1 ? `${n} blocks deleted · ⌘Z to undo` : "Block deleted · ⌘Z to undo",
+              { icon: "delete" },
+            );
           }
           return;
         }
@@ -85,6 +93,14 @@ export function useBuilderShortcuts() {
         e.preventDefault();
         const s = useBuilder.getState();
         if (!s.selectedBlockZone || s.selectedBlockIds.length === 0) return;
+        /* Issue #74: ⌘G on a single-block selection silently produced
+           a one-block group with subtle styling change. Block + toast
+           so the user knows they need to multi-select first. Ungroup
+           (⌘⇧G) is fine on one selection — that's its whole purpose. */
+        if (!e.shiftKey && s.selectedBlockIds.length < 2) {
+          showToast("Select 2+ blocks first to group", { icon: "warning" });
+          return;
+        }
         if (e.shiftKey) {
           /* Ungroup the first LayoutGroup in the current selection. */
           const zone = s.selectedBlockZone;
