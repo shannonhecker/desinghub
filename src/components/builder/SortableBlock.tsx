@@ -740,6 +740,39 @@ export function SortableBlock({
     return () => window.clearTimeout(t);
   }, []);
 
+  /* Auto-flip chip rail / actions below the block when there's no room
+     above (block is near the top of the viewport). Measure on selection
+     change, on scroll, and on resize. ~52px covers chip-rail height
+     (~32px) + gap (8px) + safety padding (12px). */
+  const blockElRef = useRef<HTMLElement | null>(null);
+  const setRefs = useCallback(
+    (el: HTMLElement | null) => {
+      blockElRef.current = el;
+      setNodeRef(el);
+    },
+    [setNodeRef],
+  );
+  const [chipRailPlacement, setChipRailPlacement] = useState<"top" | "bottom">("top");
+  useEffect(() => {
+    if (!isSelected || !experimentalLayout) return;
+    const RAIL_CLEARANCE_PX = 52;
+    const measure = () => {
+      const el = blockElRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setChipRailPlacement(rect.top < RAIL_CLEARANCE_PX ? "bottom" : "top");
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    /* Capture-phase listener catches scroll on any ancestor (the
+       canvas scrolls inside a container, not the window). */
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [isSelected, experimentalLayout]);
+
   const cls = [
     "canvas-block",
     "sortable-block",
@@ -799,9 +832,9 @@ export function SortableBlock({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
-      className={cls}
+      className={`${cls} bc-rail-${chipRailPlacement}`}
       data-block-id={id}
       data-zone={zone}
       onClickCapture={handleClickCapture}

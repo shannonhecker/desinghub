@@ -10790,6 +10790,10 @@
 /* ── SizeChipRail ── */
 .bc-chip-rail {
   position: absolute;
+  /* Default placement: above the block. SortableBlock sets a wrapper
+     class `bc-rail-top` (default) or `bc-rail-bottom` based on the
+     block's distance from the viewport top, so blocks at the top
+     don't have their chip rail clipped. */
   top: calc(-1 * (var(--bc-size-chip) + var(--bc-gap-sm)));
   left: 0;
   display: inline-flex;
@@ -10803,6 +10807,13 @@
   z-index: var(--bc-z-chip-rail);
   pointer-events: auto;
   user-select: none;
+}
+/* Issue #77 follow-up: flip chip rail below block when there's no
+   room above (block is near viewport top). Wrapper class is set by
+   SortableBlock's measurement effect. */
+.bc-rail-bottom .bc-chip-rail {
+  top: auto;
+  bottom: calc(-1 * (var(--bc-size-chip) + var(--bc-gap-sm)));
 }
 .bc-chip {
   appearance: none;
