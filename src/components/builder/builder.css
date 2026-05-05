@@ -7039,8 +7039,13 @@
   background: rgba(126, 107, 196, 0.1);
 }
 .context-menu-item.is-disabled {
-  color: var(--dh-fg-disabled);
+  /* Bumped from var(--dh-fg-disabled) (40% white, ~4.0:1 vs the menu
+     surface — fails WCAG AA 4.5:1) to 50% white. */
+  color: rgba(255, 255, 255, 0.5);
   cursor: default;
+}
+.builder-light .context-menu-item.is-disabled {
+  color: rgba(15, 16, 30, 0.5);
 }
 .context-menu-item.is-danger {
   color: #f46a6a;
@@ -7066,16 +7071,25 @@
 }
 .context-menu-shortcut {
   font-size: 10.5px;
-  font-weight: 500;
-  color: var(--dh-fg-muted);
+  /* Bumped from 500 + var(--dh-fg-muted) (~64% / ~8:1) to 600 + 78%
+     so the kbd hints feel like the same vocabulary as the Export
+     dropdown's title weight against the new opaque surface. */
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
   letter-spacing: 0.02em;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
+.builder-light .context-menu-shortcut {
+  color: rgba(15, 16, 30, 0.72);
+}
 .context-menu-chevron {
   font-size: 16px !important;
-  color: var(--dh-fg-muted);
+  color: rgba(255, 255, 255, 0.78);
   flex-shrink: 0;
+}
+.builder-light .context-menu-chevron {
+  color: rgba(15, 16, 30, 0.72);
 }
 .context-menu-separator {
   height: 1px;
