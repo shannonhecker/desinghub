@@ -702,31 +702,32 @@ function DashboardSidebar({
                       onClick={(e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
                     >
                       <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
-                      <AnimatePresence>
-                        {!collapsed && (
-                          <motion.span
-                            className="bp-nav-label"
-                            initial={{ opacity: 0, width: 0 }}
-                            animate={{ opacity: 1, width: "auto" }}
-                            exit={{ opacity: 0, width: 0 }}
-                            transition={{ duration: 0.15 }}
+                      {/* Plain span — was previously a framer-motion
+                         <motion.span> animating width 0→auto, but that
+                         left the inline `style` attribute in an
+                         inconsistent state for some rows (Events
+                         specifically), causing the label to render with
+                         a stale wide measurement that shoved the text
+                         to the right of the row. The collapsed state
+                         is now CSS-only via .bp-nav-item-row.is-collapsed
+                         (see builder.css). */}
+                      {!collapsed && (
+                        <span className="bp-nav-label">
+                          <span
+                            className="bp-zone-editable"
+                            contentEditable
+                            suppressContentEditableWarning
+                            onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) =>
+                              updateSidebarBlockProps(block.id, {
+                                label: e.currentTarget.textContent ?? "",
+                              })
+                            }
                           >
-                            <span
-                              className="bp-zone-editable"
-                              contentEditable
-                              suppressContentEditableWarning
-                              onClick={(e) => e.stopPropagation()}
-                              onBlur={(e) =>
-                                updateSidebarBlockProps(block.id, {
-                                  label: e.currentTarget.textContent ?? "",
-                                })
-                              }
-                            >
-                              {block.props.label as string}
-                            </span>
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
+                            {block.props.label as string}
+                          </span>
+                        </span>
+                      )}
                     </button>
                   </div>
                 </SortableBlock>

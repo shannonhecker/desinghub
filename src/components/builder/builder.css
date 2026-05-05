@@ -8781,6 +8781,19 @@
 .bp-nav-label {
   display: inline-block;
   overflow: hidden;
+  /* Pin the label as a non-grow, non-shrink flex item so it sits
+     immediately after the icon (with the .bp-nav-item gap). Without
+     these, framer-motion's `animate={{ width: "auto" }}` previously
+     left a stale wide width on the inline style for some rows, which
+     in a flex container with the parent stretched to 100% read as
+     "label takes all remaining space" — pushing the visible "Events"
+     text to the row's right edge. */
+  flex: 0 0 auto;
+  margin: 0;
+  /* Belt: text inside the label aligns to its own start, so even
+     if some upstream rule grows the label it doesn't show up as
+     right-aligned text. */
+  text-align: left;
 }
 
 .bp-sidebar-toggle {
