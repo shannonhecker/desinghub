@@ -6981,17 +6981,23 @@
 /* ══════════════════════════════════════════════════════════
    ContextMenu — canvas right-click + keyboard-triggered menus
    ══════════════════════════════════════════════════════════ */
+/* Surface treatment matches the top-bar Export dropdown
+   (.top-bar-export-menu, builder.css ~L1074) so popovers feel
+   uniform. The previous --b-surface token resolved to a 5% white
+   overlay that looked transparent over the canvas (visible block
+   outlines bled through). Use the same near-opaque dark as Export
+   so right-click feels like part of the same vocabulary. */
 .context-menu {
   position: fixed;
   z-index: 10000;
   min-width: 220px;
   padding: 4px;
-  background: var(--b-surface, rgba(22, 22, 34, 0.96));
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: rgba(24, 22, 48, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--dh-curve-md, 10px);
-  box-shadow: var(--dh-shadow-lg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: inherit;
   animation: context-menu-in 140ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
   outline: none;
@@ -7085,12 +7091,12 @@
   left: calc(100% + 4px);
   min-width: 200px;
   padding: 4px;
-  background: var(--b-surface, rgba(22, 22, 34, 0.96));
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: rgba(24, 22, 48, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--dh-curve-md, 10px);
-  box-shadow: var(--dh-shadow-lg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: context-menu-in 120ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 .context-submenu.is-flipped {
