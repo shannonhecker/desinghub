@@ -146,6 +146,17 @@ export function ausosTokenVars(mode: 'dark' | 'light'): string {
   ].join(' ');
 }
 
+/* ── Structure padding (S/M/L) ────────────────────────────────────────
+   User-adjustable canvas chrome rhythm. Glass-aesthetic prefers
+   slightly wider canvas margins than Salt's H/M/L base. */
+import type { StructurePaddingScale } from "../_shared/structure";
+
+export const AUSOS_STRUCTURE_PADDING: StructurePaddingScale = {
+  small:  { canvas: 12, zone: 8,  block: 8,  gap: 12 },
+  medium: { canvas: 20, zone: 12, block: 12, gap: 16 },
+  large:  { canvas: 28, zone: 16, block: 16, gap: 24 },
+};
+
 /* ── Re-export types for consumers ─────────────────────────────────────── */
 export type AusosDurationKey = keyof typeof AUSOS_MOTION.durations;
 export type AusosRadiusKey = keyof typeof AUSOS_RADIUS;

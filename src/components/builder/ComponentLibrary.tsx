@@ -20,6 +20,7 @@ import { MiniPreview } from "./MiniPreview";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
+import { ACCENT_PRESETS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import { HoverPreview, type HoverPreviewState } from "./HoverPreview";
 import { CATEGORICAL_PALETTES, PALETTE_SLOT_LABELS, PALETTE_SLOT_NAMES } from "@/lib/categoricalPalettes";
 
@@ -269,6 +270,10 @@ export function ComponentLibrary() {
 
             {/* Layout panel - per-block sizing + alignment. */}
             <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
+
+            {/* Issue #13: per-block accent override. Lets one block diverge
+                from the global accent without affecting siblings. */}
+            <BlockAccentSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
 
             <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
 
@@ -725,6 +730,67 @@ function readInspectorExpanded(): Record<string, boolean> {
   } catch {
     return {};
   }
+}
+
+/* Issue #13: per-block accent override section. Mirrors the
+   SettingsPanel accent presets but writes to the block's own
+   `colorOverrides` instead of the global one. Reset link clears the
+   per-block value so the block re-inherits the global accent. */
+function BlockAccentSection({
+  block,
+  zone,
+}: {
+  block: { id: string; colorOverrides?: Record<string, string> };
+  zone: ZoneId;
+}) {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const setBlockColorOverride = useBuilder((s) => s.setBlockColorOverride);
+  const resetBlockColorOverride = useBuilder((s) => s.resetBlockColorOverride);
+  const accentKey = ACCENT_KEY_BY_DS[designSystem];
+  const current = block.colorOverrides?.[accentKey];
+
+  return (
+    <InspectorSection id={`accent-${block.id}`} title="Accent">
+      <div className="color-row">
+        <span className="color-label">{current ? "Override" : "Inherits global"}</span>
+        {current && (
+          <button
+            type="button"
+            className="settings-reset"
+            onClick={() => resetBlockColorOverride(zone, block.id, accentKey)}
+            title="Reset to global accent"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="accent-preset-row" role="radiogroup" aria-label="Block accent preset">
+        {ACCENT_PRESETS[designSystem].map((p) => {
+          const isActive = (current ?? "").toLowerCase() === p.hex.toLowerCase();
+          return (
+            <button
+              key={p.hex}
+              type="button"
+              role="radio"
+              aria-checked={isActive}
+              aria-label={p.label}
+              title={p.label}
+              className={`accent-preset-swatch${isActive ? " is-active" : ""}`}
+              style={{ background: p.hex }}
+              onClick={() => setBlockColorOverride(zone, block.id, accentKey, p.hex)}
+            />
+          );
+        })}
+        <input
+          type="color"
+          className="color-swatch"
+          value={current || "#7c3aed"}
+          onChange={(e) => setBlockColorOverride(zone, block.id, accentKey, e.target.value)}
+          aria-label="Custom block accent"
+        />
+      </div>
+    </InspectorSection>
+  );
 }
 
 function InspectorSection({

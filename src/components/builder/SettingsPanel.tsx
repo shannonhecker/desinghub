@@ -2,6 +2,37 @@
 
 import React from "react";
 import { useBuilder, type DesignSystem, type InterfaceType } from "@/store/useBuilder";
+import { ACCENT_PRESETS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
+
+/* Issue #12: per-DS theme-key options. Wired to store.setThemeKey. */
+const THEME_KEYS: Record<DesignSystem, { value: string; label: string }[]> = {
+  salt: [
+    { value: "jpm-light", label: "JPM Light" },
+    { value: "jpm-dark", label: "JPM Dark" },
+    { value: "legacy-light", label: "Legacy Light" },
+    { value: "legacy-dark", label: "Legacy Dark" },
+  ],
+  carbon: [
+    { value: "white", label: "White" },
+    { value: "g10", label: "Gray 10" },
+    { value: "g90", label: "Gray 90" },
+    { value: "g100", label: "Gray 100" },
+  ],
+  m3: [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+    { value: "light-mc", label: "Medium-contrast Light" },
+    { value: "dark-mc", label: "Medium-contrast Dark" },
+  ],
+  fluent: [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+  ],
+  ausos: [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+  ],
+};
 
 const DS_OPTIONS: { id: DesignSystem; label: string }[] = [
   { id: "salt", label: "Salt DS (J.P. Morgan)" },
@@ -120,6 +151,8 @@ export function SettingsPanel() {
     designSystem, setDesignSystem,
     mode, setMode,
     density, setDensity,
+    structurePadding, setStructurePadding,
+    themeKey, setThemeKey,
     interfaceType, setInterfaceType,
     selectedComponents, toggleComponent,
     colorOverrides, setColorOverride, resetColors, hasOverrides,
@@ -184,6 +217,25 @@ export function SettingsPanel() {
             </div>
           </div>
 
+          {/* Theme key — per-DS canonical theme variants (Salt jpm/legacy
+              × light/dark; Carbon white/g10/g90/g100; M3 + ausos + Fluent
+              light/dark; M3 also exposes medium-contrast pairs). Mode
+              toggle still rewrites this automatically when the user
+              flips light/dark; picking a value here overrides until the
+              next mode toggle. */}
+          <div className="settings-group">
+            <label>Theme</label>
+            <select
+              className="settings-select"
+              value={themeKey}
+              onChange={(e) => setThemeKey(e.target.value)}
+            >
+              {THEME_KEYS[designSystem].map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Density */}
           <div className="settings-group">
             <label>Density / Size</label>
@@ -191,6 +243,27 @@ export function SettingsPanel() {
               {densityOptions.map((o) => (
                 <button key={o.value} className={`settings-toggle-btn ${density === o.value ? "active" : ""}`} onClick={() => setDensity(o.value)}>
                   {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Structure padding (S / M / L) — orthogonal to density.
+              Drives canvas, zone, block, and inter-block gap with
+              DS-native values. */}
+          <div className="settings-group">
+            <label>Structure padding</label>
+            <div className="settings-toggle-row">
+              {(["small", "medium", "large"] as const).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  role="radio"
+                  aria-checked={structurePadding === size}
+                  className={`settings-toggle-btn ${structurePadding === size ? "active" : ""}`}
+                  onClick={() => setStructurePadding(size)}
+                >
+                  {size === "small" ? "S" : size === "medium" ? "M" : "L"}
                 </button>
               ))}
             </div>
@@ -222,9 +295,33 @@ export function SettingsPanel() {
                 </button>
               )}
             </label>
-            {colorKeys.map((c) => (
+            {colorKeys.map((c, idx) => (
               <div key={c.key} className="color-row">
                 <span className="color-label">{c.label}</span>
+                {/* Issue #11: per-DS preset swatch grid only on the
+                    primary accent row (index 0 — matches ACCENT_KEY_BY_DS
+                    target). Native color picker still serves as fallback
+                    for any custom hex. */}
+                {idx === 0 && c.key === ACCENT_KEY_BY_DS[designSystem] && (
+                  <div className="accent-preset-row" role="radiogroup" aria-label="Accent preset">
+                    {ACCENT_PRESETS[designSystem].map((p) => {
+                      const isActive = (colorOverrides[c.key] ?? "").toLowerCase() === p.hex.toLowerCase();
+                      return (
+                        <button
+                          key={p.hex}
+                          type="button"
+                          role="radio"
+                          aria-checked={isActive}
+                          aria-label={p.label}
+                          title={p.label}
+                          className={`accent-preset-swatch${isActive ? " is-active" : ""}`}
+                          style={{ background: p.hex }}
+                          onClick={() => setColorOverride(c.key, p.hex)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
                 <input
                   type="color"
                   className="color-swatch"

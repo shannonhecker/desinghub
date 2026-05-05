@@ -171,6 +171,18 @@ export function carbonTypeClasses(fontVar: string): string {
   return rules.join('\n    ');
 }
 
+/* ── Structure padding (S/M/L) ────────────────────────────────────────
+   User-adjustable canvas chrome rhythm. Tracks Carbon's 4px preview-
+   chrome scale (matches CARBON_DENSITY_MAP.sp rhythm). DOES NOT touch
+   CARBON_SPACING 01..13 — that's the component-internal layer. */
+import type { StructurePaddingScale } from "../_shared/structure";
+
+export const CARBON_STRUCTURE_PADDING: StructurePaddingScale = {
+  small:  { canvas: 8,  zone: 4,  block: 4,  gap: 8  },
+  medium: { canvas: 16, zone: 8,  block: 8,  gap: 12 },
+  large:  { canvas: 24, zone: 12, block: 12, gap: 16 },
+};
+
 /* ── Types ───────────────────────────────────────────────────────────── */
 export type CarbonDurationKey = keyof typeof CARBON_MOTION.durations;
 export type CarbonEasingKey = keyof typeof CARBON_MOTION.easings;

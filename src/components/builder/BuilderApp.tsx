@@ -18,6 +18,8 @@ import { BlockContextMenu } from "./BlockContextMenu";
 import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
+import { resolveStructurePadding } from "@/lib/structurePadding";
+import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import "./builder.css";
 
 export function BuilderApp() {
@@ -38,6 +40,42 @@ export function BuilderApp() {
      ChatPanel / SaveIndicator can show calm "off" affordances instead
      of letting the first API call fail loudly. */
   useBackendStatus();
+
+  /* Structure padding: emit CSS vars whenever DS or size changes so
+     builder.css's --dh-pad-* references resolve to the right value.
+     `:root`-scoped so every nested zone / canvas / block reads the
+     same scale. */
+  const structurePadding = useBuilder((s) => s.structurePadding);
+  useEffect(() => {
+    const v = resolveStructurePadding(designSystem, structurePadding);
+    const root = document.documentElement;
+    root.style.setProperty('--dh-pad-canvas', `${v.canvas}px`);
+    root.style.setProperty('--dh-pad-zone', `${v.zone}px`);
+    root.style.setProperty('--dh-pad-block', `${v.block}px`);
+    root.style.setProperty('--dh-pad-gap', `${v.gap}px`);
+  }, [designSystem, structurePadding]);
+
+  /* Accent override: when a user sets `colorOverrides.accent` in
+     SettingsPanel, paint the per-DS accent CSS var so the canvas
+     reflects the choice. Sa+ausos share lineage; salt also gets
+     the override so glass tints follow. */
+  const colorOverrides = useBuilder((s) => s.colorOverrides);
+  const accentOverride = colorOverrides[ACCENT_KEY_BY_DS[designSystem]];
+  useEffect(() => {
+    const root = document.documentElement;
+    /* C-2 fix: clear every DS's accent var first so a DS switch
+       doesn't strand the previous DS's value on :root (Salt → Carbon
+       used to leave --salt-palette-accent set forever). */
+    Object.values(ACCENT_VAR_BY_DS).forEach((v) => root.style.removeProperty(v));
+    root.style.removeProperty("--salt-palette-accent");
+    if (accentOverride) {
+      root.style.setProperty(ACCENT_VAR_BY_DS[designSystem], accentOverride);
+      /* ausos's glass tint inherits Salt's accent via --salt-palette-accent. */
+      if (designSystem === "ausos") {
+        root.style.setProperty("--salt-palette-accent", accentOverride);
+      }
+    }
+  }, [designSystem, accentOverride]);
 
   const [isStandalone, setIsStandalone] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
@@ -134,7 +172,10 @@ export function BuilderApp() {
 
   /* ── Resizable drag bar ── */
   const containerRef = useRef<HTMLDivElement>(null);
-  const [splitPos, setSplitPos] = useState(55);
+  /* Issue #9: default 20% so the canvas dominates when preview is open.
+     User can drag the resize handle to adjust; clamp lowered from 30 to
+     15 below so the default reads as a comfortable mid-point. */
+  const [splitPos, setSplitPos] = useState(20);
   const isDragging = useRef(false);
   const [dragActive, setDragActive] = useState(false);
 
@@ -144,7 +185,7 @@ export function BuilderApp() {
       e.preventDefault();
       const rect = containerRef.current.getBoundingClientRect();
       const pos = ((e.clientX - rect.left) / rect.width) * 100;
-      setSplitPos(Math.max(30, Math.min(75, pos)));
+      setSplitPos(Math.max(15, Math.min(75, pos)));
     };
     const onUp = () => {
       if (isDragging.current) {
@@ -161,7 +202,7 @@ export function BuilderApp() {
       const touch = e.touches[0];
       const rect = containerRef.current.getBoundingClientRect();
       const pos = ((touch.clientX - rect.left) / rect.width) * 100;
-      setSplitPos(Math.max(30, Math.min(75, pos)));
+      setSplitPos(Math.max(15, Math.min(75, pos)));
     };
     const onTouchEnd = () => {
       if (isDragging.current) {
