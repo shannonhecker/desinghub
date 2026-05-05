@@ -8695,6 +8695,12 @@
 .bp-nav-item {
   display: flex;
   align-items: center;
+  /* Force flush-left alignment regardless of any inherited
+     justify-content from a parent flex container. Without this,
+     a stray `justify-content: space-between` upstream could push
+     icon and label apart (which is what Events looked like
+     pre-fix). */
+  justify-content: flex-start;
   gap: 10px;
   padding: 8px 10px;
   border: none;
@@ -8707,6 +8713,10 @@
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
+  /* Make the button fill the row so the rounded background extends
+     to the right edge consistently, not just under the icon+label. */
+  width: 100%;
+  text-align: left;
   transition: all var(--dur-fast) var(--ease-smooth);
 }
 .bp-nav-item:hover {
