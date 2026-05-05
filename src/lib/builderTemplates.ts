@@ -19,11 +19,19 @@ import type { Block, InterfaceType } from "@/store/useBuilder";
    - footerBlocks   → FooterText
    ══════════════════════════════════════════════════════════════ */
 
-export type TemplateId =
-  | "analytics-dashboard"
-  | "settings-page"
-  | "crm-contacts"
-  | "login-flow";
+/* Source-of-truth list of valid template ids. Both the type and the
+   runtime allow-list derive from this so a new template can be added
+   in one place without drift. The API route uses VALID_TEMPLATE_IDS
+   to reject anything else, defending against prompt-injection via the
+   templateId field. */
+export const VALID_TEMPLATE_IDS = [
+  "analytics-dashboard",
+  "settings-page",
+  "crm-contacts",
+  "login-flow",
+] as const;
+
+export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
 
 export interface BuilderTemplate {
   id: TemplateId;
