@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { useBuilder, type DesignSystem, type Block } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
 
@@ -130,10 +130,15 @@ export function CompareView() {
   const setDesignSystem = useBuilder((s) => s.setDesignSystem);
   const setCompareMode = useBuilder((s) => s.setCompareMode);
 
-  const handleOpen = (ds: DesignSystem) => {
+  /* useCallback so each CompareQuadrant's `onOpen` prop is stable
+     across renders. Without it, the inline arrow at the call site
+     produced a new function reference per CompareView render —
+     defeating React.memo on CompareQuadrant entirely and causing
+     all four quadrants to re-render on any unrelated store change. */
+  const handleOpen = useCallback((ds: DesignSystem) => {
     setDesignSystem(ds);
     setCompareMode(false);
-  };
+  }, [setDesignSystem, setCompareMode]);
 
   return (
     <div className="compare-view">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Monitor,
@@ -91,9 +91,16 @@ function DSPreviewStyles() {
   };
   const carbonDensity = densityMap[density] ?? "normal";
 
-  const css = getFullCSS("carbon", T, carbonDensity);
+  /* getFullCSS does non-trivial string assembly (full Carbon stylesheet
+     with token resolution + density expansion). Without useMemo it ran
+     on every parent re-render — including PreviewBar interactions
+     unrelated to Carbon. Memoize on the actual inputs. */
+  const css = useMemo(
+    () => sanitizeCSS(getFullCSS("carbon", T, carbonDensity)),
+    [T, carbonDensity],
+  );
 
-  return <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(css) }} />;
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }
 
 /* ── Viewport presets ── */
