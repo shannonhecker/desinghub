@@ -16,6 +16,19 @@ interface RateLimitResult {
   resetInSeconds: number;
 }
 
+/* Resolve the client IP for rate-limit keying.
+   `x-real-ip` is set by Vercel from the verified TCP source and
+   cannot be spoofed by the caller. Fall back to the first entry
+   of `x-forwarded-for` (best-effort; can be spoofed) and finally
+   to "unknown" so an absent header bucket doesn't blow up. */
+export function getClientIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp && realIp.length > 0) return realIp.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff && xff.length > 0) return xff.split(",")[0].trim();
+  return "unknown";
+}
+
 const WINDOW_MS = 60_000; // 60 seconds
 const MAX_REQUESTS = 20;
 

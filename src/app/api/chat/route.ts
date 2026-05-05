@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT } from "@/lib/chatSystem";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   // Rate limiting
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(req);
   const limit = await checkRateLimit(ip);
   if (!limit.allowed) {
     return new Response(
