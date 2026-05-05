@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { showToast } from "@/lib/toast";
+import { undo as canvasUndo } from "@/lib/builderHistory";
 import {
   SimulatedAlert,
   SimulatedDataTable,
@@ -1574,7 +1575,7 @@ function LayoutGroupBlock({ system, blockId }: { system: DesignSystem; blockId?:
               parentGroupId={group.id}
               compact
               isSelected={selectedBlockId === child.id}
-              onRemove={() => { removeBlockFromGroup(group.id, child.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+              onRemove={() => { removeBlockFromGroup(group.id, child.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
             >
               <ComponentRenderer
                 type={child.type}

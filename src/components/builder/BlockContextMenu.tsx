@@ -3,6 +3,7 @@
 import React from "react";
 import { useBuilder, type ZoneId, type Block } from "@/store/useBuilder";
 import { showToast } from "@/lib/toast";
+import { undo as canvasUndo } from "@/lib/builderHistory";
 import { ContextMenu, type ContextMenuItem } from "./ContextMenu";
 
 /* ══════════════════════════════════════════════════════════
@@ -136,11 +137,12 @@ export function BlockContextMenu() {
       onClick: () => {
         const n = activeIds.length;
         activeIds.forEach((id) => removeBlockFromZone(zone, id));
-        /* Issue #75: snackbar referencing ⌘Z so users learn undo exists. */
-        showToast(
-          n > 1 ? `${n} blocks deleted · ⌘Z to undo` : "Block deleted · ⌘Z to undo",
-          { icon: "delete" },
-        );
+        /* Issue #75 + #92 + #93: snackbar with inline Undo + 4s. */
+        showToast(n > 1 ? `${n} blocks deleted` : "Block deleted", {
+          icon: "delete",
+          durationMs: 4000,
+          action: { label: "Undo", onClick: canvasUndo },
+        });
       },
     },
     "separator",

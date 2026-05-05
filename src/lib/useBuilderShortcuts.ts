@@ -48,12 +48,12 @@ export function useBuilderShortcuts() {
             const n = s.selectedBlockIds.length;
             s.selectedBlockIds.forEach((id) => s.removeBlockFromZone(zone, id));
             s.clearSelection();
-            /* Issue #75: snackbar after every removal so users learn
-               undo exists. ⌘Z restoration is in builderHistory. */
-            showToast(
-              n > 1 ? `${n} blocks deleted · ⌘Z to undo` : "Block deleted · ⌘Z to undo",
-              { icon: "delete" },
-            );
+            /* Issue #75 + #92 + #93: snackbar with inline Undo + 4s. */
+            showToast(n > 1 ? `${n} blocks deleted` : "Block deleted", {
+              icon: "delete",
+              durationMs: 4000,
+              action: { label: "Undo", onClick: undo },
+            });
           }
           return;
         }
@@ -98,7 +98,7 @@ export function useBuilderShortcuts() {
            so the user knows they need to multi-select first. Ungroup
            (⌘⇧G) is fine on one selection — that's its whole purpose. */
         if (!e.shiftKey && s.selectedBlockIds.length < 2) {
-          showToast("Select 2+ blocks first to group", { icon: "warning" });
+          showToast("Hold Shift and click another block first to group", { icon: "warning" });
           return;
         }
         if (e.shiftKey) {

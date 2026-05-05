@@ -56,6 +56,10 @@ export function ZoneDropContainer({
   const storeLayout = useBuilder((s) => s.zoneLayouts[zoneId]);
   const zoneLayout = zoneLayoutOverride ?? storeLayout;
   const experimentalLayout = useBuilder((s) => s.experimentalLayout);
+  /* Issue #79: highlight this zone when the user is hovering a library
+     tile that would land here. Cleared on tile-leave or click/drag start. */
+  const libraryHoverZone = useBuilder((s) => s.libraryHoverZone);
+  const isLibraryHoverTarget = libraryHoverZone === zoneId;
   const { setNodeRef, isOver } = useDroppable({
     id: `zone-${zoneId}`,
     data: { zone: zoneId },
@@ -104,7 +108,7 @@ export function ZoneDropContainer({
   return (
     <div
       ref={setNodeRef}
-      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${experimentalLayout ? " has-insertion-slots" : ""}${className ? ` ${className}` : ""}`}
+      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${isLibraryHoverTarget ? " is-library-hover-target" : ""}${experimentalLayout ? " has-insertion-slots" : ""}${className ? ` ${className}` : ""}`}
       style={style}
       data-layout-mode={mode}
     >

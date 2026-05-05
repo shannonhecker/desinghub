@@ -498,7 +498,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                 zone="header"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
               >
                 <div
                   className="bp-header-brand"
@@ -531,7 +531,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                 zone="header"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+                onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
               >
                 <div
                   className="bp-status-pill"
@@ -560,7 +560,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
               zone="header"
               compact
               isSelected={selectedBlockId === block.id}
-              onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+              onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
             >
               <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
@@ -680,7 +680,7 @@ function DashboardSidebar({
                   id={block.id}
                   zone="sidebar"
                   isSelected={selectedBlockId === block.id}
-                  onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+                  onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
                 >
                   <div className="bp-nav-item-row">
                     <button
@@ -726,7 +726,7 @@ function DashboardSidebar({
                 id={block.id}
                 zone="sidebar"
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+                onRemove={() => { removeBlockFromZone("sidebar", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
               >
                 <div
                   className="zone-block-sidebar"
@@ -812,7 +812,7 @@ function DashboardFooter() {
                 zone="footer"
                 compact
                 isSelected={selectedBlockId === block.id}
-                onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+                onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
               >
                 <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                   <span
@@ -848,7 +848,7 @@ function DashboardFooter() {
               zone="footer"
               compact
               isSelected={selectedBlockId === block.id}
-              onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted · ⌘Z to undo", { icon: "delete" }); }}
+              onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
             >
               <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
@@ -1115,6 +1115,15 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
 
       const activeInfo = activeItemRef.current;
       const overData = over?.data.current as Record<string, unknown> | undefined;
+
+      /* Issue #94: existing-block drag dropped without a valid target.
+         Used to leave the user wondering whether anything happened —
+         block snaps back silently. Tell them. */
+      if (activeInfo && !over) {
+        showToast("Couldn't move here — try a zone in the canvas", { icon: "error" });
+        activeItemRef.current = null;
+        return;
+      }
 
       /* Case 2: Existing block dragged. Four sub-cases: */
 
