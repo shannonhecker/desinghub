@@ -10284,8 +10284,18 @@
   flex: 1;
   min-height: 24px;
 }
-.zone-drop-header > .canvas-block:first-of-type {
-  margin-right: auto;
+/* Push every .canvas-block AFTER the first one against the right
+   edge. The general-sibling combinator `~` is used because
+   InsertionSlot strips can sit between blocks; with `~` we still
+   match any `.canvas-block` that has another `.canvas-block` earlier
+   in the sibling list. (We previously used `:first-of-type`, but
+   that pseudo-class matches by element TAG NAME — every header child
+   is a div, so the first div is an InsertionSlot, not a canvas-block,
+   and the rule never applied.) With brand + status, only the status
+   block matches and gets `margin-left: auto`, parking it at the
+   right while brand stays anchored at the left. */
+.zone-drop-header .canvas-block ~ .canvas-block {
+  margin-left: auto;
 }
 .zone-drop-footer {
   flex: 1;
