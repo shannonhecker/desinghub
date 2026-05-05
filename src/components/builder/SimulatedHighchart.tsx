@@ -92,9 +92,18 @@ function baseTheme(
       itemStyle: { color: v.fgSec, fontSize: "10px", fontWeight: "500" },
       itemHoverStyle: { color: v.fg },
     },
-    plotOptions: { series: { borderWidth: 0, animation: { duration: 500 } } },
+    plotOptions: { series: { borderWidth: 0, animation: { duration: prefersReducedMotion() ? 0 : 500 } } },
     credits: { enabled: false },
   };
+}
+
+/* Read prefers-reduced-motion at call time. SSR-safe: `window` may be
+   undefined during the initial render on the server, default to false
+   (i.e. animations enabled) so the SSR markup matches the client's
+   pre-hydration state. The chart is only constructed after mount. */
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
 
 /* ── Chart-specific option builders ── */
@@ -358,10 +367,28 @@ interface SimulatedHighchartProps {
 }
 
 export function SimulatedHighchart({ chartType, title, value, system, seriesColors }: SimulatedHighchartProps) {
-  ensureHighchartsModules();
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<HighchartsReact.RefObject>(null);
   const [vars, setVars] = useState<ThemeVars | null>(null);
+
+  /* ensureHighchartsModules registers all Highcharts modules globally.
+     Run once on mount, not on every render — module registration is
+     idempotent but not free, and calling it from the render body fires
+     on every streaming-induced re-render. */
+  useEffect(() => {
+    ensureHighchartsModules();
+  }, []);
+
+  /* Destroy the chart instance on unmount. HighchartsReact does not
+     auto-destroy, so leaks accumulate across template/DS switches and
+     block-remove cycles — each leaked chart keeps ResizeObservers and
+     animation timers alive. */
+  useEffect(() => {
+    return () => {
+      chartRef.current?.chart?.destroy();
+    };
+  }, []);
 
   /* Read CSS vars on mount and when system/mode changes */
   useEffect(() => {
@@ -396,7 +423,7 @@ export function SimulatedHighchart({ chartType, title, value, system, seriesColo
   return (
     <div ref={wrapperRef} style={{ width: "100%", minHeight: 250 }}>
       {options ? (
-        <HighchartsReact highcharts={Highcharts} options={options} />
+        <HighchartsReact ref={chartRef} highcharts={Highcharts} options={options} />
       ) : (
         <div style={{
           height: 250,
