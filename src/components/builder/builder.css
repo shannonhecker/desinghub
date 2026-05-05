@@ -8721,12 +8721,31 @@
   background: var(--ds-primary-hover);
   color: var(--ds-primary);
 }
-/* Constrain all nav icons to a uniform visual bounding box */
+/* Constrain all nav icons to a uniform visual bounding box.
+   `display: block` removes the inline-baseline gap that varies with
+   font line-height; `flex-shrink: 0` prevents squishing when the
+   label is long. */
 .bp-nav-item svg,
 .bp-nav-item .material-symbols-outlined {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  display: block;
+}
+
+/* Per-icon visual-centre compensation. Lucide icons share a 24×24
+   viewBox but the visual mass isn't always centred at x=12 — e.g.
+   BarChart3 (chart-column) has bars at x=8/13/18 and an L-axis at
+   x=3→21, putting its visual centre at ~x=10.5. Without this nudge,
+   Events reads indented vs sibling rows whose icons (Settings,
+   Database, MessageSquare, Home, User) are centred at x=12.
+
+   Targets the auto-emitted lucide class. If the upstream class name
+   changes, this rule becomes a no-op rather than breaking — the
+   parent rule above still sizes the icon. */
+.bp-nav-item svg.lucide-chart-column,
+.bp-nav-item svg.lucide-bar-chart-3 {
+  margin-left: -1px;
 }
 
 .bp-nav-label {

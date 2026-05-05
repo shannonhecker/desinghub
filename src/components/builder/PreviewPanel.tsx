@@ -15,6 +15,10 @@ import {
   ChevronRight,
   Bot,
   Send,
+  Home,
+  User,
+  Bell,
+  Search,
 } from "lucide-react";
 import {
   DndContext,
@@ -99,12 +103,21 @@ const PRESETS: Record<DeviceMode, { width: number; height: number; label: string
   mobile: { width: 375, height: 812, label: "375 \u00d7 812" },
 };
 
-/* ── Icon map for sidebar nav items ── */
+/* ── Icon map for sidebar nav items ──
+   Covers every icon key the builder templates use, plus a small set of
+   commonly-requested extras. Templates that previously hit the
+   MessageSquare fallback (home, person) now resolve to the deliberate
+   icon — matters for visual consistency since lucide icons have
+   slightly different content centring inside their viewBox. */
 const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   chat: MessageSquare,
   database: Database,
   settings: Settings,
   bar_chart: BarChart3,
+  home: Home,
+  person: User,
+  notifications: Bell,
+  search: Search,
 };
 
 /* ── Sample chat messages for the empty state ── */
