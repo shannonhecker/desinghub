@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, findBlockInTree } from "@/store/useBuilder";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
 import { ResizeHUD } from "./ResizeHUD";
 import { SizeChipRail } from "./SizeChipRail";
@@ -730,7 +730,8 @@ export function SortableBlock({
       : zone === "header" ? s.headerBlocks
       : zone === "sidebar" ? s.sidebarBlocks
       : s.footerBlocks;
-    const found = arr.find((b) => b.id === id);
+    /* C-1 fix: recurse so blocks inside LayoutGroup are reachable. */
+    const found = findBlockInTree(arr, id);
     if (!found?.colorOverrides) return undefined;
     return found.colorOverrides[ACCENT_KEY_BY_DS[s.designSystem]];
   });

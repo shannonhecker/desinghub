@@ -63,17 +63,16 @@ export function BuilderApp() {
   const accentOverride = colorOverrides[ACCENT_KEY_BY_DS[designSystem]];
   useEffect(() => {
     const root = document.documentElement;
-    const varName = ACCENT_VAR_BY_DS[designSystem];
+    /* C-2 fix: clear every DS's accent var first so a DS switch
+       doesn't strand the previous DS's value on :root (Salt → Carbon
+       used to leave --salt-palette-accent set forever). */
+    Object.values(ACCENT_VAR_BY_DS).forEach((v) => root.style.removeProperty(v));
+    root.style.removeProperty("--salt-palette-accent");
     if (accentOverride) {
-      root.style.setProperty(varName, accentOverride);
+      root.style.setProperty(ACCENT_VAR_BY_DS[designSystem], accentOverride);
       /* ausos's glass tint inherits Salt's accent via --salt-palette-accent. */
       if (designSystem === "ausos") {
         root.style.setProperty("--salt-palette-accent", accentOverride);
-      }
-    } else {
-      root.style.removeProperty(varName);
-      if (designSystem === "ausos") {
-        root.style.removeProperty("--salt-palette-accent");
       }
     }
   }, [designSystem, accentOverride]);

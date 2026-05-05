@@ -468,6 +468,31 @@ const ZONE_KEYS: Record<ZoneId, 'blocks' | 'headerBlocks' | 'sidebarBlocks' | 'f
    zone the group lives in). */
 const ZONE_IDS: ZoneId[] = ['body', 'header', 'sidebar', 'footer'];
 
+/* Recurse over a block tree (zone array → optional children) applying
+   `fn` to every node. Used by per-block colour overrides (C-1) so a
+   block nested inside a LayoutGroup is reachable. */
+function mapBlockTree(blocks: Block[], fn: (b: Block) => Block): Block[] {
+  return blocks.map((b) => {
+    const updated = fn(b);
+    return updated.children && updated.children.length > 0
+      ? { ...updated, children: mapBlockTree(updated.children, fn) }
+      : updated;
+  });
+}
+
+/* Depth-first search through a zone array (and any LayoutGroup
+   children). Returns the first match by id, or undefined. */
+export function findBlockInTree(blocks: Block[], id: string): Block | undefined {
+  for (const b of blocks) {
+    if (b.id === id) return b;
+    if (b.children) {
+      const found = findBlockInTree(b.children, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 /* ══════════════════════════════════════════════════════════
    Recursive block finder - walks through blocks[] and nested
    LayoutGroup.children[] looking for a block by ID. Returns
@@ -674,8 +699,10 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   setBlockColorOverride: (zone, blockId, key, value) =>
     set((s) => {
+      /* C-1 fix: recurse into LayoutGroup children so a per-block
+         override can reach a nested block (e.g. a card inside a group). */
       const arrKey = ZONE_KEYS[zone];
-      const arr = (s[arrKey] as Block[]).map((b) =>
+      const arr = mapBlockTree(s[arrKey] as Block[], (b) =>
         b.id === blockId ? { ...b, colorOverrides: { ...(b.colorOverrides ?? {}), [key]: value } } : b,
       );
       return { [arrKey]: arr } as Partial<BuilderState>;
@@ -683,7 +710,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   resetBlockColorOverride: (zone, blockId, key) =>
     set((s) => {
       const arrKey = ZONE_KEYS[zone];
-      const arr = (s[arrKey] as Block[]).map((b) => {
+      const arr = mapBlockTree(s[arrKey] as Block[], (b) => {
         if (b.id !== blockId || !b.colorOverrides) return b;
         const next = { ...b.colorOverrides };
         delete next[key];
