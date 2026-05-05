@@ -6981,17 +6981,23 @@
 /* ══════════════════════════════════════════════════════════
    ContextMenu — canvas right-click + keyboard-triggered menus
    ══════════════════════════════════════════════════════════ */
+/* Surface treatment matches the top-bar Export dropdown
+   (.top-bar-export-menu, builder.css ~L1074) so popovers feel
+   uniform. The previous --b-surface token resolved to a 5% white
+   overlay that looked transparent over the canvas (visible block
+   outlines bled through). Use the same near-opaque dark as Export
+   so right-click feels like part of the same vocabulary. */
 .context-menu {
   position: fixed;
   z-index: 10000;
   min-width: 220px;
   padding: 4px;
-  background: var(--b-surface, rgba(22, 22, 34, 0.96));
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: rgba(24, 22, 48, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--dh-curve-md, 10px);
-  box-shadow: var(--dh-shadow-lg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-family: inherit;
   animation: context-menu-in 140ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
   outline: none;
@@ -7033,8 +7039,13 @@
   background: rgba(126, 107, 196, 0.1);
 }
 .context-menu-item.is-disabled {
-  color: var(--dh-fg-disabled);
+  /* Bumped from var(--dh-fg-disabled) (40% white, ~4.0:1 vs the menu
+     surface — fails WCAG AA 4.5:1) to 50% white. */
+  color: rgba(255, 255, 255, 0.5);
   cursor: default;
+}
+.builder-light .context-menu-item.is-disabled {
+  color: rgba(15, 16, 30, 0.5);
 }
 .context-menu-item.is-danger {
   color: #f46a6a;
@@ -7060,16 +7071,25 @@
 }
 .context-menu-shortcut {
   font-size: 10.5px;
-  font-weight: 500;
-  color: var(--dh-fg-muted);
+  /* Bumped from 500 + var(--dh-fg-muted) (~64% / ~8:1) to 600 + 78%
+     so the kbd hints feel like the same vocabulary as the Export
+     dropdown's title weight against the new opaque surface. */
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
   letter-spacing: 0.02em;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
+.builder-light .context-menu-shortcut {
+  color: rgba(15, 16, 30, 0.72);
+}
 .context-menu-chevron {
   font-size: 16px !important;
-  color: var(--dh-fg-muted);
+  color: rgba(255, 255, 255, 0.78);
   flex-shrink: 0;
+}
+.builder-light .context-menu-chevron {
+  color: rgba(15, 16, 30, 0.72);
 }
 .context-menu-separator {
   height: 1px;
@@ -7085,12 +7105,12 @@
   left: calc(100% + 4px);
   min-width: 200px;
   padding: 4px;
-  background: var(--b-surface, rgba(22, 22, 34, 0.96));
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
+  background: rgba(24, 22, 48, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--dh-curve-md, 10px);
-  box-shadow: var(--dh-shadow-lg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: context-menu-in 120ms var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 .context-submenu.is-flipped {
