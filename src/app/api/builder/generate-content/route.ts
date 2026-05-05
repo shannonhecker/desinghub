@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
   // Rate limiting - content regen is cheap but still hits Claude.
   const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip);
+  const limit = await checkRateLimit(ip, "generate-content");
   if (!limit.allowed) {
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),

@@ -12,10 +12,10 @@ export function hashToken(password: string): string {
 // the same hex output for the same inputs, ensuring cookie compatibility.
 
 export async function POST(request: NextRequest) {
-  // Rate limit before any password work — blocks brute-force attempts at
-  // the same 20-req/60s window the chat + builder routes use.
+  // Rate limit before any password work — blocks brute-force attempts.
+  // Per-route bucket so a busy chat session can't disable login lockout.
   const ip = getClientIp(request);
-  const limit = await checkRateLimit(ip);
+  const limit = await checkRateLimit(ip, "staging-login");
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Too many login attempts. Please try again later." },
