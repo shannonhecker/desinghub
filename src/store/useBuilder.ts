@@ -646,15 +646,21 @@ export const useBuilder = create<BuilderState>((set) => ({
     pendingFirstMessage: null,
   }),
 
-  setDesignSystem: (ds) => {
-    /* Default theme key per DS - Carbon defaults to "white" (its
-       canonical light theme) since its other three themes (g10, g90,
-       g100) are variants the user picks explicitly. */
-    const themeMap: Record<DesignSystem, string> = {
-      salt: 'jpm-light', m3: 'light', fluent: 'light', ausos: 'light', carbon: 'white',
+  setDesignSystem: (ds) => set((s) => {
+    /* Pick the canonical theme key for the target DS that matches the
+       user's current mode. Switching DSes shouldn't flip light↔dark —
+       e.g. a user in dark mode toggling to Carbon gets g100, not white.
+       Each DS exposes finer variants (Salt jpm/legacy, Carbon g10/g90)
+       via setThemeKey; this map only carries the canonical pair. */
+    const themeMap: Record<DesignSystem, { light: string; dark: string }> = {
+      salt:   { light: 'jpm-light', dark: 'jpm-dark' },
+      m3:     { light: 'light',     dark: 'dark'     },
+      fluent: { light: 'light',     dark: 'dark'     },
+      ausos:  { light: 'light',     dark: 'dark'     },
+      carbon: { light: 'white',     dark: 'g100'     },
     };
-    set({ designSystem: ds, themeKey: themeMap[ds] });
-  },
+    return { designSystem: ds, themeKey: themeMap[ds][s.mode] };
+  }),
   setMode: (m) => set((s) => {
     const key = s.themeKey;
     if (s.designSystem === 'salt') {

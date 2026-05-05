@@ -10267,13 +10267,35 @@
 /* Zone-specific extras that layer on top of inline layout styles
    from computeContainerStyle. Display + direction + gap are set
    inline from the store's zoneLayouts, so these rules only keep
-   min-height (empty-state affordance) and header/footer's
-   justify-content: space-between (brand left, status right) which
-   isn't covered by the generic LayoutAlign enum. */
+   min-height (empty-state affordance) and the header's
+   left-anchor / right-anchor split.
+
+   Why not `justify-content: space-between`?
+   When experimentalLayout is on, ZoneDropContainer interleaves
+   InsertionSlot strips between every child, so a 2-block header
+   (brand + status) becomes a 5-item flex row (slot,brand,slot,
+   pill,slot). `space-between` then distributes all 5 evenly, which
+   pushes the brand to ~25% and the pill to ~75% — visibly
+   "centered". Anchoring via `margin-right: auto` on the first
+   .canvas-block keeps the brand flush left and lets all
+   subsequent items (slots + status) settle against the right
+   edge regardless of how many slots are interleaved. */
 .zone-drop-header {
-  justify-content: space-between;
   flex: 1;
   min-height: 24px;
+}
+/* Push every .canvas-block AFTER the first one against the right
+   edge. The general-sibling combinator `~` is used because
+   InsertionSlot strips can sit between blocks; with `~` we still
+   match any `.canvas-block` that has another `.canvas-block` earlier
+   in the sibling list. (We previously used `:first-of-type`, but
+   that pseudo-class matches by element TAG NAME — every header child
+   is a div, so the first div is an InsertionSlot, not a canvas-block,
+   and the rule never applied.) With brand + status, only the status
+   block matches and gets `margin-left: auto`, parking it at the
+   right while brand stays anchored at the left. */
+.zone-drop-header .canvas-block ~ .canvas-block {
+  margin-left: auto;
 }
 .zone-drop-footer {
   flex: 1;
