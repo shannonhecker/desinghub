@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET ?? "";
 
+/* Cap input password length so a malicious 10MB body can't be hashed.
+   Real passwords are well under this; the cap is purely a DoS guard. */
+const MAX_PASSWORD_LENGTH = 256;
+
 export function hashToken(password: string): string {
   return createHmac("sha256", TOKEN_SECRET).update(password).digest("hex");
+}
+
+/* Constant-time string comparison. Avoids leaking length and per-char
+   match progress through response timing. timingSafeEqual requires
+   equal-length buffers, so length-mismatch short-circuits to false. */
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
 }
 
 // Note: middleware.ts uses the Web Crypto API equivalent (async) which produces
@@ -45,13 +59,19 @@ export async function POST(request: NextRequest) {
   const ct = request.headers.get("content-type") ?? "";
   if (ct.includes("application/json")) {
     const body = await request.json();
-    password = body.password ?? "";
+    password = typeof body.password === "string" ? body.password : "";
   } else {
     const formData = await request.formData();
-    password = (formData.get("password") as string | null) ?? "";
+    const raw = formData.get("password");
+    password = typeof raw === "string" ? raw : "";
   }
 
-  if (!expectedPassword || password !== expectedPassword) {
+  // Reject oversized payloads before any hashing work.
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  }
+
+  if (!expectedPassword || !timingSafeStringEqual(password, expectedPassword)) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
