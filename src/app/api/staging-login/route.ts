@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET ?? "";
 
@@ -28,10 +28,7 @@ function timingSafeStringEqual(a: string, b: string): boolean {
 export async function POST(request: NextRequest) {
   // Rate limit before any password work — blocks brute-force attempts at
   // the same 20-req/60s window the chat + builder routes use.
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown";
+  const ip = getClientIp(request);
   const limit = await checkRateLimit(ip);
   if (!limit.allowed) {
     return NextResponse.json(

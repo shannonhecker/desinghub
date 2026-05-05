@@ -15,7 +15,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { MODEL_ID } from "@/lib/chatSystem";
 
 const MAX_BLOCKS = 40;
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
   }
 
   // Rate limiting - content regen is cheap but still hits Claude.
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getClientIp(req);
   const limit = await checkRateLimit(ip);
   if (!limit.allowed) {
     return new Response(
