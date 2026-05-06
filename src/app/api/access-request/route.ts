@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 type AccessRequestPayload = {
   name?: unknown;
@@ -75,6 +76,20 @@ async function sendAccessRequestEmail(submission: {
 }
 
 export async function POST(request: Request) {
+  // Rate limit on the public submission form to bound spam impact on
+  // Resend email quota and Redis storage.
+  const ip = getClientIp(request);
+  const limit = await checkRateLimit(ip, "access-request");
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.resetInSeconds) },
+      },
+    );
+  }
+
   let body: AccessRequestPayload;
 
   try {

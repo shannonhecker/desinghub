@@ -34,9 +34,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // Rate limiting
+  // Rate limiting — per-route bucket so chat traffic doesn't lock out
+  // staging-login or builder/generate-content for the same IP.
   const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip);
+  const limit = await checkRateLimit(ip, "chat");
   if (!limit.allowed) {
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),
