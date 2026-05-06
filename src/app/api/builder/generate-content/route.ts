@@ -17,9 +17,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { MODEL_ID } from "@/lib/chatSystem";
+import { VALID_TEMPLATE_IDS } from "@/lib/builderTemplates";
 
 const MAX_BLOCKS = 40;
-const MAX_TEMPLATE_ID_LENGTH = 60;
+/* Cap the JSON-serialised blocks payload to bound the prompt size we
+   send to Claude. 32 KB comfortably fits 40 typical blocks but blocks
+   a 1 MB-per-prop amplification attack. */
+const MAX_BLOCKS_PAYLOAD_BYTES = 32 * 1024;
 
 interface IncomingBlock {
   id: string;
@@ -127,9 +131,18 @@ export async function POST(req: Request) {
 
   const { templateId, blocks } = body as Record<string, unknown>;
 
-  if (typeof templateId !== "string" || templateId.length === 0 || templateId.length > MAX_TEMPLATE_ID_LENGTH) {
+  /* Allow-list templateId rather than just length-checking it. Defends
+     against prompt injection via the `Template: ${templateId}` line in
+     the user message — without this, a caller could ship instructions
+     that try to subvert the system prompt. */
+  if (
+    typeof templateId !== "string" ||
+    !(VALID_TEMPLATE_IDS as readonly string[]).includes(templateId)
+  ) {
     return new Response(
-      JSON.stringify({ error: "templateId must be a non-empty string" }),
+      JSON.stringify({
+        error: `templateId must be one of: ${VALID_TEMPLATE_IDS.join(", ")}`,
+      }),
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -148,9 +161,17 @@ export async function POST(req: Request) {
     );
   }
 
+  const blocksJson = JSON.stringify(blocks, null, 2);
+  if (blocksJson.length > MAX_BLOCKS_PAYLOAD_BYTES) {
+    return new Response(
+      JSON.stringify({ error: `blocks payload exceeds ${MAX_BLOCKS_PAYLOAD_BYTES} bytes` }),
+      { status: 413, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const anthropic = getClient(apiKey);
 
-  const userMessage = `Template: ${templateId}\n\nBlocks:\n${JSON.stringify(blocks, null, 2)}`;
+  const userMessage = `Template: ${templateId}\n\nBlocks:\n${blocksJson}`;
 
   try {
     const response = await anthropic.messages.create({
