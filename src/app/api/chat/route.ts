@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, MODEL_ID } from "@/lib/chatSystem";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
@@ -34,9 +34,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // Rate limiting
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const limit = await checkRateLimit(ip);
+  // Rate limiting — per-route bucket so chat traffic doesn't lock out
+  // staging-login or builder/generate-content for the same IP.
+  const ip = getClientIp(req);
+  const limit = await checkRateLimit(ip, "chat");
   if (!limit.allowed) {
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),

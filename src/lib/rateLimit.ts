@@ -16,6 +16,19 @@ interface RateLimitResult {
   resetInSeconds: number;
 }
 
+/* Resolve the client IP for rate-limit keying.
+   `x-real-ip` is set by Vercel from the verified TCP source and
+   cannot be spoofed by the caller. Fall back to the first entry
+   of `x-forwarded-for` (best-effort; can be spoofed) and finally
+   to "unknown" so an absent header doesn't blow up the bucket key. */
+export function getClientIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp && realIp.length > 0) return realIp.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff && xff.length > 0) return xff.split(",")[0].trim();
+  return "unknown";
+}
+
 const WINDOW_MS = 60_000; // 60 seconds
 const MAX_REQUESTS = 20;
 
@@ -27,17 +40,24 @@ function getRedisClient(): Redis | null {
 }
 
 /**
- * Check rate limit for a given IP address.
- * Uses Upstash Redis if configured, otherwise always allows (local dev).
+ * Check rate limit for a given IP address, scoped to a bucket so each
+ * route has its own quota and one route's traffic can't lock out another.
+ *
+ * `bucket` defaults to "default" for back-compat with callers that don't
+ * pass one (the old behaviour was a single shared "chat" namespace, which
+ * was effectively a global quota across every rate-limited route).
  */
-export async function checkRateLimit(ip: string): Promise<RateLimitResult> {
+export async function checkRateLimit(
+  ip: string,
+  bucket: string = "default",
+): Promise<RateLimitResult> {
   const redis = getRedisClient();
   if (!redis) {
     return { allowed: true, remaining: MAX_REQUESTS, resetInSeconds: 0 };
   }
 
   try {
-    const key = `rl:chat:${ip}`;
+    const key = `rl:${bucket}:${ip}`;
     const now = Date.now();
     const windowStart = now - WINDOW_MS;
 
