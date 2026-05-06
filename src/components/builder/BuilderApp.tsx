@@ -180,12 +180,29 @@ export function BuilderApp() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
+    /* rAF-throttle the resize move handlers. Without this, every
+       mouse/touch event fires setSplitPos synchronously (60–120 Hz),
+       triggering full content-split re-renders per pointermove.
+       With rAF, we coalesce to one update per paint frame. */
+    let rafId: number | null = null;
+    let pendingPos: number | null = null;
+    const flush = () => {
+      rafId = null;
+      if (pendingPos !== null) {
+        setSplitPos(pendingPos);
+        pendingPos = null;
+      }
+    };
+    const schedule = (pos: number) => {
+      pendingPos = Math.max(15, Math.min(75, pos));
+      if (rafId === null) rafId = requestAnimationFrame(flush);
+    };
+
     const onMove = (e: MouseEvent) => {
       if (!isDragging.current || !containerRef.current) return;
       e.preventDefault();
       const rect = containerRef.current.getBoundingClientRect();
-      const pos = ((e.clientX - rect.left) / rect.width) * 100;
-      setSplitPos(Math.max(15, Math.min(75, pos)));
+      schedule(((e.clientX - rect.left) / rect.width) * 100);
     };
     const onUp = () => {
       if (isDragging.current) {
@@ -201,13 +218,14 @@ export function BuilderApp() {
       e.preventDefault(); // prevents page scroll while resizing
       const touch = e.touches[0];
       const rect = containerRef.current.getBoundingClientRect();
-      const pos = ((touch.clientX - rect.left) / rect.width) * 100;
-      setSplitPos(Math.max(15, Math.min(75, pos)));
+      schedule(((touch.clientX - rect.left) / rect.width) * 100);
     };
     const onTouchEnd = () => {
       if (isDragging.current) {
         isDragging.current = false;
         setDragActive(false);
+        // Clear stranded cursor if touchend fires before mouseup.
+        document.body.style.cursor = "";
         document.body.style.userSelect = "";
       }
     };
@@ -216,6 +234,7 @@ export function BuilderApp() {
     document.addEventListener("touchmove", onTouchMove, { passive: false });
     document.addEventListener("touchend", onTouchEnd);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
       document.removeEventListener("touchmove", onTouchMove);

@@ -1305,12 +1305,28 @@ export function PreviewSidePanel() {
   const [compDragActive, setCompDragActive] = useState(false);
 
   useEffect(() => {
+    /* rAF-throttle the component-library sidebar resize. Same
+       rationale as the chat-split resize in BuilderApp.tsx — coalesce
+       per-pointer setState calls into one update per paint frame. */
+    let rafId: number | null = null;
+    let pendingWidth: number | null = null;
+    const flush = () => {
+      rafId = null;
+      if (pendingWidth !== null) {
+        setCompSidebarWidth(pendingWidth);
+        pendingWidth = null;
+      }
+    };
+    const schedule = (width: number) => {
+      pendingWidth = Math.max(180, Math.min(400, width));
+      if (rafId === null) rafId = requestAnimationFrame(flush);
+    };
+
     const onMove = (e: MouseEvent) => {
       if (!isCompDragging.current || !compBodyRef.current) return;
       e.preventDefault();
       const rect = compBodyRef.current.getBoundingClientRect();
-      const newWidth = rect.right - e.clientX;
-      setCompSidebarWidth(Math.max(180, Math.min(400, newWidth)));
+      schedule(rect.right - e.clientX);
     };
     const onUp = () => {
       if (isCompDragging.current) {
@@ -1325,13 +1341,14 @@ export function PreviewSidePanel() {
       e.preventDefault();
       const touch = e.touches[0];
       const rect = compBodyRef.current.getBoundingClientRect();
-      const newWidth = rect.right - touch.clientX;
-      setCompSidebarWidth(Math.max(180, Math.min(400, newWidth)));
+      schedule(rect.right - touch.clientX);
     };
     const onTouchEnd = () => {
       if (isCompDragging.current) {
         isCompDragging.current = false;
         setCompDragActive(false);
+        // Clear stranded cursor if touchend fires before mouseup.
+        document.body.style.cursor = "";
         document.body.style.userSelect = "";
       }
     };
@@ -1340,6 +1357,7 @@ export function PreviewSidePanel() {
     document.addEventListener("touchmove", onTouchMove, { passive: false });
     document.addEventListener("touchend", onTouchEnd);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
       document.removeEventListener("touchmove", onTouchMove);
