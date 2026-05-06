@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM_PROMPT } from "@/lib/chatSystem";
+import { SYSTEM_PROMPT, MODEL_ID } from "@/lib/chatSystem";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 40;
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   const anthropic = getClient(apiKey);
 
   const stream = await anthropic.messages.stream({
-    model: "claude-sonnet-4-20250514",
+    model: MODEL_ID,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: validatedMessages,

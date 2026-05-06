@@ -16,6 +16,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { MODEL_ID } from "@/lib/chatSystem";
 
 const MAX_BLOCKS = 40;
 const MAX_TEMPLATE_ID_LENGTH = 60;
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: MODEL_ID,
       max_tokens: 2048,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
