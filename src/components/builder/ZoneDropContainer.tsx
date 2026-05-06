@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -79,6 +79,14 @@ export function ZoneDropContainer({
 
   const style = zoneLayout ? computeContainerStyle(zoneLayout) : undefined;
 
+  /* Memoize the sortable items array. Without this, every render
+     produces a fresh array reference for `SortableContext.items`,
+     which dnd-kit treats as "items changed" and may trigger internal
+     recalculation. During drag (high re-render frequency) this
+     compounds. The array contents only change when the blocks list
+     changes, so memoize on blocks. */
+  const itemIds = useMemo(() => blocks.map((b) => b.id), [blocks]);
+
   /* Interleave InsertionSlot strips between every mapped child.
      `React.Children.toArray` preserves the caller's keys + strips
      falsy children, which matches the existing behavior. We only
@@ -113,7 +121,7 @@ export function ZoneDropContainer({
       data-layout-mode={mode}
     >
       <SortableContext
-        items={blocks.map((b) => b.id)}
+        items={itemIds}
         strategy={strategy}
       >
         {renderedChildren}
