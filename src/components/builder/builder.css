@@ -2263,7 +2263,14 @@
   transform: translateY(2px);
   animation: chat-word-in 280ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   animation-delay: 0ms; /* overridden inline per word */
-  will-change: opacity, transform;
+  /* Previously declared `will-change: opacity, transform` here, which
+     promoted every word to its own compositor layer permanently —
+     after the 280ms animation ended each word still held GPU memory
+     for a layer it no longer needed. Across a chat session with
+     hundreds of words this accumulates. Removed entirely; modern
+     browsers auto-promote opacity/transform animations during the
+     keyframes window and reclaim the layer after, which is the
+     correct behaviour. */
 }
 @keyframes chat-word-in {
   from { opacity: 0; transform: translateY(2px); }
@@ -2585,10 +2592,13 @@
   z-index: 1;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
-  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   border-radius: 24px;
   padding: 4px;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+  /* Single transition declaration. Previously two were declared back
+     to back; the second silently overrode the first, so the intended
+     200ms tweak never applied. Keeping the 200ms timing — it matches
+     the focus glow's own animation in .input-box.focused. */
+  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
   backdrop-filter: blur(16px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
