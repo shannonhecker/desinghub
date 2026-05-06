@@ -523,6 +523,44 @@ export function findBlockById(
   return null;
 }
 
+/* ══════════════════════════════════════════════════════════
+   Recursive block updater — walks blocks[] and nested
+   LayoutGroup.children[] and applies `transform` to the block
+   whose id matches. Returns the original array reference if no
+   match is found at any depth (so callers can short-circuit
+   render with referential equality where useful). When a
+   nested match is found, only the affected branch is rebuilt;
+   sibling subtrees keep their original references.
+
+   This is the write-side counterpart to findBlockInTree —
+   without it, store actions that mutate a block by id (e.g.,
+   updateBlockProps, updateBlockLayout) only ever match
+   top-level blocks and silently no-op when the user selects a
+   child of a LayoutGroup.
+   ══════════════════════════════════════════════════════════ */
+export function mapBlockInTree(
+  blocks: Block[],
+  id: string,
+  transform: (b: Block) => Block,
+): Block[] {
+  let changed = false;
+  const next = blocks.map((b) => {
+    if (b.id === id) {
+      changed = true;
+      return transform(b);
+    }
+    if (b.children && b.children.length > 0) {
+      const nextChildren = mapBlockInTree(b.children, id, transform);
+      if (nextChildren !== b.children) {
+        changed = true;
+        return { ...b, children: nextChildren };
+      }
+    }
+    return b;
+  });
+  return changed ? next : blocks;
+}
+
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat - start empty so hero shows
   messages: [],
@@ -840,9 +878,13 @@ export const useBuilder = create<BuilderState>((set) => ({
   setBlocks: (blocks) => set({ blocks }),
   updateBlockProps: (id, props) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === id ? { ...b, props: { ...b.props, ...props } } : b
-      ),
+      /* Walk the tree so block ids living inside a LayoutGroup's
+         children[] get matched too. Without this, prop updates from
+         the inspector silently no-oped for any nested block. */
+      blocks: mapBlockInTree(s.blocks, id, (b) => ({
+        ...b,
+        props: { ...b.props, ...props },
+      })),
     })),
   setSelectedBlock: (id, zone) =>
     set({
@@ -1174,15 +1216,22 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   /* Patch a block's layout metadata. Creates the layout object on
      first write so old blocks without layout pick up new fields
-     cleanly. Pass `undefined` for a field to clear it. */
+     cleanly. Pass `undefined` for a field to clear it.
+
+     Walks the tree so blockIds living inside a LayoutGroup's
+     children[] get matched. Without this, the chip-rail in the
+     inspector (Fill / Auto / Px / % / Fr) was a no-op for any
+     block selected inside a group column — read path
+     (computeGroupItemStyle in layoutResolver.ts) reads
+     child.layout.width correctly, but the write path was
+     iterating only top-level zone arrays. */
   updateBlockLayout: (zone, blockId, patch) => {
     const key = ZONE_KEYS[zone];
     set((s) => ({
-      [key]: (s[key] as Block[]).map((b) =>
-        b.id === blockId
-          ? { ...b, layout: { ...(b.layout ?? {}), ...patch } }
-          : b,
-      ),
+      [key]: mapBlockInTree(s[key] as Block[], blockId, (b) => ({
+        ...b,
+        layout: { ...(b.layout ?? {}), ...patch },
+      })),
     }));
   },
   /* Patch a zone's layout container config. Deep-merge over the
