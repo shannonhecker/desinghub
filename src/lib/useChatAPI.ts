@@ -114,12 +114,21 @@ export function useChatAPI() {
       // Add placeholder AI message
       store.addMessage("ai", "...");
 
+      // Carry over the trailing partial line between chunk reads. Without
+      // this, a `data: {...}` event split across two network reads gets
+      // dropped silently in the JSON.parse catch — visible to the user
+      // as truncated/garbled streamed messages and (worse) lost actions.
+      let leftover = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        // Keep the last segment as `leftover` for the next iteration
+        // so an incomplete `data: {...` doesn't hit JSON.parse mid-event.
+        const lines = (leftover + chunk).split("\n");
+        leftover = lines.pop() ?? "";
 
         for (const line of lines) {
           if (line.startsWith("data: ")) {
@@ -135,6 +144,20 @@ export function useChatAPI() {
             } catch {
               // Skip malformed SSE data
             }
+          }
+        }
+      }
+
+      // Process any final residual line that didn't end with "\n"
+      // before [DONE] / connection close.
+      if (leftover.startsWith("data: ")) {
+        const data = leftover.slice(6);
+        if (data && data !== "[DONE]") {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.text) accumulated += parsed.text;
+          } catch {
+            // Skip malformed final fragment
           }
         }
       }
@@ -192,7 +215,10 @@ export function useChatAPI() {
       }
     } finally {
       useBuilder.getState().setGenerating(false);
-      abortRef.current = null;
+      // Only clear abortRef if this call still owns it. Without this guard,
+      // a rapid double-send would have the first finally clear the second
+      // request's controller, making the second stream un-abortable.
+      if (abortRef.current === controller) abortRef.current = null;
     }
   }, []);
 
