@@ -35,7 +35,7 @@ body:
         - Material 3
         - Fluent 2
         - Carbon DS
-        - ausos DS
+        - uoaui DS
         - Shared (src/data/_shared)
         - Registry wiring (src/data/registry.ts)
         - Builder surface (src/components/builder)
