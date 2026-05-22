@@ -9,7 +9,7 @@ const DS_OPTIONS: Array<{ id: SystemId; label: string }> = [
   { id: "salt",   label: "Salt DS" },
   { id: "m3",     label: "Material 3" },
   { id: "fluent", label: "Fluent 2" },
-  { id: "ausos",  label: "ausos" },
+  { id: "uoaui",  label: "uoaui" },
   { id: "carbon", label: "Carbon" },
 ];
 
@@ -86,7 +86,7 @@ export function ContentTopBar() {
               <div role="listbox" aria-label="Design system" style={{
                 position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 99,
                 minWidth: 180,
-                /* ausos' t.bg2 is a glass layer — can read thin over its
+                /* uoaui' t.bg2 is a glass layer — can read thin over its
                    gradient/beam bg. Prefer its cardBg (opaque glass fill)
                    when present so the dropdown stays legible. */
                 background: t.T.cardBg || t.bg2 || t.bg,

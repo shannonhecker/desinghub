@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COOKIE = "ausos_auth_token";
+const COOKIE = "uoaui_auth_token";
 const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET;
 
 async function hashToken(password: string): Promise<string> {

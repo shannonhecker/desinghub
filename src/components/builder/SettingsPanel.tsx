@@ -28,7 +28,7 @@ const THEME_KEYS: Record<DesignSystem, { value: string; label: string }[]> = {
     { value: "light", label: "Light" },
     { value: "dark", label: "Dark" },
   ],
-  ausos: [
+  uoaui: [
     { value: "light", label: "Light" },
     { value: "dark", label: "Dark" },
   ],
@@ -38,7 +38,7 @@ const DS_OPTIONS: { id: DesignSystem; label: string }[] = [
   { id: "salt", label: "Salt DS (J.P. Morgan)" },
   { id: "m3", label: "Material 3 (Google)" },
   { id: "fluent", label: "Fluent 2 (Microsoft)" },
-  { id: "ausos", label: "ausos DS" },
+  { id: "uoaui", label: "uoaui DS" },
   { id: "carbon", label: "Carbon DS (IBM)" },
 ];
 
@@ -69,7 +69,7 @@ const DENSITY_OPTIONS: Record<DesignSystem, { value: string; label: string }[]> 
     { value: "medium", label: "Medium" },
     { value: "large", label: "Large" },
   ],
-  ausos: [
+  uoaui: [
     { value: "high", label: "High" },
     { value: "medium", label: "Medium" },
     { value: "low", label: "Low" },
@@ -88,7 +88,7 @@ const AVAILABLE_COMPONENTS: Record<DesignSystem, string[]> = {
   salt: ["buttons", "inputs", "cards", "tabs", "banners", "dialog", "badges", "avatars", "tooltips", "progress", "accordion", "form-field", "menu", "drawer", "table", "date-picker", "checkboxes", "radios", "switches", "slider"],
   m3: ["buttons", "text-fields", "chips", "cards", "switches", "checkboxes", "radios", "sliders", "fabs", "icon-buttons", "nav-bar", "tabs", "dialogs", "snackbar", "progress", "tooltips", "badges", "menus", "date-pickers"],
   fluent: ["buttons", "inputs", "checkboxes", "radios", "switches", "slider", "cards", "badges", "avatars", "tabs", "messagebars", "dialogs", "menus", "progress", "tooltips", "links", "dividers"],
-  ausos: ["buttons", "inputs", "cards", "tabs", "badges", "avatars", "checkboxes", "radios", "switches", "slider", "alerts", "progress", "tooltips", "dialog", "accordion", "table", "dropdowns"],
+  uoaui: ["buttons", "inputs", "cards", "tabs", "badges", "avatars", "checkboxes", "radios", "switches", "slider", "alerts", "progress", "tooltips", "dialog", "accordion", "table", "dropdowns"],
   carbon: ["buttons", "text-input", "checkboxes", "radios", "toggles", "dropdowns", "sliders", "tabs", "tags", "notifications", "modals", "tooltips", "accordion", "data-table", "progress-bar", "breadcrumb", "pagination", "tiles", "forms", "menus"],
 };
 
@@ -115,7 +115,7 @@ const COLOR_KEYS: Record<DesignSystem, { key: string; label: string }[]> = {
     { key: "dangerBg3", label: "Danger" },
     { key: "successBg3", label: "Success" },
   ],
-  ausos: [
+  uoaui: [
     { key: "accent", label: "Accent" },
     { key: "bg", label: "Background" },
     { key: "fg", label: "Foreground" },
@@ -218,7 +218,7 @@ export function SettingsPanel() {
           </div>
 
           {/* Theme key — per-DS canonical theme variants (Salt jpm/legacy
-              × light/dark; Carbon white/g10/g90/g100; M3 + ausos + Fluent
+              × light/dark; Carbon white/g10/g90/g100; M3 + uoaui + Fluent
               light/dark; M3 also exposes medium-contrast pairs). Mode
               toggle still rewrites this automatically when the user
               flips light/dark; picking a value here overrides until the

@@ -23,7 +23,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
    - Built-in sorting, filtering, pagination
    ═══════════════════════════════════════════════════════════ */
 
-type DesignSystem = "salt" | "m3" | "fluent" | "ausos" | "carbon";
+type DesignSystem = "salt" | "m3" | "fluent" | "uoaui" | "carbon";
 
 interface DSAgGridProps {
   system: DesignSystem;
@@ -168,8 +168,8 @@ function buildAgTheme(system: DesignSystem, T: Record<string, any>, density?: st
       headerHeight: Math.max(32, 44 + offset),
     });
   }
-  /* ausos DS */
-  if (system === "ausos") {
+  /* uoaui DS */
+  if (system === "uoaui") {
     const d = density as string || "medium";
     const scale = d === "high" ? { fs: 11, hFs: 10, sp: 6, rowH: 24 }
       : d === "low" ? { fs: 14, hFs: 12, sp: 10, rowH: 40 }

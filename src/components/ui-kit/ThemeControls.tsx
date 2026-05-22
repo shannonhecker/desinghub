@@ -16,7 +16,7 @@ const M3_MODE_OPTIONS = [
   { value: "custom", label: "Custom" },
 ];
 
-const AUSOS_ACCENTS = [
+const UOAUI_ACCENTS = [
   { name: "Violet", hex: "#7E6BC4", grad: "linear-gradient(135deg, #8A7ABD, #6B5AA8)" },
   { name: "Indigo", hex: "#5558B8", grad: "linear-gradient(135deg, #6668C0, #4A4CA5)" },
   { name: "Blue", hex: "#4A74B0", grad: "linear-gradient(135deg, #5A84BA, #3D64A0)" },
@@ -55,10 +55,10 @@ export function ThemeControls() {
   const summary = React.useMemo(() => {
     if (activeSystem === "salt") return `Salt ${store.salt.themeKey}, density ${store.salt.density}`;
     if (activeSystem === "m3") return `Material 3 ${store.m3.themeKey}, density ${store.m3.density}`;
-    if (activeSystem === "ausos") return `ausos ${store.ausos.themeKey}, density ${store.ausos.density}`;
+    if (activeSystem === "uoaui") return `uoaui ${store.uoaui.themeKey}, density ${store.uoaui.density}`;
     if (activeSystem === "carbon") return `Carbon ${store.carbon.themeKey}, density ${store.carbon.density}`;
     return `Fluent ${store.fluent.themeKey}, size ${store.fluent.size}`;
-  }, [activeSystem, store.salt.themeKey, store.salt.density, store.m3.themeKey, store.m3.density, store.ausos.themeKey, store.ausos.density, store.carbon.themeKey, store.carbon.density, store.fluent.themeKey, store.fluent.size]);
+  }, [activeSystem, store.salt.themeKey, store.salt.density, store.m3.themeKey, store.m3.density, store.uoaui.themeKey, store.uoaui.density, store.carbon.themeKey, store.carbon.density, store.fluent.themeKey, store.fluent.size]);
   const [announce, setAnnounce] = useState("");
   const prevSummary = React.useRef(summary);
   React.useEffect(() => {
@@ -76,7 +76,7 @@ export function ThemeControls() {
       ? `s-btn ${active ? "s-btn-solid" : "s-btn-bordered"}`
       : activeSystem === "m3"
       ? `m3-btn ${active ? "m3-btn-filled" : "m3-btn-outlined"}`
-      : activeSystem === "ausos"
+      : activeSystem === "uoaui"
       ? `a-btn ${active ? "a-btn-primary" : "a-btn-ghost"}`
       : activeSystem === "carbon"
       ? `cb-btn ${active ? "cb-btn-primary" : "cb-btn-tertiary"}`
@@ -113,7 +113,7 @@ export function ThemeControls() {
       next.focus();
       next.click();
     };
-    /* 4-item groups (Salt/ausos 4-tier density; Carbon 4 themes; M3 4
+    /* 4-item groups (Salt/uoaui 4-tier density; Carbon 4 themes; M3 4
        density levels) wrapped 3+1 in flex layout, orphaning one chip.
        Switch to 2×2 grid at ≥4 children so rows are always balanced. */
     const childCount = React.Children.count(children);
@@ -273,9 +273,9 @@ export function ThemeControls() {
     );
   }
 
-  /* ── AUSOS DS ── */
-  if (activeSystem === "ausos") {
-    const { ausos, setAusosTheme, setAusosDensity, setAusosAccent } = store;
+  /* ── UOAUI DS ── */
+  if (activeSystem === "uoaui") {
+    const { uoaui, setUoauiTheme, setUoauiDensity, setUoauiAccent } = store;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         {announceJsx}
@@ -283,8 +283,8 @@ export function ThemeControls() {
         {open && (
           <div style={{ display: "flex", flexDirection: "column", gap: t.scale.gap * 2 + 4, paddingBottom: t.scale.gap * 2 }}>
             <ControlGroup label="Theme">
-              <CtrlBtn active={ausos.themeKey === "light"} onClick={() => setAusosTheme("light")}>Light</CtrlBtn>
-              <CtrlBtn active={ausos.themeKey === "dark"} onClick={() => setAusosTheme("dark")}>Dark</CtrlBtn>
+              <CtrlBtn active={uoaui.themeKey === "light"} onClick={() => setUoauiTheme("light")}>Light</CtrlBtn>
+              <CtrlBtn active={uoaui.themeKey === "dark"} onClick={() => setUoauiTheme("dark")}>Dark</CtrlBtn>
             </ControlGroup>
             <div style={{ display: "flex", flexDirection: "column", gap: Math.max(4, t.scale.gap - 2), position: "relative" }}>
               <div style={{ fontSize: t.scale.labF, textTransform: "uppercase", color: t.fg2, letterSpacing: 1, fontWeight: 700 }}>Accent Color</div>
@@ -296,19 +296,19 @@ export function ThemeControls() {
                 fontFamily: t.font, fontSize: t.scale.navF, transition: "border-color 150ms", height: t.scale.navH + 4,
               }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: AUSOS_ACCENTS.find(a => a.hex === ausos.accentColor)?.grad || ausos.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
-                  {AUSOS_ACCENTS.find(a => a.hex === ausos.accentColor)?.name || "Custom"}
+                  <span style={{ width: 14, height: 14, borderRadius: "50%", background: UOAUI_ACCENTS.find(a => a.hex === uoaui.accentColor)?.grad || uoaui.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
+                  {UOAUI_ACCENTS.find(a => a.hex === uoaui.accentColor)?.name || "Custom"}
                 </span>
                 <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>{accentOpen ? "expand_less" : "expand_more"}</span>
               </button>
               {accentOpen && (
                 <div style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99, background: t.bg2 || t.bg, border: `1px solid ${t.border}`, borderRadius: t.scale.gap, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", overflow: "hidden" }}>
-                  {AUSOS_ACCENTS.map(a => (
-                    <button key={a.hex} onClick={() => { setAusosAccent(a.hex); setAccentOpen(false); }}
-                      style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, padding: `${t.scale.gap}px ${t.scale.gap + 4}px`, border: "none", cursor: "pointer", fontFamily: t.font, fontSize: t.scale.navF, textAlign: "left", background: ausos.accentColor === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent", color: ausos.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms" }}>
+                  {UOAUI_ACCENTS.map(a => (
+                    <button key={a.hex} onClick={() => { setUoauiAccent(a.hex); setAccentOpen(false); }}
+                      style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, padding: `${t.scale.gap}px ${t.scale.gap + 4}px`, border: "none", cursor: "pointer", fontFamily: t.font, fontSize: t.scale.navF, textAlign: "left", background: uoaui.accentColor === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent", color: uoaui.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms" }}>
                       <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.grad, flexShrink: 0, border: `1px solid ${t.border}` }} />
                       <span style={{ flex: 1 }}>{a.name}</span>
-                      {ausos.accentColor === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: a.hex }}>check</span>}
+                      {uoaui.accentColor === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: a.hex }}>check</span>}
                     </button>
                   ))}
                 </div>
@@ -316,7 +316,7 @@ export function ThemeControls() {
             </div>
             <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
               {(["high", "medium", "low", "touch"] as const).map(k => (
-                <CtrlBtn key={k} active={ausos.density === k} onClick={() => setAusosDensity(k)}>
+                <CtrlBtn key={k} active={uoaui.density === k} onClick={() => setUoauiDensity(k)}>
                   {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
                 </CtrlBtn>
               ))}

@@ -33,7 +33,7 @@ const MATRIX = {
   m3:     { themes: ['light', 'dark', 'medium-contrast-light', 'high-contrast-light'], densities: ['0', '-1', '-2', '-3'] },
   fluent: { themes: ['light', 'dark'], densities: ['sm', 'md', 'lg'] },
   carbon: { themes: ['white', 'g10', 'g90', 'g100'], densities: ['compact', 'normal', 'spacious'] },
-  ausos:  { themes: ['dark', 'light'], densities: ['high', 'medium', 'low', 'touch'] },
+  uoaui:  { themes: ['dark', 'light'], densities: ['high', 'medium', 'low', 'touch'] },
 };
 
 const BASE_URL = process.env.SS_BASE_URL ?? 'http://localhost:3000';

@@ -1,5 +1,5 @@
 /**
- * Motion spec for Design Hub (ausos.ai).
+ * Motion spec for Design Hub (uoaui.ai).
  *
  * Single source of truth for site-wide animation timing + easing.
  * Values match the token system's shared primitives in
@@ -9,7 +9,7 @@
  * Rules this module enforces:
  *   - Durations cluster on 150ms (hover / micro) and 300ms (layout / reveal).
  *   - Default easing is Material standard cubic-bezier(0.2, 0, 0, 1).
- *     Mirrors M3_MOTION.easing.standard and the ausos house curve.
+ *     Mirrors M3_MOTION.easing.standard and the uoaui house curve.
  *   - Every animation respects prefers-reduced-motion — consumers either
  *     pass the guarded timeline helpers below, or call isReducedMotion()
  *     themselves and skip animation entirely.

@@ -3,7 +3,7 @@
  *
  * Per Q1 (2026-04-22): unify raw values here; each DS re-aliases under its
  * spec-correct names (M3 short1..long2, Carbon productive/expressive,
- * Fluent durationFaster/Fast/Normal, Salt fast/normal/slow, ausos glass-*).
+ * Fluent durationFaster/Fast/Normal, Salt fast/normal/slow, uoaui glass-*).
  *
  * Rules:
  *   - No semantic names in this file — only primitive values keyed by intent.

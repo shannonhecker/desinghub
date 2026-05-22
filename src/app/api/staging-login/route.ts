@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
   const token = hashToken(expectedPassword);
   const response = NextResponse.json({ ok: true });
 
-  response.cookies.set("ausos_auth_token", token, {
+  response.cookies.set("uoaui_auth_token", token, {
     httpOnly: true,
     // Browsers reject `secure: true` cookies on http://localhost, which would
     // break local dev. Everywhere else (preview, staging, production) the

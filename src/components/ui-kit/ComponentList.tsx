@@ -57,7 +57,7 @@ export function ComponentList() {
         ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accentText, background: t.accentWeak, borderRadius: 4, paddingLeft: t.scale.gap + 6, marginLeft: indent }
         : { fontSize: t.scale.navF, color: t.fg, paddingLeft: t.scale.gap + 6, marginLeft: indent };
     }
-    if (activeSystem === "ausos") {
+    if (activeSystem === "uoaui") {
       return active
         ? { fontSize: t.scale.navF, fontWeight: 600, color: t.accent, background: t.accentWeak, borderRadius: 6, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" }
         : { fontSize: t.scale.navF, color: t.fg2, paddingLeft: t.scale.gap + 6, marginLeft: indent, border: "none" };

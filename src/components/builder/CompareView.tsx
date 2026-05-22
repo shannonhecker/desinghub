@@ -9,7 +9,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
    four design systems simultaneously.
 
    Purpose: non-technical users want to see "what does our
-   app look like in Salt vs Material 3 vs Fluent vs ausos?"
+   app look like in Salt vs Material 3 vs Fluent vs uoaui?"
    without manually swapping the DS switcher four times.
 
    The mini canvases are read-only (pointer-events: none on
@@ -22,7 +22,7 @@ const SYSTEMS: { key: DesignSystem; label: string; color: string; org: string }[
   { key: "salt",   label: "Salt DS",     color: "#1B7F9E", org: "J.P. Morgan" },
   { key: "m3",     label: "Material 3",  color: "#6750A4", org: "Google" },
   { key: "fluent", label: "Fluent 2",    color: "#0F6CBD", org: "Microsoft" },
-  { key: "ausos",  label: "ausos DS",    color: "#7E6BC4", org: "ausos" },
+  { key: "uoaui",  label: "uoaui DS",    color: "#7E6BC4", org: "uoaui" },
 ];
 
 interface CompareQuadrantProps {

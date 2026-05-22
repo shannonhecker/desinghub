@@ -34,8 +34,8 @@ function getChartTheme(system: string, T: any, font: string): Partial<Highcharts
       legend: { itemStyle: { color: T.onSurfaceVariant }, itemHoverStyle: { color: T.onSurface } },
     };
   }
-  // ausos DS
-  if (system === "ausos") {
+  // uoaui DS
+  if (system === "uoaui") {
     return {
       colors: T.chart || ["#9575F0", "#f46a9b", "#27aeef", "#87bc45", "#edbf33", "#ef9b20", "#b33dc6", "#ea5545", "#76b7b2", "#bdcf32"],
       chart: { backgroundColor: "transparent", style: { fontFamily: font } },
@@ -256,18 +256,18 @@ export function ChartsPage() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
-    : activeSystem === "ausos"
-    ? getTheme("ausos", store.ausos.themeKey)
+    : activeSystem === "uoaui"
+    ? getTheme("uoaui", store.uoaui.themeKey)
     : getTheme("fluent", store.fluent.themeKey);
 
   activateTheme(activeSystem, T);
   const font = getFont(activeSystem);
   const chartTheme = useMemo(() => getChartTheme(activeSystem, T, font), [activeSystem, T, font]);
 
-  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surfaceContainerLow : activeSystem === "ausos" ? T.surface : T.bg2;
-  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : activeSystem === "ausos" ? T.fg : T.fg1;
+  const bg = activeSystem === "salt" ? T.bg : activeSystem === "m3" ? T.surfaceContainerLow : activeSystem === "uoaui" ? T.surface : T.bg2;
+  const fg = activeSystem === "salt" ? T.fg : activeSystem === "m3" ? T.onSurface : activeSystem === "uoaui" ? T.fg : T.fg1;
   const fg3 = activeSystem === "salt" ? T.fg3 : activeSystem === "m3" ? T.onSurfaceVariant : T.fg3;
-  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : activeSystem === "ausos" ? T.borderMd : T.stroke2;
+  const border = activeSystem === "salt" ? T.border : activeSystem === "m3" ? T.outlineVariant : activeSystem === "uoaui" ? T.borderMd : T.stroke2;
   const categories = [...new Set(CHARTS.map(c => c.category))];
   const filtered = selectedCategory ? CHARTS.filter(c => c.category === selectedCategory) : CHARTS;
 
@@ -285,7 +285,7 @@ export function ChartsPage() {
               </button>
             );
           }
-          if (activeSystem === "ausos") {
+          if (activeSystem === "uoaui") {
             return (
               <button key={cat || "all"} className={`a-btn ${isActive ? "a-btn-primary" : "a-btn-ghost"}`}
                 onClick={() => setSelectedCategory(cat)}

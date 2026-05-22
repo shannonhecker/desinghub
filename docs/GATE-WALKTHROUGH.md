@@ -67,7 +67,7 @@ Switch to **Salt DS** in the top bar. Then keyboard-walk these demos in sequence
 | **Modal** | Open → Tab | `aria-modal` + `aria-labelledby` wired to `<h2>` |
 | **Login form** | Tab through fields | Autofill works (email + current-password); labels linked via `htmlFor` |
 
-### A.5 ausos keyboard checks
+### A.5 uoaui keyboard checks
 
 | Demo | Key sequence | Expected |
 |---|---|---|
@@ -96,7 +96,7 @@ Navigate to M3, then through each of these demos with VoiceOver. Confirm SR anno
 ### B.2 Live regions
 
 - **M3 Snackbars demo** → triggering (by clicking something elsewhere) should cause SR to speak "Photo saved" / "Conversation archived".
-- **ausos Alerts** — on first landing on the Alerts demo, all 4 alerts should announce once (polite for info/success, assertive for warning/danger).
+- **uoaui Alerts** — on first landing on the Alerts demo, all 4 alerts should announce once (polite for info/success, assertive for warning/danger).
 - **Salt Banners** — same: 4 banners announce on demo mount.
 - **Salt Loading chip** — "Loading, status" should be spoken when visible.
 
@@ -143,7 +143,7 @@ This is specifically covered by:
 
 Install the **WAVE** or **axe DevTools** Chrome extension if not already.
 
-1. Switch each DS to its dark theme (M3 dark, Carbon g100, Fluent dark, Salt jpm-dark, ausos dark)
+1. Switch each DS to its dark theme (M3 dark, Carbon g100, Fluent dark, Salt jpm-dark, uoaui dark)
 2. Run axe on a representative component (any button + any text field)
 3. **Expected:** 0 contrast errors. Warnings on borderline cases OK — document them in the PR.
 

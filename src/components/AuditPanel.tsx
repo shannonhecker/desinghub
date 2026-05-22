@@ -145,12 +145,12 @@ function runAudit(code: string, system: string, T: any): AuditIssue[] {
 
 function ContrastAudit({ system, T }: { system: string; T: any }) {
   // Derive card colours from the active DS tokens so the card feels native
-  const cardBg  = system === "salt" ? T.bg : system === "m3" ? (T.surfaceContainer ?? T.surface) : system === "ausos" ? T.surface : T.bg2;
-  const cardBdr = system === "salt" ? T.border : system === "m3" ? T.outlineVariant : system === "ausos" ? T.borderMd : T.stroke2;
-  const titleFg = system === "salt" ? T.fg : system === "m3" ? T.onSurface : system === "ausos" ? T.fg : T.fg1;
-  const labelFg = system === "salt" ? T.fg2 : system === "m3" ? T.onSurfaceVariant : system === "ausos" ? T.fg2 : T.fg2;
-  const rowFg   = system === "salt" ? T.fg : system === "m3" ? T.onSurface : system === "ausos" ? T.fg : T.fg1;
-  const monoFg  = system === "salt" ? T.fg3 : system === "m3" ? T.onSurfaceVariant : system === "ausos" ? T.fg3 : T.fg3;
+  const cardBg  = system === "salt" ? T.bg : system === "m3" ? (T.surfaceContainer ?? T.surface) : system === "uoaui" ? T.surface : T.bg2;
+  const cardBdr = system === "salt" ? T.border : system === "m3" ? T.outlineVariant : system === "uoaui" ? T.borderMd : T.stroke2;
+  const titleFg = system === "salt" ? T.fg : system === "m3" ? T.onSurface : system === "uoaui" ? T.fg : T.fg1;
+  const labelFg = system === "salt" ? T.fg2 : system === "m3" ? T.onSurfaceVariant : system === "uoaui" ? T.fg2 : T.fg2;
+  const rowFg   = system === "salt" ? T.fg : system === "m3" ? T.onSurface : system === "uoaui" ? T.fg : T.fg1;
+  const monoFg  = system === "salt" ? T.fg3 : system === "m3" ? T.onSurfaceVariant : system === "uoaui" ? T.fg3 : T.fg3;
 
   const pairs = useMemo(() => {
     if (system === "salt") {
@@ -175,7 +175,7 @@ function ContrastAudit({ system, T }: { system: string; T: any }) {
         { fg: "outline", bg: "surface", fgVal: T.outline, bgVal: T.surface },
       ];
     }
-    if (system === "ausos") {
+    if (system === "uoaui") {
       return [
         { fg: "fg", bg: "bg", fgVal: T.fg, bgVal: T.bg },
         { fg: "fg2", bg: "bg", fgVal: T.fg2, bgVal: T.bg },
@@ -236,8 +236,8 @@ export function AuditPanel() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
-    : activeSystem === "ausos"
-    ? getTheme("ausos", store.ausos.themeKey)
+    : activeSystem === "uoaui"
+    ? getTheme("uoaui", store.uoaui.themeKey)
     : getTheme("fluent", store.fluent.themeKey);
 
   // Derive semantic colors from active DS tokens

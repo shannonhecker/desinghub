@@ -12,7 +12,7 @@ const DS_LABEL: Record<DesignSystem, string> = {
   salt: "Salt DS",
   m3: "Material 3",
   fluent: "Fluent 2",
-  ausos: "ausos DS",
+  uoaui: "uoaui DS",
   carbon: "Carbon DS",
 };
 
@@ -20,7 +20,7 @@ const DS_COLOR: Record<DesignSystem, string> = {
   salt: "#1B7F9E",
   m3: "#6750A4",
   fluent: "#0F6CBD",
-  ausos: "#7E6BC4",
+  uoaui: "#7E6BC4",
   carbon: "#0f62fe",
 };
 

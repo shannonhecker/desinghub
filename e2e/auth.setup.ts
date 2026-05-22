@@ -36,7 +36,7 @@ setup("authenticate (or skip if public mode)", async ({ request, page }) => {
     `Login failed (status ${res.status()}). Set STAGING_PASSWORD env to match the dev server.`,
   ).toBe(true);
 
-  // The login route sets `ausos_auth_token` as an httpOnly cookie on the
+  // The login route sets `uoaui_auth_token` as an httpOnly cookie on the
   // response. Persist the cookies into a Playwright storage state.
   const cookies = (await res.headersArray())
     .filter((h) => h.name.toLowerCase() === "set-cookie")

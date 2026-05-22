@@ -44,7 +44,7 @@ export function DesignHubApp() {
     const density = params.get("density");
     const themeKey = params.get("themeKey");
 
-    if (ds && ["salt", "m3", "fluent", "carbon", "ausos"].includes(ds)) {
+    if (ds && ["salt", "m3", "fluent", "carbon", "uoaui"].includes(ds)) {
       store.setActiveSystem(ds);
     }
     /* themeKey is per-DS so apply to whichever DS is now active. */
@@ -54,20 +54,20 @@ export function DesignHubApp() {
       else if (targetDs === "m3") store.setM3Theme(themeKey);
       else if (targetDs === "fluent") store.setFluentTheme(themeKey);
       else if (targetDs === "carbon") store.setCarbonTheme(themeKey);
-      else if (targetDs === "ausos") store.setAusosTheme(themeKey);
+      else if (targetDs === "uoaui") store.setUoauiTheme(themeKey);
     } else if (mode) {
       /* Fallback: use mode (light/dark) when no themeKey was passed. */
       if (targetDs === "salt") store.setSaltTheme(mode === "dark" ? "jpm-dark" : "jpm-light");
       else if (targetDs === "m3") store.setM3Theme(mode === "dark" ? "dark" : "light");
       else if (targetDs === "fluent") store.setFluentTheme(mode === "dark" ? "dark" : "light");
       else if (targetDs === "carbon") store.setCarbonTheme(mode === "dark" ? "g100" : "white");
-      else if (targetDs === "ausos") store.setAusosTheme(mode === "dark" ? "dark" : "light");
+      else if (targetDs === "uoaui") store.setUoauiTheme(mode === "dark" ? "dark" : "light");
     }
     if (density) {
       if (targetDs === "salt") store.setSaltDensity(density);
       else if (targetDs === "fluent") store.setFluentSize(density);
       else if (targetDs === "carbon") store.setCarbonDensity(density);
-      else if (targetDs === "ausos") store.setAusosDensity(density);
+      else if (targetDs === "uoaui") store.setUoauiDensity(density);
       /* M3 density is numeric (-3..0); skip non-numeric handoff. */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,11 +84,11 @@ export function DesignHubApp() {
 
   /* Keyboard shortcuts — Cmd/Ctrl+1..5 cycle through the five DSes
      in the order they appear in SystemSwitcher (Salt 1, M3 2, Fluent
-     3, Carbon 4, ausos 5). Mirrors Builder's Cmd+Z/Cmd+Shift+Z
+     3, Carbon 4, uoaui 5). Mirrors Builder's Cmd+Z/Cmd+Shift+Z
      undo-redo binding pattern. Skipped when focus is in an editable
      field so users can still type "1" in the search box. */
   React.useEffect(() => {
-    const SYSTEM_KEYS: SystemId[] = ["salt", "m3", "fluent", "carbon", "ausos"];
+    const SYSTEM_KEYS: SystemId[] = ["salt", "m3", "fluent", "carbon", "uoaui"];
     const handler = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
       const target = e.target;
@@ -121,8 +121,8 @@ export function DesignHubApp() {
     ? store.salt.themeKey.includes("dark")
     : activeSystem === "m3"
     ? store.m3.themeKey.startsWith("dark")
-    : activeSystem === "ausos"
-    ? store.ausos.themeKey === "dark"
+    : activeSystem === "uoaui"
+    ? store.uoaui.themeKey === "dark"
     : activeSystem === "carbon"
     ? store.carbon.themeKey === "g90" || store.carbon.themeKey === "g100"
     : store.fluent.themeKey === "dark";
@@ -133,9 +133,9 @@ export function DesignHubApp() {
      on header regardless of main theme, Carbon-blue accent for the
      active system switcher + AI Builder button. */
   const isCarbon = activeSystem === "carbon";
-  const headerBg = isCarbon ? "#161616" /* $background-inverse */ : (activeSystem === "ausos" ? "transparent" : t.bg);
+  const headerBg = isCarbon ? "#161616" /* $background-inverse */ : (activeSystem === "uoaui" ? "transparent" : t.bg);
   const headerFg = isCarbon ? "#ffffff" : t.fg;
-  const headerBorder = isCarbon ? "#393939" : (activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border);
+  const headerBorder = isCarbon ? "#393939" : (activeSystem === "uoaui" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border);
   /* Logo stays black on white headers, white on dark/Carbon headers. */
   const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
 
@@ -144,7 +144,7 @@ export function DesignHubApp() {
       /* Carbon uses its own canvas bg (white / g100) so the main area
          and the outer wrapper are the same colour, matching the
          "no seam" aesthetic of carbondesignsystem.com. */
-      background: activeSystem === "ausos" ? t.bg : isCarbon ? t.bg : t.bg2,
+      background: activeSystem === "uoaui" ? t.bg : isCarbon ? t.bg : t.bg2,
       fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Skip link — visually hidden until keyboard focused. WCAG 2.1
           2.4.1 Bypass Blocks. Sends users past the header + sidebar
@@ -179,7 +179,7 @@ export function DesignHubApp() {
       >
         {/* Left - logo + title */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
-          <img src="/aologo.svg" alt="ausōs" style={{ height: isCarbon ? 16 : t.scale.navF + 4, width: "auto", filter: resolvedLogoFilter }} />
+          <img src="/aologo.svg" alt="uoaui" style={{ height: isCarbon ? 16 : t.scale.navF + 4, width: "auto", filter: resolvedLogoFilter }} />
           <span style={{ fontSize: isCarbon ? 14 : t.scale.navF + 1, fontWeight: isCarbon ? 400 : 600, color: headerFg }}>
             {isCarbon ? <><strong style={{ fontWeight: 600 }}>IBM</strong> Design Hub</> : "UI Kit Overview"}
           </span>
@@ -204,8 +204,8 @@ export function DesignHubApp() {
                 store.setSaltTheme(isDk ? key.replace("dark", "light") : key.replace("light", "dark"));
               } else if (activeSystem === "m3") {
                 store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
-              } else if (activeSystem === "ausos") {
-                store.setAusosTheme(store.ausos.themeKey === "dark" ? "light" : "dark");
+              } else if (activeSystem === "uoaui") {
+                store.setUoauiTheme(store.uoaui.themeKey === "dark" ? "light" : "dark");
               } else if (activeSystem === "carbon") {
                 /* Carbon toggles white ↔ g100 (canonical light/dark).
                    Users pick g10/g90 explicitly via ThemeControls. */
@@ -250,12 +250,12 @@ export function DesignHubApp() {
                 ds === "m3" ? store.m3.themeKey :
                 ds === "fluent" ? store.fluent.themeKey :
                 ds === "carbon" ? store.carbon.themeKey :
-                store.ausos.themeKey;
+                store.uoaui.themeKey;
               const density =
                 ds === "salt" ? store.salt.density :
                 ds === "fluent" ? store.fluent.size :
                 ds === "carbon" ? store.carbon.density :
-                ds === "ausos" ? store.ausos.density :
+                ds === "uoaui" ? store.uoaui.density :
                 String(store.m3.density);
               return `/builder?ds=${ds}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`;
             })()}
@@ -282,10 +282,10 @@ export function DesignHubApp() {
         {sidebarOpen && (
           <aside style={{
             width: t.scale.panelW,
-            borderRight: `1px solid ${activeSystem === "ausos" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
+            borderRight: `1px solid ${activeSystem === "uoaui" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
             /* Carbon sidebar sits at $layer-01 (one step up from
                canvas) matching the Carbon docs sidenav. */
-            background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg2 : isCarbon ? t.T.layer01 : t.bg,
+            background: activeSystem === "uoaui" ? "transparent" : activeSystem === "m3" ? t.bg2 : isCarbon ? t.T.layer01 : t.bg,
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
@@ -305,7 +305,7 @@ export function DesignHubApp() {
         )}
 
         {/* Main - ContentTopBar (hamburger + breadcrumb) always at top */}
-        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "ausos" ? "transparent" : t.bg }}>
+        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "uoaui" ? "transparent" : t.bg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />

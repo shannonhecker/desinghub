@@ -13,14 +13,14 @@ import { SALT_STRUCTURE_PADDING } from "@/data/salt/tokens";
 import { M3_STRUCTURE_PADDING } from "@/data/m3/tokens";
 import { FLUENT_STRUCTURE_PADDING } from "@/data/fluent/tokens";
 import { CARBON_STRUCTURE_PADDING } from "@/data/carbon/tokens";
-import { AUSOS_STRUCTURE_PADDING } from "@/data/ausos/tokens";
+import { UOAUI_STRUCTURE_PADDING } from "@/data/uoaui/tokens";
 
 const TABLE: Record<DesignSystem, StructurePaddingScale> = {
   salt: SALT_STRUCTURE_PADDING,
   m3: M3_STRUCTURE_PADDING,
   fluent: FLUENT_STRUCTURE_PADDING,
   carbon: CARBON_STRUCTURE_PADDING,
-  ausos: AUSOS_STRUCTURE_PADDING,
+  uoaui: UOAUI_STRUCTURE_PADDING,
 };
 
 export function resolveStructurePadding(

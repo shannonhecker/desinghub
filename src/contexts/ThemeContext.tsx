@@ -58,7 +58,7 @@ function computeScale(activeSystem: SystemId, densityOrSize: string | number): S
          : d === "spacious" ? { navH: 48, navF: 14, labF: 11, tabH: 48, hdrH: 56, gap: 10, panelW: 280 }
          :                    { navH: 32, navF: 13, labF: 10, tabH: 36, hdrH: 44, gap: 8,  panelW: 256 };
   }
-  // ausos
+  // uoaui
   const d = densityOrSize as string;
   return d === "high"  ? { navH: 20, navF: 11, labF: 9,  tabH: 24, hdrH: 36, gap: 4,  panelW: 220 }
        : d === "low"   ? { navH: 36, navF: 13, labF: 11, tabH: 40, hdrH: 48, gap: 8,  panelW: 260 }
@@ -76,9 +76,9 @@ function computeTheme(
   m3IsDarkCustom: boolean,
   fluentThemeKey: string,
   fluentSize: string,
-  ausosThemeKey: string,
-  ausosDensity: string,
-  ausosAccentColor: string,
+  uoauiThemeKey: string,
+  uoauiDensity: string,
+  uoauiAccentColor: string,
   carbonThemeKey: string,
   carbonDensity: string,
 ): ActiveTheme {
@@ -90,11 +90,11 @@ function computeTheme(
     ? getTheme("fluent", fluentThemeKey)
     : activeSystem === "carbon"
     ? getTheme("carbon", carbonThemeKey)
-    : getTheme("ausos", ausosThemeKey);
+    : getTheme("uoaui", uoauiThemeKey);
 
-  // Apply custom accent color for ausos
-  if (activeSystem === "ausos" && ausosAccentColor && ausosAccentColor !== T.accent) {
-    const c = ausosAccentColor;
+  // Apply custom accent color for uoaui
+  if (activeSystem === "uoaui" && uoauiAccentColor && uoauiAccentColor !== T.accent) {
+    const c = uoauiAccentColor;
     const lighter = c + "CC";
     const charts = T.chart ? [...T.chart] : [];
     if (charts.length > 0) charts[0] = c;
@@ -113,22 +113,22 @@ function computeTheme(
     : activeSystem === "m3" ? m3Density
     : activeSystem === "fluent" ? fluentSize
     : activeSystem === "carbon" ? carbonDensity
-    : ausosDensity;
+    : uoauiDensity;
 
   const css = getFullCSS(activeSystem, T, densityOrSize);
   const font = getFont(activeSystem);
 
   /* Normalized token accessors - one slot per system. Carbon's
-     theme tokens use the same field names as salt/ausos (bg, fg,
+     theme tokens use the same field names as salt/uoaui (bg, fg,
      accent, etc.) so most carbon slots reuse salt's key names;
      where Carbon diverges (layer/field tokens in Phase 2), we'll
      override with a carbon-specific key. */
-  const n = (salt: string, m3: string, fluent: string, ausos: string, carbon: string) =>
+  const n = (salt: string, m3: string, fluent: string, uoaui: string, carbon: string) =>
     activeSystem === "salt" ? T[salt]
     : activeSystem === "m3" ? T[m3]
     : activeSystem === "fluent" ? T[fluent]
     : activeSystem === "carbon" ? T[carbon]
-    : T[ausos];
+    : T[uoaui];
 
   return {
     T, css, font,
@@ -169,9 +169,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const m3IsDarkCustom = useDesignHub((s) => s.m3.isDarkCustom);
   const fluentThemeKey = useDesignHub((s) => s.fluent.themeKey);
   const fluentSize = useDesignHub((s) => s.fluent.size);
-  const ausosThemeKey = useDesignHub((s) => s.ausos.themeKey);
-  const ausosDensity = useDesignHub((s) => s.ausos.density);
-  const ausosAccentColor = useDesignHub((s) => s.ausos.accentColor);
+  const uoauiThemeKey = useDesignHub((s) => s.uoaui.themeKey);
+  const uoauiDensity = useDesignHub((s) => s.uoaui.density);
+  const uoauiAccentColor = useDesignHub((s) => s.uoaui.accentColor);
   const carbonThemeKey = useDesignHub((s) => s.carbon.themeKey);
   const carbonDensity = useDesignHub((s) => s.carbon.density);
 
@@ -180,14 +180,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       activeSystem, saltThemeKey, saltDensity,
       m3ThemeKey, m3Density, m3CustomColor, m3IsDarkCustom,
       fluentThemeKey, fluentSize,
-      ausosThemeKey, ausosDensity, ausosAccentColor,
+      uoauiThemeKey, uoauiDensity, uoauiAccentColor,
       carbonThemeKey, carbonDensity,
     ),
     [
       activeSystem, saltThemeKey, saltDensity,
       m3ThemeKey, m3Density, m3CustomColor, m3IsDarkCustom,
       fluentThemeKey, fluentSize,
-      ausosThemeKey, ausosDensity, ausosAccentColor,
+      uoauiThemeKey, uoauiDensity, uoauiAccentColor,
       carbonThemeKey, carbonDensity,
     ],
   );

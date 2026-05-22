@@ -25,7 +25,7 @@ export function Sidebar() {
       <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <img src="/aologo.svg" alt="ausōs" className="ausos-logo-img" />
+            <img src="/aologo.svg" alt="uoaui" className="uoaui-logo-img" />
           </div>
           <button className="sidebar-collapse-btn" onClick={toggleSidebar} aria-label="Collapse sidebar">
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>

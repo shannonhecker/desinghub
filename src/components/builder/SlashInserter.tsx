@@ -275,7 +275,7 @@ export function SlashInserter() {
         designSystem === "m3" ? "Material 3" :
         designSystem === "fluent" ? "Fluent 2" :
         designSystem === "carbon" ? "Carbon" :
-        "ausos";
+        "uoaui";
       out.push({
         key: `ds-variants-${designSystem}`,
         label: `${dsLabel} variants`,

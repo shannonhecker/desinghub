@@ -37,7 +37,7 @@ export async function generateMetadata({
         salt: "Salt DS",
         m3: "Material 3",
         fluent: "Fluent 2",
-        ausos: "ausos DS",
+        uoaui: "uoaui DS",
         carbon: "Carbon DS",
       }[state.designSystem]
     : "Design Hub";

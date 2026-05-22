@@ -39,7 +39,7 @@ async function sendAccessRequestEmail(submission: {
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.ACCESS_REQUEST_TO_EMAIL;
-  const from = process.env.ACCESS_REQUEST_FROM_EMAIL || "ausos <onboarding@resend.dev>";
+  const from = process.env.ACCESS_REQUEST_FROM_EMAIL || "uoaui <onboarding@resend.dev>";
 
   if (!apiKey || !to) return false;
 
@@ -53,7 +53,7 @@ async function sendAccessRequestEmail(submission: {
       from,
       to,
       reply_to: submission.email,
-      subject: `ausos access request from ${submission.name}`,
+      subject: `uoaui access request from ${submission.name}`,
       text: [
         `Name: ${submission.name}`,
         `Email: ${submission.email}`,
@@ -130,8 +130,8 @@ export async function POST(request: Request) {
 
   if (url && token) {
     const redis = new Redis({ url, token });
-    await redis.lpush("ausos:access-requests", submission);
-    await redis.ltrim("ausos:access-requests", 0, 999);
+    await redis.lpush("uoaui:access-requests", submission);
+    await redis.ltrim("uoaui:access-requests", 0, 999);
     stored = true;
   }
 

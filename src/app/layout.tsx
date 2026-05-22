@@ -7,9 +7,9 @@ import "./conversion.css";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
-  title: "ausos - AI Design-System Builder for Product Teams",
+  title: "uoaui - AI Design-System Builder for Product Teams",
   description:
-    "Turn one product brief into responsive Salt DS, Material 3, Fluent 2, Carbon, and ausos interface directions for comparison, review, and handoff.",
+    "Turn one product brief into responsive Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions for comparison, review, and handoff.",
   icons: {
     icon: "/favicon.svg",
     apple: "/apple-touch-icon.png",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ausōs",
+    title: "uoaui",
   },
 };
 

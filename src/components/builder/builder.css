@@ -6,7 +6,7 @@
 
 /* --------------------------------------------------------------------------
    Builder chrome polish
-   Tone down ambient blobs and align app chrome with the calmer ausos landing
+   Tone down ambient blobs and align app chrome with the calmer uoaui landing
    language. Design-system preview surfaces keep their own tokens below.
    -------------------------------------------------------------------------- */
 
@@ -135,7 +135,7 @@
 
 /* ── VARIABLES ── */
 :root {
-  /* Builder chrome - aligned with ausos DS dark tokens */
+  /* Builder chrome - aligned with uoaui DS dark tokens */
   --b-bg: #0b1120;
   --b-bg2: #0e1428;
   --b-bg3: #121830;
@@ -1010,8 +1010,8 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── ausōs logo image ── */
-.ausos-logo-img {
+/* ── uoaui logo image ── */
+.uoaui-logo-img {
   height: 18px;
   width: auto;
   display: block;
@@ -6106,8 +6106,8 @@
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
 }
 
-/* ── ausos DS (Dark = base, glass surfaces) ── */
-.preview-ausos {
+/* ── uoaui DS (Dark = base, glass surfaces) ── */
+.preview-uoaui {
   --ds-primary: #7E6BC4;
   --ds-on-primary: #ffffff;
   --ds-bg: #0b1120;
@@ -6128,7 +6128,7 @@
   --ds-status-warning: #FBBF24;
   --ds-status-negative: #F87171;
 }
-.builder-light .preview-ausos {
+.builder-light .preview-uoaui {
   --ds-bg: #FFFFFF;
   --ds-fg: #2D1B4E;
   --ds-fg-secondary: #5C4A78;

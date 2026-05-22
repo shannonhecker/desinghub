@@ -766,9 +766,9 @@
   --preview-radius: 0;
 }
 
-.hero-product[data-preview-system="ausos"] {
-  --preview-accent: var(--dh-preview-ausos-a);
-  --preview-accent-2: var(--dh-preview-ausos-b);
+.hero-product[data-preview-system="uoaui"] {
+  --preview-accent: var(--dh-preview-uoaui-a);
+  --preview-accent-2: var(--dh-preview-uoaui-b);
   --preview-surface: rgba(16, 12, 28, 0.66);
   --preview-surface-strong: rgba(180, 144, 245, 0.1);
   --preview-border: rgba(180, 144, 245, 0.22);
@@ -816,7 +816,7 @@
   --preview-border: rgba(15, 98, 254, 0.18);
 }
 
-.hero-product[data-preview-mode="light"][data-preview-system="ausos"] {
+.hero-product[data-preview-mode="light"][data-preview-system="uoaui"] {
   --preview-accent: #6750a4;
   --preview-accent-2: #007681;
   --preview-border: rgba(103, 80, 164, 0.18);
@@ -1301,12 +1301,12 @@
   background: rgba(255, 255, 255, 0.028);
 }
 
-.hero-product[data-preview-system="ausos"] .preview-board {
+.hero-product[data-preview-system="uoaui"] .preview-board {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.hero-product[data-preview-system="ausos"] .preview-hero-card,
-.hero-product[data-preview-system="ausos"] .preview-detail-list {
+.hero-product[data-preview-system="uoaui"] .preview-hero-card,
+.hero-product[data-preview-system="uoaui"] .preview-detail-list {
   background:
     radial-gradient(circle at 20% 0%, rgba(94, 231, 223, 0.12), transparent 48%),
     rgba(255, 255, 255, 0.06);
@@ -1504,8 +1504,8 @@
   color: var(--preview-accent);
 }
 
-.hero-product[data-preview-mode="light"][data-preview-system="ausos"] .preview-hero-card,
-.hero-product[data-preview-mode="light"][data-preview-system="ausos"] .preview-detail-list {
+.hero-product[data-preview-mode="light"][data-preview-system="uoaui"] .preview-hero-card,
+.hero-product[data-preview-mode="light"][data-preview-system="uoaui"] .preview-detail-list {
   background:
     radial-gradient(circle at 20% 0%, rgba(94, 231, 223, 0.12), transparent 48%),
     #ffffff;
@@ -2012,7 +2012,7 @@
   --accent-soft: rgba(255, 255, 255, 0.048);
 }
 
-.system-card[data-system="ausos"] {
+.system-card[data-system="uoaui"] {
   --accent: var(--rose);
   --accent-soft: rgba(223, 155, 147, 0.06);
 }

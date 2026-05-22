@@ -12,7 +12,7 @@ export function SystemSwitcher() {
     { id: "salt", label: "Salt DS" },
     { id: "m3", label: "Material 3" },
     { id: "fluent", label: "Fluent 2" },
-    { id: "ausos", label: "ausos" },
+    { id: "uoaui", label: "uoaui" },
     { id: "carbon", label: "Carbon" },
   ];
   /* Button-class prefix picks the DS's own button styling for the

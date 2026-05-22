@@ -8,8 +8,8 @@ import { CodePanel } from "./CodePanel";
 import { ChartsPage } from "./ChartsPage";
 import { DSAgGrid } from "./DSAgGrid";
 
-/* ── ausos Props Documentation ── */
-const AUSOS_PROPS: Record<string, { name: string; type: string; default: string; desc: string }[]> = {
+/* ── uoaui Props Documentation ── */
+const UOAUI_PROPS: Record<string, { name: string; type: string; default: string; desc: string }[]> = {
   buttons: [
     { name: "appearance", type: '"primary" | "secondary" | "ghost" | "outline"', default: '"secondary"', desc: "Visual style variant" },
     { name: "disabled", type: "boolean", default: "false", desc: "Disables interaction" },
@@ -81,14 +81,14 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const densityOrSize = activeSystem === "salt" ? store.salt.density
     : activeSystem === "m3" ? store.m3.density
     : activeSystem === "carbon" ? store.carbon.density
-    : activeSystem === "ausos" ? store.ausos.density
+    : activeSystem === "uoaui" ? store.uoaui.density
     : store.fluent.size;
   const css = getFullCSS(activeSystem, t.T, densityOrSize);
 
   const DemoComponent = getDemoComponent(activeSystem, componentId);
 
-  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : activeSystem === "ausos" ? "a-tab" : activeSystem === "carbon" ? "cb-tab" : "f-tab";
-  const isAusos = activeSystem === "ausos";
+  const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : activeSystem === "uoaui" ? "a-tab" : activeSystem === "carbon" ? "cb-tab" : "f-tab";
+  const isUoaui = activeSystem === "uoaui";
   const isCarbon = activeSystem === "carbon";
 
   const pad = 48;
@@ -129,7 +129,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
             : tab === "usage" ? "Usage"
             : tab === "style" ? "Style"
             : "Accessibility";
-          return isAusos ? (
+          return isUoaui ? (
             <button
               key={tab}
               role="tab"
@@ -231,8 +231,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
              rebuilding the CSS string. */
           className={isCarbon ? `cds--${store.carbon.themeKey}` : undefined}
           style={{
-            background: isAusos && t.T.gradient ? t.T.gradient : isCarbon ? t.T.layer01 : t.bg,
-            borderRadius: isAusos ? 14 : activeSystem === "m3" ? 12 : isCarbon ? 0 : 8,
+            background: isUoaui && t.T.gradient ? t.T.gradient : isCarbon ? t.T.layer01 : t.bg,
+            borderRadius: isUoaui ? 14 : activeSystem === "m3" ? 12 : isCarbon ? 0 : 8,
             border: `1px solid ${t.border}`, padding: pad, color: t.fg,
           }}
         >
@@ -246,8 +246,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         </div>
       )}
 
-      {/* Props table - ausos DS only */}
-      {currentTab === "preview" && isAusos && AUSOS_PROPS[componentId] && (
+      {/* Props table - uoaui DS only */}
+      {currentTab === "preview" && isUoaui && UOAUI_PROPS[componentId] && (
         <div style={{ marginTop: t.scale.gap * 3, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
           <div style={{ padding: "10px 16px", borderBottom: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, color: t.fg }}>Props</div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontFamily: t.font }}>
@@ -259,7 +259,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
               </tr>
             </thead>
             <tbody>
-              {AUSOS_PROPS[componentId].map((p: { name: string; type: string; default: string; desc: string }) => (
+              {UOAUI_PROPS[componentId].map((p: { name: string; type: string; default: string; desc: string }) => (
                 <tr key={p.name} style={{ borderBottom: `1px solid ${t.border}` }}>
                   <td style={{ padding: "8px 12px", fontWeight: 500, color: t.fg }}>{p.name}</td>
                   <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11, color: t.accent }}>{p.type}</td>
