@@ -29,7 +29,7 @@
       "ms": 25,
       "files": 1
     },
-    "ausos": {
+    "uoaui": {
       "hex": 80,
       "rgba": 59,
       "px": 262,
@@ -193,8 +193,8 @@
       }
     },
     {
-      "path": "src/data/ausos/ausos-documentation.jsx",
-      "ds": "ausos",
+      "path": "src/data/uoaui/uoaui-documentation.jsx",
+      "ds": "uoaui",
       "hex": 80,
       "rgba": 59,
       "px": 262,

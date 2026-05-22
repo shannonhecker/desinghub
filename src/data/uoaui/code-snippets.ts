@@ -1,8 +1,8 @@
 import type { CodeSnippets } from '../salt/types';
 
-export const AUSOS_CODE: CodeSnippets = {
+export const UOAUI_CODE: CodeSnippets = {
   buttons: {
-    react: `import { Button } from "@ausos/core";
+    react: `import { Button } from "@uoaui/core";
 
 // 4 appearances: primary, secondary, ghost, outline
 <Button appearance="primary">Primary</Button>
@@ -19,7 +19,7 @@ export const AUSOS_CODE: CodeSnippets = {
 <button class="a-btn a-btn-primary" disabled>Disabled</button>`
   },
   inputs: {
-    react: `import { Input, FormField } from "@ausos/core";
+    react: `import { Input, FormField } from "@uoaui/core";
 
 <FormField label="Full Name">
   <Input placeholder="Enter your name" />
@@ -34,7 +34,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   checkboxes: {
-    react: `import { Checkbox } from "@ausos/core";
+    react: `import { Checkbox } from "@uoaui/core";
 
 <Checkbox label="Option A" checked />
 <Checkbox label="Option B" />
@@ -49,7 +49,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </label>`
   },
   radios: {
-    react: `import { RadioGroup, Radio } from "@ausos/core";
+    react: `import { RadioGroup, Radio } from "@uoaui/core";
 
 <RadioGroup label="Size" value="medium">
   <Radio value="small" label="Small" />
@@ -66,7 +66,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   switches: {
-    react: `import { Switch } from "@ausos/core";
+    react: `import { Switch } from "@uoaui/core";
 
 <Switch label="Dark mode" checked />
 <Switch label="Notifications" />`,
@@ -78,7 +78,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </button>`
   },
   tabs: {
-    react: `import { Tabs, Tab } from "@ausos/core";
+    react: `import { Tabs, Tab } from "@uoaui/core";
 
 <Tabs value="general">
   <Tab value="general" label="General" />
@@ -92,7 +92,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   cards: {
-    react: `import { Card } from "@ausos/core";
+    react: `import { Card } from "@uoaui/core";
 
 <Card>
   <Card.Header>Analytics</Card.Header>
@@ -104,7 +104,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   badges: {
-    react: `import { Badge } from "@ausos/core";
+    react: `import { Badge } from "@uoaui/core";
 
 <Badge variant="accent">Active</Badge>
 <Badge variant="success">Done</Badge>
@@ -116,7 +116,7 @@ export const AUSOS_CODE: CodeSnippets = {
 <span class="a-badge a-badge-danger">Error</span>`
   },
   avatars: {
-    react: `import { Avatar } from "@ausos/core";
+    react: `import { Avatar } from "@uoaui/core";
 
 <Avatar initials="SH" />
 <Avatar initials="JD" color="warning" />
@@ -125,7 +125,7 @@ export const AUSOS_CODE: CodeSnippets = {
 <div class="a-avatar">JD</div>`
   },
   alerts: {
-    react: `import { Alert } from "@ausos/core";
+    react: `import { Alert } from "@uoaui/core";
 
 <Alert variant="info">New update available.</Alert>
 <Alert variant="success">Changes saved.</Alert>
@@ -141,7 +141,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   progress: {
-    react: `import { Progress } from "@ausos/core";
+    react: `import { Progress } from "@uoaui/core";
 
 <Progress value={72} label="Upload" />
 <Progress value={45} label="Processing" />`,
@@ -150,7 +150,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   tooltips: {
-    react: `import { Tooltip, Button } from "@ausos/core";
+    react: `import { Tooltip, Button } from "@uoaui/core";
 
 <Tooltip content="This is a tooltip">
   <Button>Hover me</Button>
@@ -158,7 +158,7 @@ export const AUSOS_CODE: CodeSnippets = {
     html: `<div class="a-tooltip">This is a tooltip</div>`
   },
   dropdowns: {
-    react: `import { Dropdown } from "@ausos/core";
+    react: `import { Dropdown } from "@uoaui/core";
 
 <Dropdown
   placeholder="Select option"
@@ -175,7 +175,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   dialog: {
-    react: `import { Dialog, Button } from "@ausos/core";
+    react: `import { Dialog, Button } from "@uoaui/core";
 
 <Dialog open title="Confirm action">
   <p>Are you sure? This cannot be undone.</p>
@@ -196,15 +196,15 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   accordion: {
-    react: `import { Accordion } from "@ausos/core";
+    react: `import { Accordion } from "@uoaui/core";
 
-<Accordion title="What is ausos DS?">
+<Accordion title="What is uoaui DS?">
   A glassmorphism design system with frosted surfaces
   and semantic token architecture.
 </Accordion>`,
     html: `<div class="a-accordion">
   <button class="a-accordion-header">
-    What is ausos DS? <span>▾</span>
+    What is uoaui DS? <span>▾</span>
   </button>
   <div class="a-accordion-body">
     A glassmorphism design system...
@@ -212,7 +212,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </div>`
   },
   breadcrumbs: {
-    react: `import { Breadcrumbs, BreadcrumbItem } from "@ausos/core";
+    react: `import { Breadcrumbs, BreadcrumbItem } from "@uoaui/core";
 
 <Breadcrumbs>
   <BreadcrumbItem href="/">Home</BreadcrumbItem>
@@ -224,7 +224,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </nav>`
   },
   "data-table": {
-    react: `import { Table } from "@ausos/core";
+    react: `import { Table } from "@uoaui/core";
 
 <Table
   columns={[
@@ -247,7 +247,7 @@ export const AUSOS_CODE: CodeSnippets = {
 </table>`
   },
   "date-picker": {
-    react: `import { DatePicker } from "@ausos/core";
+    react: `import { DatePicker } from "@uoaui/core";
 
 <DatePicker
   label="Start date"
@@ -264,8 +264,8 @@ export const AUSOS_CODE: CodeSnippets = {
     react: `import { AgGridReact } from "ag-grid-react";
 import { themeQuartz } from "ag-grid-community";
 
-// ausos glass theme for AG Grid
-const ausosTheme = themeQuartz.withParams({
+// uoaui glass theme for AG Grid
+const uoauiTheme = themeQuartz.withParams({
   accentColor: "#7E6BC4",
   backgroundColor: "#0b1120",
   foregroundColor: "#E8EAED",
@@ -275,7 +275,7 @@ const ausosTheme = themeQuartz.withParams({
   fontFamily: "'Inter', sans-serif",
 });
 
-<AgGridReact theme={ausosTheme} rowData={data} columnDefs={cols} />`,
+<AgGridReact theme={uoauiTheme} rowData={data} columnDefs={cols} />`,
     html: `<!-- AG Grid requires JavaScript initialization -->
 <div id="grid" class="ag-theme-quartz" style="height: 400px"></div>`
   },
@@ -490,7 +490,7 @@ const ausosTheme = themeQuartz.withParams({
 
   // ── Salt parity aliases ──
   banners: {
-    react: `import { Banner } from "@ausos/core";
+    react: `import { Banner } from "@uoaui/core";
 
 <Banner variant="info">
   <span className="material-symbols-outlined">info</span>
@@ -508,7 +508,7 @@ const ausosTheme = themeQuartz.withParams({
 <div class="a-banner a-banner-danger">Service connection lost.</div>`
   },
   calendar: {
-    react: `import { Calendar } from "@ausos/core";
+    react: `import { Calendar } from "@uoaui/core";
 
 <Calendar
   value={selectedDate}
@@ -537,7 +537,7 @@ const ausosTheme = themeQuartz.withParams({
 </div>`
   },
   carousel: {
-    react: `import { Carousel, CarouselSlide } from "@ausos/core";
+    react: `import { Carousel, CarouselSlide } from "@uoaui/core";
 
 <Carousel autoplay interval={5000}>
   <CarouselSlide>
@@ -564,7 +564,7 @@ const ausosTheme = themeQuartz.withParams({
 </div>`
   },
   collapsible: {
-    react: `import { Collapsible } from "@ausos/core";
+    react: `import { Collapsible } from "@uoaui/core";
 
 const [open, setOpen] = useState(false);
 
@@ -586,7 +586,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   "data-grid": {
-    react: `import { DataGrid } from "@ausos/core";
+    react: `import { DataGrid } from "@uoaui/core";
 
 <DataGrid
   columns={[
@@ -613,7 +613,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   dropdown: {
-    react: `import { Dropdown } from "@ausos/core";
+    react: `import { Dropdown } from "@uoaui/core";
 
 <Dropdown
   placeholder="Select option"
@@ -633,7 +633,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   drawer: {
-    react: `import { Drawer } from "@ausos/core";
+    react: `import { Drawer } from "@uoaui/core";
 
 <Drawer open={drawerOpen} position="right" onClose={() => setDrawerOpen(false)}>
   <Drawer.Header>
@@ -656,7 +656,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   "form-field": {
-    react: `import { FormField, Input } from "@ausos/core";
+    react: `import { FormField, Input } from "@uoaui/core";
 
 <FormField label="Email" helperText="We'll never share your email." required>
   <Input type="email" placeholder="you@example.com" />
@@ -677,7 +677,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   "interactable-card": {
-    react: `import { InteractableCard } from "@ausos/core";
+    react: `import { InteractableCard } from "@uoaui/core";
 
 <InteractableCard
   selected={isSelected}
@@ -696,7 +696,7 @@ const [open, setOpen] = useState(false);
 </button>`
   },
   "nav-item": {
-    react: `import { NavItem } from "@ausos/core";
+    react: `import { NavItem } from "@uoaui/core";
 
 <nav className="a-nav">
   <NavItem active icon="home">Home</NavItem>
@@ -716,7 +716,7 @@ const [open, setOpen] = useState(false);
 </nav>`
   },
   overlay: {
-    react: `import { Overlay } from "@ausos/core";
+    react: `import { Overlay } from "@uoaui/core";
 
 <Overlay open={showOverlay} onClose={() => setShowOverlay(false)}>
   {/* Modal or drawer content renders on top */}
@@ -734,7 +734,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   pagination: {
-    react: `import { Pagination } from "@ausos/core";
+    react: `import { Pagination } from "@uoaui/core";
 
 <Pagination
   page={currentPage}
@@ -753,7 +753,7 @@ const [open, setOpen] = useState(false);
 </nav>`
   },
   panel: {
-    react: `import { Panel } from "@ausos/core";
+    react: `import { Panel } from "@uoaui/core";
 
 <Panel>
   <Panel.Header>
@@ -777,7 +777,7 @@ const [open, setOpen] = useState(false);
 </section>`
   },
   "skip-link": {
-    react: `import { SkipLink } from "@ausos/core";
+    react: `import { SkipLink } from "@uoaui/core";
 
 {/* Place as first focusable element in the app */}
 <SkipLink targetId="main-content">Skip to main content</SkipLink>
@@ -806,7 +806,7 @@ const [open, setOpen] = useState(false);
 </style>`
   },
   splitter: {
-    react: `import { Splitter, SplitterPanel } from "@ausos/core";
+    react: `import { Splitter, SplitterPanel } from "@uoaui/core";
 
 <Splitter orientation="horizontal">
   <SplitterPanel defaultSize={30} minSize={20}>
@@ -827,7 +827,7 @@ const [open, setOpen] = useState(false);
 </div>`
   },
   "static-list": {
-    react: `import { StaticList, StaticListItem } from "@ausos/core";
+    react: `import { StaticList, StaticListItem } from "@uoaui/core";
 
 <StaticList>
   <StaticListItem icon="check_circle" status="success">Build passed</StaticListItem>
@@ -847,7 +847,7 @@ const [open, setOpen] = useState(false);
 </ul>`
   },
   table: {
-    react: `import { Table, TableHead, TableBody, TableRow, TableCell } from "@ausos/core";
+    react: `import { Table, TableHead, TableBody, TableRow, TableCell } from "@uoaui/core";
 
 <Table>
   <TableHead>
@@ -880,7 +880,7 @@ const [open, setOpen] = useState(false);
 </table>`
   },
   "vert-nav": {
-    react: `import { VerticalNav, NavItem, NavGroup } from "@ausos/core";
+    react: `import { VerticalNav, NavItem, NavGroup } from "@uoaui/core";
 
 <VerticalNav>
   <NavItem icon="home" active>Home</NavItem>
@@ -912,7 +912,7 @@ const [open, setOpen] = useState(false);
 
   // ── Foundations ──
   "dl-color": {
-    react: `// ausos DS color tokens
+    react: `// uoaui DS color tokens
 const colors = {
   bg: "var(--a-bg)",           // #0b1120 (dark) / #FFFFFF (light)
   surface: "var(--a-surface)", // Glass surface
@@ -935,7 +935,7 @@ const colors = {
 <span className="material-symbols-outlined">settings</span>
 <span className="material-symbols-outlined">home</span>
 
-// With ausos muted styling
+// With uoaui muted styling
 <span className="material-symbols-outlined"
   style={{ fontSize: 20, color: "var(--a-fg2)" }}>
   favorite
@@ -944,7 +944,7 @@ const colors = {
 <span class="material-symbols-outlined">search</span>`
   },
   "dl-typography": {
-    react: `// ausos type scale - Inter font
+    react: `// uoaui type scale - Inter font
 const typeScale = {
   display:  { size: 48, weight: 300 },
   headline: { size: 22, weight: 600 },
@@ -987,7 +987,7 @@ const elevations = {
 </div>`
   },
   "dl-spacing": {
-    react: `// ausos spacing scale (4px base grid)
+    react: `// uoaui spacing scale (4px base grid)
 const spacing = {
   25: 2, 50: 4, 100: 8, 150: 12,
   200: 16, 300: 24, 400: 32,
@@ -1056,9 +1056,9 @@ const densities = {
   touch:  { height: 48, fontSize: 15, gap: 14 },
 };
 
-<AusosProvider density="medium">
+<UoauiProvider density="medium">
   <App />
-</AusosProvider>`,
+</UoauiProvider>`,
     html: `<!-- Density scales all component sizes -->
 <div class="density-medium">
   <button class="a-btn a-btn-primary">Medium (32px)</button>
@@ -1078,7 +1078,7 @@ const densities = {
   },
   tokens: {
     react: `// Token reference - import and use
-import { tokens } from "@ausos/core";
+import { tokens } from "@uoaui/core";
 
 // Color tokens
 tokens.color.bg;      // "#0b1120"
@@ -1103,7 +1103,7 @@ tokens.type.display;   // { size: 48, weight: 300 }`,
   },
   audit: {
     react: `// Design audit - check your code for violations
-import { audit } from "@ausos/tools";
+import { audit } from "@uoaui/tools";
 
 const result = audit(myComponent);
 // Returns: {
@@ -1121,8 +1121,8 @@ const result = audit(myComponent);
     react: `import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
-// ausos chart theme
-const ausosTheme = {
+// uoaui chart theme
+const uoauiTheme = {
   colors: T.chart, // 10-color palette
   chart: { backgroundColor: "transparent" },
   xAxis: { gridLineColor: "var(--a-border)" },
@@ -1131,10 +1131,10 @@ const ausosTheme = {
 };
 
 <HighchartsReact highcharts={Highcharts} options={{
-  ...ausosTheme,
+  ...uoauiTheme,
   series: [{ data: [1, 3, 2, 4] }],
 }} />`,
-    html: `<!-- Highcharts with ausos theme -->
+    html: `<!-- Highcharts with uoaui theme -->
 <div id="chart"></div>
 <script>
   Highcharts.chart('chart', {
@@ -1147,7 +1147,7 @@ const ausosTheme = {
   // ── Patterns ──
   "pat-dashboard": {
     react: `// Analytical Dashboard pattern
-import { Card, Table, Badge, Progress } from "@ausos/core";
+import { Card, Table, Badge, Progress } from "@uoaui/core";
 
 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
   <Card>
@@ -1169,7 +1169,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 </div>`
   },
   "pat-form": {
-    react: `import { FormField, Input, Button } from "@ausos/core";
+    react: `import { FormField, Input, Button } from "@uoaui/core";
 
 <form>
   <FormField label="Full Name" required>
@@ -1234,7 +1234,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 </div>`
   },
   "pat-login": {
-    react: `import { Input, Button } from "@ausos/core";
+    react: `import { Input, Button } from "@uoaui/core";
 
 <div style={{ maxWidth: 400, margin: "0 auto" }}>
   <h1>Sign in</h1>
@@ -1257,7 +1257,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 </div>`
   },
   "pat-settings": {
-    react: `import { SidebarItem, Input, Switch } from "@ausos/core";
+    react: `import { SidebarItem, Input, Switch } from "@uoaui/core";
 
 <div style={{ display: "flex", gap: 24 }}>
   <nav style={{ width: 200 }}>
@@ -1285,7 +1285,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 </div>`
   },
   "pat-search": {
-    react: `import { Input, Button, Card } from "@ausos/core";
+    react: `import { Input, Button, Card } from "@uoaui/core";
 
 <Input placeholder="Search templates..." fullWidth />
 <div style={{ display: "flex", gap: 8 }}>
@@ -1305,7 +1305,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 <div class="a-card">Dashboard Kit</div>`
   },
   "pat-wizard": {
-    react: `import { Stepper, Step, Input, Button } from "@ausos/core";
+    react: `import { Stepper, Step, Input, Button } from "@uoaui/core";
 
 <Stepper activeStep={0}>
   <Step label="Details" />
@@ -1327,7 +1327,7 @@ import { Card, Table, Badge, Progress } from "@ausos/core";
 </div>`
   },
   "pat-data-table": {
-    react: `import { Input, Button, Table, Badge } from "@ausos/core";
+    react: `import { Input, Button, Table, Badge } from "@uoaui/core";
 
 <div style={{ display: "flex", gap: 8 }}>
   <Input placeholder="Filter..." style={{ flex: 1 }} />

@@ -58,7 +58,7 @@ import { ZoneDropContainer } from "./ZoneDropContainer";
 /* ══════════════════════════════════════════════════════════
    DSPreviewStyles - injects design-system CSS into the builder.
    ══════════════════════════════════════════════════════════
-   Salt / M3 / Fluent / ausos ship their component styling through
+   Salt / M3 / Fluent / uoaui ship their component styling through
    pre-baked .s-*, .m3-*, .f-*, .a-* rules in builder.css, but the
    Carbon .cb-* rules live in carbonBuildCSS() (so they can read the
    active Carbon theme). We mirror the DesignHubApp pattern here and
@@ -142,7 +142,7 @@ const SAMPLE_MESSAGES = [
    Replaces the old two-row DeviceControls + PreviewToolbar.
 
    Layout (left → right):
-     [← Chat]  [↶ ↷]  [🖥 📱 📞]  [Salt · M3 · Fluent · ausos]
+     [← Chat]  [↶ ↷]  [🖥 📱 📞]  [Salt · M3 · Fluent · uoaui]
      [🌓]  [Compare]  [High · Medium · Low]  [</> Code]  [⋯]
 
    Rare actions (Refresh, Pop-out, Library toggle, Share,
@@ -198,11 +198,11 @@ function PreviewBar() {
     };
   }, [overflowOpen]);
 
-  const dsSystems: { key: "salt" | "m3" | "fluent" | "ausos" | "carbon"; label: string }[] = [
+  const dsSystems: { key: "salt" | "m3" | "fluent" | "uoaui" | "carbon"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
     { key: "fluent", label: "Fluent 2" },
-    { key: "ausos", label: "ausos" },
+    { key: "uoaui", label: "uoaui" },
     { key: "carbon", label: "Carbon" },
   ];
 

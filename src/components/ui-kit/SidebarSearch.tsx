@@ -23,9 +23,9 @@ export const SidebarSearch = React.memo(function SidebarSearch() {
         onChange={e => setSearchQuery(e.target.value)}
         className={inputClass}
         style={{
-          background: activeSystem === "ausos" ? "transparent" : activeSystem === "m3" ? t.bg : t.bg2,
+          background: activeSystem === "uoaui" ? "transparent" : activeSystem === "m3" ? t.bg : t.bg2,
           color: t.fg, border: `1px solid ${t.border}`,
-          borderRadius: activeSystem === "ausos" ? 9999 : activeSystem === "m3" ? 28 : 4,
+          borderRadius: activeSystem === "uoaui" ? 9999 : activeSystem === "m3" ? 28 : 4,
           padding: `${t.scale.gap - 1}px 10px ${t.scale.gap - 1}px 28px`,
           fontSize: t.scale.navF, fontFamily: t.font, outline: "none", width: "100%",
           boxSizing: "border-box" as const,

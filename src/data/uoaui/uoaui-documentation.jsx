@@ -1,17 +1,17 @@
 import React, { useState } from "react";
-import { ausosTokenVars, AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER } from "./tokens";
+import { uoauiTokenVars, UOAUI_MOTION, UOAUI_OPACITY, UOAUI_RADIUS, UOAUI_SHADOW, UOAUI_BORDER } from "./tokens";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
-export { THEMES as AUSOS_THEMES, buildCSS as ausosBuildCSS, COMPS as AUSOS_COMPS, CATS as AUSOS_CATS, AIcon, FONT as AUSOS_FONT };
-export { AUSOS_MOTION, AUSOS_OPACITY, AUSOS_RADIUS, AUSOS_SHADOW, AUSOS_BORDER };
-export function setAusosT(theme) { T = theme; }
-export function getAusosT() { return T; }
-export function getAusosPreviews() { return PREVIEWS; }
-export function getAusosDemoComponent(id) {
+export { THEMES as UOAUI_THEMES, buildCSS as uoauiBuildCSS, COMPS as UOAUI_COMPS, CATS as UOAUI_CATS, AIcon, FONT as UOAUI_FONT };
+export { UOAUI_MOTION, UOAUI_OPACITY, UOAUI_RADIUS, UOAUI_SHADOW, UOAUI_BORDER };
+export function setUoauiT(theme) { T = theme; }
+export function getUoauiT() { return T; }
+export function getUoauiPreviews() { return PREVIEWS; }
+export function getUoauiDemoComponent(id) {
   const comp = COMPS.find(c => c.id === id);
   return comp ? comp.render : null;
 }
-export function getAusosDensityCSS(density) {
+export function getUoauiDensityCSS(density) {
   const densityMap = {
     high:   { h: 24, pad: 8,  fs: 11, iconS: 14, sideW: 200, sidePad: 10, mainPad: 20, cardMin: 160, gap: 8,  bodyFs: 11, labelFs: 11, headFs: 20, subFs: 10, gridGap: 8,  cardPad: 12, sideItemPad: "6px 10px", sideFs: 10, topBarH: 28, cardRadius: 18 },
     medium: { h: 32, pad: 14, fs: 13, iconS: 18, sideW: 260, sidePad: 14, mainPad: 28, cardMin: 200, gap: 12, bodyFs: 13, labelFs: 13, headFs: 24, subFs: 11, gridGap: 14, cardPad: 20, sideItemPad: "8px 14px", sideFs: 12, topBarH: 40, cardRadius: 24 },
@@ -38,7 +38,7 @@ export function getAusosDensityCSS(density) {
   `;
 }
 
-/* ── AUSOS THEME PALETTES ──
+/* ── UOAUI THEME PALETTES ──
    Following dark mode best practices:
    - Base bg near-black (#0b1120), surfaces step up 5-8% luminance each
    - Primary text off-white (#E8EAED) not pure white - reduces eye strain
@@ -131,7 +131,7 @@ function AIcon({ name, size = 18, color }) {
 
 /* ── GLOBAL STYLES ── */
 /* Mode detection — theme objects declare { name: 'Dark'|'Light' } and are
-   swapped via setAusosT(). ausosTokenVars() emits mode-aware CSS var
+   swapped via setUoauiT(). uoauiTokenVars() emits mode-aware CSS var
    declarations for motion, opacity-glass, radius, and shadow. */
 const modeOf = (T) => (T?.name === "Light" ? "light" : "dark");
 const buildCSS = (T) => `
@@ -140,7 +140,7 @@ const buildCSS = (T) => `
 
 :root {
   color-scheme: ${modeOf(T)};
-  ${ausosTokenVars(modeOf(T))}
+  ${uoauiTokenVars(modeOf(T))}
   --a-gradient: ${T.gradient};
   --a-gradient-subtle: ${T.gradientSubtle};
 }
@@ -722,7 +722,7 @@ function Accordion() {
     <div style={{ fontFamily: FONT, maxWidth: 320 }}>
       <div className="a-accordion">
         <button type="button" className="a-accordion-header" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls={bodyId}>
-          <span>What is ausos DS?</span>
+          <span>What is uoaui DS?</span>
           <AIcon name={open ? "expand_less" : "expand_more"} size={16} color={T.fg3} />
         </button>
         {open && <div id={bodyId} className="a-accordion-body">A glassmorphism design system with frosted surfaces, muted accents, and semantic token architecture.</div>}

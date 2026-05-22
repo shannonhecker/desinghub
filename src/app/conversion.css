@@ -1298,7 +1298,7 @@
 .hero.landing-page .system-row[data-system="m3"]     { --system-row-dot: var(--dh-preview-m3-a); }
 .hero.landing-page .system-row[data-system="fluent"] { --system-row-dot: var(--dh-preview-fluent-a); }
 .hero.landing-page .system-row[data-system="carbon"] { --system-row-dot: var(--dh-preview-carbon-a); }
-.hero.landing-page .system-row[data-system="ausos"]  { --system-row-dot: var(--dh-preview-ausos-a); }
+.hero.landing-page .system-row[data-system="uoaui"]  { --system-row-dot: var(--dh-preview-uoaui-a); }
 
 .hero.landing-page .system-row-name {
   margin: 0;

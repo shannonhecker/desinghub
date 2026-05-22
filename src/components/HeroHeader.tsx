@@ -26,7 +26,7 @@ import { getBentoGraphic } from "./landing/BentoGraphics";
 import "./hero.css";
 
 const ACCESS_EMAIL = "shannonheckerchen@gmail.com";
-const ACCESS_MAILTO = `mailto:${ACCESS_EMAIL}?subject=ausos%20studio%20access`;
+const ACCESS_MAILTO = `mailto:${ACCESS_EMAIL}?subject=uoaui%20studio%20access`;
 
 const navItems = [
   { label: "Demo", href: "#demo" },
@@ -62,8 +62,8 @@ const systems = [
     signal: "Data first",
   },
   {
-    key: "ausos",
-    name: "ausos",
+    key: "uoaui",
+    name: "uoaui",
     detail: "Glass-native AI workspace patterns that keep prompts, variants, and exports visible.",
     signal: "AI native",
   },
@@ -83,7 +83,7 @@ const workflow = [
   {
     eyebrow: "03",
     title: "Compare",
-    body: "Switch the same canvas through Salt, Material 3, Fluent 2, Carbon, and ausos. Tokens, density, and chrome update in place.",
+    body: "Switch the same canvas through Salt, Material 3, Fluent 2, Carbon, and uoaui. Tokens, density, and chrome update in place.",
   },
   {
     eyebrow: "04",
@@ -133,7 +133,7 @@ const markers = [
 ];
 
 const proof = [
-  { icon: Layers, value: "5 systems", label: "Salt, Material, Fluent, Carbon, and ausos from one brief" },
+  { icon: Layers, value: "5 systems", label: "Salt, Material, Fluent, Carbon, and uoaui from one brief" },
   { icon: MonitorSmartphone, value: "Responsive", label: "desktop, tablet, and mobile previews" },
   { icon: Code2, value: "Exports", label: "React, HTML, and Vite handoff paths" },
   { icon: Eye, value: "Review links", label: "private previews ready for stakeholder critique" },
@@ -143,8 +143,8 @@ const bentoProof = [
   {
     key: "systems",
     title: "Compare system directions",
-    body: "Move the same product brief through enterprise, Material, Fluent, Carbon, and ausos treatments.",
-    visual: ["Salt", "M3", "Fluent", "Carbon", "ausos"],
+    body: "Move the same product brief through enterprise, Material, Fluent, Carbon, and uoaui treatments.",
+    visual: ["Salt", "M3", "Fluent", "Carbon", "uoaui"],
   },
   {
     key: "frames",
@@ -194,7 +194,7 @@ const previewSystems = [
   { key: "m3", label: "M3" },
   { key: "fluent", label: "Fluent" },
   { key: "carbon", label: "Carbon" },
-  { key: "ausos", label: "ausos" },
+  { key: "uoaui", label: "uoaui" },
 ] as const;
 
 type PreviewSystemKey = (typeof previewSystems)[number]["key"];
@@ -340,12 +340,12 @@ const previewDemoSteps: PreviewDemoStep[] = [
     id: "share",
     mode: "light",
     phase: "share",
-    system: "ausos",
+    system: "uoaui",
     layout: "glass",
     status: "Ready to share",
-    prompt: "Package the ausos AI workspace with glass panels, preview link, and clean handoff.",
+    prompt: "Package the uoaui AI workspace with glass panels, preview link, and clean handoff.",
     toolbar: ["Desktop", "Light", "Balanced"],
-    surfaceLabel: "ausos workspace",
+    surfaceLabel: "uoaui workspace",
     title: "AI Builder Handoff",
     body: "Translucent panels, prompt context, and share states stay polished without hiding content.",
     metrics: [
@@ -360,7 +360,7 @@ const previewDemoSteps: PreviewDemoStep[] = [
     ],
     chart: [66, 82, 74, 92, 80, 96],
     shareLabel: "Share link copied",
-    exportLabel: "ausos handoff",
+    exportLabel: "uoaui handoff",
   },
 ];
 
@@ -699,7 +699,7 @@ function RequestAccessModal({
         <span className="section-kicker">Private preview</span>
         <h2 id="access-title">Request studio access.</h2>
         <p>
-          Tell me where ausos fits in your workflow. I will use this to prioritize
+          Tell me where uoaui fits in your workflow. I will use this to prioritize
           access and shape the builder around real product work.
         </p>
 
@@ -942,7 +942,7 @@ export function HeroHeader() {
         aria-label="Primary"
         data-hero-enter
       >
-        <Link href="/" className="landing-brand" aria-label="ausos home">
+        <Link href="/" className="landing-brand" aria-label="uoaui home">
           <span className="landing-brand-mark" aria-hidden="true">
             <img src="/aologo.svg" alt="" className="landing-brand-logo" />
           </span>
@@ -1071,10 +1071,10 @@ export function HeroHeader() {
               AI builder for five enterprise design systems
             </div>
             <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or ausos</span>
+              Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or uoaui</span>
             </h1>
             <p className="hero-body" data-hero-enter>
-              ausōs turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
+              uoaui turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
             </p>
             <div className="hero-actions" data-hero-enter>
               <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
@@ -1109,7 +1109,7 @@ export function HeroHeader() {
                 <span />
                 <span />
                 <span />
-                <strong>ausos studio</strong>
+                <strong>uoaui studio</strong>
               </div>
               <div className="hero-ai-product-body">
                 <aside>
@@ -1117,7 +1117,7 @@ export function HeroHeader() {
                   <span>M3</span>
                   <span>Fluent</span>
                   <span>Carbon</span>
-                  <span>ausos</span>
+                  <span>uoaui</span>
                 </aside>
                 <div className="hero-ai-canvas">
                   <div className="hero-ai-prompt">
@@ -1162,7 +1162,7 @@ export function HeroHeader() {
           <span className="section-kicker">Product proof</span>
           <h2 id="bento-title">Every output stays tied to real interface work.</h2>
           <p>
-            ausos is built around the pieces teams review: system language, responsive
+            uoaui is built around the pieces teams review: system language, responsive
             framing, export path, and the context behind each decision.
           </p>
         </div>
@@ -1198,7 +1198,7 @@ export function HeroHeader() {
           <span className="section-kicker">Built for</span>
           <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
           <p>
-            ausos is being built by Shannon for early product exploration: the moment
+            uoaui is being built by Shannon for early product exploration: the moment
             when a brief needs to become a credible interface direction fast.
           </p>
         </div>
@@ -1246,7 +1246,7 @@ export function HeroHeader() {
           <span className="section-kicker">Systems</span>
           <h2>One interface idea, five distinct product languages.</h2>
           <p>
-            ausos keeps each system's rhythm intact, from dense trading screens to softer
+            uoaui keeps each system's rhythm intact, from dense trading screens to softer
             review surfaces and glass-native AI workspaces.
           </p>
         </div>
@@ -1330,7 +1330,7 @@ export function HeroHeader() {
       </section>
 
       <footer className="landing-footer">
-        <span>ausos</span>
+        <span>uoaui</span>
         <span>AI-powered design-system builder</span>
       </footer>
       <RequestAccessModal

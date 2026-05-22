@@ -57,7 +57,7 @@ export function BuilderApp() {
 
   /* Accent override: when a user sets `colorOverrides.accent` in
      SettingsPanel, paint the per-DS accent CSS var so the canvas
-     reflects the choice. Sa+ausos share lineage; salt also gets
+     reflects the choice. Sa+uoaui share lineage; salt also gets
      the override so glass tints follow. */
   const colorOverrides = useBuilder((s) => s.colorOverrides);
   const accentOverride = colorOverrides[ACCENT_KEY_BY_DS[designSystem]];
@@ -70,8 +70,8 @@ export function BuilderApp() {
     root.style.removeProperty("--salt-palette-accent");
     if (accentOverride) {
       root.style.setProperty(ACCENT_VAR_BY_DS[designSystem], accentOverride);
-      /* ausos's glass tint inherits Salt's accent via --salt-palette-accent. */
-      if (designSystem === "ausos") {
+      /* uoaui's glass tint inherits Salt's accent via --salt-palette-accent. */
+      if (designSystem === "uoaui") {
         root.style.setProperty("--salt-palette-accent", accentOverride);
       }
     }
@@ -374,8 +374,8 @@ export function BuilderApp() {
             >
               <img
                 src="/aologo.svg"
-                alt="ausōs"
-                className="ausos-logo-img"
+                alt="uoaui"
+                className="uoaui-logo-img"
               />
             </Link>
             <button
@@ -519,7 +519,7 @@ export function BuilderApp() {
 
         {/* ── Copyright - in-flow below chat, never overlaps content ── */}
         <div className="builder-copyright-fixed" aria-hidden="true">
-          &copy; {new Date().getFullYear()} ausōs. All rights reserved.
+          &copy; {new Date().getFullYear()} uoaui. All rights reserved.
         </div>
       </main>
 

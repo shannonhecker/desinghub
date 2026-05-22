@@ -42,7 +42,7 @@ jobs:
           DS_TOUCHED=""
 
           # Count which DS directories changed
-          for ds in salt m3 fluent carbon ausos; do
+          for ds in salt m3 fluent carbon uoaui; do
             if echo "$CHANGED" | grep -qE "^src/data/${ds}/"; then
               DS_TOUCHED="${DS_TOUCHED}${ds} "
             fi
@@ -124,7 +124,7 @@ jobs:
               ...(gates.design ? [
                 '**Design**',
                 '- [ ] `npm run tokens:audit` exits 0 (no new literals)',
-                '- [ ] Per-DS spec names used (Salt characteristic / M3 shape / Fluent duration / Carbon motion / ausos glass)',
+                '- [ ] Per-DS spec names used (Salt characteristic / M3 shape / Fluent duration / Carbon motion / uoaui glass)',
                 '- [ ] Hover / focus / pressed / disabled states all defined',
                 '- [ ] Density or size variants tested (where applicable)',
                 '',

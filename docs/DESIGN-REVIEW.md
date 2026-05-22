@@ -48,9 +48,9 @@ A one-paragraph "why + what" you can paste at the top of the PR description, wit
 
 ### Criteria
 - [ ] Tokens only — no raw hex, spacing px, font-size, duration, or radius in `src/data/**` outside `tokens.ts` files. Verified via `npm run tokens:audit`.
-- [ ] Per-DS spec adherence — Salt characteristic tokens, M3 shape ladder, Fluent duration names (`durationFaster/Fast/Normal`), Carbon productive/expressive motion, ausos glass opacity scale.
+- [ ] Per-DS spec adherence — Salt characteristic tokens, M3 shape ladder, Fluent duration names (`durationFaster/Fast/Normal`), Carbon productive/expressive motion, uoaui glass opacity scale.
 - [ ] Interaction patterns consistent across the DS — hover / focus / pressed / disabled states all present.
-- [ ] Responsive behavior defined — if density/size variants apply (Salt H/M/L/T, Carbon compact/normal/spacious, Fluent S/M/L, M3 density offset, ausos H/M/L/T).
+- [ ] Responsive behavior defined — if density/size variants apply (Salt H/M/L/T, Carbon compact/normal/spacious, Fluent S/M/L, M3 density offset, uoaui H/M/L/T).
 - [ ] Content strategy — labels active-voice + Title Case, error messages include fix, specific button labels (not "Continue").
 - [ ] Design system components used — prefer existing `.a-*` / `.cb-*` / `.f-*` / `.m3-*` / `.s-*` utility classes + token CSS vars before introducing new ones.
 
@@ -113,7 +113,7 @@ Merged PR with all CI checks ✓, reviewer walkthrough approved in a comment.
 Every review — concept through QA — asks these five questions:
 
 1. **Does it solve the user problem?** (Design Hub user = design engineer evaluating / comparing / shipping across DSs.)
-2. **Is it consistent with the active DS?** (Salt vs. M3 vs. Fluent vs. Carbon vs. ausos each have their own spec conventions.)
+2. **Is it consistent with the active DS?** (Salt vs. M3 vs. Fluent vs. Carbon vs. uoaui each have their own spec conventions.)
 3. **Is it accessible (WCAG 2.1 AA)?**
 4. **Are all states and edge cases covered?**
 5. **Is it feasible and sustainable to maintain?** (Does it add cross-DS coupling? Does it depend on external packages we don't control?)

@@ -10,12 +10,12 @@ import type { TemplateId } from "@/lib/builderTemplates";
    miniature that matches the template's real composition.
 
    Each SVG is 220 × 130 (2x pattern card aspect) and uses the
-   ausos accent (muted violet) for emphasis strokes + semantic
+   uoaui accent (muted violet) for emphasis strokes + semantic
    tokens for surfaces so it works in both dark and light modes.
    ══════════════════════════════════════════════════════════ */
 
 const FG = "currentColor";
-const ACCENT = "#9484D6"; // muted violet, ausos accent - always visible over both modes
+const ACCENT = "#9484D6"; // muted violet, uoaui accent - always visible over both modes
 const MUTED = "rgba(128, 128, 128, 0.35)";
 const BG_BAR = "rgba(128, 128, 128, 0.2)";
 

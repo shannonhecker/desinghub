@@ -19,7 +19,7 @@ const codeMapLoaders: Record<string, () => Promise<CodeSnippets>> = {
   salt:   () => import("@/data/salt/code-snippets").then((m) => m.SALT_CODE),
   m3:     () => import("@/data/m3/code-snippets").then((m) => m.M3_CODE),
   fluent: () => import("@/data/fluent/code-snippets").then((m) => m.FLUENT_CODE),
-  ausos:  () => import("@/data/ausos/code-snippets").then((m) => m.AUSOS_CODE),
+  uoaui:  () => import("@/data/uoaui/code-snippets").then((m) => m.UOAUI_CODE),
   carbon: () => import("@/data/carbon/code-snippets").then((m) => m.CARBON_CODE),
 };
 const codeMapCache: Record<string, CodeSnippets> = {};
@@ -31,7 +31,7 @@ const SYSTEM_PACKAGES: Record<string, { pkg: string; docsUrl: string; componentB
   salt:   { pkg: "@salt-ds/core",              docsUrl: "https://www.saltdesignsystem.com/salt/components/", componentBase: "https://www.saltdesignsystem.com/salt/components/" },
   m3:     { pkg: "@mui/material",              docsUrl: "https://m3.material.io/components",                 componentBase: "https://mui.com/material-ui/react-" },
   fluent: { pkg: "@fluentui/react-components", docsUrl: "https://react.fluentui.dev/",                       componentBase: "https://react.fluentui.dev/?path=/docs/components-" },
-  ausos:  { pkg: "@ausos/core",                docsUrl: "#",                                                  componentBase: "#" },
+  uoaui:  { pkg: "@uoaui/core",                docsUrl: "#",                                                  componentBase: "#" },
   carbon: { pkg: "@carbon/react",              docsUrl: "https://carbondesignsystem.com/components/",         componentBase: "https://react.carbondesignsystem.com/?path=/docs/components-" },
 };
 
@@ -89,7 +89,7 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
     (match) => `<span class="syn-token-copyable" data-token="${match.replace(/"/g, "&quot;")}">${match}</span>`
   );
 
-  const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "ausos" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
+  const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "uoaui" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
   // Detect light theme - if bg luminance is high, use light syntax colors
   const isLight = (() => {
@@ -204,7 +204,7 @@ export function CodePanel({ componentId }: { componentId: string }) {
   /* DS card class for code block containers */
   const cardCls = activeSystem === "salt" ? "s-card"
     : activeSystem === "m3" ? "m3-card"
-    : activeSystem === "ausos" ? "a-card"
+    : activeSystem === "uoaui" ? "a-card"
     : activeSystem === "carbon" ? "cb-tile"
     : "f-card";
 

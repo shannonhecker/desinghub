@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type SystemId = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
+export type SystemId = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 /* Tabs shown on a component detail page. Carbon mirrors the
    carbondesignsystem.com 5-tab shape: Overview / Usage / Style /
    Code / Accessibility. Other DSes only use preview + code. */
@@ -15,7 +15,7 @@ interface DesignHubState {
   salt: { themeKey: string; density: string };
   m3: { themeKey: string; density: number; customColor: string; isDarkCustom: boolean };
   fluent: { themeKey: string; size: string };
-  ausos: { themeKey: string; density: string; accentColor: string };
+  uoaui: { themeKey: string; density: string; accentColor: string };
   /* Carbon has 4 themes: white (default light), g10 (alt light), g90 (alt
      dark), g100 (default dark). Density ladder: compact / normal / spacious
      matching Carbon spacing-01..13 tokens. */
@@ -34,9 +34,9 @@ interface DesignHubState {
   setM3DarkCustom: (d: boolean) => void;
   setFluentTheme: (key: string) => void;
   setFluentSize: (s: string) => void;
-  setAusosTheme: (key: string) => void;
-  setAusosDensity: (d: string) => void;
-  setAusosAccent: (c: string) => void;
+  setUoauiTheme: (key: string) => void;
+  setUoauiDensity: (d: string) => void;
+  setUoauiAccent: (c: string) => void;
   setCarbonTheme: (key: string) => void;
   setCarbonDensity: (d: string) => void;
   setSelectedComponent: (id: string | null) => void;
@@ -47,13 +47,13 @@ interface DesignHubState {
 
 export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   activeSystem: 'salt',
-  /* Dark-default across all 5 DS — matches the ausos.ai brand (dark-first
+  /* Dark-default across all 5 DS — matches the uoaui.ai brand (dark-first
      hero + builder mode='dark' in useBuilder). Users can still switch to
      any light theme via the per-DS theme picker. */
   salt: { themeKey: 'jpm-dark', density: 'medium' },
   m3: { themeKey: 'dark', density: 0, customColor: '#6750A4', isDarkCustom: true },
   fluent: { themeKey: 'dark', size: 'medium' },
-  ausos: { themeKey: 'dark', density: 'medium', accentColor: '#7E6BC4' },
+  uoaui: { themeKey: 'dark', density: 'medium', accentColor: '#7E6BC4' },
   /* g100 is Carbon's canonical dark theme (pairs with g90, white, g10). */
   carbon: { themeKey: 'g100', density: 'normal' },
   selectedComponent: null,
@@ -73,11 +73,11 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   setM3DarkCustom: (d) => set((st) => ({ m3: { ...st.m3, isDarkCustom: d } })),
   setFluentTheme: (key) => set((st) => ({ fluent: { ...st.fluent, themeKey: key } })),
   setFluentSize: (s) => set((st) => ({ fluent: { ...st.fluent, size: s } })),
-  setAusosTheme: (key) => set((st) => ({ ausos: { ...st.ausos, themeKey: key } })),
-  setAusosDensity: (d) => set((st) => ({ ausos: { ...st.ausos, density: d } })),
-  setAusosAccent: (c) => {
+  setUoauiTheme: (key) => set((st) => ({ uoaui: { ...st.uoaui, themeKey: key } })),
+  setUoauiDensity: (d) => set((st) => ({ uoaui: { ...st.uoaui, density: d } })),
+  setUoauiAccent: (c) => {
     if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
-    set((st) => ({ ausos: { ...st.ausos, accentColor: c } }));
+    set((st) => ({ uoaui: { ...st.uoaui, accentColor: c } }));
   },
   setCarbonTheme: (key) => set((st) => ({ carbon: { ...st.carbon, themeKey: key } })),
   setCarbonDensity: (d) => set((st) => ({ carbon: { ...st.carbon, density: d } })),
@@ -98,7 +98,7 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
     salt: state.salt,
     m3: state.m3,
     fluent: state.fluent,
-    ausos: state.ausos,
+    uoaui: state.uoaui,
     carbon: state.carbon,
   }),
 }));

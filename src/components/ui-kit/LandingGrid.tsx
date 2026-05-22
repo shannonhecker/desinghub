@@ -25,7 +25,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
     ? [{ icon: "layers", label: "3-Layer Tokens" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
     : activeSystem === "m3"
     ? [{ icon: "palette", label: "Dynamic Color" }, { icon: "accessibility_new", label: "WCAG AA" }]
-    : activeSystem === "ausos"
+    : activeSystem === "uoaui"
     ? [{ icon: "blur_on", label: "Glassmorphism" }, { icon: "gradient", label: "Aurora Themes" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
     : activeSystem === "carbon"
     ? [{ icon: "grid_view", label: "2px Grid" }, { icon: "palette", label: "4 Themes" }, { icon: "density_small", label: "7 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }]
@@ -40,7 +40,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
     ? " accessible, density-aware, token-driven design system."
     : activeSystem === "m3"
     ? " expressive, adaptive, and accessible design system."
-    : activeSystem === "ausos"
+    : activeSystem === "uoaui"
     ? " glassmorphism-first, accessible, and token-driven design system."
     : activeSystem === "carbon"
     ? " IBM's open-source design system for products and digital experiences."
@@ -48,8 +48,8 @@ export const LandingGrid = React.memo(function LandingGrid() {
 
   /* Carbon is flat: 0px radius on cards, no shadows, Plex Light
      hero, tag-style pills (16px), $layer-accent pill bg. */
-  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "ausos" ? undefined : activeSystem === "carbon" ? "cb-tile" : "f-card";
-  const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "ausos" ? 14 : activeSystem === "carbon" ? 0 : 8;
+  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "uoaui" ? undefined : activeSystem === "carbon" ? "cb-tile" : "f-card";
+  const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "uoaui" ? 14 : activeSystem === "carbon" ? 0 : 8;
   const pillRadius = activeSystem === "salt" ? 4 : activeSystem === "carbon" ? 16 : 20;
   const pillWeight = activeSystem === "salt" ? 600 : activeSystem === "carbon" ? 400 : 500;
   const catWeight = activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 400 : 600;
@@ -107,10 +107,10 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     style={{
                       width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
                       borderRadius: cardRadius,
-                      border: activeSystem === "ausos" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
-                      background: activeSystem === "ausos" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
-                      backdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
-                      WebkitBackdropFilter: activeSystem === "ausos" ? t.T.glass : undefined,
+                      border: activeSystem === "uoaui" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
+                      background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
+                      backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
+                      WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
                       transition: "background 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-color 200ms",
                     }}
                   >
@@ -118,7 +118,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                       /* Carbon preview tile uses $layer-accent (a half-step
                          deeper than layer-01 where the card body sits) to
                          separate the preview visually without shadow. */
-                      background: activeSystem === "ausos" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
+                      background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
                       padding: 20, minHeight: 60,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       borderBottom: `1px solid ${t.border}`,

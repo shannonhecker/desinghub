@@ -44,7 +44,7 @@ export const ACCENT_PRESETS: Record<DesignSystem, AccentPreset[]> = {
     { hex: "#8A3FFC", label: "Purple" },
     { hex: "#FA4D56", label: "Magenta" },
   ],
-  ausos: [
+  uoaui: [
     { hex: "#7E6BC4", label: "Aurora violet" },
     { hex: "#5EE7DF", label: "Mint" },
     { hex: "#F78AB8", label: "Rose" },
@@ -60,7 +60,7 @@ export const ACCENT_VAR_BY_DS: Record<DesignSystem, string> = {
   m3: "--md-sys-color-primary",
   fluent: "--colorBrandBackground",
   carbon: "--cds-interactive",
-  ausos: "--a-accent",
+  uoaui: "--a-accent",
 };
 
 /* Per-DS lookup key into `colorOverrides` for the primary accent.
@@ -70,5 +70,5 @@ export const ACCENT_KEY_BY_DS: Record<DesignSystem, string> = {
   m3: "primary",
   fluent: "brandBg",
   carbon: "accent",
-  ausos: "accent",
+  uoaui: "accent",
 };

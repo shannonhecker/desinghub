@@ -5,7 +5,7 @@ import React, { useState, FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import "./login.css";
 
-const ACCESS_EMAIL = "mailto:shannonheckerchen@gmail.com?subject=ausos%20studio%20access";
+const ACCESS_EMAIL = "mailto:shannonheckerchen@gmail.com?subject=uoaui%20studio%20access";
 
 export default function LoginPage() {
   const [error, setError] = useState(false);
@@ -48,11 +48,11 @@ export default function LoginPage() {
 
       <div className="login-layout">
         <section className="login-story" aria-labelledby="login-title">
-          <Link href="/" className="login-brand-link" aria-label="Back to ausos landing page">
+          <Link href="/" className="login-brand-link" aria-label="Back to uoaui landing page">
             <span className="login-mark" aria-hidden="true">
               <img src="/aologo.svg" alt="" />
             </span>
-            <span>ausos</span>
+            <span>uoaui</span>
           </Link>
           <div className="login-kicker">
             <Sparkles size={16} strokeWidth={1.8} aria-hidden="true" />
@@ -61,7 +61,7 @@ export default function LoginPage() {
           <h1 id="login-title">Enter the design-system studio.</h1>
           <p>
             Use your private-preview password to open the working builder, where prompts
-            become Salt DS, Material 3, Fluent 2, Carbon, and ausos interface directions.
+            become Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions.
           </p>
           <div className="login-proof-row" aria-label="Studio capabilities">
             <span>Prompt</span>

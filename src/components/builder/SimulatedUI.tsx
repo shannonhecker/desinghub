@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import * as CarbonIcons from "@carbon/icons-react";
 
 interface SimProps {
-  system: "salt" | "m3" | "fluent" | "ausos" | "carbon";
+  system: "salt" | "m3" | "fluent" | "uoaui" | "carbon";
 }
 
-/* Map Material Symbols names (used by Salt / M3 / Fluent / ausos
+/* Map Material Symbols names (used by Salt / M3 / Fluent / uoaui
    simulators) to their @carbon/icons-react equivalents so the Carbon
    branch renders native Carbon glyphs without duplicating every
    block. Keys match the exact Material Symbols tokens used in this
@@ -68,7 +68,7 @@ const CARBON_ICON_MAP: Record<string, string> = {
   smart_toy: "Dashboard",
 };
 
-/* SimIcon - system-aware icon renderer. Salt / M3 / Fluent / ausos
+/* SimIcon - system-aware icon renderer. Salt / M3 / Fluent / uoaui
    all share the Material Symbols font (wired in src/app/layout.tsx),
    so for those systems we render the legacy <span> glyph. Carbon
    swaps to the matching @carbon/icons-react SVG component; unknown

@@ -5,7 +5,7 @@
  *   1. Uses the DS's accent + semantic tokens where they map cleanly.
  *   2. Fills in with DS-appropriate hues (teal/blue for Salt JPM,
  *      violet/purple for M3, brand-blue for Fluent, muted violet/
- *      aurora for ausos).
+ *      aurora for uoaui).
  *   3. Passes basic contrast checks on both dark and light canvases.
  *
  * The first 4 entries are the "primary quadrant" (accent, positive,
@@ -88,8 +88,8 @@ export const CATEGORICAL_PALETTES: Record<DesignSystem, string[]> = {
     "#006D75", // teal
     "#CA5010", // coral
   ],
-  /* ausos - proprietary: muted violet + aurora palette */
-  ausos: [
+  /* uoaui - proprietary: muted violet + aurora palette */
+  uoaui: [
     "#7E6BC4", // accent muted violet
     "#5AAE8C", // positive sage
     "#D4A574", // warning warm amber

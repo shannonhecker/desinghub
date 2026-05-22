@@ -52,7 +52,7 @@ import { GroupDropContainer } from "./GroupDropContainer";
 import { computeGroupItemStyle } from "@/lib/layoutResolver";
 import type { Block } from "@/store/useBuilder";
 
-type DesignSystem = "salt" | "m3" | "fluent" | "ausos" | "carbon";
+type DesignSystem = "salt" | "m3" | "fluent" | "uoaui" | "carbon";
 
 interface ComponentRendererProps {
   type: string;

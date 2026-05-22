@@ -18,7 +18,7 @@ export type Mode = 'light' | 'dark' | 'contrast';
 
 /**
  * Density scale-index. Per-DS DENSITY_MAP translates these into px.
- * Salt / ausos use the full 4-tier range.
+ * Salt / uoaui use the full 4-tier range.
  * M3 uses a density-offset model (-3..0) — see getM3LayoutDensity.
  * Carbon uses compact / normal / spacious (maps to compact / default / comfortable).
  * Fluent does NOT use density — it uses Size.
@@ -46,7 +46,7 @@ export type TokenCategory =
   | 'border';
 
 /** The 5 supported design systems. */
-export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'carbon' | 'ausos';
+export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'carbon' | 'uoaui';
 
 /**
  * Variant applicability matrix.

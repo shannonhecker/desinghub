@@ -7,7 +7,7 @@ function resetStore() {
     salt: { themeKey: "jpm-dark", density: "medium" },
     m3: { themeKey: "dark", density: 0, customColor: "#6750A4", isDarkCustom: true },
     fluent: { themeKey: "dark", size: "medium" },
-    ausos: { themeKey: "dark", density: "medium", accentColor: "#7E6BC4" },
+    uoaui: { themeKey: "dark", density: "medium", accentColor: "#7E6BC4" },
     carbon: { themeKey: "g100", density: "normal" },
     selectedComponent: null,
     searchQuery: "",
@@ -53,14 +53,14 @@ describe("useDesignHub", () => {
     expect(useDesignHub.getState().m3.customColor).toBe("#FF5733");
   });
 
-  it("setAusosAccent rejects invalid hex", () => {
-    useDesignHub.getState().setAusosAccent("invalid");
-    expect(useDesignHub.getState().ausos.accentColor).toBe("#7E6BC4"); // unchanged
+  it("setUoauiAccent rejects invalid hex", () => {
+    useDesignHub.getState().setUoauiAccent("invalid");
+    expect(useDesignHub.getState().uoaui.accentColor).toBe("#7E6BC4"); // unchanged
   });
 
-  it("setAusosAccent accepts valid hex", () => {
-    useDesignHub.getState().setAusosAccent("#3D8A82");
-    expect(useDesignHub.getState().ausos.accentColor).toBe("#3D8A82");
+  it("setUoauiAccent accepts valid hex", () => {
+    useDesignHub.getState().setUoauiAccent("#3D8A82");
+    expect(useDesignHub.getState().uoaui.accentColor).toBe("#3D8A82");
   });
 
   it("toggleSidebar flips sidebarOpen", () => {

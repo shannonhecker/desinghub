@@ -1,18 +1,18 @@
 /**
- * ausos.ai brand tokens.
+ * uoaui.ai brand tokens.
  *
  * The brand layer sits above per-DS tokens (Salt / M3 / Fluent / Carbon /
- * ausos-DS-the-design-system) but below the five DS namespaces. These
+ * uoaui-DS-the-design-system) but below the five DS namespaces. These
  * values drive the landing page hero, marketing surfaces, and any future
- * ausos-owned chrome.
+ * uoaui-owned chrome.
  *
  * Not to be confused with:
- *   - `AUSOS_*` tokens in src/data/ausos/tokens.ts — those are the
- *     *ausos DS* (one of the 5 supported DSes, a glassmorphism system).
+ *   - `UOAUI_*` tokens in src/data/uoaui/tokens.ts — those are the
+ *     *uoaui DS* (one of the 5 supported DSes, a glassmorphism system).
  *   - `--bc-*` tokens in chrome-tokens.css — those are builder-chrome
  *     (tool UI around the canvas, intentionally isolated from DS tokens).
  *
- * This file is the brand for the PRODUCT (ausos.ai), not for a DS.
+ * This file is the brand for the PRODUCT (uoaui.ai), not for a DS.
  *
  * Token-definition file — exempt from no-hardcoded-tokens via filename.
  */
@@ -26,7 +26,7 @@ export const BRAND = {
   /* Background — shared by hero, landing, auth chrome. */
   'bg-deep': '#0b0e1a',
 
-  /* Primary brand violet — M3 primary / ausos violet accent. Used for
+  /* Primary brand violet — M3 primary / uoaui violet accent. Used for
      beam core, focus rings on landing, CTA accents. */
   'primary': '#6750a4',
 

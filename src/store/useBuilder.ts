@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'ausos' | 'carbon';
+export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
@@ -694,7 +694,7 @@ export const useBuilder = create<BuilderState>((set) => ({
       salt:   { light: 'jpm-light', dark: 'jpm-dark' },
       m3:     { light: 'light',     dark: 'dark'     },
       fluent: { light: 'light',     dark: 'dark'     },
-      ausos:  { light: 'light',     dark: 'dark'     },
+      uoaui:  { light: 'light',     dark: 'dark'     },
       carbon: { light: 'white',     dark: 'g100'     },
     };
     return { designSystem: ds, themeKey: themeMap[ds][s.mode] };

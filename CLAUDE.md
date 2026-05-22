@@ -5,9 +5,9 @@ alwaysApply: true
 
 # Design System Rules — Figma-to-Code Integration
 
-This document defines the design system rules for translating Figma designs into production code. It covers five supported design systems: **Salt DS** (J.P. Morgan), **Material 3** (Google), **Fluent 2** (Microsoft), **Carbon DS** (IBM), and **ausos DS** (internal).
+This document defines the design system rules for translating Figma designs into production code. It covers five supported design systems: **Salt DS** (J.P. Morgan), **Material 3** (Google), **Fluent 2** (Microsoft), **Carbon DS** (IBM), and **uoaui DS** (internal).
 
-Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): Salt 70, Carbon 68, M3 44, Fluent 40, ausos 40. These are Design Hub's own reference entries; the upstream-library counts below (e.g., "Salt DS (57 components)") refer to each DS's official package.
+Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): Salt 70, Carbon 68, M3 44, Fluent 40, uoaui 40. These are Design Hub's own reference entries; the upstream-library counts below (e.g., "Salt DS (57 components)") refer to each DS's official package.
 
 ---
 
@@ -42,7 +42,7 @@ Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): S
   - **Component internals:** 2px scale via `--cds-spacing-01`..`--cds-spacing-13` (defined in `carbon-documentation.jsx` `buildCSS`). Used by rendered Carbon components (buttons, inputs, notifications).
   - **Preview/UI-Kit layout:** 4px scale in `registry.ts:CARBON_DENSITY_MAP`. Drives sidebar width, card min-widths, preview padding — matches the other DS's registry density maps so previews feel consistent across systems.
 
-### ausos DS
+### uoaui DS
 - **Format:** CSS custom properties via `--a-*` prefix — semantic glassmorphism tokens
 - **Key groups:** `--a-bg`, `--a-surface` (white-opacity glass layers), `--a-fg`, `--a-accent`, `--a-border`. Elevation via `backdrop-filter: blur()` + opacity, not drop shadows
 - **Density:** Inherits Salt's 4-level scale (high/medium/low/touch)
@@ -119,7 +119,7 @@ Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): S
   ```
 - Reference: `src/data/carbon/carbon-documentation.jsx`
 
-### ausos DS
+### uoaui DS
 - **Package:** internal
 - **Architecture:** Glassmorphism — white-opacity surfaces + backdrop-blur elevation. Aurora palette foundation
 - **Key patterns:**
@@ -127,7 +127,7 @@ Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): S
   <button className="a-btn a-btn-primary">Label</button>
   <div className="a-surface" style={{ backdropFilter: "blur(12px)" }}>...</div>
   ```
-- Reference: `src/data/ausos/ausos-documentation.jsx`
+- Reference: `src/data/uoaui/uoaui-documentation.jsx`
 
 ---
 
@@ -167,9 +167,9 @@ import "@carbon/styles/css/styles.css";
 // Tokens live under `--cds-*` prefix after @carbon/styles is loaded.
 ```
 
-### ausos-specific
+### uoaui-specific
 ```tsx
-// Internal DS. Rendered via Design Hub's AUSOS_THEMES + ausosBuildCSS.
+// Internal DS. Rendered via Design Hub's UOAUI_THEMES + uoauiBuildCSS.
 // No external provider; tokens are injected per preview.
 ```
 
@@ -191,7 +191,7 @@ import "@carbon/styles/css/styles.css";
 | **M3** | Material Symbols | 2,500+ | Variable font (Google Fonts CDN) |
 | **Fluent** | `@fluentui/react-icons` | 4,000+ | React SVG, tree-shakeable |
 | **Carbon** | `@carbon/icons-react` | 2,000+ | React SVG, tree-shakeable per-icon imports |
-| **ausos** | Material Symbols | 2,500+ | Variable font — ausos piggybacks on M3's icon surface |
+| **uoaui** | Material Symbols | 2,500+ | Variable font — uoaui piggybacks on M3's icon surface |
 
 ### Salt Icons
 ```tsx
@@ -217,7 +217,7 @@ import { Search, Add, Settings } from "@carbon/icons-react";
 <Search size={16} />  // 16 | 20 | 24 | 32
 ```
 
-### ausos Icons
+### uoaui Icons
 ```html
 <span class="material-symbols-outlined">search</span>
 <!-- same font-based surface as M3; opacity adapts to glass surfaces -->
@@ -249,14 +249,14 @@ All five systems use **CSS custom properties** (design tokens). No CSS-in-JS req
 - **M3:** Density offset via component prop `density={-1}` (each step = -4dp)
 - **Fluent:** Size prop on components: `size="small|medium|large"` (intentional — Fluent 2 spec uses component size variants, not a global density scale)
 - **Carbon:** Density tiers `compact` (24px) / `normal` (32px) / `spacious` (48px). 2px-based spacing scale. `medium` aliases to `normal` for cross-DS callers (two density layers — see Section 1 note).
-- **ausos:** Inherits Salt's 4-level density (high/medium/low/touch)
+- **uoaui:** Inherits Salt's 4-level density (high/medium/low/touch)
 
 ### Dark Mode
 - **Salt:** `SaltProvider mode="dark"` — palette tokens auto-switch
 - **M3:** Theme object swap (light/dark scheme); 6 variants (light, dark, plus medium- and high-contrast pairs)
 - **Fluent:** `FluentProvider theme={webDarkTheme}`
 - **Carbon:** Swap between `white` / `g10` / `g90` / `g100` themes (Design Hub exposes `jpm-light`/`jpm-dark`/`legacy-light`/`legacy-dark` overlays)
-- **ausos:** Glass surfaces adapt; primary theme is dark by default (inverts to light via `AUSOS_THEMES.light`)
+- **uoaui:** Glass surfaces adapt; primary theme is dark by default (inverts to light via `UOAUI_THEMES.light`)
 - **Rule:** Never hardcode dark-mode colors. All colors must come from tokens that auto-resolve.
 
 ---
@@ -318,7 +318,7 @@ When translating a Figma design to code, verify:
 - [ ] M3: verify density offset (-1 to -3) renders correctly
 - [ ] Fluent: verify S/M/L sizes are consistent
 - [ ] Carbon: verify compact/normal/spacious tiers; `medium` alias resolves to `normal`
-- [ ] ausos: verify H/M/L/T densities (inherits Salt scale)
+- [ ] uoaui: verify H/M/L/T densities (inherits Salt scale)
 
 ---
 
@@ -344,7 +344,7 @@ Global rule applies: ask one clarifying question per turn, every request (incl. 
 
 **Design-Hub-specific things to always clarify before building:**
 
-- **Which design system is this block/page using?** Salt DS, Material 3, Fluent 2, Carbon DS, or ausos DS. Tokens and component names diverge across all five — don't assume.
+- **Which design system is this block/page using?** Salt DS, Material 3, Fluent 2, Carbon DS, or uoaui DS. Tokens and component names diverge across all five — don't assume.
 - **Is this token-source work or block-level work?** Changes to `theme-next.css` / MD3 sys vars / Fluent design tokens / `--cds-*` / `--a-*` ripple everywhere; block-level styling is scoped. Ask before touching the token layer.
 - **Cross-system intent:** if a new component is proposed, ask whether it should exist in all five systems eventually, even if only one is being implemented now.
 - **Builder state vs. preview state:** clarify whether the change affects the Zustand builder state, the DnD surface, or only the rendered preview.

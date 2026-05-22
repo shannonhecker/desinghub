@@ -32,7 +32,7 @@ const ROOT = resolve(__dirname, '..');
 const SRC = join(ROOT, 'src/data');
 const BASELINE = join(ROOT, 'scripts/tokens-baseline.json');
 
-const DESIGN_SYSTEMS = ['salt', 'm3', 'fluent', 'carbon', 'ausos'];
+const DESIGN_SYSTEMS = ['salt', 'm3', 'fluent', 'carbon', 'uoaui'];
 
 const PATTERNS = {
   hex: /#[0-9a-fA-F]{3,8}\b/g,
@@ -47,7 +47,7 @@ const ALLOWLIST_VARIABLE_NAMES = [
   'M3_DENSITY_MAP',
   'FLUENT_SIZE_MAP',
   'CARBON_DENSITY_MAP',
-  'AUSOS_DENSITY_MAP',
+  'UOAUI_DENSITY_MAP',
   'DENSITY_MAP',
   'SIZE_MAP',
 ];

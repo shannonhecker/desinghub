@@ -27,7 +27,7 @@ const STYLE_CHIPS: { label: string; value: DesignSystem; color: string }[] = [
   { label: "Salt DS", value: "salt", color: "#1B7F9E" },
   { label: "Material 3", value: "m3", color: "#6750A4" },
   { label: "Fluent 2", value: "fluent", color: "#0F6CBD" },
-  { label: "ausos DS", value: "ausos", color: "#7E6BC4" },
+  { label: "uoaui DS", value: "uoaui", color: "#7E6BC4" },
   { label: "Carbon DS", value: "carbon", color: "#0f62fe" },
 ];
 
@@ -263,7 +263,7 @@ const DS_LABEL: Record<DesignSystem, string> = {
   salt: "Salt DS",
   m3: "Material 3",
   fluent: "Fluent 2",
-  ausos: "ausos DS",
+  uoaui: "uoaui DS",
   carbon: "Carbon DS",
 };
 
@@ -273,7 +273,7 @@ function getFreeformResponse(input: string): string {
   if (l.includes("salt")) return "Switched to Salt DS - teal accents and Open Sans typography.";
   if (l.includes("material") || l.includes("m3")) return "Switched to Material 3 - dynamic color and Roboto type scale.";
   if (l.includes("fluent")) return "Switched to Fluent 2 - Segoe UI and brand blue palette.";
-  if (l.includes("ausos")) return "Switched to ausos DS - glassmorphism surfaces and muted violet accent.";
+  if (l.includes("uoaui")) return "Switched to uoaui DS - glassmorphism surfaces and muted violet accent.";
   if (l.includes("color") || l.includes("accent")) return "I'll adjust the color palette for you.";
   if (l.includes("thank")) return "You're welcome! Let me know if you need anything else.";
   if (l.includes("help")) return "I can help! Try 'add buttons', 'remove cards', 'build a dashboard', 'dark mode', 'switch to Fluent', or 'what components do I have?'.";
@@ -607,7 +607,7 @@ export function ChatPanel() {
     if (l.includes("salt"))                               { setDesignSystem("salt");   dsChanged = true; }
     else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3");     dsChanged = true; }
     else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
-    else if (l.includes("ausos"))                          { setDesignSystem("ausos");  dsChanged = true; }
+    else if (l.includes("uoaui"))                          { setDesignSystem("uoaui");  dsChanged = true; }
 
     /* ── Component command matched - apply and respond ── */
     if (newComponents !== null) {

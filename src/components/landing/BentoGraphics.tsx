@@ -9,13 +9,13 @@ export function BentoSystemsGraphic() {
   /* Five tile previews — one representative chrome moment per DS:
      Salt = dense grid, M3 = rounded card with surface tint,
      Fluent = compound input, Carbon = UI Shell strip,
-     ausos = glass panel. */
+     uoaui = glass panel. */
   return (
     <svg
       className="bento-graphic bento-graphic--systems"
       viewBox="0 0 480 152"
       role="img"
-      aria-label="Five design-system preview tiles: Salt, Material 3, Fluent 2, Carbon, ausos"
+      aria-label="Five design-system preview tiles: Salt, Material 3, Fluent 2, Carbon, uoaui"
     >
       {/* Salt — dense grid */}
       <g transform="translate(0,12)">
@@ -76,7 +76,7 @@ export function BentoSystemsGraphic() {
         <rect x="10" y="114" width="28" height="10" rx="0" fill="rgba(255, 255, 255,0.92)" />
       </g>
 
-      {/* ausos — glass panel */}
+      {/* uoaui — glass panel */}
       <g transform="translate(386,12)">
         <rect x="0" y="0" width="92" height="128" rx="14" fill="rgba(255, 255, 255,0.06)" stroke="rgba(255, 255, 255,0.18)" />
         <rect x="12" y="14" width="68" height="22" rx="11" fill="rgba(255, 255, 255,0.12)" stroke="rgba(255,255,255,0.16)" />

@@ -21,7 +21,7 @@ import type { LibraryCategory } from "@/lib/blockRegistry";
        (primary/default/outline/subtle)
      - Carbon: kind per @carbon/react
        (primary/secondary/tertiary/ghost/danger)
-     - ausos: variant per internal DS (primary/secondary/ghost)
+     - uoaui: variant per internal DS (primary/secondary/ghost)
 
    Scope: this file currently covers Button. Input / Card / Tabs
    variants are queued for a follow-up — the data shape is
@@ -187,31 +187,31 @@ const CARBON_BUTTONS: DSVariantPreset[] = [
   },
 ];
 
-/* ── ausos — Button variants ───────────────────────────────── */
-const AUSOS_BUTTONS: DSVariantPreset[] = [
+/* ── uoaui — Button variants ───────────────────────────────── */
+const UOAUI_BUTTONS: DSVariantPreset[] = [
   {
-    id: "ausos-button-primary",
-    ds: "ausos",
+    id: "uoaui-button-primary",
+    ds: "uoaui",
     baseType: "SimulatedButton",
-    label: "ausos Button — Primary",
+    label: "uoaui Button — Primary",
     category: "actions",
     icon: "smart_button",
     defaults: { variant: "primary", label: "Generate" },
   },
   {
-    id: "ausos-button-secondary",
-    ds: "ausos",
+    id: "uoaui-button-secondary",
+    ds: "uoaui",
     baseType: "SimulatedButton",
-    label: "ausos Button — Secondary",
+    label: "uoaui Button — Secondary",
     category: "actions",
     icon: "smart_button",
     defaults: { variant: "secondary", label: "Edit prompt" },
   },
   {
-    id: "ausos-button-ghost",
-    ds: "ausos",
+    id: "uoaui-button-ghost",
+    ds: "uoaui",
     baseType: "SimulatedButton",
-    label: "ausos Button — Ghost",
+    label: "uoaui Button — Ghost",
     category: "actions",
     icon: "smart_button",
     defaults: { variant: "tertiary", label: "Cancel" },
@@ -224,7 +224,7 @@ const PRESETS_BY_DS: Record<DesignSystem, DSVariantPreset[]> = {
   m3: M3_BUTTONS,
   fluent: FLUENT_BUTTONS,
   carbon: CARBON_BUTTONS,
-  ausos: AUSOS_BUTTONS,
+  uoaui: UOAUI_BUTTONS,
 };
 
 export function getDSVariantPresets(ds: DesignSystem): DSVariantPreset[] {
@@ -236,5 +236,5 @@ export const ALL_DS_VARIANT_PRESETS: DSVariantPreset[] = [
   ...M3_BUTTONS,
   ...FLUENT_BUTTONS,
   ...CARBON_BUTTONS,
-  ...AUSOS_BUTTONS,
+  ...UOAUI_BUTTONS,
 ];

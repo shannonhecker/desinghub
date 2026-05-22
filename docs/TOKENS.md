@@ -11,7 +11,7 @@ Audit baseline: `scripts/tokens-baseline.json`. Refresh with `npm run tokens:aud
 ## Principles
 
 1. **No raw values in renderers or CSS output.** Every color, spacing, font size/weight/line-height, radius, shadow, duration, easing, opacity, and border-width resolves through a named token.
-2. **Per-DS sovereignty.** Each DS keeps its spec-correct token names (M3 `short1..long2`, Carbon `productive/expressive`, Fluent `durationFaster/Fast/Normal`, Salt `fast/normal/slow`, ausos `glass-*`). We unify primitive values in `src/data/_shared/primitives.ts`; we do **not** unify names.
+2. **Per-DS sovereignty.** Each DS keeps its spec-correct token names (M3 `short1..long2`, Carbon `productive/expressive`, Fluent `durationFaster/Fast/Normal`, Salt `fast/normal/slow`, uoaui `glass-*`). We unify primitive values in `src/data/_shared/primitives.ts`; we do **not** unify names.
 3. **Variants are explicit.** Mode × density × state × size resolve through declared axes (see §Variant matrix). Nothing hides in a cascade.
 4. **Lint + CI enforce it.** ESLint catches AST-visible literals; `scripts/tokens-audit.mjs` catches template-literal interpolations. Both run per PR.
 
@@ -58,7 +58,7 @@ Resolution axes:
 | Color (bg/fg/border) | ✓ | — | ✓ | — |
 | Color (accent/status) | ✓ | — | ✓ | — |
 | Spacing | — | ✓ | — | — |
-| Radius | — | partial (ausos/Salt) | — | — |
+| Radius | — | partial (uoaui/Salt) | — | — |
 | Type size | — | ✓ | — | ✓ |
 | Type weight / lh | — | — | — | — |
 | Elevation | ✓ | — | ✓ (hover raise) | — |
@@ -88,7 +88,7 @@ src/data/m3/motion.ts          → M3_MOTION     { short1, short2, long1, ... } 
 src/data/carbon/motion.ts      → CARBON_MOTION { productive, expressive }
 src/data/fluent/motion.ts      → FLUENT_MOTION { durationFaster, durationFast, durationNormal }
 src/data/salt/motion.ts        → SALT_MOTION   { fast, normal, slow }
-src/data/ausos/motion.ts       → AUSOS_MOTION  { glass-fade, glass-rise }
+src/data/uoaui/motion.ts       → UOAUI_MOTION  { glass-fade, glass-rise }
 ```
 
 ---
@@ -122,7 +122,7 @@ Use suppressions sparingly and pair them with a comment explaining **why** the l
 | # | Phase | Branch | Gate |
 |---|---|---|---|
 | **P0** | Foundation — types + audit script + screenshot matrix + ESLint rule at `warn` + `docs/TOKENS.md` | `feat/tokens-foundation` | Lint green, zero visual diff, baseline captured |
-| **P1** | ausos — promote 10 inline `rgba(…)` glass layers + `AUSOS_MOTION/OPACITY/RADIUS`. Blur elevation stays; opt-in `--a-shadow-*` added for parity. | `feat/tokens-ausos` | 4 densities × 2 themes |
+| **P1** | uoaui — promote 10 inline `rgba(…)` glass layers + `UOAUI_MOTION/OPACITY/RADIUS`. Blur elevation stays; opt-in `--a-shadow-*` added for parity. | `feat/tokens-uoaui` | 4 densities × 2 themes |
 | **P2** | Fluent — extract `cardRadius`, add `FLUENT_MOTION`, extract hardcoded shadows. | `feat/tokens-fluent` | 3 sizes × 2 themes |
 | **P3** | Carbon — extract 12 hardcoded font-size px → `--cds-type-*` matching IBM scale. Add `CARBON_MOTION`. Preserve two density layers. Promote preview chrome 4px into `--bc-*` namespace. | `feat/tokens-carbon` | 3 densities × 4 themes |
 | **P4** | M3 — replace inline 20/12/8 radius with `--m3-shape-*`, extract 3 inline type escapes. Refactor PR #13 drafts (search-bar, segmented-buttons, shape-tokens, density-tokens) through token system. | `feat/tokens-m3` | 4 themes × 3 density offsets |

@@ -48,7 +48,7 @@ export const TabBar = React.memo(function TabBar() {
     );
   }
 
-  if (activeSystem === "ausos") {
+  if (activeSystem === "uoaui") {
     return (
       <div style={{ display: "flex", borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
         {tabs.map(tab => {

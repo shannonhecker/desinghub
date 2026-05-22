@@ -43,7 +43,7 @@ function extractTokens(theme: any, system: string): TokenEntry[] {
     for (const [cat, keys] of Object.entries(cats))
       for (const key of keys)
         if (theme[key]) tokens.push({ name: key, value: theme[key], category: cat });
-  } else if (system === "ausos") {
+  } else if (system === "uoaui") {
     const cats: Record<string, string[]> = {
       "Background": ["bg", "bg2", "bg3", "bg4"],
       "Surface": ["surface", "surfaceHover", "surfaceActive", "surfaceMd", "surfaceLg"],
@@ -124,8 +124,8 @@ export function TokenReference() {
     ? getTheme("salt", store.salt.themeKey)
     : activeSystem === "m3"
     ? getTheme("m3", store.m3.themeKey, store.m3.customColor, store.m3.isDarkCustom)
-    : activeSystem === "ausos"
-    ? getTheme("ausos", store.ausos.themeKey)
+    : activeSystem === "uoaui"
+    ? getTheme("uoaui", store.uoaui.themeKey)
     : getTheme("fluent", store.fluent.themeKey);
 
   activateTheme(activeSystem, T);
@@ -135,7 +135,7 @@ export function TokenReference() {
 
   // Derive semantic colors from active DS tokens
   const n = (s: string, m: string, a: string, f: string) =>
-    activeSystem === "salt" ? T[s] : activeSystem === "m3" ? T[m] : activeSystem === "ausos" ? T[a] : T[f];
+    activeSystem === "salt" ? T[s] : activeSystem === "m3" ? T[m] : activeSystem === "uoaui" ? T[a] : T[f];
   const pageBg   = n("bg2", "surface", "bg2", "bg2");
   const cardBg   = n("bg", "surfaceContainerLow", "surface", "bg1");
   const border   = n("border", "outlineVariant", "borderMd", "stroke2");
@@ -144,8 +144,8 @@ export function TokenReference() {
   const accent   = n("accent", "primary", "accent", "brandBg");
   const bgToken  = n("bg", "surface", "bg", "bg1");
 
-  const positive = activeSystem === "ausos" ? (T.successFg || "#4ADE80") : activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
-  const negative = activeSystem === "ausos" ? (T.dangerFg || "#F87171") : activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
+  const positive = activeSystem === "uoaui" ? (T.successFg || "#4ADE80") : activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
+  const negative = activeSystem === "uoaui" ? (T.dangerFg || "#F87171") : activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
   const swatchColors: SwatchColors = { cardBg, border, fg, fg3, positive, negative };
   const categories = [...new Set(tokens.map((t) => t.category))];
 
@@ -186,7 +186,7 @@ export function TokenReference() {
             ? [4, 8, 12, 16, 20, 24, 32]
             : activeSystem === "m3"
             ? [4, 8, 12, 16, 24, 32, 48, 64]
-            : activeSystem === "ausos"
+            : activeSystem === "uoaui"
             ? [2, 4, 8, 12, 16, 24, 32, 40, 48, 64]
             : [2, 4, 6, 8, 10, 12, 16, 20, 24, 32]
           ).map((s) => (
@@ -209,7 +209,7 @@ export function TokenReference() {
             ? [{ label: "Display", size: 46 }, { label: "H1", size: 36 }, { label: "H2", size: 28 }, { label: "H3", size: 24 }, { label: "H4", size: 18 }, { label: "Body", size: 14 }, { label: "Label", size: 12 }, { label: "Caption", size: 11 }]
             : activeSystem === "m3"
             ? [{ label: "Display Large", size: 57 }, { label: "Display Medium", size: 45 }, { label: "Headline Large", size: 32 }, { label: "Title Large", size: 22 }, { label: "Title Medium", size: 16 }, { label: "Body Large", size: 16 }, { label: "Body Medium", size: 14 }, { label: "Label Large", size: 14 }, { label: "Label Small", size: 11 }]
-            : activeSystem === "ausos"
+            : activeSystem === "uoaui"
             ? [{ label: "Display", size: 38 }, { label: "Headline", size: 19 }, { label: "Title", size: 16 }, { label: "Body", size: 15 }, { label: "Label", size: 12 }, { label: "Caption", size: 11 }]
             : [{ label: "Display", size: 40 }, { label: "Title 1", size: 28 }, { label: "Title 2", size: 24 }, { label: "Title 3", size: 20 }, { label: "Subtitle 1", size: 18 }, { label: "Body 1", size: 14 }, { label: "Caption 1", size: 12 }, { label: "Caption 2", size: 10 }]
           ).map((t) => (
@@ -233,7 +233,7 @@ export function TokenReference() {
             ? [{ label: "100", shadow: `0 1px 3px ${T.shadow}` }, { label: "200", shadow: `0 2px 6px ${T.shadowMed}` }, { label: "300", shadow: `0 4px 12px ${T.shadowMed}` }, { label: "400", shadow: `0 8px 24px ${T.shadowHigh}` }]
             : activeSystem === "m3"
             ? [{ label: "Level 0", shadow: "none" }, { label: "Level 1", shadow: "0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15)" }, { label: "Level 2", shadow: "0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15)" }, { label: "Level 3", shadow: "0 1px 3px rgba(0,0,0,0.3), 0 4px 8px 3px rgba(0,0,0,0.15)" }]
-            : activeSystem === "ausos"
+            : activeSystem === "uoaui"
             ? [{ label: "Glass 0", shadow: T.insetHighlight || "none" }, { label: "Glass 1", shadow: `${T.shadow}` }, { label: "Glass 2", shadow: `${T.shadowLg}` }, { label: "Glass 3", shadow: `${T.shadowLg}, ${T.insetHighlight}` }]
             : [{ label: "2", shadow: `0 1px 2px ${T.shadowAmbient}` }, { label: "4", shadow: `0 2px 4px ${T.shadowAmbient}, 0 0 2px ${T.shadowKey}` }, { label: "8", shadow: `0 4px 8px ${T.shadowAmbient}, 0 0 2px ${T.shadowKey}` }, { label: "28", shadow: `0 14px 28px ${T.shadowAmbient}, 0 0 8px ${T.shadowKey}` }]
           ).map((s) => (

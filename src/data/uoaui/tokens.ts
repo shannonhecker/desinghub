@@ -1,9 +1,9 @@
 /**
- * ausos design tokens — motion, opacity, radius, shadow.
+ * uoaui design tokens — motion, opacity, radius, shadow.
  *
  * This is a token-definition file. Raw ms / px / rgba literals live here
  * because they define the scale; consumers must reference them via the
- * `--a-*` CSS vars injected by ausos-documentation.jsx:buildCSS.
+ * `--a-*` CSS vars injected by uoaui-documentation.jsx:buildCSS.
  *
  * File is exempt from no-hardcoded-tokens via filename suffix `.ts`
  * under src/data/*\/tokens.ts — see docs/TOKENS.md § Intentional literals.
@@ -17,14 +17,14 @@ import {
 } from '../_shared/primitives';
 
 /* ── MOTION ────────────────────────────────────────────────────────────
-   Mirrors ausos' existing cadence (150 / 250 / 350) plus two house-style
-   easing curves. The 250 / 350 rungs are ausos-specific and don't appear
+   Mirrors uoaui' existing cadence (150 / 250 / 350) plus two house-style
+   easing curves. The 250 / 350 rungs are uoaui-specific and don't appear
    in _shared/primitives — they express the DS's lazier, floatier feel. */
-export const AUSOS_MOTION = {
+export const UOAUI_MOTION = {
   durations: {
     fast: `${DURATION_MS.short}ms`, // 150ms — rapid micro-interactions
-    mid: '250ms',                    // ausos-specific — default UI transition
-    slow: '350ms',                    // ausos-specific — emphasis + orchestration
+    mid: '250ms',                    // uoaui-specific — default UI transition
+    slow: '350ms',                    // uoaui-specific — emphasis + orchestration
   },
   easings: {
     standard: 'cubic-bezier(0.22, 0.68, 0, 1)', // house curve — slight overshoot
@@ -35,13 +35,13 @@ export const AUSOS_MOTION = {
 } as const;
 
 /* ── OPACITY (glass layers) ────────────────────────────────────────────
-   ausos' signature glassmorphism uses translucent white-on-surface in
+   uoaui' signature glassmorphism uses translucent white-on-surface in
    dark mode and translucent white-on-lavender in light mode. The NUMERIC
    opacity levels below define the semantic ladder; the theme object
    composes them with the mode's base color to produce the final rgba.
    Consumers that want programmatic control use var(--a-opacity-glass-NN)
    directly; consumers that want pre-composed strings use var(--a-surface-*). */
-export const AUSOS_OPACITY = {
+export const UOAUI_OPACITY = {
   dark: {
     'glass-01': OPACITY[4] + OPACITY[4], // 0.08 — placeholder semantic: subtlest layer
     'glass-02': OPACITY[12],              // 0.12 — raised / hover
@@ -61,10 +61,10 @@ export const AUSOS_OPACITY = {
 } as const;
 
 /* ── RADIUS ────────────────────────────────────────────────────────────
-   ausos uses soft, generous corner radii to reinforce the glass metaphor.
+   uoaui uses soft, generous corner radii to reinforce the glass metaphor.
    Values match the inline usages across the existing CSS:
      2, 4, 5, 8, 10, 12, 14, 16, 20, 10000 (pill). */
-export const AUSOS_RADIUS = {
+export const UOAUI_RADIUS = {
   none: '0px',
   xs: '2px',
   sm: '4px',
@@ -79,13 +79,13 @@ export const AUSOS_RADIUS = {
 } as const;
 
 /* ── SHADOW (opt-in, per Q2) ────────────────────────────────────────────
-   ausos' identity is backdrop-filter blur — drop shadows are intentionally
+   uoaui' identity is backdrop-filter blur — drop shadows are intentionally
    understated. Q2 (2026-04-22) approved exposing --a-shadow-* as opt-in
    escape hatches for parity with Salt/M3/Fluent/Carbon. Use sparingly.
 
    Values are MODE-DEPENDENT — theme object holds composed strings and
    buildCSS injects them as CSS vars for the active mode. */
-export const AUSOS_SHADOW = {
+export const UOAUI_SHADOW = {
   dark: {
     sm: '0 2px 8px rgba(0,0,0,0.2)',
     md: '0 4px 16px rgba(0,0,0,0.3)',    // matches existing T.shadow
@@ -100,7 +100,7 @@ export const AUSOS_SHADOW = {
 
 /* ── BORDER WIDTH ──────────────────────────────────────────────────────
    Re-expose shared primitives under --a-border-* via buildCSS. */
-export const AUSOS_BORDER = {
+export const UOAUI_BORDER = {
   hair: `${BORDER_WIDTH_PX.hair}px`,
   thin: `${BORDER_WIDTH_PX.thin}px`,
   thick: `${BORDER_WIDTH_PX.thick}px`,
@@ -108,15 +108,15 @@ export const AUSOS_BORDER = {
 } as const;
 
 /* ── CSS-var injection helper ──────────────────────────────────────────
-   Returns the `:root` block body (without braces) expressing all ausos
+   Returns the `:root` block body (without braces) expressing all uoaui
    tokens for the given mode as CSS custom properties. Called from
-   buildCSS(T) in ausos-documentation.jsx. */
-export function ausosTokenVars(mode: 'dark' | 'light'): string {
-  const op = AUSOS_OPACITY[mode];
-  const sh = AUSOS_SHADOW[mode];
-  const m = AUSOS_MOTION;
-  const r = AUSOS_RADIUS;
-  const b = AUSOS_BORDER;
+   buildCSS(T) in uoaui-documentation.jsx. */
+export function uoauiTokenVars(mode: 'dark' | 'light'): string {
+  const op = UOAUI_OPACITY[mode];
+  const sh = UOAUI_SHADOW[mode];
+  const m = UOAUI_MOTION;
+  const r = UOAUI_RADIUS;
+  const b = UOAUI_BORDER;
   return [
     `--a-dur-fast: ${m.durations.fast};`,
     `--a-dur-mid: ${m.durations.mid};`,
@@ -127,7 +127,7 @@ export function ausosTokenVars(mode: 'dark' | 'light'): string {
     `--a-opacity-glass-02: ${op['glass-02']};`,
     `--a-opacity-glass-03: ${op['glass-03']};`,
     `--a-opacity-glass-04: ${op['glass-04']};`,
-    `--a-opacity-disabled: ${AUSOS_OPACITY.disabled};`,
+    `--a-opacity-disabled: ${UOAUI_OPACITY.disabled};`,
     `--a-radius-none: ${r.none};`,
     `--a-radius-xs: ${r.xs};`,
     `--a-radius-sm: ${r.sm};`,
@@ -151,14 +151,14 @@ export function ausosTokenVars(mode: 'dark' | 'light'): string {
    slightly wider canvas margins than Salt's H/M/L base. */
 import type { StructurePaddingScale } from "../_shared/structure";
 
-export const AUSOS_STRUCTURE_PADDING: StructurePaddingScale = {
+export const UOAUI_STRUCTURE_PADDING: StructurePaddingScale = {
   small:  { canvas: 12, zone: 8,  block: 8,  gap: 12 },
   medium: { canvas: 20, zone: 12, block: 12, gap: 16 },
   large:  { canvas: 28, zone: 16, block: 16, gap: 24 },
 };
 
 /* ── Re-export types for consumers ─────────────────────────────────────── */
-export type AusosDurationKey = keyof typeof AUSOS_MOTION.durations;
-export type AusosRadiusKey = keyof typeof AUSOS_RADIUS;
-export type AusosShadowKey = keyof typeof AUSOS_SHADOW.dark;
-export type AusosGlassKey = keyof typeof AUSOS_OPACITY.dark;
+export type UoauiDurationKey = keyof typeof UOAUI_MOTION.durations;
+export type UoauiRadiusKey = keyof typeof UOAUI_RADIUS;
+export type UoauiShadowKey = keyof typeof UOAUI_SHADOW.dark;
+export type UoauiGlassKey = keyof typeof UOAUI_OPACITY.dark;
