@@ -124,6 +124,39 @@ export function heroEnterTimeline(container: Element | null): gsap.core.Timeline
   return tl;
 }
 
+/* ── Headline word-by-word entrance ─────────────────────────────────────── */
+
+/**
+ * Animates `[data-headline-word]` spans inside a headline with a fine
+ * stagger, layered on top of the main hero entrance. Linear / Stripe
+ * editorial-grade word reveal. Runs once on mount.
+ *
+ * Under reduced motion, snaps all words to final state — no animation.
+ */
+export function headlineWordEntrance(headline: Element | null): gsap.core.Timeline | null {
+  if (!headline || typeof window === "undefined") return null;
+
+  const words = headline.querySelectorAll<HTMLElement>("[data-headline-word]");
+  if (words.length === 0) return null;
+
+  if (isReducedMotion()) {
+    gsap.set(words, { opacity: 1, y: 0 });
+    return null;
+  }
+
+  const tl = gsap.timeline({ delay: 0.08 });
+  tl.set(words, { opacity: 0, y: 10, willChange: "transform, opacity" });
+  tl.to(words, {
+    opacity: 1,
+    y: 0,
+    duration: 0.55,
+    ease: EASE_EMPHASIZED_DECEL,
+    stagger: 0.045,
+  });
+  tl.set(words, { willChange: "auto" });
+  return tl;
+}
+
 /* ── Scroll-triggered reveal ────────────────────────────────────────────── */
 
 export interface RevealOpts {

@@ -40,6 +40,26 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Mouse-parallax cursor glow — single soft aurora light that follows the
+   pointer, fed by --hero-mouse-x / --hero-mouse-y from useHaloPointer.
+   Defaults position to the headline area (35% 30%) for first paint before
+   the user moves. Disabled on touch / narrow viewports by the hook. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    520px 320px at var(--hero-mouse-x, 35%) var(--hero-mouse-y, 30%),
+    rgba(94, 231, 223, 0.10) 0%,
+    rgba(180, 144, 245, 0.05) 38%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  transition: background var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
 .hero::after {
   content: "";
   position: absolute;
@@ -52,6 +72,17 @@
     radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1.5px),
     radial-gradient(circle at 42% 66%, rgba(255, 255, 255, 0.34) 0 1px, transparent 1.5px);
   background-size: 260px 210px, 340px 260px, 420px 310px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before {
+    transition: none;
+    background: radial-gradient(
+      520px 320px at 35% 30%,
+      rgba(94, 231, 223, 0.08) 0%,
+      transparent 70%
+    );
+  }
 }
 
 .hero::after {
@@ -559,8 +590,55 @@
   text-wrap: balance;
 }
 
-.hero-headline span {
+/* Systems list (the group span containing the 5 system names) is the
+   muted "could be any of these" tone; individual system spans light up
+   when they match the active demo step. */
+.hero-headline-systems {
   color: rgba(227, 233, 225, 0.62);
+}
+
+/* Word-by-word reveal — initial state hidden so GSAP can stagger them in.
+   Reduced-motion users get visible immediately (motion.ts handles that). */
+.hero-word {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* Individual system spans inside the systems list. Shift to brand white +
+   draw a 2px aurora-cyan underline when active. ~360ms decel. */
+.hero-system {
+  position: relative;
+  color: inherit;
+  transition: color var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
+.hero-system::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.06em;
+  height: 2px;
+  background: var(--dh-preview-salt-a, #5ee7df);
+  transform-origin: 0% 50%;
+  transform: scaleX(0);
+  transition: transform 360ms var(--dh-motion-ease, cubic-bezier(0.05, 0.7, 0.1, 1));
+  border-radius: 2px;
+}
+
+.hero-system[data-active="true"] {
+  color: var(--dh-brand-fg, #ffffff);
+}
+
+.hero-system[data-active="true"]::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-system,
+  .hero-system::after {
+    transition: none;
+  }
 }
 
 .hero-body {

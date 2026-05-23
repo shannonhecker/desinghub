@@ -21,7 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
+import { headlineWordEntrance, heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
 import { getBentoGraphic } from "./landing/BentoGraphics";
 import "./hero.css";
 
@@ -743,7 +743,7 @@ function RequestAccessModal({
   );
 }
 
-function HeroPreviewDemo() {
+function HeroPreviewDemo({ onSystemChange }: { onSystemChange?: (system: string) => void } = {}) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -766,6 +766,12 @@ function HeroPreviewDemo() {
 
     return () => window.clearInterval(intervalId);
   }, [isPaused, isHovering, reducedMotion]);
+
+  /* Notify parent when the active system changes — used by the hero headline
+     to highlight the matching system word in sync with the demo cycle. */
+  useEffect(() => {
+    onSystemChange?.(step.system);
+  }, [step.system, onSystemChange]);
 
   const controlLabel = reducedMotion
     ? "Preview demo paused for reduced motion"
@@ -884,6 +890,10 @@ export function HeroHeader() {
   const reducedMotion = useReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
   const [accessModalSource, setAccessModalSource] = useState<AccessRequestSource | null>(null);
+  /* Active demo system, kept in sync with HeroPreviewDemo's step cycle so
+     the hero headline can highlight the matching system word as the demo
+     lands on it. Updated via onSystemChange callback below. */
+  const [activeSystem, setActiveSystem] = useState<string>("salt");
   /* Sticky nav scroll-state — adds `landing-nav--scrolled` once the user
      has moved past the hero's first viewport, which triggers the
      condensed visual treatment (denser bg, smaller chip, tighter chrome). */
@@ -911,8 +921,11 @@ export function HeroHeader() {
     const root = landingRef.current;
     if (!root) return;
     const tl = heroEnterTimeline(root);
+    const headline = root.querySelector(".hero-headline");
+    const wordTl = headlineWordEntrance(headline);
     return () => {
       tl?.kill();
+      wordTl?.kill();
     };
   }, [landingRef]);
 
@@ -967,7 +980,18 @@ export function HeroHeader() {
                 AI builder for five enterprise design systems
               </div>
               <h1 id="landing-title" className="hero-headline" data-hero-enter>
-                Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or uoaui</span>
+                <span className="hero-word" data-headline-word>Prompt</span>{" "}
+                <span className="hero-word" data-headline-word>once.</span>{" "}
+                <span className="hero-word" data-headline-word>Ship</span>{" "}
+                <span className="hero-word" data-headline-word>in</span>{" "}
+                <span className="hero-headline-systems">
+                  <span className="hero-word hero-system" data-headline-word data-active={activeSystem === "salt" ? "true" : "false"}>Salt</span>,{" "}
+                  <span className="hero-word hero-system" data-headline-word data-active={activeSystem === "m3" ? "true" : "false"}>Material&nbsp;3</span>,{" "}
+                  <span className="hero-word hero-system" data-headline-word data-active={activeSystem === "fluent" ? "true" : "false"}>Fluent&nbsp;2</span>,{" "}
+                  <span className="hero-word hero-system" data-headline-word data-active={activeSystem === "carbon" ? "true" : "false"}>Carbon</span>,{" "}
+                  <span className="hero-word" data-headline-word>or</span>{" "}
+                  <span className="hero-word hero-system" data-headline-word data-active={activeSystem === "uoaui" ? "true" : "false"}>uoaui</span>
+                </span>
               </h1>
               <p className="hero-body" data-hero-enter>
                 uoaui turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
@@ -984,7 +1008,7 @@ export function HeroHeader() {
             </div>
 
             <div className="hero-demo" data-hero-enter>
-              <HeroPreviewDemo />
+              <HeroPreviewDemo onSystemChange={setActiveSystem} />
             </div>
           </div>
         </div>
