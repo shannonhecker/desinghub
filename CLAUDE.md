@@ -11,6 +11,18 @@ Design Hub's live inventory per DS (from `src/data/<ds>/*-documentation.jsx`): S
 
 ---
 
+## 0. Design Context (read first)
+
+uoaui's own strategic + visual identity lives in two root files. Any UI work on Design Hub's own chrome (landing, login, builder, /preview, /share) MUST respect these:
+
+- **[`PRODUCT.md`](./PRODUCT.md)** — Strategic context. Register (product, builder-led), users (design-engineering hybrids), product purpose, brand personality (Expert · calm · committed), anti-references (no SaaS dashboard, no Tailwind/shadcn default, no neon glow, no bento grid), 5 design principles, WCAG 2.2 AA + reduced-motion baseline.
+- **[`DESIGN.md`](./DESIGN.md)** — Visual system. Creative North Star ("The Aurora Observatory"), color palette with descriptive names (Observatory Iris, Solar Lilac, Aurora Cyan, etc.), typography stack (Outfit / Space Grotesk / DM Sans / SF Mono), 6-step radius scale, 10-step spacing scale, flat-tonal + functional-glass elevation, solid-and-quiet component philosophy, full Do's and Don'ts list. Frontmatter follows the Google Stitch DESIGN.md format.
+- **`.impeccable/design.json`** — Machine-readable sidecar with tonal ramps, shadow/motion tokens, breakpoints, and component HTML/CSS snippets. Consumed by Impeccable's live panel and tooling; humans read DESIGN.md.
+
+**Distinction from the DS rules below:** Sections 1–N cover how to render Salt / M3 / Fluent / Carbon / uoaui *as accurate per-DS previews* (preserving each system's tokens and conventions). Section 0 is about uoaui's OWN voice when the user is inside our chrome — not the per-DS preview content. The principle "Five systems coexist; uoaui owns the chrome" is the line between them.
+
+---
+
 ## 1. Token Definitions
 
 ### Salt DS

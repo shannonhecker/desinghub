@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-23T21:30:00Z",
+  "title": "Design System: uoaui",
+  "extensions": {
+    "colorMeta": {
+      "observatory-iris": {
+        "role": "primary",
+        "displayName": "Observatory Iris",
+        "canonical": "oklch(46% 0.18 295)",
+        "tonalRamp": ["#1a0e2e", "#2b1947", "#3d2466", "#4f2f84", "#6750a4", "#8a72c2", "#ad97d8", "#d1c4ec"]
+      },
+      "solar-lilac": {
+        "role": "primary",
+        "displayName": "Solar Lilac",
+        "canonical": "oklch(75% 0.13 295)",
+        "tonalRamp": ["#2a1c47", "#3f2c66", "#553d84", "#6c4fa3", "#8666c2", "#9d80df", "#b490f5", "#d4bcfa"]
+      },
+      "aurora-cyan": {
+        "role": "secondary",
+        "displayName": "Aurora Cyan",
+        "canonical": "oklch(86% 0.13 187)",
+        "tonalRamp": ["#0a3833", "#0e5751", "#117770", "#149890", "#1abab1", "#3dd1c8", "#5ee7df", "#a5f1ec"]
+      },
+      "observatory-night": {
+        "role": "neutral",
+        "displayName": "Observatory Night",
+        "canonical": "oklch(13% 0.03 270)",
+        "tonalRamp": ["#0b0e1a", "#13182a", "#1c233d", "#262e51", "#313a66", "#3d477c", "#525d8e", "#7a82a6"]
+      },
+      "outer-dark": {
+        "role": "neutral",
+        "displayName": "Outer Dark",
+        "canonical": "oklch(2% 0.005 150)",
+        "tonalRamp": ["#020302", "#060806", "#0a0d0a", "#0f120f", "#141815", "#1a1e1b", "#21251f", "#2a2e26"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero h1 + login h1. One per page." },
+      "headline": { "displayName": "Headline", "purpose": "Landing section headings + hero stage labels." },
+      "title": { "displayName": "Title", "purpose": "Card titles, settings group titles, builder panel headers." },
+      "body": { "displayName": "Body", "purpose": "Paragraph copy. Cap at 65–75ch." },
+      "label": { "displayName": "Label", "purpose": "Chips, kickers, status badges. Uppercase + 0.06em tracking." },
+      "mono": { "displayName": "Mono", "purpose": "Code blocks, token tables, hex strings, DS code previews." }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(0,0,0,0.28), 0 1px 1px rgba(0,0,0,0.14)", "purpose": "Hover lift on chrome buttons. Active state response." },
+      { "name": "shadow-md", "value": "0 4px 12px rgba(0,0,0,0.32), 0 2px 4px rgba(0,0,0,0.16)", "purpose": "Toast notifications, dropdowns, low-elevation popovers." },
+      { "name": "shadow-lg", "value": "0 12px 32px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.18)", "purpose": "Login card ambient, dialog overlays, rare high-elevation panels." },
+      { "name": "shadow-focus", "value": "0 0 0 2px #5ee7df, 0 0 0 4px rgba(94,231,223,0.22)", "purpose": "Canonical focus ring. Cyan halo across all interactive elements." }
+    ],
+    "motion": [
+      { "name": "dur-hover", "value": "160ms", "purpose": "Hover state changes (color, border, transform)." },
+      { "name": "dur-emphasis", "value": "240ms", "purpose": "Default for state transitions, modal entry, dropdown reveal." },
+      { "name": "dur-slow", "value": "600ms", "purpose": "Major state changes — page transitions, full-overlay entry." },
+      { "name": "ease-standard", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The uoaui spring. Use for everything except linear progress." },
+      { "name": "ease-smooth", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Material standard ease. Reserved for builder chrome to match Material previews." }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "380px" },
+      { "name": "sm", "value": "420px" },
+      { "name": "md", "value": "640px" },
+      { "name": "lg", "value": "840px" },
+      { "name": "xl", "value": "960px" },
+      { "name": "xxl", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The signature CTA. Aurora gradient (Cyan → Solar Lilac), Outer Dark text, 46px tall, lift-on-hover.",
+      "html": "<button class=\"ds-btn-primary\">Get Started</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 24px; border: 1px solid rgba(161,255,246,0.72); border-radius: 10px; background: linear-gradient(135deg, #5ee7df 0%, #b490f5 48%, #b490f5 100%); color: #020302; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; box-shadow: 0 18px 46px rgba(94,231,223,0.22), inset 0 1px 0 rgba(255,255,255,0.82); transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms, background 180ms; } .ds-btn-primary:hover { transform: translateY(-1px); background: linear-gradient(135deg, #5ee7df 0%, #8b5cf6 46%, #8b5cf6 100%); box-shadow: 0 22px 54px rgba(94,231,223,0.3), inset 0 1px 0 rgba(255,255,255,0.86); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #5ee7df, 0 0 0 4px rgba(94,231,223,0.22), 0 18px 46px rgba(94,231,223,0.22); } .ds-btn-primary:disabled { opacity: 0.62; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Builder chrome navigation. Minimal borders, lift-on-hover, active state tints to builder-accent.",
+      "html": "<button class=\"ds-btn-ghost\">Settings</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(255,255,255,0.03); color: #E8EAED; font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), color 180ms, background 180ms, border-color 180ms; } .ds-btn-ghost:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 2px #5ee7df, 0 0 0 4px rgba(94,231,223,0.22); } .ds-btn-ghost.is-active { border-color: #9575F0; background: rgba(149,117,240,0.10); color: #9575F0; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Glass surface text input. Cyan focus ring (4px halo). Error border red.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@studio.com\" />",
+      "css": ".ds-input { display: block; width: 100%; min-height: 46px; padding: 0 40px 0 12px; border: 1px solid rgba(255,255,255,0.11); border-radius: 10px; background: rgba(255,255,255,0.055); color: rgba(255,255,255,0.92); font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.92rem; outline: none; transition: border-color 180ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms, box-shadow 180ms; } .ds-input::placeholder { color: rgba(255,255,255,0.38); } .ds-input:hover:not(:focus) { border-color: rgba(255,255,255,0.2); } .ds-input:focus-visible { border-color: rgba(94,231,223,0.62); background: rgba(255,255,255,0.075); box-shadow: 0 0 0 4px rgba(94,231,223,0.15); } .ds-input.has-error { border-color: rgba(255,120,120,0.62); }"
+    },
+    {
+      "name": "Card Surface",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Glassmorphism panel. Triple shadow (ambient + glow + inset), gradient overlay, blur 26px, radial mint glow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Decision</div><div class=\"ds-card-body\">Salt DS is the right fit for your enterprise tooling.</div></div>",
+      "css": ".ds-card { position: relative; min-width: 0; padding: 32px; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.045)), radial-gradient(circle at 24% 0%, rgba(94,231,223,0.13), transparent 42%), rgba(8,12,22,0.82); box-shadow: 0 42px 140px rgba(0,0,0,0.5), 0 0 120px rgba(59,130,246,0.12), inset 0 1px 0 rgba(255,255,255,0.12); backdrop-filter: blur(26px); -webkit-backdrop-filter: blur(26px); color: rgba(255,255,255,0.92); font-family: 'DM Sans', system-ui, sans-serif; } .ds-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(135deg, rgba(94,231,223,0.12), transparent 38%, rgba(180,144,245,0.10)); opacity: 0.42; } .ds-card-title { font-size: 1.02rem; font-weight: 600; line-height: 1.25; margin-bottom: 12px; } .ds-card-body { font-size: 1rem; font-weight: 400; line-height: 1.68; color: rgba(255,255,255,0.7); }"
+    },
+    {
+      "name": "Proof Chip",
+      "kind": "chip",
+      "refersTo": "chip-proof",
+      "description": "Proof / social-proof badge. Minimal bordered pill, uppercase Label typography.",
+      "html": "<span class=\"ds-chip\">Salt DS</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 8px; border: 1px solid rgba(255,255,255,0.09); border-radius: 6px; background: rgba(255,255,255,0.045); color: rgba(255,255,255,0.7); font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.74rem; font-weight: 800; line-height: 1.2; letter-spacing: 0.06em; text-transform: uppercase; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Aurora Observatory",
+    "overview": "uoaui is built like an observatory — a calm vantage point from which to study moving phenomena. The aurora, the beam shader, the five design-system specimens on the workbench: all of it lives beneath a stable instrument-grade chrome. The phenomena move; the observer doesn't. That's the visual contract. This system explicitly rejects the four reflexes of category-coded AI tooling: it is not a SaaS dashboard, it is not the Tailwind / shadcn default, it is not crypto-on-black neon glow, and it is not bento-grid template feel.",
+    "keyCharacteristics": [
+      "Flat tonal + functional glass. Surfaces flat at rest; shadows only on state change.",
+      "Solid and quiet components. Borders and tonal opacity do what cards usually do.",
+      "Aurora as constant, not ornament. Cyan / violet / rose ribbon ties hero, login, and builder.",
+      "Two-voice token system. Brand surfaces use #6750a4; builder chrome uses #9575F0 for legibility on glass."
+    ],
+    "rules": [
+      { "name": "The Aurora-as-Constant Rule", "body": "The aurora ribbon (cyan, violet, rose) appears on every brand surface as ambient atmosphere. Never break it into a single accent. Never recolor it to brand-primary alone. The ribbon IS uoaui.", "section": "colors" },
+      { "name": "The Two-Voice Rule", "body": "Brand surfaces use Observatory Iris #6750a4. Builder chrome uses builder-accent #9575F0 (lighter violet, reads better on dark glass). Don't unify them.", "section": "colors" },
+      { "name": "The Accent Restraint Rule", "body": "The five-color accent set is reserved for stage markers, system status, and per-DS swatches. Total accent coverage per screen ≤8%.", "section": "colors" },
+      { "name": "The One-Display Rule", "body": "A page carries one Display element. Heroes and login screens only. Never use Display for section headings — that's Headline's job.", "section": "typography" },
+      { "name": "The Uppercase-Label-Only Rule", "body": "Uppercase + 0.06em tracking is reserved for the Label role. Never apply to Body, Title, or Headline. Uppercase Title is the SaaS cliché.", "section": "typography" },
+      { "name": "The Functional Shadow Rule", "body": "Shadows reserved for state change or genuine elevation. A card at rest has no shadow. Glass-morphic insets are not shadows; they are light treatment.", "section": "elevation" },
+      { "name": "The Cyan Focus Rule", "body": "Focus rings use the aurora cyan halo, not the brand primary. Focus reads independent of brand theming, stays legible across builder-light / builder-dark / DS preview modes.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do anchor the brand surface in Observatory Iris #6750a4 + Solar Lilac #b490f5.",
+      "Do use the cyan focus ring on every interactive element.",
+      "Do keep surfaces flat at rest. Use opacity stacks and 1px borders for depth.",
+      "Do cap body copy at 65–75ch line length.",
+      "Do preserve each DS's own tokens when rendering its preview.",
+      "Do respect prefers-reduced-motion fully."
+    ],
+    "donts": [
+      "Don't look like a generic SaaS dashboard. No sidebar-nav + card-grid + stat-counter.",
+      "Don't use Tailwind / shadcn default look. No slate-gray-on-white, no rounded-md-card-grid, no Inter-everywhere.",
+      "Don't push toward crypto / AI neon-on-black aesthetic.",
+      "Don't lay out in bento grids.",
+      "Don't use uppercase + tracking on Body, Title, or Headline.",
+      "Don't drop shadow as default elevation.",
+      "Don't use border-left / border-right >1px as colored accent stripe.",
+      "Don't use gradient text (background-clip: text + gradient).",
+      "Don't treat the HeroBeam as decoration."
+    ]
+  }
+}
