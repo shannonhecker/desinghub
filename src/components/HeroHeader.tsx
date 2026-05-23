@@ -125,13 +125,6 @@ const features = [
   },
 ];
 
-const markers = [
-  { key: "salt", label: "Salt", position: "top-left", glyph: "01" },
-  { key: "m3", label: "Material", position: "top-right", glyph: "02" },
-  { key: "fluent", label: "Fluent", position: "left", glyph: "03" },
-  { key: "carbon", label: "Carbon", position: "right", glyph: "04" },
-];
-
 const proof = [
   { icon: Layers, value: "5 systems", label: "Salt, Material, Fluent, Carbon, and uoaui from one brief" },
   { icon: MonitorSmartphone, value: "Responsive", label: "desktop, tablet, and mobile previews" },
@@ -961,50 +954,38 @@ export function HeroHeader() {
           <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
         </Link>
       </nav>
-      <section className="hero-stage" aria-labelledby="landing-title">
+      <section id="demo" className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
           <div className="hero-halo" aria-hidden="true" />
 
           <TopoLines />
 
-          {markers.map((marker) => (
-            <div
-              className={`stage-marker stage-marker--${marker.position}`}
-              key={marker.key}
-              data-hero-enter
-            >
-              <span className="stage-marker-icon" aria-hidden="true">
-                {marker.glyph}
-              </span>
-              <span>
-                <strong>{marker.label}</strong>
-              </span>
+          <div className="hero-grid">
+            <div className="hero-copy">
+              <div className="hero-kicker" data-hero-enter>
+                <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
+                AI builder for five enterprise design systems
+              </div>
+              <h1 id="landing-title" className="hero-headline" data-hero-enter>
+                Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or uoaui</span>
+              </h1>
+              <p className="hero-body" data-hero-enter>
+                uoaui turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
+              </p>
+              <div className="hero-actions" data-hero-enter>
+                <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
+                  <span>Request Access</span>
+                  <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                </button>
+              </div>
+              <p className="hero-body hero-body--small" data-hero-enter>
+                Private preview. Already have a password? Use Enter Studio in the top navigation.
+              </p>
             </div>
-          ))}
 
-          <div className="hero-copy">
-            <div className="hero-kicker" data-hero-enter>
-              <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
-              AI builder for five enterprise design systems
+            <div className="hero-demo" data-hero-enter>
+              <HeroPreviewDemo />
             </div>
-            <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or uoaui</span>
-            </h1>
-            <p className="hero-body" data-hero-enter>
-              uoaui turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
-            </p>
-            <div className="hero-actions" data-hero-enter>
-              <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
-                <span>Request Access</span>
-                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-              </button>
-              <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
-                <span>View Demo</span>
-              </a>
-            </div>
-            <p className="hero-body" data-hero-enter>
-              Private preview. Already have a password? Use Enter Studio in the top navigation.
-            </p>
           </div>
         </div>
       </section>
@@ -1088,18 +1069,6 @@ export function HeroHeader() {
               </div>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section id="demo" className="landing-section demo-section" aria-labelledby="demo-title">
-        <ContentAtmosphere />
-        <div className="section-heading demo-heading content-parallax-heading">
-          <span className="section-kicker">Live demo</span>
-          <h2 id="demo-title">See the builder move from prompt to handoff.</h2>
-          <p>Follow the complete loop: Prompt -&gt; Generate -&gt; Compare -&gt; Tune -&gt; Export.</p>
-        </div>
-        <div className="demo-frame content-card-grid">
-          <HeroPreviewDemo />
         </div>
       </section>
 

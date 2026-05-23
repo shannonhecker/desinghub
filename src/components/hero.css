@@ -468,14 +468,57 @@
   right: 8%;
 }
 
+/* Linear-style hero grid: copy left, demo right. Stacks vertically on narrow viewports. */
+.hero-grid {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: clamp(28px, 4vw, 56px);
+  max-width: 1440px;
+  width: 100%;
+  margin: clamp(80px, 14vh, 130px) auto 0;
+  padding: 0 var(--dh-space-16) clamp(48px, 8vh, 96px);
+}
+
 .hero-copy {
-  width: min(800px, 100%);
-  margin: clamp(104px, 18vh, 154px) auto 0;
-  padding: 0 var(--dh-space-16) 138px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+}
+
+.hero-demo {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+/* The demo's own width is sized for its #demo section context; inside the hero
+   grid it needs to fit the right column at all viewports. */
+.hero-demo .hero-product {
+  width: 100%;
+  max-width: 720px;
+}
+
+@media (max-width: 960px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: clamp(40px, 6vw, 64px);
+    margin-top: clamp(64px, 10vh, 110px);
+  }
+
+  .hero-copy {
+    align-items: center;
+    text-align: center;
+  }
+
+  .hero-demo .hero-product {
+    max-width: 100%;
+  }
 }
 
 .hero-kicker,
@@ -505,14 +548,14 @@
 }
 
 .hero-headline {
-  max-width: 950px;
+  max-width: 600px;
   margin: var(--dh-space-20) 0 0;
   color: var(--dh-brand-fg);
   font-family: var(--font-outfit), "Outfit", system-ui, sans-serif;
-  font-size: clamp(3.4rem, 7vw, 7.55rem);
-  line-height: 0.92;
+  font-size: clamp(2.8rem, 5vw, 4.6rem);
+  line-height: 0.96;
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: -0.005em;
   text-wrap: balance;
 }
 
@@ -521,20 +564,42 @@
 }
 
 .hero-body {
-  max-width: 720px;
-  margin: var(--dh-space-16) 0 0;
+  max-width: 540px;
+  margin: var(--dh-space-20) 0 0;
   color: rgba(238, 242, 237, 0.72);
-  font-size: clamp(0.9rem, 1.2vw, 1rem);
+  font-size: clamp(0.95rem, 1.05vw, 1.05rem);
   line-height: 1.6;
   text-wrap: balance;
+}
+
+.hero-body--small {
+  font-size: 0.82rem;
+  color: rgba(238, 242, 237, 0.5);
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: var(--dh-space-12);
   margin-top: var(--dh-space-32);
+}
+
+@media (max-width: 960px) {
+  .hero-headline {
+    max-width: 100%;
+    font-size: clamp(2.8rem, 7vw, 5rem);
+  }
+
+  .hero-body {
+    max-width: 540px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
 }
 
 .landing-btn {
