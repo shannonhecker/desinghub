@@ -963,92 +963,9 @@ export function HeroHeader() {
       </nav>
       <section className="hero-stage" aria-labelledby="landing-title">
         <div className="hero-stage-shell">
-          <div className="hero-beam-pillar" aria-hidden="true">
-            <div className="hero-beam-pillar-particles" />
-            <div className="hero-beam-pillar-aura-top" />
-            <div className="hero-beam-pillar-aura-bottom" />
-            <div className="hero-beam-pillar-rays-top">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 4 rays per side (idx 2..5). The two innermost rays per
-                // side (idx 0 and 1) are skipped so the headline area
-                // stays clean — they were reading as distracting vertical
-                // lines behind the title.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6; // 0..5 within the side
-                if (idx <= 1) return null;
-                // Spread each side from ~22.8% to ~36% out from centre.
-                const xPct = side * (14 + idx * 4.4);
-                const dist = Math.abs(xPct) / 36; // 0..1 normalised
-                const heightPct = 92 - dist * 30;
-                const widthPx = 5 + ((i * 17) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.92 - dist * 0.32;
-                const delay = ((i * 0.137) % 1) * 5.4;
-                return (
-                  <span
-                    key={`top-${i}`}
-                    className="hero-beam-ray"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      top: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-rays-bottom">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 5 rays per side, mirroring the top fan but with the
-                // innermost ray (idx 0) skipped so the bottom fan also
-                // clears the headline area on shorter viewports.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6;
-                if (idx === 0) return null;
-                const xPct = side * (16 + idx * 5.2);
-                const dist = Math.abs(xPct) / 42;
-                const heightPct = 84 - dist * 24;
-                const widthPx = 5 + ((i * 19) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.88 - dist * 0.3;
-                const delay = ((i * 0.179) % 1) * 5.4;
-                return (
-                  <span
-                    key={`bot-${i}`}
-                    className="hero-beam-ray hero-beam-ray--down"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      bottom: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-waist" />
-            <div className="hero-beam-pillar-floor" />
-          </div>
           <div className="hero-halo" aria-hidden="true" />
-          <div className="stage-light stage-light--right" aria-hidden="true" />
-          <div className="stage-light stage-light--left" aria-hidden="true" />
-          <div className="stage-grid" aria-hidden="true" />
 
           <TopoLines />
-          <div className="stage-motion-lines" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
 
           {markers.map((marker) => (
             <div
@@ -1088,60 +1005,6 @@ export function HeroHeader() {
             <p className="hero-body" data-hero-enter>
               Private preview. Already have a password? Use Enter Studio in the top navigation.
             </p>
-          </div>
-
-          <div className="hero-ai-showcase" aria-hidden="true" data-hero-enter>
-            <div className="hero-ai-orbit hero-ai-orbit--one" />
-            <div className="hero-ai-orbit hero-ai-orbit--two" />
-            <div className="hero-ai-beam hero-ai-beam--one" />
-            <div className="hero-ai-beam hero-ai-beam--two" />
-            <div className="hero-ai-node hero-ai-node--prompt">
-              <span>Prompt</span>
-            </div>
-            <div className="hero-ai-node hero-ai-node--systems">
-              <span>5 systems</span>
-            </div>
-            <div className="hero-ai-node hero-ai-node--export">
-              <span>Export</span>
-            </div>
-            <div className="hero-ai-product">
-              <div className="hero-ai-product-top">
-                <span />
-                <span />
-                <span />
-                <strong>uoaui studio</strong>
-              </div>
-              <div className="hero-ai-product-body">
-                <aside>
-                  <span className="is-active">Salt</span>
-                  <span>M3</span>
-                  <span>Fluent</span>
-                  <span>Carbon</span>
-                  <span>uoaui</span>
-                </aside>
-                <div className="hero-ai-canvas">
-                  <div className="hero-ai-prompt">
-                    <Sparkles size={14} strokeWidth={1.8} />
-                    Design a review-ready product dashboard
-                  </div>
-                  <div className="hero-ai-card hero-ai-card--wide">
-                    <span>Generated surface</span>
-                    <strong>Revenue Operations</strong>
-                    <p>System-aware layout with responsive states and handoff notes.</p>
-                  </div>
-                  <div className="hero-ai-metrics">
-                    <div><span>Variants</span><strong>5</strong></div>
-                    <div><span>Frames</span><strong>3</strong></div>
-                    <div><span>Ready</span><strong>96%</strong></div>
-                  </div>
-                  <div className="hero-ai-chart">
-                    {[54, 76, 62, 88, 70, 94].map((height, index) => (
-                      <span key={index} style={{ height: `${height}%` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
