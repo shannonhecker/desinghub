@@ -1101,7 +1101,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Product proof</span>
-          <h2 id="bento-title">Every output stays tied to real interface work.</h2>
+          <h2 id="bento-title">Every output stays tied to real interface <em className="section-accent">work.</em></h2>
           <p>
             uoaui is built around the pieces teams review: system language, responsive
             framing, export path, and the context behind each decision.
@@ -1137,7 +1137,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Built for</span>
-          <h2 id="audience-title">For the messy middle between product brief and polished UI.</h2>
+          <h2 id="audience-title">For the <em className="section-accent">messy middle</em> between product brief and polished UI.</h2>
           <p>
             uoaui is being built by Shannon for early product exploration: the moment
             when a brief needs to become a credible interface direction fast.
@@ -1173,7 +1173,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading demo-heading content-parallax-heading">
           <span className="section-kicker">Live demo</span>
-          <h2 id="demo-title">See the builder move from prompt to handoff.</h2>
+          <h2 id="demo-title">See the builder move from prompt to <em className="section-accent">handoff.</em></h2>
           <p>Follow the complete loop: Prompt -&gt; Generate -&gt; Compare -&gt; Tune -&gt; Export.</p>
         </div>
         <div className="demo-frame content-card-grid">
@@ -1185,7 +1185,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Systems</span>
-          <h2>One interface idea, five distinct product languages.</h2>
+          <h2>One interface idea, <em className="section-accent">five distinct</em> product languages.</h2>
           <p>
             uoaui keeps each system's rhythm intact, from dense trading screens to softer
             review surfaces and glass-native AI workspaces.
@@ -1210,7 +1210,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Workflow</span>
-          <h2>A focused path from prompt to handoff.</h2>
+          <h2>A focused path from prompt to <em className="section-accent">handoff.</em></h2>
         </div>
         <ol className="workflow-flow" ref={workflowGridRef}>
           {workflow.map((item) => (
@@ -1227,7 +1227,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="section-heading content-parallax-heading">
           <span className="section-kicker">Studio</span>
-          <h2>Polished enough for critique, practical enough for production.</h2>
+          <h2>Polished enough for <em className="section-accent">critique,</em> practical enough for production.</h2>
           <p>
             The product work stays visible: prompt context, system comparison, responsive
             review, and export all sit inside the same workspace.
@@ -1253,7 +1253,7 @@ export function HeroHeader() {
         <ContentAtmosphere />
         <div className="export-cta">
           <span className="section-kicker">Private studio</span>
-          <h2>Start with a prompt. Leave with a system-aware interface.</h2>
+          <h2>Start with a prompt. Leave with a <em className="section-accent">system-aware</em> interface.</h2>
           <p>
             Build the first direction, compare it across product languages, and carry the
             selected surface into review, sharing, and export.

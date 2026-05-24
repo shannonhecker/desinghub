@@ -5938,3 +5938,530 @@
 .hero-stage--orbital .hero-ai-showcase {
   display: none !important;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Landing-page cohesion layer
+   Hoists the orbital aesthetic (italic-serif accent, peach/coral
+   gradient, lilac warmth, grain, DS brand signals) into every section
+   below the hero. Surgical typography + atmospheric backgrounds —
+   no structural rewrites.
+   ───────────────────────────────────────────────────────────────────── */
+
+.landing-page {
+  /* Re-declare orbital tokens at landing-page scope so all sections
+     can use them. (.hero-stage--orbital still defines its own copy
+     for safety.) */
+  --orbital-bezel-peach: #f4a682;
+  --orbital-bezel-coral: #d97a6c;
+  --orbital-bezel-lilac: #b490f5;
+  --orbital-bezel-indigo: #4a3b7a;
+
+  --orbital-salt:   #1b9eb4;
+  --orbital-m3:     #7c5dfa;
+  --orbital-fluent: #2b88d8;
+  --orbital-carbon: #0f62fe;
+  --orbital-uoaui:  #d7b6f2;
+
+  /* Grain background re-used as a CSS background-image var so any
+     section can paint the same texture without re-encoding the SVG. */
+  --grain-bg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ── Section-accent — italic serif on one word per H2 ───────────── */
+.landing-page .section-accent {
+  font-family: var(--font-instrument-serif), "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.08em;
+  letter-spacing: -0.005em;
+  background: linear-gradient(102deg, #f4a682 0%, #e88a78 48%, #d97a6c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 24px rgba(244, 166, 130, 0.1);
+  padding-right: 0.04em;
+}
+
+/* Calm-version accent for body / pullquote — same italic family but
+   no gradient, plain warm cream color. Use on .section-accent--soft. */
+.landing-page .section-accent--soft {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(244, 166, 130, 0.88);
+  background: none;
+  -webkit-text-fill-color: rgba(244, 166, 130, 0.88);
+}
+
+/* Override the existing .hero-headline span gradient sweep for our
+   new tension headline (it doesn't have <span>s but old rules are
+   broad — neutralise to be safe). */
+.landing-page .hero-headline--tension span,
+.landing-page .hero-headline--tension em {
+  -webkit-text-fill-color: unset;
+}
+
+/* ── Section-band atmospheric backgrounds ───────────────────────── */
+.landing-page .section-band {
+  position: relative;
+  isolation: isolate;
+}
+
+.landing-page .section-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  background:
+    radial-gradient(60% 50% at 88% 12%, rgba(244, 166, 130, 0.06), transparent 65%),
+    radial-gradient(50% 50% at 8% 88%, rgba(180, 144, 245, 0.05), transparent 70%);
+}
+
+/* Alternate sections — flip the warm/cool diagonal for rhythm.
+   :nth-of-type(even) of section.section-band flips the gradient. */
+.landing-page section.section-band:nth-of-type(even)::before {
+  background:
+    radial-gradient(58% 50% at 12% 18%, rgba(244, 166, 130, 0.055), transparent 68%),
+    radial-gradient(54% 52% at 92% 84%, rgba(180, 144, 245, 0.05), transparent 70%);
+}
+
+/* Subtle grain on section-bands ties them to the hero bezel grain. */
+.landing-page .section-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--grain-bg);
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+/* Make sure section content sits above the new pseudo elements. */
+.landing-page .section-band > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Section kicker — calm Instrument Serif italic eyebrow ──────── */
+.landing-page .section-kicker {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 0.92rem;
+  font-weight: 400;
+  color: rgba(244, 166, 130, 0.78);
+  letter-spacing: 0.005em;
+  text-transform: none;
+}
+
+/* ── Proof strip — chip-style hover lift ────────────────────────── */
+.landing-page .proof-strip-flow {
+  position: relative;
+  z-index: 1;
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 3vw, 48px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: clamp(12px, 1.5vw, 20px);
+}
+
+.landing-page .proof-flow-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(20, 20, 36, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    transform 320ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    border-color 320ms ease,
+    background 320ms ease;
+}
+
+.landing-page .proof-flow-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 166, 130, 0.32);
+  background: rgba(28, 22, 36, 0.55);
+}
+
+.landing-page .proof-flow-icon {
+  color: rgba(244, 166, 130, 0.78);
+}
+
+.landing-page .proof-flow-item strong {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(247, 249, 244, 0.96);
+}
+
+.landing-page .proof-flow-item span {
+  font-size: 0.78rem;
+  color: rgba(238, 242, 237, 0.62);
+  line-height: 1.45;
+}
+
+/* ── Bento proof rows — soft warm card backdrop ─────────────────── */
+.landing-page .proof-row {
+  position: relative;
+}
+
+.landing-page .proof-row h3 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(1.3rem, 2vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.landing-page .proof-row-chips span {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(244, 166, 130, 0.08);
+  border: 1px solid rgba(244, 166, 130, 0.18);
+  color: rgba(247, 235, 226, 0.86);
+}
+
+/* ── Audience pullquote — full italic-serif moment ──────────────── */
+.landing-page .audience-pullquote,
+.landing-page .section-pullquote {
+  position: relative;
+  margin: clamp(32px, 5vw, 64px) auto;
+  max-width: 920px;
+  padding: clamp(28px, 4vw, 48px);
+  border-radius: 24px;
+  background:
+    radial-gradient(70% 100% at 100% 0%, rgba(244, 166, 130, 0.08), transparent 70%),
+    radial-gradient(80% 100% at 0% 100%, rgba(180, 144, 245, 0.06), transparent 72%),
+    rgba(20, 16, 32, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-page .section-pullquote-label {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: rgba(244, 166, 130, 0.78);
+  letter-spacing: 0.02em;
+}
+
+.landing-page .section-pullquote p {
+  margin-top: 14px;
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-size: clamp(1.3rem, 2.1vw, 1.85rem);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  color: rgba(247, 235, 226, 0.92);
+  text-wrap: balance;
+}
+
+/* ── Audience row cards — subtle warm hover ─────────────────────── */
+.landing-page .audience-row {
+  transition:
+    transform 320ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    border-color 320ms ease;
+}
+
+.landing-page .audience-row:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 166, 130, 0.32);
+}
+
+.landing-page .audience-row-icon {
+  color: rgba(244, 166, 130, 0.86);
+}
+
+.landing-page .audience-row-tags span {
+  background: rgba(180, 144, 245, 0.08);
+  border: 1px solid rgba(180, 144, 245, 0.18);
+  color: rgba(228, 216, 252, 0.86);
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* ── Demo frame — bezel framing around HeroPreviewDemo ──────────── */
+.landing-page .demo-frame {
+  position: relative;
+  padding: clamp(20px, 2.6vw, 40px);
+  border-radius: clamp(20px, 2.4vw, 36px);
+  background:
+    radial-gradient(60% 50% at 78% 18%, rgba(244, 166, 130, 0.22), transparent 70%),
+    radial-gradient(50% 50% at 18% 82%, rgba(217, 122, 108, 0.18), transparent 72%),
+    radial-gradient(70% 60% at 52% 50%, rgba(180, 144, 245, 0.16), transparent 76%),
+    linear-gradient(168deg, #1a1430 0%, #2a1f4a 60%, #1b1834 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 30px 90px -20px rgba(8, 6, 24, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.landing-page .demo-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-bg);
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-page .demo-frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Systems section — DS brand-signal dot per row ──────────────── */
+.landing-page .system-row[data-system="salt"]   .system-row-dot { background: var(--orbital-salt);   box-shadow: 0 0 16px var(--orbital-salt); }
+.landing-page .system-row[data-system="m3"]     .system-row-dot { background: var(--orbital-m3);     box-shadow: 0 0 16px var(--orbital-m3); }
+.landing-page .system-row[data-system="fluent"] .system-row-dot { background: var(--orbital-fluent); box-shadow: 0 0 16px var(--orbital-fluent); }
+.landing-page .system-row[data-system="carbon"] .system-row-dot { background: var(--orbital-carbon); box-shadow: 0 0 16px var(--orbital-carbon); }
+.landing-page .system-row[data-system="uoaui"]  .system-row-dot { background: var(--orbital-uoaui);  box-shadow: 0 0 16px var(--orbital-uoaui); }
+
+.landing-page .system-row-name {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.landing-page .system-row-signal {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.84rem;
+  color: rgba(244, 166, 130, 0.78);
+  letter-spacing: 0.005em;
+}
+
+/* ── Workflow numerals — editorial scale ────────────────────────── */
+.landing-page .workflow-step-flow {
+  position: relative;
+  padding: clamp(28px, 3vw, 48px) clamp(24px, 3vw, 40px);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: clamp(16px, 2vw, 32px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.landing-page .workflow-step-flow:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-page .workflow-numeral {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(4.5rem, 8vw, 7.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  background: linear-gradient(168deg, #f4a682 0%, #d97a6c 55%, #b490f5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0.92;
+  align-self: start;
+  min-width: clamp(110px, 12vw, 180px);
+}
+
+.landing-page .workflow-title {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-top: clamp(12px, 1.5vw, 24px);
+}
+
+.landing-page .workflow-body {
+  color: rgba(238, 242, 237, 0.7);
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.55;
+  max-width: 60ch;
+}
+
+@media (max-width: 720px) {
+  .landing-page .workflow-step-flow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .landing-page .workflow-numeral {
+    font-size: clamp(4rem, 18vw, 6rem);
+  }
+}
+
+/* ── Feature list — italic on terms, warm accent on icons ───────── */
+.landing-page .feature-list-row {
+  transition: background 320ms ease;
+}
+
+.landing-page .feature-list-row:hover {
+  background: rgba(244, 166, 130, 0.03);
+}
+
+.landing-page .feature-list-term {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.landing-page .feature-list-term svg {
+  color: rgba(244, 166, 130, 0.78);
+}
+
+/* ── Export section — bezel bookend ─────────────────────────────── */
+.landing-page .export-section.section-band--cta {
+  position: relative;
+  padding: clamp(48px, 8vw, 96px) clamp(24px, 4vw, 64px);
+  margin: clamp(40px, 6vw, 80px) clamp(16px, 2vw, 32px);
+  border-radius: clamp(20px, 2.4vw, 36px);
+  background: transparent;
+  isolation: isolate;
+}
+
+.landing-page .export-section.section-band--cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  background:
+    radial-gradient(60% 50% at 22% 12%, rgba(244, 166, 130, 0.5), transparent 70%),
+    radial-gradient(50% 50% at 82% 88%, rgba(217, 122, 108, 0.4), transparent 72%),
+    radial-gradient(70% 60% at 50% 50%, rgba(180, 144, 245, 0.28), transparent 78%),
+    linear-gradient(168deg, #1a1430 0%, #2a1f4a 50%, #1b1834 100%);
+}
+
+.landing-page .export-section.section-band--cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image: var(--grain-bg);
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.landing-page .export-cta {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.landing-page .export-cta h2 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin-top: var(--dh-space-20);
+}
+
+.landing-page .export-cta p {
+  margin: var(--dh-space-16) auto 0;
+  max-width: 56ch;
+  color: rgba(238, 242, 237, 0.78);
+  font-size: clamp(0.96rem, 1.2vw, 1.1rem);
+  line-height: 1.55;
+  text-wrap: balance;
+}
+
+.landing-page .export-cta-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: var(--dh-space-24) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-page .export-cta-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(20, 14, 36, 0.5);
+  border: 1px solid rgba(244, 166, 130, 0.22);
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(247, 235, 226, 0.92);
+}
+
+.landing-page .export-cta-list li svg {
+  color: rgba(244, 166, 130, 0.92);
+}
+
+.landing-page .export-cta-btn {
+  margin-top: var(--dh-space-24);
+}
+
+/* ── Footer — small italic touch ────────────────────────────────── */
+.landing-page .landing-footer {
+  padding: clamp(28px, 4vw, 48px) clamp(20px, 3vw, 48px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-page .landing-footer span:first-child {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.1rem;
+  color: rgba(244, 166, 130, 0.88);
+  letter-spacing: 0.005em;
+}
+
+.landing-page .landing-footer span:last-child {
+  font-size: 0.78rem;
+  color: rgba(238, 242, 237, 0.52);
+}
+
+/* ── Section heading typography pass ────────────────────────────── */
+.landing-page .section-heading h2 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(1.8rem, 3.6vw, 3.2rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  margin: var(--dh-space-16) 0 0;
+}
+
+.landing-page .section-heading p {
+  margin: var(--dh-space-16) 0 0;
+  max-width: 60ch;
+  color: rgba(238, 242, 237, 0.7);
+  font-size: clamp(0.96rem, 1.2vw, 1.1rem);
+  line-height: 1.55;
+  text-wrap: balance;
+}
