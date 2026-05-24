@@ -1268,7 +1268,7 @@ export function HeroHeader() {
         <div className="section-heading">
           <span className="section-kicker">5 systems</span>
           <h2 id="compare-title">Same prompt. <em className="section-accent">Five chromes.</em></h2>
-          <p>Tokens, density, component grammar — each system intact.</p>
+          <p>Tokens, density, component grammar. Each system intact.</p>
         </div>
         <div className="compare-grid">
           {systems.map((system) => (

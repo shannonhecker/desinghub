@@ -7195,3 +7195,19 @@ body.custom-cursor-active * {
 .landing-page .hero-copy--centered {
   max-width: 920px;
 }
+
+/* ── A11y fix: section-accent contrast ────────────────────────────
+   Legacy rule at line ~4325 sets `.hero.landing-page .section-heading
+   h2 em { color: var(--ice-blue) }` — that won via specificity and
+   produced ~1.6:1 contrast (WCAG 1.4.3 fail). Bump specificity here
+   so the peach gradient wins everywhere section-accent appears,
+   including inside .section-heading h2. */
+.hero.landing-page h2 em.section-accent,
+.hero.landing-page h2 em.hero-headline__accent {
+  background: linear-gradient(102deg, #ffa56d 0%, #f47a5f 48%, #e0584a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 28px rgba(255, 165, 109, 0.18);
+}
