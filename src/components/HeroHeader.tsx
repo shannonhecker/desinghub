@@ -1022,43 +1022,6 @@ export function HeroHeader() {
     };
   }, [landingRef]);
 
-  /* Scroll parallax — halftone bg drifts down at 30% scroll rate
-     (subtle), secondary halftone drifts down at 18% in the opposite
-     phase, workflow numerals drift at 60%. CSS reads --halftone-shift,
-     --halftone-shift-2, --numeral-shift. rAF-throttled. Skips when
-     prefers-reduced-motion. */
-  useEffect(() => {
-    if (reducedMotion) return;
-    const root = landingRef.current;
-    if (!root || typeof window === "undefined") return;
-
-    let frame = 0;
-    const numerals = Array.from(
-      document.querySelectorAll<HTMLElement>(".landing-page .workflow-numeral"),
-    );
-
-    const apply = () => {
-      frame = 0;
-      const y = window.scrollY;
-      root.style.setProperty("--halftone-shift", `${(y * 0.3).toFixed(1)}px`);
-      root.style.setProperty("--halftone-shift-2", `${(-y * 0.18).toFixed(1)}px`);
-      const numeralShift = `${(y * 0.06).toFixed(1)}px`;
-      for (const n of numerals) n.style.setProperty("--numeral-shift", numeralShift);
-    };
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(apply);
-    };
-
-    apply();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [reducedMotion, landingRef]);
-
   useEffect(() => {
     /* Section heading reveals — kicker → h2 → body stagger as each
        section enters the viewport. */
