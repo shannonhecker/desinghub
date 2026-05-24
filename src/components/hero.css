@@ -6548,3 +6548,199 @@
 .hero-orbital--paused .hero-orbital__center {
   animation-play-state: paused;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   "PUSH HARDER" — bolder saturation, scroll + mouse parallax,
+   chromatic-aberration hover on cards. Stays in the dark editorial
+   genre matching the Melio + Marketeam refs.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Saturate the page bg accents — bump opacity ~30% above the prior
+   pass so warm/cool zones read more vividly across the scroll. */
+.hero.landing-page {
+  background:
+    radial-gradient(54% 38% at 78% 8%,  rgba(244, 166, 130, 0.58), transparent 64%),
+    radial-gradient(46% 36% at 18% 24%, rgba(217, 122, 108, 0.46), transparent 66%),
+    radial-gradient(58% 36% at 50% 16%, rgba(180, 144, 245, 0.38), transparent 70%),
+    radial-gradient(52% 28% at 8% 52%,  rgba(244, 166, 130, 0.22), transparent 72%),
+    radial-gradient(54% 28% at 92% 68%, rgba(180, 144, 245, 0.26), transparent 72%),
+    radial-gradient(60% 32% at 50% 92%, rgba(217, 122, 108, 0.32), transparent 72%),
+    linear-gradient(178deg, #150f2c 0%, #1f1740 22%, #29204a 48%, #211838 74%, #14102a 100%);
+}
+
+/* Scroll parallax — page bg ::before drifts at 20% scroll rate.
+   --bg-parallax-y is set from JS on scroll. The slower bg creates
+   depth: eye reads it as "behind" the content. */
+.hero.landing-page::before {
+  transform: translate3d(0, var(--bg-parallax-y, 0px), 0);
+  will-change: transform;
+}
+
+/* Saturate the headline + section accents — push peach toward coral. */
+.landing-page .hero-headline__accent,
+.landing-page .section-accent {
+  background: linear-gradient(102deg, #ffa56d 0%, #f47a5f 48%, #e0584a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 28px rgba(255, 165, 109, 0.18);
+}
+
+/* ── Mouse parallax — orbital tilts toward cursor ─────────────────── */
+.hero-orbital-stage {
+  perspective: 1400px;
+  transform-style: preserve-3d;
+}
+
+.landing-page .hero-orbital {
+  transform:
+    rotateY(calc((var(--hero-mouse-px, 0) - 0.5) * 6deg))
+    rotateX(calc((0.5 - var(--hero-mouse-py, 0)) * 4deg));
+  transform-style: preserve-3d;
+  transition: transform 320ms cubic-bezier(0.22, 0.6, 0.36, 1);
+}
+
+/* Chips push forward in 3D so they catch the parallax tilt. */
+.landing-page .hero-orbital__chip {
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--chip-angle))
+    translateY(calc(var(--chip-radius) * -1))
+    rotate(calc(var(--chip-angle) * -1))
+    translateZ(40px);
+}
+
+.landing-page .hero-orbital__chip.is-active {
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--chip-angle))
+    translateY(calc(var(--chip-radius) * -1))
+    rotate(calc(var(--chip-angle) * -1))
+    translateZ(72px);
+}
+
+.landing-page .hero-orbital__center {
+  transform-style: preserve-3d;
+}
+
+.landing-page .hero-orbital__surface {
+  transform: translateZ(20px);
+}
+
+/* ── Workflow numerals — scroll drift ─────────────────────────────── */
+.landing-page .workflow-numeral {
+  transform: translateY(var(--numeral-shift, 0px));
+  transition: transform 80ms linear;
+  will-change: transform;
+}
+
+/* ── Card chromatic aberration on hover ───────────────────────────── */
+
+/* Two pseudo-element ghost layers — peach-shifted + lilac-shifted —
+   offset on hover to give a "split channel" look. The original card
+   content stays sharp; only the ghosts shift. */
+.landing-page .proof-row,
+.landing-page .audience-row,
+.landing-page .system-row,
+.landing-page .feature-list-row,
+.landing-page .proof-flow-item {
+  position: relative;
+  isolation: isolate;
+  transition:
+    transform 320ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    border-color 320ms ease,
+    background 320ms ease;
+}
+
+.landing-page .proof-row::before,
+.landing-page .audience-row::before,
+.landing-page .system-row::before,
+.landing-page .feature-list-row::before,
+.landing-page .proof-flow-item::before,
+.landing-page .proof-row::after,
+.landing-page .audience-row::after,
+.landing-page .system-row::after,
+.landing-page .feature-list-row::after,
+.landing-page .proof-flow-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  border: inherit;
+  background: inherit;
+  opacity: 0;
+  transform: translate(0, 0);
+  transition:
+    opacity 240ms ease,
+    transform 280ms cubic-bezier(0.22, 0.6, 0.36, 1);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.landing-page .proof-row::before,
+.landing-page .audience-row::before,
+.landing-page .system-row::before,
+.landing-page .feature-list-row::before,
+.landing-page .proof-flow-item::before {
+  filter: hue-rotate(-22deg) saturate(2.2);
+}
+
+.landing-page .proof-row::after,
+.landing-page .audience-row::after,
+.landing-page .system-row::after,
+.landing-page .feature-list-row::after,
+.landing-page .proof-flow-item::after {
+  filter: hue-rotate(36deg) saturate(2.2);
+}
+
+.landing-page .proof-row:hover::before,
+.landing-page .audience-row:hover::before,
+.landing-page .system-row:hover::before,
+.landing-page .feature-list-row:hover::before,
+.landing-page .proof-flow-item:hover::before {
+  opacity: 0.32;
+  transform: translate(-3px, -2px);
+}
+
+.landing-page .proof-row:hover::after,
+.landing-page .audience-row:hover::after,
+.landing-page .system-row:hover::after,
+.landing-page .feature-list-row:hover::after,
+.landing-page .proof-flow-item:hover::after {
+  opacity: 0.28;
+  transform: translate(3px, 2px);
+}
+
+/* Lift on hover stays in addition to the chromatic ghosts. */
+.landing-page .proof-row:hover,
+.landing-page .audience-row:hover,
+.landing-page .system-row:hover,
+.landing-page .proof-flow-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 165, 109, 0.42);
+}
+
+/* Reduced motion: kill mouse parallax tilt + chromatic ghosts +
+   scroll parallax. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .hero-orbital,
+  .landing-page .hero-orbital__chip,
+  .landing-page .hero-orbital__surface,
+  .landing-page .workflow-numeral,
+  .hero.landing-page::before {
+    transform: none !important;
+  }
+  .landing-page .proof-row::before,
+  .landing-page .audience-row::before,
+  .landing-page .system-row::before,
+  .landing-page .feature-list-row::before,
+  .landing-page .proof-flow-item::before,
+  .landing-page .proof-row::after,
+  .landing-page .audience-row::after,
+  .landing-page .system-row::after,
+  .landing-page .feature-list-row::after,
+  .landing-page .proof-flow-item::after {
+    display: none;
+  }
+}

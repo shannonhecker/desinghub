@@ -444,6 +444,10 @@ function useHaloPointer(
       frameId = 0;
       root.style.setProperty("--hero-mouse-x", `${pendingX.toFixed(1)}%`);
       root.style.setProperty("--hero-mouse-y", `${pendingY.toFixed(1)}%`);
+      /* Also expose 0-1 fractions for transform calc() math —
+         used by the orbital 3D tilt. */
+      root.style.setProperty("--hero-mouse-px", (pendingX / 100).toFixed(3));
+      root.style.setProperty("--hero-mouse-py", (pendingY / 100).toFixed(3));
     };
 
     const onMove = (event: PointerEvent) => {
@@ -1021,6 +1025,40 @@ export function HeroHeader() {
       tl?.kill();
     };
   }, [landingRef]);
+
+  /* Scroll parallax — page bg drifts at 20% scroll rate (slow → reads
+     as depth), workflow numerals drift at 60% (fast → passes content).
+     rAF-throttled. Skips when prefers-reduced-motion. */
+  useEffect(() => {
+    if (reducedMotion) return;
+    const root = landingRef.current;
+    if (!root || typeof window === "undefined") return;
+
+    let frame = 0;
+    const numerals = Array.from(
+      document.querySelectorAll<HTMLElement>(".landing-page .workflow-numeral"),
+    );
+
+    const apply = () => {
+      frame = 0;
+      const y = window.scrollY;
+      root.style.setProperty("--bg-parallax-y", `${(y * 0.2).toFixed(1)}px`);
+      const numeralShift = `${(y * 0.06).toFixed(1)}px`;
+      for (const n of numerals) n.style.setProperty("--numeral-shift", numeralShift);
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(apply);
+    };
+
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [reducedMotion, landingRef]);
 
   useEffect(() => {
     /* Section heading reveals — kicker → h2 → body stagger as each
