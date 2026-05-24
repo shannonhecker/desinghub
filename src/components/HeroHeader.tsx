@@ -865,6 +865,22 @@ function HeroPreviewDemo() {
   );
 }
 
+/* Split text into per-character spans for the cascade reveal.
+   aria-hidden on the spans, aria-label on the parent preserves
+   screen-reader output as one continuous string (WCAG 1.3.1, 4.1.2). */
+function splitChars(text: string, opts: { lineDelay: number; charStep?: number }) {
+  const { lineDelay, charStep = 28 } = opts;
+  return text.split("").map((char, i) => (
+    <span
+      key={`${lineDelay}-${i}`}
+      className="hero-char"
+      style={{ ["--char-delay" as string]: `${lineDelay + i * charStep}ms` }}
+    >
+      {char === " " ? " " : char}
+    </span>
+  ));
+}
+
 /* ───────────── Hero orbital comp (Marketeam-inspired) ──────────────
    5 DS chips orbit on 2 elliptical rings around a center surface
    that morphs through each system's visual language. Tension-accent
@@ -1007,12 +1023,36 @@ export function HeroHeader() {
   }, [landingRef]);
 
   useEffect(() => {
+    /* Section heading reveals — kicker → h2 → body stagger as each
+       section enters the viewport. */
+    const headings = document.querySelectorAll(".landing-page .section-heading");
+    const headingCleanups = Array.from(headings).map((h) =>
+      revealOnScroll(h.querySelectorAll(".section-kicker, h2, p"), { stagger: 0.08, offset: 32 }),
+    );
+
+    /* Pull quote — the audience pullquote gets its own reveal so the
+       italic-serif moment lands distinctly. */
+    const pullquoteCleanup = revealOnScroll(
+      document.querySelectorAll(".landing-page .section-pullquote"),
+      { offset: 40, duration: 0.6 },
+    );
+
+    /* Proof + bento + audience + systems + workflow + features +
+       export — content children stagger in per section. Selectors
+       match the current JSX (post-orbital refactor). */
     const cleanups = [
-      proofRef.current && revealOnScroll(proofRef.current.querySelectorAll(".proof-item"), { stagger: 0.05 }),
-      systemGridRef.current && revealOnScroll(systemGridRef.current.querySelectorAll(".system-card")),
-      workflowGridRef.current && revealOnScroll(workflowGridRef.current.querySelectorAll(".workflow-step")),
-      featureGridRef.current && revealOnScroll(featureGridRef.current.querySelectorAll(".feature-card")),
+      proofRef.current && revealOnScroll(proofRef.current.querySelectorAll(".proof-flow-item"), { stagger: 0.06 }),
+      revealOnScroll(document.querySelectorAll(".landing-page .proof-row"), { stagger: 0.12, offset: 32 }),
+      revealOnScroll(document.querySelectorAll(".landing-page .audience-row"), { stagger: 0.1, offset: 28 }),
+      revealOnScroll(document.querySelectorAll(".landing-page .demo-frame"), { offset: 40, duration: 0.6 }),
+      systemGridRef.current && revealOnScroll(systemGridRef.current.querySelectorAll(".system-row"), { stagger: 0.08, offset: 20 }),
+      workflowGridRef.current && revealOnScroll(workflowGridRef.current.querySelectorAll(".workflow-step-flow"), { stagger: 0.12, offset: 32 }),
+      featureGridRef.current && revealOnScroll(featureGridRef.current.querySelectorAll(".feature-list-row"), { stagger: 0.06, offset: 16 }),
+      revealOnScroll(document.querySelectorAll(".landing-page .export-cta > *"), { stagger: 0.08, offset: 24 }),
+      pullquoteCleanup,
+      ...headingCleanups,
     ];
+
     return () => {
       for (const c of cleanups) if (typeof c === "function") c();
     };
@@ -1056,12 +1096,20 @@ export function HeroHeader() {
                 <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
                 AI builder for five enterprise design systems
               </div>
-              <h1 id="landing-title" className="hero-headline hero-headline--tension" data-hero-enter>
-                Design-system fluency
-                <br />
-                you thought was
-                <br />
-                <em className="hero-headline__accent">out of reach.</em>
+              <h1
+                id="landing-title"
+                className="hero-headline hero-headline--tension"
+                aria-label="Design-system fluency you thought was out of reach."
+              >
+                <span className="hero-headline__line" aria-hidden="true">
+                  {splitChars("Design-system fluency", { lineDelay: 0 })}
+                </span>
+                <br aria-hidden="true" />
+                <span className="hero-headline__line" aria-hidden="true">
+                  {splitChars("you thought was", { lineDelay: 380 })}
+                </span>
+                <br aria-hidden="true" />
+                <em className="hero-headline__accent" aria-hidden="true">out of reach.</em>
               </h1>
               <p className="hero-headline__resolution" data-hero-enter>
                 Now one prompt away.

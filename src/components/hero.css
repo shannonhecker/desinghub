@@ -6420,3 +6420,131 @@
   line-height: 1.55;
   text-wrap: balance;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+   Motion choreography — orchestrated hero entry
+   Letter-by-letter cascade on the headline, sequential orbital build,
+   center-surface breathing. Respects prefers-reduced-motion (WCAG
+   2.3.3) — all animations no-op when the user prefers reduced motion.
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Headline letter cascade — each .hero-char fades + rises in sequence.
+   The aria-label on the h1 covers screen-reader semantics; per-letter
+   spans are aria-hidden so SRs read it as one continuous string. */
+.hero-headline__line {
+  display: inline;
+}
+
+.hero-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  will-change: transform, opacity;
+  animation: char-rise 720ms cubic-bezier(0.05, 0.7, 0.1, 1) forwards;
+  animation-delay: var(--char-delay, 0ms);
+}
+
+@keyframes char-rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Italic accent — left-to-right mask sweep. Fires after the
+   plain-text letters of the previous lines have cascaded in.
+   The clip-path reveal keeps the gradient continuous (better
+   than splitting into per-letter spans which would fragment it). */
+.hero-headline__accent {
+  display: inline-block;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  will-change: clip-path, opacity;
+  animation: accent-sweep 900ms cubic-bezier(0.05, 0.7, 0.1, 1) 820ms forwards;
+}
+
+@keyframes accent-sweep {
+  0%   { opacity: 0; clip-path: inset(0 100% 0 0); }
+  12%  { opacity: 1; }
+  100% { opacity: 1; clip-path: inset(0 0% 0 0); }
+}
+
+/* Sequential orbital build — ring → ring → core → chips → center.
+   Delays are tuned so the orbital finishes assembling at ~1.8s,
+   shortly after the headline cascade completes (~1.6s). */
+.hero-orbital__rings {
+  opacity: 0;
+  animation: orbital-fade-in 700ms cubic-bezier(0.05, 0.7, 0.1, 1) 1100ms forwards,
+             orbital-rotate 90s linear infinite 1800ms;
+}
+
+.hero-orbital__glow {
+  opacity: 0;
+  animation: glow-fade-in 800ms cubic-bezier(0.05, 0.7, 0.1, 1) 1300ms forwards;
+}
+
+@keyframes orbital-fade-in {
+  to { opacity: 1; }
+}
+
+@keyframes glow-fade-in {
+  to { opacity: 0.28; }
+}
+
+.hero-orbital__chip {
+  opacity: 0;
+  animation: chip-pop 600ms cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+}
+
+.hero-orbital__chip[data-system="salt"]   { animation-delay: 1400ms; }
+.hero-orbital__chip[data-system="m3"]     { animation-delay: 1480ms; }
+.hero-orbital__chip[data-system="fluent"] { animation-delay: 1560ms; }
+.hero-orbital__chip[data-system="carbon"] { animation-delay: 1640ms; }
+.hero-orbital__chip[data-system="uoaui"]  { animation-delay: 1720ms; }
+
+@keyframes chip-pop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.hero-orbital__center {
+  opacity: 0;
+  animation: center-rise 720ms cubic-bezier(0.05, 0.7, 0.1, 1) 1500ms forwards,
+             surface-breathe 8s ease-in-out 2300ms infinite;
+}
+
+@keyframes center-rise {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Subtle scale breathing on the centre surface — 1.5% over 8s
+   gives a barely-perceptible "alive" feel once entry completes. */
+@keyframes surface-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015); }
+}
+
+/* Reduced-motion guard — every choreographed animation snaps to
+   final state. Required for WCAG 2.3.3 + practical for vestibular
+   sensitivities. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-char,
+  .hero-headline__accent,
+  .hero-orbital__rings,
+  .hero-orbital__glow,
+  .hero-orbital__chip,
+  .hero-orbital__center {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+  }
+  .hero-orbital__glow { opacity: 0.28 !important; }
+}
+
+/* When pause prop is set on .hero-orbital (hover/focus/JS-controlled),
+   pause the continuous loops too so they don't keep breathing. */
+.hero-orbital--paused .hero-orbital__center {
+  animation-play-state: paused;
+}
