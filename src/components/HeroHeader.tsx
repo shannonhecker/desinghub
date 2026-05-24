@@ -1002,6 +1002,7 @@ export function HeroHeader() {
   const systemGridRef = useRef<HTMLUListElement | null>(null);
   const workflowGridRef = useRef<HTMLOListElement | null>(null);
   const featureGridRef = useRef<HTMLDListElement | null>(null);
+  const cursorRef = useRef<HTMLDivElement | null>(null);
 
   useHaloPointer(reducedMotion, landingRef);
 
@@ -1025,6 +1026,52 @@ export function HeroHeader() {
       tl?.kill();
     };
   }, [landingRef]);
+
+  /* Custom cursor — peach dot follows the pointer; expands to a
+     ring when hovering interactive elements. Hides the native
+     cursor via body class. Skips on touch devices + reduced motion.
+     mix-blend-mode: difference inverts against any bg color. */
+  useEffect(() => {
+    if (reducedMotion) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(hover: none)").matches) return;
+    const el = cursorRef.current;
+    if (!el) return;
+
+    let frameId = 0;
+    let px = 0;
+    let py = 0;
+
+    const apply = () => {
+      frameId = 0;
+      el.style.transform = `translate3d(${px}px, ${py}px, 0) translate(-50%, -50%)`;
+    };
+
+    const onMove = (e: MouseEvent) => {
+      px = e.clientX;
+      py = e.clientY;
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(apply);
+    };
+
+    const onOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const hoverable = target.closest(
+        'button, a, [role="button"], .hero-orbital__chip, label, input, textarea, select, .preview-step, .preview-demo-control',
+      );
+      el.dataset.state = hoverable ? "hover" : "default";
+    };
+
+    document.body.classList.add("custom-cursor-active");
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseover", onOver);
+    return () => {
+      document.body.classList.remove("custom-cursor-active");
+      if (frameId) window.cancelAnimationFrame(frameId);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseover", onOver);
+    };
+  }, [reducedMotion]);
 
   /* Scroll parallax — page bg drifts at 20% scroll rate (slow → reads
      as depth), workflow numerals drift at 60% (fast → passes content).
@@ -1365,6 +1412,7 @@ export function HeroHeader() {
         source={accessModalSource ?? "hero"}
         onClose={() => setAccessModalSource(null)}
       />
+      <div ref={cursorRef} className="custom-cursor" aria-hidden="true" />
     </main>
   );
 }
