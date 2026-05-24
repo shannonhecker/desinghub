@@ -21,8 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { heroEnterTimeline, revealOnScroll, useReducedMotion } from "@/lib/motion";
-import { getBentoGraphic } from "./landing/BentoGraphics";
+import { heroEnterTimeline, revealOnScroll, useReducedMotion, ScrollTrigger } from "@/lib/motion";
 import "./hero.css";
 
 const ACCESS_EMAIL = "shannonheckerchen@gmail.com";
@@ -40,32 +39,32 @@ const systems = [
   {
     key: "salt",
     name: "Salt DS",
-    detail: "Dense operational surfaces with precise spacing, clear state, and trader-grade controls.",
-    signal: "High density",
+    detail: "Dense operational surfaces. Trader-grade controls. High-frequency density.",
+    signal: "Dense",
   },
   {
     key: "m3",
     name: "Material 3",
-    detail: "Adaptive surfaces, tonal hierarchy, and expressive product rhythm from one prompt.",
+    detail: "Adaptive tonal surfaces. Expressive product rhythm. Soft hierarchy.",
     signal: "Adaptive",
   },
   {
     key: "fluent",
     name: "Fluent 2",
-    detail: "Calm command patterns for dashboards, forms, navigation, and review workflows.",
+    detail: "Calm command patterns. Dashboards, forms, review workflows.",
     signal: "Command",
   },
   {
     key: "carbon",
     name: "Carbon",
-    detail: "IBM UI Shell chrome with the four canonical theme keys (white, g10, g90, g100), flat-radius grammar, and the electric-blue interactive accent. Replicated to match carbondesignsystem.com.",
-    signal: "Data first",
+    detail: "IBM UI Shell. 4 themes, flat radius, electric-blue accent.",
+    signal: "Data",
   },
   {
     key: "uoaui",
     name: "uoaui",
-    detail: "Glass-native AI workspace patterns that keep prompts, variants, and exports visible.",
-    signal: "AI native",
+    detail: "Glass-native AI workspace. Prompts, variants, exports visible.",
+    signal: "AI",
   },
 ];
 
@@ -73,55 +72,22 @@ const workflow = [
   {
     eyebrow: "01",
     title: "Prompt",
-    body: "Describe the surface. Use the slash-command inserter (\"/\") to drop a known component, or pick a starting template.",
+    body: "Describe the surface. Slash-insert known components, or start from a template.",
   },
   {
     eyebrow: "02",
     title: "Generate",
-    body: "The canvas builds across header, sidebar, body, and footer zones using each system's real components — not generic placeholders.",
+    body: "Real components across header, sidebar, body, footer. No placeholders.",
   },
   {
     eyebrow: "03",
     title: "Compare",
-    body: "Switch the same canvas through Salt, Material 3, Fluent 2, Carbon, and uoaui. Tokens, density, and chrome update in place.",
+    body: "Switch systems in place. Tokens, density, chrome update.",
   },
   {
     eyebrow: "04",
     title: "Ship",
-    body: "Export three ways: stateless share link, JSON canvas snapshot, or a React TSX / HTML / Vite project. Sessions auto-save in the background.",
-  },
-];
-
-const features = [
-  {
-    icon: Sparkles,
-    title: "Prompt canvas",
-    body: "Turn a product brief into a visible interface direction while the context stays close.",
-  },
-  {
-    icon: SlidersHorizontal,
-    title: "Theme studio",
-    body: "Tune mode, contrast, density, and token choices without rebuilding the surface.",
-  },
-  {
-    icon: MonitorSmartphone,
-    title: "Responsive frames",
-    body: "Review desktop, tablet, and mobile layouts inside the same focused workspace.",
-  },
-  {
-    icon: Share2,
-    title: "Review links",
-    body: "Send compact previews that are polished enough for critique and stakeholder review.",
-  },
-  {
-    icon: Download,
-    title: "Export routes",
-    body: "Move from generated canvas to HTML, React, or Vite without losing system intent.",
-  },
-  {
-    icon: PanelsTopLeft,
-    title: "Component depth",
-    body: "Compose navigation, forms, charts, data grids, overlays, and layout primitives.",
+    body: "React, HTML, or Vite. Share link, JSON, or full project. Tokens preserved.",
   },
 ];
 
@@ -132,50 +98,23 @@ const proof = [
   { icon: Eye, value: "Review links", label: "private previews ready for stakeholder critique" },
 ];
 
-const bentoProof = [
-  {
-    key: "systems",
-    title: "Compare system directions",
-    body: "Move the same product brief through enterprise, Material, Fluent, Carbon, and uoaui treatments.",
-    visual: ["Salt", "M3", "Fluent", "Carbon", "uoaui"],
-  },
-  {
-    key: "frames",
-    title: "Responsive from the start",
-    body: "Review desktop, tablet, and mobile frames before a direction leaves the studio.",
-    visual: ["Desktop", "Tablet", "Mobile"],
-  },
-  {
-    key: "handoff",
-    title: "Handoff-ready outputs",
-    body: "Carry the selected interface into React, HTML, or Vite without losing system intent.",
-    visual: ["React", "HTML", "Vite"],
-  },
-  {
-    key: "review",
-    title: "Private review rooms",
-    body: "Share a polished preview link while the prompt, variants, and export context stay visible.",
-    visual: ["Preview", "Notes", "Export"],
-  },
-];
-
 const audienceCards = [
   {
     icon: Users,
     title: "Product teams",
-    body: "Explore product surfaces before committing design and engineering time.",
+    body: "Explore surfaces before committing engineering time.",
     tags: ["Dashboards", "Forms", "Flows"],
   },
   {
     icon: Palette,
-    title: "Design-system owners",
-    body: "Stress-test how one interface behaves across density, tone, and component rules.",
+    title: "DS owners",
+    body: "Stress-test one interface across density, tone, components.",
     tags: ["Tokens", "States", "Patterns"],
   },
   {
     icon: Rocket,
-    title: "Founders and agencies",
-    body: "Turn a rough product brief into review-ready UI for pitches, demos, and handoff.",
+    title: "Founders + agencies",
+    body: "Brief → pitch-ready UI. Same day.",
     tags: ["Pitch", "Preview", "Export"],
   },
 ];
@@ -1073,6 +1012,85 @@ export function HeroHeader() {
     };
   }, [reducedMotion]);
 
+  /* Storyboard scroll pins — orbital, workflow, exports each pin
+     for ~2.5 viewports. Workflow + exports reveal items as scrubbing
+     progresses. Skips on mobile (<900px) + reduced motion. */
+  useEffect(() => {
+    if (reducedMotion) return;
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(max-width: 900px)").matches) return;
+
+    const cleanups: Array<() => void> = [];
+
+    const pin = (
+      trackSelector: string,
+      durationPct: number,
+      onUpdate?: (progress: number) => void,
+    ) => {
+      const track = document.querySelector<HTMLElement>(trackSelector);
+      if (!track) return;
+      const stage = track.querySelector<HTMLElement>(".scene-pin-stage");
+      if (!stage) return;
+      const st = ScrollTrigger.create({
+        trigger: track,
+        start: "top top",
+        end: `+=${durationPct}%`,
+        pin: stage,
+        pinSpacing: true,
+        scrub: 1,
+        anticipatePin: 1,
+        onUpdate: (self) => onUpdate?.(self.progress),
+      });
+      cleanups.push(() => st.kill());
+    };
+
+    /* Orbital pin — let HeroOrbital auto-cycle inside the pinned
+       stage. 200% gives ~5 internal morphs to play through. */
+    pin('[data-pin-track="orbital"]', 200);
+
+    /* Workflow pin — 4 steps. Reveal one per quarter of progress. */
+    const workflowTrack = document.querySelector('[data-pin-track="workflow"]');
+    if (workflowTrack) {
+      const steps = Array.from(
+        workflowTrack.querySelectorAll<HTMLElement>("[data-step-index]"),
+      );
+      pin('[data-pin-track="workflow"]', 220, (progress) => {
+        const activeIndex = Math.min(
+          steps.length - 1,
+          Math.floor(progress * steps.length),
+        );
+        steps.forEach((s, i) => {
+          s.dataset.active = i <= activeIndex ? "true" : "false";
+        });
+      });
+    }
+
+    /* Exports pin — 3 paths cycle through with scroll. */
+    const exportsTrack = document.querySelector('[data-pin-track="exports"]');
+    if (exportsTrack) {
+      const items = Array.from(
+        exportsTrack.querySelectorAll<HTMLElement>("[data-export-index]"),
+      );
+      pin('[data-pin-track="exports"]', 180, (progress) => {
+        const activeIndex = Math.min(
+          items.length - 1,
+          Math.floor(progress * items.length),
+        );
+        items.forEach((it, i) => {
+          it.dataset.active = i <= activeIndex ? "true" : "false";
+        });
+      });
+    }
+
+    /* Refresh ScrollTrigger once layout settles. */
+    const refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 120);
+    cleanups.push(() => window.clearTimeout(refreshTimer));
+
+    return () => {
+      for (const c of cleanups) c();
+    };
+  }, [reducedMotion]);
+
   /* Scroll parallax — page bg drifts at 20% scroll rate (slow → reads
      as depth), workflow numerals drift at 60% (fast → passes content).
      rAF-throttled. Skips when prefers-reduced-motion. */
@@ -1175,47 +1193,41 @@ export function HeroHeader() {
           <div className="hero-bezel__grain" />
         </div>
         <div className="hero-stage-shell hero-stage-shell--orbital">
-          <div className="hero-orbital-grid">
-            <div className="hero-copy hero-copy--orbital">
-              <div className="hero-kicker" data-hero-enter>
-                <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
-                AI builder for five enterprise design systems
-              </div>
-              <h1
-                id="landing-title"
-                className="hero-headline hero-headline--tension"
-                aria-label="Design-system fluency you thought was out of reach."
-              >
-                <span className="hero-headline__line" aria-hidden="true">
-                  {splitChars("Design-system fluency", { lineDelay: 0 })}
-                </span>
-                <br aria-hidden="true" />
-                <span className="hero-headline__line" aria-hidden="true">
-                  {splitChars("you thought was", { lineDelay: 380 })}
-                </span>
-                <br aria-hidden="true" />
-                <em className="hero-headline__accent" aria-hidden="true">out of reach.</em>
-              </h1>
-              <p className="hero-headline__resolution" data-hero-enter>
-                Now one prompt away.
-              </p>
-              <div className="hero-actions" data-hero-enter>
-                <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
-                  <span>Request Access</span>
-                  <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-                </button>
-                <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
-                  <span>View Demo</span>
-                </a>
-              </div>
-              <p className="hero-microcopy" data-hero-enter>
-                262 documented components. Three handoff paths. Private preview.
-              </p>
+          <div className="hero-copy hero-copy--orbital hero-copy--centered">
+            <div className="hero-kicker" data-hero-enter>
+              <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
+              Salt · Material 3 · Fluent 2 · Carbon · uoaui
             </div>
-
-            <div className="hero-orbital-stage" data-hero-enter>
-              <HeroOrbital paused={reducedMotion} />
+            <h1
+              id="landing-title"
+              className="hero-headline hero-headline--tension"
+              aria-label="5 systems. 262 components. One prompt."
+            >
+              <span className="hero-headline__line" aria-hidden="true">
+                {splitChars("5 systems.", { lineDelay: 0 })}
+              </span>
+              <br aria-hidden="true" />
+              <span className="hero-headline__line" aria-hidden="true">
+                {splitChars("262 components.", { lineDelay: 320 })}
+              </span>
+              <br aria-hidden="true" />
+              <em className="hero-headline__accent" aria-hidden="true">One prompt.</em>
+            </h1>
+            <p className="hero-headline__resolution" data-hero-enter>
+              Generate Salt, Material 3, Fluent 2, Carbon, and uoaui surfaces from the same brief.
+            </p>
+            <div className="hero-actions" data-hero-enter>
+              <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
+                <span>Request Access</span>
+                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+              </button>
+              <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
+                <span>See it morph</span>
+              </a>
             </div>
+            <p className="hero-microcopy" data-hero-enter>
+              React + HTML + Vite exports. Tokens preserved. Private preview.
+            </p>
           </div>
         </div>
       </section>
@@ -1230,60 +1242,74 @@ export function HeroHeader() {
         ))}
       </section>
 
-      <section className="landing-section bento-section section-band" aria-labelledby="bento-title">
-        <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Product proof</span>
-          <h2 id="bento-title">Every output stays tied to real interface <em className="section-accent">work.</em></h2>
-          <p>
-            uoaui is built around the pieces teams review: system language, responsive
-            framing, export path, and the context behind each decision.
-          </p>
+      {/* Scene 2 — orbital morph. Pinned via GSAP ScrollTrigger
+         in a useEffect below. As scrubbing progresses, the active
+         DS index increments through Salt → M3 → Fluent → Carbon →
+         uoaui. The HeroOrbital data-system attribute drives
+         existing chrome/colour swaps. */}
+      <section id="demo" className="scene scene--orbital-pin" aria-label="One prompt, five systems">
+        <div className="scene-pin-track" data-pin-track="orbital">
+          <div className="scene-pin-stage">
+            <div className="scene-pin-copy">
+              <span className="section-kicker">One brief</span>
+              <h2>Watch it cycle <em className="section-accent">5 systems.</em></h2>
+              <p>Scroll to morph. Same prompt, different chrome.</p>
+            </div>
+            <div className="scene-pin-orbital">
+              <HeroOrbital paused={reducedMotion} />
+            </div>
+          </div>
         </div>
-        <div className="proof-rows">
-          {bentoProof.map((item, index) => (
-            <article
-              className={`proof-row proof-row--${item.key}`}
-              data-flip={index % 2 === 1 ? "true" : "false"}
-              key={item.key}
-            >
-              <div className="proof-row-visual">
-                <div className="proof-row-graphic" aria-hidden="false">
-                  {getBentoGraphic(item.key)}
-                </div>
-                <div className="proof-row-chips" aria-hidden="true">
-                  {item.visual.map((label) => (
-                    <span key={label}>{label}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="proof-row-copy">
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </div>
+      </section>
+
+      {/* Scene 3 — compact comparison. Same brief, 5 chromes side
+         by side. Replaces the bento section. */}
+      <section className="scene scene--compare" aria-labelledby="compare-title">
+        <div className="section-heading">
+          <span className="section-kicker">5 systems</span>
+          <h2 id="compare-title">Same prompt. <em className="section-accent">Five chromes.</em></h2>
+          <p>Tokens, density, component grammar — each system intact.</p>
+        </div>
+        <div className="compare-grid">
+          {systems.map((system) => (
+            <article className="compare-card" data-system={system.key} key={system.key}>
+              <span className="compare-card-dot" aria-hidden="true" />
+              <h3>{system.name}</h3>
+              <span className="compare-card-signal">{system.signal}</span>
+              <p>{system.detail}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="landing-section audience-section section-band" aria-labelledby="audience-title">
-        <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Built for</span>
-          <h2 id="audience-title">For the <em className="section-accent">messy middle</em> between product brief and polished UI.</h2>
-          <p>
-            uoaui is being built by Shannon for early product exploration: the moment
-            when a brief needs to become a credible interface direction fast.
-          </p>
+      {/* Scene 4 — pinned workflow. 4 steps reveal one-by-one as
+         scrubbing progresses through the pin range. */}
+      <section id="workflow" className="scene scene--workflow-pin" aria-labelledby="workflow-title">
+        <div className="scene-pin-track" data-pin-track="workflow">
+          <div className="scene-pin-stage">
+            <div className="scene-pin-copy">
+              <span className="section-kicker">4 steps</span>
+              <h2 id="workflow-title">Prompt to <em className="section-accent">handoff.</em></h2>
+            </div>
+            <ol className="workflow-flow scene-workflow" ref={workflowGridRef}>
+              {workflow.map((item, i) => (
+                <li className="workflow-step-flow" data-step-index={i} key={item.eyebrow}>
+                  <span className="workflow-numeral" aria-hidden="true">{item.eyebrow}</span>
+                  <h3 className="workflow-title">{item.title}</h3>
+                  <p className="workflow-body">{item.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
-        <blockquote className="section-pullquote audience-pullquote">
-          <span className="section-pullquote-label">Founder note</span>
-          <p>
-            The goal is not another generic AI mockup surface. It is a practical studio
-            for comparing design-system directions with enough structure to critique,
-            share, and hand off.
-          </p>
-        </blockquote>
+      </section>
+
+      {/* Scene 5 — audiences. Compact 3-up. */}
+      <section className="scene scene--audience" aria-labelledby="audience-title">
+        <div className="section-heading">
+          <span className="section-kicker">Built for</span>
+          <h2 id="audience-title">Three <em className="section-accent">rooms.</em></h2>
+        </div>
         <div className="audience-rows">
           {audienceCards.map(({ icon: Icon, title, body, tags }) => (
             <article className="audience-row" key={title}>
@@ -1302,99 +1328,46 @@ export function HeroHeader() {
         </div>
       </section>
 
-      <section id="demo" className="landing-section demo-section" aria-labelledby="demo-title">
-        <ContentAtmosphere />
-        <div className="section-heading demo-heading content-parallax-heading">
-          <span className="section-kicker">Live demo</span>
-          <h2 id="demo-title">See the builder move from prompt to <em className="section-accent">handoff.</em></h2>
-          <p>Follow the complete loop: Prompt -&gt; Generate -&gt; Compare -&gt; Tune -&gt; Export.</p>
-        </div>
-        <div className="demo-frame content-card-grid">
-          <HeroPreviewDemo />
-        </div>
-      </section>
-
-      <section id="systems" className="landing-section systems-section section-band">
-        <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Systems</span>
-          <h2>One interface idea, <em className="section-accent">five distinct</em> product languages.</h2>
-          <p>
-            uoaui keeps each system's rhythm intact, from dense trading screens to softer
-            review surfaces and glass-native AI workspaces.
-          </p>
-        </div>
-        <div className="system-bar-wrap">
-          <OrbitRing variant="systems" />
-          <ul className="system-bar" ref={systemGridRef}>
-            {systems.map((system) => (
-              <li className="system-row" data-system={system.key} key={system.name}>
-                <span className="system-row-dot" aria-hidden="true" />
-                <h3 className="system-row-name">{system.name}</h3>
-                <span className="system-row-signal">{system.signal}</span>
-                <p className="system-row-detail">{system.detail}</p>
+      {/* Scene 6 — pinned exports. Cycles through 3 handoff paths
+         as scrubbing progresses. */}
+      <section className="scene scene--exports-pin" aria-labelledby="exports-title">
+        <div className="scene-pin-track" data-pin-track="exports">
+          <div className="scene-pin-stage">
+            <div className="scene-pin-copy">
+              <span className="section-kicker">Handoff</span>
+              <h2 id="exports-title">Three paths <em className="section-accent">out.</em></h2>
+            </div>
+            <ol className="exports-list">
+              <li data-export-index={0}>
+                <Share2 size={22} strokeWidth={1.8} aria-hidden="true" />
+                <h3>Share link</h3>
+                <p>Stateless preview URL. No signup.</p>
               </li>
-            ))}
-          </ul>
+              <li data-export-index={1}>
+                <PanelsTopLeft size={22} strokeWidth={1.8} aria-hidden="true" />
+                <h3>JSON snapshot</h3>
+                <p>Re-importable canvas state. Lossless.</p>
+              </li>
+              <li data-export-index={2}>
+                <Code2 size={22} strokeWidth={1.8} aria-hidden="true" />
+                <h3>React, HTML, or Vite</h3>
+                <p>Runnable project. Tokens preserved.</p>
+              </li>
+            </ol>
+          </div>
         </div>
       </section>
 
-      <section id="workflow" className="landing-section workflow-section section-band">
-        <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Workflow</span>
-          <h2>A focused path from prompt to <em className="section-accent">handoff.</em></h2>
-        </div>
-        <ol className="workflow-flow" ref={workflowGridRef}>
-          {workflow.map((item) => (
-            <li className="workflow-step-flow" key={item.eyebrow}>
-              <span className="workflow-numeral" aria-hidden="true">{item.eyebrow}</span>
-              <h3 className="workflow-title">{item.title}</h3>
-              <p className="workflow-body">{item.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section id="features" className="landing-section features-section section-band">
-        <ContentAtmosphere />
-        <div className="section-heading content-parallax-heading">
-          <span className="section-kicker">Studio</span>
-          <h2>Polished enough for <em className="section-accent">critique,</em> practical enough for production.</h2>
-          <p>
-            The product work stays visible: prompt context, system comparison, responsive
-            review, and export all sit inside the same workspace.
-          </p>
-        </div>
-        <div className="feature-list-wrap">
-          <StudioConstellation />
-          <dl className="feature-list" ref={featureGridRef}>
-            {features.map(({ icon: Icon, title, body }) => (
-              <div className="feature-list-row" key={title}>
-                <dt className="feature-list-term">
-                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-                  <span>{title}</span>
-                </dt>
-                <dd className="feature-list-detail">{body}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
+      {/* Scene 7 — final CTA */}
       <section id="export" className="landing-section export-section section-band section-band--cta">
-        <ContentAtmosphere />
         <div className="export-cta">
-          <span className="section-kicker">Private studio</span>
-          <h2>Start with a prompt. Leave with a <em className="section-accent">system-aware</em> interface.</h2>
-          <p>
-            Build the first direction, compare it across product languages, and carry the
-            selected surface into review, sharing, and export.
-          </p>
+          <span className="section-kicker">Private preview</span>
+          <h2>Request <em className="section-accent">access.</em></h2>
+          <p>Tell me where uoaui fits in your workflow.</p>
           <ul className="export-cta-list" aria-label="Supported handoff paths">
-            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Share previews</li>
-            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export React</li>
-            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Export HTML</li>
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> Share link</li>
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> React export</li>
+            <li><CheckCircle2 size={17} strokeWidth={2} aria-hidden="true" /> HTML export</li>
           </ul>
           <button type="button" className="landing-btn landing-btn--light export-cta-btn" onClick={() => openAccessModal("export")}>
             <span>Request Access</span>

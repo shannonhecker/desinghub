@@ -6800,3 +6800,359 @@ body.custom-cursor-active * {
   background: transparent;
   border: 1.5px solid #ffa56d;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   STORYBOARD SCENES
+   Hero (Scene 1) → proof strip → Scene 2 orbital pin → Scene 3
+   compare grid → Scene 4 workflow pin → Scene 5 audiences → Scene 6
+   exports pin → Scene 7 CTA. Three pinned scenes use GSAP
+   ScrollTrigger. Mobile + reduced-motion: scenes scroll naturally.
+   ════════════════════════════════════════════════════════════════════ */
+
+.landing-page .scene {
+  position: relative;
+  padding: clamp(48px, 8vw, 128px) clamp(20px, 4vw, 64px);
+}
+
+/* Hero: now single-column centered. Override grid layout. */
+.landing-page .hero-copy--centered {
+  text-align: center;
+  align-items: center;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(60px, 12vh, 140px) 0 clamp(40px, 8vh, 80px);
+}
+
+.landing-page .hero-copy--centered .hero-headline--tension {
+  max-width: 14ch;
+  text-align: center;
+}
+
+.landing-page .hero-copy--centered .hero-headline__resolution {
+  text-align: center;
+  max-width: 56ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-page .hero-copy--centered .hero-actions {
+  justify-content: center;
+}
+
+.landing-page .hero-copy--centered .hero-microcopy {
+  text-align: center;
+}
+
+/* ── Pin track containers ───────────────────────────────────────── */
+
+.landing-page .scene-pin-track {
+  position: relative;
+  width: 100%;
+}
+
+.landing-page .scene-pin-stage {
+  width: 100%;
+  min-height: 100svh;
+  padding: clamp(40px, 6vh, 80px) clamp(20px, 4vw, 64px);
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: clamp(32px, 5vw, 80px);
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.landing-page .scene-pin-copy {
+  align-self: center;
+}
+
+.landing-page .scene-pin-copy .section-kicker {
+  display: block;
+  margin-bottom: var(--dh-space-16);
+}
+
+.landing-page .scene-pin-copy h2 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(2.4rem, 5vw, 5rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0;
+  color: var(--dh-brand-fg);
+}
+
+.landing-page .scene-pin-copy p {
+  margin: var(--dh-space-20) 0 0;
+  max-width: 50ch;
+  color: rgba(238, 242, 237, 0.72);
+  font-size: clamp(0.96rem, 1.2vw, 1.1rem);
+  line-height: 1.55;
+}
+
+.landing-page .scene-pin-orbital {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 0.96;
+}
+
+/* ── Scene 3: compare grid ──────────────────────────────────────── */
+
+.landing-page .scene--compare .section-heading {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto var(--dh-space-48);
+}
+
+.landing-page .scene--compare h2 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(2.4rem, 5vw, 5rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.landing-page .compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.landing-page .compare-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: clamp(20px, 2.4vw, 32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(20, 16, 36, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition:
+    transform 320ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    border-color 320ms ease,
+    background 320ms ease;
+  /* DS-specific border-left accent — connects to orbital chip colors */
+  border-left: 3px solid var(--card-accent, var(--orbital-uoaui));
+}
+
+.landing-page .compare-card[data-system="salt"]   { --card-accent: var(--orbital-salt); }
+.landing-page .compare-card[data-system="m3"]     { --card-accent: var(--orbital-m3); }
+.landing-page .compare-card[data-system="fluent"] { --card-accent: var(--orbital-fluent); }
+.landing-page .compare-card[data-system="carbon"] { --card-accent: var(--orbital-carbon); }
+.landing-page .compare-card[data-system="uoaui"]  { --card-accent: var(--orbital-uoaui); }
+
+.landing-page .compare-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 165, 109, 0.35);
+  background: rgba(28, 22, 44, 0.7);
+}
+
+.landing-page .compare-card-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--card-accent);
+  box-shadow: 0 0 16px var(--card-accent);
+}
+
+.landing-page .compare-card h3 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--dh-brand-fg);
+  margin: 0;
+}
+
+.landing-page .compare-card-signal {
+  font-family: var(--font-instrument-serif), Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: rgba(244, 166, 130, 0.78);
+}
+
+.landing-page .compare-card p {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: rgba(238, 242, 237, 0.7);
+}
+
+/* ── Scene 4: workflow pin ──────────────────────────────────────── */
+
+.landing-page .scene--workflow-pin .scene-pin-stage {
+  align-items: stretch;
+}
+
+.landing-page .scene-workflow {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 28px);
+  align-self: center;
+}
+
+.landing-page .scene-workflow .workflow-step-flow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(20px, 2.4vw, 36px);
+  align-items: start;
+  opacity: 0.18;
+  transform: translateX(20px);
+  transition:
+    opacity 600ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 0.6, 0.36, 1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: clamp(16px, 2vw, 28px) 0;
+}
+
+.landing-page .scene-workflow .workflow-step-flow[data-active="true"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.landing-page .scene-workflow .workflow-numeral {
+  /* Within pin scene, numerals scale down so 4 steps fit visually. */
+  font-size: clamp(4rem, 7vw, 6.5rem);
+  min-width: clamp(110px, 11vw, 160px);
+}
+
+/* ── Scene 5: audience compact ──────────────────────────────────── */
+
+.landing-page .scene--audience .section-heading {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto var(--dh-space-48);
+}
+
+.landing-page .scene--audience h2 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: clamp(2.4rem, 5vw, 5rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.landing-page .scene--audience .audience-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+/* ── Scene 6: exports pin ───────────────────────────────────────── */
+
+.landing-page .scene--exports-pin .scene-pin-stage {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+}
+
+.landing-page .exports-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 28px);
+}
+
+.landing-page .exports-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  padding: clamp(20px, 2.4vw, 32px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(20, 16, 36, 0.5);
+  align-items: start;
+  opacity: 0.22;
+  transform: translateY(12px);
+  transition:
+    opacity 480ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    transform 480ms cubic-bezier(0.22, 0.6, 0.36, 1),
+    border-color 480ms ease,
+    background 480ms ease;
+}
+
+.landing-page .exports-list li[data-active="true"] {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: rgba(255, 165, 109, 0.4);
+  background: rgba(28, 22, 44, 0.72);
+}
+
+.landing-page .exports-list li svg {
+  color: rgba(255, 165, 109, 0.78);
+  align-self: start;
+  margin-top: 4px;
+}
+
+.landing-page .exports-list li h3 {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--dh-brand-fg);
+  margin: 0;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.landing-page .exports-list li p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(238, 242, 237, 0.72);
+  margin: 4px 0 0;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* ── Pin track placeholder space ────────────────────────────────── */
+
+/* When ScrollTrigger pins .scene-pin-stage, it adds spacing to the
+   track so the page doesn't jump. These rules give the track the
+   minimum height so even before pin attaches (or under reduced
+   motion / mobile), the layout looks intentional. */
+.landing-page .scene-pin-track {
+  min-height: 100svh;
+}
+
+/* ── Mobile + reduced motion: pins collapse to natural scroll ─── */
+
+@media (max-width: 900px) {
+  .landing-page .scene-pin-stage {
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 5vw, 48px);
+    min-height: auto;
+    padding: clamp(40px, 8vw, 64px) clamp(20px, 4vw, 32px);
+  }
+  .landing-page .scene-pin-track {
+    min-height: auto;
+  }
+  /* Stop hiding workflow + exports items when pin isn't active. */
+  .landing-page .scene-workflow .workflow-step-flow,
+  .landing-page .exports-list li {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .scene-pin-track {
+    min-height: auto;
+  }
+  .landing-page .scene-pin-stage {
+    min-height: auto;
+  }
+  .landing-page .scene-workflow .workflow-step-flow,
+  .landing-page .exports-list li {
+    opacity: 1;
+    transform: none;
+  }
+}
