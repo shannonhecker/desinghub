@@ -7211,3 +7211,52 @@ body.custom-cursor-active * {
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 28px rgba(255, 165, 109, 0.18);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   NAV — align with page rhythm + add the sticky behaviour the JSX
+   was already hinting at (landing-nav--sticky / --scrolled classes
+   existed but had no CSS rules). Caps at --page-max with the same
+   --page-pad-x gutter as every scene below.
+   ════════════════════════════════════════════════════════════════════ */
+
+.hero.landing-page .landing-nav {
+  /* Outer nav stretches full viewport so the sticky bg can span edge
+     to edge on scroll. Inner content is capped via max-width below. */
+  padding: var(--dh-space-16) var(--page-pad-x);
+  max-width: calc(var(--page-max) + 2 * var(--page-pad-x));
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+/* Sticky behaviour wired up. Was missing — JSX added the class but
+   no CSS rule existed. Pin to top, ride above scenes. */
+.hero.landing-page .landing-nav--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition:
+    background 280ms ease,
+    backdrop-filter 280ms ease,
+    border-color 280ms ease,
+    padding 280ms ease;
+}
+
+/* Scrolled state — appears when navScrolled is true (past 200px).
+   Frosted bg + thin warm border-bottom to anchor it visually. */
+.hero.landing-page .landing-nav--scrolled {
+  background: rgba(20, 14, 42, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(244, 166, 130, 0.12);
+  /* When scrolled, the nav extends edge-to-edge on the bg layer.
+     Reset max-width so the frosted strip spans the full viewport. */
+  max-width: 100%;
+}
+
+/* When scrolled, the inner grid still caps at page-max. Apply via
+   a pseudo-trick: use padding-inline that grows with viewport. */
+.hero.landing-page .landing-nav--scrolled {
+  padding-left: max(var(--page-pad-x), calc(50% - var(--page-max) / 2));
+  padding-right: max(var(--page-pad-x), calc(50% - var(--page-max) / 2));
+}
