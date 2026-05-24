@@ -125,13 +125,6 @@ const features = [
   },
 ];
 
-const markers = [
-  { key: "salt", label: "Salt", position: "top-left", glyph: "01" },
-  { key: "m3", label: "Material", position: "top-right", glyph: "02" },
-  { key: "fluent", label: "Fluent", position: "left", glyph: "03" },
-  { key: "carbon", label: "Carbon", position: "right", glyph: "04" },
-];
-
 const proof = [
   { icon: Layers, value: "5 systems", label: "Salt, Material, Fluent, Carbon, and uoaui from one brief" },
   { icon: MonitorSmartphone, value: "Responsive", label: "desktop, tablet, and mobile previews" },
@@ -468,21 +461,6 @@ function useHaloPointer(
       root.removeEventListener("pointermove", onMove);
     };
   }, [disabled, rootRef]);
-}
-
-function TopoLines() {
-  return (
-    <svg
-      className="topo-svg"
-      viewBox="0 0 1200 600"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <path className="topo-line topo-line--1" d="M-20,180 C220,140 360,260 560,210 C740,170 900,290 1220,240" />
-      <path className="topo-line topo-line--2" d="M-20,360 C200,330 340,440 540,400 C760,360 920,470 1220,430" />
-      <path className="topo-line topo-line--3" d="M-20,500 C180,470 320,560 520,520 C760,470 940,560 1220,540" />
-    </svg>
-  );
 }
 
 function OrbitRing({
@@ -887,6 +865,111 @@ function HeroPreviewDemo() {
   );
 }
 
+/* ───────────── Hero orbital comp (Marketeam-inspired) ──────────────
+   5 DS chips orbit on 2 elliptical rings around a center surface
+   that morphs through each system's visual language. Tension-accent
+   headline lives in a left column; this comp lives in the right.
+   Pauses on reduced motion + on hover/focus. */
+
+type OrbitalSystemKey = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
+
+const ORBITAL_SYSTEMS: Array<{
+  key: OrbitalSystemKey;
+  label: string;
+  short: string;
+  angle: number;
+  ring: "outer" | "inner";
+}> = [
+  { key: "salt", label: "Salt DS", short: "Salt", angle: -76, ring: "outer" },
+  { key: "m3", label: "Material 3", short: "M3", angle: 38, ring: "outer" },
+  { key: "fluent", label: "Fluent 2", short: "Fluent", angle: 96, ring: "inner" },
+  { key: "carbon", label: "Carbon", short: "Carbon", angle: 162, ring: "outer" },
+  { key: "uoaui", label: "uoaui", short: "uoaui", angle: -142, ring: "inner" },
+];
+
+function HeroOrbital({ paused }: { paused: boolean }) {
+  const [systemIndex, setSystemIndex] = useState(0);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = window.setInterval(() => {
+      setSystemIndex((i) => (i + 1) % ORBITAL_SYSTEMS.length);
+    }, 3200);
+    return () => window.clearInterval(id);
+  }, [paused]);
+
+  const active = ORBITAL_SYSTEMS[systemIndex];
+
+  return (
+    <div
+      className={`hero-orbital${paused ? " hero-orbital--paused" : ""}`}
+      data-system={active.key}
+      aria-hidden="true"
+    >
+      <svg
+        className="hero-orbital__rings"
+        viewBox="0 0 600 600"
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
+        <ellipse className="hero-orbital__ring hero-orbital__ring--outer" cx="300" cy="300" rx="278" ry="248" />
+        <ellipse className="hero-orbital__ring hero-orbital__ring--inner" cx="300" cy="300" rx="206" ry="176" />
+        <ellipse className="hero-orbital__ring hero-orbital__ring--core" cx="300" cy="300" rx="136" ry="116" />
+      </svg>
+
+      <div className="hero-orbital__glow" aria-hidden="true" />
+
+      <div className="hero-orbital__chips">
+        {ORBITAL_SYSTEMS.map((system) => (
+          <span
+            key={system.key}
+            className={`hero-orbital__chip hero-orbital__chip--${system.ring}${
+              system.key === active.key ? " is-active" : ""
+            }`}
+            style={{ ["--chip-angle" as string]: `${system.angle}deg` }}
+            data-system={system.key}
+          >
+            <span className="hero-orbital__chip-dot" aria-hidden="true" />
+            <span className="hero-orbital__chip-label">{system.short}</span>
+          </span>
+        ))}
+      </div>
+
+      <div className="hero-orbital__center" data-system={active.key}>
+        <div className="hero-orbital__surface">
+          <div className="hero-orbital__chrome">
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <strong key={active.key}>{active.label}</strong>
+          </div>
+          <div className="hero-orbital__body">
+            <div className="hero-orbital__prompt">
+              <Sparkles size={11} strokeWidth={1.8} aria-hidden="true" />
+              <span>Build a review-ready dashboard</span>
+            </div>
+            <div className="hero-orbital__card" key={active.key}>
+              <span className="hero-orbital__eyebrow">Generated surface</span>
+              <strong>Revenue Operations</strong>
+              <div className="hero-orbital__stats">
+                <span><b>5</b>Variants</span>
+                <span><b>3</b>Frames</span>
+                <span><b>96%</b>Ready</span>
+              </div>
+              <div className="hero-orbital__bars" aria-hidden="true">
+                {[54, 76, 62, 88, 70, 94].map((h, i) => (
+                  <span key={i} style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <span className="hero-orbital__tag">5 systems · 1 builder</span>
+      </div>
+    </div>
+  );
+}
+
 export function HeroHeader() {
   const reducedMotion = useReducedMotion();
   const landingRef = useContentParallax(reducedMotion);
@@ -961,186 +1044,44 @@ export function HeroHeader() {
           <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
         </Link>
       </nav>
-      <section className="hero-stage" aria-labelledby="landing-title">
-        <div className="hero-stage-shell">
-          <div className="hero-beam-pillar" aria-hidden="true">
-            <div className="hero-beam-pillar-particles" />
-            <div className="hero-beam-pillar-aura-top" />
-            <div className="hero-beam-pillar-aura-bottom" />
-            <div className="hero-beam-pillar-rays-top">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 4 rays per side (idx 2..5). The two innermost rays per
-                // side (idx 0 and 1) are skipped so the headline area
-                // stays clean — they were reading as distracting vertical
-                // lines behind the title.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6; // 0..5 within the side
-                if (idx <= 1) return null;
-                // Spread each side from ~22.8% to ~36% out from centre.
-                const xPct = side * (14 + idx * 4.4);
-                const dist = Math.abs(xPct) / 36; // 0..1 normalised
-                const heightPct = 92 - dist * 30;
-                const widthPx = 5 + ((i * 17) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.92 - dist * 0.32;
-                const delay = ((i * 0.137) % 1) * 5.4;
-                return (
-                  <span
-                    key={`top-${i}`}
-                    className="hero-beam-ray"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      top: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-rays-bottom">
-              {Array.from({ length: 12 }, (_, i) => {
-                // 5 rays per side, mirroring the top fan but with the
-                // innermost ray (idx 0) skipped so the bottom fan also
-                // clears the headline area on shorter viewports.
-                const side = i < 6 ? -1 : 1;
-                const idx = i < 6 ? i : i - 6;
-                if (idx === 0) return null;
-                const xPct = side * (16 + idx * 5.2);
-                const dist = Math.abs(xPct) / 42;
-                const heightPct = 84 - dist * 24;
-                const widthPx = 5 + ((i * 19) % 4);
-                const blur = 1.6 + dist * 3;
-                const alpha = 0.88 - dist * 0.3;
-                const delay = ((i * 0.179) % 1) * 5.4;
-                return (
-                  <span
-                    key={`bot-${i}`}
-                    className="hero-beam-ray hero-beam-ray--down"
-                    style={{
-                      left: `calc(50% + ${xPct}%)`,
-                      bottom: 0,
-                      width: `${widthPx}px`,
-                      height: `${heightPct}%`,
-                      filter: `blur(${blur}px)`,
-                      ["--ray-alpha" as string]: alpha,
-                      ["--ray-delay" as string]: `${delay}s`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="hero-beam-pillar-waist" />
-            <div className="hero-beam-pillar-floor" />
-          </div>
-          <div className="hero-halo" aria-hidden="true" />
-          <div className="stage-light stage-light--right" aria-hidden="true" />
-          <div className="stage-light stage-light--left" aria-hidden="true" />
-          <div className="stage-grid" aria-hidden="true" />
-
-          <TopoLines />
-          <div className="stage-motion-lines" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-
-          {markers.map((marker) => (
-            <div
-              className={`stage-marker stage-marker--${marker.position}`}
-              key={marker.key}
-              data-hero-enter
-            >
-              <span className="stage-marker-icon" aria-hidden="true">
-                {marker.glyph}
-              </span>
-              <span>
-                <strong>{marker.label}</strong>
-              </span>
-            </div>
-          ))}
-
-          <div className="hero-copy">
-            <div className="hero-kicker" data-hero-enter>
-              <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
-              AI builder for five enterprise design systems
-            </div>
-            <h1 id="landing-title" className="hero-headline" data-hero-enter>
-              Prompt once. Ship in <span>Salt, Material 3, Fluent 2, Carbon, or uoaui</span>
-            </h1>
-            <p className="hero-body" data-hero-enter>
-              uoaui turns a brief into a multi-zone canvas using each system&apos;s real components, tokens, and density rules. 262 documented components. Three handoff paths: share link, JSON, or React / HTML / Vite project.
-            </p>
-            <div className="hero-actions" data-hero-enter>
-              <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
-                <span>Request Access</span>
-                <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-              </button>
-              <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
-                <span>View Demo</span>
-              </a>
-            </div>
-            <p className="hero-body" data-hero-enter>
-              Private preview. Already have a password? Use Enter Studio in the top navigation.
-            </p>
-          </div>
-
-          <div className="hero-ai-showcase" aria-hidden="true" data-hero-enter>
-            <div className="hero-ai-orbit hero-ai-orbit--one" />
-            <div className="hero-ai-orbit hero-ai-orbit--two" />
-            <div className="hero-ai-beam hero-ai-beam--one" />
-            <div className="hero-ai-beam hero-ai-beam--two" />
-            <div className="hero-ai-node hero-ai-node--prompt">
-              <span>Prompt</span>
-            </div>
-            <div className="hero-ai-node hero-ai-node--systems">
-              <span>5 systems</span>
-            </div>
-            <div className="hero-ai-node hero-ai-node--export">
-              <span>Export</span>
-            </div>
-            <div className="hero-ai-product">
-              <div className="hero-ai-product-top">
-                <span />
-                <span />
-                <span />
-                <strong>uoaui studio</strong>
+      <section className="hero-stage hero-stage--orbital" aria-labelledby="landing-title">
+        <div className="hero-bezel" aria-hidden="true">
+          <div className="hero-bezel__wash" />
+          <div className="hero-bezel__grain" />
+        </div>
+        <div className="hero-stage-shell hero-stage-shell--orbital">
+          <div className="hero-orbital-grid">
+            <div className="hero-copy hero-copy--orbital">
+              <div className="hero-kicker" data-hero-enter>
+                <Sparkles size={13} strokeWidth={1.8} aria-hidden="true" />
+                AI builder for five enterprise design systems
               </div>
-              <div className="hero-ai-product-body">
-                <aside>
-                  <span className="is-active">Salt</span>
-                  <span>M3</span>
-                  <span>Fluent</span>
-                  <span>Carbon</span>
-                  <span>uoaui</span>
-                </aside>
-                <div className="hero-ai-canvas">
-                  <div className="hero-ai-prompt">
-                    <Sparkles size={14} strokeWidth={1.8} />
-                    Design a review-ready product dashboard
-                  </div>
-                  <div className="hero-ai-card hero-ai-card--wide">
-                    <span>Generated surface</span>
-                    <strong>Revenue Operations</strong>
-                    <p>System-aware layout with responsive states and handoff notes.</p>
-                  </div>
-                  <div className="hero-ai-metrics">
-                    <div><span>Variants</span><strong>5</strong></div>
-                    <div><span>Frames</span><strong>3</strong></div>
-                    <div><span>Ready</span><strong>96%</strong></div>
-                  </div>
-                  <div className="hero-ai-chart">
-                    {[54, 76, 62, 88, 70, 94].map((height, index) => (
-                      <span key={index} style={{ height: `${height}%` }} />
-                    ))}
-                  </div>
-                </div>
+              <h1 id="landing-title" className="hero-headline hero-headline--tension" data-hero-enter>
+                Design-system fluency
+                <br />
+                you thought was
+                <br />
+                <em className="hero-headline__accent">out of reach.</em>
+              </h1>
+              <p className="hero-headline__resolution" data-hero-enter>
+                Now one prompt away.
+              </p>
+              <div className="hero-actions" data-hero-enter>
+                <button type="button" className="landing-btn landing-btn--light" onClick={() => openAccessModal("hero")}>
+                  <span>Request Access</span>
+                  <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+                </button>
+                <a href="#demo" className="landing-btn landing-btn--outline" onClick={() => trackLandingEvent("view_demo_click", { source: "hero" })}>
+                  <span>View Demo</span>
+                </a>
               </div>
+              <p className="hero-microcopy" data-hero-enter>
+                262 documented components. Three handoff paths. Private preview.
+              </p>
+            </div>
+
+            <div className="hero-orbital-stage" data-hero-enter>
+              <HeroOrbital paused={reducedMotion} />
             </div>
           </div>
         </div>

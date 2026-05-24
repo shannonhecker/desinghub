@@ -7,6 +7,7 @@ import {
   Roboto,
   IBM_Plex_Sans,
   IBM_Plex_Mono,
+  Instrument_Serif,
 } from "next/font/google";
 
 /**
@@ -97,6 +98,14 @@ export const ibmPlexMono = IBM_Plex_Mono({
   preload: false,
 });
 
+export const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-instrument-serif",
+});
+
 /** All font CSS variables joined for <html> className */
 export const fontVariables = [
   outfit.variable,
@@ -107,4 +116,5 @@ export const fontVariables = [
   roboto.variable,
   ibmPlexSans.variable,
   ibmPlexMono.variable,
+  instrumentSerif.variable,
 ].join(" ");
