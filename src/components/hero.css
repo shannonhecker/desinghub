@@ -7156,3 +7156,42 @@ body.custom-cursor-active * {
     transform: none;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   PAGE-LEVEL HORIZONTAL RHYTHM
+   Normalises horizontal padding + max-width across all scenes after
+   inconsistencies crept in during the storyboard rework. One token
+   for the gutter, one for the content cap. Override later rules.
+   ════════════════════════════════════════════════════════════════════ */
+
+.landing-page {
+  --page-pad-x: clamp(24px, 4vw, 80px);
+  --page-max: 1280px;
+}
+
+/* Unified horizontal padding on every section container. */
+.landing-page .scene,
+.landing-page .hero-stage-shell--orbital,
+.landing-page .scene-pin-stage,
+.landing-page .proof-strip-flow,
+.landing-page .export-section.section-band--cta {
+  padding-left: var(--page-pad-x);
+  padding-right: var(--page-pad-x);
+}
+
+/* Unified content cap — content centers within page-pad gutters. */
+.landing-page .scene-pin-stage,
+.landing-page .compare-grid,
+.landing-page .scene--audience .audience-rows,
+.landing-page .scene--compare .section-heading,
+.landing-page .scene--audience .section-heading,
+.landing-page .proof-strip-flow {
+  max-width: var(--page-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Hero copy keeps a tighter cap for line-length comfort. */
+.landing-page .hero-copy--centered {
+  max-width: 920px;
+}
