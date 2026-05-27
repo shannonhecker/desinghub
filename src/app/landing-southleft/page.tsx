@@ -315,22 +315,34 @@ const SYSTEMS: readonly SystemSpec[] = [
   },
 ] as const;
 
-const QUOTES = [
-  {
-    text: "It is the first tool that treats five design systems as peers instead of asking us to pick a winner before we have the data.",
-    name: "Design lead",
-    org: "Fintech platform team",
-  },
-  {
-    text: "The token-switching is the bit that surprised the engineers. The same composition holds up across Salt and Carbon without a rewrite.",
-    name: "Staff engineer",
-    org: "Internal tooling group",
-  },
-  {
-    text: "Feels like a sketchbook, behaves like a production component library. That gap is usually where these tools fall apart.",
-    name: "Principal designer",
-    org: "Enterprise SaaS",
-  },
+/* Token primitives shown verbatim in the "tokens you can read" section.
+   Pulled from --dh-* / --lsl-* / brand vars so they read as the actual
+   surface of the design system, not decorative swatches. */
+
+const COLOR_TOKENS = [
+  { name: "--dh-brand-primary", hex: "#6750A4", role: "Brand · CTA" },
+  { name: "--lsl-amber",        hex: "#D9905D", role: "Secondary highlight" },
+  { name: "--lsl-bg",           hex: "#161513", role: "Surface · canvas" },
+  { name: "--lsl-fg",           hex: "#EFEAE0", role: "Ink · body" },
+  { name: "--lsl-fg-muted",     hex: "#A89B82", role: "Ink · muted" },
+  { name: "--lsl-rule",         hex: "rgba(239,234,224,0.10)", role: "Hairline" },
+] as const;
+
+const TYPE_TOKENS = [
+  { sample: "Display 800", spec: "Bricolage Grotesque · 80px · −0.028em",  fam: "display" },
+  { sample: "Section 800", spec: "Bricolage Grotesque · 40px · −0.025em",  fam: "display" },
+  { sample: "Body",         spec: "Inter · 16.5px · 1.55",                   fam: "sans" },
+  { sample: "TOKEN / 01",   spec: "IBM Plex Mono · 12px · uppercase",        fam: "mono" },
+] as const;
+
+const SPACE_TOKENS = [
+  { v: 4,  name: "01" },
+  { v: 8,  name: "02" },
+  { v: 12, name: "03" },
+  { v: 16, name: "04" },
+  { v: 24, name: "06" },
+  { v: 32, name: "08" },
+  { v: 48, name: "12" },
 ] as const;
 
 /* ── Hooks ───────────────────────────────────────────────────────────── */
@@ -540,42 +552,87 @@ export default function LandingSouthleftPage() {
 
       <hr className="lsl-rule" />
 
-      {/* ── Testimonials ── */}
+      {/* ── Tokens you can read ── */}
       <section
         id="voices"
-        className="lsl-section-tight"
-        aria-labelledby="lsl-voices-heading"
+        className="lsl-section"
+        aria-labelledby="lsl-tokens-heading"
       >
         <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>Voices</p>
+          <p className="lsl-section-label" data-reveal>tokens / primitives</p>
           <h2
-            id="lsl-voices-heading"
+            id="lsl-tokens-heading"
             className="lsl-section-heading"
             data-reveal
           >
-            How teams describe it.
+            Tokens you can read.
           </h2>
-        </div>
-        <div
-          className="lsl-quotes"
-          data-reveal
-          role="region"
-          aria-label="Testimonials, scroll horizontally"
-          tabIndex={0}
-        >
-          {QUOTES.map((q) => (
-            <figure key={q.text} className="lsl-quote">
-              <div>
-                <p className="lsl-quote-mark" aria-hidden="true">
-                  {"“"}
-                </p>
-                <blockquote className="lsl-quote-text">{q.text}</blockquote>
-              </div>
-              <figcaption className="lsl-quote-attrib">
-                <strong>{q.name}</strong>, {q.org}
-              </figcaption>
-            </figure>
-          ))}
+          <p className="lsl-section-lede" data-reveal>
+            The unit of portability across five systems. Same primitives,
+            different rendering. Below is a slice of the actual canvas.
+          </p>
+
+          <div className="lsl-tokens" data-reveal>
+            {/* Colour column */}
+            <div className="lsl-tokens-col">
+              <p className="lsl-tokens-col-label">color</p>
+              <ul className="lsl-tokens-list">
+                {COLOR_TOKENS.map((t) => (
+                  <li key={t.name} className="lsl-token-row">
+                    <span
+                      className="lsl-token-swatch"
+                      style={{ background: t.hex }}
+                      aria-hidden="true"
+                    />
+                    <span className="lsl-token-meta">
+                      <span className="lsl-token-name">{t.name}</span>
+                      <span className="lsl-token-detail">
+                        {t.hex} · {t.role}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Type column */}
+            <div className="lsl-tokens-col">
+              <p className="lsl-tokens-col-label">type</p>
+              <ul className="lsl-tokens-list">
+                {TYPE_TOKENS.map((t) => (
+                  <li key={t.sample} className="lsl-token-row">
+                    <span
+                      className="lsl-token-typesample"
+                      data-fam={t.fam}
+                    >
+                      {t.sample}
+                    </span>
+                    <span className="lsl-token-detail">{t.spec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Spacing column */}
+            <div className="lsl-tokens-col">
+              <p className="lsl-tokens-col-label">space</p>
+              <ul className="lsl-tokens-list lsl-tokens-list-space">
+                {SPACE_TOKENS.map((t) => (
+                  <li key={t.name} className="lsl-token-row lsl-token-row-space">
+                    <span className="lsl-token-name lsl-token-name-mono">
+                      {t.name}
+                    </span>
+                    <span
+                      className="lsl-token-bar"
+                      style={{ width: `${t.v * 3}px` }}
+                      aria-hidden="true"
+                    />
+                    <span className="lsl-token-detail">{t.v}px</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -604,7 +661,7 @@ export default function LandingSouthleftPage() {
             </div>
 
             <div>
-              <p className="lsl-footer-col-label">Product</p>
+              <p className="lsl-footer-col-label">product</p>
               <ul className="lsl-footer-list">
                 <li><a href="/builder">Workbench</a></li>
                 <li><a href="/ui-kit">UI kit</a></li>
@@ -614,22 +671,18 @@ export default function LandingSouthleftPage() {
             </div>
 
             <div>
-              <p className="lsl-footer-col-label">Company</p>
+              <p className="lsl-footer-col-label">made by</p>
               <ul className="lsl-footer-list">
-                <li><a href="#">About</a></li>
-                <li><a href="#">Writing</a></li>
-                <li><a href="#">Changelog</a></li>
-                <li><a href="#">Contact</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="lsl-footer-col-label">Elsewhere</p>
-              <ul className="lsl-footer-list">
-                <li><a href="https://github.com/shannonhecker">GitHub</a></li>
-                <li><a href="#">LinkedIn</a></li>
-                <li><a href="#">Read.cv</a></li>
-                <li><a href="#">RSS</a></li>
+                <li>
+                  <a href="https://github.com/shannonhecker">
+                    Shannon Hecker
+                  </a>
+                </li>
+                <li>
+                  <a href="https://github.com/shannonhecker/desinghub">
+                    GitHub repo
+                  </a>
+                </li>
               </ul>
             </div>
           </div>

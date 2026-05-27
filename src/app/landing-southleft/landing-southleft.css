@@ -547,53 +547,121 @@
           drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.4));
 }
 
-/* ── Testimonials (scroll-snap row, no carousel lib) ──────────────────── */
-.landing-southleft .lsl-quotes {
+/* ── Tokens you can read (3-col primitive strip) ──────────────────────── */
+.landing-southleft .lsl-tokens {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(min(460px, 84%), 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--lsl-rule);
-  border-top: 1px solid var(--lsl-rule);
-  border-bottom: 1px solid var(--lsl-rule);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
+  border: 1px solid var(--lsl-rule);
+  border-radius: 14px;
+  overflow: hidden;
 }
-.landing-southleft .lsl-quote {
+.landing-southleft .lsl-tokens-col {
   background: var(--lsl-bg);
-  padding: 56px 48px;
-  scroll-snap-align: start;
+  padding: 36px 32px 40px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 300px;
 }
-.landing-southleft .lsl-quote-mark {
+.landing-southleft .lsl-tokens-col-label {
+  font-family: var(--lsl-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--lsl-amber);
+  margin: 0 0 24px;
+}
+.landing-southleft .lsl-tokens-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.landing-southleft .lsl-token-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Colour swatch */
+.landing-southleft .lsl-token-swatch {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--lsl-rule-strong);
+}
+.landing-southleft .lsl-token-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.landing-southleft .lsl-token-name {
+  font-family: var(--lsl-font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--lsl-fg-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.landing-southleft .lsl-token-detail {
+  font-family: var(--lsl-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--lsl-fg-subtle);
+}
+
+/* Type sample */
+.landing-southleft .lsl-token-row:has(.lsl-token-typesample) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.landing-southleft .lsl-token-typesample {
+  font-weight: 500;
+  color: var(--lsl-fg-strong);
+  line-height: 1;
+}
+.landing-southleft .lsl-token-typesample[data-fam="display"] {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: 56px;
-  line-height: 0.6;
-  color: var(--lsl-accent);
-  margin: 0 0 8px;
+  font-size: 26px;
+  letter-spacing: -0.025em;
 }
-.landing-southleft .lsl-quote-text {
-  font-family: var(--lsl-font-display);
-  font-weight: 500;
-  font-size: 24px;
-  line-height: 1.3;
-  letter-spacing: -0.018em;
-  color: var(--lsl-fg-strong);
-  margin: 0 0 36px;
+.landing-southleft .lsl-token-typesample[data-fam="sans"] {
+  font-family: var(--lsl-font-sans);
+  font-size: 18px;
 }
-.landing-southleft .lsl-quote-attrib {
-  font-size: 13px;
+.landing-southleft .lsl-token-typesample[data-fam="mono"] {
+  font-family: var(--lsl-font-mono);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+/* Space row */
+.landing-southleft .lsl-token-row-space {
+  align-items: center;
+}
+.landing-southleft .lsl-token-name-mono {
+  font-family: var(--lsl-font-mono);
+  font-size: 11px;
+  width: 28px;
+  flex-shrink: 0;
   color: var(--lsl-fg-subtle);
-  letter-spacing: 0.06em;
 }
-.landing-southleft .lsl-quote-attrib strong {
-  color: var(--lsl-fg);
-  font-weight: 600;
+.landing-southleft .lsl-token-bar {
+  height: 14px;
+  background: var(--lsl-accent);
+  border-radius: 2px;
+  display: inline-block;
+}
+.landing-southleft .lsl-token-row-space .lsl-token-detail {
+  margin-left: auto;
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
@@ -606,7 +674,7 @@
 }
 .landing-southleft .lsl-footer-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 56px;
   margin-bottom: 72px;
 }
@@ -726,6 +794,9 @@
   .landing-southleft .lsl-systems {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+  .landing-southleft .lsl-tokens {
+    grid-template-columns: 1fr;
   }
   .landing-southleft .lsl-footer-grid {
     grid-template-columns: 1fr 1fr;
