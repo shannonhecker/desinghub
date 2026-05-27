@@ -1,0 +1,547 @@
+/*
+ * Landing — southleft prototype.
+ *
+ * Scoped to .landing-southleft wrapper. All selectors prefixed so styles do
+ * not bleed into the dark default chrome used by the rest of Design Hub.
+ *
+ * Local tokens (--lsl-*) defined on the wrapper. We DO NOT touch --dh-*,
+ * --a-*, or any DS-scoped tokens. The single accent below is the only new
+ * design decision — palette intentionally restricted to cream / charcoal +
+ * one muted ink accent, with --dh-brand-primary as a secondary option if
+ * Shannon wants brand continuity.
+ *
+ * Scroll: the host globals.css gates page-scroll behind `:has(.hero)`. The
+ * page root carries both `landing-southleft` AND `hero` so the page
+ * scrolls without us modifying globals.
+ */
+
+.landing-southleft {
+  /* ── Local palette (cream / charcoal / single accent) ────────────────── */
+  --lsl-bg:           #F5F2EC;  /* warm off-white */
+  --lsl-bg-soft:      #EFEBE3;  /* slightly deeper, for nav-on-scroll bg */
+  --lsl-fg:           #1A1A1A;  /* deep charcoal — body */
+  --lsl-fg-strong:    #0E0E0E;  /* near-black — display */
+  --lsl-fg-muted:     #5C5A55;  /* muted body / metadata */
+  --lsl-fg-subtle:    #8A8780;  /* labels / fine print */
+  --lsl-rule:         rgba(26, 26, 26, 0.10);
+  --lsl-rule-strong:  rgba(26, 26, 26, 0.18);
+  --lsl-accent:       #B5481E;  /* terracotta ink — single accent */
+  --lsl-accent-soft:  rgba(181, 72, 30, 0.10);
+
+  /* ── Type scale (display dominant, body normal tracking) ─────────────── */
+  --lsl-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", system-ui, sans-serif;
+  --lsl-font-display: var(--font-outfit), var(--font-inter),
+                      -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* ── Spacing rhythm ──────────────────────────────────────────────────── */
+  --lsl-section-y: 120px;
+  --lsl-section-y-tight: 80px;
+  --lsl-content-max: 1200px;
+  --lsl-content-pad: 32px;
+
+  /* ── Wrapper base ────────────────────────────────────────────────────── */
+  background: var(--lsl-bg);
+  color: var(--lsl-fg);
+  font-family: var(--lsl-font-sans);
+  font-size: 16.5px;
+  line-height: 1.55;
+  letter-spacing: 0;
+  min-height: 100vh;
+  /* Override globals' html { color-scheme: light dark } locally so form
+     controls / scrollbars render as light. */
+  color-scheme: light;
+}
+
+.landing-southleft a { color: inherit; }
+.landing-southleft *,
+.landing-southleft *::before,
+.landing-southleft *::after { box-sizing: border-box; }
+
+/* ── Shared container ─────────────────────────────────────────────────── */
+.landing-southleft .lsl-container {
+  width: 100%;
+  max-width: var(--lsl-content-max);
+  margin: 0 auto;
+  padding-left: var(--lsl-content-pad);
+  padding-right: var(--lsl-content-pad);
+}
+
+/* ── Top nav ──────────────────────────────────────────────────────────── */
+.landing-southleft .lsl-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--lsl-bg);
+  border-bottom: 1px solid transparent;
+  transition: background 200ms ease, border-color 200ms ease,
+              backdrop-filter 200ms ease;
+}
+.landing-southleft .lsl-nav[data-scrolled="true"] {
+  background: rgba(245, 242, 236, 0.85);
+  backdrop-filter: saturate(180%) blur(10px);
+  -webkit-backdrop-filter: saturate(180%) blur(10px);
+  border-bottom-color: var(--lsl-rule);
+}
+.landing-southleft .lsl-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+.landing-southleft .lsl-logo {
+  font-family: var(--lsl-font-display);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--lsl-fg-strong);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.landing-southleft .lsl-logo-mark {
+  color: var(--lsl-accent);
+  font-weight: 600;
+}
+.landing-southleft .lsl-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.landing-southleft .lsl-nav-link {
+  font-size: 14px;
+  color: var(--lsl-fg);
+  position: relative;
+  padding: 4px 0;
+  transition: color 160ms ease;
+}
+.landing-southleft .lsl-nav-link:hover { color: var(--lsl-accent); }
+.landing-southleft .lsl-nav-link:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.landing-southleft .lsl-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--lsl-fg-strong);
+  color: var(--lsl-bg);
+  font-family: var(--lsl-font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--lsl-fg-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease,
+              border-color 160ms ease, transform 160ms ease;
+}
+.landing-southleft .lsl-cta:hover {
+  background: var(--lsl-accent);
+  border-color: var(--lsl-accent);
+}
+.landing-southleft .lsl-cta:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+}
+.landing-southleft .lsl-cta-ghost {
+  background: transparent;
+  color: var(--lsl-fg-strong);
+  border: 1px solid var(--lsl-rule-strong);
+}
+.landing-southleft .lsl-cta-ghost:hover {
+  background: transparent;
+  color: var(--lsl-accent);
+  border-color: currentColor;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.landing-southleft .lsl-hero {
+  padding-top: 128px;
+  padding-bottom: var(--lsl-section-y);
+}
+.landing-southleft .lsl-hero-eyebrow {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-subtle);
+  margin: 0 0 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.landing-southleft .lsl-hero-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  background: var(--lsl-fg-subtle);
+}
+.landing-southleft .lsl-hero-headline {
+  font-family: var(--lsl-font-display);
+  font-weight: 400;
+  font-size: clamp(44px, 6.4vw, 76px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 28px;
+  max-width: 14ch;
+}
+.landing-southleft .lsl-hero-headline em {
+  font-style: normal;
+  color: var(--lsl-accent);
+}
+.landing-southleft .lsl-hero-sub {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--lsl-fg-muted);
+  max-width: 56ch;
+  margin: 0 0 40px;
+}
+.landing-southleft .lsl-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.landing-southleft .lsl-hero-secondary {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--lsl-fg-strong);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--lsl-rule-strong);
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.landing-southleft .lsl-hero-secondary:hover {
+  color: var(--lsl-accent);
+  border-color: var(--lsl-accent);
+}
+
+/* ── Section divider ──────────────────────────────────────────────────── */
+.landing-southleft .lsl-rule {
+  height: 1px;
+  background: var(--lsl-rule);
+  border: 0;
+  margin: 0;
+}
+
+/* ── Section shell ────────────────────────────────────────────────────── */
+.landing-southleft .lsl-section {
+  padding-top: var(--lsl-section-y);
+  padding-bottom: var(--lsl-section-y);
+}
+.landing-southleft .lsl-section-tight {
+  padding-top: var(--lsl-section-y-tight);
+  padding-bottom: var(--lsl-section-y-tight);
+}
+.landing-southleft .lsl-section-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-subtle);
+  margin: 0 0 24px;
+}
+.landing-southleft .lsl-section-heading {
+  font-family: var(--lsl-font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 16px;
+  max-width: 22ch;
+}
+.landing-southleft .lsl-section-lede {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--lsl-fg-muted);
+  max-width: 56ch;
+  margin: 0 0 56px;
+}
+
+/* ── Services 2×2 grid ────────────────────────────────────────────────── */
+.landing-southleft .lsl-services {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--lsl-rule);
+  border: 1px solid var(--lsl-rule);
+}
+.landing-southleft .lsl-service {
+  background: var(--lsl-bg);
+  padding: 40px 36px 44px;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+}
+.landing-southleft .lsl-service-num {
+  font-family: var(--lsl-font-display);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--lsl-accent);
+  letter-spacing: 0.02em;
+  margin: 0 0 24px;
+  font-feature-settings: "tnum" 1;
+}
+.landing-southleft .lsl-service-heading {
+  font-family: var(--lsl-font-display);
+  font-weight: 500;
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 12px;
+}
+.landing-southleft .lsl-service-body {
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--lsl-fg-muted);
+  margin: 0;
+  max-width: 36ch;
+}
+
+/* ── Featured projects (two-col alternating) ──────────────────────────── */
+.landing-southleft .lsl-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 96px;
+}
+.landing-southleft .lsl-project {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+.landing-southleft .lsl-project[data-flip="true"] .lsl-project-figure {
+  order: 2;
+}
+.landing-southleft .lsl-project[data-flip="true"] .lsl-project-body {
+  order: 1;
+}
+.landing-southleft .lsl-project-figure {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background:
+    linear-gradient(135deg,
+      rgba(26, 26, 26, 0.04) 0%,
+      rgba(26, 26, 26, 0.08) 100%);
+  border: 1px solid var(--lsl-rule);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* TODO: replace placeholder with real screenshot — see public/examples/. */
+.landing-southleft .lsl-project-figure-placeholder {
+  font-family: var(--lsl-font-display);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-subtle);
+}
+.landing-southleft .lsl-project-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-subtle);
+  margin: 0 0 18px;
+}
+.landing-southleft .lsl-project-heading {
+  font-family: var(--lsl-font-display);
+  font-weight: 400;
+  font-size: clamp(26px, 2.8vw, 34px);
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 18px;
+}
+.landing-southleft .lsl-project-body p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--lsl-fg-muted);
+  margin: 0 0 28px;
+  max-width: 48ch;
+}
+.landing-southleft .lsl-project-link {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--lsl-fg-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--lsl-rule-strong);
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.landing-southleft .lsl-project-link:hover {
+  color: var(--lsl-accent);
+  border-color: var(--lsl-accent);
+}
+
+/* ── Testimonials (scroll-snap row, no carousel lib) ──────────────────── */
+.landing-southleft .lsl-quotes {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(min(420px, 80%), 1fr);
+  gap: 1px;
+  background: var(--lsl-rule);
+  border-top: 1px solid var(--lsl-rule);
+  border-bottom: 1px solid var(--lsl-rule);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.landing-southleft .lsl-quote {
+  background: var(--lsl-bg);
+  padding: 48px 40px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 260px;
+}
+.landing-southleft .lsl-quote-mark {
+  font-family: var(--lsl-font-display);
+  font-size: 32px;
+  line-height: 1;
+  color: var(--lsl-accent);
+  margin: 0 0 16px;
+}
+.landing-southleft .lsl-quote-text {
+  font-family: var(--lsl-font-display);
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 32px;
+}
+.landing-southleft .lsl-quote-attrib {
+  font-size: 13px;
+  color: var(--lsl-fg-subtle);
+  letter-spacing: 0.04em;
+}
+.landing-southleft .lsl-quote-attrib strong {
+  color: var(--lsl-fg);
+  font-weight: 500;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.landing-southleft .lsl-footer {
+  background: var(--lsl-bg);
+  border-top: 1px solid var(--lsl-rule);
+  padding-top: 72px;
+  padding-bottom: 40px;
+  color: var(--lsl-fg);
+}
+.landing-southleft .lsl-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 56px;
+}
+.landing-southleft .lsl-footer-brand {
+  max-width: 32ch;
+}
+.landing-southleft .lsl-footer-brand-mark {
+  font-family: var(--lsl-font-display);
+  font-weight: 500;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--lsl-fg-strong);
+  margin: 0 0 16px;
+}
+.landing-southleft .lsl-footer-brand-body {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--lsl-fg-muted);
+  margin: 0;
+}
+.landing-southleft .lsl-footer-col-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-subtle);
+  margin: 0 0 18px;
+}
+.landing-southleft .lsl-footer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.landing-southleft .lsl-footer-list a {
+  font-size: 14.5px;
+  color: var(--lsl-fg);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.landing-southleft .lsl-footer-list a:hover { color: var(--lsl-accent); }
+.landing-southleft .lsl-footer-fine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 28px;
+  border-top: 1px solid var(--lsl-rule);
+  font-size: 13px;
+  color: var(--lsl-fg-subtle);
+}
+
+/* ── Fade-in reveal (kept minimal — no parallax, no chromatic) ────────── */
+.landing-southleft [data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 600ms cubic-bezier(0.2, 0, 0, 1),
+              transform 600ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: opacity, transform;
+}
+.landing-southleft [data-reveal][data-revealed="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-southleft [data-reveal],
+  .landing-southleft [data-reveal][data-revealed="true"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .landing-southleft .lsl-nav-links { display: none; }
+  .landing-southleft .lsl-services { grid-template-columns: 1fr; }
+  .landing-southleft .lsl-project { grid-template-columns: 1fr; gap: 32px; }
+  .landing-southleft .lsl-project[data-flip="true"] .lsl-project-figure { order: 0; }
+  .landing-southleft .lsl-project[data-flip="true"] .lsl-project-body { order: 0; }
+  .landing-southleft .lsl-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .landing-southleft .lsl-footer-brand { grid-column: 1 / -1; }
+  .landing-southleft .lsl-hero { padding-top: 88px; }
+  .landing-southleft {
+    --lsl-section-y: 80px;
+    --lsl-section-y-tight: 56px;
+    --lsl-content-pad: 20px;
+  }
+}
