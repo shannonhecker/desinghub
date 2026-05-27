@@ -7,6 +7,7 @@ import {
   Roboto,
   IBM_Plex_Sans,
   IBM_Plex_Mono,
+  Bricolage_Grotesque,
 } from "next/font/google";
 
 /**
@@ -97,6 +98,16 @@ export const ibmPlexMono = IBM_Plex_Mono({
   preload: false,
 });
 
+/* Bricolage Grotesque - display face for the /landing-southleft
+   prototype. Variable across weight + width; we ship 500/700/800
+   so the prototype can dial weight without loading another file. */
+export const bricolageGrotesque = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
+  display: "swap",
+  variable: "--font-bricolage",
+});
+
 /** All font CSS variables joined for <html> className */
 export const fontVariables = [
   outfit.variable,
@@ -107,4 +118,5 @@ export const fontVariables = [
   roboto.variable,
   ibmPlexSans.variable,
   ibmPlexMono.variable,
+  bricolageGrotesque.variable,
 ].join(" ");

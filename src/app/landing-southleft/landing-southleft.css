@@ -1,14 +1,19 @@
 /*
- * Landing — southleft prototype.
+ * Landing — southleft prototype (dark / bold / editorial pivot).
  *
  * Scoped to .landing-southleft wrapper. All selectors prefixed so styles do
  * not bleed into the dark default chrome used by the rest of Design Hub.
  *
  * Local tokens (--lsl-*) defined on the wrapper. We DO NOT touch --dh-*,
- * --a-*, or any DS-scoped tokens. The single accent below is the only new
- * design decision — palette intentionally restricted to cream / charcoal +
- * one muted ink accent, with --dh-brand-primary as a secondary option if
- * Shannon wants brand continuity.
+ * --a-*, or any DS-scoped tokens.
+ *
+ * Palette: near-black bg, warm-cream type, orange-coral single accent,
+ * muted taupe for sub-copy. Matches the southleft.com reference shared by
+ * Shannon 2026-05-27 (post-2024 editorial maximalist).
+ *
+ * Type: Bricolage Grotesque ExtraBold (800) on display, Inter on body.
+ * Display sits at 88-156px, tracking -0.035em, leading 0.92 — much bolder
+ * and more artistic than the prior cream/Outfit-400 take.
  *
  * Scroll: the host globals.css gates page-scroll behind `:has(.hero)`. The
  * page root carries both `landing-southleft` AND `hero` so the page
@@ -16,29 +21,30 @@
  */
 
 .landing-southleft {
-  /* ── Local palette (cream / charcoal / single accent) ────────────────── */
-  --lsl-bg:           #F5F2EC;  /* warm off-white */
-  --lsl-bg-soft:      #EFEBE3;  /* slightly deeper, for nav-on-scroll bg */
-  --lsl-fg:           #1A1A1A;  /* deep charcoal — body */
-  --lsl-fg-strong:    #0E0E0E;  /* near-black — display */
-  --lsl-fg-muted:     #5C5A55;  /* muted body / metadata */
-  --lsl-fg-subtle:    #8A8780;  /* labels / fine print */
-  --lsl-rule:         rgba(26, 26, 26, 0.10);
-  --lsl-rule-strong:  rgba(26, 26, 26, 0.18);
-  --lsl-accent:       #B5481E;  /* terracotta ink — single accent */
-  --lsl-accent-soft:  rgba(181, 72, 30, 0.10);
+  /* ── Local palette (dark / cream / orange-coral / taupe) ─────────────── */
+  --lsl-bg:           #161513;  /* near-black, slight warm cast */
+  --lsl-bg-soft:      #1F1D1A;  /* one step up for nav-on-scroll */
+  --lsl-fg:           #EFEAE0;  /* warm cream — body */
+  --lsl-fg-strong:    #FAF5EB;  /* bright cream — display */
+  --lsl-fg-muted:     #A89B82;  /* taupe — sub-copy / lede */
+  --lsl-fg-subtle:    #7A6F5C;  /* deeper taupe — labels / fine print */
+  --lsl-rule:         rgba(239, 234, 224, 0.10);
+  --lsl-rule-strong:  rgba(239, 234, 224, 0.20);
+  --lsl-accent:       #FF4F2C;  /* orange-coral — single bright accent */
+  --lsl-accent-hover: #FF6845;
+  --lsl-accent-soft:  rgba(255, 79, 44, 0.14);
 
-  /* ── Type scale (display dominant, body normal tracking) ─────────────── */
+  /* ── Type scale ──────────────────────────────────────────────────────── */
   --lsl-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
                    "Segoe UI", system-ui, sans-serif;
-  --lsl-font-display: var(--font-outfit), var(--font-inter),
+  --lsl-font-display: var(--font-bricolage), var(--font-outfit),
                       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* ── Spacing rhythm ──────────────────────────────────────────────────── */
-  --lsl-section-y: 120px;
-  --lsl-section-y-tight: 80px;
-  --lsl-content-max: 1200px;
-  --lsl-content-pad: 32px;
+  --lsl-section-y: 140px;
+  --lsl-section-y-tight: 96px;
+  --lsl-content-max: 1320px;
+  --lsl-content-pad: 40px;
 
   /* ── Wrapper base ────────────────────────────────────────────────────── */
   background: var(--lsl-bg);
@@ -48,15 +54,17 @@
   line-height: 1.55;
   letter-spacing: 0;
   min-height: 100vh;
-  /* Override globals' html { color-scheme: light dark } locally so form
-     controls / scrollbars render as light. */
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 .landing-southleft a { color: inherit; }
 .landing-southleft *,
 .landing-southleft *::before,
 .landing-southleft *::after { box-sizing: border-box; }
+.landing-southleft ::selection {
+  background: var(--lsl-accent);
+  color: var(--lsl-bg);
+}
 
 /* ── Shared container ─────────────────────────────────────────────────── */
 .landing-southleft .lsl-container {
@@ -73,46 +81,48 @@
   top: 0;
   z-index: 50;
   background: var(--lsl-bg);
-  border-bottom: 1px solid transparent;
+  border-bottom: 1px solid var(--lsl-rule);
   transition: background 200ms ease, border-color 200ms ease,
               backdrop-filter 200ms ease;
 }
 .landing-southleft .lsl-nav[data-scrolled="true"] {
-  background: rgba(245, 242, 236, 0.85);
-  backdrop-filter: saturate(180%) blur(10px);
-  -webkit-backdrop-filter: saturate(180%) blur(10px);
-  border-bottom-color: var(--lsl-rule);
+  background: rgba(22, 21, 19, 0.78);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom-color: var(--lsl-rule-strong);
 }
 .landing-southleft .lsl-nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 72px;
+  height: 80px;
 }
 .landing-southleft .lsl-logo {
   font-family: var(--lsl-font-display);
-  font-weight: 500;
-  font-size: 18px;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
+  text-transform: lowercase;
 }
 .landing-southleft .lsl-logo-mark {
   color: var(--lsl-accent);
-  font-weight: 600;
+  font-weight: 800;
 }
 .landing-southleft .lsl-nav-links {
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 40px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .landing-southleft .lsl-nav-link {
-  font-size: 14px;
+  font-size: 14.5px;
+  font-weight: 500;
   color: var(--lsl-fg);
   position: relative;
   padding: 4px 0;
@@ -125,28 +135,30 @@
   border-radius: 2px;
 }
 
+/* ── Pill CTA ─────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-cta {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 18px;
-  background: var(--lsl-fg-strong);
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  background: var(--lsl-accent);
   color: var(--lsl-bg);
   font-family: var(--lsl-font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  border: 1px solid var(--lsl-fg-strong);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  border: 1px solid var(--lsl-accent);
   border-radius: 999px;
   cursor: pointer;
   text-decoration: none;
-  transition: background 160ms ease, color 160ms ease,
-              border-color 160ms ease, transform 160ms ease;
+  transition: background 160ms ease, border-color 160ms ease,
+              transform 160ms ease;
 }
 .landing-southleft .lsl-cta:hover {
-  background: var(--lsl-accent);
-  border-color: var(--lsl-accent);
+  background: var(--lsl-accent-hover);
+  border-color: var(--lsl-accent-hover);
+  transform: translateY(-1px);
 }
 .landing-southleft .lsl-cta:focus-visible {
   outline: 2px solid var(--lsl-accent);
@@ -165,63 +177,64 @@
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-hero {
-  padding-top: 128px;
+  padding-top: 96px;
   padding-bottom: var(--lsl-section-y);
 }
 .landing-southleft .lsl-hero-eyebrow {
   font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lsl-fg-subtle);
-  margin: 0 0 28px;
+  color: var(--lsl-accent);
+  margin: 0 0 36px;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .landing-southleft .lsl-hero-eyebrow::before {
   content: "";
   display: inline-block;
-  width: 24px;
+  width: 32px;
   height: 1px;
-  background: var(--lsl-fg-subtle);
+  background: var(--lsl-accent);
 }
 .landing-southleft .lsl-hero-headline {
   font-family: var(--lsl-font-display);
-  font-weight: 400;
-  font-size: clamp(44px, 6.4vw, 76px);
-  line-height: 1.04;
-  letter-spacing: -0.025em;
+  font-weight: 800;
+  font-size: clamp(56px, 11vw, 156px);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 28px;
-  max-width: 14ch;
+  margin: 0 0 40px;
+  max-width: 18ch;
+  font-feature-settings: "ss01" 1;
 }
 .landing-southleft .lsl-hero-headline em {
   font-style: normal;
   color: var(--lsl-accent);
 }
 .landing-southleft .lsl-hero-sub {
-  font-size: 19px;
-  line-height: 1.5;
+  font-size: 21px;
+  line-height: 1.45;
   color: var(--lsl-fg-muted);
-  max-width: 56ch;
-  margin: 0 0 40px;
+  max-width: 58ch;
+  margin: 0 0 48px;
 }
 .landing-southleft .lsl-hero-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 .landing-southleft .lsl-hero-secondary {
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--lsl-fg-strong);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 2px;
+  gap: 8px;
+  padding: 8px 4px;
   border-bottom: 1px solid var(--lsl-rule-strong);
   transition: color 160ms ease, border-color 160ms ease;
 }
@@ -249,28 +262,28 @@
 }
 .landing-southleft .lsl-section-label {
   font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lsl-fg-subtle);
-  margin: 0 0 24px;
+  color: var(--lsl-accent);
+  margin: 0 0 28px;
 }
 .landing-southleft .lsl-section-heading {
   font-family: var(--lsl-font-display);
-  font-weight: 400;
-  font-size: clamp(28px, 3.4vw, 40px);
-  line-height: 1.15;
-  letter-spacing: -0.018em;
+  font-weight: 800;
+  font-size: clamp(40px, 6vw, 80px);
+  line-height: 0.96;
+  letter-spacing: -0.028em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 16px;
-  max-width: 22ch;
+  margin: 0 0 24px;
+  max-width: 20ch;
 }
 .landing-southleft .lsl-section-lede {
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 18px;
+  line-height: 1.5;
   color: var(--lsl-fg-muted);
-  max-width: 56ch;
-  margin: 0 0 56px;
+  max-width: 58ch;
+  margin: 0 0 72px;
 }
 
 /* ── Services 2×2 grid ────────────────────────────────────────────────── */
@@ -283,31 +296,36 @@
 }
 .landing-southleft .lsl-service {
   background: var(--lsl-bg);
-  padding: 40px 36px 44px;
+  padding: 56px 48px 60px;
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  min-height: 280px;
+  transition: background 200ms ease;
+}
+.landing-southleft .lsl-service:hover {
+  background: var(--lsl-bg-soft);
 }
 .landing-southleft .lsl-service-num {
   font-family: var(--lsl-font-display);
-  font-weight: 400;
-  font-size: 14px;
+  font-weight: 800;
+  font-size: 15px;
   color: var(--lsl-accent);
-  letter-spacing: 0.02em;
-  margin: 0 0 24px;
+  letter-spacing: 0.04em;
+  margin: 0 0 32px;
   font-feature-settings: "tnum" 1;
 }
 .landing-southleft .lsl-service-heading {
   font-family: var(--lsl-font-display);
-  font-weight: 500;
-  font-size: 22px;
-  line-height: 1.25;
-  letter-spacing: -0.012em;
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 12px;
+  margin: 0 0 18px;
+  max-width: 18ch;
 }
 .landing-southleft .lsl-service-body {
-  font-size: 15.5px;
+  font-size: 16px;
   line-height: 1.55;
   color: var(--lsl-fg-muted);
   margin: 0;
@@ -318,12 +336,12 @@
 .landing-southleft .lsl-projects {
   display: flex;
   flex-direction: column;
-  gap: 96px;
+  gap: 128px;
 }
 .landing-southleft .lsl-project {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 64px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 80px;
   align-items: center;
 }
 .landing-southleft .lsl-project[data-flip="true"] .lsl-project-figure {
@@ -337,54 +355,55 @@
   aspect-ratio: 4 / 3;
   background:
     linear-gradient(135deg,
-      rgba(26, 26, 26, 0.04) 0%,
-      rgba(26, 26, 26, 0.08) 100%);
+      rgba(239, 234, 224, 0.04) 0%,
+      rgba(239, 234, 224, 0.10) 100%);
   border: 1px solid var(--lsl-rule);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* TODO: replace placeholder with real screenshot — see public/examples/. */
+/* TODO: replace placeholder with real screenshot — see public/landing-southleft/. */
 .landing-southleft .lsl-project-figure-placeholder {
   font-family: var(--lsl-font-display);
+  font-weight: 700;
   font-size: 12px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--lsl-fg-subtle);
 }
 .landing-southleft .lsl-project-label {
   font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lsl-fg-subtle);
-  margin: 0 0 18px;
+  color: var(--lsl-accent);
+  margin: 0 0 20px;
 }
 .landing-southleft .lsl-project-heading {
   font-family: var(--lsl-font-display);
-  font-weight: 400;
-  font-size: clamp(26px, 2.8vw, 34px);
-  line-height: 1.2;
-  letter-spacing: -0.018em;
+  font-weight: 800;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.0;
+  letter-spacing: -0.028em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 18px;
+  margin: 0 0 24px;
 }
 .landing-southleft .lsl-project-body p {
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.55;
   color: var(--lsl-fg-muted);
-  margin: 0 0 28px;
+  margin: 0 0 32px;
   max-width: 48ch;
 }
 .landing-southleft .lsl-project-link {
-  font-size: 14.5px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--lsl-fg-strong);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 2px;
+  gap: 8px;
+  padding: 6px 2px;
   border-bottom: 1px solid var(--lsl-rule-strong);
   transition: color 160ms ease, border-color 160ms ease;
 }
@@ -397,7 +416,7 @@
 .landing-southleft .lsl-quotes {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(min(420px, 80%), 1fr);
+  grid-auto-columns: minmax(min(460px, 84%), 1fr);
   gap: 1px;
   background: var(--lsl-rule);
   border-top: 1px solid var(--lsl-rule);
@@ -408,77 +427,79 @@
 }
 .landing-southleft .lsl-quote {
   background: var(--lsl-bg);
-  padding: 48px 40px;
+  padding: 56px 48px;
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 260px;
+  min-height: 300px;
 }
 .landing-southleft .lsl-quote-mark {
   font-family: var(--lsl-font-display);
-  font-size: 32px;
-  line-height: 1;
+  font-weight: 800;
+  font-size: 56px;
+  line-height: 0.6;
   color: var(--lsl-accent);
-  margin: 0 0 16px;
+  margin: 0 0 8px;
 }
 .landing-southleft .lsl-quote-text {
   font-family: var(--lsl-font-display);
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 1.4;
-  letter-spacing: -0.01em;
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.3;
+  letter-spacing: -0.018em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 32px;
+  margin: 0 0 36px;
 }
 .landing-southleft .lsl-quote-attrib {
   font-size: 13px;
   color: var(--lsl-fg-subtle);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 .landing-southleft .lsl-quote-attrib strong {
   color: var(--lsl-fg);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-footer {
   background: var(--lsl-bg);
   border-top: 1px solid var(--lsl-rule);
-  padding-top: 72px;
-  padding-bottom: 40px;
+  padding-top: 96px;
+  padding-bottom: 48px;
   color: var(--lsl-fg);
 }
 .landing-southleft .lsl-footer-grid {
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 56px;
+  gap: 56px;
+  margin-bottom: 72px;
 }
 .landing-southleft .lsl-footer-brand {
   max-width: 32ch;
 }
 .landing-southleft .lsl-footer-brand-mark {
   font-family: var(--lsl-font-display);
-  font-weight: 500;
-  font-size: 20px;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 16px;
+  margin: 0 0 20px;
+  text-transform: lowercase;
 }
 .landing-southleft .lsl-footer-brand-body {
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--lsl-fg-muted);
   margin: 0;
 }
 .landing-southleft .lsl-footer-col-label {
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lsl-fg-subtle);
-  margin: 0 0 18px;
+  color: var(--lsl-accent);
+  margin: 0 0 20px;
 }
 .landing-southleft .lsl-footer-list {
   list-style: none;
@@ -486,10 +507,10 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .landing-southleft .lsl-footer-list a {
-  font-size: 14.5px;
+  font-size: 15px;
   color: var(--lsl-fg);
   text-decoration: none;
   transition: color 160ms ease;
@@ -499,7 +520,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 28px;
+  padding-top: 32px;
   border-top: 1px solid var(--lsl-rule);
   font-size: 13px;
   color: var(--lsl-fg-subtle);
@@ -530,18 +551,18 @@
 @media (max-width: 900px) {
   .landing-southleft .lsl-nav-links { display: none; }
   .landing-southleft .lsl-services { grid-template-columns: 1fr; }
-  .landing-southleft .lsl-project { grid-template-columns: 1fr; gap: 32px; }
+  .landing-southleft .lsl-project { grid-template-columns: 1fr; gap: 40px; }
   .landing-southleft .lsl-project[data-flip="true"] .lsl-project-figure { order: 0; }
   .landing-southleft .lsl-project[data-flip="true"] .lsl-project-body { order: 0; }
   .landing-southleft .lsl-footer-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    gap: 40px;
   }
   .landing-southleft .lsl-footer-brand { grid-column: 1 / -1; }
-  .landing-southleft .lsl-hero { padding-top: 88px; }
+  .landing-southleft .lsl-hero { padding-top: 64px; }
   .landing-southleft {
-    --lsl-section-y: 80px;
-    --lsl-section-y-tight: 56px;
-    --lsl-content-pad: 20px;
+    --lsl-section-y: 96px;
+    --lsl-section-y-tight: 64px;
+    --lsl-content-pad: 24px;
   }
 }
