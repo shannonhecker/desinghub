@@ -139,6 +139,50 @@ function ArrowUpRight() {
   );
 }
 
+/** Composite mock — browser-chrome desktop card stacked with a phone
+    silhouette. Placeholder until real /builder + /ui-kit captures land
+    (see public/landing-southleft/, task #7). */
+function ProjectComposite({ variant }: { variant: "desktop-cool" | "desktop-warm" }) {
+  return (
+    <svg
+      viewBox="0 0 480 320"
+      className={`lsl-composite lsl-composite-${variant}`}
+      aria-hidden="true"
+    >
+      {/* Desktop browser chrome */}
+      <g className="lsl-comp-desktop">
+        <rect x="30" y="30" width="380" height="240" rx="10" className="lsl-comp-chrome" />
+        <rect x="30" y="30" width="380" height="28" rx="10" className="lsl-comp-titlebar" />
+        <circle cx="46" cy="44" r="4" className="lsl-comp-dot" />
+        <circle cx="60" cy="44" r="4" className="lsl-comp-dot" />
+        <circle cx="74" cy="44" r="4" className="lsl-comp-dot" />
+        {/* Window content: sidebar + canvas */}
+        <rect x="38" y="66" width="86" height="196" className="lsl-comp-sidebar" />
+        <rect x="48" y="78" width="64" height="6" rx="2" className="lsl-comp-line" />
+        <rect x="48" y="92" width="50" height="5" rx="2" className="lsl-comp-line-faint" />
+        <rect x="48" y="104" width="58" height="5" rx="2" className="lsl-comp-line-faint" />
+        <rect x="48" y="116" width="44" height="5" rx="2" className="lsl-comp-line-faint" />
+        {/* Canvas blocks */}
+        <rect x="138" y="78" width="260" height="38" rx="4" className="lsl-comp-block-accent" />
+        <rect x="138" y="124" width="124" height="84" rx="4" className="lsl-comp-block" />
+        <rect x="270" y="124" width="128" height="40" rx="4" className="lsl-comp-block" />
+        <rect x="270" y="170" width="128" height="38" rx="4" className="lsl-comp-block" />
+        <rect x="138" y="216" width="200" height="46" rx="4" className="lsl-comp-block" />
+      </g>
+      {/* Phone overlay bottom-right */}
+      <g className="lsl-comp-phone" transform="translate(348, 142)">
+        <rect x="0" y="0" width="100" height="160" rx="14" className="lsl-comp-phone-frame" />
+        <rect x="6" y="6" width="88" height="148" rx="10" className="lsl-comp-phone-screen" />
+        <rect x="14" y="22" width="60" height="6" rx="2" className="lsl-comp-line" />
+        <rect x="14" y="36" width="44" height="4" rx="2" className="lsl-comp-line-faint" />
+        <rect x="14" y="54" width="72" height="40" rx="4" className="lsl-comp-block-accent" />
+        <rect x="14" y="102" width="72" height="14" rx="3" className="lsl-comp-block" />
+        <rect x="14" y="122" width="56" height="14" rx="3" className="lsl-comp-block" />
+      </g>
+    </svg>
+  );
+}
+
 /* ── Content (kept local — prototype, not a CMS surface) ────────────── */
 
 const NAV_LINKS = [
@@ -209,20 +253,25 @@ const SERVICES: readonly Service[] = [
   },
 ] as const;
 
-const PROJECTS = [
+interface Project {
+  heading: string;
+  body: string;
+  tags: readonly string[];
+  href: string;
+}
+
+const PROJECTS: readonly Project[] = [
   {
-    label: "Case study",
     heading: "A workbench for product teams choosing between design systems.",
     body: "uoaui.ai started as a side-by-side comparison tool. It is now a working canvas where designers and engineers prototype the same screen in five systems, then read the trade-offs across tokens, density, and accessibility.",
-    link: "Read the build notes",
-    href: "#",
+    tags: ["Design Systems", "Builder", "Multi-DS"],
+    href: "/builder",
   },
   {
-    label: "Field notes",
     heading: "Tokens are the abstraction. Everything else is rendering.",
     body: "A long-form look at why token layers, not components, are the unit of portability across design systems. Practical patterns from shipping uoaui.ai, plus the moments the abstraction breaks down.",
-    link: "Read the essay",
-    href: "#",
+    tags: ["Tokens", "Essay", "Theming"],
+    href: "/token-editor",
   },
 ] as const;
 
@@ -416,48 +465,42 @@ export default function LandingSouthleftPage() {
         aria-labelledby="lsl-projects-heading"
       >
         <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>Featured</p>
-          <h2
-            id="lsl-projects-heading"
-            className="lsl-section-heading"
-            data-reveal
-          >
-            Recent work and writing.
-          </h2>
-          <p className="lsl-section-lede" data-reveal>
-            Two pieces that sit closest to how the workbench is being used in
-            production today.
-          </p>
+          <div className="lsl-projects-header">
+            <p className="lsl-section-label" data-reveal id="lsl-projects-heading">
+              Featured Projects
+            </p>
+            <Link href="/builder" className="lsl-view-all" data-reveal>
+              View all
+            </Link>
+          </div>
 
           <div className="lsl-projects">
             {PROJECTS.map((p, idx) => (
-              <article
+              <Link
                 key={p.heading}
+                href={p.href}
                 className="lsl-project"
-                data-flip={idx % 2 === 1}
                 data-reveal
               >
                 {/*
-                  TODO: replace with real screenshots. public/examples/ only
-                  contains design-references.md right now — Shannon to drop
-                  workbench captures into public/landing-southleft/ and swap
-                  the placeholder for <Image src=… />.
+                  Placeholder composite — real /builder + /ui-kit captures
+                  swap in via task #7 once auth is sorted (task #16).
                 */}
                 <div className="lsl-project-figure">
-                  <span className="lsl-project-figure-placeholder">
-                    Screenshot placeholder
-                  </span>
+                  <ProjectComposite
+                    variant={idx === 0 ? "desktop-warm" : "desktop-cool"}
+                  />
                 </div>
                 <div className="lsl-project-body">
-                  <p className="lsl-project-label">{p.label}</p>
                   <h3 className="lsl-project-heading">{p.heading}</h3>
                   <p>{p.body}</p>
-                  <a className="lsl-project-link" href={p.href}>
-                    {p.link}
-                    <span aria-hidden="true">{"→"}</span>
-                  </a>
+                  <ul className="lsl-project-tags">
+                    {p.tags.map((t) => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </div>
