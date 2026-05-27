@@ -86,10 +86,13 @@
               backdrop-filter 200ms ease;
 }
 .landing-southleft .lsl-nav[data-scrolled="true"] {
-  background: rgba(22, 21, 19, 0.78);
-  backdrop-filter: saturate(160%) blur(14px);
-  -webkit-backdrop-filter: saturate(160%) blur(14px);
-  border-bottom-color: var(--lsl-rule-strong);
+  background: rgba(22, 21, 19, 0.55);
+  backdrop-filter: saturate(180%) blur(28px);
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  border-bottom-color: rgba(239, 234, 224, 0.14);
+  box-shadow:
+    0 1px 0 rgba(239, 234, 224, 0.04) inset,
+    0 8px 32px rgba(0, 0, 0, 0.32);
 }
 .landing-southleft .lsl-nav-inner {
   display: flex;
@@ -104,13 +107,21 @@
   letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
   display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 12px;
   text-transform: lowercase;
+  text-decoration: none;
 }
-.landing-southleft .lsl-logo-mark {
-  color: var(--lsl-accent);
-  font-weight: 800;
+.landing-southleft .lsl-logo-mark-svg {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+.landing-southleft .lsl-mark-body { fill: var(--lsl-fg-strong); }
+.landing-southleft .lsl-mark-macron { fill: var(--lsl-accent); }
+.landing-southleft .lsl-logo-word {
+  position: relative;
+  top: 1px;
 }
 .landing-southleft .lsl-nav-links {
   display: flex;
@@ -185,18 +196,21 @@
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lsl-accent);
+  color: var(--lsl-fg);
   margin: 0 0 36px;
   display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
-.landing-southleft .lsl-hero-eyebrow::before {
+.landing-southleft .lsl-hero-eyebrow::before,
+.landing-southleft .lsl-section-label::before {
   content: "";
   display: inline-block;
-  width: 32px;
-  height: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: var(--lsl-accent);
+  flex-shrink: 0;
 }
 .landing-southleft .lsl-hero-headline {
   font-family: var(--lsl-font-display);
@@ -265,8 +279,11 @@
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--lsl-accent);
+  color: var(--lsl-fg);
   margin: 0 0 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 .landing-southleft .lsl-section-heading {
   font-family: var(--lsl-font-display);
@@ -478,14 +495,27 @@
 .landing-southleft .lsl-footer-brand {
   max-width: 32ch;
 }
+.landing-southleft .lsl-footer-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+}
+.landing-southleft .lsl-footer-brand-mark-svg {
+  height: 38px;
+  width: auto;
+  display: block;
+}
 .landing-southleft .lsl-footer-brand-mark {
   font-family: var(--lsl-font-display);
   font-weight: 800;
   font-size: 28px;
   letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 20px;
+  margin: 0;
   text-transform: lowercase;
+  position: relative;
+  top: 2px;
 }
 .landing-southleft .lsl-footer-brand-body {
   font-size: 15px;
@@ -498,8 +528,20 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--lsl-accent);
+  color: var(--lsl-fg);
   margin: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.landing-southleft .lsl-footer-col-label::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lsl-accent);
+  flex-shrink: 0;
 }
 .landing-southleft .lsl-footer-list {
   list-style: none;
