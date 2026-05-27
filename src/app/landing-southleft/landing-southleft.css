@@ -20,6 +20,18 @@
  * scrolls without us modifying globals.
  */
 
+/* ── Sticky-nav scroll-context fix ────────────────────────────────────────
+   globals.css sets both html AND body to overflow:auto when :has(.hero).
+   `document.scrollingElement` is html, but body matches as a sticky scroll
+   ancestor — so a sticky nav inside body looks up to body (which never
+   actually scrolls because its height = content height) and stays orphaned.
+   Walking the sticky scope up to html requires body to NOT be a scrolling
+   container. Scoping to this prototype so we don't touch other pages. */
+body:has(.landing-southleft),
+html:has(.landing-southleft) body {
+  overflow: visible;
+}
+
 .landing-southleft {
   /* ── Local palette (dark / cream / orange-coral / taupe) ─────────────── */
   --lsl-bg:           #161513;  /* near-black, slight warm cast */
@@ -82,12 +94,14 @@
 /* ── Top nav ──────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-nav {
   position: sticky;
+  position: -webkit-sticky;
   top: 0;
-  z-index: 50;
+  z-index: 100;
   background: var(--lsl-bg);
   border-bottom: 1px solid var(--lsl-rule);
   transition: background 200ms ease, border-color 200ms ease,
               backdrop-filter 200ms ease;
+  will-change: backdrop-filter;
 }
 .landing-southleft .lsl-nav[data-scrolled="true"] {
   background: rgba(22, 21, 19, 0.55);
@@ -321,17 +335,22 @@
   background: var(--lsl-bg);
   color: var(--lsl-fg);
 }
-.landing-southleft .lsl-service-card[data-tone="cream"] {
-  background: var(--lsl-fg-strong);
+/* Inversion on hover: redefine the wrapper tokens so every graphic primitive
+   that references --lsl-fg / --lsl-fg-strong / --lsl-fg-muted / --lsl-bg /
+   --lsl-rule flips with the card. Single rule, four cards' worth of work. */
+.landing-southleft .lsl-service-card:hover,
+.landing-southleft .lsl-service-card:focus-visible {
+  --lsl-bg:           #FAF5EB;
+  --lsl-fg:           #1A1815;
+  --lsl-fg-strong:    #0E0D0C;
+  --lsl-fg-muted:     #5A5347;
+  --lsl-fg-subtle:    #7A6F5C;
+  --lsl-rule:         rgba(26, 24, 21, 0.10);
+  --lsl-rule-strong:  rgba(26, 24, 21, 0.22);
+  background: #FAF5EB;
   color: #1A1815;
   border-color: transparent;
-}
-.landing-southleft .lsl-service-card:hover {
   transform: translateY(-2px);
-  border-color: var(--lsl-rule-strong);
-}
-.landing-southleft .lsl-service-card[data-tone="cream"]:hover {
-  border-color: rgba(26, 24, 21, 0.16);
 }
 
 .landing-southleft .lsl-card-arrow {
@@ -386,8 +405,8 @@
   line-height: 1.45;
   color: var(--lsl-fg-muted);
 }
-.landing-southleft .lsl-service-card[data-tone="cream"] .lsl-service-bullets li {
-  color: #5A5347;
+.landing-southleft .lsl-service-card:hover .lsl-service-bullets li {
+  color: var(--lsl-fg-muted);
 }
 
 .landing-southleft .lsl-service-figure {
@@ -401,12 +420,34 @@
   max-width: 320px;
   height: auto;
   display: block;
+  /* Routes every SVG `currentColor` fill/stroke through the wrapper's
+     --lsl-fg token. Card inversion redefines --lsl-fg, so the entire
+     graphic flips automatically. */
+  color: var(--lsl-fg);
+}
+
+/* Card 1 morph surface needs a hairline so it's visible against any
+   wrapper bg (cycles between white-ish DS-canonical surfaces). */
+.landing-southleft .lsl-morph-card {
+  stroke: rgba(0, 0, 0, 0.10);
+  stroke-width: 1;
+}
+
+/* Card 2 component-card surface — uses a step-up tone over wrapper bg.
+   Inverted on hover via .lsl-service-card:hover scoping below. */
+.landing-southleft .lsl-tokens-target {
+  fill: var(--lsl-tokens-target-bg, #2A2724);
+  stroke: currentColor;
+  stroke-opacity: 0.18;
+}
+.landing-southleft .lsl-service-card:hover .lsl-tokens-target {
+  --lsl-tokens-target-bg: #EAE3D2;
 }
 .landing-southleft .lsl-shape-neutral {
   fill: var(--lsl-fg-muted);
 }
-.landing-southleft .lsl-service-card[data-tone="cream"] .lsl-shape-neutral {
-  fill: #C8BCA3;
+.landing-southleft .lsl-service-card:hover .lsl-shape-neutral {
+  fill: var(--lsl-fg-muted);
 }
 .landing-southleft .lsl-shape-accent {
   fill: var(--lsl-accent);
@@ -484,9 +525,9 @@
   100%    { transform: translate(40px, 132px); opacity: 0; }
 }
 @keyframes lsl-tokens-target {
-  0%, 60%   { fill: #2A2724; stroke: rgba(239,234,224,0.14); }
-  65%, 90%  { fill: rgba(103,80,164,0.18); stroke: rgba(103,80,164,0.5); }
-  100%      { fill: #2A2724; stroke: rgba(239,234,224,0.14); }
+  0%, 60%   { fill: var(--lsl-tokens-target-bg, #2A2724); stroke: rgba(103, 80, 164, 0.18); }
+  65%, 90%  { fill: rgba(103, 80, 164, 0.30);            stroke: rgba(103, 80, 164, 0.60); }
+  100%      { fill: var(--lsl-tokens-target-bg, #2A2724); stroke: rgba(103, 80, 164, 0.18); }
 }
 @keyframes lsl-tokens-target-btn {
   0%, 85%   { fill: #6750A4; }
@@ -799,14 +840,9 @@
   padding-bottom: 48px;
   color: var(--lsl-fg);
 }
-.landing-southleft .lsl-footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 56px;
-  margin-bottom: 72px;
-}
 .landing-southleft .lsl-footer-brand {
-  max-width: 32ch;
+  max-width: 48ch;
+  margin-bottom: 72px;
 }
 .landing-southleft .lsl-footer-brand-lockup {
   display: flex;
@@ -925,11 +961,7 @@
   .landing-southleft .lsl-tokens {
     grid-template-columns: 1fr;
   }
-  .landing-southleft .lsl-footer-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-  }
-  .landing-southleft .lsl-footer-brand { grid-column: 1 / -1; }
+  .landing-southleft .lsl-footer-brand { margin-bottom: 48px; }
   .landing-southleft .lsl-hero { padding-top: 64px; }
   .landing-southleft {
     --lsl-section-y: 96px;

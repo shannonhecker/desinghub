@@ -55,7 +55,7 @@ function GraphicSystemMorph() {
     <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-morph" aria-hidden="true">
       {/* Builder canvas hairline */}
       <rect x="20" y="20" width="280" height="180" rx="12"
-            fill="none" stroke="rgba(239,234,224,0.06)" strokeWidth="1" />
+            fill="none" stroke="currentColor" strokeOpacity="0.10" strokeWidth="1" />
       {/* The morphing card surface */}
       <rect className="lsl-morph-card"
             x="60" y="50" width="200" height="120"
@@ -97,23 +97,26 @@ function GraphicTokenFlow() {
     <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-tokens" aria-hidden="true">
       {/* Token rail (left) */}
       <rect x="20" y="30" width="68" height="160" rx="8"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.10)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.14" />
       {/* Token rail rows */}
       {[0, 1, 2, 3].map((i) => (
         <g key={i}>
           <rect x="30" y={46 + i * 36} width="14" height="14" rx="3"
-                fill={["#6750A4", "#D9905D", "#A89B82", "#FAF5EB"][i]} />
+                fill={["#6750A4", "#D9905D", "#A89B82", "currentColor"][i]} />
           <rect x="50" y={50 + i * 36} width="30" height="6" rx="2"
-                fill="#FAF5EB" opacity="0.6" />
+                fill="currentColor" opacity="0.5" />
         </g>
       ))}
-      {/* Component card (right) */}
+      {/* Component card (right) — surface contrasts wrapper bg via .lsl-tokens-target */}
       <rect className="lsl-tokens-target"
-            x="148" y="50" width="148" height="120" rx="12"
-            fill="#2A2724" stroke="rgba(239,234,224,0.14)" />
-      <rect x="166" y="68" width="84" height="8" rx="2" fill="#FAF5EB" opacity="0.85" />
-      <rect x="166" y="86" width="110" height="5" rx="2" fill="#FAF5EB" opacity="0.30" />
-      <rect x="166" y="96" width="90" height="5" rx="2" fill="#FAF5EB" opacity="0.30" />
+            x="148" y="50" width="148" height="120" rx="12" />
+      <rect x="166" y="68" width="84" height="8" rx="2" fill="currentColor" opacity="0.85"
+            className="lsl-on-tokens-target" />
+      <rect x="166" y="86" width="110" height="5" rx="2" fill="currentColor" opacity="0.30"
+            className="lsl-on-tokens-target" />
+      <rect x="166" y="96" width="90" height="5" rx="2" fill="currentColor" opacity="0.30"
+            className="lsl-on-tokens-target" />
       <rect className="lsl-tokens-target-btn"
             x="166" y="124" width="64" height="24" rx="12" fill="#6750A4" />
       {/* Travelling token (animated) */}
@@ -131,15 +134,17 @@ function GraphicDragDrop() {
     <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-drag" aria-hidden="true">
       {/* Sidebar palette */}
       <rect x="20" y="20" width="86" height="180" rx="8"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.10)" />
-      <rect x="32" y="36" width="62" height="36" rx="6" fill="rgba(168,155,130,0.4)" />
-      <rect x="32" y="80" width="62" height="36" rx="6" fill="rgba(168,155,130,0.4)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.14" />
+      <rect x="32" y="36" width="62" height="36" rx="6" fill="currentColor" opacity="0.35" />
+      <rect x="32" y="80" width="62" height="36" rx="6" fill="currentColor" opacity="0.35" />
       <rect x="32" y="124" width="62" height="36" rx="6"
-            className="lsl-drag-source" fill="rgba(168,155,130,0.4)" />
-      <rect x="32" y="168" width="62" height="20" rx="6" fill="rgba(168,155,130,0.4)" />
+            className="lsl-drag-source" fill="currentColor" opacity="0.35" />
+      <rect x="32" y="168" width="62" height="20" rx="6" fill="currentColor" opacity="0.35" />
       {/* Canvas */}
       <rect x="126" y="20" width="174" height="180" rx="8"
-            fill="rgba(239,234,224,0.02)" stroke="rgba(239,234,224,0.10)"
+            fill="currentColor" fillOpacity="0.03"
+            stroke="currentColor" strokeOpacity="0.14"
             strokeDasharray="4 4" />
       {/* Drop-zone hint, fades out as the ghost lands */}
       <rect className="lsl-drag-target"
@@ -160,31 +165,35 @@ function GraphicBriefVariants() {
     <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-brief" aria-hidden="true">
       {/* Prompt input */}
       <rect x="20" y="22" width="280" height="42" rx="10"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.16)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.20" />
       {/* Mono prompt-prefix glyph */}
       <text x="36" y="48" className="lsl-brief-prefix">/</text>
       {/* Typing line — width animates 0 → 220 */}
       <rect className="lsl-brief-typing"
-            x="50" y="42" width="0" height="6" rx="2" fill="#FAF5EB" opacity="0.9" />
+            x="50" y="42" width="0" height="6" rx="2" fill="currentColor" opacity="0.85" />
       {/* Cursor — blinks at end of typing range */}
       <rect className="lsl-brief-cursor"
             x="50" y="36" width="2" height="18" fill="#D9905D" />
       {/* Three variant cards (animate-in stagger) */}
       <rect className="lsl-brief-variant lsl-brief-variant-1"
             x="20"  y="92" width="88" height="100" rx="8"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.22" />
       <rect className="lsl-brief-variant lsl-brief-variant-2"
             x="116" y="92" width="88" height="100" rx="8"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.22" />
       <rect className="lsl-brief-variant lsl-brief-variant-3"
             x="212" y="92" width="88" height="100" rx="8"
-            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+            fill="currentColor" fillOpacity="0.05"
+            stroke="currentColor" strokeOpacity="0.22" />
       {/* Variant content lines */}
       {[20, 116, 212].map((x, i) => (
         <g key={i} className={`lsl-brief-variant lsl-brief-variant-${i + 1}`}>
-          <rect x={x + 12} y="108" width="40" height="6" rx="2" fill="#FAF5EB" opacity="0.85" />
-          <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="#FAF5EB" opacity="0.30" />
-          <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="#FAF5EB" opacity="0.30" />
+          <rect x={x + 12} y="108" width="40" height="6" rx="2" fill="currentColor" opacity="0.85" />
+          <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="currentColor" opacity="0.30" />
+          <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="currentColor" opacity="0.30" />
           <rect x={x + 12} y="162" width="44" height="18" rx="9"
                 fill={i === 1 ? "#6750A4" : "#D9905D"} opacity={i === 1 ? 1 : 0.7} />
         </g>
@@ -725,43 +734,15 @@ export default function LandingSouthleftPage() {
           Site footer
         </h2>
         <div className="lsl-container">
-          <div className="lsl-footer-grid">
-            <div className="lsl-footer-brand">
-              <div className="lsl-footer-brand-lockup">
-                <UoauiMark className="lsl-footer-brand-mark-svg" />
-                <p className="lsl-footer-brand-mark">uoaui.ai</p>
-              </div>
-              <p className="lsl-footer-brand-body">
-                A workbench for designing across five systems. Built by a
-                design engineer who got tired of choosing.
-              </p>
+          <div className="lsl-footer-brand">
+            <div className="lsl-footer-brand-lockup">
+              <UoauiMark className="lsl-footer-brand-mark-svg" />
+              <p className="lsl-footer-brand-mark">uoaui.ai</p>
             </div>
-
-            <div>
-              <p className="lsl-footer-col-label">product</p>
-              <ul className="lsl-footer-list">
-                <li><a href="/builder">Workbench</a></li>
-                <li><a href="/ui-kit">UI kit</a></li>
-                <li><a href="/theme-builder">Theme builder</a></li>
-                <li><a href="/token-editor">Token editor</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="lsl-footer-col-label">made by</p>
-              <ul className="lsl-footer-list">
-                <li>
-                  <a href="https://github.com/shannonhecker">
-                    Shannon Hecker
-                  </a>
-                </li>
-                <li>
-                  <a href="https://github.com/shannonhecker/desinghub">
-                    GitHub repo
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <p className="lsl-footer-brand-body">
+              A workbench for designing across five systems. Built by a
+              design engineer who got tired of choosing.
+            </p>
           </div>
 
           <div className="lsl-footer-fine">
