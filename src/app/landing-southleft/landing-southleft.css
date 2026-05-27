@@ -483,136 +483,68 @@
   }
 }
 
-/* ── Featured projects (2-col grid, composite + tags) ─────────────────── */
-.landing-southleft .lsl-projects-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  margin: 0 0 56px;
-  flex-wrap: wrap;
-}
-.landing-southleft .lsl-view-all {
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 22px;
-  background: var(--lsl-accent);
-  color: var(--lsl-bg);
-  font-family: var(--lsl-font-sans);
-  font-size: 14.5px;
-  font-weight: 600;
-  border-radius: 999px;
-  text-decoration: none;
-  transition: background 160ms ease, transform 160ms ease;
-}
-.landing-southleft .lsl-view-all:hover {
-  background: var(--lsl-accent-hover);
-  transform: translateY(-1px);
-}
-.landing-southleft .lsl-projects {
+/* ── Same comp, five systems strip ────────────────────────────────────── */
+.landing-southleft .lsl-systems {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 40px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
 }
-.landing-southleft .lsl-project {
+.landing-southleft .lsl-syscard {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
   text-decoration: none;
   color: inherit;
 }
-.landing-southleft .lsl-project-figure {
-  aspect-ratio: 16 / 11;
+.landing-southleft .lsl-syscard-frame {
+  aspect-ratio: 11 / 8;
   border-radius: 14px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background:
-    radial-gradient(120% 100% at 30% 20%,
-      rgba(255, 79, 44, 0.10) 0%,
-      rgba(168, 155, 130, 0.08) 40%,
+    radial-gradient(120% 100% at 50% 0%,
+      rgba(103, 80, 164, 0.10) 0%,
+      rgba(217, 144, 93, 0.06) 45%,
       rgba(22, 21, 19, 0.0) 75%),
     linear-gradient(180deg, #2A2724 0%, #1C1A17 100%);
   border: 1px solid var(--lsl-rule);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 280ms cubic-bezier(0.2, 0, 0, 1),
-              border-color 280ms ease;
+              border-color 280ms ease,
+              box-shadow 280ms ease;
 }
-.landing-southleft .lsl-project:hover .lsl-project-figure {
+.landing-southleft .lsl-syscard:hover .lsl-syscard-frame {
   transform: translateY(-3px);
   border-color: var(--lsl-rule-strong);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.32);
 }
-.landing-southleft .lsl-composite {
-  width: 86%;
-  max-width: 460px;
+.landing-southleft .lsl-syscard-svg {
+  width: 100%;
   height: auto;
   display: block;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.32));
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
 }
-/* Composite color stops — mirror the workbench chrome palette */
-.landing-southleft .lsl-comp-chrome    { fill: #F5F2EC; }
-.landing-southleft .lsl-comp-titlebar  { fill: #E4DFD5; }
-.landing-southleft .lsl-comp-dot       { fill: #B8AE9A; }
-.landing-southleft .lsl-comp-sidebar   { fill: #ECE7DC; }
-.landing-southleft .lsl-comp-line      { fill: #1A1815; opacity: 0.78; }
-.landing-southleft .lsl-comp-line-faint { fill: #1A1815; opacity: 0.34; }
-.landing-southleft .lsl-comp-block       { fill: #D7CFBE; }
-.landing-southleft .lsl-comp-block-accent { fill: var(--lsl-accent); opacity: 0.92; }
-.landing-southleft .lsl-comp-phone-frame  { fill: #1A1815; }
-.landing-southleft .lsl-comp-phone-screen { fill: #F5F2EC; }
-.landing-southleft .lsl-composite-desktop-cool .lsl-comp-block-accent {
-  fill: var(--lsl-amber);
-  opacity: 0.95;
-}
-
-.lsl-project-heading {
-  /* moved below — needs new size + color */
-}
-.landing-southleft .lsl-project-heading {
-  font-family: var(--lsl-font-display);
-  font-weight: 800;
-  font-size: clamp(24px, 2.6vw, 34px);
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  color: var(--lsl-fg-strong);
-  margin: 0;
-  max-width: 24ch;
-}
-.landing-southleft .lsl-project-body {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.landing-southleft .lsl-project-body p {
-  font-size: 16px;
-  line-height: 1.55;
+.landing-southleft .lsl-syscard-label {
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--lsl-fg-muted);
   margin: 0;
-  max-width: 52ch;
+  text-align: center;
+  transition: color 160ms ease;
 }
-.landing-southleft .lsl-project-tags {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.landing-southleft .lsl-project-tags li {
-  font-size: 12.5px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+.landing-southleft .lsl-syscard:hover .lsl-syscard-label {
   color: var(--lsl-fg-strong);
-  padding: 8px 14px;
-  background: rgba(239, 234, 224, 0.06);
-  border: 1px solid var(--lsl-rule);
-  border-radius: 999px;
-  transition: background 160ms ease, border-color 160ms ease;
 }
-.landing-southleft .lsl-project:hover .lsl-project-tags li {
-  background: rgba(239, 234, 224, 0.10);
-  border-color: var(--lsl-rule-strong);
+/* uoaui card gets a glass surface on the dark frame — its surface is
+   defined as semi-transparent rgba in SystemSpec, so render a subtle
+   backdrop tint underneath via the frame's gradient. */
+.landing-southleft .lsl-syscard[data-system="uoaui"] .lsl-syscard-svg {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3))
+          drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.4));
 }
 
 /* ── Testimonials (scroll-snap row, no carousel lib) ──────────────────── */
@@ -767,8 +699,10 @@
 .landing-southleft .lsl-services > [data-reveal]:nth-child(3) { transition-delay: 180ms; }
 .landing-southleft .lsl-services > [data-reveal]:nth-child(4) { transition-delay: 270ms; }
 
-.landing-southleft .lsl-projects > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
-.landing-southleft .lsl-projects > [data-reveal]:nth-child(2) { transition-delay: 130ms; }
+.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 80ms; }
+.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 160ms; }
+.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 240ms; }
 @media (prefers-reduced-motion: reduce) {
   .landing-southleft [data-reveal],
   .landing-southleft [data-reveal][data-revealed="true"] {
@@ -789,7 +723,10 @@
   }
   .landing-southleft .lsl-service-figure { min-height: 200px; }
   .landing-southleft .lsl-graphic { max-width: 220px; }
-  .landing-southleft .lsl-projects { grid-template-columns: 1fr; gap: 48px; }
+  .landing-southleft .lsl-systems {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
   .landing-southleft .lsl-footer-grid {
     grid-template-columns: 1fr 1fr;
     gap: 40px;

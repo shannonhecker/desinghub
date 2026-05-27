@@ -139,46 +139,34 @@ function ArrowUpRight() {
   );
 }
 
-/** Composite mock — browser-chrome desktop card stacked with a phone
-    silhouette. Placeholder until real /builder + /ui-kit captures land
-    (see public/landing-southleft/, task #7). */
-function ProjectComposite({ variant }: { variant: "desktop-cool" | "desktop-warm" }) {
+/** Mock of a "card with a button" component rendered with one DS's
+    signature: surface color, ink color, card radius, button radius,
+    stroke. Hand-rolled, not pulled from the real DS packages. */
+function SystemCardMock({ spec }: { spec: SystemSpec }) {
   return (
-    <svg
-      viewBox="0 0 480 320"
-      className={`lsl-composite lsl-composite-${variant}`}
-      aria-hidden="true"
-    >
-      {/* Desktop browser chrome */}
-      <g className="lsl-comp-desktop">
-        <rect x="30" y="30" width="380" height="240" rx="10" className="lsl-comp-chrome" />
-        <rect x="30" y="30" width="380" height="28" rx="10" className="lsl-comp-titlebar" />
-        <circle cx="46" cy="44" r="4" className="lsl-comp-dot" />
-        <circle cx="60" cy="44" r="4" className="lsl-comp-dot" />
-        <circle cx="74" cy="44" r="4" className="lsl-comp-dot" />
-        {/* Window content: sidebar + canvas */}
-        <rect x="38" y="66" width="86" height="196" className="lsl-comp-sidebar" />
-        <rect x="48" y="78" width="64" height="6" rx="2" className="lsl-comp-line" />
-        <rect x="48" y="92" width="50" height="5" rx="2" className="lsl-comp-line-faint" />
-        <rect x="48" y="104" width="58" height="5" rx="2" className="lsl-comp-line-faint" />
-        <rect x="48" y="116" width="44" height="5" rx="2" className="lsl-comp-line-faint" />
-        {/* Canvas blocks */}
-        <rect x="138" y="78" width="260" height="38" rx="4" className="lsl-comp-block-accent" />
-        <rect x="138" y="124" width="124" height="84" rx="4" className="lsl-comp-block" />
-        <rect x="270" y="124" width="128" height="40" rx="4" className="lsl-comp-block" />
-        <rect x="270" y="170" width="128" height="38" rx="4" className="lsl-comp-block" />
-        <rect x="138" y="216" width="200" height="46" rx="4" className="lsl-comp-block" />
-      </g>
-      {/* Phone overlay bottom-right */}
-      <g className="lsl-comp-phone" transform="translate(348, 142)">
-        <rect x="0" y="0" width="100" height="160" rx="14" className="lsl-comp-phone-frame" />
-        <rect x="6" y="6" width="88" height="148" rx="10" className="lsl-comp-phone-screen" />
-        <rect x="14" y="22" width="60" height="6" rx="2" className="lsl-comp-line" />
-        <rect x="14" y="36" width="44" height="4" rx="2" className="lsl-comp-line-faint" />
-        <rect x="14" y="54" width="72" height="40" rx="4" className="lsl-comp-block-accent" />
-        <rect x="14" y="102" width="72" height="14" rx="3" className="lsl-comp-block" />
-        <rect x="14" y="122" width="56" height="14" rx="3" className="lsl-comp-block" />
-      </g>
+    <svg viewBox="0 0 220 160" className="lsl-syscard-svg" aria-hidden="true">
+      {/* Card surface */}
+      <rect
+        x="6" y="6" width="208" height="148"
+        rx={spec.radius}
+        fill={spec.surface}
+        stroke={spec.stroke ?? "none"}
+        strokeWidth={spec.stroke ? 1 : 0}
+      />
+      {/* Title line (full opacity) */}
+      <rect x="22" y="24" width="100" height="10" rx="2" fill={spec.ink} opacity="0.92" />
+      {/* Body lines (faded) */}
+      <rect x="22" y="46" width="170" height="6" rx="2" fill={spec.ink} opacity="0.34" />
+      <rect x="22" y="58" width="140" height="6" rx="2" fill={spec.ink} opacity="0.34" />
+      <rect x="22" y="70" width="158" height="6" rx="2" fill={spec.ink} opacity="0.34" />
+      {/* Primary button */}
+      <rect
+        x="22" y="108"
+        width="78" height="30"
+        rx={spec.btnRadius}
+        fill={spec.brand}
+      />
+      <rect x="36" y="118" width="50" height="10" rx="2" fill="#FFFFFF" opacity="0.94" />
     </svg>
   );
 }
@@ -204,48 +192,48 @@ interface Service {
 
 const SERVICES: readonly Service[] = [
   {
-    heading: "Five systems, one canvas",
+    heading: "Five systems, side by side",
     bullets: [
-      "Salt DS, Material 3, Fluent 2, Carbon, uoaui",
-      "Side-by-side composition, no theme re-plumbing",
-      "Cross-system component reuse",
-      "Same comp rendered across five renderers",
+      "Drop a Salt card. See it as Material 3, Fluent, Carbon, uoaui.",
+      "Demo the same brief to five stakeholders at once.",
+      "Decide which system fits before you commit a codebase to it.",
+      "No swap penalty: the comp carries across renderers.",
     ],
     tone: "dark",
     graphic: "stack",
     href: "/builder",
   },
   {
-    heading: "Token-aware switching",
+    heading: "Tokens travel with the block",
     bullets: [
-      "Swap a block from Salt to Carbon, tokens follow",
-      "Spacing, radius, color, density resolve correctly",
-      "Nothing hardcoded, no inline overrides",
-      "Token diff surfaced inline during a swap",
+      "Swap a block, tokens follow it.",
+      "Spacing, radius, color, density resolve through the right layer.",
+      "No hardcoded hex, no inline overrides leaking in.",
+      "Token diff surfaced inline whenever you change a system.",
     ],
     tone: "cream",
     graphic: "flow",
     href: "/token-editor",
   },
   {
-    heading: "Drag and drop composition",
+    heading: "Sketch in real components",
     bullets: [
-      "Sketch a page as fast as a presentation tool",
-      "Components stay real, accessible, production-shaped",
-      "LayoutGroups + row/column primitives",
-      "Keyboard parity for every drag interaction",
+      "Compose at the speed of a presentation tool.",
+      "Drop production components, not lorem rectangles.",
+      "LayoutGroups and row primitives keep the diff readable.",
+      "Every drag is keyboard-reachable too.",
     ],
     tone: "dark",
     graphic: "grid",
     href: "/builder",
   },
   {
-    heading: "Assisted authoring",
+    heading: "Brief it, get variants back",
     bullets: [
-      "Generate variants from a brief",
-      "Audit contrast and density in line",
-      "Pressure-test layouts against scenarios",
-      "Keep the canvas as the source of truth",
+      "Hand the canvas a brief, get three layouts back.",
+      "Audit contrast and density without leaving the page.",
+      "Pressure-test against the scenarios you care about.",
+      "Your canvas stays the source of truth, not the screenshot.",
     ],
     tone: "cream",
     graphic: "crescent",
@@ -253,25 +241,77 @@ const SERVICES: readonly Service[] = [
   },
 ] as const;
 
-interface Project {
-  heading: string;
-  body: string;
-  tags: readonly string[];
+/* The "same comp, five systems" strip. Each entry mocks the visual
+   signature of one design system rendering the same card-with-button
+   primitive. Hand-rolled SVG, not real components — the canvas is the
+   source of truth, this is the brochure. */
+interface SystemSpec {
+  name: string;
+  /** Brand-ish chip color used as a hint of the DS palette. */
+  brand: string;
+  /** Card background. */
+  surface: string;
+  /** Card text color. */
+  ink: string;
+  /** Border-radius the DS prefers for cards. */
+  radius: number;
+  /** Border-radius the DS prefers for buttons (Carbon = 0, M3 = 20). */
+  btnRadius: number;
+  /** Subtle stroke around the card (Carbon-flat / Salt-bordered / etc). */
+  stroke: string | null;
   href: string;
 }
 
-const PROJECTS: readonly Project[] = [
+const SYSTEMS: readonly SystemSpec[] = [
   {
-    heading: "A workbench for product teams choosing between design systems.",
-    body: "uoaui.ai started as a side-by-side comparison tool. It is now a working canvas where designers and engineers prototype the same screen in five systems, then read the trade-offs across tokens, density, and accessibility.",
-    tags: ["Design Systems", "Builder", "Multi-DS"],
-    href: "/builder",
+    name: "Salt DS",
+    brand: "#0D7A95",  // Salt accent teal
+    surface: "#FFFFFF",
+    ink: "#1E1E1E",
+    radius: 6,
+    btnRadius: 6,
+    stroke: "rgba(0,0,0,0.10)",
+    href: "/builder?ds=salt",
   },
   {
-    heading: "Tokens are the abstraction. Everything else is rendering.",
-    body: "A long-form look at why token layers, not components, are the unit of portability across design systems. Practical patterns from shipping uoaui.ai, plus the moments the abstraction breaks down.",
-    tags: ["Tokens", "Essay", "Theming"],
-    href: "/token-editor",
+    name: "Material 3",
+    brand: "#6750A4",  // M3 primary purple
+    surface: "#FEF7FF",
+    ink: "#1D1B20",
+    radius: 16,
+    btnRadius: 20,
+    stroke: null,
+    href: "/builder?ds=md3",
+  },
+  {
+    name: "Fluent 2",
+    brand: "#0F6CBD",  // Fluent brand blue
+    surface: "#FAFAFA",
+    ink: "#242424",
+    radius: 4,
+    btnRadius: 4,
+    stroke: "rgba(0,0,0,0.08)",
+    href: "/builder?ds=fluent",
+  },
+  {
+    name: "Carbon",
+    brand: "#0F62FE",  // IBM blue
+    surface: "#F4F4F4",
+    ink: "#161616",
+    radius: 0,
+    btnRadius: 0,
+    stroke: null,
+    href: "/builder?ds=carbon",
+  },
+  {
+    name: "uoaui",
+    brand: "#6750A4",
+    surface: "rgba(255,255,255,0.06)",
+    ink: "#FAF5EB",
+    radius: 14,
+    btnRadius: 999,
+    stroke: "rgba(239,234,224,0.18)",
+    href: "/builder?ds=uoaui",
   },
 ] as const;
 
@@ -458,48 +498,40 @@ export default function LandingSouthleftPage() {
 
       <hr className="lsl-rule" />
 
-      {/* ── Featured projects ── */}
+      {/* ── Same comp, five systems ── */}
       <section
         id="projects"
         className="lsl-section"
-        aria-labelledby="lsl-projects-heading"
+        aria-labelledby="lsl-systems-heading"
       >
         <div className="lsl-container">
-          <div className="lsl-projects-header">
-            <p className="lsl-section-label" data-reveal id="lsl-projects-heading">
-              Featured Projects
-            </p>
-            <Link href="/builder" className="lsl-view-all" data-reveal>
-              View all
-            </Link>
-          </div>
+          <p className="lsl-section-label" data-reveal>
+            systems / side-by-side
+          </p>
+          <h2
+            id="lsl-systems-heading"
+            className="lsl-section-heading"
+            data-reveal
+          >
+            The same card. Five renderings.
+          </h2>
+          <p className="lsl-section-lede" data-reveal>
+            Pick a system to compose with. Swap later without rewriting the
+            comp. Tokens carry the design intent across renderers.
+          </p>
 
-          <div className="lsl-projects">
-            {PROJECTS.map((p, idx) => (
+          <div className="lsl-systems" data-reveal>
+            {SYSTEMS.map((s) => (
               <Link
-                key={p.heading}
-                href={p.href}
-                className="lsl-project"
-                data-reveal
+                key={s.name}
+                href={s.href}
+                className="lsl-syscard"
+                data-system={s.name.toLowerCase().replace(/\s+/g, "-")}
               >
-                {/*
-                  Placeholder composite — real /builder + /ui-kit captures
-                  swap in via task #7 once auth is sorted (task #16).
-                */}
-                <div className="lsl-project-figure">
-                  <ProjectComposite
-                    variant={idx === 0 ? "desktop-warm" : "desktop-cool"}
-                  />
+                <div className="lsl-syscard-frame">
+                  <SystemCardMock spec={s} />
                 </div>
-                <div className="lsl-project-body">
-                  <h3 className="lsl-project-heading">{p.heading}</h3>
-                  <p>{p.body}</p>
-                  <ul className="lsl-project-tags">
-                    {p.tags.map((t) => (
-                      <li key={t}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
+                <p className="lsl-syscard-label">{s.name}</p>
               </Link>
             ))}
           </div>
