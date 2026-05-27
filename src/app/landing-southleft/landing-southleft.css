@@ -412,75 +412,202 @@
   fill: var(--lsl-accent);
 }
 
-/* ── Graphic animations ──────────────────────────────────────────────────
-   All keyframes are subtle by design (southleft tone — not maximalist).
-   Reduced-motion users get static graphics via the @media block at file
-   end. Animations apply to .lsl-graphic descendants only. */
+/* ── Graphic animations: meaningful demonstrations ──────────────────────
+   Each graphic animates the specific behaviour its card claims.
+   Cycle lengths sit in the "long choreography" range from
+   animation-principles.md (400-700ms per element, full loops up to ~6s).
+   prefers-reduced-motion users get static states. */
 
-/* Flow ellipse: drifts horizontally across the 3 pills. The orange
-   "fluid through pipes" feel from ref #3. */
-@keyframes lsl-flow {
-  0%, 100% { transform: translateX(-46px); }
-  50%      { transform: translateX(46px); }
+/* Card 1 — GraphicSystemMorph: card surface + button + label cycle
+   through Salt / M3 / Fluent / Carbon / uoaui every 1.6s.
+   Each keyframe step is a real DS visual signature. */
+@keyframes lsl-morph-card {
+  0%, 16%   { fill: #FFFFFF; rx: 6; }   /* Salt: subtle radius */
+  20%, 36%  { fill: #FEF7FF; rx: 16; }  /* M3: large radius, tonal surface */
+  40%, 56%  { fill: #FAFAFA; rx: 4; }   /* Fluent: minimal radius */
+  60%, 76%  { fill: #F4F4F4; rx: 0; }   /* Carbon: flat */
+  80%, 100% { fill: rgba(250,245,235,0.08); rx: 14; } /* uoaui: glass */
 }
-.landing-southleft .lsl-flow-ellipse {
-  transform-origin: 160px 180px;
+@keyframes lsl-morph-btn {
+  0%, 16%   { fill: #0D7A95; rx: 6; }   /* Salt teal */
+  20%, 36%  { fill: #6750A4; rx: 20; }  /* M3 purple pill */
+  40%, 56%  { fill: #0F6CBD; rx: 4; }   /* Fluent blue */
+  60%, 76%  { fill: #0F62FE; rx: 0; }   /* Carbon flat IBM blue */
+  80%, 100% { fill: #6750A4; rx: 13; }  /* uoaui violet pill */
+}
+@keyframes lsl-morph-label {
+  0%, 16%   { content: "SALT"; }
+  20%, 36%  { content: "M3"; }
+  40%, 56%  { content: "FLUENT"; }
+  60%, 76%  { content: "CARBON"; }
+  80%, 100% { content: "UOAUI"; }
+}
+.landing-southleft .lsl-morph-card {
+  animation: lsl-morph-card 8s steps(1) infinite;
+}
+.landing-southleft .lsl-morph-btn {
+  animation: lsl-morph-btn 8s steps(1) infinite;
+}
+.landing-southleft .lsl-morph-label {
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  fill: var(--lsl-amber);
+  opacity: 0;
+}
+@keyframes lsl-morph-label-1 { 0%, 16% { opacity: 1; } 18%, 100% { opacity: 0; } }
+@keyframes lsl-morph-label-2 { 0%, 18% { opacity: 0; } 20%, 36% { opacity: 1; } 38%, 100% { opacity: 0; } }
+@keyframes lsl-morph-label-3 { 0%, 38% { opacity: 0; } 40%, 56% { opacity: 1; } 58%, 100% { opacity: 0; } }
+@keyframes lsl-morph-label-4 { 0%, 58% { opacity: 0; } 60%, 76% { opacity: 1; } 78%, 100% { opacity: 0; } }
+@keyframes lsl-morph-label-5 { 0%, 78% { opacity: 0; } 80%, 100% { opacity: 1; } }
+.landing-southleft .lsl-morph-label-1 { animation: lsl-morph-label-1 8s steps(1, end) infinite; }
+.landing-southleft .lsl-morph-label-2 { animation: lsl-morph-label-2 8s steps(1, end) infinite; }
+.landing-southleft .lsl-morph-label-3 { animation: lsl-morph-label-3 8s steps(1, end) infinite; }
+.landing-southleft .lsl-morph-label-4 { animation: lsl-morph-label-4 8s steps(1, end) infinite; }
+.landing-southleft .lsl-morph-label-5 { animation: lsl-morph-label-5 8s steps(1, end) infinite; }
+
+/* Card 2 — GraphicTokenFlow: particles emit from rail (left) and
+   strike the target card (right). When particle 1 arrives, surface
+   tints violet; when particle 2 arrives, button tints amber. */
+@keyframes lsl-token-particle-1 {
+  0%   { transform: translate(40px, 60px); opacity: 0; }
+  10%  { transform: translate(40px, 60px); opacity: 1; }
+  60%  { transform: translate(200px, 110px); opacity: 1; }
+  65%  { transform: translate(200px, 110px); opacity: 0; }
+  100% { transform: translate(40px, 60px); opacity: 0; }
+}
+@keyframes lsl-token-particle-2 {
+  0%, 35% { transform: translate(40px, 132px); opacity: 0; }
+  40%     { transform: translate(40px, 132px); opacity: 1; }
+  90%     { transform: translate(200px, 136px); opacity: 1; }
+  95%     { transform: translate(200px, 136px); opacity: 0; }
+  100%    { transform: translate(40px, 132px); opacity: 0; }
+}
+@keyframes lsl-tokens-target {
+  0%, 60%   { fill: #2A2724; stroke: rgba(239,234,224,0.14); }
+  65%, 90%  { fill: rgba(103,80,164,0.18); stroke: rgba(103,80,164,0.5); }
+  100%      { fill: #2A2724; stroke: rgba(239,234,224,0.14); }
+}
+@keyframes lsl-tokens-target-btn {
+  0%, 85%   { fill: #6750A4; }
+  90%, 98%  { fill: #D9905D; }
+  100%      { fill: #6750A4; }
+}
+.landing-southleft .lsl-token-particle {
   transform-box: fill-box;
-  animation: lsl-flow 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.landing-southleft .lsl-token-particle-1 {
+  animation: lsl-token-particle-1 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.landing-southleft .lsl-token-particle-2 {
+  animation: lsl-token-particle-2 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.landing-southleft .lsl-tokens-target {
+  animation: lsl-tokens-target 3.6s ease-in-out infinite;
+}
+.landing-southleft .lsl-tokens-target-btn {
+  animation: lsl-tokens-target-btn 3.6s ease-in-out infinite;
 }
 
-/* Crescent arc: slow breath via opacity + tiny rotation. */
-@keyframes lsl-crescent {
-  0%, 100% { opacity: 0.92; transform: rotate(0deg) scale(1); }
-  50%      { opacity: 1;    transform: rotate(-3deg) scale(1.02); }
+/* Card 3 — GraphicDragDrop: ghost component lifts off the palette,
+   arcs across to the dropzone, lands. Drop target fades on landing. */
+@keyframes lsl-drag-ghost {
+  0%, 8%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  20%      { transform: translate(40px, -20px) scale(1.04); opacity: 0.95; }
+  55%      { transform: translate(122px, -32px) scale(1.04); opacity: 0.95; }
+  70%      { transform: translate(122px, -32px) scale(1); opacity: 1; }
+  85%, 100%{ transform: translate(0, 0) scale(1); opacity: 1; }
 }
-.landing-southleft .lsl-crescent-arc {
-  transform-origin: 160px 200px;
-  transform-box: fill-box;
-  animation: lsl-crescent 4.8s ease-in-out infinite;
+@keyframes lsl-drag-source {
+  0%, 8%    { opacity: 1; }
+  20%, 65%  { opacity: 0.35; }
+  85%, 100% { opacity: 1; }
 }
-
-/* Grid pop: the popped accent cell pulses up + brightens. */
-@keyframes lsl-grid-pop {
-  0%, 100% { transform: translate(0, 0); }
-  50%      { transform: translate(2px, -2px); }
+@keyframes lsl-drag-target {
+  0%, 15%   { opacity: 1; }
+  60%, 70%  { opacity: 0; }
+  85%, 100% { opacity: 1; }
 }
-.landing-southleft .lsl-grid-pop {
+.landing-southleft .lsl-drag-ghost {
   transform-origin: center;
   transform-box: fill-box;
-  animation: lsl-grid-pop 3.6s ease-in-out infinite;
+  animation: lsl-drag-ghost 4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+.landing-southleft .lsl-drag-source {
+  animation: lsl-drag-source 4s ease-in-out infinite;
+}
+.landing-southleft .lsl-drag-target {
+  animation: lsl-drag-target 4s ease-in-out infinite;
 }
 
-/* Stack: top accent pill gently drifts to right + back, hinting at
-   "Salt → next system" rotation. */
-@keyframes lsl-stack-shift {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(8px); }
+/* Card 4 — GraphicBriefVariants: prompt types out across 1s, cursor
+   blinks at end of typing range, then three variants stagger in
+   (130ms each), hold ~2s, reset. */
+@keyframes lsl-brief-typing {
+  0%, 6%   { width: 0; }
+  30%, 92% { width: 220px; }
+  100%     { width: 0; }
 }
-.landing-southleft .lsl-graphic .lsl-shape-accent:first-of-type {
-  /* Only the FIRST accent shape in a graphic gets this — guards Flow's
-     ellipse + Crescent's arc + Grid's popped cell from double-binding. */
+@keyframes lsl-brief-cursor {
+  0%, 5%, 92%, 100% { transform: translateX(0); opacity: 1; }
+  30%, 90%          { transform: translateX(220px); opacity: 0.4; }
 }
-.landing-southleft .lsl-graphic:has(rect.lsl-shape-accent) rect.lsl-shape-accent {
+@keyframes lsl-brief-variant {
+  0%, 35%   { opacity: 0; transform: translateY(8px); }
+  50%, 92%  { opacity: 1; transform: translateY(0); }
+  100%      { opacity: 0; transform: translateY(8px); }
+}
+.landing-southleft .lsl-brief-typing {
+  animation: lsl-brief-typing 5.4s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+.landing-southleft .lsl-brief-cursor {
+  transform-box: fill-box;
+  animation: lsl-brief-cursor 5.4s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+.landing-southleft .lsl-brief-variant {
   transform-origin: center;
   transform-box: fill-box;
-  animation: lsl-stack-shift 4.4s ease-in-out infinite;
+  animation: lsl-brief-variant 5.4s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+.landing-southleft .lsl-brief-variant-2 { animation-delay: 0.13s; }
+.landing-southleft .lsl-brief-variant-3 { animation-delay: 0.26s; }
+.landing-southleft .lsl-brief-prefix {
+  font-family: var(--lsl-font-mono);
+  font-size: 14px;
+  fill: var(--lsl-amber);
 }
 
-/* Card hover speeds up the resident animation, telegraphing interactivity. */
-.landing-southleft .lsl-service-card:hover .lsl-flow-ellipse,
-.landing-southleft .lsl-service-card:hover .lsl-crescent-arc,
-.landing-southleft .lsl-service-card:hover .lsl-grid-pop {
-  animation-duration: 1.8s;
-}
+/* Hover doesn't speed these — the demos are deliberate and need their
+   full cycle to communicate. Slight emphasis on hover via container
+   shadow already handled by .lsl-service-card:hover earlier. */
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-southleft .lsl-flow-ellipse,
-  .landing-southleft .lsl-crescent-arc,
-  .landing-southleft .lsl-grid-pop,
-  .landing-southleft .lsl-graphic:has(rect.lsl-shape-accent) rect.lsl-shape-accent {
+  .landing-southleft .lsl-morph-card,
+  .landing-southleft .lsl-morph-btn,
+  .landing-southleft [class^="lsl-morph-label-"],
+  .landing-southleft .lsl-token-particle-1,
+  .landing-southleft .lsl-token-particle-2,
+  .landing-southleft .lsl-tokens-target,
+  .landing-southleft .lsl-tokens-target-btn,
+  .landing-southleft .lsl-drag-ghost,
+  .landing-southleft .lsl-drag-source,
+  .landing-southleft .lsl-drag-target,
+  .landing-southleft .lsl-brief-typing,
+  .landing-southleft .lsl-brief-cursor,
+  .landing-southleft .lsl-brief-variant {
     animation: none;
   }
+  /* Restore static defaults so reduced-motion users see a useful
+     still-frame rather than mid-transition empty state. */
+  .landing-southleft .lsl-brief-typing { width: 200px; }
+  .landing-southleft .lsl-brief-variant { opacity: 1; transform: none; }
+  .landing-southleft .lsl-token-particle-1,
+  .landing-southleft .lsl-token-particle-2 { opacity: 0; }
+  .landing-southleft .lsl-morph-label-1 { opacity: 1; }
+  .landing-southleft .lsl-morph-label-2,
+  .landing-southleft .lsl-morph-label-3,
+  .landing-southleft .lsl-morph-label-4,
+  .landing-southleft .lsl-morph-label-5 { opacity: 0; }
 }
 
 /* ── Same comp, five systems strip ────────────────────────────────────── */

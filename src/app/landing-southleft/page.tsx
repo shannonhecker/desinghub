@@ -43,84 +43,161 @@ function UoauiMark({ className }: { className?: string }) {
 }
 
 /* ── Card hero graphics ─────────────────────────────────────────────────
-   Hand-rolled SVG primitives. Classed for color + animation control via
-   landing-southleft.css. No external dependency. */
+   Miniature builder-derived demonstrations. Each one ANIMATES the
+   specific behaviour the card claims. Hand-rolled SVG + CSS keyframes
+   (no GSAP). All respect prefers-reduced-motion via .css. */
 
-/** Stack: 5 horizontal pills (the five design systems), accent on top. */
-function GraphicStack() {
+/** Card 1: a single mini-card morphs through the five DS styles —
+    rendering Salt → Material 3 → Fluent → Carbon → uoaui in turn.
+    Demonstrates "Five systems, side by side": the SAME comp, swapped. */
+function GraphicSystemMorph() {
   return (
-    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
-      {[0, 1, 2, 3, 4].map((i) => (
-        <rect
-          key={i}
-          x="60"
-          y={42 + i * 48}
-          width="200"
-          height="36"
-          rx="18"
-          className={i === 0 ? "lsl-shape-accent" : "lsl-shape-neutral"}
-        />
+    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-morph" aria-hidden="true">
+      {/* Builder canvas hairline */}
+      <rect x="20" y="20" width="280" height="180" rx="12"
+            fill="none" stroke="rgba(239,234,224,0.06)" strokeWidth="1" />
+      {/* The morphing card surface */}
+      <rect className="lsl-morph-card"
+            x="60" y="50" width="200" height="120"
+            rx="8" fill="#FFFFFF" />
+      {/* Title line */}
+      <rect x="76" y="68" width="90" height="8" rx="2"
+            fill="#1E1E1E" opacity="0.85" className="lsl-morph-ink" />
+      {/* Body lines */}
+      <rect x="76" y="86" width="150" height="5" rx="2"
+            fill="#1E1E1E" opacity="0.32" className="lsl-morph-ink-faint" />
+      <rect x="76" y="96" width="120" height="5" rx="2"
+            fill="#1E1E1E" opacity="0.32" className="lsl-morph-ink-faint" />
+      {/* Button — morphs radius + fill across systems */}
+      <rect className="lsl-morph-btn"
+            x="76" y="128" width="74" height="26"
+            rx="6" fill="#0D7A95" />
+      {/* Mono label below — five stacked, opacity-cycled to match the
+          morph step. Only one visible at a time. */}
+      {["SALT", "MATERIAL 3", "FLUENT 2", "CARBON", "UOAUI"].map((label, i) => (
+        <text
+          key={label}
+          x="160"
+          y="194"
+          textAnchor="middle"
+          className={`lsl-morph-label lsl-morph-label-${i + 1}`}
+        >
+          {label}
+        </text>
       ))}
     </svg>
   );
 }
 
-/** Flow: 3 vertical pills with an orange ellipse intersecting the middle. */
-function GraphicFlow() {
+/** Card 2: tokens emit from a left-side rail and fly into a component
+    card on the right, changing its surface + accent on each strike.
+    Demonstrates "Tokens travel with the block". */
+function GraphicTokenFlow() {
   return (
-    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
-      <rect x="60"  y="60" width="50" height="200" rx="25" className="lsl-shape-neutral" />
-      <rect x="135" y="40" width="50" height="240" rx="25" className="lsl-shape-neutral" />
-      <rect x="210" y="60" width="50" height="200" rx="25" className="lsl-shape-neutral" />
-      <ellipse cx="160" cy="180" rx="80" ry="32" className="lsl-shape-accent lsl-flow-ellipse" />
+    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-tokens" aria-hidden="true">
+      {/* Token rail (left) */}
+      <rect x="20" y="30" width="68" height="160" rx="8"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.10)" />
+      {/* Token rail rows */}
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i}>
+          <rect x="30" y={46 + i * 36} width="14" height="14" rx="3"
+                fill={["#6750A4", "#D9905D", "#A89B82", "#FAF5EB"][i]} />
+          <rect x="50" y={50 + i * 36} width="30" height="6" rx="2"
+                fill="#FAF5EB" opacity="0.6" />
+        </g>
+      ))}
+      {/* Component card (right) */}
+      <rect className="lsl-tokens-target"
+            x="148" y="50" width="148" height="120" rx="12"
+            fill="#2A2724" stroke="rgba(239,234,224,0.14)" />
+      <rect x="166" y="68" width="84" height="8" rx="2" fill="#FAF5EB" opacity="0.85" />
+      <rect x="166" y="86" width="110" height="5" rx="2" fill="#FAF5EB" opacity="0.30" />
+      <rect x="166" y="96" width="90" height="5" rx="2" fill="#FAF5EB" opacity="0.30" />
+      <rect className="lsl-tokens-target-btn"
+            x="166" y="124" width="64" height="24" rx="12" fill="#6750A4" />
+      {/* Travelling token (animated) */}
+      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#6750A4" />
+      <circle className="lsl-token-particle lsl-token-particle-2" r="6" fill="#D9905D" />
     </svg>
   );
 }
 
-/** Grid: 3x3 of small squares with one (top-right) shifted out + accented. */
-function GraphicGrid() {
-  const cells = [];
-  for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 3; c++) {
-      const isAccent = r === 0 && c === 2;
-      cells.push(
-        <rect
-          key={`${r}-${c}`}
-          x={60 + c * 70 + (isAccent ? 18 : 0)}
-          y={60 + r * 70 + (isAccent ? -18 : 0)}
-          width="56"
-          height="56"
-          rx="10"
-          className={isAccent ? "lsl-shape-accent lsl-grid-pop" : "lsl-shape-neutral"}
-        />
-      );
-    }
-  }
+/** Card 3: a component thumbnail lifts off the sidebar palette,
+    follows an arc, settles into the canvas drop-zone.
+    Demonstrates "Sketch in real components" (drag and drop). */
+function GraphicDragDrop() {
   return (
-    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
-      {cells}
+    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-drag" aria-hidden="true">
+      {/* Sidebar palette */}
+      <rect x="20" y="20" width="86" height="180" rx="8"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.10)" />
+      <rect x="32" y="36" width="62" height="36" rx="6" fill="rgba(168,155,130,0.4)" />
+      <rect x="32" y="80" width="62" height="36" rx="6" fill="rgba(168,155,130,0.4)" />
+      <rect x="32" y="124" width="62" height="36" rx="6"
+            className="lsl-drag-source" fill="rgba(168,155,130,0.4)" />
+      <rect x="32" y="168" width="62" height="20" rx="6" fill="rgba(168,155,130,0.4)" />
+      {/* Canvas */}
+      <rect x="126" y="20" width="174" height="180" rx="8"
+            fill="rgba(239,234,224,0.02)" stroke="rgba(239,234,224,0.10)"
+            strokeDasharray="4 4" />
+      {/* Drop-zone hint, fades out as the ghost lands */}
+      <rect className="lsl-drag-target"
+            x="154" y="92" width="118" height="40" rx="6"
+            fill="rgba(103,80,164,0.10)" stroke="#6750A4" strokeDasharray="3 3" />
+      {/* Travelling ghost (animated from sidebar → canvas) */}
+      <rect className="lsl-drag-ghost"
+            x="32" y="124" width="62" height="36" rx="6"
+            fill="#6750A4" />
     </svg>
   );
 }
 
-/** Crescent: large taupe circle with an orange-coral arc carved through it. */
-function GraphicCrescent() {
+/** Card 4: a prompt input "types" then three variant cards stagger-in
+    below. Demonstrates "Brief it, get variants back". */
+function GraphicBriefVariants() {
   return (
-    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
-      <circle cx="160" cy="160" r="110" className="lsl-shape-neutral" />
-      <path
-        d="M 90,200 A 110,110 0 0 0 230,200 A 90,40 0 0 1 90,200 Z"
-        className="lsl-shape-accent lsl-crescent-arc"
-      />
+    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-brief" aria-hidden="true">
+      {/* Prompt input */}
+      <rect x="20" y="22" width="280" height="42" rx="10"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.16)" />
+      {/* Mono prompt-prefix glyph */}
+      <text x="36" y="48" className="lsl-brief-prefix">/</text>
+      {/* Typing line — width animates 0 → 220 */}
+      <rect className="lsl-brief-typing"
+            x="50" y="42" width="0" height="6" rx="2" fill="#FAF5EB" opacity="0.9" />
+      {/* Cursor — blinks at end of typing range */}
+      <rect className="lsl-brief-cursor"
+            x="50" y="36" width="2" height="18" fill="#D9905D" />
+      {/* Three variant cards (animate-in stagger) */}
+      <rect className="lsl-brief-variant lsl-brief-variant-1"
+            x="20"  y="92" width="88" height="100" rx="8"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+      <rect className="lsl-brief-variant lsl-brief-variant-2"
+            x="116" y="92" width="88" height="100" rx="8"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+      <rect className="lsl-brief-variant lsl-brief-variant-3"
+            x="212" y="92" width="88" height="100" rx="8"
+            fill="rgba(239,234,224,0.04)" stroke="rgba(239,234,224,0.18)" />
+      {/* Variant content lines */}
+      {[20, 116, 212].map((x, i) => (
+        <g key={i} className={`lsl-brief-variant lsl-brief-variant-${i + 1}`}>
+          <rect x={x + 12} y="108" width="40" height="6" rx="2" fill="#FAF5EB" opacity="0.85" />
+          <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="#FAF5EB" opacity="0.30" />
+          <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="#FAF5EB" opacity="0.30" />
+          <rect x={x + 12} y="162" width="44" height="18" rx="9"
+                fill={i === 1 ? "#6750A4" : "#D9905D"} opacity={i === 1 ? 1 : 0.7} />
+        </g>
+      ))}
     </svg>
   );
 }
 
 const GRAPHIC_MAP = {
-  stack: GraphicStack,
-  flow: GraphicFlow,
-  grid: GraphicGrid,
-  crescent: GraphicCrescent,
+  stack: GraphicSystemMorph,
+  flow: GraphicTokenFlow,
+  grid: GraphicDragDrop,
+  crescent: GraphicBriefVariants,
 } as const;
 
 /** Up-right arrow icon, top-right corner of each card. */
