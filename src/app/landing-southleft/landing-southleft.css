@@ -30,15 +30,19 @@
   --lsl-fg-subtle:    #7A6F5C;  /* deeper taupe — labels / fine print */
   --lsl-rule:         rgba(239, 234, 224, 0.10);
   --lsl-rule-strong:  rgba(239, 234, 224, 0.20);
-  --lsl-accent:       #FF4F2C;  /* orange-coral — single bright accent */
-  --lsl-accent-hover: #FF6845;
-  --lsl-accent-soft:  rgba(255, 79, 44, 0.14);
+  --lsl-accent:       #6750A4;  /* brand violet (Design Hub --dh-brand-primary) */
+  --lsl-accent-hover: #7860B5;
+  --lsl-accent-soft:  rgba(103, 80, 164, 0.16);
+  --lsl-amber:        #D9905D;  /* warm secondary for eyebrow numerics + tags */
+  --lsl-amber-soft:   rgba(217, 144, 93, 0.18);
 
   /* ── Type scale ──────────────────────────────────────────────────────── */
   --lsl-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
                    "Segoe UI", system-ui, sans-serif;
   --lsl-font-display: var(--font-bricolage), var(--font-outfit),
                       -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --lsl-font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
+                   Menlo, Consolas, monospace;
 
   /* ── Spacing rhythm ──────────────────────────────────────────────────── */
   --lsl-section-y: 140px;
@@ -192,25 +196,13 @@
   padding-bottom: var(--lsl-section-y);
 }
 .landing-southleft .lsl-hero-eyebrow {
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lsl-fg);
+  color: var(--lsl-amber);
   margin: 0 0 36px;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-.landing-southleft .lsl-hero-eyebrow::before,
-.landing-southleft .lsl-section-label::before {
-  content: "";
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--lsl-accent);
-  flex-shrink: 0;
 }
 .landing-southleft .lsl-hero-headline {
   font-family: var(--lsl-font-display);
@@ -275,15 +267,14 @@
   padding-bottom: var(--lsl-section-y-tight);
 }
 .landing-southleft .lsl-section-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lsl-fg);
+  color: var(--lsl-amber);
   margin: 0 0 28px;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
+  display: inline-block;
 }
 .landing-southleft .lsl-section-heading {
   font-family: var(--lsl-font-display);
@@ -361,11 +352,11 @@
   flex-direction: column;
 }
 .landing-southleft .lsl-service-num {
-  font-family: var(--lsl-font-display);
-  font-weight: 800;
-  font-size: 13px;
-  color: var(--lsl-accent);
-  letter-spacing: 0.18em;
+  font-family: var(--lsl-font-mono);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--lsl-amber);
+  letter-spacing: 0.06em;
   margin: 0 0 28px;
   font-feature-settings: "tnum" 1;
   text-transform: uppercase;
@@ -571,8 +562,8 @@
 .landing-southleft .lsl-comp-phone-frame  { fill: #1A1815; }
 .landing-southleft .lsl-comp-phone-screen { fill: #F5F2EC; }
 .landing-southleft .lsl-composite-desktop-cool .lsl-comp-block-accent {
-  fill: #6750A4;
-  opacity: 0.88;
+  fill: var(--lsl-amber);
+  opacity: 0.95;
 }
 
 .lsl-project-heading {
@@ -719,24 +710,13 @@
   margin: 0;
 }
 .landing-southleft .lsl-footer-col-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  font-family: var(--lsl-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lsl-fg);
+  color: var(--lsl-amber);
   margin: 0 0 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-.landing-southleft .lsl-footer-col-label::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--lsl-accent);
-  flex-shrink: 0;
 }
 .landing-southleft .lsl-footer-list {
   list-style: none;

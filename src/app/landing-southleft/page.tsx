@@ -376,7 +376,7 @@ export default function LandingSouthleftPage() {
       <section className="lsl-hero" aria-labelledby="lsl-hero-headline">
         <div className="lsl-container">
           <p className="lsl-hero-eyebrow" data-reveal>
-            uoaui.ai, the design-system workbench
+            uoaui.ai / workbench
           </p>
           <h1
             id="lsl-hero-headline"
@@ -411,7 +411,7 @@ export default function LandingSouthleftPage() {
         aria-labelledby="lsl-services-heading"
       >
         <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>What it does</p>
+          <p className="lsl-section-label" data-reveal>canvas / overview</p>
           <h2
             id="lsl-services-heading"
             className="lsl-section-heading"
