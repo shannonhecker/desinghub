@@ -421,6 +421,77 @@
   fill: var(--lsl-accent);
 }
 
+/* ── Graphic animations ──────────────────────────────────────────────────
+   All keyframes are subtle by design (southleft tone — not maximalist).
+   Reduced-motion users get static graphics via the @media block at file
+   end. Animations apply to .lsl-graphic descendants only. */
+
+/* Flow ellipse: drifts horizontally across the 3 pills. The orange
+   "fluid through pipes" feel from ref #3. */
+@keyframes lsl-flow {
+  0%, 100% { transform: translateX(-46px); }
+  50%      { transform: translateX(46px); }
+}
+.landing-southleft .lsl-flow-ellipse {
+  transform-origin: 160px 180px;
+  transform-box: fill-box;
+  animation: lsl-flow 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Crescent arc: slow breath via opacity + tiny rotation. */
+@keyframes lsl-crescent {
+  0%, 100% { opacity: 0.92; transform: rotate(0deg) scale(1); }
+  50%      { opacity: 1;    transform: rotate(-3deg) scale(1.02); }
+}
+.landing-southleft .lsl-crescent-arc {
+  transform-origin: 160px 200px;
+  transform-box: fill-box;
+  animation: lsl-crescent 4.8s ease-in-out infinite;
+}
+
+/* Grid pop: the popped accent cell pulses up + brightens. */
+@keyframes lsl-grid-pop {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(2px, -2px); }
+}
+.landing-southleft .lsl-grid-pop {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: lsl-grid-pop 3.6s ease-in-out infinite;
+}
+
+/* Stack: top accent pill gently drifts to right + back, hinting at
+   "Salt → next system" rotation. */
+@keyframes lsl-stack-shift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(8px); }
+}
+.landing-southleft .lsl-graphic .lsl-shape-accent:first-of-type {
+  /* Only the FIRST accent shape in a graphic gets this — guards Flow's
+     ellipse + Crescent's arc + Grid's popped cell from double-binding. */
+}
+.landing-southleft .lsl-graphic:has(rect.lsl-shape-accent) rect.lsl-shape-accent {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: lsl-stack-shift 4.4s ease-in-out infinite;
+}
+
+/* Card hover speeds up the resident animation, telegraphing interactivity. */
+.landing-southleft .lsl-service-card:hover .lsl-flow-ellipse,
+.landing-southleft .lsl-service-card:hover .lsl-crescent-arc,
+.landing-southleft .lsl-service-card:hover .lsl-grid-pop {
+  animation-duration: 1.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-southleft .lsl-flow-ellipse,
+  .landing-southleft .lsl-crescent-arc,
+  .landing-southleft .lsl-grid-pop,
+  .landing-southleft .lsl-graphic:has(rect.lsl-shape-accent) rect.lsl-shape-accent {
+    animation: none;
+  }
+}
+
 /* ── Featured projects (2-col grid, composite + tags) ─────────────────── */
 .landing-southleft .lsl-projects-header {
   display: flex;
@@ -695,15 +766,29 @@
 /* ── Fade-in reveal (kept minimal — no parallax, no chromatic) ────────── */
 .landing-southleft [data-reveal] {
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 600ms cubic-bezier(0.2, 0, 0, 1),
-              transform 600ms cubic-bezier(0.2, 0, 0, 1);
+  transform: translateY(14px);
+  transition: opacity 700ms cubic-bezier(0.2, 0, 0, 1),
+              transform 700ms cubic-bezier(0.2, 0, 0, 1);
   will-change: opacity, transform;
 }
 .landing-southleft [data-reveal][data-revealed="true"] {
   opacity: 1;
   transform: translateY(0);
 }
+/* Section-scoped stagger: children reveal in cascade once any sibling
+   triggers, telegraphing the rhythm of each section. */
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 100ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 200ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 300ms; }
+
+.landing-southleft .lsl-services > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft .lsl-services > [data-reveal]:nth-child(2) { transition-delay: 90ms; }
+.landing-southleft .lsl-services > [data-reveal]:nth-child(3) { transition-delay: 180ms; }
+.landing-southleft .lsl-services > [data-reveal]:nth-child(4) { transition-delay: 270ms; }
+
+.landing-southleft .lsl-projects > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft .lsl-projects > [data-reveal]:nth-child(2) { transition-delay: 130ms; }
 @media (prefers-reduced-motion: reduce) {
   .landing-southleft [data-reveal],
   .landing-southleft [data-reveal][data-revealed="true"] {
