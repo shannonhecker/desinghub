@@ -42,6 +42,103 @@ function UoauiMark({ className }: { className?: string }) {
   );
 }
 
+/* ── Card hero graphics ─────────────────────────────────────────────────
+   Hand-rolled SVG primitives. Classed for color + animation control via
+   landing-southleft.css. No external dependency. */
+
+/** Stack: 5 horizontal pills (the five design systems), accent on top. */
+function GraphicStack() {
+  return (
+    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <rect
+          key={i}
+          x="60"
+          y={42 + i * 48}
+          width="200"
+          height="36"
+          rx="18"
+          className={i === 0 ? "lsl-shape-accent" : "lsl-shape-neutral"}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Flow: 3 vertical pills with an orange ellipse intersecting the middle. */
+function GraphicFlow() {
+  return (
+    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
+      <rect x="60"  y="60" width="50" height="200" rx="25" className="lsl-shape-neutral" />
+      <rect x="135" y="40" width="50" height="240" rx="25" className="lsl-shape-neutral" />
+      <rect x="210" y="60" width="50" height="200" rx="25" className="lsl-shape-neutral" />
+      <ellipse cx="160" cy="180" rx="80" ry="32" className="lsl-shape-accent lsl-flow-ellipse" />
+    </svg>
+  );
+}
+
+/** Grid: 3x3 of small squares with one (top-right) shifted out + accented. */
+function GraphicGrid() {
+  const cells = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const isAccent = r === 0 && c === 2;
+      cells.push(
+        <rect
+          key={`${r}-${c}`}
+          x={60 + c * 70 + (isAccent ? 18 : 0)}
+          y={60 + r * 70 + (isAccent ? -18 : 0)}
+          width="56"
+          height="56"
+          rx="10"
+          className={isAccent ? "lsl-shape-accent lsl-grid-pop" : "lsl-shape-neutral"}
+        />
+      );
+    }
+  }
+  return (
+    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
+      {cells}
+    </svg>
+  );
+}
+
+/** Crescent: large taupe circle with an orange-coral arc carved through it. */
+function GraphicCrescent() {
+  return (
+    <svg viewBox="0 0 320 320" className="lsl-graphic" aria-hidden="true">
+      <circle cx="160" cy="160" r="110" className="lsl-shape-neutral" />
+      <path
+        d="M 90,200 A 110,110 0 0 0 230,200 A 90,40 0 0 1 90,200 Z"
+        className="lsl-shape-accent lsl-crescent-arc"
+      />
+    </svg>
+  );
+}
+
+const GRAPHIC_MAP = {
+  stack: GraphicStack,
+  flow: GraphicFlow,
+  grid: GraphicGrid,
+  crescent: GraphicCrescent,
+} as const;
+
+/** Up-right arrow icon, top-right corner of each card. */
+function ArrowUpRight() {
+  return (
+    <svg viewBox="0 0 24 24" className="lsl-card-arrow" aria-hidden="true">
+      <path
+        d="M7 17 L17 7 M9 7 H17 V15"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 /* ── Content (kept local — prototype, not a CMS surface) ────────────── */
 
 const NAV_LINKS = [
@@ -51,26 +148,64 @@ const NAV_LINKS = [
   { href: "#about", label: "About" },
 ] as const;
 
-const SERVICES = [
+type ServiceTone = "dark" | "cream";
+type ServiceGraphic = "stack" | "flow" | "grid" | "crescent";
+interface Service {
+  heading: string;
+  bullets: readonly string[];
+  tone: ServiceTone;
+  graphic: ServiceGraphic;
+  href: string;
+}
+
+const SERVICES: readonly Service[] = [
   {
-    num: "01",
     heading: "Five systems, one canvas",
-    body: "Compose with Salt, Material 3, Fluent 2, Carbon, and uoaui side by side. No context switching, no theme re-plumbing.",
+    bullets: [
+      "Salt DS, Material 3, Fluent 2, Carbon, uoaui",
+      "Side-by-side composition, no theme re-plumbing",
+      "Cross-system component reuse",
+      "Same comp rendered across five renderers",
+    ],
+    tone: "dark",
+    graphic: "stack",
+    href: "/builder",
   },
   {
-    num: "02",
     heading: "Token-aware switching",
-    body: "Swap a block from Salt to Carbon and every spacing, radius, and color resolves through the right token layer. Nothing hardcoded.",
+    bullets: [
+      "Swap a block from Salt to Carbon, tokens follow",
+      "Spacing, radius, color, density resolve correctly",
+      "Nothing hardcoded, no inline overrides",
+      "Token diff surfaced inline during a swap",
+    ],
+    tone: "cream",
+    graphic: "flow",
+    href: "/token-editor",
   },
   {
-    num: "03",
     heading: "Drag and drop composition",
-    body: "Sketch a page as fast as you would in a presentation tool. Components stay real, accessible, production-shaped.",
+    bullets: [
+      "Sketch a page as fast as a presentation tool",
+      "Components stay real, accessible, production-shaped",
+      "LayoutGroups + row/column primitives",
+      "Keyboard parity for every drag interaction",
+    ],
+    tone: "dark",
+    graphic: "grid",
+    href: "/builder",
   },
   {
-    num: "04",
     heading: "Assisted authoring",
-    body: "Generate variants, audit contrast, and pressure-test layouts against a brief without leaving the canvas.",
+    bullets: [
+      "Generate variants from a brief",
+      "Audit contrast and density in line",
+      "Pressure-test layouts against scenarios",
+      "Keep the canvas as the source of truth",
+    ],
+    tone: "cream",
+    graphic: "crescent",
+    href: "/builder",
   },
 ] as const;
 
@@ -240,14 +375,34 @@ export default function LandingSouthleftPage() {
             hand off across systems. The four moves below cover the day to day.
           </p>
 
-          <div className="lsl-services" data-reveal>
-            {SERVICES.map((s) => (
-              <article key={s.num} className="lsl-service">
-                <p className="lsl-service-num">{s.num}</p>
-                <h3 className="lsl-service-heading">{s.heading}</h3>
-                <p className="lsl-service-body">{s.body}</p>
-              </article>
-            ))}
+          <div className="lsl-services">
+            {SERVICES.map((s, idx) => {
+              const Graphic = GRAPHIC_MAP[s.graphic];
+              const num = String(idx + 1).padStart(2, "0");
+              return (
+                <Link
+                  key={s.heading}
+                  href={s.href}
+                  className="lsl-service-card"
+                  data-tone={s.tone}
+                  data-reveal
+                >
+                  <ArrowUpRight />
+                  <div className="lsl-service-content">
+                    <p className="lsl-service-num">{num}</p>
+                    <h3 className="lsl-service-heading">{s.heading}</h3>
+                    <ul className="lsl-service-bullets">
+                      {s.bullets.map((b) => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="lsl-service-figure">
+                    <Graphic />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
