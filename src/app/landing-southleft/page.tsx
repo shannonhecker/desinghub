@@ -103,7 +103,7 @@ function GraphicTokenFlow() {
       {[0, 1, 2, 3].map((i) => (
         <g key={i}>
           <rect x="30" y={46 + i * 36} width="14" height="14" rx="3"
-                fill={["#3DDCC4", "#F0B5A4", "#A78BFA", "currentColor"][i]} />
+                fill={["#A78BFA", "#F0B5A4", "#A78BFA", "currentColor"][i]} />
           <rect x="50" y={50 + i * 36} width="30" height="6" rx="2"
                 fill="currentColor" opacity="0.5" />
         </g>
@@ -118,9 +118,9 @@ function GraphicTokenFlow() {
       <rect x="166" y="96" width="90" height="5" rx="2" fill="currentColor" opacity="0.30"
             className="lsl-on-tokens-target" />
       <rect className="lsl-tokens-target-btn"
-            x="166" y="124" width="64" height="24" rx="12" fill="#3DDCC4" />
+            x="166" y="124" width="64" height="24" rx="12" fill="#A78BFA" />
       {/* Travelling token (animated) */}
-      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#3DDCC4" />
+      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#A78BFA" />
       <circle className="lsl-token-particle lsl-token-particle-2" r="6" fill="#F0B5A4" />
     </svg>
   );
@@ -149,11 +149,11 @@ function GraphicDragDrop() {
       {/* Drop-zone hint, fades out as the ghost lands */}
       <rect className="lsl-drag-target"
             x="154" y="92" width="118" height="40" rx="6"
-            fill="rgba(61,220,196,0.10)" stroke="#3DDCC4" strokeDasharray="3 3" />
+            fill="rgba(167,139,250,0.10)" stroke="#A78BFA" strokeDasharray="3 3" />
       {/* Travelling ghost (animated from sidebar → canvas) */}
       <rect className="lsl-drag-ghost"
             x="32" y="124" width="62" height="36" rx="6"
-            fill="#3DDCC4" />
+            fill="#A78BFA" />
     </svg>
   );
 }
@@ -195,7 +195,7 @@ function GraphicBriefVariants() {
           <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="currentColor" opacity="0.30" />
           <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="currentColor" opacity="0.30" />
           <rect x={x + 12} y="162" width="44" height="18" rx="9"
-                fill={i === 1 ? "#3DDCC4" : "#F0B5A4"} opacity={i === 1 ? 1 : 0.7} />
+                fill={i === 1 ? "#A78BFA" : "#F0B5A4"} opacity={i === 1 ? 1 : 0.7} />
         </g>
       ))}
     </svg>
@@ -391,7 +391,7 @@ const SYSTEMS: readonly SystemSpec[] = [
   },
   {
     name: "uoaui",
-    brand: "#3DDCC4",  // Teal Input — uoaui primary
+    brand: "#A78BFA",  // Teal Input — uoaui primary
     surface: "rgba(255,255,255,0.06)",
     ink: "#FFFFFF",
     radius: 14,
@@ -406,12 +406,12 @@ const SYSTEMS: readonly SystemSpec[] = [
    surface of the design system, not decorative swatches. */
 
 const COLOR_TOKENS = [
-  { name: "--lsl-accent",  hex: "#3DDCC4",                 role: "Teal Input · primary"   },
-  { name: "--lsl-purple",  hex: "#A78BFA",                 role: "Purple Compute · AI"    },
-  { name: "--lsl-amber",   hex: "#F0B5A4",                 role: "Peach Output · result"  },
+  { name: "--lsl-accent",  hex: "#A78BFA",                 role: "Purple Compute · primary" },
+  { name: "--lsl-amber",   hex: "#F0B5A4",                 role: "Peach Output · secondary" },
+  { name: "--lsl-teal",    hex: "#3DDCC4",                 role: "Teal Input · signal"      },
   { name: "--lsl-bg",      hex: "#0A0E1A",                 role: "Midnight Canvas · surface" },
-  { name: "--lsl-fg",      hex: "rgba(255,255,255,0.87)",  role: "Ink · high emphasis"    },
-  { name: "--lsl-fg-muted",hex: "rgba(255,255,255,0.60)",  role: "Ink · medium"           },
+  { name: "--lsl-fg",      hex: "rgba(255,255,255,0.92)",  role: "Ink · high emphasis"      },
+  { name: "--lsl-fg-muted",hex: "rgba(255,255,255,0.65)",  role: "Ink · medium"             },
 ] as const;
 
 const TYPE_TOKENS = [
