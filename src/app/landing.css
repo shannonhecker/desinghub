@@ -297,10 +297,17 @@ html:has(.landing-southleft) body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* OKLab interpolation + tinted-zero end-stops kill 8-bit sRGB banding
+     on the dark hero. Noise overlay (top layer, overlay blend) adds
+     sub-pixel dither for what OKLab alone can't smooth. See globals.css
+     `--dh-noise-overlay` for the shared turbulence source. */
   background:
-    radial-gradient(60% 70% at 18% 18%,  var(--lsl-aurora-cyan) 0%, transparent 70%),
-    radial-gradient(50% 60% at 82% 30%,  var(--lsl-aurora-pale) 0%, transparent 75%),
-    radial-gradient(40% 50% at 60% 90%,  rgba(167,139,250, 0.07) 0%, transparent 70%);
+    var(--dh-noise-overlay),
+    radial-gradient(60% 70% at 18% 18% in oklab, var(--lsl-aurora-cyan) 0%, rgba(130, 224, 255, 0) 70%),
+    radial-gradient(50% 60% at 82% 30% in oklab, var(--lsl-aurora-pale) 0%, rgba(175, 240, 255, 0) 75%),
+    radial-gradient(40% 50% at 60% 90% in oklab, rgba(167, 139, 250, 0.07) 0%, rgba(167, 139, 250, 0) 70%);
+  background-size: 200px 200px, auto, auto, auto;
+  background-blend-mode: overlay, normal, normal, normal;
 }
 .landing-southleft .lsl-hero > .lsl-container {
   position: relative;
