@@ -58,7 +58,9 @@ Bare canvas fills the viewport. No chrome.
 - `<StandalonePreview />` — used by the `/builder?preview=1` flow today
 - `BUILDER_TEMPLATES` lookup — `src/lib/builderTemplates.ts`
 
-The only genuinely new code in this PR is the route page + 4 new templates.
+**Important nuance found at plan-writing time:** `StandalonePreview` currently includes a chrome bar (`.standalone-preview-header` with traffic-light dots and a "Design Hub Preview" label, plus a `{DS} · {mode}` badge). For the bare-canvas marketing intent, this needs to be hidden. Solution: add an optional `bare?: boolean` prop to `StandalonePreview` that conditionally hides the chrome. Default false (backward-compat with the existing `?preview=1` flow). The new route passes `bare`.
+
+The only genuinely new code in this PR is the route page + 4 new templates + the `bare` prop on `StandalonePreview`.
 
 ## New templates
 
@@ -143,6 +145,9 @@ These are minor — flagged but not blocking the design approval.
 | File | Change |
 |---|---|
 | `src/app/preview/[interface]/[ds]/page.tsx` | new — the route |
+| `src/lib/previewRoute.ts` | new — pure `resolvePreviewParams` function (testable in isolation) |
 | `src/lib/builderTemplates.ts` | extend `VALID_TEMPLATE_IDS` (4 new ids); add 4 new template definitions; add a `getFirstTemplateForInterface(interfaceType: InterfaceType): BuilderTemplate \| null` helper that returns the alphabetically-first template matching the given interface |
-| `src/middleware.ts` (or wherever staging-login bypass list lives) | add `/preview/*` to allowlist (STOP-class) |
-| `src/app/preview/[interface]/[ds]/__tests__/page.test.ts` | new — unit tests |
+| `src/components/builder/PreviewPanel.tsx` | add `bare?: boolean` prop to `StandalonePreview` so the chrome bar can be hidden |
+| `src/middleware.ts` | add `preview` to the matcher exclusion regex AND to the public-routes conditional (STOP-class) |
+| `src/lib/__tests__/previewRoute.test.ts` | new — unit tests for the resolver |
+| `src/lib/__tests__/builderTemplates.test.ts` | new — unit tests for `getFirstTemplateForInterface` and the 4 new template shapes |
