@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@carbon/icons-react"],
   },
+  async redirects() {
+    return [
+      { source: "/landing-southleft", destination: "/", permanent: true },
+      { source: "/landing", destination: "/", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

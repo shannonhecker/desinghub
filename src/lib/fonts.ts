@@ -98,9 +98,9 @@ export const ibmPlexMono = IBM_Plex_Mono({
   preload: false,
 });
 
-/* Bricolage Grotesque - display face for the /landing-southleft
-   prototype. Variable across weight + width; we ship 500/700/800
-   so the prototype can dial weight without loading another file. */
+/* Bricolage Grotesque - display face for the landing page.
+   Variable across weight + width; we ship 500/700/800 so the page
+   can dial weight without loading another file. */
 export const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["500", "700", "800"],
