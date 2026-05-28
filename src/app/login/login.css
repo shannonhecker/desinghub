@@ -1,21 +1,67 @@
 /* --------------------------------------------------------------------------
    Login styled to match the new landing (/) — southleft tokens, editorial
-   feel. Polish-pass overrides go here; base structural rules remain below.
+   feel.
+
+   ── Self-contained tokens ──
+   The original `--lsl-*` family lives on `.landing-southleft` in landing.css.
+   That file is only imported by `src/app/page.tsx`, so on `/login` every
+   `var(--lsl-*)` resolved to `unset` and the polish pass silently fell back
+   to the base structural rules below. We re-declare the type + colour
+   subset we need directly on `.login-shell` so the page is self-sufficient.
+
+   ── Type scale ──
+   Mirrors landing.css verbatim. Sizes are named by role, so future copy
+   changes pick a slot instead of inventing a new px value.
+
+   ── Visual recipe ──
    - Bg: Midnight Canvas with static aurora wash (no animated drift)
-   - Type: Bricolage display H1, Inter body
+   - Type: Bricolage display H1, Inter body, IBM Plex Mono microtype
    - Accent: Purple Compute on kicker, focus rings, primary submit
    - Form card: bg-less, border-only (matches landing's restraint)
    - Proof row → mono uppercase microtype (matches .lsl-section-label)
    -------------------------------------------------------------------------- */
 
 .login-shell.login-shell {
+  /* Token re-declaration (see header note). */
+  --lsl-bg:           #0A0E1A;
+  --lsl-fg:           rgba(255, 255, 255, 0.92);
+  --lsl-fg-strong:    #FFFFFF;
+  --lsl-fg-muted:     rgba(255, 255, 255, 0.65);
+  --lsl-rule:         rgba(255, 255, 255, 0.10);
+  --lsl-rule-strong:  rgba(255, 255, 255, 0.22);
+  --lsl-accent:       #A78BFA;
+  --lsl-accent-hover: #B89BFB;
+  --lsl-accent-soft:  rgba(167, 139, 250, 0.18);
+  --lsl-amber:        #F0B5A4;
+  --lsl-aurora-cyan:  rgba(130, 224, 255, 0.10);
+  --lsl-aurora-pale:  rgba(175, 240, 255, 0.06);
+
+  --lsl-font-sans:    var(--font-inter), -apple-system, BlinkMacSystemFont,
+                      "Segoe UI", system-ui, sans-serif;
+  --lsl-font-display: var(--font-bricolage), var(--font-outfit),
+                      -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --lsl-font-mono:    var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
+                      Menlo, Consolas, monospace;
+
+  /* Named type-scale tokens — every login element must reference one of
+     these. New copy picks an existing slot rather than introducing a new
+     px value. Matches landing.css's display sizes exactly. */
+  --lsl-text-display-m:  clamp(40px, 6vw, 80px);  /* H1 — landing Display M */
+  --lsl-text-card-title: 18px;                    /* H2 — new mid-slot for card heads */
+  --lsl-text-body-xl:    18px;                    /* Lede body */
+  --lsl-text-body:       15.5px;                  /* Default body, meta */
+  --lsl-text-body-s:     15px;                    /* Inputs, dense body */
+  --lsl-text-meta:       14px;                    /* Submit pill, fine print */
+  --lsl-text-eyebrow:    12px;                    /* Kicker, proof row */
+  --lsl-text-micro:      11px;                    /* Field labels */
+
   /* Midnight Canvas + static aurora wash. OKLab + tinted-zero. No animation. */
   background:
-    radial-gradient(60% 70% at 18% 18% in oklab, var(--lsl-aurora-cyan, rgba(130, 224, 255, 0.10)) 0%, rgba(130, 224, 255, 0) 70%),
-    radial-gradient(50% 60% at 82% 30% in oklab, var(--lsl-aurora-pale, rgba(175, 240, 255, 0.06)) 0%, rgba(175, 240, 255, 0) 75%),
+    radial-gradient(60% 70% at 18% 18% in oklab, var(--lsl-aurora-cyan) 0%, rgba(130, 224, 255, 0) 70%),
+    radial-gradient(50% 60% at 82% 30% in oklab, var(--lsl-aurora-pale) 0%, rgba(175, 240, 255, 0) 75%),
     radial-gradient(40% 50% at 60% 90% in oklab, rgba(167, 139, 250, 0.07) 0%, rgba(167, 139, 250, 0) 70%),
-    var(--lsl-bg, #0A0E1A);
-  color: var(--lsl-fg, rgba(255, 255, 255, 0.92));
+    var(--lsl-bg);
+  color: var(--lsl-fg);
   font-family: var(--lsl-font-sans);
 }
 
@@ -46,28 +92,29 @@
   background: rgba(167, 139, 250, 0.08);
   color: var(--lsl-accent);
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .login-shell.login-shell .login-story h1 {
-  max-width: 680px;
+  max-width: 16ch;
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-size: var(--lsl-text-display-m);
   line-height: 0.96;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.028em;
   color: var(--lsl-fg-strong);
   text-shadow: none;
+  text-wrap: balance;
 }
 
 .login-shell.login-shell .login-story p {
   color: var(--lsl-fg-muted);
   font-family: var(--lsl-font-sans);
-  font-size: 1.0625rem;
-  line-height: 1.6;
+  font-size: var(--lsl-text-body-xl);
+  line-height: 1.5;
 }
 
 .login-shell.login-shell .login-proof-row {
@@ -81,7 +128,7 @@
   border: 0;
   background: none;
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -107,15 +154,28 @@
   color: var(--lsl-accent);
 }
 
-.login-shell.login-shell .login-card-header p,
+/* Card heading — new mid-slot between display H1 and body. Sans + 600 so
+   it reads as UI, not as a second display step. */
+.login-shell.login-shell .login-card h2 {
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-card-title);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--lsl-fg-strong);
+}
+
 .login-shell.login-shell .login-meta {
   color: var(--lsl-fg-muted);
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-body);
+  line-height: 1.45;
 }
 
 .login-shell.login-shell .login-field-label {
   color: var(--lsl-fg-muted);
   font-family: var(--lsl-font-mono);
-  font-size: 11px;
+  font-size: var(--lsl-text-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -126,6 +186,14 @@
   background: rgba(255, 255, 255, 0.03);
   color: var(--lsl-fg);
   font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-body-s);
+  font-weight: 500;
+}
+
+.login-shell.login-shell .login-error {
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-meta);
+  line-height: 1.45;
 }
 
 .login-shell.login-shell .login-input:hover:not(:focus) {
@@ -144,7 +212,9 @@
   background: var(--lsl-accent);
   color: var(--lsl-bg);
   font-family: var(--lsl-font-sans);
-  font-weight: 700;
+  font-size: var(--lsl-text-meta);
+  font-weight: 600;
+  letter-spacing: 0.005em;
   box-shadow: none;
   transition:
     transform 220ms var(--login-ease),
@@ -174,10 +244,8 @@
   .login-shell.login-shell .login-layout {
     gap: var(--dh-space-32);
   }
-
-  .login-shell.login-shell .login-story h1 {
-    font-size: clamp(2.4rem, 9vw, 3.6rem);
-  }
+  /* H1 size inherits the responsive clamp from --lsl-text-display-m,
+     which already floors at 40px on small viewports. */
 }
 
 .login-shell {
@@ -674,17 +742,16 @@
     display: block;
     margin: 18px 0 0;
     font-family: var(--lsl-font-mono);
-    font-size: 12px;
+    font-size: var(--lsl-text-eyebrow);
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--lsl-amber);
   }
 
-  /* Tighten H1 spacing on mobile */
+  /* Tighten H1 spacing on mobile; size already clamps via --lsl-text-display-m. */
   .login-shell.login-shell .login-story h1 {
     margin-top: 20px;
-    font-size: clamp(2.4rem, 9vw, 3.4rem);
   }
 
   /* Restore visible form card boundary */

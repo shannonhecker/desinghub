@@ -63,8 +63,7 @@ export default function LoginPage() {
             Private preview.
           </p>
           <p className="login-story-body">
-            Use your private-preview password to open the working builder, where prompts
-            become Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions.
+            Prompts become Salt, Material 3, Fluent, Carbon, and uoaui directions, side by side.
           </p>
           <div className="login-proof-row" aria-label="Studio capabilities">
             <span>Prompt</span>
@@ -81,7 +80,6 @@ export default function LoginPage() {
             </div>
             <div>
               <h2>Studio password</h2>
-              <p>Use your private-preview password, or request access below.</p>
             </div>
           </div>
 
@@ -131,7 +129,7 @@ export default function LoginPage() {
           </form>
 
           <p className="login-meta">
-            This preview is under development. Need access? <a href={ACCESS_EMAIL}>Email Shannon</a>.
+            Private preview. <a href={ACCESS_EMAIL}>Email Shannon for access</a>.
           </p>
         </section>
       </div>
