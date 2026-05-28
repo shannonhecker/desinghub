@@ -3,7 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useBuilder } from "@/store/useBuilder";
-import type { DesignSystem, BuilderMode, InterfaceType } from "@/store/useBuilder";
+import {
+  canonicalDesignSystem,
+  canonicalBuilderMode,
+  canonicalInterfaceType,
+} from "@/lib/dsParam";
 /* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
  * no direct import here since BuilderApp no longer owns the save/load UI. */
 import { ChatPanel } from "./ChatPanel";
@@ -276,13 +280,17 @@ export function BuilderApp() {
      and screenshot-friendly. */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const ds = params.get("ds") as DesignSystem | null;
-    const m = params.get("mode") as BuilderMode | null;
+    /* Canonicalize external input. Casting `params.get("ds") as DesignSystem`
+       used to flow `"md3"` straight to `setDesignSystem`, where the themeMap
+       lookup returned undefined and the next property read crashed the app.
+       `canonicalDesignSystem` also maps user-friendly aliases (md3 → m3). */
+    const ds = canonicalDesignSystem(params.get("ds"));
+    const m = canonicalBuilderMode(params.get("mode"));
     const density = params.get("density");
     const themeKey = params.get("themeKey");
 
     if (params.get("preview") === "1") {
-      const t = params.get("type") as InterfaceType | null;
+      const t = canonicalInterfaceType(params.get("type"));
       const c = params.get("components");
       if (ds) setDesignSystem(ds);
       if (m) setMode(m);

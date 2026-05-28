@@ -697,6 +697,12 @@ export const useBuilder = create<BuilderState>((set) => ({
       uoaui:  { light: 'light',     dark: 'dark'     },
       carbon: { light: 'white',     dark: 'g100'     },
     };
+    /* Defensive: refuse an unknown DS rather than crash on
+       themeMap[ds].light. Boundary code (URL params, share state,
+       chat actions) should canonicalize via `canonicalDesignSystem`
+       first; this is the last line of defense for any future caller
+       that forgets. */
+    if (!themeMap[ds]) return s;
     return { designSystem: ds, themeKey: themeMap[ds][s.mode] };
   }),
   setMode: (m) => set((s) => {
