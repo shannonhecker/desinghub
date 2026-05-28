@@ -77,7 +77,7 @@ html:has(.landing-southleft) body {
   background: var(--lsl-bg);
   color: var(--lsl-fg);
   font-family: var(--lsl-font-sans);
-  font-size: 16.5px;
+  font-size: var(--lsl-text-body-l);
   line-height: 1.55;
   letter-spacing: 0;
   min-height: 100vh;
@@ -141,7 +141,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-logo {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: 20px;
+  font-size: var(--lsl-text-display-xxs);
   letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
   display: inline-flex;
@@ -170,7 +170,7 @@ html:has(.landing-southleft) body {
   padding: 0;
 }
 .landing-southleft .lsl-nav-link {
-  font-size: 14.5px;
+  font-size: var(--lsl-text-meta); /* snapped from 14.5px (-0.5 sub-pixel) */
   font-weight: 500;
   color: var(--lsl-fg);
   position: relative;
@@ -194,7 +194,7 @@ html:has(.landing-southleft) body {
   background: var(--lsl-accent);
   color: var(--lsl-bg);
   font-family: var(--lsl-font-sans);
-  font-size: 15px;
+  font-size: var(--lsl-text-body-s);
   font-weight: 600;
   letter-spacing: 0.005em;
   border: 1px solid var(--lsl-accent);
@@ -231,7 +231,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-hero-eyebrow {
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -243,7 +243,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-hero-headline {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: clamp(56px, 11vw, 156px);
+  font-size: var(--lsl-text-display-xl);
   line-height: 0.92;
   letter-spacing: -0.035em;
   color: var(--lsl-fg-strong);
@@ -256,7 +256,7 @@ html:has(.landing-southleft) body {
   color: var(--lsl-accent);
 }
 .landing-southleft .lsl-hero-sub {
-  font-size: 21px;
+  font-size: var(--lsl-text-body-xxl);
   line-height: 1.45;
   color: var(--lsl-fg-muted);
   max-width: 58ch;
@@ -269,7 +269,7 @@ html:has(.landing-southleft) body {
   flex-wrap: wrap;
 }
 .landing-southleft .lsl-hero-secondary {
-  font-size: 15px;
+  font-size: var(--lsl-text-body-s);
   font-weight: 500;
   color: var(--lsl-fg-strong);
   text-decoration: none;
@@ -351,7 +351,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-hero-demo-caption {
   margin: 16px 0 0;
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   letter-spacing: 0.05em;
   color: var(--lsl-fg-subtle);
 }
@@ -375,7 +375,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-section-label {
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -386,7 +386,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-section-heading {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: clamp(40px, 6vw, 80px);
+  font-size: var(--lsl-text-display-m);
   line-height: 0.96;
   letter-spacing: -0.028em;
   color: var(--lsl-fg-strong);
@@ -394,7 +394,7 @@ html:has(.landing-southleft) body {
   max-width: 20ch;
 }
 .landing-southleft .lsl-section-lede {
-  font-size: 18px;
+  font-size: var(--lsl-text-body-xl);
   line-height: 1.5;
   color: var(--lsl-fg-muted);
   max-width: 58ch;
@@ -468,7 +468,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-service-num {
   font-family: var(--lsl-font-mono);
   font-weight: 500;
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   color: var(--lsl-amber);
   letter-spacing: 0.06em;
   margin: 0 0 28px;
@@ -478,7 +478,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-service-heading {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: clamp(32px, 3.6vw, 48px);
+  font-size: var(--lsl-text-display-s);
   line-height: 1.0;
   letter-spacing: -0.028em;
   margin: 0 0 28px;
@@ -496,7 +496,7 @@ html:has(.landing-southleft) body {
   gap: 10px;
 }
 .landing-southleft .lsl-service-bullets li {
-  font-size: 15.5px;
+  font-size: var(--lsl-text-body);
   line-height: 1.45;
   color: var(--lsl-fg-muted);
 }
@@ -586,7 +586,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-morph-label {
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   letter-spacing: 0.14em;
   fill: var(--lsl-amber);
   opacity: 0;
@@ -709,7 +709,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-brief-variant-3 { animation-delay: 0.26s; }
 .landing-southleft .lsl-brief-prefix {
   font-family: var(--lsl-font-mono);
-  font-size: 14px;
+  font-size: var(--lsl-text-meta);
   fill: var(--lsl-amber);
 }
 
@@ -784,7 +784,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-syscard-label {
   font-family: var(--lsl-font-mono);
-  font-size: 12px;
+  font-size: var(--lsl-text-eyebrow);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -822,7 +822,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-tokens-col-label {
   font-family: var(--lsl-font-mono);
-  font-size: 11px;
+  font-size: var(--lsl-text-micro);
   font-weight: 500;
   letter-spacing: 0.10em;
   text-transform: uppercase;
@@ -859,7 +859,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-token-name {
   font-family: var(--lsl-font-mono);
-  font-size: 12.5px;
+  font-size: var(--lsl-text-eyebrow); /* snapped from 12.5px (-0.5 sub-pixel) */
   font-weight: 500;
   color: var(--lsl-fg-strong);
   overflow: hidden;
@@ -868,7 +868,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-token-detail {
   font-family: var(--lsl-font-mono);
-  font-size: 11px;
+  font-size: var(--lsl-text-micro);
   letter-spacing: 0.02em;
   color: var(--lsl-fg-subtle);
 }
@@ -887,16 +887,16 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-token-typesample[data-fam="display"] {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: 26px;
+  font-size: var(--lsl-text-display-xs);
   letter-spacing: -0.025em;
 }
 .landing-southleft .lsl-token-typesample[data-fam="sans"] {
   font-family: var(--lsl-font-sans);
-  font-size: 18px;
+  font-size: var(--lsl-text-body-xl);
 }
 .landing-southleft .lsl-token-typesample[data-fam="mono"] {
   font-family: var(--lsl-font-mono);
-  font-size: 14px;
+  font-size: var(--lsl-text-meta);
   letter-spacing: 0.08em;
 }
 
@@ -906,7 +906,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-token-name-mono {
   font-family: var(--lsl-font-mono);
-  font-size: 11px;
+  font-size: var(--lsl-text-micro);
   width: 28px;
   flex-shrink: 0;
   color: var(--lsl-fg-subtle);
@@ -947,7 +947,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-footer-brand-mark {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: 28px;
+  font-size: var(--lsl-text-display-xs); /* snapped from 28px (-2px) */
   letter-spacing: -0.025em;
   color: var(--lsl-fg-strong);
   margin: 0;
@@ -956,14 +956,14 @@ html:has(.landing-southleft) body {
   top: 2px;
 }
 .landing-southleft .lsl-footer-brand-body {
-  font-size: 15px;
+  font-size: var(--lsl-text-body-s);
   line-height: 1.6;
   color: var(--lsl-fg-muted);
   margin: 0;
 }
 .landing-southleft .lsl-footer-col-label {
   font-family: var(--lsl-font-mono);
-  font-size: 11px;
+  font-size: var(--lsl-text-micro);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -979,7 +979,7 @@ html:has(.landing-southleft) body {
   gap: 12px;
 }
 .landing-southleft .lsl-footer-list a {
-  font-size: 15px;
+  font-size: var(--lsl-text-body-s);
   color: var(--lsl-fg);
   text-decoration: none;
   transition: color 160ms ease;
@@ -991,7 +991,7 @@ html:has(.landing-southleft) body {
   justify-content: space-between;
   padding-top: 32px;
   border-top: 1px solid var(--lsl-rule);
-  font-size: 13px;
+  font-size: var(--lsl-text-meta); /* snapped from 13px (+1px) */
   color: var(--lsl-fg-subtle);
 }
 
