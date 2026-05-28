@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { parseAIResponse } from "../parseAIResponse";
 
 describe("parseAIResponse", () => {
@@ -51,5 +51,65 @@ describe("parseAIResponse", () => {
     const text = 'Start\n\n\n\n\n```json\n{"action": "setMode", "value": "dark"}\n```\n\n\n\n\nEnd';
     const { displayText } = parseAIResponse(text);
     expect(displayText).not.toMatch(/\n{3,}/);
+  });
+
+  describe("hard-reject unknown action types", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("drops unknown action types and warns", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const text = [
+        '```json\n{"action": "addBlock", "value": {"type": "button"}}\n```',
+        '```json\n{"action": "nonsense", "value": "foo"}\n```',
+      ].join("\n\n");
+
+      const { actions } = parseAIResponse(text);
+
+      expect(actions).toHaveLength(1);
+      expect(actions[0].action).toBe("addBlock");
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain("nonsense");
+    });
+
+    it("preserves valid actions in mixed input and warns once per unknown", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const text = [
+        '```json\n{"action": "setDesignSystem", "value": "salt"}\n```',
+        '```json\n{"action": "setLayout", "value": "grid"}\n```',
+        '```json\n{"action": "setMode", "value": "dark"}\n```',
+      ].join("\n\n");
+
+      const { actions } = parseAIResponse(text);
+
+      expect(actions).toHaveLength(2);
+      expect(actions.map((a) => a.action)).toEqual(["setDesignSystem", "setMode"]);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain("setLayout");
+    });
+
+    it("returns empty array when every action is unknown", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const text = [
+        '```json\n{"action": "doTheThing", "value": 1}\n```',
+        '```json\n{"action": "anotherFake", "value": 2}\n```',
+      ].join("\n\n");
+
+      const { actions } = parseAIResponse(text);
+
+      expect(actions).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not warn when JSON is structurally malformed (no regression)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const text = '```json\n{this is not valid json}\n```';
+
+      const { actions } = parseAIResponse(text);
+
+      expect(actions).toEqual([]);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
   });
 });
