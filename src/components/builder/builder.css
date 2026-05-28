@@ -2114,7 +2114,13 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--b-accent);
 }
+.prompt-bubble-ds-dot[data-ds="salt"]   { background: var(--b-accent); }
+.prompt-bubble-ds-dot[data-ds="m3"]     { background: var(--b-accent); }
+.prompt-bubble-ds-dot[data-ds="fluent"] { background: var(--b-accent); }
+.prompt-bubble-ds-dot[data-ds="carbon"] { background: var(--b-accent); }
+.prompt-bubble-ds-dot[data-ds="uoaui"]  { background: var(--b-accent); }
 
 /* ── Visual pattern cards (Phase C template gallery) ──
    Each card gets an inline SVG wireframe preview at the top so users
