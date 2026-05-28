@@ -23,12 +23,12 @@ import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 const PATTERN_CARDS: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
 
 /* ── DS quick-switch (subtle affordance in hero) ── */
-const STYLE_CHIPS: { label: string; value: DesignSystem; color: string }[] = [
-  { label: "Salt DS", value: "salt", color: "#1B7F9E" },
-  { label: "Material 3", value: "m3", color: "#6750A4" },
-  { label: "Fluent 2", value: "fluent", color: "#0F6CBD" },
-  { label: "uoaui DS", value: "uoaui", color: "#7E6BC4" },
-  { label: "Carbon DS", value: "carbon", color: "#0f62fe" },
+const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
+  { label: "Salt DS", value: "salt" },
+  { label: "Material 3", value: "m3" },
+  { label: "Fluent 2", value: "fluent" },
+  { label: "uoaui DS", value: "uoaui" },
+  { label: "Carbon DS", value: "carbon" },
 ];
 
 const REFINE_CHIPS = [
@@ -286,8 +286,8 @@ function getFreeformResponse(input: string): string {
 
 export function ChatPanel() {
   const {
-    messages, inputText, isVoiceActive, isGenerating,
-    setInputText, addMessage, toggleVoice, setGenerating, bumpPreview,
+    messages, inputText, isGenerating,
+    setInputText, addMessage, setGenerating, bumpPreview,
     designSystem, selectedComponents,
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
@@ -687,7 +687,7 @@ export function ChatPanel() {
         >
           <span
             className="prompt-bubble-ds-dot"
-            style={{ background: chip.color }}
+            data-ds={chip.value}
             aria-hidden="true"
           />
           {chip.label}
@@ -892,32 +892,15 @@ export function ChatPanel() {
               rows={1}
             />
             <div className="input-toolbar">
-              <div className="toolbar-left">
-                <button className="toolbar-icon-btn" aria-label="Add attachment">
-                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>add</span>
-                </button>
-              </div>
               <div className="toolbar-right">
-                {hasText ? (
-                  <button
-                    className="send-btn"
-                    onClick={() => handleSend()}
-                    disabled={isGenerating}
-                    aria-label="Send"
-                  >
-                    <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-                  </button>
-                ) : (
-                  <button
-                    className={`mic-btn ${isVoiceActive ? "active" : ""}`}
-                    onClick={toggleVoice}
-                    aria-label="Toggle voice"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                      {isVoiceActive ? "stop" : "mic"}
-                    </span>
-                  </button>
-                )}
+                <button
+                  className="send-btn"
+                  onClick={() => handleSend()}
+                  disabled={isGenerating || !hasText}
+                  aria-label="Send"
+                >
+                  <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                </button>
               </div>
             </div>
           </div>

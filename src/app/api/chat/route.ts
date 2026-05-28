@@ -82,7 +82,7 @@ export async function POST(req: Request) {
 
   const stream = await anthropic.messages.stream({
     model: MODEL_ID,
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: validatedMessages,
   });
