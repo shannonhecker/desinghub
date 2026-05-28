@@ -6,7 +6,12 @@
  *
  * Active swatch is matched on hex; case-insensitive comparison
  * recommended at the call site.
+ *
+ * Raw hex is intentional in this file: these ARE the canonical brand
+ * swatches per DS (the values --<ds>-color-* tokens resolve to).
+ * Wrapping them in `var(--…)` here would defeat the purpose.
  */
+/* eslint-disable design-hub/no-hardcoded-tokens */
 
 import type { DesignSystem } from "@/store/useBuilder";
 
