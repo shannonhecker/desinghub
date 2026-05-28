@@ -69,12 +69,27 @@
   gap: var(--dh-space-40);
 }
 
+/* Brand + kicker + h1 + body + proof row stack vertically.
+   Base CSS leaves them inline-flex siblings, which puts the kicker pill
+   next to the brand wordmark with no breathing room. Flex-column on the
+   parent forces each row onto its own line; align-items: flex-start
+   shrinks each child to its content width. */
+.login-shell.login-shell .login-story {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .login-shell.login-shell .login-brand-link {
   color: var(--lsl-fg-strong);
 }
 
 .login-shell.login-shell .login-kicker {
   min-height: 30px;
+  /* Override the base 64px margin-top — that gap made sense when the
+     kicker was the only block after the brand link, but now the flex
+     parent gives us a tighter, more deliberate rhythm. */
+  margin-top: var(--dh-space-24);
   padding: 0 14px;
   border: 1px solid var(--lsl-accent-soft);
   border-radius: 999px;
@@ -121,7 +136,8 @@
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lsl-amber);
+  /* Match the landing's microtype accent: Purple Compute, not Peach. */
+  color: var(--lsl-accent);
 }
 
 .login-shell.login-shell .login-card {
