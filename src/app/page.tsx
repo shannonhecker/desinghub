@@ -433,14 +433,21 @@ const SPACE_TOKENS = [
 
 /* ── Hooks ───────────────────────────────────────────────────────────── */
 
-/** Toggle the sticky nav background once the user scrolls past the hero crest. */
+/** Toggle the sticky nav background once the user scrolls past the hero.
+    Threshold: 80% of viewport height — keeps the nav fully transparent
+    through the entire brand-moment hero scroll. Glass only kicks in when
+    the user crosses into the service-card content below. */
 function useScrolledNav(): boolean {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
   return scrolled;
 }
