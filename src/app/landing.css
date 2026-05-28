@@ -108,6 +108,11 @@ html:has(.landing-southleft) body {
   position: -webkit-sticky;
   top: 0;
   z-index: 100;
+  /* iOS status-bar clearance. With viewportFit:"cover" + black-translucent
+     statusBarStyle (see app/layout.tsx), the page extends under the bar;
+     this padding pushes the nav band below it. Falls back to 0 on platforms
+     without notch / status-bar overlay. */
+  padding-top: env(safe-area-inset-top, 0px);
   /* Default: fully transparent, no border. Hero peeks through cleanly. */
   background: transparent;
   border-bottom: 1px solid transparent;
@@ -311,7 +316,7 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-hero-demo-frame {
   position: relative;
-  border-radius: 20px;
+  border-radius: 14px;
   overflow: hidden;
   background: var(--lsl-bg-soft);
   border: 1px solid var(--lsl-rule-strong);
