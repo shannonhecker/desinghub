@@ -240,6 +240,21 @@ export function getTemplate(id: TemplateId): BuilderTemplate {
   return BUILDER_TEMPLATES[id];
 }
 
+/**
+ * Returns the alphabetically-first template whose `interfaceType` matches.
+ * Returns null when no template exists for that interface type.
+ * Used by the /preview/<interface>/<ds> route to pick a deterministic
+ * template per interface.
+ */
+export function getFirstTemplateForInterface(
+  interfaceType: InterfaceType,
+): BuilderTemplate | null {
+  const matches = Object.values(BUILDER_TEMPLATES)
+    .filter((t) => t.interfaceType === interfaceType)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  return matches[0] ?? null;
+}
+
 /** Ordered list for the pattern card grid in the hero. */
 export const TEMPLATE_ORDER: TemplateId[] = [
   "analytics-dashboard",
