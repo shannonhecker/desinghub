@@ -19,9 +19,7 @@
 
 /* ── Core brand palette ─────────────────────────────────────────────────
    Violet + soft-violet anchor, indigo background. The shader beam pulls
-   its core + edge from here; the 3 CSS aurora blobs have their own
-   legacy gradients still hardcoded in hero.css (to preserve the
-   existing multi-hue look). Future: fold those into AURORA below. */
+   its core + edge from here. */
 export const BRAND = {
   /* Background — shared by hero, landing, auth chrome. */
   'bg-deep': '#0b0e1a',
