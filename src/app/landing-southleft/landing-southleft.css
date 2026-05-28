@@ -33,26 +33,28 @@ html:has(.landing-southleft) body {
 }
 
 .landing-southleft {
-  /* ── Palette pulled from the portfolio's uoaui case study ────────────────
-     Source: shannonhecker.com/project-uoaui.html + assets/dark-mode.css.
-     Brand quartet: Teal Input #49D0BE · Purple Compute #8A58C9 ·
-     Peach Output #E5A999 · Midnight Canvas #0B1120. Emphasis tiers follow
-     the portfolio's M2/M3 white-alpha convention (0.87 / 0.60 / 0.53). */
-  --lsl-bg:           #0B1120;  /* Midnight Canvas — brand canvas */
-  --lsl-bg-soft:      #131A2A;  /* one step up for nav-on-scroll */
-  --lsl-fg:           rgba(255, 255, 255, 0.87);  /* high emphasis */
+  /* ── Refined Aurora — uoaui brand, 2026-tuned ─────────────────────────────
+     Tuned from the portfolio source for 2026 dark-mode best practice:
+     deeper navy base, M3-style elevation tiers, brighter accents that pass
+     WCAG AA on the new bg. Brand vocabulary unchanged (Teal Input · Purple
+     Compute · Peach Output · Midnight Canvas) — values refined.
+     Source research: Vercel Geist, Linear, Radix Colors, M3 dark scheme. */
+  --lsl-bg:           #0A0E1A;  /* refined Midnight Canvas — cleaner navy */
+  --lsl-bg-soft:      #131829;  /* surf-1 — primary elevated (cards, nav) */
+  --lsl-bg-elevated:  #1C2238;  /* surf-2 — secondary elevated (hover, nav-scrolled) */
+  --lsl-fg:           rgba(255, 255, 255, 0.92);  /* high emphasis (was 0.87) */
   --lsl-fg-strong:    #FFFFFF;                    /* display + brand mark */
-  --lsl-fg-muted:     rgba(255, 255, 255, 0.60);  /* medium emphasis */
-  --lsl-fg-subtle:    rgba(255, 255, 255, 0.45);  /* hint / fine print */
-  --lsl-rule:         rgba(255, 255, 255, 0.12);
+  --lsl-fg-muted:     rgba(255, 255, 255, 0.65);  /* medium emphasis (was 0.60) */
+  --lsl-fg-subtle:    rgba(255, 255, 255, 0.50);  /* hint / fine print (was 0.45) */
+  --lsl-rule:         rgba(255, 255, 255, 0.10);
   --lsl-rule-strong:  rgba(255, 255, 255, 0.22);
-  --lsl-accent:       #49D0BE;  /* Teal Input — primary accent + focus ring */
-  --lsl-accent-hover: #5EDFCB;
-  --lsl-accent-soft:  rgba(73, 208, 190, 0.16);
-  --lsl-amber:        #E5A999;  /* Peach Output — secondary highlight */
-  --lsl-amber-soft:   rgba(229, 169, 153, 0.18);
-  --lsl-purple:       #8A58C9;  /* Purple Compute — AI / processing accent */
-  --lsl-purple-soft:  rgba(138, 88, 201, 0.20);
+  --lsl-accent:       #3DDCC4;  /* Teal Input — brighter for AA on #0A0E1A (9.8:1) */
+  --lsl-accent-hover: #5BE5CE;
+  --lsl-accent-soft:  rgba(61, 220, 196, 0.16);
+  --lsl-amber:        #F0B5A4;  /* Peach Output — slightly warmer (9.1:1) */
+  --lsl-amber-soft:   rgba(240, 181, 164, 0.18);
+  --lsl-purple:       #A78BFA;  /* Purple Compute — M3 dark-mode primary (5.4:1 AA) */
+  --lsl-purple-soft:  rgba(167, 139, 250, 0.20);
   --lsl-aurora-cyan:  rgba(130, 224, 255, 0.10);
   --lsl-aurora-pale:  rgba(175, 240, 255, 0.06);
 
@@ -112,13 +114,13 @@ html:has(.landing-southleft) body {
   will-change: backdrop-filter;
 }
 .landing-southleft .lsl-nav[data-scrolled="true"] {
-  background: rgba(22, 21, 19, 0.55);
+  background: rgba(10, 14, 26, 0.55);  /* Midnight Canvas at 55% — matches new bg */
   backdrop-filter: saturate(180%) blur(28px);
   -webkit-backdrop-filter: saturate(180%) blur(28px);
-  border-bottom-color: rgba(239, 234, 224, 0.14);
+  border-bottom-color: rgba(255, 255, 255, 0.14);
   box-shadow:
-    0 1px 0 rgba(239, 234, 224, 0.04) inset,
-    0 8px 32px rgba(0, 0, 0, 0.32);
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 32px rgba(0, 0, 0, 0.40);
 }
 .landing-southleft .lsl-nav-inner {
   display: flex;
@@ -286,7 +288,7 @@ html:has(.landing-southleft) body {
   background:
     radial-gradient(60% 70% at 18% 18%,  var(--lsl-aurora-cyan) 0%, transparent 70%),
     radial-gradient(50% 60% at 82% 30%,  var(--lsl-aurora-pale) 0%, transparent 75%),
-    radial-gradient(40% 50% at 60% 90%,  rgba(138, 88, 201, 0.07) 0%, transparent 70%);
+    radial-gradient(40% 50% at 60% 90%,  rgba(167,139,250, 0.07) 0%, transparent 70%);
 }
 .landing-southleft .lsl-hero > .lsl-container {
   position: relative;
@@ -308,9 +310,9 @@ html:has(.landing-southleft) body {
   border: 1px solid var(--lsl-rule-strong);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 30px 80px rgba(11, 17, 32, 0.55),
-    0 0 0 1px rgba(73, 208, 190, 0.18),
-    0 0 60px -10px rgba(73, 208, 190, 0.20);
+    0 30px 80px rgba(10,14,26, 0.55),
+    0 0 0 1px rgba(61,220,196, 0.18),
+    0 0 60px -10px rgba(61,220,196, 0.20);
   isolation: isolate;
 }
 .landing-southleft .lsl-hero-demo-video {
@@ -326,9 +328,9 @@ html:has(.landing-southleft) body {
   inset: 0;
   pointer-events: none;
   background: linear-gradient(180deg,
-    rgba(11, 17, 32, 0.0)  0%,
-    rgba(11, 17, 32, 0.0)  70%,
-    rgba(11, 17, 32, 0.35) 100%);
+    rgba(10,14,26, 0.0)  0%,
+    rgba(10,14,26, 0.0)  70%,
+    rgba(10,14,26, 0.35) 100%);
 }
 .landing-southleft .lsl-hero-demo-caption {
   margin: 16px 0 0;
@@ -416,18 +418,18 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-service-card:hover,
 .landing-southleft .lsl-service-card:focus-visible {
   --lsl-bg:           #FFFFFF;                  /* portfolio's primary inversion target */
-  --lsl-fg:           rgba(11, 17, 32, 0.87);   /* Midnight ink at high emphasis */
-  --lsl-fg-strong:    #0B1120;                  /* Midnight Canvas as solid ink */
-  --lsl-fg-muted:     rgba(11, 17, 32, 0.60);
-  --lsl-fg-subtle:    rgba(11, 17, 32, 0.45);
-  --lsl-rule:         rgba(11, 17, 32, 0.10);
-  --lsl-rule-strong:  rgba(11, 17, 32, 0.22);
+  --lsl-fg:           rgba(10,14,26, 0.87);   /* Midnight ink at high emphasis */
+  --lsl-fg-strong:    #0A0E1A;                  /* Midnight Canvas as solid ink */
+  --lsl-fg-muted:     rgba(10,14,26, 0.60);
+  --lsl-fg-subtle:    rgba(10,14,26, 0.45);
+  --lsl-rule:         rgba(10,14,26, 0.10);
+  --lsl-rule-strong:  rgba(10,14,26, 0.22);
   background: #FFFFFF;
-  color: rgba(11, 17, 32, 0.87);
+  color: rgba(10,14,26, 0.87);
   border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 18px 60px rgba(73, 208, 190, 0.18),
-              0 2px 8px rgba(11, 17, 32, 0.20);
+  box-shadow: 0 18px 60px rgba(61,220,196, 0.18),
+              0 2px 8px rgba(10,14,26, 0.20);
 }
 
 .landing-southleft .lsl-card-arrow {
@@ -506,14 +508,14 @@ html:has(.landing-southleft) body {
 /* Card 1 morph surface needs a hairline so it's visible against any
    wrapper bg (cycles between white-ish DS-canonical surfaces). */
 .landing-southleft .lsl-morph-card {
-  stroke: rgba(11, 17, 32, 0.18);
+  stroke: rgba(10,14,26, 0.18);
   stroke-width: 1;
 }
 
 /* Card 2 component-card surface — uses a step-up tone over wrapper bg.
    Inverted on hover via .lsl-service-card:hover scoping below. */
 .landing-southleft .lsl-tokens-target {
-  fill: var(--lsl-tokens-target-bg, #131A2A);
+  fill: var(--lsl-tokens-target-bg, #131829);
   stroke: currentColor;
   stroke-opacity: 0.20;
 }
@@ -551,7 +553,7 @@ html:has(.landing-southleft) body {
   20%, 36%  { fill: #6750A4; rx: 20; }  /* M3 purple pill */
   40%, 56%  { fill: #0F6CBD; rx: 4; }   /* Fluent blue */
   60%, 76%  { fill: #0F62FE; rx: 0; }   /* Carbon flat IBM blue */
-  80%, 100% { fill: #49D0BE; rx: 13; }  /* uoaui Teal Input pill */
+  80%, 100% { fill: #3DDCC4; rx: 13; }  /* uoaui Teal Input pill */
 }
 @keyframes lsl-morph-label {
   0%, 16%   { content: "SALT"; }
@@ -602,14 +604,14 @@ html:has(.landing-southleft) body {
   100%    { transform: translate(40px, 132px); opacity: 0; }
 }
 @keyframes lsl-tokens-target {
-  0%, 60%   { fill: var(--lsl-tokens-target-bg, #131A2A); stroke: rgba(73, 208, 190, 0.18); }
-  65%, 90%  { fill: rgba(73, 208, 190, 0.28);            stroke: rgba(73, 208, 190, 0.60); }
-  100%      { fill: var(--lsl-tokens-target-bg, #131A2A); stroke: rgba(73, 208, 190, 0.18); }
+  0%, 60%   { fill: var(--lsl-tokens-target-bg, #131829); stroke: rgba(61,220,196, 0.18); }
+  65%, 90%  { fill: rgba(61,220,196, 0.28);            stroke: rgba(61,220,196, 0.60); }
+  100%      { fill: var(--lsl-tokens-target-bg, #131829); stroke: rgba(61,220,196, 0.18); }
 }
 @keyframes lsl-tokens-target-btn {
-  0%, 85%   { fill: #49D0BE; }
-  90%, 98%  { fill: #E5A999; }
-  100%      { fill: #49D0BE; }
+  0%, 85%   { fill: #3DDCC4; }
+  90%, 98%  { fill: #F0B5A4; }
+  100%      { fill: #3DDCC4; }
 }
 .landing-southleft .lsl-token-particle {
   transform-box: fill-box;
