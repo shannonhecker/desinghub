@@ -319,8 +319,10 @@ html:has(.landing-southleft) body {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
+  /* Native aspect = 2056×1236 (≈ 1.663:1). Let the video carry its own
+     dimensions so nothing crops. */
+  aspect-ratio: 2056 / 1236;
+  object-fit: contain;
 }
 /* Subtle inner gradient — masks any letterboxing + ties video to bg */
 .landing-southleft .lsl-hero-demo-shield {
