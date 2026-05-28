@@ -59,7 +59,10 @@ export default function LoginPage() {
             Private Studio Access
           </div>
           <h1 id="login-title">Enter the design-system studio.</h1>
-          <p>
+          <p className="login-story-tagline-mobile" aria-hidden="true">
+            Private preview.
+          </p>
+          <p className="login-story-body">
             Use your private-preview password to open the working builder, where prompts
             become Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions.
           </p>
