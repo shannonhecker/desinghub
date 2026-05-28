@@ -5,20 +5,35 @@
    -------------------------------------------------------------------------- */
 
 .login-shell.login-shell {
+  /* OKLab interpolation + tinted-zero end-stops to remove 8-bit sRGB
+     banding on the aurora ramps. SVG dither layered on top via
+     `.login-shell::after` (see below). */
   background:
-    radial-gradient(ellipse at 50% -10%, rgba(180, 144, 245, 0.11), transparent 40rem),
-    radial-gradient(ellipse at 14% 32%, rgba(94, 231, 223, 0.07), transparent 30rem),
-    radial-gradient(ellipse at 86% 42%, rgba(247, 138, 184, 0.052), transparent 34rem),
-    linear-gradient(180deg, #020302 0%, #070710 46%, #030403 100%);
+    radial-gradient(ellipse at 50% -10% in oklab, rgba(180, 144, 245, 0.11), rgba(180, 144, 245, 0) 40rem),
+    radial-gradient(ellipse at 14% 32% in oklab, rgba(94, 231, 223, 0.07), rgba(94, 231, 223, 0) 30rem),
+    radial-gradient(ellipse at 86% 42% in oklab, rgba(247, 138, 184, 0.052), rgba(247, 138, 184, 0) 34rem),
+    linear-gradient(180deg in oklab, #020302 0%, #070710 46%, #030403 100%);
+}
+
+.login-shell.login-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--dh-noise-overlay);
+  background-size: 200px 200px;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
 }
 
 .login-shell.login-shell .login-ambient-field-1 {
   opacity: 0.4;
   filter: blur(78px) saturate(0.96);
   background:
-    radial-gradient(ellipse at 18% 72%, rgba(94, 231, 223, 0.11), transparent 32rem),
-    radial-gradient(ellipse at 64% 18%, rgba(180, 144, 245, 0.12), transparent 38rem),
-    radial-gradient(ellipse at 88% 66%, rgba(247, 138, 184, 0.055), transparent 34rem);
+    radial-gradient(ellipse at 18% 72% in oklab, rgba(94, 231, 223, 0.11), rgba(94, 231, 223, 0) 32rem),
+    radial-gradient(ellipse at 64% 18% in oklab, rgba(180, 144, 245, 0.12), rgba(180, 144, 245, 0) 38rem),
+    radial-gradient(ellipse at 88% 66% in oklab, rgba(247, 138, 184, 0.055), rgba(247, 138, 184, 0) 34rem);
   animation-duration: 28s;
 }
 
@@ -26,8 +41,8 @@
   opacity: 0.18;
   filter: blur(58px);
   background:
-    linear-gradient(118deg, transparent 22%, rgba(94, 231, 223, 0.1) 40%, transparent 58%),
-    linear-gradient(148deg, transparent 34%, rgba(180, 144, 245, 0.09) 52%, transparent 72%);
+    linear-gradient(118deg in oklab, rgba(94, 231, 223, 0) 22%, rgba(94, 231, 223, 0.1) 40%, rgba(94, 231, 223, 0) 58%),
+    linear-gradient(148deg in oklab, rgba(180, 144, 245, 0) 34%, rgba(180, 144, 245, 0.09) 52%, rgba(180, 144, 245, 0) 72%);
   animation-duration: 32s;
 }
 
