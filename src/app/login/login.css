@@ -2,16 +2,14 @@
    Login styled to match the new landing (/) — southleft tokens, editorial
    feel.
 
-   ── Self-contained tokens ──
-   The original `--lsl-*` family lives on `.landing-southleft` in landing.css.
-   That file is only imported by `src/app/page.tsx`, so on `/login` every
-   `var(--lsl-*)` resolved to `unset` and the polish pass silently fell back
-   to the base structural rules below. We re-declare the type + colour
-   subset we need directly on `.login-shell` so the page is self-sufficient.
-
-   ── Type scale ──
-   Mirrors landing.css verbatim. Sizes are named by role, so future copy
-   changes pick a slot instead of inventing a new px value.
+   ── Token sources ──
+   - `--lsl-text-*` (named type-scale slots): defined on `:root` in
+     globals.css — global, available everywhere.
+   - `--lsl-*` colours + font families: re-declared on `.login-shell` below.
+     The original `--lsl-*` family lives on `.landing-southleft` in
+     landing.css, which only imports on `/`. We declare the subset we need
+     here so the page is self-sufficient regardless of which stylesheet
+     loaded for the route.
 
    ── Visual recipe ──
    - Bg: Midnight Canvas with static aurora wash (no animated drift)
@@ -43,17 +41,8 @@
   --lsl-font-mono:    var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
                       Menlo, Consolas, monospace;
 
-  /* Named type-scale tokens — every login element must reference one of
-     these. New copy picks an existing slot rather than introducing a new
-     px value. Matches landing.css's display sizes exactly. */
-  --lsl-text-display-m:  clamp(40px, 6vw, 80px);  /* H1 — landing Display M */
-  --lsl-text-card-title: 18px;                    /* H2 — new mid-slot for card heads */
-  --lsl-text-body-xl:    18px;                    /* Lede body */
-  --lsl-text-body:       15.5px;                  /* Default body, meta */
-  --lsl-text-body-s:     15px;                    /* Inputs, dense body */
-  --lsl-text-meta:       14px;                    /* Submit pill, fine print */
-  --lsl-text-eyebrow:    12px;                    /* Kicker, proof row */
-  --lsl-text-micro:      11px;                    /* Field labels */
+  /* Type-scale tokens (--lsl-text-*) live on :root in globals.css.
+     Login picks slots by name, never invents a px value. */
 
   /* Midnight Canvas + static aurora wash. OKLab + tinted-zero. No animation. */
   background:
