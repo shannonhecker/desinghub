@@ -1,41 +1,32 @@
 /* --------------------------------------------------------------------------
-   Login polish pass
-   Keep the private-studio mood, but align gradient intensity, card treatment,
-   controls, and motion with the calmer landing page.
+   Login styled to match the new landing (/) — southleft tokens, editorial
+   feel. Polish-pass overrides go here; base structural rules remain below.
+   - Bg: Midnight Canvas with static aurora wash (no animated drift)
+   - Type: Bricolage display H1, Inter body
+   - Accent: Purple Compute on kicker, focus rings, primary submit
+   - Form card: bg-less, border-only (matches landing's restraint)
+   - Proof row → mono uppercase microtype (matches .lsl-section-label)
    -------------------------------------------------------------------------- */
 
 .login-shell.login-shell {
-  /* OKLab interpolation + tinted-zero end-stops keep the aurora ramps
-     smooth without introducing a visible noise texture. */
+  /* Midnight Canvas + static aurora wash. OKLab + tinted-zero. No animation. */
   background:
-    radial-gradient(ellipse at 50% -10% in oklab, rgba(180, 144, 245, 0.11), rgba(180, 144, 245, 0) 40rem),
-    radial-gradient(ellipse at 14% 32% in oklab, rgba(94, 231, 223, 0.07), rgba(94, 231, 223, 0) 30rem),
-    radial-gradient(ellipse at 86% 42% in oklab, rgba(247, 138, 184, 0.052), rgba(247, 138, 184, 0) 34rem),
-    linear-gradient(180deg in oklab, #020302 0%, #070710 46%, #030403 100%);
+    radial-gradient(60% 70% at 18% 18% in oklab, var(--lsl-aurora-cyan, rgba(130, 224, 255, 0.10)) 0%, rgba(130, 224, 255, 0) 70%),
+    radial-gradient(50% 60% at 82% 30% in oklab, var(--lsl-aurora-pale, rgba(175, 240, 255, 0.06)) 0%, rgba(175, 240, 255, 0) 75%),
+    radial-gradient(40% 50% at 60% 90% in oklab, rgba(167, 139, 250, 0.07) 0%, rgba(167, 139, 250, 0) 70%),
+    var(--lsl-bg, #0A0E1A);
+  color: var(--lsl-fg, rgba(255, 255, 255, 0.92));
+  font-family: var(--lsl-font-sans);
 }
 
-.login-shell.login-shell .login-ambient-field-1 {
-  opacity: 0.4;
-  filter: blur(78px) saturate(0.96);
-  background:
-    radial-gradient(ellipse at 18% 72% in oklab, rgba(94, 231, 223, 0.11), rgba(94, 231, 223, 0) 32rem),
-    radial-gradient(ellipse at 64% 18% in oklab, rgba(180, 144, 245, 0.12), rgba(180, 144, 245, 0) 38rem),
-    radial-gradient(ellipse at 88% 66% in oklab, rgba(247, 138, 184, 0.055), rgba(247, 138, 184, 0) 34rem);
-  animation-duration: 28s;
-}
-
-.login-shell.login-shell .login-ambient-field-2 {
-  opacity: 0.18;
-  filter: blur(58px);
-  background:
-    linear-gradient(118deg in oklab, rgba(94, 231, 223, 0) 22%, rgba(94, 231, 223, 0.1) 40%, rgba(94, 231, 223, 0) 58%),
-    linear-gradient(148deg in oklab, rgba(180, 144, 245, 0) 34%, rgba(180, 144, 245, 0.09) 52%, rgba(180, 144, 245, 0) 72%);
-  animation-duration: 32s;
-}
-
+/* Drop the animated ambient fields + gridline — replaced by the static
+   aurora on .login-shell. The .login-ambient wrapper stays for backwards
+   compat; its children are hidden. */
+.login-shell.login-shell .login-ambient,
+.login-shell.login-shell .login-ambient-field-1,
+.login-shell.login-shell .login-ambient-field-2,
 .login-shell.login-shell .login-gridline {
-  opacity: 0.07;
-  background-size: 80px 80px;
+  display: none;
 }
 
 .login-shell.login-shell .login-layout {
@@ -43,112 +34,140 @@
   gap: var(--dh-space-40);
 }
 
+.login-shell.login-shell .login-brand-link {
+  color: var(--lsl-fg-strong);
+}
+
 .login-shell.login-shell .login-kicker {
   min-height: 30px;
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: var(--dh-curve-full);
-  background: rgba(5, 7, 8, 0.5);
-  color: rgba(244, 248, 241, 0.76);
-  text-transform: none;
+  padding: 0 14px;
+  border: 1px solid var(--lsl-accent-soft);
+  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.08);
+  color: var(--lsl-accent);
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .login-shell.login-shell .login-story h1 {
   max-width: 680px;
-  font-size: clamp(3.1rem, 6vw, 5.4rem);
+  font-family: var(--lsl-font-display);
+  font-weight: 800;
+  font-size: clamp(2.8rem, 6vw, 5rem);
   line-height: 0.96;
+  letter-spacing: -0.025em;
+  color: var(--lsl-fg-strong);
   text-shadow: none;
 }
 
 .login-shell.login-shell .login-story p {
-  color: rgba(238, 242, 237, 0.66);
-  line-height: 1.68;
+  color: var(--lsl-fg-muted);
+  font-family: var(--lsl-font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.login-shell.login-shell .login-proof-row {
+  flex-wrap: wrap;
+  gap: 18px;
 }
 
 .login-shell.login-shell .login-proof-row span {
-  min-height: 30px;
-  border-color: rgba(255, 255, 255, 0.085);
-  border-radius: var(--dh-curve-full);
-  background: rgba(255, 255, 255, 0.035);
-  color: rgba(244, 248, 241, 0.62);
-  text-transform: none;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lsl-amber);
 }
 
 .login-shell.login-shell .login-card {
-  border-color: rgba(255, 255, 255, 0.095);
-  border-radius: var(--dh-curve-md);
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(197, 244, 222, 0.07), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.026)),
-    rgba(6, 8, 13, 0.9);
-  box-shadow:
-    0 36px 110px rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--lsl-rule);
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .login-shell.login-shell .login-card::before {
-  opacity: 0.42;
-  background: linear-gradient(135deg, rgba(197, 244, 222, 0.08), transparent 42%, rgba(180, 144, 245, 0.06));
+  display: none;
 }
 
 .login-shell.login-shell .login-lock {
-  border-color: rgba(197, 244, 222, 0.18);
-  background: rgba(197, 244, 222, 0.055);
-  color: rgba(197, 244, 222, 0.86);
+  border-color: var(--lsl-accent-soft);
+  background: rgba(167, 139, 250, 0.10);
+  color: var(--lsl-accent);
 }
 
 .login-shell.login-shell .login-card-header p,
 .login-shell.login-shell .login-meta {
-  color: rgba(238, 242, 237, 0.54);
+  color: var(--lsl-fg-muted);
 }
 
 .login-shell.login-shell .login-field-label {
-  color: rgba(238, 242, 237, 0.58);
-  text-transform: none;
+  color: var(--lsl-fg-muted);
+  font-family: var(--lsl-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .login-shell.login-shell .login-input {
-  border-color: rgba(255, 255, 255, 0.095);
-  border-radius: var(--dh-curve-md);
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--lsl-rule);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lsl-fg);
+  font-family: var(--lsl-font-sans);
 }
 
 .login-shell.login-shell .login-input:hover:not(:focus) {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--lsl-rule-strong);
 }
 
 .login-shell.login-shell .login-input:focus-visible {
-  border-color: rgba(197, 244, 222, 0.48);
-  background: rgba(255, 255, 255, 0.062);
-  box-shadow: 0 0 0 4px rgba(197, 244, 222, 0.12);
+  border-color: var(--lsl-accent);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px var(--lsl-accent-soft);
 }
 
 .login-shell.login-shell .login-submit {
-  border-color: rgba(255, 255, 255, 0.76);
-  border-radius: var(--dh-curve-md);
-  background: rgba(241, 244, 239, 0.94);
-  color: #020302;
-  box-shadow:
-    0 16px 42px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--lsl-accent);
+  border-radius: 999px;
+  background: var(--lsl-accent);
+  color: var(--lsl-bg);
+  font-family: var(--lsl-font-sans);
+  font-weight: 700;
+  box-shadow: none;
   transition:
     transform 220ms var(--login-ease),
-    border-color 220ms var(--login-ease),
     background 220ms var(--login-ease),
-    box-shadow 220ms var(--login-ease);
+    border-color 220ms var(--login-ease);
 }
 
 .login-shell.login-shell .login-submit:not(:disabled):hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.9);
-  background: var(--dh-surface-cream);
-  box-shadow:
-    0 20px 52px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+  background: var(--lsl-accent-hover, #B89BFB);
+  border-color: var(--lsl-accent-hover, #B89BFB);
+  box-shadow: none;
 }
 
 .login-shell.login-shell .login-pw-toggle:hover {
-  background: rgba(255, 255, 255, 0.055);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.login-shell.login-shell .login-brand-link:focus-visible,
+.login-shell.login-shell .login-meta a:focus-visible,
+.login-shell.login-shell .login-submit:focus-visible,
+.login-shell.login-shell .login-input:focus-visible {
+  outline-color: var(--lsl-accent);
 }
 
 @media (max-width: 840px) {
@@ -157,7 +176,7 @@
   }
 
   .login-shell.login-shell .login-story h1 {
-    font-size: clamp(2.8rem, 11vw, 4.1rem);
+    font-size: clamp(2.4rem, 9vw, 3.6rem);
   }
 }
 
