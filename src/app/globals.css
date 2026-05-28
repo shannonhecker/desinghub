@@ -199,24 +199,32 @@ a { color: inherit; text-decoration: none; }
   --beam-color-bg: var(--dh-brand-bg-deep);
 
   /* ─── Landing type scale (--lsl-text-*) ──────────────────────────────────
-         Named role tokens for the southleft landing system. Originally
-         duplicated on .login-shell because landing.css's --lsl-* family
-         was page-scoped to .landing-southleft. Hoisting to :root so every
-         page (landing, login, future surfaces) references one source. New
+         Named role tokens for the southleft landing system. Every page
+         (landing, login, future surfaces) references one source. New
          copy / layout work picks a slot — never invents a new px value.
 
-         Sizes mirror landing.css's display scale verbatim. Phase 2 will
-         migrate landing.css's own inline values (14.5/15.5/12.5px etc.)
-         onto these slots so the scale converges across the marketing
-         surface. ─── */
-  --lsl-text-display-m:  clamp(40px, 6vw, 80px);  /* H1 — Display M */
-  --lsl-text-card-title: 18px;                    /* H2 — card heading */
-  --lsl-text-body-xl:    18px;                    /* Lede body */
-  --lsl-text-body:       15.5px;                  /* Default body, meta */
-  --lsl-text-body-s:     15px;                    /* Inputs, dense body */
-  --lsl-text-meta:       14px;                    /* Submit pill, fine print */
-  --lsl-text-eyebrow:    12px;                    /* Kicker, proof row */
-  --lsl-text-micro:      11px;                    /* Field labels */
+         Display column = clamped hero / section / card sizes (xl → xxs).
+         Body column = static body sizes (xxl → s).
+         Micro column = meta / eyebrow / field-label microtype.
+
+         Phase 2A added the four display-{xl,s,xs,xxs} steps + body-l +
+         body-xxl by auditing landing.css and either (a) lifting canonical
+         clamps into named slots or (b) adding steps to absorb prior
+         inline values. ─── */
+  --lsl-text-display-xl:  clamp(56px, 11vw, 156px); /* Hero giant — landing Display XL */
+  --lsl-text-display-m:   clamp(40px, 6vw, 80px);   /* Section H2 — Display M */
+  --lsl-text-display-s:   clamp(32px, 3.6vw, 48px); /* Card H3 — Display S */
+  --lsl-text-display-xs:  26px;                     /* Mid display step (absorbs prior 26 + 28) */
+  --lsl-text-display-xxs: 20px;                     /* Smallest display step (nav brand) */
+  --lsl-text-card-title:  18px;                     /* H2 — card heading (sans, 600 weight) */
+  --lsl-text-body-xxl:    21px;                     /* Hero lede */
+  --lsl-text-body-xl:     18px;                     /* Lede body */
+  --lsl-text-body-l:      16.5px;                   /* Body baseline */
+  --lsl-text-body:        15.5px;                   /* Default body, meta */
+  --lsl-text-body-s:      15px;                     /* Inputs, dense body */
+  --lsl-text-meta:        14px;                     /* Submit pill, fine print */
+  --lsl-text-eyebrow:     12px;                     /* Kicker, proof row */
+  --lsl-text-micro:       11px;                     /* Field labels */
 
   /* ── Radius scale ── */
   --dh-curve-xs:   4px;
