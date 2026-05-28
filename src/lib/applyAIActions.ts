@@ -4,7 +4,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { AIAction } from "./parseAIResponse";
 import type { DesignSystem, BuilderMode, InterfaceType, ZoneId, Block, LayoutProps, ZoneLayout } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
-import { pushSnapshot } from "@/store/useBuilderHistory";
+import { pushSnapshot } from "./builderHistory";
 
 const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "uoaui", "carbon"];
 const VALID_MODES = ["light", "dark"];
