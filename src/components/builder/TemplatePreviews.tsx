@@ -221,8 +221,13 @@ function LoginFlowPreview() {
   );
 }
 
-/* ── Registry ── */
-const PREVIEWS: Record<TemplateId, React.FC> = {
+/* ── Registry ──
+   Partial because new template ids (marketing-landing, product-page,
+   article, case-study-grid added in the preview-route work) ship without
+   a hand-drawn SVG yet. The guard in TemplatePreview falls back to null
+   when no preview is registered, so the pattern card just renders without
+   the wireframe thumbnail until art catches up. */
+const PREVIEWS: Partial<Record<TemplateId, React.FC>> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
   "settings-page":       SettingsPagePreview,
   "crm-contacts":        CrmContactsPreview,

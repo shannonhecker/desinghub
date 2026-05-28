@@ -29,6 +29,10 @@ export const VALID_TEMPLATE_IDS = [
   "settings-page",
   "crm-contacts",
   "login-flow",
+  "marketing-landing",
+  "product-page",
+  "article",
+  "case-study-grid",
 ] as const;
 
 export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
@@ -227,6 +231,212 @@ const loginFlow: BuilderTemplate = {
 };
 
 /* ──────────────────────────────────────────────────────────────
+   5. Marketing Landing
+   ────────────────────────────────────────────────────────────── */
+const MARKETING_LANDING_TEMPLATE: BuilderTemplate = {
+  id: "marketing-landing",
+  label: "Marketing landing",
+  desc: "Hero, 3-card feature grid, testimonial, footer.",
+  icon: "rocket_launch",
+  interfaceType: "landing",
+  selectedComponents: ["buttons", "cards", "hero"],
+  header: [
+    { id: tid("ml-hdr"), type: "AppBrand", props: { label: "Acme", tone: "primary" } },
+  ],
+  sidebar: [],
+  body: [
+    {
+      id: tid("ml-hero"),
+      type: "LayoutGroup",
+      props: {
+        direction: "stack",
+        gap: 16,
+        padding: 32,
+        align: "center",
+      },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("ml-hero-eyebrow"), type: "StatusPill", props: { label: "NEW · 2026 RELEASE", tone: "accent" } },
+        { id: tid("ml-hero-title"), type: "DemoHeading", props: { title: "Ship faster with one source of truth", level: 1 } },
+        { id: tid("ml-hero-sub"), type: "DemoParagraph", props: { text: "Acme replaces five tools with one. Designed for teams that ship daily." } },
+        { id: tid("ml-hero-cta"), type: "PrimaryButton", props: { label: "Start free trial" } },
+      ],
+    },
+    {
+      id: tid("ml-feat"),
+      type: "LayoutGroup",
+      props: { direction: "row", gap: 16, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("ml-feat-1"), type: "FeatureCard", props: { title: "Real-time sync", body: "Every change reflected across surfaces instantly." }, layout: { width: "fill" } },
+        { id: tid("ml-feat-2"), type: "FeatureCard", props: { title: "Built-in audit", body: "Every diff tracked, every action attributable." }, layout: { width: "fill" } },
+        { id: tid("ml-feat-3"), type: "FeatureCard", props: { title: "Token-aware", body: "Pull from your design system at any layer." }, layout: { width: "fill" } },
+      ],
+    },
+    {
+      id: tid("ml-quote"),
+      type: "Testimonial",
+      props: {
+        quote: "We cut our handoff time by 70% in the first month.",
+        author: "Maya Chen",
+        role: "Design Engineering Lead, Northwind",
+      },
+      layout: { width: "fill" },
+    },
+  ],
+  footer: [
+    { id: tid("ml-ft"), type: "FooterText", props: { text: "© 2026 Acme · Built with uoaui" } },
+  ],
+  aiResponse: "Marketing landing applied. Hero, three feature cards, testimonial, footer.",
+};
+
+/* ──────────────────────────────────────────────────────────────
+   6. Product Page
+   ────────────────────────────────────────────────────────────── */
+const PRODUCT_PAGE_TEMPLATE: BuilderTemplate = {
+  id: "product-page",
+  label: "Product page",
+  desc: "Product gallery, info, add-to-cart, reviews.",
+  icon: "shopping_bag",
+  interfaceType: "ecommerce",
+  selectedComponents: ["cards", "buttons", "tables"],
+  header: [
+    { id: tid("pp-hdr"), type: "AppBrand", props: { label: "Acme Shop", tone: "primary" } },
+    { id: tid("pp-status"), type: "StatusPill", props: { label: "FREE SHIPPING", tone: "positive" } },
+  ],
+  sidebar: [],
+  body: [
+    {
+      id: tid("pp-row"),
+      type: "LayoutGroup",
+      props: { direction: "row", gap: 24, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("pp-gallery"), type: "MediaPlaceholder", props: { label: "Product image" }, layout: { width: "50%" } },
+        {
+          id: tid("pp-info"),
+          type: "LayoutGroup",
+          props: { direction: "stack", gap: 12, padding: 0 },
+          layout: { width: "50%" },
+          children: [
+            { id: tid("pp-title"), type: "DemoHeading", props: { title: "Vega Lounge Chair", level: 1 } },
+            { id: tid("pp-price"), type: "DemoHeading", props: { title: "$1,240", level: 2 } },
+            { id: tid("pp-desc"), type: "DemoParagraph", props: { text: "Walnut frame, hand-stitched leather seat, made to order. Lead time 6-8 weeks." } },
+            { id: tid("pp-cta"), type: "PrimaryButton", props: { label: "Add to cart" } },
+            { id: tid("pp-cta2"), type: "SecondaryButton", props: { label: "Save for later" } },
+          ],
+        },
+      ],
+    },
+    {
+      id: tid("pp-reviews"),
+      type: "LayoutGroup",
+      props: { direction: "stack", gap: 16, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("pp-reviews-title"), type: "DemoHeading", props: { title: "Reviews", level: 2 } },
+        { id: tid("pp-review-1"), type: "Testimonial", props: { quote: "Comfortable and beautifully made.", author: "Aisha O.", role: "Verified buyer" } },
+      ],
+    },
+  ],
+  footer: [
+    { id: tid("pp-ft"), type: "FooterText", props: { text: "© 2026 Acme Shop · Returns within 30 days" } },
+  ],
+  aiResponse: "Product page applied. Gallery, info, add-to-cart, reviews, footer.",
+};
+
+/* ──────────────────────────────────────────────────────────────
+   7. Article (Blog)
+   ────────────────────────────────────────────────────────────── */
+const ARTICLE_TEMPLATE: BuilderTemplate = {
+  id: "article",
+  label: "Article",
+  desc: "Title, meta, paragraphs, code, image, footer.",
+  icon: "article",
+  interfaceType: "blog",
+  selectedComponents: ["typography"],
+  header: [
+    { id: tid("art-hdr"), type: "AppBrand", props: { label: "Acme Journal", tone: "primary" } },
+  ],
+  sidebar: [],
+  body: [
+    {
+      id: tid("art-body"),
+      type: "LayoutGroup",
+      props: { direction: "stack", gap: 16, padding: 32, align: "center" },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("art-meta"), type: "StatusPill", props: { label: "ENGINEERING · 5 MIN READ", tone: "neutral" } },
+        { id: tid("art-title"), type: "DemoHeading", props: { title: "What we learned from rebuilding our token pipeline", level: 1 } },
+        { id: tid("art-byline"), type: "DemoParagraph", props: { text: "By Maya Chen · 2026-05-21" } },
+        { id: tid("art-p1"), type: "DemoParagraph", props: { text: "We replaced a hand-curated CSS file with a token graph last quarter. The first month was rough; the next three were clarifying. Here is what changed." } },
+        { id: tid("art-code"), type: "MediaPlaceholder", props: { label: "Code block: tokens.json schema" } },
+        { id: tid("art-p2"), type: "DemoParagraph", props: { text: "The hardest part was naming. Every team called the same value something different until we wrote them down in one place. After that, the implementation was mostly mechanical." } },
+        { id: tid("art-img"), type: "MediaPlaceholder", props: { label: "Diagram: token resolution flow" } },
+      ],
+    },
+  ],
+  footer: [
+    { id: tid("art-ft"), type: "FooterText", props: { text: "© 2026 Acme Journal · Subscribe at acme.dev" } },
+  ],
+  aiResponse: "Article applied. Title, meta, body paragraphs, code block, diagram, footer.",
+};
+
+/* ──────────────────────────────────────────────────────────────
+   8. Case-Study Grid (Portfolio)
+   ────────────────────────────────────────────────────────────── */
+const CASE_STUDY_GRID_TEMPLATE: BuilderTemplate = {
+  id: "case-study-grid",
+  label: "Case-study grid",
+  desc: "Portfolio grid of 6 case studies.",
+  icon: "grid_view",
+  interfaceType: "portfolio",
+  selectedComponents: ["cards"],
+  header: [
+    { id: tid("cs-hdr"), type: "AppBrand", props: { label: "Maya Chen", tone: "primary" } },
+  ],
+  sidebar: [],
+  body: [
+    {
+      id: tid("cs-intro"),
+      type: "LayoutGroup",
+      props: { direction: "stack", gap: 12, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("cs-eyebrow"), type: "StatusPill", props: { label: "DESIGN ENGINEER", tone: "accent" } },
+        { id: tid("cs-title"), type: "DemoHeading", props: { title: "Selected work", level: 1 } },
+      ],
+    },
+    {
+      id: tid("cs-row-1"),
+      type: "LayoutGroup",
+      props: { direction: "row", gap: 16, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("cs-1"), type: "FeatureCard", props: { title: "Northwind dashboards", body: "Series of executive dashboards for an analytics suite." }, layout: { width: "fill" } },
+        { id: tid("cs-2"), type: "FeatureCard", props: { title: "Acme tokens", body: "Token graph + Figma sync for a multi-system DS." }, layout: { width: "fill" } },
+        { id: tid("cs-3"), type: "FeatureCard", props: { title: "Vega marketplace", body: "End-to-end e-commerce redesign across 4 surfaces." }, layout: { width: "fill" } },
+      ],
+    },
+    {
+      id: tid("cs-row-2"),
+      type: "LayoutGroup",
+      props: { direction: "row", gap: 16, padding: 32 },
+      layout: { width: "fill" },
+      children: [
+        { id: tid("cs-4"), type: "FeatureCard", props: { title: "Lumen onboarding", body: "Multi-step wizard with progressive disclosure." }, layout: { width: "fill" } },
+        { id: tid("cs-5"), type: "FeatureCard", props: { title: "Polaris CMS", body: "Editorial workflow for a publishing platform." }, layout: { width: "fill" } },
+        { id: tid("cs-6"), type: "FeatureCard", props: { title: "Helio settings", body: "Granular permission UI for a B2B product." }, layout: { width: "fill" } },
+      ],
+    },
+  ],
+  footer: [
+    { id: tid("cs-ft"), type: "FooterText", props: { text: "© 2026 Maya Chen · hello@mayachen.dev" } },
+  ],
+  aiResponse: "Case-study grid applied. Six work samples in a 2×3 grid.",
+};
+
+/* ──────────────────────────────────────────────────────────────
    Registry + accessor
    ────────────────────────────────────────────────────────────── */
 export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
@@ -234,6 +444,10 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "settings-page": settingsPage,
   "crm-contacts": crmContacts,
   "login-flow": loginFlow,
+  "marketing-landing": MARKETING_LANDING_TEMPLATE,
+  "product-page": PRODUCT_PAGE_TEMPLATE,
+  "article": ARTICLE_TEMPLATE,
+  "case-study-grid": CASE_STUDY_GRID_TEMPLATE,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
