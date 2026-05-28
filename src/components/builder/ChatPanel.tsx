@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
@@ -9,6 +9,7 @@ import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
+import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 
 /* ═══════════════════════════════════════════
@@ -280,6 +281,31 @@ function getFreeformResponse(input: string): string {
   return "I didn't catch that. Try 'add buttons', 'remove cards', 'build a dashboard', or 'dark mode'.";
 }
 
+/* Memoised plain-text message - stable identity-keyed, so
+   re-rendering the message list while a new assistant message
+   streams in doesn't re-evaluate (or re-animate) historical
+   messages. Pairs with the last-AI-message gate in the map
+   below so only the actively-streaming message uses
+   FadingWords; everything else flows through this. */
+const MemoPlainMessage = React.memo(function MemoPlainMessage({
+  text,
+}: {
+  text: string;
+}) {
+  return <span>{text}</span>;
+});
+
+/* Memoised FadingWords wrapper so its identity is stable per
+   message id - the animation lifecycle isn't re-triggered by
+   unrelated parent renders. */
+const MemoFadingWords = React.memo(function MemoFadingWords({
+  text,
+}: {
+  text: string;
+}) {
+  return <FadingWords text={text} />;
+});
+
 /* ═══════════════════════════════════════════
    ChatPanel Component
    ═══════════════════════════════════════════ */
@@ -345,10 +371,68 @@ export function ChatPanel() {
     return { friendly, detail: null as string | null };
   })();
 
-  const { sendMessage: sendToAPI } = useChatAPI();
+  const { sendMessage: sendToAPI, abort: abortAPI } = useChatAPI();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
+
+
+  /* ── Lifecycle state for the status pill ──
+     Derived from existing signals only:
+       - isGenerating flips true when handleSend() commits
+       - the last AI message's content starts as "..." and gets
+         replaced with real text once the first SSE chunk lands
+       - when isGenerating drops back to false we briefly show
+         "done" before reverting to idle
+       - error sentinel: if the placeholder was replaced with the
+         "I'm having trouble connecting" / AI_OFF message,
+         we surface that as error briefly */
+  const [lifecycleState, setLifecycleState] = useState<LifecycleState>("idle");
+  const prevGeneratingRef = useRef(isGenerating);
+  const lastAiContent = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "ai") return messages[i].content;
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (isGenerating) {
+      /* Streaming if the placeholder has been replaced with real
+         tokens; otherwise still thinking. The placeholder string
+         "..." is set inside useChatAPI before the first chunk. */
+      if (lastAiContent && lastAiContent !== "..." && lastAiContent.length > 0) {
+        setLifecycleState("streaming");
+      } else {
+        setLifecycleState("thinking");
+      }
+      prevGeneratingRef.current = true;
+      return;
+    }
+    /* Just transitioned generating → idle. Show "done" briefly,
+       then fade to idle. The 800ms matches the spec - long
+       enough to read, short enough not to linger. */
+    if (prevGeneratingRef.current) {
+      prevGeneratingRef.current = false;
+      /* Error sentinels emitted by useChatAPI - if the last AI
+         message starts with one of these, surface as error. */
+      const isError =
+        typeof lastAiContent === "string" &&
+        (lastAiContent.startsWith("I'm having trouble connecting") ||
+          lastAiContent.startsWith("AI is off"));
+      setLifecycleState(isError ? "error" : "done");
+      const t = setTimeout(() => setLifecycleState("idle"), 800);
+      return () => clearTimeout(t);
+    }
+  }, [isGenerating, lastAiContent]);
+
+  /* Handler for the stop button - aborts the in-flight fetch and
+     drops back to idle. Mirrors the existing setGenerating(false)
+     contract so the UI consistently reflects "not running". */
+  const handleStop = () => {
+    abortAPI();
+    setGenerating(false);
+  };
 
   const hasMessages = messages.length > 0;
   const hasText = inputText.trim().length > 0;
@@ -818,9 +902,27 @@ export function ChatPanel() {
           <div className="messages-area">
             {messages.map((msg, i) => {
               const isLastAi = msg.role === "ai" && i === messages.length - 1;
+              /* Animate only the actively-streaming assistant message.
+                 Every prior assistant message + every user message
+                 renders via MemoPlainMessage so identity-stable rows
+                 don't re-trigger word-fade on parent re-renders (G6). */
+              const shouldAnimate = isLastAi && isGenerating && msg.role === "ai";
               return (
                 <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
-                  {msg.role === "ai" ? <FadingWords text={msg.content} /> : msg.content}
+                  {msg.role === "ai" ? (
+                    shouldAnimate ? (
+                      <MemoFadingWords text={msg.content} />
+                    ) : (
+                      <MemoPlainMessage text={msg.content} />
+                    )
+                  ) : (
+                    <MemoPlainMessage text={msg.content} />
+                  )}
+                  {/* Lifecycle pill - mounts below the latest assistant
+                     bubble only. State transitions cross-fade via CSS. */}
+                  {isLastAi && msg.role === "ai" && (
+                    <LifecyclePill state={lifecycleState} />
+                  )}
                   {/* Per-AI-message action row (regenerate / thumbs / copy)
                      was wired to UI only; click handlers were placeholders.
                      Hidden until properly wired (issue #73). Silent no-ops
@@ -893,14 +995,25 @@ export function ChatPanel() {
             />
             <div className="input-toolbar">
               <div className="toolbar-right">
-                <button
-                  className="send-btn"
-                  onClick={() => handleSend()}
-                  disabled={isGenerating || !hasText}
-                  aria-label="Send"
-                >
-                  <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-                </button>
+                {isGenerating ? (
+                  <button
+                    className="stop-btn"
+                    onClick={handleStop}
+                    aria-label="Stop generating"
+                    title="Stop generating"
+                  >
+                    <span className="stop-btn-glyph" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <button
+                    className="send-btn"
+                    onClick={() => handleSend()}
+                    disabled={!hasText}
+                    aria-label="Send"
+                  >
+                    <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
