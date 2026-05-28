@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useBuilder } from "../useBuilder";
-import { pushSnapshot, undo, redo, canUndo, canRedo, clearHistory } from "../useBuilderHistory";
+import { useBuilder } from "@/store/useBuilder";
+import { pushSnapshot, undo, redo, canUndo, canRedo, initBuilderHistory } from "../builderHistory";
+
+let teardown: (() => void) | null = null;
 
 function resetAll() {
   useBuilder.setState({
@@ -8,6 +10,8 @@ function resetAll() {
     headerBlocks: [],
     sidebarBlocks: [],
     footerBlocks: [],
+    selectedComponents: [],
+    activeTemplateId: null,
     designSystem: "salt",
     mode: "dark",
     density: "medium",
@@ -15,10 +19,11 @@ function resetAll() {
     colorOverrides: {},
     hasOverrides: false,
   });
-  clearHistory();
+  if (teardown) teardown();
+  teardown = initBuilderHistory();
 }
 
-describe("useBuilderHistory", () => {
+describe("builderHistory", () => {
   beforeEach(resetAll);
 
   it("starts with no undo/redo available", () => {
@@ -26,7 +31,7 @@ describe("useBuilderHistory", () => {
     expect(canRedo()).toBe(false);
   });
 
-  it("undo restores previous state", () => {
+  it("pushSnapshot + density change + undo restores density", () => {
     pushSnapshot();
     useBuilder.setState({ density: "high" });
 
@@ -57,7 +62,7 @@ describe("useBuilderHistory", () => {
     expect(canRedo()).toBe(true);
   });
 
-  it("new action after undo clears redo stack", () => {
+  it("new pushSnapshot after undo clears redo stack", () => {
     pushSnapshot();
     useBuilder.setState({ density: "high" });
     undo();
@@ -87,26 +92,22 @@ describe("useBuilderHistory", () => {
     expect(useBuilder.getState().density).toBe("medium");
   });
 
-  it("undo with no history is a no-op", () => {
+  /* Unified lib/ undo behaviour differs from the deprecated store/ stack:
+     a state change without an explicit pushSnapshot is still undo-able,
+     because the subscription auto-captures via RAF. undo() flushes any
+     pending capture synchronously before popping, so even a sync state
+     change → sync undo() round-trip restores the prior state. This is
+     the correct Cmd+Z semantics for arbitrary UI mutations. */
+  it("undo restores prior state even without explicit pushSnapshot (subscription auto-capture)", () => {
     useBuilder.setState({ density: "high" });
     undo();
-    expect(useBuilder.getState().density).toBe("high");
+    expect(useBuilder.getState().density).toBe("medium");
   });
 
   it("redo with no future is a no-op", () => {
     useBuilder.setState({ density: "high" });
     redo();
     expect(useBuilder.getState().density).toBe("high");
-  });
-
-  it("clearHistory resets stacks", () => {
-    pushSnapshot();
-    useBuilder.setState({ density: "high" });
-    expect(canUndo()).toBe(true);
-
-    clearHistory();
-    expect(canUndo()).toBe(false);
-    expect(canRedo()).toBe(false);
   });
 
   it("tracks block changes through undo", () => {
@@ -124,5 +125,42 @@ describe("useBuilderHistory", () => {
     expect(useBuilder.getState().blocks).toHaveLength(1);
     undo();
     expect(useBuilder.getState().blocks).toHaveLength(0);
+  });
+
+  /* Regression: pre-unification, an AI turn that switched designSystem
+     pushed to the (deprecated) store/useBuilderHistory stack while Cmd+Z
+     popped from lib/ — the lib/ snapshot didn't even carry `designSystem`,
+     so the user saw blocks revert but the DS stayed on the new one.
+     This test pins the unified behaviour: a single pushSnapshot() before
+     mutating DS + blocks together, followed by one undo(), restores BOTH. */
+  it("undo restores designSystem AND blocks after a combined AI turn", () => {
+    pushSnapshot();
+    useBuilder.setState({
+      designSystem: "fluent",
+      blocks: [{ id: "ai-1", type: "SimulatedCard", props: {} }],
+    });
+
+    expect(useBuilder.getState().designSystem).toBe("fluent");
+    expect(useBuilder.getState().blocks).toHaveLength(1);
+
+    undo();
+
+    expect(useBuilder.getState().designSystem).toBe("salt");
+    expect(useBuilder.getState().blocks).toHaveLength(0);
+  });
+
+  it("undo restores colorOverrides + hasOverrides", () => {
+    pushSnapshot();
+    useBuilder.setState({
+      colorOverrides: { "--salt-palette-accent": "#FF00AA" },
+      hasOverrides: true,
+    });
+
+    expect(useBuilder.getState().hasOverrides).toBe(true);
+
+    undo();
+
+    expect(useBuilder.getState().colorOverrides).toEqual({});
+    expect(useBuilder.getState().hasOverrides).toBe(false);
   });
 });
