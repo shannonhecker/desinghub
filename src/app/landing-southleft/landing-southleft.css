@@ -33,20 +33,28 @@ html:has(.landing-southleft) body {
 }
 
 .landing-southleft {
-  /* ── Local palette (dark / cream / orange-coral / taupe) ─────────────── */
-  --lsl-bg:           #161513;  /* near-black, slight warm cast */
-  --lsl-bg-soft:      #1F1D1A;  /* one step up for nav-on-scroll */
-  --lsl-fg:           #EFEAE0;  /* warm cream — body */
-  --lsl-fg-strong:    #FAF5EB;  /* bright cream — display */
-  --lsl-fg-muted:     #A89B82;  /* taupe — sub-copy / lede */
-  --lsl-fg-subtle:    #7A6F5C;  /* deeper taupe — labels / fine print */
-  --lsl-rule:         rgba(239, 234, 224, 0.10);
-  --lsl-rule-strong:  rgba(239, 234, 224, 0.20);
-  --lsl-accent:       #6750A4;  /* brand violet (Design Hub --dh-brand-primary) */
-  --lsl-accent-hover: #7860B5;
-  --lsl-accent-soft:  rgba(103, 80, 164, 0.16);
-  --lsl-amber:        #D9905D;  /* warm secondary for eyebrow numerics + tags */
-  --lsl-amber-soft:   rgba(217, 144, 93, 0.18);
+  /* ── Palette pulled from the portfolio's uoaui case study ────────────────
+     Source: shannonhecker.com/project-uoaui.html + assets/dark-mode.css.
+     Brand quartet: Teal Input #49D0BE · Purple Compute #8A58C9 ·
+     Peach Output #E5A999 · Midnight Canvas #0B1120. Emphasis tiers follow
+     the portfolio's M2/M3 white-alpha convention (0.87 / 0.60 / 0.53). */
+  --lsl-bg:           #0B1120;  /* Midnight Canvas — brand canvas */
+  --lsl-bg-soft:      #131A2A;  /* one step up for nav-on-scroll */
+  --lsl-fg:           rgba(255, 255, 255, 0.87);  /* high emphasis */
+  --lsl-fg-strong:    #FFFFFF;                    /* display + brand mark */
+  --lsl-fg-muted:     rgba(255, 255, 255, 0.60);  /* medium emphasis */
+  --lsl-fg-subtle:    rgba(255, 255, 255, 0.45);  /* hint / fine print */
+  --lsl-rule:         rgba(255, 255, 255, 0.12);
+  --lsl-rule-strong:  rgba(255, 255, 255, 0.22);
+  --lsl-accent:       #49D0BE;  /* Teal Input — primary accent + focus ring */
+  --lsl-accent-hover: #5EDFCB;
+  --lsl-accent-soft:  rgba(73, 208, 190, 0.16);
+  --lsl-amber:        #E5A999;  /* Peach Output — secondary highlight */
+  --lsl-amber-soft:   rgba(229, 169, 153, 0.18);
+  --lsl-purple:       #8A58C9;  /* Purple Compute — AI / processing accent */
+  --lsl-purple-soft:  rgba(138, 88, 201, 0.20);
+  --lsl-aurora-cyan:  rgba(130, 224, 255, 0.10);
+  --lsl-aurora-pale:  rgba(175, 240, 255, 0.06);
 
   /* ── Type scale ──────────────────────────────────────────────────────── */
   --lsl-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
@@ -263,6 +271,73 @@ html:has(.landing-southleft) body {
   border-color: var(--lsl-accent);
 }
 
+/* ── Hero aurora wash (Midnight Canvas + cyan/pale glow) ──────────────
+   Mirrors the portfolio's .proj-nda-glow motif: low-alpha radials
+   layered over the bg. Pure decoration, never interferes with content. */
+.landing-southleft .lsl-hero {
+  position: relative;
+  overflow: hidden;
+}
+.landing-southleft .lsl-hero-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 70% at 18% 18%,  var(--lsl-aurora-cyan) 0%, transparent 70%),
+    radial-gradient(50% 60% at 82% 30%,  var(--lsl-aurora-pale) 0%, transparent 75%),
+    radial-gradient(40% 50% at 60% 90%,  rgba(138, 88, 201, 0.07) 0%, transparent 70%);
+}
+.landing-southleft .lsl-hero > .lsl-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Hero demo (restored from portfolio) ───────────────────────────────
+   Glassy frame, cyan-tinted ring, soft outer glow. The same treatment
+   the portfolio uses on .proj-cover for uoaui. */
+.landing-southleft .lsl-hero-demo {
+  margin: 64px 0 0;
+  max-width: 1080px;
+}
+.landing-southleft .lsl-hero-demo-frame {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--lsl-bg-soft);
+  border: 1px solid var(--lsl-rule-strong);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 30px 80px rgba(11, 17, 32, 0.55),
+    0 0 0 1px rgba(73, 208, 190, 0.18),
+    0 0 60px -10px rgba(73, 208, 190, 0.20);
+  isolation: isolate;
+}
+.landing-southleft .lsl-hero-demo-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+/* Subtle inner gradient — masks any letterboxing + ties video to bg */
+.landing-southleft .lsl-hero-demo-shield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(11, 17, 32, 0.0)  0%,
+    rgba(11, 17, 32, 0.0)  70%,
+    rgba(11, 17, 32, 0.35) 100%);
+}
+.landing-southleft .lsl-hero-demo-caption {
+  margin: 16px 0 0;
+  font-family: var(--lsl-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--lsl-fg-subtle);
+}
+
 /* ── Section divider ──────────────────────────────────────────────────── */
 .landing-southleft .lsl-rule {
   height: 1px;
@@ -340,17 +415,19 @@ html:has(.landing-southleft) body {
    --lsl-rule flips with the card. Single rule, four cards' worth of work. */
 .landing-southleft .lsl-service-card:hover,
 .landing-southleft .lsl-service-card:focus-visible {
-  --lsl-bg:           #FAF5EB;
-  --lsl-fg:           #1A1815;
-  --lsl-fg-strong:    #0E0D0C;
-  --lsl-fg-muted:     #5A5347;
-  --lsl-fg-subtle:    #7A6F5C;
-  --lsl-rule:         rgba(26, 24, 21, 0.10);
-  --lsl-rule-strong:  rgba(26, 24, 21, 0.22);
-  background: #FAF5EB;
-  color: #1A1815;
+  --lsl-bg:           #FFFFFF;                  /* portfolio's primary inversion target */
+  --lsl-fg:           rgba(11, 17, 32, 0.87);   /* Midnight ink at high emphasis */
+  --lsl-fg-strong:    #0B1120;                  /* Midnight Canvas as solid ink */
+  --lsl-fg-muted:     rgba(11, 17, 32, 0.60);
+  --lsl-fg-subtle:    rgba(11, 17, 32, 0.45);
+  --lsl-rule:         rgba(11, 17, 32, 0.10);
+  --lsl-rule-strong:  rgba(11, 17, 32, 0.22);
+  background: #FFFFFF;
+  color: rgba(11, 17, 32, 0.87);
   border-color: transparent;
   transform: translateY(-2px);
+  box-shadow: 0 18px 60px rgba(73, 208, 190, 0.18),
+              0 2px 8px rgba(11, 17, 32, 0.20);
 }
 
 .landing-southleft .lsl-card-arrow {
@@ -429,19 +506,19 @@ html:has(.landing-southleft) body {
 /* Card 1 morph surface needs a hairline so it's visible against any
    wrapper bg (cycles between white-ish DS-canonical surfaces). */
 .landing-southleft .lsl-morph-card {
-  stroke: rgba(0, 0, 0, 0.10);
+  stroke: rgba(11, 17, 32, 0.18);
   stroke-width: 1;
 }
 
 /* Card 2 component-card surface — uses a step-up tone over wrapper bg.
    Inverted on hover via .lsl-service-card:hover scoping below. */
 .landing-southleft .lsl-tokens-target {
-  fill: var(--lsl-tokens-target-bg, #2A2724);
+  fill: var(--lsl-tokens-target-bg, #131A2A);
   stroke: currentColor;
-  stroke-opacity: 0.18;
+  stroke-opacity: 0.20;
 }
 .landing-southleft .lsl-service-card:hover .lsl-tokens-target {
-  --lsl-tokens-target-bg: #EAE3D2;
+  --lsl-tokens-target-bg: #F1F3F8;
 }
 .landing-southleft .lsl-shape-neutral {
   fill: var(--lsl-fg-muted);
@@ -474,7 +551,7 @@ html:has(.landing-southleft) body {
   20%, 36%  { fill: #6750A4; rx: 20; }  /* M3 purple pill */
   40%, 56%  { fill: #0F6CBD; rx: 4; }   /* Fluent blue */
   60%, 76%  { fill: #0F62FE; rx: 0; }   /* Carbon flat IBM blue */
-  80%, 100% { fill: #6750A4; rx: 13; }  /* uoaui violet pill */
+  80%, 100% { fill: #49D0BE; rx: 13; }  /* uoaui Teal Input pill */
 }
 @keyframes lsl-morph-label {
   0%, 16%   { content: "SALT"; }
@@ -525,14 +602,14 @@ html:has(.landing-southleft) body {
   100%    { transform: translate(40px, 132px); opacity: 0; }
 }
 @keyframes lsl-tokens-target {
-  0%, 60%   { fill: var(--lsl-tokens-target-bg, #2A2724); stroke: rgba(103, 80, 164, 0.18); }
-  65%, 90%  { fill: rgba(103, 80, 164, 0.30);            stroke: rgba(103, 80, 164, 0.60); }
-  100%      { fill: var(--lsl-tokens-target-bg, #2A2724); stroke: rgba(103, 80, 164, 0.18); }
+  0%, 60%   { fill: var(--lsl-tokens-target-bg, #131A2A); stroke: rgba(73, 208, 190, 0.18); }
+  65%, 90%  { fill: rgba(73, 208, 190, 0.28);            stroke: rgba(73, 208, 190, 0.60); }
+  100%      { fill: var(--lsl-tokens-target-bg, #131A2A); stroke: rgba(73, 208, 190, 0.18); }
 }
 @keyframes lsl-tokens-target-btn {
-  0%, 85%   { fill: #6750A4; }
-  90%, 98%  { fill: #D9905D; }
-  100%      { fill: #6750A4; }
+  0%, 85%   { fill: #49D0BE; }
+  90%, 98%  { fill: #E5A999; }
+  100%      { fill: #49D0BE; }
 }
 .landing-southleft .lsl-token-particle {
   transform-box: fill-box;

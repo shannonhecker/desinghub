@@ -103,7 +103,7 @@ function GraphicTokenFlow() {
       {[0, 1, 2, 3].map((i) => (
         <g key={i}>
           <rect x="30" y={46 + i * 36} width="14" height="14" rx="3"
-                fill={["#6750A4", "#D9905D", "#A89B82", "currentColor"][i]} />
+                fill={["#49D0BE", "#E5A999", "#8A58C9", "currentColor"][i]} />
           <rect x="50" y={50 + i * 36} width="30" height="6" rx="2"
                 fill="currentColor" opacity="0.5" />
         </g>
@@ -118,10 +118,10 @@ function GraphicTokenFlow() {
       <rect x="166" y="96" width="90" height="5" rx="2" fill="currentColor" opacity="0.30"
             className="lsl-on-tokens-target" />
       <rect className="lsl-tokens-target-btn"
-            x="166" y="124" width="64" height="24" rx="12" fill="#6750A4" />
+            x="166" y="124" width="64" height="24" rx="12" fill="#49D0BE" />
       {/* Travelling token (animated) */}
-      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#6750A4" />
-      <circle className="lsl-token-particle lsl-token-particle-2" r="6" fill="#D9905D" />
+      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#49D0BE" />
+      <circle className="lsl-token-particle lsl-token-particle-2" r="6" fill="#E5A999" />
     </svg>
   );
 }
@@ -149,11 +149,11 @@ function GraphicDragDrop() {
       {/* Drop-zone hint, fades out as the ghost lands */}
       <rect className="lsl-drag-target"
             x="154" y="92" width="118" height="40" rx="6"
-            fill="rgba(103,80,164,0.10)" stroke="#6750A4" strokeDasharray="3 3" />
+            fill="rgba(73,208,190,0.10)" stroke="#49D0BE" strokeDasharray="3 3" />
       {/* Travelling ghost (animated from sidebar → canvas) */}
       <rect className="lsl-drag-ghost"
             x="32" y="124" width="62" height="36" rx="6"
-            fill="#6750A4" />
+            fill="#49D0BE" />
     </svg>
   );
 }
@@ -174,7 +174,7 @@ function GraphicBriefVariants() {
             x="50" y="42" width="0" height="6" rx="2" fill="currentColor" opacity="0.85" />
       {/* Cursor — blinks at end of typing range */}
       <rect className="lsl-brief-cursor"
-            x="50" y="36" width="2" height="18" fill="#D9905D" />
+            x="50" y="36" width="2" height="18" fill="#E5A999" />
       {/* Three variant cards (animate-in stagger) */}
       <rect className="lsl-brief-variant lsl-brief-variant-1"
             x="20"  y="92" width="88" height="100" rx="8"
@@ -195,7 +195,7 @@ function GraphicBriefVariants() {
           <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="currentColor" opacity="0.30" />
           <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="currentColor" opacity="0.30" />
           <rect x={x + 12} y="162" width="44" height="18" rx="9"
-                fill={i === 1 ? "#6750A4" : "#D9905D"} opacity={i === 1 ? 1 : 0.7} />
+                fill={i === 1 ? "#49D0BE" : "#E5A999"} opacity={i === 1 ? 1 : 0.7} />
         </g>
       ))}
     </svg>
@@ -391,12 +391,12 @@ const SYSTEMS: readonly SystemSpec[] = [
   },
   {
     name: "uoaui",
-    brand: "#6750A4",
+    brand: "#49D0BE",  // Teal Input — uoaui primary
     surface: "rgba(255,255,255,0.06)",
-    ink: "#FAF5EB",
+    ink: "#FFFFFF",
     radius: 14,
     btnRadius: 999,
-    stroke: "rgba(239,234,224,0.18)",
+    stroke: "rgba(255,255,255,0.18)",
     href: "/builder?ds=uoaui",
   },
 ] as const;
@@ -406,12 +406,12 @@ const SYSTEMS: readonly SystemSpec[] = [
    surface of the design system, not decorative swatches. */
 
 const COLOR_TOKENS = [
-  { name: "--dh-brand-primary", hex: "#6750A4", role: "Brand · CTA" },
-  { name: "--lsl-amber",        hex: "#D9905D", role: "Secondary highlight" },
-  { name: "--lsl-bg",           hex: "#161513", role: "Surface · canvas" },
-  { name: "--lsl-fg",           hex: "#EFEAE0", role: "Ink · body" },
-  { name: "--lsl-fg-muted",     hex: "#A89B82", role: "Ink · muted" },
-  { name: "--lsl-rule",         hex: "rgba(239,234,224,0.10)", role: "Hairline" },
+  { name: "--lsl-accent",  hex: "#49D0BE",                 role: "Teal Input · primary"   },
+  { name: "--lsl-purple",  hex: "#8A58C9",                 role: "Purple Compute · AI"    },
+  { name: "--lsl-amber",   hex: "#E5A999",                 role: "Peach Output · result"  },
+  { name: "--lsl-bg",      hex: "#0B1120",                 role: "Midnight Canvas · surface" },
+  { name: "--lsl-fg",      hex: "rgba(255,255,255,0.87)",  role: "Ink · high emphasis"    },
+  { name: "--lsl-fg-muted",hex: "rgba(255,255,255,0.60)",  role: "Ink · medium"           },
 ] as const;
 
 const TYPE_TOKENS = [
@@ -512,31 +512,63 @@ export default function LandingSouthleftPage() {
 
       {/* ── Hero ── */}
       <section className="lsl-hero" aria-labelledby="lsl-hero-headline">
+        {/* Aurora wash — cyan + pale glow, matches portfolio's .proj-nda-glow
+            motif. Pure decoration, kept under content. */}
+        <div className="lsl-hero-aurora" aria-hidden="true" />
+
         <div className="lsl-container">
           <p className="lsl-hero-eyebrow" data-reveal>
-            uoaui.ai / workbench
+            uoaui.ai / dark-mode first
           </p>
           <h1
             id="lsl-hero-headline"
             className="lsl-hero-headline"
             data-reveal
           >
-            Design across five systems, <em>without picking a winner</em>.
+            A visual web builder for designers who <em>think in systems</em>.
           </h1>
           <p className="lsl-hero-sub" data-reveal>
-            A canvas for product teams that need to reason about Salt, Material
-            3, Fluent 2, Carbon, and uoaui as peers. Token-aware, drag and
-            drop, and built so the prototype and the production shape rhyme.
+            UI Kit plus private-preview Builder across Salt, Material 3,
+            Fluent 2, Carbon, and the uoaui system. Token-aware, dark-mode
+            first, with vibrant aurora accents.
           </p>
           <div className="lsl-hero-actions" data-reveal>
             <Link href="/builder" className="lsl-cta">
               Open the workbench
             </Link>
-            <a className="lsl-hero-secondary" href="#services">
-              See what it does
+            <a className="lsl-hero-secondary" href="#demo">
+              Watch the demo
               <span aria-hidden="true">{"→"}</span>
             </a>
           </div>
+
+          {/* Demo video — restored from the portfolio. Matches the
+              shannonhecker.com/project-uoaui.html cover treatment:
+              autoplay/muted/loop/playsinline + theme-aware framing. */}
+          <figure
+            id="demo"
+            className="lsl-hero-demo"
+            data-reveal
+            aria-label="uoaui.ai builder walkthrough"
+          >
+            <div className="lsl-hero-demo-frame">
+              <video
+                className="lsl-hero-demo-video"
+                src="/landing-southleft/uoaui-demo.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+              />
+              <div className="lsl-hero-demo-shield" aria-hidden="true" />
+            </div>
+            <figcaption className="lsl-hero-demo-caption">
+              Live capture · Workbench across Salt, Material 3, Fluent 2,
+              Carbon, and uoaui
+            </figcaption>
+          </figure>
         </div>
       </section>
 
