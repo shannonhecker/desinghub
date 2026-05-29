@@ -1227,7 +1227,8 @@
 [data-builder-mode="preview"] .bc-chip-rail,
 [data-builder-mode="preview"] .bc-resize-hud,
 [data-builder-mode="preview"] .insertion-slot,
-[data-builder-mode="preview"] .bp-sidebar-resize-handle {
+[data-builder-mode="preview"] .bp-sidebar-resize-handle,
+[data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
 /* Preview mode: strip selection outlines + hover borders from
@@ -6295,9 +6296,13 @@
 @media (prefers-reduced-motion: reduce) {
   .canvas-block { animation: none; }
 }
-.canvas-block:hover {
-  border-color: var(--ds-border);
-}
+/* E2 (2026-05-29): bare .canvas-block hover no longer paints its own
+   border. The hover affordance now lives inside <HoverInspector> as
+   a dashed 1px outline gated by HOVER_DELAY_MS so it doesn't strobe
+   on quick pointer movement. The [data-builder-mode="edit"]
+   .canvas-block:hover marker selector at the top of this file (E1
+   chrome-gating block) remains as the structural anchor; the actual
+   visual hover state has moved into .hover-inspector below. */
 .canvas-block.is-dragging {
   opacity: 0.5;
   z-index: 100;
@@ -6417,12 +6422,104 @@
 
 /* Suppress canvas-block-handle / -remove / -swap inside the sidebar
    rail even if a future change forgets the React-side gate. Belt-and-
-   braces for S1, the JSX gate in SortableBlock is the primary fix. */
-.canvas-block[data-zone="sidebar"] > .canvas-block-handle,
-.canvas-block[data-zone="sidebar"] > .canvas-block-remove,
-.canvas-block[data-zone="sidebar"] > .canvas-block-swap,
-.canvas-block[data-zone="sidebar"] > .canvas-block-colspan {
+   braces for S1, the JSX gate in SortableBlock is the primary fix.
+   E2 (2026-05-29): widened to descendant selectors so it also catches
+   chrome rendered inside .hover-inspector (which is the new home for
+   handle / remove / swap in Edit mode). */
+.canvas-block[data-zone="sidebar"] .canvas-block-handle,
+.canvas-block[data-zone="sidebar"] .canvas-block-remove,
+.canvas-block[data-zone="sidebar"] .canvas-block-swap,
+.canvas-block[data-zone="sidebar"] .canvas-block-colspan,
+.canvas-block[data-zone="sidebar"] .hover-inspector {
   display: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Hover inspector (Phase E2, 2026-05-29 builder UX cleanup)
+   ════════════════════════════════════════════════════════════
+   Replaces the always-on per-block edit chrome with a hover-
+   activated inspector. Rendered as a child of .canvas-block by
+   <HoverInspector>. Two visual states keyed off wrapper classes:
+     .is-hovered : 1px dashed --bc-border outline, no badges.
+     .is-pinned  : 2px solid --builder-selection-color outline +
+                   4 corner badges, controls fully visible.
+
+   Anti-slop: outline ≤ 2px, badges 6×6px with --bc-radius-xs
+   (3px) corner rounding. Reduce-motion: fade-in transition is
+   gated by --bc-duration-fast which the chrome-tokens.css
+   @media (prefers-reduced-motion) block resets to 0ms.
+   Preview mode: HoverInspector returns null when
+   usePreviewMode.mode === "preview", so no rules needed here.
+   ════════════════════════════════════════════════════════════ */
+.hover-inspector {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  /* Reduce-motion friendly fade-in. --bc-duration-fast resolves
+     to 0ms under the global prefers-reduced-motion rule. */
+  animation: hover-inspector-in var(--bc-duration-fast, 120ms) var(--bc-ease, ease-out);
+}
+@keyframes hover-inspector-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-inspector { animation: none; }
+}
+
+/* Outline layer — sits at the block bounds. Hover = dashed, pin = solid.
+   Pointer-events disabled so the outline never intercepts clicks meant
+   for the rendered block content underneath. */
+.hover-inspector-outline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: var(--ds-radius, 8px);
+  transition: border-color var(--bc-duration-fast, 120ms) var(--bc-ease, ease-out),
+              outline-color var(--bc-duration-fast, 120ms) var(--bc-ease, ease-out);
+}
+.hover-inspector.is-hovered .hover-inspector-outline {
+  outline: 1px dashed var(--bc-border);
+  outline-offset: 2px;
+}
+.hover-inspector.is-pinned .hover-inspector-outline {
+  outline: var(--builder-selection-outline-width, 2px) solid var(--builder-selection-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--builder-selection-ring);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-inspector-outline { transition: none; }
+}
+
+/* Corner badges — pinned state only. 6×6px sharp squares with 3px (--bc-radius-xs)
+   corner rounding. Anti-slop: no shimmer, no gradient. */
+.hover-inspector-corner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--builder-selection-color);
+  border-radius: var(--bc-radius-xs, 3px);
+  pointer-events: none;
+}
+.hover-inspector-corner--tl { top: -4px;    left: -4px; }
+.hover-inspector-corner--tr { top: -4px;    right: -4px; }
+.hover-inspector-corner--bl { bottom: -4px; left: -4px; }
+.hover-inspector-corner--br { bottom: -4px; right: -4px; }
+
+/* Chrome controls inside the inspector are interactive — re-enable
+   pointer-events on the handle/remove/swap. The old .canvas-block:hover
+   reveals stay compatible: when the user mouse-overs the block, the
+   chrome appears (after the JS-driven 80ms delay) and the existing
+   opacity:0 → 1 transition on the controls completes inside the
+   hover-inspector fade-in. We force opacity:1 here for the pinned
+   case (pointer may have moved off the block, leaving the parent
+   :hover false). */
+.hover-inspector .canvas-block-handle,
+.hover-inspector .canvas-block-remove,
+.hover-inspector .canvas-block-swap {
+  pointer-events: auto;
+  opacity: 1;
 }
 
 .canvas-block-label {

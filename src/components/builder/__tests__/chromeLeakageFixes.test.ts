@@ -40,20 +40,24 @@ const sizeChipRail = readFileSync(join(builderDir, "SizeChipRail.tsx"), "utf8");
 const chromeTokens = readFileSync(join(builderDir, "chrome-tokens.css"), "utf8");
 const builderCss = readFileSync(join(builderDir, "builder.css"), "utf8");
 
-describe("S1 / A1, sidebar chrome gating in SortableBlock", () => {
-  it("guards drag handle behind zone !== 'sidebar'", () => {
-    expect(sortableBlock).toMatch(/zone !== "sidebar"[\s\S]*canvas-block-handle/);
+describe("S1 / A1, sidebar chrome gating (E2 refactor: now lives inside HoverInspector)", () => {
+  /* E2 (2026-05-29) moved the per-block edit chrome (handle / remove /
+     swap) out of SortableBlock's direct JSX and into <HoverInspector>.
+     The sidebar bail-out moved with it. These tests now verify the new
+     architecture: SortableBlock mounts <HoverInspector>, HoverInspector
+     bails out on sidebar zone, and the colspan badge (still owned by
+     SortableBlock) still has its sidebar guard. */
+  const hoverInspector = readFileSync(join(builderDir, "HoverInspector.tsx"), "utf8");
+
+  it("SortableBlock mounts <HoverInspector> with zone forwarded", () => {
+    expect(sortableBlock).toMatch(/<HoverInspector[\s\S]*?zone=\{zone\}/);
   });
 
-  it("guards remove button behind zone !== 'sidebar'", () => {
-    expect(sortableBlock).toMatch(/onRemove && zone !== "sidebar"/);
+  it("HoverInspector returns null when zone === 'sidebar'", () => {
+    expect(hoverInspector).toMatch(/zone\s*===\s*"sidebar"/);
   });
 
-  it("guards swap button behind zone !== 'sidebar'", () => {
-    expect(sortableBlock).toMatch(/onSwapClick && !compact && zone !== "sidebar"/);
-  });
-
-  it("guards legacy colspan badge behind zone !== 'sidebar'", () => {
+  it("guards legacy colspan badge behind zone !== 'sidebar' (still in SortableBlock)", () => {
     expect(sortableBlock).toMatch(/onColSpanChange && !compact && !experimentalLayout && zone !== "sidebar"/);
   });
 
@@ -150,10 +154,23 @@ describe("S1, builder.css belt-and-braces sidebar zone gate", () => {
 });
 
 describe("A1, body-zone selection chrome docks above the block", () => {
-  it("shifts handle / remove / swap to a negative top when selected outside sidebar", () => {
+  /* E2 (2026-05-29): inspector chrome now lives inside <HoverInspector>,
+     a child of .canvas-block. The legacy direct-child docking shift rule
+     below is preserved as a no-op for any future regression that puts
+     chrome back as a direct child of .canvas-block. The active visual
+     "is-pinned" state ships via .hover-inspector.is-pinned styling
+     (outline + corner badges); the docking shift is no longer the
+     primary affordance. */
+  it("preserves legacy direct-child docking shift rule (no-op now, regression guard)", () => {
     expect(builderCss).toMatch(
       /\.canvas-block\.is-selected:not\(\[data-zone="sidebar"\]\)[\s\S]*top:\s*calc\(/,
     );
+  });
+
+  it("ships .hover-inspector.is-pinned outline + corner badges as the new pin state", () => {
+    expect(builderCss).toMatch(/\.hover-inspector\.is-pinned\s+\.hover-inspector-outline\s*\{/);
+    expect(builderCss).toMatch(/\.hover-inspector-corner--tl/);
+    expect(builderCss).toMatch(/\.hover-inspector-corner--br/);
   });
 });
 
