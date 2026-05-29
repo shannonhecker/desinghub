@@ -4,6 +4,7 @@ import { useCallback, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
 import { applyAIActions } from "./applyAIActions";
+import { cleanHistoryForAPI } from "./cleanMessageHistory";
 
 /**
  * Hook that sends messages to the Claude API endpoint and streams the response.
@@ -16,11 +17,13 @@ export function useChatAPI() {
   const sendMessage = useCallback(async (userText: string): Promise<void> => {
     const store = useBuilder.getState();
 
-    // Build message history for context (last 20 messages)
-    const history = store.messages.slice(-20).map((m) => ({
-      role: m.role === "ai" ? "assistant" as const : "user" as const,
-      content: m.content,
-    }));
+    /* Build message history for context (last 20 turns).
+       cleanHistoryForAPI strips the `[Current state: ...]\n\n` prefix
+       from PRIOR turns - the current turn's prefix is freshly injected
+       below so the API only ever sees one authoritative state snapshot
+       per request. Without this, prefixes from previous turns stack
+       up as stale context noise (G7 + G15). */
+    const history = cleanHistoryForAPI(store.messages);
 
     // Add current message with context - includes the clicked/selected
     // block when the user has scoped their message to a specific element.
