@@ -10,7 +10,34 @@ import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
+import { ContextStrip } from "./ContextStrip";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
+import ReactMarkdown from "react-markdown";
+
+/* ── Markdown render config (Phase 2b G16) ────────────────────
+   react-markdown handles sanitisation natively (no
+   dangerouslySetInnerHTML), so we only restrict the rendered
+   subset via component overrides.
+
+   Allowed: bold, italic, inline code, code blocks, links.
+   Links auto-get rel="noopener noreferrer" + target="_blank"
+   so opened references can't reach back into the builder. */
+const MD_COMPONENTS = {
+  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    // eslint-disable-next-line jsx-a11y/anchor-has-content
+    <a {...props} rel="noopener noreferrer" target="_blank" />
+  ),
+};
+
+/* Heuristic: skip ReactMarkdown when the content has no markdown
+   markers - cheap path that avoids running the parser for every
+   "Theme updated!" style local-pipeline reply. Catches **bold**,
+   *italic*, `code`, ```fences```, and [links](...). */
+function hasMarkdown(text: string): boolean {
+  return /\*\*[^*]+\*\*|(?:^|[^*])\*[^*\n]+\*|`[^`]+`|```|\[[^\]]+\]\([^)]+\)/.test(
+    text,
+  );
+}
 
 /* ═══════════════════════════════════════════
    Chat-first Builder - no mandatory wizard.
@@ -902,24 +929,34 @@ export function ChatPanel() {
           <div className="messages-area">
             {messages.map((msg, i) => {
               const isLastAi = msg.role === "ai" && i === messages.length - 1;
-              /* Animate only the actively-streaming assistant message.
-                 Every prior assistant message + every user message
-                 renders via MemoPlainMessage so identity-stable rows
-                 don't re-trigger word-fade on parent re-renders (G6). */
+              /* Render strategy combines Phase 2a memoization + Phase 2b markdown:
+                 - Actively streaming last AI msg: MemoFadingWords (Phase 2a animation gate)
+                 - Earlier AI msg with markdown markers: ReactMarkdown (Phase 2b)
+                 - Earlier AI msg without markdown: MemoPlainMessage (Phase 2a memo)
+                 - User msg: MemoPlainMessage (avoid markdown parse on user content)
+                 LifecyclePill mounts below the last AI bubble only. */
               const shouldAnimate = isLastAi && isGenerating && msg.role === "ai";
+              const useMarkdown =
+                msg.role === "ai" &&
+                !shouldAnimate &&
+                hasMarkdown(msg.content);
               return (
                 <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
                   {msg.role === "ai" ? (
                     shouldAnimate ? (
                       <MemoFadingWords text={msg.content} />
+                    ) : useMarkdown ? (
+                      <div className="chat-msg-md">
+                        <ReactMarkdown components={MD_COMPONENTS}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
                     ) : (
                       <MemoPlainMessage text={msg.content} />
                     )
                   ) : (
                     <MemoPlainMessage text={msg.content} />
                   )}
-                  {/* Lifecycle pill - mounts below the latest assistant
-                     bubble only. State transitions cross-fade via CSS. */}
                   {isLastAi && msg.role === "ai" && (
                     <LifecyclePill state={lifecycleState} />
                   )}
@@ -953,6 +990,12 @@ export function ChatPanel() {
 
       {/* Input - always pinned to bottom, active from message 1 */}
       <div className="chat-input-bar">
+        {/* Context Strip (Phase 2b N3) - visual surface for the
+            `[Current state: ...]` context that useChatAPI prepends
+            invisibly to every user turn. Renders pills for Theme /
+            Mode / Scope / Density above the composer so users can
+            see (and clear, where wired) the live context. */}
+        <ContextStrip />
         {/* Scope chip - shown when a block is selected on the canvas, so
             the user has a visible confirmation that their next message
             will be scoped to that element. */}
