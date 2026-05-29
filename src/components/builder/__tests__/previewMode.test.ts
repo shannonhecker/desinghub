@@ -99,10 +99,12 @@ describe("BuilderApp root mounts data-builder-mode + keyboard listener", () => {
     expect(builderAppSrc).toMatch(/e\.key\s*===\s*"Escape"/);
   });
 
-  it("listener no-ops when focus is inside an input", () => {
-    expect(builderAppSrc).toMatch(/t\.tagName\s*===\s*"INPUT"/);
-    expect(builderAppSrc).toMatch(/t\.tagName\s*===\s*"TEXTAREA"/);
-    expect(builderAppSrc).toMatch(/t\.isContentEditable/);
+  it("listener no-ops when focus is inside an editable target (shared helper)", () => {
+    // Guard now delegates to the shared isEditableTarget helper from
+    // useBuilderShortcuts, which covers INPUT, TEXTAREA, SELECT, and
+    // contenteditable in one place. Verify import + use.
+    expect(builderAppSrc).toMatch(/import\s*\{[^}]*\bisEditableTarget\b[^}]*\}\s*from\s*["']@\/lib\/useBuilderShortcuts["']/);
+    expect(builderAppSrc).toMatch(/isEditableTarget\s*\(\s*t\s*\)/);
   });
 
   it("only Escape return-to-edit when currently in preview (no-op when edit)", () => {

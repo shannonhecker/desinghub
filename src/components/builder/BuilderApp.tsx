@@ -21,7 +21,7 @@ import { SlashInserter } from "./SlashInserter";
 import { BlockContextMenu } from "./BlockContextMenu";
 import { PreviewToggle } from "./PreviewToggle";
 import { usePreviewMode } from "@/store/usePreviewMode";
-import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
+import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
@@ -103,15 +103,7 @@ export function BuilderApp() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const t = e.target;
-      if (t instanceof HTMLElement) {
-        if (
-          t.tagName === "INPUT" ||
-          t.tagName === "TEXTAREA" ||
-          t.isContentEditable
-        ) {
-          return;
-        }
-      }
+      if (t instanceof HTMLElement && isEditableTarget(t)) return;
       const k = e.key.toLowerCase();
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.shiftKey && k === "p") {
