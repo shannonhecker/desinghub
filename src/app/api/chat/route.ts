@@ -1,5 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM_PROMPT, MODEL_ID } from "@/lib/chatSystem";
+import { MODEL_ID } from "@/lib/chatSystem";
+import {
+  buildSystemPrompt,
+  VALID_DESIGN_SYSTEMS,
+} from "@/lib/buildSystemPrompt";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const MAX_MESSAGES = 40;
@@ -61,7 +65,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { messages } = body as Record<string, unknown>;
+  const { messages, designSystem } = body as Record<string, unknown>;
 
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     return new Response(
@@ -77,13 +81,29 @@ export async function POST(req: Request) {
     );
   }
 
+  /* Strict allowlist guard. Anything non-canonical (including
+     prompt-injection attempts like "<script>...") is rejected
+     before the value can be folded into the system prompt. */
+  if (
+    designSystem !== undefined &&
+    (typeof designSystem !== "string" ||
+      !(VALID_DESIGN_SYSTEMS as readonly string[]).includes(designSystem))
+  ) {
+    return new Response(
+      JSON.stringify({
+        error: `designSystem must be one of: ${VALID_DESIGN_SYSTEMS.join(", ")}`,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const validatedMessages = messages as { role: "user" | "assistant"; content: string }[];
   const anthropic = getClient(apiKey);
 
   const stream = await anthropic.messages.stream({
     model: MODEL_ID,
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: buildSystemPrompt((designSystem as string | undefined) ?? "salt"),
     messages: validatedMessages,
   });
 

@@ -87,7 +87,13 @@ export function useChatAPI() {
       const res = await fetch(`${basePath}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        /* Phase 4: forward the active DS so the route can build a
+           DS-aware system prompt. Route validates against an
+           allowlist; arbitrary strings get rejected with 400. */
+        body: JSON.stringify({
+          messages: history,
+          designSystem: store.designSystem,
+        }),
         signal: controller.signal,
       });
 
