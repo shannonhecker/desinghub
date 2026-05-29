@@ -1,7 +1,7 @@
 "use client";
 
 /* ════════════════════════════════════════════════════════════
-   SizeChipRail — one-click width presets shown ABOVE a selected
+   SizeChipRail, one-click width presets shown above a selected
    block (not during drag). Experimental-flag only.
 
    Chips: Auto · Fill · ⅓ · ½ · ⅔ · Custom…
@@ -17,10 +17,29 @@
    - Each chip is role="radio" with aria-checked reflecting
      whether it matches the block's current width token.
 
+   Positioning (S2, 2026-05-29 audit):
+   - Anchored to the parent .canvas-block via Floating UI useFloating.
+   - Middleware: offset(8), flip(), shift({padding: 8}), autoUpdate.
+     flip handles viewport-top occlusion (preview header) and shift
+     handles horizontal clipping at the canvas right edge.
+   - Portaled to document.body via FloatingPortal so the rail escapes
+     any ancestor overflow:hidden clip rect (preview content, sidebar
+     stacking, etc).
+   - Raw `position:absolute; left:0; top:-N` from the original v1 has
+     been removed; Floating UI owns positioning end-to-end.
+
    Styling uses --bc-* chrome tokens only.
    ════════════════════════════════════════════════════════════ */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FloatingPortal,
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
+} from "@floating-ui/react";
 import type { LayoutWidth, ZoneId } from "@/store/useBuilder";
 import { useBuilder } from "@/store/useBuilder";
 
@@ -91,9 +110,14 @@ export interface SizeChipRailProps {
   zone: ZoneId;
   blockId: string;
   currentWidth: LayoutWidth | undefined;
+  /** S2: Floating UI anchor. The parent SortableBlock passes its
+     .canvas-block element so the rail anchors next to the selected
+     block. If null (block element not yet mounted), the rail mounts
+     in the default flow until the ref resolves. */
+  anchorEl?: HTMLElement | null;
 }
 
-export function SizeChipRail({ zone, blockId, currentWidth }: SizeChipRailProps) {
+export function SizeChipRail({ zone, blockId, currentWidth, anchorEl }: SizeChipRailProps) {
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
   const zoneMode = zoneLayouts[zone]?.mode ?? "row";
@@ -106,6 +130,25 @@ export function SizeChipRail({ zone, blockId, currentWidth }: SizeChipRailProps)
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const btnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  /* Floating UI: place the rail above the anchored block by default,
+     flip below when there isn't viewport room above (preview header
+     band), shift horizontally to stay 8px inside the viewport edges.
+     autoUpdate keeps the position fresh on scroll + resize + canvas
+     reflow without manual listener bookkeeping. */
+  const { refs, floatingStyles } = useFloating({
+    placement: "top-start",
+    strategy: "fixed",
+    middleware: [
+      offset(8),
+      flip({ padding: 8 }),
+      shift({ padding: 8 }),
+    ],
+    whileElementsMounted: autoUpdate,
+  });
+  useEffect(() => {
+    refs.setReference(anchorEl ?? null);
+  }, [anchorEl, refs]);
 
   /* Re-focus the active chip when it changes (e.g. the parent
      selects a different block). Don't steal focus if the user
@@ -163,15 +206,17 @@ export function SizeChipRail({ zone, blockId, currentWidth }: SizeChipRailProps)
 
   const headingId = useMemo(() => `size-chip-rail-${blockId}`, [blockId]);
 
-  return (
+  const rail = (
     <div
+      ref={refs.setFloating}
+      style={floatingStyles}
       className="bc-chip-rail"
       role="radiogroup"
-      aria-label="Block width"
       aria-labelledby={headingId}
       onKeyDown={onKeyDown}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
+      data-testid="size-chip-rail"
     >
       <span id={headingId} className="bc-sr-only">Block width</span>
       {CHIPS.map((chip) => {
@@ -235,4 +280,9 @@ export function SizeChipRail({ zone, blockId, currentWidth }: SizeChipRailProps)
       )}
     </div>
   );
+
+  /* FloatingPortal mounts the rail as a child of document.body so
+     it escapes ancestor overflow:hidden boundaries (preview surface
+     clips, scrollable canvas containers). */
+  return <FloatingPortal>{rail}</FloatingPortal>;
 }

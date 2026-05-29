@@ -767,7 +767,13 @@ function DashboardSidebar({
         )}
       </nav>
 
-      <button className="bp-sidebar-toggle" onClick={onToggle} title="Toggle sidebar">
+      <button
+        className="bp-sidebar-toggle"
+        onClick={onToggle}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        type="button"
+      >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
     </motion.aside>
