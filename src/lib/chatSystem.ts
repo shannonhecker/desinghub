@@ -5,6 +5,9 @@
    /api/builder/generate-content together. */
 export const MODEL_ID = "claude-sonnet-4-6" as const;
 
+/** Sonnet for chat (current). Haiku reserved for generate-content (Phase 5). */
+export const MODEL_HAIKU = "claude-haiku-4-5" as const;
+
 export const SYSTEM_PROMPT = `You are "Design Hub AI", a UX Designer assistant that helps users build branded AI agent interfaces. You guide users through designing component-based UIs using one of five design systems: Salt DS (J.P. Morgan), Material 3 (Google), Fluent 2 (Microsoft), uoaui DS (a proprietary glassmorphism design system with frosted surfaces, muted teal accents, and dark aurora aesthetics), or Carbon DS (IBM - flat Swiss aesthetic with IBM Plex typography, 0px corner radius, and the signature blue #0f62fe primary).
 
 ## Workflow Phases
