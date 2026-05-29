@@ -6290,6 +6290,30 @@
   color: #E52135;
 }
 
+/* A1 (2026-05-29 audit): when a body-zone block is selected, dock the
+   chrome row ABOVE the block bounds so handles + remove + swap don't
+   overlap the rendered content (e.g. KPI title + value). Sidebar-zone
+   chrome is suppressed entirely in SortableBlock so this only affects
+   body / header / footer rows. The -10px offset lifts the 20-24px chrome
+   tiles fully above the block top edge while their left/right anchors
+   stay aligned with the block. */
+.canvas-block.is-selected:not([data-zone="sidebar"]) > .canvas-block-handle,
+.canvas-block.is-selected:not([data-zone="sidebar"]) > .canvas-block-remove,
+.canvas-block.is-selected:not([data-zone="sidebar"]) > .canvas-block-swap {
+  top: calc(-1 * (var(--bc-size-chip, 26px) + var(--bc-gap-xs, 4px)));
+  opacity: 1;
+}
+
+/* Suppress canvas-block-handle / -remove / -swap inside the sidebar
+   rail even if a future change forgets the React-side gate. Belt-and-
+   braces for S1, the JSX gate in SortableBlock is the primary fix. */
+.canvas-block[data-zone="sidebar"] > .canvas-block-handle,
+.canvas-block[data-zone="sidebar"] > .canvas-block-remove,
+.canvas-block[data-zone="sidebar"] > .canvas-block-swap,
+.canvas-block[data-zone="sidebar"] > .canvas-block-colspan {
+  display: none !important;
+}
+
 .canvas-block-label {
   font-size: 10px;
   font-weight: 600;
@@ -8061,11 +8085,18 @@
   background: var(--ds-primary-hover);
 }
 
-/* Selected block highlight - uses DS primary token */
+/* Selected block highlight.
+   S3 (2026-05-29 audit): uses --builder-selection-color (chrome token),
+   NOT --ds-primary (per-DS brand). Selection is an editor state, not
+   a brand decision; conflating them made the outline read as "this
+   block is broken / has a permanent error border" the moment the user
+   moved their mouse away. The new token resolves to a desaturated
+   builder-blue distinct from any of the 5 supported DS brand accents. */
 .canvas-block.is-selected {
-  outline: 2px solid var(--ds-primary);
+  outline: var(--builder-selection-outline-width, 2px) solid var(--builder-selection-color);
   outline-offset: 2px;
   border-radius: var(--ds-radius, 8px);
+  box-shadow: 0 0 0 4px var(--builder-selection-ring);
 }
 
 /* ── Light mode overrides ── */
@@ -8111,7 +8142,10 @@
   background: var(--ds-primary-hover);
 }
 .builder-light .canvas-block.is-selected {
-  outline-color: var(--ds-primary);
+  /* Light-mode selection token resolves to a deeper blue (defined in
+     chrome-tokens.css under .builder-light) for contrast on light
+     preview surfaces. */
+  outline-color: var(--builder-selection-color);
 }
 
 
@@ -8812,47 +8846,92 @@
   text-align: left;
 }
 
+/* S4 (2026-05-29 audit): the collapse toggle previously rendered as a
+   full-width bordered pill in the same vertical flow as nav items,
+   reading as "another menu item that does nothing". Rebuilt with
+   chrome tokens (--bc-*) so it reads as editor chrome, not content:
+   icon-only square footprint (28x28), self-aligned to the rail edge,
+   no full-width pill border. Distinct from nav-item content treatment. */
 .bp-sidebar-toggle {
-  display: flex;
+  align-self: flex-end;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 6px;
-  padding: 6px;
-  border: 1px solid var(--ds-border);
-  border-radius: var(--ds-radius);
-  background: transparent;
-  color: var(--ds-fg-secondary);
+  width: 28px;
+  height: 28px;
+  margin: var(--bc-gap-sm, 8px);
+  padding: 0;
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-sm, 6px);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg-muted);
   cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-smooth);
+  transition: background var(--bc-duration-fast, 120ms) var(--bc-ease),
+              color var(--bc-duration-fast, 120ms) var(--bc-ease),
+              border-color var(--bc-duration-fast, 120ms) var(--bc-ease);
 }
-.bp-sidebar-toggle:hover {
-  background: var(--ds-surface-hover);
-  color: var(--ds-fg);
+@media (prefers-reduced-motion: reduce) {
+  .bp-sidebar-toggle {
+    transition: none;
+  }
+}
+.bp-sidebar-toggle:hover,
+.bp-sidebar-toggle:focus-visible {
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+  border-color: var(--bc-border-strong);
+  outline: none;
+}
+.bp-sidebar-toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
 }
 
-/* ── Dashboard sidebar resize handle ── */
+/* ── Dashboard sidebar resize handle ──
+   S5 (2026-05-29 audit): idle state previously was a 24px-tall bar in
+   --ds-border color, undiscoverable. Rebuilt with a two-dot idle hint
+   that reads as "drag column" (matches Figma / Notion column-resizer
+   visual idiom) and grows on hover. Uses --bc-* chrome tokens so the
+   handle stops borrowing per-DS brand color for chrome purposes. */
 .bp-sidebar-resize-handle {
   width: 6px;
   cursor: col-resize;
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   position: relative;
   z-index: 2;
 }
+/* Idle hint: two stacked 2px dots, ~30% opacity so it reads as a
+   suggestion rather than a control. Uses --bc-border-strong so it
+   adapts to light/dark mode via chrome-tokens.css. */
+.bp-sidebar-resize-handle::before,
 .bp-sidebar-resize-handle::after {
   content: '';
   width: 2px;
-  height: 24px;
+  height: 2px;
   border-radius: 1px;
-  background: var(--ds-border);
-  transition: background 0.15s, height 0.15s;
+  background: var(--bc-border-strong);
+  transition: background var(--bc-duration-fast, 120ms) var(--bc-ease),
+              height var(--bc-duration-fast, 120ms) var(--bc-ease),
+              width var(--bc-duration-fast, 120ms) var(--bc-ease);
 }
+.bp-sidebar-resize-handle:hover::before,
+.bp-sidebar-resize-handle.is-active::before,
 .bp-sidebar-resize-handle:hover::after,
 .bp-sidebar-resize-handle.is-active::after {
-  background: var(--ds-primary);
-  height: 40px;
+  background: var(--bc-accent);
+  width: 2px;
+  height: 16px;
+  border-radius: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-sidebar-resize-handle::before,
+  .bp-sidebar-resize-handle::after {
+    transition: none;
+  }
 }
 
 /* ── Main content area ── */
@@ -10926,15 +11005,15 @@
   outline: none;
 }
 
-/* ── SizeChipRail ── */
+/* ── SizeChipRail ──
+   S2 (2026-05-29 audit): Floating UI owns positioning end-to-end via
+   inline styles applied to the floating element. The previous raw
+   `position: absolute; left: 0; top: -N` (with a single-axis y-flip
+   fallback) clipped behind the preview header and overflowed the
+   canvas right edge. The rail is now portaled to document.body and
+   anchored via useFloating(offset + flip + shift + autoUpdate), so
+   visual styling here is positioning-agnostic. */
 .bc-chip-rail {
-  position: absolute;
-  /* Default placement: above the block. SortableBlock sets a wrapper
-     class `bc-rail-top` (default) or `bc-rail-bottom` based on the
-     block's distance from the viewport top, so blocks at the top
-     don't have their chip rail clipped. */
-  top: calc(-1 * (var(--bc-size-chip) + var(--bc-gap-sm)));
-  left: 0;
   display: inline-flex;
   align-items: center;
   gap: var(--bc-gap-xs);
@@ -10946,13 +11025,6 @@
   z-index: var(--bc-z-chip-rail);
   pointer-events: auto;
   user-select: none;
-}
-/* Issue #77 follow-up: flip chip rail below block when there's no
-   room above (block is near viewport top). Wrapper class is set by
-   SortableBlock's measurement effect. */
-.bc-rail-bottom .bc-chip-rail {
-  top: auto;
-  bottom: calc(-1 * (var(--bc-size-chip) + var(--bc-gap-sm)));
 }
 .bc-chip {
   appearance: none;

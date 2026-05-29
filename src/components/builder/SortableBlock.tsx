@@ -764,10 +764,13 @@ export function SortableBlock({
     return () => window.clearTimeout(t);
   }, []);
 
-  /* Auto-flip chip rail / actions below the block when there's no room
-     above (block is near the top of the viewport). Measure on selection
-     change, on scroll, and on resize. ~52px covers chip-rail height
-     (~32px) + gap (8px) + safety padding (12px). */
+  /* Block element ref. Forwarded to dnd-kit via setNodeRef and used as
+     the Floating UI anchor for SizeChipRail (S2, 2026-05-29 audit).
+     The pre-Floating-UI measurement effect that flipped a wrapping
+     `bc-rail-top` / `bc-rail-bottom` class was removed: Floating UI's
+     `flip()` middleware handles viewport-top occlusion directly, and
+     `shift()` handles horizontal canvas-edge collisions that the old
+     y-axis-only fallback couldn't catch. */
   const blockElRef = useRef<HTMLElement | null>(null);
   const setRefs = useCallback(
     (el: HTMLElement | null) => {
@@ -776,26 +779,6 @@ export function SortableBlock({
     },
     [setNodeRef],
   );
-  const [chipRailPlacement, setChipRailPlacement] = useState<"top" | "bottom">("top");
-  useEffect(() => {
-    if (!isSelected || !experimentalLayout) return;
-    const RAIL_CLEARANCE_PX = 52;
-    const measure = () => {
-      const el = blockElRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      setChipRailPlacement(rect.top < RAIL_CLEARANCE_PX ? "bottom" : "top");
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    /* Capture-phase listener catches scroll on any ancestor (the
-       canvas scrolls inside a container, not the window). */
-    window.addEventListener("scroll", measure, true);
-    return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
-  }, [isSelected, experimentalLayout]);
 
   const cls = [
     "canvas-block",
@@ -858,7 +841,7 @@ export function SortableBlock({
     <div
       ref={setRefs}
       style={style}
-      className={`${cls} bc-rail-${chipRailPlacement}`}
+      className={cls}
       data-block-id={id}
       data-zone={zone}
       onClickCapture={handleClickCapture}
@@ -870,22 +853,33 @@ export function SortableBlock({
         <div className="block-drop-indicator" />
       )}
 
-      {/* Drag handle */}
-      <div
-        ref={setActivatorNodeRef}
-        className="canvas-block-handle"
-        {...listeners}
-        title="Drag to reorder"
-        role="button"
-        tabIndex={0}
-        aria-roledescription="sortable"
-        aria-label="Drag handle"
-      >
-        <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
-      </div>
+      {/* Drag handle.
+          Sidebar zone (S1, 2026-05-29 audit): suppress the drag handle
+          here. The narrow rail can't host an absolute-positioned overlay
+          without stacking on top of the NavItem icon + label. Sidebar
+          NavItems are still reorderable via the row itself; remove is
+          available via the per-row remove button + the right-click
+          context menu (BlockContextMenu). */}
+      {zone !== "sidebar" && (
+        <div
+          ref={setActivatorNodeRef}
+          className="canvas-block-handle"
+          {...listeners}
+          title="Drag to reorder"
+          role="button"
+          tabIndex={0}
+          aria-roledescription="sortable"
+          aria-label="Drag handle"
+        >
+          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
+        </div>
+      )}
 
-      {/* Remove button */}
-      {onRemove && (
+      {/* Remove button.
+          Sidebar zone: suppress (S1). NavItem rows render their own
+          .bp-nav-remove-btn inline, and the context menu carries the
+          affordance for non-NavItem sidebar blocks. */}
+      {onRemove && zone !== "sidebar" && (
         <button
           className="canvas-block-remove"
           onClick={onRemove}
@@ -898,8 +892,8 @@ export function SortableBlock({
         </button>
       )}
 
-      {/* Swap button - hidden in compact mode */}
-      {onSwapClick && !compact && (
+      {/* Swap button - hidden in compact mode and in sidebar zone. */}
+      {onSwapClick && !compact && zone !== "sidebar" && (
         <button
           className="canvas-block-swap"
           onClick={onSwapClick}
@@ -914,9 +908,9 @@ export function SortableBlock({
 
       {/* Column span badge - click to cycle 1/2/3 (legacy; the
           resize handles are the primary affordance now).
-          Hidden in experimental mode — the size chip rail
-          supersedes it. */}
-      {onColSpanChange && !compact && !experimentalLayout && (
+          Hidden in experimental mode (the size chip rail
+          supersedes it) and in sidebar zone (S1 audit). */}
+      {onColSpanChange && !compact && !experimentalLayout && zone !== "sidebar" && (
         <button
           className="canvas-block-colspan"
           onClick={() => {
@@ -933,9 +927,18 @@ export function SortableBlock({
         </button>
       )}
 
-      {/* Size chip rail — experimental only, shown when selected. */}
+      {/* Size chip rail, experimental only, shown when selected.
+          S2 (2026-05-29 audit): anchored via Floating UI to the block
+          element so the rail flips + shifts away from viewport edges
+          (preview header, right-edge clip). Portaled to document.body
+          so the rail escapes ancestor overflow:hidden clip rects. */}
       {experimentalLayout && isSelected && !compact && zone && onWidthChange && (
-        <SizeChipRail zone={zone} blockId={id} currentWidth={currentWidth} />
+        <SizeChipRail
+          zone={zone}
+          blockId={id}
+          currentWidth={currentWidth}
+          anchorEl={blockElRef.current}
+        />
       )}
 
       {children}
