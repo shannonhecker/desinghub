@@ -50,6 +50,22 @@
   /* Feedback */
   --bc-danger:      #ff7a7a;
 
+  /* ─── Brand palette (E1, 2026-05-29) ─────────────────────────────
+     Verbatim from the canonical uoaui brand palette memo
+     (~/.claude/projects/-Users-shannonhecker/memory/reference_uoaui_brand_palette.md):
+       Teal Input    : #49D0BE  (maps to Edit-mode active state)
+       Peach Output  : #E5A999  (maps to Preview-mode active state)
+     Used by PreviewToggle.tsx to map the Edit / Preview pill
+     active segments to brand colors. Builder chrome only.
+     The "ring" variants are low-opacity halos for focus rings
+     and active backgrounds, matching the --bc-accent-* shape. */
+  --brand-teal:       #49D0BE;
+  --brand-teal-soft:  rgba(73, 208, 190, 0.18);
+  --brand-teal-ring:  rgba(73, 208, 190, 0.50);
+  --brand-peach:      #E5A999;
+  --brand-peach-soft: rgba(229, 169, 153, 0.20);
+  --brand-peach-ring: rgba(229, 169, 153, 0.50);
+
   /* Sizes */
   --bc-size-hit:    32px;   /* Touch target minimum for handles + */
   --bc-size-chip:   26px;   /* Chip rail item height */
