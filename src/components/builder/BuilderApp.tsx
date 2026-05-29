@@ -19,7 +19,9 @@ import { SessionsDrawer } from "./SessionsDrawer";
 import { SaveIndicator } from "./SaveIndicator";
 import { SlashInserter } from "./SlashInserter";
 import { BlockContextMenu } from "./BlockContextMenu";
-import { useBuilderShortcuts } from "@/lib/useBuilderShortcuts";
+import { PreviewToggle } from "./PreviewToggle";
+import { usePreviewMode } from "@/store/usePreviewMode";
+import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
@@ -87,6 +89,39 @@ export function BuilderApp() {
   /* Register Cmd+Z / Cmd+Shift+Z for canvas undo/redo.
      Initialized once, scoped to the builder tree. */
   useBuilderShortcuts();
+
+  /* ── Preview-mode (Phase E1, 2026-05-29) ──
+     Two modes: "edit" (default) and "preview". Preview hides all
+     editor chrome (selection borders, hover labels, drag handles,
+     remove + swap buttons, chip rail, resize handles) while
+     leaving rendered content fully interactive.
+     Shortcut: Shift+Cmd+P (Mac) / Shift+Ctrl+P (other) toggles.
+     Esc from Preview returns to Edit. The listener no-ops when
+     focus is inside an input / textarea / contenteditable so we
+     never steal keystrokes from the user typing. */
+  const builderMode = usePreviewMode((s) => s.mode);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target;
+      if (t instanceof HTMLElement && isEditableTarget(t)) return;
+      const k = e.key.toLowerCase();
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.shiftKey && k === "p") {
+        e.preventDefault();
+        usePreviewMode.getState().toggle();
+        return;
+      }
+      if (e.key === "Escape") {
+        const s = usePreviewMode.getState();
+        if (s.mode === "preview") {
+          e.preventDefault();
+          s.setMode("edit");
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   // ── Export modal ──
   const [exportOpen, setExportOpen] = useState(false);
@@ -347,8 +382,11 @@ export function BuilderApp() {
   if (isStandalone) return <StandalonePreview />;
 
   return (
-    <div className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}>
-      {/* Skip link — visually hidden until keyboard focused. WCAG 2.1
+    <div
+      className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}
+      data-builder-mode={builderMode}
+    >
+      {/* Skip link, visually hidden until keyboard focused. WCAG 2.1
           2.4.1 Bypass Blocks. Sends users past the top-bar straight to
           the chat + canvas split inside <main id="main-content">. */}
       <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -397,12 +435,14 @@ export function BuilderApp() {
             <SaveIndicator />
           </div>
 
-          {/* Right: UI Kit + Export. Dark/light toggle + Preview button
-              removed in Phase F.1 - theme lives in the preview toolbar,
-              and Preview toggle was redundant since the canvas is always
-              the workspace. */}
+          {/* Right: Preview-mode toggle (E1) + UI Kit + Export.
+              Preview toggle sits first so it reads as a primary canvas
+              control before the secondary chrome (UI Kit, Export).
+              Shortcut: Shift+Cmd+P. Esc from Preview returns to Edit. */}
           <div className="top-bar-right">
-            {/* UI Kit — passes current ds/mode/density/themeKey so
+            <PreviewToggle />
+
+            {/* UI Kit, passes current ds/mode/density/themeKey so
                 UI Kit lands on the same configuration the user is
                 already exploring in Builder. */}
             <Link

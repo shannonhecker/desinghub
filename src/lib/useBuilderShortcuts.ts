@@ -20,7 +20,7 @@ import { initBuilderHistory, undo, redo } from "./builderHistory";
 import { useBuilder } from "@/store/useBuilder";
 import { showToast } from "./toast";
 
-function isEditableTarget(t: EventTarget | null): boolean {
+export function isEditableTarget(t: EventTarget | null): boolean {
   if (!(t instanceof HTMLElement)) return false;
   if (t.isContentEditable) return true;
   const tag = t.tagName;

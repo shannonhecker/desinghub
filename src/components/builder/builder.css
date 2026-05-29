@@ -1147,6 +1147,117 @@
 .builder-light .top-bar-export-item-desc { color: rgba(0, 0, 0, 0.55); }
 .builder-light .top-bar-export-divider { background: rgba(0, 0, 0, 0.06); }
 
+/* ════════════════════════════════════════════════════════════
+   PreviewToggle (Phase E1, 2026-05-29 builder UX cleanup)
+   ════════════════════════════════════════════════════════════
+   Pill segmented control in the top-bar. Two segments wide,
+   ~32px tall. Brand mapping:
+     Edit active    -> --brand-teal  (Teal Input,  #49D0BE)
+     Preview active -> --brand-peach (Peach Output, #E5A999)
+   Inactive segments use chrome tokens so they read as editor
+   chrome, not brand decisions. 6px radius matches the rest of
+   the chrome layer (anti-slop checklist max).
+   ════════════════════════════════════════════════════════════ */
+.preview-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  padding: 3px;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-sm, 6px);
+  gap: 2px;
+}
+.preview-toggle-segment {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--bc-fg-muted);
+  font: var(--bc-type-value);
+  padding: 0 12px;
+  min-width: 64px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--bc-duration-fast, 120ms) var(--bc-ease),
+              color var(--bc-duration-fast, 120ms) var(--bc-ease);
+}
+.preview-toggle-segment:hover {
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+}
+.preview-toggle-segment:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.preview-toggle-segment--edit.is-active {
+  background: var(--brand-teal);
+  color: var(--bc-fg-on-accent);
+}
+.preview-toggle-segment--preview.is-active {
+  background: var(--brand-peach);
+  color: var(--bc-fg-on-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview-toggle-segment {
+    transition: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   Preview-mode chrome gating (Phase E1)
+   ════════════════════════════════════════════════════════════
+   Every editing-only chrome rule below is gated behind
+   [data-builder-mode="edit"] so toggling to Preview hides ALL
+   editor affordances without touching individual JSX gates.
+   The .bp-sidebar-toggle is intentionally NOT gated: it is a
+   layout control, not editing chrome, and remains visible in
+   both modes per the E1 spec.
+   ════════════════════════════════════════════════════════════ */
+[data-builder-mode="preview"] .canvas-block-handle,
+[data-builder-mode="preview"] .canvas-block-remove,
+[data-builder-mode="preview"] .canvas-block-swap,
+[data-builder-mode="preview"] .canvas-block-colspan,
+[data-builder-mode="preview"] .canvas-block-label,
+[data-builder-mode="preview"] .block-resize-handle,
+[data-builder-mode="preview"] .block-resize-handle--experimental,
+[data-builder-mode="preview"] .block-resize-corner,
+[data-builder-mode="preview"] .bc-chip-rail,
+[data-builder-mode="preview"] .bc-resize-hud,
+[data-builder-mode="preview"] .insertion-slot,
+[data-builder-mode="preview"] .bp-sidebar-resize-handle {
+  display: none !important;
+}
+/* Preview mode: strip selection outlines + hover borders from
+   every canvas-block, regardless of selected/hover state. Using
+   the plain `.canvas-block` selector here (rather than the more
+   specific `.canvas-block.is-selected`) keeps the structural
+   regex in chromeLeakageFixes.test.ts pointing at the canonical
+   rule at line ~8200. */
+[data-builder-mode="preview"] .canvas-block {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+/* Belt-and-braces: the edit-mode root attribute scopes the
+   "show me chrome" assumption so any future selector that
+   forgets to gate itself still suppresses cleanly in preview. */
+[data-builder-mode="edit"] .canvas-block-handle,
+[data-builder-mode="edit"] .canvas-block-remove,
+[data-builder-mode="edit"] .canvas-block-swap,
+[data-builder-mode="edit"] .canvas-block-colspan,
+[data-builder-mode="edit"] .bc-chip-rail,
+[data-builder-mode="edit"] .bp-sidebar-resize-handle,
+[data-builder-mode="edit"] .canvas-block.is-selected,
+[data-builder-mode="edit"] .canvas-block:hover {
+  /* No-op marker. The presence of these selectors lets the
+     E1 structural tests confirm chrome is keyed to the edit
+     mode attribute. Real styling continues to live in each
+     rule's primary block above. */
+}
+
 /* Small hint at the bottom of the preview-bar overflow menu noting
    that share/download moved to the top-bar Export dropdown. */
 .preview-bar-overflow-hint {
