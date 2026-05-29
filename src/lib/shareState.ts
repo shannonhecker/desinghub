@@ -16,6 +16,7 @@
  */
 
 import type { Block, DesignSystem, BuilderMode } from "@/store/useBuilder";
+import { isValidBlockSource } from "@/store/useBuilder";
 
 export interface SharedCanvas {
   v: 1; // schema version - bumps allow older URLs to error cleanly
@@ -124,6 +125,14 @@ function validateAndSanitizeBlock(b: unknown, depth = 1): Block | null {
   }
 
   const out: Block = { id: blk.id, type: blk.type, props: cleanProps };
+
+  /* Phase 3a: preserve provenance tag if present. Strict allowlist —
+     unknown values are dropped silently so a malicious share can't
+     ride an arbitrary string in here. Pre-Phase-3a payloads have no
+     `source` field and round-trip unchanged. */
+  if (isValidBlockSource(blk.source)) {
+    out.source = blk.source;
+  }
 
   /* Preserve layout metadata if present. The shape is a small
      key/value bag (width/min/max/grow/align/margin) so the generic

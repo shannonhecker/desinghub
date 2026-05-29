@@ -145,4 +145,21 @@ describe("applyChatComponentDelta", () => {
     applyChatComponentDelta(["cards"], [], { alsoRemoveIds: ["buttons"] });
     expect(useBuilder.getState().blocks).toHaveLength(0);
   });
+
+  /* Phase 3a (N4 Tool-Use Cards): every block landing via the chat
+     delta is stamped `source: 'chat'`. Removal predicate stays
+     type-only per Q2 — provenance is metadata, not a filter. */
+  it("Phase 3a: single-id chat add stamps source='chat'", () => {
+    applyChatComponentDelta([], ["tabs"]);
+    const blocks = useBuilder.getState().blocks;
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].source).toBe("chat");
+  });
+
+  it("Phase 3a: multi-block chat add stamps every block with source='chat'", () => {
+    applyChatComponentDelta([], ["progress"]);
+    const blocks = useBuilder.getState().blocks;
+    expect(blocks).toHaveLength(3);
+    for (const b of blocks) expect(b.source).toBe("chat");
+  });
 });
