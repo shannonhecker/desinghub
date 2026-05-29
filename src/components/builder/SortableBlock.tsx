@@ -930,7 +930,7 @@ export function SortableBlock({
           zone={zone}
           blockId={id}
           currentWidth={currentWidth}
-          anchorEl={blockElRef.current}
+          anchorRef={blockElRef}
         />
       )}
 

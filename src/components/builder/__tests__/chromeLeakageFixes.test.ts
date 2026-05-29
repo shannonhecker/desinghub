@@ -15,7 +15,7 @@
    3. SizeChipRail imports Floating UI primitives and uses
       FloatingPortal (S2).
    4. SizeChipRail wires the floating ref + style on the rail
-      and accepts an `anchorEl` prop (S2).
+      and accepts an `anchorRef` prop (S2).
    5. chrome-tokens.css declares the new `--builder-selection-*`
       token namespace and a matching light-mode override (S3).
    6. builder.css selection rule references
@@ -87,17 +87,17 @@ describe("S2, SizeChipRail Floating UI adoption", () => {
     expect(sizeChipRail).toMatch(/whileElementsMounted:\s*autoUpdate/);
   });
 
-  it("accepts an anchorEl prop and wires it to refs.setReference", () => {
-    expect(sizeChipRail).toMatch(/anchorEl\?:\s*HTMLElement \| null/);
-    expect(sizeChipRail).toMatch(/refs\.setReference\(anchorEl/);
+  it("accepts an anchorRef prop and wires it to setReference (destructured from refs)", () => {
+    expect(sizeChipRail).toMatch(/anchorRef\?:\s*React\.RefObject<HTMLElement \| null>/);
+    expect(sizeChipRail).toMatch(/setReference\(anchorRef\?\.current/);
   });
 
   it("wraps the rail in FloatingPortal so it escapes ancestor clip rects", () => {
     expect(sizeChipRail).toMatch(/<FloatingPortal>\{rail\}<\/FloatingPortal>/);
   });
 
-  it("applies floatingStyles + refs.setFloating on the rail element", () => {
-    expect(sizeChipRail).toMatch(/ref=\{refs\.setFloating\}/);
+  it("applies floatingStyles + setFloating (destructured from refs) on the rail element", () => {
+    expect(sizeChipRail).toMatch(/ref=\{setFloating\}/);
     expect(sizeChipRail).toMatch(/style=\{floatingStyles\}/);
   });
 });
