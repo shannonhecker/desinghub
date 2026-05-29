@@ -57,18 +57,23 @@ export function applyChatComponentDelta(
   const state = useBuilder.getState();
 
   /* Adds second so a subsequent "remove" in the same delta operates
-     on a stable post-add block list. */
+     on a stable post-add block list.
+
+     Phase 3a: every block landing via the chat delta carries
+     `source: 'chat'` so N4 Tool-Use Cards can render the right
+     "Undo this action" affordance. Removal predicate below stays
+     type-only per Q2 — provenance is metadata, not a filter. */
   for (const id of addedIds) {
     const multi = ID_TO_MULTI_BLOCKS[id];
     if (multi) {
       for (const mb of multi) {
-        state.addBlockFromLibrary(mb.type, { ...mb.props }, "body");
+        state.addBlockFromLibrary(mb.type, { ...mb.props }, "body", undefined, "chat");
       }
       continue;
     }
     const type = ID_TO_BLOCK[id];
     if (type) {
-      state.addBlockFromLibrary(type, {}, "body");
+      state.addBlockFromLibrary(type, {}, "body", undefined, "chat");
     }
     /* Unknown id (e.g. legacy string from an old session) — skip
        silently. The AI acknowledgement still surfaces, so the UX

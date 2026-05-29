@@ -181,9 +181,12 @@ export function useChatAPI() {
         });
       }
 
-      // Apply any actions from the response
+      // Apply any actions from the response.
+      // Phase 3a (N4): pass `lastAi.id` so each emitted tool-use event
+      // ties back to the assistant bubble that produced it. ChatPanel
+      // groups events by messageId to render the inline cards.
       if (actions.length > 0) {
-        applyAIActions(actions);
+        applyAIActions(actions, lastAi?.id);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;

@@ -94,6 +94,23 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+/* Phase 3a (N4 Tool-Use Cards): block provenance tag. Tracks where
+   the block originated so N4 cards + N9 audit log can render the
+   right "Undo this action" affordance. NOT used for removal scoping
+   per Q2 (`chatComponentDelta` removal stays type-only). Optional +
+   backward-compatible: pre-Phase-3a sessions load fine with the
+   field undefined. */
+export type BlockSource = 'chat' | 'palette' | 'template' | 'ai-action';
+const VALID_BLOCK_SOURCES: ReadonlySet<BlockSource> = new Set([
+  'chat',
+  'palette',
+  'template',
+  'ai-action',
+]);
+export function isValidBlockSource(v: unknown): v is BlockSource {
+  return typeof v === 'string' && VALID_BLOCK_SOURCES.has(v as BlockSource);
+}
+
 export interface Block {
   id: string;
   type: string;
@@ -111,6 +128,14 @@ export interface Block {
      'primary', 'brandBg' per DS). Renderer wraps the block subtree
      with an inline style that scopes the accent CSS var. */
   colorOverrides?: Record<string, string>;
+  /* Phase 3a provenance: how this block landed on the canvas.
+     `chat` = applyChatComponentDelta (free-form chat command),
+     `ai-action` = applyAIActions addBlock (Claude tool-use),
+     `palette` = drag-from-library / addBlockFromLibrary,
+     `template` = applied via a builderTemplates pattern card.
+     Lives outside `props` so `sanitizePropValue` depth doesn't
+     strip it. */
+  source?: BlockSource;
 }
 
 /* Valid LayoutGroup direction values. Mirrors LayoutMode since
@@ -321,6 +346,11 @@ interface BuilderState {
     defaults: Record<string, unknown>,
     preferZone?: ZoneId,
     index?: number,
+    /* Phase 3a provenance: how the block was added. Defaults to
+       `palette` (drag-from-library is the original call site).
+       `chatComponentDelta` passes `chat` so N4 Tool-Use Cards can
+       distinguish chat-emitted blocks from palette drops. */
+    source?: BlockSource,
   ) => void;
   /* Issue #79: set/clear the hovered library zone. */
   setLibraryHoverZone: (zone: ZoneId | null) => void;
@@ -790,12 +820,15 @@ export const useBuilder = create<BuilderState>((set) => ({
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
-  addBlockFromLibrary: (type, defaults, preferZone, index) => {
+  addBlockFromLibrary: (type, defaults, preferZone, index, source) => {
     const state = useBuilder.getState();
     const targetZone = resolveDestinationZone(type, preferZone, state.selectedBlockZone);
     const key = ZONE_KEYS[targetZone];
     const id = `blk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    const newBlock: Block = { id, type, props: { ...defaults } };
+    /* Phase 3a: stamp provenance. Default `palette` since drag-from-
+       library is the original call site; chatComponentDelta overrides
+       to `chat`. */
+    const newBlock: Block = { id, type, props: { ...defaults }, source: source ?? 'palette' };
     const existing = state[key] as Block[];
     /* When an explicit index is supplied (e.g. from an InsertionSlot +
        button), splice the new block at that position. Otherwise fall

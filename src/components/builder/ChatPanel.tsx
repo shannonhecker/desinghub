@@ -12,6 +12,8 @@ import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { ContextStrip } from "./ContextStrip";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
+import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
+import { ToolUseCard } from "./cards/ToolUseCard";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -452,6 +454,126 @@ export function ChatPanel() {
       return () => clearTimeout(t);
     }
   }, [isGenerating, lastAiContent]);
+
+  /* ── Phase 3a (N4 Tool-Use Cards) ──
+     Subscribe to `builder:tool-use` events emitted by applyAIActions.
+     Group by messageId so each assistant message renders its own
+     stack of cards inline. Per-tab in-memory only (no persistence)
+     — refresh wipes the cards. PR (b) introduces per-action-type
+     card variants; PR (a) here renders the base wrapper with a
+     param dump and (for addBlock) a per-card undo. */
+  const [toolUseByMessage, setToolUseByMessage] = useState<
+    Record<string, ToolUseEvent[]>
+  >({});
+
+  useEffect(() => {
+    const unsubscribe = subscribeToolUse((event) => {
+      if (!event.messageId) return;
+      setToolUseByMessage((prev) => {
+        const existing = prev[event.messageId!] ?? [];
+        /* Dedupe by (action + ts) so a re-emit (e.g. React StrictMode
+           double-invoke under dev) doesn't double-render. */
+        const exists = existing.some(
+          (e) => e.action === event.action && e.ts === event.ts,
+        );
+        if (exists) return prev;
+        return { ...prev, [event.messageId!]: [...existing, event] };
+      });
+    });
+    return unsubscribe;
+  }, []);
+
+  /* Per-card undo wiring. For PR (a) we ship a working undo for
+     `addBlock` only (the most common case): remove the block by id
+     from the zone the action targeted. PR (b) variants extend to
+     other action types (e.g. setDesignSystem → revert to the prior
+     DS, captured from the snapshot). Returns undefined when the
+     action has no inverse wired yet so the card just hides the
+     button. */
+  const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
+  const handleToolUseUndo = (event: ToolUseEvent): (() => void) | undefined => {
+    if (event.action === "addBlock" && event.blockId && event.zone) {
+      const blockId = event.blockId;
+      const zone = event.zone;
+      return () => removeBlockFromZone(zone, blockId);
+    }
+    return undefined;
+  };
+
+  /* Map ToolUseAction → display title for the base wrapper. PR (b)
+     replaces this with per-action card components. */
+  const TOOL_USE_TITLE: Record<string, string> = {
+    addBlock: "Add block",
+    removeBlock: "Remove block",
+    moveBlock: "Move block",
+    updateBlockProps: "Update block props",
+    updateBlockLayout: "Update block layout",
+    setDesignSystem: "Switch design system",
+    setMode: "Switch mode",
+    setDensity: "Switch density",
+    setComponents: "Set components",
+    setInterfaceType: "Set interface type",
+    setThemeKey: "Switch theme",
+    setColorOverride: "Override color",
+    clearCanvas: "Clear canvas",
+    setZoneLayout: "Update zone layout",
+  };
+  const TOOL_USE_ICON: Record<string, string> = {
+    addBlock: "add_box",
+    removeBlock: "remove",
+    moveBlock: "swap_horiz",
+    updateBlockProps: "tune",
+    updateBlockLayout: "view_quilt",
+    setDesignSystem: "palette",
+    setMode: "contrast",
+    setDensity: "density_medium",
+    setComponents: "widgets",
+    setInterfaceType: "dashboard",
+    setThemeKey: "format_color_fill",
+    setColorOverride: "colorize",
+    clearCanvas: "delete_sweep",
+    setZoneLayout: "view_module",
+  };
+
+  function renderToolUseCards(messageId: string) {
+    const events = toolUseByMessage[messageId];
+    if (!events || events.length === 0) return null;
+    return (
+      <div className="tool-use-card-stack">
+        {events.map((event, idx) => {
+          const title = TOOL_USE_TITLE[event.action] ?? event.action;
+          const icon = TOOL_USE_ICON[event.action] ?? "bolt";
+          /* Short subtitle for the head: addBlock shows type + zone;
+             other actions show a short value summary. PR (b) variants
+             render typed param rows instead. */
+          let subtitle: string | undefined;
+          if (event.action === "addBlock") {
+            const v = event.value as { type?: string } | null;
+            subtitle = v?.type ? `${v.type} → ${event.zone ?? "body"}` : undefined;
+          } else if (typeof event.value === "string") {
+            subtitle = event.value;
+          }
+          const onUndo = handleToolUseUndo(event);
+          return (
+            <ToolUseCard
+              key={`${event.action}-${event.ts}-${idx}`}
+              icon={icon}
+              title={title}
+              subtitle={subtitle}
+              staggerIndex={idx}
+              onUndo={onUndo}
+            >
+              {/* PR (a) base: collapsed params show the raw JSON. PR
+                  (b) variants slot typed param rows in here. */}
+              <pre className="tool-use-card__params-pre">
+                {JSON.stringify(event.value, null, 2)}
+              </pre>
+            </ToolUseCard>
+          );
+        })}
+      </div>
+    );
+  }
 
   /* Handler for the stop button - aborts the in-flight fetch and
      drops back to idle. Mirrors the existing setGenerating(false)
@@ -960,6 +1082,11 @@ export function ChatPanel() {
                   {isLastAi && msg.role === "ai" && (
                     <LifecyclePill state={lifecycleState} />
                   )}
+                  {/* Phase 3a (N4): Tool-Use Cards rendered inline
+                      below the assistant message that produced them.
+                      Cards persist for the lifetime of the panel
+                      (in-memory only — refresh wipes them). */}
+                  {msg.role === "ai" && renderToolUseCards(msg.id)}
                   {/* Per-AI-message action row (regenerate / thumbs / copy)
                      was wired to UI only; click handlers were placeholders.
                      Hidden until properly wired (issue #73). Silent no-ops

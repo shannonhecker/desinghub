@@ -13026,3 +13026,173 @@
 .chat-msg-md li {
   margin: 2px 0;
 }
+
+/* ════════════════════════════════════════════════════════════
+   Phase 3a (N4 Tool-Use Cards): inline action surfaces.
+
+   Visual direction per chatbox plan §"Visual direction":
+     - Instrument-panel feel: 6px radius, no rounded-3xl, no
+       gradients, no glassmorphism on the card body.
+     - 10px internal padding so multi-action turns stay dense.
+     - Monochrome Material Symbols icons, no emoji.
+     - Mount motion: translate-y-2 + opacity, staggered 40ms via
+       `--tu-stagger-index`. Reduced-motion drops both.
+
+   All values resolve through `--bc-*` chrome tokens (zero raw hex).
+   PR (a) ships the base wrapper; PR (b) introduces per-action
+   card variants that inherit these styles.
+   ════════════════════════════════════════════════════════════ */
+.tool-use-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-xs);
+  margin-top: var(--bc-gap-sm);
+  padding: 10px;
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-sm);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  font: var(--bc-type-value);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: toolUseCardIn 220ms var(--bc-ease) forwards;
+  animation-delay: calc(var(--tu-stagger-index, 0) * 40ms);
+}
+.tool-use-card--undone {
+  opacity: 0.62;
+}
+
+@keyframes toolUseCardIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tool-use-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-sm);
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.tool-use-card__head:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+  border-radius: var(--bc-radius-xs);
+}
+
+.tool-use-card__icon {
+  font-size: 16px;
+  color: var(--bc-fg-muted);
+  flex: 0 0 auto;
+}
+
+.tool-use-card__title {
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.tool-use-card__subtitle {
+  color: var(--bc-fg-muted);
+  font: var(--bc-type-tabular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.tool-use-card__chevron {
+  font-size: 16px;
+  color: var(--bc-fg-subtle);
+  flex: 0 0 auto;
+  transition: transform var(--bc-duration-fast) var(--bc-ease);
+}
+.tool-use-card__chevron[data-open="true"] {
+  transform: rotate(180deg);
+}
+
+.tool-use-card__params {
+  margin-top: var(--bc-gap-xs);
+  padding: var(--bc-gap-sm);
+  border-radius: var(--bc-radius-xs);
+  background: var(--bc-bg-hover);
+  font: var(--bc-type-tabular);
+  color: var(--bc-fg-muted);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tool-use-card__params:empty {
+  display: none;
+}
+
+.tool-use-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--bc-gap-xs);
+}
+
+.tool-use-card__undo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  padding: 4px 8px;
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-xs);
+  background: transparent;
+  color: var(--bc-fg-muted);
+  font: var(--bc-type-label);
+  cursor: pointer;
+  transition:
+    background var(--bc-duration-fast) var(--bc-ease),
+    color var(--bc-duration-fast) var(--bc-ease),
+    border-color var(--bc-duration-fast) var(--bc-ease);
+}
+.tool-use-card__undo:hover:not(:disabled) {
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+  border-color: var(--bc-border-strong);
+}
+.tool-use-card__undo:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+}
+.tool-use-card__undo:disabled {
+  cursor: default;
+  color: var(--bc-fg-subtle);
+}
+
+.tool-use-card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-xs);
+  margin-top: var(--bc-gap-sm);
+}
+
+.tool-use-card__params-pre {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Reduced motion: instant reveal, no chevron rotation easing. */
+@media (prefers-reduced-motion: reduce) {
+  .tool-use-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .tool-use-card__chevron {
+    transition: none;
+  }
+}
