@@ -212,7 +212,6 @@ export function SizeChipRail({ zone, blockId, currentWidth, anchorEl }: SizeChip
       style={floatingStyles}
       className="bc-chip-rail"
       role="radiogroup"
-      aria-label="Block width"
       aria-labelledby={headingId}
       onKeyDown={onKeyDown}
       onPointerDown={(e) => e.stopPropagation()}
