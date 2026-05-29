@@ -21,6 +21,7 @@ import { SlashInserter } from "./SlashInserter";
 import { BlockContextMenu } from "./BlockContextMenu";
 import { PreviewToggle } from "./PreviewToggle";
 import { usePreviewMode } from "@/store/usePreviewMode";
+import { useInspectorPin } from "@/store/useInspectorPin";
 import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
@@ -116,11 +117,39 @@ export function BuilderApp() {
         if (s.mode === "preview") {
           e.preventDefault();
           s.setMode("edit");
+          return;
+        }
+        /* Phase E2: Esc in Edit mode releases the hover-inspector
+           pin (if any). No-op when nothing is pinned, so this never
+           steals an Escape from another consumer. */
+        const ip = useInspectorPin.getState();
+        if (ip.pinnedBlockId != null) {
+          e.preventDefault();
+          ip.unpin();
         }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  /* Phase E2: click-outside releases the inspector pin. Any
+     pointerdown that isn't inside a [data-block-id] subtree (so
+     not on a block, not on the inspector controls) clears the
+     pin. The block's own pointerdown re-pins it immediately, so
+     clicking from one pinned block to another reads as a swap,
+     not as a release-then-pin. Mouse-driven only — keyboard
+     equivalent is Esc above. */
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      if (t.closest("[data-block-id]")) return;
+      const ip = useInspectorPin.getState();
+      if (ip.pinnedBlockId != null) ip.unpin();
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
   }, []);
 
   // ── Export modal ──

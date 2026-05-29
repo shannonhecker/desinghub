@@ -6,9 +6,11 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
 import { useBuilder, findBlockInTree } from "@/store/useBuilder";
+import { useInspectorPin } from "@/store/useInspectorPin";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
 import { ResizeHUD } from "./ResizeHUD";
 import { SizeChipRail } from "./SizeChipRail";
+import { HoverInspector } from "./HoverInspector";
 
 const COL_SPAN_LABELS: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
 
@@ -806,6 +808,31 @@ export function SortableBlock({
     toggleBlockSelection(id, zone);
   };
 
+  /* ── Hover-inspector pointer + click wiring (E2) ──
+     Pointer enter/leave drives useInspectorPin's hovered state;
+     plain click pins the block. We intentionally DO NOT call
+     preventDefault on the click so rendered block content (links,
+     buttons in the preview) can still fire their own handlers.
+     Sidebar zone is excluded — PR #167 keeps the rail chrome-free,
+     and Phase E1 + HoverInspector both bail out on that zone. */
+  const setInspectorHover = useInspectorPin((s) => s.setHover);
+  const pinInspector = useInspectorPin((s) => s.pin);
+
+  const handlePointerEnter = () => {
+    if (!zone || zone === "sidebar") return;
+    setInspectorHover(id);
+  };
+  const handlePointerLeave = () => {
+    if (!zone || zone === "sidebar") return;
+    setInspectorHover(null);
+  };
+  const handleClick = (e: React.MouseEvent) => {
+    if (!zone || zone === "sidebar") return;
+    /* Shift-click is consumed by handleClickCapture already. */
+    if (e.shiftKey) return;
+    pinInspector(id);
+  };
+
   /* Right-click: open the context menu at cursor. If this block
      isn't already in the current selection, replace selection with
      just this block so menu actions target what the user clicked. */
@@ -845,6 +872,9 @@ export function SortableBlock({
       data-block-id={id}
       data-zone={zone}
       onClickCapture={handleClickCapture}
+      onClick={handleClick}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onContextMenu={handleContextMenu}
       {...attributes}
     >
@@ -853,58 +883,21 @@ export function SortableBlock({
         <div className="block-drop-indicator" />
       )}
 
-      {/* Drag handle.
-          Sidebar zone (S1, 2026-05-29 audit): suppress the drag handle
-          here. The narrow rail can't host an absolute-positioned overlay
-          without stacking on top of the NavItem icon + label. Sidebar
-          NavItems are still reorderable via the row itself; remove is
-          available via the per-row remove button + the right-click
-          context menu (BlockContextMenu). */}
-      {zone !== "sidebar" && (
-        <div
-          ref={setActivatorNodeRef}
-          className="canvas-block-handle"
-          {...listeners}
-          title="Drag to reorder"
-          role="button"
-          tabIndex={0}
-          aria-roledescription="sortable"
-          aria-label="Drag handle"
-        >
-          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>&#x2807;</span>
-        </div>
-      )}
-
-      {/* Remove button.
-          Sidebar zone: suppress (S1). NavItem rows render their own
-          .bp-nav-remove-btn inline, and the context menu carries the
-          affordance for non-NavItem sidebar blocks. */}
-      {onRemove && zone !== "sidebar" && (
-        <button
-          className="canvas-block-remove"
-          onClick={onRemove}
-          aria-label="Remove block"
-          type="button"
-        >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>
-            close
-          </span>
-        </button>
-      )}
-
-      {/* Swap button - hidden in compact mode and in sidebar zone. */}
-      {onSwapClick && !compact && zone !== "sidebar" && (
-        <button
-          className="canvas-block-swap"
-          onClick={onSwapClick}
-          aria-label="Swap component"
-          type="button"
-        >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>
-            swap_horiz
-          </span>
-        </button>
-      )}
+      {/* Hover-inspector (Phase E2): replaces the always-on handle /
+          remove / swap chrome. Renders nothing unless this block is
+          hovered (after HOVER_DELAY_MS) or pinned. Bails out in
+          Preview mode + on the sidebar zone for the same reasons
+          the old per-block chrome did. Drag activator is forwarded
+          so dnd-kit still owns the gesture. */}
+      <HoverInspector
+        blockId={id}
+        zone={zone}
+        dragHandleRef={setActivatorNodeRef}
+        dragListeners={listeners as Record<string, unknown> | undefined}
+        isNewlyMounted={isNewlyMounted}
+        onRemove={onRemove}
+        onSwapClick={!compact ? onSwapClick : undefined}
+      />
 
       {/* Column span badge - click to cycle 1/2/3 (legacy; the
           resize handles are the primary affordance now).
@@ -937,7 +930,7 @@ export function SortableBlock({
           zone={zone}
           blockId={id}
           currentWidth={currentWidth}
-          anchorEl={blockElRef.current}
+          anchorRef={blockElRef}
         />
       )}
 

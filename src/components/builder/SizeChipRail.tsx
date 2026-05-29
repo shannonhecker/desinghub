@@ -110,14 +110,15 @@ export interface SizeChipRailProps {
   zone: ZoneId;
   blockId: string;
   currentWidth: LayoutWidth | undefined;
-  /** S2: Floating UI anchor. The parent SortableBlock passes its
-     .canvas-block element so the rail anchors next to the selected
-     block. If null (block element not yet mounted), the rail mounts
-     in the default flow until the ref resolves. */
-  anchorEl?: HTMLElement | null;
+  /** S2: Floating UI anchor. The parent SortableBlock passes a ref
+     to its .canvas-block element so the rail anchors next to the
+     selected block. Passing the ref object (not .current) lets us
+     read it inside useEffect without tripping the React Compiler
+     rule about ref access during render. */
+  anchorRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function SizeChipRail({ zone, blockId, currentWidth, anchorEl }: SizeChipRailProps) {
+export function SizeChipRail({ zone, blockId, currentWidth, anchorRef }: SizeChipRailProps) {
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
   const zoneMode = zoneLayouts[zone]?.mode ?? "row";
@@ -146,9 +147,13 @@ export function SizeChipRail({ zone, blockId, currentWidth, anchorEl }: SizeChip
     ],
     whileElementsMounted: autoUpdate,
   });
+  /* Destructure the ref callbacks out of the Floating UI refs
+     object so they read as plain callbacks at the JSX site instead
+     of looking like ref-during-render accesses to the linter. */
+  const { setFloating, setReference } = refs;
   useEffect(() => {
-    refs.setReference(anchorEl ?? null);
-  }, [anchorEl, refs]);
+    setReference(anchorRef?.current ?? null);
+  }, [anchorRef, setReference]);
 
   /* Re-focus the active chip when it changes (e.g. the parent
      selects a different block). Don't steal focus if the user
@@ -208,7 +213,7 @@ export function SizeChipRail({ zone, blockId, currentWidth, anchorEl }: SizeChip
 
   const rail = (
     <div
-      ref={refs.setFloating}
+      ref={setFloating}
       style={floatingStyles}
       className="bc-chip-rail"
       role="radiogroup"
