@@ -10,7 +10,7 @@ import {
   MessageSquare,
   Database,
   Settings,
-  BarChart3,
+  BarChart2,
   ChevronLeft,
   ChevronRight,
   Bot,
@@ -120,7 +120,12 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   chat: MessageSquare,
   database: Database,
   settings: Settings,
-  bar_chart: BarChart3,
+  /* BarChart2 (symmetric three-bar glyph, visual centre at x=12) instead of
+     BarChart3/ChartColumn — the latter's L-axis pulls its visual centre to
+     ~x=10.5, which made the Events nav row read indented vs its siblings. The
+     old margin-left:-1px compensation was a no-op (box + gap shifted together)
+     so the misalignment never resolved until the glyph itself was swapped. */
+  bar_chart: BarChart2,
   home: Home,
   person: User,
   notifications: Bell,
