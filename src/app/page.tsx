@@ -470,11 +470,15 @@ function useNavGlassStyle() {
   const tint = useTransform(scrollY, range, [0, 0.5], { clamp: true });
   const borderAlpha = useTransform(scrollY, range, [0, 0.1], { clamp: true });
   const shadowAlpha = useTransform(scrollY, range, [0, 0.45], { clamp: true });
+  // Inset top highlight ramps too, so at the default (top, y=0) the nav is
+  // FULLY transparent — no colour, no border, no highlight line — and the
+  // glossy/blur glass only appears as the user scrolls.
+  const highlightAlpha = useTransform(scrollY, range, [0, 0.05], { clamp: true });
 
   const backdropFilter = useMotionTemplate`saturate(${saturate}%) blur(${blur}px)`;
   const backgroundColor = useMotionTemplate`rgba(10, 14, 26, ${tint})`;
   const borderBottomColor = useMotionTemplate`rgba(255, 255, 255, ${borderAlpha})`;
-  const boxShadow = useMotionTemplate`inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 40px rgba(0, 0, 0, ${shadowAlpha})`;
+  const boxShadow = useMotionTemplate`inset 0 1px 0 rgba(255, 255, 255, ${highlightAlpha}), 0 12px 40px rgba(0, 0, 0, ${shadowAlpha})`;
 
   return {
     backdropFilter,
