@@ -22,6 +22,7 @@ const storeDir = join(process.cwd(), "src", "store");
 
 const previewToggleSrc = readFileSync(join(builderDir, "PreviewToggle.tsx"), "utf8");
 const builderAppSrc = readFileSync(join(builderDir, "BuilderApp.tsx"), "utf8");
+const previewPanelSrc = readFileSync(join(builderDir, "PreviewPanel.tsx"), "utf8");
 const builderCss = readFileSync(join(builderDir, "builder.css"), "utf8");
 const chromeTokens = readFileSync(join(builderDir, "chrome-tokens.css"), "utf8");
 const previewModeStoreSrc = readFileSync(join(storeDir, "usePreviewMode.ts"), "utf8");
@@ -85,8 +86,12 @@ describe("BuilderApp root mounts data-builder-mode + keyboard listener", () => {
     expect(builderAppSrc).toMatch(/data-builder-mode=\{builderMode\}/);
   });
 
-  it("renders <PreviewToggle /> in the top-bar", () => {
-    expect(builderAppSrc).toMatch(/<PreviewToggle\s*\/>/);
+  it("renders <PreviewToggle /> in the canvas toolbar (PreviewBar), not the top bar", () => {
+    /* Relocated 2026-05-30: the toggle is a canvas control, so it moved out
+       of BuilderApp's global top bar into PreviewBar (PreviewPanel), after
+       Compare and gated on content. Assert the move in both directions. */
+    expect(builderAppSrc).not.toMatch(/<PreviewToggle\s*\/>/);
+    expect(previewPanelSrc).toMatch(/<PreviewToggle\s*\/>/);
   });
 
   it("keyboard listener handles Shift+Cmd+P (metaKey || ctrlKey + shiftKey + 'p')", () => {
