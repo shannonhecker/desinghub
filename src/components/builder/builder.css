@@ -9008,21 +9008,6 @@
   display: block;
 }
 
-/* Per-icon visual-centre compensation. Lucide icons share a 24×24
-   viewBox but the visual mass isn't always centred at x=12 — e.g.
-   BarChart3 (chart-column) has bars at x=8/13/18 and an L-axis at
-   x=3→21, putting its visual centre at ~x=10.5. Without this nudge,
-   Events reads indented vs sibling rows whose icons (Settings,
-   Database, MessageSquare, Home, User) are centred at x=12.
-
-   Targets the auto-emitted lucide class. If the upstream class name
-   changes, this rule becomes a no-op rather than breaking — the
-   parent rule above still sizes the icon. */
-.bp-nav-item svg.lucide-chart-column,
-.bp-nav-item svg.lucide-bar-chart-3 {
-  margin-left: -1px;
-}
-
 .bp-nav-label {
   display: inline-block;
   overflow: hidden;
