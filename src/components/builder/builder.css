@@ -13347,6 +13347,11 @@
   color: var(--b-fg);
   font-weight: 600;
 }
+/* Pills with no × (Theme / Mode / Density) need symmetric padding —
+   the base 4px right padding only made sense to tuck the clear button. */
+.ctx-pill-static {
+  padding-right: 10px;
+}
 .ctx-pill-scope {
   background: rgba(180, 144, 245, 0.14);
   border-color: rgba(180, 144, 245, 0.35);
