@@ -54,6 +54,7 @@ import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
+import { PreviewToggle } from "./PreviewToggle";
 
 /* ══════════════════════════════════════════════════════════
    DSPreviewStyles - injects design-system CSS into the builder.
@@ -174,6 +175,15 @@ function PreviewBar() {
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
+  /* Gate the relocated Edit/Preview toggle on real content — same signal as
+     PreviewPanel's hasContent. PreviewBar only renders when the preview is
+     open (which already implies content), so this is belt-and-braces. */
+  const hasBuilderContent = useBuilder(
+    (s) =>
+      s.messages.some((m) => m.role === "ai") ||
+      s.blocks.length > 0 ||
+      s.selectedBlockId !== null,
+  );
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const compareMode = useBuilder((s) => s.compareMode);
   const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
@@ -402,6 +412,12 @@ function PreviewBar() {
         <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }}>compare</span>
         Compare
       </button>
+
+      {/* Edit/Preview mode toggle — relocated here from the global top bar so
+          it sits with the other canvas controls (after Compare, per design).
+          Shown only once there's content; PreviewBar itself renders only when
+          the preview is open. Shortcut Shift+Cmd+P still toggles. */}
+      {hasBuilderContent && <PreviewToggle />}
 
       {/* Density + Code moved to the ⋯ overflow menu — they are power-user
          toggles that don't need primary bar weight. Keeps the canvas
