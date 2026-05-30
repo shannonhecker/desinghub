@@ -10,7 +10,6 @@ import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
-import { ContextStrip } from "./ContextStrip";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseCard } from "./cards/ToolUseCard";
@@ -1117,12 +1116,6 @@ export function ChatPanel() {
 
       {/* Input - always pinned to bottom, active from message 1 */}
       <div className="chat-input-bar">
-        {/* Context Strip (Phase 2b N3) - visual surface for the
-            `[Current state: ...]` context that useChatAPI prepends
-            invisibly to every user turn. Renders pills for Theme /
-            Mode / Scope / Density above the composer so users can
-            see (and clear, where wired) the live context. */}
-        <ContextStrip />
         {/* Scope chip - shown when a block is selected on the canvas, so
             the user has a visible confirmation that their next message
             will be scoped to that element. */}
