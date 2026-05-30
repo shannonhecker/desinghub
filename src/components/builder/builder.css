@@ -3812,6 +3812,164 @@
   min-height: 0;
 }
 
+/* ══════════════════════════════════════════════════════════
+   Present mode — full-stage, read-only "stage" (PR-A).
+   ══════════════════════════════════════════════════════════
+   PresentStage early-returns in place of .builder-shell and
+   carries data-builder-mode="preview", so the chrome-hide
+   cascade above already strips all editor affordances. These
+   rules add only the stage itself: a neutral deeper backdrop
+   the framed device canvas lifts off, plus the slim floating
+   control bar. Bezel / faux-chrome polish is deferred to PR-B. */
+.present-stage {
+  height: 100vh;
+  width: 100%;
+  background: var(--bc-stage);
+  color: var(--b-fg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Centres the device frame with matting on all sides; extra
+   bottom padding leaves room for the floating present-bar. */
+.present-stage-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 4vh, 56px) clamp(16px, 4vw, 64px);
+  padding-bottom: clamp(78px, 12vh, 128px);
+}
+
+/* On the stage the frame sizes to its content (capped), centred,
+   rather than the flex:1 fill it uses inside the narrow side panel.
+   Desktop caps at a presentation width so it reads as "presented",
+   not just the app re-rendered full-bleed. */
+.present-stage .bp-device-frame {
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: min(100%, 1320px);
+  box-shadow: 0 0 0 1px var(--b-border), var(--bc-shadow-lg);
+}
+
+/* Slim floating control bar, bottom-centre. Glass on the nav layer
+   only (never on canvas content). */
+.present-bar {
+  position: fixed;
+  bottom: clamp(16px, 4vh, 32px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  box-shadow: var(--bc-shadow-lg);
+  backdrop-filter: blur(12px);
+  max-width: calc(100vw - 32px);
+  color: var(--bc-fg);
+}
+
+.present-bar-brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bc-fg-muted);
+  padding: 0 6px;
+}
+
+.present-bar-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--bc-border);
+}
+
+.present-bar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.present-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.present-bar-btn:hover { background: var(--bc-bg-hover); }
+.present-bar-btn:focus-visible {
+  outline: 2px solid var(--bc-accent);
+  outline-offset: 1px;
+}
+.present-bar-btn-icon {
+  width: 30px;
+  padding: 0;
+  position: relative;
+}
+.present-bar-btn-pill { border-radius: var(--bc-radius-pill); }
+
+/* Active device: NOT colour-only — heavier icon stroke (set in JS)
+   plus this underline cue, on top of aria-pressed. */
+.present-bar-btn-active { background: var(--bc-bg-active); }
+.present-bar-btn-active::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--bc-accent);
+}
+
+.present-bar-ds-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-fg-muted);
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+/* Exit ("Done") = primary action, but kept NEUTRAL not accent-filled:
+   --bc-fg-on-accent (near-black) on the light-mode accent (#0b69d9) only
+   hits 3.76:1 (fails AA for 13px text). A neutral fill uses --bc-fg on
+   --bc-bg-active, which is high-contrast in BOTH themes. Weight + a strong
+   border give it primary emphasis without the accent-contrast trap. */
+.present-bar-btn-exit {
+  background: var(--bc-bg-active);
+  color: var(--bc-fg);
+  border-color: var(--bc-border-strong);
+  font-weight: 700;
+}
+.present-bar-btn-exit:hover {
+  background: var(--bc-bg-active);
+  border-color: var(--bc-fg-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .present-bar-btn { transition: none; }
+}
+
 /* Preview scrollbars */
 .preview-side-body::-webkit-scrollbar { width: 4px; }
 .preview-side-body::-webkit-scrollbar-track { background: transparent; }

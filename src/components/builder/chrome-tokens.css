@@ -18,6 +18,11 @@
   --bc-bg-raised:   rgba(30, 33, 38, 0.98);
   --bc-bg-hover:    rgba(255, 255, 255, 0.06);
   --bc-bg-active:   rgba(255, 255, 255, 0.10);
+  /* Present-mode stage backdrop — a step deeper than --bc-bg so the
+     framed device canvas lifts off it like art on a gallery wall.
+     Neutral cool near-black: must not bias any of the 5 design
+     systems rendered on the stage. */
+  --bc-stage:       rgba(14, 16, 20, 1);
   --bc-overlay:     rgba(0, 0, 0, 0.40);
 
   /* Text */
@@ -131,6 +136,10 @@
   --bc-bg-raised:   rgba(255, 255, 255, 1);
   --bc-bg-hover:    rgba(15, 17, 22, 0.05);
   --bc-bg-active:   rgba(15, 17, 22, 0.08);
+  /* Present-mode stage backdrop (light): a soft grey, a touch darker
+     than the near-white --bc-bg, so the near-white device frame still
+     lifts. Neutral — no DS bias. */
+  --bc-stage:       rgba(240, 241, 244, 1);
   --bc-overlay:     rgba(15, 17, 22, 0.22);
 
   --bc-fg:          rgba(20, 22, 26, 0.96);
