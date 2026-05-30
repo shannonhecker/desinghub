@@ -54,6 +54,8 @@ export function PresentBar() {
       designSystem: s.designSystem,
       mode: s.mode,
       density: s.density,
+      deviceMode: s.deviceMode,
+      themeKey: s.themeKey,
       activeTemplateId: s.activeTemplateId,
       headerBlocks: s.headerBlocks,
       sidebarBlocks: s.sidebarBlocks,
