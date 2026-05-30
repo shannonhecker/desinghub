@@ -4,6 +4,9 @@
  *
  * The payload is the minimum state needed to re-render the canvas:
  *   - designSystem, mode, density
+ *   - deviceMode, themeKey (so a shared link opens at the author's
+ *     device frame + theme — added PR-C, v1-compatible: links that
+ *     predate these fields decode with desktop / null defaults)
  *   - activeTemplateId (for future "fork" support)
  *   - all four zone block arrays
  *
@@ -15,7 +18,7 @@
  * If that becomes a problem, swap in LZ-String later.)
  */
 
-import type { Block, DesignSystem, BuilderMode } from "@/store/useBuilder";
+import type { Block, DesignSystem, BuilderMode, DeviceMode } from "@/store/useBuilder";
 import { isValidBlockSource } from "@/store/useBuilder";
 
 export interface SharedCanvas {
@@ -23,6 +26,11 @@ export interface SharedCanvas {
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
+  /* PR-C: device frame + theme so a shared link opens exactly as the
+     author framed it. v1-compatible — decode defaults these for older
+     links that lack them, so no version bump is needed. */
+  deviceMode: DeviceMode;
+  themeKey: string | null;
   activeTemplateId: string | null;
   headerBlocks: Block[];
   sidebarBlocks: Block[];
@@ -32,6 +40,7 @@ export interface SharedCanvas {
 
 const DESIGN_SYSTEMS = new Set<DesignSystem>(["salt", "m3", "fluent", "uoaui", "carbon"]);
 const MODES = new Set<BuilderMode>(["light", "dark"]);
+const DEVICE_MODES = new Set<DeviceMode>(["desktop", "tablet", "mobile"]);
 
 /* URL-safe base64: replace +/ with -_ and strip = padding. */
 function urlSafeB64Encode(s: string): string {
@@ -205,6 +214,18 @@ export function decodeShareState(hash: string): SharedCanvas | null {
   if (typeof obj.designSystem !== "string" || !DESIGN_SYSTEMS.has(obj.designSystem as DesignSystem)) return null;
   if (typeof obj.mode !== "string" || !MODES.has(obj.mode as BuilderMode)) return null;
   if (typeof obj.density !== "string" || obj.density.length > 40) return null;
+
+  /* PR-C: deviceMode + themeKey. v1-compatible — a link that predates
+     these fields (no deviceMode/themeKey) decodes with sane defaults
+     rather than erroring, so existing shared URLs keep working without
+     a version bump. An invalid deviceMode also falls back to desktop. */
+  const deviceMode: DeviceMode =
+    typeof obj.deviceMode === "string" && DEVICE_MODES.has(obj.deviceMode as DeviceMode)
+      ? (obj.deviceMode as DeviceMode)
+      : "desktop";
+  const themeKey: string | null =
+    typeof obj.themeKey === "string" && obj.themeKey.length <= 40 ? obj.themeKey : null;
+
   const activeTemplateId =
     typeof obj.activeTemplateId === "string" && obj.activeTemplateId.length <= 80
       ? obj.activeTemplateId
@@ -222,6 +243,8 @@ export function decodeShareState(hash: string): SharedCanvas | null {
     designSystem: obj.designSystem as DesignSystem,
     mode: obj.mode as BuilderMode,
     density: obj.density,
+    deviceMode,
+    themeKey,
     activeTemplateId,
     headerBlocks,
     sidebarBlocks,
