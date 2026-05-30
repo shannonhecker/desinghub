@@ -144,14 +144,21 @@ export function useChatAPI() {
             const data = line.slice(6);
             if (data === "[DONE]") break;
 
+            let parsed: { text?: string; error?: string } | null = null;
             try {
-              const parsed = JSON.parse(data);
-              if (parsed.text) {
-                accumulated += parsed.text;
-                scheduleFlush();
-              }
+              parsed = JSON.parse(data);
             } catch {
               // Skip malformed SSE data
+            }
+            /* Surface mid-stream server errors instead of swallowing them.
+               The route emits {error} frames on stream failure (route.ts).
+               Throw OUTSIDE the JSON.parse try so it isn't re-caught here —
+               it propagates to the outer catch, which shows the user-facing
+               error and flips the LifecyclePill to its error state. */
+            if (parsed?.error) throw new Error(parsed.error);
+            if (parsed?.text) {
+              accumulated += parsed.text;
+              scheduleFlush();
             }
           }
         }
@@ -162,12 +169,14 @@ export function useChatAPI() {
       if (leftover.startsWith("data: ")) {
         const data = leftover.slice(6);
         if (data && data !== "[DONE]") {
+          let parsed: { text?: string; error?: string } | null = null;
           try {
-            const parsed = JSON.parse(data);
-            if (parsed.text) accumulated += parsed.text;
+            parsed = JSON.parse(data);
           } catch {
             // Skip malformed final fragment
           }
+          if (parsed?.error) throw new Error(parsed.error);
+          if (parsed?.text) accumulated += parsed.text;
         }
       }
 
@@ -195,7 +204,25 @@ export function useChatAPI() {
         applyAIActions(actions, lastAi?.id);
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") {
+        /* Stopping should leave a legible marker, not a dangling "...".
+           Cancel any pending flush, then finalize the in-flight bubble:
+           a bare placeholder becomes "Stopped.", a partial stream keeps its
+           text with a "(stopped)" note. `finally` still clears generating. */
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        const msgs = useBuilder.getState().messages;
+        const lastAi = msgs[msgs.length - 1];
+        if (lastAi && lastAi.role === "ai") {
+          const stopped =
+            lastAi.content === "..." || lastAi.content.trim() === ""
+              ? "Stopped."
+              : `${lastAi.content}\n\n(stopped)`;
+          useBuilder.setState({
+            messages: [...msgs.slice(0, -1), { ...lastAi, content: stopped }],
+          });
+        }
+        return;
+      }
 
       // Cancel pending RAF on error
       if (rafId !== null) cancelAnimationFrame(rafId);

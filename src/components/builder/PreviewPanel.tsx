@@ -1298,10 +1298,20 @@ export function PreviewSidePanel() {
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const blocks = useBuilder((s) => s.blocks);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const compareMode = useBuilder((s) => s.compareMode);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const hasContent = messages.some((m) => m.role === "ai");
+  /* P0: gate the canvas on actual content, not just chat history. A forked
+     share link (BuilderApp sets blocks, no message) and the first palette-add
+     (sets a block + selection, no message) would otherwise render the empty
+     demo chat while the real blocks sit invisible in state. Header/sidebar/
+     footer are pre-seeded so we can't test their length — body blocks + an
+     active selection are the reliable "user has content" signals. */
+  const hasContent =
+    messages.some((m) => m.role === "ai") ||
+    blocks.length > 0 ||
+    selectedBlockId !== null;
   const isMobile = deviceMode === "mobile";
   const preset = PRESETS[deviceMode];
   const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
@@ -1490,9 +1500,15 @@ export function StandalonePreview() {
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const blocks = useBuilder((s) => s.blocks);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const hasContent = messages.some((m) => m.role === "ai");
+  /* P0: same content gate as PreviewSidePanel — show the real canvas when
+     blocks/selection exist, not only when there's an AI message. */
+  const hasContent =
+    messages.some((m) => m.role === "ai") ||
+    blocks.length > 0 ||
+    selectedBlockId !== null;
   const isCodeView = canvasViewMode === "code";
 
   return (
