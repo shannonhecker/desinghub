@@ -51,8 +51,9 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.01em;
+  /* Unprefixed only — lightningcss re-adds -webkit per browserslist.
+     Hand-writing both trips lightningcss #695 (drops the standard prop). */
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   opacity: 0;
   transform: translateY(12px) scale(0.98);
   transition:

@@ -113,24 +113,15 @@ html:has(.landing-southleft) body {
      this padding pushes the nav band below it. Falls back to 0 on platforms
      without notch / status-bar overlay. */
   padding-top: env(safe-area-inset-top, 0px);
-  /* Default: fully transparent, no border. Hero peeks through cleanly. */
+  /* Default: fully transparent. The scroll-linked glass — background tint,
+     blur, hairline border and drop shadow — is driven by scroll position via
+     Motion inline styles (see useNavGlassStyle in page.tsx). No CSS transition
+     here: Motion writes these properties per frame, so a transition would only
+     add lag. The old `[data-scrolled]` rule was removed because lightningcss
+     stripped its unprefixed backdrop-filter at minify time (issue #695). */
   background: transparent;
   border-bottom: 1px solid transparent;
-  transition: background 220ms ease, border-color 220ms ease,
-              backdrop-filter 220ms ease;
   will-change: backdrop-filter;
-}
-/* Scrolled state: heavy glass — matches the southleft reference. Strong
-   blur reveals content motion underneath; low-opacity Midnight bg keeps
-   the brand tint without flattening the see-through. */
-.landing-southleft .lsl-nav[data-scrolled="true"] {
-  background: rgba(10, 14, 26, 0.50);
-  backdrop-filter: saturate(190%) blur(40px);
-  -webkit-backdrop-filter: saturate(190%) blur(40px);
-  border-bottom-color: rgba(255, 255, 255, 0.10);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.05) inset,
-    0 12px 40px rgba(0, 0, 0, 0.45);
 }
 .landing-southleft .lsl-nav-inner {
   display: flex;

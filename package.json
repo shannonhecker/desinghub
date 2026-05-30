@@ -2,6 +2,10 @@
   "name": "design-hub",
   "version": "0.1.0",
   "private": true,
+  "browserslist": [
+    "defaults",
+    "Safari >= 15.4"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
