@@ -232,44 +232,59 @@ export function useCloudStorage() {
   }
 
   function loadProject(project: SavedProject) {
-    const { snapshot } = project;
-    useBuilder.setState({
-      messages: snapshot.messages,
-      blocks: snapshot.blocks,
-      headerBlocks: snapshot.headerBlocks ?? [],
-      sidebarBlocks: snapshot.sidebarBlocks ?? [],
-      footerBlocks: snapshot.footerBlocks ?? [],
-      /* Restore zone layouts if present in the snapshot; otherwise
-         fall through to whatever the store currently holds (the
-         default config). Pre-flex-layout sessions deserialize with
-         the defaults, which visually match the old 3-col behaviour
-         once colSpan → width translation runs. */
-      ...(snapshot.zoneLayouts ? { zoneLayouts: snapshot.zoneLayouts } : {}),
-      designSystem: snapshot.designSystem,
-      mode: snapshot.mode,
-      density: snapshot.density,
-      interfaceType: snapshot.interfaceType,
-      selectedComponents: snapshot.selectedComponents,
-      colorOverrides: snapshot.colorOverrides,
-      activeTemplateId: snapshot.activeTemplateId ?? null,
-      hasOverrides: Object.keys(snapshot.colorOverrides).length > 0,
-      onboardingStep: "ready",
-      /* Reattach the loaded project as the current session so subsequent
-       *  auto-saves update it in place instead of forking a copy. */
-      currentSessionId: project.id,
-      sessionTitle: project.name,
-      lastSavedAt: project.updatedAt.getTime(),
-      saveState: 'saved',
-      saveError: null,
-      /* Drawers + pending flows should close when loading a session */
-      sessionsDrawerOpen: false,
-      templatesDrawerOpen: false,
-      pendingTemplateId: null,
-      pendingFirstMessage: null,
-      selectedBlockId: null,
-      selectedBlockZone: null,
-      previewOpen: true,
-    });
+    try {
+      const { snapshot } = project;
+      /* Default the nullable fields before use. A legacy/malformed snapshot
+         can be missing colorOverrides entirely, and Object.keys(undefined)
+         below would otherwise throw and crash the whole builder. */
+      const colorOverrides = snapshot.colorOverrides ?? {};
+      useBuilder.setState({
+        messages: snapshot.messages ?? [],
+        blocks: snapshot.blocks ?? [],
+        headerBlocks: snapshot.headerBlocks ?? [],
+        sidebarBlocks: snapshot.sidebarBlocks ?? [],
+        footerBlocks: snapshot.footerBlocks ?? [],
+        /* Restore zone layouts if present in the snapshot; otherwise
+           fall through to whatever the store currently holds (the
+           default config). Pre-flex-layout sessions deserialize with
+           the defaults, which visually match the old 3-col behaviour
+           once colSpan → width translation runs. */
+        ...(snapshot.zoneLayouts ? { zoneLayouts: snapshot.zoneLayouts } : {}),
+        designSystem: snapshot.designSystem,
+        mode: snapshot.mode,
+        density: snapshot.density,
+        interfaceType: snapshot.interfaceType,
+        selectedComponents: snapshot.selectedComponents ?? [],
+        colorOverrides,
+        activeTemplateId: snapshot.activeTemplateId ?? null,
+        hasOverrides: Object.keys(colorOverrides).length > 0,
+        onboardingStep: "ready",
+        /* Reattach the loaded project as the current session so subsequent
+         *  auto-saves update it in place instead of forking a copy. */
+        currentSessionId: project.id,
+        sessionTitle: project.name,
+        lastSavedAt: project.updatedAt.getTime(),
+        saveState: 'saved',
+        saveError: null,
+        /* Drawers + pending flows should close when loading a session */
+        sessionsDrawerOpen: false,
+        templatesDrawerOpen: false,
+        pendingTemplateId: null,
+        pendingFirstMessage: null,
+        selectedBlockId: null,
+        selectedBlockZone: null,
+        previewOpen: true,
+      });
+    } catch (e) {
+      /* Never let one bad session take down the builder. Surface the failure
+         via saveError and leave the current canvas untouched. */
+      console.error("loadProject failed:", e);
+      useBuilder.setState({
+        saveState: 'error',
+        saveError: "Couldn't open that session — it may be from an older version.",
+        sessionsDrawerOpen: false,
+      });
+    }
   }
 
   async function deleteProject(id: string) {
