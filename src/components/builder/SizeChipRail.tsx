@@ -42,6 +42,7 @@ import {
 } from "@floating-ui/react";
 import type { LayoutWidth, ZoneId } from "@/store/useBuilder";
 import { useBuilder } from "@/store/useBuilder";
+import { usePreviewMode } from "@/store/usePreviewMode";
 
 interface ChipDef {
   /** Short visible label. */
@@ -121,6 +122,7 @@ export interface SizeChipRailProps {
 export function SizeChipRail({ zone, blockId, currentWidth, anchorRef }: SizeChipRailProps) {
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
+  const isPreview = usePreviewMode((s) => s.mode) === "preview";
   const zoneMode = zoneLayouts[zone]?.mode ?? "row";
 
   const active = matchChip(currentWidth);
@@ -210,6 +212,12 @@ export function SizeChipRail({ zone, blockId, currentWidth, anchorRef }: SizeChi
   };
 
   const headingId = useMemo(() => `size-chip-rail-${blockId}`, [blockId]);
+
+  /* Preview mode is read-only. The rail portals to document.body via
+     FloatingPortal, so the [data-builder-mode="preview"] CSS fence on
+     .builder-shell can never reach it — gate at render instead. Placed
+     after all hooks so rules-of-hooks holds. */
+  if (isPreview) return null;
 
   const rail = (
     <div

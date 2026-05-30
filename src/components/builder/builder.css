@@ -1222,6 +1222,8 @@
 [data-builder-mode="preview"] .bc-resize-hud,
 [data-builder-mode="preview"] .insertion-slot,
 [data-builder-mode="preview"] .bp-sidebar-resize-handle,
+[data-builder-mode="preview"] .bc-snap-guide,
+[data-builder-mode="preview"] .component-sidebar,
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
