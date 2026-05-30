@@ -8,18 +8,18 @@ import type { DesignSystem } from "@/store/useBuilder";
    ContextStrip - visual surface for the `[Current state: ...]`
    block that useChatAPI prepends to every user message.
 
-   Sits ABOVE the composer textarea as a row of removable pills:
+   Sits ABOVE the composer textarea as a row of context pills:
    - Theme: <DS label>
    - Mode:  <light/dark>
    - Scope: <block label> (only when a block is click-to-edit
                            scoped on the canvas)
    - Density: <density> (only when non-default)
 
-   Each pill has an × affordance. Theme / Mode / Density clears
-   are no-op stubs for now (a future PR will wire DS removal to
-   either a "no DS" sentinel or a reset to default). Scope ×
-   clears the selected-block state, which IS auditable today via
-   the chat-scope-chip on the input bar.
+   Only the Scope pill is clearable (its × clears the selected-block
+   state, auditable via the chat-scope-chip on the input bar). Theme /
+   Mode / Density are current-state indicators — there is no defined
+   "clear" target for them (clear theme to WHAT?), so they render NO ×.
+   A future PR may wire a reset-to-default and re-add the affordance.
 
    Hides when there is nothing to display.
    ══════════════════════════════════════════════════════════ */
@@ -42,24 +42,33 @@ function Pill({
   kind: "theme" | "mode" | "scope" | "density";
   label: string;
   value: string;
-  onClear: () => void;
-  clearLabel: string;
+  /* Optional: only clearable pills (Scope) render an × button. Theme /
+     Mode / Density are read-only state indicators — passing no onClear
+     means no dead affordance is shown. */
+  onClear?: () => void;
+  clearLabel?: string;
 }) {
+  const clearable = Boolean(onClear);
   return (
-    <span className={`ctx-pill ctx-pill-${kind}`} role="listitem">
+    <span
+      className={`ctx-pill ctx-pill-${kind}${clearable ? "" : " ctx-pill-static"}`}
+      role="listitem"
+    >
       <span className="ctx-pill-label">{label}:</span>
       <span className="ctx-pill-value">{value}</span>
-      <button
-        type="button"
-        className="ctx-pill-clear"
-        onClick={onClear}
-        aria-label={clearLabel}
-        title={clearLabel}
-      >
-        <span className="material-symbols-outlined" aria-hidden="true">
-          close
-        </span>
-      </button>
+      {clearable && (
+        <button
+          type="button"
+          className="ctx-pill-clear"
+          onClick={onClear}
+          aria-label={clearLabel}
+          title={clearLabel}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            close
+          </span>
+        </button>
+      )}
     </span>
   );
 }
@@ -117,29 +126,10 @@ export function ContextStrip() {
       aria-label="Current chat context"
     >
       {designSystem && (
-        <Pill
-          kind="theme"
-          label="Theme"
-          value={DS_LABEL[designSystem]}
-          onClear={() => {
-            /* No-op stub: clearing the design system would require a
-               "no DS" sentinel or a reset-to-default behaviour that
-               isn't defined yet. Tracked for a future PR. */
-          }}
-          clearLabel="Clear theme (coming soon)"
-        />
+        <Pill kind="theme" label="Theme" value={DS_LABEL[designSystem]} />
       )}
       {mode && (
-        <Pill
-          kind="mode"
-          label="Mode"
-          value={mode === "dark" ? "Dark" : "Light"}
-          onClear={() => {
-            /* No-op stub - same reasoning as theme. Mode reset means
-               "what should we reset TO?", which isn't decided yet. */
-          }}
-          clearLabel="Clear mode (coming soon)"
-        />
+        <Pill kind="mode" label="Mode" value={mode === "dark" ? "Dark" : "Light"} />
       )}
       {scopeLabel && (
         <Pill
@@ -154,16 +144,7 @@ export function ContextStrip() {
         <Pill
           kind="density"
           label="Density"
-          value={
-            density.charAt(0).toUpperCase() + density.slice(1)
-          }
-          onClear={() => {
-            /* No-op stub: density reset target is also not defined.
-               The setting persists across sessions and there's no
-               clear "default" we can reset to without surprising
-               the user. */
-          }}
-          clearLabel="Clear density (coming soon)"
+          value={density.charAt(0).toUpperCase() + density.slice(1)}
         />
       )}
       {/* Reference `selectedBlockZone` so it isn't dead-code -
