@@ -19,7 +19,6 @@ import { SessionsDrawer } from "./SessionsDrawer";
 import { SaveIndicator } from "./SaveIndicator";
 import { SlashInserter } from "./SlashInserter";
 import { BlockContextMenu } from "./BlockContextMenu";
-import { PreviewToggle } from "./PreviewToggle";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
@@ -464,13 +463,11 @@ export function BuilderApp() {
             <SaveIndicator />
           </div>
 
-          {/* Right: Preview-mode toggle (E1) + UI Kit + Export.
-              Preview toggle sits first so it reads as a primary canvas
-              control before the secondary chrome (UI Kit, Export).
-              Shortcut: Shift+Cmd+P. Esc from Preview returns to Edit. */}
+          {/* Right: UI Kit + Export. The Edit/Preview toggle moved into the
+              canvas toolbar (PreviewBar) — it's a canvas control and now lives
+              beside Compare / device / DS there. Shortcut Shift+Cmd+P still
+              toggles; Esc from Preview still returns to Edit. */}
           <div className="top-bar-right">
-            <PreviewToggle />
-
             {/* UI Kit, passes current ds/mode/density/themeKey so
                 UI Kit lands on the same configuration the user is
                 already exploring in Builder. */}
