@@ -237,12 +237,34 @@ function PreviewBar() {
       typeof window !== "undefined"
         ? ((window as unknown as Record<string, Record<string, string>>).__NEXT_DATA__?.basePath || "")
         : "";
-    const params = new URLSearchParams({
-      preview: "1", ds: designSystem, mode, type: interfaceType,
-      components: selectedComponents.join(","),
+    /* Route the pop-out through the share encoder so the FULL canvas
+       travels to the new window: all four zone block arrays plus
+       deviceMode + themeKey. Previously this passed only ds/mode/
+       selectedComponents, so the pop-out rendered an EMPTY canvas
+       (selectedComponents never drives the standalone render). The pop-out
+       URL reuses the ?shared= fork flow (BuilderApp hydrates from the hash)
+       plus ?preview=1 to land in standalone mode. */
+    const s = useBuilder.getState();
+    const { hash, tooLong } = buildShareUrl({
+      v: 1,
+      designSystem: s.designSystem,
+      mode: s.mode,
+      density: s.density,
+      deviceMode: s.deviceMode,
+      themeKey: s.themeKey,
+      activeTemplateId: s.activeTemplateId,
+      headerBlocks: s.headerBlocks,
+      sidebarBlocks: s.sidebarBlocks,
+      blocks: s.blocks,
+      footerBlocks: s.footerBlocks,
     });
+    if (tooLong) {
+      showToast("Canvas too large to pop out. Try the share link instead.", { icon: "error" });
+      setOverflowOpen(false);
+      return;
+    }
     window.open(
-      `${window.location.origin}${basePath}/builder?${params}`,
+      `${window.location.origin}${basePath}/builder?preview=1&shared=${hash}`,
       "design-hub-preview", "width=900,height=700"
     );
     setOverflowOpen(false);

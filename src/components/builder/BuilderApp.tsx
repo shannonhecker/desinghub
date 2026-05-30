@@ -356,13 +356,20 @@ export function BuilderApp() {
     const themeKey = params.get("themeKey");
 
     if (params.get("preview") === "1") {
-      const t = canonicalInterfaceType(params.get("type"));
-      const c = params.get("components");
-      if (ds) setDesignSystem(ds);
-      if (m) setMode(m);
-      if (t) setInterfaceType(t);
-      if (c) setSelectedComponents(c.split(","));
-      setIsStandalone(true);
+      /* New pop-outs carry ?shared=<hash>: the fork effect below hydrates
+         the full canvas, then flips isStandalone AFTER, so the standalone
+         view mounts already-populated (no empty flash). Old bookmarks
+         (?preview=1&ds=&mode=&type=&components=, no hash) have nothing to
+         hydrate, so apply those params + go standalone immediately. */
+      if (!params.get("shared")) {
+        const t = canonicalInterfaceType(params.get("type"));
+        const c = params.get("components");
+        if (ds) setDesignSystem(ds);
+        if (m) setMode(m);
+        if (t) setInterfaceType(t);
+        if (c) setSelectedComponents(c.split(","));
+        setIsStandalone(true);
+      }
       return;
     }
 
@@ -383,11 +390,20 @@ export function BuilderApp() {
     const params = new URLSearchParams(window.location.search);
     const hash = params.get("shared");
     if (!hash) return;
+    /* A pop-out (?preview=1&shared=) hydrates here, then flips to standalone
+       AFTER so StandalonePreview mounts populated, not empty. Captured now,
+       before the URL cleanup below clears the query. */
+    const isPopout = params.get("preview") === "1";
     (async () => {
       try {
         const { decodeShareState } = await import("@/lib/shareState");
         const state = decodeShareState(hash);
-        if (!state) return;
+        if (!state) {
+          /* Bad hash in a pop-out: still go standalone (empty) rather than
+             stranding the pop-out window on the full editor shell. */
+          if (isPopout) setIsStandalone(true);
+          return;
+        }
         const store = useBuilder.getState();
         store.setDesignSystem(state.designSystem);
         store.setMode(state.mode);
@@ -397,12 +413,22 @@ export function BuilderApp() {
         store.setBlocks(state.blocks);
         store.setFooterBlocks(state.footerBlocks);
         if (state.activeTemplateId) store.setActiveTemplateId(state.activeTemplateId);
+        /* deviceMode + themeKey (PR-C schema). themeKey is applied LAST,
+           after setMode above, because setMode derives a dialect-specific
+           default themeKey that the explicit one must override — do not
+           reorder. Only override when a themeKey was actually shared
+           (legacy links decode themeKey as null → keep setMode's default). */
+        store.setDeviceMode(state.deviceMode);
+        if (state.themeKey) store.setThemeKey(state.themeKey);
         store.setPreviewOpen(true);
+        /* Pop-out: now that the canvas is populated, flip to standalone. */
+        if (isPopout) setIsStandalone(true);
         // Clean the URL so reload doesn't trigger another apply
         const newUrl = window.location.pathname + window.location.hash;
         window.history.replaceState({}, "", newUrl);
       } catch {
         /* Decoding or import failed - silently ignore; user lands on an empty builder */
+        if (isPopout) setIsStandalone(true);
       }
     })();
   }, []);
