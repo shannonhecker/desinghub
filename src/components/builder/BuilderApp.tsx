@@ -13,6 +13,7 @@ import {
 import { ChatPanel } from "./ChatPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
+import { PresentStage } from "./PresentStage";
 import { ExportPanel } from "./ExportPanel";
 import { TemplatesDrawer } from "./TemplatesDrawer";
 import { SessionsDrawer } from "./SessionsDrawer";
@@ -408,6 +409,13 @@ export function BuilderApp() {
      owns session load/save/delete now, and auto-save handles persistence. */
 
   if (isStandalone) return <StandalonePreview />;
+
+  /* Present mode is a full-stage, read-only experience that REPLACES the
+     editor shell (it renders data-builder-mode="preview" itself to inherit
+     the chrome-hide cascade). Early-return after the standalone check and
+     after all hooks above, so the global Shift+Cmd+P / Esc listeners stay
+     mounted and can toggle back to edit. */
+  if (builderMode === "preview") return <PresentStage />;
 
   return (
     <div

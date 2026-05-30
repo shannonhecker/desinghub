@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Monitor,
   Tablet,
@@ -69,7 +69,7 @@ import { PreviewReadOnlyContext, usePreviewReadOnly } from "./previewReadOnly";
    rules) whenever designSystem === "carbon", so the /builder canvas
    gets the same styling as /ui-kit. Returns null for other DSes - no
    injection required. */
-function DSPreviewStyles() {
+export function DSPreviewStyles() {
   const designSystem = useBuilder((s) => s.designSystem);
   const themeKey = useBuilder((s) => s.themeKey);
   const density = useBuilder((s) => s.density);
@@ -915,6 +915,145 @@ function DashboardFooter() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   DeviceFrame - animated viewport frame around the dashboard.
+   ══════════════════════════════════════════════════════════
+   Extracted from PreviewSidePanel's inline motion.div so the
+   exact same frame can be reused by the full-stage Present mode
+   (PresentStage). Width/height come from the active device
+   preset; desktop is fluid (100%), tablet/mobile are fixed.
+
+   The spring is now wrapped in useReducedMotion — when a user
+   prefers reduced motion the width/height changes apply
+   instantly (duration 0) instead of springing. No guard existed
+   on the inline version; this is an additive a11y improvement. */
+export function DeviceFrame({ children }: { children: React.ReactNode }) {
+  const deviceMode = useBuilder((s) => s.deviceMode);
+  const reduceMotion = useReducedMotion();
+  const preset = PRESETS[deviceMode];
+  const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
+  return (
+    <motion.div
+      className="bp-device-frame"
+      animate={{ width: frameWidth, maxHeight: preset.height }}
+      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   BuilderCanvas - the single dashboard render path.
+   ══════════════════════════════════════════════════════════
+   ONE source of truth for the canvas, consumed by three shells:
+   PreviewSidePanel (in-app, framed + responsive), StandalonePreview
+   (?preview=1 pop-out, plain), and PresentStage (full-stage Present
+   mode, framed + responsive). Previously this JSX was duplicated
+   inline in PreviewSidePanel and StandalonePreview with no reuse
+   seam — the root cause the rethink set out to fix.
+
+   Read-only is NOT a prop here: it flows via PreviewReadOnlyContext
+   (provided by the CanvasDndProvider each shell wraps this in), so
+   the same tree is honest-read-only or editable purely by context.
+
+   Flags map the genuine differences between the existing call sites:
+     - framed             wrap in DeviceFrame (+ Compare swaps the
+                          whole frame for CompareView). Side panel +
+                          Present: true. Standalone: false.
+     - responsive         compact header + hide sidebar on mobile.
+                          Side panel + Present: true. Standalone: false
+                          (always desktop layout, like the pop-out today).
+     - resizableSidebar   sidebar width control + drag handle. Side
+                          panel + Present: true. Standalone: false.
+     - allowEmptyState    show the demo chat when there's no content.
+                          Side panel + Present: true. Standalone: false. */
+interface BuilderCanvasProps {
+  framed?: boolean;
+  responsive?: boolean;
+  resizableSidebar?: boolean;
+  allowEmptyState?: boolean;
+}
+
+export function BuilderCanvas({
+  framed = false,
+  responsive = false,
+  resizableSidebar = false,
+  allowEmptyState = false,
+}: BuilderCanvasProps) {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const density = useBuilder((s) => s.density);
+  const previewKey = useBuilder((s) => s.previewKey);
+  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
+  const blocks = useBuilder((s) => s.blocks);
+  const messages = useBuilder((s) => s.messages);
+  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const deviceMode = useBuilder((s) => s.deviceMode);
+  const compareMode = useBuilder((s) => s.compareMode);
+
+  const isMobile = deviceMode === "mobile";
+  const isCodeView = canvasViewMode === "code";
+  /* Same content gate as the old inline call sites: real blocks or a
+     live selection or an AI message — not the seeded zone blocks. */
+  const hasContent =
+    messages.some((m) => m.role === "ai") ||
+    blocks.length > 0 ||
+    selectedBlockId !== null;
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [dashSidebarWidth, setDashSidebarWidth] = useState(180);
+  const handleSidebarToggle = useCallback(() => setSidebarCollapsed((v) => !v), []);
+
+  /* Responsive shells compact the header + drop the sidebar on the
+     mobile device; the standalone pop-out stays full desktop layout. */
+  const compact = responsive && isMobile;
+  const showSidebar = !(responsive && isMobile);
+
+  const dashboard = isCodeView ? (
+    <CodeViewer blocks={blocks} />
+  ) : (
+    <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+      <DashboardHeader compact={compact} />
+
+      <div className="bp-body">
+        {showSidebar && (
+          <DashboardSidebar
+            collapsed={sidebarCollapsed}
+            onToggle={handleSidebarToggle}
+            width={resizableSidebar ? dashSidebarWidth : undefined}
+            onWidthChange={resizableSidebar ? setDashSidebarWidth : undefined}
+          />
+        )}
+
+        {/* Resize handle only when the sidebar is resizable + open. The
+            handle is also CSS-hidden under [data-builder-mode="preview"],
+            so it never shows in Present mode regardless of this flag. */}
+        {resizableSidebar && showSidebar && !sidebarCollapsed && (
+          <DashboardSidebarResizeHandle
+            width={dashSidebarWidth}
+            onWidthChange={setDashSidebarWidth}
+          />
+        )}
+
+        <main className="bp-main">
+          {allowEmptyState && !hasContent ? (
+            <DefaultChatArea messageKey={previewKey} />
+          ) : (
+            <PreviewCanvas />
+          )}
+        </main>
+      </div>
+
+      <DashboardFooter />
+    </div>
+  );
+
+  if (!framed) return dashboard;
+  /* Framed shells: Compare mode swaps the entire device frame for the
+     four-up CompareView (unchanged behaviour from the side panel). */
+  return compareMode ? <CompareView /> : <DeviceFrame>{dashboard}</DeviceFrame>;
+}
+
+/* ══════════════════════════════════════════════════════════
    Preview Toolbar - DS switcher + density + canvas actions
    Consolidated: removed redundant Add button, repositioned
    code toggle next to primary builder controls.
@@ -954,7 +1093,7 @@ const multiZoneCollision: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
-function CanvasDndProvider({ children, readOnly = false }: { children: React.ReactNode; readOnly?: boolean }) {
+export function CanvasDndProvider({ children, readOnly = false }: { children: React.ReactNode; readOnly?: boolean }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
@@ -1318,39 +1457,12 @@ function CanvasDndProvider({ children, readOnly = false }: { children: React.Rea
    ══════════════════════════════════════════════════════════ */
 export function PreviewSidePanel() {
   const previewOpen = useBuilder((s) => s.previewOpen);
-  const previewKey = useBuilder((s) => s.previewKey);
-  const deviceMode = useBuilder((s) => s.deviceMode);
-  const messages = useBuilder((s) => s.messages);
-  const designSystem = useBuilder((s) => s.designSystem);
-  const density = useBuilder((s) => s.density);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
-  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
-  const blocks = useBuilder((s) => s.blocks);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-  const compareMode = useBuilder((s) => s.compareMode);
   /* Preview mode → render the canvas read-only (suppress inline edit, +Add,
-     selection-driven editing) while keeping the product's own hover/focus. */
+     selection-driven editing) while keeping the product's own hover/focus.
+     The canvas itself now lives in <BuilderCanvas> (one shared render path);
+     this shell only owns the chat-split panel chrome + component library. */
   const builderMode = usePreviewMode((s) => s.mode);
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  /* P0: gate the canvas on actual content, not just chat history. A forked
-     share link (BuilderApp sets blocks, no message) and the first palette-add
-     (sets a block + selection, no message) would otherwise render the empty
-     demo chat while the real blocks sit invisible in state. Header/sidebar/
-     footer are pre-seeded so we can't test their length — body blocks + an
-     active selection are the reliable "user has content" signals. */
-  const hasContent =
-    messages.some((m) => m.role === "ai") ||
-    blocks.length > 0 ||
-    selectedBlockId !== null;
-  const isMobile = deviceMode === "mobile";
-  const preset = PRESETS[deviceMode];
-  const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
-  const isCodeView = canvasViewMode === "code";
-
-  const handleSidebarToggle = useCallback(() => {
-    setSidebarCollapsed((v) => !v);
-  }, []);
 
   /* ── Component library sidebar resize ── */
   const compBodyRef = useRef<HTMLDivElement>(null);
@@ -1426,9 +1538,6 @@ export function PreviewSidePanel() {
     document.body.style.userSelect = "none";
   };
 
-  /* ── Dashboard sidebar resize ── */
-  const [dashSidebarWidth, setDashSidebarWidth] = useState(180);
-
   return (
     <div className={`preview-side ${previewOpen ? "open" : ""}`}>
       {/* Inject DS-specific CSS (Carbon tokens + .cb-* component rules). */}
@@ -1443,58 +1552,13 @@ export function PreviewSidePanel() {
           ref={compBodyRef}
           style={componentLibraryOpen ? { "--comp-sidebar-width": `${compSidebarWidth}px` } as React.CSSProperties : undefined}
         >
-          {/* Center: Viewport */}
+          {/* Center: Viewport — the canvas itself is the shared
+              <BuilderCanvas>: framed (device frame + Compare swap),
+              responsive (compact/hidden sidebar on mobile), resizable
+              sidebar, and empty-state-aware, matching this shell's
+              prior inline behaviour exactly. */}
           <div className="bp-viewport-wrapper">
-            {compareMode ? (
-              /* Compare DS mode - 2x2 grid covering the full viewport */
-              <CompareView />
-            ) : (
-              /* Device Frame - animated width */
-              <motion.div
-                className="bp-device-frame"
-                animate={{ width: frameWidth, maxHeight: preset.height }}
-                transition={{ type: "spring", stiffness: 260, damping: 28 }}
-              >
-                {/* Code view - covers the entire dashboard area */}
-                {isCodeView ? (
-                  <CodeViewer blocks={blocks} />
-                ) : (
-                  /* SaaS Dashboard layout - scoped to the selected design system */
-                  <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-                    <DashboardHeader compact={isMobile} />
-
-                    <div className="bp-body">
-                      {!isMobile && (
-                        <DashboardSidebar
-                          collapsed={sidebarCollapsed}
-                          onToggle={handleSidebarToggle}
-                          width={dashSidebarWidth}
-                          onWidthChange={setDashSidebarWidth}
-                        />
-                      )}
-
-                      {/* Resize handle for dashboard sidebar */}
-                      {!isMobile && !sidebarCollapsed && (
-                        <DashboardSidebarResizeHandle
-                          width={dashSidebarWidth}
-                          onWidthChange={setDashSidebarWidth}
-                        />
-                      )}
-
-                      <main className="bp-main">
-                        {hasContent ? (
-                          <PreviewCanvas />
-                        ) : (
-                          <DefaultChatArea messageKey={previewKey} />
-                        )}
-                      </main>
-                    </div>
-
-                    <DashboardFooter />
-                  </div>
-                )}
-              </motion.div>
-            )}
+            <BuilderCanvas framed responsive resizableSidebar allowEmptyState />
           </div>
 
           {/* Resize handle for component library */}
@@ -1524,23 +1588,8 @@ export function PreviewSidePanel() {
    ══════════════════════════════════════════════════════════ */
 export function StandalonePreview() {
   const designSystem = useBuilder((s) => s.designSystem);
-  const density = useBuilder((s) => s.density);
   const mode = useBuilder((s) => s.mode);
-  const messages = useBuilder((s) => s.messages);
-  const previewKey = useBuilder((s) => s.previewKey);
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
-  const canvasViewMode = useBuilder((s) => s.canvasViewMode);
-  const blocks = useBuilder((s) => s.blocks);
-  const selectedBlockId = useBuilder((s) => s.selectedBlockId);
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  /* P0: same content gate as PreviewSidePanel — show the real canvas when
-     blocks/selection exist, not only when there's an AI message. */
-  const hasContent =
-    messages.some((m) => m.role === "ai") ||
-    blocks.length > 0 ||
-    selectedBlockId !== null;
-  const isCodeView = canvasViewMode === "code";
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
@@ -1572,23 +1621,10 @@ export function StandalonePreview() {
       <CanvasDndProvider readOnly>
         <div className="preview-builder-body">
           <div className="standalone-preview-canvas">
-            {isCodeView ? (
-              <CodeViewer blocks={blocks} />
-            ) : (
-            <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
-              <DashboardHeader compact={false} />
-              <div className="bp-body">
-                <DashboardSidebar
-                  collapsed={sidebarCollapsed}
-                  onToggle={() => setSidebarCollapsed((v) => !v)}
-                />
-                <main className="bp-main">
-                  <PreviewCanvas />
-                </main>
-              </div>
-              <DashboardFooter />
-            </div>
-            )}
+            {/* Shared canvas, unframed + non-responsive so the pop-out
+                keeps its full-desktop layout. Read-only flows from the
+                wrapping CanvasDndProvider's context (value=true). */}
+            <BuilderCanvas />
           </div>
 
           {/* Right: Component Library Sidebar in standalone */}
