@@ -55,6 +55,8 @@ import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
+import { usePreviewMode } from "@/store/usePreviewMode";
+import { PreviewReadOnlyContext, usePreviewReadOnly } from "./previewReadOnly";
 
 /* ══════════════════════════════════════════════════════════
    DSPreviewStyles - injects design-system CSS into the builder.
@@ -525,6 +527,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
   const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const readOnly = usePreviewReadOnly();
 
   return (
     <header className="bp-header">
@@ -551,7 +554,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                   {!compact && (
                     <span
                       className="bp-logo-text bp-zone-editable"
-                      contentEditable
+                      contentEditable={!readOnly}
                       suppressContentEditableWarning
                       onBlur={(e) =>
                         updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
@@ -581,7 +584,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
                   <span className="bp-status-dot" />
                   <span
                     className="bp-status-label bp-zone-editable"
-                    contentEditable
+                    contentEditable={!readOnly}
                     suppressContentEditableWarning
                     onBlur={(e) =>
                       updateHeaderBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
@@ -685,6 +688,7 @@ function DashboardSidebar({
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
   const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const readOnly = usePreviewReadOnly();
 
   const handleSetActive = (id: string) => {
     setSidebarBlocks(
@@ -743,7 +747,7 @@ function DashboardSidebar({
                         <span className="bp-nav-label">
                           <span
                             className="bp-zone-editable"
-                            contentEditable
+                            contentEditable={!readOnly}
                             suppressContentEditableWarning
                             onClick={(e) => e.stopPropagation()}
                             onBlur={(e) =>
@@ -780,7 +784,7 @@ function DashboardSidebar({
             );
           })}
         </ZoneDropContainer>
-        {!collapsed && (
+        {!collapsed && !readOnly && (
           <button className="bp-nav-add-btn" onClick={handleAddNavItem}>
             <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>
             Add item
@@ -846,6 +850,7 @@ function DashboardFooter() {
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
   const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const readOnly = usePreviewReadOnly();
 
   return (
     <footer className="bp-footer">
@@ -865,7 +870,7 @@ function DashboardFooter() {
                 <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                   <span
                     className="bp-zone-editable"
-                    contentEditable
+                    contentEditable={!readOnly}
                     suppressContentEditableWarning
                     onBlur={(e) =>
                       updateFooterBlockProps(block.id, { label: e.currentTarget.textContent ?? "" })
@@ -876,7 +881,7 @@ function DashboardFooter() {
                   <span className="bp-footer-sep">&middot;</span>
                   <span
                     className="bp-zone-editable"
-                    contentEditable
+                    contentEditable={!readOnly}
                     suppressContentEditableWarning
                     onBlur={(e) =>
                       updateFooterBlockProps(block.id, { version: e.currentTarget.textContent ?? "" })
@@ -949,7 +954,7 @@ const multiZoneCollision: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
-function CanvasDndProvider({ children }: { children: React.ReactNode }) {
+function CanvasDndProvider({ children, readOnly = false }: { children: React.ReactNode; readOnly?: boolean }) {
   const blocks = useBuilder((s) => s.blocks);
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
@@ -1286,7 +1291,9 @@ function CanvasDndProvider({ children }: { children: React.ReactNode }) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      {children}
+      <PreviewReadOnlyContext.Provider value={readOnly}>
+        {children}
+      </PreviewReadOnlyContext.Provider>
 
       {/* Drag overlay - ghost preview while dragging from library */}
       <DragOverlay dropAnimation={null}>
@@ -1321,6 +1328,9 @@ export function PreviewSidePanel() {
   const blocks = useBuilder((s) => s.blocks);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const compareMode = useBuilder((s) => s.compareMode);
+  /* Preview mode → render the canvas read-only (suppress inline edit, +Add,
+     selection-driven editing) while keeping the product's own hover/focus. */
+  const builderMode = usePreviewMode((s) => s.mode);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   /* P0: gate the canvas on actual content, not just chat history. A forked
@@ -1427,7 +1437,7 @@ export function PreviewSidePanel() {
       <PreviewBar />
 
       {/* Main builder area - DndContext wraps viewport + right sidebar */}
-      <CanvasDndProvider>
+      <CanvasDndProvider readOnly={builderMode === "preview"}>
         <div
           className="preview-builder-body"
           ref={compBodyRef}
@@ -1556,8 +1566,10 @@ export function StandalonePreview() {
       {/* Single consolidated preview toolbar (Phase F.2) */}
       <PreviewBar />
 
-      {/* Full dashboard canvas - DndContext wraps viewport + sidebar */}
-      <CanvasDndProvider>
+      {/* Full dashboard canvas - DndContext wraps viewport + sidebar.
+          The ?preview=1 pop-out is ALWAYS read-only (it reads useBuilder, not
+          usePreviewMode, so it had no gating before — this is the fix). */}
+      <CanvasDndProvider readOnly>
         <div className="preview-builder-body">
           <div className="standalone-preview-canvas">
             {isCodeView ? (

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
+import { usePreviewReadOnly } from "./previewReadOnly";
 import { showToast } from "@/lib/toast";
 import { undo as canvasUndo } from "@/lib/builderHistory";
 import {
@@ -720,6 +721,7 @@ function InlineEditable({
   autoOpenComponentPanel?: boolean;
 }) {
   const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
+  const readOnly = usePreviewReadOnly();
   const ref = useRef<HTMLSpanElement>(null);
   const isEditingRef = useRef(false);
 
@@ -752,7 +754,7 @@ function InlineEditable({
   return (
     <span
       ref={ref}
-      contentEditable
+      contentEditable={!readOnly}
       suppressContentEditableWarning
       className={`inline-editable ${className || ""}`}
       style={style}

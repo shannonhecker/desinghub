@@ -23,6 +23,8 @@ const storeDir = join(process.cwd(), "src", "store");
 const previewToggleSrc = readFileSync(join(builderDir, "PreviewToggle.tsx"), "utf8");
 const builderAppSrc = readFileSync(join(builderDir, "BuilderApp.tsx"), "utf8");
 const previewPanelSrc = readFileSync(join(builderDir, "PreviewPanel.tsx"), "utf8");
+const componentRendererSrc = readFileSync(join(builderDir, "ComponentRenderer.tsx"), "utf8");
+const previewReadOnlySrc = readFileSync(join(builderDir, "previewReadOnly.ts"), "utf8");
 const builderCss = readFileSync(join(builderDir, "builder.css"), "utf8");
 const chromeTokens = readFileSync(join(builderDir, "chrome-tokens.css"), "utf8");
 const previewModeStoreSrc = readFileSync(join(storeDir, "usePreviewMode.ts"), "utf8");
@@ -171,5 +173,46 @@ describe("PreviewToggle CSS honours reduce-motion", () => {
     const match = builderCss.match(/\.preview-toggle\s*\{([\s\S]*?)\n\}/);
     expect(match).not.toBeNull();
     expect(match![1]).toMatch(/border-radius:\s*var\(--bc-radius-sm/);
+  });
+});
+
+/* ════════════════════════════════════════════════════════════
+   P0 (2026-05-30): Preview is truly read-only — content edits off.
+   Pins the readOnly-context gating so a refactor can't silently
+   re-open inline editing / +Add in preview, and so StandalonePreview
+   (the ?preview=1 pop-out) keeps its gate. Source-pin (no DOM).
+   ════════════════════════════════════════════════════════════ */
+describe("Preview read-only: content editing is gated", () => {
+  it("previewReadOnly module exports the context + hook", () => {
+    expect(previewReadOnlySrc).toMatch(/export const PreviewReadOnlyContext\s*=\s*createContext\(false\)/);
+    expect(previewReadOnlySrc).toMatch(/export function usePreviewReadOnly\(\)/);
+  });
+
+  it("every zone contentEditable in PreviewPanel is gated on !readOnly", () => {
+    // No bare always-on contentEditable should remain.
+    expect(previewPanelSrc).not.toMatch(/contentEditable\s*\n\s*suppressContentEditableWarning/);
+    expect(previewPanelSrc).not.toMatch(/contentEditable\s*\/?>/);
+    // At least the 5 known zone fields gate on readOnly.
+    const gated = previewPanelSrc.match(/contentEditable=\{!readOnly\}/g) ?? [];
+    expect(gated.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("body InlineEditable (ComponentRenderer) gates contentEditable on !readOnly", () => {
+    expect(componentRendererSrc).toMatch(/contentEditable=\{!readOnly\}/);
+    expect(componentRendererSrc).toMatch(/usePreviewReadOnly/);
+  });
+
+  it("the + Add item control is hidden when read-only", () => {
+    expect(previewPanelSrc).toMatch(/!collapsed && !readOnly/);
+  });
+
+  it("CanvasDndProvider provides readOnly context; in-app binds to preview mode", () => {
+    expect(previewPanelSrc).toMatch(/<PreviewReadOnlyContext\.Provider value=\{readOnly\}>/);
+    expect(previewPanelSrc).toMatch(/<CanvasDndProvider readOnly=\{builderMode === "preview"\}>/);
+  });
+
+  it("StandalonePreview (?preview=1) renders read-only unconditionally", () => {
+    // The pop-out previously had NO gating (read useBuilder, not usePreviewMode).
+    expect(previewPanelSrc).toMatch(/<CanvasDndProvider readOnly>/);
   });
 });
