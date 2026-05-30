@@ -298,6 +298,12 @@ html:has(.landing-southleft) body {
     radial-gradient(60% 70% at 18% 18% in oklab, var(--lsl-aurora-cyan) 0%, rgba(130, 224, 255, 0) 70%),
     radial-gradient(50% 60% at 82% 30% in oklab, var(--lsl-aurora-pale) 0%, rgba(175, 240, 255, 0) 75%),
     radial-gradient(40% 50% at 60% 90% in oklab, rgba(167, 139, 250, 0.07) 0%, rgba(167, 139, 250, 0) 70%);
+  /* Clear the aurora from the top band so the landing fold (behind the
+     transparent nav) reads as flat Midnight Canvas — no colour wash on
+     arrival. The glow fades in below the fold-top and keeps its full presence
+     lower in the hero. Unprefixed only — lightningcss adds -webkit-mask per
+     browserslist (same #695 caveat as backdrop-filter). */
+  mask-image: linear-gradient(to bottom, transparent 0, transparent 150px, #000 340px);
 }
 .landing-southleft .lsl-hero > .lsl-container {
   position: relative;
