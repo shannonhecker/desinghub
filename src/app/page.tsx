@@ -19,7 +19,14 @@
  * copy. Colons, commas, periods only.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useMotionTemplate,
+  useReducedMotion,
+} from "framer-motion";
 import Link from "next/link";
 
 import "./landing.css";
@@ -433,23 +440,49 @@ const SPACE_TOKENS = [
 
 /* ── Hooks ───────────────────────────────────────────────────────────── */
 
-/** Toggle the sticky nav background once the user scrolls past the hero.
-    Threshold: 80% of viewport height — keeps the nav fully transparent
-    through the entire brand-moment hero scroll. Glass only kicks in when
-    the user crosses into the service-card content below. */
-function useScrolledNav(): boolean {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-  return scrolled;
+/** Scroll-linked glass for the sticky nav.
+ *
+ * Rather than snapping on at a threshold, the glass *builds in* as the user
+ * scrolls: blur radius, saturation, background tint, hairline border and drop
+ * shadow all ramp 0 → full across the first GLASS_RANGE px of scroll. Returns
+ * a style object of MotionValues to spread onto a <motion.nav>.
+ *
+ * Why JS-driven inline styles instead of the old `[data-scrolled]` CSS rule:
+ * lightningcss strips the unprefixed `backdrop-filter` from minified CSS when
+ * both prefixed + unprefixed are authored (issue #695), so the class-based
+ * glass shipped `-webkit-`-only and never painted in Chrome / Firefox /
+ * Safari 18+. Inline styles bypass CSS minification, and we emit BOTH
+ * `backdropFilter` and `WebkitBackdropFilter` so every engine gets a value.
+ *
+ * Motion safety: the effect is a pure function of scroll position (no
+ * time-based animation), which is already reduced-motion-appropriate. When
+ * `prefers-reduced-motion` is set we additionally collapse the ramp to a near-
+ * instant snap so there is no gradual visual change at all. */
+const GLASS_RANGE_PX = 360; // scroll distance over which the glass reaches full
+
+function useNavGlassStyle() {
+  const reduce = useReducedMotion();
+  const { scrollY } = useScroll();
+  const range = reduce ? [0, 1] : [0, GLASS_RANGE_PX];
+
+  const blur = useTransform(scrollY, range, [0, 40], { clamp: true });
+  const saturate = useTransform(scrollY, range, [100, 190], { clamp: true });
+  const tint = useTransform(scrollY, range, [0, 0.5], { clamp: true });
+  const borderAlpha = useTransform(scrollY, range, [0, 0.1], { clamp: true });
+  const shadowAlpha = useTransform(scrollY, range, [0, 0.45], { clamp: true });
+
+  const backdropFilter = useMotionTemplate`saturate(${saturate}%) blur(${blur}px)`;
+  const backgroundColor = useMotionTemplate`rgba(10, 14, 26, ${tint})`;
+  const borderBottomColor = useMotionTemplate`rgba(255, 255, 255, ${borderAlpha})`;
+  const boxShadow = useMotionTemplate`inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 40px rgba(0, 0, 0, ${shadowAlpha})`;
+
+  return {
+    backdropFilter,
+    WebkitBackdropFilter: backdropFilter,
+    backgroundColor,
+    borderBottomColor,
+    boxShadow,
+  };
 }
 
 /**
@@ -485,7 +518,7 @@ function useRevealOnScroll(rootRef: React.RefObject<HTMLElement | null>): void {
 
 export default function LandingSouthleftPage() {
   const rootRef = useRef<HTMLElement>(null);
-  const scrolled = useScrolledNav();
+  const navGlass = useNavGlassStyle();
   useRevealOnScroll(rootRef);
 
   return (
@@ -496,7 +529,7 @@ export default function LandingSouthleftPage() {
       className="landing-southleft hero"
     >
       {/* ── Nav ── */}
-      <nav className="lsl-nav" data-scrolled={scrolled} aria-label="Primary">
+      <motion.nav className="lsl-nav" style={navGlass} aria-label="Primary">
         <div className="lsl-container lsl-nav-inner">
           <Link href="/" className="lsl-logo" aria-label="uoaui.ai home">
             <UoauiMark className="lsl-logo-mark-svg" />
@@ -515,7 +548,7 @@ export default function LandingSouthleftPage() {
             Open the workbench
           </Link>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* ── Hero ── */}
       <section className="lsl-hero" aria-labelledby="lsl-hero-headline">

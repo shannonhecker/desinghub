@@ -188,8 +188,8 @@
 .access-modal-overlay,
 .request-access-overlay {
   background: rgba(1, 2, 4, 0.72);
+  /* Unprefixed only — see globals.css note (lightningcss #695). */
   backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 .hero.landing-page .access-modal,
@@ -376,7 +376,6 @@
   font-weight: 800;
   line-height: 1.35;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 .hero .section-heading p {
@@ -753,8 +752,8 @@
   background:
     radial-gradient(ellipse at 50% 20%, rgba(94, 231, 223, 0.12), transparent 42rem),
     rgba(2, 3, 2, 0.78);
+  /* Unprefixed only — see globals.css note (lightningcss #695). */
   backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   cursor: pointer;
 }
 
