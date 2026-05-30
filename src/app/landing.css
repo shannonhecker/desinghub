@@ -51,6 +51,10 @@ html:has(.landing-southleft) body {
   --lsl-accent:       #A78BFA;  /* Purple Compute — primary (5.4:1 AA on #0A0E1A) */
   --lsl-accent-hover: #B89BFB;
   --lsl-accent-soft:  rgba(167, 139, 250, 0.18);
+  /* Shared accent for small mono tag labels (hero eyebrow, section labels,
+     token-scale labels) so they match by construction. Violet at 78% — 4.6:1
+     AA on --lsl-bg. */
+  --lsl-label-accent: rgba(167, 139, 250, 0.78);
   --lsl-amber:        #F0B5A4;  /* Peach Output — secondary highlight (9.1:1) */
   --lsl-amber-soft:   rgba(240, 181, 164, 0.18);
   --lsl-teal:         #3DDCC4;  /* Teal Input — demoted to tertiary signal (9.8:1) */
@@ -228,7 +232,7 @@ html:has(.landing-southleft) body {
   text-transform: uppercase;
   /* Soft violet — tinted to primary accent without competing with the
      headline. 4.6:1 contrast on bg (AA for normal text). */
-  color: rgba(167, 139, 250, 0.78);
+  color: var(--lsl-label-accent);
   margin: 0 0 36px;
 }
 .landing-southleft .lsl-hero-headline {
@@ -370,7 +374,7 @@ html:has(.landing-southleft) body {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lsl-amber);
+  color: var(--lsl-label-accent);
   margin: 0 0 28px;
   display: inline-block;
 }
@@ -900,7 +904,7 @@ html:has(.landing-southleft) body {
   font-size: var(--lsl-text-micro);
   width: 28px;
   flex-shrink: 0;
-  color: var(--lsl-fg-subtle);
+  color: var(--lsl-label-accent);
 }
 .landing-southleft .lsl-token-bar {
   height: 14px;
