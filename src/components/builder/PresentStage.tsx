@@ -13,9 +13,9 @@
 
    1. The root renders data-builder-mode="preview" (NOT a new
       "present" value). That makes the existing chrome-hide
-      cascade in builder.css (handles, chip rail, resize handles,
-      hover inspector, component sidebar, …) and the JS gates
-      (HoverInspector, SizeChipRail) apply unchanged — Present
+      cascade in builder.css (resize handles, hover inspector,
+      component sidebar, …) and the JS gates (HoverInspector)
+      apply unchanged — Present
       mode inherits read-only suppression for free instead of
       reimplementing it.
 

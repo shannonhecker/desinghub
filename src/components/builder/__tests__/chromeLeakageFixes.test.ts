@@ -12,10 +12,6 @@
    2. SortableBlock no longer attaches the legacy
       `bc-rail-${chipRailPlacement}` wrapper class (replaced by
       Floating UI flip middleware).
-   3. SizeChipRail imports Floating UI primitives and uses
-      FloatingPortal (S2).
-   4. SizeChipRail wires the floating ref + style on the rail
-      and accepts an `anchorRef` prop (S2).
    5. chrome-tokens.css declares the new `--builder-selection-*`
       token namespace and a matching light-mode override (S3).
    6. builder.css selection rule references
@@ -36,7 +32,6 @@ import { join } from "node:path";
 
 const builderDir = join(process.cwd(), "src", "components", "builder");
 const sortableBlock = readFileSync(join(builderDir, "SortableBlock.tsx"), "utf8");
-const sizeChipRail = readFileSync(join(builderDir, "SizeChipRail.tsx"), "utf8");
 const chromeTokens = readFileSync(join(builderDir, "chrome-tokens.css"), "utf8");
 const builderCss = readFileSync(join(builderDir, "builder.css"), "utf8");
 
@@ -62,54 +57,6 @@ describe("S1 / A1, sidebar chrome gating (E2 refactor: now lives inside HoverIns
 
   it("no longer wraps with the legacy bc-rail-${placement} class", () => {
     expect(sortableBlock).not.toMatch(/bc-rail-\$\{chipRailPlacement\}/);
-  });
-});
-
-describe("S2, SizeChipRail Floating UI adoption", () => {
-  it("imports FloatingPortal and useFloating from @floating-ui/react", () => {
-    expect(sizeChipRail).toContain("from \"@floating-ui/react\"");
-    expect(sizeChipRail).toContain("FloatingPortal");
-    expect(sizeChipRail).toContain("useFloating");
-  });
-
-  it("uses offset, flip, and shift middleware", () => {
-    expect(sizeChipRail).toMatch(/offset\(/);
-    expect(sizeChipRail).toMatch(/flip\(/);
-    expect(sizeChipRail).toMatch(/shift\(/);
-  });
-
-  it("uses autoUpdate via whileElementsMounted", () => {
-    expect(sizeChipRail).toMatch(/whileElementsMounted:\s*autoUpdate/);
-  });
-
-  it("accepts an anchorRef prop and wires it to setReference (destructured from refs)", () => {
-    expect(sizeChipRail).toMatch(/anchorRef\?:\s*React\.RefObject<HTMLElement \| null>/);
-    expect(sizeChipRail).toMatch(/setReference\(anchorRef\?\.current/);
-  });
-
-  it("wraps the rail in FloatingPortal so it escapes ancestor clip rects", () => {
-    expect(sizeChipRail).toMatch(/<FloatingPortal>\{rail\}<\/FloatingPortal>/);
-  });
-
-  it("applies floatingStyles + setFloating (destructured from refs) on the rail element", () => {
-    expect(sizeChipRail).toMatch(/ref=\{setFloating\}/);
-    expect(sizeChipRail).toMatch(/style=\{floatingStyles\}/);
-  });
-});
-
-describe("S2, builder.css drops raw absolute positioning from .bc-chip-rail", () => {
-  it(".bc-chip-rail block no longer hard-codes position:absolute + top/left offsets", () => {
-    // Extract the .bc-chip-rail rule body, ignoring later overrides.
-    const match = builderCss.match(/\.bc-chip-rail\s*\{([\s\S]*?)\n\}/);
-    expect(match, ".bc-chip-rail rule should still exist for visual styling").not.toBeNull();
-    const body = match![1];
-    expect(body).not.toMatch(/position:\s*absolute/);
-    expect(body).not.toMatch(/left:\s*0/);
-    expect(body).not.toMatch(/top:\s*calc/);
-  });
-
-  it("the legacy .bc-rail-bottom flip override is removed", () => {
-    expect(builderCss).not.toMatch(/\.bc-rail-bottom\s+\.bc-chip-rail/);
   });
 });
 
