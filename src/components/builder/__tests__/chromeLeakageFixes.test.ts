@@ -45,8 +45,7 @@ describe("S1 / A1, sidebar chrome gating (E2 refactor: now lives inside HoverIns
      swap) out of SortableBlock's direct JSX and into <HoverInspector>.
      The sidebar bail-out moved with it. These tests now verify the new
      architecture: SortableBlock mounts <HoverInspector>, HoverInspector
-     bails out on sidebar zone, and the colspan badge (still owned by
-     SortableBlock) still has its sidebar guard. */
+     bails out on sidebar zone. */
   const hoverInspector = readFileSync(join(builderDir, "HoverInspector.tsx"), "utf8");
 
   it("SortableBlock mounts <HoverInspector> with zone forwarded", () => {
@@ -55,10 +54,6 @@ describe("S1 / A1, sidebar chrome gating (E2 refactor: now lives inside HoverIns
 
   it("HoverInspector returns null when zone === 'sidebar'", () => {
     expect(hoverInspector).toMatch(/zone\s*===\s*"sidebar"/);
-  });
-
-  it("guards legacy colspan badge behind zone !== 'sidebar' (still in SortableBlock)", () => {
-    expect(sortableBlock).toMatch(/onColSpanChange && !compact && !experimentalLayout && zone !== "sidebar"/);
   });
 
   it("emits data-zone attribute so CSS belt-and-braces can target sidebar", () => {

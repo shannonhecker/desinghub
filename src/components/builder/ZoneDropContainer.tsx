@@ -24,11 +24,8 @@ import { InsertionSlot } from "./InsertionSlot";
    coded prop. `direction` is kept as a legacy fallback for
    callers that haven't migrated yet.
 
-   When `experimentalLayout` is on, we interleave InsertionSlot
-   strips between every mapped child so users can add a new
-   block at any index with a + click. Slots themselves are
-   gated internally by the flag, so turning the flag off makes
-   them render nothing (no layout cost, no visual diff).
+   We interleave InsertionSlot strips between every mapped child
+   so users can add a new block at any index with a + click.
    ══════════════════════════════════════════════════════════ */
 
 interface ZoneDropContainerProps {
@@ -55,7 +52,6 @@ export function ZoneDropContainer({
 }: ZoneDropContainerProps) {
   const storeLayout = useBuilder((s) => s.zoneLayouts[zoneId]);
   const zoneLayout = zoneLayoutOverride ?? storeLayout;
-  const experimentalLayout = useBuilder((s) => s.experimentalLayout);
   /* Issue #79: highlight this zone when the user is hovering a library
      tile that would land here. Cleared on tile-leave or click/drag start. */
   const libraryHoverZone = useBuilder((s) => s.libraryHoverZone);
@@ -89,13 +85,10 @@ export function ZoneDropContainer({
 
   /* Interleave InsertionSlot strips between every mapped child.
      `React.Children.toArray` preserves the caller's keys + strips
-     falsy children, which matches the existing behavior. We only
-     materialize slots when the flag is on so the non-experimental
-     path stays structurally identical to before. */
+     falsy children, which matches the existing behavior. */
   const childArray = React.Children.toArray(children);
   const slotOrientation: "horizontal" | "vertical" = mode === "row" ? "vertical" : "horizontal";
-  const renderedChildren = experimentalLayout
-    ? childArray.flatMap((child, i) => [
+  const renderedChildren = childArray.flatMap((child, i) => [
         <InsertionSlot
           key={`slot-${zoneId}-${i}`}
           zone={zoneId}
@@ -110,13 +103,12 @@ export function ZoneDropContainer({
           index={childArray.length}
           orientation={slotOrientation}
         />,
-      )
-    : children;
+      );
 
   return (
     <div
       ref={setNodeRef}
-      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${isLibraryHoverTarget ? " is-library-hover-target" : ""}${experimentalLayout ? " has-insertion-slots" : ""}${className ? ` ${className}` : ""}`}
+      className={`zone-drop-container zone-drop-${zoneId}${mode === "grid" ? " zone-grid" : ""}${mode === "row" ? " zone-row" : ""}${mode === "stack" ? " zone-stack" : ""}${isOver ? " is-over" : ""}${isLibraryHoverTarget ? " is-library-hover-target" : ""} has-insertion-slots${className ? ` ${className}` : ""}`}
       style={style}
       data-layout-mode={mode}
     >

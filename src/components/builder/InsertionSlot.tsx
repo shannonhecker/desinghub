@@ -8,12 +8,8 @@ import { useBuilder, type ZoneId } from "@/store/useBuilder";
    children inside a zone. Click the + button to open the
    SlashInserter anchored at this zone + index.
 
-   Visibility is entirely gated by experimentalLayout:
-     - flag OFF → component returns null, zero regression for
-       non-test users.
-     - flag ON  → the strip is always in the DOM (so it can
-       expand on hover), but only a 1px center line is painted
-       until the user hovers.
+   The strip is always in the DOM (so it can expand on hover),
+   but only a 1px center line is painted until the user hovers.
 
    Orientation mirrors the zone's flow mode:
      - stack / grid → horizontal strip (full width, short height)
@@ -35,10 +31,7 @@ interface InsertionSlotProps {
 }
 
 export function InsertionSlot({ zone, index, orientation = "horizontal" }: InsertionSlotProps) {
-  const experimentalLayout = useBuilder((s) => s.experimentalLayout);
   const openInserter = useBuilder((s) => s.openInserter);
-
-  if (!experimentalLayout) return null;
 
   const handleClick = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
