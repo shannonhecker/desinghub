@@ -36,7 +36,17 @@ import { useBuilder } from "@/store/useBuilder";
 import { CanvasDndProvider, BuilderCanvas, DSPreviewStyles } from "./PreviewPanel";
 import { PresentBar } from "./PresentBar";
 
-export function PresentStage() {
+export function PresentStage({
+  /* "recipient" + sharedHash are passed by SharedPreview (the shared-link
+     route) to swap the PresentBar's exit for Fork-and-edit + Home. The
+     in-app author path (BuilderApp) renders <PresentStage/> with no props
+     → PresentBar defaults to the "author" variant. */
+  barVariant,
+  sharedHash,
+}: {
+  barVariant?: "author" | "recipient";
+  sharedHash?: string;
+} = {}) {
   /* Canvas theme (light/dark) drives the .builder-light scope so the
      --bc-* chrome tokens + DS rendering resolve correctly, exactly as
      StandalonePreview does. */
@@ -85,7 +95,7 @@ export function PresentStage() {
         </div>
       </CanvasDndProvider>
 
-      <PresentBar />
+      <PresentBar variant={barVariant} sharedHash={sharedHash} />
     </div>
   );
 }

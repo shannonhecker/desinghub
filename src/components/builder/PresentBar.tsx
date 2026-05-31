@@ -34,7 +34,16 @@ const DEVICES: { key: DeviceMode; Icon: typeof Monitor; label: string }[] = [
   { key: "mobile", Icon: Smartphone, label: "Mobile" },
 ];
 
-export function PresentBar() {
+export function PresentBar({
+  /* "author" (default): in-app Present mode — exits back to the editor.
+     "recipient": the shared-link view — no editor to exit to, so the exit
+     slot becomes Fork-and-edit + Home (Decision #4/#5). */
+  variant = "author",
+  sharedHash,
+}: {
+  variant?: "author" | "recipient";
+  sharedHash?: string;
+} = {}) {
   const deviceMode = useBuilder((s) => s.deviceMode);
   const setDeviceMode = useBuilder((s) => s.setDeviceMode);
   const designSystem = useBuilder((s) => s.designSystem);
@@ -89,7 +98,7 @@ export function PresentBar() {
 
   return (
     <div className="present-bar" role="toolbar" aria-label="Present mode controls">
-      <span className="present-bar-brand" aria-hidden="true">Present</span>
+      <span className="present-bar-brand" aria-hidden="true">{variant === "recipient" ? "Preview" : "Present"}</span>
 
       <span className="present-bar-sep" aria-hidden="true" />
 
@@ -152,20 +161,50 @@ export function PresentBar() {
 
       <span className="present-bar-sep" aria-hidden="true" />
 
-      {/* Exit Present mode → back to the editor. Esc does the same
-          (handled globally in BuilderApp). */}
-      <button
-        type="button"
-        className="present-bar-btn present-bar-btn-exit"
-        onClick={() => setBuilderMode("edit")}
-        title="Exit Present mode (Esc)"
-        aria-label="Exit Present mode"
-      >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
-          close
-        </span>
-        Done
-      </button>
+      {variant === "recipient" ? (
+        <>
+          {/* Recipient (shared link): open the canvas in the builder, or go
+              home. No "exit to edit" — there's no editor in this route. */}
+          <button
+            type="button"
+            className="present-bar-btn present-bar-btn-exit"
+            onClick={() => { if (sharedHash) window.location.href = `/builder?shared=${sharedHash}`; }}
+            title="Open this canvas in the builder"
+            aria-label="Fork and edit in the builder"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
+              edit
+            </span>
+            Fork &amp; edit
+          </button>
+          <a
+            className="present-bar-btn"
+            href="/"
+            title="Design Hub home"
+            aria-label="Design Hub home"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
+              home
+            </span>
+            Home
+          </a>
+        </>
+      ) : (
+        /* Author: exit Present mode → back to the editor. Esc does the same
+           (handled globally in BuilderApp). */
+        <button
+          type="button"
+          className="present-bar-btn present-bar-btn-exit"
+          onClick={() => setBuilderMode("edit")}
+          title="Exit Present mode (Esc)"
+          aria-label="Exit Present mode"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
+            close
+          </span>
+          Done
+        </button>
+      )}
     </div>
   );
 }
