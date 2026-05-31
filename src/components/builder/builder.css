@@ -3840,8 +3840,14 @@
   min-height: 0;
   overflow: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* flex-start (not center) is the scroll-safe fallback. When the framed
+     canvas is TALLER than the stage — e.g. a portrait tablet (1024px) on a
+     laptop viewport — centring pushes the frame's top (its header) out of
+     reach above the scroll area, so it looked permanently cropped. The
+     frame is re-centred via `margin: auto` below, which collapses to 0 on
+     overflow, leaving the top reachable by scroll. */
+  align-items: flex-start;
+  justify-content: flex-start;
   padding: clamp(20px, 4vh, 56px) clamp(16px, 4vw, 64px);
   padding-bottom: clamp(78px, 12vh, 128px);
 }
@@ -3854,6 +3860,11 @@
   flex: 0 1 auto;
   width: 100%;
   max-width: min(100%, 1320px);
+  /* Auto margins centre the frame in the stage when there's room, and
+     collapse to 0 when the frame overflows — so an over-tall frame aligns
+     to the top (header visible, scroll-reachable) instead of being clipped
+     by `align-items: center`. Pairs with the flex-start fallback above. */
+  margin: auto;
   box-shadow: 0 0 0 1px var(--b-border), var(--bc-shadow-lg);
 }
 
