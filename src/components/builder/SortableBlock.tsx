@@ -9,7 +9,6 @@ import { useBuilder, findBlockInTree } from "@/store/useBuilder";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
 import { ResizeHUD } from "./ResizeHUD";
-import { SizeChipRail } from "./SizeChipRail";
 import { HoverInspector } from "./HoverInspector";
 
 /* Snap points (percent) and magnetic pull distance (px) applied
@@ -762,20 +761,9 @@ export function SortableBlock({
         onSwapClick={!compact ? onSwapClick : undefined}
       />
 
-      {/* Size chip rail, shown when selected.
-          S2 (2026-05-29 audit): anchored via Floating UI to the block
-          element so the rail flips + shifts away from viewport edges
-          (preview header, right-edge clip). Portaled to document.body
-          so the rail escapes ancestor overflow:hidden clip rects. */}
-      {isSelected && !compact && zone && onWidthChange && (
-        <SizeChipRail
-          zone={zone}
-          blockId={id}
-          currentWidth={currentWidth}
-          anchorRef={blockElRef}
-        />
-      )}
-
+      {/* Width is edited in the Inspector's Layout section (the unified
+          Width control). The on-canvas SizeChipRail was retired in
+          Phase 2; on-canvas drag-resize remains via ExperimentalResize. */}
       {children}
 
       {/* On-canvas resize: single right-edge handle + HUD + snap guide.
