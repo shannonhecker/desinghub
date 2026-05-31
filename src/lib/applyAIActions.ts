@@ -13,6 +13,12 @@ const VALID_DENSITIES = ["high", "medium", "low", "touch"];
 const VALID_ZONES: ZoneId[] = ["body", "header", "sidebar", "footer"];
 const VALID_INTERFACE_TYPES = ["dashboard", "landing", "form", "ecommerce", "blog", "portfolio"];
 
+/* Runaway guard: a single AI turn should never carpet the canvas with a
+   20-30 block dashboard. The system prompt targets a 5-9 block budget; this
+   is a hard backstop against prompt drift. Generous enough that it never
+   clips a reasonable build, low enough to stop a pathological dump. */
+const MAX_ADD_BLOCKS_PER_TURN = 16;
+
 function uid() {
   return `ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
@@ -28,6 +34,9 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
   if (actions.length > 0) pushSnapshot();
 
   const store = useBuilder.getState();
+
+  let addBlockCount = 0;
+  let addBlockCapWarned = false;
 
   for (const action of actions) {
     switch (action.action) {
@@ -94,6 +103,16 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
           layout?: Partial<LayoutProps>;
         } | null;
         if (!v || typeof v.type !== "string") break;
+        addBlockCount++;
+        if (addBlockCount > MAX_ADD_BLOCKS_PER_TURN) {
+          if (!addBlockCapWarned) {
+            addBlockCapWarned = true;
+            console.warn(
+              `[applyAIActions] addBlock cap (${MAX_ADD_BLOCKS_PER_TURN}) reached in one turn; extra blocks ignored to keep generated layouts simple.`,
+            );
+          }
+          break;
+        }
         const zone: ZoneId = v.zone && VALID_ZONES.includes(v.zone) ? v.zone : "body";
         // Find defaults from registry
         const blueprint = LIBRARY_BLUEPRINTS.find((b) => b.type === v.type);

@@ -245,16 +245,16 @@ interface DataTableProps extends SimProps {
 }
 
 const DEFAULT_COLUMNS = ["Name", "Status", "Role", "Last Active"];
-const DEFAULT_DATA = [
-  { name: "Jane Doe", status: "Active", role: "Admin", date: "2 hrs ago" },
-  { name: "John Smith", status: "Pending", role: "Editor", date: "Yesterday" },
-  { name: "Alice Jones", status: "Active", role: "Viewer", date: "5 mins ago" },
-];
 
+/* No DEFAULT_DATA fallback by design: a table with no rows renders an explicit
+   empty state instead of a generic "Jane Doe / John Smith / Alice Jones"
+   placeholder roster. That roster used to leak into every generated dashboard
+   regardless of domain (a plant tracker should never show an Admin/Editor/Viewer
+   users table). Callers that want a populated table pass real `rows`. */
 export function SimulatedDataTable({
   system,
-  columns = DEFAULT_COLUMNS,
-  data = DEFAULT_DATA,
+  columns,
+  data,
 }: DataTableProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -279,12 +279,28 @@ export function SimulatedDataTable({
     return "neutral";
   };
 
+  const cols = columns ?? DEFAULT_COLUMNS;
+  const rows = Array.isArray(data) ? data : [];
+
+  if (rows.length === 0) {
+    return (
+      <div
+        className={`${prefix}-table-container`}
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120, padding: 24, textAlign: "center", opacity: 0.6 }}
+      >
+        <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+          No data yet. Describe the records you want, or add rows.
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={`${prefix}-table-container`}>
       <table className={`${prefix}-table`}>
         <thead>
           <tr>
-            {columns.map((col, i) => (
+            {cols.map((col, i) => (
               <th
                 key={col}
                 className={`${prefix}-th ${sortCol === i ? `${prefix}-th-sorted` : ""}`}
@@ -304,7 +320,7 @@ export function SimulatedDataTable({
           </tr>
         </thead>
         <tbody>
-          {data.map((row, idx) => (
+          {rows.map((row, idx) => (
             <tr
               key={idx}
               className={`${prefix}-tr${hoveredRow === idx ? ` ${prefix}-tr-hover` : ""}${selectedRow === idx ? ` ${prefix}-tr-selected` : ""}`}

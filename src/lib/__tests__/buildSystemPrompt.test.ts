@@ -113,7 +113,7 @@ describe("buildSystemPrompt — smarter-chatbot enrichment (P1)", () => {
   it("heuristics map common intents to concrete blocks", () => {
     expect(SYSTEM_PROMPT).toContain("a single metric / KPI / number -> SimulatedStatCard");
     expect(SYSTEM_PROMPT).toContain("a trend over time -> HighchartLine");
-    expect(SYSTEM_PROMPT).toContain("a list of records / rows -> SimulatedDataTable");
+    expect(SYSTEM_PROMPT).toContain("domain-specific records the user will read or act on");
   });
 
   it("build-first directive biases toward building over interrogating", () => {
@@ -127,5 +127,31 @@ describe("buildSystemPrompt — smarter-chatbot enrichment (P1)", () => {
     expect(buildSystemPrompt("m3")).toContain("contained");
     expect(buildSystemPrompt("carbon")).toContain("tertiary");
     expect(buildSystemPrompt("uoaui")).toContain("a-btn");
+  });
+});
+
+/* Simplicity discipline: the build-first prompt now caps block count, fixes
+   the reading order (KPIs first), gates questions away from scaffolds, bans
+   the generic users table, and pins grid widths so rows don't wrap. These keep
+   generated UI simple and aligned instead of noisy. */
+describe("buildSystemPrompt — simplicity / de-noise discipline", () => {
+  it("caps the block budget so dashboards stay readable", () => {
+    expect(SYSTEM_PROMPT).toContain("Block budget: aim for 5-9 blocks");
+  });
+
+  it("mandates KPIs-first reading order (not buried at the bottom)", () => {
+    expect(SYSTEM_PROMPT).toContain("KPI stat-card row directly under the title");
+  });
+
+  it("gates questions away from generating a scaffold", () => {
+    expect(SYSTEM_PROMPT).toContain("If the user is ASKING a question");
+  });
+
+  it("bans the generic people/users placeholder table", () => {
+    expect(SYSTEM_PROMPT).toContain("NEVER emit a generic people/users table");
+  });
+
+  it("pins grid widths so equal rows don't silently wrap", () => {
+    expect(SYSTEM_PROMPT).toContain('never mix percentage widths and "fill" in the same row');
   });
 });
