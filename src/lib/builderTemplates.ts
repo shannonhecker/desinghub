@@ -98,8 +98,8 @@ const analyticsDashboard: BuilderTemplate = {
     /* Hero trend - full width (12 cols), headline metric vs previous period */
     { id: tid("ad-hero"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 30 days vs previous" }, layout: { width: "12fr" } },
     /* 2-up supporting row - 6/6 */
-    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel" }, layout: { width: "6fr" } },
-    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan" }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel", categories: ["Organic", "Paid", "Referral", "Social"], series: [{ name: "Signups", data: [320, 210, 140, 90] }] }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan", seriesData: [{ name: "Free", y: 46 }, { name: "Pro", y: 34 }, { name: "Enterprise", y: 20 }] }, layout: { width: "6fr" } },
     /* Detail table - 12 cols, kept LAST so the granular view follows the KPI + chart overview (canonical reading order) */
     { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "12fr" } },
   ],
