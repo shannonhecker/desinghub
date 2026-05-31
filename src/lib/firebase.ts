@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
+import { migrateBlocks } from "./blockMigrations";
 import type {
   ChatMessage,
   Block,
@@ -240,10 +241,10 @@ export function useCloudStorage() {
       const colorOverrides = snapshot.colorOverrides ?? {};
       useBuilder.setState({
         messages: snapshot.messages ?? [],
-        blocks: snapshot.blocks ?? [],
-        headerBlocks: snapshot.headerBlocks ?? [],
-        sidebarBlocks: snapshot.sidebarBlocks ?? [],
-        footerBlocks: snapshot.footerBlocks ?? [],
+        blocks: migrateBlocks(snapshot.blocks ?? []),
+        headerBlocks: migrateBlocks(snapshot.headerBlocks ?? []),
+        sidebarBlocks: migrateBlocks(snapshot.sidebarBlocks ?? []),
+        footerBlocks: migrateBlocks(snapshot.footerBlocks ?? []),
         /* Restore zone layouts if present in the snapshot; otherwise
            fall through to whatever the store currently holds (the
            default config). Pre-flex-layout sessions deserialize with
