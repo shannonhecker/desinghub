@@ -5,6 +5,7 @@
 
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
+import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   salt: { provider: "SaltProvider", importFrom: "@salt-ds/core" },
@@ -14,7 +15,11 @@ const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   carbon: { provider: "Theme", importFrom: "@carbon/react" },
 };
 
-function blockToJSX(block: Block, indent: string): string {
+function blockToJSX(block: Block, indent: string, system: SystemId): string {
+  /* Prefer real DS-component JSX from the ComponentAPIRegistry; fall back to
+     the generic markup for blocks / DSs the registry doesn't cover yet. */
+  const real = blockToRealJsx(system, block);
+  if (real) return real.split("\n").map((line) => indent + line).join("\n");
   const p = block.props;
   switch (block.type) {
     case "SimulatedTitle":
@@ -67,31 +72,66 @@ function blockToJSX(block: Block, indent: string): string {
   }
 }
 
-function renderZone(blocks: Block[], zoneName: string, indent: string): string {
+function renderZone(blocks: Block[], zoneName: string, indent: string, system: SystemId): string {
   if (blocks.length === 0) return "";
-  const inner = blocks.map((b) => blockToJSX(b, indent + "    ")).join("\n");
+  const inner = blocks.map((b) => blockToJSX(b, indent + "    ", system)).join("\n");
   return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
 }
 
 export function exportReact(): string {
   const s = useBuilder.getState();
+  const system = s.designSystem as SystemId;
   const ds = DS_IMPORTS[s.designSystem] || DS_IMPORTS.salt;
 
   const zones = [
-    renderZone(s.headerBlocks, "Header", "    "),
-    renderZone(s.sidebarBlocks, "Sidebar", "    "),
-    renderZone(s.blocks, "Body", "    "),
-    renderZone(s.footerBlocks, "Footer", "    "),
+    renderZone(s.headerBlocks, "Header", "    ", system),
+    renderZone(s.sidebarBlocks, "Sidebar", "    ", system),
+    renderZone(s.blocks, "Body", "    ", system),
+    renderZone(s.footerBlocks, "Footer", "    ", system),
   ].filter(Boolean).join("\n\n");
 
-  return `import React from "react";
-// import { ${ds.provider} } from "${ds.importFrom}";
+  /* Real DS-component imports for the blocks the registry covers. When present
+     we emit the real provider + theme + a wrapped tree; otherwise we keep the
+     legacy commented provider + generic markup (graceful fallback for DSs not
+     yet seeded in the registry). */
+  const allTypes = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks].map((b) => b.type);
+  const componentImports = collectImports(system, allTypes);
+  const real = componentImports.length > 0;
+
+  const imports = ['import React from "react";'];
+  if (real) {
+    imports.push(...componentImports);
+    /* Provider import differs per DS API. */
+    if (system === "m3") {
+      imports.push('import { ThemeProvider, createTheme } from "@mui/material";');
+    } else {
+      imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
+    }
+    if (system === "salt") imports.push('import "@salt-ds/theme/index.css";');
+  } else {
+    imports.push(`// import { ${ds.provider} } from "${ds.importFrom}";`);
+  }
+
+  /* Per-DS provider wrapping — each provider's API differs (Salt takes mode=,
+     MUI takes theme=createTheme(...)). */
+  const open = !real
+    ? ""
+    : system === "m3"
+      ? `<ThemeProvider theme={createTheme({ palette: { mode: "${s.mode}" } })}>\n    `
+      : `<${ds.provider} mode="${s.mode}">\n    `;
+  const close = !real
+    ? ""
+    : system === "m3"
+      ? "\n    </ThemeProvider>"
+      : `\n    </${ds.provider}>`;
+
+  return `${imports.join("\n")}
 
 export default function Dashboard() {
   return (
-    <div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
+    ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
 ${zones}
-    </div>
+    </div>${close}
   );
 }
 `;
