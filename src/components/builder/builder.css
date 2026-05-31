@@ -8311,9 +8311,10 @@
    ══════════════════════════════════════════════════════════ */
 .lib-tile-grid {
   display: grid;
-  /* P1 density: 3-up compact tiles (~3x more visible per scroll than the old
-     2-up tall cards). Labels wrap instead of truncating. */
-  grid-template-columns: repeat(3, 1fr);
+  /* P1 density: keep 2-up (wide enough for full labels) but SHORT tiles
+     (small fixed-height preview below) so ~2x more fit per scroll than the
+     old tall 8/5 cards — density without narrow-tile mid-word label breaks. */
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
 }
 .lib-tile {
@@ -8344,7 +8345,13 @@
   opacity: 0.35;
 }
 .lib-tile-preview {
-  aspect-ratio: 8 / 5;
+  /* Short fixed height (was aspect-ratio 8/5 → tall cards). Short cards = ~2x
+     density per scroll while keeping 2-up width for readable labels. */
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.025);
   border-radius: 5px;
   padding: 4px;
@@ -8356,18 +8363,16 @@
   color: rgba(255, 255, 255, 0.88);
 }
 .lib-tile-label {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.86);
-  /* Wrap to a second line instead of truncating ("Toggle Button" no longer
-     becomes "Toggle Butt...") now that tiles are narrower at 3-up. */
-  white-space: normal;
-  /* break-word wraps at the space ("Segmented Group" -> two lines) rather than
-     mid-word ("Segment ed Group"). */
-  overflow-wrap: break-word;
-  word-break: normal;
-  padding: 0 1px;
-  line-height: 1.2;
+  /* Single line + ellipsis is clean at 2-up width (most labels fit; long ones
+     truncate gracefully and the full name is on hover/title). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px;
+  line-height: 1.25;
   text-align: center;
 }
 /* Light mode */
