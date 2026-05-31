@@ -211,6 +211,9 @@ const loginFlow: BuilderTemplate = {
   icon: "login",
   interfaceType: "form",
   selectedComponents: ["inputs", "buttons", "sim-title"],
+  /* 12-col grid body: single-column auth form, each field its own row;
+     remember (8) + forgot link (4) share a row. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("lf-brand"), type: "AppBrand", props: { label: "Acme" } },
     { id: tid("lf-status"), type: "StatusPill", props: { label: "Secure" } },
@@ -223,17 +226,17 @@ const loginFlow: BuilderTemplate = {
   ],
   body: [
     /* Screen 1 - Login */
-    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h1" }, layout: { width: "fill" } },
-    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back - enter your details to continue.", level: "h4" }, layout: { width: "fill" } },
-    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com" }, layout: { width: "fill" } },
-    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password" }, layout: { width: "fill" } },
-    { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false }, layout: { width: "66.666%" } },
-    { id: tid("lf-forgot"), type: "SimulatedLink", props: { text: "Forgot password?", showIcon: false }, layout: { width: "33.333%" } },
-    { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary" }, layout: { width: "fill" } },
-    { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline" }, layout: { width: "fill" } },
-    { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline" }, layout: { width: "fill" } },
+    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h2" }, layout: { width: "12fr" } },
+    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back. Enter your details to continue.", level: "h4" }, layout: { width: "12fr" } },
+    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com" }, layout: { width: "12fr" } },
+    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password" }, layout: { width: "12fr" } },
+    { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false }, layout: { width: "8fr" } },
+    { id: tid("lf-forgot"), type: "SimulatedLink", props: { text: "Forgot password?", showIcon: false }, layout: { width: "4fr" } },
+    { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary" }, layout: { width: "12fr" } },
+    { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline" }, layout: { width: "12fr" } },
+    { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline" }, layout: { width: "12fr" } },
     /* Flow hint - connects to the post-login dashboard */
-    { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info" }, layout: { width: "fill" } },
+    { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info" }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("lf-ftr"), type: "FooterText", props: { label: "© 2026 Acme, Inc.", version: "Privacy · Terms" } },
