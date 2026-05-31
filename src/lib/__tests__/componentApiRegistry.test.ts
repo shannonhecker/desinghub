@@ -50,3 +50,30 @@ describe("componentApiRegistry — Salt emits real @salt-ds/core components", ()
     expect(resolveComponentApi("carbon", "SimulatedButton")).toBeNull();
   });
 });
+
+describe("componentApiRegistry — M3 (@mui/material) emits real MUI components", () => {
+  it("translates a primary button to MUI variant=contained", () => {
+    expect(blockToRealJsx("m3", b("SimulatedButton", { label: "Submit", variant: "primary" })))
+      .toBe('<Button variant="contained">Submit</Button>');
+  });
+
+  it("maps a danger button to contained + color=error", () => {
+    const jsx = blockToRealJsx("m3", b("SimulatedButton", { label: "Delete", variant: "danger" }))!;
+    expect(jsx).toContain('variant="contained"');
+    expect(jsx).toContain('color="error"');
+  });
+
+  it("maps a text input to MUI TextField", () => {
+    expect(blockToRealJsx("m3", b("SimulatedTextInput", { label: "Email" }))).toContain('<TextField label="Email"');
+  });
+
+  it("maps a switch to MUI FormControlLabel + Switch", () => {
+    expect(blockToRealJsx("m3", b("SimulatedSwitch", { label: "Notifications", defaultOn: true })))
+      .toBe('<FormControlLabel control={<Switch defaultChecked />} label="Notifications" />');
+  });
+
+  it("collects deduped, sorted imports from @mui/material", () => {
+    expect(collectImports("m3", ["SimulatedButton", "SimulatedSwitch"]))
+      .toContain('import { Button, FormControlLabel, Switch } from "@mui/material";');
+  });
+});

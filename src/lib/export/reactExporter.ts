@@ -100,15 +100,30 @@ export function exportReact(): string {
 
   const imports = ['import React from "react";'];
   if (real) {
-    imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
     imports.push(...componentImports);
+    /* Provider import differs per DS API. */
+    if (system === "m3") {
+      imports.push('import { ThemeProvider, createTheme } from "@mui/material";');
+    } else {
+      imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
+    }
     if (system === "salt") imports.push('import "@salt-ds/theme/index.css";');
   } else {
     imports.push(`// import { ${ds.provider} } from "${ds.importFrom}";`);
   }
 
-  const open = real ? `<${ds.provider} mode="${s.mode}">\n    ` : "";
-  const close = real ? `\n    </${ds.provider}>` : "";
+  /* Per-DS provider wrapping — each provider's API differs (Salt takes mode=,
+     MUI takes theme=createTheme(...)). */
+  const open = !real
+    ? ""
+    : system === "m3"
+      ? `<ThemeProvider theme={createTheme({ palette: { mode: "${s.mode}" } })}>\n    `
+      : `<${ds.provider} mode="${s.mode}">\n    `;
+  const close = !real
+    ? ""
+    : system === "m3"
+      ? "\n    </ThemeProvider>"
+      : `\n    </${ds.provider}>`;
 
   return `${imports.join("\n")}
 

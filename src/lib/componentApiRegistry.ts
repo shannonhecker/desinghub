@@ -62,11 +62,49 @@ const SALT: Record<string, ComponentApiEntry> = {
   },
 };
 
-/* Per-DS registries. Only Salt is seeded; other DSs return null so the
-   exporter can fall back / mark the block unsupported rather than emit a
-   fabricated (wrong) API. */
+/* Generic block `variant` -> Material 3 (MUI) Button props. MUI Button API:
+   variant = contained|outlined|text; color = primary|secondary|error|... */
+function m3ButtonAttrs(props: Record<string, unknown>): string {
+  const variant = s(props.variant, "primary");
+  const map: Record<string, string> = {
+    primary: 'variant="contained"',
+    secondary: 'variant="outlined"',
+    outline: 'variant="outlined"',
+    ghost: 'variant="text"',
+    danger: 'variant="contained" color="error"',
+    destructive: 'variant="contained" color="error"',
+  };
+  return map[variant] ?? map.primary;
+}
+
+const M3: Record<string, ComponentApiEntry> = {
+  SimulatedButton: {
+    imports: { from: "@mui/material", names: ["Button"] },
+    toJsx: (p) => `<Button ${m3ButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+  },
+  SimulatedTextInput: {
+    imports: { from: "@mui/material", names: ["TextField"] },
+    toJsx: (p) => `<TextField label="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" variant="outlined" />`,
+  },
+  SimulatedCheckbox: {
+    imports: { from: "@mui/material", names: ["Checkbox", "FormControlLabel"] },
+    toJsx: (p) => `<FormControlLabel control={<Checkbox${p.defaultChecked ? " defaultChecked" : ""} />} label="${s(p.label)}" />`,
+  },
+  SimulatedSwitch: {
+    imports: { from: "@mui/material", names: ["FormControlLabel", "Switch"] },
+    toJsx: (p) => `<FormControlLabel control={<Switch${p.defaultOn ? " defaultChecked" : ""} />} label="${s(p.label)}" />`,
+  },
+  SimulatedCard: {
+    imports: { from: "@mui/material", names: ["Card", "CardContent"] },
+    toJsx: (p) => `<Card>\n  <CardContent>\n    <h3>${s(p.title, "Card")}</h3>\n    <p>${s(p.content)}</p>\n  </CardContent>\n</Card>`,
+  },
+};
+
+/* Per-DS registries. Salt + M3 seeded; other DSs return null so the exporter
+   falls back rather than emit a fabricated (wrong) API. */
 const REGISTRY: Partial<Record<SystemId, Record<string, ComponentApiEntry>>> = {
   salt: SALT,
+  m3: M3,
 };
 
 export function resolveComponentApi(system: SystemId, blockType: string): ComponentApiEntry | null {

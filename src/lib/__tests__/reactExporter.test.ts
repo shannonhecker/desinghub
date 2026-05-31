@@ -37,4 +37,14 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     const code = exportReact();
     expect(code).toContain('className="breadcrumb"');
   });
+
+  it("M3 button → real MUI <Button variant=contained> + @mui/material import + ThemeProvider/createTheme", () => {
+    setCanvas("m3", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    const code = exportReact();
+    expect(code).toContain('import { Button } from "@mui/material";');
+    expect(code).toContain('import { ThemeProvider, createTheme } from "@mui/material";');
+    expect(code).toContain("createTheme({ palette: { mode:");
+    expect(code).toContain('<Button variant="contained">Submit</Button>');
+    expect(code).not.toContain('className="btn');
+  });
 });
