@@ -4,11 +4,12 @@
  * official API. Replaces reactExporter's generic `className="btn"` pseudocode
  * so generated code actually imports + uses the real components.
  *
- * Seeded with Salt DS, Material 3 (@mui/material), and Fluent 2
- * (@fluentui/react-components). Remaining DSs intentionally return null until
- * added with their verified official API — we never fabricate an API. Each DS's
- * facts are sourced from its official package surface (Salt sentiment/appearance,
- * MUI variant/color, Fluent appearance) cross-checked against src/data/<ds>.
+ * Seeded with Salt DS, Material 3 (@mui/material), Fluent 2
+ * (@fluentui/react-components), and Carbon (@carbon/react). Remaining DSs
+ * intentionally return null until added with their verified official API — we
+ * never fabricate an API. Each DS's facts are sourced from its official package
+ * surface (Salt sentiment/appearance, MUI variant/color, Fluent appearance,
+ * Carbon kind/labelText) cross-checked against src/data/<ds>.
  */
 
 export type SystemId = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
@@ -21,6 +22,11 @@ export interface ComponentApiEntry {
 }
 
 const s = (v: unknown, fallback = ""): string => String(v ?? fallback);
+
+/* Carbon's TextInput/Checkbox/Toggle require a unique `id` — derive a stable
+   slug from the label so generated code is valid out of the box. */
+const slug = (v: unknown, fallback = "field"): string =>
+  s(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
 
 /* Generic block `variant` -> Salt's official sentiment + appearance.
    Salt API: sentiment = accented|neutral|positive|caution|negative,
@@ -144,12 +150,55 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   },
 };
 
-/* Per-DS registries. Salt + M3 + Fluent seeded; remaining DSs return null so the
-   exporter falls back rather than emit a fabricated (wrong) API. */
+/* Generic block `variant` -> Carbon (@carbon/react) Button kind.
+   Carbon API: kind = primary|secondary|tertiary|ghost|danger (+ danger--* ).
+   tertiary is Carbon's bordered/outline button; danger is the destructive kind. */
+function carbonButtonAttrs(props: Record<string, unknown>): string {
+  const variant = s(props.variant, "primary");
+  const map: Record<string, string> = {
+    primary: 'kind="primary"',
+    secondary: 'kind="secondary"',
+    outline: 'kind="tertiary"',
+    ghost: 'kind="ghost"',
+    danger: 'kind="danger"',
+    destructive: 'kind="danger"',
+  };
+  return map[variant] ?? map.primary;
+}
+
+const CARBON: Record<string, ComponentApiEntry> = {
+  SimulatedButton: {
+    imports: { from: "@carbon/react", names: ["Button"] },
+    toJsx: (p) => `<Button ${carbonButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+  },
+  SimulatedTextInput: {
+    imports: { from: "@carbon/react", names: ["TextInput"] },
+    toJsx: (p) =>
+      `<TextInput id="${slug(p.label, "input")}" labelText="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" />`,
+  },
+  SimulatedCheckbox: {
+    imports: { from: "@carbon/react", names: ["Checkbox"] },
+    toJsx: (p) =>
+      `<Checkbox id="${slug(p.label, "checkbox")}" labelText="${s(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
+  },
+  SimulatedSwitch: {
+    imports: { from: "@carbon/react", names: ["Toggle"] },
+    toJsx: (p) =>
+      `<Toggle id="${slug(p.label, "toggle")}" labelText="${s(p.label)}"${p.defaultOn ? " defaultToggled" : ""} />`,
+  },
+  SimulatedCard: {
+    imports: { from: "@carbon/react", names: ["Tile"] },
+    toJsx: (p) => `<Tile>\n  <h3>${s(p.title, "Card")}</h3>\n  <p>${s(p.content)}</p>\n</Tile>`,
+  },
+};
+
+/* Per-DS registries. Salt + M3 + Fluent + Carbon seeded; remaining DSs return
+   null so the exporter falls back rather than emit a fabricated (wrong) API. */
 const REGISTRY: Partial<Record<SystemId, Record<string, ComponentApiEntry>>> = {
   salt: SALT,
   m3: M3,
   fluent: FLUENT,
+  carbon: CARBON,
 };
 
 export function resolveComponentApi(system: SystemId, blockType: string): ComponentApiEntry | null {
