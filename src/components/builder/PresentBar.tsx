@@ -15,6 +15,7 @@
    on import so the two never get crossed. */
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
 import { useBuilder, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
 import { usePreviewMode } from "@/store/usePreviewMode";
@@ -177,7 +178,7 @@ export function PresentBar({
             </span>
             Fork &amp; edit
           </button>
-          <a
+          <Link
             className="present-bar-btn"
             href="/"
             title="Design Hub home"
@@ -187,7 +188,7 @@ export function PresentBar({
               home
             </span>
             Home
-          </a>
+          </Link>
         </>
       ) : (
         /* Author: exit Present mode → back to the editor. Esc does the same
