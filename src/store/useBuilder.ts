@@ -984,14 +984,22 @@ export const useBuilder = create<BuilderState>((set) => ({
         s.selectedBlockId && zoneOf(s.selectedBlockId)
           ? s.selectedBlockId
           : survivors[0] ?? null;
-      /* No change → return {} so history/autosave subscribers don't churn. */
-      if (survivors.length === s.selectedBlockIds.length && primary === s.selectedBlockId) {
+      const primaryZone = primary ? zoneOf(primary) : null;
+      /* No change → return {} so subscribers don't re-render. Must also check
+         the primary's ZONE: a bare moveBlock relocates a still-selected block
+         without updating selectedBlockZone, so the id-set + primary can be
+         intact while the zone is stale — recompute it in that case. */
+      if (
+        survivors.length === s.selectedBlockIds.length &&
+        primary === s.selectedBlockId &&
+        primaryZone === s.selectedBlockZone
+      ) {
         return {};
       }
       return {
         selectedBlockIds: survivors,
         selectedBlockId: primary,
-        selectedBlockZone: primary ? zoneOf(primary) : null,
+        selectedBlockZone: primaryZone,
       };
     }),
 

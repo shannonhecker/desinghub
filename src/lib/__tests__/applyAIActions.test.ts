@@ -18,6 +18,11 @@ function resetStore() {
     footerBlocks: [],
     colorOverrides: {},
     hasOverrides: false,
+    /* Reset canvas-block selection too — it's load-bearing now that
+       applyAIActions reconciles it, so leakage would cross-contaminate. */
+    selectedBlockId: null,
+    selectedBlockIds: [],
+    selectedBlockZone: null,
   });
 }
 
