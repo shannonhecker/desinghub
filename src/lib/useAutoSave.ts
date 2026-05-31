@@ -37,6 +37,7 @@ const TRACKED_KEYS = [
   "headerBlocks",
   "sidebarBlocks",
   "footerBlocks",
+  "zoneLayouts",
   "designSystem",
   "mode",
   "density",
