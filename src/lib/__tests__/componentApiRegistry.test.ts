@@ -46,8 +46,8 @@ describe("componentApiRegistry — Salt emits real @salt-ds/core components", ()
     expect(blockToRealJsx("salt", b("TotallyUnknownBlock"))).toBeNull();
   });
 
-  it("returns null for a DS not yet seeded (no fabricated API)", () => {
-    expect(resolveComponentApi("uoaui", "SimulatedButton")).toBeNull();
+  it("returns null for an intentionally-omitted block (uoaui ships no switch)", () => {
+    expect(resolveComponentApi("uoaui", "SimulatedSwitch")).toBeNull();
   });
 });
 
@@ -143,5 +143,39 @@ describe("componentApiRegistry — Carbon (@carbon/react) emits real Carbon comp
   it("collects deduped, sorted imports from @carbon/react", () => {
     expect(collectImports("carbon", ["SimulatedButton", "SimulatedTextInput"]))
       .toContain('import { Button, TextInput } from "@carbon/react";');
+  });
+});
+
+describe("componentApiRegistry — uoaui (in-house, className + --a-* CSS) emits real a-* markup", () => {
+  it("translates a primary button to uoaui's a-btn a-btn-primary classes", () => {
+    expect(blockToRealJsx("uoaui", b("SimulatedButton", { label: "Submit", variant: "primary" })))
+      .toBe('<button className="a-btn a-btn-primary">Submit</button>');
+  });
+
+  it("maps outline/ghost to their real a-btn classes; danger -> primary (uoaui has no danger button)", () => {
+    expect(blockToRealJsx("uoaui", b("SimulatedButton", { variant: "outline" }))).toContain("a-btn-outline");
+    expect(blockToRealJsx("uoaui", b("SimulatedButton", { variant: "ghost" }))).toContain("a-btn-ghost");
+    expect(blockToRealJsx("uoaui", b("SimulatedButton", { variant: "danger" }))).toContain("a-btn-primary");
+  });
+
+  it("maps a text input to uoaui's a-input-wrap / a-input-label / a-input composition", () => {
+    const jsx = blockToRealJsx("uoaui", b("SimulatedTextInput", { label: "Email", placeholder: "you@co" }))!;
+    expect(jsx).toContain('className="a-input-wrap"');
+    expect(jsx).toContain('<label className="a-input-label">Email</label>');
+    expect(jsx).toContain('<input className="a-input" placeholder="you@co" />');
+  });
+
+  it("maps a card to uoaui's a-card glass surface", () => {
+    expect(blockToRealJsx("uoaui", b("SimulatedCard", { title: "Stats", content: "Body" })))
+      .toContain('className="a-card"');
+  });
+
+  it("has no switch (uoaui ships none) so it returns null and the exporter falls back", () => {
+    expect(resolveComponentApi("uoaui", "SimulatedSwitch")).toBeNull();
+  });
+
+  it("collects a single side-effect stylesheet import (no named component imports)", () => {
+    expect(collectImports("uoaui", ["SimulatedButton", "SimulatedCard", "SimulatedTextInput"]))
+      .toEqual(['import "./uoaui-theme.css";']);
   });
 });

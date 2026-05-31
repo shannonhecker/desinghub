@@ -26,10 +26,10 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).not.toContain('className="btn'); // no pseudocode for the salt button
   });
 
-  it("falls back to generic markup for an un-registered DS (uoaui, not yet seeded)", () => {
-    setCanvas("uoaui", [{ id: "b1", type: "SimulatedButton", props: { label: "X", variant: "primary" } }]);
+  it("falls back to generic markup for an intentionally-omitted block (uoaui ships no switch)", () => {
+    setCanvas("uoaui", [{ id: "b1", type: "SimulatedSwitch", props: { label: "Wifi", defaultOn: true } }]);
     const code = exportReact();
-    expect(code).toContain('className="btn'); // graceful fallback, not a crash
+    expect(code).toContain('className="switch"'); // graceful generic fallback, not a crash
   });
 
   it("falls back to generic markup for an un-registered block in Salt", () => {
@@ -65,5 +65,14 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).toContain('<Theme theme="white">');
     expect(code).toContain('<Button kind="primary">Submit</Button>');
     expect(code).not.toContain('className="btn');
+  });
+
+  it("uoaui button → a-* classNames + side-effect uoaui-theme.css import + NO provider wrapper", () => {
+    setCanvas("uoaui", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    const code = exportReact();
+    expect(code).toContain('import "./uoaui-theme.css";');
+    expect(code).toContain('<button className="a-btn a-btn-primary">Submit</button>');
+    expect(code).not.toContain("UoauiProvider"); // no fabricated provider package
+    expect(code).not.toContain('className="btn'); // real a-btn, not generic pseudocode
   });
 });

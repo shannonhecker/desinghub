@@ -106,6 +106,9 @@ export function exportReact(): string {
       imports.push('import { ThemeProvider, createTheme } from "@mui/material";');
     } else if (system === "fluent") {
       imports.push(`import { FluentProvider, ${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"} } from "@fluentui/react-components";`);
+    } else if (system === "uoaui") {
+      /* uoaui is CSS-only — its stylesheet side-effect import already comes from
+         componentImports; there is no JS provider package to import. */
     } else {
       imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
     }
@@ -125,7 +128,9 @@ export function exportReact(): string {
         ? `<FluentProvider theme={${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"}}>\n    `
         : system === "carbon"
           ? `<Theme theme="${s.mode === "dark" ? "g100" : "white"}">\n    `
-          : `<${ds.provider} mode="${s.mode}">\n    `;
+          : system === "uoaui"
+            ? "" /* CSS-only DS — no provider wrapper, just a-* classNames */
+            : `<${ds.provider} mode="${s.mode}">\n    `;
   const close = !real
     ? ""
     : system === "m3"
@@ -134,7 +139,9 @@ export function exportReact(): string {
         ? "\n    </FluentProvider>"
         : system === "carbon"
           ? "\n    </Theme>"
-          : `\n    </${ds.provider}>`;
+          : system === "uoaui"
+            ? ""
+            : `\n    </${ds.provider}>`;
 
   return `${imports.join("\n")}
 
