@@ -76,3 +76,33 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).not.toContain('className="btn'); // real a-btn, not generic pseudocode
   });
 });
+
+/* #3: charts must export RUNNABLE Highcharts, not a dead <div className="chart-placeholder">. */
+describe("reactExporter — real Highcharts export bridge", () => {
+  it("a chart block emits <ChartBlock>, highcharts imports, and a ChartBlock definition", () => {
+    setCanvas("salt", [{ id: "c1", type: "HighchartLine", props: { chartType: "line", title: "Monthly Revenue" } }]);
+    const code = exportReact();
+    expect(code).toContain("<ChartBlock");
+    expect(code).toContain('type="line"');
+    expect(code).toContain('title="Monthly Revenue"');
+    expect(code).toContain('import HighchartsReact from "highcharts-react-official";');
+    expect(code).toContain('import Highcharts from "highcharts";');
+    expect(code).toContain("function ChartBlock");
+    expect(code).not.toContain("chart-placeholder"); // the dead placeholder is gone
+  });
+
+  it("SimulatedChart maps to a line ChartBlock and threads the builder mode", () => {
+    setCanvas("m3", [{ id: "c1", type: "SimulatedChart", props: { title: "Trend" } }]);
+    const code = exportReact();
+    expect(code).toContain('<ChartBlock type="line"');
+    expect(code).toContain('mode="light"'); // setCanvas sets mode: "light"
+  });
+
+  it("a no-chart canvas does NOT emit chart imports or the helper", () => {
+    setCanvas("salt", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    const code = exportReact();
+    expect(code).not.toContain("highcharts-react-official");
+    expect(code).not.toContain("function ChartBlock");
+    expect(code).not.toContain("<ChartBlock");
+  });
+});
