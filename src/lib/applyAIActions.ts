@@ -128,20 +128,26 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
         // Search all zones for the block
         const st = useBuilder.getState();
         const blockId: string = v.blockId;
+        let removed = false;
         for (const zone of VALID_ZONES) {
           const key = zone === "body" ? "blocks" : `${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks";
           const arr = zone === "body" ? st.blocks : st[key];
           if (arr.some((b) => b.id === blockId)) {
             store.removeBlockFromZone(zone, blockId);
             emitToolUse({ messageId, action: "removeBlock", value: { blockId }, blockId, zone });
+            removed = true;
             break;
           }
         }
-        /* Reconcile selection: if the AI removed the block that was selected,
-           clear the selection so the inspector / HoverInspector doesn't
-           dangle on a block that no longer exists. Mirrors the manual-delete
-           reconcile in PreviewCanvas (`if (selectedBlockId === id) …`). */
-        if (useBuilder.getState().selectedBlockId === blockId) {
+        /* Reconcile selection: if we ACTUALLY removed the block that was
+           selected, clear the selection so the inspector / HoverInspector
+           doesn't dangle. Gated on `removed` (not id-equality alone): the
+           loop only scans top-level zone arrays, so a removeBlock id that
+           isn't found there (e.g. a still-present group-child, or an
+           unknown id) removes nothing and must leave the selection intact.
+           Mirrors PreviewCanvas's manual-delete reconcile, whose guard is
+           safe because it only ever fires on a real top-level removal. */
+        if (removed && useBuilder.getState().selectedBlockId === blockId) {
           store.clearSelection();
         }
         break;

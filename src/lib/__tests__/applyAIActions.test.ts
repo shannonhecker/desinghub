@@ -218,6 +218,25 @@ describe("applyAIActions", () => {
     expect(useBuilder.getState().selectedBlockId).toBe("b1");
   });
 
+  /* Regression guard: removeBlock scans only TOP-LEVEL zone arrays, but a
+     block inside a LayoutGroup is independently selectable yet lives in
+     group.children (not a top-level array). If the AI removeBlock id isn't
+     found at top level, nothing is removed — so a still-valid selection
+     (e.g. a group-child) must NOT be cleared. The reconcile is gated on an
+     actual removal, not on id-equality alone. */
+  it("keeps the selection when removeBlock removes nothing (e.g. a group-child id)", () => {
+    useBuilder.setState({
+      blocks: [{ id: "g1", type: "LayoutGroup", props: {} }],
+      selectedBlockId: "c1", // a child inside g1 — selectable, not a top-level block
+      selectedBlockIds: ["c1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "removeBlock", value: { blockId: "c1" } }]);
+
+    expect(useBuilder.getState().selectedBlockId).toBe("c1");
+  });
+
   it("clears a body selection when the AI clears the canvas", () => {
     useBuilder.setState({
       blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
