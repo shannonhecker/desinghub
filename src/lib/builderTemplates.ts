@@ -120,6 +120,9 @@ const settingsPage: BuilderTemplate = {
   icon: "settings",
   interfaceType: "form",
   selectedComponents: ["inputs", "switches", "buttons", "form-field"],
+  /* 12-col grid body so settings render as a clean vertical form (each section
+     heading + setting on its own row) instead of a scattered wrapping flex row. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("sp-brand"), type: "AppBrand", props: { label: "Workspace" } },
     { id: tid("sp-status"), type: "StatusPill", props: { label: "Saved" } },
@@ -132,23 +135,23 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-nav-5"), type: "NavItem", props: { label: "Billing", icon: "home", active: false } },
   ],
   body: [
-    /* Profile section */
-    { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: "SC", size: "lg", presence: "available" }, layout: { width: "33.333%" } },
-    { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Change photo", variant: "secondary" }, layout: { width: "66.666%" } },
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: "Sarah Chen" }, layout: { width: "fill" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "sarah@acme.co" }, layout: { width: "fill" } },
+    /* Profile section - heading (own row) -> avatar + change-photo row -> fields (own rows) */
+    { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: "SC", size: "lg", presence: "available" }, layout: { width: "2fr" } },
+    { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Change photo", variant: "secondary" }, layout: { width: "4fr" } },
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: "Sarah Chen" }, layout: { width: "12fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "sarah@acme.co" }, layout: { width: "12fr" } },
 
-    /* Preferences section */
-    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Preferences", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: "Email notifications", defaultOn: true }, layout: { width: "fill" } },
-    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: "Weekly digest email", defaultOn: false }, layout: { width: "fill" } },
-    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: "Product updates & marketing", defaultOn: false }, layout: { width: "fill" } },
+    /* Preferences section - one setting per row (label left / switch right) */
+    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Preferences", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: "Email notifications", defaultOn: true }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: "Weekly digest email", defaultOn: false }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: "Product updates & marketing", defaultOn: false }, layout: { width: "12fr" } },
 
-    /* Danger zone */
-    { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-alert"), type: "Alert", props: { title: "Delete account", message: "This permanently removes your workspace and cannot be undone.", variant: "error" }, layout: { width: "fill" } },
-    { id: tid("sp-btn-delete"), type: "SimulatedButton", props: { label: "Delete account", variant: "ghost" }, layout: { width: "33.333%" } },
+    /* Danger zone - isolated last */
+    { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-alert"), type: "Alert", props: { title: "Delete account", message: "This permanently removes your workspace and cannot be undone.", variant: "error" }, layout: { width: "12fr" } },
+    { id: tid("sp-btn-delete"), type: "SimulatedButton", props: { label: "Delete account", variant: "ghost" }, layout: { width: "4fr" } },
   ],
   footer: [
     { id: tid("sp-ftr"), type: "FooterText", props: { label: "Changes save automatically", version: "v1.0" } },
@@ -167,6 +170,8 @@ const crmContacts: BuilderTemplate = {
   icon: "contacts",
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs", "buttons", "progress"],
+  /* 12-col grid body: toolbar (search 8 / filter 4) -> KPI summary 4/4/4 -> table 12. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("crm-brand"), type: "AppBrand", props: { label: "Contacts" } },
     { id: tid("crm-status"), type: "StatusPill", props: { label: "247 records" } },
@@ -180,14 +185,14 @@ const crmContacts: BuilderTemplate = {
   ],
   body: [
     /* Search + filter row */
-    { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "66.666%" } },
-    { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "33.333%" } },
+    { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "8fr" } },
+    { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "4fr" } },
     /* Pipeline KPIs - overview first, before the detailed table (standard dashboard reading order) */
-    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "33.333%" } },
-    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "33.333%" } },
-    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "33.333%" } },
-    /* Main data table - last */
-    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "fill" } },
+    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "4fr" } },
+    /* Main data table - 12 cols, last */
+    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("crm-ftr"), type: "FooterText", props: { label: "Showing 247 of 1,247 contacts", version: "v3.2" } },
@@ -206,6 +211,9 @@ const loginFlow: BuilderTemplate = {
   icon: "login",
   interfaceType: "form",
   selectedComponents: ["inputs", "buttons", "sim-title"],
+  /* 12-col grid body: single-column auth form, each field its own row;
+     remember (8) + forgot link (4) share a row. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("lf-brand"), type: "AppBrand", props: { label: "Acme" } },
     { id: tid("lf-status"), type: "StatusPill", props: { label: "Secure" } },
@@ -218,17 +226,17 @@ const loginFlow: BuilderTemplate = {
   ],
   body: [
     /* Screen 1 - Login */
-    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h1" }, layout: { width: "fill" } },
-    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back - enter your details to continue.", level: "h4" }, layout: { width: "fill" } },
-    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com" }, layout: { width: "fill" } },
-    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password" }, layout: { width: "fill" } },
-    { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false }, layout: { width: "66.666%" } },
-    { id: tid("lf-forgot"), type: "SimulatedLink", props: { text: "Forgot password?", showIcon: false }, layout: { width: "33.333%" } },
-    { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary" }, layout: { width: "fill" } },
-    { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline" }, layout: { width: "fill" } },
-    { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline" }, layout: { width: "fill" } },
+    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h2" }, layout: { width: "12fr" } },
+    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back. Enter your details to continue.", level: "h4" }, layout: { width: "12fr" } },
+    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com" }, layout: { width: "12fr" } },
+    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password" }, layout: { width: "12fr" } },
+    { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false }, layout: { width: "8fr" } },
+    { id: tid("lf-forgot"), type: "SimulatedLink", props: { text: "Forgot password?", showIcon: false }, layout: { width: "4fr" } },
+    { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary" }, layout: { width: "12fr" } },
+    { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline" }, layout: { width: "12fr" } },
+    { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline" }, layout: { width: "12fr" } },
     /* Flow hint - connects to the post-login dashboard */
-    { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info" }, layout: { width: "fill" } },
+    { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info" }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("lf-ftr"), type: "FooterText", props: { label: "© 2026 Acme, Inc.", version: "Privacy · Terms" } },
