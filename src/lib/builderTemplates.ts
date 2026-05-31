@@ -86,11 +86,11 @@ const analyticsDashboard: BuilderTemplate = {
     { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "33.333%" } },
     /* Main chart - full width */
     { id: tid("ad-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Revenue - last 30 days" }, layout: { width: "fill" } },
-    /* Data table - full width */
-    { id: tid("ad-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
     /* Secondary row - ⅔ chart + ⅓ progress */
     { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Daily events" }, layout: { width: "66.666%" } },
     { id: tid("ad-progress"), type: "SimulatedProgress", props: { label: "Monthly plan usage", value: 64 }, layout: { width: "33.333%" } },
+    /* Data table - kept LAST so the detailed view follows the KPI + chart overview (standard dashboard reading order) */
+    { id: tid("ad-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
   ],
   footer: [
     { id: tid("ad-ftr"), type: "FooterText", props: { label: "Last updated 2 min ago", version: "v2.4" } },
@@ -171,12 +171,12 @@ const crmContacts: BuilderTemplate = {
     /* Search + filter row */
     { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "66.666%" } },
     { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "33.333%" } },
-    /* Main data table */
-    { id: tid("crm-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
-    /* Pipeline KPIs */
+    /* Pipeline KPIs - overview first, before the detailed table (standard dashboard reading order) */
     { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "33.333%" } },
     { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "33.333%" } },
     { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "33.333%" } },
+    /* Main data table - last */
+    { id: tid("crm-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
   ],
   footer: [
     { id: tid("crm-ftr"), type: "FooterText", props: { label: "Showing 247 of 1,247 contacts", version: "v3.2" } },
@@ -253,10 +253,12 @@ export function getLoginDashboardBody(): Block[] {
   let i = 0;
   const nid = (p: string) => `tpl-dash-${p}-${++i}`;
   return [
-    { id: nid("kpi1"), type: "SimulatedStatCard", props: { label: "Welcome back, Sarah", value: "12 new", pct: 8 }, layout: { width: "fill" } },
-    { id: nid("kpi2"), type: "SimulatedStatCard", props: { label: "Tasks", value: "7 open", pct: -2 }, layout: { width: "33.333%" } },
-    { id: nid("kpi3"), type: "SimulatedStatCard", props: { label: "Messages", value: "24", pct: 11 }, layout: { width: "33.333%" } },
-    { id: nid("kpi4"), type: "SimulatedStatCard", props: { label: "Meetings today", value: "3", pct: 0 }, layout: { width: "33.333%" } },
+    /* KPI row - 3 × ⅓. The standalone full-width "Welcome back, Sarah"
+       stat card was redundant chrome (a greeting forced into a metric
+       tile); the post-login dashboard now opens straight on real KPIs. */
+    { id: nid("kpi1"), type: "SimulatedStatCard", props: { label: "Tasks", value: "7 open", pct: -2 }, layout: { width: "33.333%" } },
+    { id: nid("kpi2"), type: "SimulatedStatCard", props: { label: "Messages", value: "24", pct: 11 }, layout: { width: "33.333%" } },
+    { id: nid("kpi3"), type: "SimulatedStatCard", props: { label: "Meetings today", value: "3", pct: 0 }, layout: { width: "33.333%" } },
     { id: nid("chart"), type: "HighchartArea", props: { chartType: "area", title: "Activity - last 7 days" }, layout: { width: "fill" } },
     { id: nid("table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
   ];
