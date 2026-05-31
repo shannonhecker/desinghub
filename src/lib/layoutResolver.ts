@@ -31,8 +31,9 @@ function toCss(w: LayoutWidth | undefined): string | null {
 
 /* Map colSpan 1|2|3 to a percentage width so old templates keep
    looking right in the new flex body. Anything outside 1..3 is
-   treated as "fill" (100%). */
-function colSpanToWidth(colSpan: unknown): LayoutWidth | undefined {
+   treated as "fill" (100%). Exported so the one-time colSpan→width
+   migration (blockMigrations.ts) shares this exact mapping. */
+export function colSpanToWidth(colSpan: unknown): LayoutWidth | undefined {
   const n = Number(colSpan);
   if (!Number.isFinite(n)) return undefined;
   if (n === 1) return "33.333%";

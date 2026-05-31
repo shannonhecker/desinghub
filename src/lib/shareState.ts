@@ -20,6 +20,7 @@
 
 import type { Block, DesignSystem, BuilderMode, DeviceMode } from "@/store/useBuilder";
 import { isValidBlockSource } from "@/store/useBuilder";
+import { migrateBlocks } from "./blockMigrations";
 
 export interface SharedCanvas {
   v: 1; // schema version - bumps allow older URLs to error cleanly
@@ -246,10 +247,10 @@ export function decodeShareState(hash: string): SharedCanvas | null {
     deviceMode,
     themeKey,
     activeTemplateId,
-    headerBlocks,
-    sidebarBlocks,
-    blocks,
-    footerBlocks,
+    headerBlocks: migrateBlocks(headerBlocks),
+    sidebarBlocks: migrateBlocks(sidebarBlocks),
+    blocks: migrateBlocks(blocks),
+    footerBlocks: migrateBlocks(footerBlocks),
   };
 }
 
