@@ -252,4 +252,12 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
       }
     }
   }
+
+  /* After applying the whole batch, drop any selection that now points at a
+     block the AI deleted (removeBlock / clearCanvas, in any order). Reconciling
+     ONCE against the FINAL canvas state — by block existence, not per-action
+     id/zone guards — is what makes this robust to multi-selection, group-child
+     selections, and a [moveBlock, clearCanvas] batch that leaves selectedBlockZone
+     stale. No-op when the selection is empty or fully intact. */
+  if (actions.length > 0) store.reconcileSelection();
 }

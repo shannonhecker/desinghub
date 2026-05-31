@@ -384,6 +384,11 @@ interface BuilderState {
   toggleBlockSelection: (id: string, zone: ZoneId) => void;
   /** Clear every selection state (primary + multi). Bound to Esc. */
   clearSelection: () => void;
+  /** Drop any selected id that no longer resolves to a live block on the
+   *  canvas (recursing LayoutGroup children), recomputing primary + zone.
+   *  No-op when the whole selection is still present. Call after mutations
+   *  that can delete blocks (e.g. an AI turn) so nothing dangles. */
+  reconcileSelection: () => void;
   /** Open the block context menu at viewport-relative (x, y). */
   openBlockContextMenu: (blockId: string, zone: ZoneId, x: number, y: number) => void;
   /** Close the block context menu. */
@@ -960,6 +965,43 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   clearSelection: () =>
     set({ selectedBlockIds: [], selectedBlockId: null, selectedBlockZone: null }),
+
+  reconcileSelection: () =>
+    set((s) => {
+      if (s.selectedBlockIds.length === 0 && s.selectedBlockId === null) return {};
+      /* Which zone (if any) currently contains `id`, searching nested
+         LayoutGroup children — not just the top-level zone arrays. */
+      const zoneOf = (id: string): ZoneId | null => {
+        for (const zone of Object.keys(ZONE_KEYS) as ZoneId[]) {
+          if (findBlockInTree(s[ZONE_KEYS[zone]] as Block[], id)) return zone;
+        }
+        return null;
+      };
+      const survivors = s.selectedBlockIds.filter((id) => zoneOf(id) !== null);
+      /* Keep the current primary if it survived; otherwise promote the first
+         surviving member (preserves selection order). */
+      const primary =
+        s.selectedBlockId && zoneOf(s.selectedBlockId)
+          ? s.selectedBlockId
+          : survivors[0] ?? null;
+      const primaryZone = primary ? zoneOf(primary) : null;
+      /* No change → return {} so subscribers don't re-render. Must also check
+         the primary's ZONE: a bare moveBlock relocates a still-selected block
+         without updating selectedBlockZone, so the id-set + primary can be
+         intact while the zone is stale — recompute it in that case. */
+      if (
+        survivors.length === s.selectedBlockIds.length &&
+        primary === s.selectedBlockId &&
+        primaryZone === s.selectedBlockZone
+      ) {
+        return {};
+      }
+      return {
+        selectedBlockIds: survivors,
+        selectedBlockId: primary,
+        selectedBlockZone: primaryZone,
+      };
+    }),
 
   openBlockContextMenu: (blockId, zone, x, y) =>
     set({ blockContextMenu: { blockId, zone, x, y } }),
