@@ -6901,6 +6901,62 @@
   padding-top: 4px;
 }
 
+/* Inspector sub-group — nested collapsible inside a section (e.g. Layout
+   "Advanced"). Indented with a left rule, lighter header, leading caret. */
+.inspector-subgroup {
+  margin-top: 6px;
+  padding-left: 8px;
+  border-left: 1px solid var(--b-border, rgba(255, 255, 255, 0.08));
+}
+.inspector-subgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 2px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--dh-curve-sm, 6px);
+  color: var(--b-fg3);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.12s;
+  text-align: left;
+}
+.inspector-subgroup-head:hover {
+  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
+}
+.inspector-subgroup-head:focus-visible {
+  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline-offset: 2px;
+}
+.builder-light .inspector-subgroup-head:hover {
+  color: var(--dh-fg, rgba(15, 16, 30, 0.92));
+}
+.inspector-subgroup-caret {
+  font-size: 14px !important;
+  color: var(--b-fg3);
+  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  transform: rotate(0deg);
+  flex-shrink: 0;
+}
+.inspector-subgroup-caret.is-open {
+  transform: rotate(90deg);
+}
+.inspector-subgroup-title {
+  flex: 1;
+}
+.inspector-subgroup-body {
+  padding-top: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inspector-subgroup-caret { transition: none; }
+}
+
 .inspector-toggle-group {
   display: flex;
   gap: 2px;

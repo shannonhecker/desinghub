@@ -413,59 +413,7 @@ function LayoutSection({
         </div>
       )}
 
-      {/* Min / max width (px). Empty string clears the constraint. */}
-      <div className="inspector-field inspector-field-row">
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Min width (px)</label>
-          <input
-            type="number"
-            className="inspector-input"
-            value={parseWidthValue(layout.minWidth)}
-            min={0}
-            placeholder="—"
-            onChange={(e) => {
-              const v = e.target.value;
-              updateBlockLayout(zone, block.id, {
-                minWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
-              });
-            }}
-          />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Max width (px)</label>
-          <input
-            type="number"
-            className="inspector-input"
-            value={parseWidthValue(layout.maxWidth)}
-            min={0}
-            placeholder="—"
-            onChange={(e) => {
-              const v = e.target.value;
-              updateBlockLayout(zone, block.id, {
-                maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
-              });
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Grow toggle - flex-grow 0 vs 1 */}
-      <div className="inspector-field">
-        <label className="inspector-field-label">Grow</label>
-        <div className="inspector-toggle-group">
-          {([["0", "Off", 0 as const], ["1", "On", 1 as const]] as const).map(([, label, v]) => (
-            <button
-              key={label}
-              className={`inspector-toggle-btn${(layout.grow ?? 0) === v ? " active" : ""}`}
-              onClick={() => updateBlockLayout(zone, block.id, { grow: v })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Align-self on the cross axis */}
+      {/* Align-self on the cross axis (core control — kept visible) */}
       <div className="inspector-field">
         <label className="inspector-field-label">Align</label>
         <div className="inspector-toggle-group">
@@ -481,21 +429,77 @@ function LayoutSection({
         </div>
       </div>
 
-      {/* Margin - single-value px; applied to all sides. */}
-      <div className="inspector-field">
-        <label className="inspector-field-label">Margin (px)</label>
-        <input
-          type="number"
-          className="inspector-input"
-          value={layout.margin ?? ""}
-          min={0}
-          placeholder="0"
-          onChange={(e) => {
-            const v = e.target.value;
-            updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) });
-          }}
-        />
-      </div>
+      {/* Advanced sizing — collapsed by default so Layout leads with its
+          core controls (Width + Align). */}
+      <InspectorSubgroup id="layout-advanced" title="Advanced">
+        {/* Min / max width (px). Empty string clears the constraint. */}
+        <div className="inspector-field inspector-field-row">
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Min width (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.minWidth)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  minWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Max width (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.maxWidth)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Grow toggle - flex-grow 0 vs 1 */}
+        <div className="inspector-field">
+          <label className="inspector-field-label">Grow</label>
+          <div className="inspector-toggle-group">
+            {([["0", "Off", 0 as const], ["1", "On", 1 as const]] as const).map(([, label, v]) => (
+              <button
+                key={label}
+                className={`inspector-toggle-btn${(layout.grow ?? 0) === v ? " active" : ""}`}
+                onClick={() => updateBlockLayout(zone, block.id, { grow: v })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Margin - single-value px; applied to all sides. */}
+        <div className="inspector-field">
+          <label className="inspector-field-label">Margin (px)</label>
+          <input
+            type="number"
+            className="inspector-input"
+            value={layout.margin ?? ""}
+            min={0}
+            placeholder="0"
+            onChange={(e) => {
+              const v = e.target.value;
+              updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) });
+            }}
+          />
+        </div>
+      </InspectorSubgroup>
     </InspectorSection>
   );
 }
@@ -524,7 +528,7 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
 
   return (
-    <InspectorSection id={`zone-layout-${zone}`} title={`${label} Zone Layout`}>
+    <InspectorSection id={`zone-layout-${zone}`} title={`${label} Zone Layout`} defaultOpen={false}>
       {/* Flow mode - stack / row / grid */}
       <div className="inspector-field">
         <label className="inspector-field-label">Flow</label>
@@ -750,7 +754,7 @@ function BlockAccentSection({
   const current = block.colorOverrides?.[accentKey];
 
   return (
-    <InspectorSection id={`accent-${block.id}`} title="Accent">
+    <InspectorSection id={`accent-${block.id}`} title="Accent" defaultOpen={Boolean(current)}>
       <div className="color-row">
         <span className="color-label">{current ? "Override" : "Inherits global"}</span>
         {current && (
@@ -835,6 +839,61 @@ function InspectorSection({
       </button>
       {open && (
         <div id={`${id}-panel`} className="inspector-section-body">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Inspector sub-group ──
+   A lighter, nested collapsible used INSIDE a section to tuck advanced
+   fields away (e.g. Layout's min/max/grow/margin) so the section leads
+   with its core controls. Same sessionStorage-backed expand state as
+   InspectorSection; distinct visual (indented, smaller header). Defaults
+   to collapsed. */
+function InspectorSubgroup({
+  id,
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  id: string;
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpenState] = useState<boolean>(() => {
+    const saved = readInspectorExpanded();
+    return id in saved ? saved[id] : defaultOpen;
+  });
+  const setOpen = (v: boolean) => {
+    setOpenState(v);
+    try {
+      const saved = readInspectorExpanded();
+      saved[id] = v;
+      sessionStorage.setItem(INSPECTOR_EXPANDED_KEY, JSON.stringify(saved));
+    } catch { /* private mode */ }
+  };
+  return (
+    <div className="inspector-subgroup">
+      <button
+        type="button"
+        className="inspector-subgroup-head"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={`${id}-panel`}
+      >
+        <span
+          className={`material-symbols-outlined inspector-subgroup-caret${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        >
+          chevron_right
+        </span>
+        <span className="inspector-subgroup-title">{title}</span>
+      </button>
+      {open && (
+        <div id={`${id}-panel`} className="inspector-subgroup-body">
           {children}
         </div>
       )}
