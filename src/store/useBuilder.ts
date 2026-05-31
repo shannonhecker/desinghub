@@ -267,14 +267,6 @@ interface BuilderState {
   // simultaneously (2x2 grid) so designers can compare visual output.
   compareMode: boolean;
 
-  // Issue #77: was a Track B prototype flag, now ON by default. Gates
-  // the single-handle resize (with HUD + chip rail + snap guides + ARIA),
-  // in-canvas + slots, and fuzzy SlashInserter. The simulator + heuristic
-  // eval found the legacy two-handle (px / %) resize was the worst
-  // gesture across 5 of 8 personas. This flag stays as a kill-switch
-  // for one sprint in case regressions surface; remove once stable.
-  experimentalLayout: boolean;
-
   // User-adjustable canvas chrome rhythm. Drives padding on canvas
   // wrapper, every zone, every block wrapper, and the inter-block gap.
   // Per-DS native values resolved via lib/structurePadding.ts.
@@ -471,9 +463,6 @@ interface BuilderState {
   // Compare-DS
   toggleCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
-
-  // Track B prototype flag
-  setExperimentalLayout: (v: boolean) => void;
 
   // Structure padding control (per-DS S/M/L)
   setStructurePadding: (size: 'small' | 'medium' | 'large') => void;
@@ -694,9 +683,6 @@ export const useBuilder = create<BuilderState>((set) => ({
   previewKey: 0,
   deviceMode: 'desktop',
   compareMode: false,
-  /* Issue #77: ON by default — single-handle resize, in-canvas + slots,
-     fuzzy SlashInserter. Kill-switch retained one sprint. */
-  experimentalLayout: true,
   structurePadding: 'medium',
   inserterOpen: false,
   inserterAnchor: null,
@@ -1336,7 +1322,6 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
   setCompareMode: (v) => set({ compareMode: v }),
 
-  setExperimentalLayout: (v) => set({ experimentalLayout: v }),
   setStructurePadding: (size) => set({ structurePadding: size }),
 
   openInserter: (anchor) => set({ inserterOpen: true, inserterAnchor: anchor ?? null }),

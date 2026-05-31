@@ -12,8 +12,6 @@ import { ResizeHUD } from "./ResizeHUD";
 import { SizeChipRail } from "./SizeChipRail";
 import { HoverInspector } from "./HoverInspector";
 
-const COL_SPAN_LABELS: Record<number, string> = { 1: "⅓", 2: "⅔", 3: "Full" };
-
 /* Snap points (percent) and magnetic pull distance (px) applied
    to the experimental right-edge handle. Pull is translated to
    a percent window based on the container's current width so the
@@ -24,132 +22,6 @@ const SNAP_PULL_PX = 6;
    much past the snap point before unsnapping. Matches Figma-feel
    — snap "sticks" until deliberately pulled away. */
 const SNAP_RELEASE_PX = 10;
-
-/* ════════════════════════════════════════════════════════════
-   Resize handles — production path (two handles) vs experimental
-   path (one right-edge slider + HUD + snap guide + chip rail).
-   ════════════════════════════════════════════════════════════
-
-   Production (experimentalLayout === false):
-   - Right-edge handle drags block width in PIXELS.
-   - Bottom-right corner handle drags block width as PERCENT.
-   Both are kept unchanged so the flag-off path regresses nothing.
-
-   Experimental (experimentalLayout === true):
-   - Single right-edge handle (the corner handle is removed).
-   - Handle is role="slider" with ARIA valuemin/max/now/text +
-     arrow-key resize (Left/Right, Shift = fine, Alt = 0.5%).
-   - During drag, ResizeHUD shows the live value + unit toggle
-     (P = px, % = percent).
-   - Unit defaults from the zone's flow mode: row/grid → %,
-     stack → px.
-   - A single snap guide line renders at the NEAREST snap point
-     (25/33/50/66/75/100 %); when the pointer is within
-     SNAP_PULL_PX of that point the width is magnetically
-     pulled to it.
-   - A SizeChipRail mounts above the block while it's selected.
-   ════════════════════════════════════════════════════════════ */
-
-interface ResizeHandleProps {
-  colSpan: number;
-  onResize: (span: number) => void;
-  /** Called when the new resize flow writes a specific width
-     string (px or %) to the block. Prefer this over onResize
-     for the new layout system; colSpan is legacy. */
-  onWidth?: (width: string) => void;
-  /** Respected during drag - computed width is clamped to
-     [minWidth, maxWidth] before being emitted. */
-  minWidth?: number;
-  maxWidth?: number;
-  /** Drag mode: "px" (right-edge) or "percent" (corner). */
-  mode: "px" | "percent";
-}
-
-function ResizeHandle({ colSpan, onResize, onWidth, minWidth, maxWidth, mode }: ResizeHandleProps) {
-  const [resizing, setResizing] = useState(false);
-  const [overlay, setOverlay] = useState<string>("");
-  const startRef = useRef<{ x: number; startWidth: number; containerWidth: number } | null>(null);
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      /* Measure the block and the parent container. Parent is the
-         zone-drop-container; block is the wrapping div that carries
-         computeItemStyle. */
-      const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
-      const wrapperEl = blockEl?.parentElement as HTMLElement | null;
-      const containerEl = wrapperEl?.closest(".zone-drop-container") as HTMLElement | null;
-      const startWidth = wrapperEl?.getBoundingClientRect().width ?? 240;
-      const containerWidth = containerEl?.clientWidth ?? 720;
-
-      startRef.current = { x: e.clientX, startWidth, containerWidth };
-      setResizing(true);
-      setOverlay(mode === "px" ? `${Math.round(startWidth)}px` : `${Math.round((startWidth / containerWidth) * 100)}%`);
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    },
-    [mode],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!startRef.current) return;
-      const { x: startX, startWidth, containerWidth } = startRef.current;
-      const delta = e.clientX - startX;
-
-      /* Clamp to [minWidth, maxWidth] (px). Default min is 80px,
-         default max is containerWidth (can't exceed parent). */
-      const minPx = minWidth ?? 80;
-      const maxPx = maxWidth ?? containerWidth;
-      const nextPx = Math.max(minPx, Math.min(maxPx, startWidth + delta));
-
-      if (mode === "px") {
-        const v = Math.round(nextPx);
-        setOverlay(`${v}px`);
-        onWidth?.(`${v}px`);
-        /* Also map to legacy colSpan so the badge button stays in
-           sync. Snap: <40% = 1, <73% = 2, else 3. */
-        const pct = nextPx / containerWidth;
-        const legacy = pct >= 0.73 ? 3 : pct >= 0.4 ? 2 : 1;
-        if (legacy !== colSpan) onResize(legacy);
-      } else {
-        /* Percent mode: round to nearest 5% for snappy feel;
-           hold Shift for 1% precision. */
-        const rawPct = (nextPx / containerWidth) * 100;
-        const pct = e.shiftKey ? Math.round(rawPct) : Math.round(rawPct / 5) * 5;
-        const clamped = Math.max(10, Math.min(100, pct));
-        setOverlay(`${clamped}%`);
-        onWidth?.(`${clamped}%`);
-        const legacy = clamped >= 73 ? 3 : clamped >= 40 ? 2 : 1;
-        if (legacy !== colSpan) onResize(legacy);
-      }
-    },
-    [colSpan, onResize, onWidth, minWidth, maxWidth, mode],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    startRef.current = null;
-    setResizing(false);
-    /* Fade overlay out after a beat so the user sees the final value. */
-    setTimeout(() => setOverlay(""), 350);
-  }, []);
-
-  const wrapperClass = mode === "px" ? "block-resize-handle" : "block-resize-corner";
-  return (
-    <div
-      className={`${wrapperClass}${resizing ? " is-resizing" : ""}`}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      title={mode === "px" ? "Drag to resize (pixels)" : "Drag to resize (percent) — hold Shift for 1% steps"}
-    >
-      <div className={mode === "px" ? "block-resize-grip" : "block-resize-grip-corner"} />
-      {overlay && <span className="block-resize-overlay">{overlay}</span>}
-    </div>
-  );
-}
 
 /* ════════════════════════════════════════════════════════════
    Experimental single-handle resize + HUD + snap guide
@@ -671,8 +543,6 @@ interface SortableBlockProps {
   parentGroupId?: string;
   compact?: boolean;
   isSelected?: boolean;
-  colSpan?: number;
-  onColSpanChange?: (span: number) => void;
   /** New layout-system hook. Writes a width string
      ("{N}px" / "{N}%") directly to the block's layout.width. */
   onWidthChange?: (width: string) => void;
@@ -692,8 +562,6 @@ export function SortableBlock({
   parentGroupId,
   compact,
   isSelected,
-  colSpan = 3,
-  onColSpanChange,
   onWidthChange,
   layoutHints,
   currentWidth,
@@ -712,7 +580,6 @@ export function SortableBlock({
     isSorting,
   } = useSortable({ id, data: { zone, parentGroupId } });
 
-  const experimentalLayout = useBuilder((s) => s.experimentalLayout);
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
   const zoneMode = zone ? (zoneLayouts[zone]?.mode ?? "row") : "row";
   const selectedBlockIds = useBuilder((s) => s.selectedBlockIds);
@@ -789,7 +656,7 @@ export function SortableBlock({
     isSelected && "is-selected",
     isSecondarySelected && "is-selected-multi",
     compact && "zone-block-compact",
-    experimentalLayout && "canvas-block--experimental",
+    "canvas-block--experimental",
     isNewlyMounted && "is-newly-mounted",
     /* Drop indicator: show when another item is being sorted and this item is shifting */
     isSorting && !isDragging && "is-sorting-peer",
@@ -856,13 +723,9 @@ export function SortableBlock({
     ? parseFloat(layoutHints.maxWidth)
     : typeof layoutHints?.maxWidth === "number" ? layoutHints.maxWidth : undefined;
 
-  /* Unified colSpan-change handler used by both the badge button
-     (discrete 1/2/3) and the percent resize handle (continuous). */
-  const handleSpanChange = (span: number) => onColSpanChange?.(span);
   const handleWidthChange = (w: string) => onWidthChange?.(w);
 
-  const resizableInExperimental = experimentalLayout && !!onWidthChange && !compact && !!zone;
-  const resizableInProduction = !experimentalLayout && !!onColSpanChange && !compact;
+  const resizable = !!onWidthChange && !compact && !!zone;
 
   return (
     <div
@@ -899,33 +762,12 @@ export function SortableBlock({
         onSwapClick={!compact ? onSwapClick : undefined}
       />
 
-      {/* Column span badge - click to cycle 1/2/3 (legacy; the
-          resize handles are the primary affordance now).
-          Hidden in experimental mode (the size chip rail
-          supersedes it) and in sidebar zone (S1 audit). */}
-      {onColSpanChange && !compact && !experimentalLayout && zone !== "sidebar" && (
-        <button
-          className="canvas-block-colspan"
-          onClick={() => {
-            const cycle = [1, 2, 3];
-            const idx = cycle.indexOf(colSpan);
-            onColSpanChange(cycle[(idx + 1) % cycle.length]);
-          }}
-          title={`Width: ${COL_SPAN_LABELS[colSpan] || "Full"} - click to cycle`}
-          type="button"
-        >
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.02em" }}>
-            {COL_SPAN_LABELS[colSpan] || "Full"}
-          </span>
-        </button>
-      )}
-
-      {/* Size chip rail, experimental only, shown when selected.
+      {/* Size chip rail, shown when selected.
           S2 (2026-05-29 audit): anchored via Floating UI to the block
           element so the rail flips + shifts away from viewport edges
           (preview header, right-edge clip). Portaled to document.body
           so the rail escapes ancestor overflow:hidden clip rects. */}
-      {experimentalLayout && isSelected && !compact && zone && onWidthChange && (
+      {isSelected && !compact && zone && onWidthChange && (
         <SizeChipRail
           zone={zone}
           blockId={id}
@@ -936,34 +778,10 @@ export function SortableBlock({
 
       {children}
 
-      {/* Production path: dual handles (right-edge px + corner percent).
+      {/* On-canvas resize: single right-edge handle + HUD + snap guide.
           Issue #8: gated on `isSelected` so idle / hovered blocks don't
-          render the handle (matches chip-rail's existing visibility). */}
-      {isSelected && resizableInProduction && (
-        <>
-          <ResizeHandle
-            colSpan={colSpan}
-            onResize={handleSpanChange}
-            onWidth={handleWidthChange}
-            minWidth={minPx}
-            maxWidth={maxPx}
-            mode="px"
-          />
-          <ResizeHandle
-            colSpan={colSpan}
-            onResize={handleSpanChange}
-            onWidth={handleWidthChange}
-            minWidth={minPx}
-            maxWidth={maxPx}
-            mode="percent"
-          />
-        </>
-      )}
-
-      {/* Experimental path: single right-edge handle + HUD +
-          snap guide. Corner handle is removed. */}
-      {/* Issue #8: same gate as the production handle above. */}
-      {isSelected && resizableInExperimental && zone && (
+          render the handle (matches the chip-rail's visibility). */}
+      {isSelected && resizable && zone && (
         <ExperimentalResize
           zone={zone}
           blockId={id}

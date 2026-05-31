@@ -10,7 +10,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { SwapMenu } from "./SwapMenu";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS, BLOCK_TO_ID } from "@/lib/componentMaps";
-import { computeItemStyle, deriveColSpan } from "@/lib/layoutResolver";
+import { computeItemStyle } from "@/lib/layoutResolver";
 
 let blockCounter = 0;
 export function makeBlockId() {
@@ -226,10 +226,6 @@ export function PreviewCanvas() {
              resolver. computeItemStyle handles all width modes
              (fill/auto/px/%/fr) + min/max + colSpan back-compat. */
           const itemStyle = computeItemStyle(block, bodyZoneLayout);
-          /* deriveColSpan keeps the legacy colSpan-cycle button
-             working via a stable 1|2|3 integer. Sub-phase 4 wires
-             the px resize handle on top. */
-          const colSpan = deriveColSpan(block);
           return (
           <div
             key={block.id}
@@ -243,18 +239,8 @@ export function PreviewCanvas() {
               id={block.id}
               zone="body"
               isSelected={selectedBlockId === block.id}
-              colSpan={colSpan}
               currentWidth={block.layout?.width}
               layoutHints={block.layout ? { minWidth: block.layout.minWidth, maxWidth: block.layout.maxWidth } : undefined}
-              onColSpanChange={(span) => {
-                /* Legacy colSpan write - the resolver auto-translates
-                   to width on the next render. The new width handle
-                   below bypasses this for continuous resizing. */
-                const next = blocks.map((b) =>
-                  b.id === block.id ? { ...b, props: { ...b.props, colSpan: span } } : b
-                );
-                syncToStore(next);
-              }}
               onWidthChange={(w) => {
                 /* Write the continuous width to block.layout.width so
                    the resolver renders an exact pixel or percent value.
