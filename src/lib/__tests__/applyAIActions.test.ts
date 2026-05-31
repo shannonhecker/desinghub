@@ -218,23 +218,105 @@ describe("applyAIActions", () => {
     expect(useBuilder.getState().selectedBlockId).toBe("b1");
   });
 
-  /* Regression guard: removeBlock scans only TOP-LEVEL zone arrays, but a
-     block inside a LayoutGroup is independently selectable yet lives in
-     group.children (not a top-level array). If the AI removeBlock id isn't
-     found at top level, nothing is removed — so a still-valid selection
-     (e.g. a group-child) must NOT be cleared. The reconcile is gated on an
-     actual removal, not on id-equality alone. */
-  it("keeps the selection when removeBlock removes nothing (e.g. a group-child id)", () => {
+  /* removeBlock scans only TOP-LEVEL zone arrays, but a block inside a
+     LayoutGroup is independently selectable while living in group.children.
+     An AI removeBlock of a group-child id removes nothing at top level, so
+     the child still exists — reconciling by EXISTENCE (findBlockInTree
+     recurses children) correctly keeps the selection. */
+  it("keeps a group-child selection when removeBlock doesn't remove it", () => {
     useBuilder.setState({
-      blocks: [{ id: "g1", type: "LayoutGroup", props: {} }],
-      selectedBlockId: "c1", // a child inside g1 — selectable, not a top-level block
+      blocks: [{
+        id: "g1", type: "LayoutGroup", props: {},
+        children: [{ id: "c1", type: "SimulatedCard", props: {} }],
+      }],
+      selectedBlockId: "c1",
       selectedBlockIds: ["c1"],
       selectedBlockZone: "body",
     });
 
     applyAIActions([{ action: "removeBlock", value: { blockId: "c1" } }]);
 
+    // c1 still lives in g1.children → selection preserved.
     expect(useBuilder.getState().selectedBlockId).toBe("c1");
+  });
+
+  /* Multi-selection (marquee / shift-click) lives in selectedBlockIds, with
+     selectedBlockId = [0]. Removing a NON-primary member must prune just
+     that id, not leave it dangling (Delete/Backspace + context-menu read
+     the whole set). */
+  it("prunes only the removed member of a multi-selection", () => {
+    useBuilder.setState({
+      blocks: [
+        { id: "b1", type: "SimulatedCard", props: {} },
+        { id: "b2", type: "SimulatedButton", props: {} },
+      ],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1", "b2"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "removeBlock", value: { blockId: "b2" } }]);
+
+    const s = useBuilder.getState();
+    expect(s.selectedBlockIds).toEqual(["b1"]);
+    expect(s.selectedBlockId).toBe("b1");
+  });
+
+  it("promotes a survivor to primary when the AI removes the primary of a multi-selection", () => {
+    useBuilder.setState({
+      blocks: [
+        { id: "b1", type: "SimulatedCard", props: {} },
+        { id: "b2", type: "SimulatedButton", props: {} },
+      ],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1", "b2"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "removeBlock", value: { blockId: "b1" } }]);
+
+    const s = useBuilder.getState();
+    expect(s.selectedBlockIds).toEqual(["b2"]);
+    expect(s.selectedBlockId).toBe("b2");
+  });
+
+  /* A [moveBlock, clearCanvas] batch leaves selectedBlockZone stale (moveBlock
+     never updates it). Existence-based reconcile against the FINAL state gets
+     both directions right where a zone-gate could not. */
+  it("keeps (and re-zones) a selection that moveBlock relocated out of a cleared zone", () => {
+    useBuilder.setState({
+      blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
+      headerBlocks: [],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([
+      { action: "moveBlock", value: { blockId: "b1", toZone: "header", toIndex: 0 } },
+      { action: "clearCanvas", value: "body" },
+    ]);
+
+    const s = useBuilder.getState();
+    expect(s.selectedBlockId).toBe("b1");        // b1 now lives in header → still valid
+    expect(s.selectedBlockZone).toBe("header");  // zone recomputed to where it actually is
+  });
+
+  it("clears a selection that moveBlock relocated INTO the zone that then gets cleared", () => {
+    useBuilder.setState({
+      blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
+      headerBlocks: [],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([
+      { action: "moveBlock", value: { blockId: "b1", toZone: "header", toIndex: 0 } },
+      { action: "clearCanvas", value: "header" },
+    ]);
+
+    expect(useBuilder.getState().selectedBlockId).toBeNull(); // b1 was deleted with header
   });
 
   it("clears a body selection when the AI clears the canvas", () => {

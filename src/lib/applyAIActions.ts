@@ -128,27 +128,14 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
         // Search all zones for the block
         const st = useBuilder.getState();
         const blockId: string = v.blockId;
-        let removed = false;
         for (const zone of VALID_ZONES) {
           const key = zone === "body" ? "blocks" : `${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks";
           const arr = zone === "body" ? st.blocks : st[key];
           if (arr.some((b) => b.id === blockId)) {
             store.removeBlockFromZone(zone, blockId);
             emitToolUse({ messageId, action: "removeBlock", value: { blockId }, blockId, zone });
-            removed = true;
             break;
           }
-        }
-        /* Reconcile selection: if we ACTUALLY removed the block that was
-           selected, clear the selection so the inspector / HoverInspector
-           doesn't dangle. Gated on `removed` (not id-equality alone): the
-           loop only scans top-level zone arrays, so a removeBlock id that
-           isn't found there (e.g. a still-present group-child, or an
-           unknown id) removes nothing and must leave the selection intact.
-           Mirrors PreviewCanvas's manual-delete reconcile, whose guard is
-           safe because it only ever fires on a real top-level removal. */
-        if (removed && useBuilder.getState().selectedBlockId === blockId) {
-          store.clearSelection();
         }
         break;
       }
@@ -209,12 +196,6 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
         const zone = typeof action.value === "string" && VALID_ZONES.includes(action.value as ZoneId)
           ? action.value as ZoneId : "body";
         store.setZoneBlocks(zone, []);
-        /* Reconcile selection: clearing a zone drops any block selected in
-           it, so clear a now-dangling selection (a block can only be
-           selected in one zone, so a selection in another zone is safe). */
-        if (useBuilder.getState().selectedBlockZone === zone) {
-          store.clearSelection();
-        }
         emitToolUse({ messageId, action: "clearCanvas", value: zone, zone });
         break;
       }
@@ -271,4 +252,12 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
       }
     }
   }
+
+  /* After applying the whole batch, drop any selection that now points at a
+     block the AI deleted (removeBlock / clearCanvas, in any order). Reconciling
+     ONCE against the FINAL canvas state — by block existence, not per-action
+     id/zone guards — is what makes this robust to multi-selection, group-child
+     selections, and a [moveBlock, clearCanvas] batch that leaves selectedBlockZone
+     stale. No-op when the selection is empty or fully intact. */
+  if (actions.length > 0) store.reconcileSelection();
 }
