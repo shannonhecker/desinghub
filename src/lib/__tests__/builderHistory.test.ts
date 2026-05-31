@@ -18,6 +18,12 @@ function resetAll() {
     themeKey: "jpm-dark",
     colorOverrides: {},
     hasOverrides: false,
+    zoneLayouts: {
+      body:    { mode: 'row',   gap: 12, wrap: true,  align: 'stretch' },
+      header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+      sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
+      footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+    },
   });
   if (teardown) teardown();
   teardown = initBuilderHistory();
@@ -162,5 +168,46 @@ describe("builderHistory", () => {
 
     expect(useBuilder.getState().colorOverrides).toEqual({});
     expect(useBuilder.getState().hasOverrides).toBe(false);
+  });
+
+  /* Audit finding #4 (2026-05-30): a zone's layout mode (row/grid/stack)
+     lived in the store + Firebase snapshot but NOT in the undo history,
+     so changing a zone layout then pressing Cmd+Z left the new layout in
+     place — silent, un-undoable state. These pin the unified behaviour. */
+  it("undo restores a zone layout change (layout-mode edits are undoable)", () => {
+    useBuilder.getState().setZoneLayout("body", { mode: "row" });
+    pushSnapshot();
+    useBuilder.getState().setZoneLayout("body", { mode: "grid" });
+
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("grid");
+
+    undo();
+
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("row");
+  });
+
+  it("redo re-applies a zone layout change after undo", () => {
+    useBuilder.getState().setZoneLayout("body", { mode: "row" });
+    pushSnapshot();
+    useBuilder.getState().setZoneLayout("body", { mode: "grid" });
+
+    undo();
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("row");
+    redo();
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("grid");
+  });
+
+  /* Real-world path: the inspector (ComponentLibrary) calls setZoneLayout
+     directly with NO explicit pushSnapshot, so undoability relies on the
+     subscription auto-capture gate including zoneLayouts. Without the gate
+     entry, a layout-only edit is filtered out as "nothing changed" and no
+     snapshot is taken — undo would be a no-op. */
+  it("undo restores zoneLayouts via subscription auto-capture (no explicit pushSnapshot)", () => {
+    useBuilder.getState().setZoneLayout("body", { mode: "grid" });
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("grid");
+
+    undo();
+
+    expect(useBuilder.getState().zoneLayouts.body.mode).toBe("row");
   });
 });

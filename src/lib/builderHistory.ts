@@ -15,7 +15,7 @@
  * - Bounded ring buffer (MAX_HISTORY = 50) caps memory.
  */
 
-import { useBuilder, type Block, type DesignSystem, type BuilderMode } from "@/store/useBuilder";
+import { useBuilder, type Block, type DesignSystem, type BuilderMode, type ZoneId, type ZoneLayout } from "@/store/useBuilder";
 
 const MAX_HISTORY = 50;
 
@@ -37,6 +37,10 @@ interface CanvasSnapshot {
   density: string;
   themeKey: string;
   colorOverrides: Record<string, string>;
+  /* Per-zone layout config (row/grid/stack + columns/gap/padding/…).
+     Persisted to Firebase already but was absent here, so a layout-mode
+     change was silently un-undoable (audit finding #4, 2026-05-30). */
+  zoneLayouts: Record<ZoneId, ZoneLayout>;
 }
 
 let past: CanvasSnapshot[] = [];
@@ -69,6 +73,10 @@ function snap(): CanvasSnapshot {
     density: s.density,
     themeKey: s.themeKey,
     colorOverrides: { ...s.colorOverrides },
+    /* Captured by reference (not copied): setZoneLayout always produces a
+       fresh top-level object, and nothing mutates zoneLayouts in place, so
+       reference identity reliably tracks change for sameSnapshot/the gate. */
+    zoneLayouts: s.zoneLayouts,
   };
 }
 
@@ -87,7 +95,8 @@ function sameSnapshot(a: CanvasSnapshot, b: CanvasSnapshot): boolean {
     a.mode === b.mode &&
     a.density === b.density &&
     a.themeKey === b.themeKey &&
-    a.colorOverrides === b.colorOverrides
+    a.colorOverrides === b.colorOverrides &&
+    a.zoneLayouts === b.zoneLayouts
   );
 }
 
@@ -133,6 +142,7 @@ function apply(snapshot: CanvasSnapshot) {
     density: snapshot.density,
     themeKey: snapshot.themeKey,
     colorOverrides: snapshot.colorOverrides,
+    zoneLayouts: snapshot.zoneLayouts,
     /* hasOverrides is a derived flag that store/useBuilderHistory used
        to set alongside colorOverrides. Mirror that derivation so a
        restored snapshot with overrides preserves the conditional UI. */
@@ -193,7 +203,8 @@ export function initBuilderHistory(): () => void {
       state.mode === prev.mode &&
       state.density === prev.density &&
       state.themeKey === prev.themeKey &&
-      state.colorOverrides === prev.colorOverrides
+      state.colorOverrides === prev.colorOverrides &&
+      state.zoneLayouts === prev.zoneLayouts
     ) {
       return;
     }
