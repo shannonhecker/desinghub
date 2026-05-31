@@ -9088,6 +9088,18 @@
   flex: 1;
 }
 
+/* Edit-mode device toggle fix. The base `flex: 1` above resolves to
+   flex-basis: 0%, and a non-auto basis makes flexbox IGNORE the element's
+   width — so the inline `width: 768px / 375px` that framer-motion writes on
+   the frame when the device toggle changes was silently discarded and
+   flex-grow stretched it back to full width. Restoring flex-basis: auto
+   lets that inline width win, so the frame narrows to the tablet/mobile
+   preset and centres via the wrapper's justify-content. (Present mode
+   already does this via `.present-stage .bp-device-frame`.) */
+.bp-viewport-wrapper .bp-device-frame {
+  flex: 0 1 auto;
+}
+
 /* ── Dashboard skeleton inside the frame ── */
 .bp-dashboard {
   display: flex;
