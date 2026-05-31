@@ -168,6 +168,9 @@ function processComponentCommand(
   alsoRemoveIds?: string[];
   /* Wipe every body block — set by "clear all" style commands. */
   clearBody?: boolean;
+  /* Wipe ALL zones (header, sidebar, body, footer) — "Clear all" means the
+     whole canvas, not just the body content area. */
+  clearAll?: boolean;
 } {
   const l = input.toLowerCase();
 
@@ -246,9 +249,9 @@ function processComponentCommand(
   /* ── Clear all ── */
   if (isClear)
     return {
-      response: "All components cleared. Tell me what to add or select from the options.",
+      response: "Cleared the whole canvas. Tell me what to add or select from the options.",
       newComponents: [],
-      clearBody: true,
+      clearAll: true,
     };
 
   /* ── Show all ── */
@@ -840,7 +843,7 @@ export function ChatPanel() {
       return;
     }
 
-    const { response: compResponse, newComponents, alsoRemoveIds, clearBody } =
+    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll } =
       processComponentCommand(msg, selectedComponents);
 
     /* ── Theme changes ── */
@@ -864,7 +867,18 @@ export function ChatPanel() {
          and clearBody carry explicit remove intent for cases where
          selectedComponents doesn't reflect what's actually on canvas
          (dragged blocks, loaded sessions, etc.). */
-      applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, clearBody });
+      if (clearAll) {
+        /* "Clear all" wipes the WHOLE canvas, not just the body. Reset every
+           zone + the body layout + the active template. */
+        setHeaderBlocks([]);
+        setSidebarBlocks([]);
+        setBlocks([]);
+        setFooterBlocks([]);
+        setZoneLayout("body", { mode: "row", gap: 12, wrap: true, align: "stretch" });
+        setActiveTemplateId(null);
+      } else {
+        applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, clearBody });
+      }
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);
       setTimeout(() => {
