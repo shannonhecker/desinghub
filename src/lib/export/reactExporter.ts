@@ -104,6 +104,8 @@ export function exportReact(): string {
     /* Provider import differs per DS API. */
     if (system === "m3") {
       imports.push('import { ThemeProvider, createTheme } from "@mui/material";');
+    } else if (system === "fluent") {
+      imports.push(`import { FluentProvider, ${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"} } from "@fluentui/react-components";`);
     } else {
       imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
     }
@@ -118,12 +120,16 @@ export function exportReact(): string {
     ? ""
     : system === "m3"
       ? `<ThemeProvider theme={createTheme({ palette: { mode: "${s.mode}" } })}>\n    `
-      : `<${ds.provider} mode="${s.mode}">\n    `;
+      : system === "fluent"
+        ? `<FluentProvider theme={${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"}}>\n    `
+        : `<${ds.provider} mode="${s.mode}">\n    `;
   const close = !real
     ? ""
     : system === "m3"
       ? "\n    </ThemeProvider>"
-      : `\n    </${ds.provider}>`;
+      : system === "fluent"
+        ? "\n    </FluentProvider>"
+        : `\n    </${ds.provider}>`;
 
   return `${imports.join("\n")}
 

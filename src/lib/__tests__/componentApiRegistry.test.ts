@@ -77,3 +77,38 @@ describe("componentApiRegistry — M3 (@mui/material) emits real MUI components"
       .toContain('import { Button, FormControlLabel, Switch } from "@mui/material";');
   });
 });
+
+describe("componentApiRegistry — Fluent (@fluentui/react-components) emits real Fluent components", () => {
+  it("translates a primary button to Fluent appearance=primary", () => {
+    expect(blockToRealJsx("fluent", b("SimulatedButton", { label: "Submit", variant: "primary" })))
+      .toBe('<Button appearance="primary">Submit</Button>');
+  });
+
+  it("maps a danger button to subtle + the real red token (Fluent has no native danger appearance)", () => {
+    const jsx = blockToRealJsx("fluent", b("SimulatedButton", { label: "Delete", variant: "danger" }))!;
+    expect(jsx).toContain('appearance="subtle"');
+    expect(jsx).toContain("--colorPaletteRedForeground1");
+  });
+
+  it("maps a text input to Fluent's Field + Input composition", () => {
+    const jsx = blockToRealJsx("fluent", b("SimulatedTextInput", { label: "Email", placeholder: "you@co" }))!;
+    expect(jsx).toContain('<Field label="Email">');
+    expect(jsx).toContain('<Input placeholder="you@co" />');
+  });
+
+  it("maps a switch (defaultOn) to Fluent Switch defaultChecked", () => {
+    expect(blockToRealJsx("fluent", b("SimulatedSwitch", { label: "Notifications", defaultOn: true })))
+      .toBe('<Switch label="Notifications" defaultChecked />');
+  });
+
+  it("maps a card to Fluent Card + CardHeader", () => {
+    const jsx = blockToRealJsx("fluent", b("SimulatedCard", { title: "Stats", content: "Body" }))!;
+    expect(jsx).toContain("<Card>");
+    expect(jsx).toContain('<CardHeader header="Stats" description="Body" />');
+  });
+
+  it("collects deduped, sorted imports from @fluentui/react-components", () => {
+    expect(collectImports("fluent", ["SimulatedButton", "SimulatedCheckbox"]))
+      .toContain('import { Button, Checkbox } from "@fluentui/react-components";');
+  });
+});

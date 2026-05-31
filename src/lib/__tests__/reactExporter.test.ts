@@ -47,4 +47,13 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).toContain('<Button variant="contained">Submit</Button>');
     expect(code).not.toContain('className="btn');
   });
+
+  it("Fluent button → real <Button appearance> + FluentProvider theme + @fluentui/react-components import", () => {
+    setCanvas("fluent", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    const code = exportReact();
+    expect(code).toContain('from "@fluentui/react-components";');
+    expect(code).toContain("FluentProvider theme={webLightTheme}");
+    expect(code).toContain('<Button appearance="primary">Submit</Button>');
+    expect(code).not.toContain('className="btn');
+  });
 });

@@ -4,10 +4,11 @@
  * official API. Replaces reactExporter's generic `className="btn"` pseudocode
  * so generated code actually imports + uses the real components.
  *
- * Seeded with Salt DS (the most complete in-repo API, src/data/salt). Other
- * DSs intentionally return null until added with their verified official API —
- * we never fabricate an API. Salt facts are sourced from the official
- * @salt-ds/core surface (sentiment/appearance enums, FormField composition).
+ * Seeded with Salt DS, Material 3 (@mui/material), and Fluent 2
+ * (@fluentui/react-components). Remaining DSs intentionally return null until
+ * added with their verified official API — we never fabricate an API. Each DS's
+ * facts are sourced from its official package surface (Salt sentiment/appearance,
+ * MUI variant/color, Fluent appearance) cross-checked against src/data/<ds>.
  */
 
 export type SystemId = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
@@ -100,11 +101,55 @@ const M3: Record<string, ComponentApiEntry> = {
   },
 };
 
-/* Per-DS registries. Salt + M3 seeded; other DSs return null so the exporter
-   falls back rather than emit a fabricated (wrong) API. */
+/* Generic block `variant` -> Fluent 2 (@fluentui/react-components) Button.
+   Fluent API: appearance = primary|secondary|outline|subtle|transparent.
+   Fluent v9 has NO native destructive appearance — the repo's verified pattern
+   for danger is subtle + the real --colorPaletteRedForeground1 token (a CSS var
+   FluentProvider injects), so we mirror that rather than fabricate a prop. */
+function fluentButtonAttrs(props: Record<string, unknown>): string {
+  const variant = s(props.variant, "primary");
+  const map: Record<string, string> = {
+    primary: 'appearance="primary"',
+    secondary: 'appearance="secondary"',
+    outline: 'appearance="outline"',
+    ghost: 'appearance="subtle"',
+    danger: 'appearance="subtle" style={{ color: "var(--colorPaletteRedForeground1)" }}',
+    destructive: 'appearance="subtle" style={{ color: "var(--colorPaletteRedForeground1)" }}',
+  };
+  return map[variant] ?? map.primary;
+}
+
+const FLUENT: Record<string, ComponentApiEntry> = {
+  SimulatedButton: {
+    imports: { from: "@fluentui/react-components", names: ["Button"] },
+    toJsx: (p) => `<Button ${fluentButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+  },
+  SimulatedTextInput: {
+    imports: { from: "@fluentui/react-components", names: ["Field", "Input"] },
+    toJsx: (p) =>
+      `<Field label="${s(p.label, "Label")}">\n  <Input placeholder="${s(p.placeholder)}" />\n</Field>`,
+  },
+  SimulatedCheckbox: {
+    imports: { from: "@fluentui/react-components", names: ["Checkbox"] },
+    toJsx: (p) => `<Checkbox label="${s(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
+  },
+  SimulatedSwitch: {
+    imports: { from: "@fluentui/react-components", names: ["Switch"] },
+    toJsx: (p) => `<Switch label="${s(p.label)}"${p.defaultOn ? " defaultChecked" : ""} />`,
+  },
+  SimulatedCard: {
+    imports: { from: "@fluentui/react-components", names: ["Card", "CardHeader"] },
+    toJsx: (p) =>
+      `<Card>\n  <CardHeader header="${s(p.title, "Card")}" description="${s(p.content)}" />\n</Card>`,
+  },
+};
+
+/* Per-DS registries. Salt + M3 + Fluent seeded; remaining DSs return null so the
+   exporter falls back rather than emit a fabricated (wrong) API. */
 const REGISTRY: Partial<Record<SystemId, Record<string, ComponentApiEntry>>> = {
   salt: SALT,
   m3: M3,
+  fluent: FLUENT,
 };
 
 export function resolveComponentApi(system: SystemId, blockType: string): ComponentApiEntry | null {
