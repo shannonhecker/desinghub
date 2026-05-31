@@ -58,28 +58,21 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-avatar-group": "SimulatedAvatarGroup",
 };
 
-/** Compound expansion: some wizard IDs produce multiple individual blocks.
- *  Each entry defines the block type + unique default props for each instance. */
-export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<string, unknown> }[]> = {
-  progress: [
-    { type: "SimulatedStatCard", props: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 } },
-    { type: "SimulatedStatCard", props: { label: "Users", value: "1,247", pct: 75, colSpan: 1 } },
-    { type: "SimulatedStatCard", props: { label: "Growth", value: "+18%", pct: 90, colSpan: 1 } },
-  ],
-  buttons: [
-    { type: "SimulatedButton", props: { variant: "primary", label: "Primary" } },
-    { type: "SimulatedButton", props: { variant: "secondary", label: "Secondary" } },
-  ],
-  cards: [
-    { type: "SimulatedCard", props: { title: "Analytics", content: "Track key metrics and performance indicators." } },
-    { type: "SimulatedCard", props: { title: "Reports", content: "Generate and export detailed reports." } },
-  ],
-  badges: [
-    { type: "SimulatedBadge", props: { label: "Active", status: "success" } },
-    { type: "SimulatedBadge", props: { label: "Pending", status: "warning" } },
-    { type: "SimulatedBadge", props: { label: "Closed", status: "default" } },
-  ],
-};
+/** Compound expansion map — intentionally EMPTY.
+ *
+ *  Previously a few wizard IDs (progress/buttons/cards/badges) auto-expanded
+ *  to fixed, domain-blind blocks (3× Revenue/Users/Growth stat cards, 2×
+ *  Analytics/Reports cards, Primary/Secondary buttons, Active/Pending/Closed
+ *  badges). That padded every generated dashboard with generic filler the
+ *  user never asked for — a major noise source. Multiplicity and content are
+ *  now driven entirely by the model's per-block `addBlock` props (and by the
+ *  user duplicating a block), so each wizard ID maps to a single block via
+ *  ID_TO_BLOCK. Both consumers (PreviewCanvas, chatComponentDelta) fall
+ *  through to the single-block path when an ID is absent here.
+ *
+ *  Kept as an empty record (not deleted) so the consumer lookups and the
+ *  removal-by-group logic stay structurally intact and type-safe. */
+export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<string, unknown> }[]> = {};
 
 /** Reverse: block type → canonical store ID */
 export const BLOCK_TO_ID: Record<string, string> = {

@@ -169,11 +169,9 @@ function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: s
   const isSelected = blockId != null && selectedBlockId === blockId;
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
 
-  const defaultRows = [
-    { name: "Jane Doe", status: "Active", role: "Admin", date: "2 hrs ago" },
-    { name: "John Smith", status: "Pending", role: "Editor", date: "Yesterday" },
-    { name: "Alice Jones", status: "Active", role: "Viewer", date: "5 mins ago" },
-  ];
+  /* No hardcoded "Jane Doe" sample roster — an empty table renders the
+     empty state (via SimulatedDataTable) rather than a generic users table. */
+  const defaultRows: { name: string; status: string; role: string; date: string }[] = [];
   const rows = (block?.props.rows as typeof defaultRows) ?? defaultRows;
 
   const updateCell = (rowIdx: number, key: string, value: string) => {
@@ -1236,9 +1234,10 @@ function SimulatedDataTableBlock({
 }) {
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
-  const data = (block?.props.rows as { name: string; status: string; role: string; date: string }[]) ?? undefined;
+  const data = (block?.props.rows as unknown[]) ?? undefined;
+  const columns = (block?.props.columns as string[]) ?? undefined;
 
-  return <SimulatedDataTable system={system} data={data} />;
+  return <SimulatedDataTable system={system} data={data} columns={columns} />;
 }
 
 function SimulatedProgressBlock({

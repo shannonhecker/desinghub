@@ -54,6 +54,18 @@ describe("applyAIActions", () => {
     expect(useBuilder.getState().selectedComponents).toEqual(["cards", "tabs"]);
   });
 
+  it("caps addBlock actions per turn (runaway guard keeps layouts simple)", () => {
+    /* 20 addBlock actions in one turn → only the first 16 land. The system
+       prompt targets a 5-9 block budget; this is the hard backstop against
+       prompt drift that produces 20-30 block dashboards. */
+    const many: AIAction[] = Array.from({ length: 20 }, () => ({
+      action: "addBlock",
+      value: { type: "SimulatedButton", zone: "body" },
+    }));
+    applyAIActions(many);
+    expect(useBuilder.getState().blocks).toHaveLength(16);
+  });
+
   it("setInterfaceType changes interface type", () => {
     applyAIActions([{ action: "setInterfaceType", value: "form" }]);
     expect(useBuilder.getState().interfaceType).toBe("form");

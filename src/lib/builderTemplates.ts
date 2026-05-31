@@ -90,7 +90,7 @@ const analyticsDashboard: BuilderTemplate = {
     { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Daily events" }, layout: { width: "66.666%" } },
     { id: tid("ad-progress"), type: "SimulatedProgress", props: { label: "Monthly plan usage", value: 64 }, layout: { width: "33.333%" } },
     /* Data table - kept LAST so the detailed view follows the KPI + chart overview (standard dashboard reading order) */
-    { id: tid("ad-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
+    { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "fill" } },
   ],
   footer: [
     { id: tid("ad-ftr"), type: "FooterText", props: { label: "Last updated 2 min ago", version: "v2.4" } },
@@ -176,7 +176,7 @@ const crmContacts: BuilderTemplate = {
     { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "33.333%" } },
     { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "33.333%" } },
     /* Main data table - last */
-    { id: tid("crm-table"), type: "SimulatedDataTable", props: { }, layout: { width: "fill" } },
+    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "fill" } },
   ],
   footer: [
     { id: tid("crm-ftr"), type: "FooterText", props: { label: "Showing 247 of 1,247 contacts", version: "v3.2" } },

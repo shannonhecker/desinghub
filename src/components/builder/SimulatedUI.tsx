@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import * as CarbonIcons from "@carbon/icons-react";
+import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent" | "uoaui" | "carbon";
@@ -241,20 +242,23 @@ type SortDir = "asc" | "desc" | null;
 
 interface DataTableProps extends SimProps {
   columns?: string[];
-  data?: { name: string; status: string; role: string; date: string }[];
+  /* Rows are intentionally untyped: the model emits domain-shaped rows
+     (objects keyed by header, the legacy {name,status,role,date} object, or
+     arrays). resolveCell() handles every shape defensively. */
+  data?: unknown[];
 }
 
 const DEFAULT_COLUMNS = ["Name", "Status", "Role", "Last Active"];
-const DEFAULT_DATA = [
-  { name: "Jane Doe", status: "Active", role: "Admin", date: "2 hrs ago" },
-  { name: "John Smith", status: "Pending", role: "Editor", date: "Yesterday" },
-  { name: "Alice Jones", status: "Active", role: "Viewer", date: "5 mins ago" },
-];
 
+/* No DEFAULT_DATA fallback by design: a table with no rows renders an explicit
+   empty state instead of a generic "Jane Doe / John Smith / Alice Jones"
+   placeholder roster. That roster used to leak into every generated dashboard
+   regardless of domain (a plant tracker should never show an Admin/Editor/Viewer
+   users table). Callers that want a populated table pass real `rows`. */
 export function SimulatedDataTable({
   system,
-  columns = DEFAULT_COLUMNS,
-  data = DEFAULT_DATA,
+  columns,
+  data,
 }: DataTableProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -272,19 +276,28 @@ export function SimulatedDataTable({
     }
   };
 
-  const statusClass = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "active") return "success";
-    if (s === "pending") return "warning";
-    return "neutral";
-  };
+  const cols = columns ?? DEFAULT_COLUMNS;
+  const rows = Array.isArray(data) ? data : [];
+
+  if (rows.length === 0) {
+    return (
+      <div
+        className={`${prefix}-table-container`}
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120, padding: 24, textAlign: "center", opacity: 0.6 }}
+      >
+        <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+          No data yet. Describe the records you want, or add rows.
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className={`${prefix}-table-container`}>
       <table className={`${prefix}-table`}>
         <thead>
           <tr>
-            {columns.map((col, i) => (
+            {cols.map((col, i) => (
               <th
                 key={col}
                 className={`${prefix}-th ${sortCol === i ? `${prefix}-th-sorted` : ""}`}
@@ -304,7 +317,7 @@ export function SimulatedDataTable({
           </tr>
         </thead>
         <tbody>
-          {data.map((row, idx) => (
+          {rows.map((row, idx) => (
             <tr
               key={idx}
               className={`${prefix}-tr${hoveredRow === idx ? ` ${prefix}-tr-hover` : ""}${selectedRow === idx ? ` ${prefix}-tr-selected` : ""}`}
@@ -312,14 +325,24 @@ export function SimulatedDataTable({
               onMouseLeave={() => setHoveredRow(null)}
               onClick={() => setSelectedRow(selectedRow === idx ? null : idx)}
             >
-              <td className={`${prefix}-td ${prefix}-td-name`}>{row.name}</td>
-              <td className={`${prefix}-td`}>
-                <span className={`${prefix}-status-badge ${prefix}-status-${statusClass(row.status)}`}>
-                  {row.status}
-                </span>
-              </td>
-              <td className={`${prefix}-td`}>{row.role}</td>
-              <td className={`${prefix}-td ${prefix}-td-muted`}>{row.date}</td>
+              {cols.map((col, ci) => {
+                const value = resolveCell(row, col, ci);
+                if (isStatusColumn(col)) {
+                  return (
+                    <td key={ci} className={`${prefix}-td`}>
+                      <span className={`${prefix}-status-badge ${prefix}-status-${statusToClass(value)}`}>
+                        {value}
+                      </span>
+                    </td>
+                  );
+                }
+                const tdClass = `${prefix}-td${ci === 0 ? ` ${prefix}-td-name` : ""}${ci === cols.length - 1 && cols.length > 1 ? ` ${prefix}-td-muted` : ""}`;
+                return (
+                  <td key={ci} className={tdClass}>
+                    {value}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

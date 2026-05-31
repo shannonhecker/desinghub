@@ -26,25 +26,23 @@ describe("applyChatComponentDelta", () => {
     expect(useBuilder.getState().blocks).toHaveLength(0);
   });
 
-  it("single-id add (not in multi-block map) → adds one body block of the mapped type", () => {
-    /* Use "tabs": ID_TO_BLOCK entry only, no ID_TO_MULTI_BLOCKS entry,
-       so this exercises the single-add branch. Ids like "buttons" and
-       "cards" are multi-block expansions and covered separately. */
+  it("single-id add → adds one body block of the mapped type", () => {
+    /* Every wizard id now maps to a single block (generic multi-block
+       expansions were removed so content is domain-driven, not templated). */
     applyChatComponentDelta([], ["tabs"]);
     const blocks = useBuilder.getState().blocks;
     expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe("SimulatedTabs");
   });
 
-  it("multi-block id expands to every entry in ID_TO_MULTI_BLOCKS", () => {
+  it("wizard id 'progress' adds a SINGLE SimulatedStatCard (no generic Revenue/Users/Growth expansion)", () => {
     applyChatComponentDelta([], ["progress"]);
     const blocks = useBuilder.getState().blocks;
-    /* ID_TO_MULTI_BLOCKS.progress → three SimulatedStatCard entries */
-    expect(blocks).toHaveLength(3);
-    expect(blocks.every((b) => b.type === "SimulatedStatCard")).toBe(true);
-    /* Each instance carries its distinct default props (Revenue / Users / Growth) */
-    const labels = blocks.map((b) => b.props.label);
-    expect(labels).toEqual(expect.arrayContaining(["Revenue", "Users", "Growth"]));
+    /* Generic 3-card expansion removed — the model supplies domain-specific
+       labels/values via per-block props instead of a hardcoded template. */
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("SimulatedStatCard");
+    expect(blocks[0].props.label).toBeUndefined();
   });
 
   it("unknown id is skipped silently — no dispatches, no throw", () => {
@@ -83,12 +81,12 @@ describe("applyChatComponentDelta", () => {
     resetStore({
       blocks: [{ id: "a", type: "SimulatedButton", props: {} }] as Block[],
     });
-    /* old=[buttons], new=[cards] → "cards" multi-expands to 2
-       SimulatedCard blocks; removal drops the single SimulatedButton.
-       Result: 2 cards, 0 buttons. */
+    /* old=[buttons], new=[cards] → "cards" adds ONE SimulatedCard
+       (expansions removed); removal drops the single SimulatedButton.
+       Result: 1 card, 0 buttons. */
     applyChatComponentDelta(["buttons"], ["cards"]);
     const blocks = useBuilder.getState().blocks;
-    expect(blocks).toHaveLength(2);
+    expect(blocks).toHaveLength(1);
     expect(blocks.every((b) => b.type === "SimulatedCard")).toBe(true);
     expect(blocks.some((b) => b.type === "SimulatedButton")).toBe(false);
   });
@@ -156,10 +154,10 @@ describe("applyChatComponentDelta", () => {
     expect(blocks[0].source).toBe("chat");
   });
 
-  it("Phase 3a: multi-block chat add stamps every block with source='chat'", () => {
+  it("Phase 3a: wizard 'progress' add stamps the block with source='chat'", () => {
     applyChatComponentDelta([], ["progress"]);
     const blocks = useBuilder.getState().blocks;
-    expect(blocks).toHaveLength(3);
-    for (const b of blocks) expect(b.source).toBe("chat");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].source).toBe("chat");
   });
 });
