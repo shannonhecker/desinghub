@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import * as CarbonIcons from "@carbon/icons-react";
+import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent" | "uoaui" | "carbon";
@@ -241,7 +242,10 @@ type SortDir = "asc" | "desc" | null;
 
 interface DataTableProps extends SimProps {
   columns?: string[];
-  data?: { name: string; status: string; role: string; date: string }[];
+  /* Rows are intentionally untyped: the model emits domain-shaped rows
+     (objects keyed by header, the legacy {name,status,role,date} object, or
+     arrays). resolveCell() handles every shape defensively. */
+  data?: unknown[];
 }
 
 const DEFAULT_COLUMNS = ["Name", "Status", "Role", "Last Active"];
@@ -270,13 +274,6 @@ export function SimulatedDataTable({
       setSortCol(colIdx);
       setSortDir("asc");
     }
-  };
-
-  const statusClass = (status: string) => {
-    const s = status.toLowerCase();
-    if (s === "active") return "success";
-    if (s === "pending") return "warning";
-    return "neutral";
   };
 
   const cols = columns ?? DEFAULT_COLUMNS;
@@ -328,14 +325,24 @@ export function SimulatedDataTable({
               onMouseLeave={() => setHoveredRow(null)}
               onClick={() => setSelectedRow(selectedRow === idx ? null : idx)}
             >
-              <td className={`${prefix}-td ${prefix}-td-name`}>{row.name}</td>
-              <td className={`${prefix}-td`}>
-                <span className={`${prefix}-status-badge ${prefix}-status-${statusClass(row.status)}`}>
-                  {row.status}
-                </span>
-              </td>
-              <td className={`${prefix}-td`}>{row.role}</td>
-              <td className={`${prefix}-td ${prefix}-td-muted`}>{row.date}</td>
+              {cols.map((col, ci) => {
+                const value = resolveCell(row, col, ci);
+                if (isStatusColumn(col)) {
+                  return (
+                    <td key={ci} className={`${prefix}-td`}>
+                      <span className={`${prefix}-status-badge ${prefix}-status-${statusToClass(value)}`}>
+                        {value}
+                      </span>
+                    </td>
+                  );
+                }
+                const tdClass = `${prefix}-td${ci === 0 ? ` ${prefix}-td-name` : ""}${ci === cols.length - 1 && cols.length > 1 ? ` ${prefix}-td-muted` : ""}`;
+                return (
+                  <td key={ci} className={tdClass}>
+                    {value}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

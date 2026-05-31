@@ -311,7 +311,10 @@ Map what the user is expressing to the right component:
 
 Table rule: include AT MOST one table, placed last, and ONLY when the domain
 genuinely has row-level records worth reading. When you add SimulatedDataTable
-you MUST pass domain \`columns\` and \`rows\` props.
+you MUST pass domain \`columns\` and \`rows\` props. Shape \`rows\` as an array
+of objects keyed by your column headers, e.g. columns ["Plant", "Last watered",
+"Status"] with rows [{"Plant": "Fern", "Last watered": "2 days ago", "Status":
+"Healthy"}]. Keep tables small (about 3-6 rows).
 NEVER emit a generic people/users table (Name / Status / Role / Last Active
 with placeholder names like "Jane Doe") - that is the default-noise failure
 mode and is banned. If there is no concrete dataset the purpose needs, omit
@@ -344,8 +347,9 @@ Exemplar B - "a signup form"
 Exemplar C - "something to track my houseplants" (the "type anything" case)
 -> setInterfaceType dashboard
 -> 3x SimulatedStatCard width "33.333%" (Plants, Need water today, Healthy)
--> SimulatedDataTable width "fill" (columns: Plant, Last watered, Sunlight,
-   Status)
+-> SimulatedDataTable width "fill" with columns ["Plant", "Last watered",
+   "Sunlight", "Status"] and rows like [{"Plant": "Fern", "Last watered":
+   "2 days ago", "Sunlight": "Indirect", "Status": "Healthy"}]
 -> SimulatedButton variant "primary" label "Add plant" width "auto"
    Note the domain-specific content - that is what "turn a description into
    something meaningful" means, not generic Label/Value placeholders.

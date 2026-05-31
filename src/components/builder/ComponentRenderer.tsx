@@ -1234,7 +1234,7 @@ function SimulatedDataTableBlock({
 }) {
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
-  const data = (block?.props.rows as { name: string; status: string; role: string; date: string }[]) ?? undefined;
+  const data = (block?.props.rows as unknown[]) ?? undefined;
   const columns = (block?.props.columns as string[]) ?? undefined;
 
   return <SimulatedDataTable system={system} data={data} columns={columns} />;
