@@ -27,8 +27,14 @@ describe("analytics-dashboard canonical structure", () => {
     expect(ad.body[ad.body.length - 1].type).toBe("SimulatedDataTable");
   });
 
-  it("uses clean body widths (no bare % mixed with fill that wraps)", () => {
+  it("uses fr column-span widths (grid spans, no wrap-prone % or fill mix)", () => {
     const widths = ad.body.map((b) => b.layout?.width).filter(Boolean) as string[];
-    expect(widths.every((w) => ["fill", "25%", "50%", "auto"].includes(w))).toBe(true);
+    expect(widths.length).toBeGreaterThan(0);
+    expect(widths.every((w) => /^\d+fr$/.test(w))).toBe(true);
+  });
+
+  it("body is a 12-col grid so the canonical rows render cleanly (no scatter)", () => {
+    expect(ad.zoneLayouts?.body?.mode).toBe("grid");
+    expect(ad.zoneLayouts?.body?.columns).toBe(12);
   });
 });
