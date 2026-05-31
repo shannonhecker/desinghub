@@ -32,8 +32,11 @@ describe("PR-E: shared link unified onto PresentStage", () => {
     expect(stage).toMatch(/<PresentBar variant=\{barVariant\} sharedHash=\{sharedHash\} \/>/);
   });
 
-  it("SharedPreview hydrates the store one-shot then renders the recipient PresentStage", () => {
-    expect(shared).toMatch(/useMemo\(/);
+  it("SharedPreview hydrates the store once-per-hash (ref-guarded) then renders the recipient PresentStage", () => {
+    // Ref-guarded render-phase hydration: synchronous (no flash), one-shot
+    // per distinct share link, re-hydrates only when the hash changes.
+    expect(shared).toMatch(/useRef<string \| null>\(null\)/);
+    expect(shared).toMatch(/hydratedHash\.current !== hash/);
     expect(shared).toMatch(/store\.setDeviceMode\(state\.deviceMode\)/);
     expect(shared).toMatch(/if \(state\.themeKey\) store\.setThemeKey/);
     expect(shared).toMatch(/<PresentStage barVariant="recipient" sharedHash=\{hash\} \/>/);
