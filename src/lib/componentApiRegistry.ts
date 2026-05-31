@@ -4,12 +4,14 @@
  * official API. Replaces reactExporter's generic `className="btn"` pseudocode
  * so generated code actually imports + uses the real components.
  *
- * Seeded with Salt DS, Material 3 (@mui/material), Fluent 2
- * (@fluentui/react-components), and Carbon (@carbon/react). Remaining DSs
- * intentionally return null until added with their verified official API — we
- * never fabricate an API. Each DS's facts are sourced from its official package
- * surface (Salt sentiment/appearance, MUI variant/color, Fluent appearance,
- * Carbon kind/labelText) cross-checked against src/data/<ds>.
+ * Seeded with all five DSs: Salt, Material 3 (@mui/material), Fluent 2
+ * (@fluentui/react-components), Carbon (@carbon/react), and uoaui — the in-house
+ * DS, which has no npm package: it is className + --a-* token CSS, so it emits
+ * a-* classNames + a side-effect stylesheet import rather than component imports.
+ * We never fabricate an API; each DS's facts are sourced from its official
+ * package surface (Salt sentiment/appearance, MUI variant/color, Fluent
+ * appearance, Carbon kind/labelText, uoaui a-* classes) cross-checked against
+ * src/data/<ds>.
  */
 
 export type SystemId = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
@@ -192,13 +194,62 @@ const CARBON: Record<string, ComponentApiEntry> = {
   },
 };
 
-/* Per-DS registries. Salt + M3 + Fluent + Carbon seeded; remaining DSs return
-   null so the exporter falls back rather than emit a fabricated (wrong) API. */
+/* Generic block `variant` -> uoaui button class suffix. uoaui buttons:
+   a-btn-primary|secondary|outline|ghost. uoaui has NO danger button variant
+   (and no --a-danger token), so danger falls to primary — the closest real
+   class — rather than inventing a-btn-danger. */
+function uoauiButtonClass(props: Record<string, unknown>): string {
+  const variant = s(props.variant, "primary");
+  const map: Record<string, string> = {
+    primary: "a-btn-primary",
+    secondary: "a-btn-secondary",
+    outline: "a-btn-outline",
+    ghost: "a-btn-ghost",
+    danger: "a-btn-primary",
+    destructive: "a-btn-primary",
+  };
+  return map[variant] ?? map.primary;
+}
+
+/* uoaui is CSS-only — every entry's "import" is the same side-effect stylesheet
+   (the --a-* tokens + .a-* rules Design Hub generates via uoauiBuildCSS), with
+   no named exports. collectImports turns names:[] into `import "..."`. */
+const uoauiImport = { from: "./uoaui-theme.css", names: [] as string[] };
+
+const UOAUI: Record<string, ComponentApiEntry> = {
+  SimulatedButton: {
+    imports: uoauiImport,
+    toJsx: (p) => `<button className="a-btn ${uoauiButtonClass(p)}">${s(p.label, "Button")}</button>`,
+  },
+  SimulatedTextInput: {
+    imports: uoauiImport,
+    toJsx: (p) =>
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${s(p.label, "Label")}</label>\n  <input className="a-input" placeholder="${s(p.placeholder)}" />\n</div>`,
+  },
+  SimulatedCheckbox: {
+    imports: uoauiImport,
+    toJsx: (p) => {
+      const checked = !!p.defaultChecked;
+      return `<label className="a-checkbox${checked ? " checked" : ""}">\n  <span className="a-cb-box">${checked ? "✓" : ""}</span>\n  ${s(p.label)}\n</label>`;
+    },
+  },
+  /* uoaui has no native switch/toggle component — SimulatedSwitch is
+     intentionally omitted so the exporter falls back to generic markup rather
+     than emit a fabricated a-switch class. */
+  SimulatedCard: {
+    imports: uoauiImport,
+    toJsx: (p) => `<div className="a-card">\n  <h3>${s(p.title, "Card")}</h3>\n  <p>${s(p.content)}</p>\n</div>`,
+  },
+};
+
+/* Per-DS registries. All five DSs seeded. uoaui is className/CSS-based; the
+   other four import real component packages. */
 const REGISTRY: Partial<Record<SystemId, Record<string, ComponentApiEntry>>> = {
   salt: SALT,
   m3: M3,
   fluent: FLUENT,
   carbon: CARBON,
+  uoaui: UOAUI,
 };
 
 export function resolveComponentApi(system: SystemId, blockType: string): ComponentApiEntry | null {
@@ -223,7 +274,9 @@ export function collectImports(system: SystemId, blockTypes: string[]): string[]
     entry.imports.names.forEach((n) => set.add(n));
     byPkg.set(entry.imports.from, set);
   }
-  return [...byPkg.entries()].map(
-    ([from, names]) => `import { ${[...names].sort().join(", ")} } from "${from}";`,
+  return [...byPkg.entries()].map(([from, names]) =>
+    names.size === 0
+      ? `import "${from}";` /* side-effect import (e.g. uoaui's CSS-only theme) */
+      : `import { ${[...names].sort().join(", ")} } from "${from}";`,
   );
 }
