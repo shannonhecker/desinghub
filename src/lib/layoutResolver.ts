@@ -124,9 +124,24 @@ export function computeItemStyle(
       style.width = "100%";
     }
   } else if (widthCss) {
-    /* Fixed px, %, or fr-in-flex-container: use flex-basis. */
-    style.flex = `${grow} ${shrink} ${widthCss}`;
-    style.width = widthCss;
+    /* Fixed px, %, or fr-in-flex-container: use flex-basis.
+       Row mode adds `gap` BETWEEN items on top of their flex-basis, so
+       N items at (100/N)% overflow the line and the last wraps (the
+       classic flex gap-vs-percentage trap). For a PERCENTAGE width in a
+       row, subtract one gap from the basis so a row summing to <=100%
+       fits on one line instead of wrapping; genuine overflow (widths
+       summing to >100%) still wraps. px is left literal (an explicit
+       fixed size), auto/fill are handled above, and stack mode is
+       excluded because its gap runs along the cross axis (vertical). */
+    const gap = zoneLayout.gap ?? 0;
+    const gapAware =
+      zoneLayout.mode === "row" &&
+      gap > 0 &&
+      typeof layout.width === "string" &&
+      layout.width.endsWith("%");
+    const basis = gapAware ? `calc(${widthCss} - ${gap}px)` : widthCss;
+    style.flex = `${grow} ${shrink} ${basis}`;
+    style.width = basis;
   }
 
   if (minCss && layout.width !== "fill") style.minWidth = minCss;
@@ -195,7 +210,11 @@ export function computeGroupStyle(block: Block): React.CSSProperties {
 export function computeGroupItemStyle(block: Block, group: Block): React.CSSProperties {
   const rawDir = group.props.direction;
   const mode: ZoneLayout["mode"] = rawDir === "row" || rawDir === "grid" ? rawDir : "stack";
-  const synthetic: ZoneLayout = { mode };
+  /* Thread the group's gap so row-group children get the same gap-aware
+     percentage basis as zone children (computeGroupStyle defaults an
+     absent gap to 12). */
+  const gapRaw = Number(group.props.gap);
+  const synthetic: ZoneLayout = { mode, gap: Number.isFinite(gapRaw) ? gapRaw : 12 };
   return computeItemStyle(block, synthetic);
 }
 
