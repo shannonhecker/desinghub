@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import {
   useBuilder,
@@ -325,21 +325,6 @@ function LayoutSection({
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
   const layout = block.layout ?? {};
 
-  /* Derive the current width "mode" from layout.width. Used by
-     the mode buttons to highlight the active option. */
-  const currentMode: "fill" | "auto" | "px" | "percent" | "fr" = (() => {
-    const w = layout.width;
-    if (w === "fill" || w === undefined) return "fill";
-    if (w === "auto") return "auto";
-    if (typeof w === "number") return "px";
-    if (typeof w === "string") {
-      if (w.endsWith("px")) return "px";
-      if (w.endsWith("%")) return "percent";
-      if (w.endsWith("fr")) return "fr";
-    }
-    return "fill";
-  })();
-
   /* Numeric-only part of a LayoutWidth token, for editing. */
   const parseWidthValue = (w: LayoutWidth | undefined): string => {
     if (w === undefined || w === "fill" || w === "auto") return "";
@@ -347,71 +332,103 @@ function LayoutSection({
     return w.replace(/(px|%|fr)$/, "");
   };
 
-  const setWidth = (mode: typeof currentMode, value?: string) => {
-    if (mode === "fill") {
-      updateBlockLayout(zone, block.id, { width: "fill" });
-    } else if (mode === "auto") {
-      updateBlockLayout(zone, block.id, { width: "auto" });
-    } else {
-      const n = value !== undefined ? value : parseWidthValue(layout.width) || (mode === "percent" ? "50" : mode === "fr" ? "1" : "240");
-      const next = mode === "px" ? `${n}px` : mode === "percent" ? `${n}%` : `${n}fr`;
-      updateBlockLayout(zone, block.id, { width: next as LayoutWidth });
-    }
+  /* Which canonical preset the current width matches. The ⅓/⅔
+     percentages mirror the resolver's colSpan mapping so a preset
+     click reproduces the legacy 1/2/3 widths exactly. null = a custom
+     value; an undefined width resolves to "fill" (the row-mode default). */
+  const w = layout.width;
+  const activePreset =
+    w === undefined || w === "fill" ? "fill"
+    : w === "auto" ? "auto"
+    : w === "33.333%" ? "33.333%"
+    : w === "50%" ? "50%"
+    : w === "66.666%" ? "66.666%"
+    : null;
+
+  /* Custom value + unit. The unit is stateful so the px/% toggle
+     reflects the user's choice before they type a value; it re-seeds
+     when a different block is selected. */
+  const customIsPx = typeof w === "number" || (typeof w === "string" && w.endsWith("px"));
+  const [customUnit, setCustomUnit] = useState<"px" | "%">(customIsPx ? "px" : "%");
+  useEffect(() => {
+    setCustomUnit(customIsPx ? "px" : "%");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [block.id]);
+  const customValue = activePreset !== null ? "" : parseWidthValue(w);
+
+  const applyPreset = (value: string) =>
+    updateBlockLayout(zone, block.id, { width: value as LayoutWidth });
+  const applyCustom = (value: string, unit: "px" | "%") => {
+    const trimmed = value.trim();
+    if (trimmed === "") return; // empty input: leave the width unchanged
+    updateBlockLayout(zone, block.id, { width: `${trimmed}${unit}` as LayoutWidth });
+  };
+  const switchUnit = (unit: "px" | "%") => {
+    setCustomUnit(unit);
+    if (customValue !== "") applyCustom(customValue, unit);
   };
 
-  const widthValue = parseWidthValue(layout.width);
-  const needsValue = currentMode === "px" || currentMode === "percent" || currentMode === "fr";
+  const WIDTH_PRESETS: { value: string; label: string; aria: string }[] = [
+    { value: "fill", label: "Fill", aria: "Fill remaining space" },
+    { value: "auto", label: "Auto", aria: "Hug contents" },
+    { value: "33.333%", label: "⅓", aria: "One third" },
+    { value: "50%", label: "½", aria: "Half" },
+    { value: "66.666%", label: "⅔", aria: "Two thirds" },
+  ];
 
   return (
     <InspectorSection id="layout" title="Layout">
-      {/* Width mode selector - 5 modes */}
+      {/* Width — preset chips (Fill / Auto / ⅓ / ½ / ⅔). */}
       <div className="inspector-field">
         <label className="inspector-field-label">Width</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Width mode">
-          {([
-            ["fill", "Fill"],
-            ["auto", "Auto"],
-            ["px", "Px"],
-            ["percent", "%"],
-            ["fr", "Fr"],
-          ] as const).map(([m, label]) => (
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width">
+          {WIDTH_PRESETS.map((p) => (
             <button
-              key={m}
+              key={p.value}
+              type="button"
               role="radio"
-              aria-checked={currentMode === m}
-              className={`inspector-toggle-btn${currentMode === m ? " active" : ""}`}
-              onClick={() => setWidth(m)}
-              title={
-                m === "fill" ? "Fill remaining row space"
-                : m === "auto" ? "Hug contents"
-                : m === "px" ? "Fixed pixel width"
-                : m === "percent" ? "Percentage of container"
-                : "Grid fractional unit (grid containers only)"
-              }
+              aria-checked={activePreset === p.value}
+              aria-label={p.aria}
+              className={`inspector-toggle-btn${activePreset === p.value ? " active" : ""}`}
+              onClick={() => applyPreset(p.value)}
+              title={p.aria}
             >
-              {label}
+              {p.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Numeric input - only shown for modes that need a value */}
-      {needsValue && (
-        <div className="inspector-field">
-          <label className="inspector-field-label">
-            {currentMode === "px" ? "Value (px)" : currentMode === "percent" ? "Value (%)" : "Value (fr)"}
-          </label>
+      {/* Custom width — always visible; typing overrides the preset. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Custom</label>
+        <div className="inspector-width-custom">
           <input
             type="number"
             className="inspector-input"
-            value={widthValue}
-            min={currentMode === "percent" ? 1 : 0}
-            max={currentMode === "percent" ? 100 : undefined}
-            step={currentMode === "fr" ? 0.5 : 1}
-            onChange={(e) => setWidth(currentMode, e.target.value)}
+            value={customValue}
+            placeholder={customUnit === "%" ? "e.g. 40" : "e.g. 320"}
+            min={customUnit === "%" ? 1 : 0}
+            max={customUnit === "%" ? 100 : undefined}
+            aria-label="Custom width value"
+            onChange={(e) => applyCustom(e.target.value, customUnit)}
           />
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom width unit">
+            {(["px", "%"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                role="radio"
+                aria-checked={customUnit === u}
+                className={`inspector-toggle-btn${customUnit === u ? " active" : ""}`}
+                onClick={() => switchUnit(u)}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Align-self on the cross axis (core control — kept visible) */}
       <div className="inspector-field">

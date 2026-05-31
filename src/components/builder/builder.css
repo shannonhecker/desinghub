@@ -7027,6 +7027,21 @@
   gap: 4px;
 }
 
+/* Custom-width row: the numeric input grows, the px/% unit toggle
+   sits beside it at its intrinsic width. */
+.inspector-width-custom {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.inspector-width-custom .inspector-input {
+  flex: 1;
+  min-width: 0;
+}
+.inspector-width-custom .inspector-toggle-group {
+  flex: 0 0 auto;
+}
+
 .inspector-field-label {
   font-size: 10px;
   font-weight: 600;
