@@ -640,8 +640,8 @@ interface AlertProps extends SimProps {
 export function SimulatedAlert({
   system,
   variant = "info",
-  title = "Update Available",
-  message = "A new version of Design Hub is ready to install.",
+  title = "Notice",
+  message = "This is a notification message.",
 }: AlertProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [dismissed, setDismissed] = useState(false);

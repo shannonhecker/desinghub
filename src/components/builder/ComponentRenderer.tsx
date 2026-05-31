@@ -158,8 +158,21 @@ const btnRadius = "var(--ds-btn-radius)";
 
 /* ── Individual block renderers ── */
 
-function AlertBlock({ system }: { system: DesignSystem }) {
-  return <SimulatedAlert system={system} />;
+function AlertBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const block = blockId
+    ? (blocks.find((b) => b.id === blockId)
+      ?? headerBlocks.find((b) => b.id === blockId)
+      ?? sidebarBlocks.find((b) => b.id === blockId)
+      ?? footerBlocks.find((b) => b.id === blockId))
+    : null;
+  const variant = block?.props.variant as "info" | "success" | "warning" | "error" | undefined;
+  const title = block?.props.title as string | undefined;
+  const message = block?.props.message as string | undefined;
+  return <SimulatedAlert system={system} variant={variant} title={title} message={message} />;
 }
 
 function DataTableBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {

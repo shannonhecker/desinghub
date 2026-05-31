@@ -120,6 +120,9 @@ const settingsPage: BuilderTemplate = {
   icon: "settings",
   interfaceType: "form",
   selectedComponents: ["inputs", "switches", "buttons", "form-field"],
+  /* 12-col grid body so settings render as a clean vertical form (each section
+     heading + setting on its own row) instead of a scattered wrapping flex row. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("sp-brand"), type: "AppBrand", props: { label: "Workspace" } },
     { id: tid("sp-status"), type: "StatusPill", props: { label: "Saved" } },
@@ -132,23 +135,23 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-nav-5"), type: "NavItem", props: { label: "Billing", icon: "home", active: false } },
   ],
   body: [
-    /* Profile section */
-    { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: "SC", size: "lg", presence: "available" }, layout: { width: "33.333%" } },
-    { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Change photo", variant: "secondary" }, layout: { width: "66.666%" } },
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: "Sarah Chen" }, layout: { width: "fill" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "sarah@acme.co" }, layout: { width: "fill" } },
+    /* Profile section - heading (own row) -> avatar + change-photo row -> fields (own rows) */
+    { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: "SC", size: "lg", presence: "available" }, layout: { width: "2fr" } },
+    { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Change photo", variant: "secondary" }, layout: { width: "4fr" } },
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: "Sarah Chen" }, layout: { width: "12fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "sarah@acme.co" }, layout: { width: "12fr" } },
 
-    /* Preferences section */
-    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Preferences", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: "Email notifications", defaultOn: true }, layout: { width: "fill" } },
-    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: "Weekly digest email", defaultOn: false }, layout: { width: "fill" } },
-    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: "Product updates & marketing", defaultOn: false }, layout: { width: "fill" } },
+    /* Preferences section - one setting per row (label left / switch right) */
+    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Preferences", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: "Email notifications", defaultOn: true }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: "Weekly digest email", defaultOn: false }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: "Product updates & marketing", defaultOn: false }, layout: { width: "12fr" } },
 
-    /* Danger zone */
-    { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h2" }, layout: { width: "fill" } },
-    { id: tid("sp-alert"), type: "Alert", props: { title: "Delete account", message: "This permanently removes your workspace and cannot be undone.", variant: "error" }, layout: { width: "fill" } },
-    { id: tid("sp-btn-delete"), type: "SimulatedButton", props: { label: "Delete account", variant: "ghost" }, layout: { width: "33.333%" } },
+    /* Danger zone - isolated last */
+    { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-alert"), type: "Alert", props: { title: "Delete account", message: "This permanently removes your workspace and cannot be undone.", variant: "error" }, layout: { width: "12fr" } },
+    { id: tid("sp-btn-delete"), type: "SimulatedButton", props: { label: "Delete account", variant: "ghost" }, layout: { width: "4fr" } },
   ],
   footer: [
     { id: tid("sp-ftr"), type: "FooterText", props: { label: "Changes save automatically", version: "v1.0" } },
