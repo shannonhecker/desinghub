@@ -211,9 +211,9 @@ export function SettingsPanel() {
           {/* Mode */}
           <div className="settings-group">
             <label>Mode</label>
-            <div className="settings-toggle-row">
-              <button className={`settings-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>Light</button>
-              <button className={`settings-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>Dark</button>
+            <div className="settings-toggle-row" role="radiogroup" aria-label="Mode">
+              <button type="button" role="radio" aria-checked={mode === "light"} className={`settings-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>Light</button>
+              <button type="button" role="radio" aria-checked={mode === "dark"} className={`settings-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>Dark</button>
             </div>
           </div>
 
@@ -239,9 +239,9 @@ export function SettingsPanel() {
           {/* Density */}
           <div className="settings-group">
             <label>Density / Size</label>
-            <div className="settings-toggle-row">
+            <div className="settings-toggle-row" role="radiogroup" aria-label="Density / Size">
               {densityOptions.map((o) => (
-                <button key={o.value} className={`settings-toggle-btn ${density === o.value ? "active" : ""}`} onClick={() => setDensity(o.value)}>
+                <button key={o.value} type="button" role="radio" aria-checked={density === o.value} className={`settings-toggle-btn ${density === o.value ? "active" : ""}`} onClick={() => setDensity(o.value)}>
                   {o.label}
                 </button>
               ))}
@@ -253,7 +253,7 @@ export function SettingsPanel() {
               DS-native values. */}
           <div className="settings-group">
             <label>Structure padding</label>
-            <div className="settings-toggle-row">
+            <div className="settings-toggle-row" role="radiogroup" aria-label="Structure padding">
               {(["small", "medium", "large"] as const).map((size) => (
                 <button
                   key={size}
