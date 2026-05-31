@@ -756,25 +756,35 @@ export function ChatPanel() {
     const msg = (text || inputText).trim();
     if (!msg || isGenerating) return;
 
-    /* ── First-turn onboarding: if the user has no messages yet and
-       nothing staged, stage this as pendingFirstMessage and ask about
-       DS as the next conversational turn. Skipping this short-circuit
-       is important when:
-         - text was passed programmatically (from applyPendingIntentWithDs)
-         - a refine chip is clicked after the first message
-       We detect "first turn" as messages.length === 0. ── */
+    /* P4 (build-first): when AI is available, the FIRST freeform message builds
+       immediately rather than gating on a "which design system?" question or a
+       theme/DS-keyword early-return — a design system is always active (via
+       [Current state]). Offline we keep the wizard onboarding so the keyword
+       fast-paths can still build without an API key. */
+    const isFirstFreeform =
+      messages.length === 0 && !selectedBlockId && !aiDisabled;
+
+    /* ── First-turn onboarding (offline only): with no API key, stage this as
+       pendingFirstMessage and ask about DS as the next turn so the keyword
+       fast-paths can build a template. When AI IS available we skip this and
+       fall through to the model (build-first). Skipping the short-circuit also
+       matters when text was passed programmatically (applyPendingIntentWithDs)
+       or a refine chip is clicked. ── */
     if (messages.length === 0 && !selectedBlockId) {
-      setPendingFirstMessage(msg);
-      setPendingTemplateId(null);
-      addMessage("user", msg);
-      addMessage(
-        "ai",
-        "Got it - which design system should I use for this?"
-      );
-      /* Start a session named from the user's first intent so the
-         sessions drawer has a recognizable entry immediately. */
+      if (aiDisabled) {
+        setPendingFirstMessage(msg);
+        setPendingTemplateId(null);
+        addMessage("user", msg);
+        addMessage(
+          "ai",
+          "Got it - which design system should I use for this?"
+        );
+        ensureSessionStarted(titleFromMessage(msg));
+        return;
+      }
+      /* AI available: name the session, then fall through to the keyword
+         fast-paths + model below so "type anything" builds in one turn. */
       ensureSessionStarted(titleFromMessage(msg));
-      return;
     }
 
     addMessage("user", msg);
@@ -864,8 +874,11 @@ export function ChatPanel() {
     /* ── Freeform refinement ── */
     if (!previewOpen) setPreviewOpen(true);
 
-    // Local fast-path for theme/DS toggles
-    if (themeChanged || dsChanged) {
+    // Local fast-path for theme/DS toggles. On the first freeform message we
+    // DON'T early-return here: a stray "dark"/"salt" keyword shouldn't swallow
+    // the build — the mode/DS are already applied above, so let it reach the
+    // model to build the actual UI (build-first).
+    if ((themeChanged || dsChanged) && !isFirstFreeform) {
       const aiResponse = themeChanged
         ? "Theme updated! The preview reflects the new mode."
         : getFreeformResponse(msg);

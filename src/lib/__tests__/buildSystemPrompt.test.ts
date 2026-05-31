@@ -98,3 +98,34 @@ describe("buildSystemPrompt", () => {
     expect([salt, m3, fluent, carbon, uoaui]).toHaveLength(5);
   });
 });
+
+/* P1 "smarter chatbot": the base prompt now carries a build-first directive,
+   intent->block heuristics, and worked exemplars so freeform input ("type
+   anything") becomes a meaningful real UI instead of an interrogation. */
+describe("buildSystemPrompt — smarter-chatbot enrichment (P1)", () => {
+  it("base prompt includes the build-first directive, heuristics, and exemplars", () => {
+    const out = buildSystemPrompt("salt");
+    expect(out).toContain("Interpreting Freeform Requests");
+    expect(out).toContain("Block-Selection Heuristics");
+    expect(out).toContain("Worked Exemplars");
+  });
+
+  it("heuristics map common intents to concrete blocks", () => {
+    expect(SYSTEM_PROMPT).toContain("a single metric / KPI / number -> SimulatedStatCard");
+    expect(SYSTEM_PROMPT).toContain("a trend over time -> HighchartLine");
+    expect(SYSTEM_PROMPT).toContain("a list of records / rows -> SimulatedDataTable");
+  });
+
+  it("build-first directive biases toward building over interrogating", () => {
+    expect(SYSTEM_PROMPT).toContain("Default to BUILDING a sensible first draft");
+    expect(SYSTEM_PROMPT).toContain("Ask AT MOST one clarifying question");
+    expect(SYSTEM_PROMPT).toContain("fill each row to 100%");
+  });
+
+  it("DS addenda carry the real per-DS button prop mapping (matches the registry)", () => {
+    expect(buildSystemPrompt("salt")).toContain("sentiment");
+    expect(buildSystemPrompt("m3")).toContain("contained");
+    expect(buildSystemPrompt("carbon")).toContain("tertiary");
+    expect(buildSystemPrompt("uoaui")).toContain("a-btn");
+  });
+});
