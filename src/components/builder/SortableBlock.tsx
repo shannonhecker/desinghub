@@ -15,7 +15,10 @@ import { HoverInspector } from "./HoverInspector";
    to the experimental right-edge handle. Pull is translated to
    a percent window based on the container's current width so the
    snap feels consistent on narrow and wide zones alike. */
-const SNAP_POINTS_PCT: readonly number[] = [25, 33, 50, 66, 75, 100];
+/* 33.333 / 66.666 (not 33 / 66) so dragging to a third emits the exact
+   same width as the Inspector's ⅓ / ⅔ presets — drag and preset agree,
+   and the active-preset highlight survives an on-canvas nudge. */
+const SNAP_POINTS_PCT: readonly number[] = [25, 33.333, 50, 66.666, 75, 100];
 const SNAP_PULL_PX = 6;
 /* Hysteresis: once snapped, require the pointer to travel this
    much past the snap point before unsnapping. Matches Figma-feel
