@@ -67,7 +67,7 @@ const analyticsDashboard: BuilderTemplate = {
   desc: "KPI row, revenue chart, data table, and activity feed",
   icon: "monitoring",
   interfaceType: "dashboard",
-  selectedComponents: ["progress", "table", "tabs"],
+  selectedComponents: ["progress", "table", "buttons"],
   header: [
     { id: tid("ad-brand"), type: "AppBrand", props: { label: "Acme Analytics" } },
     { id: tid("ad-status"), type: "StatusPill", props: { label: "Live" } },
@@ -80,16 +80,21 @@ const analyticsDashboard: BuilderTemplate = {
     { id: tid("ad-nav-5"), type: "NavItem", props: { label: "Settings", icon: "settings", active: false } },
   ],
   body: [
-    /* KPI row - 3 × ⅓ width */
-    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12 }, layout: { width: "33.333%" } },
-    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8 }, layout: { width: "33.333%" } },
-    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "33.333%" } },
-    /* Main chart - full width */
-    { id: tid("ad-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Revenue - last 30 days" }, layout: { width: "fill" } },
-    /* Secondary row - ⅔ chart + ⅓ progress */
-    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Daily events" }, layout: { width: "66.666%" } },
-    { id: tid("ad-progress"), type: "SimulatedProgress", props: { label: "Monthly plan usage", value: 64 }, layout: { width: "33.333%" } },
-    /* Data table - kept LAST so the detailed view follows the KPI + chart overview (standard dashboard reading order) */
+    /* Scope bar - title + range preset + export (canonical dashboard header line) */
+    { id: tid("ad-title"), type: "SimulatedTitle", props: { text: "Revenue overview", level: "h3" }, layout: { width: "fill" } },
+    { id: tid("ad-range"), type: "SimulatedSegmentedGroup", props: { optionsCsv: "7d,30d,90d" }, layout: { width: "auto" } },
+    { id: tid("ad-export"), type: "SimulatedButton", props: { variant: "outline", label: "Export" }, layout: { width: "auto" } },
+    /* KPI row - 4 cards, lead metric first, signed delta (never color-only) */
+    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12 }, layout: { width: "25%" } },
+    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8 }, layout: { width: "25%" } },
+    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "25%" } },
+    { id: tid("ad-kpi-4"), type: "SimulatedStatCard", props: { label: "ARPU", value: "$38", pct: 5 }, layout: { width: "25%" } },
+    /* Hero trend - full width, headline metric vs previous period */
+    { id: tid("ad-hero"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 30 days vs previous" }, layout: { width: "fill" } },
+    /* 2-up supporting row - 6/6 */
+    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel" }, layout: { width: "50%" } },
+    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan" }, layout: { width: "50%" } },
+    /* Detail table - kept LAST so the granular view follows the KPI + chart overview (canonical reading order) */
     { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "fill" } },
   ],
   footer: [
