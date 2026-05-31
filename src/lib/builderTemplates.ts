@@ -170,6 +170,8 @@ const crmContacts: BuilderTemplate = {
   icon: "contacts",
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs", "buttons", "progress"],
+  /* 12-col grid body: toolbar (search 8 / filter 4) -> KPI summary 4/4/4 -> table 12. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("crm-brand"), type: "AppBrand", props: { label: "Contacts" } },
     { id: tid("crm-status"), type: "StatusPill", props: { label: "247 records" } },
@@ -183,14 +185,14 @@ const crmContacts: BuilderTemplate = {
   ],
   body: [
     /* Search + filter row */
-    { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "66.666%" } },
-    { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "33.333%" } },
+    { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "8fr" } },
+    { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "4fr" } },
     /* Pipeline KPIs - overview first, before the detailed table (standard dashboard reading order) */
-    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "33.333%" } },
-    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "33.333%" } },
-    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "33.333%" } },
-    /* Main data table - last */
-    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "fill" } },
+    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "4fr" } },
+    /* Main data table - 12 cols, last */
+    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("crm-ftr"), type: "FooterText", props: { label: "Showing 247 of 1,247 contacts", version: "v3.2" } },
