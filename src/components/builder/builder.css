@@ -8362,7 +8362,10 @@
   /* Wrap to a second line instead of truncating ("Toggle Button" no longer
      becomes "Toggle Butt...") now that tiles are narrower at 3-up. */
   white-space: normal;
-  overflow-wrap: anywhere;
+  /* break-word wraps at the space ("Segmented Group" -> two lines) rather than
+     mid-word ("Segment ed Group"). */
+  overflow-wrap: break-word;
+  word-break: normal;
   padding: 0 1px;
   line-height: 1.2;
   text-align: center;
