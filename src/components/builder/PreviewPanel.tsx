@@ -74,35 +74,34 @@ export function DSPreviewStyles() {
   const themeKey = useBuilder((s) => s.themeKey);
   const density = useBuilder((s) => s.density);
 
-  if (designSystem !== "carbon") return null;
+  /* Build the Carbon stylesheet UNCONDITIONALLY inside useMemo (returns
+     null for non-Carbon systems). The hook must run on every render: a
+     prior version early-returned for non-Carbon BEFORE this useMemo, so
+     switching the design system to/from Carbon changed the hook count and
+     crashed the whole builder with React #310 ("Rendered fewer hooks than
+     expected"). All hooks stay above any conditional return.
 
-  /* Map Carbon theme keys. The builder store uses "white" / "g10" /
-     "g90" / "g100" for Carbon themes already (see useBuilder's
-     themeMap) so we can hand it through unchanged. Fall back to
-     "white" for any unexpected value. */
-  const resolvedTheme = ["white", "g10", "g90", "g100"].includes(themeKey) ? themeKey : "white";
-  const T = getTheme("carbon", resolvedTheme);
+     - Carbon theme keys ("white"/"g10"/"g90"/"g100") pass through; fall
+       back to "white" for anything unexpected.
+     - The shared density labels (high/medium/low/touch) map to Carbon's
+       ladder (compact/normal/spacious); "touch" routes to spacious.
+     - getFullCSS does non-trivial string assembly, so memoize on the raw
+       inputs to avoid re-running on unrelated parent re-renders. */
+  const css = useMemo(() => {
+    if (designSystem !== "carbon") return null;
+    const resolvedTheme = ["white", "g10", "g90", "g100"].includes(themeKey) ? themeKey : "white";
+    const T = getTheme("carbon", resolvedTheme);
+    const densityMap: Record<string, string> = {
+      high: "compact",
+      medium: "normal",
+      low: "spacious",
+      touch: "spacious",
+    };
+    const carbonDensity = densityMap[density] ?? "normal";
+    return sanitizeCSS(getFullCSS("carbon", T, carbonDensity));
+  }, [designSystem, themeKey, density]);
 
-  /* Map the builder's shared density labels (high/medium/low/touch)
-     to Carbon's ladder (compact / normal / spacious). "touch" is
-     rare in Carbon contexts - route it to spacious. */
-  const densityMap: Record<string, string> = {
-    high: "compact",
-    medium: "normal",
-    low: "spacious",
-    touch: "spacious",
-  };
-  const carbonDensity = densityMap[density] ?? "normal";
-
-  /* getFullCSS does non-trivial string assembly (full Carbon stylesheet
-     with token resolution + density expansion). Without useMemo it ran
-     on every parent re-render — including PreviewBar interactions
-     unrelated to Carbon. Memoize on the actual inputs. */
-  const css = useMemo(
-    () => sanitizeCSS(getFullCSS("carbon", T, carbonDensity)),
-    [T, carbonDensity],
-  );
-
+  if (!css) return null;
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }
 
