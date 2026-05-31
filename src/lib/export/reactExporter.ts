@@ -110,6 +110,7 @@ export function exportReact(): string {
       imports.push(`import { ${ds.provider} } from "${ds.importFrom}";`);
     }
     if (system === "salt") imports.push('import "@salt-ds/theme/index.css";');
+    if (system === "carbon") imports.push('import "@carbon/styles/css/styles.css";');
   } else {
     imports.push(`// import { ${ds.provider} } from "${ds.importFrom}";`);
   }
@@ -122,14 +123,18 @@ export function exportReact(): string {
       ? `<ThemeProvider theme={createTheme({ palette: { mode: "${s.mode}" } })}>\n    `
       : system === "fluent"
         ? `<FluentProvider theme={${s.mode === "dark" ? "webDarkTheme" : "webLightTheme"}}>\n    `
-        : `<${ds.provider} mode="${s.mode}">\n    `;
+        : system === "carbon"
+          ? `<Theme theme="${s.mode === "dark" ? "g100" : "white"}">\n    `
+          : `<${ds.provider} mode="${s.mode}">\n    `;
   const close = !real
     ? ""
     : system === "m3"
       ? "\n    </ThemeProvider>"
       : system === "fluent"
         ? "\n    </FluentProvider>"
-        : `\n    </${ds.provider}>`;
+        : system === "carbon"
+          ? "\n    </Theme>"
+          : `\n    </${ds.provider}>`;
 
   return `${imports.join("\n")}
 

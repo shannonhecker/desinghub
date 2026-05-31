@@ -26,8 +26,8 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).not.toContain('className="btn'); // no pseudocode for the salt button
   });
 
-  it("falls back to generic markup for an un-registered DS (carbon, not yet seeded)", () => {
-    setCanvas("carbon", [{ id: "b1", type: "SimulatedButton", props: { label: "X", variant: "primary" } }]);
+  it("falls back to generic markup for an un-registered DS (uoaui, not yet seeded)", () => {
+    setCanvas("uoaui", [{ id: "b1", type: "SimulatedButton", props: { label: "X", variant: "primary" } }]);
     const code = exportReact();
     expect(code).toContain('className="btn'); // graceful fallback, not a crash
   });
@@ -54,6 +54,16 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).toContain('from "@fluentui/react-components";');
     expect(code).toContain("FluentProvider theme={webLightTheme}");
     expect(code).toContain('<Button appearance="primary">Submit</Button>');
+    expect(code).not.toContain('className="btn');
+  });
+
+  it("Carbon button → real <Button kind> + <Theme theme> + @carbon/react import + styles css", () => {
+    setCanvas("carbon", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    const code = exportReact();
+    expect(code).toContain('from "@carbon/react";');
+    expect(code).toContain('import "@carbon/styles/css/styles.css";');
+    expect(code).toContain('<Theme theme="white">');
+    expect(code).toContain('<Button kind="primary">Submit</Button>');
     expect(code).not.toContain('className="btn');
   });
 });

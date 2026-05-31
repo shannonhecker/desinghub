@@ -47,7 +47,7 @@ describe("componentApiRegistry — Salt emits real @salt-ds/core components", ()
   });
 
   it("returns null for a DS not yet seeded (no fabricated API)", () => {
-    expect(resolveComponentApi("carbon", "SimulatedButton")).toBeNull();
+    expect(resolveComponentApi("uoaui", "SimulatedButton")).toBeNull();
   });
 });
 
@@ -110,5 +110,38 @@ describe("componentApiRegistry — Fluent (@fluentui/react-components) emits rea
   it("collects deduped, sorted imports from @fluentui/react-components", () => {
     expect(collectImports("fluent", ["SimulatedButton", "SimulatedCheckbox"]))
       .toContain('import { Button, Checkbox } from "@fluentui/react-components";');
+  });
+});
+
+describe("componentApiRegistry — Carbon (@carbon/react) emits real Carbon components", () => {
+  it("translates a primary button to Carbon kind=primary", () => {
+    expect(blockToRealJsx("carbon", b("SimulatedButton", { label: "Submit", variant: "primary" })))
+      .toBe('<Button kind="primary">Submit</Button>');
+  });
+
+  it("maps danger to kind=danger and outline to Carbon's tertiary (its bordered button)", () => {
+    expect(blockToRealJsx("carbon", b("SimulatedButton", { variant: "danger" }))).toContain('kind="danger"');
+    expect(blockToRealJsx("carbon", b("SimulatedButton", { variant: "outline" }))).toContain('kind="tertiary"');
+  });
+
+  it("maps a text input to TextInput with a derived id + labelText (Carbon requires id)", () => {
+    expect(blockToRealJsx("carbon", b("SimulatedTextInput", { label: "Work Email", placeholder: "you@co" })))
+      .toBe('<TextInput id="work-email" labelText="Work Email" placeholder="you@co" />');
+  });
+
+  it("maps the switch block to Carbon's Toggle (its real switch) with defaultToggled", () => {
+    expect(blockToRealJsx("carbon", b("SimulatedSwitch", { label: "Notifications", defaultOn: true })))
+      .toBe('<Toggle id="notifications" labelText="Notifications" defaultToggled />');
+  });
+
+  it("maps the card block to Carbon's Tile (its real card surface)", () => {
+    const jsx = blockToRealJsx("carbon", b("SimulatedCard", { title: "Stats", content: "Body" }))!;
+    expect(jsx).toContain("<Tile>");
+    expect(jsx).toContain("<h3>Stats</h3>");
+  });
+
+  it("collects deduped, sorted imports from @carbon/react", () => {
+    expect(collectImports("carbon", ["SimulatedButton", "SimulatedTextInput"]))
+      .toContain('import { Button, TextInput } from "@carbon/react";');
   });
 });
