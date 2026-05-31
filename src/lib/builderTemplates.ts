@@ -1,4 +1,4 @@
-import type { Block, InterfaceType } from "@/store/useBuilder";
+import type { Block, InterfaceType, ZoneLayout, ZoneId } from "@/store/useBuilder";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -49,6 +49,10 @@ export interface BuilderTemplate {
   sidebar: Block[];
   body: Block[];
   footer: Block[];
+  /** Optional per-zone layout overrides applied on template apply (e.g. a
+   *  12-col grid body so patterns render as clean canonical rows instead of
+   *  a single wrapping flex row). Zones omitted here reset to the defaults. */
+  zoneLayouts?: Partial<Record<ZoneId, ZoneLayout>>;
   /** Assistant chat message shown after the template is applied. */
   aiResponse: string;
 }
@@ -67,7 +71,10 @@ const analyticsDashboard: BuilderTemplate = {
   desc: "KPI row, revenue chart, data table, and activity feed",
   icon: "monitoring",
   interfaceType: "dashboard",
-  selectedComponents: ["progress", "table", "tabs"],
+  selectedComponents: ["progress", "table", "buttons"],
+  /* 12-col grid body so the canonical rows render cleanly (scope bar 8/2/2,
+     KPIs 3/3/3/3, hero 12, charts 6/6, table 12) instead of one wrapping row. */
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
     { id: tid("ad-brand"), type: "AppBrand", props: { label: "Acme Analytics" } },
     { id: tid("ad-status"), type: "StatusPill", props: { label: "Live" } },
@@ -80,17 +87,21 @@ const analyticsDashboard: BuilderTemplate = {
     { id: tid("ad-nav-5"), type: "NavItem", props: { label: "Settings", icon: "settings", active: false } },
   ],
   body: [
-    /* KPI row - 3 × ⅓ width */
-    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12 }, layout: { width: "33.333%" } },
-    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8 }, layout: { width: "33.333%" } },
-    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "33.333%" } },
-    /* Main chart - full width */
-    { id: tid("ad-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Revenue - last 30 days" }, layout: { width: "fill" } },
-    /* Secondary row - ⅔ chart + ⅓ progress */
-    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Daily events" }, layout: { width: "66.666%" } },
-    { id: tid("ad-progress"), type: "SimulatedProgress", props: { label: "Monthly plan usage", value: 64 }, layout: { width: "33.333%" } },
-    /* Data table - kept LAST so the detailed view follows the KPI + chart overview (standard dashboard reading order) */
-    { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "fill" } },
+    /* Section heading - full width (own row). Inline date-range + export
+       scope controls deferred to a proper header scope-bar slice. */
+    { id: tid("ad-title"), type: "SimulatedTitle", props: { text: "Revenue overview", level: "h3" }, layout: { width: "12fr" } },
+    /* KPI row - 4 cards (3 cols each), lead metric first, signed delta (never color-only) */
+    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-4"), type: "SimulatedStatCard", props: { label: "ARPU", value: "$38", pct: 5 }, layout: { width: "3fr" } },
+    /* Hero trend - full width (12 cols), headline metric vs previous period */
+    { id: tid("ad-hero"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 30 days vs previous" }, layout: { width: "12fr" } },
+    /* 2-up supporting row - 6/6 */
+    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel", categories: ["Organic", "Paid", "Referral", "Social"], series: [{ name: "Signups", data: [320, 210, 140, 90] }] }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan", seriesData: [{ name: "Free", y: 46 }, { name: "Pro", y: 34 }, { name: "Enterprise", y: 20 }] }, layout: { width: "6fr" } },
+    /* Detail table - 12 cols, kept LAST so the granular view follows the KPI + chart overview (canonical reading order) */
+    { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("ad-ftr"), type: "FooterText", props: { label: "Last updated 2 min ago", version: "v2.4" } },

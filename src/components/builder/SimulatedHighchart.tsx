@@ -117,7 +117,14 @@ function chartOptions(
   chartType: HighchartType,
   t: Partial<Highcharts.Options>,
   v: ThemeVars,
-  props: { title?: string; value?: number },
+  props: {
+    title?: string;
+    value?: number;
+    /** Domain data the template/model can pass so charts aren't generic. */
+    seriesData?: { name: string; y: number }[];
+    categories?: string[];
+    series?: { name: string; data: number[] }[];
+  },
 ): Highcharts.Options {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const tc = t.chart as any;
@@ -159,11 +166,13 @@ function chartOptions(
         ...t,
         chart: { ...tc, type: "column" },
         title: { ...tt, text: props.title || "Sales by Region" },
-        xAxis: { ...tx, categories: ["NA", "EMEA", "APAC", "LATAM"] },
-        series: [
-          { name: "Q3", data: [420, 380, 290, 180], type: "column" as const },
-          { name: "Q4", data: [480, 410, 340, 210], type: "column" as const },
-        ],
+        xAxis: { ...tx, categories: props.categories ?? ["NA", "EMEA", "APAC", "LATAM"] },
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "column" as const }))
+          : [
+              { name: "Q3", data: [420, 380, 290, 180], type: "column" as const },
+              { name: "Q4", data: [480, 410, 340, 210], type: "column" as const },
+            ],
       };
 
     case "pie":
@@ -173,7 +182,7 @@ function chartOptions(
         title: { ...tt, text: props.title || "Market Share" },
         series: [{
           name: "Share", type: "pie" as const,
-          data: [
+          data: props.seriesData?.length ? props.seriesData : [
             { name: "Product A", y: 45 },
             { name: "Product B", y: 26 },
             { name: "Product C", y: 17 },
@@ -219,14 +228,13 @@ function chartOptions(
       return {
         ...t,
         chart: { ...tc, type: "pie" },
-        title: { ...tt, text: props.title || "Portfolio Allocation" },
+        title: { ...tt, text: props.title || "Breakdown" },
         series: [{
-          name: "Allocation", type: "pie" as const, innerSize: "60%",
-          data: [
-            { name: "Equities", y: 55 },
-            { name: "Bonds", y: 25 },
-            { name: "Alternatives", y: 12 },
-            { name: "Cash", y: 8 },
+          name: "Share", type: "pie" as const, innerSize: "60%",
+          data: props.seriesData?.length ? props.seriesData : [
+            { name: "Segment A", y: 42 },
+            { name: "Segment B", y: 33 },
+            { name: "Segment C", y: 25 },
           ],
         }],
         plotOptions: {
@@ -364,9 +372,13 @@ interface SimulatedHighchartProps {
    *  inspector or by Claude emitting `updateBlockProps` with this
    *  array. */
   seriesColors?: string[];
+  /** Domain chart data so templates/model output isn't generic. */
+  seriesData?: { name: string; y: number }[];
+  categories?: string[];
+  series?: { name: string; data: number[] }[];
 }
 
-export function SimulatedHighchart({ chartType, title, value, system, seriesColors }: SimulatedHighchartProps) {
+export function SimulatedHighchart({ chartType, title, value, system, seriesColors, seriesData, categories, series }: SimulatedHighchartProps) {
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
@@ -415,10 +427,10 @@ export function SimulatedHighchart({ chartType, title, value, system, seriesColo
       chartType,
       baseTheme(vars, palette, seriesColors),
       vars,
-      { title, value },
+      { title, value, seriesData, categories, series },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series]);
 
   return (
     <div ref={wrapperRef} style={{ width: "100%", minHeight: 250 }}>

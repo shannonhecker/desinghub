@@ -1513,6 +1513,17 @@ function HighchartBlockRenderer({
   const seriesColors = Array.isArray(raw)
     ? (raw.filter((c) => typeof c === "string") as string[])
     : undefined;
+  /* Domain chart data the template / model can supply so charts aren't
+     generic finance placeholders (e.g. donut "Revenue by plan"). */
+  const seriesData = Array.isArray(block?.props.seriesData)
+    ? (block.props.seriesData as { name: string; y: number }[])
+    : undefined;
+  const categories = Array.isArray(block?.props.categories)
+    ? (block.props.categories as string[])
+    : undefined;
+  const series = Array.isArray(block?.props.series)
+    ? (block.props.series as { name: string; data: number[] }[])
+    : undefined;
 
   return (
     <SimulatedHighchart
@@ -1521,6 +1532,9 @@ function HighchartBlockRenderer({
       value={value}
       system={system}
       seriesColors={seriesColors}
+      seriesData={seriesData}
+      categories={categories}
+      series={series}
     />
   );
 }

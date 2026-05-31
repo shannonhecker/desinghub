@@ -345,7 +345,7 @@ export function ChatPanel() {
     designSystem, selectedComponents,
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
-    setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks,
+    setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks, setZoneLayout,
     activeTemplateId, setActiveTemplateId,
     isRegeneratingContent, setIsRegeneratingContent,
     selectedBlockId, selectedBlockZone, setSelectedBlock,
@@ -642,6 +642,9 @@ export function ChatPanel() {
         setSidebarBlocks(tpl.sidebar);
         setBlocks(tpl.body);
         setFooterBlocks(tpl.footer);
+        /* Apply the template's body layout (e.g. dashboard's 12-col grid); reset
+           to the default row layout otherwise so a prior grid doesn't leak. */
+        setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
         setActiveTemplateId(tpl.id);
         if (!previewOpen) setPreviewOpen(true);
         addMessage("user", DS_LABEL[ds]);
@@ -742,6 +745,7 @@ export function ChatPanel() {
     setSidebarBlocks(tpl.sidebar);
     setBlocks(tpl.body);
     setFooterBlocks(tpl.footer);
+    setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
     addMessage("ai", "Back to the login screen.");
     bumpPreview();
     return true;
