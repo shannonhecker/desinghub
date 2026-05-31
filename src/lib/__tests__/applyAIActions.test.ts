@@ -180,4 +180,71 @@ describe("applyAIActions", () => {
     expect(events[0].messageId).toBeUndefined();
     expect(events[0].action).toBe("setMode");
   });
+
+  /* Audit finding #2 (2026-05-30): when the AI removes or clears the block
+     that is currently selected, the selection (selectedBlockId/Ids/Zone)
+     dangled — pointing at a block that no longer exists. Mirrors the manual
+     delete reconcile in PreviewCanvas (`if (selectedBlockId === id) …`). */
+  it("clears the selection when the AI removes the selected block", () => {
+    useBuilder.setState({
+      blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "removeBlock", value: { blockId: "b1" } }]);
+
+    const s = useBuilder.getState();
+    expect(s.blocks.find((b) => b.id === "b1")).toBeUndefined();
+    expect(s.selectedBlockId).toBeNull();
+    expect(s.selectedBlockIds).toEqual([]);
+    expect(s.selectedBlockZone).toBeNull();
+  });
+
+  it("keeps the selection when the AI removes a DIFFERENT block", () => {
+    useBuilder.setState({
+      blocks: [
+        { id: "b1", type: "SimulatedCard", props: {} },
+        { id: "b2", type: "SimulatedButton", props: {} },
+      ],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "removeBlock", value: { blockId: "b2" } }]);
+
+    expect(useBuilder.getState().selectedBlockId).toBe("b1");
+  });
+
+  it("clears a body selection when the AI clears the canvas", () => {
+    useBuilder.setState({
+      blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "clearCanvas", value: "body" }]);
+
+    const s = useBuilder.getState();
+    expect(s.blocks).toEqual([]);
+    expect(s.selectedBlockId).toBeNull();
+    expect(s.selectedBlockZone).toBeNull();
+  });
+
+  it("keeps a body selection when the AI clears a DIFFERENT zone", () => {
+    useBuilder.setState({
+      blocks: [{ id: "b1", type: "SimulatedCard", props: {} }],
+      headerBlocks: [{ id: "h1", type: "SimulatedButton", props: {} }],
+      selectedBlockId: "b1",
+      selectedBlockIds: ["b1"],
+      selectedBlockZone: "body",
+    });
+
+    applyAIActions([{ action: "clearCanvas", value: "header" }]);
+
+    expect(useBuilder.getState().selectedBlockId).toBe("b1");
+  });
 });

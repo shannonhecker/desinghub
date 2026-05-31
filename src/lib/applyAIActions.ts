@@ -137,6 +137,13 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
             break;
           }
         }
+        /* Reconcile selection: if the AI removed the block that was selected,
+           clear the selection so the inspector / HoverInspector doesn't
+           dangle on a block that no longer exists. Mirrors the manual-delete
+           reconcile in PreviewCanvas (`if (selectedBlockId === id) …`). */
+        if (useBuilder.getState().selectedBlockId === blockId) {
+          store.clearSelection();
+        }
         break;
       }
 
@@ -196,6 +203,12 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
         const zone = typeof action.value === "string" && VALID_ZONES.includes(action.value as ZoneId)
           ? action.value as ZoneId : "body";
         store.setZoneBlocks(zone, []);
+        /* Reconcile selection: clearing a zone drops any block selected in
+           it, so clear a now-dangling selection (a block can only be
+           selected in one zone, so a selection in another zone is safe). */
+        if (useBuilder.getState().selectedBlockZone === zone) {
+          store.clearSelection();
+        }
         emitToolUse({ messageId, action: "clearCanvas", value: zone, zone });
         break;
       }
