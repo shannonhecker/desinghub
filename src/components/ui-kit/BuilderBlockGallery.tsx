@@ -24,12 +24,21 @@ import { getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
 import { ComponentRenderer } from "@/components/builder/ComponentRenderer";
+import { RealComponentRenderer, canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
 import {
   kitByCategory,
   kitExportCode,
   type KitEntry,
 } from "@/lib/kitCatalog";
 import type { SystemId } from "@/lib/componentApiRegistry";
+
+/* Salt's provider density is one of these literals; the store stores it as a
+   plain string, so coerce to a known value (medium default) for the real
+   SaltProvider. Other DSs ignore this. */
+type SaltDensity = "high" | "medium" | "low" | "touch";
+function coerceSaltDensity(d: unknown): SaltDensity {
+  return d === "high" || d === "low" || d === "touch" ? d : "medium";
+}
 
 /* Light vs dark is encoded in each DS's themeKey (the `.builder-light
    .preview-*` overrides in builder.css govern light mode). Salt/M3/Fluent/
@@ -142,7 +151,13 @@ export function BuilderBlockGallery() {
             }}
           >
             {group.items.map((entry) => (
-              <BlockCard key={entry.type} entry={entry} ds={ds} />
+              <BlockCard
+                key={entry.type}
+                entry={entry}
+                ds={ds}
+                mode={light ? "light" : "dark"}
+                saltDensity={coerceSaltDensity(densityOrSize)}
+              />
             ))}
           </div>
         </section>
@@ -151,11 +166,69 @@ export function BuilderBlockGallery() {
   );
 }
 
-function BlockCard({ entry, ds }: { entry: KitEntry; ds: SystemId }) {
+/**
+ * Render the REAL official component (Salt/M3/Fluent core set) when eligible,
+ * else the builder's Simulated ComponentRenderer (the canvas render path).
+ *
+ * SSR/hydration safety: providers (MUI emotion, Fluent griffel) only run
+ * client-side. We render Simulated until mounted, then swap to the real
+ * component for eligible (system, block) pairs — so the first paint matches the
+ * server (Simulated everywhere) and there's no hydration mismatch. The whole
+ * gallery is also dynamic-imported `ssr: false`, so this is belt-and-suspenders.
+ */
+function RealOrSimulated({
+  entry,
+  ds,
+  mode,
+  saltDensity,
+}: {
+  entry: KitEntry;
+  ds: SystemId;
+  mode: "light" | "dark";
+  saltDensity: SaltDensity;
+}) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (mounted && canRenderReal(ds, entry.type)) {
+    return (
+      <RealComponentRenderer
+        system={ds}
+        type={entry.type}
+        mode={mode}
+        saltDensity={saltDensity}
+        props={entry.defaults}
+      />
+    );
+  }
+  return <ComponentRenderer type={entry.type} system={ds} blockId={undefined} {...entry.defaults} />;
+}
+
+function BlockCard({
+  entry,
+  ds,
+  mode,
+  saltDensity,
+}: {
+  entry: KitEntry;
+  ds: SystemId;
+  mode: "light" | "dark";
+  saltDensity: SaltDensity;
+}) {
   const { code, imports, isReal } = kitExportCode(ds, entry.type);
   const snippet = isReal
     ? [...imports, "", code].filter((l, i) => !(l === "" && i === imports.length)).join("\n")
     : `// ${entry.label}: no real ${ds} component yet, exports generic markup`;
+
+  /* PR-3: render the REAL official component (Salt/M3/Fluent core set) when
+     available; otherwise fall back to the builder's Simulated ComponentRenderer
+     (the same render path as the canvas). The provider style engines only run
+     client-side (gallery is dynamic-imported ssr:false + RealComponentRenderer
+     is mounted-guarded), so until mounted the real renderer returns null and
+     the Simulated render shows — no SSR/hydration mismatch. */
+  const liveOfficial = canRenderReal(ds, entry.type);
 
   return (
     <div
@@ -182,10 +255,11 @@ function BlockCard({ entry, ds }: { entry: KitEntry; ds: SystemId }) {
           borderBottom: "1px solid var(--ds-border)",
         }}
       >
-        {/* blockId=undefined → static, store-free demo from the block's
-            defaults. THE reuse: same render path as the builder canvas. */}
+        {/* Real official component when available (Salt/M3/Fluent core set),
+            else the builder's Simulated render (blockId=undefined → static,
+            store-free demo from the block's defaults — same path as canvas). */}
         <div style={{ width: "100%", pointerEvents: "none" }}>
-          <ComponentRenderer type={entry.type} system={ds} blockId={undefined} {...entry.defaults} />
+          <RealOrSimulated entry={entry} ds={ds} mode={mode} saltDensity={saltDensity} />
         </div>
       </div>
 
@@ -194,7 +268,31 @@ function BlockCard({ entry, ds }: { entry: KitEntry; ds: SystemId }) {
           {entry.icon}
         </span>
         <span style={{ fontSize: 13, fontWeight: 600 }}>{entry.label}</span>
-        {!isReal && (
+        {/* Honest provenance of the LIVE DEMO: a real official React component
+            (Salt/M3/Fluent core set), a faithful Simulated preview of a DS that
+            has a real export but renders Simulated here, or generic markup. */}
+        {liveOfficial ? (
+          <span
+            title={`Rendered with the official ${ds} React component`}
+            style={{
+              marginLeft: "auto",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              color: "var(--ds-primary)",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--ds-primary)" }}
+            />
+            Live official component
+          </span>
+        ) : (
           <span
             style={{
               marginLeft: "auto",
@@ -205,7 +303,7 @@ function BlockCard({ entry, ds }: { entry: KitEntry; ds: SystemId }) {
               color: "var(--ds-fg-tertiary)",
             }}
           >
-            generic
+            {isReal ? "Faithful preview" : "Generic"}
           </span>
         )}
       </div>
