@@ -4,6 +4,7 @@ import React from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getComponents, getCategories, getSystemInfo, getPreviews } from "@/data/registry";
+import { getUiKitGroup, BUILDER_BLOCKS } from "./uiKitGroups";
 
 export const LandingGrid = React.memo(function LandingGrid() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
@@ -89,9 +90,61 @@ export const LandingGrid = React.memo(function LandingGrid() {
         </div>
       </div>
 
-      {/* Category sections */}
+      {/* Tools section — Tokens, Design Audit, Builder Blocks. Sourced from
+          the same uiKitGroups IA as the sidebar so these appear here ONLY,
+          never also as Foundation cards (the old 11-vs-9 duplication). */}
+      {(() => {
+        const toolItems: { id: string; name: string; desc: string }[] = [
+          ...components.filter(c => getUiKitGroup(c.id, c.cat) === "Tools"),
+          { id: BUILDER_BLOCKS.id, name: BUILDER_BLOCKS.name, desc: BUILDER_BLOCKS.desc },
+        ];
+        if (toolItems.length === 0) return null;
+        return (
+          <div style={{ marginBottom: outerPad }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>
+              <h2 style={{ fontSize: h2Size, fontWeight: catWeight, color: t.fg, margin: 0 }}>Tools</h2>
+              <span style={{ fontSize: captionSize, color: t.fg3 }}>{toolItems.length}</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+              {toolItems.map(c => (
+                <button key={c.id} className={cardClass || undefined}
+                  onClick={() => setSelectedComponent(c.id)}
+                  style={{
+                    width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
+                    borderRadius: cardRadius,
+                    border: activeSystem === "uoaui" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
+                    background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
+                    backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
+                    WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
+                    transition: "background 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-color 200ms",
+                  }}
+                >
+                  <div style={{
+                    background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
+                    padding: 20, minHeight: 60,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    borderBottom: `1px solid ${t.border}`,
+                  }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.accent, opacity: 0.85 }}>
+                      {c.id === "tokens" ? "palette" : c.id === "audit" ? "fact_check" : "widgets"}
+                    </span>
+                  </div>
+                  <div style={{ padding: "10px 14px 12px" }}>
+                    <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
+                    <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || "Tool"}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Category sections — Tools-group ids (tokens/audit) are filtered out
+          so they live only in the Tools section above. */}
       {categories.map(cat => {
-        const catItems = components.filter(c => c.cat === cat);
+        const catItems = components.filter(c => c.cat === cat && getUiKitGroup(c.id, c.cat) !== "Tools");
+        if (catItems.length === 0) return null;
         return (
           <div key={cat} style={{ marginBottom: outerPad }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>

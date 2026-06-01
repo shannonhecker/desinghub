@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { useDesignHub, type ActiveTab } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getComponents, getCategories } from "@/data/registry";
+import { getComponents } from "@/data/registry";
 import { COMPONENT_SUBCATS, SUBCAT_ORDER } from "@/data/componentCategories";
+import { getUiKitGroup, BUILDER_BLOCKS } from "./uiKitGroups";
 
 export function ComponentList() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
@@ -13,7 +14,6 @@ export function ComponentList() {
   const searchQuery = useDesignHub((s) => s.searchQuery);
   const t = useTheme();
   const components = getComponents(activeSystem);
-  const categories = getCategories(activeSystem);
 
   const filtered = searchQuery
     ? components.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.desc.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -96,15 +96,16 @@ export function ComponentList() {
     >{c.name}</button>
   );
 
-  const TOOL_IDS = new Set(["tokens", "audit"]);
-  const foundationItems = filtered.filter(c => c.cat === "Foundations" && !TOOL_IDS.has(c.id));
-  const toolItems = filtered.filter(c => c.cat === "Foundations" && TOOL_IDS.has(c.id));
+  /* Group from the single IA source of truth (uiKitGroups). Foundations vs
+     Tools vs Components is decided in ONE place that LandingGrid + MainContent
+     also read, so a thing appears in exactly one location. */
+  const foundationItems = filtered.filter(c => getUiKitGroup(c.id, c.cat) === "Foundations");
+  const toolItems = filtered.filter(c => getUiKitGroup(c.id, c.cat) === "Tools");
   const componentItems = filtered.filter(c => c.cat === "Components & Patterns");
 
-  /* Synthetic Tools entry: the Builder Blocks gallery isn't a per-DS registry
-     component — it's a cross-system view that renders the builder's vocabulary
-     + real export code. Surface it in Tools, gated by search like the rest. */
-  const BUILDER_BLOCKS = { id: "builder-blocks", name: "Builder Blocks" };
+  /* Builder Blocks is the one synthetic (non-registry) Tools entry. It lives in
+     BUILDER_BLOCKS and is grouped as Tools by GROUP_MAP; gate it by search like
+     the rest. */
   const showBuilderBlocks = !searchQuery || BUILDER_BLOCKS.name.toLowerCase().includes(searchQuery.toLowerCase());
 
   const helperStyle: React.CSSProperties = {

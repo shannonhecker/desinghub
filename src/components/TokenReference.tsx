@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getTheme, getSystemInfo, getFont, activateTheme } from "@/data/registry";
 import { contrastRatio, formatRatio, meetsAA, isHex } from "@/lib/contrastUtils";
+import {
+  isOfficialTokenSource,
+  getOfficialTokenList,
+  readOfficialComputedTokens,
+} from "@/lib/officialTokens";
 
 interface TokenEntry {
   name: string;
@@ -80,9 +85,17 @@ function extractTokens(theme: any, system: string): TokenEntry[] {
 
 interface SwatchColors { cardBg: string; border: string; fg: string; fg3: string; positive: string; negative: string }
 
+/* A swatch is paintable if the value is any CSS color (hex / rgb / hsl /
+   named) — official Salt tokens can resolve through palette chains to
+   rgb(...). Contrast, however, is only computed when BOTH ends are hex,
+   because contrastRatio() parses hex only. */
+function isCssColor(value: string): boolean {
+  return isHex(value) || /^(rgb|hsl|color|oklch|lab|lch)\(/i.test(value);
+}
+
 function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: string; colors: SwatchColors }) {
-  const isColor = isHex(token.value);
-  const ratio = isColor && isHex(bgToken) ? contrastRatio(token.value, bgToken) : null;
+  const paintable = isCssColor(token.value);
+  const ratio = isHex(token.value) && isHex(bgToken) ? contrastRatio(token.value, bgToken) : null;
   const passes = ratio ? meetsAA(ratio) : null;
 
   return (
@@ -92,7 +105,7 @@ function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: s
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: 6, flexShrink: 0,
-        background: isColor ? token.value : "transparent",
+        background: paintable ? token.value : "transparent",
         /* Swatches need to delineate against dark cards (bg5 #000000 on
            near-black cards vanished). Using fg3 — one step more contrast
            than the default border token while staying themed. */
@@ -131,7 +144,51 @@ export function TokenReference() {
   activateTheme(activeSystem, T);
   const font = getFont(activeSystem);
 
-  const tokens = useMemo(() => extractTokens(T, activeSystem), [T, activeSystem]);
+  const official = isOfficialTokenSource(activeSystem);
+
+  /* Mode/theme handle used to scope the official-token probe.
+     Salt official CSS keys off [data-mode=light|dark]; Carbon off the
+     theme key (white/g10/g90/g100). For Salt we map Design Hub's
+     jpm-light/jpm-dark overlay key onto official light/dark. */
+  const officialThemeHandle = activeSystem === "salt"
+    ? (store.salt.themeKey.includes("dark") ? "dark" : "light")
+    : store.carbon.themeKey;
+
+  /* Facsimile tokens for M3 / Fluent / uoaui (unchanged behaviour). */
+  const facsimileTokens = useMemo(
+    () => (official ? [] : extractTokens(T, activeSystem)),
+    [T, activeSystem, official],
+  );
+
+  /* Official tokens + contrast background: read the genuine computed values
+     off the official CSS vars (@salt-ds/theme --salt-*, @carbon/themes
+     --cds-*) so the displayed values are demonstrably official, not
+     hand-authored. Done in one effect (one DOM probe) because
+     getComputedStyle needs the live DOM — the official CSS is scoped to
+     .salt-theme / .preview-carbon, which only exist client-side. */
+  const [officialState, setOfficialState] = useState<{ tokens: TokenEntry[]; bg: string }>({ tokens: [], bg: "" });
+  useEffect(() => {
+    if (!official) {
+      /* Identity-preserving reset: return the SAME state when already empty so
+         React bails out (no cascading re-render for the facsimile DSs). */
+      setOfficialState((s) => (s.tokens.length || s.bg ? { tokens: [], bg: "" } : s));
+      return;
+    }
+    const probeSystem = activeSystem === "salt" ? "salt" : "carbon";
+    const bgVar = activeSystem === "salt" ? "--salt-container-primary-background" : "--cds-background";
+    const list = getOfficialTokenList(activeSystem);
+    const varNames = [...list.flatMap((c) => c.tokens.map((tk) => tk.varName)), bgVar];
+    const computed = readOfficialComputedTokens(probeSystem, varNames, officialThemeHandle);
+    const entries: TokenEntry[] = [];
+    for (const cat of list)
+      for (const tk of cat.tokens) {
+        const value = computed[tk.varName] || "";
+        if (value) entries.push({ name: tk.label, value, category: cat.category });
+      }
+    setOfficialState({ tokens: entries, bg: computed[bgVar] || "" });
+  }, [official, activeSystem, officialThemeHandle]);
+
+  const tokens = official ? officialState.tokens : facsimileTokens;
 
   // Derive semantic colors from active DS tokens
   const n = (s: string, m: string, a: string, f: string) =>
@@ -147,15 +204,39 @@ export function TokenReference() {
   const positive = activeSystem === "uoaui" ? (T.successFg || "#4ADE80") : activeSystem === "salt" ? (T.positive || "#36b37e") : activeSystem === "m3" ? (T.tertiary || "#36b37e") : (T.successFg1 || "#107C10");
   const negative = activeSystem === "uoaui" ? (T.dangerFg || "#F87171") : activeSystem === "salt" ? (T.negative || "#de350b") : activeSystem === "m3" ? (T.error || "#B3261E") : (T.dangerFg1 || "#D13438");
   const swatchColors: SwatchColors = { cardBg, border, fg, fg3, positive, negative };
+
+  /* Contrast baseline. For official DSs, measure against the official
+     background token (read in the same probe above); fall back to the
+     facsimile bg if it didn't resolve. */
+  const contrastBg = official ? (officialState.bg || bgToken) : bgToken;
+
   const categories = [...new Set(tokens.map((t) => t.category))];
 
   return (
     <div style={{ padding: 24, background: pageBg, minHeight: "100%", fontFamily: font }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, color: fg, marginBottom: 4 }}>
-        Token Reference
-      </h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: fg, margin: 0 }}>
+          Token Reference
+        </h2>
+        <span title={official
+          ? "Values read live from the official token package"
+          : "Hand-authored facsimile values; official tokens land in a follow-up"}
+          style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+            padding: "3px 8px", borderRadius: 4, whiteSpace: "nowrap",
+            background: official ? positive + "22" : border,
+            color: official ? positive : fg3,
+            border: `1px solid ${official ? positive + "55" : border}`,
+          }}>
+          {official ? "Official tokens" : "Facsimile"}
+        </span>
+      </div>
       <p style={{ fontSize: 13, color: fg3, marginBottom: 20 }}>
-        {sysInfo.name} - {tokens.length} tokens · {T.name || "Current theme"} · Contrast ratios against background ({bgToken})
+        {sysInfo.name} - {tokens.length} tokens · {T.name || "Current theme"}
+        {official
+          ? <> · live from <code style={{ fontFamily: "monospace", fontSize: 12 }}>{activeSystem === "salt" ? "@salt-ds/theme (--salt-*)" : "@carbon/themes (--cds-*)"}</code></>
+          : null}
+        {" "}· Contrast ratios against background ({contrastBg})
       </p>
 
       {/* Token grid */}
@@ -172,7 +253,7 @@ export function TokenReference() {
               {cat}
             </div>
             {tokens.filter((t) => t.category === cat).map((t) => (
-              <TokenSwatch key={t.name} token={t} bgToken={bgToken} colors={swatchColors} />
+              <TokenSwatch key={t.name} token={t} bgToken={contrastBg} colors={swatchColors} />
             ))}
           </div>
         ))}
