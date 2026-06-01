@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { showToast } from "@/lib/toast";
@@ -47,7 +48,23 @@ import {
   SimulatedAvatarGroup,
   SimIcon,
 } from "./SimulatedUI";
-import { SimulatedHighchart, type HighchartType } from "./SimulatedHighchart";
+import type { HighchartType } from "./SimulatedHighchart";
+/* Highcharts core + react wrapper are heavy and only needed when a chart block
+   is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
+   the builder's critical-path bundle / first paint. The `type` import above is
+   erased at build time, so it does not pull the module eagerly. */
+const SimulatedHighchart = dynamic(
+  () => import("./SimulatedHighchart").then((m) => m.SimulatedHighchart),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        aria-hidden
+        style={{ height: 250, borderRadius: 8, background: "var(--ds-surface-2, rgba(127,127,127,0.08))" }}
+      />
+    ),
+  },
+);
 import { SortableBlock } from "./SortableBlock";
 import { GroupDropContainer } from "./GroupDropContainer";
 import { computeGroupItemStyle } from "@/lib/layoutResolver";

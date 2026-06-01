@@ -1,12 +1,17 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getFullCSS, getDemoComponent } from "@/data/registry";
 import { useActiveTheme } from "@/components/DesignHubApp";
 import { CodePanel } from "./CodePanel";
-import { ChartsPage } from "./ChartsPage";
 import { DSAgGrid } from "./DSAgGrid";
+
+/* ChartsPage statically imports Highcharts core; lazy-load (ssr:false) so
+   opening a non-chart /ui-kit component preview never pulls Highcharts into
+   the preview chunk. */
+const ChartsPage = dynamic(() => import("./ChartsPage").then((m) => m.ChartsPage), { ssr: false });
 
 /* ── uoaui Props Documentation ── */
 const UOAUI_PROPS: Record<string, { name: string; type: string; default: string; desc: string }[]> = {
