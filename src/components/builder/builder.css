@@ -2620,6 +2620,53 @@
   border-color: rgba(126, 107, 196, 0.55);
 }
 
+/* ── Assumption Row ──────────────────────────────────────────
+   Post-build affordance: a labelled row of one-tap "I assumed:"
+   chips that correct the inferred dims (interface / DS / mode /
+   density) and rebuild. Reuses .prompt-bubbles + .prompt-bubble;
+   only the lead label + the caret + a focus ring are new. */
+.assumption-row {
+  align-items: center;
+  margin-top: 10px;
+}
+.assumption-row-lead {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--b-fg2);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 2px;
+}
+.builder-light .assumption-row-lead {
+  color: rgba(0, 0, 0, 0.55);
+  opacity: 1;
+}
+.prompt-bubble-assumption {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.assumption-row-caret {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.5;
+}
+.prompt-bubble-assumption:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+/* Visible keyboard focus for every chip (additive: no change to the
+   default/hover look, only the focus-visible ring). Meets the >=3:1
+   non-text contrast bar against both builder-dark and builder-light. */
+.prompt-bubble:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+
 /* Component selector wrapper */
 .component-selector {
   display: flex;
