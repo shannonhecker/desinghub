@@ -7,6 +7,29 @@ import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
+import { jsxText, jsxAttr } from "./escape";
+
+/* Generic-fallback variant/status are concatenated into a className string, so
+   they must be a known, slug-safe token (never free text). Validate against the
+   block's documented set; anything else falls back to the safe default. */
+const FALLBACK_BUTTON_VARIANTS = new Set(["primary", "secondary", "outline", "ghost", "danger", "destructive"]);
+const FALLBACK_ALERT_VARIANTS = new Set(["info", "success", "warning", "error"]);
+const FALLBACK_BADGE_STATUSES = new Set(["default", "info", "success", "warning", "error"]);
+function safeToken(v: unknown, allowed: Set<string>, fallback: string): string {
+  const str = String(v ?? "");
+  return allowed.has(str) ? str : fallback;
+}
+/* Heading level becomes a JSX tag name, so it must be a known h1–h4 (never free
+   text — a malformed level would emit an unbalanced/invalid element). */
+function safeLevel(v: unknown): string {
+  const str = String(v ?? "h2");
+  return /^h[1-6]$/.test(str) ? str : "h2";
+}
+/* Avatar size suffixes a className (avatar-${size}); constrain to known tokens. */
+const FALLBACK_AVATAR_SIZES = new Set(["sm", "md", "lg"]);
+function slugSize(v: unknown): string {
+  return safeToken(v, FALLBACK_AVATAR_SIZES, "md");
+}
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   salt: { provider: "SaltProvider", importFrom: "@salt-ds/core" },
@@ -28,46 +51,48 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   if (real) return real.split("\n").map((line) => indent + line).join("\n");
   const p = block.props;
   switch (block.type) {
-    case "SimulatedTitle":
-      return `${indent}<${(p.level as string) || "h2"}>${p.text || "Heading"}</${(p.level as string) || "h2"}>`;
+    case "SimulatedTitle": {
+      const lvl = safeLevel(p.level);
+      return `${indent}<${lvl}>${jsxText(p.text, "Heading")}</${lvl}>`;
+    }
     case "SimulatedButton":
-      return `${indent}<button className="btn btn-${p.variant || "primary"}">${p.label || "Button"}</button>`;
+      return `${indent}<button className="btn btn-${safeToken(p.variant, FALLBACK_BUTTON_VARIANTS, "primary")}">${jsxText(p.label, "Button")}</button>`;
     case "SimulatedTextInput":
-      return `${indent}<div className="form-field">\n${indent}  <label>${p.label || "Label"}</label>\n${indent}  <input type="text" placeholder="${p.placeholder || ""}" />\n${indent}</div>`;
+      return `${indent}<div className="form-field">\n${indent}  <label>${jsxText(p.label, "Label")}</label>\n${indent}  <input type="text" placeholder="${jsxAttr(p.placeholder)}" />\n${indent}</div>`;
     case "SimulatedCard":
-      return `${indent}<div className="card">\n${indent}  <h3>${p.title || "Card"}</h3>\n${indent}  <p>${p.content || ""}</p>\n${indent}</div>`;
+      return `${indent}<div className="card">\n${indent}  <h3>${jsxText(p.title, "Card")}</h3>\n${indent}  <p>${jsxText(p.content)}</p>\n${indent}</div>`;
     case "SimulatedStatCard":
-      return `${indent}<div className="stat-card">\n${indent}  <span className="stat-label">${p.label || "Metric"}</span>\n${indent}  <span className="stat-value">${p.value || "0"}</span>\n${indent}  <div className="progress-bar" style={{ width: "${p.pct || 0}%" }} />\n${indent}</div>`;
+      return `${indent}<div className="stat-card">\n${indent}  <span className="stat-label">${jsxText(p.label, "Metric")}</span>\n${indent}  <span className="stat-value">${jsxText(p.value, "0")}</span>\n${indent}  <div className="progress-bar" style={{ width: "${Number(p.pct) || 0}%" }} />\n${indent}</div>`;
     case "Alert":
-      return `${indent}<div className="alert alert-${p.variant || "info"}">\n${indent}  <strong>${p.title || "Alert"}</strong>\n${indent}  <p>${p.message || ""}</p>\n${indent}</div>`;
+      return `${indent}<div className="alert alert-${safeToken(p.variant, FALLBACK_ALERT_VARIANTS, "info")}">\n${indent}  <strong>${jsxText(p.title, "Alert")}</strong>\n${indent}  <p>${jsxText(p.message)}</p>\n${indent}</div>`;
     case "SimulatedBadge":
-      return `${indent}<span className="badge badge-${p.status || "default"}">${p.label || "Badge"}</span>`;
+      return `${indent}<span className="badge badge-${safeToken(p.status, FALLBACK_BADGE_STATUSES, "default")}">${jsxText(p.label, "Badge")}</span>`;
     case "SimulatedCheckbox":
-      return `${indent}<label className="checkbox"><input type="checkbox" ${p.defaultChecked ? "defaultChecked" : ""} /> ${p.label || "Checkbox"}</label>`;
+      return `${indent}<label className="checkbox"><input type="checkbox" ${p.defaultChecked ? "defaultChecked" : ""} /> ${jsxText(p.label, "Checkbox")}</label>`;
     case "SimulatedSwitch":
-      return `${indent}<label className="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "defaultChecked" : ""} /> ${p.label || "Toggle"}</label>`;
+      return `${indent}<label className="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "defaultChecked" : ""} /> ${jsxText(p.label, "Toggle")}</label>`;
     case "SimulatedProgress":
-      return `${indent}<div className="progress">\n${indent}  <label>${p.label || "Progress"}</label>\n${indent}  <progress value="${p.value || 50}" max="100" />\n${indent}</div>`;
+      return `${indent}<div className="progress">\n${indent}  <label>${jsxText(p.label, "Progress")}</label>\n${indent}  <progress value="${Number(p.value) || 50}" max="100" />\n${indent}</div>`;
     case "SimulatedTabs":
-      return `${indent}<div className="tabs">\n${((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button className="tab">${t.trim()}</button>`).join("\n")}\n${indent}</div>`;
+      return `${indent}<div className="tabs">\n${((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button className="tab">${jsxText(t.trim())}</button>`).join("\n")}\n${indent}</div>`;
     case "SimulatedAccordion":
-      return `${indent}<details className="accordion">\n${indent}  <summary>${p.title || "Section"}</summary>\n${indent}  <p>${p.content || ""}</p>\n${indent}</details>`;
+      return `${indent}<details className="accordion">\n${indent}  <summary>${jsxText(p.title, "Section")}</summary>\n${indent}  <p>${jsxText(p.content)}</p>\n${indent}</details>`;
     case "SimulatedAvatar":
-      return `${indent}<div className="avatar avatar-${p.size || "md"}">${p.initials || "?"}</div>`;
+      return `${indent}<div className="avatar avatar-${slugSize(p.size)}">${jsxText(p.initials, "?")}</div>`;
     case "SimulatedBreadcrumb":
-      return `${indent}<nav className="breadcrumb">\n${((p.pathCsv as string) || "Home").split(",").map((s: string, i: number, arr: string[]) => `${indent}  <span>${s.trim()}</span>${i < arr.length - 1 ? " / " : ""}`).join("\n")}\n${indent}</nav>`;
+      return `${indent}<nav className="breadcrumb">\n${((p.pathCsv as string) || "Home").split(",").map((seg: string, i: number, arr: string[]) => `${indent}  <span>${jsxText(seg.trim())}</span>${i < arr.length - 1 ? " / " : ""}`).join("\n")}\n${indent}</nav>`;
     case "SimulatedDialog":
-      return `${indent}<dialog className="dialog">\n${indent}  <h3>${p.title || "Dialog"}</h3>\n${indent}  <p>${p.message || ""}</p>\n${indent}  <button>Close</button>\n${indent}</dialog>`;
+      return `${indent}<dialog className="dialog">\n${indent}  <h3>${jsxText(p.title, "Dialog")}</h3>\n${indent}  <p>${jsxText(p.message)}</p>\n${indent}  <button>Close</button>\n${indent}</dialog>`;
     case "SimulatedDropdown":
-      return `${indent}<select className="dropdown">\n${indent}  <option value="">${p.placeholder || "Select..."}</option>\n${indent}</select>`;
+      return `${indent}<select className="dropdown">\n${indent}  <option value="">${jsxText(p.placeholder, "Select...")}</option>\n${indent}</select>`;
     case "AppBrand":
-      return `${indent}<div className="app-brand">${p.label || "App"}</div>`;
+      return `${indent}<div className="app-brand">${jsxText(p.label, "App")}</div>`;
     case "StatusPill":
-      return `${indent}<span className="status-pill">${p.label || "Active"}</span>`;
+      return `${indent}<span className="status-pill">${jsxText(p.label, "Active")}</span>`;
     case "NavItem":
-      return `${indent}<button className="nav-item${p.active ? " active" : ""}">\n${indent}  <span className="material-symbols-outlined">${p.icon || "home"}</span>\n${indent}  ${p.label || "Nav"}\n${indent}</button>`;
+      return `${indent}<button className="nav-item${p.active ? " active" : ""}">\n${indent}  <span className="material-symbols-outlined">${jsxText(p.icon, "home")}</span>\n${indent}  ${jsxText(p.label, "Nav")}\n${indent}</button>`;
     case "FooterText":
-      return `${indent}<footer className="footer-text">${p.label || ""} ${p.version || ""}</footer>`;
+      return `${indent}<footer className="footer-text">${jsxText(p.label)} ${jsxText(p.version)}</footer>`;
     default:
       return `${indent}<div className="${block.type.toLowerCase()}">{/* ${block.type} */}</div>`;
   }
