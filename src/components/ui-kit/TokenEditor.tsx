@@ -45,7 +45,20 @@ export function TokenEditor() {
       setTimeout(() => setCopied(false), 2000);
       showToast(`${totalTokens} ${sysInfo.name} tokens copied`, { icon: "content_copy" });
     } catch {
-      showToast("Clipboard unavailable — select and copy manually", { icon: "warning" });
+      showToast("Clipboard unavailable. Select and copy manually.", { icon: "warning" });
+    }
+  };
+
+  /* Per-token click-to-copy (keyboard-accessible <button>). The value / --var
+     cells were overflow:hidden + ellipsis with no copy affordance, so the
+     highest-frequency token-owner action — grab a value or a CSS var — was
+     impossible. The button's title also surfaces the full (untruncated) text. */
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`Copied ${label}`, { icon: "content_copy" });
+    } catch {
+      showToast("Clipboard unavailable", { icon: "warning" });
     }
   };
 
@@ -236,11 +249,25 @@ export function TokenEditor() {
                   <th scope="row" style={{ padding: "8px 12px", fontWeight: 500, color: t.fg, textAlign: "left" }}>
                     {key}
                   </th>
-                  <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 11, color: t.fg2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {value}
+                  <td style={{ padding: "8px 12px", maxWidth: 180 }}>
+                    <button
+                      type="button"
+                      onClick={() => copyText(value, "value")}
+                      title={`Copy ${value}`}
+                      style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", fontSize: 11, color: t.fg2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {value}
+                    </button>
                   </td>
-                  <td style={{ padding: "8px 12px", fontFamily: "monospace", fontSize: 10, color: t.fg3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    --{key}
+                  <td style={{ padding: "8px 12px", maxWidth: 200 }}>
+                    <button
+                      type="button"
+                      onClick={() => copyText(`--${key}`, `--${key}`)}
+                      title={`Copy --${key}`}
+                      style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", fontSize: 10, color: t.fg3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      --{key}
+                    </button>
                   </td>
                 </tr>
               ))}
