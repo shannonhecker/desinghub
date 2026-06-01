@@ -8,6 +8,7 @@ import { ComponentPreview } from "@/components/ComponentPreview";
 import { TokenReference } from "@/components/TokenReference";
 import { AuditPanel } from "@/components/AuditPanel";
 import { LandingGrid } from "./LandingGrid";
+import { COMPONENT_ROUTES } from "./uiKitGroups";
 
 /* Lazy-load the builder-vocabulary gallery: it pulls in the builder's
    ComponentRenderer (SimulatedUI + Highcharts), so deferring it keeps the
@@ -26,12 +27,20 @@ export function MainContent() {
   const selectedComponent = useDesignHub((s) => s.selectedComponent);
   const activeSystem = useDesignHub((s) => s.activeSystem);
 
-  if (selectedComponent === "tokens") return <TokenReference />;
-  if (selectedComponent === "audit") return <AuditPanel />;
-  if (selectedComponent === "builder-blocks") return <BuilderBlockGallery />;
-  if (selectedComponent === "charts") return <ComponentPreview componentId="charts" />;
-
   if (!selectedComponent) return <LandingGrid />;
+
+  /* Special ids route via the single COMPONENT_ROUTES table (shared with
+     ComponentList + LandingGrid) so nav, overview, and content can't drift. */
+  const route = COMPONENT_ROUTES[selectedComponent];
+  if (route) {
+    switch (route.kind) {
+      case "token-reference": return <TokenReference />;
+      case "audit-panel": return <AuditPanel />;
+      case "builder-blocks": return <BuilderBlockGallery />;
+      case "preview": return <ComponentPreview componentId={route.componentId} />;
+    }
+  }
+
   const components = getComponents(activeSystem);
   if (!components.find(c => c.id === selectedComponent)) return <LandingGrid />;
   return <ComponentPreview componentId={selectedComponent} />;

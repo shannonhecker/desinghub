@@ -42,3 +42,15 @@ declare module '*.jsx' {
   export function getFluentDemoComponent(id: string): any;
   export function getFluentSizeCSS(size: string): string;
 }
+
+/* @carbon/themes ships official IBM token VALUES as JS objects (no bundled
+   types). Each named theme is a flat dictionary of camelCase token → value;
+   most values are color/size strings, some are numeric. We only consume the
+   string entries (see officialTokens.ts). */
+declare module '@carbon/themes' {
+  type CarbonThemeTokens = Record<string, string | number>;
+  export const white: CarbonThemeTokens;
+  export const g10: CarbonThemeTokens;
+  export const g90: CarbonThemeTokens;
+  export const g100: CarbonThemeTokens;
+}
