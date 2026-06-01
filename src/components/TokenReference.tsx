@@ -169,7 +169,9 @@ export function TokenReference() {
   const [officialState, setOfficialState] = useState<{ tokens: TokenEntry[]; bg: string }>({ tokens: [], bg: "" });
   useEffect(() => {
     if (!official) {
-      setOfficialState({ tokens: [], bg: "" });
+      /* Identity-preserving reset: return the SAME state when already empty so
+         React bails out (no cascading re-render for the facsimile DSs). */
+      setOfficialState((s) => (s.tokens.length || s.bg ? { tokens: [], bg: "" } : s));
       return;
     }
     const probeSystem = activeSystem === "salt" ? "salt" : "carbon";
