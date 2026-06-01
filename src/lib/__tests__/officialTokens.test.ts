@@ -75,6 +75,9 @@ describe("officialTokens — Carbon CSS is scoped + official", () => {
   const css = buildCarbonTokenCSS();
 
   it("scopes every block under .preview-carbon (never :root / html / body)", () => {
+    // Bare default block (PR-2a) so official vars resolve before a theme attr
+    // is set, plus the per-theme [data-cds-theme] blocks.
+    expect(css).toContain(".preview-carbon{");
     expect(css).toContain('.preview-carbon[data-cds-theme="white"]');
     expect(css).toContain('.preview-carbon[data-cds-theme="g100"]');
     // Leak-safety contract: no global selectors anywhere.
@@ -82,9 +85,12 @@ describe("officialTokens — Carbon CSS is scoped + official", () => {
   });
 
   it("emits ONLY --cds-* custom properties (no resets / component rules)", () => {
-    // Strip the .preview-carbon[...] selectors, then every declaration left
-    // must be a --cds-* custom property.
-    const decls = css.replace(/\.preview-carbon\[[^\]]*\]\{/g, "").replace(/\}/g, ";");
+    // Strip the .preview-carbon selectors (bare default block + the
+    // [data-cds-theme] per-theme blocks), then every declaration left must be
+    // a --cds-* custom property.
+    const decls = css
+      .replace(/\.preview-carbon(\[[^\]]*\])?\{/g, "")
+      .replace(/\}/g, ";");
     const props = decls.split(";").map(s => s.trim()).filter(Boolean);
     expect(props.length).toBeGreaterThan(50);
     for (const p of props) expect(p.startsWith("--cds-")).toBe(true);

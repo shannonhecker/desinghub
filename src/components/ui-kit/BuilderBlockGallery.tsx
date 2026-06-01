@@ -22,6 +22,7 @@ import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
+import { getPreviewOfficialScope } from "@/lib/officialTokens";
 import { ComponentRenderer } from "@/components/builder/ComponentRenderer";
 import {
   kitByCategory,
@@ -64,13 +65,22 @@ export function BuilderBlockGallery() {
   const css = getFullCSS(ds, t.T, densityOrSize);
   const light = isLightTheme(ds, themeKey);
 
-  /* Carbon also needs the cds--<themeKey> ancestor so the @carbon source vars
-     resolve; builder-light flips the .preview-* light overrides. */
+  /* Official-token scope wiring (#9 PR-2a): for Salt/Carbon, the wrapper also
+     carries the `.salt-theme`[data-mode] / `[data-cds-theme]` scope so the
+     OFFICIAL `--salt-*` / `--cds-*` vars (loaded on /ui-kit via the
+     @salt-ds/theme import + <OfficialTokenStyles>) resolve here and the
+     `.preview-<ds>` bridge reads genuine DS values. No-op for M3/Fluent/uoaui. */
+  const officialScope = getPreviewOfficialScope(ds, light ? "light" : "dark", themeKey);
+
+  /* Carbon also needs the cds--<themeKey> ancestor so the @carbon FACSIMILE
+     source vars (from getFullCSS) still resolve as a fallback; builder-light
+     flips the .preview-* light overrides. */
   const wrapperClass = [
     `preview-${ds}`,
     "preview-canvas-root",
     ds === "carbon" ? `cds--${store.carbon.themeKey}` : "",
     light ? "builder-light" : "",
+    officialScope.className,
   ]
     .filter(Boolean)
     .join(" ");
@@ -80,6 +90,7 @@ export function BuilderBlockGallery() {
   return (
     <div
       className={wrapperClass}
+      {...officialScope.attrs}
       style={{
         padding: 48,
         fontFamily: t.font,

@@ -42,6 +42,8 @@ import {
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
+import { getPreviewOfficialScope } from "@/lib/officialTokens";
+import type { SystemId } from "@/store/useDesignHub";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
 import { CompareView } from "./CompareView";
@@ -1061,6 +1063,19 @@ export function BuilderCanvas({
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
   const deviceMode = useBuilder((s) => s.deviceMode);
   const compareMode = useBuilder((s) => s.compareMode);
+  const mode = useBuilder((s) => s.mode);
+  const themeKey = useBuilder((s) => s.themeKey);
+
+  /* Official-token scope wiring (#9 PR-2a): for Salt/Carbon, add the
+     `.salt-theme`[data-mode] / `[data-cds-theme]` scope so the official
+     `--salt-*` / `--cds-*` vars resolve on the preview wrapper and the
+     `.preview-<ds>` bridge in builder.css reads genuine DS token values.
+     No-op for M3/Fluent/uoaui (still facsimile). */
+  const officialScope = getPreviewOfficialScope(
+    designSystem as SystemId,
+    mode === "light" ? "light" : "dark",
+    themeKey,
+  );
 
   const isMobile = deviceMode === "mobile";
   const isCodeView = canvasViewMode === "code";
@@ -1083,7 +1098,11 @@ export function BuilderCanvas({
   const dashboard = isCodeView ? (
     <CodeViewer blocks={blocks} />
   ) : (
-    <div className={`bp-dashboard preview-${designSystem} density-${density}`} key={previewKey}>
+    <div
+      className={`bp-dashboard preview-${designSystem} density-${density}${officialScope.className ? ` ${officialScope.className}` : ""}`}
+      key={previewKey}
+      {...officialScope.attrs}
+    >
       <DashboardHeader compact={compact} />
 
       <div className="bp-body">

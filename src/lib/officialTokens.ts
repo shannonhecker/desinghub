@@ -205,9 +205,22 @@ function isCssTokenValue(v: unknown): v is string {
  * custom properties (no reset, no component CSS, no `:root`), under
  * `.preview-carbon[data-cds-theme="<key>"]`. Safe to inject anywhere — it can
  * only take effect inside an element that opts in with `.preview-carbon`.
+ *
+ * Also emits a bare `.preview-carbon` default block (white theme) so the
+ * official `--cds-*` values resolve even before a `data-cds-theme` attribute
+ * is set. The bridge in builder.css (`.preview-carbon { --ds-*: var(--cds-*) }`)
+ * therefore always reads official Carbon values once this stylesheet is loaded,
+ * winning over the facsimile `.cds--<theme>` ancestor on specificity.
  */
 export function buildCarbonTokenCSS(): string {
   const blocks: string[] = [];
+  /* Default (un-attributed) .preview-carbon → white, so the official tokens
+     are in scope on the wrapper even if the active theme attr is missing. */
+  const defaultDecls: string[] = [];
+  for (const [key, value] of Object.entries(CARBON_TOKEN_THEMES.white)) {
+    if (isCssTokenValue(value)) defaultDecls.push(`${cdsVarName(key)}:${value};`);
+  }
+  blocks.push(`.preview-carbon{${defaultDecls.join("")}}`);
   for (const [themeKey, tokens] of Object.entries(CARBON_TOKEN_THEMES)) {
     const decls: string[] = [];
     for (const [key, value] of Object.entries(tokens)) {
@@ -216,6 +229,56 @@ export function buildCarbonTokenCSS(): string {
     blocks.push(`.preview-carbon[data-cds-theme="${themeKey}"]{${decls.join("")}}`);
   }
   return blocks.join("\n");
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * Scope wiring: extra class + data-attrs so the OFFICIAL --salt-* / --cds-*
+ * vars resolve on the same element that carries .preview-salt / .preview-carbon.
+ *
+ *   - Salt official tokens are defined by @salt-ds/theme/index.css ONLY under
+ *     `.salt-theme` (+ `.salt-theme[data-mode=light|dark]` for the palette).
+ *     So a .preview-salt wrapper must ALSO carry `.salt-theme` + `data-mode`
+ *     for the official vars to be in scope. The Salt CSS is class-scoped (no
+ *     :root / body / * reset — verified), so adding the class is leak-safe.
+ *   - Carbon official tokens are emitted (above) under
+ *     `.preview-carbon[data-cds-theme=<key>]`, so the wrapper needs the
+ *     matching `data-cds-theme`.
+ *
+ * `salt-density-medium` is added alongside so the size/spacing tokens (which
+ * Salt scopes under the density classes) also resolve; medium is the canonical
+ * default and matches readOfficialComputedTokens()'s probe.
+ * ──────────────────────────────────────────────────────────────────────── */
+export interface PreviewOfficialScope {
+  /** Extra className to append to the `.preview-<ds>` wrapper. */
+  className: string;
+  /** Extra data-/attribute props to spread onto the wrapper element. */
+  attrs: Record<string, string>;
+}
+
+/**
+ * For Salt/Carbon, return the official-token scope wiring for a wrapper.
+ * For M3/Fluent/uoaui (still facsimile), returns empty wiring.
+ *
+ * @param system    active design system
+ * @param mode      "light" | "dark" canvas mode (drives Salt data-mode)
+ * @param themeKey  active theme key (Carbon: white/g10/g90/g100)
+ */
+export function getPreviewOfficialScope(
+  system: SystemId,
+  mode: "light" | "dark",
+  themeKey: string,
+): PreviewOfficialScope {
+  if (system === "salt") {
+    return {
+      className: "salt-theme salt-density-medium",
+      attrs: { "data-mode": mode === "dark" ? "dark" : "light" },
+    };
+  }
+  if (system === "carbon") {
+    const resolved = ["white", "g10", "g90", "g100"].includes(themeKey) ? themeKey : "white";
+    return { className: "", attrs: { "data-cds-theme": resolved } };
+  }
+  return { className: "", attrs: {} };
 }
 
 /**

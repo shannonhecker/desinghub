@@ -6648,17 +6648,29 @@
    Preview Semantic Tokens
    ══════════════════════════════════════════ */
 
-/* ── Salt DS (Dark = base) ── */
+/* ── Salt DS (Dark = base) — OFFICIAL-BRIDGED (#9 PR-2a) ──
+   --ds-* now reference the OFFICIAL @salt-ds/theme `--salt-*` characteristic
+   tokens (slot-for-slot), not the facsimile. The official vars are scoped
+   under `.salt-theme` / `.salt-theme[data-mode]`, which the preview wrapper
+   also carries (see getPreviewOfficialScope + the wrapper sites). Each slot
+   keeps a facsimile literal as a last-resort fallback so nothing renders
+   unset off the /ui-kit route (where @salt-ds/theme is imported) or before the
+   scope class lands. The bold accent maps to Salt's actionable-bold (the real
+   button background) rather than the raw palette-accent. M3/Fluent/uoaui stay
+   on their facsimile mapping until PR-2b. */
 .preview-salt {
-  --ds-primary: var(--salt-palette-accent);
-  --ds-on-primary: var(--salt-actionable-bold-foreground, #fff);
+  /* Accent (teal), NOT actionable-bold (neutral grey): --ds-primary is the
+     brand accent used across charts / progress / links / active states, so map
+     it to Salt's palette accent to preserve the teal identity. */
+  --ds-primary: var(--salt-palette-accent, #1B7F9E);
+  --ds-on-primary: var(--salt-actionable-accented-foreground, #fff);
   --ds-bg: var(--salt-container-primary-background, #101820);
-  --ds-fg: var(--salt-content-primary-foreground);
+  --ds-fg: var(--salt-content-primary-foreground, #E2E4E5);
   --ds-fg-secondary: var(--salt-content-secondary-foreground, #E2E4E5CC);
   --ds-fg-tertiary: var(--salt-content-secondary-foreground, #E2E4E5B0);
   --ds-surface: var(--salt-container-secondary-background, #1C2830);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #243440);
-  --ds-border: var(--salt-editable-borderColor);
+  --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #4F5B66));
   --ds-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-font: 'Open Sans', sans-serif;
   --ds-radius: var(--salt-curve-100, 4px);
@@ -6666,19 +6678,21 @@
   --ds-primary-hover: rgba(27, 127, 158, 0.25);
   --ds-primary-glow: rgba(27, 127, 158, 0.37);
   --ds-primary-shadow: rgba(27, 127, 158, 0.08);
-  --ds-status-positive: var(--salt-status-success-foreground-informative, #36b37e);
-  --ds-status-warning: var(--salt-status-warning-foreground-informative, #ffab00);
-  --ds-status-negative: var(--salt-status-error-foreground-informative, #de350b);
+  --ds-status-positive: var(--salt-status-success-foreground, var(--salt-status-success-foreground-informative, #36b37e));
+  --ds-status-warning: var(--salt-status-warning-foreground, var(--salt-status-warning-foreground-informative, #ffab00));
+  --ds-status-negative: var(--salt-status-error-foreground, var(--salt-status-error-foreground-informative, #de350b));
 }
 .builder-light .preview-salt {
-  --ds-bg: #FFFFFF;
-  --ds-fg: var(--salt-content-primary-foreground);
-  --ds-fg-secondary: #000000CC;
-  --ds-fg-tertiary: #000000B0;
-  --ds-surface: #F4F6F8;
-  --ds-surface-hover: #E8ECF0;
-  --ds-border: var(--salt-editable-borderColor, #C4C8CC);
-  --ds-hover: #E8ECF0;
+  /* Light palette comes from the official `.salt-theme[data-mode=light]` vars;
+     literals are fallbacks only. */
+  --ds-bg: var(--salt-container-primary-background, #FFFFFF);
+  --ds-fg: var(--salt-content-primary-foreground, #000000);
+  --ds-fg-secondary: var(--salt-content-secondary-foreground, #000000CC);
+  --ds-fg-tertiary: var(--salt-content-secondary-foreground, #000000B0);
+  --ds-surface: var(--salt-container-secondary-background, #F4F6F8);
+  --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
+  --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #C4C8CC));
+  --ds-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
 }
 
 /* ── Material 3 (Dark = base) ── */
@@ -6747,12 +6761,18 @@
   --ds-hover: #EBEBEB;
 }
 
-/* ── Carbon DS (White = base) ──
-   Mirrors the Salt/M3/Fluent mapping so the canvas inherits
-   Carbon's $interactive / $layer-01 / $text-primary tokens via
-   the --ds-* bridge. The --cds-* source variables are injected
-   by PreviewPanel when designSystem === "carbon" so both the
-   .cb-* component rules and these --ds-* mappings resolve. */
+/* ── Carbon DS (White = base) — OFFICIAL-BRIDGED (#9 PR-2a) ──
+   The --ds-* bridge below already references Carbon's canonical
+   `--cds-*` names, so when the OFFICIAL @carbon/themes values are
+   in scope (emitted by buildCarbonTokenCSS under .preview-carbon
+   + .preview-carbon[data-cds-theme], injected via OfficialTokenStyles
+   on /ui-kit AND /builder) these slots resolve to genuine published
+   Carbon tokens. The official `.preview-carbon[data-cds-theme]` block
+   out-specifies the facsimile `.cds--<theme>` ancestor from getFullCSS,
+   so official wins; the literals stay as last-resort fallbacks. The
+   `.cb-*` component rules and these --ds-* mappings share the same
+   --cds-* source. M3/Fluent/uoaui stay on their facsimile mapping
+   until PR-2b. */
 .preview-carbon {
   --ds-primary: var(--cds-interactive, #0f62fe);
   --ds-on-primary: var(--cds-text-on-color, #ffffff);
