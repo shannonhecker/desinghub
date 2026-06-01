@@ -4,6 +4,11 @@ export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
 export type OnboardingStep = 'type' | 'style' | 'components' | 'ready';
+/* Guided pre-build wizard step machine (parallel to the legacy
+   OnboardingStep, which the chat-first flow no longer drives). The wizard
+   walks one decision per screen: type → style → details (look) → audience →
+   confirm, then 'done' once the user taps Build it. */
+export type WizardStep = 'type' | 'style' | 'details' | 'audience' | 'confirm' | 'done';
 export type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 
@@ -182,6 +187,15 @@ interface BuilderState {
   onboardingStep: OnboardingStep;
   pendingComponents: string[];
 
+  // Guided pre-build wizard (the empty-state hero flow). Parallel to the
+  // legacy onboardingStep above - separate so wiring the wizard doesn't
+  // disturb the chat-first machinery that still reads onboardingStep.
+  wizardStep: WizardStep;
+  // True once the user finished the wizard and tapped Build it. The build
+  // chose every dim explicitly, so the post-build Assumption Row is
+  // suppressed; reset to false on the first freeform refinement.
+  builtViaWizard: boolean;
+
   // Active template (set when a pattern card is applied; null for ad-hoc canvases)
   activeTemplateId: string | null;
   // Regenerate-content status - true while /api/builder/generate-content is pending
@@ -314,6 +328,8 @@ interface BuilderState {
 
   // Actions - Onboarding
   setOnboardingStep: (s: OnboardingStep) => void;
+  setWizardStep: (s: WizardStep) => void;
+  setBuiltViaWizard: (v: boolean) => void;
   setPendingComponents: (c: string[]) => void;
   togglePendingComponent: (label: string) => void;
 
@@ -616,6 +632,12 @@ export const useBuilder = create<BuilderState>((set) => ({
   onboardingStep: 'ready',
   pendingComponents: [],
 
+  // Guided pre-build wizard - shown in the empty-state hero. Starts on the
+  // first decision (interface type); builtViaWizard flips true only when the
+  // user completes the wizard and taps Build it.
+  wizardStep: 'type',
+  builtViaWizard: false,
+
   // Template / regeneration state
   activeTemplateId: null,
   isRegeneratingContent: false,
@@ -711,6 +733,10 @@ export const useBuilder = create<BuilderState>((set) => ({
     pendingTemplateId: null,
     pendingFirstMessage: null,
     pendingAudience: null,
+    /* A cleared chat returns to the empty-state hero, so re-show the
+       wizard from its first decision. */
+    wizardStep: 'type',
+    builtViaWizard: false,
   }),
 
   setDesignSystem: (ds) => set((s) => {
@@ -801,6 +827,8 @@ export const useBuilder = create<BuilderState>((set) => ({
     }),
 
   setOnboardingStep: (s) => set({ onboardingStep: s }),
+  setWizardStep: (s) => set({ wizardStep: s }),
+  setBuiltViaWizard: (v) => set({ builtViaWizard: v }),
   setPendingComponents: (c) => set({ pendingComponents: c }),
   togglePendingComponent: (label) =>
     set((s) => ({
@@ -913,6 +941,9 @@ export const useBuilder = create<BuilderState>((set) => ({
     templatesDrawerOpen: false,
     previewOpen: false,
     onboardingStep: 'ready',
+    /* Fresh session re-shows the guided wizard from step 1. */
+    wizardStep: 'type',
+    builtViaWizard: false,
   }),
 
   setBlocks: (blocks) => set({ blocks }),
