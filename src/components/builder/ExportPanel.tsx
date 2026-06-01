@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { exportReact } from "@/lib/export/reactExporter";
 import { exportHTML } from "@/lib/export/htmlExporter";
 import { exportViteBootstrap, viteBootstrapFilename } from "@/lib/export/viteExporter";
@@ -60,6 +60,50 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     setTimeout(() => setCopied(false), 2000);
   }, [code, isGuard]);
 
+  /* Modal a11y: this overlay was a plain div with no dialog semantics — no
+     role/aria-modal, no focus management, no Esc. Make it a real dialog:
+     move focus in on open (so screen-reader users are told it opened),
+     trap Tab inside it, close on Escape, and restore focus to the trigger
+     on unmount. */
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const node = modalRef.current;
+    if (!node) return;
+    node.focus();
+    const focusables = () =>
+      Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        const f = focusables();
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    node.addEventListener("keydown", onKeyDown);
+    return () => {
+      node.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose]);
+
   const download = useCallback(() => {
     if (!code || isGuard) return;
     let filename: string;
@@ -91,11 +135,19 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="export-overlay" onClick={onClose}>
-      <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className="export-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="export-modal-header">
-          <span className="export-modal-title">Export Code</span>
-          <button className="export-modal-close" onClick={onClose}>
+          <span className="export-modal-title" id="export-modal-title">Export Code</span>
+          <button className="export-modal-close" onClick={onClose} aria-label="Close export">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
           </button>
         </div>
