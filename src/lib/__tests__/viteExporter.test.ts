@@ -79,6 +79,17 @@ describe("viteExporter — exported package.json installs real DS deps", () => {
     expect(script).toContain(".a-cb-box");      // registry emits the <span className="a-cb-box">
   });
 
+  /* Regression: appTsxSource() used to prepend its own `import React` on top of
+     the one exportReact() already emits → "Duplicate identifier 'React'" under
+     `tsc -b`, and it displaced the leading "use client" off line 1. Caught only
+     by a real scaffold build, not by substring tests. */
+  it("exported App.tsx does not double-import React (chart canvas)", () => {
+    setCanvas("uoaui", [{ id: "c", type: "HighchartColumn", props: { chartType: "column", title: "Rev" } }]);
+    const script = exportViteBootstrap();
+    expect(script).not.toMatch(/import React from "react";\s*\n\s*\nimport React from "react";/);
+    expect(script).not.toContain('import React from "react";\n\n"use client";');
+  });
+
   /* Dep ↔ usage coherence: when charts are present the embedded App.tsx must
      actually import Highcharts (not just list the dep), so the installed
      package isn't dead weight. */

@@ -411,11 +411,12 @@ Happy building.
 }
 
 function appTsxSource(): string {
-  // reactExporter's output is a full standalone component; wrap it as src/App.tsx.
-  // exportReact() already emits 'export default function App() { ... }' so we keep it
-  // and prepend the React import + styles import.
-  const componentSource = exportReact();
-  return `import React from "react";\n\n${componentSource}\n`;
+  // reactExporter's output is a full standalone component for src/App.tsx.
+  // exportReact() ALREADY emits `import React from "react";` (and, when charts
+  // are present, a leading `"use client";` that MUST stay the file's first line).
+  // Do NOT prepend another React import here — it duplicates the identifier
+  // (tsc: "Duplicate identifier 'React'") and displaces the directive.
+  return `${exportReact()}\n`;
 }
 
 /** Safety caps - a generated Vite project should never exceed these
