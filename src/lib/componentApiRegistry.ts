@@ -24,6 +24,8 @@
  * imports for Metric/ContactDetails/TokenizedInput composites).
  */
 
+import { jsxText, jsxAttr } from "./export/escape";
+
 export type SystemId = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
 
 /** A single package's named imports, or a side-effect import when names=[]. */
@@ -129,24 +131,24 @@ function saltAvatarSize(size: string): number {
 const SALT: Record<string, ComponentApiEntry> = {
   SimulatedButton: {
     imports: { from: SALT_CORE, names: ["Button"] },
-    toJsx: (p) => `<Button ${saltButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+    toJsx: (p) => `<Button ${saltButtonAttrs(p)}>${jsxText(p.label, "Button")}</Button>`,
   },
   SimulatedTextInput: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "Input"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <Input placeholder="${s(p.placeholder)}" />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <Input placeholder="${jsxAttr(p.placeholder)}" />\n</FormField>`,
   },
   SimulatedCheckbox: {
     imports: { from: SALT_CORE, names: ["Checkbox"] },
-    toJsx: (p) => `<Checkbox label="${s(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
+    toJsx: (p) => `<Checkbox label="${jsxAttr(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
   },
   SimulatedSwitch: {
     imports: { from: SALT_CORE, names: ["Switch"] },
-    toJsx: (p) => `<Switch label="${s(p.label)}"${p.defaultOn ? " defaultChecked" : ""} />`,
+    toJsx: (p) => `<Switch label="${jsxAttr(p.label)}"${p.defaultOn ? " defaultChecked" : ""} />`,
   },
   SimulatedCard: {
     imports: { from: SALT_CORE, names: ["Card"] },
-    toJsx: (p) => `<Card>\n  <h3>${s(p.title, "Card")}</h3>\n  <p>${s(p.content)}</p>\n</Card>`,
+    toJsx: (p) => `<Card>\n  <h3>${jsxText(p.title, "Card")}</h3>\n  <p>${jsxText(p.content)}</p>\n</Card>`,
   },
 
   /* ── extended coverage ── */
@@ -154,13 +156,13 @@ const SALT: Record<string, ComponentApiEntry> = {
     imports: { from: SALT_CORE, names: ["H1", "H2", "H3", "H4"] },
     toJsx: (p) => {
       const tag = ({ h1: "H1", h2: "H2", h3: "H3", h4: "H4" } as Record<string, string>)[s(p.level, "h2")] ?? "H2";
-      return `<${tag}>${s(p.text, "Heading")}</${tag}>`;
+      return `<${tag}>${jsxText(p.text, "Heading")}</${tag}>`;
     },
   },
   SimulatedToggleButton: {
     imports: { from: SALT_CORE, names: ["ToggleButton"] },
     toJsx: (p) =>
-      `<ToggleButton value="${slug(p.label, "toggle")}"${p.defaultPressed ? " selected" : ""}>${s(p.label, "Toggle")}</ToggleButton>`,
+      `<ToggleButton value="${slug(p.label, "toggle")}"${p.defaultPressed ? " selected" : ""}>${jsxText(p.label, "Toggle")}</ToggleButton>`,
   },
   SimulatedSegmentedGroup: {
     imports: { from: SALT_CORE, names: ["SegmentedButtonGroup", "Button"] },
@@ -168,7 +170,7 @@ const SALT: Record<string, ComponentApiEntry> = {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
       const di = Number(p.defaultIndex ?? 0);
       const children = opts
-        .map((o, i) => `  <Button${i === di ? ' sentiment="accented"' : ""}>${o}</Button>`)
+        .map((o, i) => `  <Button${i === di ? ' sentiment="accented"' : ""}>${jsxText(o)}</Button>`)
         .join("\n");
       return `<SegmentedButtonGroup>\n${children}\n</SegmentedButtonGroup>`;
     },
@@ -177,18 +179,18 @@ const SALT: Record<string, ComponentApiEntry> = {
     imports: p2(() => ({ from: SALT_CORE, names: ["Link"] }), () => ({ from: SALT_ICONS, names: ["ChevronRightIcon"] })),
     toJsx: (p) =>
       p.showIcon
-        ? `<Link href="#" IconComponent={ChevronRightIcon}>${s(p.text, "Learn more")}</Link>`
-        : `<Link href="#">${s(p.text, "Learn more")}</Link>`,
+        ? `<Link href="#" IconComponent={ChevronRightIcon}>${jsxText(p.text, "Learn more")}</Link>`
+        : `<Link href="#">${jsxText(p.text, "Learn more")}</Link>`,
   },
   SimulatedMultilineInput: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "MultilineInput"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <MultilineInput placeholder="${s(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <MultilineInput placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</FormField>`,
   },
   SimulatedNumberInput: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "NumberInput"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <NumberInput defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <NumberInput defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</FormField>`,
   },
   SimulatedDatePicker: {
     imports: { from: SALT_LAB, names: ["DatePicker", "DatePickerSingleInput", "DatePickerOverlay", "DatePickerSinglePanel"] },
@@ -198,39 +200,39 @@ const SALT: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "Slider"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</FormField>`,
   },
   SimulatedRadioGroup: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "RadioButtonGroup", "RadioButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
       const di = Number(p.defaultIndex ?? 0);
-      const buttons = opts.map((o) => `    <RadioButton label="${o}" value="${slug(o)}" />`).join("\n");
+      const buttons = opts.map((o) => `    <RadioButton label="${jsxAttr(o)}" value="${slug(o)}" />`).join("\n");
       const dv = slug(opts[di] ?? opts[0]);
-      return `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <RadioButtonGroup defaultValue="${dv}">\n${buttons}\n  </RadioButtonGroup>\n</FormField>`;
+      return `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <RadioButtonGroup defaultValue="${dv}">\n${buttons}\n  </RadioButtonGroup>\n</FormField>`;
     },
   },
   SimulatedDropdown: {
     imports: { from: SALT_CORE, names: ["Dropdown", "Option"] },
     toJsx: (p) =>
-      `<Dropdown placeholder="${s(p.placeholder, "Select an option")}">\n  <Option value="option-1">Option 1</Option>\n  <Option value="option-2">Option 2</Option>\n</Dropdown>`,
+      `<Dropdown placeholder="${jsxAttr(p.placeholder, "Select an option")}">\n  <Option value="option-1">Option 1</Option>\n  <Option value="option-2">Option 2</Option>\n</Dropdown>`,
   },
   SimulatedComboBox: {
     imports: { from: SALT_CORE, names: ["ComboBox", "Option"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["United States", "United Kingdom", "Canada"]);
-      const children = opts.map((o) => `  <Option value="${o}">${o}</Option>`).join("\n");
-      return `<ComboBox placeholder="${s(p.placeholder, "Search...")}">\n${children}\n</ComboBox>`;
+      const children = opts.map((o) => `  <Option value="${jsxAttr(o)}">${jsxText(o)}</Option>`).join("\n");
+      return `<ComboBox placeholder="${jsxAttr(p.placeholder, "Search...")}">\n${children}\n</ComboBox>`;
     },
   },
   SimulatedSearchbox: {
     imports: p2(() => ({ from: SALT_CORE, names: ["Input"] }), () => ({ from: SALT_ICONS, names: ["SearchIcon"] })),
-    toJsx: (p) => `<Input placeholder="${s(p.placeholder, "Search...")}" startAdornment={<SearchIcon />} />`,
+    toJsx: (p) => `<Input placeholder="${jsxAttr(p.placeholder, "Search...")}" startAdornment={<SearchIcon />} />`,
   },
   SimulatedRating: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "Rating"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${s(p.label, "Rating")}</FormFieldLabel>\n  <Rating max={${Number(p.max ?? 5)}} defaultValue={${Number(p.value ?? 3)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Rating")}</FormFieldLabel>\n  <Rating max={${Number(p.max ?? 5)}} defaultValue={${Number(p.value ?? 3)}} />\n</FormField>`,
   },
   SimulatedTokenizedInput: {
     /* FormField/FormFieldLabel from core; TokenizedInput from lab — split. */
@@ -240,8 +242,8 @@ const SALT: Record<string, ComponentApiEntry> = {
     ),
     toJsx: (p) => {
       const tokens = csv(p.tokensCsv, ["alice@co.com", "bob@co.com"]);
-      const arr = tokens.map((t) => `"${t}"`).join(", ");
-      return `<FormField>\n  <FormFieldLabel>${s(p.label, "Label")}</FormFieldLabel>\n  <TokenizedInput defaultSelected={[${arr}]} />\n</FormField>`;
+      const arr = tokens.map((t) => JSON.stringify(t)).join(", ");
+      return `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <TokenizedInput defaultSelected={[${arr}]} />\n</FormField>`;
     },
   },
   /* SimulatedFileDropZone uses Salt FileDropZone (core, composable). */
@@ -249,7 +251,7 @@ const SALT: Record<string, ComponentApiEntry> = {
     imports: { from: SALT_CORE, names: ["FileDropZone", "FileDropZoneIcon", "FileDropZoneTrigger"] },
     toJsx: (p) => {
       const accept = csv(p.acceptTypes, [".png", ".jpg", ".pdf"]).join(",");
-      return `<FileDropZone>\n  <FileDropZoneIcon />\n  <strong>${s(p.label, "Drag & drop files here")}</strong>\n  <FileDropZoneTrigger accept="${accept}" />\n</FileDropZone>`;
+      return `<FileDropZone>\n  <FileDropZoneIcon />\n  <strong>${jsxText(p.label, "Drag & drop files here")}</strong>\n  <FileDropZoneTrigger accept="${jsxAttr(accept)}" />\n</FileDropZone>`;
     },
   },
   SimulatedDataTable: {
@@ -264,13 +266,13 @@ const SALT: Record<string, ComponentApiEntry> = {
       () => ({ from: SALT_LAB, names: ["Metric", "MetricHeader", "MetricContent"] }),
     ),
     toJsx: (p) =>
-      `<Card>\n  <Metric>\n    <MetricHeader title="${s(p.label, "Metric")}" />\n    <MetricContent value="${s(p.value, "0")}" />\n  </Metric>\n</Card>`,
+      `<Card>\n  <Metric>\n    <MetricHeader title="${jsxAttr(p.label, "Metric")}" />\n    <MetricContent value="${jsxAttr(p.value, "0")}" />\n  </Metric>\n</Card>`,
   },
   SimulatedListBox: {
     imports: { from: SALT_CORE, names: ["ListBox", "Option"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["Apple", "Banana", "Cherry"]);
-      const children = opts.map((o) => `  <Option value="${o}">${o}</Option>`).join("\n");
+      const children = opts.map((o) => `  <Option value="${jsxAttr(o)}">${jsxText(o)}</Option>`).join("\n");
       return `<ListBox${p.multiSelect ? " multiselect" : ""}>\n${children}\n</ListBox>`;
     },
   },
@@ -282,7 +284,7 @@ const SALT: Record<string, ComponentApiEntry> = {
         nodes
           .map((n) => {
             const pad = "  ".repeat(depth + 1);
-            const inner = `${pad}  <TreeNodeTrigger>\n${pad}    <TreeNodeLabel>${n.label}</TreeNodeLabel>\n${pad}  </TreeNodeTrigger>`;
+            const inner = `${pad}  <TreeNodeTrigger>\n${pad}    <TreeNodeLabel>${jsxText(n.label)}</TreeNodeLabel>\n${pad}  </TreeNodeTrigger>`;
             const kids = n.children.length ? `\n${render(n.children, depth + 1)}` : "";
             return `${pad}<TreeNode value="${slug(n.label)}">\n${inner}${kids}\n${pad}</TreeNode>`;
           })
@@ -292,35 +294,35 @@ const SALT: Record<string, ComponentApiEntry> = {
   },
   SimulatedProgress: {
     imports: { from: SALT_CORE, names: ["LinearProgress"] },
-    toJsx: (p) => `<LinearProgress aria-label="${s(p.label, "Progress")}" value={${Number(p.value ?? 50)}} />`,
+    toJsx: (p) => `<LinearProgress aria-label="${jsxAttr(p.label, "Progress")}" value={${Number(p.value ?? 50)}} />`,
   },
   SimulatedAvatar: {
     imports: { from: SALT_CORE, names: ["Avatar"] },
-    toJsx: (p) => `<Avatar name="${s(p.initials, "?")}" size={${saltAvatarSize(s(p.size, "md"))}} />`,
+    toJsx: (p) => `<Avatar name="${jsxAttr(p.initials, "?")}" size={${saltAvatarSize(s(p.size, "md"))}} />`,
   },
   /* SimulatedAvatarGroup — OMIT: Salt core/lab ship no AvatarGroup. */
   SimulatedBadge: {
     /* Salt Badge is a count overlay (value + children); it has no sentiment/
        status prop, so status is honestly dropped (verify-confirmed). */
     imports: { from: SALT_CORE, names: ["Badge", "Button"] },
-    toJsx: (p) => `<Badge value={1}>\n  <Button>${s(p.label, "Badge")}</Button>\n</Badge>`,
+    toJsx: (p) => `<Badge value={1}>\n  <Button>${jsxText(p.label, "Badge")}</Button>\n</Badge>`,
   },
   SimulatedPill: {
     imports: { from: SALT_CORE, names: ["Pill"] },
-    toJsx: (p) => `<Pill onClick={() => {}}>${s(p.label, "Tag")}</Pill>`,
+    toJsx: (p) => `<Pill onClick={() => {}}>${jsxText(p.label, "Tag")}</Pill>`,
   },
   SimulatedPersona: {
     imports: { from: SALT_LAB, names: ["ContactDetails", "ContactAvatar", "ContactPrimaryInfo", "ContactSecondaryInfo"] },
     toJsx: (p) =>
-      `<ContactDetails variant="mini">\n  <ContactAvatar />\n  <ContactPrimaryInfo text="${s(p.name, "Name")}" />\n  <ContactSecondaryInfo text="${s(p.role, "")}" />\n</ContactDetails>`,
+      `<ContactDetails variant="mini">\n  <ContactAvatar />\n  <ContactPrimaryInfo text="${jsxAttr(p.name, "Name")}" />\n  <ContactSecondaryInfo text="${jsxAttr(p.role, "")}" />\n</ContactDetails>`,
   },
   SimulatedTabs: {
     imports: { from: SALT_CORE, names: ["Tabs", "TabBar", "TabList", "Tab", "TabPanel"] },
     toJsx: (p) => {
       const tabs = csv(p.tabsCsv, ["General", "Security", "Notifications"]);
       const first = slug(tabs[0]);
-      const tabEls = tabs.map((t) => `      <Tab value="${slug(t)}">${t}</Tab>`).join("\n");
-      const panels = tabs.map((t) => `  <TabPanel value="${slug(t)}">${t} content</TabPanel>`).join("\n");
+      const tabEls = tabs.map((t) => `      <Tab value="${slug(t)}">${jsxText(t)}</Tab>`).join("\n");
+      const panels = tabs.map((t) => `  <TabPanel value="${slug(t)}">${jsxText(t)} content</TabPanel>`).join("\n");
       return `<Tabs defaultValue="${first}">\n  <TabBar>\n    <TabList>\n${tabEls}\n    </TabList>\n  </TabBar>\n${panels}\n</Tabs>`;
     },
   },
@@ -329,7 +331,7 @@ const SALT: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const path = csv(p.pathCsv, ["Home", "Projects", "Design Hub"]);
       const items = path
-        .map((seg, i) => (i === path.length - 1 ? `  <Breadcrumb>${seg}</Breadcrumb>` : `  <Breadcrumb href="#">${seg}</Breadcrumb>`))
+        .map((seg, i) => (i === path.length - 1 ? `  <Breadcrumb>${jsxText(seg)}</Breadcrumb>` : `  <Breadcrumb href="#">${jsxText(seg)}</Breadcrumb>`))
         .join("\n");
       return `<Breadcrumbs>\n${items}\n</Breadcrumbs>`;
     },
@@ -339,7 +341,7 @@ const SALT: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const items = csv(p.itemsCsv, ["Home", "Dashboard", "Settings"]);
       const links = items
-        .map((it, i) => `    <NavigationItem href="#" orientation="vertical"${i === 0 ? " active" : ""}>${it}</NavigationItem>`)
+        .map((it, i) => `    <NavigationItem href="#" orientation="vertical"${i === 0 ? " active" : ""}>${jsxText(it)}</NavigationItem>`)
         .join("\n");
       return `<Drawer open position="left">\n  <nav>\n${links}\n  </nav>\n</Drawer>`;
     },
@@ -348,52 +350,55 @@ const SALT: Record<string, ComponentApiEntry> = {
     imports: { from: SALT_CORE, names: ["Banner", "BannerContent"] },
     toJsx: (p) => {
       const status = saltAlertStatus(s(p.variant, "info"));
-      const title = s(p.title) ? `${s(p.title)} ` : "";
-      return `<Banner status="${status}">\n  <BannerContent>${title}${s(p.message)}</BannerContent>\n</Banner>`;
+      /* title + message are concatenated into BannerContent children; escape
+         both as JSX children. (A bare `${jsxText(a)} ${jsxText(b)}` of two
+         expression-or-text fragments is valid JSX.) */
+      const title = s(p.title) ? `${jsxText(p.title)} ` : "";
+      return `<Banner status="${status}">\n  <BannerContent>${title}${jsxText(p.message)}</BannerContent>\n</Banner>`;
     },
   },
   /* SimulatedSkeleton — OMIT: Salt has no shimmer placeholder (only Spinner). */
   SimulatedTooltip: {
     imports: { from: SALT_CORE, names: ["Tooltip", "Button"] },
     toJsx: (p) =>
-      `<Tooltip content="${s(p.text, "Tooltip")}">\n  <Button>${s(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
+      `<Tooltip content="${jsxAttr(p.text, "Tooltip")}">\n  <Button>${jsxText(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
   },
   SimulatedPopover: {
     imports: { from: SALT_CORE, names: ["Overlay", "OverlayTrigger", "OverlayPanel", "OverlayPanelContent", "Button"] },
     toJsx: (p) =>
-      `<Overlay>\n  <OverlayTrigger>\n    <Button>Open</Button>\n  </OverlayTrigger>\n  <OverlayPanel>\n    <OverlayPanelContent>\n      <h3>${s(p.title, "Popover")}</h3>\n      <p>${s(p.content)}</p>\n    </OverlayPanelContent>\n  </OverlayPanel>\n</Overlay>`,
+      `<Overlay>\n  <OverlayTrigger>\n    <Button>Open</Button>\n  </OverlayTrigger>\n  <OverlayPanel>\n    <OverlayPanelContent>\n      <h3>${jsxText(p.title, "Popover")}</h3>\n      <p>${jsxText(p.content)}</p>\n    </OverlayPanelContent>\n  </OverlayPanel>\n</Overlay>`,
   },
   SimulatedDialog: {
     imports: { from: SALT_CORE, names: ["Dialog", "DialogHeader", "DialogContent", "DialogActions", "Button"] },
     toJsx: (p) =>
-      `<Dialog open>\n  <DialogHeader header="${s(p.title, "Dialog")}" />\n  <DialogContent>${s(p.message)}</DialogContent>\n  <DialogActions>\n    <Button appearance="bordered" sentiment="neutral">Cancel</Button>\n    <Button sentiment="negative">Confirm</Button>\n  </DialogActions>\n</Dialog>`,
+      `<Dialog open>\n  <DialogHeader header="${jsxAttr(p.title, "Dialog")}" />\n  <DialogContent>${jsxText(p.message)}</DialogContent>\n  <DialogActions>\n    <Button appearance="bordered" sentiment="neutral">Cancel</Button>\n    <Button sentiment="negative">Confirm</Button>\n  </DialogActions>\n</Dialog>`,
   },
   SimulatedAccordion: {
     /* value is optional on a standalone Accordion (verify-corrected); the
        emitted value="…" is still valid and groups gracefully if wrapped. */
     imports: { from: SALT_CORE, names: ["Accordion", "AccordionHeader", "AccordionPanel"] },
     toJsx: (p) =>
-      `<Accordion value="${slug(p.title, "section")}">\n  <AccordionHeader>${s(p.title, "Section")}</AccordionHeader>\n  <AccordionPanel>${s(p.content)}</AccordionPanel>\n</Accordion>`,
+      `<Accordion value="${slug(p.title, "section")}">\n  <AccordionHeader>${jsxText(p.title, "Section")}</AccordionHeader>\n  <AccordionPanel>${jsxText(p.content)}</AccordionPanel>\n</Accordion>`,
   },
   /* SimulatedChatMessage — OMIT: no Salt chat/message component. */
   AppBrand: {
     imports: { from: SALT_CORE, names: ["Text"] },
-    toJsx: (p) => `<Text styleAs="h4"><strong>${s(p.label, "App Name")}</strong></Text>`,
+    toJsx: (p) => `<Text styleAs="h4"><strong>${jsxText(p.label, "App Name")}</strong></Text>`,
   },
   StatusPill: {
     imports: { from: SALT_CORE, names: ["StatusIndicator", "Text"] },
     toJsx: (p) =>
-      `<span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>\n  <StatusIndicator status="success" />\n  <Text>${s(p.label, "Active")}</Text>\n</span>`,
+      `<span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>\n  <StatusIndicator status="success" />\n  <Text>${jsxText(p.label, "Active")}</Text>\n</span>`,
   },
   NavItem: {
     imports: { from: SALT_CORE, names: ["NavigationItem"] },
     toJsx: (p) =>
-      `<NavigationItem href="#"${p.active ? " active" : ""} orientation="vertical">${s(p.label, "Nav")}</NavigationItem>`,
+      `<NavigationItem href="#"${p.active ? " active" : ""} orientation="vertical">${jsxText(p.label, "Nav")}</NavigationItem>`,
   },
   FooterText: {
     imports: { from: SALT_CORE, names: ["Text"] },
     toJsx: (p) =>
-      `<footer>\n  <Text variant="secondary">${s(p.label, "Footer")}</Text>\n  <Text variant="secondary" styleAs="label">${s(p.version, "v1.0")}</Text>\n</footer>`,
+      `<footer>\n  <Text variant="secondary">${jsxText(p.label, "Footer")}</Text>\n  <Text variant="secondary" styleAs="label">${jsxText(p.version, "v1.0")}</Text>\n</footer>`,
   },
 };
 
@@ -429,23 +434,23 @@ function muiChipColor(status: string): string {
 const M3: Record<string, ComponentApiEntry> = {
   SimulatedButton: {
     imports: { from: MUI, names: ["Button"] },
-    toJsx: (p) => `<Button ${m3ButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+    toJsx: (p) => `<Button ${m3ButtonAttrs(p)}>${jsxText(p.label, "Button")}</Button>`,
   },
   SimulatedTextInput: {
     imports: { from: MUI, names: ["TextField"] },
-    toJsx: (p) => `<TextField label="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" variant="outlined" />`,
+    toJsx: (p) => `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" variant="outlined" />`,
   },
   SimulatedCheckbox: {
     imports: { from: MUI, names: ["Checkbox", "FormControlLabel"] },
-    toJsx: (p) => `<FormControlLabel control={<Checkbox${p.defaultChecked ? " defaultChecked" : ""} />} label="${s(p.label)}" />`,
+    toJsx: (p) => `<FormControlLabel control={<Checkbox${p.defaultChecked ? " defaultChecked" : ""} />} label="${jsxAttr(p.label)}" />`,
   },
   SimulatedSwitch: {
     imports: { from: MUI, names: ["FormControlLabel", "Switch"] },
-    toJsx: (p) => `<FormControlLabel control={<Switch${p.defaultOn ? " defaultChecked" : ""} />} label="${s(p.label)}" />`,
+    toJsx: (p) => `<FormControlLabel control={<Switch${p.defaultOn ? " defaultChecked" : ""} />} label="${jsxAttr(p.label)}" />`,
   },
   SimulatedCard: {
     imports: { from: MUI, names: ["Card", "CardContent"] },
-    toJsx: (p) => `<Card>\n  <CardContent>\n    <h3>${s(p.title, "Card")}</h3>\n    <p>${s(p.content)}</p>\n  </CardContent>\n</Card>`,
+    toJsx: (p) => `<Card>\n  <CardContent>\n    <h3>${jsxText(p.title, "Card")}</h3>\n    <p>${jsxText(p.content)}</p>\n  </CardContent>\n</Card>`,
   },
 
   /* ── extended coverage ── */
@@ -454,50 +459,50 @@ const M3: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const level = s(p.level, "h2");
       const variant = ({ h1: "h3", h2: "h4", h3: "h5", h4: "h6" } as Record<string, string>)[level] ?? "h4";
-      return `<Typography variant="${variant}" component="${level}">${s(p.text, "Heading")}</Typography>`;
+      return `<Typography variant="${variant}" component="${level}">${jsxText(p.text, "Heading")}</Typography>`;
     },
   },
   SimulatedToggleButton: {
     imports: { from: MUI, names: ["ToggleButton"] },
     toJsx: (p) =>
-      `<ToggleButton value="${slug(p.label, "toggle")}" selected={${p.defaultPressed ? "true" : "false"}} aria-label="${s(p.label, "Toggle")}">${s(p.label, "Toggle")}</ToggleButton>`,
+      `<ToggleButton value="${slug(p.label, "toggle")}" selected={${p.defaultPressed ? "true" : "false"}} aria-label="${jsxAttr(p.label, "Toggle")}">${jsxText(p.label, "Toggle")}</ToggleButton>`,
   },
   SimulatedSegmentedGroup: {
     imports: { from: MUI, names: ["ToggleButtonGroup", "ToggleButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
       const di = Number(p.defaultIndex ?? 0);
-      const children = opts.map((o) => `  <ToggleButton value="${slug(o)}">${o}</ToggleButton>`).join("\n");
+      const children = opts.map((o) => `  <ToggleButton value="${slug(o)}">${jsxText(o)}</ToggleButton>`).join("\n");
       return `<ToggleButtonGroup exclusive value="${slug(opts[di] ?? opts[0])}" aria-label="view">\n${children}\n</ToggleButtonGroup>`;
     },
   },
   SimulatedLink: {
     imports: { from: MUI, names: ["Link"] },
-    toJsx: (p) => `<Link href="#" underline="hover">${s(p.text, "Learn more")}</Link>`,
+    toJsx: (p) => `<Link href="#" underline="hover">${jsxText(p.text, "Learn more")}</Link>`,
   },
   SimulatedMultilineInput: {
     imports: { from: MUI, names: ["TextField"] },
     toJsx: (p) =>
-      `<TextField label="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" multiline rows={${Number(p.rows ?? 3)}} variant="outlined" fullWidth />`,
+      `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" multiline rows={${Number(p.rows ?? 3)}} variant="outlined" fullWidth />`,
   },
   SimulatedNumberInput: {
     /* verify-corrected: slotProps.htmlInput (works MUI v6.5+/v7); the old
        inputProps is deprecated in v6 and removed in v7. */
     imports: { from: MUI, names: ["TextField"] },
     toJsx: (p) =>
-      `<TextField type="number" label="${s(p.label, "Label")}" defaultValue={${Number(p.value ?? 1)}} slotProps={{ htmlInput: { min: ${Number(p.min ?? 0)}, max: ${Number(p.max ?? 99)}, step: ${Number(p.step ?? 1)} } }} variant="outlined" />`,
+      `<TextField type="number" label="${jsxAttr(p.label, "Label")}" defaultValue={${Number(p.value ?? 1)}} slotProps={{ htmlInput: { min: ${Number(p.min ?? 0)}, max: ${Number(p.max ?? 99)}, step: ${Number(p.step ?? 1)} } }} variant="outlined" />`,
   },
   SimulatedDatePicker: {
     /* @mui/x-date-pickers DatePicker requires a LocalizationProvider + a date
        adapter (dayjs) at runtime; without that wrapper the exported app throws.
        Use the provider-free native-date TextField so generated M3 code runs. */
     imports: { from: MUI, names: ["TextField"] },
-    toJsx: (p) => `<TextField type="date" label="${s(p.label, "Date")}" slotProps={{ inputLabel: { shrink: true } }} variant="outlined" />`,
+    toJsx: (p) => `<TextField type="date" label="${jsxAttr(p.label, "Date")}" slotProps={{ inputLabel: { shrink: true } }} variant="outlined" />`,
   },
   SimulatedSlider: {
     imports: { from: MUI, names: ["Slider"] },
     toJsx: (p) =>
-      `<Slider defaultValue={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} aria-label="${s(p.label, "Slider")}" />`,
+      `<Slider defaultValue={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} aria-label="${jsxAttr(p.label, "Slider")}" />`,
   },
   SimulatedRadioGroup: {
     imports: { from: MUI, names: ["FormControl", "FormLabel", "RadioGroup", "FormControlLabel", "Radio"] },
@@ -505,28 +510,28 @@ const M3: Record<string, ComponentApiEntry> = {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
       const di = Number(p.defaultIndex ?? 0);
       const items = opts
-        .map((o) => `    <FormControlLabel value="${slug(o)}" control={<Radio />} label="${o}" />`)
+        .map((o) => `    <FormControlLabel value="${slug(o)}" control={<Radio />} label="${jsxAttr(o)}" />`)
         .join("\n");
-      return `<FormControl>\n  <FormLabel>${s(p.label, "Label")}</FormLabel>\n  <RadioGroup defaultValue="${slug(opts[di] ?? opts[0])}">\n${items}\n  </RadioGroup>\n</FormControl>`;
+      return `<FormControl>\n  <FormLabel>${jsxText(p.label, "Label")}</FormLabel>\n  <RadioGroup defaultValue="${slug(opts[di] ?? opts[0])}">\n${items}\n  </RadioGroup>\n</FormControl>`;
     },
   },
   SimulatedDropdown: {
     imports: { from: MUI, names: ["FormControl", "InputLabel", "Select", "MenuItem"] },
     toJsx: (p) =>
-      `<FormControl fullWidth>\n  <InputLabel id="sel-label">${s(p.placeholder, "Select an option")}</InputLabel>\n  <Select labelId="sel-label" label="${s(p.placeholder, "Select an option")}" defaultValue="">\n    <MenuItem value="opt1">Option 1</MenuItem>\n    <MenuItem value="opt2">Option 2</MenuItem>\n  </Select>\n</FormControl>`,
+      `<FormControl fullWidth>\n  <InputLabel id="sel-label">${jsxText(p.placeholder, "Select an option")}</InputLabel>\n  <Select labelId="sel-label" label="${jsxAttr(p.placeholder, "Select an option")}" defaultValue="">\n    <MenuItem value="opt1">Option 1</MenuItem>\n    <MenuItem value="opt2">Option 2</MenuItem>\n  </Select>\n</FormControl>`,
   },
   SimulatedComboBox: {
     imports: { from: MUI, names: ["Autocomplete", "TextField"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["United States", "United Kingdom", "Canada"]);
-      const arr = opts.map((o) => `"${o}"`).join(", ");
-      return `<Autocomplete\n  options={[${arr}]}\n  renderInput={(params) => <TextField {...params} label="${s(p.placeholder, "Search...")}" variant="outlined" />}\n/>`;
+      const arr = opts.map((o) => JSON.stringify(o)).join(", ");
+      return `<Autocomplete\n  options={[${arr}]}\n  renderInput={(params) => <TextField {...params} label="${jsxAttr(p.placeholder, "Search...")}" variant="outlined" />}\n/>`;
     },
   },
   SimulatedSearchbox: {
     imports: p2(() => ({ from: MUI, names: ["TextField", "InputAdornment"] }), () => ({ from: "@mui/icons-material/Search", names: ["default as SearchIcon"] })),
     toJsx: (p) =>
-      `<TextField placeholder="${s(p.placeholder, "Search...")}" variant="outlined" size="small" InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) }} />`,
+      `<TextField placeholder="${jsxAttr(p.placeholder, "Search...")}" variant="outlined" size="small" InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) }} />`,
   },
   SimulatedRating: {
     imports: { from: MUI, names: ["Rating"] },
@@ -536,8 +541,8 @@ const M3: Record<string, ComponentApiEntry> = {
     imports: { from: MUI, names: ["Autocomplete", "TextField", "Chip"] },
     toJsx: (p) => {
       const tokens = csv(p.tokensCsv, ["alice@co.com", "bob@co.com"]);
-      const arr = tokens.map((t) => `"${t}"`).join(", ");
-      return `<Autocomplete\n  multiple\n  freeSolo\n  options={[]}\n  defaultValue={[${arr}]}\n  renderTags={(value, getTagProps) => value.map((opt, i) => { const { key, ...tagProps } = getTagProps({ index: i }); return <Chip key={key} label={opt} {...tagProps} />; })}\n  renderInput={(params) => <TextField {...params} label="${s(p.label, "Label")}" variant="outlined" />}\n/>`;
+      const arr = tokens.map((t) => JSON.stringify(t)).join(", ");
+      return `<Autocomplete\n  multiple\n  freeSolo\n  options={[]}\n  defaultValue={[${arr}]}\n  renderTags={(value, getTagProps) => value.map((opt, i) => { const { key, ...tagProps } = getTagProps({ index: i }); return <Chip key={key} label={opt} {...tagProps} />; })}\n  renderInput={(params) => <TextField {...params} label="${jsxAttr(p.label, "Label")}" variant="outlined" />}\n/>`;
     },
   },
   /* SimulatedFileDropZone — OMIT: @mui/material ships no dropzone component. */
@@ -549,14 +554,14 @@ const M3: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: MUI, names: ["Card", "CardContent", "Typography", "LinearProgress"] },
     toJsx: (p) =>
-      `<Card variant="outlined">\n  <CardContent>\n    <Typography variant="body2" color="text.secondary">${s(p.label, "Metric")}</Typography>\n    <Typography variant="h4">${s(p.value, "0")}</Typography>\n    <LinearProgress variant="determinate" value={${Number(p.pct ?? 0)}} sx={{ mt: 1 }} />\n  </CardContent>\n</Card>`,
+      `<Card variant="outlined">\n  <CardContent>\n    <Typography variant="body2" color="text.secondary">${jsxText(p.label, "Metric")}</Typography>\n    <Typography variant="h4">${jsxText(p.value, "0")}</Typography>\n    <LinearProgress variant="determinate" value={${Number(p.pct ?? 0)}} sx={{ mt: 1 }} />\n  </CardContent>\n</Card>`,
   },
   SimulatedListBox: {
     imports: { from: MUI, names: ["List", "ListItem", "ListItemButton", "ListItemText"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["Apple", "Banana", "Cherry"]);
       const items = opts
-        .map((o) => `  <ListItem disablePadding><ListItemButton><ListItemText primary="${o}" /></ListItemButton></ListItem>`)
+        .map((o) => `  <ListItem disablePadding><ListItemButton><ListItemText primary="${jsxAttr(o)}" /></ListItemButton></ListItem>`)
         .join("\n");
       return `<List>\n${items}\n</List>`;
     },
@@ -573,8 +578,8 @@ const M3: Record<string, ComponentApiEntry> = {
           .map((n) => {
             const id = prefix ? `${prefix}-${slug(n.label)}` : slug(n.label);
             const pad = "  ".repeat(depth + 1);
-            if (!n.children.length) return `${pad}<TreeItem itemId="${id}" label="${n.label}" />`;
-            return `${pad}<TreeItem itemId="${id}" label="${n.label}">\n${render(n.children, id, depth + 1)}\n${pad}</TreeItem>`;
+            if (!n.children.length) return `${pad}<TreeItem itemId="${id}" label="${jsxAttr(n.label)}" />`;
+            return `${pad}<TreeItem itemId="${id}" label="${jsxAttr(n.label)}">\n${render(n.children, id, depth + 1)}\n${pad}</TreeItem>`;
           })
           .join("\n");
       return `<SimpleTreeView>\n${render(tree, "", 0)}\n</SimpleTreeView>`;
@@ -588,7 +593,7 @@ const M3: Record<string, ComponentApiEntry> = {
     imports: { from: MUI, names: ["Avatar"] },
     toJsx: (p) => {
       const dim = ({ sm: 28, md: 40, lg: 56 } as Record<string, number>)[s(p.size, "md")] ?? 40;
-      return `<Avatar sx={{ width: ${dim}, height: ${dim} }}>${s(p.initials, "?")}</Avatar>`;
+      return `<Avatar sx={{ width: ${dim}, height: ${dim} }}>${jsxText(p.initials, "?")}</Avatar>`;
     },
   },
   SimulatedAvatarGroup: {
@@ -596,30 +601,30 @@ const M3: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const names = csv(p.namesCsv, ["AB", "CD", "EF"]);
       const max = Number(p.max ?? 4);
-      const items = names.map((n) => `  <Avatar>${n}</Avatar>`).join("\n");
+      const items = names.map((n) => `  <Avatar>${jsxText(n)}</Avatar>`).join("\n");
       return `<AvatarGroup max={${max}}>\n${items}\n</AvatarGroup>`;
     },
   },
   SimulatedBadge: {
     /* MUI Badge is a count overlay; a labeled status badge maps to Chip. */
     imports: { from: MUI, names: ["Chip"] },
-    toJsx: (p) => `<Chip label="${s(p.label, "Badge")}" color="${muiChipColor(s(p.status, "default"))}" size="small" />`,
+    toJsx: (p) => `<Chip label="${jsxAttr(p.label, "Badge")}" color="${muiChipColor(s(p.status, "default"))}" size="small" />`,
   },
   SimulatedPill: {
     imports: { from: MUI, names: ["Chip"] },
     toJsx: (p) =>
-      `<Chip label="${s(p.label, "Tag")}" color="${muiChipColor(s(p.status, "default"))}"${p.dismissible ? " onDelete={() => {}}" : ""} />`,
+      `<Chip label="${jsxAttr(p.label, "Tag")}" color="${muiChipColor(s(p.status, "default"))}"${p.dismissible ? " onDelete={() => {}}" : ""} />`,
   },
   SimulatedPersona: {
     imports: { from: MUI, names: ["ListItem", "ListItemAvatar", "Avatar", "ListItemText"] },
     toJsx: (p) =>
-      `<ListItem>\n  <ListItemAvatar><Avatar>${slug(p.name, "p").slice(0, 2).toUpperCase()}</Avatar></ListItemAvatar>\n  <ListItemText primary="${s(p.name, "Name")}" secondary="${s(p.role)}" />\n</ListItem>`,
+      `<ListItem>\n  <ListItemAvatar><Avatar>${jsxText(slug(p.name, "p").slice(0, 2).toUpperCase())}</Avatar></ListItemAvatar>\n  <ListItemText primary="${jsxAttr(p.name, "Name")}" secondary="${jsxAttr(p.role)}" />\n</ListItem>`,
   },
   SimulatedTabs: {
     imports: { from: MUI, names: ["Tabs", "Tab"] },
     toJsx: (p) => {
       const tabs = csv(p.tabsCsv, ["General", "Security", "Notifications"]);
-      const tabEls = tabs.map((t) => `  <Tab label="${t}" />`).join("\n");
+      const tabEls = tabs.map((t) => `  <Tab label="${jsxAttr(t)}" />`).join("\n");
       return `<Tabs value={0} aria-label="tabs">\n${tabEls}\n</Tabs>`;
     },
   },
@@ -630,8 +635,8 @@ const M3: Record<string, ComponentApiEntry> = {
       const items = path
         .map((seg, i) =>
           i === path.length - 1
-            ? `  <Typography color="text.primary">${seg}</Typography>`
-            : `  <Link underline="hover" color="inherit" href="#">${seg}</Link>`,
+            ? `  <Typography color="text.primary">${jsxText(seg)}</Typography>`
+            : `  <Link underline="hover" color="inherit" href="#">${jsxText(seg)}</Link>`,
         )
         .join("\n");
       return `<Breadcrumbs aria-label="breadcrumb">\n${items}\n</Breadcrumbs>`;
@@ -642,7 +647,7 @@ const M3: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const items = csv(p.itemsCsv, ["Home", "Dashboard", "Settings"]);
       const links = items
-        .map((it) => `    <ListItem disablePadding><ListItemButton><ListItemText primary="${it}" /></ListItemButton></ListItem>`)
+        .map((it) => `    <ListItem disablePadding><ListItemButton><ListItemText primary="${jsxAttr(it)}" /></ListItemButton></ListItem>`)
         .join("\n");
       return `<Drawer variant="permanent" anchor="left">\n  <List>\n${links}\n  </List>\n</Drawer>`;
     },
@@ -650,7 +655,7 @@ const M3: Record<string, ComponentApiEntry> = {
   Alert: {
     imports: { from: MUI, names: ["Alert", "AlertTitle"] },
     toJsx: (p) =>
-      `<Alert severity="${s(p.variant, "info")}">\n  <AlertTitle>${s(p.title, "Alert")}</AlertTitle>\n  ${s(p.message)}\n</Alert>`,
+      `<Alert severity="${jsxAttr(p.variant, "info")}">\n  <AlertTitle>${jsxText(p.title, "Alert")}</AlertTitle>\n  ${jsxText(p.message)}\n</Alert>`,
   },
   SimulatedSkeleton: {
     imports: { from: MUI, names: ["Skeleton"] },
@@ -663,40 +668,40 @@ const M3: Record<string, ComponentApiEntry> = {
   },
   SimulatedTooltip: {
     imports: { from: MUI, names: ["Tooltip", "Button"] },
-    toJsx: (p) => `<Tooltip title="${s(p.text, "Tooltip")}">\n  <Button>${s(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
+    toJsx: (p) => `<Tooltip title="${jsxAttr(p.text, "Tooltip")}">\n  <Button>${jsxText(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
   },
   SimulatedPopover: {
     imports: { from: MUI, names: ["Popover", "Typography"] },
     toJsx: (p) =>
-      `<Popover open={open} anchorEl={anchorEl} onClose={handleClose} anchorOrigin={{ vertical: "bottom", horizontal: "left" }}>\n  <Typography sx={{ p: 2 }} variant="subtitle2">${s(p.title, "Popover")}</Typography>\n  <Typography sx={{ px: 2, pb: 2 }}>${s(p.content)}</Typography>\n</Popover>`,
+      `<Popover open={open} anchorEl={anchorEl} onClose={handleClose} anchorOrigin={{ vertical: "bottom", horizontal: "left" }}>\n  <Typography sx={{ p: 2 }} variant="subtitle2">${jsxText(p.title, "Popover")}</Typography>\n  <Typography sx={{ px: 2, pb: 2 }}>${jsxText(p.content)}</Typography>\n</Popover>`,
   },
   SimulatedDialog: {
     imports: { from: MUI, names: ["Dialog", "DialogTitle", "DialogContent", "DialogContentText", "DialogActions", "Button"] },
     toJsx: (p) =>
-      `<Dialog open={true} onClose={handleClose}>\n  <DialogTitle>${s(p.title, "Dialog")}</DialogTitle>\n  <DialogContent>\n    <DialogContentText>${s(p.message)}</DialogContentText>\n  </DialogContent>\n  <DialogActions>\n    <Button onClick={handleClose}>Cancel</Button>\n    <Button color="error" onClick={handleClose}>Confirm</Button>\n  </DialogActions>\n</Dialog>`,
+      `<Dialog open={true} onClose={handleClose}>\n  <DialogTitle>${jsxText(p.title, "Dialog")}</DialogTitle>\n  <DialogContent>\n    <DialogContentText>${jsxText(p.message)}</DialogContentText>\n  </DialogContent>\n  <DialogActions>\n    <Button onClick={handleClose}>Cancel</Button>\n    <Button color="error" onClick={handleClose}>Confirm</Button>\n  </DialogActions>\n</Dialog>`,
   },
   SimulatedAccordion: {
     imports: { from: MUI, names: ["Accordion", "AccordionSummary", "AccordionDetails", "Typography"] },
     toJsx: (p) =>
-      `<Accordion>\n  <AccordionSummary>\n    <Typography>${s(p.title, "Section")}</Typography>\n  </AccordionSummary>\n  <AccordionDetails>\n    <Typography>${s(p.content)}</Typography>\n  </AccordionDetails>\n</Accordion>`,
+      `<Accordion>\n  <AccordionSummary>\n    <Typography>${jsxText(p.title, "Section")}</Typography>\n  </AccordionSummary>\n  <AccordionDetails>\n    <Typography>${jsxText(p.content)}</Typography>\n  </AccordionDetails>\n</Accordion>`,
   },
   /* SimulatedChatMessage — OMIT: @mui/material ships no chat-bubble component. */
   AppBrand: {
     imports: { from: MUI, names: ["Typography"] },
-    toJsx: (p) => `<Typography variant="h6" noWrap component="div">${s(p.label, "App Name")}</Typography>`,
+    toJsx: (p) => `<Typography variant="h6" noWrap component="div">${jsxText(p.label, "App Name")}</Typography>`,
   },
   StatusPill: {
     imports: { from: MUI, names: ["Chip"] },
-    toJsx: (p) => `<Chip label="${s(p.label, "Active")}" color="success" size="small" variant="outlined" />`,
+    toJsx: (p) => `<Chip label="${jsxAttr(p.label, "Active")}" color="success" size="small" variant="outlined" />`,
   },
   NavItem: {
     imports: { from: MUI, names: ["ListItem", "ListItemButton", "ListItemIcon", "ListItemText", "Icon"] },
     toJsx: (p) =>
-      `<ListItem disablePadding>\n  <ListItemButton selected={${p.active ? "true" : "false"}}>\n    <ListItemIcon><Icon>${s(p.icon, "home")}</Icon></ListItemIcon>\n    <ListItemText primary="${s(p.label, "Nav")}" />\n  </ListItemButton>\n</ListItem>`,
+      `<ListItem disablePadding>\n  <ListItemButton selected={${p.active ? "true" : "false"}}>\n    <ListItemIcon><Icon>${jsxText(p.icon, "home")}</Icon></ListItemIcon>\n    <ListItemText primary="${jsxAttr(p.label, "Nav")}" />\n  </ListItemButton>\n</ListItem>`,
   },
   FooterText: {
     imports: { from: MUI, names: ["Typography"] },
-    toJsx: (p) => `<Typography variant="body2" color="text.secondary">${s(p.label, "Footer")} · ${s(p.version, "v1.0")}</Typography>`,
+    toJsx: (p) => `<Typography variant="body2" color="text.secondary">${jsxText(p.label, "Footer")} · ${jsxText(p.version, "v1.0")}</Typography>`,
   },
 };
 
@@ -744,25 +749,25 @@ function fluentIconName(icon: string): string {
 const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedButton: {
     imports: { from: FLUENT_CORE, names: ["Button"] },
-    toJsx: (p) => `<Button ${fluentButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+    toJsx: (p) => `<Button ${fluentButtonAttrs(p)}>${jsxText(p.label, "Button")}</Button>`,
   },
   SimulatedTextInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "Input"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Label")}">\n  <Input placeholder="${s(p.placeholder)}" />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Input placeholder="${jsxAttr(p.placeholder)}" />\n</Field>`,
   },
   SimulatedCheckbox: {
     imports: { from: FLUENT_CORE, names: ["Checkbox"] },
-    toJsx: (p) => `<Checkbox label="${s(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
+    toJsx: (p) => `<Checkbox label="${jsxAttr(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
   },
   SimulatedSwitch: {
     imports: { from: FLUENT_CORE, names: ["Switch"] },
-    toJsx: (p) => `<Switch label="${s(p.label)}"${p.defaultOn ? " defaultChecked" : ""} />`,
+    toJsx: (p) => `<Switch label="${jsxAttr(p.label)}"${p.defaultOn ? " defaultChecked" : ""} />`,
   },
   SimulatedCard: {
     imports: { from: FLUENT_CORE, names: ["Card", "CardHeader"] },
     toJsx: (p) =>
-      `<Card>\n  <CardHeader header="${s(p.title, "Card")}" description="${s(p.content)}" />\n</Card>`,
+      `<Card>\n  <CardHeader header="${jsxAttr(p.title, "Card")}" description="${jsxAttr(p.content)}" />\n</Card>`,
   },
 
   /* ── extended coverage ── */
@@ -771,13 +776,13 @@ const FLUENT: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const level = s(p.level, "h2");
       const comp = ({ h1: "Title1", h2: "Title2", h3: "Title3", h4: "Subtitle2" } as Record<string, string>)[level] ?? "Title2";
-      return `<${comp} as="${level}">${s(p.text, "Heading")}</${comp}>`;
+      return `<${comp} as="${level}">${jsxText(p.text, "Heading")}</${comp}>`;
     },
   },
   SimulatedToggleButton: {
     imports: { from: FLUENT_CORE, names: ["ToggleButton"] },
     toJsx: (p) =>
-      `<ToggleButton appearance="subtle" defaultChecked={${p.defaultPressed ? "true" : "false"}}>${s(p.label, "Toggle")}</ToggleButton>`,
+      `<ToggleButton appearance="subtle" defaultChecked={${p.defaultPressed ? "true" : "false"}}>${jsxText(p.label, "Toggle")}</ToggleButton>`,
   },
   SimulatedSegmentedGroup: {
     imports: { from: FLUENT_CORE, names: ["Toolbar", "ToggleButton"] },
@@ -785,24 +790,24 @@ const FLUENT: Record<string, ComponentApiEntry> = {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
       const di = Number(p.defaultIndex ?? 0);
       const children = opts
-        .map((o, i) => `  <ToggleButton appearance="subtle"${i === di ? " checked" : ""}>${o}</ToggleButton>`)
+        .map((o, i) => `  <ToggleButton appearance="subtle"${i === di ? " checked" : ""}>${jsxText(o)}</ToggleButton>`)
         .join("\n");
       return `<Toolbar aria-label="Segmented">\n${children}\n</Toolbar>`;
     },
   },
   SimulatedLink: {
     imports: { from: FLUENT_CORE, names: ["Link"] },
-    toJsx: (p) => `<Link href="#">${s(p.text, "Learn more")}</Link>`,
+    toJsx: (p) => `<Link href="#">${jsxText(p.text, "Learn more")}</Link>`,
   },
   SimulatedMultilineInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "Textarea"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Label")}">\n  <Textarea placeholder="${s(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Textarea placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</Field>`,
   },
   SimulatedNumberInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "SpinButton"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Label")}">\n  <SpinButton defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <SpinButton defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</Field>`,
   },
   SimulatedDatePicker: {
     imports: { from: "@fluentui/react-datepicker-compat", names: ["DatePicker"] },
@@ -811,49 +816,49 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: FLUENT_CORE, names: ["Field", "Slider"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Label")}">\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</Field>`,
   },
   SimulatedRadioGroup: {
     imports: { from: FLUENT_CORE, names: ["Field", "RadioGroup", "Radio"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
       const di = Number(p.defaultIndex ?? 0);
-      const radios = opts.map((o) => `    <Radio value="${slug(o)}" label="${o}" />`).join("\n");
-      return `<Field label="${s(p.label, "Label")}">\n  <RadioGroup defaultValue="${slug(opts[di] ?? opts[0])}">\n${radios}\n  </RadioGroup>\n</Field>`;
+      const radios = opts.map((o) => `    <Radio value="${slug(o)}" label="${jsxAttr(o)}" />`).join("\n");
+      return `<Field label="${jsxAttr(p.label, "Label")}">\n  <RadioGroup defaultValue="${slug(opts[di] ?? opts[0])}">\n${radios}\n  </RadioGroup>\n</Field>`;
     },
   },
   SimulatedDropdown: {
     imports: { from: FLUENT_CORE, names: ["Dropdown", "Option"] },
     toJsx: (p) =>
-      `<Dropdown placeholder="${s(p.placeholder, "Select an option")}">\n  <Option>Option 1</Option>\n  <Option>Option 2</Option>\n  <Option>Option 3</Option>\n</Dropdown>`,
+      `<Dropdown placeholder="${jsxAttr(p.placeholder, "Select an option")}">\n  <Option>Option 1</Option>\n  <Option>Option 2</Option>\n  <Option>Option 3</Option>\n</Dropdown>`,
   },
   SimulatedComboBox: {
     imports: { from: FLUENT_CORE, names: ["Combobox", "Option"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["United States", "United Kingdom", "Canada"]);
-      const children = opts.map((o) => `  <Option>${o}</Option>`).join("\n");
-      return `<Combobox placeholder="${s(p.placeholder, "Search...")}">\n${children}\n</Combobox>`;
+      const children = opts.map((o) => `  <Option>${jsxText(o)}</Option>`).join("\n");
+      return `<Combobox placeholder="${jsxAttr(p.placeholder, "Search...")}">\n${children}\n</Combobox>`;
     },
   },
   SimulatedSearchbox: {
     /* SearchBox is stable-exported from react-components in recent v9; older
        minors need @fluentui/react-search (verify note, not a blocker). */
     imports: { from: FLUENT_CORE, names: ["SearchBox"] },
-    toJsx: (p) => `<SearchBox placeholder="${s(p.placeholder, "Search...")}" />`,
+    toJsx: (p) => `<SearchBox placeholder="${jsxAttr(p.placeholder, "Search...")}" />`,
   },
   SimulatedRating: {
     imports: { from: FLUENT_CORE, names: ["Field", "Rating"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Rating")}">\n  <Rating defaultValue={${Number(p.value ?? 3)}} max={${Number(p.max ?? 5)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Rating")}">\n  <Rating defaultValue={${Number(p.value ?? 3)}} max={${Number(p.max ?? 5)}} />\n</Field>`,
   },
   SimulatedTokenizedInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "TagGroup", "Tag"] },
     toJsx: (p) => {
       const tokens = csv(p.tokensCsv, ["alice@co.com", "bob@co.com"]);
       const tags = tokens
-        .map((t) => `    <Tag dismissible value="${slug(t)}">${t}</Tag>`)
+        .map((t) => `    <Tag dismissible value="${slug(t)}">${jsxText(t)}</Tag>`)
         .join("\n");
-      return `<Field label="${s(p.label, "Label")}">\n  <TagGroup>\n${tags}\n  </TagGroup>\n</Field>`;
+      return `<Field label="${jsxAttr(p.label, "Label")}">\n  <TagGroup>\n${tags}\n  </TagGroup>\n</Field>`;
     },
   },
   /* SimulatedFileDropZone — OMIT: Fluent v9 has no file-drop component. */
@@ -865,13 +870,13 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: FLUENT_CORE, names: ["Card", "CardHeader", "Title3", "Caption1", "ProgressBar"] },
     toJsx: (p) =>
-      `<Card>\n  <CardHeader header={<Caption1>${s(p.label, "Metric")}</Caption1>} />\n  <Title3>${s(p.value, "0")}</Title3>\n  <ProgressBar value={${(Number(p.pct ?? 0) / 100).toString()}} />\n</Card>`,
+      `<Card>\n  <CardHeader header={<Caption1>${jsxText(p.label, "Metric")}</Caption1>} />\n  <Title3>${jsxText(p.value, "0")}</Title3>\n  <ProgressBar value={${(Number(p.pct ?? 0) / 100).toString()}} />\n</Card>`,
   },
   SimulatedListBox: {
     imports: { from: FLUENT_CORE, names: ["Listbox", "Option"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["Apple", "Banana", "Cherry"]);
-      const children = opts.map((o) => `  <Option>${o}</Option>`).join("\n");
+      const children = opts.map((o) => `  <Option>${jsxText(o)}</Option>`).join("\n");
       return `<Listbox aria-label="List"${p.multiSelect ? " multiselect" : ""}>\n${children}\n</Listbox>`;
     },
   },
@@ -884,8 +889,8 @@ const FLUENT: Record<string, ComponentApiEntry> = {
           .map((n) => {
             const pad = "  ".repeat(depth + 1);
             if (!n.children.length)
-              return `${pad}<TreeItem itemType="leaf" value="${slug(n.label)}"><TreeItemLayout>${n.label}</TreeItemLayout></TreeItem>`;
-            return `${pad}<TreeItem itemType="branch" value="${slug(n.label)}">\n${pad}  <TreeItemLayout>${n.label}</TreeItemLayout>\n${pad}  <Tree>\n${render(n.children, depth + 2)}\n${pad}  </Tree>\n${pad}</TreeItem>`;
+              return `${pad}<TreeItem itemType="leaf" value="${slug(n.label)}"><TreeItemLayout>${jsxText(n.label)}</TreeItemLayout></TreeItem>`;
+            return `${pad}<TreeItem itemType="branch" value="${slug(n.label)}">\n${pad}  <TreeItemLayout>${jsxText(n.label)}</TreeItemLayout>\n${pad}  <Tree>\n${render(n.children, depth + 2)}\n${pad}  </Tree>\n${pad}</TreeItem>`;
           })
           .join("\n");
       return `<Tree aria-label="Files">\n${render(tree, 0)}\n</Tree>`;
@@ -894,46 +899,46 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: { from: FLUENT_CORE, names: ["Field", "ProgressBar"] },
     toJsx: (p) =>
-      `<Field label="${s(p.label, "Progress")}">\n  <ProgressBar value={${(Number(p.value ?? 50) / 100).toString()}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Progress")}">\n  <ProgressBar value={${(Number(p.value ?? 50) / 100).toString()}} />\n</Field>`,
   },
   SimulatedAvatar: {
     imports: { from: FLUENT_CORE, names: ["Avatar"] },
     toJsx: (p) => {
       const size = ({ sm: 24, md: 32, lg: 48 } as Record<string, number>)[s(p.size, "md")] ?? 32;
       const presence = s(p.presence);
-      const badge = presence ? ` badge={{ status: "${presence}" }}` : "";
-      return `<Avatar name="${s(p.initials, "?")}" size={${size}}${badge} />`;
+      const badge = presence ? ` badge={{ status: "${jsxAttr(presence)}" }}` : "";
+      return `<Avatar name="${jsxAttr(p.initials, "?")}" size={${size}}${badge} />`;
     },
   },
   SimulatedAvatarGroup: {
     imports: { from: FLUENT_CORE, names: ["AvatarGroup", "AvatarGroupItem"] },
     toJsx: (p) => {
       const names = csv(p.namesCsv, ["AB", "CD", "EF"]);
-      const items = names.map((n) => `  <AvatarGroupItem name="${n}" />`).join("\n");
+      const items = names.map((n) => `  <AvatarGroupItem name="${jsxAttr(n)}" />`).join("\n");
       return `<AvatarGroup>\n${items}\n</AvatarGroup>`;
     },
   },
   SimulatedBadge: {
     imports: { from: FLUENT_CORE, names: ["Badge"] },
-    toJsx: (p) => `<Badge appearance="filled" color="${fluentBadgeColor(s(p.status, "default"))}">${s(p.label, "Badge")}</Badge>`,
+    toJsx: (p) => `<Badge appearance="filled" color="${fluentBadgeColor(s(p.status, "default"))}">${jsxText(p.label, "Badge")}</Badge>`,
   },
   SimulatedPill: {
     imports: { from: FLUENT_CORE, names: ["Tag"] },
-    toJsx: (p) => `<Tag appearance="filled"${p.dismissible ? " dismissible" : ""}>${s(p.label, "Tag")}</Tag>`,
+    toJsx: (p) => `<Tag appearance="filled"${p.dismissible ? " dismissible" : ""}>${jsxText(p.label, "Tag")}</Tag>`,
   },
   SimulatedPersona: {
     imports: { from: FLUENT_CORE, names: ["Persona"] },
     toJsx: (p) => {
       const presence = s(p.presence);
-      const pres = presence ? ` presence={{ status: "${presence}" }}` : "";
-      return `<Persona name="${s(p.name, "Name")}" secondaryText="${s(p.role)}"${pres} avatar={{ color: "colorful" }} />`;
+      const pres = presence ? ` presence={{ status: "${jsxAttr(presence)}" }}` : "";
+      return `<Persona name="${jsxAttr(p.name, "Name")}" secondaryText="${jsxAttr(p.role)}"${pres} avatar={{ color: "colorful" }} />`;
     },
   },
   SimulatedTabs: {
     imports: { from: FLUENT_CORE, names: ["TabList", "Tab"] },
     toJsx: (p) => {
       const tabs = csv(p.tabsCsv, ["General", "Security", "Notifications"]);
-      const tabEls = tabs.map((t) => `  <Tab value="${slug(t)}">${t}</Tab>`).join("\n");
+      const tabEls = tabs.map((t) => `  <Tab value="${slug(t)}">${jsxText(t)}</Tab>`).join("\n");
       return `<TabList defaultSelectedValue="${slug(tabs[0])}">\n${tabEls}\n</TabList>`;
     },
   },
@@ -944,7 +949,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
       const parts: string[] = [];
       path.forEach((seg, i) => {
         const current = i === path.length - 1 ? " current" : "";
-        parts.push(`  <BreadcrumbItem><BreadcrumbButton${current}>${seg}</BreadcrumbButton></BreadcrumbItem>`);
+        parts.push(`  <BreadcrumbItem><BreadcrumbButton${current}>${jsxText(seg)}</BreadcrumbButton></BreadcrumbItem>`);
         if (i < path.length - 1) parts.push("  <BreadcrumbDivider />");
       });
       return `<Breadcrumb aria-label="Breadcrumb">\n${parts.join("\n")}\n</Breadcrumb>`;
@@ -955,7 +960,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const items = csv(p.itemsCsv, ["Home", "Dashboard", "Settings"]);
       const links = items
-        .map((it) => `    <NavItem value="${slug(it)}" href="#">${it}</NavItem>`)
+        .map((it) => `    <NavItem value="${slug(it)}" href="#">${jsxText(it)}</NavItem>`)
         .join("\n");
       return `<NavDrawer open type="inline" selectedValue="${slug(items[0])}">\n  <NavDrawerBody>\n${links}\n  </NavDrawerBody>\n</NavDrawer>`;
     },
@@ -963,7 +968,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   Alert: {
     imports: { from: FLUENT_CORE, names: ["MessageBar", "MessageBarBody", "MessageBarTitle"] },
     toJsx: (p) =>
-      `<MessageBar intent="${s(p.variant, "info")}">\n  <MessageBarBody>\n    <MessageBarTitle>${s(p.title, "Alert")}</MessageBarTitle>\n    ${s(p.message)}\n  </MessageBarBody>\n</MessageBar>`,
+      `<MessageBar intent="${jsxAttr(p.variant, "info")}">\n  <MessageBarBody>\n    <MessageBarTitle>${jsxText(p.title, "Alert")}</MessageBarTitle>\n    ${jsxText(p.message)}\n  </MessageBarBody>\n</MessageBar>`,
   },
   SimulatedSkeleton: {
     imports: { from: FLUENT_CORE, names: ["Skeleton", "SkeletonItem"] },
@@ -975,31 +980,31 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedTooltip: {
     imports: { from: FLUENT_CORE, names: ["Tooltip", "Button"] },
     toJsx: (p) =>
-      `<Tooltip content="${s(p.text, "Tooltip")}" relationship="label">\n  <Button>${s(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
+      `<Tooltip content="${jsxAttr(p.text, "Tooltip")}" relationship="label">\n  <Button>${jsxText(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
   },
   SimulatedPopover: {
     imports: { from: FLUENT_CORE, names: ["Popover", "PopoverTrigger", "PopoverSurface", "Button"] },
     toJsx: (p) =>
-      `<Popover>\n  <PopoverTrigger disableButtonEnhancement>\n    <Button>${s(p.title, "Popover")}</Button>\n  </PopoverTrigger>\n  <PopoverSurface>${s(p.content)}</PopoverSurface>\n</Popover>`,
+      `<Popover>\n  <PopoverTrigger disableButtonEnhancement>\n    <Button>${jsxText(p.title, "Popover")}</Button>\n  </PopoverTrigger>\n  <PopoverSurface>${jsxText(p.content)}</PopoverSurface>\n</Popover>`,
   },
   SimulatedDialog: {
     imports: { from: FLUENT_CORE, names: ["Dialog", "DialogSurface", "DialogTitle", "DialogBody", "DialogActions", "Button"] },
     toJsx: (p) =>
-      `<Dialog>\n  <DialogSurface>\n    <DialogTitle>${s(p.title, "Dialog")}</DialogTitle>\n    <DialogBody>${s(p.message)}</DialogBody>\n    <DialogActions>\n      <Button appearance="secondary">Cancel</Button>\n      <Button appearance="primary">Confirm</Button>\n    </DialogActions>\n  </DialogSurface>\n</Dialog>`,
+      `<Dialog>\n  <DialogSurface>\n    <DialogTitle>${jsxText(p.title, "Dialog")}</DialogTitle>\n    <DialogBody>${jsxText(p.message)}</DialogBody>\n    <DialogActions>\n      <Button appearance="secondary">Cancel</Button>\n      <Button appearance="primary">Confirm</Button>\n    </DialogActions>\n  </DialogSurface>\n</Dialog>`,
   },
   SimulatedAccordion: {
     imports: { from: FLUENT_CORE, names: ["Accordion", "AccordionItem", "AccordionHeader", "AccordionPanel"] },
     toJsx: (p) =>
-      `<Accordion collapsible>\n  <AccordionItem value="1">\n    <AccordionHeader>${s(p.title, "Section")}</AccordionHeader>\n    <AccordionPanel>${s(p.content)}</AccordionPanel>\n  </AccordionItem>\n</Accordion>`,
+      `<Accordion collapsible>\n  <AccordionItem value="1">\n    <AccordionHeader>${jsxText(p.title, "Section")}</AccordionHeader>\n    <AccordionPanel>${jsxText(p.content)}</AccordionPanel>\n  </AccordionItem>\n</Accordion>`,
   },
   /* SimulatedChatMessage — OMIT: chat lives only in @fluentui-copilot (out of scope). */
   AppBrand: {
     imports: { from: FLUENT_CORE, names: ["Title3"] },
-    toJsx: (p) => `<Title3 as="span">${s(p.label, "App Name")}</Title3>`,
+    toJsx: (p) => `<Title3 as="span">${jsxText(p.label, "App Name")}</Title3>`,
   },
   StatusPill: {
     imports: { from: FLUENT_CORE, names: ["Badge"] },
-    toJsx: (p) => `<Badge appearance="filled" color="success">${s(p.label, "Active")}</Badge>`,
+    toJsx: (p) => `<Badge appearance="filled" color="success">${jsxText(p.label, "Active")}</Badge>`,
   },
   NavItem: {
     imports: p2(
@@ -1007,11 +1012,11 @@ const FLUENT: Record<string, ComponentApiEntry> = {
       (p) => ({ from: "@fluentui/react-icons", names: [fluentIconName(s(p.icon, "home"))] }),
     ),
     toJsx: (p) =>
-      `<NavItem value="${slug(p.label, "item")}" href="#" icon={<${fluentIconName(s(p.icon, "home"))} />}>${s(p.label, "Nav")}</NavItem>`,
+      `<NavItem value="${slug(p.label, "item")}" href="#" icon={<${fluentIconName(s(p.icon, "home"))} />}>${jsxText(p.label, "Nav")}</NavItem>`,
   },
   FooterText: {
     imports: { from: FLUENT_CORE, names: ["Caption1"] },
-    toJsx: (p) => `<Caption1 as="p">${s(p.label, "Footer")} · ${s(p.version, "v1.0")}</Caption1>`,
+    toJsx: (p) => `<Caption1 as="p">${jsxText(p.label, "Footer")} · ${jsxText(p.version, "v1.0")}</Caption1>`,
   },
 };
 
@@ -1067,26 +1072,26 @@ function carbonIconName(icon: string): string {
 const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedButton: {
     imports: { from: CARBON_PKG, names: ["Button"] },
-    toJsx: (p) => `<Button ${carbonButtonAttrs(p)}>${s(p.label, "Button")}</Button>`,
+    toJsx: (p) => `<Button ${carbonButtonAttrs(p)}>${jsxText(p.label, "Button")}</Button>`,
   },
   SimulatedTextInput: {
     imports: { from: CARBON_PKG, names: ["TextInput"] },
     toJsx: (p) =>
-      `<TextInput id="${slug(p.label, "input")}" labelText="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" />`,
+      `<TextInput id="${slug(p.label, "input")}" labelText="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" />`,
   },
   SimulatedCheckbox: {
     imports: { from: CARBON_PKG, names: ["Checkbox"] },
     toJsx: (p) =>
-      `<Checkbox id="${slug(p.label, "checkbox")}" labelText="${s(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
+      `<Checkbox id="${slug(p.label, "checkbox")}" labelText="${jsxAttr(p.label)}"${p.defaultChecked ? " defaultChecked" : ""} />`,
   },
   SimulatedSwitch: {
     imports: { from: CARBON_PKG, names: ["Toggle"] },
     toJsx: (p) =>
-      `<Toggle id="${slug(p.label, "toggle")}" labelText="${s(p.label)}"${p.defaultOn ? " defaultToggled" : ""} />`,
+      `<Toggle id="${slug(p.label, "toggle")}" labelText="${jsxAttr(p.label)}"${p.defaultOn ? " defaultToggled" : ""} />`,
   },
   SimulatedCard: {
     imports: { from: CARBON_PKG, names: ["Tile"] },
-    toJsx: (p) => `<Tile>\n  <h3>${s(p.title, "Card")}</h3>\n  <p>${s(p.content)}</p>\n</Tile>`,
+    toJsx: (p) => `<Tile>\n  <h3>${jsxText(p.title, "Card")}</h3>\n  <p>${jsxText(p.content)}</p>\n</Tile>`,
   },
 
   /* ── extended coverage ── */
@@ -1097,7 +1102,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
       const di = Number(p.defaultIndex ?? 0);
-      const switches = opts.map((o) => `  <Switch name="${slug(o)}" text="${o}" />`).join("\n");
+      const switches = opts.map((o) => `  <Switch name="${slug(o)}" text="${jsxAttr(o)}" />`).join("\n");
       return `<ContentSwitcher selectedIndex={${di}} onChange={() => {}}>\n${switches}\n</ContentSwitcher>`;
     },
   },
@@ -1105,19 +1110,19 @@ const CARBON: Record<string, ComponentApiEntry> = {
     imports: p2(() => ({ from: CARBON_PKG, names: ["Link"] }), () => ({ from: CARBON_ICONS, names: ["ArrowRight"] })),
     toJsx: (p) =>
       p.showIcon
-        ? `<Link href="#" renderIcon={ArrowRight}>${s(p.text, "Learn more")}</Link>`
-        : `<Link href="#">${s(p.text, "Learn more")}</Link>`,
+        ? `<Link href="#" renderIcon={ArrowRight}>${jsxText(p.text, "Learn more")}</Link>`
+        : `<Link href="#">${jsxText(p.text, "Learn more")}</Link>`,
   },
   SimulatedMultilineInput: {
     imports: { from: CARBON_PKG, names: ["TextArea"] },
     toJsx: (p) =>
-      `<TextArea id="${slug(p.label, "textarea")}" labelText="${s(p.label, "Label")}" placeholder="${s(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />`,
+      `<TextArea id="${slug(p.label, "textarea")}" labelText="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />`,
   },
   SimulatedNumberInput: {
     /* NumberInput uses `label` (NOT labelText) and requires a unique id. */
     imports: { from: CARBON_PKG, names: ["NumberInput"] },
     toJsx: (p) =>
-      `<NumberInput id="${slug(p.label, "number")}" label="${s(p.label, "Label")}" value={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />`,
+      `<NumberInput id="${slug(p.label, "number")}" label="${jsxAttr(p.label, "Label")}" value={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />`,
   },
   SimulatedDatePicker: {
     imports: { from: CARBON_PKG, names: ["DatePicker", "DatePickerInput"] },
@@ -1127,7 +1132,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: CARBON_PKG, names: ["Slider"] },
     toJsx: (p) =>
-      `<Slider id="${slug(p.label, "slider")}" labelText="${s(p.label, "Label")}" value={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} step={1} />`,
+      `<Slider id="${slug(p.label, "slider")}" labelText="${jsxAttr(p.label, "Label")}" value={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} step={1} />`,
   },
   SimulatedRadioGroup: {
     imports: { from: CARBON_PKG, names: ["RadioButtonGroup", "RadioButton"] },
@@ -1135,43 +1140,43 @@ const CARBON: Record<string, ComponentApiEntry> = {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
       const di = Number(p.defaultIndex ?? 0);
       const buttons = opts
-        .map((o) => `  <RadioButton id="${slug(o)}" value="${slug(o)}" labelText="${o}" />`)
+        .map((o) => `  <RadioButton id="${slug(o)}" value="${slug(o)}" labelText="${jsxAttr(o)}" />`)
         .join("\n");
-      return `<RadioButtonGroup name="${slug(p.label, "group")}" legendText="${s(p.label, "Label")}" defaultSelected="${slug(opts[di] ?? opts[0])}">\n${buttons}\n</RadioButtonGroup>`;
+      return `<RadioButtonGroup name="${slug(p.label, "group")}" legendText="${jsxAttr(p.label, "Label")}" defaultSelected="${slug(opts[di] ?? opts[0])}">\n${buttons}\n</RadioButtonGroup>`;
     },
   },
   SimulatedDropdown: {
     imports: { from: CARBON_PKG, names: ["Dropdown"] },
     toJsx: (p) =>
-      `<Dropdown id="dropdown" titleText="" label="${s(p.placeholder, "Select an option")}" items={["Option 1", "Option 2", "Option 3"]} itemToString={(item) => item ?? ""} />`,
+      `<Dropdown id="dropdown" titleText="" label="${jsxAttr(p.placeholder, "Select an option")}" items={["Option 1", "Option 2", "Option 3"]} itemToString={(item) => item ?? ""} />`,
   },
   SimulatedComboBox: {
     imports: { from: CARBON_PKG, names: ["ComboBox"] },
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["United States", "United Kingdom", "Canada"]);
-      const arr = opts.map((o) => `"${o}"`).join(", ");
-      return `<ComboBox id="combobox" titleText="" placeholder="${s(p.placeholder, "Search...")}" items={[${arr}]} itemToString={(item) => item ?? ""} />`;
+      const arr = opts.map((o) => JSON.stringify(o)).join(", ");
+      return `<ComboBox id="combobox" titleText="" placeholder="${jsxAttr(p.placeholder, "Search...")}" items={[${arr}]} itemToString={(item) => item ?? ""} />`;
     },
   },
   SimulatedSearchbox: {
     imports: { from: CARBON_PKG, names: ["Search"] },
     toJsx: (p) =>
-      `<Search id="search" labelText="Search" placeholder="${s(p.placeholder, "Search...")}" size="md" />`,
+      `<Search id="search" labelText="Search" placeholder="${jsxAttr(p.placeholder, "Search...")}" size="md" />`,
   },
   /* SimulatedRating — OMIT: Carbon ships no Rating/star component. */
   SimulatedTokenizedInput: {
     imports: { from: CARBON_PKG, names: ["FilterableMultiSelect"] },
     toJsx: (p) => {
       const tokens = csv(p.tokensCsv, ["alice@co.com", "bob@co.com"]);
-      const arr = tokens.map((t) => `"${t}"`).join(", ");
-      return `<FilterableMultiSelect id="${slug(p.label, "multiselect")}" titleText="${s(p.label, "Label")}" placeholder="Add item" items={[${arr}]} itemToString={(item) => item ?? ""} initialSelectedItems={[${arr}]} />`;
+      const arr = tokens.map((t) => JSON.stringify(t)).join(", ");
+      return `<FilterableMultiSelect id="${slug(p.label, "multiselect")}" titleText="${jsxAttr(p.label, "Label")}" placeholder="Add item" items={[${arr}]} itemToString={(item) => item ?? ""} initialSelectedItems={[${arr}]} />`;
     },
   },
   SimulatedFileDropZone: {
     imports: { from: CARBON_PKG, names: ["FileUploaderDropContainer"] },
     toJsx: (p) => {
-      const accept = csv(p.acceptTypes, [".png", ".jpg", ".pdf"]).map((t) => `"${t}"`).join(", ");
-      return `<FileUploaderDropContainer labelText="${s(p.label, "Drag & drop files here")}" accept={[${accept}]} multiple onAddFiles={() => {}} />`;
+      const accept = csv(p.acceptTypes, [".png", ".jpg", ".pdf"]).map((t) => JSON.stringify(t)).join(", ");
+      return `<FileUploaderDropContainer labelText="${jsxAttr(p.label, "Drag & drop files here")}" accept={[${accept}]} multiple onAddFiles={() => {}} />`;
     },
   },
   SimulatedDataTable: {
@@ -1182,7 +1187,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: CARBON_PKG, names: ["Tile"] },
     toJsx: (p) =>
-      `<Tile>\n  <p className="cds--type-label-01">${s(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${s(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${Number(p.pct ?? 0)}%</span>\n</Tile>`,
+      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${Number(p.pct ?? 0)}%</span>\n</Tile>`,
   },
   /* SimulatedListBox — OMIT: Carbon ListBox is an internal select sub-primitive, not standalone. */
   SimulatedTree: {
@@ -1194,8 +1199,8 @@ const CARBON: Record<string, ComponentApiEntry> = {
           .map((n) => {
             const id = prefix ? `${prefix}-${slug(n.label)}` : slug(n.label);
             const pad = "  ".repeat(depth + 1);
-            if (!n.children.length) return `${pad}<TreeNode id="${id}" label="${n.label}" />`;
-            return `${pad}<TreeNode id="${id}" label="${n.label}">\n${render(n.children, id, depth + 1)}\n${pad}</TreeNode>`;
+            if (!n.children.length) return `${pad}<TreeNode id="${id}" label="${jsxAttr(n.label)}" />`;
+            return `${pad}<TreeNode id="${id}" label="${jsxAttr(n.label)}">\n${render(n.children, id, depth + 1)}\n${pad}</TreeNode>`;
           })
           .join("\n");
       return `<TreeView label="Files" hideLabel>\n${render(tree, "", 0)}\n</TreeView>`;
@@ -1204,13 +1209,13 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: { from: CARBON_PKG, names: ["ProgressBar"] },
     toJsx: (p) =>
-      `<ProgressBar label="${s(p.label, "Progress")}" helperText="${Number(p.value ?? 50)}%" value={${Number(p.value ?? 50)}} max={100} />`,
+      `<ProgressBar label="${jsxAttr(p.label, "Progress")}" helperText="${Number(p.value ?? 50)}%" value={${Number(p.value ?? 50)}} max={100} />`,
   },
   /* SimulatedAvatar — OMIT: Carbon ships no first-party Avatar (compose markup). */
   /* SimulatedAvatarGroup — OMIT: Carbon has neither Avatar nor AvatarGroup. */
   SimulatedBadge: {
     imports: { from: CARBON_PKG, names: ["Tag"] },
-    toJsx: (p) => `<Tag type="${carbonTagType(s(p.status, "default"))}">${s(p.label, "Badge")}</Tag>`,
+    toJsx: (p) => `<Tag type="${carbonTagType(s(p.status, "default"))}">${jsxText(p.label, "Badge")}</Tag>`,
   },
   SimulatedPill: {
     /* dismissible -> DismissibleTag (current API); else plain Tag. */
@@ -1220,16 +1225,16 @@ const CARBON: Record<string, ComponentApiEntry> = {
     ),
     toJsx: (p) =>
       p.dismissible
-        ? `<DismissibleTag type="${carbonTagType(s(p.status, "default"))}" text="${s(p.label, "Tag")}" title="Remove" onClose={() => {}} />`
-        : `<Tag type="${carbonTagType(s(p.status, "default"))}">${s(p.label, "Tag")}</Tag>`,
+        ? `<DismissibleTag type="${carbonTagType(s(p.status, "default"))}" text="${jsxAttr(p.label, "Tag")}" title="Remove" onClose={() => {}} />`
+        : `<Tag type="${carbonTagType(s(p.status, "default"))}">${jsxText(p.label, "Tag")}</Tag>`,
   },
   /* SimulatedPersona — OMIT: Carbon has no Persona (and no Avatar to build it from). */
   SimulatedTabs: {
     imports: { from: CARBON_PKG, names: ["Tabs", "TabList", "Tab", "TabPanels", "TabPanel"] },
     toJsx: (p) => {
       const tabs = csv(p.tabsCsv, ["General", "Security", "Notifications"]);
-      const tabEls = tabs.map((t) => `    <Tab>${t}</Tab>`).join("\n");
-      const panels = tabs.map((t) => `    <TabPanel>${t}</TabPanel>`).join("\n");
+      const tabEls = tabs.map((t) => `    <Tab>${jsxText(t)}</Tab>`).join("\n");
+      const panels = tabs.map((t) => `    <TabPanel>${jsxText(t)}</TabPanel>`).join("\n");
       return `<Tabs>\n  <TabList aria-label="Tabs">\n${tabEls}\n  </TabList>\n  <TabPanels>\n${panels}\n  </TabPanels>\n</Tabs>`;
     },
   },
@@ -1240,8 +1245,8 @@ const CARBON: Record<string, ComponentApiEntry> = {
       const items = path
         .map((seg, i) =>
           i === path.length - 1
-            ? `  <BreadcrumbItem isCurrentPage>${seg}</BreadcrumbItem>`
-            : `  <BreadcrumbItem href="#">${seg}</BreadcrumbItem>`,
+            ? `  <BreadcrumbItem isCurrentPage>${jsxText(seg)}</BreadcrumbItem>`
+            : `  <BreadcrumbItem href="#">${jsxText(seg)}</BreadcrumbItem>`,
         )
         .join("\n");
       return `<Breadcrumb>\n${items}\n</Breadcrumb>`;
@@ -1252,7 +1257,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const items = csv(p.itemsCsv, ["Home", "Dashboard", "Settings"]);
       const links = items
-        .map((it, i) => `    <SideNavLink href="#"${i === 0 ? " isActive" : ""}>${it}</SideNavLink>`)
+        .map((it, i) => `    <SideNavLink href="#"${i === 0 ? " isActive" : ""}>${jsxText(it)}</SideNavLink>`)
         .join("\n");
       return `<SideNav aria-label="Side navigation" expanded isFixedNav>\n  <SideNavItems>\n${links}\n  </SideNavItems>\n</SideNav>`;
     },
@@ -1260,7 +1265,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
   Alert: {
     imports: { from: CARBON_PKG, names: ["InlineNotification"] },
     toJsx: (p) =>
-      `<InlineNotification kind="${s(p.variant, "info")}" title="${s(p.title, "Alert")}" subtitle="${s(p.message)}" />`,
+      `<InlineNotification kind="${jsxAttr(p.variant, "info")}" title="${jsxAttr(p.title, "Alert")}" subtitle="${jsxAttr(p.message)}" />`,
   },
   SimulatedSkeleton: {
     imports: { from: CARBON_PKG, names: ["SkeletonText", "SkeletonPlaceholder"] },
@@ -1275,32 +1280,32 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedTooltip: {
     imports: { from: CARBON_PKG, names: ["Tooltip", "Button"] },
     toJsx: (p) =>
-      `<Tooltip label="${s(p.text, "Tooltip")}" align="bottom">\n  <Button kind="ghost">${s(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
+      `<Tooltip label="${jsxAttr(p.text, "Tooltip")}" align="bottom">\n  <Button kind="ghost">${jsxText(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
   },
   SimulatedPopover: {
     imports: { from: CARBON_PKG, names: ["Popover", "PopoverContent"] },
     toJsx: (p) =>
-      `<Popover open align="bottom">\n  <button type="button">Anchor</button>\n  <PopoverContent>\n    <p className="cds--type-heading-compact-01">${s(p.title, "Popover")}</p>\n    <p className="cds--type-body-01">${s(p.content)}</p>\n  </PopoverContent>\n</Popover>`,
+      `<Popover open align="bottom">\n  <button type="button">Anchor</button>\n  <PopoverContent>\n    <p className="cds--type-heading-compact-01">${jsxText(p.title, "Popover")}</p>\n    <p className="cds--type-body-01">${jsxText(p.content)}</p>\n  </PopoverContent>\n</Popover>`,
   },
   SimulatedDialog: {
     /* Carbon's Dialog component is named Modal. */
     imports: { from: CARBON_PKG, names: ["Modal"] },
     toJsx: (p) =>
-      `<Modal open modalHeading="${s(p.title, "Dialog")}" primaryButtonText="Confirm" secondaryButtonText="Cancel" danger onRequestClose={() => {}}>\n  <p>${s(p.message)}</p>\n</Modal>`,
+      `<Modal open modalHeading="${jsxAttr(p.title, "Dialog")}" primaryButtonText="Confirm" secondaryButtonText="Cancel" danger onRequestClose={() => {}}>\n  <p>${jsxText(p.message)}</p>\n</Modal>`,
   },
   SimulatedAccordion: {
     imports: { from: CARBON_PKG, names: ["Accordion", "AccordionItem"] },
     toJsx: (p) =>
-      `<Accordion>\n  <AccordionItem title="${s(p.title, "Section")}">\n    ${s(p.content)}\n  </AccordionItem>\n</Accordion>`,
+      `<Accordion>\n  <AccordionItem title="${jsxAttr(p.title, "Section")}">\n    ${jsxText(p.content)}\n  </AccordionItem>\n</Accordion>`,
   },
   /* SimulatedChatMessage — OMIT: chat lives in @carbon/ai-chat (separate experimental pkg). */
   AppBrand: {
     imports: { from: CARBON_PKG, names: ["HeaderName"] },
-    toJsx: (p) => `<HeaderName href="#" prefix="">${s(p.label, "App Name")}</HeaderName>`,
+    toJsx: (p) => `<HeaderName href="#" prefix="">${jsxText(p.label, "App Name")}</HeaderName>`,
   },
   StatusPill: {
     imports: { from: CARBON_PKG, names: ["Tag"] },
-    toJsx: (p) => `<Tag type="${carbonStatusType(s(p.label, "Active"))}">${s(p.label, "Active")}</Tag>`,
+    toJsx: (p) => `<Tag type="${carbonStatusType(s(p.label, "Active"))}">${jsxText(p.label, "Active")}</Tag>`,
   },
   NavItem: {
     imports: p2(
@@ -1308,7 +1313,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
       (p) => ({ from: CARBON_ICONS, names: [carbonIconName(s(p.icon, "home"))] }),
     ),
     toJsx: (p) =>
-      `<SideNavLink href="#" renderIcon={${carbonIconName(s(p.icon, "home"))}} isActive={${p.active ? "true" : "false"}}>${s(p.label, "Nav")}</SideNavLink>`,
+      `<SideNavLink href="#" renderIcon={${carbonIconName(s(p.icon, "home"))}} isActive={${p.active ? "true" : "false"}}>${jsxText(p.label, "Nav")}</SideNavLink>`,
   },
   /* FooterText — OMIT: @carbon/react has no Footer component (styled <footer> fallback). */
 };
@@ -1349,24 +1354,24 @@ const uoauiImport: ImportSpec = { from: "./uoaui-theme.css", names: [] };
 const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedButton: {
     imports: uoauiImport,
-    toJsx: (p) => `<button className="a-btn ${uoauiButtonClass(p)}">${s(p.label, "Button")}</button>`,
+    toJsx: (p) => `<button className="a-btn ${uoauiButtonClass(p)}">${jsxText(p.label, "Button")}</button>`,
   },
   SimulatedTextInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${s(p.label, "Label")}</label>\n  <input className="a-input" placeholder="${s(p.placeholder)}" />\n</div>`,
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" placeholder="${jsxAttr(p.placeholder)}" />\n</div>`,
   },
   SimulatedCheckbox: {
     imports: uoauiImport,
     toJsx: (p) => {
       const checked = !!p.defaultChecked;
-      return `<label className="a-checkbox${checked ? " checked" : ""}">\n  <span className="a-cb-box">${checked ? "✓" : ""}</span>\n  ${s(p.label)}\n</label>`;
+      return `<label className="a-checkbox${checked ? " checked" : ""}">\n  <span className="a-cb-box">${checked ? "✓" : ""}</span>\n  ${jsxText(p.label)}\n</label>`;
     },
   },
   /* SimulatedSwitch — OMIT: uoaui ships no switch/toggle class. */
   SimulatedCard: {
     imports: uoauiImport,
-    toJsx: (p) => `<div className="a-card">\n  <h3>${s(p.title, "Card")}</h3>\n  <p>${s(p.content)}</p>\n</div>`,
+    toJsx: (p) => `<div className="a-card">\n  <h3>${jsxText(p.title, "Card")}</h3>\n  <p>${jsxText(p.content)}</p>\n</div>`,
   },
 
   /* ── extended coverage (className composites over real .a-* classes) ── */
@@ -1374,7 +1379,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => {
       const tag = ({ h1: "h1", h2: "h2", h3: "h3", h4: "h4" } as Record<string, string>)[s(p.level, "h2")] ?? "h2";
-      return `<${tag} className="a-title">${s(p.text, "Heading")}</${tag}>`;
+      return `<${tag} className="a-title">${jsxText(p.text, "Heading")}</${tag}>`;
     },
   },
   SimulatedToggleButton: {
@@ -1382,7 +1387,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const pressed = !!p.defaultPressed;
       const cls = pressed ? "a-btn a-btn-primary" : "a-btn a-btn-secondary";
-      return `<button type="button" className="${cls}" aria-pressed={${pressed ? "true" : "false"}}>${s(p.label, "Toggle")}</button>`;
+      return `<button type="button" className="${cls}" aria-pressed={${pressed ? "true" : "false"}}>${jsxText(p.label, "Toggle")}</button>`;
     },
   },
   SimulatedSegmentedGroup: {
@@ -1393,7 +1398,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const buttons = opts
         .map(
           (o, i) =>
-            `  <button type="button" role="tab" aria-selected={${i === di ? "true" : "false"}} className="a-tab${i === di ? " active" : ""}">${o}</button>`,
+            `  <button type="button" role="tab" aria-selected={${i === di ? "true" : "false"}} className="a-tab${i === di ? " active" : ""}">${jsxText(o)}</button>`,
         )
         .join("\n");
       return `<div className="a-tabs" role="tablist" aria-label="View">\n${buttons}\n</div>`;
@@ -1403,18 +1408,18 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) =>
       p.showIcon
-        ? `<a href="#" className="a-link">${s(p.text, "Learn more")}<span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>`
-        : `<a href="#" className="a-link">${s(p.text, "Learn more")}</a>`,
+        ? `<a href="#" className="a-link">${jsxText(p.text, "Learn more")}<span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>`
+        : `<a href="#" className="a-link">${jsxText(p.text, "Learn more")}</a>`,
   },
   SimulatedMultilineInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${s(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${Number(p.rows ?? 3)}} placeholder="${s(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${Number(p.rows ?? 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
   },
   SimulatedNumberInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${s(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</div>`,
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</div>`,
   },
   /* SimulatedDatePicker — uoaui has a real role=grid calendar demo (no class);
      emit the accent-highlighted grid the DS itself uses. */
@@ -1422,7 +1427,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => {
       const label = `${s(p.month, "October")} ${s(p.year, "2026")}`;
-      return `<div className="a-datepicker">\n  <div className="a-dp-header"><button type="button" aria-label="Previous month"><span className="material-symbols-outlined">chevron_left</span></button><span aria-live="polite">${label}</span><button type="button" aria-label="Next month"><span className="material-symbols-outlined">chevron_right</span></button></div>\n  <div role="grid" aria-label="${label}" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>\n    {["Mo","Tu","We","Th","Fr","Sa","Su"].map((d) => <div key={d} role="columnheader">{d}</div>)}\n    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <button key={d} type="button" role="gridcell" aria-pressed={d === 15} style={{ background: d === 15 ? "var(--a-accent)" : "transparent", color: d === 15 ? "var(--a-accent-fg)" : "var(--a-fg)", borderRadius: 9999, border: "none", width: 32, height: 32 }}>{d}</button>)}\n  </div>\n</div>`;
+      return `<div className="a-datepicker">\n  <div className="a-dp-header"><button type="button" aria-label="Previous month"><span className="material-symbols-outlined">chevron_left</span></button><span aria-live="polite">${jsxText(label)}</span><button type="button" aria-label="Next month"><span className="material-symbols-outlined">chevron_right</span></button></div>\n  <div role="grid" aria-label="${jsxAttr(label)}" style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>\n    {["Mo","Tu","We","Th","Fr","Sa","Su"].map((d) => <div key={d} role="columnheader">{d}</div>)}\n    {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <button key={d} type="button" role="gridcell" aria-pressed={d === 15} style={{ background: d === 15 ? "var(--a-accent)" : "transparent", color: d === 15 ? "var(--a-accent-fg)" : "var(--a-fg)", borderRadius: 9999, border: "none", width: 32, height: 32 }}>{d}</button>)}\n  </div>\n</div>`;
     },
   },
   /* SimulatedSlider — OMIT: no real uoaui slider/range class. */
@@ -1434,32 +1439,32 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const rows = opts
         .map((o, i) =>
           i === di
-            ? `  <div className="a-radio selected" role="radio" aria-checked={true} tabIndex={0}><div className="a-radio-circle"><div style={{ width: 8, height: 8, borderRadius: 4, background: "var(--a-accent)" }} /></div>${o}</div>`
-            : `  <div className="a-radio" role="radio" aria-checked={false} tabIndex={-1}><div className="a-radio-circle" />${o}</div>`,
+            ? `  <div className="a-radio selected" role="radio" aria-checked={true} tabIndex={0}><div className="a-radio-circle"><div style={{ width: 8, height: 8, borderRadius: 4, background: "var(--a-accent)" }} /></div>${jsxText(o)}</div>`
+            : `  <div className="a-radio" role="radio" aria-checked={false} tabIndex={-1}><div className="a-radio-circle" />${jsxText(o)}</div>`,
         )
         .join("\n");
-      return `<div role="radiogroup" aria-label="${s(p.label, "Select option")}">\n${rows}\n</div>`;
+      return `<div role="radiogroup" aria-label="${jsxAttr(p.label, "Select option")}">\n${rows}\n</div>`;
     },
   },
   SimulatedDropdown: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-dropdown">\n  <button type="button" className="a-dropdown-trigger" aria-haspopup="listbox" aria-expanded={false}>\n    <span>${s(p.placeholder, "Select an option")}</span>\n    <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>\n  </button>\n  <ul className="a-dropdown-menu" role="listbox" aria-label="${s(p.placeholder, "Select an option")}" hidden>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option A</li>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option B</li>\n  </ul>\n</div>`,
+      `<div className="a-dropdown">\n  <button type="button" className="a-dropdown-trigger" aria-haspopup="listbox" aria-expanded={false}>\n    <span>${jsxText(p.placeholder, "Select an option")}</span>\n    <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>\n  </button>\n  <ul className="a-dropdown-menu" role="listbox" aria-label="${jsxAttr(p.placeholder, "Select an option")}" hidden>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option A</li>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option B</li>\n  </ul>\n</div>`,
   },
   SimulatedComboBox: {
     imports: uoauiImport,
     toJsx: (p) => {
       const opts = csv(p.itemsCsv, ["United States", "United Kingdom", "Canada"]);
       const items = opts
-        .map((o) => `    <li className="a-dropdown-item" role="option" aria-selected={false}>${o}</li>`)
+        .map((o) => `    <li className="a-dropdown-item" role="option" aria-selected={false}>${jsxText(o)}</li>`)
         .join("\n");
-      return `<div className="a-dropdown">\n  <input className="a-input" role="combobox" aria-expanded={false} aria-autocomplete="list" aria-controls="cb-list" placeholder="${s(p.placeholder, "Search...")}" />\n  <ul id="cb-list" className="a-dropdown-menu" role="listbox" hidden>\n${items}\n  </ul>\n</div>`;
+      return `<div className="a-dropdown">\n  <input className="a-input" role="combobox" aria-expanded={false} aria-autocomplete="list" aria-controls="cb-list" placeholder="${jsxAttr(p.placeholder, "Search...")}" />\n  <ul id="cb-list" className="a-dropdown-menu" role="listbox" hidden>\n${items}\n  </ul>\n</div>`;
     },
   },
   SimulatedSearchbox: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap" style={{ position: "relative" }}>\n  <span className="material-symbols-outlined" aria-hidden="true" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>search</span>\n  <input className="a-input" type="search" placeholder="${s(p.placeholder, "Search...")}" aria-label="Search" style={{ paddingLeft: 34 }} />\n</div>`,
+      `<div className="a-input-wrap" style={{ position: "relative" }}>\n  <span className="material-symbols-outlined" aria-hidden="true" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" }}>search</span>\n  <input className="a-input" type="search" placeholder="${jsxAttr(p.placeholder, "Search...")}" aria-label="Search" style={{ paddingLeft: 34 }} />\n</div>`,
   },
   /* SimulatedRating — OMIT: no real uoaui rating/star class. */
   SimulatedTokenizedInput: {
@@ -1469,10 +1474,10 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const chips = tokens
         .map(
           (t) =>
-            `    <span className="a-badge a-badge-default">${t}<span className="material-symbols-outlined" style={{ fontSize: 14, cursor: "pointer" }}>close</span></span>`,
+            `    <span className="a-badge a-badge-default">${jsxText(t)}<span className="material-symbols-outlined" style={{ fontSize: 14, cursor: "pointer" }}>close</span></span>`,
         )
         .join("\n");
-      return `<div className="a-input-wrap">\n  <label className="a-input-label">${s(p.label, "Label")}</label>\n  <div className="a-input" style={{ display: "flex", flexWrap: "wrap", gap: 6, height: "auto", alignItems: "center", paddingTop: 6, paddingBottom: 6 }}>\n${chips}\n    <input style={{ border: "none", background: "transparent", outline: "none", flex: 1, color: "var(--a-fg)" }} aria-label="Add item" />\n  </div>\n</div>`;
+      return `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <div className="a-input" style={{ display: "flex", flexWrap: "wrap", gap: 6, height: "auto", alignItems: "center", paddingTop: 6, paddingBottom: 6 }}>\n${chips}\n    <input style={{ border: "none", background: "transparent", outline: "none", flex: 1, color: "var(--a-fg)" }} aria-label="Add item" />\n  </div>\n</div>`;
     },
   },
   /* SimulatedFileDropZone — OMIT: no real uoaui dropzone class. */
@@ -1484,7 +1489,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-card" style={{ padding: 16 }}>\n  <div style={{ fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 }}>${s(p.label, "Metric")}</div>\n  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" }}>${s(p.value, "0")}</div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.pct ?? 0)}%" }} /></div>\n</div>`,
+      `<div className="a-card" style={{ padding: 16 }}>\n  <div style={{ fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 }}>${jsxText(p.label, "Metric")}</div>\n  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" }}>${jsxText(p.value, "0")}</div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.pct ?? 0)}%" }} /></div>\n</div>`,
   },
   SimulatedListBox: {
     imports: uoauiImport,
@@ -1493,7 +1498,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const items = opts
         .map(
           (o, i) =>
-            `  <li className="a-dropdown-item" role="option" aria-selected={${i === 0 ? "true" : "false"}} tabIndex={0}>${o}</li>`,
+            `  <li className="a-dropdown-item" role="option" aria-selected={${i === 0 ? "true" : "false"}} tabIndex={0}>${jsxText(o)}</li>`,
         )
         .join("\n");
       const multi = p.multiSelect ? " aria-multiselectable={true}" : "";
@@ -1509,7 +1514,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
           .map((n) => {
             const pad = "  ".repeat(depth + 1);
             const icon = n.children.length ? "folder" : "description";
-            const row = `${pad}<li role="treeitem"${n.children.length ? " aria-expanded={true}" : ""}>\n${pad}  <div className="a-sidebar-item"><span className="material-symbols-outlined">${icon}</span>${n.label}</div>`;
+            const row = `${pad}<li role="treeitem"${n.children.length ? " aria-expanded={true}" : ""}>\n${pad}  <div className="a-sidebar-item"><span className="material-symbols-outlined">${icon}</span>${jsxText(n.label)}</div>`;
             if (!n.children.length) return `${row}</li>`;
             return `${row}\n${pad}  <ul role="group" style={{ listStyle: "none", paddingLeft: 16 }}>\n${render(n.children, depth + 2)}\n${pad}  </ul>\n${pad}</li>`;
           })
@@ -1520,7 +1525,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div>\n  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--a-fg-2)", marginBottom: 4 }}><span>${s(p.label, "Progress")}</span><span>${Number(p.value ?? 50)}%</span></div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.value ?? 50)}%" }} /></div>\n</div>`,
+      `<div>\n  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--a-fg-2)", marginBottom: 4 }}><span>${jsxText(p.label, "Progress")}</span><span>${Number(p.value ?? 50)}%</span></div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.value ?? 50)}%" }} /></div>\n</div>`,
   },
   SimulatedAvatar: {
     imports: uoauiImport,
@@ -1533,7 +1538,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const dot = dotColor
         ? `\n  <span style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderRadius: "50%", background: "${dotColor}", border: "2px solid var(--a-bg)" }} aria-hidden="true" />`
         : "";
-      return `<div style={{ position: "relative", display: "inline-flex" }}>\n  <div className="a-avatar">${s(p.initials, "?")}</div>${dot}\n</div>`;
+      return `<div style={{ position: "relative", display: "inline-flex" }}>\n  <div className="a-avatar">${jsxText(p.initials, "?")}</div>${dot}\n</div>`;
     },
   },
   SimulatedAvatarGroup: {
@@ -1546,7 +1551,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const avatars = shown
         .map(
           (n, i) =>
-            `  <div className="a-avatar" style={{ marginLeft: ${i === 0 ? 0 : -8}, border: "2px solid var(--a-bg)" }}>${n}</div>`,
+            `  <div className="a-avatar" style={{ marginLeft: ${i === 0 ? 0 : -8}, border: "2px solid var(--a-bg)" }}>${jsxText(n)}</div>`,
         )
         .join("\n");
       const extra =
@@ -1558,16 +1563,16 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   },
   SimulatedBadge: {
     imports: uoauiImport,
-    toJsx: (p) => `<span className="a-badge ${uoauiBadgeClass(s(p.status, "default"))}">${s(p.label, "Badge")}</span>`,
+    toJsx: (p) => `<span className="a-badge ${uoauiBadgeClass(s(p.status, "default"))}">${jsxText(p.label, "Badge")}</span>`,
   },
   SimulatedPill: {
     imports: uoauiImport,
     toJsx: (p) => {
       const cls = uoauiBadgeClass(s(p.status, "default"));
       const close = p.dismissible
-        ? `<button type="button" aria-label="Remove ${s(p.label, "Tag")}" style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", marginLeft: 4, color: "inherit" }}><span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span></button>`
+        ? `<button type="button" aria-label="Remove ${jsxAttr(s(p.label, "Tag"))}" style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", marginLeft: 4, color: "inherit" }}><span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span></button>`
         : "";
-      return `<span className="a-badge ${cls}">${s(p.label, "Tag")}${close}</span>`;
+      return `<span className="a-badge ${cls}">${jsxText(p.label, "Tag")}${close}</span>`;
     },
   },
   SimulatedPersona: {
@@ -1578,7 +1583,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
         available: "var(--a-success-fg)", busy: "var(--a-danger-fg)",
         away: "var(--a-warning-fg)", offline: "var(--a-fg-3)",
       } as Record<string, string>)[presence] ?? "var(--a-success-fg)";
-      return `<div style={{ display: "flex", alignItems: "center", gap: 10 }}>\n  <div style={{ position: "relative", display: "inline-flex" }}>\n    <div className="a-avatar">${slug(p.name, "p").slice(0, 2).toUpperCase()}</div>\n    <span style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderRadius: "50%", background: "${dotColor}", border: "2px solid var(--a-bg)" }} aria-hidden="true" />\n  </div>\n  <div>\n    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--a-fg)" }}>${s(p.name, "Name")}</div>\n    <div style={{ fontSize: 11, color: "var(--a-fg-3)" }}>${s(p.role)}</div>\n  </div>\n</div>`;
+      return `<div style={{ display: "flex", alignItems: "center", gap: 10 }}>\n  <div style={{ position: "relative", display: "inline-flex" }}>\n    <div className="a-avatar">${slug(p.name, "p").slice(0, 2).toUpperCase()}</div>\n    <span style={{ position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderRadius: "50%", background: "${dotColor}", border: "2px solid var(--a-bg)" }} aria-hidden="true" />\n  </div>\n  <div>\n    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--a-fg)" }}>${jsxText(p.name, "Name")}</div>\n    <div style={{ fontSize: 11, color: "var(--a-fg-3)" }}>${jsxText(p.role)}</div>\n  </div>\n</div>`;
     },
   },
   SimulatedTabs: {
@@ -1588,10 +1593,10 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const buttons = tabs
         .map(
           (t, i) =>
-            `    <button type="button" role="tab" id="tab-${i}" aria-selected={${i === 0 ? "true" : "false"}} aria-controls="panel-${i}" tabIndex={${i === 0 ? 0 : -1}} className="a-tab${i === 0 ? " active" : ""}">${t}</button>`,
+            `    <button type="button" role="tab" id="tab-${i}" aria-selected={${i === 0 ? "true" : "false"}} aria-controls="panel-${i}" tabIndex={${i === 0 ? 0 : -1}} className="a-tab${i === 0 ? " active" : ""}">${jsxText(t)}</button>`,
         )
         .join("\n");
-      return `<div>\n  <div className="a-tabs" role="tablist" aria-label="Sections">\n${buttons}\n  </div>\n  <div id="panel-0" role="tabpanel" aria-labelledby="tab-0">Content for ${tabs[0]} tab.</div>\n</div>`;
+      return `<div>\n  <div className="a-tabs" role="tablist" aria-label="Sections">\n${buttons}\n  </div>\n  <div id="panel-0" role="tabpanel" aria-labelledby="tab-0">Content for ${jsxText(tabs[0])} tab.</div>\n</div>`;
     },
   },
   SimulatedBreadcrumb: {
@@ -1601,9 +1606,9 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const parts: string[] = [];
       path.forEach((seg, i) => {
         if (i === path.length - 1) {
-          parts.push(`  <li><span aria-current="page" style={{ color: "var(--a-fg)", fontWeight: 600 }}>${seg}</span></li>`);
+          parts.push(`  <li><span aria-current="page" style={{ color: "var(--a-fg)", fontWeight: 600 }}>${jsxText(seg)}</span></li>`);
         } else {
-          parts.push(`  <li><a href="#" style={{ color: "var(--a-fg-3)" }}>${seg}</a></li>`);
+          parts.push(`  <li><a href="#" style={{ color: "var(--a-fg-3)" }}>${jsxText(seg)}</a></li>`);
           parts.push(`  <li aria-hidden="true"><span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--a-fg-3)" }}>chevron_right</span></li>`);
         }
       });
@@ -1615,7 +1620,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     toJsx: (p) => {
       const items = csv(p.itemsCsv, ["Home", "Dashboard", "Settings"]);
       const links = items
-        .map((it, i) => `  <button type="button" className="a-sidebar-item${i === 0 ? " active" : ""}">${it}</button>`)
+        .map((it, i) => `  <button type="button" className="a-sidebar-item${i === 0 ? " active" : ""}">${jsxText(it)}</button>`)
         .join("\n");
       return `<nav aria-label="Main" style={{ width: 240, background: "var(--a-surface)", backdropFilter: "blur(16px) saturate(140%)", borderRight: "1px solid var(--a-border)", padding: 8 }}>\n${links}\n</nav>`;
     },
@@ -1627,29 +1632,29 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const cls = ({ info: "a-alert-info", success: "a-alert-success", warning: "a-alert-warning", error: "a-alert-danger" } as Record<string, string>)[variant] ?? "a-alert-info";
       const icon = ({ info: "info", success: "check_circle", warning: "warning", error: "error" } as Record<string, string>)[variant] ?? "info";
       const role = variant === "warning" || variant === "error" ? "alert" : "status";
-      return `<div className="a-alert ${cls}" role="${role}" aria-live="polite"><span className="material-symbols-outlined" aria-hidden="true">${icon}</span><div><strong>${s(p.title, "Alert")}</strong><div>${s(p.message)}</div></div></div>`;
+      return `<div className="a-alert ${cls}" role="${role}" aria-live="polite"><span className="material-symbols-outlined" aria-hidden="true">${icon}</span><div><strong>${jsxText(p.title, "Alert")}</strong><div>${jsxText(p.message)}</div></div></div>`;
     },
   },
   /* SimulatedSkeleton — OMIT: no real uoaui skeleton/shimmer class. */
   SimulatedTooltip: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div style={{ position: "relative", display: "inline-flex" }}>\n  <button type="button" className="a-btn a-btn-secondary" aria-describedby="tt-1">${s(p.buttonLabel, "Hover me")}</button>\n  <div id="tt-1" role="tooltip" className="a-tooltip" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)" }}>${s(p.text, "Tooltip")}</div>\n</div>`,
+      `<div style={{ position: "relative", display: "inline-flex" }}>\n  <button type="button" className="a-btn a-btn-secondary" aria-describedby="tt-1">${jsxText(p.buttonLabel, "Hover me")}</button>\n  <div id="tt-1" role="tooltip" className="a-tooltip" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)" }}>${jsxText(p.text, "Tooltip")}</div>\n</div>`,
   },
   SimulatedPopover: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div style={{ position: "relative", display: "inline-block" }}>\n  <button type="button" className="a-btn a-btn-secondary" aria-haspopup="dialog" aria-expanded={false}>More info</button>\n  <div role="dialog" aria-label="${s(p.title, "Popover")}" className="a-dropdown-menu" style={{ padding: 14, minWidth: 220 }}>\n    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--a-fg)", marginBottom: 4 }}>${s(p.title, "Popover")}</div>\n    <div style={{ fontSize: 12, color: "var(--a-fg-2)" }}>${s(p.content)}</div>\n  </div>\n</div>`,
+      `<div style={{ position: "relative", display: "inline-block" }}>\n  <button type="button" className="a-btn a-btn-secondary" aria-haspopup="dialog" aria-expanded={false}>More info</button>\n  <div role="dialog" aria-label="${jsxAttr(p.title, "Popover")}" className="a-dropdown-menu" style={{ padding: 14, minWidth: 220 }}>\n    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--a-fg)", marginBottom: 4 }}>${jsxText(p.title, "Popover")}</div>\n    <div style={{ fontSize: 12, color: "var(--a-fg-2)" }}>${jsxText(p.content)}</div>\n  </div>\n</div>`,
   },
   SimulatedDialog: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-dialog-backdrop">\n  <div className="a-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">\n    <div id="dlg-title" style={{ fontSize: 16, fontWeight: 600, color: "var(--a-fg)", marginBottom: 8 }}>${s(p.title, "Dialog")}</div>\n    <div style={{ fontSize: 12, color: "var(--a-fg-2)", marginBottom: 16 }}>${s(p.message)}</div>\n    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>\n      <button type="button" className="a-btn a-btn-ghost">Cancel</button>\n      <button type="button" className="a-btn a-btn-primary">Confirm</button>\n    </div>\n  </div>\n</div>`,
+      `<div className="a-dialog-backdrop">\n  <div className="a-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">\n    <div id="dlg-title" style={{ fontSize: 16, fontWeight: 600, color: "var(--a-fg)", marginBottom: 8 }}>${jsxText(p.title, "Dialog")}</div>\n    <div style={{ fontSize: 12, color: "var(--a-fg-2)", marginBottom: 16 }}>${jsxText(p.message)}</div>\n    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>\n      <button type="button" className="a-btn a-btn-ghost">Cancel</button>\n      <button type="button" className="a-btn a-btn-primary">Confirm</button>\n    </div>\n  </div>\n</div>`,
   },
   SimulatedAccordion: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-accordion">\n  <button type="button" className="a-accordion-header" aria-expanded={true} aria-controls="acc-body">\n    <span>${s(p.title, "Section")}</span>\n    <span className="material-symbols-outlined" aria-hidden="true">expand_less</span>\n  </button>\n  <div id="acc-body" className="a-accordion-body">${s(p.content)}</div>\n</div>`,
+      `<div className="a-accordion">\n  <button type="button" className="a-accordion-header" aria-expanded={true} aria-controls="acc-body">\n    <span>${jsxText(p.title, "Section")}</span>\n    <span className="material-symbols-outlined" aria-hidden="true">expand_less</span>\n  </button>\n  <div id="acc-body" className="a-accordion-body">${jsxText(p.content)}</div>\n</div>`,
   },
   SimulatedChatMessage: {
     imports: uoauiImport,
@@ -1658,30 +1663,30 @@ const UOAUI: Record<string, ComponentApiEntry> = {
       const dir = isUser ? "row-reverse" : "row";
       const avatar = isUser ? "You" : "AI";
       const bubble = isUser
-        ? `<div className="a-card" style={{ padding: "10px 14px", background: "var(--a-accent-surface)", borderColor: "var(--a-border-accent)", maxWidth: "75%", cursor: "default" }}>${s(p.message)}</div>`
-        : `<div className="a-card" style={{ padding: "10px 14px", maxWidth: "75%", cursor: "default" }}>${s(p.message)}</div>`;
+        ? `<div className="a-card" style={{ padding: "10px 14px", background: "var(--a-accent-surface)", borderColor: "var(--a-border-accent)", maxWidth: "75%", cursor: "default" }}>${jsxText(p.message)}</div>`
+        : `<div className="a-card" style={{ padding: "10px 14px", maxWidth: "75%", cursor: "default" }}>${jsxText(p.message)}</div>`;
       return `<div style={{ display: "flex", gap: 8, flexDirection: "${dir}", alignItems: "flex-start" }}>\n  <div className="a-avatar">${avatar}</div>\n  ${bubble}\n</div>`;
     },
   },
   AppBrand: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div style={{ display: "flex", alignItems: "center", gap: 8 }}>\n  <span style={{ width: 24, height: 24, borderRadius: 8, background: "var(--a-accent-gradient, var(--a-accent))" }} aria-hidden="true" />\n  <span style={{ fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.01em" }}>${s(p.label, "App Name")}</span>\n</div>`,
+      `<div style={{ display: "flex", alignItems: "center", gap: 8 }}>\n  <span style={{ width: 24, height: 24, borderRadius: 8, background: "var(--a-accent-gradient, var(--a-accent))" }} aria-hidden="true" />\n  <span style={{ fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.01em" }}>${jsxText(p.label, "App Name")}</span>\n</div>`,
   },
   StatusPill: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<span className="a-badge a-badge-success"><span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", marginRight: 6, display: "inline-block" }} aria-hidden="true" />${s(p.label, "Active")}</span>`,
+      `<span className="a-badge a-badge-success"><span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", marginRight: 6, display: "inline-block" }} aria-hidden="true" />${jsxText(p.label, "Active")}</span>`,
   },
   NavItem: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<button type="button" className="a-sidebar-item${p.active ? " active" : ""}" aria-current={${p.active ? '"page"' : "false"}}><span className="material-symbols-outlined" aria-hidden="true">${s(p.icon, "chat")}</span>${s(p.label, "Nav")}</button>`,
+      `<button type="button" className="a-sidebar-item${p.active ? " active" : ""}" aria-current={${p.active ? '"page"' : "false"}}><span className="material-symbols-outlined" aria-hidden="true">${jsxText(p.icon, "chat")}</span>${jsxText(p.label, "Nav")}</button>`,
   },
   FooterText: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<footer style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--a-fg-3)" }}>\n  <span>${s(p.label, "Footer")}</span>\n  <span className="a-badge a-badge-default">${s(p.version, "v1.0")}</span>\n</footer>`,
+      `<footer style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--a-fg-3)" }}>\n  <span>${jsxText(p.label, "Footer")}</span>\n  <span className="a-badge a-badge-default">${jsxText(p.version, "v1.0")}</span>\n</footer>`,
   },
 };
 

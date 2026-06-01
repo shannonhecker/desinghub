@@ -5,48 +5,66 @@
 
 import { useBuilder } from "@/store/useBuilder";
 import type { Block } from "@/store/useBuilder";
+import { htmlText, htmlAttr } from "./escape";
+
+/* class-concat tokens (variant/status/size/level) must be known, slug-safe
+   values, never user free text — they form a class name or an element tag. */
+const BUTTON_VARIANTS = new Set(["primary", "secondary", "outline", "ghost", "danger", "destructive"]);
+const ALERT_VARIANTS = new Set(["info", "success", "warning", "error"]);
+const BADGE_STATUSES = new Set(["default", "info", "success", "warning", "error"]);
+const AVATAR_SIZES = new Set(["sm", "md", "lg"]);
+function token(v: unknown, allowed: Set<string>, fallback: string): string {
+  const str = String(v ?? "");
+  return allowed.has(str) ? str : fallback;
+}
+function level(v: unknown): string {
+  const str = String(v ?? "h2");
+  return /^h[1-6]$/.test(str) ? str : "h2";
+}
 
 function blockToHTML(block: Block, indent: string): string {
   const p = block.props;
   switch (block.type) {
-    case "SimulatedTitle":
-      return `${indent}<${(p.level as string) || "h2"}>${p.text || "Heading"}</${(p.level as string) || "h2"}>`;
+    case "SimulatedTitle": {
+      const lvl = level(p.level);
+      return `${indent}<${lvl}>${htmlText(p.text, "Heading")}</${lvl}>`;
+    }
     case "SimulatedButton":
-      return `${indent}<button class="btn btn-${p.variant || "primary"}">${p.label || "Button"}</button>`;
+      return `${indent}<button class="btn btn-${token(p.variant, BUTTON_VARIANTS, "primary")}">${htmlText(p.label, "Button")}</button>`;
     case "SimulatedTextInput":
-      return `${indent}<div class="form-field">\n${indent}  <label>${p.label || "Label"}</label>\n${indent}  <input type="text" placeholder="${p.placeholder || ""}" />\n${indent}</div>`;
+      return `${indent}<div class="form-field">\n${indent}  <label>${htmlText(p.label, "Label")}</label>\n${indent}  <input type="text" placeholder="${htmlAttr(p.placeholder)}" />\n${indent}</div>`;
     case "SimulatedCard":
-      return `${indent}<div class="card">\n${indent}  <h3>${p.title || "Card"}</h3>\n${indent}  <p>${p.content || ""}</p>\n${indent}</div>`;
+      return `${indent}<div class="card">\n${indent}  <h3>${htmlText(p.title, "Card")}</h3>\n${indent}  <p>${htmlText(p.content)}</p>\n${indent}</div>`;
     case "SimulatedStatCard":
-      return `${indent}<div class="stat-card">\n${indent}  <span class="stat-label">${p.label || "Metric"}</span>\n${indent}  <span class="stat-value">${p.value || "0"}</span>\n${indent}  <div class="progress-bar" style="width: ${p.pct || 0}%"></div>\n${indent}</div>`;
+      return `${indent}<div class="stat-card">\n${indent}  <span class="stat-label">${htmlText(p.label, "Metric")}</span>\n${indent}  <span class="stat-value">${htmlText(p.value, "0")}</span>\n${indent}  <div class="progress-bar" style="width: ${Number(p.pct) || 0}%"></div>\n${indent}</div>`;
     case "Alert":
-      return `${indent}<div class="alert alert-${p.variant || "info"}">\n${indent}  <strong>${p.title || "Alert"}</strong>\n${indent}  <p>${p.message || ""}</p>\n${indent}</div>`;
+      return `${indent}<div class="alert alert-${token(p.variant, ALERT_VARIANTS, "info")}">\n${indent}  <strong>${htmlText(p.title, "Alert")}</strong>\n${indent}  <p>${htmlText(p.message)}</p>\n${indent}</div>`;
     case "SimulatedBadge":
-      return `${indent}<span class="badge badge-${p.status || "default"}">${p.label || "Badge"}</span>`;
+      return `${indent}<span class="badge badge-${token(p.status, BADGE_STATUSES, "default")}">${htmlText(p.label, "Badge")}</span>`;
     case "SimulatedCheckbox":
-      return `${indent}<label class="checkbox"><input type="checkbox" ${p.defaultChecked ? "checked" : ""} /> ${p.label || "Checkbox"}</label>`;
+      return `${indent}<label class="checkbox"><input type="checkbox" ${p.defaultChecked ? "checked" : ""} /> ${htmlText(p.label, "Checkbox")}</label>`;
     case "SimulatedSwitch":
-      return `${indent}<label class="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "checked" : ""} /> ${p.label || "Toggle"}</label>`;
+      return `${indent}<label class="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "checked" : ""} /> ${htmlText(p.label, "Toggle")}</label>`;
     case "SimulatedProgress":
-      return `${indent}<div class="progress">\n${indent}  <label>${p.label || "Progress"}</label>\n${indent}  <progress value="${p.value || 50}" max="100"></progress>\n${indent}</div>`;
+      return `${indent}<div class="progress">\n${indent}  <label>${htmlText(p.label, "Progress")}</label>\n${indent}  <progress value="${Number(p.value) || 50}" max="100"></progress>\n${indent}</div>`;
     case "SimulatedTabs": {
-      const tabs = ((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button class="tab">${t.trim()}</button>`).join("\n");
+      const tabs = ((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button class="tab">${htmlText(t.trim())}</button>`).join("\n");
       return `${indent}<div class="tabs">\n${tabs}\n${indent}</div>`;
     }
     case "SimulatedAccordion":
-      return `${indent}<details class="accordion">\n${indent}  <summary>${p.title || "Section"}</summary>\n${indent}  <p>${p.content || ""}</p>\n${indent}</details>`;
+      return `${indent}<details class="accordion">\n${indent}  <summary>${htmlText(p.title, "Section")}</summary>\n${indent}  <p>${htmlText(p.content)}</p>\n${indent}</details>`;
     case "SimulatedAvatar":
-      return `${indent}<div class="avatar avatar-${p.size || "md"}">${p.initials || "?"}</div>`;
+      return `${indent}<div class="avatar avatar-${token(p.size, AVATAR_SIZES, "md")}">${htmlText(p.initials, "?")}</div>`;
     case "SimulatedBreadcrumb":
-      return `${indent}<nav class="breadcrumb">${((p.pathCsv as string) || "Home").split(",").map((s: string) => s.trim()).join(" / ")}</nav>`;
+      return `${indent}<nav class="breadcrumb">${((p.pathCsv as string) || "Home").split(",").map((seg: string) => htmlText(seg.trim())).join(" / ")}</nav>`;
     case "AppBrand":
-      return `${indent}<div class="app-brand">${p.label || "App"}</div>`;
+      return `${indent}<div class="app-brand">${htmlText(p.label, "App")}</div>`;
     case "StatusPill":
-      return `${indent}<span class="status-pill">${p.label || "Active"}</span>`;
+      return `${indent}<span class="status-pill">${htmlText(p.label, "Active")}</span>`;
     case "NavItem":
-      return `${indent}<button class="nav-item${p.active ? " active" : ""}">${p.label || "Nav"}</button>`;
+      return `${indent}<button class="nav-item${p.active ? " active" : ""}">${htmlText(p.label, "Nav")}</button>`;
     case "FooterText":
-      return `${indent}<footer class="footer-text">${p.label || ""} ${p.version || ""}</footer>`;
+      return `${indent}<footer class="footer-text">${htmlText(p.label)} ${htmlText(p.version)}</footer>`;
     default:
       return `${indent}<div class="${block.type.toLowerCase()}"><!-- ${block.type} --></div>`;
   }
