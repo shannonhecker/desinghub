@@ -101,6 +101,12 @@ export function ComponentList() {
   const toolItems = filtered.filter(c => c.cat === "Foundations" && TOOL_IDS.has(c.id));
   const componentItems = filtered.filter(c => c.cat === "Components & Patterns");
 
+  /* Synthetic Tools entry: the Builder Blocks gallery isn't a per-DS registry
+     component — it's a cross-system view that renders the builder's vocabulary
+     + real export code. Surface it in Tools, gated by search like the rest. */
+  const BUILDER_BLOCKS = { id: "builder-blocks", name: "Builder Blocks" };
+  const showBuilderBlocks = !searchQuery || BUILDER_BLOCKS.name.toLowerCase().includes(searchQuery.toLowerCase());
+
   const helperStyle: React.CSSProperties = {
     fontSize: 11, color: t.fg3, letterSpacing: "0.04em",
     padding: activeSystem === "m3" ? "0 16px 4px" : "0 0 4px",
@@ -124,14 +130,15 @@ export function ComponentList() {
         </div>
       )}
 
-      {toolItems.length > 0 && (
+      {(toolItems.length > 0 || showBuilderBlocks) && (
         <div>
           <button onClick={() => toggleGroup("Tools")} aria-expanded={expandedGroups.has("Tools")} style={groupHeaderStyle(expandedGroups.has("Tools"))}>
             <span style={sectionHeaderStyle}>Tools</span>
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
           </button>
-          {showHelpers && expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code</div>}
+          {showHelpers && expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code, builder blocks</div>}
           {expandedGroups.has("Tools") && toolItems.map(c => renderItem(c))}
+          {expandedGroups.has("Tools") && showBuilderBlocks && renderItem(BUILDER_BLOCKS)}
         </div>
       )}
 
