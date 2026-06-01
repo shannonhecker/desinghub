@@ -22,8 +22,16 @@
  *     carries them is ours and is namespaced so it can only apply inside an
  *     element that opts in with `.preview-carbon`.
  *
- * The other three systems (M3, Fluent, uoaui) stay on the existing facsimile
- * theme objects for now — a follow-up PR adds their provider-based tokens.
+ * PR-2b extends the same model to M3 and Fluent, the two DSs that ship runtime
+ * providers rather than a plain CSS-var stylesheet:
+ *   - M3: `@mui/material`'s CSS-variables theme exposes `--mui-*` custom
+ *     properties. We re-emit the genuine generated values SCOPED to
+ *     `.preview-m3` (see buildM3TokenCSS in officialM3FluentTokens.ts).
+ *   - Fluent: `@fluentui/react-theme`'s web{Light,Dark}Theme tokens map 1:1 to
+ *     the `--color*` / `--fontFamily*` vars FluentProvider injects; we emit them
+ *     SCOPED to `.preview-fluent` (see buildFluentTokenCSS).
+ * Both are emitted via <OfficialTokenStyles> (client-only) with NO `:root` and
+ * NO global reset, so they cannot leak. uoaui stays in-house (no official pkg).
  */
 
 import { white, g10, g90, g100 } from "@carbon/themes";
@@ -39,9 +47,9 @@ export type TokenSource = "official" | "facsimile";
 export const TOKEN_SOURCE: Record<SystemId, TokenSource> = {
   salt: "official", // @salt-ds/theme --salt-*
   carbon: "official", // @carbon/themes --cds-*
-  m3: "facsimile",
-  fluent: "facsimile",
-  uoaui: "facsimile",
+  m3: "official", // @mui/material --mui-* (CSS-variables theme)
+  fluent: "official", // @fluentui/react-theme --color* / --fontFamily*
+  uoaui: "facsimile", // in-house DS; no official package
 };
 
 export function isOfficialTokenSource(system: SystemId): boolean {
@@ -159,10 +167,93 @@ export const CARBON_OFFICIAL_TOKENS: OfficialTokenCategory[] = [
   },
 ];
 
+/** Official M3 tokens (`--mui-*`) from @mui/material's CSS-variables theme. */
+export const M3_OFFICIAL_TOKENS: OfficialTokenCategory[] = [
+  {
+    category: "Primary",
+    tokens: [
+      row("--mui-palette-primary-main", "palette-primary-main"),
+      row("--mui-palette-primary-dark", "palette-primary-dark"),
+      row("--mui-palette-primary-contrastText", "palette-primary-contrastText"),
+    ],
+  },
+  {
+    category: "Background / Surface",
+    tokens: [
+      row("--mui-palette-background-default", "palette-background-default"),
+      row("--mui-palette-background-paper", "palette-background-paper"),
+      row("--mui-palette-divider", "palette-divider"),
+    ],
+  },
+  {
+    category: "Text",
+    tokens: [
+      row("--mui-palette-text-primary", "palette-text-primary"),
+      row("--mui-palette-text-secondary", "palette-text-secondary"),
+      row("--mui-palette-text-disabled", "palette-text-disabled"),
+    ],
+  },
+  {
+    category: "Status",
+    tokens: [
+      row("--mui-palette-success-main", "palette-success-main"),
+      row("--mui-palette-error-main", "palette-error-main"),
+      row("--mui-palette-warning-main", "palette-warning-main"),
+      row("--mui-palette-info-main", "palette-info-main"),
+    ],
+  },
+];
+
+/** Official Fluent 2 tokens (`--color*`) from @fluentui/react-theme. */
+export const FLUENT_OFFICIAL_TOKENS: OfficialTokenCategory[] = [
+  {
+    category: "Brand",
+    tokens: [
+      row("--colorBrandBackground", "colorBrandBackground"),
+      row("--colorBrandForeground1", "colorBrandForeground1"),
+      row("--colorNeutralForegroundOnBrand", "colorNeutralForegroundOnBrand"),
+    ],
+  },
+  {
+    category: "Neutral Background",
+    tokens: [
+      row("--colorNeutralBackground1", "colorNeutralBackground1"),
+      row("--colorNeutralBackground2", "colorNeutralBackground2"),
+      row("--colorNeutralBackground3", "colorNeutralBackground3"),
+    ],
+  },
+  {
+    category: "Neutral Foreground",
+    tokens: [
+      row("--colorNeutralForeground1", "colorNeutralForeground1"),
+      row("--colorNeutralForeground2", "colorNeutralForeground2"),
+      row("--colorNeutralForeground3", "colorNeutralForeground3"),
+    ],
+  },
+  {
+    category: "Stroke",
+    tokens: [
+      row("--colorNeutralStroke1", "colorNeutralStroke1"),
+      row("--colorNeutralStroke2", "colorNeutralStroke2"),
+      row("--colorNeutralStrokeAccessible", "colorNeutralStrokeAccessible"),
+    ],
+  },
+  {
+    category: "Status",
+    tokens: [
+      row("--colorStatusSuccessForeground1", "colorStatusSuccessForeground1"),
+      row("--colorStatusDangerForeground1", "colorStatusDangerForeground1"),
+      row("--colorStatusWarningForeground1", "colorStatusWarningForeground1"),
+    ],
+  },
+];
+
 /** The curated official token list for a DS (empty for facsimile DSs). */
 export function getOfficialTokenList(system: SystemId): OfficialTokenCategory[] {
   if (system === "salt") return SALT_OFFICIAL_TOKENS;
   if (system === "carbon") return CARBON_OFFICIAL_TOKENS;
+  if (system === "m3") return M3_OFFICIAL_TOKENS;
+  if (system === "fluent") return FLUENT_OFFICIAL_TOKENS;
   return [];
 }
 
@@ -257,7 +348,16 @@ export interface PreviewOfficialScope {
 
 /**
  * For Salt/Carbon, return the official-token scope wiring for a wrapper.
- * For M3/Fluent/uoaui (still facsimile), returns empty wiring.
+ *
+ * M3/Fluent (PR-2b) need NO extra wiring: their official `--mui-*` / `--color*`
+ * vars are emitted directly under `.preview-m3` / `.preview-fluent` (dark base)
+ * and `.builder-light .preview-m3` / `.preview-fluent` (light) by
+ * buildM3TokenCSS / buildFluentTokenCSS. The wrapper already carries
+ * `.preview-<ds>`, and the `.builder-light` ancestor (builder-shell /
+ * present-stage / standalone-preview / the /ui-kit gallery wrapper) drives the
+ * light override automatically — so empty wiring is correct.
+ *
+ * uoaui (in-house) also returns empty wiring.
  *
  * @param system    active design system
  * @param mode      "light" | "dark" canvas mode (drives Salt data-mode)
@@ -301,42 +401,63 @@ export function getCarbonOfficialTokens(themeKey: string): Record<string, string
  * ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * Read computed `--salt-*` / `--cds-*` values off a detached, off-screen probe
- * element carrying the right scope class so the official CSS resolves. Returns
- * a map of varName → computed value (trimmed). Returns {} when not in a browser.
+ * Read computed `--salt-*` / `--cds-*` / `--mui-*` / `--color*` values off a
+ * detached, off-screen probe element carrying the right scope class so the
+ * official CSS resolves. Returns a map of varName → computed value (trimmed).
+ * Returns {} when not in a browser.
  *
- * @param system      "salt" or "carbon"
- * @param varNames    the custom-property names to resolve (e.g. "--salt-actionable-bold-background")
- * @param themeMode   for Salt: "light" | "dark" (data-mode); for Carbon: theme key (data-cds-theme)
+ * For M3/Fluent the official vars are emitted under `.preview-m3` /
+ * `.preview-fluent` (dark base) and `.builder-light .preview-m3` /
+ * `.preview-fluent` (light), so the probe needs the `.preview-<ds>` class and,
+ * for light mode, a `.builder-light` ANCESTOR (matched by wrapping the probe in
+ * a `.builder-light` host so the descendant override resolves).
+ *
+ * @param system      "salt" | "carbon" | "m3" | "fluent"
+ * @param varNames    the custom-property names to resolve (e.g. "--mui-palette-primary-main")
+ * @param themeMode   Salt/M3/Fluent: "light" | "dark"; Carbon: theme key (data-cds-theme)
  */
 export function readOfficialComputedTokens(
-  system: "salt" | "carbon",
+  system: "salt" | "carbon" | "m3" | "fluent",
   varNames: string[],
   themeMode: string,
 ): Record<string, string> {
   if (typeof document === "undefined") return {};
   const probe = document.createElement("div");
+  /* For M3/Fluent light mode we need a `.builder-light` ancestor so the
+     `.builder-light .preview-<ds>` override resolves; we mount the probe inside
+     a host element that carries it. `host` is what we append/remove. */
+  let host: HTMLElement = probe;
   if (system === "salt") {
     // Self-scoped class from @salt-ds/theme/index.css. Density class supplies
     // the size/spacing tokens; medium is the canonical default.
     probe.className = "salt-theme salt-density-medium";
     probe.setAttribute("data-mode", themeMode === "dark" ? "dark" : "light");
-  } else {
+  } else if (system === "carbon") {
     // Our scoped Carbon token block keys off [data-cds-theme].
     probe.className = "preview-carbon";
     probe.setAttribute("data-cds-theme", themeMode);
+  } else {
+    // M3 / Fluent: scoped under .preview-m3 / .preview-fluent (dark base) and
+    // .builder-light .preview-<ds> (light). Wrap in a .builder-light host for
+    // the light probe so the descendant override resolves.
+    probe.className = system === "m3" ? "preview-m3" : "preview-fluent";
+    if (themeMode === "light") {
+      host = document.createElement("div");
+      host.className = "builder-light";
+      host.appendChild(probe);
+    }
   }
-  probe.style.position = "absolute";
-  probe.style.left = "-99999px";
-  probe.style.width = "0";
-  probe.style.height = "0";
-  probe.style.pointerEvents = "none";
-  document.body.appendChild(probe);
+  host.style.position = "absolute";
+  host.style.left = "-99999px";
+  host.style.width = "0";
+  host.style.height = "0";
+  host.style.pointerEvents = "none";
+  document.body.appendChild(host);
   const cs = getComputedStyle(probe);
   const out: Record<string, string> = {};
   for (const name of varNames) {
     out[name] = cs.getPropertyValue(name).trim();
   }
-  document.body.removeChild(probe);
+  document.body.removeChild(host);
   return out;
 }
