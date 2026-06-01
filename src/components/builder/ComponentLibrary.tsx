@@ -257,10 +257,14 @@ export function ComponentLibrary() {
       </div>
 
       <div className="lib-body">
-        {/* Properties inspector - shown at top when a block is selected.
-            Each section is collapsible so users can hide the ones they
-            don't need — state persists per section key in sessionStorage. */}
-        {selectedBlock && FieldsComponent && (
+        {/* Two modes, mutually exclusive (#9 PR-2). A selected block puts the
+            panel in INSPECT mode (its properties + layout); with no selection
+            the panel is in BROWSE mode (templates + library). Previously browse
+            rendered underneath the inspector, so editing a block buried it in
+            the full library — the clutter the owner flagged. */}
+        {selectedBlock && FieldsComponent ? (
+          /* Inspector - each section is collapsible so users can hide the ones
+             they don't need; state persists per section key in sessionStorage. */
           <div className="inspector-stack">
             <InspectorSection
               id={`props-${selectedBlock.type}`}
@@ -283,17 +287,17 @@ export function ComponentLibrary() {
               <ChartColoursSection block={selectedBlock} />
             )}
           </div>
+        ) : (
+          <>
+            {/* Templates accordion - swap the entire layout mid-flow without
+                returning to the empty state. 2x2 grid of mini template cards. */}
+            <TemplatesAccordion />
+
+            {/* Library - grouped by zone, searchable. Each blueprint can be
+                dragged onto its preferred zone (drop handling allows any zone). */}
+            <LibraryBrowser />
+          </>
         )}
-
-        {/* Templates accordion - collapsible section at the top so users
-            can swap the entire layout mid-flow without returning to the
-            empty state. Renders a 2x2 grid of mini template cards. */}
-        <TemplatesAccordion />
-
-        {/* Library - grouped by zone, searchable. Each blueprint can be
-            dragged onto its preferred zone (though drop handling allows
-            any zone). */}
-        <LibraryBrowser />
       </div>
     </div>
     </HoverContext.Provider>
