@@ -103,7 +103,7 @@ export function exportHTML(): string {
     .card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .stat-card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
-    .btn-primary { background: ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#7E6BC4" : "#0F6CBD"}; color: #fff; }
+    .btn-primary { background: ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#7E6BC4" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; color: #fff; }
     .nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: 6px; color: inherit; text-align: left; }
     .nav-item.active { background: ${s.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}; font-weight: 600; }
     .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
