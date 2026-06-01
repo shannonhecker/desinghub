@@ -693,12 +693,14 @@ export const useBuilder = create<BuilderState>((set) => ({
   ],
 
   /* Zone layout defaults - backward-compatible with the pre-flex
-     Builder: body now uses Row+wrap (visually replaces the old
-     3-column grid once block widths translate colSpan → percent),
-     header/footer stay horizontal, sidebar stays vertical. Users
-     can flip any of these via the zone layout-mode picker. */
+     Builder: body defaults to a 12-col grid (the canonical layout all
+     templates already use; blocks place by width fill/percent/fr ->
+     column span via the layout resolver, so a full-width chart fills
+     the row instead of collapsing into one track), header/footer stay
+     horizontal, sidebar stays vertical. Users can flip any of these
+     via the zone layout-mode picker. */
   zoneLayouts: {
-    body:    { mode: 'row',   gap: 12, wrap: true,  align: 'stretch' },
+    body:    { mode: 'grid',  columns: 12, gap: 12, align: 'start' },
     header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
     sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
     footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
@@ -916,7 +918,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     sidebarBlocks: [],
     footerBlocks: [],
     zoneLayouts: {
-      body:    { mode: 'row',   gap: 12, wrap: true,  align: 'stretch' },
+      body:    { mode: 'grid',  columns: 12, gap: 12, align: 'start' },
       header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
       sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
       footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },

@@ -31,6 +31,17 @@
   --bc-stage-mat:   clamp(16px, 3vw, 40px);
   --bc-overlay:     rgba(0, 0, 0, 0.40);
 
+  /* Inner content caps (per interface type) + fluid page gutter.
+     The device frame caps at --bc-stage-cap; WITHIN it, body content
+     caps at a type-appropriate working width so it fills the frame to
+     a sane measure instead of collapsing into a narrow column or
+     stretching edge-to-edge. Applied on the canvas via data-interface.
+     Theme-agnostic chrome (sizes the working column, not block tokens). */
+  --bc-content-cap-app:       1280px; /* dashboard / CRM / settings */
+  --bc-content-cap-doc:       760px;  /* form / auth / blog reading measure */
+  --bc-content-cap-marketing: 1120px; /* landing / ecommerce / portfolio */
+  --bc-gutter:                clamp(16px, 2.5vw, 32px); /* fluid page gutter */
+
   /* Text */
   --bc-fg:          rgba(245, 247, 250, 0.96);
   --bc-fg-muted:    rgba(245, 247, 250, 0.62);
