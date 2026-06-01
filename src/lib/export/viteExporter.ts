@@ -201,7 +201,7 @@ const STYLES_CSS = `/* ── Design tokens - swap these with real DS imports wh
   --fg-muted: rgba(255, 255, 255, 0.6);
   --surface: rgba(255, 255, 255, 0.04);
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #7e6bc4;
+  --accent: #8A58C9;
   --accent-fg: #ffffff;
   --success: #4ade80;
   --warn: #facc15;

@@ -53,7 +53,7 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   salt: { themeKey: 'jpm-dark', density: 'medium' },
   m3: { themeKey: 'dark', density: 0, customColor: '#6750A4', isDarkCustom: true },
   fluent: { themeKey: 'dark', size: 'medium' },
-  uoaui: { themeKey: 'dark', density: 'medium', accentColor: '#7E6BC4' },
+  uoaui: { themeKey: 'dark', density: 'medium', accentColor: '#8A58C9' },
   /* g100 is Carbon's canonical dark theme (pairs with g90, white, g10). */
   carbon: { themeKey: 'g100', density: 'normal' },
   selectedComponent: null,

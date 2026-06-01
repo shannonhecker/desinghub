@@ -7,7 +7,7 @@ function resetStore() {
     salt: { themeKey: "jpm-dark", density: "medium" },
     m3: { themeKey: "dark", density: 0, customColor: "#6750A4", isDarkCustom: true },
     fluent: { themeKey: "dark", size: "medium" },
-    uoaui: { themeKey: "dark", density: "medium", accentColor: "#7E6BC4" },
+    uoaui: { themeKey: "dark", density: "medium", accentColor: "#8A58C9" },
     carbon: { themeKey: "g100", density: "normal" },
     selectedComponent: null,
     searchQuery: "",
@@ -55,7 +55,7 @@ describe("useDesignHub", () => {
 
   it("setUoauiAccent rejects invalid hex", () => {
     useDesignHub.getState().setUoauiAccent("invalid");
-    expect(useDesignHub.getState().uoaui.accentColor).toBe("#7E6BC4"); // unchanged
+    expect(useDesignHub.getState().uoaui.accentColor).toBe("#8A58C9"); // unchanged
   });
 
   it("setUoauiAccent accepts valid hex", () => {

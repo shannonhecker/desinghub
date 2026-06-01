@@ -17,7 +17,7 @@ const M3_MODE_OPTIONS = [
 ];
 
 const UOAUI_ACCENTS = [
-  { name: "Violet", hex: "#7E6BC4", grad: "linear-gradient(135deg, #8A7ABD, #6B5AA8)" },
+  { name: "Violet", hex: "#8A58C9", grad: "linear-gradient(135deg, #9D71D2, #7343B0)" },
   { name: "Indigo", hex: "#5558B8", grad: "linear-gradient(135deg, #6668C0, #4A4CA5)" },
   { name: "Blue", hex: "#4A74B0", grad: "linear-gradient(135deg, #5A84BA, #3D64A0)" },
   { name: "Teal", hex: "#3D8A82", grad: "linear-gradient(135deg, #4D9A92, #2F7A72)" },
