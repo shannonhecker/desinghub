@@ -91,7 +91,12 @@ describe("chartExporter — chartHelperSource", () => {
     const src = chartHelperSource("salt");
     expect(src).toContain("function ChartBlock");
     expect(src).toContain("HighchartsReact highcharts={Highcharts} options={options}");
-    expect(src).toContain("ensureChartModules");
+    /* HC v12: modules register via side-effect import — the old factory-call
+       ceremony is removed. The helper is typed so the scaffold's strict tsc -b
+       passes, and honours prefers-reduced-motion (a11y parity with the builder). */
+    expect(src).not.toContain("ensureChartModules");
+    expect(src).toContain("prefersReducedMotion");
+    expect(src).toContain(': "light" | "dark"');
   });
 
   it("bakes the per-DS palette literally (no host import)", () => {

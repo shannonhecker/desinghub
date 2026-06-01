@@ -65,4 +65,27 @@ describe("viteExporter — exported package.json installs real DS deps", () => {
     expect(script).toContain(".a-btn"); // the theme stylesheet content is emitted
     expect(script).not.toContain("@uoaui/core"); // no fabricated runtime package
   });
+
+  /* The uoaui stylesheet must style the classNames the registry actually emits
+     (componentApiRegistry: a-input-label, a-cb-box) — not assumed names — or
+     exported uoaui inputs/checkboxes render unstyled. */
+  it("uoaui theme styles the exact classNames the registry emits", () => {
+    setCanvas("uoaui", [
+      { id: "i1", type: "SimulatedTextInput", props: { label: "Email" } },
+      { id: "c1", type: "SimulatedCheckbox", props: { label: "Agree", defaultChecked: true } },
+    ]);
+    const script = exportViteBootstrap();
+    expect(script).toContain(".a-input-label"); // registry emits className="a-input-label"
+    expect(script).toContain(".a-cb-box");      // registry emits the <span className="a-cb-box">
+  });
+
+  /* Dep ↔ usage coherence: when charts are present the embedded App.tsx must
+     actually import Highcharts (not just list the dep), so the installed
+     package isn't dead weight. */
+  it("chart canvas → the embedded App.tsx imports Highcharts (dep is actually used)", () => {
+    setCanvas("salt", [{ id: "c1", type: "HighchartLine", props: { chartType: "line", title: "Revenue" } }]);
+    const script = exportViteBootstrap();
+    expect(script).toContain('"highcharts"');                                   // installed
+    expect(script).toContain('import HighchartsReact from "highcharts-react-official";'); // used
+  });
 });

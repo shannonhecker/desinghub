@@ -103,6 +103,11 @@ export function exportReact(): string {
   const charts = hasCharts(allTypes);
 
   const imports = ['import React from "react";'];
+  /* Chart components use hooks + window, so the exported file must be a client
+     component to also work if pasted into a Next.js App Router project. "use
+     client" must be the file's first line; it is a harmless no-op in the
+     documented Vite target. */
+  if (charts) imports.unshift('"use client";', "");
   /* Charts emit runnable Highcharts — pull in the lib + react wrapper + the 4
      advanced-chart modules. The ChartBlock definition is appended below. */
   if (charts) imports.push(...chartImports());

@@ -29,8 +29,9 @@ const PROJECT_NAME = "design-hub-app";
 /**
  * The REAL official npm packages each design system needs at runtime, so the
  * downloaded project installs + runs against the genuine DS API (not a stub).
- * Versions track the host package.json where a dep is already present, and use
- * recent stable ranges otherwise.
+ * Only highcharts/highcharts-react-official track the host package.json; the
+ * DS package ranges are recent-stable values chosen manually (the host is a
+ * Next app using Simulated* renderers and does NOT depend on the DS packages).
  *
  * uoaui is CSS-only: no JS package — the exported project ships its own
  * `src/uoaui-theme.css` (emitted by buildProjectFiles) to satisfy the
@@ -295,7 +296,8 @@ const UOAUI_THEME_CSS = `/* uoaui DS - glassmorphism theme tokens + a-* componen
 
 /* Inputs */
 .a-input-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-.a-label { font-size: 12px; font-weight: 500; color: var(--a-fg-muted); }
+/* registry emits className="a-input-label" (componentApiRegistry uoaui input) */
+.a-input-label { font-size: 12px; font-weight: 500; color: var(--a-fg-muted); }
 .a-input {
   width: 100%;
   padding: 8px 12px;
@@ -328,7 +330,16 @@ const UOAUI_THEME_CSS = `/* uoaui DS - glassmorphism theme tokens + a-* componen
   color: var(--a-fg);
   cursor: pointer;
 }
-.a-checkbox input { accent-color: var(--a-accent); width: 16px; height: 16px; }
+/* registry emits <label className="a-checkbox"><span className="a-cb-box">✓</span> ...,
+   adding " checked" to the label className when checked — style the SPAN, not an input. */
+.a-cb-box {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex-shrink: 0;
+  border: 1px solid var(--a-border); border-radius: 4px;
+  background: var(--a-surface); color: transparent;
+  font-size: 11px; line-height: 1;
+}
+.a-checkbox.checked .a-cb-box { background: var(--a-accent); color: var(--a-accent-fg); border-color: transparent; }
 `;
 
 /* Human label + the npm packages installed for each DS, so the README can be

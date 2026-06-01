@@ -19,7 +19,7 @@
  */
 
 import type { Block } from "@/store/useBuilder";
-import { CATEGORICAL_PALETTES, getPalette } from "@/lib/categoricalPalettes";
+import { CATEGORICAL_PALETTES } from "@/lib/categoricalPalettes";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* ── Chart block types (SimulatedChart + the 12 Highchart* blocks) ── */
@@ -84,10 +84,12 @@ export function chartImports(): string[] {
   return [
     'import Highcharts from "highcharts";',
     'import HighchartsReact from "highcharts-react-official";',
-    'import HighchartsMore from "highcharts/highcharts-more";',
-    'import SolidGauge from "highcharts/modules/solid-gauge";',
-    'import Heatmap from "highcharts/modules/heatmap";',
-    'import Treemap from "highcharts/modules/treemap";',
+    /* Highcharts v12: a module import is a side effect that augments the
+       Highcharts namespace — there is no factory function to call. */
+    'import "highcharts/highcharts-more";',
+    'import "highcharts/modules/solid-gauge";',
+    'import "highcharts/modules/heatmap";',
+    'import "highcharts/modules/treemap";',
   ];
 }
 
@@ -103,18 +105,17 @@ export function chartImports(): string[] {
  * types + a default. Renders <HighchartsReact highcharts={Highcharts} ... />.
  */
 export function chartHelperSource(system: SystemId): string {
-  const palette = (CATEGORICAL_PALETTES as Record<string, string[]>)[system] ?? getPalette(system);
+  const palette = CATEGORICAL_PALETTES[system];
   const paletteLiteral = JSON.stringify(palette);
 
-  return `/* ── ChartBlock: runnable Highcharts, baked ${system} palette + mode theme ── */
-let __chartModulesReady = false;
-function ensureChartModules() {
-  if (__chartModulesReady || typeof window === "undefined") return;
-  __chartModulesReady = true;
-  [HighchartsMore, SolidGauge, Heatmap, Treemap].forEach((m) => {
-    const init = typeof m === "function" ? m : (m && m.default);
-    if (typeof init === "function") init(Highcharts);
-  });
+  return `/* ── ChartBlock: runnable Highcharts, baked ${system} palette + mode theme ──
+   Highcharts modules register via side-effect imports at the top of the exported
+   file (HC v12: importing the module augments Highcharts; no factory to call). */
+
+/* Reduced-motion: exported charts honour the OS setting, matching the builder. */
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && !!window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 /* Baked ${system} categorical palette — first 4 slots are accent / positive /
@@ -123,7 +124,7 @@ const CHART_PALETTE = ${paletteLiteral};
 
 /* Neutral light/dark theme tokens. No CSS vars, no computed-style reads —
    exported code carries its own colours so charts render anywhere. */
-function chartTheme(mode) {
+function chartTheme(mode: "light" | "dark") {
   const dark = mode === "dark";
   return {
     primary: CHART_PALETTE[0],
@@ -139,7 +140,7 @@ function chartTheme(mode) {
   };
 }
 
-function chartBaseTheme(v) {
+function chartBaseTheme(v: ReturnType<typeof chartTheme>) {
   return {
     colors: CHART_PALETTE,
     chart: { backgroundColor: "transparent", style: { fontFamily: "inherit" }, height: 250 },
@@ -168,12 +169,12 @@ function chartBaseTheme(v) {
       itemStyle: { color: v.fgSec, fontSize: "10px", fontWeight: "500" },
       itemHoverStyle: { color: v.fg },
     },
-    plotOptions: { series: { borderWidth: 0 } },
+    plotOptions: { series: { borderWidth: 0, animation: prefersReducedMotion() ? false : { duration: 500 } } },
     credits: { enabled: false },
   };
 }
 
-function chartOptionsFor(chartType, t, v, props) {
+function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: { title?: string; value?: number }): any {
   const tc = t.chart, tt = t.title, tx = t.xAxis, ty = t.yAxis;
   switch (chartType) {
     case "line":
@@ -382,8 +383,7 @@ function chartOptionsFor(chartType, t, v, props) {
   }
 }
 
-function ChartBlock({ type = "line", title, value, mode = "light" }) {
-  ensureChartModules();
+function ChartBlock({ type = "line", title, value, mode = "light" }: { type?: string; title?: string; value?: number; mode?: "light" | "dark" }) {
   const v = chartTheme(mode);
   const options = chartOptionsFor(type, chartBaseTheme(v), v, { title, value });
   return (

@@ -89,6 +89,7 @@ describe("reactExporter — real Highcharts export bridge", () => {
     expect(code).toContain('import Highcharts from "highcharts";');
     expect(code).toContain("function ChartBlock");
     expect(code).not.toContain("chart-placeholder"); // the dead placeholder is gone
+    expect(code.startsWith('"use client";')).toBe(true); // client component for Next App Router portability
   });
 
   it("SimulatedChart maps to a line ChartBlock and threads the builder mode", () => {
@@ -104,5 +105,6 @@ describe("reactExporter — real Highcharts export bridge", () => {
     expect(code).not.toContain("highcharts-react-official");
     expect(code).not.toContain("function ChartBlock");
     expect(code).not.toContain("<ChartBlock");
+    expect(code.startsWith('"use client"')).toBe(false); // no charts → plain presentational file
   });
 });
