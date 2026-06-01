@@ -2793,7 +2793,7 @@ const COMPS = [
   { id: "dl-a11y", name: "Accessibility", cat: "Foundations", desc: "WCAG 2.1 AA. Contrast, focus, touch targets, ARIA, keyboard nav, reduced-motion.", render: DLAccessibility },
   { id: "dl-motion", name: "Motion", cat: "Foundations", desc: "Duration tokens: fast-01 (70ms) through slow-02 (700ms). Carbon easing curves.", render: DLMotion },
   { id: "dl-shape", name: "Shape", cat: "Foundations", desc: "0px radius on controls. Pills (tags) use 16px. Round only for avatars.", render: DLShape },
-  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Full token reference with contrast ratios (routed to TokenReference).", render: () => null },
+  { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Live token reference with WCAG contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit against Carbon token conventions.", render: () => null },
 
   /* Components (22) */

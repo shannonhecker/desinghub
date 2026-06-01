@@ -69,7 +69,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
           Preview, compare, and copy tokens across five design systems.
         </p>
         <p style={{ fontSize: bodySize, color: t.fg2, opacity: 0.85, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
-          {components.length} components across {categories.length} categories -{descSuffix}
+          {components.length} components across {categories.length} categories:{descSuffix}
         </p>
         <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>
           {featurePills.map(s => (
@@ -131,7 +131,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                   </div>
                   <div style={{ padding: "10px 14px 12px" }}>
                     <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                    <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || "Tool"}</div>
+                    <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || "Tool"}</div>
                   </div>
                 </button>
               ))}
@@ -182,7 +182,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     </div>
                     <div style={{ padding: "10px 14px 12px" }}>
                       <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                      <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2 }}>{c.desc?.slice(0, 55) || cat}</div>
+                      <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || cat}</div>
                     </div>
                   </button>
                 );
