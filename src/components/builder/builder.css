@@ -8122,6 +8122,142 @@
 }
 .preview-bar-btn-label { margin-left: 4px; }
 
+/* ── Device segmented control ──
+   The 3 device buttons read as ONE connected control: a single rounded
+   outline with hairline dividers between segments. The active segment is
+   FILLED (not colour-only) so the selection is unambiguous even with
+   colour vision differences — the bolder icon stroke reinforces it. */
+.preview-bar-segment {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.1));
+  border-radius: 7px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.preview-bar-segment .preview-bar-btn {
+  height: 26px;
+  border-radius: 0;
+}
+.preview-bar-segment .preview-bar-btn + .preview-bar-btn {
+  border-left: 1px solid var(--b-border2, rgba(255, 255, 255, 0.1));
+}
+.preview-bar-segment .preview-bar-btn.preview-bar-btn-active {
+  background: rgba(126, 107, 196, 0.28) !important;
+  color: var(--b-fg, #ffffff) !important;
+}
+.builder-light .preview-bar-segment {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.builder-light .preview-bar-segment .preview-bar-btn + .preview-bar-btn {
+  border-left-color: rgba(0, 0, 0, 0.12);
+}
+.builder-light .preview-bar-segment .preview-bar-btn.preview-bar-btn-active {
+  background: rgba(126, 107, 196, 0.2) !important;
+  color: #15102a !important;
+}
+
+/* ── Active DS dropdown ──
+   One labelled trigger + opaque popover menu, replacing the old 5-button
+   row. The menu mirrors the .top-bar-export-menu token pattern (opaque
+   --b-bg2 surface, NO backdrop-filter) so the busy canvas never bleeds
+   through it. */
+.preview-bar-ds-wrap { position: relative; display: inline-flex; }
+.preview-bar-ds-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.72));
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.preview-bar-ds-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--b-fg, #ffffff);
+}
+.preview-bar-ds-trigger.preview-bar-btn-active {
+  background: rgba(126, 107, 196, 0.18) !important;
+  border-color: rgba(126, 107, 196, 0.5);
+  color: var(--b-fg, #ffffff) !important;
+}
+.preview-bar-ds-trigger .material-symbols-outlined {
+  color: var(--b-fg2, rgba(255, 255, 255, 0.6));
+}
+.builder-light .preview-bar-ds-trigger {
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.7);
+}
+.builder-light .preview-bar-ds-trigger:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #15102a;
+}
+.builder-light .preview-bar-ds-trigger.preview-bar-btn-active {
+  background: rgba(126, 107, 196, 0.15) !important;
+  color: #15102a !important;
+}
+.preview-bar-ds-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 10px;
+  /* Opaque token surface (mirrors .top-bar-export-menu): tokens auto-switch
+     per theme, no separate light override needed, and NO backdrop-filter
+     (lightningcss can strip it -> transparent menu over the busy canvas). */
+  background: var(--b-bg2);
+  border: 1px solid var(--b-border2);
+  box-shadow: var(--b-shadow);
+  animation: preview-bar-overflow-in 0.12s ease-out;
+}
+.preview-bar-ds-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--b-fg, rgba(255, 255, 255, 0.88));
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.preview-bar-ds-item:hover { background: rgba(255, 255, 255, 0.06); }
+.preview-bar-ds-item .material-symbols-outlined {
+  font-size: 16px !important;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.55));
+}
+.preview-bar-ds-item.preview-bar-ds-item-active {
+  background: rgba(126, 107, 196, 0.16);
+  color: var(--b-fg, #ffffff);
+  font-weight: 600;
+}
+.preview-bar-ds-item.preview-bar-ds-item-active .material-symbols-outlined {
+  color: var(--ds-primary, rgba(126, 107, 196, 0.9));
+}
+.builder-light .preview-bar-ds-item:hover { background: rgba(0, 0, 0, 0.05); }
+.builder-light .preview-bar-ds-item .material-symbols-outlined { color: rgba(0, 0, 0, 0.55); }
+.builder-light .preview-bar-ds-item.preview-bar-ds-item-active {
+  background: rgba(126, 107, 196, 0.1);
+}
+
 /* Overflow menu */
 .preview-bar-overflow-wrap { position: relative; display: inline-flex; }
 .preview-bar-overflow {
