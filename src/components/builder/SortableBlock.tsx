@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
 import { useBuilder, findBlockInTree } from "@/store/useBuilder";
 import { useInspectorPin } from "@/store/useInspectorPin";
+import { usePreviewReadOnly } from "./previewReadOnly";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
 import { ResizeHUD } from "./ResizeHUD";
 import { HoverInspector } from "./HoverInspector";
@@ -670,7 +671,7 @@ export function SortableBlock({
      selection. Runs in capture phase so it wins over the parent's
      onClick + stopPropagation. */
   const handleClickCapture = (e: React.MouseEvent) => {
-    if (!zone) return;
+    if (!zone || readOnly) return;
     if (!e.shiftKey) return;
     e.stopPropagation();
     e.preventDefault();
@@ -686,6 +687,10 @@ export function SortableBlock({
      and Phase E1 + HoverInspector both bail out on that zone. */
   const setInspectorHover = useInspectorPin((s) => s.setHover);
   const pinInspector = useInspectorPin((s) => s.pin);
+  /* Read-only (Preview / Present / ?preview=1): suppress every editor
+     affordance — selection, multi-select, inspector-pin, context menu —
+     per the previewReadOnly contract. Editable canvas → context default false. */
+  const readOnly = usePreviewReadOnly();
 
   const handlePointerEnter = () => {
     if (!zone || zone === "sidebar") return;
@@ -696,7 +701,7 @@ export function SortableBlock({
     setInspectorHover(null);
   };
   const handleClick = (e: React.MouseEvent) => {
-    if (!zone || zone === "sidebar") return;
+    if (!zone || zone === "sidebar" || readOnly) return;
     /* Shift-click is consumed by handleClickCapture already. */
     if (e.shiftKey) return;
     pinInspector(id);
@@ -706,7 +711,7 @@ export function SortableBlock({
      isn't already in the current selection, replace selection with
      just this block so menu actions target what the user clicked. */
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (!zone) return;
+    if (!zone || readOnly) return;
     e.preventDefault();
     e.stopPropagation();
     if (!selectedBlockIds.includes(id)) {
