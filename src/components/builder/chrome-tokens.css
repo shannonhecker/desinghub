@@ -23,6 +23,12 @@
      Neutral cool near-black: must not bias any of the 5 design
      systems rendered on the stage. */
   --bc-stage:       rgba(14, 16, 20, 1);
+  /* Edit-canvas matting: the edit canvas caps + mats the device frame like
+     Present mode (slightly tighter mat) so "what you build" reads the same as
+     "what you present", instead of edge-to-edge "loose". Theme-agnostic, so
+     defined once in the base :root. */
+  --bc-stage-cap:   1320px;
+  --bc-stage-mat:   clamp(16px, 3vw, 40px);
   --bc-overlay:     rgba(0, 0, 0, 0.40);
 
   /* Text */

@@ -3912,7 +3912,7 @@
 .present-stage .bp-device-frame {
   flex: 0 1 auto;
   width: 100%;
-  max-width: min(100%, 1320px);
+  max-width: min(100%, var(--bc-stage-cap));
   /* Auto margins centre the frame in the stage when there's room, and
      collapse to 0 when the frame overflows — so an over-tall frame aligns
      to the top (header visible, scroll-reachable) instead of being clipped
@@ -8755,11 +8755,20 @@
 .bp-viewport-wrapper {
   flex: 1;
   display: flex;
-  align-items: stretch;
+  /* flex-start + matting + a capped, auto-centred frame mirror Present mode so
+     the edit canvas reads contained, not edge-to-edge "loose". The frame's
+     width still comes from the device preset (set inline in PreviewPanel); the
+     rule below only caps + centres it. */
+  align-items: flex-start;
   justify-content: center;
-  padding: 0;
+  padding: var(--bc-stage-mat);
   overflow: auto;
   background: var(--b-bg);
+}
+.bp-viewport-wrapper .bp-device-frame {
+  flex: 0 1 auto;
+  max-width: min(100%, var(--bc-stage-cap));
+  margin: auto;
 }
 
 /* ══════════════════════════════════════════════════════════
