@@ -2673,6 +2673,352 @@
   outline-offset: 2px;
 }
 
+/* ── Guided pre-build wizard ─────────────────────────────────
+   The empty-state hero flow: one decision per screen, with a live
+   mini-preview alongside. Option chips reuse .prompt-bubble verbatim;
+   only the card shell, the segment indicator, the step grid, the live
+   preview pane, and the nav row are wizard-specific. Token-driven
+   (--b-* builder chrome, --ds-* design-system preview). */
+.wizard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 880px;
+  margin-top: 16px;
+  align-items: start;
+}
+.wizard-card {
+  background: var(--b-surface);
+  border: 1px solid var(--b-border);
+  border-radius: 18px;
+  padding: 22px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.builder-light .wizard-card {
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Progress: determinate 5-segment bar + count + upcoming labels. */
+.wizard-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wizard-progress-count {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--b-fg2);
+}
+.wizard-segments {
+  display: flex;
+  gap: 5px;
+}
+.wizard-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--b-border);
+  transform-origin: left center;
+  transition: background 0.25s ease, transform 0.3s ease;
+}
+.wizard-segment.is-filled {
+  background: var(--b-accent);
+}
+.wizard-segment.is-current {
+  background: var(--b-accent);
+  animation: wizard-seg-fill 0.34s ease both;
+}
+@keyframes wizard-seg-fill {
+  from { transform: scaleX(0.2); opacity: 0.5; }
+  to   { transform: scaleX(1);   opacity: 1; }
+}
+.wizard-segment-labels {
+  display: flex;
+  gap: 5px;
+}
+.wizard-segment-label {
+  flex: 1;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--b-fg2);
+  opacity: 0.6;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.wizard-segment-label.is-current {
+  opacity: 1;
+  color: var(--b-fg);
+  font-weight: 600;
+}
+
+/* aria-live region for screen-reader step announcements. */
+.wizard-aria-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Step body. */
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 168px;
+}
+.wizard-step-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--b-fg);
+  margin: 0;
+  line-height: 1.25;
+}
+.wizard-step-sub {
+  font-size: 13px;
+  color: var(--b-fg2);
+  margin: -4px 0 2px;
+  line-height: 1.45;
+}
+.wizard-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--b-fg2);
+  margin-top: 4px;
+}
+
+/* Option grid - reuses .prompt-bubble chips. */
+.wizard-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wizard-grid-inline {
+  gap: 6px;
+}
+.wizard-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.wizard-chip-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.wizard-chip-wide {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 16px;
+  min-width: 168px;
+}
+.wizard-chip-main { font-weight: 600; }
+.wizard-chip-hint {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.wizard-tag {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--b-accent);
+  color: #15102a;
+}
+
+/* Free-text / note line. */
+.wizard-or-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.wizard-or-label {
+  font-size: 12px;
+  color: var(--b-fg2);
+  white-space: nowrap;
+}
+.wizard-freetext {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--b-border);
+  color: var(--b-fg);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 2px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.wizard-freetext::placeholder { color: var(--b-fg2); opacity: 0.7; }
+.wizard-freetext:focus { border-bottom-color: var(--b-accent); }
+
+/* Confirm summary - editable phrase chips. */
+.wizard-summary {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--b-fg);
+  margin: 4px 0 0;
+}
+.wizard-summary-chip {
+  font: inherit;
+  color: var(--b-accent);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed currentColor;
+  padding: 0 1px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.18s ease;
+}
+.wizard-summary-chip:hover { background: rgba(180, 144, 245, 0.14); }
+.wizard-summary-chip:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+
+/* Nav row. */
+.wizard-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+.wizard-nav-spacer { flex: 0 0 auto; }
+.wizard-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--b-fg2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 6px;
+  border-radius: 8px;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+.wizard-back:hover { color: var(--b-fg); background: var(--b-surface); }
+.wizard-back .material-symbols-outlined { font-size: 16px; }
+.wizard-back:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+.wizard-continue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  background: var(--b-accent);
+  color: #15102a;
+  border: none;
+  border-radius: 9999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.18s ease;
+  box-shadow: 0 2px 10px rgba(180, 144, 245, 0.3);
+}
+.wizard-continue .material-symbols-outlined { font-size: 17px; }
+.wizard-continue:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.wizard-continue:focus-visible { outline: 2px solid var(--b-fg); outline-offset: 2px; }
+.wizard-build { padding-left: 26px; padding-right: 26px; }
+
+/* Persistent skip. */
+.wizard-skip {
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: var(--b-fg2);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.18s ease;
+}
+.wizard-skip:hover { color: var(--b-fg); }
+.wizard-skip:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+
+/* Live preview pane. */
+.wizard-preview-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 8px;
+}
+.wizard-preview-caption {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--b-fg2);
+}
+.wizard-preview {
+  background: var(--ds-bg, #101820);
+  color: var(--ds-fg, #e8eaed);
+  font-family: var(--ds-font, inherit);
+  border: 1px solid var(--b-border);
+  border-radius: 14px;
+  padding: 16px;
+  overflow: hidden;
+  transition: background 0.25s ease;
+}
+.wizard-preview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.wizard-browse-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--b-fg2);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 2px;
+  transition: color 0.18s ease;
+}
+.wizard-browse-link:hover { color: var(--b-fg); }
+.wizard-browse-link:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+
+/* Mobile: stack the preview below the card. */
+@media (max-width: 720px) {
+  .wizard-layout {
+    grid-template-columns: 1fr;
+  }
+  .wizard-preview-pane {
+    position: static;
+  }
+}
+
+/* Reduced motion: drop the segment fill + button lift. */
+@media (prefers-reduced-motion: reduce) {
+  .wizard-segment.is-current { animation: none; }
+  .wizard-continue:hover { transform: none; }
+}
+
 /* Component selector wrapper */
 .component-selector {
   display: flex;

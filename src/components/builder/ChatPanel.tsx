@@ -14,6 +14,8 @@ import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseCard } from "./cards/ToolUseCard";
+import { WizardPanel, type WizardBuildArgs } from "./WizardPanel";
+import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt } from "@/lib/wizardFlow";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -61,15 +63,10 @@ const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
   { label: "Carbon DS", value: "carbon" },
 ];
 
+/* Trimmed display set (issue #14). The local-command handlers + offline
+   keyword fast-paths are untouched - this only cuts which chips show. */
 const REFINE_CHIPS = [
-  /* Theme */
-  "Dark Mode", "Light Mode",
-  /* Add components */
-  "Add Stat Cards", "Add Chart", "Add Data Table", "Add Buttons", "Add Cards",
-  /* Patterns */
-  "Build Dashboard", "Build Login Form", "Build Settings Page",
-  /* Manage */
-  "Show All", "Clear All",
+  "Add Chart", "Add Data Table", "Dark Mode", "Build Dashboard", "Clear All",
 ];
 
 /* ── Component keyword → ID mapping for free-form chat ── */
@@ -379,7 +376,8 @@ export function ChatPanel() {
     pendingAudience, setPendingAudience,
     clearPendingIntent,
     setTemplatesDrawerOpen,
-    ensureSessionStarted, setSessionTitle, currentSessionId,
+    ensureSessionStarted,
+    wizardStep, setWizardStep, builtViaWizard, setBuiltViaWizard,
   } = useBuilder();
 
   /* Backend feature flags from useBackendStatus (mounted in BuilderApp).
@@ -640,25 +638,16 @@ export function ChatPanel() {
   const articleFor = (label: string): string =>
     /^[aeiouAEIOU]/.test(label) ? "an" : "a";
 
+  /* Pattern-card quick-start: instead of jumping straight into the old
+     conversational DS prompt, pre-fill the wizard's interface type from
+     the template and pre-advance to step 2 (System). The user keeps the
+     guided flow but skips the first decision. We DON'T stage the template
+     here - the wizard's Build it path re-derives the template from the
+     chosen interfaceType, so DS / look / audience picks still apply. */
   const handlePatternSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
-    setPendingTemplateId(tpl.id);
-    setPendingFirstMessage(null);
-    const article = articleFor(tpl.label);
-    addMessage("user", `Build me ${article} ${tpl.label}`);
-    addMessage(
-      "ai",
-      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
-    );
-    /* Start a session keyed to the template name so auto-save kicks in
-       immediately. If a session already exists (e.g. user returned to
-       the empty state and picked a different template), update its
-       title to reflect the new focus. */
-    if (!currentSessionId) {
-      ensureSessionStarted(titleFromTemplate(tpl.label));
-    } else {
-      setSessionTitle(titleFromTemplate(tpl.label));
-    }
+    setInterfaceType(tpl.interfaceType);
+    setWizardStep("style");
   };
 
   /* Apply the currently-pending intent (template or freeform message) with
@@ -701,6 +690,84 @@ export function ChatPanel() {
          and fall through to Claude for anything unmatched. */
       setTimeout(() => handleSend(msg), 50);
     }
+  };
+
+  /* ═══════════════════════════════════
+     Guided wizard - Build it / Skip
+     ─────────────────────────────────────
+     The wizard has already written designSystem / mode / density /
+     interfaceType to the store via its setters (live preview). Here we
+     only route the build through the UNCHANGED downstream pipeline:
+       • Type pick, template exists  -> apply the template payload (the
+         same setters applyPendingIntentWithDs Case-1 uses) - offline-safe.
+       • Type pick, no template      -> send the layout-preset prompt via
+         handleSend (offline keyword fast-path builds the preset).
+       • Free-text                   -> handleSend with the DS already set.
+     The freeform / preset sends pass skipFirstTurn so handleSend does not
+     re-ask for a design system (the wizard already chose one).
+     In all cases: open preview + flag builtViaWizard (suppresses the
+     post-build Assumption Row, since dims were chosen explicitly).
+     ═══════════════════════════════════ */
+  const applyTemplateById = (id: TemplateId, ds: DesignSystem) => {
+    const tpl = BUILDER_TEMPLATES[id];
+    if (!tpl) return;
+    setDesignSystem(ds);
+    setInterfaceType(tpl.interfaceType);
+    setSelectedComponents(tpl.selectedComponents);
+    setHeaderBlocks(tpl.header);
+    setSidebarBlocks(tpl.sidebar);
+    setBlocks(tpl.body);
+    setFooterBlocks(tpl.footer);
+    setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
+    setActiveTemplateId(tpl.id);
+    addMessage("user", `Build me ${articleFor(tpl.label)} ${tpl.label}`);
+    addMessage("ai", tpl.aiResponse);
+    bumpPreview();
+  };
+
+  const handleWizardBuild = (args: WizardBuildArgs) => {
+    if (isGenerating) return;
+    const ds = designSystem; // already set live by the wizard's System step
+    setBuiltViaWizard(true);
+    setPreviewOpen(true);
+
+    /* Audience is folded into the free-text path only (it is not a
+       persisted store dim - mirrors the existing audience gate). */
+    const audienceTag = `(audience: ${args.audience})`;
+
+    /* ── Free-text path ── */
+    if (args.freeText) {
+      const text = [args.freeText, args.note, audienceTag].filter(Boolean).join(" ");
+      ensureSessionStarted(titleFromMessage(args.freeText));
+      /* skipFirstTurn: the DS is already chosen, so don't re-ask. Online
+         this builds via the model; offline the keyword fast-paths handle
+         it (and unmatched offline text gets the calm "needs AI" reply). */
+      setTimeout(() => handleSend(text, { skipFirstTurn: true }), 50);
+      return;
+    }
+
+    /* ── Type path ── */
+    const templateId = interfaceTypeToTemplateId(interfaceType);
+    if (templateId) {
+      ensureSessionStarted(titleFromTemplate(BUILDER_TEMPLATES[templateId].label));
+      applyTemplateById(templateId, ds);
+      return;
+    }
+
+    /* No template for this type (landing / ecommerce / blog / portfolio):
+       route the layout-preset prompt through the local fast-path, which
+       builds a full preset layout offline AND online. */
+    const prompt = `${interfaceTypeToBuildPrompt(interfaceType)} ${audienceTag}`;
+    ensureSessionStarted(titleFromMessage(interfaceTypeToBuildPrompt(interfaceType)));
+    setTimeout(() => handleSend(prompt, { skipFirstTurn: true }), 50);
+  };
+
+  const handleWizardSkip = () => {
+    /* Drop into the freeform composer with current defaults applied. We
+       leave builtViaWizard false so the assumption row still appears on
+       freeform builds. Just focus the input. */
+    setWizardStep("done");
+    setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   /* ═══════════════════════════════════
@@ -791,9 +858,17 @@ export function ChatPanel() {
      (no wizard gating).
      ═══════════════════════════════════ */
 
-  const handleSend = (text?: string) => {
+  const handleSend = (text?: string, opts?: { skipFirstTurn?: boolean }) => {
     const msg = (text || inputText).trim();
     if (!msg || isGenerating) return;
+
+    /* First freeform refinement after a wizard build: clear the flag so the
+       Assumption Row resumes for AI/freeform builds. Only fires once the
+       conversation has started (messages.length > 0) so it never clears
+       during the wizard's own build turn. */
+    if (builtViaWizard && messages.length > 0) {
+      setBuiltViaWizard(false);
+    }
 
     /* P4 (build-first): when AI is available, the FIRST freeform message builds
        immediately rather than gating on a "which design system?" question or a
@@ -808,8 +883,9 @@ export function ChatPanel() {
        fast-paths can build a template. When AI IS available we skip this and
        fall through to the model (build-first). Skipping the short-circuit also
        matters when text was passed programmatically (applyPendingIntentWithDs)
-       or a refine chip is clicked. ── */
-    if (messages.length === 0 && !selectedBlockId) {
+       or a refine chip is clicked. The guided wizard passes skipFirstTurn
+       because it has ALREADY chosen the DS - re-asking would be wrong. ── */
+    if (messages.length === 0 && !selectedBlockId && !opts?.skipFirstTurn) {
       if (aiDisabled) {
         setPendingFirstMessage(msg);
         setPendingTemplateId(null);
@@ -1181,30 +1257,29 @@ export function ChatPanel() {
         {/* Flex spacer - pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero - compact empty state.
-            Input is the primary action (larger, centered below).
-            Pattern cards are a tight secondary row (no SVG on card -
-            those live in the Browse Templates drawer). No DS picker
-            here; DS is asked conversationally after the first turn. */}
-        {!hasMessages && (
+        {/* Hero - empty state. The guided pre-build wizard is the primary
+            surface (one decision per screen, friendly voice retained). A
+            tight pattern quick-start row sits above it: a click pre-fills
+            the interface type and jumps the wizard to step 2. The 'Skip
+            setup' ghost inside the wizard drops to the freeform composer
+            below; 'Browse templates' lives in the wizard preview pane. */}
+        {!hasMessages && wizardStep !== "done" && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
-            <h1 className="hero-title">What are we building?</h1>
+            <h1 className="hero-title">Let&rsquo;s set things up.</h1>
             <p className="hero-subtitle">
-              Describe the app you want, or start from a pattern.
+              Five quick choices, or jump straight from a pattern.
             </p>
 
-            {/* Compact pattern cards - medium SVG thumbnail + icon/label/desc.
-                Thumbnail is a shrunk-down version of the Phase C wireframes
-                so users recognize the layout at a glance without the cards
-                dominating the hero. */}
+            {/* Pattern quick-start - clicking pre-fills the type and
+                pre-advances the wizard to the System step. */}
             <div className="pattern-cards-grid pattern-cards-compact">
               {PATTERN_CARDS.map((pat) => (
                 <button
                   key={pat.label}
                   className="pattern-card pattern-card-compact pattern-card-thumb"
                   onClick={() => handlePatternSelect(pat)}
-                  aria-label={`Start from the ${pat.label} template`}
+                  aria-label={`Start from the ${pat.label} pattern`}
                 >
                   <TemplatePreview id={pat.id as TemplateId} />
                   <div className="pattern-card-compact-text">
@@ -1220,18 +1295,23 @@ export function ChatPanel() {
               ))}
             </div>
 
-            {/* Browse templates link - opens the drawer with the full
-                SVG-wireframe gallery relocated from the empty state. */}
-            <button
-              type="button"
-              className="hero-browse-link"
-              onClick={() => setTemplatesDrawerOpen(true)}
-            >
-              Browse templates with previews
-              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginLeft: 4 }}>
-                arrow_forward
-              </span>
-            </button>
+            <WizardPanel
+              onBuild={handleWizardBuild}
+              onSkip={handleWizardSkip}
+              onBrowseTemplates={() => setTemplatesDrawerOpen(true)}
+            />
+          </div>
+        )}
+
+        {/* Skip-setup landing: the wizard was dismissed but no message sent
+            yet. Show the bare greeting so the composer below is the focus. */}
+        {!hasMessages && wizardStep === "done" && (
+          <div className="hero-greeting">
+            <span className="hero-hi">Hi there,</span>
+            <h1 className="hero-title">What are we building?</h1>
+            <p className="hero-subtitle">
+              Describe the app you want in your own words.
+            </p>
           </div>
         )}
 
@@ -1290,7 +1370,9 @@ export function ChatPanel() {
                                             question that didn't build).
                       The Assumption Row shows only once a build has placed
                       content on the canvas (hasCanvasContent) AND this turn
-                      actually built (lastTurnBuilt) or a template is active. */}
+                      actually built (lastTurnBuilt) or a template is active.
+                      Wizard builds (builtViaWizard) chose every dim
+                      explicitly, so the row is suppressed for them. */}
                   {isLastAi && !isGenerating && (
                     awaitingDs ? (
                       renderDsReplyChips()
@@ -1298,7 +1380,8 @@ export function ChatPanel() {
                       renderAudienceChips()
                     ) : (
                       <>
-                        {hasCanvasContent &&
+                        {!builtViaWizard &&
+                        hasCanvasContent &&
                         (lastTurnBuilt(toolUseByMessage[msg.id]) || activeTemplateId)
                           ? renderAssumptionRow()
                           : null}
