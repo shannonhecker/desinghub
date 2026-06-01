@@ -114,6 +114,19 @@ function collect(el: Element, originX: number, originY: number, out: SvgNode[]):
   Array.from(el.children).forEach((c) => collect(c, originX, originY, out));
 }
 
+/* Sanitise a captured chart <svg> before embedding: strip foreignObject /
+   script / style and inline event-handler attributes so the exported file is
+   valid, safe SVG (Figma rasterises foreignObject; raw handlers have no place
+   in a static export). Exported for unit testing. */
+export function sanitizeSvg(raw: string): string {
+  return raw
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, "");
+}
+
 function emit(n: SvgNode): string {
   const name = n.blockId
     ? ` data-name="${esc(n.blockId)}"`
@@ -121,9 +134,10 @@ function emit(n: SvgNode): string {
       ? ` data-name="zone-${esc(n.zone)}"`
       : "";
 
-  /* Highcharts passthrough — translate the captured <svg> into place. */
+  /* Highcharts passthrough: embed the captured chart <svg> in place, sanitised
+     so the output stays valid, safe SVG that Figma can import. */
   if (n.text?.value.startsWith("__SVG__")) {
-    const raw = n.text.value.slice(7);
+    const raw = sanitizeSvg(n.text.value.slice(7));
     return `  <g transform="translate(${n.x.toFixed(1)} ${n.y.toFixed(1)})"${name}>${raw}</g>`;
   }
 
@@ -170,7 +184,7 @@ export function exportFigmaSvg(): string | null {
   collect(root, rr.left, rr.top, nodes);
   const body = nodes.map(emit).filter(Boolean).join("\n");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${rr.width.toFixed(0)}" height="${rr.height.toFixed(0)}" viewBox="0 0 ${rr.width.toFixed(0)} ${rr.height.toFixed(0)}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${rr.width.toFixed(0)}" height="${rr.height.toFixed(0)}" viewBox="0 0 ${rr.width.toFixed(0)} ${rr.height.toFixed(0)}">
 ${body}
 </svg>`;
 }

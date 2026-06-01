@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { useBuilder } from "@/store/useBuilder";
 import { exportSvg } from "../export/svgExporter";
-import { exportFigmaSvg } from "../export/figmaSvgExporter";
+import { exportFigmaSvg, sanitizeSvg } from "../export/figmaSvgExporter";
 
 /* Read the figmaSvgExporter SOURCE so we can assert it targets the corrected
    selectors + the renamed SvgNode interface (the design got the selector
@@ -175,5 +175,19 @@ describe("figmaSvgExporter — DOM-measured (guarded when no canvas)", () => {
     expect(src).not.toContain("interface Node ");
     /* DOM Node global must remain usable for the text-node check. */
     expect(src).toContain("Node.TEXT_NODE");
+  });
+
+  it("sanitizeSvg strips foreignObject / script / style / event handlers from a chart SVG", () => {
+    const dirty =
+      '<svg onload="alert(1)"><foreignObject><div>x</div></foreignObject>' +
+      '<script>evil()</script><style>*{}</style>' +
+      '<rect width="10" height="10" onclick="boom()" /></svg>';
+    const clean = sanitizeSvg(dirty);
+    expect(clean).not.toContain("foreignObject");
+    expect(clean).not.toContain("<script");
+    expect(clean).not.toContain("<style");
+    expect(clean).not.toContain("onload=");
+    expect(clean).not.toContain("onclick=");
+    expect(clean).toContain('<rect width="10" height="10"'); // real geometry preserved
   });
 });
