@@ -15,6 +15,7 @@ import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseCard } from "./cards/ToolUseCard";
 import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
+import { applyTemplateToCanvas } from "@/lib/applyTemplate";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -640,24 +641,15 @@ export function ChatPanel() {
   const applyPendingIntentWithDs = (ds: DesignSystem) => {
     setDesignSystem(ds);
 
-    /* Case 1: a template was staged - apply its full zone payload now */
+    /* Case 1: a template was staged - apply its full zone payload now
+       (shared helper, identical to the panel + wizard apply paths). */
     if (pendingTemplateId) {
       const tpl = BUILDER_TEMPLATES[pendingTemplateId as TemplateId];
       if (tpl) {
-        setInterfaceType(tpl.interfaceType);
-        setSelectedComponents(tpl.selectedComponents);
-        setHeaderBlocks(tpl.header);
-        setSidebarBlocks(tpl.sidebar);
-        setBlocks(tpl.body);
-        setFooterBlocks(tpl.footer);
-        /* Apply the template's body layout (e.g. dashboard's 12-col grid); reset
-           to the default row layout otherwise so a prior grid doesn't leak. */
-        setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
-        setActiveTemplateId(tpl.id);
+        applyTemplateToCanvas(tpl, ds);
         if (!previewOpen) setPreviewOpen(true);
         addMessage("user", DS_LABEL[ds]);
         addMessage("ai", tpl.aiResponse);
-        bumpPreview();
       }
       clearPendingIntent();
       return;
@@ -695,18 +687,9 @@ export function ChatPanel() {
   const applyTemplateById = (id: TemplateId, ds: DesignSystem) => {
     const tpl = BUILDER_TEMPLATES[id];
     if (!tpl) return;
-    setDesignSystem(ds);
-    setInterfaceType(tpl.interfaceType);
-    setSelectedComponents(tpl.selectedComponents);
-    setHeaderBlocks(tpl.header);
-    setSidebarBlocks(tpl.sidebar);
-    setBlocks(tpl.body);
-    setFooterBlocks(tpl.footer);
-    setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
-    setActiveTemplateId(tpl.id);
+    applyTemplateToCanvas(tpl, ds);
     addMessage("user", `Build me ${articleFor(tpl.label)} ${tpl.label}`);
     addMessage("ai", tpl.aiResponse);
-    bumpPreview();
   };
 
   const handleWizardBuild = (args: WizardBuildArgs) => {

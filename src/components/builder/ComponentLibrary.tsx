@@ -20,6 +20,7 @@ import { MiniPreview } from "./MiniPreview";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
+import { applyTemplateToCanvas } from "@/lib/applyTemplate";
 import { ACCENT_PRESETS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import { HoverPreview, type HoverPreviewState } from "./HoverPreview";
 import { CATEGORICAL_PALETTES, PALETTE_SLOT_LABELS, PALETTE_SLOT_NAMES } from "@/lib/categoricalPalettes";
@@ -654,14 +655,14 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
 
 /* ── Templates accordion - Phase E.3
  *    Collapsible section at the top of the panel. When expanded,
- *    shows a 2x2 grid of mini pattern cards. Clicking one runs the
- *    same conversational DS-prompt flow as the hero pattern cards:
- *    stages a pending template and asks the AI for a DS pick. ── */
+ *    shows a 2x2 grid of mini pattern cards. Clicking one applies that
+ *    template to the canvas IMMEDIATELY using the active design system
+ *    (shared applyTemplateToCanvas path with the wizard); the DS can be
+ *    changed afterward from the preview-bar dropdown. ── */
 function TemplatesAccordion() {
   const [open, setOpen] = useState(false);
   const addMessage = useBuilder((s) => s.addMessage);
-  const setPendingTemplateId = useBuilder((s) => s.setPendingTemplateId);
-  const setPendingFirstMessage = useBuilder((s) => s.setPendingFirstMessage);
+  const designSystem = useBuilder((s) => s.designSystem);
   const currentSessionId = useBuilder((s) => s.currentSessionId);
   const ensureSessionStarted = useBuilder((s) => s.ensureSessionStarted);
   const setSessionTitle = useBuilder((s) => s.setSessionTitle);
@@ -670,21 +671,22 @@ function TemplatesAccordion() {
 
   const templates: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
 
+  /* Apply the template to the canvas IMMEDIATELY using the active design
+     system (shared path with the wizard). Previously this only staged a
+     pending intent + asked for a DS, so the canvas "changed nothing" on
+     click. The DS can still be changed afterward from the preview-bar
+     dropdown. */
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
     const article = /^[aeiouAEIOU]/.test(tpl.label) ? "an" : "a";
-    setPendingTemplateId(tpl.id);
-    setPendingFirstMessage(null);
-    addMessage("user", `Build me ${article} ${tpl.label}`);
-    addMessage(
-      "ai",
-      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
-    );
     if (!currentSessionId) {
       ensureSessionStarted(titleFromTemplate(tpl.label));
     } else {
       setSessionTitle(titleFromTemplate(tpl.label));
     }
+    applyTemplateToCanvas(tpl, designSystem);
+    addMessage("user", `Build me ${article} ${tpl.label}`);
+    addMessage("ai", tpl.aiResponse);
   };
 
   return (
