@@ -3330,6 +3330,223 @@
 }
 .chat-msg-ai::before { display: none; }
 
+/* ════════════════════════════════════════════════════════════
+   Conversational onboarding
+   Replaces the multi-card wizard. A vertical chat-style flow:
+   answered turns render as question (AI) + answer (user) bubbles,
+   reusing .chat-msg / .chat-msg-ai / .chat-msg-user. The active
+   turn shows the question + chip radiogroup. Tokens only.
+   ════════════════════════════════════════════════════════════ */
+.onboarding-flow {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 680px;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+/* sr-only live region announcing each new question. */
+.onboarding-aria-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.onboarding-q {
+  font-weight: 500;
+}
+.onboarding-step-count {
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--b-fg3);
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+/* Answered turn is a button so the user can tap to change it. */
+.onboarding-a {
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, opacity 0.2s;
+}
+.onboarding-a:hover {
+  background: var(--b-surface2);
+}
+
+.onboarding-active {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.onboarding-radiogroup {
+  margin-top: 4px;
+}
+.onboarding-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.onboarding-radio-icon {
+  font-size: 16px;
+  opacity: 0.85;
+}
+.onboarding-radio-check {
+  font-size: 16px;
+  margin-left: 2px;
+  color: var(--b-accent);
+}
+/* Selected reads via fill + weight + check glyph + accent border,
+   never colour alone (a11y). Builds on .prompt-bubble.selected. */
+.onboarding-radio.selected {
+  font-weight: 600;
+  border-color: var(--b-accent);
+}
+.onboarding-radio:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+
+/* Free-text "or describe it" / "add a note" row. */
+.onboarding-freetext-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.onboarding-freetext-label {
+  font-size: 12px;
+  color: var(--b-fg3);
+  white-space: nowrap;
+}
+.onboarding-freetext {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: var(--b-surface);
+  border: 1px solid var(--b-surface2);
+  color: var(--b-fg);
+  font-family: inherit;
+  font-size: 13px;
+}
+.onboarding-freetext::placeholder { color: var(--b-fg3); }
+.onboarding-freetext:focus-visible {
+  outline: none;
+  border-color: var(--b-accent);
+  box-shadow: 0 0 0 3px var(--b-accent-glow);
+}
+.onboarding-freetext-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--b-accent);
+  color: #0b1020; /* dark ink: ~6:1 on accent in light, high in dark (white fails) */
+}
+.onboarding-freetext-go .material-symbols-outlined { font-size: 18px; }
+
+/* Primary Build / Continue affordance. */
+.onboarding-build-primary {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--b-accent);
+  color: #0b1020; /* see note above: dark ink keeps AA on accent in both modes */
+  box-shadow: 0 2px 12px var(--b-accent-glow);
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+.onboarding-build-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 4px 18px var(--b-accent-glow);
+}
+.onboarding-build-primary:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+.onboarding-build-primary .material-symbols-outlined { font-size: 18px; }
+.onboarding-continue { margin-top: 12px; }
+
+/* Confirm summary with tap-to-edit chips. */
+.onboarding-summary {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--b-fg);
+  margin: 6px 0 0;
+}
+.onboarding-summary-chip {
+  font: inherit;
+  font-weight: 600;
+  color: var(--b-accent);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--b-accent);
+  padding: 0 1px;
+  cursor: pointer;
+}
+.onboarding-summary-chip:hover { filter: brightness(1.1); }
+.onboarding-summary-chip:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Persistent escape hatches. */
+.onboarding-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--b-surface2);
+}
+.onboarding-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--b-fg3);
+  transition: color 0.2s;
+}
+.onboarding-footer-link:hover { color: var(--b-fg); }
+.onboarding-footer-link:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.onboarding-footer-link .material-symbols-outlined { font-size: 16px; }
+.onboarding-build-now { color: var(--b-accent); font-weight: 600; }
+.onboarding-build-now:hover { color: var(--b-accent); filter: brightness(1.15); }
+
 .chat-msg-label {
   display: none;
 }

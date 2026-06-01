@@ -9,6 +9,8 @@ import {
   densityLabel,
   buildSummarySentence,
   buildSummaryParts,
+  DS_OPTIONS,
+  MODE_OPTIONS,
 } from "../wizardFlow";
 
 describe("wizardFlow - step machine", () => {
@@ -103,5 +105,23 @@ describe("wizardFlow - confirm summary", () => {
     expect(parts.ds).toBe("Material 3");
     expect(parts.look).toBe("dark at high density");
     expect(parts.audience).toBe("a public-facing site");
+  });
+});
+
+describe("wizardFlow - onboarding option lists", () => {
+  it("offers the five design systems in display order", () => {
+    expect(DS_OPTIONS.map((o) => o.value)).toEqual([
+      "salt",
+      "m3",
+      "fluent",
+      "uoaui",
+      "carbon",
+    ]);
+    DS_OPTIONS.forEach((o) => expect(o.label.length).toBeGreaterThan(0));
+  });
+
+  it("offers light then dark theme options with icons", () => {
+    expect(MODE_OPTIONS.map((o) => o.value)).toEqual(["light", "dark"]);
+    expect(MODE_OPTIONS.map((o) => o.icon)).toEqual(["light_mode", "dark_mode"]);
   });
 });
