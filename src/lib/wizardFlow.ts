@@ -2,13 +2,14 @@ import type { InterfaceType, DesignSystem, BuilderMode, WizardStep } from "@/sto
 import type { TemplateId } from "@/lib/builderTemplates";
 
 /* ════════════════════════════════════════════════════════════
-   Guided pre-build wizard - pure helpers
+   Guided pre-build setup - pure helpers
    ────────────────────────────────────────────────────────────
-   The 5-step wizard (Type / System / Look / Audience / Confirm)
-   lives in WizardPanel.tsx, but every decision-free piece of
-   logic - the step order, the next/prev transitions, the
-   interfaceType -> templateId map, and the option metadata -
-   lives here so it can be unit-tested without rendering React.
+   The 5-step flow (Type / System / Look / Audience / Confirm) is
+   rendered conversationally by ConversationalOnboarding.tsx, but
+   every decision-free piece of logic - the step order, the
+   next/prev transitions, the interfaceType -> templateId map, and
+   the option metadata - lives here so it can be unit-tested
+   without rendering React.
    ════════════════════════════════════════════════════════════ */
 
 /* Ordered visible steps (the 5 the user walks; 'done' is terminal,
@@ -71,6 +72,25 @@ export const TYPE_OPTIONS: TypeOption[] = [
   { value: "portfolio", label: "Portfolio", icon: "wallpaper" },
 ];
 
+/* ── Step 2: Design-system options ──
+   The five systems offered, in display order. Shared by the
+   conversational onboarding (and previously the card wizard) so the
+   chip list has one source of truth. The dot colour is driven by
+   data-ds={value} in CSS. */
+export const DS_OPTIONS: { label: string; value: DesignSystem }[] = [
+  { label: "Salt DS", value: "salt" },
+  { label: "Material 3", value: "m3" },
+  { label: "Fluent 2", value: "fluent" },
+  { label: "uoaui DS", value: "uoaui" },
+  { label: "Carbon DS", value: "carbon" },
+];
+
+/* ── Step 3: Theme (light / dark) options ── */
+export const MODE_OPTIONS: { value: BuilderMode; label: string; icon: string }[] = [
+  { value: "light", label: "Light", icon: "light_mode" },
+  { value: "dark", label: "Dark", icon: "dark_mode" },
+];
+
 /* ── Step 4: Audience options ── */
 export interface AudienceOption {
   value: "internal" | "public";
@@ -81,6 +101,19 @@ export const AUDIENCE_OPTIONS: AudienceOption[] = [
   { value: "internal", label: "Internal tool", hint: "dense, data-first" },
   { value: "public", label: "Public-facing", hint: "spacious, marketing" },
 ];
+
+/* Arguments handed to the build pipeline when setup completes (or the
+   user builds early). interfaceType / designSystem / mode / density are
+   read straight off the store (set live as the user answers); only these
+   three are not persisted store dims, so they travel here. */
+export interface WizardBuildArgs {
+  /* Free-text the user typed instead of picking a type. When present the
+     build routes through the freeform composer path; when null the chosen
+     interfaceType maps to a template / layout preset. */
+  freeText: string | null;
+  audience: "internal" | "public";
+  note: string;
+}
 
 /* ── interfaceType -> templateId ──
    Dashboard / form map onto the four shipped templates so the offline

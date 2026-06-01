@@ -5,17 +5,16 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI } from "@/lib/useChatAPI";
-import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
+import { BUILDER_TEMPLATES, getLoginDashboardBody, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
-import { TemplatePreview } from "./TemplatePreviews";
 import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseCard } from "./cards/ToolUseCard";
-import { WizardPanel, type WizardBuildArgs } from "./WizardPanel";
-import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt } from "@/lib/wizardFlow";
+import { ConversationalOnboarding } from "./ConversationalOnboarding";
+import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -50,9 +49,6 @@ function hasMarkdown(text: string): boolean {
    a card instantly populates all four canvas
    zones with a realistic template layout.
    ═══════════════════════════════════════════ */
-
-/* Pattern cards surface the four shipped templates. */
-const PATTERN_CARDS: BuilderTemplate[] = TEMPLATE_ORDER.map((id) => BUILDER_TEMPLATES[id]);
 
 /* ── DS quick-switch (subtle affordance in hero) ── */
 const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
@@ -637,18 +633,6 @@ export function ChatPanel() {
    *  covers every current template and is easy to reason about. */
   const articleFor = (label: string): string =>
     /^[aeiouAEIOU]/.test(label) ? "an" : "a";
-
-  /* Pattern-card quick-start: instead of jumping straight into the old
-     conversational DS prompt, pre-fill the wizard's interface type from
-     the template and pre-advance to step 2 (System). The user keeps the
-     guided flow but skips the first decision. We DON'T stage the template
-     here - the wizard's Build it path re-derives the template from the
-     chosen interfaceType, so DS / look / audience picks still apply. */
-  const handlePatternSelect = (tpl: BuilderTemplate) => {
-    if (isGenerating) return;
-    setInterfaceType(tpl.interfaceType);
-    setWizardStep("style");
-  };
 
   /* Apply the currently-pending intent (template or freeform message) with
      the chosen design system. Fires when the user clicks a DS chip on the
@@ -1257,45 +1241,21 @@ export function ChatPanel() {
         {/* Flex spacer - pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
-        {/* Hero - empty state. The guided pre-build wizard is the primary
-            surface (one decision per screen, friendly voice retained). A
-            tight pattern quick-start row sits above it: a click pre-fills
-            the interface type and jumps the wizard to step 2. The 'Skip
-            setup' ghost inside the wizard drops to the freeform composer
-            below; 'Browse templates' lives in the wizard preview pane. */}
+        {/* Hero - empty state. Conversational onboarding: the assistant asks
+            the five setup questions ONE AT A TIME as chat turns (answer with
+            a tap or by typing). A persistent "Build it now" lets the user
+            create at any point. Templates live behind the "Browse templates"
+            link inside the flow (drawer); "Skip setup" drops to the freeform
+            composer below. */}
         {!hasMessages && wizardStep !== "done" && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
             <h1 className="hero-title">Let&rsquo;s set things up.</h1>
             <p className="hero-subtitle">
-              Five quick choices, or jump straight from a pattern.
+              I&rsquo;ll ask a few quick questions, one at a time. Answer with a tap, or build whenever you like.
             </p>
 
-            {/* Pattern quick-start - clicking pre-fills the type and
-                pre-advances the wizard to the System step. */}
-            <div className="pattern-cards-grid pattern-cards-compact">
-              {PATTERN_CARDS.map((pat) => (
-                <button
-                  key={pat.label}
-                  className="pattern-card pattern-card-compact pattern-card-thumb"
-                  onClick={() => handlePatternSelect(pat)}
-                  aria-label={`Start from the ${pat.label} pattern`}
-                >
-                  <TemplatePreview id={pat.id as TemplateId} />
-                  <div className="pattern-card-compact-text">
-                    <div className="pattern-card-compact-head">
-                      <span className="material-symbols-outlined pattern-card-icon" aria-hidden="true">
-                        {pat.icon}
-                      </span>
-                      <span className="pattern-card-label">{pat.label}</span>
-                    </div>
-                    <span className="pattern-card-desc">{pat.desc}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <WizardPanel
+            <ConversationalOnboarding
               onBuild={handleWizardBuild}
               onSkip={handleWizardSkip}
               onBrowseTemplates={() => setTemplatesDrawerOpen(true)}
