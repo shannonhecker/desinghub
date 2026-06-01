@@ -86,7 +86,9 @@ export function ComponentList() {
     background: "none", border: "none", cursor: "pointer",
     padding: activeSystem === "m3" ? `${t.scale.gap}px 16px` : `${t.scale.gap}px 0`,
     fontSize: t.scale.navF - 1, fontWeight: 600, color: t.fg2, fontFamily: t.font,
-  });
+    // Feeds the DS-colored .uikit-section-toggle:focus-visible ring (globals.css)
+    ["--dh-focus-ring" as string]: t.focusRing,
+  } as React.CSSProperties);
 
   const renderItem = (c: { id: string; name: string }, isChild = false) => (
     <button key={c.id}
@@ -123,7 +125,7 @@ export function ComponentList() {
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {foundationItems.length > 0 && (
         <div>
-          <button onClick={() => toggleGroup("Foundations")} aria-expanded={expandedGroups.has("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
+          <button className="uikit-section-toggle" onClick={() => toggleGroup("Foundations")} aria-expanded={expandedGroups.has("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
             <span style={sectionHeaderStyle}>Foundations</span>
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Foundations") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
           </button>
@@ -133,7 +135,7 @@ export function ComponentList() {
 
       {(toolItems.length > 0 || showBuilderBlocks) && (
         <div>
-          <button onClick={() => toggleGroup("Tools")} aria-expanded={expandedGroups.has("Tools")} style={groupHeaderStyle(expandedGroups.has("Tools"))}>
+          <button className="uikit-section-toggle" onClick={() => toggleGroup("Tools")} aria-expanded={expandedGroups.has("Tools")} style={groupHeaderStyle(expandedGroups.has("Tools"))}>
             <span style={sectionHeaderStyle}>Tools</span>
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
           </button>
@@ -153,7 +155,7 @@ export function ComponentList() {
       {showHelpers && <div style={helperStyle}>Atomic UI controls</div>}
       {subcatGroups.map(g => (
         <div key={g.sub}>
-          <button onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
+          <button className="uikit-section-toggle" onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
             <span>{g.sub}</span>
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
           </button>
@@ -168,7 +170,7 @@ export function ComponentList() {
         if (patternItems.length === 0) return null;
         return (
           <div>
-            <button onClick={() => toggleGroup("Patterns")} aria-expanded={expandedGroups.has("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
+            <button className="uikit-section-toggle" onClick={() => toggleGroup("Patterns")} aria-expanded={expandedGroups.has("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
               <span style={sectionHeaderStyle}>Patterns & Flows</span>
               <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
             </button>

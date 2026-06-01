@@ -22,6 +22,7 @@ export interface ActiveTheme {
   fg: string; fg2: string; fg3: string;
   accent: string; accentFg: string; accentWeak: string; accentText: string;
   border: string; borderStrong: string;
+  focusRing: string;
   activeSystem: SystemId;
   densityOrSize: string | number;
   scale: Scale;
@@ -148,6 +149,14 @@ function computeTheme(
       : T.accent,
     border: n("border", "outlineVariant", "stroke2", "border", "border"),
     borderStrong: n("borderStrong", "outline", "strokeAccessible", "borderStrong", "borderStrong"),
+    /* Per-DS focus-ring color. Carbon ships a real $focus token; Fluent's
+       --colorStrokeFocus2 resolves to the high-contrast neutral (fg1); the
+       rest use their accent (Salt's focus ring is 2px solid accent, M3 =
+       primary, uoaui = --a-accent). Consumed via the --dh-focus-ring CSS
+       var on .uikit-section-toggle in globals.css. */
+    focusRing: activeSystem === "carbon" ? (T.focus ?? T.accent)
+      : activeSystem === "fluent" ? (T.fg1 ?? T.fg)
+      : n("accent", "primary", "brandBg", "accent", "accent"),
     activeSystem,
     densityOrSize,
     scale: computeScale(activeSystem, densityOrSize),

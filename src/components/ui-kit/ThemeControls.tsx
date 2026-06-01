@@ -138,12 +138,14 @@ export function ThemeControls() {
   }
 
   const collapseHeader = (
-    <button onClick={() => setOpen(v => !v)} style={{
+    <button className="uikit-section-toggle" onClick={() => setOpen(v => !v)} style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: `${t.scale.gap - 2}px 0`, background: "none", border: "none", cursor: "pointer",
       fontSize: t.scale.labF, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: 1,
       color: t.fg2, fontFamily: t.font,
-    }}>
+      // Feeds the DS-colored .uikit-section-toggle:focus-visible ring (globals.css)
+      ["--dh-focus-ring" as string]: t.focusRing,
+    } as React.CSSProperties}>
       Controls
       <span style={{ fontSize: 14, transition: "transform 200ms", transform: open ? "rotate(0deg)" : "rotate(-90deg)", opacity: 0.6 }}>⌄</span>
     </button>
