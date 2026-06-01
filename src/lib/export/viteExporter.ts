@@ -468,9 +468,16 @@ const MAX_FILE_BYTES = 256 * 1024;     // 256KB per file
  * exactly. `uniqueDelim()` below guarantees the delimiter doesn't appear
  * in the file, so this function is effectively a defense-in-depth pass
  * plus a size cap - nothing else is needed for injection safety. */
-function sanitizeForHeredoc(s: string): string {
+function sanitizeForHeredoc(s: string, path = ""): string {
   if (s.length > MAX_FILE_BYTES) {
-    // Truncate with a visible marker - far better than a broken project
+    // A mid-token slice of a code file does NOT compile (it cuts inside JSX or a
+    // string and the appended comment lands in broken syntax). For source files
+    // emit a VALID placeholder component so the project still builds; the
+    // total-project cap (below) guards true multi-megabyte bloat. Non-code files
+    // (CSS/MD) tolerate a marker comment.
+    if (/\.(tsx|ts|jsx|js)$/.test(path)) {
+      return `export default function App() {\n  return (\n    <div style={{ padding: 32, fontFamily: "system-ui, sans-serif" }}>\n      <h1>Export too large to inline</h1>\n      <p>This canvas exceeded the ${MAX_FILE_BYTES / 1024}KB per-file export limit. Re-export a smaller selection, or split the layout.</p>\n    </div>\n  );\n}\n`;
+    }
     return s.slice(0, MAX_FILE_BYTES) + "\n/* ...truncated by Design Hub export (file exceeded size limit) ... */\n";
   }
   // Strip any NUL bytes (shouldn't appear but bash handles them oddly)
@@ -569,7 +576,7 @@ echo "→ Writing project files…"
   const fileSections = files
     .map((f, i) => {
       const delim = uniqueDelim(f.contents, i);
-      const safe = sanitizeForHeredoc(f.contents);
+      const safe = sanitizeForHeredoc(f.contents, f.path);
       // Use quoted heredoc ('EOF_N') so $ variables in the content are not expanded.
       return `
 cat > "${f.path}" <<'${delim}'

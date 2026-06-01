@@ -68,6 +68,14 @@ const csv = (v: unknown, fallback: string[] = []): string[] => {
   return parts.length ? parts : fallback;
 };
 
+/* Coerce a builder field to a finite number. User/AI content can be a string
+   like "12%", and `Number("12%")` is NaN — `?? fallback` only catches null, so
+   `value={${num(p.pct, 0)}}` could emit `value={NaN}`. This guards it. */
+const num = (v: unknown, fallback: number): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
 /* Parse a tree CSV of "Parent > Child > Grandchild" paths into a nested map.
    Returns an ordered tree of { label, children } nodes. */
 interface TreeNodeData {
@@ -168,7 +176,7 @@ const SALT: Record<string, ComponentApiEntry> = {
     imports: { from: SALT_CORE, names: ["SegmentedButtonGroup", "Button"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const children = opts
         .map((o, i) => `  <Button${i === di ? ' sentiment="accented"' : ""}>${jsxText(o)}</Button>`)
         .join("\n");
@@ -185,12 +193,12 @@ const SALT: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "MultilineInput"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <MultilineInput placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <MultilineInput placeholder="${jsxAttr(p.placeholder)}" rows={${num(p.rows, 3)}} />\n</FormField>`,
   },
   SimulatedNumberInput: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "NumberInput"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <NumberInput defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <NumberInput defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</FormField>`,
   },
   SimulatedDatePicker: {
     imports: { from: SALT_LAB, names: ["DatePicker", "DatePickerSingleInput", "DatePickerOverlay", "DatePickerSinglePanel"] },
@@ -200,13 +208,13 @@ const SALT: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "Slider"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <Slider min={${num(p.min, 0)}} max={${num(p.max, 100)}} defaultValue={${num(p.value, 50)}} />\n</FormField>`,
   },
   SimulatedRadioGroup: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "RadioButtonGroup", "RadioButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const buttons = opts.map((o) => `    <RadioButton label="${jsxAttr(o)}" value="${slug(o)}" />`).join("\n");
       const dv = slug(opts[di] ?? opts[0]);
       return `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <RadioButtonGroup defaultValue="${dv}">\n${buttons}\n  </RadioButtonGroup>\n</FormField>`;
@@ -232,7 +240,7 @@ const SALT: Record<string, ComponentApiEntry> = {
   SimulatedRating: {
     imports: { from: SALT_CORE, names: ["FormField", "FormFieldLabel", "Rating"] },
     toJsx: (p) =>
-      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Rating")}</FormFieldLabel>\n  <Rating max={${Number(p.max ?? 5)}} defaultValue={${Number(p.value ?? 3)}} />\n</FormField>`,
+      `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Rating")}</FormFieldLabel>\n  <Rating max={${num(p.max, 5)}} defaultValue={${num(p.value, 3)}} />\n</FormField>`,
   },
   SimulatedTokenizedInput: {
     /* FormField/FormFieldLabel from core; TokenizedInput from lab — split. */
@@ -294,7 +302,7 @@ const SALT: Record<string, ComponentApiEntry> = {
   },
   SimulatedProgress: {
     imports: { from: SALT_CORE, names: ["LinearProgress"] },
-    toJsx: (p) => `<LinearProgress aria-label="${jsxAttr(p.label, "Progress")}" value={${Number(p.value ?? 50)}} />`,
+    toJsx: (p) => `<LinearProgress aria-label="${jsxAttr(p.label, "Progress")}" value={${num(p.value, 50)}} />`,
   },
   SimulatedAvatar: {
     imports: { from: SALT_CORE, names: ["Avatar"] },
@@ -471,7 +479,7 @@ const M3: Record<string, ComponentApiEntry> = {
     imports: { from: MUI, names: ["ToggleButtonGroup", "ToggleButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const children = opts.map((o) => `  <ToggleButton value="${slug(o)}">${jsxText(o)}</ToggleButton>`).join("\n");
       return `<ToggleButtonGroup exclusive value="${slug(opts[di] ?? opts[0])}" aria-label="view">\n${children}\n</ToggleButtonGroup>`;
     },
@@ -483,14 +491,14 @@ const M3: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: { from: MUI, names: ["TextField"] },
     toJsx: (p) =>
-      `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" multiline rows={${Number(p.rows ?? 3)}} variant="outlined" fullWidth />`,
+      `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" multiline rows={${num(p.rows, 3)}} variant="outlined" fullWidth />`,
   },
   SimulatedNumberInput: {
     /* verify-corrected: slotProps.htmlInput (works MUI v6.5+/v7); the old
        inputProps is deprecated in v6 and removed in v7. */
     imports: { from: MUI, names: ["TextField"] },
     toJsx: (p) =>
-      `<TextField type="number" label="${jsxAttr(p.label, "Label")}" defaultValue={${Number(p.value ?? 1)}} slotProps={{ htmlInput: { min: ${Number(p.min ?? 0)}, max: ${Number(p.max ?? 99)}, step: ${Number(p.step ?? 1)} } }} variant="outlined" />`,
+      `<TextField type="number" label="${jsxAttr(p.label, "Label")}" defaultValue={${num(p.value, 1)}} slotProps={{ htmlInput: { min: ${num(p.min, 0)}, max: ${num(p.max, 99)}, step: ${num(p.step, 1)} } }} variant="outlined" />`,
   },
   SimulatedDatePicker: {
     /* @mui/x-date-pickers DatePicker requires a LocalizationProvider + a date
@@ -502,13 +510,13 @@ const M3: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: MUI, names: ["Slider"] },
     toJsx: (p) =>
-      `<Slider defaultValue={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} aria-label="${jsxAttr(p.label, "Slider")}" />`,
+      `<Slider defaultValue={${num(p.value, 50)}} min={${num(p.min, 0)}} max={${num(p.max, 100)}} aria-label="${jsxAttr(p.label, "Slider")}" />`,
   },
   SimulatedRadioGroup: {
     imports: { from: MUI, names: ["FormControl", "FormLabel", "RadioGroup", "FormControlLabel", "Radio"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const items = opts
         .map((o) => `    <FormControlLabel value="${slug(o)}" control={<Radio />} label="${jsxAttr(o)}" />`)
         .join("\n");
@@ -535,7 +543,7 @@ const M3: Record<string, ComponentApiEntry> = {
   },
   SimulatedRating: {
     imports: { from: MUI, names: ["Rating"] },
-    toJsx: (p) => `<Rating name="rating" defaultValue={${Number(p.value ?? 3)}} max={${Number(p.max ?? 5)}} />`,
+    toJsx: (p) => `<Rating name="rating" defaultValue={${num(p.value, 3)}} max={${num(p.max, 5)}} />`,
   },
   SimulatedTokenizedInput: {
     imports: { from: MUI, names: ["Autocomplete", "TextField", "Chip"] },
@@ -554,7 +562,7 @@ const M3: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: MUI, names: ["Card", "CardContent", "Typography", "LinearProgress"] },
     toJsx: (p) =>
-      `<Card variant="outlined">\n  <CardContent>\n    <Typography variant="body2" color="text.secondary">${jsxText(p.label, "Metric")}</Typography>\n    <Typography variant="h4">${jsxText(p.value, "0")}</Typography>\n    <LinearProgress variant="determinate" value={${Number(p.pct ?? 0)}} sx={{ mt: 1 }} />\n  </CardContent>\n</Card>`,
+      `<Card variant="outlined">\n  <CardContent>\n    <Typography variant="body2" color="text.secondary">${jsxText(p.label, "Metric")}</Typography>\n    <Typography variant="h4">${jsxText(p.value, "0")}</Typography>\n    <LinearProgress variant="determinate" value={${num(p.pct, 0)}} sx={{ mt: 1 }} />\n  </CardContent>\n</Card>`,
   },
   SimulatedListBox: {
     imports: { from: MUI, names: ["List", "ListItem", "ListItemButton", "ListItemText"] },
@@ -587,7 +595,7 @@ const M3: Record<string, ComponentApiEntry> = {
   },
   SimulatedProgress: {
     imports: { from: MUI, names: ["LinearProgress"] },
-    toJsx: (p) => `<LinearProgress variant="determinate" value={${Number(p.value ?? 50)}} />`,
+    toJsx: (p) => `<LinearProgress variant="determinate" value={${num(p.value, 50)}} />`,
   },
   SimulatedAvatar: {
     imports: { from: MUI, names: ["Avatar"] },
@@ -600,7 +608,7 @@ const M3: Record<string, ComponentApiEntry> = {
     imports: { from: MUI, names: ["AvatarGroup", "Avatar"] },
     toJsx: (p) => {
       const names = csv(p.namesCsv, ["AB", "CD", "EF"]);
-      const max = Number(p.max ?? 4);
+      const max = num(p.max, 4);
       const items = names.map((n) => `  <Avatar>${jsxText(n)}</Avatar>`).join("\n");
       return `<AvatarGroup max={${max}}>\n${items}\n</AvatarGroup>`;
     },
@@ -671,14 +679,17 @@ const M3: Record<string, ComponentApiEntry> = {
     toJsx: (p) => `<Tooltip title="${jsxAttr(p.text, "Tooltip")}">\n  <Button>${jsxText(p.buttonLabel, "Hover me")}</Button>\n</Tooltip>`,
   },
   SimulatedPopover: {
-    imports: { from: MUI, names: ["Popover", "Typography"] },
+    /* MUI Popover is controlled (open/anchorEl/onClose); the exported Dashboard()
+       wrapper has no state, so emit the popover's content surface as a static
+       Paper instead of referencing undeclared identifiers. Honest + compiles. */
+    imports: { from: MUI, names: ["Paper", "Typography"] },
     toJsx: (p) =>
-      `<Popover open={open} anchorEl={anchorEl} onClose={handleClose} anchorOrigin={{ vertical: "bottom", horizontal: "left" }}>\n  <Typography sx={{ p: 2 }} variant="subtitle2">${jsxText(p.title, "Popover")}</Typography>\n  <Typography sx={{ px: 2, pb: 2 }}>${jsxText(p.content)}</Typography>\n</Popover>`,
+      `<Paper elevation={3} sx={{ p: 2, maxWidth: 320 }}>\n  <Typography variant="subtitle2" gutterBottom>${jsxText(p.title, "Popover")}</Typography>\n  <Typography variant="body2">${jsxText(p.content)}</Typography>\n</Paper>`,
   },
   SimulatedDialog: {
     imports: { from: MUI, names: ["Dialog", "DialogTitle", "DialogContent", "DialogContentText", "DialogActions", "Button"] },
     toJsx: (p) =>
-      `<Dialog open={true} onClose={handleClose}>\n  <DialogTitle>${jsxText(p.title, "Dialog")}</DialogTitle>\n  <DialogContent>\n    <DialogContentText>${jsxText(p.message)}</DialogContentText>\n  </DialogContent>\n  <DialogActions>\n    <Button onClick={handleClose}>Cancel</Button>\n    <Button color="error" onClick={handleClose}>Confirm</Button>\n  </DialogActions>\n</Dialog>`,
+      `<Dialog open onClose={() => {}}>\n  <DialogTitle>${jsxText(p.title, "Dialog")}</DialogTitle>\n  <DialogContent>\n    <DialogContentText>${jsxText(p.message)}</DialogContentText>\n  </DialogContent>\n  <DialogActions>\n    <Button onClick={() => {}}>Cancel</Button>\n    <Button color="error" onClick={() => {}}>Confirm</Button>\n  </DialogActions>\n</Dialog>`,
   },
   SimulatedAccordion: {
     imports: { from: MUI, names: ["Accordion", "AccordionSummary", "AccordionDetails", "Typography"] },
@@ -788,7 +799,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
     imports: { from: FLUENT_CORE, names: ["Toolbar", "ToggleButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const children = opts
         .map((o, i) => `  <ToggleButton appearance="subtle"${i === di ? " checked" : ""}>${jsxText(o)}</ToggleButton>`)
         .join("\n");
@@ -802,12 +813,12 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "Textarea"] },
     toJsx: (p) =>
-      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Textarea placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Textarea placeholder="${jsxAttr(p.placeholder)}" rows={${num(p.rows, 3)}} />\n</Field>`,
   },
   SimulatedNumberInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "SpinButton"] },
     toJsx: (p) =>
-      `<Field label="${jsxAttr(p.label, "Label")}">\n  <SpinButton defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <SpinButton defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</Field>`,
   },
   SimulatedDatePicker: {
     imports: { from: "@fluentui/react-datepicker-compat", names: ["DatePicker"] },
@@ -816,13 +827,13 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: FLUENT_CORE, names: ["Field", "Slider"] },
     toJsx: (p) =>
-      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Slider min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} defaultValue={${Number(p.value ?? 50)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Label")}">\n  <Slider min={${num(p.min, 0)}} max={${num(p.max, 100)}} defaultValue={${num(p.value, 50)}} />\n</Field>`,
   },
   SimulatedRadioGroup: {
     imports: { from: FLUENT_CORE, names: ["Field", "RadioGroup", "Radio"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const radios = opts.map((o) => `    <Radio value="${slug(o)}" label="${jsxAttr(o)}" />`).join("\n");
       return `<Field label="${jsxAttr(p.label, "Label")}">\n  <RadioGroup defaultValue="${slug(opts[di] ?? opts[0])}">\n${radios}\n  </RadioGroup>\n</Field>`;
     },
@@ -849,7 +860,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedRating: {
     imports: { from: FLUENT_CORE, names: ["Field", "Rating"] },
     toJsx: (p) =>
-      `<Field label="${jsxAttr(p.label, "Rating")}">\n  <Rating defaultValue={${Number(p.value ?? 3)}} max={${Number(p.max ?? 5)}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Rating")}">\n  <Rating defaultValue={${num(p.value, 3)}} max={${num(p.max, 5)}} />\n</Field>`,
   },
   SimulatedTokenizedInput: {
     imports: { from: FLUENT_CORE, names: ["Field", "TagGroup", "Tag"] },
@@ -870,7 +881,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: FLUENT_CORE, names: ["Card", "CardHeader", "Title3", "Caption1", "ProgressBar"] },
     toJsx: (p) =>
-      `<Card>\n  <CardHeader header={<Caption1>${jsxText(p.label, "Metric")}</Caption1>} />\n  <Title3>${jsxText(p.value, "0")}</Title3>\n  <ProgressBar value={${(Number(p.pct ?? 0) / 100).toString()}} />\n</Card>`,
+      `<Card>\n  <CardHeader header={<Caption1>${jsxText(p.label, "Metric")}</Caption1>} />\n  <Title3>${jsxText(p.value, "0")}</Title3>\n  <ProgressBar value={${(num(p.pct, 0) / 100).toString()}} />\n</Card>`,
   },
   SimulatedListBox: {
     imports: { from: FLUENT_CORE, names: ["Listbox", "Option"] },
@@ -899,7 +910,7 @@ const FLUENT: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: { from: FLUENT_CORE, names: ["Field", "ProgressBar"] },
     toJsx: (p) =>
-      `<Field label="${jsxAttr(p.label, "Progress")}">\n  <ProgressBar value={${(Number(p.value ?? 50) / 100).toString()}} />\n</Field>`,
+      `<Field label="${jsxAttr(p.label, "Progress")}">\n  <ProgressBar value={${(num(p.value, 50) / 100).toString()}} />\n</Field>`,
   },
   SimulatedAvatar: {
     imports: { from: FLUENT_CORE, names: ["Avatar"] },
@@ -1101,7 +1112,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
     imports: { from: CARBON_PKG, names: ["ContentSwitcher", "Switch"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const switches = opts.map((o) => `  <Switch name="${slug(o)}" text="${jsxAttr(o)}" />`).join("\n");
       return `<ContentSwitcher selectedIndex={${di}} onChange={() => {}}>\n${switches}\n</ContentSwitcher>`;
     },
@@ -1116,13 +1127,13 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: { from: CARBON_PKG, names: ["TextArea"] },
     toJsx: (p) =>
-      `<TextArea id="${slug(p.label, "textarea")}" labelText="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" rows={${Number(p.rows ?? 3)}} />`,
+      `<TextArea id="${slug(p.label, "textarea")}" labelText="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" rows={${num(p.rows, 3)}} />`,
   },
   SimulatedNumberInput: {
     /* NumberInput uses `label` (NOT labelText) and requires a unique id. */
     imports: { from: CARBON_PKG, names: ["NumberInput"] },
     toJsx: (p) =>
-      `<NumberInput id="${slug(p.label, "number")}" label="${jsxAttr(p.label, "Label")}" value={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />`,
+      `<NumberInput id="${slug(p.label, "number")}" label="${jsxAttr(p.label, "Label")}" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />`,
   },
   SimulatedDatePicker: {
     imports: { from: CARBON_PKG, names: ["DatePicker", "DatePickerInput"] },
@@ -1132,13 +1143,13 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedSlider: {
     imports: { from: CARBON_PKG, names: ["Slider"] },
     toJsx: (p) =>
-      `<Slider id="${slug(p.label, "slider")}" labelText="${jsxAttr(p.label, "Label")}" value={${Number(p.value ?? 50)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 100)}} step={1} />`,
+      `<Slider id="${slug(p.label, "slider")}" labelText="${jsxAttr(p.label, "Label")}" value={${num(p.value, 50)}} min={${num(p.min, 0)}} max={${num(p.max, 100)}} step={1} />`,
   },
   SimulatedRadioGroup: {
     imports: { from: CARBON_PKG, names: ["RadioButtonGroup", "RadioButton"] },
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const buttons = opts
         .map((o) => `  <RadioButton id="${slug(o)}" value="${slug(o)}" labelText="${jsxAttr(o)}" />`)
         .join("\n");
@@ -1187,7 +1198,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: { from: CARBON_PKG, names: ["Tile"] },
     toJsx: (p) =>
-      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${Number(p.pct ?? 0)}%</span>\n</Tile>`,
+      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${num(p.pct, 0)}%</span>\n</Tile>`,
   },
   /* SimulatedListBox — OMIT: Carbon ListBox is an internal select sub-primitive, not standalone. */
   SimulatedTree: {
@@ -1209,7 +1220,7 @@ const CARBON: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: { from: CARBON_PKG, names: ["ProgressBar"] },
     toJsx: (p) =>
-      `<ProgressBar label="${jsxAttr(p.label, "Progress")}" helperText="${Number(p.value ?? 50)}%" value={${Number(p.value ?? 50)}} max={100} />`,
+      `<ProgressBar label="${jsxAttr(p.label, "Progress")}" helperText="${num(p.value, 50)}%" value={${num(p.value, 50)}} max={100} />`,
   },
   /* SimulatedAvatar — OMIT: Carbon ships no first-party Avatar (compose markup). */
   /* SimulatedAvatarGroup — OMIT: Carbon has neither Avatar nor AvatarGroup. */
@@ -1394,7 +1405,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const buttons = opts
         .map(
           (o, i) =>
@@ -1414,12 +1425,12 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${Number(p.rows ?? 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${num(p.rows, 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
   },
   SimulatedNumberInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${Number(p.value ?? 1)}} min={${Number(p.min ?? 0)}} max={${Number(p.max ?? 99)}} step={${Number(p.step ?? 1)}} />\n</div>`,
+      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</div>`,
   },
   /* SimulatedDatePicker — uoaui has a real role=grid calendar demo (no class);
      emit the accent-highlighted grid the DS itself uses. */
@@ -1435,7 +1446,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => {
       const opts = csv(p.optionsCsv, ["Option A", "Option B", "Option C"]);
-      const di = Number(p.defaultIndex ?? 0);
+      const di = num(p.defaultIndex, 0);
       const rows = opts
         .map((o, i) =>
           i === di
@@ -1489,7 +1500,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedStatCard: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-card" style={{ padding: 16 }}>\n  <div style={{ fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 }}>${jsxText(p.label, "Metric")}</div>\n  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" }}>${jsxText(p.value, "0")}</div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.pct ?? 0)}%" }} /></div>\n</div>`,
+      `<div className="a-card" style={{ padding: 16 }}>\n  <div style={{ fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 }}>${jsxText(p.label, "Metric")}</div>\n  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" }}>${jsxText(p.value, "0")}</div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${num(p.pct, 0)}%" }} /></div>\n</div>`,
   },
   SimulatedListBox: {
     imports: uoauiImport,
@@ -1525,7 +1536,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedProgress: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div>\n  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--a-fg-2)", marginBottom: 4 }}><span>${jsxText(p.label, "Progress")}</span><span>${Number(p.value ?? 50)}%</span></div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${Number(p.value ?? 50)}%" }} /></div>\n</div>`,
+      `<div>\n  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--a-fg-2)", marginBottom: 4 }}><span>${jsxText(p.label, "Progress")}</span><span>${num(p.value, 50)}%</span></div>\n  <div className="a-progress-track"><div className="a-progress-fill" style={{ width: "${num(p.value, 50)}%" }} /></div>\n</div>`,
   },
   SimulatedAvatar: {
     imports: uoauiImport,
@@ -1545,7 +1556,7 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => {
       const names = csv(p.namesCsv, ["AB", "CD", "EF"]);
-      const max = Number(p.max ?? 4);
+      const max = num(p.max, 4);
       const shown = names.slice(0, max);
       const overflow = names.length - max;
       const avatars = shown
