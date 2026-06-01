@@ -91,7 +91,10 @@
   transform: translateY(-1px);
 }
 
-.builder-shell.builder-shell .top-bar-export-menu,
+/* NB: .top-bar-export-menu deliberately NOT in this glass group — a dropdown
+   over the busy canvas needs a fully opaque surface (see its own rule below),
+   not the 0.9-alpha glass used by the larger drawers/panels (which sit over a
+   dimmed overlay). */
 .builder-shell.builder-shell .sessions-drawer,
 .builder-shell.builder-shell .templates-drawer,
 .builder-shell.builder-shell .settings-panel,
@@ -1073,10 +1076,13 @@
   min-width: 320px;
   padding: 6px;
   border-radius: 12px;
-  background: rgba(24, 22, 48, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
+  /* Opaque token surface so the dropdown never lets the busy canvas (Live pill,
+     Components, charts) bleed through it. Tokens auto-switch per theme, so no
+     separate light-mode background override is needed, and there is no
+     backdrop-filter (which lightningcss can strip -> transparent menu). */
+  background: var(--b-bg2);
+  border: 1px solid var(--b-border2);
+  box-shadow: var(--b-shadow);
   animation: top-bar-export-menu-in 0.15s ease-out;
 }
 @keyframes top-bar-export-menu-in {
