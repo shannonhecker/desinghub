@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getTheme, getSystemInfo, getFont, activateTheme } from "@/data/registry";
 import { contrastRatio, formatRatio, meetsAA, isHex } from "@/lib/contrastUtils";
+import { showToast } from "@/lib/toast";
 import {
   isOfficialTokenSource,
   getOfficialTokenList,
@@ -113,7 +114,24 @@ function TokenSwatch({ token, bgToken, colors }: { token: TokenEntry; bgToken: s
       }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: colors.fg }}>{token.name}</div>
-        <div style={{ fontSize: 11, color: colors.fg3, fontFamily: "monospace" }}>{token.value}</div>
+        {/* Click-to-copy the resolved value (keyboard-accessible). The token
+            reference previously had no copy affordance — the highest-frequency
+            action (grab a hex/rgb to paste) required manual selection. */}
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(token.value);
+              showToast(`Copied ${token.value}`, { icon: "content_copy" });
+            } catch {
+              showToast("Clipboard unavailable", { icon: "warning" });
+            }
+          }}
+          title={`Copy ${token.value}`}
+          style={{ display: "block", maxWidth: "100%", background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 11, color: colors.fg3, fontFamily: "monospace", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+        >
+          {token.value}
+        </button>
       </div>
       {ratio !== null && (
         <div style={{
