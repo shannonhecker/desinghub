@@ -6,6 +6,7 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
+import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   salt: { provider: "SaltProvider", importFrom: "@salt-ds/core" },
@@ -15,7 +16,12 @@ const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   carbon: { provider: "Theme", importFrom: "@carbon/react" },
 };
 
-function blockToJSX(block: Block, indent: string, system: SystemId): string {
+function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light" | "dark"): string {
+  /* Charts emit a runnable <ChartBlock> (real Highcharts) — handled before the
+     registry-first path since the ComponentAPIRegistry doesn't cover charts. */
+  if (isChartBlock(block.type)) {
+    return indent + chartBlockJsx(block, mode);
+  }
   /* Prefer real DS-component JSX from the ComponentAPIRegistry; fall back to
      the generic markup for blocks / DSs the registry doesn't cover yet. */
   const real = blockToRealJsx(system, block);
@@ -54,11 +60,6 @@ function blockToJSX(block: Block, indent: string, system: SystemId): string {
       return `${indent}<dialog className="dialog">\n${indent}  <h3>${p.title || "Dialog"}</h3>\n${indent}  <p>${p.message || ""}</p>\n${indent}  <button>Close</button>\n${indent}</dialog>`;
     case "SimulatedDropdown":
       return `${indent}<select className="dropdown">\n${indent}  <option value="">${p.placeholder || "Select..."}</option>\n${indent}</select>`;
-    case "SimulatedChart":
-    case "HighchartLine": case "HighchartArea": case "HighchartColumn": case "HighchartPie":
-    case "HighchartScatter": case "HighchartBar": case "HighchartDonut": case "HighchartSpline":
-    case "HighchartStackedColumn": case "HighchartGauge": case "HighchartHeatmap": case "HighchartTreemap":
-      return `${indent}<div className="chart-placeholder">\n${indent}  {/* ${p.title || "Chart"} - integrate with Highcharts */}\n${indent}  <p>${p.title || "Chart"}</p>\n${indent}</div>`;
     case "AppBrand":
       return `${indent}<div className="app-brand">${p.label || "App"}</div>`;
     case "StatusPill":
@@ -72,9 +73,9 @@ function blockToJSX(block: Block, indent: string, system: SystemId): string {
   }
 }
 
-function renderZone(blocks: Block[], zoneName: string, indent: string, system: SystemId): string {
+function renderZone(blocks: Block[], zoneName: string, indent: string, system: SystemId, mode: "light" | "dark"): string {
   if (blocks.length === 0) return "";
-  const inner = blocks.map((b) => blockToJSX(b, indent + "    ", system)).join("\n");
+  const inner = blocks.map((b) => blockToJSX(b, indent + "    ", system, mode)).join("\n");
   return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
 }
 
@@ -83,11 +84,13 @@ export function exportReact(): string {
   const system = s.designSystem as SystemId;
   const ds = DS_IMPORTS[s.designSystem] || DS_IMPORTS.salt;
 
+  const mode: "light" | "dark" = s.mode === "dark" ? "dark" : "light";
+
   const zones = [
-    renderZone(s.headerBlocks, "Header", "    ", system),
-    renderZone(s.sidebarBlocks, "Sidebar", "    ", system),
-    renderZone(s.blocks, "Body", "    ", system),
-    renderZone(s.footerBlocks, "Footer", "    ", system),
+    renderZone(s.headerBlocks, "Header", "    ", system, mode),
+    renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode),
+    renderZone(s.blocks, "Body", "    ", system, mode),
+    renderZone(s.footerBlocks, "Footer", "    ", system, mode),
   ].filter(Boolean).join("\n\n");
 
   /* Real DS-component imports for the blocks the registry covers. When present
@@ -97,8 +100,17 @@ export function exportReact(): string {
   const allTypes = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks].map((b) => b.type);
   const componentImports = collectImports(system, allTypes);
   const real = componentImports.length > 0;
+  const charts = hasCharts(allTypes);
 
   const imports = ['import React from "react";'];
+  /* Chart components use hooks + window, so the exported file must be a client
+     component to also work if pasted into a Next.js App Router project. "use
+     client" must be the file's first line; it is a harmless no-op in the
+     documented Vite target. */
+  if (charts) imports.unshift('"use client";', "");
+  /* Charts emit runnable Highcharts — pull in the lib + react wrapper + the 4
+     advanced-chart modules. The ChartBlock definition is appended below. */
+  if (charts) imports.push(...chartImports());
   if (real) {
     imports.push(...componentImports);
     /* Provider import differs per DS API. */
@@ -143,6 +155,8 @@ export function exportReact(): string {
             ? ""
             : `\n    </${ds.provider}>`;
 
+  const helper = charts ? `\n${chartHelperSource(system)}` : "";
+
   return `${imports.join("\n")}
 
 export default function Dashboard() {
@@ -152,5 +166,5 @@ ${zones}
     </div>${close}
   );
 }
-`;
+${helper}`;
 }

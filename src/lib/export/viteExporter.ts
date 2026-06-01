@@ -26,29 +26,79 @@ import { exportReact } from "./reactExporter";
 
 const PROJECT_NAME = "design-hub-app";
 
-const PACKAGE_JSON = `{
-  "name": "${PROJECT_NAME}",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+/**
+ * The REAL official npm packages each design system needs at runtime, so the
+ * downloaded project installs + runs against the genuine DS API (not a stub).
+ * Only highcharts/highcharts-react-official track the host package.json; the
+ * DS package ranges are recent-stable values chosen manually (the host is a
+ * Next app using Simulated* renderers and does NOT depend on the DS packages).
+ *
+ * uoaui is CSS-only: no JS package — the exported project ships its own
+ * `src/uoaui-theme.css` (emitted by buildProjectFiles) to satisfy the
+ * `import "./uoaui-theme.css"` side-effect import from reactExporter.
+ */
+const DS_DEPENDENCIES: Record<string, Record<string, string>> = {
+  salt: {
+    "@salt-ds/core": "^1.45.0",
+    "@salt-ds/theme": "^1.18.0",
   },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+  m3: {
+    "@mui/material": "^6.4.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
   },
-  "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "typescript": "^5.5.3",
-    "vite": "^5.3.4"
-  }
+  fluent: {
+    "@fluentui/react-components": "^9.66.0",
+  },
+  carbon: {
+    "@carbon/react": "^1.71.0",
+    "@carbon/styles": "^1.70.0",
+  },
+  uoaui: {
+    /* CSS-only — no runtime package */
+  },
+};
+
+const CHART_DEPENDENCIES: Record<string, string> = {
+  highcharts: "^12.5.0",
+  "highcharts-react-official": "^3.2.3",
+};
+
+/**
+ * Build package.json for the exported project, including the REAL official DS
+ * package(s) for the selected design system plus Highcharts when the canvas
+ * contains charts. Returns the JSON string (with a trailing newline).
+ */
+function packageJson(system: string, hasCharts: boolean): string {
+  const deps: Record<string, string> = {
+    react: "^18.3.1",
+    "react-dom": "^18.3.1",
+    ...(DS_DEPENDENCIES[system] ?? {}),
+    ...(hasCharts ? CHART_DEPENDENCIES : {}),
+  };
+
+  const pkg = {
+    name: PROJECT_NAME,
+    private: true,
+    version: "0.1.0",
+    type: "module",
+    scripts: {
+      dev: "vite",
+      build: "tsc -b && vite build",
+      preview: "vite preview",
+    },
+    dependencies: deps,
+    devDependencies: {
+      "@types/react": "^18.3.3",
+      "@types/react-dom": "^18.3.0",
+      "@vitejs/plugin-react": "^4.3.1",
+      typescript: "^5.5.3",
+      vite: "^5.3.4",
+    },
+  };
+
+  return JSON.stringify(pkg, null, 2) + "\n";
 }
-`;
 
 const VITE_CONFIG = `import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -191,10 +241,152 @@ progress { width: 100%; height: 6px; }
 .checkbox, .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); cursor: pointer; }
 `;
 
-const README_MD = `# ${PROJECT_NAME}
+/* uoaui is a CSS-only DS. reactExporter emits `import "./uoaui-theme.css"` as a
+ * side-effect import, so an exported uoaui project must ship a matching
+ * stylesheet. App.tsx lives in src/, so this file is written to
+ * src/uoaui-theme.css and the relative import resolves. Compact, valid a-*
+ * glassmorphism styles so the exported app renders out of the box. */
+const UOAUI_THEME_CSS = `/* uoaui DS - glassmorphism theme tokens + a-* component styles */
+:root {
+  --a-bg: #0b1120;
+  --a-fg: #e7e2f7;
+  --a-fg-muted: rgba(231, 226, 247, 0.65);
+  --a-surface: rgba(255, 255, 255, 0.06);
+  --a-surface-strong: rgba(255, 255, 255, 0.12);
+  --a-border: rgba(255, 255, 255, 0.16);
+  --a-accent: #8a58c9;
+  --a-accent-fg: #ffffff;
+  --a-radius: 12px;
+  --a-blur: blur(12px);
+  --a-font: "Inter", system-ui, -apple-system, sans-serif;
+}
 
-This project was exported from Design Hub. It's a minimal Vite + React +
-TypeScript starter with the canvas you built wired into \`src/App.tsx\`.
+@media (prefers-color-scheme: light) {
+  :root {
+    --a-bg: #f4f1fb;
+    --a-fg: #15102a;
+    --a-fg-muted: rgba(21, 16, 42, 0.65);
+    --a-surface: rgba(255, 255, 255, 0.55);
+    --a-surface-strong: rgba(255, 255, 255, 0.75);
+    --a-border: rgba(21, 16, 42, 0.12);
+  }
+}
+
+/* Buttons */
+.a-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--a-radius);
+  border: 1px solid var(--a-border);
+  background: var(--a-surface);
+  color: var(--a-fg);
+  font-family: var(--a-font);
+  font-size: 14px;
+  cursor: pointer;
+  backdrop-filter: var(--a-blur);
+  transition: filter 120ms ease, background 120ms ease;
+}
+.a-btn:hover { filter: brightness(1.08); }
+.a-btn-primary { background: var(--a-accent); color: var(--a-accent-fg); border-color: transparent; }
+.a-btn-secondary { background: var(--a-surface-strong); color: var(--a-fg); }
+.a-btn-ghost { background: transparent; border-color: transparent; }
+.a-btn-outline { background: transparent; }
+
+/* Inputs */
+.a-input-wrap { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+/* registry emits className="a-input-label" (componentApiRegistry uoaui input) */
+.a-input-label { font-size: 12px; font-weight: 500; color: var(--a-fg-muted); }
+.a-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--a-radius);
+  border: 1px solid var(--a-border);
+  background: var(--a-surface);
+  color: var(--a-fg);
+  font-family: var(--a-font);
+  font-size: 14px;
+  backdrop-filter: var(--a-blur);
+}
+.a-input:focus-visible { outline: 2px solid var(--a-accent); outline-offset: 1px; }
+
+/* Card */
+.a-card {
+  padding: 16px;
+  border-radius: var(--a-radius);
+  border: 1px solid var(--a-border);
+  background: var(--a-surface);
+  color: var(--a-fg);
+  backdrop-filter: var(--a-blur);
+}
+
+/* Checkbox */
+.a-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--a-fg);
+  cursor: pointer;
+}
+/* registry emits <label className="a-checkbox"><span className="a-cb-box">✓</span> ...,
+   adding " checked" to the label className when checked — style the SPAN, not an input. */
+.a-cb-box {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex-shrink: 0;
+  border: 1px solid var(--a-border); border-radius: 4px;
+  background: var(--a-surface); color: transparent;
+  font-size: 11px; line-height: 1;
+}
+.a-checkbox.checked .a-cb-box { background: var(--a-accent); color: var(--a-accent-fg); border-color: transparent; }
+`;
+
+/* Human label + the npm packages installed for each DS, so the README can be
+ * accurate about what's already in package.json for the active system. */
+const DS_README: Record<string, { label: string; packages: string[]; cssOnly?: boolean }> = {
+  salt: { label: "Salt DS", packages: ["@salt-ds/core", "@salt-ds/theme"] },
+  m3: { label: "Material 3 (MUI)", packages: ["@mui/material", "@emotion/react", "@emotion/styled"] },
+  fluent: { label: "Fluent 2", packages: ["@fluentui/react-components"] },
+  carbon: { label: "Carbon DS", packages: ["@carbon/react", "@carbon/styles"] },
+  uoaui: { label: "uoaui DS", packages: [], cssOnly: true },
+};
+
+function readmeMd(system: string, hasCharts: boolean): string {
+  const info = DS_README[system] ?? DS_README.salt;
+
+  const dsSection = info.cssOnly
+    ? `## Design system — ${info.label}
+
+This canvas uses **${info.label}**, a CSS-only design system. No runtime
+package is required: the glassmorphism \`a-*\` styles ship in
+\`src/uoaui-theme.css\` and are imported by \`src/App.tsx\`, so the app
+renders out of the box.`
+    : `## Design system — ${info.label}
+
+The real **${info.label}** package${info.packages.length > 1 ? "s are" : " is"} already installed in
+\`package.json\`, so the generated code in \`src/App.tsx\` runs against the
+genuine DS API:
+
+${info.packages.map((p) => `- \`${p}\``).join("\n")}
+
+\`npm install\` pulls ${info.packages.length > 1 ? "them" : "it"} in automatically. The DS provider/theme
+wrapper is already wired into \`src/App.tsx\`.`;
+
+  const chartSection = hasCharts
+    ? `
+
+## Charts
+
+This canvas contains chart blocks, so \`highcharts\` and
+\`highcharts-react-official\` are installed too.`
+    : "";
+
+  return `# ${PROJECT_NAME}
+
+This project was exported from Design Hub. It's a Vite + React + TypeScript
+app with the canvas you built wired into \`src/App.tsx\` — running against the
+real design-system package(s) for the system you selected.
 
 ## Quick start
 
@@ -205,35 +397,26 @@ npm run dev
 
 Open http://localhost:5173.
 
-## Next steps
-
-The exported styles use design-system-agnostic CSS tokens in
-\`src/styles.css\` so the app runs out of the box. When you're ready
-to adopt a real DS, swap these for the DS package imports:
-
-- **Salt DS**: \`npm install @salt-ds/core @salt-ds/theme\`
-- **Material 3**: \`npm install @mui/material @emotion/react @emotion/styled\`
-- **Fluent 2**: \`npm install @fluentui/react-components\`
-
-Then replace the root wrapper in \`src/main.tsx\` with the DS's provider
-component.
+${dsSection}${chartSection}
 
 ## What's inside
 
-- \`src/App.tsx\` - your canvas, compiled to JSX
-- \`src/styles.css\` - DS-agnostic tokens + component primitives
-- \`vite.config.ts\` - Vite + React plugin
+- \`src/App.tsx\` - your canvas, compiled to JSX (real DS components)
+- \`src/styles.css\` - layout + fallback primitives for any uncovered blocks
+${info.cssOnly ? "- `src/uoaui-theme.css` - uoaui glassmorphism theme + `a-*` styles\n" : ""}- \`vite.config.ts\` - Vite + React plugin
 - \`tsconfig.json\` - strict TypeScript
 
 Happy building.
 `;
+}
 
 function appTsxSource(): string {
-  // reactExporter's output is a full standalone component; wrap it as src/App.tsx.
-  // exportReact() already emits 'export default function App() { ... }' so we keep it
-  // and prepend the React import + styles import.
-  const componentSource = exportReact();
-  return `import React from "react";\n\n${componentSource}\n`;
+  // reactExporter's output is a full standalone component for src/App.tsx.
+  // exportReact() ALREADY emits `import React from "react";` (and, when charts
+  // are present, a leading `"use client";` that MUST stay the file's first line).
+  // Do NOT prepend another React import here — it duplicates the identifier
+  // (tsc: "Duplicate identifier 'React'") and displaces the directive.
+  return `${exportReact()}\n`;
 }
 
 /** Safety caps - a generated Vite project should never exceed these
@@ -264,17 +447,46 @@ interface ProjectFile {
   contents: string;
 }
 
+/**
+ * Does the canvas contain any chart blocks? Scans ALL four zone arrays for
+ * "SimulatedChart" or any block type starting with "Highchart".
+ *
+ * Hardcoded on purpose — we deliberately do NOT import chartExporter, which may
+ * not exist in every worktree; this keeps viteExporter self-contained.
+ */
+function canvasHasCharts(): boolean {
+  const s = useBuilder.getState();
+  const types = [
+    ...s.headerBlocks,
+    ...s.sidebarBlocks,
+    ...s.blocks,
+    ...s.footerBlocks,
+  ].map((b) => b.type);
+  return types.some((t) => t === "SimulatedChart" || t.startsWith("Highchart"));
+}
+
 function buildProjectFiles(): ProjectFile[] {
-  return [
-    { path: "package.json",     contents: PACKAGE_JSON },
+  const state = useBuilder.getState();
+  const hasCharts = canvasHasCharts();
+
+  const files: ProjectFile[] = [
+    { path: "package.json",     contents: packageJson(state.designSystem, hasCharts) },
     { path: "vite.config.ts",   contents: VITE_CONFIG },
     { path: "tsconfig.json",    contents: TSCONFIG },
     { path: "index.html",       contents: INDEX_HTML },
-    { path: "README.md",        contents: README_MD },
+    { path: "README.md",        contents: readmeMd(state.designSystem, hasCharts) },
     { path: "src/main.tsx",     contents: MAIN_TSX },
     { path: "src/App.tsx",      contents: appTsxSource() },
     { path: "src/styles.css",   contents: STYLES_CSS },
   ];
+
+  /* uoaui ships no JS package — reactExporter emits `import "./uoaui-theme.css"`,
+     so the exported project must include that stylesheet for the app to render. */
+  if (state.designSystem === "uoaui") {
+    files.push({ path: "src/uoaui-theme.css", contents: UOAUI_THEME_CSS });
+  }
+
+  return files;
 }
 
 /** Build a unique heredoc delimiter for a given file's contents. */
