@@ -62,6 +62,7 @@ function WizardLivePreview() {
   return (
     <div
       className={`wizard-preview preview-${designSystem} density-${density}`}
+      inert
       aria-hidden="true"
     >
       <DSPreviewStyles />
@@ -364,27 +365,27 @@ export function WizardPanel({ onBuild, onSkip, onBrowseTemplates }: WizardPanelP
         <p className="wizard-summary">
           {usingFreeText ? (
             <>
-              <button type="button" className="wizard-summary-chip" data-wizard-focus="true" data-wizard-option="true" onClick={jump("type")}>
+              <button type="button" className="wizard-summary-chip" data-wizard-focus="true" onClick={jump("type")}>
                 &ldquo;{freeText.trim()}&rdquo;
               </button>
               {", built with "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("style")}>{parts.ds}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("style")}>{parts.ds}</button>
               {", "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("details")}>{parts.look}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("details")}>{parts.look}</button>
               {", for "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("audience")}>{parts.audience}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("audience")}>{parts.audience}</button>
               {"."}
             </>
           ) : (
             <>
               {parts.article + " "}
-              <button type="button" className="wizard-summary-chip" data-wizard-focus="true" data-wizard-option="true" onClick={jump("type")}>{parts.type}</button>
+              <button type="button" className="wizard-summary-chip" data-wizard-focus="true" onClick={jump("type")}>{parts.type}</button>
               {", built with "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("style")}>{parts.ds}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("style")}>{parts.ds}</button>
               {", "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("details")}>{parts.look}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("details")}>{parts.look}</button>
               {", for "}
-              <button type="button" className="wizard-summary-chip" data-wizard-option="true" onClick={jump("audience")}>{parts.audience}</button>
+              <button type="button" className="wizard-summary-chip" onClick={jump("audience")}>{parts.audience}</button>
               {"."}
             </>
           )}
