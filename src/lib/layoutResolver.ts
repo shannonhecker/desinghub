@@ -85,15 +85,31 @@ export function computeItemStyle(
      is a fraction (fr) OR a legacy colSpan is present; percentage
      and pixel widths still apply as overrides. */
   if (zoneLayout.mode === "grid") {
+    const cols = zoneLayout.columns ?? 3;
     const w = layout.width;
     if (typeof w === "string" && w.endsWith("fr")) {
       const fr = parseFloat(w);
       if (Number.isFinite(fr)) {
         /* fr-mode items span `round(fr)` columns out of the grid's
            column count. Defaults to 1 if invalid. */
-        const span = Math.max(1, Math.min(zoneLayout.columns ?? 3, Math.round(fr)));
+        const span = Math.max(1, Math.min(cols, Math.round(fr)));
         style.gridColumn = `span ${span}`;
       }
+    } else if (typeof w === "string" && w.endsWith("%")) {
+      /* Percentage in a grid maps to a proportional column span
+         (e.g. 50% of a 12-col grid = span 6) so the item occupies a
+         real slice of the row instead of auto-placing into one track. */
+      const pct = parseFloat(w);
+      if (Number.isFinite(pct)) {
+        const span = Math.max(1, Math.min(cols, Math.round((pct / 100) * cols)));
+        style.gridColumn = `span ${span}`;
+      }
+    } else if (w === "fill" || w === undefined) {
+      /* fill / unset spans the full row. This is the fix for blocks
+         (charts, tables) collapsing into a single 1/N track when a
+         template sets width:"fill" in a grid body, or when an unsized
+         block lands on the now-default 12-col grid. */
+      style.gridColumn = "1 / -1";
     } else if (widthCss) {
       style.width = widthCss;
     }
