@@ -23,59 +23,94 @@
 
 import { useBuilder } from "@/store/useBuilder";
 import { exportReact } from "./reactExporter";
+import { collectImports, type SystemId } from "@/lib/componentApiRegistry";
 
 const PROJECT_NAME = "design-hub-app";
 
 /**
- * The REAL official npm packages each design system needs at runtime, so the
- * downloaded project installs + runs against the genuine DS API (not a stub).
- * Only highcharts/highcharts-react-official track the host package.json; the
- * DS package ranges are recent-stable values chosen manually (the host is a
- * Next app using Simulated* renderers and does NOT depend on the DS packages).
+ * Dependencies for the exported project are DERIVED from the REAL imports the
+ * codegen emits (componentApiRegistry.collectImports), so package.json always
+ * matches what src/App.tsx actually imports — including the secondary packages
+ * a given block needs (@salt-ds/lab, @mui/x-tree-view, @fluentui/react-nav-preview,
+ * icon packages, etc.). No hand-maintained per-DS list to drift out of sync.
  *
- * uoaui is CSS-only: no JS package — the exported project ships its own
- * `src/uoaui-theme.css` (emitted by buildProjectFiles) to satisfy the
- * `import "./uoaui-theme.css"` side-effect import from reactExporter.
+ * uoaui is CSS-only: its only "import" is the local ./uoaui-theme.css side
+ * effect (emitted by buildProjectFiles), which resolves to no npm package.
  */
-const DS_DEPENDENCIES: Record<string, Record<string, string>> = {
-  salt: {
-    "@salt-ds/core": "^1.45.0",
-    "@salt-ds/theme": "^1.18.0",
-  },
-  m3: {
-    "@mui/material": "^6.4.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-  },
-  fluent: {
-    "@fluentui/react-components": "^9.66.0",
-  },
-  carbon: {
-    "@carbon/react": "^1.71.0",
-    "@carbon/styles": "^1.70.0",
-  },
-  uoaui: {
-    /* CSS-only — no runtime package */
-  },
-};
-
-const CHART_DEPENDENCIES: Record<string, string> = {
+const VERSION_MAP: Record<string, string> = {
+  react: "^18.3.1",
+  "react-dom": "^18.3.1",
+  "@salt-ds/core": "^1.45.0",
+  "@salt-ds/theme": "^1.18.0",
+  "@salt-ds/lab": "latest",
+  "@salt-ds/icons": "^1.14.0",
+  "@mui/material": "^6.4.0",
+  "@emotion/react": "^11.14.0",
+  "@emotion/styled": "^11.14.0",
+  "@mui/x-tree-view": "latest",
+  "@mui/icons-material": "latest",
+  "@fluentui/react-components": "^9.66.0",
+  "@fluentui/react-nav-preview": "latest",
+  "@fluentui/react-datepicker-compat": "latest",
+  "@fluentui/react-icons": "latest",
+  "@fluentui/react-search": "latest",
+  "@carbon/react": "^1.71.0",
+  "@carbon/styles": "^1.70.0",
+  "@carbon/icons-react": "^11.78.0",
   highcharts: "^12.5.0",
   "highcharts-react-official": "^3.2.3",
 };
 
+/** A "version not found" install failure is worse than a slightly-loose range:
+ *  packages we don't explicitly pin fall back to the published "latest" tag. */
+function ver(pkg: string): string {
+  return VERSION_MAP[pkg] ?? "latest";
+}
+
+/** Provider/theme packages each DS needs even when no single component import
+ *  surfaces them (the React provider + the token stylesheet). uoaui = none. */
+const DS_PROVIDER_PKGS: Record<string, string[]> = {
+  salt: ["@salt-ds/core", "@salt-ds/theme"],
+  m3: ["@mui/material", "@emotion/react", "@emotion/styled"],
+  fluent: ["@fluentui/react-components"],
+  carbon: ["@carbon/react", "@carbon/styles"],
+  uoaui: [],
+};
+
+/** npm package name from an import source path:
+ *   "@salt-ds/lab"                   -> "@salt-ds/lab"
+ *   "@mui/x-date-pickers/DatePicker" -> "@mui/x-date-pickers"
+ *   "highcharts/modules/heatmap"     -> "highcharts"
+ *   "@salt-ds/theme/index.css"       -> "@salt-ds/theme"
+ *   "./uoaui-theme.css"              -> null (local file, not a package) */
+function packageOf(from: string): string | null {
+  if (from.startsWith(".") || from.startsWith("/")) return null;
+  const parts = from.split("/");
+  return from.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+}
+
 /**
- * Build package.json for the exported project, including the REAL official DS
- * package(s) for the selected design system plus Highcharts when the canvas
- * contains charts. Returns the JSON string (with a trailing newline).
+ * Build package.json for the exported project. dependencies = base React +
+ * the active DS's provider/theme packages + every package the emitted imports
+ * actually reference (via collectImports) + Highcharts when charts are present.
+ * Versions come from VERSION_MAP (unknown packages fall back to "latest").
  */
-function packageJson(system: string, hasCharts: boolean): string {
-  const deps: Record<string, string> = {
-    react: "^18.3.1",
-    "react-dom": "^18.3.1",
-    ...(DS_DEPENDENCIES[system] ?? {}),
-    ...(hasCharts ? CHART_DEPENDENCIES : {}),
-  };
+function packageJson(system: string, allTypes: string[], hasCharts: boolean): string {
+  const pkgs = new Set<string>(["react", "react-dom"]);
+  for (const p of DS_PROVIDER_PKGS[system] ?? []) pkgs.add(p);
+  /* Discover the real component packages from the codegen's own imports. */
+  for (const imp of collectImports(system as SystemId, allTypes)) {
+    const m = imp.match(/from\s+"([^"]+)"/) ?? imp.match(/^import\s+"([^"]+)"/);
+    const pkg = m ? packageOf(m[1]) : null;
+    if (pkg) pkgs.add(pkg);
+  }
+  if (hasCharts) {
+    pkgs.add("highcharts");
+    pkgs.add("highcharts-react-official");
+  }
+
+  const dependencies: Record<string, string> = {};
+  for (const p of [...pkgs].sort()) dependencies[p] = ver(p);
 
   const pkg = {
     name: PROJECT_NAME,
@@ -87,7 +122,7 @@ function packageJson(system: string, hasCharts: boolean): string {
       build: "tsc -b && vite build",
       preview: "vite preview",
     },
-    dependencies: deps,
+    dependencies,
     devDependencies: {
       "@types/react": "^18.3.3",
       "@types/react-dom": "^18.3.0",
@@ -447,30 +482,31 @@ interface ProjectFile {
   contents: string;
 }
 
-/**
- * Does the canvas contain any chart blocks? Scans ALL four zone arrays for
- * "SimulatedChart" or any block type starting with "Highchart".
- *
- * Hardcoded on purpose — we deliberately do NOT import chartExporter, which may
- * not exist in every worktree; this keeps viteExporter self-contained.
- */
-function canvasHasCharts(): boolean {
+/** Every block type across the four zones, one level deep into LayoutGroups —
+ *  the input to both dep derivation (collectImports) and chart detection. */
+function canvasBlockTypes(): string[] {
   const s = useBuilder.getState();
-  const types = [
-    ...s.headerBlocks,
-    ...s.sidebarBlocks,
-    ...s.blocks,
-    ...s.footerBlocks,
-  ].map((b) => b.type);
+  const top = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks];
+  const types: string[] = [];
+  for (const b of top) {
+    types.push(b.type);
+    for (const c of b.children ?? []) types.push(c.type);
+  }
+  return types;
+}
+
+/** Charts need Highcharts deps. "SimulatedChart" or any "Highchart*" type. */
+function hasChartBlocks(types: string[]): boolean {
   return types.some((t) => t === "SimulatedChart" || t.startsWith("Highchart"));
 }
 
 function buildProjectFiles(): ProjectFile[] {
   const state = useBuilder.getState();
-  const hasCharts = canvasHasCharts();
+  const allTypes = canvasBlockTypes();
+  const hasCharts = hasChartBlocks(allTypes);
 
   const files: ProjectFile[] = [
-    { path: "package.json",     contents: packageJson(state.designSystem, hasCharts) },
+    { path: "package.json",     contents: packageJson(state.designSystem, allTypes, hasCharts) },
     { path: "vite.config.ts",   contents: VITE_CONFIG },
     { path: "tsconfig.json",    contents: TSCONFIG },
     { path: "index.html",       contents: INDEX_HTML },
