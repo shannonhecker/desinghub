@@ -6659,8 +6659,11 @@
    button background) rather than the raw palette-accent. M3/Fluent/uoaui stay
    on their facsimile mapping until PR-2b. */
 .preview-salt {
-  --ds-primary: var(--salt-actionable-bold-background, #2477a6);
-  --ds-on-primary: var(--salt-actionable-bold-foreground, #fff);
+  /* Accent (teal), NOT actionable-bold (neutral grey): --ds-primary is the
+     brand accent used across charts / progress / links / active states, so map
+     it to Salt's palette accent to preserve the teal identity. */
+  --ds-primary: var(--salt-palette-accent, #1B7F9E);
+  --ds-on-primary: var(--salt-actionable-accented-foreground, #fff);
   --ds-bg: var(--salt-container-primary-background, #101820);
   --ds-fg: var(--salt-content-primary-foreground, #E2E4E5);
   --ds-fg-secondary: var(--salt-content-secondary-foreground, #E2E4E5CC);
