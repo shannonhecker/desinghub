@@ -71,7 +71,7 @@ export function ThemeControls() {
     </div>
   );
 
-  function CtrlBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  function CtrlBtn({ active, onClick, children, sub }: { active: boolean; onClick: () => void; children: React.ReactNode; sub?: string }) {
     const btnClass = activeSystem === "salt"
       ? `s-btn ${active ? "s-btn-solid" : "s-btn-bordered"}`
       : activeSystem === "m3"
@@ -87,11 +87,16 @@ export function ThemeControls() {
         role="radio" aria-checked={active} tabIndex={active ? 0 : -1}
         style={{
           padding: `${t.scale.gap}px ${t.scale.gap + 8}px`,
-          fontSize: t.scale.labF, fontFamily: t.font,
+          // Chip label floor: density scale drops labF to 9px, which is what
+          // made the old "H.20" codes unreadable. 12px is the legibility floor.
+          fontSize: Math.max(12, t.scale.labF), fontFamily: t.font,
           cursor: "pointer", lineHeight: 1.4, minWidth: 0,
           height: "auto",
+          // When a px caption is present, stack it under the word label.
+          ...(sub ? { display: "inline-flex", flexDirection: "column" as const, alignItems: "center", gap: 1, lineHeight: 1.15 } : null),
         }}>
         {children}
+        {sub && <span style={{ fontSize: 10, opacity: 0.6, fontWeight: 400, letterSpacing: 0 }}>{sub}</span>}
       </button>
     );
   }
@@ -171,10 +176,10 @@ export function ThemeControls() {
               <CtrlBtn active={mode === "light"} onClick={() => set(theme, "light")}>Light</CtrlBtn>
               <CtrlBtn active={mode === "dark"} onClick={() => set(theme, "dark")}>Dark</CtrlBtn>
             </ControlGroup>
-            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
-              {(["high", "medium", "low", "touch"] as const).map(k => (
-                <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)}>
-                  {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
+            <ControlGroup label="Density">
+              {([["high", "High", 20], ["medium", "Medium", 28], ["low", "Low", 36], ["touch", "Touch", 44]] as const).map(([k, label, px]) => (
+                <CtrlBtn key={k} active={salt.density === k} onClick={() => setSaltDensity(k)} sub={`${px}px`}>
+                  {label}
                 </CtrlBtn>
               ))}
             </ControlGroup>
@@ -316,10 +321,10 @@ export function ThemeControls() {
                 </div>
               )}
             </div>
-            <ControlGroup label="Density" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
-              {(["high", "medium", "low", "touch"] as const).map(k => (
-                <CtrlBtn key={k} active={uoaui.density === k} onClick={() => setUoauiDensity(k)}>
-                  {k === "high" ? "H.20" : k === "medium" ? "M.28" : k === "low" ? "L.36" : "T.44"}
+            <ControlGroup label="Density">
+              {([["high", "High", 20], ["medium", "Medium", 28], ["low", "Low", 36], ["touch", "Touch", 44]] as const).map(([k, label, px]) => (
+                <CtrlBtn key={k} active={uoaui.density === k} onClick={() => setUoauiDensity(k)} sub={`${px}px`}>
+                  {label}
                 </CtrlBtn>
               ))}
             </ControlGroup>
@@ -370,9 +375,9 @@ export function ThemeControls() {
             <CtrlBtn active={fluent.themeKey === "light"} onClick={() => setFluentTheme("light")}>Light</CtrlBtn>
             <CtrlBtn active={fluent.themeKey === "dark"} onClick={() => setFluentTheme("dark")}>Dark</CtrlBtn>
           </ControlGroup>
-          <ControlGroup label="Size" hint={showHint ? "compact  ·  comfortable  ·  spacious" : undefined}>
-            {([["small","S.24"],["medium","M.32"],["large","L.40"]] as const).map(([k,l]) => (
-              <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)}>{l}</CtrlBtn>
+          <ControlGroup label="Size">
+            {([["small","Small",24],["medium","Medium",32],["large","Large",40]] as const).map(([k,label,px]) => (
+              <CtrlBtn key={k} active={fluent.size === k} onClick={() => setFluentSize(k)} sub={`${px}px`}>{label}</CtrlBtn>
             ))}
           </ControlGroup>
         </div>
