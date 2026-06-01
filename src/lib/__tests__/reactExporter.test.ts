@@ -32,10 +32,10 @@ describe("reactExporter — real DS code for registry-covered blocks", () => {
     expect(code).toContain('className="switch"'); // graceful generic fallback, not a crash
   });
 
-  it("falls back to generic markup for an un-registered block in Salt", () => {
-    setCanvas("salt", [{ id: "b1", type: "SimulatedBreadcrumb", props: { pathCsv: "Home, Settings" } }]);
+  it("falls back to generic markup for a Salt-omitted block (Salt ships no Skeleton)", () => {
+    setCanvas("salt", [{ id: "b1", type: "SimulatedSkeleton", props: { variant: "card" } }]);
     const code = exportReact();
-    expect(code).toContain('className="breadcrumb"');
+    expect(code).toContain('className="simulatedskeleton"'); // generic fallback for an omitted block
   });
 
   it("M3 button → real MUI <Button variant=contained> + @mui/material import + ThemeProvider/createTheme", () => {

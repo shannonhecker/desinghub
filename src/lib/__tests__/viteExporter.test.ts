@@ -99,4 +99,14 @@ describe("viteExporter — exported package.json installs real DS deps", () => {
     expect(script).toContain('"highcharts"');                                   // installed
     expect(script).toContain('import HighchartsReact from "highcharts-react-official";'); // used
   });
+
+  /* Dep derivation: a block mapping to a SECONDARY package (Salt DatePicker →
+     @salt-ds/lab) must appear in package.json — proving deps track the real
+     emitted imports, not a hardcoded core-only list. */
+  it("salt canvas with a lab-package block → @salt-ds/lab in package.json", () => {
+    setCanvas("salt", [{ id: "d1", type: "SimulatedDatePicker", props: {} }]);
+    const script = exportViteBootstrap();
+    expect(script).toContain('"@salt-ds/lab"');
+    expect(script).toContain('"@salt-ds/core"'); // provider baseline still present
+  });
 });
