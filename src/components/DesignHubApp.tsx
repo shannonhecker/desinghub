@@ -146,10 +146,9 @@ export function DesignHubApp() {
          "no seam" aesthetic of carbondesignsystem.com. */
       background: activeSystem === "uoaui" ? t.bg : isCarbon ? t.bg : t.bg2,
       fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
-      {/* Skip link — visually hidden until keyboard focused. WCAG 2.1
-          2.4.1 Bypass Blocks. Sends users past the header + sidebar
-          straight to MainContent. */}
-      <a href="#main-content" className="skip-link">Skip to main content</a>
+      {/* Skip link is provided once by the root layout (app/layout.tsx),
+          targeting this shell's <main id="main-content"> below. A per-shell
+          link here was a duplicate "Skip to main content" (WCAG 2.4.1/4.1.2). */}
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 

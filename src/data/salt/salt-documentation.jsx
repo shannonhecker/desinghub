@@ -69,7 +69,7 @@ const buildCSS = (T) => `
 .s-btn-solid:active{background:${T.accentActive};}
 .s-btn-bordered{background:transparent;color:${T.fg};border-color:${T.border};}
 .s-btn-bordered:hover{background:${T.accentWeak};}
-.s-btn-transparent{background:transparent;color:${T.accent};}
+.s-btn-transparent{background:transparent;color:${T.accentText||T.accent};}
 .s-btn-transparent:hover{background:${T.bg2};}
 .s-btn-neutral{background:${T.bg2};color:${T.fg};border-color:${T.border};}
 .s-btn-neutral:hover{background:${T.bg3};}

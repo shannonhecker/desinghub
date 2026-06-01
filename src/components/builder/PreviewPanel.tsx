@@ -620,7 +620,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
               >
                 <div
                   className="bp-header-brand"
-                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
+                  onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
                 >
                   <div className="bp-logo-mark">
                     <Bot size={compact ? 14 : 16} strokeWidth={2.4} />
@@ -653,7 +653,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
               >
                 <div
                   className="bp-status-pill"
-                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
+                  onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}
                 >
                   <span className="bp-status-dot" />
                   <span
@@ -680,7 +680,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
               isSelected={selectedBlockId === block.id}
               onRemove={() => { removeBlockFromZone("header", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
             >
-              <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}>
+              <div onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "header"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
               </div>
             </SortableBlock>
@@ -805,7 +805,7 @@ function DashboardSidebar({
                     <button
                       className={`bp-nav-item${active ? " bp-nav-item--active" : ""}`}
                       title={block.props.label as string}
-                      onClick={(e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
+                      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
                     >
                       <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
                       {/* Plain span — was previously a framer-motion
@@ -850,7 +850,7 @@ function DashboardSidebar({
               >
                 <div
                   className="zone-block-sidebar"
-                  onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "sidebar"); }}
+                  onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "sidebar"); }}
                 >
                   <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
                 </div>
@@ -941,7 +941,7 @@ function DashboardFooter() {
                 isSelected={selectedBlockId === block.id}
                 onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
               >
-                <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
+                <div onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                   <span
                     className="bp-zone-editable"
                     contentEditable={!readOnly}
@@ -977,7 +977,7 @@ function DashboardFooter() {
               isSelected={selectedBlockId === block.id}
               onRemove={() => { removeBlockFromZone("footer", block.id); showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: canvasUndo } }); }}
             >
-              <div onClick={(e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
+              <div onClick={readOnly ? undefined : (e) => { e.stopPropagation(); setSelectedBlock(block.id, "footer"); }}>
                 <ComponentRenderer type={block.type} system={designSystem} blockId={block.id} {...block.props} />
               </div>
             </SortableBlock>

@@ -450,10 +450,9 @@ export function BuilderApp() {
       className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode={builderMode}
     >
-      {/* Skip link, visually hidden until keyboard focused. WCAG 2.1
-          2.4.1 Bypass Blocks. Sends users past the top-bar straight to
-          the chat + canvas split inside <main id="main-content">. */}
-      <a href="#main-content" className="skip-link">Skip to main content</a>
+      {/* Skip link is provided once by the root layout (app/layout.tsx),
+          targeting this shell's <main id="main-content"> below. A per-shell
+          link here was a duplicate "Skip to main content" (WCAG 2.4.1/4.1.2). */}
 
       {/* GeminiSidebar removed - replaced by SessionsDrawer (left slide-in).
           isSidebarOpen is kept in state only to preserve any related CSS
