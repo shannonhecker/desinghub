@@ -4005,12 +4005,12 @@
 }
 .export-modal-title { font-size: 16px; font-weight: 600; color: var(--b-fg); }
 .export-modal-close { background: none; border: none; cursor: pointer; color: var(--b-fg3); padding: 4px; border-radius: 4px; }
-.export-format-row { display: flex; gap: 8px; padding: 16px 20px 0; }
+.export-format-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 20px 0; }
 .export-format-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  flex: 1 1 96px; display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500;
   border: 1px solid var(--b-border2); background: transparent; color: var(--b-fg2);
-  transition: all 0.15s;
+  transition: all 0.15s; white-space: nowrap;
 }
 .export-format-btn.active { background: var(--b-accent-surface); border-color: var(--b-accent); color: var(--b-accent); }
 .export-generate-btn {
