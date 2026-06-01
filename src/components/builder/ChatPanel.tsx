@@ -2,7 +2,8 @@
 
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { DesignSystem } from "@/store/useBuilder";
+import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
+import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, getLoginDashboardBody, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
@@ -299,6 +300,23 @@ const DS_LABEL: Record<DesignSystem, string> = {
   carbon: "Carbon DS",
 };
 
+/* Did the last AI turn actually BUILD something? Reuse the existing
+   tool-use event stream (toolUseByMessage) rather than adding new store
+   state - if the turn emitted any block/canvas/interface action, a build
+   happened and the Assumption Row should offer to correct the inferred
+   dims. (Template-applied builds are covered separately via the canvas
+   content / activeTemplateId fallback in the render slot.) */
+function lastTurnBuilt(events: ToolUseEvent[] | undefined): boolean {
+  if (!events) return false;
+  return events.some(
+    (e) =>
+      e.action === "addBlock" ||
+      e.action === "setInterfaceType" ||
+      e.action === "clearCanvas" ||
+      e.action === "setZoneLayout",
+  );
+}
+
 function getFreeformResponse(input: string): string {
   const l = input.toLowerCase();
   if (l.includes("dark") || l.includes("light")) return "Theme updated! The preview reflects the new mode.";
@@ -346,8 +364,11 @@ export function ChatPanel() {
     messages, inputText, isGenerating,
     setInputText, addMessage, setGenerating, bumpPreview,
     designSystem, selectedComponents,
+    /* Assumption Row reads these inferred dim VALUES from the store
+       (the build set them); the row shows + one-tap-corrects each. */
+    mode, density, interfaceType,
     previewOpen, setPreviewOpen,
-    setDesignSystem, setMode, setInterfaceType, setSelectedComponents,
+    setDesignSystem, setMode, setDensity, setInterfaceType, setSelectedComponents,
     setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks, setZoneLayout,
     activeTemplateId, setActiveTemplateId,
     isRegeneratingContent, setIsRegeneratingContent,
@@ -355,6 +376,7 @@ export function ChatPanel() {
     blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks,
     pendingTemplateId, setPendingTemplateId,
     pendingFirstMessage, setPendingFirstMessage,
+    pendingAudience, setPendingAudience,
     clearPendingIntent,
     setTemplatesDrawerOpen,
     ensureSessionStarted, setSessionTitle, currentSessionId,
@@ -369,6 +391,16 @@ export function ChatPanel() {
 
   /* Whether the conversational onboarding is waiting on a DS pick. */
   const awaitingDs = Boolean(pendingTemplateId || pendingFirstMessage);
+
+  /* Whether a build has actually placed content on the canvas. The
+     Assumption Row is a post-build affordance, so it only shows once
+     some zone has blocks (or a template is active). */
+  const hasCanvasContent =
+    bodyBlocks.length > 0 ||
+    headerBlocks.length > 0 ||
+    sidebarBlocks.length > 0 ||
+    footerBlocks.length > 0 ||
+    Boolean(activeTemplateId);
 
   /* Derive the selected-block metadata for the scope chip.
      Falls back to null when nothing is selected. */
@@ -792,6 +824,28 @@ export function ChatPanel() {
       /* AI available: name the session, then fall through to the keyword
          fast-paths + model below so "type anything" builds in one turn. */
       ensureSessionStarted(titleFromMessage(msg));
+
+      /* ── PRE-BUILD AUDIENCE GATE (single, confidence-gated) ──
+         Build-first still wins for almost everything. We interrupt with
+         AT MOST one question, and ONLY when the prompt is app/dashboard-
+         like AND carries no audience signal (audienceUnguessable), since
+         audience flips structure (dense internal tool vs spacious public
+         page). The pick re-sends the staged message with the audience
+         folded in. LIMIT: audience is message-only, not a persisted store
+         dim, so it is not re-asserted on later turns (documented in
+         assumptionDims.ts). We reuse the SAME ensureSessionStarted above —
+         no second call — then return to wait for the one-tap chip. */
+      if (audienceUnguessable(msg)) {
+        setPendingAudience(msg);
+        setPendingFirstMessage(null);
+        setPendingTemplateId(null);
+        addMessage("user", msg);
+        addMessage(
+          "ai",
+          "Quick check so I build the right shape - who is this for?",
+        );
+        return;
+      }
     }
 
     addMessage("user", msg);
@@ -999,6 +1053,111 @@ export function ChatPanel() {
     </div>
   );
 
+  /* ═══════════════════════════════════
+     Assumption Row - post-build, one-tap
+     correction of the dims the build
+     inferred. Reads VALUES straight from
+     the store (mode/density/interfaceType/
+     designSystem). Each chip: apply the
+     corrected dim via its store setter,
+     then re-run generation through the
+     unchanged handleSend pipeline so the
+     [Current state] prefix carries the
+     change to the model. One tap, reversible
+     (tap again to cycle on / back).
+     ═══════════════════════════════════ */
+  const renderAssumptionRow = () => {
+    const dims = buildAssumptionDims({ designSystem, interfaceType, mode, density });
+
+    /* Apply the corrected value to the right store dim, then re-send the
+       terse imperative. DS/mode/density also have local fast-paths in
+       handleSend; interfaceType falls through to the model. */
+    const correct = (dim: (typeof dims)[number]) => {
+      switch (dim.key) {
+        case "ds":
+          setDesignSystem(dim.nextValue as DesignSystem);
+          break;
+        case "iface":
+          setInterfaceType(dim.nextValue as InterfaceType);
+          break;
+        case "mode":
+          setMode(dim.nextValue as BuilderMode);
+          break;
+        case "density":
+          setDensity(dim.nextValue);
+          break;
+      }
+      handleSend(dim.imperative);
+    };
+
+    return (
+      <div
+        className="prompt-bubbles assumption-row"
+        role="group"
+        aria-label="Inferred settings - tap a chip to change it and rebuild"
+      >
+        <span className="assumption-row-lead" aria-hidden="true">
+          I assumed:
+        </span>
+        {dims.map((dim) => (
+          <button
+            key={dim.key}
+            type="button"
+            className="prompt-bubble prompt-bubble-assumption"
+            onClick={() => correct(dim)}
+            disabled={isGenerating}
+            aria-label={dim.ariaLabel}
+            title="Tap to change this and rebuild"
+          >
+            {dim.label}
+            <span className="assumption-row-caret" aria-hidden="true">
+              ›
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  /* ═══════════════════════════════════
+     Audience gate - the single confidence-
+     gated pre-build question. Reuses the
+     awaitingDs / pendingFirstMessage staging
+     pattern: tap clears pendingAudience and
+     re-sends the staged message with the
+     resolved audience folded into the text.
+     ═══════════════════════════════════ */
+  const renderAudienceChips = () => (
+    <div
+      className="prompt-bubbles ds-reply-chips"
+      role="group"
+      aria-label="Who is this for?"
+    >
+      {[
+        { value: "internal", label: "Internal tool", hint: "dense, data-first" },
+        { value: "public", label: "Public-facing", hint: "spacious, marketing" },
+      ].map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          className="prompt-bubble prompt-bubble-ds"
+          onClick={() => {
+            const staged = pendingAudience;
+            setPendingAudience(null);
+            if (!staged) return;
+            if (!previewOpen) setPreviewOpen(true);
+            /* Fold the resolved audience into the message so the build
+               honors it. audience is message-only (not a persisted dim). */
+            handleSend(`${staged} (audience: ${opt.value}, ${opt.hint})`);
+          }}
+          title={`Build for an ${opt.label.toLowerCase()}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+
   const placeholderText = selectedBlock
     ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
     : awaitingDs
@@ -1122,7 +1281,31 @@ export function ChatPanel() {
                      Hidden until properly wired (issue #73). Silent no-ops
                      on user clicks erode trust — half-built UI is worse
                      than missing UI. */}
-                  {isLastAi && !isGenerating && (awaitingDs ? renderDsReplyChips() : renderRefineChips())}
+                  {/* Chip slot under the last AI bubble:
+                        awaitingDs       -> DS gate (existing)
+                        pendingAudience  -> single pre-build audience gate (new)
+                        post-build       -> Assumption Row (correct inferred
+                                            dims) + the usual refine chips
+                        otherwise        -> refine chips only (e.g. a pure
+                                            question that didn't build).
+                      The Assumption Row shows only once a build has placed
+                      content on the canvas (hasCanvasContent) AND this turn
+                      actually built (lastTurnBuilt) or a template is active. */}
+                  {isLastAi && !isGenerating && (
+                    awaitingDs ? (
+                      renderDsReplyChips()
+                    ) : pendingAudience ? (
+                      renderAudienceChips()
+                    ) : (
+                      <>
+                        {hasCanvasContent &&
+                        (lastTurnBuilt(toolUseByMessage[msg.id]) || activeTemplateId)
+                          ? renderAssumptionRow()
+                          : null}
+                        {renderRefineChips()}
+                      </>
+                    )
+                  )}
                 </div>
               );
             })}

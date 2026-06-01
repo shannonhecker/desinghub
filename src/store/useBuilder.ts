@@ -195,6 +195,11 @@ interface BuilderState {
   // or the freeform message is routed to Claude with that DS set.
   pendingTemplateId: string | null;
   pendingFirstMessage: string | null;
+  // Staged first message awaiting a one-tap audience pick (pre-build
+  // confidence-gated question). Mirrors pendingFirstMessage: the chip
+  // handler clears it and re-sends with the audience folded into the
+  // message text. NOTE: audience is message-only, not a persisted dim.
+  pendingAudience: string | null;
 
   // Templates drawer - slide-in gallery that shows the full SVG-wireframe
   // cards (relocated from the empty state for visual clarity).
@@ -319,6 +324,7 @@ interface BuilderState {
   // Actions - Pending (conversational onboarding)
   setPendingTemplateId: (id: string | null) => void;
   setPendingFirstMessage: (msg: string | null) => void;
+  setPendingAudience: (msg: string | null) => void;
   clearPendingIntent: () => void;
 
   // Actions - Templates drawer
@@ -617,6 +623,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Conversational onboarding state
   pendingTemplateId: null,
   pendingFirstMessage: null,
+  pendingAudience: null,
 
   // Templates drawer
   templatesDrawerOpen: false,
@@ -703,6 +710,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     activeTemplateId: null,
     pendingTemplateId: null,
     pendingFirstMessage: null,
+    pendingAudience: null,
   }),
 
   setDesignSystem: (ds) => set((s) => {
@@ -806,7 +814,8 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
   setPendingFirstMessage: (msg) => set({ pendingFirstMessage: msg }),
-  clearPendingIntent: () => set({ pendingTemplateId: null, pendingFirstMessage: null }),
+  setPendingAudience: (msg) => set({ pendingAudience: msg }),
+  clearPendingIntent: () => set({ pendingTemplateId: null, pendingFirstMessage: null, pendingAudience: null }),
 
   setTemplatesDrawerOpen: (v) => set({ templatesDrawerOpen: v }),
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
@@ -892,6 +901,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     activeTemplateId: null,
     pendingTemplateId: null,
     pendingFirstMessage: null,
+    pendingAudience: null,
     inputText: '',
     isGenerating: false,
     currentSessionId: null,
