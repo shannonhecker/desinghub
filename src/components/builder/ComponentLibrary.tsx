@@ -174,7 +174,10 @@ function BlueprintItem({ blueprint, zone }: {
       onPointerUp={handlePointerUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      title={`${blueprint.label} - drag onto canvas or click to add`}
+      /* No native `title`: it duplicated the richer HoverPreview popover and
+         the OS truncated it ("...or clic"). aria-label keeps the same hint for
+         screen readers without rendering a second, clipped tooltip. */
+      aria-label={`${blueprint.label}, drag onto canvas or click to add`}
       role="button"
       tabIndex={0}
     >
