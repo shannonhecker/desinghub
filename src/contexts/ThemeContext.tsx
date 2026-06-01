@@ -21,7 +21,7 @@ export interface ActiveTheme {
   bg: string; bg2: string; bg3: string;
   fg: string; fg2: string; fg3: string;
   accent: string; accentFg: string; accentWeak: string; accentText: string;
-  border: string; borderStrong: string;
+  border: string; borderStrong: string; borderSubtle: string;
   focusRing: string;
   activeSystem: SystemId;
   densityOrSize: string | number;
@@ -149,6 +149,14 @@ function computeTheme(
       : T.accent,
     border: n("border", "outlineVariant", "stroke2", "border", "border"),
     borderStrong: n("borderStrong", "outline", "strokeAccessible", "borderStrong", "borderStrong"),
+    /* Softer line for DECORATIVE dividers only (hero rule, card preview
+       separators, sidebar/header). Solid-border DSs are mixed to ~55% so the
+       line reads lighter; uoaui's border is already a low-alpha rgba, so
+       mixing it further would erase it — keep it as-is there. Functional
+       borders (inputs, outlines, dropdown triggers) keep the full `border`. */
+    borderSubtle: activeSystem === "uoaui"
+      ? n("border", "outlineVariant", "stroke2", "border", "border")
+      : `color-mix(in srgb, ${n("border", "outlineVariant", "stroke2", "border", "border")} 55%, transparent)`,
     /* Per-DS focus-ring color. Carbon ships a real $focus token; Fluent's
        --colorStrokeFocus2 resolves to the high-contrast neutral (fg1); the
        rest use their accent (Salt's focus ring is 2px solid accent, M3 =

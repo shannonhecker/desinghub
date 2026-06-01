@@ -58,7 +58,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
   return (
     <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
       {/* Hero */}
-      <div style={{ marginBottom: Math.round(outerPad * 1.5), borderBottom: `1px solid ${t.border}`, paddingBottom: outerPad }}>
+      <div style={{ marginBottom: Math.round(outerPad * 1.5), borderBottom: `1px solid ${t.borderSubtle}`, paddingBottom: outerPad }}>
         <div style={{ fontSize: t.scale.labF, fontWeight: activeSystem === "m3" ? 500 : 700, color: t.accent, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4 }}>
           {orgLabel}
         </div>
@@ -123,7 +123,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
                     padding: 20, minHeight: 60,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    borderBottom: `1px solid ${t.border}`,
+                    borderBottom: `1px solid ${t.borderSubtle}`,
                   }}>
                     <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.accent, opacity: 0.85 }}>
                       {c.id === "tokens" ? "palette" : c.id === "audit" ? "fact_check" : "widgets"}
@@ -174,7 +174,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                       background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
                       padding: 20, minHeight: 60,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      borderBottom: `1px solid ${t.border}`,
+                      borderBottom: `1px solid ${t.borderSubtle}`,
                     }}>
                       {Preview
                         ? <div style={{ pointerEvents: "none", width: "100%" }}><Preview /></div>
