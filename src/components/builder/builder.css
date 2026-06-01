@@ -6695,52 +6695,75 @@
   --ds-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
 }
 
-/* ── Material 3 (Dark = base) ── */
+/* ── Material 3 (Dark = base) — OFFICIAL-BRIDGED (#9 PR-2b) ──
+   --ds-* now reference the OFFICIAL @mui/material `--mui-*` CSS-variables-theme
+   tokens (slot-for-slot), not the facsimile `--md-sys-color-*`. The official
+   --mui-* vars are emitted scoped to `.preview-m3` (dark base) /
+   `.builder-light .preview-m3` by buildM3TokenCSS() via <OfficialTokenStyles>
+   on /ui-kit AND /builder. Each slot keeps a literal facsimile fallback so
+   nothing renders unset before the scoped <style> loads. NOTE: the official
+   Material UI default palette is the classic Material blue (#1976d2 light /
+   #90caf9 dark), so M3 previews now read those genuine published values rather
+   than the old facsimile purple. MUI has no direct surface-container ladder, so
+   the container/hover slots map to background-paper + an action-overlay token,
+   the closest official equivalents. */
 .preview-m3 {
-  --ds-primary: var(--md-sys-color-primary);
-  --ds-on-primary: var(--md-sys-color-on-primary, #fff);
-  --ds-bg: var(--md-sys-color-surface);
-  --ds-fg: var(--md-sys-color-on-surface);
-  --ds-fg-secondary: var(--md-sys-color-on-surface-variant, #E6E0E9CC);
-  --ds-fg-tertiary: var(--md-sys-color-outline, #E6E0E9B0);
-  --ds-surface: var(--md-sys-color-surface-container, #2B2930);
-  --ds-surface-hover: var(--md-sys-color-surface-container-high, #36343C);
-  --ds-border: var(--md-sys-color-outline);
-  --ds-hover: var(--md-sys-color-surface-container-high, #36343C);
+  --ds-primary: var(--mui-palette-primary-main, #6750A4);
+  --ds-on-primary: var(--mui-palette-primary-contrastText, #fff);
+  --ds-bg: var(--mui-palette-background-default, #141218);
+  --ds-fg: var(--mui-palette-text-primary, #E6E0E9);
+  --ds-fg-secondary: var(--mui-palette-text-secondary, #E6E0E9CC);
+  --ds-fg-tertiary: var(--mui-palette-text-disabled, #E6E0E9B0);
+  --ds-surface: var(--mui-palette-background-paper, #2B2930);
+  --ds-surface-hover: var(--mui-palette-action-hover, #36343C);
+  --ds-border: var(--mui-palette-divider, #79747E);
+  --ds-hover: var(--mui-palette-action-hover, #36343C);
   --ds-font: 'Roboto', sans-serif;
   --ds-radius: 12px;
   --ds-btn-radius: 20px;
   --ds-primary-hover: rgba(103, 80, 164, 0.25);
   --ds-primary-glow: rgba(103, 80, 164, 0.37);
   --ds-primary-shadow: rgba(103, 80, 164, 0.08);
-  --ds-status-positive: #1B8A5A;
-  --ds-status-warning: var(--md-sys-color-tertiary, #7C5800);
-  --ds-status-negative: var(--md-sys-color-error, #B3261E);
+  --ds-status-positive: var(--mui-palette-success-main, #1B8A5A);
+  --ds-status-warning: var(--mui-palette-warning-main, #7C5800);
+  --ds-status-negative: var(--mui-palette-error-main, #B3261E);
 }
 .builder-light .preview-m3 {
-  --ds-bg: var(--md-sys-color-surface, #FFFBFE);
-  --ds-fg: var(--md-sys-color-on-surface);
-  --ds-fg-secondary: #1D1B20CC;
-  --ds-fg-tertiary: #1D1B20B0;
-  --ds-surface: #F3EDF7;
-  --ds-surface-hover: #E6E0EC;
-  --ds-border: var(--md-sys-color-outline, #79747E);
-  --ds-hover: #E6E0EC;
+  /* Light palette comes from the official `.builder-light .preview-m3` --mui-*
+     block; literals are fallbacks only. */
+  --ds-bg: var(--mui-palette-background-default, #FFFBFE);
+  --ds-fg: var(--mui-palette-text-primary, #1D1B20);
+  --ds-fg-secondary: var(--mui-palette-text-secondary, #1D1B20CC);
+  --ds-fg-tertiary: var(--mui-palette-text-disabled, #1D1B20B0);
+  --ds-surface: var(--mui-palette-background-paper, #F3EDF7);
+  --ds-surface-hover: var(--mui-palette-action-hover, #E6E0EC);
+  --ds-border: var(--mui-palette-divider, #79747E);
+  --ds-hover: var(--mui-palette-action-hover, #E6E0EC);
 }
 
-/* ── Fluent 2 (Dark = base) ── */
+/* ── Fluent 2 (Dark = base) — OFFICIAL-BRIDGED (#9 PR-2b) ──
+   The --ds-* bridge already references Fluent's canonical `--color*` /
+   `--borderRadius*` / `--fontFamily*` names, so when the OFFICIAL
+   @fluentui/react-theme values are in scope (emitted by buildFluentTokenCSS()
+   under `.preview-fluent` / `.builder-light .preview-fluent` via
+   <OfficialTokenStyles> on /ui-kit AND /builder) these slots resolve to the
+   genuine published Fluent web{Light,Dark}Theme tokens. The scoped official
+   block out-specifies the global `:root` facsimile `--color*` vars, so official
+   wins; the literals stay as last-resort fallbacks. Each slot carries a
+   facsimile literal so nothing renders unset before the scoped <style> loads.
+   The font now reads the official `--fontFamilyBase` (Segoe UI stack). */
 .preview-fluent {
-  --ds-primary: var(--colorBrandBackground);
+  --ds-primary: var(--colorBrandBackground, #0F6CBD);
   --ds-on-primary: var(--colorNeutralForegroundOnBrand, #fff);
-  --ds-bg: var(--colorNeutralBackground1);
-  --ds-fg: var(--colorNeutralForeground1);
+  --ds-bg: var(--colorNeutralBackground1, #292929);
+  --ds-fg: var(--colorNeutralForeground1, #fff);
   --ds-fg-secondary: var(--colorNeutralForeground2, #FFFFFFCC);
   --ds-fg-tertiary: var(--colorNeutralForeground3, #FFFFFFB0);
-  --ds-surface: var(--colorNeutralBackground2);
+  --ds-surface: var(--colorNeutralBackground2, #1F1F1F);
   --ds-border: var(--colorNeutralStroke1, #8A8A8A);
   --ds-surface-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-hover: var(--colorNeutralBackground3, #3A3A3A);
-  --ds-font: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+  --ds-font: var(--fontFamilyBase, 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif);
   --ds-radius: var(--borderRadiusMedium, 6px);
   --ds-btn-radius: var(--borderRadiusMedium, 6px);
   --ds-primary-hover: rgba(15, 108, 189, 0.25);
@@ -6751,14 +6774,16 @@
   --ds-status-negative: var(--colorStatusDangerForeground1, #C4314B);
 }
 .builder-light .preview-fluent {
+  /* Light palette comes from the official `.builder-light .preview-fluent`
+     --color* block; literals are fallbacks only. */
   --ds-bg: var(--colorNeutralBackground1, #FFFFFF);
-  --ds-fg: var(--colorNeutralForeground1);
-  --ds-fg-secondary: #242424CC;
-  --ds-fg-tertiary: #242424B0;
-  --ds-surface: #F5F5F5;
-  --ds-surface-hover: #EBEBEB;
-  --ds-border: #D1D1D1;
-  --ds-hover: #EBEBEB;
+  --ds-fg: var(--colorNeutralForeground1, #242424);
+  --ds-fg-secondary: var(--colorNeutralForeground2, #242424CC);
+  --ds-fg-tertiary: var(--colorNeutralForeground3, #242424B0);
+  --ds-surface: var(--colorNeutralBackground2, #F5F5F5);
+  --ds-surface-hover: var(--colorNeutralBackground3, #EBEBEB);
+  --ds-border: var(--colorNeutralStroke1, #D1D1D1);
+  --ds-hover: var(--colorNeutralBackground3, #EBEBEB);
 }
 
 /* ── Carbon DS (White = base) — OFFICIAL-BRIDGED (#9 PR-2a) ──

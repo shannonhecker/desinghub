@@ -148,11 +148,15 @@ export function TokenReference() {
 
   /* Mode/theme handle used to scope the official-token probe.
      Salt official CSS keys off [data-mode=light|dark]; Carbon off the
-     theme key (white/g10/g90/g100). For Salt we map Design Hub's
-     jpm-light/jpm-dark overlay key onto official light/dark. */
+     theme key (white/g10/g90/g100); M3/Fluent off the .builder-light vs base
+     scope (so light|dark). For Salt we map Design Hub's jpm-light/jpm-dark
+     overlay key onto official light/dark; for M3/Fluent we read the active
+     theme's name (covers light/dark + M3's contrast/custom variants). */
   const officialThemeHandle = activeSystem === "salt"
     ? (store.salt.themeKey.includes("dark") ? "dark" : "light")
-    : store.carbon.themeKey;
+    : activeSystem === "carbon"
+    ? store.carbon.themeKey
+    : (/dark/i.test(T.name || "") ? "dark" : "light");
 
   /* Facsimile tokens for M3 / Fluent / uoaui (unchanged behaviour). */
   const facsimileTokens = useMemo(
@@ -161,11 +165,12 @@ export function TokenReference() {
   );
 
   /* Official tokens + contrast background: read the genuine computed values
-     off the official CSS vars (@salt-ds/theme --salt-*, @carbon/themes
-     --cds-*) so the displayed values are demonstrably official, not
-     hand-authored. Done in one effect (one DOM probe) because
-     getComputedStyle needs the live DOM — the official CSS is scoped to
-     .salt-theme / .preview-carbon, which only exist client-side. */
+     off the official CSS vars (@salt-ds/theme --salt-*, @carbon/themes --cds-*,
+     @mui/material --mui-*, @fluentui/react-theme --color*) so the displayed
+     values are demonstrably official, not hand-authored. Done in one effect
+     (one DOM probe) because getComputedStyle needs the live DOM — the official
+     CSS is scoped to .salt-theme / .preview-carbon / .preview-m3 /
+     .preview-fluent, which only exist client-side. */
   const [officialState, setOfficialState] = useState<{ tokens: TokenEntry[]; bg: string }>({ tokens: [], bg: "" });
   useEffect(() => {
     if (!official) {
@@ -174,8 +179,16 @@ export function TokenReference() {
       setOfficialState((s) => (s.tokens.length || s.bg ? { tokens: [], bg: "" } : s));
       return;
     }
-    const probeSystem = activeSystem === "salt" ? "salt" : "carbon";
-    const bgVar = activeSystem === "salt" ? "--salt-container-primary-background" : "--cds-background";
+    const probeSystem =
+      activeSystem === "salt" ? "salt"
+      : activeSystem === "carbon" ? "carbon"
+      : activeSystem === "m3" ? "m3"
+      : "fluent";
+    const bgVar =
+      activeSystem === "salt" ? "--salt-container-primary-background"
+      : activeSystem === "carbon" ? "--cds-background"
+      : activeSystem === "m3" ? "--mui-palette-background-default"
+      : "--colorNeutralBackground1";
     const list = getOfficialTokenList(activeSystem);
     const varNames = [...list.flatMap((c) => c.tokens.map((tk) => tk.varName)), bgVar];
     const computed = readOfficialComputedTokens(probeSystem, varNames, officialThemeHandle);
@@ -234,7 +247,12 @@ export function TokenReference() {
       <p style={{ fontSize: 13, color: fg3, marginBottom: 20 }}>
         {sysInfo.name} - {tokens.length} tokens · {T.name || "Current theme"}
         {official
-          ? <> · live from <code style={{ fontFamily: "monospace", fontSize: 12 }}>{activeSystem === "salt" ? "@salt-ds/theme (--salt-*)" : "@carbon/themes (--cds-*)"}</code></>
+          ? <> · live from <code style={{ fontFamily: "monospace", fontSize: 12 }}>{
+              activeSystem === "salt" ? "@salt-ds/theme (--salt-*)"
+              : activeSystem === "carbon" ? "@carbon/themes (--cds-*)"
+              : activeSystem === "m3" ? "@mui/material (--mui-*)"
+              : "@fluentui/react-theme (--color*)"
+            }</code></>
           : null}
         {" "}· Contrast ratios against background ({contrastBg})
       </p>
