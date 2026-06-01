@@ -4,32 +4,64 @@ import React, { useState, useCallback } from "react";
 import { exportReact } from "@/lib/export/reactExporter";
 import { exportHTML } from "@/lib/export/htmlExporter";
 import { exportViteBootstrap, viteBootstrapFilename } from "@/lib/export/viteExporter";
+import { exportSvg } from "@/lib/export/svgExporter";
+import { exportFigmaSvg } from "@/lib/export/figmaSvgExporter";
 
-type ExportFormat = "react" | "html" | "vite";
+type ExportFormat = "react" | "html" | "vite" | "svg" | "figma";
+
+/* exportFigmaSvg() measures the live DOM and returns null when no canvas is
+   mounted. Surface a clear guard in the preview area instead of a broken
+   download. */
+const FIGMA_GUARD = "Open Preview first, then export to Figma.";
 
 export function ExportPanel({ onClose }: { onClose: () => void }) {
   const [format, setFormat] = useState<ExportFormat>("react");
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  /* True when the current `code` is a guard message, not real output — used to
+     disable Copy/Download so the user can't save the message as a file. */
+  const [isGuard, setIsGuard] = useState(false);
 
   const generate = useCallback(() => {
+    if (format === "figma") {
+      const out = exportFigmaSvg();
+      if (out === null) {
+        setCode(FIGMA_GUARD);
+        setIsGuard(true);
+        setCopied(false);
+        return;
+      }
+      setCode(out);
+      setIsGuard(false);
+      setCopied(false);
+      return;
+    }
     const output =
       format === "react" ? exportReact()
       : format === "html" ? exportHTML()
+      : format === "svg" ? exportSvg()
       : exportViteBootstrap();
     setCode(output);
+    setIsGuard(false);
     setCopied(false);
   }, [format]);
 
+  const selectFormat = useCallback((next: ExportFormat) => {
+    setFormat(next);
+    setCode("");
+    setIsGuard(false);
+    setCopied(false);
+  }, []);
+
   const copyToClipboard = useCallback(async () => {
-    if (!code) return;
+    if (!code || isGuard) return;
     await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [code]);
+  }, [code, isGuard]);
 
   const download = useCallback(() => {
-    if (!code) return;
+    if (!code || isGuard) return;
     let filename: string;
     let mime: string;
     if (format === "react") {
@@ -38,6 +70,12 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     } else if (format === "html") {
       filename = "dashboard.html";
       mime = "text/html";
+    } else if (format === "svg") {
+      filename = "dashboard.svg";
+      mime = "image/svg+xml";
+    } else if (format === "figma") {
+      filename = "dashboard-figma.svg";
+      mime = "image/svg+xml";
     } else {
       filename = viteBootstrapFilename();
       mime = "application/x-sh";
@@ -49,7 +87,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-  }, [code, format]);
+  }, [code, format, isGuard]);
 
   return (
     <div className="export-overlay" onClick={onClose}>
@@ -66,25 +104,41 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
         <div className="export-format-row">
           <button
             className={`export-format-btn ${format === "react" ? "active" : ""}`}
-            onClick={() => { setFormat("react"); setCode(""); }}
+            onClick={() => selectFormat("react")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>code</span>
             React (TSX)
           </button>
           <button
             className={`export-format-btn ${format === "html" ? "active" : ""}`}
-            onClick={() => { setFormat("html"); setCode(""); }}
+            onClick={() => selectFormat("html")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>language</span>
             HTML
           </button>
           <button
             className={`export-format-btn ${format === "vite" ? "active" : ""}`}
-            onClick={() => { setFormat("vite"); setCode(""); }}
+            onClick={() => selectFormat("vite")}
             title="Self-extracting shell script - run `sh design-hub-app.sh` to bootstrap a working Vite + React + TS project"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
             Vite project
+          </button>
+          <button
+            className={`export-format-btn ${format === "svg" ? "active" : ""}`}
+            onClick={() => selectFormat("svg")}
+            title="Wireframe / medium-fidelity vector SVG of the canvas. Figma-editable layers. Always available - reads the builder store, no Preview needed."
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>shapes</span>
+            SVG
+          </button>
+          <button
+            className={`export-format-btn ${format === "figma" ? "active" : ""}`}
+            onClick={() => selectFormat("figma")}
+            title="Pixel-accurate SVG measured from the live canvas. Drag onto a Figma canvas - imports as editable layers. Requires Preview to be open."
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>design_services</span>
+            Figma (SVG)
           </button>
         </div>
 
@@ -94,6 +148,8 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
           Generate {
             format === "react" ? "React Component"
             : format === "html" ? "HTML Page"
+            : format === "svg" ? "Wireframe SVG"
+            : format === "figma" ? "Figma SVG"
             : "Vite Project Bootstrap"
           }
         </button>
@@ -105,8 +161,31 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
-        {/* Code preview */}
-        {code && (
+        {format === "svg" && code && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>info</span>
+            Wireframe / medium-fidelity vector. Reproduces canvas regions and component silhouettes, not the exact live layout. Drag the <code>.svg</code> into Figma: each block imports as an editable layer.
+          </p>
+        )}
+
+        {format === "figma" && code && isGuard && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>visibility</span>
+            {FIGMA_GUARD} It measures the rendered canvas, so the Preview / Present view must be on screen.
+          </p>
+        )}
+
+        {format === "figma" && code && !isGuard && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>design_services</span>
+            Pixel-accurate, measured from the live canvas. Download the <code>.svg</code> and drag it onto a Figma canvas: it imports as editable layers, no plugin needed.
+          </p>
+        )}
+
+        {/* Code preview — hidden when the output is just a guard message
+            (e.g. Figma with no canvas mounted); the helper note above carries
+            the instruction instead of a broken download. */}
+        {code && !isGuard && (
           <>
             <div className="export-code-wrapper">
               <pre className="export-code-pre">{code}</pre>
@@ -125,6 +204,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
                 Download {
                   format === "react" ? ".tsx"
                   : format === "html" ? ".html"
+                  : format === "svg" || format === "figma" ? ".svg"
                   : ".sh"
                 }
               </button>
