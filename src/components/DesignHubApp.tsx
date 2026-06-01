@@ -263,7 +263,11 @@ export function DesignHubApp() {
             style={{
               display: "inline-flex", alignItems: "center", gap: 5,
               fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
-              color: "#ffffff",
+              /* On-accent text must use the DS accent-foreground token, not a
+                 hardcoded white. M3 dark `primary` is a LIGHT lavender whose
+                 `onPrimary` is dark, so white failed (~1.6:1); accentFg resolves
+                 to onPrimary / fgOnBrand / accentFg per DS and meets AA. */
+              color: isCarbon ? "#ffffff" : t.accentFg,
               background: isCarbon ? "#0f62fe" : t.accent,
               padding: isNarrow ? "8px 10px" : isCarbon ? "10px 16px" : `${t.scale.gap - 1}px ${t.scale.gap + 8}px`,
               borderRadius: isCarbon ? 0 : 9999,
