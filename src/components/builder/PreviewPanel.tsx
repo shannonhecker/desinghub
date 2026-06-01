@@ -145,18 +145,20 @@ const SAMPLE_MESSAGES = [
    Device Controls - top bar with Desktop / Tablet / Mobile
    ══════════════════════════════════════════════════════════ */
 /* ══════════════════════════════════════════════════════════
-   PreviewBar - single consolidated toolbar (Phase F.2)
+   PreviewBar - single consolidated toolbar (Phase F.2; zoned declutter)
    Replaces the old two-row DeviceControls + PreviewToolbar.
 
-   Layout (left → right):
-     [← Chat]  [↶ ↷]  [🖥 📱 📞]  [Salt · M3 · Fluent · uoaui]
-     [🌓]  [Compare]  [High · Medium · Low]  [</> Code]  [⋯]
+   Three zones (two spacers between them):
+     LEFT:   [← Chat] | [↶ ↷ undo/redo]
+     CENTER: [🖥 📱 📞 device segment]  ( Edit | Preview )
+     RIGHT:  [ <ActiveDS> ▾ ]  [🌓]  [Components]  [⋯]
 
-   Rare actions (Refresh, Pop-out, Library toggle, Share,
-   Download) moved behind the ⋯ overflow menu. Density labels
-   are normalised to High / Medium / Low across all DSes so
-   users see a consistent control regardless of which system
-   is active.
+   The five DS buttons collapsed into ONE labelled dropdown
+   (preview-bar-ds-trigger -> preview-bar-ds-menu). Device buttons
+   are wrapped in a connected segmented control. Compare, Density,
+   Code and the rare actions (Refresh, Pop-out, Library toggle)
+   live behind the ⋯ overflow menu. Density labels are normalised
+   to High / Medium / Low across all DSes.
    ══════════════════════════════════════════════════════════ */
 function PreviewBar() {
   const deviceMode = useBuilder((s) => s.deviceMode);
@@ -190,10 +192,12 @@ function PreviewBar() {
   const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
 
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [dsMenuOpen, setDsMenuOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
 
   const overflowRef = useRef<HTMLDivElement | null>(null);
+  const dsMenuRef = useRef<HTMLDivElement | null>(null);
 
   /* Dismiss overflow menu on outside click + Esc */
   useEffect(() => {
@@ -214,13 +218,33 @@ function PreviewBar() {
     };
   }, [overflowOpen]);
 
+  /* Dismiss DS dropdown on outside click + Esc (mirrors the overflow pattern). */
+  useEffect(() => {
+    if (!dsMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (dsMenuRef.current && !dsMenuRef.current.contains(e.target as Node)) {
+        setDsMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [dsMenuOpen]);
+
   const dsSystems: { key: "salt" | "m3" | "fluent" | "uoaui" | "carbon"; label: string }[] = [
     { key: "salt", label: "Salt DS" },
     { key: "m3", label: "Material 3" },
     { key: "fluent", label: "Fluent 2" },
-    { key: "uoaui", label: "uoaui" },
+    { key: "uoaui", label: "uoaui DS" },
     { key: "carbon", label: "Carbon" },
   ];
+  const activeDsLabel = dsSystems.find((s) => s.key === designSystem)?.label ?? "Design system";
 
   const preset = PRESETS[deviceMode];
   const devices: { key: DeviceMode; Icon: typeof Monitor; label: string }[] = [
@@ -373,10 +397,14 @@ function PreviewBar() {
         </button>
       </div>
 
-      <span className="preview-bar-sep" aria-hidden="true" />
+      {/* ── Spacer 1: pushes the CENTER zone (device + Edit/Preview) away
+             from the LEFT zone (collapse + undo/redo). ── */}
+      <span className="preview-bar-spacer" aria-hidden="true" />
 
-      {/* Device toggle */}
-      <div className="preview-bar-group">
+      {/* ── CENTER ZONE ── */}
+      {/* Device segmented control — connected outline, dividers between,
+          active segment FILLED + bolder icon (selection is not colour-only). */}
+      <div className="preview-bar-segment" role="group" aria-label="Viewport size">
         {devices.map(({ key, Icon, label }) => (
           <button
             key={key}
@@ -386,33 +414,62 @@ function PreviewBar() {
             aria-label={`${label} viewport`}
             aria-pressed={deviceMode === key}
           >
-            <Icon size={16} strokeWidth={deviceMode === key ? 2.2 : 1.6} />
+            <Icon size={16} strokeWidth={deviceMode === key ? 2.4 : 1.6} />
           </button>
         ))}
+      </div>
+
+      {/* Edit/Preview mode toggle — sits with the device control in the
+          centre zone. Shown only once there's content; PreviewBar itself
+          renders only when the preview is open. Shortcut Shift+Cmd+P. */}
+      {hasBuilderContent && <PreviewToggle />}
+
+      {/* ── Spacer 2: pushes the RIGHT zone (DS / theme / Components / ⋯)
+             to the far edge, giving the bar three readable zones. ── */}
+      <span className="preview-bar-spacer" aria-hidden="true" />
+
+      {/* ── RIGHT ZONE ── */}
+      {/* Active design-system dropdown — replaces the 5-button row. Trigger
+          shows the active DS label + caret; the menu lists all 5 systems
+          and checks the current one. Compare lives in the ⋯ overflow now. */}
+      <div className="preview-bar-ds-wrap" ref={dsMenuRef}>
+        <button
+          className={`preview-bar-ds-trigger${dsMenuOpen ? " preview-bar-btn-active" : ""}`}
+          onClick={() => setDsMenuOpen((v) => !v)}
+          title="Switch the canvas design system"
+          aria-label={`Design system: ${activeDsLabel}`}
+          aria-haspopup="menu"
+          aria-expanded={dsMenuOpen}
+        >
+          <span className="preview-bar-ds-label">{activeDsLabel}</span>
+          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
+            {dsMenuOpen ? "expand_less" : "expand_more"}
+          </span>
+        </button>
+        {dsMenuOpen && (
+          <div className="preview-bar-ds-menu" role="menu" aria-label="Design system">
+            {dsSystems.map((s) => (
+              <button
+                key={s.key}
+                className={`preview-bar-ds-item${designSystem === s.key ? " preview-bar-ds-item-active" : ""}`}
+                role="menuitem"
+                aria-checked={designSystem === s.key}
+                onClick={() => { setDesignSystem(s.key); setDsMenuOpen(false); }}
+                title={`Switch canvas to ${s.label}`}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  {designSystem === s.key ? "check" : "palette"}
+                </span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <span className="preview-bar-sep" aria-hidden="true" />
 
-      {/* DS Switcher - center, labels visible */}
-      <div className="preview-bar-group preview-bar-group-ds" role="group" aria-label="Design system">
-        {dsSystems.map((s) => (
-          <button
-            key={s.key}
-            className={`preview-bar-btn preview-bar-btn-ds${designSystem === s.key ? " preview-bar-btn-active" : ""}`}
-            onClick={() => setDesignSystem(s.key)}
-            title={`Switch canvas to ${s.label}`}
-            aria-label={`Switch to ${s.label}`}
-            aria-pressed={designSystem === s.key}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Spacer pushes remaining controls to the right on wide viewports */}
-      <span className="preview-bar-spacer" aria-hidden="true" />
-
-      {/* Theme toggle - moved from Bar 1 so it lives with canvas controls */}
+      {/* Theme toggle - lives with the canvas controls */}
       <button
         className="preview-bar-btn preview-bar-btn-icon"
         onClick={() => setMode(mode === "dark" ? "light" : "dark")}
@@ -424,29 +481,9 @@ function PreviewBar() {
         </span>
       </button>
 
-      <span className="preview-bar-sep" aria-hidden="true" />
-
-      {/* Compare DS - headline moat feature */}
-      <button
-        className={`preview-bar-btn preview-bar-btn-pill${compareMode ? " preview-bar-btn-active" : ""}`}
-        onClick={toggleCompareMode}
-        title={compareMode ? "Exit compare mode" : "Compare this canvas in all 4 design systems"}
-        aria-label="Toggle compare design systems"
-        aria-pressed={compareMode}
-      >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }}>compare</span>
-        Compare
-      </button>
-
-      {/* Edit/Preview mode toggle — relocated here from the global top bar so
-          it sits with the other canvas controls (after Compare, per design).
-          Shown only once there's content; PreviewBar itself renders only when
-          the preview is open. Shortcut Shift+Cmd+P still toggles. */}
-      {hasBuilderContent && <PreviewToggle />}
-
-      {/* Density + Code moved to the ⋯ overflow menu — they are power-user
-         toggles that don't need primary bar weight. Keeps the canvas
-         row focused on DS / device / mode / Compare. */}
+      {/* Density + Code + Compare live in the ⋯ overflow menu — power-user
+         toggles that don't need primary bar weight. Keeps the canvas row
+         focused on device / DS / mode. */}
 
       {/* Reopen component library — only visible when the panel is
          closed. When open, the in-panel × button handles close. */}
@@ -514,6 +551,18 @@ function PreviewBar() {
                 {d.label}
               </button>
             ))}
+            <div className="preview-bar-overflow-divider" />
+            {/* Compare design systems — relocated from the bar to declutter.
+                Checkmark reflects the live compareMode state. */}
+            <button
+              className={`preview-bar-overflow-item${compareMode ? " preview-bar-overflow-item-active" : ""}`}
+              role="menuitemcheckbox"
+              aria-checked={compareMode}
+              onClick={() => { toggleCompareMode(); setOverflowOpen(false); }}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">compare</span>
+              {compareMode ? "Exit compare mode" : "Compare design systems"}
+            </button>
             <div className="preview-bar-overflow-divider" />
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleToggleLibrary}>
               <span className="material-symbols-outlined" aria-hidden="true">category</span>
