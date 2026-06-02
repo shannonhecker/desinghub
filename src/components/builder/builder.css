@@ -2443,7 +2443,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #b8a8ff, #7E6BC4 65%);
+  background: radial-gradient(circle at 30% 30%, #b8a8ff, #8A58C9 65%);
   box-shadow: 0 0 10px rgba(184, 168, 255, 0.7);
   animation: generating-dot-breathe 1.4s ease-in-out infinite;
   flex-shrink: 0;
@@ -7050,7 +7050,7 @@
 
 /* ── uoaui DS (Dark = base, glass surfaces) ── */
 .preview-uoaui {
-  --ds-primary: #7E6BC4;
+  --ds-primary: #8A58C9;
   --ds-on-primary: #ffffff;
   --ds-bg: #0b1120;
   --ds-fg: #E8EAED;

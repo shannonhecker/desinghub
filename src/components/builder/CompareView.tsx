@@ -22,7 +22,7 @@ const SYSTEMS: { key: DesignSystem; label: string; color: string; org: string }[
   { key: "salt",   label: "Salt DS",     color: "#1B7F9E", org: "J.P. Morgan" },
   { key: "m3",     label: "Material 3",  color: "#6750A4", org: "Google" },
   { key: "fluent", label: "Fluent 2",    color: "#0F6CBD", org: "Microsoft" },
-  { key: "uoaui",  label: "uoaui DS",    color: "#7E6BC4", org: "uoaui" },
+  { key: "uoaui",  label: "uoaui DS",    color: "#8A58C9", org: "uoaui" },
 ];
 
 interface CompareQuadrantProps {

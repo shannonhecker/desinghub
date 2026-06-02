@@ -28,7 +28,7 @@ const DS_ACCENT: Record<string, string> = {
   salt: "#1B7F9E",
   m3: "#6750A4",
   fluent: "#0F6CBD",
-  uoaui: "#7E6BC4",
+  uoaui: "#8A58C9",
   carbon: "#0F62FE",
 };
 

@@ -61,10 +61,11 @@ const THEMES = {
     cardBg: "rgba(255,255,255,0.06)", cardBgHover: "rgba(255,255,255,0.10)",
     // Text - solid colors for reliable contrast (4.5:1+)
     fg: "#E8EAED", fg2: "#9CA3AF", fg3: "#6B7280", fgDisabled: "#4B5563",
-    // Accent - muted violet (darker, less vivid for better text contrast)
-    accent: "#7E6BC4", accentHover: "#8D7DD0", accentActive: "#6F5CB5",
-    accentGradient: "linear-gradient(135deg, #8D7DD0 0%, #7E6BC4 50%, #6F5CB5 100%)",
-    accentSurface: "rgba(126,107,196,0.10)", accentSurfaceHover: "rgba(126,107,196,0.16)",
+    // Accent - brand "Purple Compute"; white text clears AA (4.86:1).
+    // Re-anchored from the prior lighter violet which was 4.39:1 (sub-AA).
+    accent: "#8A58C9", accentHover: "#9D71D2", accentActive: "#7343B0",
+    accentGradient: "linear-gradient(135deg, #9D71D2 0%, #8A58C9 50%, #7343B0 100%)",
+    accentSurface: "rgba(138,88,201,0.10)", accentSurfaceHover: "rgba(138,88,201,0.16)",
     accentFg: "#ffffff",
     // Borders - WCAG 3:1 for UI components on dark bg
     border: "rgba(255,255,255,0.06)", borderMd: "rgba(255,255,255,0.10)", borderStrong: "#6B7280",
