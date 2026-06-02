@@ -131,12 +131,12 @@ describe("officialM3FluentTokens — M3 (@mui/material) CSS is scoped + official
     for (const p of props) expect(p.startsWith("--mui-")).toBe(true);
   });
 
-  it("carries the genuine published Material UI palette values (dark base / light override)", () => {
-    // Dark = builder base scope; official MUI default dark primary is #90caf9.
-    expect(flat).toMatch(/\.preview-m3\{[^}]*--mui-palette-primary-main:#90caf9/);
-    // Light override = official MUI default light primary #1976d2.
-    expect(flat).toMatch(/\.builder-light \.preview-m3\{[^}]*--mui-palette-primary-main:#1976d2/);
-    // Background tokens are genuine MUI values.
+  it("carries the genuine Material 3 baseline palette values (dark base / light override)", () => {
+    // Dark = builder base scope; M3 baseline dark primary is #D0BCFF (matches src/data/m3/themes.ts).
+    expect(flat).toMatch(/\.preview-m3\{[^}]*--mui-palette-primary-main:#D0BCFF/);
+    // Light override = M3 baseline light primary #6750A4.
+    expect(flat).toMatch(/\.builder-light \.preview-m3\{[^}]*--mui-palette-primary-main:#6750A4/);
+    // Background stays MUI's neutral default (#121212 dark); M3 sets primary/secondary/error, not surface.
     expect(flat).toMatch(/\.preview-m3\{[^}]*--mui-palette-background-default:#121212/);
   });
 });

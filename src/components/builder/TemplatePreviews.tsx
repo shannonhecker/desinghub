@@ -221,12 +221,61 @@ function LoginFlowPreview() {
   );
 }
 
+/* ── 5. Landing Page ── */
+function LandingPagePreview() {
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Landing page preview">
+      {/* Top nav: brand + links + CTA (full-width marketing, no sidebar) */}
+      <WireRect x={8} y={6} w={26} h={5} accent />
+      <WireRect x={120} y={7} w={14} h={3} />
+      <WireRect x={138} y={7} w={14} h={3} />
+      <WireRect x={156} y={7} w={14} h={3} />
+      <WireRect x={184} y={4} w={28} h={10} r={2} accent />
+
+      {/* Hero: headline + subtext + email capture (left) */}
+      <WireRect x={8} y={26} w={84} h={7} accent />
+      <WireRect x={8} y={37} w={96} h={3} />
+      <WireRect x={8} y={43} w={80} h={3} />
+      <WireRect x={8} y={52} w={64} h={9} r={1.5} stroke />
+      <WireRect x={76} y={52} w={28} h={9} r={1.5} accent />
+
+      {/* Hero image (right) — sun + mountains placeholder */}
+      <WireRect x={120} y={24} w={92} h={42} r={2} stroke />
+      <circle cx={140} cy={36} r={4} fill={ACCENT} opacity={0.6} />
+      <path d="M 124 62 L 146 42 L 164 56 L 184 38 L 208 62 Z" fill={MUTED} />
+
+      {/* Feature trio */}
+      {[8, 80, 152].map((x) => (
+        <g key={`f${x}`}>
+          <WireRect x={x} y={74} w={60} h={24} r={2} stroke />
+          <WireRect x={x + 6} y={79} w={10} h={10} r={2} accent />
+          <WireRect x={x + 20} y={80} w={32} h={3} />
+          <WireRect x={x + 20} y={86} w={26} h={2.5} />
+          <WireRect x={x + 20} y={91} w={30} h={2.5} />
+        </g>
+      ))}
+
+      {/* Social-proof stats band */}
+      {[8, 80, 152].map((x) => (
+        <g key={`s${x}`}>
+          <WireRect x={x + 8} y={104} w={24} h={6} accent />
+          <WireRect x={x + 8} y={113} w={40} h={2.5} />
+        </g>
+      ))}
+
+      {/* Footer */}
+      <WireRect x={4} y={120} w={212} h={6} r={1} />
+    </svg>
+  );
+}
+
 /* ── Registry ── */
 const PREVIEWS: Record<TemplateId, React.FC> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
   "settings-page":       SettingsPagePreview,
   "crm-contacts":        CrmContactsPreview,
   "login-flow":          LoginFlowPreview,
+  "landing-page":        LandingPagePreview,
 };
 
 export function TemplatePreview({ id }: { id: TemplateId }) {

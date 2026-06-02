@@ -29,6 +29,7 @@ export const VALID_TEMPLATE_IDS = [
   "settings-page",
   "crm-contacts",
   "login-flow",
+  "landing-page",
 ] as const;
 
 export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
@@ -246,6 +247,65 @@ const loginFlow: BuilderTemplate = {
 };
 
 /* ──────────────────────────────────────────────────────────────
+   5. Landing Page (marketing — full-width, top nav)
+   Layout structure from the Finpay reference (top nav, hero with a
+   product visual, feature trio, social-proof stats, a trend chart,
+   pricing, closing CTA). Built from OUR blocks/tokens — no left
+   sidebar, so it renders full-width via the showSidebar gate.
+   ────────────────────────────────────────────────────────────── */
+const landingPage: BuilderTemplate = {
+  id: "landing-page",
+  label: "Landing Page",
+  desc: "Marketing page: hero, features, stats, pricing, and a closing CTA",
+  icon: "rocket_launch",
+  interfaceType: "landing",
+  selectedComponents: ["sim-title", "buttons", "cards", "progress"],
+  zoneLayouts: { body: { mode: "grid", columns: 12, gap: 16 } },
+  /* Top nav: brand + nav links + a primary CTA (rendered horizontally). */
+  header: [
+    { id: tid("lp-brand"), type: "AppBrand", props: { label: "Northwind" } },
+    { id: tid("lp-nav-1"), type: "SimulatedLink", props: { text: "Product", showIcon: false } },
+    { id: tid("lp-nav-2"), type: "SimulatedLink", props: { text: "Pricing", showIcon: false } },
+    { id: tid("lp-nav-3"), type: "SimulatedLink", props: { text: "Customers", showIcon: false } },
+    { id: tid("lp-cta"), type: "SimulatedButton", props: { label: "Sign up", variant: "primary" } },
+  ],
+  sidebar: [],
+  body: [
+    /* Hero: headline + supporting visual, then subtitle + email capture. */
+    { id: tid("lp-hero-title"), type: "SimulatedTitle", props: { text: "Ship faster, scale smarter.", level: "h1" }, layout: { width: "7fr" } },
+    { id: tid("lp-hero-img"), type: "SimulatedImage", props: { alt: "Product preview", ratio: "4:3", caption: "" }, layout: { width: "5fr" } },
+    { id: tid("lp-hero-sub"), type: "SimulatedTitle", props: { text: "Everything your team needs to build, launch, and grow, in one place.", level: "h4" }, layout: { width: "7fr" } },
+    { id: tid("lp-hero-email"), type: "SimulatedTextInput", props: { label: "", placeholder: "Your work email" }, layout: { width: "5fr" } },
+    { id: tid("lp-hero-btn"), type: "SimulatedButton", props: { label: "Get started", variant: "primary" }, layout: { width: "3fr" } },
+    /* Feature trio. */
+    { id: tid("lp-feat-title"), type: "SimulatedTitle", props: { text: "Built to grow with you", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-feat-1"), type: "SimulatedCard", props: { title: "Fast transfers", content: "Move work forward with automated, repeatable flows." }, layout: { width: "4fr" } },
+    { id: tid("lp-feat-2"), type: "SimulatedCard", props: { title: "One workspace", content: "Run everything from a single, connected surface." }, layout: { width: "4fr" } },
+    { id: tid("lp-feat-3"), type: "SimulatedCard", props: { title: "Secure by default", content: "Org-wide controls, MFA, and audit-ready access." }, layout: { width: "4fr" } },
+    /* Social-proof stats. */
+    { id: tid("lp-stat-title"), type: "SimulatedTitle", props: { text: "Teams everywhere trust us", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-stat-1"), type: "SimulatedStatCard", props: { label: "Active teams", value: "3,000+", pct: 78 }, layout: { width: "4fr" } },
+    { id: tid("lp-stat-2"), type: "SimulatedStatCard", props: { label: "Revenue tracked", value: "180K", pct: 64 }, layout: { width: "4fr" } },
+    { id: tid("lp-stat-3"), type: "SimulatedStatCard", props: { label: "Months of runway", value: "10+", pct: 85 }, layout: { width: "4fr" } },
+    /* Trend chart. */
+    { id: tid("lp-chart-title"), type: "SimulatedTitle", props: { text: "Steady, predictable growth", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-chart"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 6 months" }, layout: { width: "12fr" } },
+    /* Pricing. */
+    { id: tid("lp-price-title"), type: "SimulatedTitle", props: { text: "Simple pricing", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-price-1"), type: "SimulatedCard", props: { title: "Plus", content: "For small teams getting started. $2.99 per month." }, layout: { width: "6fr" } },
+    { id: tid("lp-price-2"), type: "SimulatedCard", props: { title: "Premium", content: "For scaling teams that need more. $6.99 per month." }, layout: { width: "6fr" } },
+    /* Closing CTA. */
+    { id: tid("lp-cta-title"), type: "SimulatedTitle", props: { text: "Ready to level up?", level: "h2" }, layout: { width: "8fr" } },
+    { id: tid("lp-cta-btn"), type: "SimulatedButton", props: { label: "Get started now", variant: "primary" }, layout: { width: "4fr" } },
+  ],
+  footer: [
+    { id: tid("lp-ftr"), type: "FooterText", props: { label: "© 2026 Northwind, Inc.", version: "Privacy · Terms" } },
+  ],
+  aiResponse:
+    "Built a **Landing Page**: top nav, a hero with email capture, a feature trio, social-proof stats, a growth chart, simple pricing, and a closing CTA. Ask me to swap sections, change the copy, or try it in another design system.",
+};
+
+/* ──────────────────────────────────────────────────────────────
    Registry + accessor
    ────────────────────────────────────────────────────────────── */
 export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
@@ -253,6 +313,7 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "settings-page": settingsPage,
   "crm-contacts": crmContacts,
   "login-flow": loginFlow,
+  "landing-page": landingPage,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
@@ -265,6 +326,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "settings-page",
   "crm-contacts",
   "login-flow",
+  "landing-page",
 ];
 
 /** Used when the Login→Dashboard flow is progressed via chat. */

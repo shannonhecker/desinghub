@@ -45,13 +45,13 @@ describe("wizardFlow - step machine", () => {
 });
 
 describe("wizardFlow - interfaceType mapping", () => {
-  it("maps dashboard + form onto shipped templates", () => {
+  it("maps dashboard, form + landing onto shipped templates", () => {
     expect(interfaceTypeToTemplateId("dashboard")).toBe("analytics-dashboard");
     expect(interfaceTypeToTemplateId("form")).toBe("settings-page");
+    expect(interfaceTypeToTemplateId("landing")).toBe("landing-page");
   });
 
   it("returns null for types with no template (route to layout preset)", () => {
-    expect(interfaceTypeToTemplateId("landing")).toBeNull();
     expect(interfaceTypeToTemplateId("ecommerce")).toBeNull();
     expect(interfaceTypeToTemplateId("blog")).toBeNull();
     expect(interfaceTypeToTemplateId("portfolio")).toBeNull();

@@ -96,6 +96,33 @@ Inspired by Aris AI, Zyricon, and modern chatbot UIs.
 
 ---
 
+## Phase 4 — Builder Templates & Chatbot Flow (In Progress)
+
+> Note: this log skipped several intervening builder / template / onboarding releases (tracked in PRs #200+). Resuming here from 2026-06-02.
+
+### 4.1 Landing Page template + full-width support — 2026-06-02
+Branch `builder-marketing-templates`, commit `0365c1c`.
+- **Full-width layouts:** `showSidebar` now gates on `sidebarBlocks.length > 0`, so marketing pages with no sidebar render full-width instead of showing an empty rail. Dashboards keep their sidebar; dropping a sidebar block re-shows it. (`PreviewPanel.tsx`)
+- **Landing Page template** (`interfaceType: "landing"`, id `"landing-page"`): top nav (brand + links + CTA) → hero with email capture + image → feature trio → social-proof stats → growth chart → pricing → closing CTA → footer. Built from existing blocks + tokens; structure from the Finpay reference. Registered in `VALID_TEMPLATE_IDS` / `BUILDER_TEMPLATES` / `TEMPLATE_ORDER` + `interfaceTypeToTemplateId("landing")`. (`builderTemplates.ts`, `wizardFlow.ts`)
+- **Drawer thumbnail:** added `LandingPagePreview` SVG wireframe to `TemplatePreviews.tsx`.
+- **Recovery note (Mac crash):** the local verify build (`bihjuok7z`) was killed by a system crash mid-typecheck, so the commit pushed before the failure surfaced. The Vercel preview build then errored: `PREVIEWS: Record<TemplateId, React.FC>` was missing the `landing-page` key. Fixed by adding `LandingPagePreview`. **Lesson:** a new `TemplateId` must be wired into every exhaustive map AND the (un-typed) block renderers — `tsc` only catches the explicitly-typed `Record<TemplateId, …>` maps, not switch defaults, untyped lookups, or per-block render branches.
+
+### 4.2 Chatbot flow polish — QUEUED (needs reference images #8–#11)
+Owner ask 2026-06-02; blocked on the 4 screenshots being re-shared.
+- [ ] **Hover treatment:** current state shows an underline + the element growing taller on hover — reads as odd. Replace with a better-considered treatment.
+- [ ] **Stepwise setup:** when "set it up step by step" is chosen, the step UI should *replace* the chatbox (guided-in-chat), not sit alongside it.
+- [ ] **Templates as in-chat cards:** selecting a template should render the choices as cards *inside the chat thread* (chat format), with the composer pinned to the bottom — not a separate drawer.
+- [ ] Reference patterns to mine: Claude, Codex, Gemini, v0, Lovable, Replit (research done 2026-06-02 — synthesis below).
+
+**Research synthesis** (Claude / ChatGPT Apps SDK / Gemini / Copilot / v0 AI-Elements / Lovable / Replit / Bolt):
+- **Hover/focus (the odd treatment):** drop the underline + the literal height-grow (it reflows neighbors and reads jumpy). Standard fix: keep the box height fixed and let a *group-owned* ring carry focus. v0/AI-Elements wraps shadcn `InputGroup` so the GROUP owns `border-ring + ring-[3px] ring-ring/50` while the inner field is ringless; Fluent 2 = thicker focus *stroke*, fill unchanged. Chips → `rounded-full` outline pills; hover = subtle fill-darken (not underline, not scale); focus = same ring. Token it so it themes across Salt/M3/Fluent. ≥4.5:1 in every state.
+- **Stepwise setup (replace the chatbox):** do NOT delete the free-text input. Put a "Set it up step by step" toggle *inside* the composer (Replit Plan-mode, Lovable Plan, Bolt Plan/Discuss). It re-frames the same input into a guided flow with a structured control per step (DS = 3-up segmented, density = segmented/slider, blocks = chips), a "Step 2 of 4" stepper, then an editable plan with an **Accept / Revise gate** before generating. After generation, fall back to free-text iteration. Dual-mode (structured + freeform coexist), never a rigid wizard lock.
+- **Templates as in-chat cards (composer at bottom):** render template/starter choices as INLINE cards/carousel in the thread with the composer pinned to the bottom — unanimous across OpenAI Apps SDK, v0 AI-Elements (Plan/Confirmation cards), Copilot Adaptive Cards, Replit output-type carousel. Card spec: header (label+icon) / preview / MAX TWO actions ("Use this" + "Customize"); no tabs or nested scroll; 3–8 per carousel. Reserve a separate fullscreen surface only for genuine multi-step builds.
+- **Composer (cross-cutting):** always bottom-docked; centered only on the empty state, then drops to bottom on first message (one component, two positions). Mode/action controls live *inside* the composer footer, not a top toolbar. Streaming = in-place shimmer, never a layout change.
+- **Watch-out:** Gemini removing visible chips hurt discoverability — if chips leave the bar, replace that discoverability (empty-state starter-card feed, or in-response follow-ups).
+
+---
+
 ## File Structure
 
 ```
