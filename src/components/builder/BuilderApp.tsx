@@ -35,8 +35,26 @@ export function BuilderApp() {
     designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen, setChatOpen,
+    chatMode,
+    blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks, activeTemplateId,
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
+
+  /* Floating chat is a fixed overlay card over a full-bleed canvas; docked
+     chat is the legacy left column that splits width with the preview. */
+  const chatFloating = chatMode === "floating";
+
+  /* Whether the user has anything on the canvas yet. Drives the floating
+     card's size: roomy while the canvas is empty (onboarding has room to
+     breathe), compact once there's a canvas to float over. NB: this is
+     content presence, NOT `previewOpen` (which toggles the separate
+     read-only preview side panel and stays off during normal editing). */
+  const hasCanvasContent =
+    bodyBlocks.length > 0 ||
+    headerBlocks.length > 0 ||
+    sidebarBlocks.length > 0 ||
+    footerBlocks.length > 0 ||
+    Boolean(activeTemplateId);
 
   /* Auto-save subscription - kicks in the moment a session is started
      (either by picking a template or sending a first message). */
@@ -600,21 +618,28 @@ export function BuilderApp() {
           </div>
         </div>
 
-        {/* ── Content: chat + resizable preview ── */}
+        {/* ── Content: chat + resizable preview ──
+             Docked mode: chat is a flex column that splits width with the
+             preview (resize-handle between them). Floating mode: chat is
+             lifted out into a fixed overlay card (below), so the canvas
+             goes full-bleed — we flag `chat-collapsed` to hand the preview
+             the full width via the existing rule. */}
         <div
-          className={`content-split ${previewOpen ? "has-preview" : ""} ${!isChatOpen ? "chat-collapsed" : ""}`}
+          className={`content-split ${previewOpen ? "has-preview" : ""} ${(!isChatOpen || chatFloating) ? "chat-collapsed" : ""}`}
           ref={containerRef}
           style={
-            previewOpen && isChatOpen
+            previewOpen && isChatOpen && !chatFloating
               ? ({ "--chat-width": `${splitPos}%` } as React.CSSProperties)
               : undefined
           }
         >
-          <div className={`chat-slide ${isChatOpen ? "chat-slide-open" : "chat-slide-closed"}`}>
-            <ChatPanel />
-          </div>
+          {!chatFloating && (
+            <div className={`chat-slide ${isChatOpen ? "chat-slide-open" : "chat-slide-closed"}`}>
+              <ChatPanel />
+            </div>
+          )}
 
-          {previewOpen && isChatOpen && (
+          {previewOpen && isChatOpen && !chatFloating && (
             <div
               className={`resize-handle ${dragActive ? "dragging" : ""}`}
               onMouseDown={startDrag}
@@ -625,6 +650,18 @@ export function BuilderApp() {
 
           <PreviewSidePanel />
         </div>
+
+        {/* ── Floating chat card — overlays the full-bleed canvas, grows
+             from the corner-FAB origin. Roomier while onboarding (no
+             preview yet), compact once there's a canvas to sit over. ── */}
+        {chatFloating && isChatOpen && (
+          <aside
+            className={`chat-float ${hasCanvasContent ? "chat-float-compact" : "chat-float-onboarding"}`}
+            aria-label="uoaui assistant"
+          >
+            <ChatPanel />
+          </aside>
+        )}
 
         {/* ── Copyright - in-flow below chat, never overlaps content ── */}
         <div className="builder-copyright-fixed" aria-hidden="true">

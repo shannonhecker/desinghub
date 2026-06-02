@@ -282,6 +282,11 @@ interface BuilderState {
   settingsOpen: boolean;
   previewOpen: boolean;
   chatOpen: boolean;
+  /* How the chat sits when open. 'floating' = a card over a full-bleed
+     canvas (default — the canvas keeps its full width); 'docked' = the
+     legacy left column that splits width with the preview. User-togglable
+     via the pin control in the chat header. */
+  chatMode: 'floating' | 'docked';
   sidebarCollapsed: boolean;
   previewKey: number;
   deviceMode: DeviceMode;
@@ -482,6 +487,8 @@ interface BuilderState {
   setPreviewOpen: (v: boolean) => void;
   toggleChat: () => void;
   setChatOpen: (v: boolean) => void;
+  setChatMode: (m: 'floating' | 'docked') => void;
+  toggleChatMode: () => void;
   setDeviceMode: (d: DeviceMode) => void;
   toggleSidebar: () => void;
   bumpPreview: () => void;
@@ -714,6 +721,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   settingsOpen: false,
   previewOpen: false,
   chatOpen: true,
+  chatMode: 'floating',
   sidebarCollapsed: false,
   previewKey: 0,
   deviceMode: 'desktop',
@@ -1362,6 +1370,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   setPreviewOpen: (v) => set({ previewOpen: v }),
   toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
   setChatOpen: (v) => set({ chatOpen: v }),
+  setChatMode: (m) => set({ chatMode: m }),
+  toggleChatMode: () =>
+    set((s) => ({ chatMode: s.chatMode === 'floating' ? 'docked' : 'floating' })),
   setDeviceMode: (d) => set({ deviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
