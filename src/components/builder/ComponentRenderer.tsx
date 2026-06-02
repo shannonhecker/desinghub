@@ -23,6 +23,7 @@ import {
   SimulatedBreadcrumb,
   SimulatedAccordion,
   SimulatedCard,
+  SimulatedImage,
   SimulatedBadge,
   SimulatedChatMessage,
   SimulatedChart,
@@ -900,6 +901,22 @@ function SimulatedTitleBlock({
   );
 }
 
+function SimulatedImageBlock({
+  system,
+  alt = "Image",
+  ratio = "16:9",
+  caption = "",
+}: {
+  system: DesignSystem;
+  alt?: string;
+  ratio?: string;
+  caption?: string;
+}) {
+  /* Token-driven placeholder; props (alt / ratio / caption) are edited via
+     the inspector fields, so no inline-edit branch is needed here. */
+  return <SimulatedImage system={system} alt={alt} ratio={ratio} caption={caption} />;
+}
+
 function SimulatedTextInputBlock({
   system,
   label = "Label",
@@ -1659,6 +1676,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   SimulatedBreadcrumb: SimulatedBreadcrumbBlock as React.FC<{ system: DesignSystem }>,
   SimulatedAccordion: SimulatedAccordionBlock as React.FC<{ system: DesignSystem }>,
   SimulatedCard: SimulatedCardBlock as React.FC<{ system: DesignSystem }>,
+  SimulatedImage: SimulatedImageBlock as React.FC<{ system: DesignSystem }>,
   SimulatedBadge: SimulatedBadgeBlock as React.FC<{ system: DesignSystem }>,
   SimulatedChatMessage: SimulatedChatMessageBlock as React.FC<{ system: DesignSystem }>,
   SimulatedChart: SimulatedChartBlock as React.FC<{ system: DesignSystem }>,

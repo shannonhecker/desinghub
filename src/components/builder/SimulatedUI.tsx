@@ -882,6 +882,31 @@ export function SimulatedCard({
 }
 
 /* ═══════════════════════════════════════════
+   SimulatedImage — media placeholder (DS-agnostic, token-driven)
+   ═══════════════════════════════════════════
+   Adds media support so templates (ecommerce / blog / portfolio)
+   can show image slots. Uses --ds-* tokens (surface / border /
+   radius / fg) so it adopts each DS's look without per-DS classes. */
+interface ImageProps extends SimProps {
+  alt?: string;
+  ratio?: string;
+  caption?: string;
+}
+
+export function SimulatedImage({ alt = "Image", ratio = "16:9", caption = "" }: ImageProps) {
+  const [w, h] = ratio.split(":").map((n) => parseFloat(n));
+  const aspect = w && h ? `${w} / ${h}` : "16 / 9";
+  return (
+    <figure className="sim-image">
+      <div className="sim-image-frame" style={{ aspectRatio: aspect }} role="img" aria-label={alt}>
+        <span className="material-symbols-outlined sim-image-icon" aria-hidden="true">image</span>
+      </div>
+      {caption ? <figcaption className="sim-image-caption">{caption}</figcaption> : null}
+    </figure>
+  );
+}
+
+/* ═══════════════════════════════════════════
    SimulatedBadge
    ═══════════════════════════════════════════ */
 

@@ -266,6 +266,11 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedCard", label: "Card", icon: "credit_card", defaults: { title: "New Card", content: "Card content goes here." }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "textarea", propKey: "content", label: "Content" },
   ]},
+  { type: "SimulatedImage", label: "Image", icon: "image", defaults: { alt: "Image", ratio: "16:9", caption: "" }, fields: [
+    { type: "text", propKey: "alt", label: "Alt text" },
+    { type: "select", propKey: "ratio", label: "Aspect ratio", options: [{ value: "16:9", label: "16:9 (wide)" }, { value: "4:3", label: "4:3" }, { value: "1:1", label: "1:1 (square)" }, { value: "3:2", label: "3:2" }, { value: "21:9", label: "21:9 (ultrawide)" }] },
+    { type: "text", propKey: "caption", label: "Caption" },
+  ]},
   { type: "SimulatedBadge", label: "Badge", icon: "label", defaults: { label: "New Badge", status: "default" }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "status", label: "Status", options: STATUS_OPTIONS },
   ]},
@@ -538,6 +543,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
 
   /* Content */
   SimulatedTitle: "content",
+  SimulatedImage: "content",
   SimulatedChatMessage: "content",
 };
 

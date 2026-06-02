@@ -11291,6 +11291,28 @@
   margin: 0;
 }
 
+/* SimulatedImage - DS-agnostic media placeholder. Adopts each DS's
+   surface/border/radius via the bridged --ds-* tokens, so it needs no
+   per-DS class. */
+.sim-image { margin: 0; width: 100%; display: block; }
+.sim-image-frame {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  color: var(--ds-fg);
+}
+.sim-image-icon { font-size: 32px; opacity: 0.45; }
+.sim-image-caption {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ds-fg-secondary);
+}
+
 /* Salt DS card - bordered/elevated feel */
 .s-sim-card {
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
