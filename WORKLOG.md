@@ -136,6 +136,9 @@ The config-panel editing path is pillar #1's other input mode (the prompt side s
 - [ ] **4.4b Config-panel editing as a peer to prompt** — make "edit from the configuration panel" a first-class input mode alongside chat, same realtime preview.
 - [ ] **4.4c Real DS components in the panel** — the panel lists + inserts the REAL official DS components (not Simulated*), so what you drag in matches what exports. **Depends on Phase 5.**
 
+### 4.5 In-chat template gallery — discoverability — SHIPPING 2026-06-02
+The PR-2 in-chat card carousel cut cards off (CRM half-clipped) with no affordance (hidden scrollbar, no arrows), so users couldn't tell there were more templates. Rethought per carousel best practice (NN/g, Smashing): keep the carousel + add **left/right arrow buttons**, **edge-fade gradients**, **scroll-snap**, and the existing **peek** of the next card, so every template is reachable and obviously-more. Arrows hide at each end; reduced-motion guarded. Alternative considered: a wrap-grid (all visible at once) — deferred per owner's arrow suggestion.
+
 ---
 
 ## Phase 5 — Real DS API (goal pillar #5 + #4) — PLAN (5-agent audit, 2026-06-02)
