@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import {
   useBuilder,
@@ -130,6 +130,7 @@ function BlueprintItem({ blueprint, zone }: {
          in body even if the user's current selectedBlockZone is
          elsewhere (e.g. they clicked a header block just before). */
       addBlockFromLibrary(blueprint.type, blueprint.defaults, zone);
+      recordRecent(blueprint.type);
     }
   };
 
@@ -998,6 +999,40 @@ function readExpanded(): Record<string, boolean> {
   }
 }
 
+/* Recently-used blueprint types — most-recent first, capped at 6.
+   Persisted to sessionStorage (mirrors the dh-lib-expanded pattern) so
+   the strip survives panel re-mounts within a session but resets per
+   tab, matching the rest of the builder's session-scoped memory. */
+const LIB_RECENTS_STORAGE_KEY = "dh-lib-recents";
+const LIB_RECENTS_MAX = 6;
+
+function readRecents(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = sessionStorage.getItem(LIB_RECENTS_STORAGE_KEY);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.filter((t) => typeof t === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/* Push `type` to the front of the recents list (de-duped, capped).
+   Dispatches a window event so a mounted LibraryBrowser can re-read
+   without prop drilling — the click-to-add path lives in BlueprintItem,
+   which has no direct handle on the browser's state. */
+function recordRecent(type: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const next = [type, ...readRecents().filter((t) => t !== type)].slice(0, LIB_RECENTS_MAX);
+    sessionStorage.setItem(LIB_RECENTS_STORAGE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent("dh-lib-recents-change"));
+  } catch {
+    /* private mode / quota */
+  }
+}
+
 /* ── Library browser — searchable, grouped by zone, body zone sub-
    grouped by semantic category with expand/collapse accordions.
    Search is sticky at the top; when a query is active, categories
@@ -1006,6 +1041,35 @@ function readExpanded(): Record<string, boolean> {
 function LibraryBrowser() {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded);
+  const [recents, setRecents] = useState<string[]>(readRecents);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  /* Keep the recents strip in sync with click-to-add events fired from
+     BlueprintItem (which can't reach this component's state directly). */
+  useEffect(() => {
+    const sync = () => setRecents(readRecents());
+    window.addEventListener("dh-lib-recents-change", sync);
+    return () => window.removeEventListener("dh-lib-recents-change", sync);
+  }, []);
+
+  /* Press "/" anywhere (outside a text field) to jump to the search
+     box — matches the placeholder hint and common builder shortcuts. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.isContentEditable)
+      ) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const persistExpanded = (next: Record<string, boolean>) => {
     setExpanded(next);
@@ -1072,34 +1136,70 @@ function LibraryBrowser() {
     return expanded[key] !== false;
   };
 
+  /* Every category key that can render at full inventory (no query),
+     so Collapse-all / Expand-all writes them in one shot. */
+  const allCategoryKeys = useMemo(() => {
+    const keys = LIBRARY_CATEGORY_ORDER.map((c) => c.key as string);
+    keys.push("misc");
+    return keys;
+  }, []);
+
+  /* True when at least one category is currently open (so the toggle
+     offers Collapse-all); flips to Expand-all once everything is shut. */
+  const anyCategoryOpen = allCategoryKeys.some((k) => expanded[k] !== false);
+
+  const setAllCategories = (open: boolean) => {
+    const next = { ...expanded };
+    for (const k of allCategoryKeys) next[k] = open;
+    persistExpanded(next);
+  };
+
   return (
     <div className="lib-browser">
       {/* Sticky search input — pins to top of .lib-body while the
-          user scrolls through categories. */}
+          user scrolls through categories. The inner .lib-search-field
+          anchors the icon + clear button to the input itself, not the
+          padded sticky band, so the magnifier sits inside the box. */}
       <div className="lib-search lib-search-sticky">
-        <span className="material-symbols-outlined lib-search-icon" aria-hidden="true">search</span>
-        <input
-          type="text"
-          className="lib-search-input"
-          placeholder="Search components..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search component library"
-        />
-        {query && (
-          <button
-            type="button"
-            className="lib-search-clear"
-            onClick={() => setQuery("")}
-            aria-label="Clear search"
-          >
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>close</span>
-          </button>
+        <label className="dh-visually-hidden" htmlFor="lib-search-input">Search component library</label>
+        <div className="lib-search-field">
+          <span className="material-symbols-outlined lib-search-icon" aria-hidden="true">search</span>
+          <input
+            id="lib-search-input"
+            ref={searchRef}
+            type="search"
+            className="lib-search-input"
+            placeholder="Search components  (press /)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-describedby={hasQuery ? "lib-search-count" : undefined}
+          />
+          {query && (
+            <button
+              type="button"
+              className="lib-search-clear"
+              onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+              aria-label="Clear search"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>close</span>
+            </button>
+          )}
+        </div>
+        {!hasQuery && (
+          <div className="lib-search-row">
+            <button
+              type="button"
+              className="lib-collapse-toggle"
+              onClick={() => setAllCategories(!anyCategoryOpen)}
+            >
+              {anyCategoryOpen ? "Collapse all" : "Expand all"}
+            </button>
+          </div>
         )}
       </div>
 
       {hasQuery && totalVisible > 0 && (
-        <span className="lib-zone-count" role="status" style={{ alignSelf: "flex-start", margin: "0 0 8px 2px" }}>
+        <span id="lib-search-count" className="lib-search-count" role="status" aria-live="polite">
           {totalVisible} result{totalVisible === 1 ? "" : "s"}
         </span>
       )}
@@ -1107,6 +1207,29 @@ function LibraryBrowser() {
       {totalVisible === 0 && (
         <div className="lib-empty">No components match &ldquo;{query}&rdquo;.</div>
       )}
+
+      {/* Recently used — click-to-re-add the last handful of components.
+          Hidden while searching and when the session has no recents. */}
+      {!hasQuery && (() => {
+        const recentBlueprints = recents
+          .map((type) => LIBRARY_BLUEPRINTS.find((bp) => bp.type === type))
+          .filter((bp): bp is (typeof LIBRARY_BLUEPRINTS)[number] => Boolean(bp));
+        if (recentBlueprints.length === 0) return null;
+        return (
+          <div className="lib-zone-group">
+            <div className="lib-zone-head">
+              <span className="material-symbols-outlined lib-zone-icon" aria-hidden="true">history</span>
+              <span className="lib-zone-label">Recently used</span>
+              <span className="lib-zone-count">{recentBlueprints.length}</span>
+            </div>
+            <div className="lib-tile-grid">
+              {recentBlueprints.map((bp) => (
+                <BlueprintItem key={`recent-${bp.id}`} blueprint={bp} zone={zoneForType(bp.type)} />
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Body zone — sub-grouped by category, each collapsible */}
       {grouped.body.length > 0 && (
