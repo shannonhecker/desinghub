@@ -7345,6 +7345,20 @@
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
 }
 
+/* ── Carbon live-render scope bridge (W6-P2b) ──
+   `.carbon-live-scope` is the wrapper CarbonReal renders REAL @carbon/react
+   components into. The build-time-scoped public/carbon-scoped.css supplies all
+   --cds-* tokens (via the cds--white/cds--g100 theme class) and the Carbon
+   reset, so this bridge is intentionally MINIMAL: it only points Carbon's
+   font-family at the locally-bundled IBM Plex Sans (the --font-ibm-plex-sans
+   var, same as .preview-carbon) so the scope uses the app's loaded font instead
+   of refetching IBM Plex from the Carbon CDN, and gives the wrapper full width
+   so the demo doesn't collapse. Everything visual still flows through --cds-*. */
+.carbon-live-scope {
+  font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  width: 100%;
+}
+
 /* ── uoaui DS (Dark = base, glass surfaces) ── */
 .preview-uoaui {
   --ds-primary: #8A58C9;

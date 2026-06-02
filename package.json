@@ -21,6 +21,7 @@
     "tokens:audit": "node scripts/tokens-audit.mjs",
     "tokens:audit:write": "node scripts/tokens-audit.mjs --write",
     "tokens:audit:json": "node scripts/tokens-audit.mjs --json",
+    "carbon:scoped-css": "node scripts/generate-carbon-scoped-css.mjs",
     "ss": "node scripts/screenshot-matrix.mjs",
     "ss:baseline": "node scripts/screenshot-matrix.mjs --save",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
@@ -73,6 +74,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.3",
     "jsdom": "^29.0.2",
+    "postcss": "^8.4.31",
     "typescript": "^5",
     "vercel": "^51.8.0",
     "vitest": "^4.1.4"

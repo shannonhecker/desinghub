@@ -17,8 +17,16 @@
  *         injects the DS's own CSS via the existing getFullCSS / uoauiBuildCSS
  *         theme mechanism — SCOPED to that wrapper so the DS's global reset
  *         (`*{}` / `:root{}`) can't leak app-wide.
- *       · Carbon is still EXCLUDED: its real components need `@carbon/styles`, a
- *         ~950 KB GLOBAL reset; it awaits a separate scoped-CSS PR.
+ *       · Carbon (W6-P2b) — real `@carbon/react` components. @carbon/styles is a
+ *         ~950 KB GLOBAL sheet (Eric-Meyer reset + `:root` token blocks), so
+ *         it's scoped at BUILD TIME to `.carbon-live-scope`
+ *         (scripts/generate-carbon-scoped-css.mjs -> public/carbon-scoped.css)
+ *         and lazy-loaded by CarbonScopeStyles. The CarbonReal subtree wraps the
+ *         real components (from realBlockMap) in a `.carbon-live-scope` element
+ *         carrying the `cds--white`/`cds--g100` theme class (so --cds-* resolve
+ *         inside the scope). Per the locked decision, Carbon's @keyframes land
+ *         in the global keyframe registry (harmless, --cds-/IBM-Plex prefixed);
+ *         Shadow DOM/iframe are NOT used (DnD-kit needs one document).
  *   - BLOCKS: only the CORE SET — Button, TextInput, Checkbox, Switch, Card.
  *     Everything else returns null and the caller falls back to the builder's
  *     ComponentRenderer (the same render path as the canvas).
@@ -34,9 +42,13 @@
  * so MUI's emotion / Fluent's griffel style engines never run during SSR or the
  * first hydration pass — no Next App-Router hydration mismatch, and no
  * empty-demo flash. uoaui is plain CSS (no JS style engine), but it rides the
- * same mounted gate so its scoped <style> injects only client-side too.
+ * same mounted gate so its scoped <style> injects only client-side too. Carbon
+ * (@carbon/react) uses Sass-compiled static CSS (no runtime style engine); it
+ * rides the same mounted gate and lazy-loads its scoped sheet via
+ * CarbonScopeStyles on first mount.
  *
- * We never import `@carbon/styles` or `@carbon/react`.
+ * We never import the GLOBAL `@carbon/styles` sheet; Carbon's CSS comes only via
+ * the build-time-scoped public/carbon-scoped.css (lazy <link>).
  */
 
 import React from "react";
@@ -44,6 +56,7 @@ import React from "react";
 import { getFullCSS, getTheme } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
+import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 
 import {
   SaltProvider,
@@ -81,10 +94,10 @@ import {
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* The systems that render REAL components here. Salt/M3/Fluent via their own
-   provider subtree; uoaui (W6-P2a) via the scoped-CSS UoauiReal subtree. Carbon
-   is still absent — it needs the @carbon/styles global-reset scoping work
-   (separate PR). See file header. */
-const REAL_SYSTEMS = new Set<SystemId>(["salt", "m3", "fluent", "uoaui"]);
+   provider subtree; uoaui (W6-P2a) via the scoped-CSS UoauiReal subtree; carbon
+   (W6-P2b) via the CarbonReal subtree (build-time-scoped @carbon/styles +
+   theme class). All 5 DSs now render real. See file header. */
+const REAL_SYSTEMS = new Set<SystemId>(["salt", "m3", "fluent", "uoaui", "carbon"]);
 
 /* The CORE SET of block types we render real, per the PR scope. Anything else
    returns null so the caller falls back to the Simulated ComponentRenderer. */
@@ -344,6 +357,29 @@ function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendere
   );
 }
 
+/* ── Carbon real subtree (W6-P2b) ──
+   Renders real @carbon/react components (from realBlockMap) inside a
+   `.carbon-live-scope` wrapper. The wrapper ALSO carries Carbon's theme class
+   (`cds--white` light / `cds--g100` dark) so the build-time-scoped sheet's
+   `.carbon-live-scope .cds--white { --cds-*: … }` block sets the official token
+   values on the subtree (Carbon themes are class-based, not attribute-based).
+   CarbonScopeStyles lazy-injects public/carbon-scoped.css once on first mount,
+   so the heavy sheet only loads when Carbon is actually on screen. */
+function CarbonReal({ type, mode, props }: Omit<RealComponentRendererProps, "system">) {
+  const themeClass = mode === "dark" ? "cds--g100" : "cds--white";
+  const render = getRealBlockRenderer("carbon", type);
+  const inner = render ? render(props) : null;
+
+  return (
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${themeClass}`} data-carbon-theme={mode === "dark" ? "g100" : "white"}>
+        {inner}
+      </div>
+    </>
+  );
+}
+
 /**
  * Render the REAL official component for (system, type) in the core set, or
  * return null when the pair is out of scope.
@@ -368,5 +404,6 @@ export function RealComponentRenderer({
   if (system === "m3") return <M3Real type={type} mode={mode} props={props} />;
   if (system === "fluent") return <FluentReal type={type} mode={mode} props={props} />;
   if (system === "uoaui") return <UoauiReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
+  if (system === "carbon") return <CarbonReal type={type} mode={mode} props={props} />;
   return null;
 }
