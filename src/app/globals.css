@@ -483,3 +483,348 @@ a { color: inherit; text-decoration: none; }
   justify-content: center;
   overflow: hidden;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   UI-Kit premium component-detail page (W8-P3..P6)
+   A single-scroll page with a sticky right-rail TOC, in the spirit of
+   m3.material.io / spec.fluentui.com: generous spacing rhythm, a calm type
+   hierarchy, and a consistent scale. These classes own ONLY structure, type,
+   spacing, and motion — every colour (fg / bg / border / accent) is passed in
+   inline from the active design system's theme tokens, so light + dark stay
+   correct automatically and no DS palette is hard-coded here.
+
+   Spacing rhythm uses the --dh-space-* scale; corners use --dh-curve-*;
+   elevation uses the mode-swapping --dh-shadow-* tokens above.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 2-column shell: scrollable content + sticky right rail. ── */
+.dh-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: var(--dh-space-48, 48px);
+  align-items: start;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.dh-detail-main {
+  min-width: 0; /* let the content column shrink so tables/code can scroll */
+}
+.dh-detail-rail {
+  position: sticky;
+  top: var(--dh-space-24, 24px);
+  align-self: start;
+  padding-top: 56px; /* align the rail with the first section, past the header */
+}
+/* Below ~1080px the rail would crowd the content; collapse to a single column
+   and let the (still-anchored) sections read top-to-bottom. */
+@media (max-width: 1080px) {
+  .dh-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dh-detail-rail {
+    display: none;
+  }
+}
+
+/* ── Page header + section rhythm. ── */
+.dh-detail {
+  padding: 48px 56px 96px;
+}
+.dh-detail-header {
+  margin-bottom: var(--dh-space-48, 48px);
+  max-width: 64ch;
+}
+.dh-detail-title {
+  font-size: clamp(28px, 2.4vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  margin: 0 0 var(--dh-space-12, 12px);
+}
+.dh-detail-desc {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+.dh-section {
+  margin-bottom: var(--dh-space-64, 64px);
+  scroll-margin-top: 88px; /* so #anchor jumps clear the sticky ContentTopBar */
+}
+.dh-section:last-child {
+  margin-bottom: 0;
+}
+.dh-section-h {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0 0 var(--dh-space-8, 8px);
+  outline: none; /* TOC click focuses the heading; suppress the focus box */
+}
+.dh-section-lede {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 var(--dh-space-20, 20px);
+  max-width: 68ch;
+}
+
+/* Shared framed card used by the variants / props / tokens surfaces. */
+.dh-detail-card {
+  border: 1px solid;
+  border-radius: var(--dh-curve-md, 10px);
+  overflow: hidden;
+}
+
+/* ── Right-rail TOC. ── */
+.dh-toc {
+  font-size: 13px;
+}
+.dh-toc-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 var(--dh-space-12, 12px);
+}
+.dh-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dh-toc-link {
+  display: block;
+  padding: 7px 0 7px 14px;
+  border-left: 2px solid;
+  text-decoration: none;
+  line-height: 1.3;
+  transition:
+    color var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    border-left-color var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.dh-toc-link:hover {
+  filter: brightness(1.18);
+}
+.dh-toc-link:focus-visible {
+  outline: 2px solid var(--dh-focus-ring, currentColor);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dh-toc-link {
+    transition: none;
+  }
+}
+
+/* ── Variants × states matrix. ── */
+.dh-matrix-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--dh-space-12, 12px);
+  font-size: 12px;
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
+  border-bottom: 1px solid;
+}
+.dh-matrix-scroll {
+  overflow-x: auto;
+}
+.dh-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.dh-matrix-corner,
+.dh-matrix-colhead,
+.dh-matrix-rowhead,
+.dh-matrix-cell {
+  border: 1px solid;
+  text-align: left;
+  vertical-align: middle;
+}
+.dh-matrix-corner {
+  padding: var(--dh-space-8, 8px) var(--dh-space-12, 12px);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dh-matrix-colhead,
+.dh-matrix-rowhead {
+  padding: var(--dh-space-8, 8px) var(--dh-space-12, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dh-matrix-rowhead {
+  text-align: right;
+}
+.dh-matrix-cell {
+  padding: 0;
+}
+/* Each cell hosts the live specimen, scaled down + clipped so the grid reads as
+   a calm anatomy matrix rather than N copies of a full demo. */
+.dh-matrix-specimen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  height: 88px;
+  padding: var(--dh-space-12, 12px);
+  overflow: hidden;
+  transform: scale(0.82);
+  transform-origin: center;
+}
+
+/* ── Props table. ── */
+.dh-props {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dh-props-h {
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid;
+}
+.dh-props-cell {
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
+  border-bottom: 1px solid;
+  line-height: 1.5;
+  vertical-align: top;
+}
+.dh-props tr:last-child .dh-props-cell {
+  border-bottom: 0;
+}
+.dh-props-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dh-props-type,
+.dh-props-default {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.dh-props-default {
+  white-space: nowrap;
+}
+
+/* ── Do / Don't guidance cards. ── */
+.dh-guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--dh-space-20, 20px);
+}
+@media (max-width: 720px) {
+  .dh-guidance-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.dh-guidance-card {
+  border: 1px solid;
+  border-radius: var(--dh-curve-md, 10px);
+  padding: var(--dh-space-20, 20px) var(--dh-space-24, 24px);
+}
+.dh-guidance-head {
+  display: flex;
+  align-items: center;
+  gap: var(--dh-space-8, 8px);
+  margin-bottom: var(--dh-space-16, 16px);
+}
+.dh-guidance-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.dh-guidance-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.dh-guidance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-12, 12px);
+}
+.dh-guidance-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dh-space-8, 8px);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.dh-guidance-bullet {
+  font-size: 16px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ── Token swatch table. ── */
+.dh-tokens {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dh-tokens-h {
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid;
+}
+.dh-tokens-h-swatch {
+  width: 72px;
+}
+.dh-tokens-h-value {
+  width: 38%;
+}
+.dh-tokens-cell {
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
+  border-bottom: 1px solid;
+  vertical-align: middle;
+}
+.dh-tokens tr:last-child .dh-tokens-cell {
+  border-bottom: 0;
+}
+.dh-token-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 24px;
+  border: 1px solid;
+  border-radius: var(--dh-curve-sm, 6px);
+  /* A subtle checker so transparent / semi-transparent token values read. */
+  background-image:
+    linear-gradient(45deg, rgba(128, 128, 128, 0.16) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(128, 128, 128, 0.16) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(128, 128, 128, 0.16) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(128, 128, 128, 0.16) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+.dh-token-chip-na {
+  font-size: 11px;
+  line-height: 1;
+}
+.dh-token-name {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.dh-token-role {
+  display: block;
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.dh-token-value {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
