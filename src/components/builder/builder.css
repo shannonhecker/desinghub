@@ -8341,8 +8341,8 @@
 }
 .lib-search-input:focus {
   outline: none;
-  border-color: rgba(126, 107, 196, 0.55);
-  background: rgba(126, 107, 196, 0.08);
+  border-color: var(--b-accent);
+  background: var(--b-accent-glow);
 }
 .lib-search-input::placeholder { color: var(--b-fg3); }
 .lib-search-clear {
@@ -8386,7 +8386,7 @@
 }
 .lib-zone-icon {
   font-size: 14px !important;
-  color: rgba(126, 107, 196, 0.8);
+  color: var(--b-accent);
 }
 .lib-zone-label {
   font-size: 11px;
@@ -8401,8 +8401,8 @@
   color: var(--b-fg3);
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--b-accent-glow);
+  border: 1px solid rgba(180, 144, 245, 0.25);
 }
 .builder-light .lib-zone-count {
   background: rgba(0, 0, 0, 0.04);
@@ -8410,10 +8410,10 @@
 }
 .lib-zone-hint {
   font-size: 10px;
-  color: var(--b-fg3);
+  color: var(--b-fg2);
   padding: 0 2px;
   margin-bottom: 6px;
-  font-style: italic;
+  letter-spacing: 0.01em;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -8608,7 +8608,7 @@
   border-radius: var(--dh-curve-sm, 6px);
   color: var(--dh-fg-muted, rgba(255, 255, 255, 0.7));
   font-family: inherit;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -8620,7 +8620,7 @@
   color: var(--dh-fg, rgba(255, 255, 255, 0.92));
 }
 .lib-category-head:focus-visible {
-  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline: 2px solid var(--bc-accent-ring);
   outline-offset: 2px;
 }
 .builder-light .lib-category-head:hover {
@@ -8628,7 +8628,7 @@
 }
 .lib-category-icon {
   font-size: 14px !important;
-  color: var(--ds-primary, rgba(126, 107, 196, 0.85));
+  color: var(--b-accent);
   flex-shrink: 0;
 }
 .lib-category-label {
@@ -8639,8 +8639,8 @@
   color: var(--b-fg3);
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--b-accent-glow);
+  border: 1px solid rgba(180, 144, 245, 0.25);
   font-weight: 500;
 }
 .builder-light .lib-category-count {
@@ -8879,9 +8879,9 @@
   z-index: 9000;
   padding: 12px;
   border-radius: 12px;
-  background: rgba(24, 22, 48, 0.96);
+  background: var(--bc-bg);
   color: #e7e2f7;
-  border: 1px solid rgba(126, 107, 196, 0.35);
+  border: 1px solid var(--bc-border-strong);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(6px);
   pointer-events: none;
@@ -8914,11 +8914,11 @@
 .lib-hover-preview-desc {
   font-size: 11px;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--bc-fg-muted);
 }
 .lib-hover-preview-hint {
   font-size: 10px;
-  color: rgba(148, 132, 214, 0.85);
+  color: var(--b-accent);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -8928,17 +8928,17 @@
 }
 /* Light mode variant */
 .builder-light .lib-hover-preview {
-  background: #ffffff;
-  color: #1a1a2e;
-  border-color: rgba(126, 107, 196, 0.35);
+  background: var(--bc-bg);
+  color: var(--bc-fg);
+  border-color: var(--bc-border-strong);
 }
 .builder-light .lib-hover-preview-thumb {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.07);
   color: rgba(0, 0, 0, 0.72);
 }
-.builder-light .lib-hover-preview-desc { color: rgba(0, 0, 0, 0.55); }
-.builder-light .lib-hover-preview-hint { color: #6b57b0; border-top-color: rgba(0, 0, 0, 0.06); }
+.builder-light .lib-hover-preview-desc { color: var(--bc-fg-muted); }
+.builder-light .lib-hover-preview-hint { color: var(--b-accent); border-top-color: rgba(0, 0, 0, 0.06); }
 
 /* ══════════════════════════════════════════════════════════
    PreviewBar - single consolidated toolbar (Phase F.2)
@@ -9423,10 +9423,16 @@
   min-width: 0;
 }
 .lib-tile:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--b-accent-glow);
+  border-color: var(--b-accent);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
+}
+.lib-tile:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+  background: var(--b-accent-glow);
+  border-color: var(--b-accent);
 }
 .lib-tile:active {
   cursor: grabbing;

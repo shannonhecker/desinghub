@@ -1098,6 +1098,12 @@ function LibraryBrowser() {
         )}
       </div>
 
+      {hasQuery && totalVisible > 0 && (
+        <span className="lib-zone-count" role="status" style={{ alignSelf: "flex-start", margin: "0 0 8px 2px" }}>
+          {totalVisible} result{totalVisible === 1 ? "" : "s"}
+        </span>
+      )}
+
       {totalVisible === 0 && (
         <div className="lib-empty">No components match &ldquo;{query}&rdquo;.</div>
       )}
