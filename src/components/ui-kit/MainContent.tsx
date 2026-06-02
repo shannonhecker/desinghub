@@ -4,9 +4,11 @@ import React from "react";
 import dynamic from "next/dynamic";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents } from "@/data/registry";
-import { ComponentPreview } from "@/components/ComponentPreview";
+import { ComponentPreview, getDetailSections } from "@/components/ComponentPreview";
 import { TokenReference } from "@/components/TokenReference";
 import { AuditPanel } from "@/components/AuditPanel";
+import { useActiveTheme } from "@/components/DesignHubApp";
+import { InPageTOC } from "./InPageTOC";
 import { LandingGrid } from "./LandingGrid";
 import { COMPONENT_ROUTES } from "./uiKitGroups";
 
@@ -23,6 +25,33 @@ const BuilderBlockGallery = dynamic(
   },
 );
 
+/**
+ * DetailLayout — wraps a component-detail ComponentPreview in the premium
+ * 2-column shell: scrollable content + a sticky right-rail in-page TOC
+ * (m3.material.io anatomy pattern, owner-locked). The TOC is only shown when the
+ * component actually renders the multi-section detail page (Salt / M3 / Fluent /
+ * uoaui core components produce 2+ sections); Carbon and tool pages return no
+ * sections, in which case the preview renders full-width with no rail.
+ */
+function DetailLayout({ componentId }: { componentId: string }) {
+  const t = useActiveTheme();
+  const sections = getDetailSections(t.activeSystem, componentId);
+  const showToc = sections.length > 1;
+
+  if (!showToc) return <ComponentPreview componentId={componentId} />;
+
+  return (
+    <div className="dh-detail-layout">
+      <div className="dh-detail-main">
+        <ComponentPreview componentId={componentId} />
+      </div>
+      <aside className="dh-detail-rail">
+        <InPageTOC sections={sections} t={t} />
+      </aside>
+    </div>
+  );
+}
+
 export function MainContent() {
   const selectedComponent = useDesignHub((s) => s.selectedComponent);
   const activeSystem = useDesignHub((s) => s.activeSystem);
@@ -37,11 +66,11 @@ export function MainContent() {
       case "token-reference": return <TokenReference />;
       case "audit-panel": return <AuditPanel />;
       case "builder-blocks": return <BuilderBlockGallery />;
-      case "preview": return <ComponentPreview componentId={route.componentId} />;
+      case "preview": return <DetailLayout componentId={route.componentId} />;
     }
   }
 
   const components = getComponents(activeSystem);
   if (!components.find(c => c.id === selectedComponent)) return <LandingGrid />;
-  return <ComponentPreview componentId={selectedComponent} />;
+  return <DetailLayout componentId={selectedComponent} />;
 }
