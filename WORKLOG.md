@@ -258,6 +258,11 @@ public/
 | 10 | Template **padding too big**, not like a real usable website/app → **online competitor analysis first**, then a thought-through **plan** | ⏸ QUEUED (task) — targets structurePadding S/M/L + per-DS native values + --dh-pad-canvas/zone/block/gap; plan-first |
 | 11 | "after all above done run a **user-test + code review + design audit** again" | 🔄 RUNNING — read-only QA workflow (correctness, failures/security, export-build-all-5-DS, design-audit, a11y, 3-persona user-test) → synthesize → FIX P0/P1 |
 | 12 | "capture all the ask into work log" | ✅ this entry |
+| 13 | Component panel **token audit** + "some text feels out of space" | 🔄 folded into the panel redesign (run `tokens:audit` + grep hardcoded values + text-spacing pass before merge) |
+| 14 | Component panel **research-grounded REDESIGN** — make it useful (search-in-box + scannable groups + recents) | 🔄 IN PROGRESS — best-practice research done; building (decisions locked: recents✓, sticky headers✓, all-open+collapse-all✓) |
+| 15 | Template **density** — too padded vs real apps; competitor analysis + plan | ✅ PLAN APPROVED (Stripe-moderate / redefine 'medium' / defer landing hero) — implementing after panel (key fix: `--dh-pad-canvas` was injected-but-unused; tighten uoaui+M3 only) |
+| 16 | **Sessions never save** (drawer always empty) — research how AI chats store conversations + fix | 🔄 diagnose+research workflow running → plan → fix (likely localStorage/IndexedDB-first, no-auth) |
+| 17 | Chatbox as **conversational user-guide** — explain what the tool is / how it works + refer users to the UI Kit site | ⏸ QUEUED (task) — chat system-prompt + intent handling + /ui-kit link affordance |
 
 ### Shipped this session — 11 PRs (main 1e09b4d → ddfc719)
 - #251 floating chat + dock/pin · #252 sample-data + stock-image library · #253 component-panel polish (tokens/focus/hover/search-count) · #254 ui-kit-meta data backbone · #255 export-verify harness (salt+uoaui exports build green) · #256 stock-image picker · #257 premium gallery cards (tall thumbnail) · #258 uoaui live real-render · #259 realistic templates · #260 premium component-detail page (right-rail TOC + variants matrix + all-5-DS props + guidance + token swatches) · #261 Carbon live real-render (scoped @carbon/styles) → **5/5 DS render real**.
