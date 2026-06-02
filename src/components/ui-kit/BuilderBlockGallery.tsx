@@ -24,7 +24,8 @@ import { getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
 import { ComponentRenderer } from "@/components/builder/ComponentRenderer";
-import { RealComponentRenderer, canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
+import { canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
+import { PreviewReadOnlyContext } from "@/components/builder/previewReadOnly";
 import {
   kitByCategory,
   kitExportCode,
@@ -187,23 +188,24 @@ function RealOrSimulated({
   mode: "light" | "dark";
   saltDensity: SaltDensity;
 }) {
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (mounted && canRenderReal(ds, entry.type)) {
-    return (
-      <RealComponentRenderer
-        system={ds}
+  /* PR-D: ONE render source. Route through the builder's ComponentRenderer,
+     which internally picks the REAL DS component (read-only) or Simulated —
+     the exact same gate the builder canvas uses, so the two surfaces share one
+     source. readOnly=true so the gallery shows the real component; mode/
+     saltDensity passed explicitly (the UI Kit's theme store differs from the
+     builder's). ComponentRenderer's own `mountedReal` handles SSR gating. */
+  return (
+    <PreviewReadOnlyContext.Provider value={true}>
+      <ComponentRenderer
         type={entry.type}
+        system={ds}
+        blockId={undefined}
+        {...entry.defaults}
         mode={mode}
         saltDensity={saltDensity}
-        props={entry.defaults}
       />
-    );
-  }
-  return <ComponentRenderer type={entry.type} system={ds} blockId={undefined} {...entry.defaults} />;
+    </PreviewReadOnlyContext.Provider>
+  );
 }
 
 function BlockCard({

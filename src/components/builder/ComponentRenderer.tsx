@@ -1738,17 +1738,20 @@ const RENDERERS: Record<string, React.FC<any>> = {
 };
 
 /* ── Main export ── */
-export function ComponentRenderer({ type, system, blockId, ...props }: ComponentRendererProps & { blockId?: string }) {
-  /* Phase 5 (P5.3): in preview/present (read-only) mode, render the REAL
-     official DS component for the covered core set (Salt/M3/Fluent ×
-     Button/Input/Checkbox/Switch/Card) via the SHARED RealComponentRenderer
-     — the same path the UI Kit gallery uses ("share one source"). Edit mode
-     keeps Simulated* so inline-edit + chrome work. `mountedReal` gates the DS
-     style engines off SSR / first hydration. Uncovered combos fall through to
-     Simulated (honest, same coverage contract as the export). */
+export function ComponentRenderer({ type, system, blockId, mode: modeProp, saltDensity: densityProp, ...props }: ComponentRendererProps & { blockId?: string; mode?: "light" | "dark"; saltDensity?: "high" | "medium" | "low" | "touch" }) {
+  /* Phase 5 (P5.3 + PR-D): ComponentRenderer is the ONE render entry shared by
+     the builder canvas AND the UI Kit gallery. In preview/present (read-only)
+     mode it renders the REAL official DS component for covered combos via the
+     shared RealComponentRenderer; edit mode keeps Simulated* (inline-edit +
+     chrome). `mountedReal` gates DS style engines off SSR / first hydration.
+     mode/saltDensity are read from props when present (the UI Kit reads
+     useDesignHub/useTheme, not useBuilder) and fall back to the builder store
+     on the canvas. Uncovered combos fall through to Simulated (honest). */
   const readOnly = usePreviewReadOnly();
-  const builderMode = useBuilder((s) => s.mode);
-  const density = useBuilder((s) => s.density);
+  const storeMode = useBuilder((s) => s.mode);
+  const storeDensity = useBuilder((s) => s.density);
+  const builderMode = modeProp ?? storeMode;
+  const density = densityProp ?? storeDensity;
   const [mountedReal, setMountedReal] = useState(false);
   useEffect(() => { setMountedReal(true); }, []);
   if (mountedReal && readOnly && canRenderReal(system as SystemId, type)) {
