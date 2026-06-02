@@ -376,6 +376,7 @@ export function ChatPanel() {
     setTemplatesDrawerOpen,
     ensureSessionStarted,
     wizardStep, setWizardStep, builtViaWizard, setBuiltViaWizard,
+    chatMode, toggleChatMode, setChatOpen,
   } = useBuilder();
 
   /* Backend feature flags from useBackendStatus (mounted in BuilderApp).
@@ -1250,6 +1251,34 @@ export function ChatPanel() {
 
   return (
     <div className={`chat-layout ${!hasMessages ? "chat-hero-state" : ""}`}>
+      {/* Window controls - pinned top-right, independent of the hero
+          centering. Dock/float toggle + minimize-to-corner. Present in
+          both docked and floating modes so the user can switch from
+          either. */}
+      <div className="chat-controls" role="group" aria-label="Chat window controls">
+        <button
+          type="button"
+          className="chat-controls-btn"
+          onClick={toggleChatMode}
+          title={chatMode === "floating" ? "Dock to side" : "Float over canvas"}
+          aria-label={chatMode === "floating" ? "Dock chat to the side" : "Float chat over the canvas"}
+          aria-pressed={chatMode === "docked"}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">
+            {chatMode === "floating" ? "dock_to_left" : "picture_in_picture"}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="chat-controls-btn"
+          onClick={() => setChatOpen(false)}
+          title="Minimize to corner"
+          aria-label="Minimize chat to corner"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
       {/* Scrollable content area */}
       <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer - pushes content to bottom when messages are few */}
