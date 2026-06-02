@@ -169,23 +169,36 @@ interface RealComponentRendererProps {
   props: Record<string, unknown>;
 }
 
+/* ── Per-cell state props the variants matrix threads in. Real DS props on
+   every covered component (disabled, validationStatus, indeterminate); state
+   axis values that are pure CSS (hover/focus/rest/open) are rendered in their
+   default state by every DS, which is honest for a static, store-free grid. ── */
+type ValidationStatus = "error" | "warning" | "success" | undefined;
+
+/* Salt validation status -> FormField validationStatus (no "success" slot;
+   Salt FormField exposes error|warning). Success renders as the default field. */
+function saltValidation(v: ValidationStatus): "error" | "warning" | undefined {
+  return v === "error" ? "error" : v === "warning" ? "warning" : undefined;
+}
+
 /* ── SALT real subtree ── */
 function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+  const disabled = Boolean(props.disabled);
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { sentiment, appearance } = saltButtonProps(s(props.variant, "primary"));
-    inner = <SaltButton sentiment={sentiment} appearance={appearance}>{s(props.label, "Button")}</SaltButton>;
+    inner = <SaltButton sentiment={sentiment} appearance={appearance} disabled={disabled}>{s(props.label, "Button")}</SaltButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
-      <SaltFormField>
+      <SaltFormField validationStatus={saltValidation(props.validationStatus as ValidationStatus)} disabled={disabled}>
         <SaltFormFieldLabel>{s(props.label, "Label")}</SaltFormFieldLabel>
-        <SaltInput placeholder={s(props.placeholder)} readOnly />
+        <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly />
       </SaltFormField>
     );
   } else if (type === "SimulatedCheckbox") {
-    inner = <SaltCheckbox label={s(props.label)} defaultChecked={Boolean(props.defaultChecked)} />;
+    inner = <SaltCheckbox label={s(props.label)} checked={Boolean(props.defaultChecked)} indeterminate={Boolean(props.indeterminate)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedSwitch") {
-    inner = <SaltSwitch label={s(props.label)} defaultChecked={Boolean(props.defaultOn)} />;
+    inner = <SaltSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedCard") {
     inner = (
       <SaltCard>
@@ -208,16 +221,30 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
   /* createTheme with the active mode; emotion styles are scoped per component
      (no global reset). Memoise so the theme isn't rebuilt every render. */
   const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const disabled = Boolean(props.disabled);
+  const validation = props.validationStatus as ValidationStatus;
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { variant, color } = muiButtonProps(s(props.variant, "primary"));
-    inner = <MuiButton variant={variant} color={color}>{s(props.label, "Button")}</MuiButton>;
+    inner = <MuiButton variant={variant} color={color} disabled={disabled}>{s(props.label, "Button")}</MuiButton>;
   } else if (type === "SimulatedTextInput") {
-    inner = <MuiTextField label={s(props.label, "Label")} placeholder={s(props.placeholder)} variant="outlined" />;
+    inner = (
+      <MuiTextField
+        label={s(props.label, "Label")}
+        placeholder={s(props.placeholder)}
+        value={s(props.value) || undefined}
+        variant="outlined"
+        error={validation === "error"}
+        color={validation === "success" ? "success" : validation === "warning" ? "warning" : undefined}
+        focused={validation === "success" || validation === "warning" ? true : undefined}
+        disabled={disabled}
+        slotProps={{ input: { readOnly: true } }}
+      />
+    );
   } else if (type === "SimulatedCheckbox") {
-    inner = <MuiFormControlLabel control={<MuiCheckbox defaultChecked={Boolean(props.defaultChecked)} />} label={s(props.label)} />;
+    inner = <MuiFormControlLabel disabled={disabled} control={<MuiCheckbox checked={Boolean(props.defaultChecked)} indeterminate={Boolean(props.indeterminate)} readOnly />} label={s(props.label)} />;
   } else if (type === "SimulatedSwitch") {
-    inner = <MuiFormControlLabel control={<MuiSwitch defaultChecked={Boolean(props.defaultOn)} />} label={s(props.label)} />;
+    inner = <MuiFormControlLabel disabled={disabled} control={<MuiSwitch checked={Boolean(props.defaultOn)} readOnly />} label={s(props.label)} />;
   } else if (type === "SimulatedCard") {
     inner = (
       <MuiCard>
@@ -233,20 +260,24 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
 
 /* ── Fluent real subtree ── */
 function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "system">) {
+  const disabled = Boolean(props.disabled);
+  const validation = props.validationStatus as ValidationStatus;
+  /* Fluent Field validationState is error|warning|success|none. */
+  const fluentValidation = validation ?? undefined;
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { appearance, style } = fluentButtonProps(s(props.variant, "primary"));
-    inner = <FluentButton appearance={appearance} style={style}>{s(props.label, "Button")}</FluentButton>;
+    inner = <FluentButton appearance={appearance} style={style} disabled={disabled}>{s(props.label, "Button")}</FluentButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
-      <FluentField label={s(props.label, "Label")}>
-        <FluentInput placeholder={s(props.placeholder)} readOnly />
+      <FluentField label={s(props.label, "Label")} validationState={fluentValidation}>
+        <FluentInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} disabled={disabled} readOnly />
       </FluentField>
     );
   } else if (type === "SimulatedCheckbox") {
-    inner = <FluentCheckbox label={s(props.label)} defaultChecked={Boolean(props.defaultChecked)} />;
+    inner = <FluentCheckbox label={s(props.label)} checked={Boolean(props.indeterminate) ? "mixed" : Boolean(props.defaultChecked)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedSwitch") {
-    inner = <FluentSwitch label={s(props.label)} defaultChecked={Boolean(props.defaultOn)} />;
+    inner = <FluentSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedCard") {
     inner = (
       <FluentCard>
