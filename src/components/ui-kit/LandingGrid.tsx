@@ -15,11 +15,21 @@ export const LandingGrid = React.memo(function LandingGrid() {
   const sysInfo = getSystemInfo(activeSystem);
   const previews = getPreviews(activeSystem);
 
-  const heroSize = 48;
+  /* Hero size is fluid: driven by the --uikit-hero-size CSS var
+     (clamp(36px, 3.5vw, 52px), see globals.css). Falls back to 48px
+     for any context where the var isn't present. */
+  const heroSize = "var(--uikit-hero-size, 48px)";
   const h2Size = 22;
   const bodySize = 16;
   const captionSize = 13;
   const outerPad = 48;
+
+  /* Tall-thumbnail gallery (W8-P2): a ~120px live-specimen zone holds the
+     same registry Preview the card has always rendered. We don't change
+     WHICH component renders — only the frame around it. The card name grows
+     to 16px and the description clamps to a single line. */
+  const thumbHeight = 120;
+  const cardGap = 20;
 
   /* DS-specific feature pills */
   const featurePills = activeSystem === "salt"
@@ -105,9 +115,9 @@ export const LandingGrid = React.memo(function LandingGrid() {
               <h2 style={{ fontSize: h2Size, fontWeight: catWeight, color: t.fg, margin: 0 }}>Tools</h2>
               <span style={{ fontSize: captionSize, color: t.fg3 }}>{toolItems.length}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
               {toolItems.map(c => (
-                <button key={c.id} className={cardClass || undefined}
+                <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
                   onClick={() => setSelectedComponent(c.id)}
                   style={{
                     width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
@@ -116,22 +126,20 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
                     backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
                     WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                    transition: "background 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-color 200ms",
                   }}
                 >
-                  <div style={{
+                  <div className="uikit-card-thumb" style={{
                     background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
-                    padding: 20, minHeight: 60,
-                    display: "flex", alignItems: "center", justifyContent: "center",
+                    height: thumbHeight,
                     borderBottom: `1px solid ${t.borderSubtle}`,
                   }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.accent, opacity: 0.85 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 40, color: t.accent, opacity: 0.85 }}>
                       {c.id === "tokens" ? "palette" : c.id === "audit" ? "fact_check" : "widgets"}
                     </span>
                   </div>
-                  <div style={{ padding: "10px 14px 12px" }}>
-                    <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                    <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || "Tool"}</div>
+                  <div style={{ padding: "14px 16px 16px" }}>
+                    <div style={{ fontSize: bodySize, fontWeight: 600, color: t.fg, lineHeight: 1.3, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
+                    <div style={{ fontSize: t.scale.labF + 1, color: t.fg2, marginTop: 4, lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || "Tool"}</div>
                   </div>
                 </button>
               ))}
@@ -151,11 +159,11 @@ export const LandingGrid = React.memo(function LandingGrid() {
               <h2 style={{ fontSize: h2Size, fontWeight: catWeight, color: t.fg, margin: 0 }}>{cat}</h2>
               <span style={{ fontSize: captionSize, color: t.fg3 }}>{catItems.length}</span>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
               {catItems.map(c => {
                 const Preview = previews[c.id];
                 return (
-                  <button key={c.id} className={cardClass || undefined}
+                  <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
                     onClick={() => setSelectedComponent(c.id)}
                     style={{
                       width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
@@ -164,25 +172,26 @@ export const LandingGrid = React.memo(function LandingGrid() {
                       background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
                       backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
                       WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                      transition: "background 70ms cubic-bezier(0.2, 0, 0.38, 0.9), border-color 200ms",
                     }}
                   >
-                    <div style={{
+                    <div className="uikit-card-thumb" style={{
                       /* Carbon preview tile uses $layer-accent (a half-step
                          deeper than layer-01 where the card body sits) to
                          separate the preview visually without shadow. */
                       background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
-                      padding: 20, minHeight: 60,
-                      display: "flex", alignItems: "center", justifyContent: "center",
+                      height: thumbHeight,
                       borderBottom: `1px solid ${t.borderSubtle}`,
                     }}>
                       {Preview
-                        ? <div style={{ pointerEvents: "none", width: "100%" }}><Preview /></div>
-                        : <span className="material-symbols-outlined" style={{ fontSize: 32, color: t.fg3, opacity: 0.4 }}>widgets</span>}
+                        /* Same registry Preview as before — centered and clipped
+                           to the taller frame. The inner wrapper constrains width
+                           so wide specimens don't overflow the card. */
+                        ? <div className="uikit-card-specimen" style={{ pointerEvents: "none" }}><Preview /></div>
+                        : <span className="material-symbols-outlined" style={{ fontSize: 40, color: t.fg3, opacity: 0.4 }}>widgets</span>}
                     </div>
-                    <div style={{ padding: "10px 14px 12px" }}>
-                      <div style={{ fontSize: t.scale.navF, fontWeight: 500, color: t.fg, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                      <div style={{ fontSize: t.scale.labF, color: t.fg2, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || cat}</div>
+                    <div style={{ padding: "14px 16px 16px" }}>
+                      <div style={{ fontSize: bodySize, fontWeight: 600, color: t.fg, lineHeight: 1.3, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
+                      <div style={{ fontSize: t.scale.labF + 1, color: t.fg2, marginTop: 4, lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || cat}</div>
                     </div>
                   </button>
                 );
