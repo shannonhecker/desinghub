@@ -1384,6 +1384,33 @@
 /* Legacy chat-collapse-btn - moved to preview-toolbar-collapse-btn */
 .chat-collapse-btn { display: none; }
 
+/* Collapsed-chat corner FAB (4.3): the chat tucks into the corner while
+   editing so the canvas gets the space; this floats it back one tap away.
+   Calm affordance (brightness + shadow, no positional jump) per the unified
+   hover treatment; honors reduced-motion. */
+.chat-reopen-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 1px solid var(--b-accent);
+  background: var(--b-accent);
+  color: #15102a;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(180, 144, 245, 0.25);
+  transition: filter 0.18s ease, box-shadow 0.2s ease;
+}
+.chat-reopen-fab:hover { filter: brightness(1.08); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34); }
+.chat-reopen-fab:focus-visible { outline: 2px solid var(--b-fg); outline-offset: 2px; }
+.chat-reopen-fab .material-symbols-outlined { font-size: 22px; }
+@media (prefers-reduced-motion: reduce) { .chat-reopen-fab { transition: none; } }
+
 /* ── UNIFIED CHAT LAYOUT ── */
 .chat-layout {
   flex: 1;

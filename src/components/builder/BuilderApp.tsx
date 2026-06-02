@@ -34,7 +34,7 @@ export function BuilderApp() {
     mode, previewOpen, setMode,
     designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
-    chatOpen: isChatOpen,
+    chatOpen: isChatOpen, setChatOpen,
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
 
@@ -631,6 +631,22 @@ export function BuilderApp() {
           &copy; {new Date().getFullYear()} uoaui. All rights reserved.
         </div>
       </main>
+
+      {/* Collapsed-chat corner FAB (4.3): when the chat is tucked away while
+          editing, it lives as a floating corner button so the canvas gets the
+          space and the chat is one tap away. The preview-toolbar chevron
+          collapses it; this brings it back. */}
+      {!isChatOpen && (
+        <button
+          type="button"
+          className="chat-reopen-fab"
+          onClick={() => setChatOpen(true)}
+          title="Open chat"
+          aria-label="Open chat"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">forum</span>
+        </button>
+      )}
 
       <SettingsPanel />
 
