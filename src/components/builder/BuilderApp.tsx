@@ -131,14 +131,25 @@ export function BuilderApp() {
      same scale. */
   const structurePadding = useBuilder((s) => s.structurePadding);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+  const interfaceType = useBuilder((s) => s.interfaceType);
   useEffect(() => {
     const v = resolveStructurePadding(designSystem, structurePadding);
     const root = document.documentElement;
+    /* Marketing interface types (landing / blog / portfolio) stay airy:
+       widen zone and gap so hero/section rhythm breathes, while app and
+       dashboard types tighten to the redefined moderate density. Canvas
+       and block padding follow the DS scale unchanged. */
+    const isMarketing =
+      interfaceType === 'landing' ||
+      interfaceType === 'blog' ||
+      interfaceType === 'portfolio';
+    const zoneMul = isMarketing ? 2 : 1;
+    const gapMul = isMarketing ? 2.5 : 1;
     root.style.setProperty('--dh-pad-canvas', `${v.canvas}px`);
-    root.style.setProperty('--dh-pad-zone', `${v.zone}px`);
+    root.style.setProperty('--dh-pad-zone', `${v.zone * zoneMul}px`);
     root.style.setProperty('--dh-pad-block', `${v.block}px`);
-    root.style.setProperty('--dh-pad-gap', `${v.gap}px`);
-  }, [designSystem, structurePadding]);
+    root.style.setProperty('--dh-pad-gap', `${v.gap * gapMul}px`);
+  }, [designSystem, structurePadding, interfaceType]);
 
   /* Accent override: when a user sets `colorOverrides.accent` in
      SettingsPanel, paint the per-DS accent CSS var so the canvas

@@ -232,9 +232,9 @@ export function uoauiTokenVars(mode: 'dark' | 'light'): string {
 import type { StructurePaddingScale } from "../_shared/structure";
 
 export const UOAUI_STRUCTURE_PADDING: StructurePaddingScale = {
-  small:  { canvas: 12, zone: 8,  block: 8,  gap: 12 },
-  medium: { canvas: 20, zone: 12, block: 12, gap: 16 },
-  large:  { canvas: 28, zone: 16, block: 16, gap: 24 },
+  small:  { canvas: 8,  zone: 6,  block: 6,  gap: 8  },
+  medium: { canvas: 16, zone: 10, block: 10, gap: 12 },
+  large:  { canvas: 24, zone: 14, block: 12, gap: 16 },
 };
 
 /* ── Re-export types for consumers ─────────────────────────────────────── */
