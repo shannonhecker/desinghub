@@ -1,0 +1,26 @@
+{
+  "designSystem": "m3",
+  "mode": "light",
+  "density": "medium",
+  "headerBlocks": [
+    { "id": "m3-brand", "type": "AppBrand", "props": { "label": "Material Console" } },
+    { "id": "m3-status", "type": "StatusPill", "props": { "label": "Synced" } }
+  ],
+  "sidebarBlocks": [
+    { "id": "m3-nav-1", "type": "NavItem", "props": { "label": "Home", "icon": "home", "active": true } },
+    { "id": "m3-nav-2", "type": "NavItem", "props": { "label": "Insights", "icon": "bar_chart", "active": false } },
+    { "id": "m3-nav-3", "type": "NavItem", "props": { "label": "Settings", "icon": "settings", "active": false } }
+  ],
+  "blocks": [
+    { "id": "m3-title", "type": "SimulatedTitle", "props": { "text": "Project insights", "level": "h3" }, "layout": { "width": "12fr" } },
+    { "id": "m3-kpi", "type": "SimulatedStatCard", "props": { "label": "Active users", "value": "12,847", "pct": 8 }, "layout": { "width": "4fr" } },
+    { "id": "m3-btn", "type": "SimulatedButton", "props": { "label": "Create", "variant": "primary" }, "layout": { "width": "4fr" } },
+    { "id": "m3-input", "type": "SimulatedTextInput", "props": { "label": "Project name", "placeholder": "Untitled project" }, "layout": { "width": "4fr" } },
+    { "id": "m3-card", "type": "SimulatedCard", "props": { "title": "Latest activity", "content": "Three deployments completed in the last hour." }, "layout": { "width": "6fr" } },
+    { "id": "m3-chart", "type": "HighchartColumn", "props": { "chartType": "column", "title": "Signups by channel", "categories": ["Organic", "Paid", "Referral", "Social"], "series": [{ "name": "Signups", "data": [320, 210, 140, 90] }] }, "layout": { "width": "6fr" } },
+    { "id": "m3-table", "type": "SimulatedDataTable", "props": { "columns": ["Item", "Status", "Owner", "Updated"], "rows": [{ "name": "Onboarding flow", "status": "Active", "role": "A. Lin", "date": "1h ago" }, { "name": "Billing page", "status": "Review", "role": "M. Patel", "date": "3h ago" }] }, "layout": { "width": "12fr" } }
+  ],
+  "footerBlocks": [
+    { "id": "m3-ftr", "type": "FooterText", "props": { "label": "Auto-saved", "version": "v1.0" } }
+  ]
+}

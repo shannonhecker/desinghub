@@ -1,0 +1,26 @@
+{
+  "designSystem": "fluent",
+  "mode": "light",
+  "density": "medium",
+  "headerBlocks": [
+    { "id": "fluent-brand", "type": "AppBrand", "props": { "label": "Fluent Workspace" } },
+    { "id": "fluent-status", "type": "StatusPill", "props": { "label": "Online" } }
+  ],
+  "sidebarBlocks": [
+    { "id": "fluent-nav-1", "type": "NavItem", "props": { "label": "Home", "icon": "home", "active": true } },
+    { "id": "fluent-nav-2", "type": "NavItem", "props": { "label": "Reports", "icon": "bar_chart", "active": false } },
+    { "id": "fluent-nav-3", "type": "NavItem", "props": { "label": "Settings", "icon": "settings", "active": false } }
+  ],
+  "blocks": [
+    { "id": "fluent-title", "type": "SimulatedTitle", "props": { "text": "Team dashboard", "level": "h3" }, "layout": { "width": "12fr" } },
+    { "id": "fluent-kpi", "type": "SimulatedStatCard", "props": { "label": "Open tickets", "value": "143", "pct": -5 }, "layout": { "width": "4fr" } },
+    { "id": "fluent-btn", "type": "SimulatedButton", "props": { "label": "New ticket", "variant": "primary" }, "layout": { "width": "4fr" } },
+    { "id": "fluent-input", "type": "SimulatedTextInput", "props": { "label": "Filter", "placeholder": "Search tickets..." }, "layout": { "width": "4fr" } },
+    { "id": "fluent-card", "type": "SimulatedCard", "props": { "title": "Service health", "content": "All regions are operating within target latency." }, "layout": { "width": "6fr" } },
+    { "id": "fluent-chart", "type": "HighchartArea", "props": { "chartType": "area", "title": "Tickets over time" }, "layout": { "width": "6fr" } },
+    { "id": "fluent-table", "type": "SimulatedDataTable", "props": { "columns": ["Ticket", "Status", "Assignee", "Updated"], "rows": [{ "name": "#4821", "status": "Open", "role": "K. Tan", "date": "10m ago" }, { "name": "#4818", "status": "Resolved", "role": "P. Vega", "date": "1h ago" }] }, "layout": { "width": "12fr" } }
+  ],
+  "footerBlocks": [
+    { "id": "fluent-ftr", "type": "FooterText", "props": { "label": "Connected", "version": "v3.1" } }
+  ]
+}

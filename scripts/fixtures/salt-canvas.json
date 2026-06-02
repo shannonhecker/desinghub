@@ -1,0 +1,26 @@
+{
+  "designSystem": "salt",
+  "mode": "dark",
+  "density": "medium",
+  "headerBlocks": [
+    { "id": "salt-brand", "type": "AppBrand", "props": { "label": "Salt Analytics" } },
+    { "id": "salt-status", "type": "StatusPill", "props": { "label": "Live" } }
+  ],
+  "sidebarBlocks": [
+    { "id": "salt-nav-1", "type": "NavItem", "props": { "label": "Overview", "icon": "home", "active": true } },
+    { "id": "salt-nav-2", "type": "NavItem", "props": { "label": "Reports", "icon": "bar_chart", "active": false } },
+    { "id": "salt-nav-3", "type": "NavItem", "props": { "label": "Settings", "icon": "settings", "active": false } }
+  ],
+  "blocks": [
+    { "id": "salt-title", "type": "SimulatedTitle", "props": { "text": "Account overview", "level": "h3" }, "layout": { "width": "12fr" } },
+    { "id": "salt-kpi", "type": "SimulatedStatCard", "props": { "label": "Net new revenue", "value": "$48,200", "pct": 12 }, "layout": { "width": "4fr" } },
+    { "id": "salt-btn", "type": "SimulatedButton", "props": { "label": "New report", "variant": "primary" }, "layout": { "width": "4fr" } },
+    { "id": "salt-input", "type": "SimulatedTextInput", "props": { "label": "Search accounts", "placeholder": "Type a name..." }, "layout": { "width": "4fr" } },
+    { "id": "salt-card", "type": "SimulatedCard", "props": { "title": "Quarterly summary", "content": "Revenue is tracking 12% ahead of plan across the book." }, "layout": { "width": "6fr" } },
+    { "id": "salt-chart", "type": "HighchartLine", "props": { "chartType": "line", "title": "Revenue, last 30 days" }, "layout": { "width": "6fr" } },
+    { "id": "salt-table", "type": "SimulatedDataTable", "props": { "columns": ["Account", "Status", "Owner", "Updated"], "rows": [{ "name": "Northwind Co.", "status": "Active", "role": "J. Doe", "date": "2h ago" }, { "name": "Globex Ltd.", "status": "Pending", "role": "R. Roe", "date": "Yesterday" }] }, "layout": { "width": "12fr" } }
+  ],
+  "footerBlocks": [
+    { "id": "salt-ftr", "type": "FooterText", "props": { "label": "Last synced 2 min ago", "version": "v2.4" } }
+  ]
+}

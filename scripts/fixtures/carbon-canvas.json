@@ -1,0 +1,26 @@
+{
+  "designSystem": "carbon",
+  "mode": "dark",
+  "density": "medium",
+  "headerBlocks": [
+    { "id": "carbon-brand", "type": "AppBrand", "props": { "label": "Carbon Operations" } },
+    { "id": "carbon-status", "type": "StatusPill", "props": { "label": "Healthy" } }
+  ],
+  "sidebarBlocks": [
+    { "id": "carbon-nav-1", "type": "NavItem", "props": { "label": "Overview", "icon": "home", "active": true } },
+    { "id": "carbon-nav-2", "type": "NavItem", "props": { "label": "Pipelines", "icon": "bar_chart", "active": false } },
+    { "id": "carbon-nav-3", "type": "NavItem", "props": { "label": "Settings", "icon": "settings", "active": false } }
+  ],
+  "blocks": [
+    { "id": "carbon-title", "type": "SimulatedTitle", "props": { "text": "Pipeline status", "level": "h3" }, "layout": { "width": "12fr" } },
+    { "id": "carbon-kpi", "type": "SimulatedStatCard", "props": { "label": "Throughput", "value": "9.4k/s", "pct": 4 }, "layout": { "width": "4fr" } },
+    { "id": "carbon-btn", "type": "SimulatedButton", "props": { "label": "Run pipeline", "variant": "primary" }, "layout": { "width": "4fr" } },
+    { "id": "carbon-input", "type": "SimulatedTextInput", "props": { "label": "Search jobs", "placeholder": "Job id or name" }, "layout": { "width": "4fr" } },
+    { "id": "carbon-card", "type": "SimulatedCard", "props": { "title": "Cluster summary", "content": "Twelve nodes online, no degraded partitions." }, "layout": { "width": "6fr" } },
+    { "id": "carbon-chart", "type": "HighchartBar", "props": { "chartType": "bar", "title": "Jobs by stage", "categories": ["Queued", "Running", "Done", "Failed"], "series": [{ "name": "Jobs", "data": [40, 28, 180, 6] }] }, "layout": { "width": "6fr" } },
+    { "id": "carbon-table", "type": "SimulatedDataTable", "props": { "columns": ["Job", "Status", "Owner", "Updated"], "rows": [{ "name": "etl-nightly", "status": "Running", "role": "data-eng", "date": "now" }, { "name": "ml-train", "status": "Done", "role": "ml-team", "date": "20m ago" }] }, "layout": { "width": "12fr" } }
+  ],
+  "footerBlocks": [
+    { "id": "carbon-ftr", "type": "FooterText", "props": { "label": "Region us-east-1", "version": "v4.0" } }
+  ]
+}

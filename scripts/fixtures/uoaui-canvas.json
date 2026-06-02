@@ -1,0 +1,26 @@
+{
+  "designSystem": "uoaui",
+  "mode": "dark",
+  "density": "medium",
+  "headerBlocks": [
+    { "id": "uoaui-brand", "type": "AppBrand", "props": { "label": "Aurora Studio" } },
+    { "id": "uoaui-status", "type": "StatusPill", "props": { "label": "Saved" } }
+  ],
+  "sidebarBlocks": [
+    { "id": "uoaui-nav-1", "type": "NavItem", "props": { "label": "Canvas", "icon": "home", "active": true } },
+    { "id": "uoaui-nav-2", "type": "NavItem", "props": { "label": "Insights", "icon": "bar_chart", "active": false } },
+    { "id": "uoaui-nav-3", "type": "NavItem", "props": { "label": "Settings", "icon": "settings", "active": false } }
+  ],
+  "blocks": [
+    { "id": "uoaui-title", "type": "SimulatedTitle", "props": { "text": "Studio overview", "level": "h3" }, "layout": { "width": "12fr" } },
+    { "id": "uoaui-kpi", "type": "SimulatedStatCard", "props": { "label": "Active projects", "value": "27", "pct": 6 }, "layout": { "width": "4fr" } },
+    { "id": "uoaui-btn", "type": "SimulatedButton", "props": { "label": "New project", "variant": "primary" }, "layout": { "width": "4fr" } },
+    { "id": "uoaui-input", "type": "SimulatedTextInput", "props": { "label": "Search", "placeholder": "Find a project..." }, "layout": { "width": "4fr" } },
+    { "id": "uoaui-card", "type": "SimulatedCard", "props": { "title": "Recent work", "content": "Glassmorphism surfaces refreshed across the kit." }, "layout": { "width": "6fr" } },
+    { "id": "uoaui-chart", "type": "HighchartDonut", "props": { "chartType": "donut", "title": "Time by project", "seriesData": [{ "name": "Design", "y": 46 }, { "name": "Build", "y": 34 }, { "name": "Review", "y": 20 }] }, "layout": { "width": "6fr" } },
+    { "id": "uoaui-table", "type": "SimulatedDataTable", "props": { "columns": ["Project", "Status", "Owner", "Updated"], "rows": [{ "name": "Aurora UI Kit", "status": "Active", "role": "S. Hale", "date": "5m ago" }, { "name": "Glass tokens", "status": "Draft", "role": "T. Okafor", "date": "Yesterday" }] }, "layout": { "width": "12fr" } }
+  ],
+  "footerBlocks": [
+    { "id": "uoaui-ftr", "type": "FooterText", "props": { "label": "Synced to cloud", "version": "v0.9" } }
+  ]
+}
