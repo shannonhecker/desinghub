@@ -8451,9 +8451,28 @@
   background: rgba(255, 255, 255, 0.88);
   border-bottom-color: rgba(0, 0, 0, 0.06);
 }
+/* Visually-hidden label — accessible name for the search input
+   without a visible duplicate. (.sr-only/.bc-sr-only exist elsewhere
+   but aren't scoped to this CSS file; define a local equivalent.) */
+.dh-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+/* Inner field wrapper — the icon + clear button position relative to
+   THIS box (which is the input's footprint), not the padded sticky
+   band, so the magnifier sits inside the input instead of floating in
+   the band's left padding. */
+.lib-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
 .lib-search-icon {
   position: absolute;
-  left: 8px;
+  left: 9px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 16px !important;
@@ -8462,7 +8481,7 @@
 }
 .lib-search-input {
   width: 100%;
-  padding: 7px 28px 7px 30px;
+  padding: 7px 30px 7px 32px;
   border-radius: 8px;
   border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
   background: var(--b-bg2, rgba(255, 255, 255, 0.03));
@@ -8477,6 +8496,9 @@
   background: var(--b-accent-glow);
 }
 .lib-search-input::placeholder { color: var(--b-fg3); }
+/* Hide the native type=search clear control — we render our own
+   .lib-search-clear, and the browser default doubles up / mis-aligns. */
+.lib-search-input::-webkit-search-cancel-button { display: none; }
 .lib-search-clear {
   position: absolute;
   right: 6px;
@@ -8497,6 +8519,52 @@
 .lib-search-clear:hover { background: rgba(255, 255, 255, 0.15); }
 .builder-light .lib-search-clear { background: rgba(0, 0, 0, 0.06); }
 .builder-light .lib-search-clear:hover { background: rgba(0, 0, 0, 0.12); }
+
+/* Row under the search input holding the Collapse-all / Expand-all
+   text-button (right-aligned, low-emphasis). */
+.lib-search-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.lib-collapse-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--b-fg2);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.lib-collapse-toggle:hover {
+  color: var(--b-accent);
+  background: var(--b-accent-glow);
+}
+.lib-collapse-toggle:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+}
+
+/* Search result count — was inline-styled; now a class so it carries
+   role=status / aria-live for screen-reader announcement. */
+.lib-search-count {
+  align-self: flex-start;
+  margin: 0 0 8px 2px;
+  font-size: 10px;
+  color: var(--b-fg3);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--b-accent-glow);
+  border: 1px solid rgba(180, 144, 245, 0.25);
+}
+.builder-light .lib-search-count {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
 
 .lib-empty {
   padding: 24px 8px;
@@ -8723,10 +8791,21 @@
    Collapse body-zone tiles into semantic buckets so users don't
    scroll a wall of ~45 items to find what they need. Header style
    mirrors TemplatesAccordion's caret-rotation for consistency. */
+/* Category = one tier quieter than the ZONE head above it (Zone is the
+   loud uppercased tier; Category is sentence-style + smaller) so users
+   never confuse the two levels. A hairline divider + extra top margin
+   give each category its own breathing room while scrolling. */
 .lib-category {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  margin-top: 12px;
+  border-top: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
+  padding-top: 8px;
+}
+.lib-category:first-of-type {
+  border-top: 0;
+  padding-top: 0;
   margin-top: 4px;
 }
 .lib-category-head {
@@ -8735,28 +8814,32 @@
   gap: 8px;
   width: 100%;
   padding: 6px 4px;
-  background: transparent;
+  /* Sticky under the search band (which pins at the top). Must be
+     OPAQUE so scrolling tiles never bleed through the header. */
+  position: sticky;
+  top: 44px;
+  z-index: 2;
+  background: var(--b-bg2, rgba(20, 20, 30, 0.92));
   border: 0;
   border-radius: var(--dh-curve-sm, 6px);
-  color: var(--dh-fg-muted, rgba(255, 255, 255, 0.7));
+  color: var(--b-fg2);
   font-family: inherit;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
   cursor: pointer;
   transition: background 0.12s, color 0.12s;
   text-align: left;
 }
+.builder-light .lib-category-head {
+  background: rgba(255, 255, 255, 0.92);
+}
 .lib-category-head:hover {
-  background: rgba(255, 255, 255, 0.04);
   color: var(--dh-fg, rgba(255, 255, 255, 0.92));
 }
 .lib-category-head:focus-visible {
   outline: 2px solid var(--bc-accent-ring);
   outline-offset: 2px;
-}
-.builder-light .lib-category-head:hover {
-  background: rgba(0, 0, 0, 0.04);
 }
 .lib-category-icon {
   font-size: 14px !important;
@@ -8774,6 +8857,7 @@
   background: var(--b-accent-glow);
   border: 1px solid rgba(180, 144, 245, 0.25);
   font-weight: 500;
+  letter-spacing: 0;
 }
 .builder-light .lib-category-count {
   background: rgba(0, 0, 0, 0.04);
@@ -8791,7 +8875,7 @@
   transform: rotate(90deg);
 }
 .lib-category-panel {
-  padding: 2px 0 6px;
+  padding: 6px 0 12px;
 }
 
 /* Inline editable text on canvas */
@@ -9589,9 +9673,10 @@
   font-size: 11.5px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.86);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   padding: 0 2px;
   line-height: 1.3;
 }
