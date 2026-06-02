@@ -891,15 +891,22 @@ interface ImageProps extends SimProps {
   alt?: string;
   ratio?: string;
   caption?: string;
+  /** Optional stock-photo URL. When set, a real <img> fills the frame;
+     otherwise the token-driven placeholder icon is shown. */
+  src?: string;
 }
 
-export function SimulatedImage({ alt = "Image", ratio = "16:9", caption = "" }: ImageProps) {
+export function SimulatedImage({ alt = "Image", ratio = "16:9", caption = "", src = "" }: ImageProps) {
   const [w, h] = ratio.split(":").map((n) => parseFloat(n));
   const aspect = w && h ? `${w} / ${h}` : "16 / 9";
   return (
     <figure className="sim-image">
       <div className="sim-image-frame" style={{ aspectRatio: aspect }} role="img" aria-label={alt}>
-        <span className="material-symbols-outlined sim-image-icon" aria-hidden="true">image</span>
+        {src ? (
+          <img className="sim-image-img" src={src} alt={alt} loading="lazy" />
+        ) : (
+          <span className="material-symbols-outlined sim-image-icon" aria-hidden="true">image</span>
+        )}
       </div>
       {caption ? <figcaption className="sim-image-caption">{caption}</figcaption> : null}
     </figure>
