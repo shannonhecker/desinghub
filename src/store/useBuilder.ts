@@ -97,6 +97,10 @@ export interface ChatMessage {
   role: 'user' | 'ai';
   content: string;
   timestamp: number;
+  /* Optional discriminator for non-text messages. Absent = plain text
+     (back-compat with persisted sessions). 'templates' renders the
+     in-chat template carousel instead of a text bubble. */
+  messageType?: 'templates';
 }
 
 /* Phase 3a (N4 Tool-Use Cards): block provenance tag. Tracks where
@@ -302,7 +306,7 @@ interface BuilderState {
 
   // Actions - Chat
   setInputText: (t: string) => void;
-  addMessage: (role: 'user' | 'ai', content: string) => void;
+  addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => void;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
@@ -720,9 +724,9 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
-  addMessage: (role, content) =>
+  addMessage: (role, content, messageType) =>
     set((s) => ({
-      messages: [...s.messages, { id: uid(), role, content, timestamp: Date.now() }],
+      messages: [...s.messages, { id: uid(), role, content, timestamp: Date.now(), messageType }],
       inputText: role === 'user' ? '' : s.inputText,
     })),
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),

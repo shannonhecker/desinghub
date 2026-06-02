@@ -14,6 +14,7 @@ import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseCard } from "./cards/ToolUseCard";
 import { ConversationalOnboarding } from "./ConversationalOnboarding";
+import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
 import ReactMarkdown from "react-markdown";
@@ -737,6 +738,36 @@ export function ChatPanel() {
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
+  /* ── Templates as in-chat cards (replaces the slide-over drawer) ──
+     "Browse templates" now posts an AI turn whose cards render inline in
+     the thread; the composer stays pinned at the bottom. */
+  const showTemplateCards = () => {
+    if (isGenerating) return;
+    addMessage("ai", "Pick a starting point, or describe your own below.", "templates");
+  };
+
+  /* "Use this" mirrors the old drawer select: stage the template and ask
+     for a design system as the next turn (the DS gate applies it). */
+  const handleUseTemplate = (id: TemplateId) => {
+    if (isGenerating) return;
+    const tpl = BUILDER_TEMPLATES[id];
+    if (!tpl) return;
+    setPendingTemplateId(id);
+    setPendingFirstMessage(null);
+    addMessage("user", `Build me ${articleFor(tpl.label)} ${tpl.label}`);
+    addMessage("ai", "Great choice. Which design system should I use?");
+  };
+
+  /* "Customize" seeds the composer so the user describes tweaks in free
+     text instead of taking the template as-is. */
+  const handleCustomizeTemplate = (id: TemplateId) => {
+    if (isGenerating) return;
+    const tpl = BUILDER_TEMPLATES[id];
+    if (!tpl) return;
+    setInputText(`Start from the ${tpl.label} template, but `);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
   /* ═══════════════════════════════════
      Regenerate Data - ask Claude for a
      fresh pass of realistic mock content
@@ -1241,7 +1272,7 @@ export function ChatPanel() {
             <ConversationalOnboarding
               onBuild={handleWizardBuild}
               onSkip={handleWizardSkip}
-              onBrowseTemplates={() => setTemplatesDrawerOpen(true)}
+              onBrowseTemplates={showTemplateCards}
             />
           </div>
         )}
@@ -1262,7 +1293,7 @@ export function ChatPanel() {
                 <span className="material-symbols-outlined" aria-hidden="true">tune</span>
                 Set it up step by step
               </button>
-              <button type="button" className="hero-setup-link" onClick={() => setTemplatesDrawerOpen(true)}>
+              <button type="button" className="hero-setup-link" onClick={showTemplateCards}>
                 <span className="material-symbols-outlined" aria-hidden="true">grid_view</span>
                 Browse templates
               </button>
@@ -1302,6 +1333,13 @@ export function ChatPanel() {
                     )
                   ) : (
                     <MemoPlainMessage text={msg.content} />
+                  )}
+                  {msg.messageType === "templates" && (
+                    <TemplateCardsMessage
+                      onUse={handleUseTemplate}
+                      onCustomize={handleCustomizeTemplate}
+                      disabled={isGenerating}
+                    />
                   )}
                   {isLastAi && msg.role === "ai" && (
                     <LifecyclePill state={lifecycleState} />
