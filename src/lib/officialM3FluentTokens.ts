@@ -77,10 +77,32 @@ function declsToCss(decls: Record<string, string | number>): string {
  * shape/radius resolve in either mode.
  */
 export function buildM3TokenCSS(): string {
+  /* Configure MUI with the Material 3 BASELINE palette so the emitted --mui-*
+     tokens reflect real M3 (purple), not MUI's own default theme (blue). Without
+     this, --mui-palette-primary-main resolves to MUI's default blue, which the
+     builder bridge (.preview-m3 { --ds-primary: var(--mui-palette-primary-main) })
+     rendered as blue M3 components — wrong, since M3 baseline primary is purple.
+     Values = the M3 baseline tokens (match src/data/m3/themes.ts Light/Dark), so
+     the builder's M3 components agree with the UI-Kit's M3 theme. */
   const theme = extendTheme({
     cssVarPrefix: "mui",
     colorSchemeSelector: "class",
-    colorSchemes: { light: true, dark: true },
+    colorSchemes: {
+      light: {
+        palette: {
+          primary: { main: "#6750A4", contrastText: "#FFFFFF" },
+          secondary: { main: "#625B71", contrastText: "#FFFFFF" },
+          error: { main: "#B3261E", contrastText: "#FFFFFF" },
+        },
+      },
+      dark: {
+        palette: {
+          primary: { main: "#D0BCFF", contrastText: "#381E72" },
+          secondary: { main: "#CCC2DC", contrastText: "#332D41" },
+          error: { main: "#F2B8B5", contrastText: "#601410" },
+        },
+      },
+    },
   });
   const sheets = theme.generateStyleSheets() as unknown as MuiSheet[];
 
