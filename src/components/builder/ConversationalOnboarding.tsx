@@ -265,35 +265,6 @@ export function ConversationalOnboarding({
                 </span>
               )}
             />
-            <div className="onboarding-freetext-row">
-              <span className="onboarding-freetext-label">or describe it</span>
-              <input
-                type="text"
-                className="onboarding-freetext"
-                placeholder="e.g. a habit tracker for kids"
-                value={freeText}
-                onChange={(e) => setFreeText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && freeText.trim()) {
-                    e.preventDefault();
-                    advance();
-                  }
-                }}
-                aria-label="Describe what you want to build"
-              />
-              {freeText.trim() && (
-                <button
-                  type="button"
-                  className="onboarding-freetext-go"
-                  onClick={advance}
-                  aria-label="Use this description"
-                >
-                  <span className="material-symbols-outlined" aria-hidden="true">
-                    arrow_forward
-                  </span>
-                </button>
-              )}
-            </div>
           </>
         );
 

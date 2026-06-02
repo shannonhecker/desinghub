@@ -1458,6 +1458,39 @@
 }
 .builder-light .hero-subtitle { color: rgba(0, 0, 0, 0.4); }
 
+/* ── Chatbox-first hero: opt-in setup links (guided wizard + templates).
+      Small secondary affordances under the greeting; the composer below is
+      the single primary input. ── */
+.hero-setup-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.hero-setup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--b-fg2);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.hero-setup-link:hover { color: var(--b-accent); }
+.hero-setup-link:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.hero-setup-link .material-symbols-outlined { font-size: 16px; opacity: 0.85; }
+.builder-light .hero-setup-link { color: rgba(0, 0, 0, 0.55); }
+
 /* ── Pattern cards grid - zero state (glassmorphism) ── */
 .pattern-cards-grid {
   display: grid;

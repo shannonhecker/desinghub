@@ -632,10 +632,10 @@ export const useBuilder = create<BuilderState>((set) => ({
   onboardingStep: 'ready',
   pendingComponents: [],
 
-  // Guided pre-build wizard - shown in the empty-state hero. Starts on the
-  // first decision (interface type); builtViaWizard flips true only when the
-  // user completes the wizard and taps Build it.
-  wizardStep: 'type',
+  // Guided pre-build wizard. First land is CHATBOX-FIRST (wizardStep 'done' =
+  // the bare composer hero); the 5-step wizard is OPT-IN via "Set it up step by
+  // step" (sets wizardStep 'type'). builtViaWizard flips true only on Build it.
+  wizardStep: 'done',
   builtViaWizard: false,
 
   // Template / regeneration state
@@ -735,9 +735,9 @@ export const useBuilder = create<BuilderState>((set) => ({
     pendingTemplateId: null,
     pendingFirstMessage: null,
     pendingAudience: null,
-    /* A cleared chat returns to the empty-state hero, so re-show the
-       wizard from its first decision. */
-    wizardStep: 'type',
+    /* A cleared chat returns to the chatbox-first hero (the composer is the
+       focus); the guided wizard stays opt-in. */
+    wizardStep: 'done',
     builtViaWizard: false,
   }),
 
@@ -943,8 +943,8 @@ export const useBuilder = create<BuilderState>((set) => ({
     templatesDrawerOpen: false,
     previewOpen: false,
     onboardingStep: 'ready',
-    /* Fresh session re-shows the guided wizard from step 1. */
-    wizardStep: 'type',
+    /* Fresh session returns to the chatbox-first hero (guided wizard opt-in). */
+    wizardStep: 'done',
     builtViaWizard: false,
   }),
 

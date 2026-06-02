@@ -1246,8 +1246,10 @@ export function ChatPanel() {
           </div>
         )}
 
-        {/* Skip-setup landing: the wizard was dismissed but no message sent
-            yet. Show the bare greeting so the composer below is the focus. */}
+        {/* Chatbox-first landing (default). The composer below is the single,
+            focal input; the 5-step guided wizard is opt-in via "Set it up step
+            by step", and templates via "Browse templates". No second text input
+            here (the wizard's inline describe-it field was removed). */}
         {!hasMessages && wizardStep === "done" && (
           <div className="hero-greeting">
             <span className="hero-hi">Hi there,</span>
@@ -1255,6 +1257,16 @@ export function ChatPanel() {
             <p className="hero-subtitle">
               Describe the app you want in your own words.
             </p>
+            <div className="hero-setup-links">
+              <button type="button" className="hero-setup-link" onClick={() => setWizardStep("type")}>
+                <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                Set it up step by step
+              </button>
+              <button type="button" className="hero-setup-link" onClick={() => setTemplatesDrawerOpen(true)}>
+                <span className="material-symbols-outlined" aria-hidden="true">grid_view</span>
+                Browse templates
+              </button>
+            </div>
           </div>
         )}
 
