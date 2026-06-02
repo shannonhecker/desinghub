@@ -9,6 +9,8 @@ function resetStore() {
     fluent: { themeKey: "dark", size: "medium" },
     uoaui: { themeKey: "dark", density: "medium", accentColor: "#8A58C9" },
     carbon: { themeKey: "g100", density: "normal" },
+    globalMode: "dark",
+    globalDensity: 1,
     selectedComponent: null,
     searchQuery: "",
     activeTab: "preview",
@@ -76,5 +78,59 @@ describe("useDesignHub", () => {
     useDesignHub.getState().setSelectedComponent("buttons");
     expect(useDesignHub.getState().activeTab).toBe("preview");
     expect(useDesignHub.getState().selectedComponent).toBe("buttons");
+  });
+
+  it("mode + density chosen in Salt carry into Carbon on switch", () => {
+    // User picks a LIGHT mode + TOUCH density (level 3) in Salt
+    useDesignHub.getState().setSaltTheme("jpm-light");
+    useDesignHub.getState().setSaltDensity("touch");
+    expect(useDesignHub.getState().globalMode).toBe("light");
+    expect(useDesignHub.getState().globalDensity).toBe(3);
+
+    useDesignHub.getState().setActiveSystem("carbon");
+    const c = useDesignHub.getState().carbon;
+    // Carbon must land on a LIGHT shade (white/g10), NOT snap back to g100 dark
+    expect(["white", "g10"]).toContain(c.themeKey);
+    // Level 3 maps to Carbon 'spacious'
+    expect(c.density).toBe("spacious");
+  });
+
+  it("M3 density carries into Fluent size on switch", () => {
+    // M3 density -2 == level 1 (Compact)
+    useDesignHub.getState().setM3Density(-2);
+    expect(useDesignHub.getState().globalDensity).toBe(1);
+    useDesignHub.getState().setActiveSystem("fluent");
+    // Level 1 folds into Fluent 'small'
+    expect(useDesignHub.getState().fluent.size).toBe("small");
+  });
+
+  it("uoaui light mode carries into M3 on switch", () => {
+    useDesignHub.getState().setUoauiTheme("light");
+    expect(useDesignHub.getState().globalMode).toBe("light");
+    useDesignHub.getState().setActiveSystem("m3");
+    const m = useDesignHub.getState().m3;
+    expect(m.themeKey).toBe("light");
+    expect(m.isDarkCustom).toBe(false);
+  });
+
+  it("M3 preserves contrast tier when mode flips on switch", () => {
+    // Sit on a high-contrast LIGHT M3 theme, then go dark elsewhere
+    useDesignHub.getState().setM3Theme("lightHighContrast");
+    expect(useDesignHub.getState().globalMode).toBe("light");
+    useDesignHub.getState().setCarbonTheme("g100"); // dark in Carbon
+    expect(useDesignHub.getState().globalMode).toBe("dark");
+    useDesignHub.getState().setActiveSystem("m3");
+    // Tier (HighContrast) preserved, only light->dark flipped
+    expect(useDesignHub.getState().m3.themeKey).toBe("darkHighContrast");
+  });
+
+  it("Carbon keeps current dark shade (g90) rather than snapping to g100", () => {
+    // globalMode is dark by default; sit Carbon on g90 (alt dark)
+    useDesignHub.getState().setCarbonTheme("g90");
+    expect(useDesignHub.getState().globalMode).toBe("dark");
+    // Switch away and back — g90 should survive (still on the dark side)
+    useDesignHub.getState().setActiveSystem("salt");
+    useDesignHub.getState().setActiveSystem("carbon");
+    expect(useDesignHub.getState().carbon.themeKey).toBe("g90");
   });
 });
