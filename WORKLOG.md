@@ -233,3 +233,46 @@ public/
 - [ ] Particle effects around orb (canvas-based)
 - [ ] Typing animation on AI responses
 - [ ] Drag-and-drop component arrangement in preview
+
+---
+
+## Session Log — 2026-06-02 (Goal push: realistic 5-DS builder)
+
+> NOTE: this app is now **5 design systems** (Salt, Material 3, Fluent 2, Carbon, uoaui), deployed on **Vercel → uoaui.ai** (the "3 DS / GitHub Pages" notes above are stale). Studio login `Dog6621`.
+
+**North-star goal (`/goal`, Stop-hook enforced):** a realistic UI builder that competes with Canva-class tools, using 5 design systems with REAL components + patterns; users can download OR share ready-to-use code; the UI Kit page should feel like a Google Material / Microsoft Fluent design-system website.
+
+### Owner asks (every request this session, with status)
+
+| # | Ask | Status |
+|---|---|---|
+| 1 | Floating chat over canvas — float, but user can also **dock/pin to the side** | ✅ SHIPPED #251 (chatMode floating\|docked + .chat-float card + dock toggle + FAB) |
+| 2 | Component-panel polish (4.4a) | ⚠️ #253 shipped token/focus/hover/search-count — but it was mostly *invisible*; did NOT fix the visible UX → superseded by ask #8 |
+| 3 | Templates "not realistic enough" → realism | ✅ SHIPPED #259 (real data + stock images across all 5 templates; area-chart now honours real series) |
+| 4 | Dummy-data + **images library** (ready-to-load) | ✅ SHIPPED #252 (sampleData + 33 HTTP-verified stock images) + #256 stock-image **picker** |
+| 5 | Merge authority: "can merge as long as tested + visually confirmed" | ✅ operating model (carve-outs: rules-class files, em-dashes, unverifiable) |
+| 6 | "use /workflow to run all the task and plan" | ✅ planning workflow → 17-PR conflict-aware plan; per-item implement workflows |
+| 7 | Stock images "for user to pick from" | ✅ SHIPPED #256 (categorized picker: Product/People/Office/Nature/Abstract + paste-URL); source = curated free-license hotlinked (no API key, exports resolve anywhere) |
+| 8 | Component panel **search icon outside the input box** + **grouping hard to find things** → make it **useful** w/ UI/UX + front-end skills + **online best-practice research** | 🔄 IN PROGRESS — root cause found (icon anchors to padded sticky-bar edge, not the input); research+audit+redesign-spec workflow running; branch `fix/panel-search-icon-grouping` |
+| 9 | Floating chat → **moveable anywhere** + collapse to corner + **dock anywhere** + expand when docked + **popup when user clicks "ready to generate / build it"** | ⏸ QUEUED (task) — evolves item 1 into the moveable-window model + dock zones + build-trigger |
+| 10 | Template **padding too big**, not like a real usable website/app → **online competitor analysis first**, then a thought-through **plan** | ⏸ QUEUED (task) — targets structurePadding S/M/L + per-DS native values + --dh-pad-canvas/zone/block/gap; plan-first |
+| 11 | "after all above done run a **user-test + code review + design audit** again" | 🔄 RUNNING — read-only QA workflow (correctness, failures/security, export-build-all-5-DS, design-audit, a11y, 3-persona user-test) → synthesize → FIX P0/P1 |
+| 12 | "capture all the ask into work log" | ✅ this entry |
+| 13 | Component panel **token audit** + "some text feels out of space" | 🔄 folded into the panel redesign (run `tokens:audit` + grep hardcoded values + text-spacing pass before merge) |
+| 14 | Component panel **research-grounded REDESIGN** — make it useful (search-in-box + scannable groups + recents) | 🔄 IN PROGRESS — best-practice research done; building (decisions locked: recents✓, sticky headers✓, all-open+collapse-all✓) |
+| 15 | Template **density** — too padded vs real apps; competitor analysis + plan | ✅ PLAN APPROVED (Stripe-moderate / redefine 'medium' / defer landing hero) — implementing after panel (key fix: `--dh-pad-canvas` was injected-but-unused; tighten uoaui+M3 only) |
+| 16 | **Sessions never save** (drawer always empty) — research how AI chats store conversations + fix | 🔄 diagnose+research workflow running → plan → fix (likely localStorage/IndexedDB-first, no-auth) |
+| 17 | Chatbox as **conversational user-guide** — explain what the tool is / how it works + refer users to the UI Kit site | ⏸ QUEUED (task) — chat system-prompt + intent handling + /ui-kit link affordance |
+
+### Shipped this session — 11 PRs (main 1e09b4d → ddfc719)
+- #251 floating chat + dock/pin · #252 sample-data + stock-image library · #253 component-panel polish (tokens/focus/hover/search-count) · #254 ui-kit-meta data backbone · #255 export-verify harness (salt+uoaui exports build green) · #256 stock-image picker · #257 premium gallery cards (tall thumbnail) · #258 uoaui live real-render · #259 realistic templates · #260 premium component-detail page (right-rail TOC + variants matrix + all-5-DS props + guidance + token swatches) · #261 Carbon live real-render (scoped @carbon/styles) → **5/5 DS render real**.
+
+### Deferred / not-yet-built
+- Ask #8 panel redesign (in flight), #9 moveable-window chat, #10 template density, #11 closing-QA P0/P1 fixes.
+- W7-P2 LayoutGroup export recursion fix; W6-P3 extended-block coverage (salt/m3/fluent beyond the 5 core blocks).
+
+### Key engineering notes (this session)
+- **Parallel-agent race** fires even across git worktrees here → run implementer agents ONE AT A TIME; each commits then verifies via `git show <sha>:<file>` (not the working tree); scope-check every PR's file list before merge.
+- **lightningcss**: author `backdrop-filter` UNPREFIXED only (a presentStage test fails on the `-webkit-` + standard pair).
+- Headless chromium can't load the Google-hosted Material Symbols font (icons render as ligature text) and the /builder component-library rail sits behind an onboarding gate → verify visuals on `/ui-kit` (no gate) or the Vercel preview with the `x-vercel-protection-bypass` header.
+- Carbon live-render needs build-time scoped CSS (postcss prefix-wrap to `.carbon-live-scope`) — the runtime CSS-scoper that worked for uoaui can't apply since Carbon ships a static stylesheet, not a JS generator.
