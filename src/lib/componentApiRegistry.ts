@@ -1192,8 +1192,15 @@ const CARBON: Record<string, ComponentApiEntry> = {
   },
   SimulatedDataTable: {
     imports: { from: CARBON_PKG, names: ["DataTable", "Table", "TableHead", "TableHeader", "TableRow", "TableBody", "TableCell"] },
+    /* Carbon's DataTable types `rows` as DataTableRow[] = `{ id: string }` (no
+       index signature), so an inline literal carrying the display columns
+       (name/status) trips tsc "name does not exist in type
+       Omit<DataTableRow, 'cells'>". The extra keys ARE needed at runtime (the
+       headers reference them), so cast the literal — `as never[]` keeps the
+       array element-typed as Carbon expects while letting the data fields
+       through. (DataTable's runtime reads arbitrary keys by header `key`.) */
     toJsx: () =>
-      `<DataTable rows={[{ id: "1", name: "Jane Doe", status: "Active" }]} headers={[{ key: "name", header: "Name" }, { key: "status", header: "Status" }]}>\n  {({ rows, headers, getHeaderProps, getRowProps }) => (\n    <Table>\n      <TableHead>\n        <TableRow>\n          {headers.map((h) => (\n            <TableHeader {...getHeaderProps({ header: h })} key={h.key}>{h.header}</TableHeader>\n          ))}\n        </TableRow>\n      </TableHead>\n      <TableBody>\n        {rows.map((row) => (\n          <TableRow {...getRowProps({ row })} key={row.id}>\n            {row.cells.map((c) => <TableCell key={c.id}>{c.value}</TableCell>)}\n          </TableRow>\n        ))}\n      </TableBody>\n    </Table>\n  )}\n</DataTable>`,
+      `<DataTable rows={[{ id: "1", name: "Jane Doe", status: "Active" }] as never[]} headers={[{ key: "name", header: "Name" }, { key: "status", header: "Status" }]}>\n  {({ rows, headers, getHeaderProps, getRowProps }) => (\n    <Table>\n      <TableHead>\n        <TableRow>\n          {headers.map((h) => (\n            <TableHeader {...getHeaderProps({ header: h })} key={h.key}>{h.header}</TableHeader>\n          ))}\n        </TableRow>\n      </TableHead>\n      <TableBody>\n        {rows.map((row) => (\n          <TableRow {...getRowProps({ row })} key={row.id}>\n            {row.cells.map((c) => <TableCell key={c.id}>{c.value}</TableCell>)}\n          </TableRow>\n        ))}\n      </TableBody>\n    </Table>\n  )}\n</DataTable>`,
   },
   SimulatedStatCard: {
     imports: { from: CARBON_PKG, names: ["Tile"] },

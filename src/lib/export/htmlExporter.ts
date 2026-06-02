@@ -53,8 +53,23 @@ function blockToHTML(block: Block, indent: string): string {
     }
     case "SimulatedAccordion":
       return `${indent}<details class="accordion">\n${indent}  <summary>${htmlText(p.title, "Section")}</summary>\n${indent}  <p>${htmlText(p.content)}</p>\n${indent}</details>`;
-    case "SimulatedAvatar":
+    case "SimulatedAvatar": {
+      const avSrc = typeof p.src === "string" ? p.src.trim() : "";
+      if (avSrc) {
+        return `${indent}<img class="avatar avatar-${token(p.size, AVATAR_SIZES, "md")}" src="${htmlAttr(avSrc)}" alt="${htmlAttr(p.alt ?? p.initials ?? "Avatar")}" loading="lazy" />`;
+      }
       return `${indent}<div class="avatar avatar-${token(p.size, AVATAR_SIZES, "md")}">${htmlText(p.initials, "?")}</div>`;
+    }
+    case "SimulatedImage": {
+      /* P0: emit the real stock image (src/alt escaped via htmlAttr); without
+         this the picture was dropped to an empty placeholder in exported HTML. */
+      const imgSrc = typeof p.src === "string" ? p.src.trim() : "";
+      if (!imgSrc) {
+        return `${indent}<div class="sim-image-placeholder" role="img" aria-label="${htmlAttr(p.alt ?? "Image")}"></div>`;
+      }
+      const cap = p.caption ? `\n${indent}  <figcaption>${htmlText(p.caption)}</figcaption>` : "";
+      return `${indent}<figure class="sim-image">\n${indent}  <img src="${htmlAttr(imgSrc)}" alt="${htmlAttr(p.alt ?? "Image")}" loading="lazy" />${cap}\n${indent}</figure>`;
+    }
     case "SimulatedBreadcrumb":
       return `${indent}<nav class="breadcrumb">${((p.pathCsv as string) || "Home").split(",").map((seg: string) => htmlText(seg.trim())).join(" / ")}</nav>`;
     case "AppBrand":
