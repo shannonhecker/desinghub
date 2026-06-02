@@ -721,7 +721,7 @@ export function ChatPanel() {
       return;
     }
 
-    /* No template for this type (landing / ecommerce / blog / portfolio):
+    /* No template for this type (ecommerce / blog / portfolio):
        route the layout-preset prompt through the local fast-path, which
        builds a full preset layout offline AND online. */
     const prompt = `${interfaceTypeToBuildPrompt(interfaceType)} ${audienceTag}`;
