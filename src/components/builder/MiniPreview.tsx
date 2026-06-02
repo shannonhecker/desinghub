@@ -87,6 +87,7 @@ const CATEGORY_BY_TYPE: Record<string, Category> = {
 
   /* Containers */
   SimulatedCard: "container",
+  SimulatedImage: "container",
   SimulatedAccordion: "container",
   SimulatedDialog: "container",
   Alert: "container",
