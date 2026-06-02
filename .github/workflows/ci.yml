@@ -40,3 +40,33 @@ jobs:
         # Fails if hex / rgba / px / ms literal count rose vs.
         # scripts/tokens-baseline.json. This is the hard gate —
         # PRs that ADD hardcoded design values cannot merge.
+
+  verify-exports:
+    # Export-verification harness (the "oracle"): proves a downloaded Vite
+    # project export actually compiles + builds for each of the 5 design
+    # systems. Each system generates the real bootstrap (via the real exporter),
+    # materialises it, npm-installs the genuine DS packages, and runs the
+    # exported `tsc -b && vite build`.
+    #
+    # INFORMATIONAL FOR NOW (continue-on-error): this PR establishes the harness;
+    # a clean green baseline across all 5 DSs is not yet guaranteed (the exported
+    # projects pull the latest published DS packages over the network and build
+    # them fresh). Once a stable baseline is confirmed, drop `continue-on-error`
+    # and let this gate block merges. Salt + uoaui were verified green locally.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (Design Hub)
+        run: npm ci
+
+      - name: Verify exports build (all 5 design systems)
+        run: bash scripts/verify-exports.sh
