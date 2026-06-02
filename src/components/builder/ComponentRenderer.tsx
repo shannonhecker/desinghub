@@ -4,6 +4,8 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
+import { RealComponentRenderer, canRenderReal } from "../ui-kit/RealComponentRenderer";
+import type { SystemId } from "@/lib/componentApiRegistry";
 import { showToast } from "@/lib/toast";
 import { undo as canvasUndo } from "@/lib/builderHistory";
 import {
@@ -1737,6 +1739,32 @@ const RENDERERS: Record<string, React.FC<any>> = {
 
 /* ── Main export ── */
 export function ComponentRenderer({ type, system, blockId, ...props }: ComponentRendererProps & { blockId?: string }) {
+  /* Phase 5 (P5.3): in preview/present (read-only) mode, render the REAL
+     official DS component for the covered core set (Salt/M3/Fluent ×
+     Button/Input/Checkbox/Switch/Card) via the SHARED RealComponentRenderer
+     — the same path the UI Kit gallery uses ("share one source"). Edit mode
+     keeps Simulated* so inline-edit + chrome work. `mountedReal` gates the DS
+     style engines off SSR / first hydration. Uncovered combos fall through to
+     Simulated (honest, same coverage contract as the export). */
+  const readOnly = usePreviewReadOnly();
+  const builderMode = useBuilder((s) => s.mode);
+  const density = useBuilder((s) => s.density);
+  const [mountedReal, setMountedReal] = useState(false);
+  useEffect(() => { setMountedReal(true); }, []);
+  if (mountedReal && readOnly && canRenderReal(system as SystemId, type)) {
+    return (
+      <div>
+        <RealComponentRenderer
+          system={system as SystemId}
+          type={type}
+          mode={builderMode === "dark" ? "dark" : "light"}
+          saltDensity={(["high", "medium", "low", "touch"].includes(density) ? density : "medium") as "high" | "medium" | "low" | "touch"}
+          props={props as Record<string, unknown>}
+        />
+      </div>
+    );
+  }
+
   const Renderer = RENDERERS[type];
   if (!Renderer) {
     return (
