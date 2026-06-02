@@ -1,4 +1,24 @@
 import type { Block, InterfaceType, ZoneLayout, ZoneId } from "@/store/useBuilder";
+import {
+  analyticsKpis,
+  analyticsRevenueTrend,
+  analyticsSignupsByChannel,
+  analyticsRevenueByPlan,
+  analyticsOrders,
+  crmKpis,
+  crmContacts as crmContactsData,
+  settingsProfile,
+  settingsNotifications,
+  landingBrand,
+  landingHero,
+  landingFeatures,
+  landingStats,
+  landingPricing,
+  landingTestimonials,
+  landingRevenueTrend,
+  authContent,
+} from "@/lib/sampleData";
+import { pickImage, getImageById } from "@/lib/sampleImages";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -91,18 +111,21 @@ const analyticsDashboard: BuilderTemplate = {
     /* Section heading - full width (own row). Inline date-range + export
        scope controls deferred to a proper header scope-bar slice. */
     { id: tid("ad-title"), type: "SimulatedTitle", props: { text: "Revenue overview", level: "h3" }, layout: { width: "12fr" } },
-    /* KPI row - 4 cards (3 cols each), lead metric first, signed delta (never color-only) */
-    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: "MRR", value: "$48,200", pct: 12 }, layout: { width: "3fr" } },
-    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: "Active users", value: "12,847", pct: 8 }, layout: { width: "3fr" } },
-    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: "Churn rate", value: "2.1%", pct: -3 }, layout: { width: "3fr" } },
-    { id: tid("ad-kpi-4"), type: "SimulatedStatCard", props: { label: "ARPU", value: "$38", pct: 5 }, layout: { width: "3fr" } },
+    /* KPI row - 4 cards (3 cols each), lead metric first. label + value come
+       from the shared analyticsKpis dataset; the `pct` here drives the card's
+       progress bar (a fill width, not the signed delta), so it stays a sensible
+       0-100 magnitude rather than the dataset's period-over-period delta. */
+    { id: tid("ad-kpi-1"), type: "SimulatedStatCard", props: { label: analyticsKpis[0].label, value: analyticsKpis[0].value, pct: 72 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-2"), type: "SimulatedStatCard", props: { label: analyticsKpis[1].label, value: analyticsKpis[1].value, pct: 64 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-3"), type: "SimulatedStatCard", props: { label: analyticsKpis[2].label, value: analyticsKpis[2].value, pct: 21 }, layout: { width: "3fr" } },
+    { id: tid("ad-kpi-4"), type: "SimulatedStatCard", props: { label: analyticsKpis[3].label, value: analyticsKpis[3].value, pct: 38 }, layout: { width: "3fr" } },
     /* Hero trend - full width (12 cols), headline metric vs previous period */
-    { id: tid("ad-hero"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 30 days vs previous" }, layout: { width: "12fr" } },
+    { id: tid("ad-hero"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 30 days vs previous", categories: analyticsRevenueTrend.categories, series: analyticsRevenueTrend.series }, layout: { width: "12fr" } },
     /* 2-up supporting row - 6/6 */
-    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel", categories: ["Organic", "Paid", "Referral", "Social"], series: [{ name: "Signups", data: [320, 210, 140, 90] }] }, layout: { width: "6fr" } },
-    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan", seriesData: [{ name: "Free", y: 46 }, { name: "Pro", y: 34 }, { name: "Enterprise", y: 20 }] }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel", categories: analyticsSignupsByChannel.categories, series: analyticsSignupsByChannel.series }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan", seriesData: analyticsRevenueByPlan }, layout: { width: "6fr" } },
     /* Detail table - 12 cols, kept LAST so the granular view follows the KPI + chart overview (canonical reading order) */
-    { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: ["Order", "Status", "Customer", "Updated"], rows: [{ name: "#10472", status: "Paid", role: "Northwind Co.", date: "2h ago" }, { name: "#10471", status: "Pending", role: "Globex Ltd.", date: "Yesterday" }, { name: "#10468", status: "Paid", role: "Initech", date: "2d ago" }] }, layout: { width: "12fr" } },
+    { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: analyticsOrders.columns, rows: analyticsOrders.rows }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("ad-ftr"), type: "FooterText", props: { label: "Last updated 2 min ago", version: "v2.4" } },
@@ -138,16 +161,16 @@ const settingsPage: BuilderTemplate = {
   body: [
     /* Profile section - heading (own row) -> avatar + change-photo row -> fields (own rows) */
     { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: "SC", size: "lg", presence: "available" }, layout: { width: "2fr" } },
+    { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: settingsProfile.initials, src: getImageById(settingsProfile.avatarId)?.url, size: "lg", presence: "available" }, layout: { width: "2fr" } },
     { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Change photo", variant: "secondary" }, layout: { width: "4fr" } },
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: "Sarah Chen" }, layout: { width: "12fr" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "sarah@acme.co" }, layout: { width: "12fr" } },
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: settingsProfile.email }, layout: { width: "12fr" } },
 
     /* Preferences section - one setting per row (label left / switch right) */
     { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Preferences", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: "Email notifications", defaultOn: true }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: "Weekly digest email", defaultOn: false }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: "Product updates & marketing", defaultOn: false }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: settingsNotifications[0].label, defaultOn: settingsNotifications[0].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: settingsNotifications[1].label, defaultOn: settingsNotifications[1].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: settingsNotifications[3].label, defaultOn: settingsNotifications[3].defaultOn }, layout: { width: "12fr" } },
 
     /* Danger zone - isolated last */
     { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
@@ -188,12 +211,16 @@ const crmContacts: BuilderTemplate = {
     /* Search + filter row */
     { id: tid("crm-search"), type: "SimulatedSearchbox", props: { placeholder: "Search by name, company, email..." }, layout: { width: "8fr" } },
     { id: tid("crm-filter"), type: "SimulatedDropdown", props: { placeholder: "All statuses" }, layout: { width: "4fr" } },
-    /* Pipeline KPIs - overview first, before the detailed table (standard dashboard reading order) */
-    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: "New this week", value: "24", pct: 12 }, layout: { width: "4fr" } },
-    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: "Active leads", value: "89", pct: 5 }, layout: { width: "4fr" } },
-    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: "Deals closed (MTD)", value: "$12.4K", pct: 18 }, layout: { width: "4fr" } },
-    /* Main data table - 12 cols, last */
-    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: ["Contact", "Stage", "Owner", "Updated"], rows: [{ name: "Priya Shah", status: "Active", role: "A. Chen", date: "1h ago" }, { name: "Marco Rossi", status: "Pending", role: "J. Patel", date: "Yesterday" }, { name: "Lena Ortiz", status: "Active", role: "A. Chen", date: "3d ago" }] }, layout: { width: "12fr" } },
+    /* Pipeline KPIs - overview first, before the detailed table (standard
+       dashboard reading order). label + value from the shared crmKpis dataset;
+       `pct` is the card's progress-bar fill width (a 0-100 magnitude), not the
+       dataset's signed period-over-period delta. */
+    { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: crmKpis[0].label, value: crmKpis[0].value, pct: 30 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: crmKpis[1].label, value: crmKpis[1].value, pct: 74 }, layout: { width: "4fr" } },
+    { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: crmKpis[2].label, value: crmKpis[2].value, pct: 58 }, layout: { width: "4fr" } },
+    /* Main data table - 12 cols, last. columns + rows come from crmContacts so
+       resolveCell matches each cell by its header key (Name/Company/Status/...). */
+    { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: crmContactsData.columns, rows: crmContactsData.rows }, layout: { width: "12fr" } },
   ],
   footer: [
     { id: tid("crm-ftr"), type: "FooterText", props: { label: "Showing 247 of 1,247 contacts", version: "v3.2" } },
@@ -216,7 +243,7 @@ const loginFlow: BuilderTemplate = {
      remember (8) + forgot link (4) share a row. */
   zoneLayouts: { body: { mode: "grid", columns: 12, gap: 12 } },
   header: [
-    { id: tid("lf-brand"), type: "AppBrand", props: { label: "Acme" } },
+    { id: tid("lf-brand"), type: "AppBrand", props: { label: authContent.brand } },
     { id: tid("lf-status"), type: "StatusPill", props: { label: "Secure" } },
   ],
   sidebar: [
@@ -226,21 +253,21 @@ const loginFlow: BuilderTemplate = {
     { id: tid("lf-nav-3"), type: "NavItem", props: { label: "Help", icon: "chat", active: false } },
   ],
   body: [
-    /* Screen 1 - Login */
-    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: "Sign in to Acme", level: "h2" }, layout: { width: "12fr" } },
-    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: "Welcome back. Enter your details to continue.", level: "h4" }, layout: { width: "12fr" } },
-    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: "you@company.com" }, layout: { width: "12fr" } },
-    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: "Enter your password" }, layout: { width: "12fr" } },
+    /* Screen 1 - Login (copy + placeholders from the shared authContent set) */
+    { id: tid("lf-title"), type: "SimulatedTitle", props: { text: authContent.title, level: "h2" }, layout: { width: "12fr" } },
+    { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: authContent.subtitle, level: "h4" }, layout: { width: "12fr" } },
+    { id: tid("lf-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: authContent.emailPlaceholder }, layout: { width: "12fr" } },
+    { id: tid("lf-pass"), type: "SimulatedTextInput", props: { label: "Password", placeholder: authContent.passwordPlaceholder }, layout: { width: "12fr" } },
     { id: tid("lf-remember"), type: "SimulatedCheckbox", props: { label: "Keep me signed in for 30 days", defaultChecked: false }, layout: { width: "8fr" } },
     { id: tid("lf-forgot"), type: "SimulatedLink", props: { text: "Forgot password?", showIcon: false }, layout: { width: "4fr" } },
     { id: tid("lf-signin"), type: "SimulatedButton", props: { label: "Sign in", variant: "primary" }, layout: { width: "12fr" } },
-    { id: tid("lf-google"), type: "SimulatedButton", props: { label: "Continue with Google", variant: "outline" }, layout: { width: "12fr" } },
-    { id: tid("lf-github"), type: "SimulatedButton", props: { label: "Continue with GitHub", variant: "outline" }, layout: { width: "12fr" } },
+    { id: tid("lf-google"), type: "SimulatedButton", props: { label: authContent.oauth[0], variant: "outline" }, layout: { width: "12fr" } },
+    { id: tid("lf-github"), type: "SimulatedButton", props: { label: authContent.oauth[1], variant: "outline" }, layout: { width: "12fr" } },
     /* Flow hint - connects to the post-login dashboard */
     { id: tid("lf-alert"), type: "Alert", props: { title: "After sign-in", message: "Ask me to 'show the dashboard' and I'll swap in where users land after authenticating.", variant: "info" }, layout: { width: "12fr" } },
   ],
   footer: [
-    { id: tid("lf-ftr"), type: "FooterText", props: { label: "© 2026 Acme, Inc.", version: "Privacy · Terms" } },
+    { id: tid("lf-ftr"), type: "FooterText", props: { label: `© 2026 ${authContent.brand}, Inc.`, version: "Privacy · Terms" } },
   ],
   aiResponse:
     "Built a **Login** screen with email + password, two OAuth buttons (Google, GitHub), a remember-me checkbox, and a forgot-password link. Say **'show the dashboard'** and I'll swap in the post-login landing page for the full flow.",
@@ -263,43 +290,48 @@ const landingPage: BuilderTemplate = {
   zoneLayouts: { body: { mode: "grid", columns: 12, gap: 16 } },
   /* Top nav: brand + nav links + a primary CTA (rendered horizontally). */
   header: [
-    { id: tid("lp-brand"), type: "AppBrand", props: { label: "Northwind" } },
+    { id: tid("lp-brand"), type: "AppBrand", props: { label: landingBrand } },
     { id: tid("lp-nav-1"), type: "SimulatedLink", props: { text: "Product", showIcon: false } },
     { id: tid("lp-nav-2"), type: "SimulatedLink", props: { text: "Pricing", showIcon: false } },
     { id: tid("lp-nav-3"), type: "SimulatedLink", props: { text: "Customers", showIcon: false } },
-    { id: tid("lp-cta"), type: "SimulatedButton", props: { label: "Sign up", variant: "primary" } },
+    { id: tid("lp-cta"), type: "SimulatedButton", props: { label: landingHero.primaryCta, variant: "primary" } },
   ],
   sidebar: [],
   body: [
-    /* Hero: headline + supporting visual, then subtitle + email capture. */
-    { id: tid("lp-hero-title"), type: "SimulatedTitle", props: { text: "Ship faster, scale smarter.", level: "h1" }, layout: { width: "7fr" } },
-    { id: tid("lp-hero-img"), type: "SimulatedImage", props: { alt: "Product preview", ratio: "4:3", caption: "" }, layout: { width: "5fr" } },
-    { id: tid("lp-hero-sub"), type: "SimulatedTitle", props: { text: "Everything your team needs to build, launch, and grow, in one place.", level: "h4" }, layout: { width: "7fr" } },
+    /* Hero: headline + supporting visual, then subtitle + email capture.
+       Copy + hero image come from the shared landingHero set. */
+    { id: tid("lp-hero-title"), type: "SimulatedTitle", props: { text: landingHero.headline, level: "h1" }, layout: { width: "7fr" } },
+    { id: tid("lp-hero-img"), type: "SimulatedImage", props: { alt: getImageById(landingHero.heroImageId)?.alt ?? "Product preview", ratio: "4:3", caption: "", src: getImageById(landingHero.heroImageId)?.url ?? pickImage("hero").url }, layout: { width: "5fr" } },
+    { id: tid("lp-hero-sub"), type: "SimulatedTitle", props: { text: landingHero.subhead, level: "h4" }, layout: { width: "7fr" } },
     { id: tid("lp-hero-email"), type: "SimulatedTextInput", props: { label: "", placeholder: "Your work email" }, layout: { width: "5fr" } },
-    { id: tid("lp-hero-btn"), type: "SimulatedButton", props: { label: "Get started", variant: "primary" }, layout: { width: "3fr" } },
-    /* Feature trio. */
+    { id: tid("lp-hero-btn"), type: "SimulatedButton", props: { label: landingHero.primaryCta, variant: "primary" }, layout: { width: "3fr" } },
+    /* Feature trio (from landingFeatures). */
     { id: tid("lp-feat-title"), type: "SimulatedTitle", props: { text: "Built to grow with you", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("lp-feat-1"), type: "SimulatedCard", props: { title: "Fast transfers", content: "Move work forward with automated, repeatable flows." }, layout: { width: "4fr" } },
-    { id: tid("lp-feat-2"), type: "SimulatedCard", props: { title: "One workspace", content: "Run everything from a single, connected surface." }, layout: { width: "4fr" } },
-    { id: tid("lp-feat-3"), type: "SimulatedCard", props: { title: "Secure by default", content: "Org-wide controls, MFA, and audit-ready access." }, layout: { width: "4fr" } },
-    /* Social-proof stats. */
+    { id: tid("lp-feat-1"), type: "SimulatedCard", props: { title: landingFeatures[0].title, content: landingFeatures[0].body }, layout: { width: "4fr" } },
+    { id: tid("lp-feat-2"), type: "SimulatedCard", props: { title: landingFeatures[1].title, content: landingFeatures[1].body }, layout: { width: "4fr" } },
+    { id: tid("lp-feat-3"), type: "SimulatedCard", props: { title: landingFeatures[2].title, content: landingFeatures[2].body }, layout: { width: "4fr" } },
+    /* Social-proof stats (from landingStats). pct is the card bar fill width. */
     { id: tid("lp-stat-title"), type: "SimulatedTitle", props: { text: "Teams everywhere trust us", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("lp-stat-1"), type: "SimulatedStatCard", props: { label: "Active teams", value: "3,000+", pct: 78 }, layout: { width: "4fr" } },
-    { id: tid("lp-stat-2"), type: "SimulatedStatCard", props: { label: "Revenue tracked", value: "180K", pct: 64 }, layout: { width: "4fr" } },
-    { id: tid("lp-stat-3"), type: "SimulatedStatCard", props: { label: "Months of runway", value: "10+", pct: 85 }, layout: { width: "4fr" } },
-    /* Trend chart. */
+    { id: tid("lp-stat-1"), type: "SimulatedStatCard", props: { label: landingStats[0].label, value: landingStats[0].value, pct: 78 }, layout: { width: "4fr" } },
+    { id: tid("lp-stat-2"), type: "SimulatedStatCard", props: { label: landingStats[1].label, value: landingStats[1].value, pct: 64 }, layout: { width: "4fr" } },
+    { id: tid("lp-stat-3"), type: "SimulatedStatCard", props: { label: landingStats[2].label, value: landingStats[2].value, pct: 92 }, layout: { width: "4fr" } },
+    /* Customer voices (from landingTestimonials) - rendered as quote cards. */
+    { id: tid("lp-quote-title"), type: "SimulatedTitle", props: { text: "What teams are saying", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-quote-1"), type: "SimulatedCard", props: { title: `${landingTestimonials[0].name}, ${landingTestimonials[0].role}`, content: landingTestimonials[0].quote }, layout: { width: "6fr" } },
+    { id: tid("lp-quote-2"), type: "SimulatedCard", props: { title: `${landingTestimonials[1].name}, ${landingTestimonials[1].role}`, content: landingTestimonials[1].quote }, layout: { width: "6fr" } },
+    /* Trend chart (from landingRevenueTrend). */
     { id: tid("lp-chart-title"), type: "SimulatedTitle", props: { text: "Steady, predictable growth", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("lp-chart"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 6 months" }, layout: { width: "12fr" } },
-    /* Pricing. */
+    { id: tid("lp-chart"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 6 months", categories: landingRevenueTrend.categories, series: landingRevenueTrend.series }, layout: { width: "12fr" } },
+    /* Pricing (from landingPricing). */
     { id: tid("lp-price-title"), type: "SimulatedTitle", props: { text: "Simple pricing", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("lp-price-1"), type: "SimulatedCard", props: { title: "Plus", content: "For small teams getting started. $2.99 per month." }, layout: { width: "6fr" } },
-    { id: tid("lp-price-2"), type: "SimulatedCard", props: { title: "Premium", content: "For scaling teams that need more. $6.99 per month." }, layout: { width: "6fr" } },
+    { id: tid("lp-price-1"), type: "SimulatedCard", props: { title: `${landingPricing[1].name}, ${landingPricing[1].price}${landingPricing[1].cadence}`, content: landingPricing[1].features.join(", ") + "." }, layout: { width: "6fr" } },
+    { id: tid("lp-price-2"), type: "SimulatedCard", props: { title: `${landingPricing[2].name}, ${landingPricing[2].price}`, content: landingPricing[2].features.join(", ") + "." }, layout: { width: "6fr" } },
     /* Closing CTA. */
     { id: tid("lp-cta-title"), type: "SimulatedTitle", props: { text: "Ready to level up?", level: "h2" }, layout: { width: "8fr" } },
-    { id: tid("lp-cta-btn"), type: "SimulatedButton", props: { label: "Get started now", variant: "primary" }, layout: { width: "4fr" } },
+    { id: tid("lp-cta-btn"), type: "SimulatedButton", props: { label: landingHero.primaryCta, variant: "primary" }, layout: { width: "4fr" } },
   ],
   footer: [
-    { id: tid("lp-ftr"), type: "FooterText", props: { label: "© 2026 Northwind, Inc.", version: "Privacy · Terms" } },
+    { id: tid("lp-ftr"), type: "FooterText", props: { label: `© 2026 ${landingBrand}, Inc.`, version: "Privacy · Terms" } },
   ],
   aiResponse:
     "Built a **Landing Page**: top nav, a hero with email capture, a feature trio, social-proof stats, a growth chart, simple pricing, and a closing CTA. Ask me to swap sections, change the copy, or try it in another design system.",

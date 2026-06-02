@@ -140,24 +140,32 @@ function chartOptions(
         ...t,
         chart: { ...tc, type: "line" },
         title: { ...tt, text: props.title || "Monthly Revenue" },
-        xAxis: { ...tx, categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+        xAxis: { ...tx, categories: props.categories ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
         yAxis: { ...ty, title: { ...ty.title, text: "Revenue ($K)" } },
-        series: [
-          { name: "2024", data: [120, 134, 145, 152, 168, 185], type: "line" as const },
-          { name: "2025", data: [140, 155, 162, 178, 195, 210], type: "line" as const },
-        ],
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "line" as const }))
+          : [
+              /* Realistic monthly revenue: organic upward drift with month-to-month
+                 noise (not a clean monotonic ramp), prior year tracking below. */
+              { name: "This year", data: [128, 121, 142, 138, 159, 174], type: "line" as const },
+              { name: "Last year", data: [104, 112, 109, 126, 131, 140], type: "line" as const },
+            ],
       };
 
     case "area":
       return {
         ...t,
         chart: { ...tc, type: "area" },
-        title: { ...tt, text: props.title || "User Growth" },
-        xAxis: { ...tx, categories: ["Q1", "Q2", "Q3", "Q4"] },
-        series: [
-          { name: "Free", data: [5000, 8200, 12400, 18000], type: "area" as const },
-          { name: "Pro", data: [1200, 2400, 4100, 6800], type: "area" as const },
-        ],
+        title: { ...tt, text: props.title || "Revenue trend" },
+        xAxis: { ...tx, categories: props.categories ?? ["Wk 1", "Wk 2", "Wk 3", "Wk 4"] },
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "area" as const }))
+          : [
+              /* Weekly revenue with believable variance (a dip in wk 3, not a
+                 textbook doubling) and a prior-period baseline below it. */
+              { name: "This period", data: [9800, 11200, 10600, 12400], type: "area" as const },
+              { name: "Prior period", data: [8600, 9100, 9400, 9900], type: "area" as const },
+            ],
         plotOptions: { ...t.plotOptions, area: { fillOpacity: 0.25 } },
       };
 
@@ -170,8 +178,10 @@ function chartOptions(
         series: props.series
           ? props.series.map((s) => ({ ...s, type: "column" as const }))
           : [
-              { name: "Q3", data: [420, 380, 290, 180], type: "column" as const },
-              { name: "Q4", data: [480, 410, 340, 210], type: "column" as const },
+              /* Uneven regional spread with quarter-on-quarter growth that isn't
+                 uniform (APAC jumps hardest, LATAM barely moves). */
+              { name: "Q3", data: [412, 357, 268, 174], type: "column" as const },
+              { name: "Q4", data: [468, 389, 341, 192], type: "column" as const },
             ],
       };
 
@@ -183,10 +193,13 @@ function chartOptions(
         series: [{
           name: "Share", type: "pie" as const,
           data: props.seriesData?.length ? props.seriesData : [
-            { name: "Product A", y: 45 },
-            { name: "Product B", y: 26 },
-            { name: "Product C", y: 17 },
-            { name: "Other", y: 12 },
+            /* Realistic share split: a clear leader, a long tail, an "Other"
+               bucket - shares that sum to 100 without being round numbers. */
+            { name: "Direct", y: 38 },
+            { name: "Organic search", y: 27 },
+            { name: "Referral", y: 19 },
+            { name: "Social", y: 11 },
+            { name: "Other", y: 5 },
           ],
         }],
         plotOptions: {
@@ -220,8 +233,10 @@ function chartOptions(
         ...t,
         chart: { ...tc, type: "bar" },
         title: { ...tt, text: props.title || "Top Performers" },
-        xAxis: { ...tx, categories: ["Alice", "Bob", "Carol", "Dan", "Eve"] },
-        series: [{ name: "Score", data: [95, 88, 82, 76, 71], type: "bar" as const }],
+        xAxis: { ...tx, categories: props.categories ?? ["Alice", "Bob", "Carol", "Dan", "Eve"] },
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "bar" as const }))
+          : [{ name: "Deals closed", data: [47, 41, 33, 28, 19], type: "bar" as const }],
       };
 
     case "donut":
@@ -232,9 +247,11 @@ function chartOptions(
         series: [{
           name: "Share", type: "pie" as const, innerSize: "60%",
           data: props.seriesData?.length ? props.seriesData : [
-            { name: "Segment A", y: 42 },
-            { name: "Segment B", y: 33 },
-            { name: "Segment C", y: 25 },
+            /* Plan-tier split: paid Pro leads, a meaningful free base, a small
+               enterprise slice - shares summing to 100, not even thirds. */
+            { name: "Free", y: 31 },
+            { name: "Pro", y: 46 },
+            { name: "Enterprise", y: 23 },
           ],
         }],
         plotOptions: {
