@@ -36,12 +36,25 @@ export function BuilderApp() {
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen, setChatOpen,
     chatMode,
+    blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks, activeTemplateId,
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
 
   /* Floating chat is a fixed overlay card over a full-bleed canvas; docked
      chat is the legacy left column that splits width with the preview. */
   const chatFloating = chatMode === "floating";
+
+  /* Whether the user has anything on the canvas yet. Drives the floating
+     card's size: roomy while the canvas is empty (onboarding has room to
+     breathe), compact once there's a canvas to float over. NB: this is
+     content presence, NOT `previewOpen` (which toggles the separate
+     read-only preview side panel and stays off during normal editing). */
+  const hasCanvasContent =
+    bodyBlocks.length > 0 ||
+    headerBlocks.length > 0 ||
+    sidebarBlocks.length > 0 ||
+    footerBlocks.length > 0 ||
+    Boolean(activeTemplateId);
 
   /* Auto-save subscription - kicks in the moment a session is started
      (either by picking a template or sending a first message). */
@@ -643,7 +656,7 @@ export function BuilderApp() {
              preview yet), compact once there's a canvas to sit over. ── */}
         {chatFloating && isChatOpen && (
           <aside
-            className={`chat-float ${previewOpen ? "chat-float-compact" : "chat-float-onboarding"}`}
+            className={`chat-float ${hasCanvasContent ? "chat-float-compact" : "chat-float-onboarding"}`}
             aria-label="uoaui assistant"
           >
             <ChatPanel />
