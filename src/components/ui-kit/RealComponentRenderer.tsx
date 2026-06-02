@@ -1,40 +1,49 @@
 "use client";
 
 /**
- * RealComponentRenderer (#9 PR-3) — renders REAL OFFICIAL design-system React
- * components in the /ui-kit "Builder Blocks" gallery, so the kit is
- * demonstrably "pulling from the official DS API" rather than a facsimile.
+ * RealComponentRenderer (#9 PR-3, extended W6-P2a) — renders REAL design-system
+ * components in the /ui-kit "Builder Blocks" gallery (and the read-only builder
+ * preview), so the kit is demonstrably "pulling from the official DS API" rather
+ * than a facsimile.
  *
  * SCOPE (deliberately narrow + honest):
- *   - SYSTEMS: only the three DSs whose styling comes from a JS provider with NO
- *     global reset — Salt (SaltProvider), Material 3 (MUI ThemeProvider), and
- *     Fluent (FluentProvider). Carbon is intentionally EXCLUDED: its real
- *     components need `@carbon/styles`, a ~950 KB GLOBAL reset that would leak
- *     app-wide (html/body/* selectors), so Carbon stays on the existing
- *     Simulated-on-official-tokens render. uoaui is className/CSS-only (no npm
- *     package), so it also stays Simulated.
+ *   - SYSTEMS:
+ *       · Salt (SaltProvider), Material 3 (MUI ThemeProvider), Fluent
+ *         (FluentProvider) — JS-provider DSs with NO global reset, rendered via
+ *         their own provider subtree.
+ *       · uoaui (W6-P2a) — className/CSS-only (no npm package): the in-house
+ *         glassmorphism DS. Rendered via the UoauiReal subtree, which wraps the
+ *         real `.a-*` markup (from realBlockMap) in `.preview-uoaui.a-app` and
+ *         injects the DS's own CSS via the existing getFullCSS / uoauiBuildCSS
+ *         theme mechanism — SCOPED to that wrapper so the DS's global reset
+ *         (`*{}` / `:root{}`) can't leak app-wide.
+ *       · Carbon is still EXCLUDED: its real components need `@carbon/styles`, a
+ *         ~950 KB GLOBAL reset; it awaits a separate scoped-CSS PR.
  *   - BLOCKS: only the CORE SET — Button, TextInput, Checkbox, Switch, Card.
  *     Everything else returns null and the caller falls back to the builder's
  *     ComponentRenderer (the same render path as the canvas).
  *
  * The prop translation mirrors src/lib/componentApiRegistry.ts (the JSX-string
- * exporter) in real React: Salt Button sentiment/appearance, MUI Button
- * variant/color, Fluent Button appearance, etc. — so what renders here matches
- * the handoff code the export emits.
+ * exporter) in real React/markup: Salt sentiment/appearance, MUI variant/color,
+ * Fluent appearance, uoaui `.a-*` classes — so what renders here matches the
+ * handoff code the export emits.
  *
  * SSR SAFETY: this is a "use client" component, and the gallery that mounts it
  * is dynamic-imported with `ssr: false`. Belt-and-suspenders, the CALLER also
- * client-gates this behind a `mounted` flag (BuilderBlockGallery's
- * RealOrSimulated renders the Simulated component until a mount effect fires,
- * then swaps to this one) so MUI's emotion / Fluent's griffel style engines
- * never run during SSR or the first hydration pass — no Next App-Router
- * hydration mismatch, and no empty-demo flash. Each DS subtree is wrapped in its
- * own provider (providers are client-safe).
+ * client-gates this behind a `mounted` flag (ComponentRenderer's `mountedReal`)
+ * so MUI's emotion / Fluent's griffel style engines never run during SSR or the
+ * first hydration pass — no Next App-Router hydration mismatch, and no
+ * empty-demo flash. uoaui is plain CSS (no JS style engine), but it rides the
+ * same mounted gate so its scoped <style> injects only client-side too.
  *
  * We never import `@carbon/styles` or `@carbon/react`.
  */
 
 import React from "react";
+
+import { getFullCSS, getTheme } from "@/data/registry";
+import { sanitizeCSS } from "@/lib/sanitizeCSS";
+import { getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
 
 import {
   SaltProvider,
@@ -71,9 +80,11 @@ import {
 
 import type { SystemId } from "@/lib/componentApiRegistry";
 
-/* The systems that render REAL components here (provider-styled, no global
-   reset). Carbon + uoaui are deliberately absent — see file header. */
-const REAL_SYSTEMS = new Set<SystemId>(["salt", "m3", "fluent"]);
+/* The systems that render REAL components here. Salt/M3/Fluent via their own
+   provider subtree; uoaui (W6-P2a) via the scoped-CSS UoauiReal subtree. Carbon
+   is still absent — it needs the @carbon/styles global-reset scoping work
+   (separate PR). See file header. */
+const REAL_SYSTEMS = new Set<SystemId>(["salt", "m3", "fluent", "uoaui"]);
 
 /* The CORE SET of block types we render real, per the PR scope. Anything else
    returns null so the caller falls back to the Simulated ComponentRenderer. */
@@ -235,6 +246,104 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
   return <FluentProvider theme={mode === "dark" ? webDarkTheme : webLightTheme}>{inner}</FluentProvider>;
 }
 
+/* ── uoaui real subtree (W6-P2a) ──
+   uoaui has no npm package: its components are `.a-*` classes styled by the
+   DS's own CSS. We reuse the EXISTING theme mechanism the documentation file +
+   gallery use — getFullCSS('uoaui', theme, density) = uoauiBuildCSS(theme) +
+   getUoauiDensityCSS(density) — then SCOPE the result to `.preview-uoaui.a-app`
+   so the DS's global `*{}` reset and `:root{}` block can't leak onto the app /
+   builder canvas. The real `.a-*` markup comes from realBlockMap. CSS-only, so
+   there's no emotion/griffel engine to gate; the caller's mountedReal flag still
+   keeps the <style> client-only (it's deterministic anyway). */
+
+/* The wrapper that scopes uoaui's CSS. `.preview-uoaui` already exists in
+   builder.css (bridges --a-* to --ds-*); `.a-app` is the uoaui app-shell
+   convention the documentation surface wraps demos in. */
+const UOAUI_SCOPE = ".preview-uoaui.a-app";
+
+/* Prefix a comma-separated selector list with UOAUI_SCOPE so nothing escapes
+   the wrapper. `:root` becomes the wrapper itself (so :root-declared --a-*
+   tokens resolve on it); bare `*` / `*,*::before,*::after` resets become
+   descendant selectors of the wrapper. */
+function scopeSelectorList(selectorList: string): string {
+  return selectorList
+    .split(",")
+    .map((sel) => {
+      const t = sel.trim();
+      if (!t) return "";
+      if (t === ":root") return UOAUI_SCOPE;
+      return `${UOAUI_SCOPE} ${t}`;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+/* Scope the uoaui CSS to UOAUI_SCOPE via a brace-depth walk (robust where a
+   per-rule regex is fragile on the leading rule + nested at-rules). Each
+   top-level rule's selector is prefixed; a nested at-rule (@media
+   prefers-reduced-motion) keeps its preamble and has its inner rules scoped.
+   sanitizeCSS runs first; we also drop the leftover ` url(...);` that
+   sanitizeCSS leaves after stripping the `@import` keyword, so it isn't
+   mis-parsed as a selector. */
+function scopeUoauiCSS(css: string): string {
+  /* Remove the orphaned @font import statement (sanitizeCSS strips the
+     `@import` keyword but leaves `url(...);`). */
+  const cleaned = css.replace(/^\s*url\([^)]*\)\s*;/gm, "");
+
+  let out = "";
+  let i = 0;
+  const n = cleaned.length;
+  while (i < n) {
+    const brace = cleaned.indexOf("{", i);
+    if (brace === -1) {
+      out += cleaned.slice(i);
+      break;
+    }
+    const preamble = cleaned.slice(i, brace);
+    const trimmed = preamble.trim();
+
+    /* Find the matching close brace for this block. */
+    let depth = 1;
+    let j = brace + 1;
+    for (; j < n && depth > 0; j++) {
+      if (cleaned[j] === "{") depth++;
+      else if (cleaned[j] === "}") depth--;
+    }
+    const body = cleaned.slice(brace + 1, j - 1);
+
+    if (trimmed.startsWith("@")) {
+      /* At-rule (e.g. @media): keep preamble, scope its inner rules. */
+      out += `${preamble}{${scopeUoauiCSS(body)}}`;
+    } else {
+      out += `${scopeSelectorList(preamble)} {${body}}`;
+    }
+    i = j;
+  }
+  return out;
+}
+
+function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+  /* Resolve the uoaui theme object from the active mode (dark/light) and build
+     the DS CSS via the shared registry helper. Memoised on mode+density so the
+     string isn't reassembled every render. setUoauiT inside uoauiBuildCSS is a
+     pure read of the passed theme, so this is render-safe. */
+  const density = saltDensity ?? "medium";
+  const scopedCss = React.useMemo(() => {
+    const theme = getTheme("uoaui", mode === "dark" ? "dark" : "light");
+    return scopeUoauiCSS(sanitizeCSS(getFullCSS("uoaui", theme, density)));
+  }, [mode, density]);
+
+  const render = getRealBlockRenderer("uoaui", type);
+  const inner = render ? render(props) : null;
+
+  return (
+    <div className="preview-uoaui a-app">
+      <style dangerouslySetInnerHTML={{ __html: scopedCss }} />
+      {inner}
+    </div>
+  );
+}
+
 /**
  * Render the REAL official component for (system, type) in the core set, or
  * return null when the pair is out of scope.
@@ -258,5 +367,6 @@ export function RealComponentRenderer({
   if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
   if (system === "m3") return <M3Real type={type} mode={mode} props={props} />;
   if (system === "fluent") return <FluentReal type={type} mode={mode} props={props} />;
+  if (system === "uoaui") return <UoauiReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
   return null;
 }
