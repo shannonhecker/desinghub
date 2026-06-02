@@ -1,5 +1,11 @@
 name: Deploy to GitHub Pages
 
+# The app is a server application now (AI backend under /api/* + auth),
+# so it can no longer be statically exported to GitHub Pages. The live
+# site is https://uoaui.ai (Vercel). This workflow publishes a single
+# redirect page so the legacy github.io/desinghub URL forwards there,
+# instead of failing every push trying to build a non-existent `out/`.
+
 on:
   push:
     branches: [main]
@@ -17,17 +23,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - name: Build with staging password hash
-        env:
-          NEXT_PUBLIC_STAGING_PASSWORD_HASH: ${{ secrets.STAGING_PASSWORD_HASH }}
-        run: npm run build
-      - run: touch out/.nojekyll
+      - name: Generate redirect to uoaui.ai
+        run: |
+          mkdir -p out
+          cat > out/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta http-equiv="refresh" content="0; url=https://uoaui.ai/">
+            <link rel="canonical" href="https://uoaui.ai/">
+            <title>Moved to uoaui.ai</title>
+            <script>location.replace("https://uoaui.ai/");</script>
+          </head>
+          <body style="font-family:system-ui,-apple-system,sans-serif;background:#0b1120;color:#e6e0e9;display:grid;place-items:center;min-height:100vh;margin:0">
+            <p style="font-size:15px">This project has moved to <a href="https://uoaui.ai/" style="color:#b490f5">uoaui.ai</a>. Redirecting now.</p>
+          </body>
+          </html>
+          HTML
+          touch out/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
