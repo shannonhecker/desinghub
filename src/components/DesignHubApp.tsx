@@ -135,7 +135,10 @@ export function DesignHubApp() {
   const isCarbon = activeSystem === "carbon";
   const headerBg = isCarbon ? "#161616" /* $background-inverse */ : (activeSystem === "uoaui" ? "transparent" : t.bg);
   const headerFg = isCarbon ? "#ffffff" : t.fg;
-  const headerBorder = isCarbon ? "#393939" : (activeSystem === "uoaui" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border);
+  /* Carbon keeps its faithful dark-shell divider; everyone else uses the
+     subtle divider token. This also retires uoaui's hardcoded rgba literals
+     (borderSubtle resolves to --a-border for uoaui). */
+  const headerBorder = isCarbon ? "#393939" : t.borderSubtle;
   /* Logo stays black on white headers, white on dark/Carbon headers. */
   const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
 
@@ -281,14 +284,14 @@ export function DesignHubApp() {
         {sidebarOpen && (
           <aside style={{
             width: t.scale.panelW,
-            borderRight: `1px solid ${activeSystem === "uoaui" ? (isDarkTheme ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)") : t.border}`,
+            borderRight: `1px solid ${t.borderSubtle}`,
             /* Carbon sidebar sits at $layer-01 (one step up from
                canvas) matching the Carbon docs sidenav. */
             background: activeSystem === "uoaui" ? "transparent" : activeSystem === "m3" ? t.bg2 : isCarbon ? t.T.layer01 : t.bg,
             display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             transition: "background 200ms",
           }}>
-            <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.border}` }}>
+            <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.borderSubtle}` }}>
               <SidebarDSBrand />
             </div>
             <div style={{ padding: "20px 24px 12px", flexShrink: 0 }}>
