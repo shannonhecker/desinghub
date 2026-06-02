@@ -444,6 +444,40 @@ export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
   defaults: b.defaults,
 }));
 
+/* ── Library search aliases (synonyms) ──
+   The library search matches block label + type. These extra keywords let
+   users find blocks by what they call them ("photo" -> Image, "kpi" -> Stat
+   Card, "graph" -> a chart) so search doesn't dead-end on exact wording.
+   Curated for the common misses; absent types just fall back to label/type. */
+export const SEARCH_ALIASES: Record<string, string[]> = {
+  SimulatedImage: ["photo", "picture", "media", "pic", "img", "thumbnail", "hero image"],
+  SimulatedButton: ["cta", "btn", "action", "submit"],
+  SimulatedTextInput: ["field", "textbox", "text field", "form field"],
+  SimulatedMultilineInput: ["textarea", "multiline", "paragraph input"],
+  SimulatedDataTable: ["grid", "spreadsheet", "rows", "data grid"],
+  SimulatedStatCard: ["kpi", "metric", "stat", "number"],
+  SimulatedDropdown: ["select", "picker", "menu"],
+  SimulatedComboBox: ["autocomplete", "typeahead", "search select"],
+  SimulatedCheckbox: ["tickbox", "check"],
+  SimulatedSwitch: ["toggle"],
+  SimulatedSearchbox: ["search", "filter", "find"],
+  SimulatedDatePicker: ["calendar", "date"],
+  SimulatedNavDrawer: ["menu", "navigation", "side nav"],
+  SimulatedTabs: ["segments", "tab bar"],
+  SimulatedAvatar: ["profile", "user", "person"],
+  SimulatedBadge: ["tag", "chip", "status label"],
+  SimulatedPill: ["chip", "tag"],
+  Alert: ["notification", "banner", "toast", "message"],
+  SimulatedTitle: ["heading", "headline", "h1", "h2", "title"],
+  SimulatedProgress: ["progress bar", "loading", "loader"],
+  SimulatedSkeleton: ["loading", "placeholder", "shimmer"],
+  HighchartLine: ["graph", "trend", "line graph"],
+  HighchartColumn: ["bar chart", "graph", "bars"],
+  HighchartBar: ["bar chart", "graph"],
+  HighchartPie: ["pie", "share"],
+  HighchartDonut: ["donut", "doughnut", "ring chart"],
+};
+
 /* ── Semantic sub-categories for the body-zone tile grid ──
    Used by ComponentLibrary to break ~45 tiles into expand/collapse
    accordions so users don't scroll an endless wall. Zone-specific

@@ -11,6 +11,7 @@ import {
 } from "@/store/useBuilder";
 import {
   LIBRARY_BLUEPRINTS,
+  SEARCH_ALIASES,
   TYPE_FIELDS,
   LIBRARY_CATEGORY_ORDER,
   categoryFor,
@@ -1032,7 +1033,12 @@ function LibraryBrowser() {
       body: [], header: [], sidebar: [], footer: [],
     };
     for (const bp of LIBRARY_BLUEPRINTS) {
-      if (q && !bp.label.toLowerCase().includes(q) && !bp.type.toLowerCase().includes(q)) continue;
+      if (
+        q &&
+        !bp.label.toLowerCase().includes(q) &&
+        !bp.type.toLowerCase().includes(q) &&
+        !(SEARCH_ALIASES[bp.type] ?? []).some((a) => a.includes(q))
+      ) continue;
       const zone = zoneForType(bp.type);
       groups[zone].push(bp);
     }
