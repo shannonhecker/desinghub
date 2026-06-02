@@ -121,6 +121,14 @@ Owner ask 2026-06-02; blocked on the 4 screenshots being re-shared.
 - **Composer (cross-cutting):** always bottom-docked; centered only on the empty state, then drops to bottom on first message (one component, two positions). Mode/action controls live *inside* the composer footer, not a top toolbar. Streaming = in-place shimmer, never a layout change.
 - **Watch-out:** Gemini removing visible chips hurt discoverability — if chips leave the bar, replace that discoverability (empty-state starter-card feed, or in-response follow-ups).
 
+### 4.3 Floating / collapsible chat in edit + preview mode — QUEUED (owner ask 2026-06-02)
+Once past onboarding and actively building, the 3-panel layout (chat + canvas + inspector) is too squashed, and the chat is no longer the primary action — the canvas is. So:
+- [ ] In **edit + preview** mode, detach the composer from its fixed panel and make it **float** over the canvas.
+- [ ] Let it **collapse to a corner** (FAB-style bubble), expandable on demand, freeing the squashed panel space for the canvas/inspector.
+- [ ] Keep onboarding / empty state with the chat centered as the primary surface (per 4.2); float + collapse applies only once editing begins.
+- **Relation:** extends the 4.2 composer work (the "composer position by workflow depth" finding: center-stage when chat is primary, demoted once the canvas is). Design alongside the chatbot-polish plan.
+- **Design Qs for the build pass:** which corner + default state (collapsed vs expanded); whether "preview" here means the side-by-side preview within edit vs present mode (already chat-free); keyboard access + reduced-motion for the collapse; does it dock/undock or always float.
+
 ---
 
 ## File Structure
