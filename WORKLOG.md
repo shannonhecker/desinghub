@@ -128,6 +128,32 @@ Once past onboarding and actively building, the 3-panel layout (chat + canvas + 
 - [ ] Keep onboarding / empty state with the chat centered as the primary surface (per 4.2); float + collapse applies only once editing begins.
 - **Relation:** extends the 4.2 composer work (the "composer position by workflow depth" finding: center-stage when chat is primary, demoted once the canvas is). Design alongside the chatbot-polish plan.
 - **Design Qs for the build pass:** which corner + default state (collapsed vs expanded); whether "preview" here means the side-by-side preview within edit vs present mode (already chat-free); keyboard access + reduced-motion for the collapse; does it dock/undock or always float.
+- **Status 2026-06-02:** SHIPPED as a corner re-open FAB (PR #246) leveraging the existing `chatOpen`/`toggleChat` collapse; full float-over-canvas overlay deferred as optional. (4.1 #241, hover #242, 4.2 cards #244, 4.3 stepwise #245 + FAB #246 all merged + live.)
+
+### 4.4 Component / config panel — QUEUED (owner ask 2026-06-02; "all three, sequenced")
+The config-panel editing path is pillar #1's other input mode (the prompt side shipped as 4.2). Three sub-items:
+- [ ] **4.4a Polish the panel UX** — spacing, grouping, hover/focus consistency (reuse the unified pill treatment from #242), discoverability, search.
+- [ ] **4.4b Config-panel editing as a peer to prompt** — make "edit from the configuration panel" a first-class input mode alongside chat, same realtime preview.
+- [ ] **4.4c Real DS components in the panel** — the panel lists + inserts the REAL official DS components (not Simulated*), so what you drag in matches what exports. **Depends on Phase 5.**
+
+---
+
+## Phase 5 — Real DS API (goal pillar #5 + #4) — PLAN (5-agent audit, 2026-06-02)
+
+**Goal:** every component / token / pattern from the real official DS API; download runnable code / SVG / Figma; UI Kit + builder share one source.
+
+**Audit verdict (current state):**
+- **Export = REAL, largely met.** `reactExporter` is registry-first (`componentApiRegistry.blockToRealJsx` + `collectImports`) → emits real `@salt-ds` / `@mui` / `@fluentui` / `@carbon` imports + JSX, with an *honest* generic-markup fallback (no fabricated APIs). Coverage 89.7% (175/195 block×DS): M3/Fluent 95%, Salt 92%, uoaui 87%, Carbon 79%. React + Vite exports build-runnable; charts emit runnable Highcharts.
+- **Live preview = SIMULATED.** `ComponentRenderer.tsx` renders ~43 `Simulated*` placeholders (CSS-class mimics + `--ds-*` tokens), NOT the installed packages. The registry's `toJsx` emits **strings** (code), so it can't directly render elements.
+- **UI Kit (route /) renders REAL components** (`getDemoComponent` from `src/data/<ds>/*-documentation.jsx`) but is INDEPENDENT of the registry — so "UI Kit + builder share code" isn't yet true.
+- Packages installed: Salt, MUI, Fluent, `@carbon/styles`. **Missing: `@carbon/react`.**
+
+**Plan (by leverage / risk):**
+- [ ] **P5.1 Install `@carbon/react`** (quick, low-risk): pins the version so exported Carbon projects npm-install cleanly; prepares preview-real-render.
+- [ ] **P5.2 Close registry coverage gaps** where real components exist (Carbon Avatar/Title/…, uoaui); audit uoaui `.a-*` class surface vs the actual stylesheet.
+- [ ] **P5.3 Preview renders real DS components** (the defining gap, HIGH-RISK architecture). Options: (a) iframe / shadow-DOM scoping to contain Fluent/Carbon global CSS resets + avoid hydration mismatch; (b) a parallel element-renderer (block → real React element) shared by builder preview AND UI Kit. **Owner decision needed.**
+- [ ] **P5.4 UI Kit ↔ registry bridge** (the "shared code" pillar) — both surfaces consume one source. Depends on P5.3.
+- Pin `@salt-ds/lab` in the vite exporter VERSION_MAP (currently "latest"); Figma export requires Preview mounted (guard).
 
 ---
 
