@@ -77,8 +77,27 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
       return `${indent}<div className="tabs">\n${((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button className="tab">${jsxText(t.trim())}</button>`).join("\n")}\n${indent}</div>`;
     case "SimulatedAccordion":
       return `${indent}<details className="accordion">\n${indent}  <summary>${jsxText(p.title, "Section")}</summary>\n${indent}  <p>${jsxText(p.content)}</p>\n${indent}</details>`;
-    case "SimulatedAvatar":
+    case "SimulatedAvatar": {
+      /* Emit the real photo when a stock/avatar src is set (templates now
+         default avatars to real images); fall back to initials otherwise. */
+      const avSrc = typeof p.src === "string" ? p.src.trim() : "";
+      if (avSrc) {
+        return `${indent}<img className="avatar avatar-${slugSize(p.size)}" src="${jsxAttr(avSrc)}" alt="${jsxAttr(p.alt ?? p.initials ?? "Avatar")}" loading="lazy" />`;
+      }
       return `${indent}<div className="avatar avatar-${slugSize(p.size)}">${jsxText(p.initials, "?")}</div>`;
+    }
+    case "SimulatedImage": {
+      /* P0: templates wire stock-image URLs into `src`; without this case the
+         block fell through to the empty placeholder div and every picture was
+         dropped from exported code. Emit a real <img> (src/alt escaped via
+         jsxAttr → injection-safe); keep a labelled placeholder when no src. */
+      const imgSrc = typeof p.src === "string" ? p.src.trim() : "";
+      if (!imgSrc) {
+        return `${indent}<div className="sim-image-placeholder" role="img" aria-label="${jsxAttr(p.alt ?? "Image")}" />`;
+      }
+      const cap = p.caption ? `\n${indent}  <figcaption>${jsxText(p.caption)}</figcaption>` : "";
+      return `${indent}<figure className="sim-image">\n${indent}  <img src="${jsxAttr(imgSrc)}" alt="${jsxAttr(p.alt ?? "Image")}" loading="lazy" />${cap}\n${indent}</figure>`;
+    }
     case "SimulatedBreadcrumb":
       return `${indent}<nav className="breadcrumb">\n${((p.pathCsv as string) || "Home").split(",").map((seg: string, i: number, arr: string[]) => `${indent}  <span>${jsxText(seg.trim())}</span>${i < arr.length - 1 ? " / " : ""}`).join("\n")}\n${indent}</nav>`;
     case "SimulatedDialog":
@@ -121,9 +140,15 @@ export function exportReact(): string {
   /* Real DS-component imports for the blocks the registry covers. When present
      we emit the real provider + theme + a wrapped tree; otherwise we keep the
      legacy commented provider + generic markup (graceful fallback for DSs not
-     yet seeded in the registry). */
-  const allTypes = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks].map((b) => b.type);
-  const componentImports = collectImports(system, allTypes);
+     yet seeded in the registry).
+
+     Pass the FULL block objects (type + props), not just types: prop-dependent
+     import specs (e.g. Fluent/Carbon NavItem, whose icon import is chosen from
+     `props.icon`) must see real props, or every block resolves to the default
+     icon's import — leaving the JSX referencing un-imported names (TS2304). */
+  const allBlocks = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks];
+  const allTypes = allBlocks.map((b) => b.type);
+  const componentImports = collectImports(system, allBlocks);
   const real = componentImports.length > 0;
   const charts = hasCharts(allTypes);
 
