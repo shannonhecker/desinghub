@@ -129,6 +129,8 @@ export function interfaceTypeToTemplateId(
       return "analytics-dashboard";
     case "form":
       return "settings-page";
+    case "landing":
+      return "landing-page";
     default:
       return null;
   }

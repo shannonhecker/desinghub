@@ -1089,11 +1089,17 @@ export function BuilderCanvas({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dashSidebarWidth, setDashSidebarWidth] = useState(180);
   const handleSidebarToggle = useCallback(() => setSidebarCollapsed((v) => !v), []);
+  /* Full-width support: a template/layout with no sidebar blocks (landing,
+     ecommerce, blog, portfolio — top-nav marketing pages) should render
+     full-width, not show an empty rail. Dropping a sidebar block from the
+     library re-populates sidebarBlocks and the rail returns. */
+  const sidebarBlockCount = useBuilder((s) => s.sidebarBlocks.length);
 
   /* Responsive shells compact the header + drop the sidebar on the
-     mobile device; the standalone pop-out stays full desktop layout. */
+     mobile device; the standalone pop-out stays full desktop layout.
+     Also hidden when there are no sidebar blocks (full-width layouts). */
   const compact = responsive && isMobile;
-  const showSidebar = !(responsive && isMobile);
+  const showSidebar = !(responsive && isMobile) && sidebarBlockCount > 0;
 
   const dashboard = isCodeView ? (
     <CodeViewer blocks={blocks} />
