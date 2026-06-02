@@ -3717,6 +3717,10 @@
   flex-direction: column;
   align-items: center;
 }
+/* During the active guided setup, the stepwise flow IS the input surface,
+   so hide the free-text composer to avoid a redundant second input.
+   "Skip setup, I'll describe it myself" returns the user to the composer. */
+.chat-input-bar-hidden { display: none; }
 
 /* ── Click-to-edit scope chip ──
    Shown above the chat input whenever a block is selected on the canvas.
