@@ -1404,8 +1404,10 @@ export function ChatPanel() {
         )}
       </div>
 
-      {/* Input - always pinned to bottom, active from message 1 */}
-      <div className="chat-input-bar">
+      {/* Input - pinned to bottom, active from message 1. Hidden during the
+          active guided setup (the stepwise flow IS the input then), so the
+          guided flow replaces the composer instead of duplicating it. */}
+      <div className={`chat-input-bar${!hasMessages && wizardStep !== "done" ? " chat-input-bar-hidden" : ""}`}>
         {/* Scope chip - shown when a block is selected on the canvas, so
             the user has a visible confirmation that their next message
             will be scoped to that element. */}
