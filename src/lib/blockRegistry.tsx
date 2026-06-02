@@ -2,6 +2,12 @@
 
 import React from "react";
 import { useBuilder, type Block } from "@/store/useBuilder";
+import {
+  SAMPLE_IMAGES,
+  SAMPLE_IMAGE_CATEGORIES,
+  getImagesByCategory,
+  type SampleImageCategory,
+} from "@/lib/sampleImages";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -91,11 +97,110 @@ type FieldDef =
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
   | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string }
+  /** Stock-image picker: a categorized grid of verified stock photos +
+     a paste-your-own-URL input. Writes a URL to `propKey` (the block's
+     `src`). */
+  | { type: "image"; propKey: string; label: string }
   | { type: "static"; text: string }
   /** Custom action button rendered inline inside the inspector.
      Used by LayoutGroup's "Ungroup" affordance. The action reads
      the block's location in the store and mutates accordingly. */
   | { type: "action"; label: string; action: "ungroup" };
+
+/* ── Stock-image picker ──
+   Categorized grid of HTTP-200-verified stock photos (from
+   src/lib/sampleImages.ts) plus a paste-your-own-URL input. Clicking a
+   thumbnail writes that image's URL onto the block's `src` prop; the
+   selected thumbnail gets a ring. URLs resolve anywhere (no API key), so
+   exported code emits <img src="https://images...."> that just works. */
+const CATEGORY_LABELS: Record<SampleImageCategory, string> = {
+  "product-ui": "Product",
+  people: "People",
+  "office-business": "Office",
+  "nature-lifestyle": "Nature",
+  "abstract-texture": "Abstract",
+};
+
+function ImagePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  /* Default the open tab to the category of the current image, else the
+     first category. */
+  const initialCat =
+    SAMPLE_IMAGES.find((img) => img.url === value)?.category ??
+    SAMPLE_IMAGE_CATEGORIES[0];
+  const [activeCat, setActiveCat] = React.useState<SampleImageCategory>(initialCat);
+  const images = getImagesByCategory(activeCat);
+
+  return (
+    <div className="img-picker">
+      <div className="img-picker-tabs" role="tablist" aria-label="Image categories">
+        {SAMPLE_IMAGE_CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            role="tab"
+            aria-selected={cat === activeCat}
+            className={`img-picker-tab${cat === activeCat ? " is-active" : ""}`}
+            onClick={() => setActiveCat(cat)}
+          >
+            {CATEGORY_LABELS[cat]}
+          </button>
+        ))}
+      </div>
+
+      <div className="img-picker-grid">
+        {images.map((img) => {
+          const selected = img.url === value;
+          return (
+            <button
+              key={img.id}
+              type="button"
+              className={`img-picker-tile${selected ? " is-selected" : ""}`}
+              title={img.alt}
+              aria-label={img.alt}
+              aria-pressed={selected}
+              onClick={() => onChange(img.url)}
+            >
+              <img src={img.url} alt="" loading="lazy" />
+              {selected ? (
+                <span className="img-picker-check material-symbols-outlined" aria-hidden="true">
+                  check
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <label className="img-picker-url-label">
+        Or paste your own URL
+        <input
+          className="inspector-input img-picker-url"
+          type="url"
+          inputMode="url"
+          placeholder="https://example.com/photo.jpg"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </label>
+
+      {value ? (
+        <button
+          type="button"
+          className="img-picker-clear"
+          onClick={() => onChange("")}
+        >
+          Clear image
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 /* ── Generic SchemaFields renderer ── */
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
@@ -146,6 +251,15 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
               </InspectorField>
             );
           }
+          case "image":
+            return (
+              <InspectorField key={i} label={f.label}>
+                <ImagePicker
+                  value={(props[f.propKey] as string) ?? ""}
+                  onChange={(url) => set({ [f.propKey]: url })}
+                />
+              </InspectorField>
+            );
           case "static":
             return <div key={i} style={{ padding: "4px 0", fontSize: 11, opacity: 0.5 }}>{f.text}</div>;
           case "action":
@@ -266,7 +380,8 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedCard", label: "Card", icon: "credit_card", defaults: { title: "New Card", content: "Card content goes here." }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "textarea", propKey: "content", label: "Content" },
   ]},
-  { type: "SimulatedImage", label: "Image", icon: "image", defaults: { alt: "Image", ratio: "16:9", caption: "" }, fields: [
+  { type: "SimulatedImage", label: "Image", icon: "image", defaults: { alt: "Image", ratio: "16:9", caption: "", src: "" }, fields: [
+    { type: "image", propKey: "src", label: "Image" },
     { type: "text", propKey: "alt", label: "Alt text" },
     { type: "select", propKey: "ratio", label: "Aspect ratio", options: [{ value: "16:9", label: "16:9 (wide)" }, { value: "4:3", label: "4:3" }, { value: "1:1", label: "1:1 (square)" }, { value: "3:2", label: "3:2" }, { value: "21:9", label: "21:9 (ultrawide)" }] },
     { type: "text", propKey: "caption", label: "Caption" },
@@ -300,7 +415,8 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedProgress", label: "Progress Bar", icon: "percent", defaults: { label: "Uploading assets...", value: 50 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
-  { type: "SimulatedAvatar", label: "Avatar", icon: "account_circle", defaults: { initials: "AB", size: "md", presence: "available" }, fields: [
+  { type: "SimulatedAvatar", label: "Avatar", icon: "account_circle", defaults: { initials: "AB", size: "md", presence: "available", src: "" }, fields: [
+    { type: "image", propKey: "src", label: "Photo (optional)" },
     { type: "text", propKey: "initials", label: "Initials", placeholder: "AB" },
     { type: "select", propKey: "size", label: "Size", options: [{ value: "sm", label: "Small" }, { value: "md", label: "Medium" }, { value: "lg", label: "Large" }] },
     { type: "select", propKey: "presence", label: "Presence", options: PRESENCE_OPTIONS },

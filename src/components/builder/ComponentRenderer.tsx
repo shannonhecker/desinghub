@@ -908,15 +908,19 @@ function SimulatedImageBlock({
   alt = "Image",
   ratio = "16:9",
   caption = "",
+  src = "",
 }: {
   system: DesignSystem;
   alt?: string;
   ratio?: string;
   caption?: string;
+  src?: string;
 }) {
-  /* Token-driven placeholder; props (alt / ratio / caption) are edited via
-     the inspector fields, so no inline-edit branch is needed here. */
-  return <SimulatedImage system={system} alt={alt} ratio={ratio} caption={caption} />;
+  /* Props (alt / ratio / caption / src) are edited via the inspector
+     fields, so no inline-edit branch is needed here. When `src` is set
+     (via the stock-image picker) a real <img> fills the frame; otherwise
+     the token-driven placeholder icon shows. */
+  return <SimulatedImage system={system} alt={alt} ratio={ratio} caption={caption} src={src} />;
 }
 
 function SimulatedTextInputBlock({
@@ -1316,8 +1320,9 @@ function SimulatedAvatarBlock({
   const initials = (block?.props.initials as string) ?? "AB";
   const size = (block?.props.size as "sm" | "md" | "lg") ?? "md";
   const presence = (block?.props.presence as "available" | "busy" | "away" | "offline" | undefined) || undefined;
+  const src = (block?.props.src as string) || undefined;
 
-  return <SimulatedAvatar system={system} initials={initials} size={size} presence={presence} />;
+  return <SimulatedAvatar system={system} initials={initials} size={size} presence={presence} src={src} />;
 }
 
 /* ── Batch 3: Navigation & Layout block renderers ── */
