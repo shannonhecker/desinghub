@@ -1437,7 +1437,8 @@
   border-radius: 9999px;
   background: var(--b-glass);
   border: 1px solid var(--b-border);
-  -webkit-backdrop-filter: blur(8px);
+  /* UNPREFIXED only — lightningcss drops the standard prop if both are
+     authored (see feedback_lightningcss_backdrop_filter + presentStage test). */
   backdrop-filter: blur(8px);
 }
 .chat-controls-btn {
@@ -1481,7 +1482,7 @@
   border: 1px solid var(--b-border);
   border-radius: var(--b-radius-lg);
   background: var(--b-glass);
-  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  /* UNPREFIXED only (lightningcss safe) — see .chat-controls note above. */
   backdrop-filter: blur(20px) saturate(1.3);
   box-shadow: var(--b-shadow), 0 0 0 1px var(--b-accent-glow);
   transform-origin: bottom left;
