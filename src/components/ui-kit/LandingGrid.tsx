@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { useDesignHub } from "@/store/useDesignHub";
-import type { SystemId } from "@/store/useDesignHub";
+import { useDesignHub, type SystemId } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getComponents, getCategories, getSystemInfo, getPreviews } from "@/data/registry";
 import { publicAssetUrl } from "@/lib/sampleImages";
