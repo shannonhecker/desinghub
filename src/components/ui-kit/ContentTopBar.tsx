@@ -18,8 +18,6 @@ export function ContentTopBar() {
   const selectedComponent = useDesignHub((s) => s.selectedComponent);
   const setSelectedComponent = useDesignHub((s) => s.setSelectedComponent);
   const setActiveSystem = useDesignHub((s) => s.setActiveSystem);
-  const sidebarOpen = useDesignHub((s) => s.sidebarOpen);
-  const toggleSidebar = useDesignHub((s) => s.toggleSidebar);
   const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
 
@@ -43,20 +41,9 @@ export function ContentTopBar() {
       height: t.scale.tabH, flexShrink: 0,
       background: "transparent",
     }}>
-      <button
-        onClick={toggleSidebar}
-        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        style={{
-          background: "none", border: "none", cursor: "pointer", padding: 4,
-          display: "flex", alignItems: "center", color: t.fg2, borderRadius: 4,
-          transition: "color 150ms",
-        }}
-      >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>
-          {sidebarOpen ? "chevron_left" : "menu"}
-        </span>
-      </button>
-
+      {/* Hamburger removed (owner): the panel toggle lives on the rail section
+          buttons + the panel-header close chevron, so the top bar is just the
+          breadcrumb now. */}
       <nav style={{ display: "flex", alignItems: "center", gap: t.scale.gap, fontSize: t.scale.navF - 1, fontFamily: t.font, position: "relative" }}>
         {/* Narrow viewports: DS name becomes a dropdown (header SystemSwitcher is hidden below 768px).
             Wide viewports: keep plain text behaviour — SystemSwitcher covers DS nav. */}
