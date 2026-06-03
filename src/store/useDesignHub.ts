@@ -150,7 +150,10 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',
-  sidebarOpen: true,
+  /* Collapsed by default (owner): the icon-rail is the always-visible primary
+     nav; the secondary panel opens on demand (rail section button / hamburger).
+     Ephemeral — not persisted, so every session lands rail-only. */
+  sidebarOpen: false,
 
   /* Switch DS while PRESERVING the user's chosen mode + density: map the
      carried globalMode/globalDensity into the target DS's own scale so the

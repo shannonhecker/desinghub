@@ -15,7 +15,7 @@ function resetStore() {
     selectedComponent: null,
     searchQuery: "",
     activeTab: "preview",
-    sidebarOpen: true,
+    sidebarOpen: false,
   });
 }
 
@@ -67,11 +67,11 @@ describe("useDesignHub", () => {
   });
 
   it("toggleSidebar flips sidebarOpen", () => {
-    expect(useDesignHub.getState().sidebarOpen).toBe(true);
-    useDesignHub.getState().toggleSidebar();
     expect(useDesignHub.getState().sidebarOpen).toBe(false);
     useDesignHub.getState().toggleSidebar();
     expect(useDesignHub.getState().sidebarOpen).toBe(true);
+    useDesignHub.getState().toggleSidebar();
+    expect(useDesignHub.getState().sidebarOpen).toBe(false);
   });
 
   it("setSelectedComponent resets activeTab to preview", () => {
