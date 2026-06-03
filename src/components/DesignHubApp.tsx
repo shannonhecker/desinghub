@@ -41,11 +41,18 @@ export function DesignHubApp() {
   const [panelSection, setPanelSection] = React.useState<PanelSection>("components");
   const searchWrapRef = React.useRef<HTMLDivElement | null>(null);
 
-  /* Open the panel to a given section. If the panel is closed, open it. */
+  /* Open the panel to a section — or CLOSE it if that section is already open.
+     The rail button is now the open AND close affordance (the redundant
+     ContentTopBar hamburger was removed), with a panel-header chevron as a
+     second close path. */
   const openPanel = React.useCallback((section: PanelSection) => {
+    if (store.sidebarOpen && panelSection === section) {
+      store.toggleSidebar();
+      return;
+    }
     setPanelSection(section);
     if (!store.sidebarOpen) store.toggleSidebar();
-  }, [store]);
+  }, [store, panelSection]);
 
   /* When the rail opens the panel on "search", move focus into the search
      field so the keyboard path matches the visual intent (WCAG 2.4.3). */
@@ -239,6 +246,8 @@ export function DesignHubApp() {
           className="uikit-rail"
           style={{
             ["--dh-focus-ring" as string]: t.focusRing,
+            /* Subtle hover fill for the now-borderless rail buttons. */
+            ["--dh-rail-hover" as string]: t.bg2,
             borderRight: `1px solid ${t.borderSubtle}`,
             background: railBg,
             transition: "background 200ms",
@@ -266,7 +275,10 @@ export function DesignHubApp() {
             /* Carbon stays flat (radius 0, no shadow) to honour the IBM
                aesthetic; every other DS uses the rail-button curve token. */
             const railRadius = isCarbon ? 0 : "var(--dh-curve-sm, 6px)";
-            const sectionBtn = { color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` };
+            /* Borderless (owner): no box. Inactive buttons carry only a colour;
+               the transparent fill + hover tint come from CSS (.uikit-rail-btn
+               + --dh-rail-hover) since an inline bg would block the CSS :hover. */
+            const sectionBtn = { color: t.fg2 };
             return (
               <>
                 <div className="uikit-rail-group" role="group" aria-label="Switch design system">
@@ -286,8 +298,9 @@ export function DesignHubApp() {
                           borderRadius: railRadius,
                           fontFamily: t.font,
                           color: isActive ? t.accentFg : t.fg2,
-                          background: isActive ? t.accent : "transparent",
-                          border: isActive ? "1px solid transparent" : `1px solid ${t.borderSubtle}`,
+                          /* Borderless: active = accent fill; inactive = no inline
+                             bg so the CSS transparent + hover tint apply. */
+                          background: isActive ? t.accent : undefined,
                         }}
                       >
                         <span className="uikit-rail-glyph" aria-hidden="true" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>
@@ -299,19 +312,9 @@ export function DesignHubApp() {
 
                 <div className="uikit-rail-divider" style={{ background: t.borderSubtle }} aria-hidden="true" />
 
+                {/* Overview button removed (owner) — the brand mark at the rail
+                    head already returns to the overview/landing. */}
                 <div className="uikit-rail-group" role="group" aria-label="Sections">
-                  <button
-                    type="button"
-                    className="uikit-rail-btn"
-                    aria-label="Overview"
-                    aria-pressed={store.selectedComponent === null}
-                    title="Overview"
-                    onClick={() => store.setSelectedComponent(null)}
-                    style={{ borderRadius: railRadius, ...sectionBtn }}
-                  >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>home</span>
-                    <span className="uikit-rail-label">Overview</span>
-                  </button>
                   <button
                     type="button"
                     className="uikit-rail-btn"
@@ -367,10 +370,12 @@ export function DesignHubApp() {
                   </button>
                   <Link
                     href={builderHref}
-                    className="uikit-rail-btn"
+                    className="uikit-rail-btn uikit-rail-builder"
                     aria-label="Open Builder"
                     title="Open Builder"
-                    style={{ borderRadius: railRadius, color: t.accentFg, background: t.accent, border: "1px solid transparent", textDecoration: "none" }}
+                    /* Owner: the Builder action reads the SAME across all 5 DS
+                       (not DS-tinted) — pin it to the uoaui purple AI gradient. */
+                    style={{ borderRadius: railRadius, color: "#ffffff", background: "var(--dh-builder-grad, linear-gradient(135deg, #9D71D2, #7343B0))", border: "none", textDecoration: "none" }}
                   >
                     <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>auto_awesome</span>
                     <span className="uikit-rail-label">Builder</span>
@@ -397,8 +402,26 @@ export function DesignHubApp() {
               display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
             }}
           >
-            <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.borderSubtle}` }}>
-              <SidebarDSBrand />
+            {/* Panel header: a top-left close chevron (owner) + the DS brand.
+                Closing the panel also lives on the rail section button (toggle). */}
+            <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.borderSubtle}`, display: "flex", alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={() => store.toggleSidebar()}
+                aria-label="Close panel"
+                title="Close panel"
+                style={{
+                  flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "none", border: "none", cursor: "pointer", color: t.fg2,
+                  padding: "12px 4px 12px 16px", borderRadius: 6,
+                  ["--dh-focus-ring" as string]: t.focusRing,
+                }}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>chevron_left</span>
+              </button>
+              <div style={{ flex: 1, minWidth: 0, marginLeft: -12 }}>
+                <SidebarDSBrand />
+              </div>
             </div>
             {/* #6 panel rhythm: even ~8px inter-section gaps + a single 24px
                 left edge shared by every section (brand / controls / search /
@@ -416,7 +439,8 @@ export function DesignHubApp() {
           </aside>
         )}
 
-        {/* Main - ContentTopBar (hamburger + breadcrumb) always at top */}
+        {/* Main - ContentTopBar (breadcrumb only; the panel toggle moved to the
+            rail section buttons + the panel-header close chevron). */}
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>

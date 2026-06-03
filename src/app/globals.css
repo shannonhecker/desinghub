@@ -493,6 +493,10 @@ a { color: inherit; text-decoration: none; }
    --dh-focus-ring custom property, same pattern as .uikit-section-toggle),
    and the panel slide transition.
    ═══════════════════════════════════════════ */
+/* Cross-DS Builder accent (owner): the Open Builder action reads the same on
+   every design system, so it uses the uoaui purple AI gradient rather than the
+   active DS accent. Defined at :root so it resolves inside every DS theme scope. */
+:root { --dh-builder-grad: linear-gradient(135deg, #9d71d2, #7343b0); }
 .uikit-rail {
   display: flex;
   flex-direction: column;
@@ -551,6 +555,11 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   line-height: 1;
   text-align: center;
+  /* Borderless: suppress the native button border (the inline 1px box was
+     removed), transparent by default; the active DS button gets an inline
+     accent fill, inactive buttons get the hover tint below. */
+  border: none;
+  background: transparent;
   transition:
     background var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
     color var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -573,7 +582,10 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.1;
 }
 .uikit-rail-btn:hover {
-  filter: brightness(1.06);
+  /* Inactive (transparent) buttons pick up a subtle fill; the active accent +
+     the Builder gradient are inline so they win here and just brighten. */
+  background: var(--dh-rail-hover, rgba(128, 128, 128, 0.12));
+  filter: brightness(1.04);
 }
 .uikit-rail-btn:focus-visible {
   outline: 2px solid var(--dh-focus-ring, currentColor);
