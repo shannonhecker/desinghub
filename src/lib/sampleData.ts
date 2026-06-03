@@ -212,6 +212,59 @@ export const authContent = {
   oauth: ["Continue with Google", "Continue with GitHub"],
 };
 
+/* ── CLUSTER-B ENRICHMENT (2026-06-03 template realism) ─────────────────── */
+
+/** Daily active users, last 14 days (analytics 2nd chart row). */
+export const analyticsDau: ChartSeries = {
+  categories: ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14"],
+  series: [{ name: "DAU", data: [8200, 8600, 9100, 8900, 9400, 9800, 10200, 9900, 10600, 11100, 10800, 11500, 12100, 12800] }],
+};
+
+/** Sessions by device (analytics donut). */
+export const analyticsByDevice: DonutSlice[] = [
+  { name: "Desktop", y: 58 },
+  { name: "Mobile", y: 34 },
+  { name: "Tablet", y: 8 },
+];
+
+/** Contacts added, last 30 days by week (CRM chart). */
+export const crmContactsAdded: ChartSeries = {
+  categories: ["Wk 1", "Wk 2", "Wk 3", "Wk 4"],
+  series: [{ name: "Added", data: [42, 51, 47, 63] }],
+};
+
+/** Pipeline by status (CRM donut). */
+export const crmByStatus: DonutSlice[] = [
+  { name: "Active", y: 58 },
+  { name: "Lead", y: 30 },
+  { name: "Churned", y: 12 },
+];
+
+/** Connected integrations (settings page enrichment). */
+export interface IntegrationItem {
+  name: string;
+  desc: string;
+  connected: boolean;
+}
+export const settingsIntegrations: IntegrationItem[] = [
+  { name: "Slack", desc: "Post alerts and daily summaries to a channel.", connected: true },
+  { name: "Google Analytics", desc: "Sync measurement IDs and import goals.", connected: false },
+  { name: "GitHub", desc: "Link commits and deploys to releases.", connected: false },
+];
+
+/** Resource / article cards with imagery (landing page enrichment). */
+export interface ResourceCard {
+  title: string;
+  body: string;
+  /** id into sampleImages SAMPLE_IMAGES. */
+  imageId: string;
+}
+export const landingResources: ResourceCard[] = [
+  { title: "How Initech cut reporting time 90%", body: "A field guide to event-based analytics for product teams.", imageId: "office-business-colleagues-at-laptop" },
+  { title: "The 3 metrics that predict churn", body: "Stop drowning in dashboards. Track what moves the needle.", imageId: "office-business-planning-meeting" },
+  { title: "Ship with evidence, not opinions", body: "How modern teams turn raw events into decisions.", imageId: "product-ui-marketing-analytics-laptop" },
+];
+
 /* ── lookup helpers ─────────────────────────────────────────────────────── */
 
 export const SAMPLE_DOMAINS: SampleDomain[] = [

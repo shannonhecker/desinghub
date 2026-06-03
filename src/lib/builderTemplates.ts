@@ -16,6 +16,12 @@ import {
   landingPricing,
   landingTestimonials,
   landingRevenueTrend,
+  analyticsDau,
+  analyticsByDevice,
+  crmContactsAdded,
+  crmByStatus,
+  settingsIntegrations,
+  landingResources,
   authContent,
 } from "@/lib/sampleData";
 import { pickImage, getImageById } from "@/lib/sampleImages";
@@ -124,6 +130,9 @@ const analyticsDashboard: BuilderTemplate = {
     /* 2-up supporting row - 6/6 */
     { id: tid("ad-chart-2"), type: "HighchartColumn", props: { chartType: "column", title: "Signups by channel", categories: analyticsSignupsByChannel.categories, series: analyticsSignupsByChannel.series }, layout: { width: "6fr" } },
     { id: tid("ad-chart-3"), type: "HighchartDonut", props: { chartType: "donut", title: "Revenue by plan", seriesData: analyticsRevenueByPlan }, layout: { width: "6fr" } },
+    /* 2nd chart row (Cluster-B "more charts to start with"): DAU trend + device split, 6/6. */
+    { id: tid("ad-chart-4"), type: "HighchartColumn", props: { chartType: "column", title: "Daily active users, last 14 days", categories: analyticsDau.categories, series: analyticsDau.series }, layout: { width: "6fr" } },
+    { id: tid("ad-chart-5"), type: "HighchartDonut", props: { chartType: "donut", title: "Sessions by device", seriesData: analyticsByDevice }, layout: { width: "6fr" } },
     /* Detail table - 12 cols, kept LAST so the granular view follows the KPI + chart overview (canonical reading order) */
     { id: tid("ad-table"), type: "SimulatedDataTable", props: { columns: analyticsOrders.columns, rows: analyticsOrders.rows }, layout: { width: "12fr" } },
   ],
@@ -172,6 +181,15 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: settingsNotifications[1].label, defaultOn: settingsNotifications[1].defaultOn }, layout: { width: "12fr" } },
     { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: settingsNotifications[3].label, defaultOn: settingsNotifications[3].defaultOn }, layout: { width: "12fr" } },
 
+    /* Integrations (Cluster-B: richer, per the Integrations reference — connect
+       cards + a key field with Verify). */
+    { id: tid("sp-t-int"), type: "SimulatedTitle", props: { text: "Integrations", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-int-1"), type: "SimulatedCard", props: { title: settingsIntegrations[0].name, content: settingsIntegrations[0].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-2"), type: "SimulatedCard", props: { title: settingsIntegrations[1].name, content: settingsIntegrations[1].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-3"), type: "SimulatedCard", props: { title: settingsIntegrations[2].name, content: settingsIntegrations[2].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-key"), type: "SimulatedTextInput", props: { label: "API key", placeholder: "sk_live_****************" }, layout: { width: "8fr" } },
+    { id: tid("sp-int-verify"), type: "SimulatedButton", props: { label: "Verify", variant: "secondary" }, layout: { width: "4fr" } },
+
     /* Danger zone - isolated last */
     { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
     { id: tid("sp-alert"), type: "Alert", props: { title: "Delete account", message: "This permanently removes your workspace and cannot be undone.", variant: "error" }, layout: { width: "12fr" } },
@@ -218,6 +236,9 @@ const crmContacts: BuilderTemplate = {
     { id: tid("crm-kpi-1"), type: "SimulatedStatCard", props: { label: crmKpis[0].label, value: crmKpis[0].value, pct: 30 }, layout: { width: "4fr" } },
     { id: tid("crm-kpi-2"), type: "SimulatedStatCard", props: { label: crmKpis[1].label, value: crmKpis[1].value, pct: 74 }, layout: { width: "4fr" } },
     { id: tid("crm-kpi-3"), type: "SimulatedStatCard", props: { label: crmKpis[2].label, value: crmKpis[2].value, pct: 58 }, layout: { width: "4fr" } },
+    /* Pipeline charts (Cluster-B: richer, dashboard-reference): contacts-added trend (8) + status split (4). */
+    { id: tid("crm-chart-1"), type: "HighchartArea", props: { chartType: "area", title: "Contacts added, last 30 days", categories: crmContactsAdded.categories, series: crmContactsAdded.series }, layout: { width: "8fr" } },
+    { id: tid("crm-chart-2"), type: "HighchartDonut", props: { chartType: "donut", title: "Pipeline by status", seriesData: crmByStatus }, layout: { width: "4fr" } },
     /* Main data table - 12 cols, last. columns + rows come from crmContacts so
        resolveCell matches each cell by its header key (Name/Company/Status/...). */
     { id: tid("crm-table"), type: "SimulatedDataTable", props: { columns: crmContactsData.columns, rows: crmContactsData.rows }, layout: { width: "12fr" } },
@@ -253,6 +274,10 @@ const loginFlow: BuilderTemplate = {
     { id: tid("lf-nav-3"), type: "NavItem", props: { label: "Help", icon: "chat", active: false } },
   ],
   body: [
+    /* Hero banner (Cluster-B: the AMU reference pairs a scenic image with the
+       form. A true 50/50 split-card isn't expressible in the 12-col flow grid,
+       so this is a full-width hero banner above the form — flagged for owner. */
+    { id: tid("lf-hero"), type: "SimulatedImage", props: { alt: getImageById("nature-lifestyle-mountain-ridges-haze")?.alt ?? "Sign in to your workspace", ratio: "3:1", caption: "", src: getImageById("nature-lifestyle-mountain-ridges-haze")?.url }, layout: { width: "12fr" } },
     /* Screen 1 - Login (copy + placeholders from the shared authContent set) */
     { id: tid("lf-title"), type: "SimulatedTitle", props: { text: authContent.title, level: "h2" }, layout: { width: "12fr" } },
     { id: tid("lf-sub"), type: "SimulatedTitle", props: { text: authContent.subtitle, level: "h4" }, layout: { width: "12fr" } },
@@ -302,8 +327,8 @@ const landingPage: BuilderTemplate = {
        Copy + hero image come from the shared landingHero set. */
     { id: tid("lp-hero-title"), type: "SimulatedTitle", props: { text: landingHero.headline, level: "h1" }, layout: { width: "7fr" } },
     { id: tid("lp-hero-img"), type: "SimulatedImage", props: { alt: getImageById(landingHero.heroImageId)?.alt ?? "Product preview", ratio: "4:3", caption: "", src: getImageById(landingHero.heroImageId)?.url ?? pickImage("hero").url }, layout: { width: "5fr" } },
-    { id: tid("lp-hero-sub"), type: "SimulatedTitle", props: { text: landingHero.subhead, level: "h4" }, layout: { width: "7fr" } },
-    { id: tid("lp-hero-email"), type: "SimulatedTextInput", props: { label: "", placeholder: "Your work email" }, layout: { width: "5fr" } },
+    { id: tid("lp-hero-sub"), type: "SimulatedTitle", props: { text: landingHero.subhead, level: "h4" }, layout: { width: "12fr" } },
+    { id: tid("lp-hero-email"), type: "SimulatedTextInput", props: { label: "", placeholder: "Your work email" }, layout: { width: "9fr" } },
     { id: tid("lp-hero-btn"), type: "SimulatedButton", props: { label: landingHero.primaryCta, variant: "primary" }, layout: { width: "3fr" } },
     /* Feature trio (from landingFeatures). */
     { id: tid("lp-feat-title"), type: "SimulatedTitle", props: { text: "Built to grow with you", level: "h3" }, layout: { width: "12fr" } },
@@ -319,6 +344,16 @@ const landingPage: BuilderTemplate = {
     { id: tid("lp-quote-title"), type: "SimulatedTitle", props: { text: "What teams are saying", level: "h3" }, layout: { width: "12fr" } },
     { id: tid("lp-quote-1"), type: "SimulatedCard", props: { title: `${landingTestimonials[0].name}, ${landingTestimonials[0].role}`, content: landingTestimonials[0].quote }, layout: { width: "6fr" } },
     { id: tid("lp-quote-2"), type: "SimulatedCard", props: { title: `${landingTestimonials[1].name}, ${landingTestimonials[1].role}`, content: landingTestimonials[1].quote }, layout: { width: "6fr" } },
+    /* Resources / articles (Cluster-B: more quality imagery, TrueBody-ref).
+       An image row (4/4/4) over a caption row (4/4/4) reads as article cards in
+       the flow grid (SimulatedCard has no media slot, so images are siblings). */
+    { id: tid("lp-res-title"), type: "SimulatedTitle", props: { text: "From the blog", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("lp-res-img-1"), type: "SimulatedImage", props: { alt: getImageById(landingResources[0].imageId)?.alt ?? "Article", ratio: "16:9", caption: "", src: getImageById(landingResources[0].imageId)?.url }, layout: { width: "4fr" } },
+    { id: tid("lp-res-img-2"), type: "SimulatedImage", props: { alt: getImageById(landingResources[1].imageId)?.alt ?? "Article", ratio: "16:9", caption: "", src: getImageById(landingResources[1].imageId)?.url }, layout: { width: "4fr" } },
+    { id: tid("lp-res-img-3"), type: "SimulatedImage", props: { alt: getImageById(landingResources[2].imageId)?.alt ?? "Article", ratio: "16:9", caption: "", src: getImageById(landingResources[2].imageId)?.url }, layout: { width: "4fr" } },
+    { id: tid("lp-res-1"), type: "SimulatedCard", props: { title: landingResources[0].title, content: landingResources[0].body }, layout: { width: "4fr" } },
+    { id: tid("lp-res-2"), type: "SimulatedCard", props: { title: landingResources[1].title, content: landingResources[1].body }, layout: { width: "4fr" } },
+    { id: tid("lp-res-3"), type: "SimulatedCard", props: { title: landingResources[2].title, content: landingResources[2].body }, layout: { width: "4fr" } },
     /* Trend chart (from landingRevenueTrend). */
     { id: tid("lp-chart-title"), type: "SimulatedTitle", props: { text: "Steady, predictable growth", level: "h3" }, layout: { width: "12fr" } },
     { id: tid("lp-chart"), type: "HighchartArea", props: { chartType: "area", title: "Revenue, last 6 months", categories: landingRevenueTrend.categories, series: landingRevenueTrend.series }, layout: { width: "12fr" } },
