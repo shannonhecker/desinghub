@@ -180,6 +180,15 @@ const buildCSS = (T) => `
 .a-input:focus { border-bottom-color:${T.accent}; }
 .a-input::placeholder { color:${T.fg3}; }
 .a-input:disabled { opacity:0.35; cursor:default; }
+/* Validation status — wrapper class (.a-input-wrap.a-input-error/-warning/-success)
+   recolours the underline + label using the glass status tokens, keeping the flat
+   bottom-border aesthetic. Status colour overrides hover/focus for honest state. */
+.a-input-error .a-input, .a-input-error .a-input:hover, .a-input-error .a-input:focus { border-bottom-color:${T.dangerFg}; }
+.a-input-error .a-input-label { color:${T.dangerFg}; }
+.a-input-warning .a-input, .a-input-warning .a-input:hover, .a-input-warning .a-input:focus { border-bottom-color:${T.warningFg}; }
+.a-input-warning .a-input-label { color:${T.warningFg}; }
+.a-input-success .a-input, .a-input-success .a-input:hover, .a-input-success .a-input:focus { border-bottom-color:${T.successFg}; }
+.a-input-success .a-input-label { color:${T.successFg}; }
 
 /* === CHECKBOX === */
 .a-checkbox { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-family:${FONT}; font-size:13px; color:${T.fg}; outline:none; }
@@ -200,6 +209,9 @@ const buildCSS = (T) => `
 .a-switch .a-sw-thumb { position:absolute; width:16px; height:16px; border-radius:var(--a-radius-md); background:#ffffff; top:2px; left:2px; transition:left var(--a-dur-mid) var(--a-ease),background-color var(--a-dur-mid) var(--a-ease); box-shadow:var(--a-shadow-sm); }
 .a-switch.on { background:${T.accent}; border-color:${T.accent}; }
 .a-switch.on .a-sw-thumb { left:22px; background:#ffffff; }
+
+/* Disabled state for checkbox + switch — mirrors .a-btn:disabled / .a-input:disabled. */
+.a-checkbox.disabled, .a-switch.disabled { opacity:0.35; cursor:default; pointer-events:none; }
 
 /* === TABS === */
 .a-tabs { display:flex; border-bottom:1px solid ${T.border}; gap:0; }

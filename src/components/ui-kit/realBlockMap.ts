@@ -48,6 +48,13 @@ const s = (v: unknown, fallback = ""): string => String(v ?? fallback);
 const slug = (v: unknown, fallback = "field"): string =>
   s(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
 
+/** Resolve a Carbon control's DOM id: prefer an explicit, cell-unique `id` from
+    the caller (e.g. VariantsMatrix salts variant+state so cells don't collide);
+    otherwise derive from the label. Carbon requires this id to be unique per page,
+    and the variants matrix renders the same label in every cell. */
+const fieldId = (p: Record<string, unknown>, fallback: string): string =>
+  p.id != null && s(p.id) ? s(p.id) : slug(p.label, fallback);
+
 /** A render fn takes the block's resolved props and returns the real markup. */
 export type RealBlockRenderer = (props: Record<string, unknown>) => React.ReactNode;
 
@@ -176,7 +183,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedTextInput: (p) => {
     const status = s(p.validationStatus);
     return React.createElement(CarbonTextInput, {
-      id: slug(p.label, "input"),
+      id: fieldId(p, "input"),
       labelText: s(p.label, "Label"),
       placeholder: s(p.placeholder),
       value: s(p.value) || undefined,
@@ -191,7 +198,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
 
   SimulatedCheckbox: (p) =>
     React.createElement(CarbonCheckbox, {
-      id: slug(p.label, "checkbox"),
+      id: fieldId(p, "checkbox"),
       labelText: s(p.label),
       checked: Boolean(p.defaultChecked),
       indeterminate: Boolean(p.indeterminate),
@@ -202,7 +209,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   /* Carbon's Switch maps to Toggle (a labelled on/off switch). */
   SimulatedSwitch: (p) =>
     React.createElement(CarbonToggle, {
-      id: slug(p.label, "toggle"),
+      id: fieldId(p, "toggle"),
       labelText: s(p.label, "Switch"),
       toggled: Boolean(p.defaultOn),
       disabled: Boolean(p.disabled),

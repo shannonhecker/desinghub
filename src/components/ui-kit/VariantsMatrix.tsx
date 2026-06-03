@@ -68,6 +68,11 @@ function pretty(label: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/** Lowercase, hyphenate a token for use in a unique DOM id ("On / Off" -> "on-off"). */
+function slugify(v: string): string {
+  return v.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "x";
+}
+
 /**
  * Map a cell's (variant, state) to the real props RealComponentRenderer consumes
  * for this component. The variant axis usually drives the visual variant; the
@@ -81,11 +86,17 @@ function cellProps(
   state: string,
 ): Record<string, unknown> | null {
   const disabled = state === "disabled";
+  // Stable, unique-per-cell id so DS renderers that need a DOM id (e.g. Carbon's
+  // TextInput / Checkbox / Toggle) don't collide across cells — the display label
+  // can stay constant, but every cell's control id must be unique (valid HTML +
+  // unambiguous for screen readers / label association).
+  const cellId = `vm-${componentId}-${slugify(variant)}-${slugify(state)}`;
   switch (componentId) {
     case "button":
       return { variant, label: pretty(variant), disabled };
     case "textInput":
       return {
+        id: cellId,
         label: "Label",
         placeholder: "Placeholder",
         // "filled" state shows a real value; "empty" leaves the placeholder.
@@ -95,13 +106,14 @@ function cellProps(
       };
     case "checkbox":
       return {
+        id: cellId,
         label: "Option",
         defaultChecked: variant === "checked",
         indeterminate: variant === "indeterminate",
         disabled,
       };
     case "switch":
-      return { label: "Toggle", defaultOn: variant === "on", disabled };
+      return { id: cellId, label: "Toggle", defaultOn: variant === "on", disabled };
     case "card":
       // Card has no variant prop in the real renderer; the variant names the
       // surface treatment and the renderer shows the canonical card. State is
