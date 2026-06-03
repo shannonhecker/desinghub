@@ -1496,10 +1496,53 @@
   height: min(640px, calc(100dvh - 132px));
 }
 
-/* Roomier while onboarding — no canvas yet, give the 5-step setup space. */
+/* Roomier while onboarding — no canvas yet, give the 5-step setup space.
+   Centered on the empty canvas (owner #15): inset:0 + margin:auto centers a
+   fixed element without a transform, so the entrance animation stays clean. */
 .chat-float-onboarding {
   width: min(560px, calc(100vw - 48px));
   height: min(720px, calc(100dvh - 120px));
+  inset: 0;
+  margin: auto;
+}
+
+/* #15 drag handle — a slim grab strip at the top of the floating card. */
+.chat-float-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 18px;
+  cursor: grab;
+  color: var(--b-text-dim, rgba(128, 128, 128, 0.7));
+  touch-action: none;
+}
+.chat-float-grip:active { cursor: grabbing; }
+.chat-float-grip .material-symbols-outlined { font-size: 16px; line-height: 1; opacity: 0.55; }
+
+/* #15 pin-to-edge — release the card near a side to dock it there. Placed
+   after the size variants so these win (same specificity, later in file);
+   they reset inset/margin so the dock geometry is unambiguous. */
+.chat-float-pin-left,
+.chat-float-pin-right {
+  inset: auto;
+  top: 16px;
+  bottom: 16px;
+  height: auto;
+  margin: 0;
+}
+.chat-float-pin-left { left: 16px; right: auto; }
+.chat-float-pin-right { right: 16px; left: auto; }
+.chat-float-pin-bottom {
+  inset: auto;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  top: auto;
+  width: auto;
+  max-width: none;
+  height: min(46dvh, 440px);
+  margin: 0;
 }
 
 /* The card owns the rounded corners; let the chat fill it edge to edge. */

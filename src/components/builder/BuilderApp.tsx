@@ -35,7 +35,7 @@ export function BuilderApp() {
     designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen, setChatOpen,
-    chatMode,
+    chatMode, chatPlacement, setChatPlacement,
     blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks, activeTemplateId,
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
@@ -55,6 +55,52 @@ export function BuilderApp() {
     sidebarBlocks.length > 0 ||
     footerBlocks.length > 0 ||
     Boolean(activeTemplateId);
+
+  /* #15 moveable chat: drag the floating card by its grip, then on release
+     snap to the nearest edge (left/right/bottom) if close, else keep a free
+     position. We move the card directly via the ref during the drag (no
+     per-move React re-render — same reasoning as the resize-handle) and commit
+     the final placement to the store on pointer-up. */
+  const chatFloatRef = useRef<HTMLElement | null>(null);
+  const startChatDrag = React.useCallback((e: React.PointerEvent) => {
+    const card = chatFloatRef.current;
+    if (!card) return;
+    if ((e.target as HTMLElement).closest("button")) return; // let header controls work
+    e.preventDefault();
+    const rect = card.getBoundingClientRect();
+    const offX = e.clientX - rect.left;
+    const offY = e.clientY - rect.top;
+    const w = rect.width;
+    const h = rect.height;
+    card.style.transition = "none";
+    let curX = rect.left;
+    let curY = rect.top;
+    const onMove = (ev: PointerEvent) => {
+      curX = Math.max(8, Math.min(window.innerWidth - w - 8, ev.clientX - offX));
+      curY = Math.max(8, Math.min(window.innerHeight - h - 8, ev.clientY - offY));
+      card.style.left = `${curX}px`;
+      card.style.top = `${curY}px`;
+      card.style.right = "auto";
+      card.style.bottom = "auto";
+      card.style.margin = "0";
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      card.style.transition = "";
+      const SNAP = 48;
+      const nearLeft = curX <= SNAP;
+      const nearRight = curX + w >= window.innerWidth - SNAP;
+      const nearBottom = curY + h >= window.innerHeight - SNAP;
+      let dock: "free" | "left" | "right" | "bottom" = "free";
+      if (nearBottom && !nearLeft && !nearRight) dock = "bottom";
+      else if (nearRight) dock = "right";
+      else if (nearLeft) dock = "left";
+      setChatPlacement({ dock, x: Math.round(curX), y: Math.round(curY) });
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [setChatPlacement]);
 
   /* Auto-save subscription - kicks in the moment a session is started
      (either by picking a template or sending a first message). */
@@ -656,9 +702,26 @@ export function BuilderApp() {
              preview yet), compact once there's a canvas to sit over. ── */}
         {chatFloating && isChatOpen && (
           <aside
-            className={`chat-float ${hasCanvasContent ? "chat-float-compact" : "chat-float-onboarding"}`}
+            ref={chatFloatRef}
+            className={`chat-float ${hasCanvasContent ? "chat-float-compact" : "chat-float-onboarding"}${
+              chatPlacement && chatPlacement.dock !== "free" ? ` chat-float-pin-${chatPlacement.dock}` : ""
+            }`}
+            style={
+              chatPlacement && chatPlacement.dock === "free"
+                ? { left: chatPlacement.x, top: chatPlacement.y, right: "auto", bottom: "auto", margin: 0 }
+                : undefined
+            }
             aria-label="uoaui assistant"
           >
+            {/* #15 drag handle — grab to move; release near an edge to pin. */}
+            <div
+              className="chat-float-grip"
+              onPointerDown={startChatDrag}
+              title="Drag to move. Release near an edge to pin."
+              aria-hidden="true"
+            >
+              <span className="material-symbols-outlined">drag_indicator</span>
+            </div>
             <ChatPanel />
           </aside>
         )}
