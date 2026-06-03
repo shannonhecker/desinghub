@@ -7,7 +7,6 @@ import { getSystemInfo } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { useTheme, type ActiveTheme } from "@/contexts/ThemeContext";
 
-import { SystemSwitcher } from "./ui-kit/SystemSwitcher";
 import { ThemeControls } from "./ui-kit/ThemeControls";
 import { SidebarDSBrand } from "./ui-kit/SidebarDSBrand";
 import { SidebarSearch } from "./ui-kit/SidebarSearch";
@@ -29,7 +28,6 @@ export function DesignHubApp() {
   const store = useDesignHub();
   const { sidebarOpen, activeSystem } = store;
   const t = useTheme();
-  const sysInfo = getSystemInfo(activeSystem);
 
   /* B2 ICON-RAIL: which secondary-panel section the rail last opened.
      The rail is always visible; this drives what the (toggleable) panel
@@ -156,18 +154,9 @@ export function DesignHubApp() {
     : store.fluent.themeKey === "dark";
   const logoFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0)";
 
-  /* Carbon-specific chrome treatment - matches carbondesignsystem.com:
-     black UI Shell header (always $background-inverse), white text
-     on header regardless of main theme, Carbon-blue accent for the
-     active system switcher + AI Builder button. */
+  /* Carbon keeps its flat IBM aesthetic in the rail (radius 0). The brand
+     logo stays black on light surfaces and inverts to white on dark/Carbon. */
   const isCarbon = activeSystem === "carbon";
-  const headerBg = isCarbon ? "#161616" /* $background-inverse */ : (activeSystem === "uoaui" ? "transparent" : t.bg);
-  const headerFg = isCarbon ? "#ffffff" : t.fg;
-  /* Carbon keeps its faithful dark-shell divider; everyone else uses the
-     subtle divider token. This also retires uoaui's hardcoded rgba literals
-     (borderSubtle resolves to --a-border for uoaui). */
-  const headerBorder = isCarbon ? "#393939" : t.borderSubtle;
-  /* Logo stays black on white headers, white on dark/Carbon headers. */
   const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
 
   /* C2 PER-DS STAGE: the component stage background changes per selected DS
@@ -178,6 +167,47 @@ export function DesignHubApp() {
   const stageBg = getStageBg(t);
   const railBg = getRailBg(t);
   const panelBg = getPanelBg(t);
+
+  /* Mode toggle + Open Builder relocated from the (removed) top header into
+     the rail's bottom cluster. Kept as named handlers so the rail markup stays
+     readable. toggleMode flips the active DS between its light/dark theme key;
+     builderHref carries the current ds/mode/density/themeKey so the Builder
+     opens on the same configuration the user is exploring in UI Kit. */
+  const toggleMode = () => {
+    if (activeSystem === "salt") {
+      const key = store.salt.themeKey;
+      const isDk = key.includes("dark");
+      store.setSaltTheme(isDk ? key.replace("dark", "light") : key.replace("light", "dark"));
+    } else if (activeSystem === "m3") {
+      store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
+    } else if (activeSystem === "uoaui") {
+      store.setUoauiTheme(store.uoaui.themeKey === "dark" ? "light" : "dark");
+    } else if (activeSystem === "carbon") {
+      /* Carbon toggles white ↔ g100 (canonical light/dark); users pick
+         g10/g90 explicitly via ThemeControls. */
+      const k = store.carbon.themeKey;
+      store.setCarbonTheme(k === "g100" || k === "g90" ? "white" : "g100");
+    } else {
+      store.setFluentTheme(store.fluent.themeKey === "dark" ? "light" : "dark");
+    }
+  };
+  const builderHref = (() => {
+    const ds = activeSystem;
+    const mode = isDarkTheme ? "dark" : "light";
+    const themeKey =
+      ds === "salt" ? store.salt.themeKey :
+      ds === "m3" ? store.m3.themeKey :
+      ds === "fluent" ? store.fluent.themeKey :
+      ds === "carbon" ? store.carbon.themeKey :
+      store.uoaui.themeKey;
+    const density =
+      ds === "salt" ? store.salt.density :
+      ds === "fluent" ? store.fluent.size :
+      ds === "carbon" ? store.carbon.density :
+      ds === "uoaui" ? store.uoaui.density :
+      String(store.m3.density);
+    return `/builder?ds=${ds}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`;
+  })();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh",
@@ -194,144 +224,18 @@ export function DesignHubApp() {
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
-      {/* Header - 3-column. Carbon renders as the IBM UI Shell:
-          black $background-inverse bar, 48px tall, white text, no
-          pill badges (Carbon uses flat text+tag pattern). Other
-          DSes keep their per-theme chrome.
-
-          Carbon theme-class wrapper: Carbon's theme tokens
-          (--cds-button-primary, --cds-link-primary, etc.) are
-          scoped under `.cds--<themeKey>` selectors by the Carbon
-          CSS emitter. Without a matching ancestor class, only the
-          :root fallback values apply — which leaves the SystemSwitcher's
-          `.cb-btn-ghost` labels using unscoped or mismatched tokens.
-          Applying the theme class here gives the SystemSwitcher +
-          ThemeControls the correct Carbon theme context. */}
-      <header
-        className={isCarbon ? `cds--${store.carbon.themeKey}` : undefined}
-        style={{
-          display: "flex", alignItems: "center",
-          padding: isCarbon ? "0 16px" : `${t.scale.gap}px ${t.scale.gap + 8}px`,
-          borderBottom: `1px solid ${headerBorder}`,
-          background: headerBg,
-          minHeight: isCarbon ? 48 : t.scale.hdrH, flexShrink: 0,
-          position: "relative",
-        }}
-      >
-        {/* Left - logo + title */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap - 1 }}>
-          <img src="/aologo.svg" alt="uoaui" style={{ height: isCarbon ? 16 : t.scale.navF + 4, width: "auto", filter: resolvedLogoFilter }} />
-          <span style={{ fontSize: isCarbon ? 14 : t.scale.navF + 1, fontWeight: isCarbon ? 400 : 600, color: headerFg }}>
-            {isCarbon ? <><strong style={{ fontWeight: 600 }}>IBM</strong> Design Hub</> : "UI Kit Overview"}
-          </span>
-        </div>
-
-        {/* Center - DS switcher. Hidden on narrow viewports; sidebar list
-            remains the way to navigate inside the active DS, and the header
-            theme-name chip (right side) still shows which DS is active. */}
-        {!isNarrow && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <SystemSwitcher />
-          </div>
-        )}
-
-        {/* Right - dark/light toggle + theme badge + AI Builder */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: t.scale.gap, justifyContent: "flex-end" }}>
-          <button
-            onClick={() => {
-              if (activeSystem === "salt") {
-                const key = store.salt.themeKey;
-                const isDk = key.includes("dark");
-                store.setSaltTheme(isDk ? key.replace("dark", "light") : key.replace("light", "dark"));
-              } else if (activeSystem === "m3") {
-                store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
-              } else if (activeSystem === "uoaui") {
-                store.setUoauiTheme(store.uoaui.themeKey === "dark" ? "light" : "dark");
-              } else if (activeSystem === "carbon") {
-                /* Carbon toggles white ↔ g100 (canonical light/dark).
-                   Users pick g10/g90 explicitly via ThemeControls. */
-                const k = store.carbon.themeKey;
-                store.setCarbonTheme(k === "g100" || k === "g90" ? "white" : "g100");
-              } else {
-                store.setFluentTheme(store.fluent.themeKey === "dark" ? "light" : "dark");
-              }
-            }}
-            title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: isCarbon ? "#c6c6c6" : t.fg2, display: "flex", alignItems: "center" }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF + 2 }}>
-              {isDarkTheme ? "light_mode" : "dark_mode"}
-            </span>
-          </button>
-          {isCarbon ? (
-            /* Carbon theme label — plain text, not a pill. The pill
-               treatment drew the eye to what's really just a status
-               label. */
-            <span style={{ fontSize: 11, color: "#c6c6c6", letterSpacing: "0.06em", fontWeight: 400 }}>
-              {store.carbon.themeKey.toUpperCase()}
-            </span>
-          ) : (
-            /* Same rationale for the other DSes: drop the accent-weak
-               pill, keep a plain label. */
-            <span style={{
-              fontSize: t.scale.labF, color: t.fg2, letterSpacing: "0.04em", fontWeight: 500,
-            }}>
-              {t.T.name || sysInfo.name}
-            </span>
-          )}
-          {/* Open Builder — passes current ds/mode/density/themeKey
-              so the Builder lands on the same configuration the user
-              is already exploring in UI Kit. */}
-          <Link
-            href={(() => {
-              const ds = activeSystem;
-              const mode = isDarkTheme ? "dark" : "light";
-              const themeKey =
-                ds === "salt" ? store.salt.themeKey :
-                ds === "m3" ? store.m3.themeKey :
-                ds === "fluent" ? store.fluent.themeKey :
-                ds === "carbon" ? store.carbon.themeKey :
-                store.uoaui.themeKey;
-              const density =
-                ds === "salt" ? store.salt.density :
-                ds === "fluent" ? store.fluent.size :
-                ds === "carbon" ? store.carbon.density :
-                ds === "uoaui" ? store.uoaui.density :
-                String(store.m3.density);
-              return `/builder?ds=${ds}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`;
-            })()}
-            aria-label="Open Builder"
-            title="Open Builder"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 5,
-              fontSize: isCarbon ? 14 : t.scale.labF + 1, fontWeight: isCarbon ? 400 : 600,
-              /* On-accent text must use the DS accent-foreground token, not a
-                 hardcoded white. M3 dark `primary` is a LIGHT lavender whose
-                 `onPrimary` is dark, so white failed (~1.6:1); accentFg resolves
-                 to onPrimary / fgOnBrand / accentFg per DS and meets AA. */
-              color: isCarbon ? "#ffffff" : t.accentFg,
-              background: isCarbon ? "#0f62fe" : t.accent,
-              padding: isNarrow ? "8px 10px" : isCarbon ? "10px 16px" : `${t.scale.gap - 1}px ${t.scale.gap + 8}px`,
-              borderRadius: isCarbon ? 0 : 9999,
-              textDecoration: "none",
-            }}>
-            {isNarrow ? (
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">auto_awesome</span>
-            ) : "Open Builder"}
-          </Link>
-        </div>
-      </header>
-
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* B2 ICON-RAIL — the PRIMARY nav. Always visible (not gated by
-            sidebarOpen). Top cluster = the 5 DS as icon buttons; below a
-            divider = section/tool buttons (Overview, Components, Search,
-            Theme) that open the secondary panel. Every icon-only button
-            carries aria-label + title (tooltip); the active DS carries
-            aria-pressed. Carbon keeps its flat seam-matched layer + 0
-            radius; uoaui rides transparent over the aurora. */}
+        {/* ICON-RAIL — the SOLE primary nav (owner: the old top header nav was
+            redundant with the rail, so it's merged in here). Brand mark at top;
+            then the 5 DS as LABELLED buttons (glyph + name, so the active DS is
+            legible at a glance — no bare single letters); a divider; section
+            buttons (Overview, Components, Search, Theme) that open the secondary
+            panel; and a bottom cluster (pushed down) with the mode toggle +
+            Open Builder. Every button keeps aria-label + title; the active DS /
+            open panel section carry aria-pressed. Carbon stays flat (radius 0);
+            uoaui rides transparent over the aurora. */}
         <nav
-          aria-label="Design systems and sections"
+          aria-label="Design systems, sections and actions"
           className="uikit-rail"
           style={{
             ["--dh-focus-ring" as string]: t.focusRing,
@@ -340,17 +244,29 @@ export function DesignHubApp() {
             transition: "background 200ms",
           }}
         >
+          {/* Brand mark — returns to the UI Kit overview / landing. */}
+          <button
+            type="button"
+            className="uikit-rail-logo"
+            aria-label="UI Kit overview"
+            title="UI Kit overview"
+            onClick={() => store.setSelectedComponent(null)}
+          >
+            <img src="/aologo.svg" alt="" aria-hidden="true" style={{ height: 20, width: "auto", filter: resolvedLogoFilter }} />
+          </button>
+
           {(() => {
-            const DS_LIST: { id: SystemId; label: string }[] = [
-              { id: "salt", label: "Salt DS" },
-              { id: "m3", label: "Material 3" },
-              { id: "fluent", label: "Fluent 2" },
-              { id: "uoaui", label: "uoaui DS" },
-              { id: "carbon", label: "Carbon DS" },
+            const DS_LIST: { id: SystemId; label: string; short: string }[] = [
+              { id: "salt", label: "Salt DS", short: "Salt" },
+              { id: "m3", label: "Material 3", short: "M3" },
+              { id: "fluent", label: "Fluent 2", short: "Fluent" },
+              { id: "uoaui", label: "uoaui DS", short: "uoaui" },
+              { id: "carbon", label: "Carbon DS", short: "Carbon" },
             ];
             /* Carbon stays flat (radius 0, no shadow) to honour the IBM
                aesthetic; every other DS uses the rail-button curve token. */
             const railRadius = isCarbon ? 0 : "var(--dh-curve-sm, 6px)";
+            const sectionBtn = { color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` };
             return (
               <>
                 <div className="uikit-rail-group" role="group" aria-label="Switch design system">
@@ -368,14 +284,14 @@ export function DesignHubApp() {
                         onClick={() => store.setActiveSystem(ds.id)}
                         style={{
                           borderRadius: railRadius,
-                          fontFamily: t.font, fontWeight: 700,
-                          fontSize: t.scale.navF + 1,
+                          fontFamily: t.font,
                           color: isActive ? t.accentFg : t.fg2,
                           background: isActive ? t.accent : "transparent",
                           border: isActive ? "1px solid transparent" : `1px solid ${t.borderSubtle}`,
                         }}
                       >
-                        {info.icon}
+                        <span className="uikit-rail-glyph" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>
+                        <span className="uikit-rail-label">{ds.short}</span>
                       </button>
                     );
                   })}
@@ -388,11 +304,13 @@ export function DesignHubApp() {
                     type="button"
                     className="uikit-rail-btn"
                     aria-label="Overview"
+                    aria-pressed={store.selectedComponent === null}
                     title="Overview"
                     onClick={() => store.setSelectedComponent(null)}
-                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                    style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>home</span>
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>home</span>
+                    <span className="uikit-rail-label">Overview</span>
                   </button>
                   <button
                     type="button"
@@ -401,9 +319,10 @@ export function DesignHubApp() {
                     aria-pressed={sidebarOpen && panelSection === "components"}
                     title="Components"
                     onClick={() => openPanel("components")}
-                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                    style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
+                    <span className="uikit-rail-label">Components</span>
                   </button>
                   <button
                     type="button"
@@ -412,9 +331,10 @@ export function DesignHubApp() {
                     aria-pressed={sidebarOpen && panelSection === "search"}
                     title="Search components"
                     onClick={() => openPanel("search")}
-                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                    style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>search</span>
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>search</span>
+                    <span className="uikit-rail-label">Search</span>
                   </button>
                   <button
                     type="button"
@@ -423,10 +343,38 @@ export function DesignHubApp() {
                     aria-pressed={sidebarOpen && panelSection === "theme"}
                     title="Theme controls"
                     onClick={() => openPanel("theme")}
-                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                    style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>tune</span>
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>tune</span>
+                    <span className="uikit-rail-label">Theme</span>
                   </button>
+                </div>
+
+                {/* Global actions — pushed to the rail bottom (material.io
+                    pattern). Mode toggle + Open Builder, both labelled. The
+                    Builder link carries the live ds/mode/density/themeKey. */}
+                <div className="uikit-rail-group uikit-rail-bottom" role="group" aria-label="Actions">
+                  <button
+                    type="button"
+                    className="uikit-rail-btn"
+                    aria-label={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
+                    title={isDarkTheme ? "Switch to light mode" : "Switch to dark mode"}
+                    onClick={toggleMode}
+                    style={{ borderRadius: railRadius, ...sectionBtn }}
+                  >
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>{isDarkTheme ? "light_mode" : "dark_mode"}</span>
+                    <span className="uikit-rail-label">{isDarkTheme ? "Light" : "Dark"}</span>
+                  </button>
+                  <Link
+                    href={builderHref}
+                    className="uikit-rail-btn"
+                    aria-label="Open Builder"
+                    title="Open Builder"
+                    style={{ borderRadius: railRadius, color: t.accentFg, background: t.accent, border: "1px solid transparent", textDecoration: "none" }}
+                  >
+                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>auto_awesome</span>
+                    <span className="uikit-rail-label">Builder</span>
+                  </Link>
                 </div>
               </>
             );
@@ -452,10 +400,14 @@ export function DesignHubApp() {
             <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.borderSubtle}` }}>
               <SidebarDSBrand />
             </div>
-            <div style={{ padding: "20px 24px 12px", flexShrink: 0 }}>
+            {/* #6 panel rhythm: even ~8px inter-section gaps + a single 24px
+                left edge shared by every section (brand / controls / search /
+                list) so the panel reads tidy. Vertical rhythm is conservative
+                here — owner to eyeball on preview. */}
+            <div style={{ padding: "16px 24px 8px", flexShrink: 0 }}>
               <ThemeControls />
             </div>
-            <div ref={searchWrapRef} style={{ padding: "12px 24px 16px", flexShrink: 0 }}>
+            <div ref={searchWrapRef} style={{ padding: "8px 24px 16px", flexShrink: 0 }}>
               <SidebarSearch />
             </div>
             <div style={{ padding: "8px 24px 24px", overflowY: "auto", flex: 1 }}>

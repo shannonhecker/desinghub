@@ -137,8 +137,12 @@ export function ContentTopBar() {
             <span style={{ color: t.fg, fontWeight: 500, padding: `${t.scale.gap - 2}px 0` }}>{comp.name}</span>
           </>
         ) : (
-          <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap }}>
-            <span style={{ color: t.fg, fontWeight: 500 }}>{sysInfo.name}</span>
+          /* No component selected: with the top header merged into the rail,
+             this strip is the page heading — show the active DS name + a muted
+             "UI Kit" eyebrow so the context reads clearly. */
+          <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap - 2 }}>
+            <span style={{ color: t.fg, fontWeight: 600 }}>{sysInfo.name}</span>
+            <span style={{ color: t.fg3, fontSize: t.scale.labF, letterSpacing: "0.04em" }}>UI Kit</span>
           </div>
         )}
       </nav>
