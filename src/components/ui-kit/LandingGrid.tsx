@@ -4,8 +4,26 @@ import React from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getComponents, getCategories, getSystemInfo, getPreviews } from "@/data/registry";
+import { publicAssetUrl } from "@/lib/sampleImages";
 import { getUiKitGroup, BUILDER_BLOCKS } from "./uiKitGroups";
 import { getStageBg } from "./stageTint";
+import styles from "./LandingHero.module.css";
+
+const HERO_IMAGE_BY_SYSTEM: Record<string, string> = {
+  salt: "/media/dummy/enterprise-analytics.png",
+  m3: "/media/dummy/material-mobile-collage.png",
+  fluent: "/media/dummy/saas-collaboration.png",
+  uoaui: "/media/dummy/glass-creative-studio.png",
+  carbon: "/media/dummy/enterprise-analytics.png",
+};
+
+const HERO_CLASS_BY_SYSTEM: Record<string, string> = {
+  salt: styles.systemSalt,
+  m3: styles.systemM3,
+  fluent: styles.systemFluent,
+  uoaui: styles.systemUoaui,
+  carbon: styles.systemCarbon,
+};
 
 export const LandingGrid = React.memo(function LandingGrid() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
@@ -16,23 +34,14 @@ export const LandingGrid = React.memo(function LandingGrid() {
   const sysInfo = getSystemInfo(activeSystem);
   const previews = getPreviews(activeSystem);
 
-  /* Hero size is fluid: driven by the --uikit-hero-size CSS var
-     (clamp(36px, 3.5vw, 52px), see globals.css). Falls back to 48px
-     for any context where the var isn't present. */
-  const heroSize = "var(--uikit-hero-size, 48px)";
   const h2Size = 22;
   const bodySize = 16;
   const captionSize = 13;
   const outerPad = 48;
 
-  /* Tall-thumbnail gallery (W8-P2): a ~120px live-specimen zone holds the
-     same registry Preview the card has always rendered. We don't change
-     WHICH component renders — only the frame around it. The card name grows
-     to 16px and the description clamps to a single line. */
   const thumbHeight = 120;
   const cardGap = 20;
 
-  /* DS-specific feature pills */
   const featurePills = activeSystem === "salt"
     ? [{ icon: "layers", label: "3-Layer Tokens" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
     : activeSystem === "m3"
@@ -44,9 +53,6 @@ export const LandingGrid = React.memo(function LandingGrid() {
     : [{ icon: "palette", label: "Brand Theming" }, { icon: "straighten", label: "3 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }];
 
   const orgLabel = activeSystem === "m3" ? `Google · ${sysInfo.org}` : sysInfo.org;
-  /* Carbon uses Plex Light 300 for display-01 - matches the
-     carbondesignsystem.com hero treatment exactly. Salt goes
-     heavy (700), M3 + Fluent sit at 400. */
   const heroWeight = activeSystem === "salt" ? 700 : activeSystem === "m3" ? 400 : activeSystem === "carbon" ? 300 : 300;
   const descSuffix = activeSystem === "salt"
     ? " accessible, density-aware, token-driven design system."
@@ -58,143 +64,91 @@ export const LandingGrid = React.memo(function LandingGrid() {
     ? " IBM's open-source design system for products and digital experiences."
     : " expressive, adaptive, and cross-platform design system.";
 
-  /* Carbon is flat: 0px radius on cards, no shadows, Plex Light
-     hero, tag-style pills (16px), $layer-accent pill bg. */
   const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "uoaui" ? undefined : activeSystem === "carbon" ? "cb-tile" : "f-card";
   const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "uoaui" ? 14 : activeSystem === "carbon" ? 0 : 8;
   const pillRadius = activeSystem === "salt" ? 4 : activeSystem === "carbon" ? 16 : 20;
   const pillWeight = activeSystem === "salt" ? 600 : activeSystem === "carbon" ? 400 : 500;
   const catWeight = activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 400 : 600;
+  const heroPreviewItems = components.filter((c) => Boolean(previews[c.id])).slice(0, 3);
+  const heroImage = HERO_IMAGE_BY_SYSTEM[activeSystem] ?? HERO_IMAGE_BY_SYSTEM.salt;
+  const heroAccent2 = activeSystem === "m3"
+    ? "#FFB4AB"
+    : activeSystem === "fluent"
+    ? "#4CC2FF"
+    : activeSystem === "carbon"
+    ? "#78A9FF"
+    : activeSystem === "uoaui"
+    ? "#62D9C7"
+    : "#8DDAFF";
+  const heroStyle = {
+    "--hero-bg": t.bg,
+    "--hero-surface": t.bg2,
+    "--hero-surface-strong": t.T.layerAccent01 || t.bg2,
+    "--hero-border": t.border,
+    "--hero-fg": t.fg,
+    "--hero-fg-muted": t.fg2,
+    "--hero-accent": t.accent,
+    "--hero-accent-2": heroAccent2,
+    "--hero-panel": activeSystem === "uoaui" ? "rgba(18, 22, 34, 0.56)" : activeSystem === "carbon" ? (t.T.layer01 || t.bg2) : t.bg2,
+    "--hero-title-weight": heroWeight,
+    "--hero-label-size": `${t.scale.labF}px`,
+    "--hero-pill-radius": `${pillRadius}px`,
+    "--hero-pill-weight": pillWeight,
+    "--hero-pill-size": `${t.scale.navF - 1}px`,
+  } as React.CSSProperties;
 
-  /* C2 stage alignment: the landing root uses the SAME per-DS stage tint as
-     the shell (getStageBg) so the page reads as one deliberate surface.
-     uoaui returns "transparent" so the app-level aurora shows through. */
   const stageBg = getStageBg(t);
-
-  /* A1 HERO SLAB tint — a brand-tinted editorial slab behind the hero copy.
-     uoaui rides the signature aurora gradient; M3 a tonal surface step;
-     Carbon a flat $layer-accent (no radius, no shadow); Salt/Fluent a quiet
-     accent wash mixed into the stage. All token-derived — no raw hex. */
-  const slabBg = activeSystem === "uoaui"
-    ? (t.T.gradient as string)
-    : activeSystem === "m3"
-    ? ((t.T.surfaceContainerLow as string) ?? t.bg2)
-    : activeSystem === "carbon"
-    ? ((t.T.layerAccent01 as string) ?? t.bg2)
-    : `color-mix(in srgb, ${t.accent} 6%, ${t.bg})`;
-  /* Carbon slab is flat; everyone else gets a soft editorial corner. */
-  const slabRadius = activeSystem === "carbon" ? 0 : activeSystem === "m3" ? 28 : 24;
-  /* Slab text uses the active theme's own mode-aware foreground tokens. For
-     uoaui this matters: the slab rides t.T.gradient, which is the DARK aurora
-     in dark mode (light fg #E8EAED reads) and the LIGHT lavender wash in light
-     mode (dark fg #2D1B4E reads) — both clear AA. Pinning a literal white/dark
-     would invert and fail in one mode. */
-  const slabFg = t.fg;
-  const slabFg2 = t.fg2;
-  const slabAccent = t.accent;
-
-  /* Hand-picked LIVE specimens for the hero collage — the SAME registry
-     previews the cards render, so no new render machinery and no
-     screenshots. We try an ordered candidate set and keep the first 3 that
-     actually exist for the active DS (component IDs + coverage differ per DS:
-     e.g. Carbon uses singular `badge`, M3 has no `inputs`). buttons + cards
-     exist in all 5, so every DS gets a full collage. */
-  const COLLAGE_IDS = [
-    "buttons", "cards", "inputs", "badges", "badge",
-    "switches", "chips", "tags", "checkboxes", "avatars",
-  ];
-  const collage = COLLAGE_IDS
-    .filter(id => previews[id])
-    .slice(0, 3);
-  /* Specimen tile surface mirrors the card thumb so the collage feels native
-     to the page; Carbon flat, uoaui glass-on-gradient, M3/others tonal. */
-  const specimenTileBg = activeSystem === "uoaui"
-    ? t.T.cardBg
-    : activeSystem === "m3"
-    ? t.bg2
-    : activeSystem === "carbon"
-    ? t.T.layer01
-    : t.bg;
 
   return (
     <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: stageBg, minHeight: "100%" }}>
-      {/* A1 EXPRESSIVE HERO SLAB — an aurora/brand-tinted editorial slab with
-          the headline + copy on the left and a collage of LIVE real
-          components on the right (collapses to one column under 900px). */}
-      <div className="uikit-hero-slab" style={{
-        marginBottom: Math.round(outerPad * 1.5),
-        background: slabBg,
-        borderRadius: slabRadius,
-        border: activeSystem === "carbon" ? `1px solid ${t.borderSubtle}` : activeSystem === "uoaui" ? `1px solid ${t.border}` : "none",
-      }}>
-        <div className="uikit-hero-copy">
-          <div style={{ fontSize: t.scale.labF, fontWeight: activeSystem === "m3" ? 500 : 700, color: slabAccent, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4 }}>
-            {orgLabel}
-          </div>
-          <h1 style={{ fontSize: "var(--uikit-hero-display, var(--uikit-hero-size, 48px))", fontWeight: heroWeight, color: slabFg, lineHeight: 1.08, margin: `0 0 ${t.scale.gap + (activeSystem === "m3" ? 8 : 12)}px`, letterSpacing: activeSystem === "m3" ? "-0.25px" : "-0.5px" }}>
-            {sysInfo.name}
-          </h1>
-          <p style={{ fontSize: t.scale.navF + 3, color: slabFg2, lineHeight: 1.5, maxWidth: 520, margin: "0 0 10px", fontWeight: 500 }}>
+      <div className={`${styles.heroShell} ${HERO_CLASS_BY_SYSTEM[activeSystem] ?? ""}`} style={heroStyle}>
+        <div className={styles.heroCopy}>
+          <div className={styles.orgLabel}>{orgLabel}</div>
+          <h1 className={styles.heroTitle}>{sysInfo.name}</h1>
+          <p className={styles.heroLead}>
             Preview, compare, and copy tokens across five design systems.
           </p>
-          <p style={{ fontSize: bodySize, color: slabFg2, opacity: 0.9, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+          <p className={styles.heroBody}>
             {components.length} components across {categories.length} categories:{descSuffix}
           </p>
-          <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 12, flexWrap: "wrap" }}>
-            {featurePills.map(s => (
-              <div key={s.label} style={{
-                display: "flex", alignItems: "center", gap: t.scale.gap - 2,
-                padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: pillRadius,
-                /* On the tinted slab, pills use a translucent-on-slab fill so
-                   they read against the brand wash. uoaui rides its mode-aware
-                   glass card fill over the aurora; Carbon keeps its $layer-01
-                   tag; others mix a faint surface wash from the base bg. */
-                background: activeSystem === "uoaui"
-                  ? (t.T.cardBg as string)
-                  : activeSystem === "carbon"
-                  ? (t.T.layer01 || t.bg)
-                  : `color-mix(in srgb, ${t.bg} 70%, transparent)`,
-                border: activeSystem === "carbon" ? "none" : `1px solid ${t.borderSubtle}`,
-                fontSize: t.scale.navF - 1, color: slabFg2, fontWeight: pillWeight,
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: slabAccent }}>{s.icon}</span>
+          <div className={styles.featurePills}>
+            {featurePills.map((s) => (
+              <div key={s.label} className={styles.featurePill}>
+                <span className={`material-symbols-outlined ${styles.featureIcon}`} style={{ fontSize: t.scale.navF }}>{s.icon}</span>
                 {s.label}
               </div>
             ))}
           </div>
         </div>
 
-        {/* HERO COLLAGE — live specimens, same render path as the cards. */}
-        {collage.length > 0 && (
-          <div className="uikit-hero-collage" aria-hidden="true">
-            {collage.map(id => {
-              const Preview = previews[id];
+        <div className={styles.heroVisual} aria-hidden="true">
+          <div className={styles.signalRail} />
+          <div className={styles.mediaFrame}>
+            <img src={publicAssetUrl(heroImage)} alt="" />
+          </div>
+          <div className={styles.motionBand} />
+          <div className={styles.previewStack}>
+            {heroPreviewItems.map((c, i) => {
+              const Preview = previews[c.id];
               return (
                 <div
-                  key={id}
-                  className="uikit-hero-specimen"
-                  style={{
-                    background: specimenTileBg,
-                    borderRadius: activeSystem === "carbon" ? 0 : 14,
-                    border: `1px solid ${t.borderSubtle}`,
-                    backdropFilter: activeSystem === "uoaui" ? (t.T.glass as string) : undefined,
-                    pointerEvents: "none",
-                  }}
+                  key={c.id}
+                  className={styles.previewCard}
+                  style={{ "--delay": `${i * 0.42}s` } as React.CSSProperties}
                 >
-                  {Preview ? <Preview /> : null}
+                  <div className={styles.previewCanvas}>
+                    {Preview ? <Preview /> : null}
+                  </div>
                 </div>
               );
             })}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Tools section — Tokens, Design Audit, Builder Blocks. Sourced from
-          the same uiKitGroups IA as the sidebar so these appear here ONLY,
-          never also as Foundation cards (the old 11-vs-9 duplication). */}
       {(() => {
         const toolItems: { id: string; name: string; desc: string }[] = [
-          ...components.filter(c => getUiKitGroup(c.id, c.cat) === "Tools"),
+          ...components.filter((c) => getUiKitGroup(c.id, c.cat) === "Tools"),
           { id: BUILDER_BLOCKS.id, name: BUILDER_BLOCKS.name, desc: BUILDER_BLOCKS.desc },
         ];
         if (toolItems.length === 0) return null;
@@ -205,7 +159,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
               <span style={{ fontSize: captionSize, color: t.fg3 }}>{toolItems.length}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
-              {toolItems.map(c => (
+              {toolItems.map((c) => (
                 <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
                   onClick={() => setSelectedComponent(c.id)}
                   style={{
@@ -237,10 +191,8 @@ export const LandingGrid = React.memo(function LandingGrid() {
         );
       })()}
 
-      {/* Category sections — Tools-group ids (tokens/audit) are filtered out
-          so they live only in the Tools section above. */}
-      {categories.map(cat => {
-        const catItems = components.filter(c => c.cat === cat && getUiKitGroup(c.id, c.cat) !== "Tools");
+      {categories.map((cat) => {
+        const catItems = components.filter((c) => c.cat === cat && getUiKitGroup(c.id, c.cat) !== "Tools");
         if (catItems.length === 0) return null;
         return (
           <div key={cat} style={{ marginBottom: outerPad }}>
@@ -249,7 +201,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
               <span style={{ fontSize: captionSize, color: t.fg3 }}>{catItems.length}</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
-              {catItems.map(c => {
+              {catItems.map((c) => {
                 const Preview = previews[c.id];
                 return (
                   <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
@@ -264,17 +216,11 @@ export const LandingGrid = React.memo(function LandingGrid() {
                     }}
                   >
                     <div className="uikit-card-thumb" style={{
-                      /* Carbon preview tile uses $layer-accent (a half-step
-                         deeper than layer-01 where the card body sits) to
-                         separate the preview visually without shadow. */
                       background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
                       height: thumbHeight,
                       borderBottom: `1px solid ${t.borderSubtle}`,
                     }}>
                       {Preview
-                        /* Same registry Preview as before — centered and clipped
-                           to the taller frame. The inner wrapper constrains width
-                           so wide specimens don't overflow the card. */
                         ? <div className="uikit-card-specimen" style={{ pointerEvents: "none" }}><Preview /></div>
                         : <span className="material-symbols-outlined" style={{ fontSize: 40, color: t.fg3, opacity: 0.4 }}>widgets</span>}
                     </div>

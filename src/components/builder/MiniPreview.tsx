@@ -40,6 +40,7 @@ type Category =
   | "chart-scatter" // HighchartScatter
   | "chart-grid"    // HighchartHeatmap, HighchartTreemap
   | "text"          // Title, Link
+  | "image"         // SimulatedImage
   | "breadcrumb"    // Breadcrumb
   | "tabs"          // Tabs
   | "slider"        // Slider, Rating
@@ -120,6 +121,7 @@ const CATEGORY_BY_TYPE: Record<string, Category> = {
   /* Text */
   SimulatedTitle: "text",
   SimulatedLink: "text",
+  SimulatedImage: "image",
 
   /* Breadcrumb */
   SimulatedBreadcrumb: "breadcrumb",
@@ -359,6 +361,27 @@ function Text() {
     </>
   );
 }
+function ImageShape() {
+  return (
+    <>
+      <rect x="8" y="8" width="64" height="34" rx="3" fill="none" stroke={MUTED} strokeWidth="1" />
+      <rect x="12" y="12" width="56" height="26" rx="2" fill={ACCENT} opacity="0.12" />
+      <circle cx="56" cy="18" r="4" fill={ACCENT} opacity="0.65" />
+      <path
+        d="M 13 36 L 27 24 L 36 31 L 44 22 L 68 38"
+        fill={ACCENT}
+        opacity="0.45"
+      />
+      <path
+        d="M 13 36 L 27 24 L 36 31 L 44 22 L 68 38"
+        fill="none"
+        stroke={ACCENT}
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </>
+  );
+}
 function Breadcrumb() {
   return (
     <>
@@ -562,6 +585,7 @@ const RENDERERS: Record<Category, React.FC> = {
   "chart-scatter": ChartScatter,
   "chart-grid": ChartGrid,
   text: Text,
+  image: ImageShape,
   breadcrumb: Breadcrumb,
   tabs: Tabs,
   slider: Slider,

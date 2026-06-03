@@ -8,7 +8,7 @@
    the hash and passes `state`; here we hydrate the builder store ONCE,
    synchronously (before first paint), so PresentStage — which reads the
    store — renders the canvas already populated (no empty flash). Then
-   render PresentStage in the "recipient" variant: Fork-and-edit + Home,
+   render PresentStage in the "recipient" variant: Edit + Home,
    no editor exit, and no DS switcher (author's DS only, Decision #5).
 
    The route stays stateless (server decodes, client renders); the

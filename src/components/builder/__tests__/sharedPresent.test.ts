@@ -2,7 +2,7 @@
    PR-E: shared link (/preview/share/[hash]) unified onto PresentStage.
    Source-pin (no RTL harness). Visual feel verified on Vercel preview.
    ════════════════════════════════════════════════════════════
-   Pins: (1) PresentBar gains a "recipient" variant (Fork & edit + Home,
+   Pins: (1) PresentBar gains a "recipient" variant (Edit + Home,
    no editor exit, no DS switcher per Decision #5); (2) PresentStage
    forwards barVariant + sharedHash; (3) SharedPreview hydrates the store
    one-shot (useMemo, synchronous — no flash) with themeKey AFTER setMode,
@@ -20,10 +20,10 @@ const stage = readFileSync(join(dir, "PresentStage.tsx"), "utf8");
 const shared = readFileSync(join(dir, "SharedPreview.tsx"), "utf8");
 
 describe("PR-E: shared link unified onto PresentStage", () => {
-  it("PresentBar has a recipient variant: Fork & edit + Home, no editor exit", () => {
+  it("PresentBar has a recipient variant: Edit + Home, no editor exit", () => {
     expect(bar).toMatch(/variant\?: "author" \| "recipient"/);
     expect(bar).toMatch(/variant === "recipient"/);
-    expect(bar).toMatch(/Fork &amp; edit/);
+    expect(bar).toMatch(/Edit/);
     expect(bar).toMatch(/\/builder\?shared=\$\{sharedHash\}/);
   });
 

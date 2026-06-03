@@ -6,6 +6,7 @@ import {
   SAMPLE_IMAGES,
   SAMPLE_IMAGE_CATEGORIES,
   getImagesByCategory,
+  publicAssetUrl,
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 
@@ -166,7 +167,7 @@ function ImagePicker({
               aria-pressed={selected}
               onClick={() => onChange(img.url)}
             >
-              <img src={img.url} alt="" loading="lazy" />
+              <img src={publicAssetUrl(img.url)} alt="" loading="lazy" />
               {selected ? (
                 <span className="img-picker-check material-symbols-outlined" aria-hidden="true">
                   check
@@ -396,7 +397,6 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedChart", label: "Chart", icon: "bar_chart", defaults: { title: "Monthly Revenue", dataPoints: "40,70,45,90,65" }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "text", propKey: "dataPoints", label: "Data Points", placeholder: "e.g. 40,70,45,90,65" },
   ]},
-
   /* ── Form Controls ── */
   { type: "SimulatedCheckbox", label: "Checkbox", icon: "check_box", defaults: { label: "Accept terms and conditions", defaultChecked: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "toggle", propKey: "defaultChecked", label: "Checked" },

@@ -10,6 +10,17 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-06-03 Task Log
+- Removed the small UI Kit header label from DS pages while leaving logo/theme controls intact.
+- Reworked the UI Kit DS landing hero into a system-specific animated banner with media, motion rails, and live component previews.
+- Changed the shared preview edit action label from "Fork & edit" to "Edit"; no source-level builder "Done" button was found.
+- Generated and added four dummy builder media assets: enterprise analytics, Material-style mobile collage, SaaS collaboration, and glass creative studio.
+- Added a first-class builder Image block with selectable dummy assets, alt text, and optional caption.
+- Added a Landing Page starter template that uses the default generated analytics image so template previews can show visible images.
+- Preserved existing design system theme state, theme keys, and token defaults.
+
+---
+
 ## Phase 1 — Foundation (Completed)
 
 ### 1.1 Initial Setup

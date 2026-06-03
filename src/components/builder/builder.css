@@ -4917,7 +4917,7 @@
   white-space: nowrap;
 }
 
-/* Exit ("Done") = primary action, but kept NEUTRAL not accent-filled:
+/* Preview exit/edit action = primary action, but kept NEUTRAL not accent-filled:
    --bc-fg-on-accent (near-black) on the light-mode accent (#0b69d9) only
    hits 3.76:1 (fails AA for 13px text). A neutral fill uses --bc-fg on
    --bc-bg-active, which is high-contrast in BOTH themes. Weight + a strong

@@ -38,7 +38,7 @@ const DEVICES: { key: DeviceMode; Icon: typeof Monitor; label: string }[] = [
 export function PresentBar({
   /* "author" (default): in-app Present mode — exits back to the editor.
      "recipient": the shared-link view — no editor to exit to, so the exit
-     slot becomes Fork-and-edit + Home (Decision #4/#5). */
+     slot becomes Edit + Home (Decision #4/#5). */
   variant = "author",
   sharedHash,
 }: {
@@ -171,12 +171,12 @@ export function PresentBar({
             className="present-bar-btn present-bar-btn-exit"
             onClick={() => { if (sharedHash) window.location.href = `/builder?shared=${sharedHash}`; }}
             title="Open this canvas in the builder"
-            aria-label="Fork and edit in the builder"
+            aria-label="Edit this canvas in the builder"
           >
             <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
               edit
             </span>
-            Fork &amp; edit
+            Edit
           </button>
           <Link
             className="present-bar-btn"
@@ -197,13 +197,13 @@ export function PresentBar({
           type="button"
           className="present-bar-btn present-bar-btn-exit"
           onClick={() => setBuilderMode("edit")}
-          title="Exit Present mode (Esc)"
-          aria-label="Exit Present mode"
+          title="Edit canvas (Esc)"
+          aria-label="Edit canvas"
         >
           <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
             close
           </span>
-          Done
+          Edit
         </button>
       )}
     </div>

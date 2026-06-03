@@ -22,6 +22,10 @@ export const ID_TO_BLOCK: Record<string, string> = {
   tooltips: "SimulatedTooltip",
   progress: "SimulatedStatCard",
   typography: "SimulatedTitle",
+  image: "SimulatedImage",
+  images: "SimulatedImage",
+  media: "SimulatedImage",
+  "hero-image": "SimulatedImage",
 
   /* Direct Simulated IDs (unchanged) */
   "sim-button": "SimulatedButton",
@@ -35,6 +39,7 @@ export const ID_TO_BLOCK: Record<string, string> = {
   "sim-badge": "SimulatedBadge",
   "sim-chat-message": "SimulatedChatMessage",
   "sim-chart": "SimulatedChart",
+  "sim-image": "SimulatedImage",
   "sim-stat-card": "SimulatedStatCard",
   "sim-radio-group": "SimulatedRadioGroup",
   "sim-slider": "SimulatedSlider",
@@ -88,6 +93,7 @@ export const BLOCK_TO_ID: Record<string, string> = {
   SimulatedBadge: "badges",
   SimulatedChatMessage: "sim-chat-message",
   SimulatedChart: "sim-chart",
+  SimulatedImage: "image",
   SimulatedStatCard: "progress",
   SimulatedRadioGroup: "sim-radio-group",
   SimulatedSlider: "sim-slider",

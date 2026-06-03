@@ -59,6 +59,7 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
   SimulatedTooltip: "Hover hint attached to a button.",
   SimulatedPopover: "Click-triggered popover with title + content.",
   SimulatedChatMessage: "Conversation bubble (user or system).",
+  SimulatedImage: "Responsive media frame with selectable generated placeholder images.",
   SimulatedChart: "Simple bar chart with title + dataPoints.",
   SimulatedTree: "Nested list built from 'Parent > Child' CSV.",
   SimulatedRating: "Star rating with label + max + value.",

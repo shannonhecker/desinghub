@@ -64,7 +64,7 @@ const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
 /* Trimmed display set (issue #14). The local-command handlers + offline
    keyword fast-paths are untouched - this only cuts which chips show. */
 const REFINE_CHIPS = [
-  "Add Chart", "Add Data Table", "Dark Mode", "Build Dashboard", "Clear All",
+  "Add Image", "Add Chart", "Add Data Table", "Dark Mode", "Build Dashboard", "Clear All",
 ];
 
 /* ── Component keyword → ID mapping for free-form chat ── */
@@ -76,6 +76,7 @@ const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[]
                "form element", "field"],                                             ids: ["inputs", "text-fields", "form-field"],   label: "Form Fields" },
   { keywords: ["button", "cta", "action button"],                                   ids: ["buttons"],                               label: "Buttons" },
   { keywords: ["card", "content card", "info card"],                                ids: ["cards"],                                 label: "Cards" },
+  { keywords: ["image", "images", "photo", "media", "hero image", "visual"],         ids: ["image"],                                 label: "Image" },
   { keywords: ["nav", "navigation", "tab", "menu", "sidebar nav"],                 ids: ["tabs"],                                  label: "Navigation" },
   { keywords: ["toggle", "switch", "checkbox", "radio", "check box"],              ids: ["switches", "checkboxes", "radios"],      label: "Toggles" },
   { keywords: ["badge", "chip", "tag", "label badge"],                              ids: ["badges"],                                label: "Badges" },
@@ -98,7 +99,7 @@ const COMPONENT_KEYWORDS: { keywords: string[]; ids: string[]; label: string }[]
 const LAYOUT_PRESETS: Record<string, string[]> = {
   dashboard:  ["StatsCards", "DataTable", "Tabs", "Cards", "Progress"],
   form:       ["FormFields", "Toggles", "Buttons", "Dropdown", "DatePicker"],
-  landing:    ["StatsCards", "Buttons", "Cards", "Badges", "Avatars"],
+  landing:    ["Image", "StatsCards", "Buttons", "Cards", "Badges", "Avatars"],
   ecommerce:  ["Cards", "Badges", "Buttons", "DataTable", "FormFields"],
   blog:       ["Cards", "Avatars", "Badges", "Tabs", "Buttons"],
   portfolio:  ["Cards", "Avatars", "StatsCards", "Tabs", "Buttons"],
@@ -110,6 +111,7 @@ const BLOCK_TO_IDS: Record<string, string[]> = {
   FormFields: ["inputs", "text-fields", "form-field"],
   Buttons:    ["buttons"],
   Cards:      ["cards"],
+  Image:      ["image"],
   Tabs:       ["tabs"],
   Toggles:    ["switches", "checkboxes", "radios"],
   Badges:     ["badges"],

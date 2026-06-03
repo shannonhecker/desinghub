@@ -169,7 +169,7 @@ export const landingHero = {
   subhead: "Northwind turns raw events into the three numbers that matter, so your team ships with evidence instead of opinions.",
   primaryCta: "Start free",
   secondaryCta: "Book a demo",
-  heroImageId: "product-ui-analytics-dashboard-laptop",
+  heroImageId: "generated-enterprise-analytics",
 };
 
 export const landingFeatures: FeatureCard[] = [
@@ -262,7 +262,7 @@ export interface ResourceCard {
 export const landingResources: ResourceCard[] = [
   { title: "How Initech cut reporting time 90%", body: "A field guide to event-based analytics for product teams.", imageId: "office-business-colleagues-at-laptop" },
   { title: "The 3 metrics that predict churn", body: "Stop drowning in dashboards. Track what moves the needle.", imageId: "office-business-planning-meeting" },
-  { title: "Ship with evidence, not opinions", body: "How modern teams turn raw events into decisions.", imageId: "product-ui-marketing-analytics-laptop" },
+  { title: "Ship with evidence, not opinions", body: "How modern teams turn raw events into decisions.", imageId: "generated-saas-collaboration" },
 ];
 
 /* ── lookup helpers ─────────────────────────────────────────────────────── */

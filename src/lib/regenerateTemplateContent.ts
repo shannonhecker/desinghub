@@ -30,6 +30,7 @@ const FORBIDDEN_KEYS = new Set([
   "showIcon",
   "chartType",
   "status",
+  "src",
 ]);
 
 const MAX_PROP_STRING_LENGTH = 2000;

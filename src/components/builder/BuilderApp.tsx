@@ -445,8 +445,8 @@ export function BuilderApp() {
     if (density) useBuilder.getState().setDensity(density);
   }, [setDesignSystem, setMode, setInterfaceType, setSelectedComponents]);
 
-  /* ── Fork from shared preview - pick up ?shared=<hash> and apply ──
-     Triggered when a viewer clicks "Fork & edit" on /preview/share/[hash].
+  /* ── Edit from shared preview - pick up ?shared=<hash> and apply ──
+     Triggered when a viewer clicks "Edit" on /preview/share/[hash].
      Sets the full zone state, opens the preview, and clears the URL so
      reloads don't re-apply. Runs once on mount. */
   useEffect(() => {

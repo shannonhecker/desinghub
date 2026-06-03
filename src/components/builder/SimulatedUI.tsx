@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import * as CarbonIcons from "@carbon/icons-react";
 import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
+import { publicAssetUrl } from "@/lib/sampleImages";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent" | "uoaui" | "carbon";
@@ -903,7 +904,7 @@ export function SimulatedImage({ alt = "Image", ratio = "16:9", caption = "", sr
     <figure className="sim-image">
       <div className="sim-image-frame" style={{ aspectRatio: aspect }} role="img" aria-label={alt}>
         {src ? (
-          <img className="sim-image-img" src={src} alt={alt} loading="lazy" />
+          <img className="sim-image-img" src={publicAssetUrl(src)} alt={alt} loading="lazy" />
         ) : (
           <span className="material-symbols-outlined sim-image-icon" aria-hidden="true">image</span>
         )}

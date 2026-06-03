@@ -203,7 +203,7 @@ const settingsPage: BuilderTemplate = {
 };
 
 /* ──────────────────────────────────────────────────────────────
-   3. CRM Contacts / Data Explorer (Linear-style)
+   4. CRM Contacts / Data Explorer (Linear-style)
    ────────────────────────────────────────────────────────────── */
 const crmContacts: BuilderTemplate = {
   id: "crm-contacts",
@@ -251,7 +251,7 @@ const crmContacts: BuilderTemplate = {
 };
 
 /* ──────────────────────────────────────────────────────────────
-   4. Login → Dashboard (full flow)
+   5. Login → Dashboard (full flow)
    ────────────────────────────────────────────────────────────── */
 const loginFlow: BuilderTemplate = {
   id: "login-flow",
@@ -311,7 +311,7 @@ const landingPage: BuilderTemplate = {
   desc: "Marketing page: hero, features, stats, pricing, and a closing CTA",
   icon: "rocket_launch",
   interfaceType: "landing",
-  selectedComponents: ["sim-title", "buttons", "cards", "progress"],
+  selectedComponents: ["sim-title", "image", "buttons", "cards", "progress"],
   zoneLayouts: { body: { mode: "grid", columns: 12, gap: 16 } },
   /* Top nav: brand + nav links + a primary CTA (rendered horizontally). */
   header: [

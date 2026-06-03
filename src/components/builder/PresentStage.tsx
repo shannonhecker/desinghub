@@ -26,7 +26,7 @@
       render path as the in-app preview — Present mode is that
       preview promoted to the whole viewport, on a neutral stage.
 
-   Exit: PresentBar's Done button or Esc (handled globally in
+   Exit: PresentBar's Edit button or Esc (handled globally in
    BuilderApp) returns to edit. Shift+Cmd+P also toggles. Those
    listeners live on BuilderApp, which stays mounted because the
    early-return sits after all of its hooks. */
@@ -38,7 +38,7 @@ import { PresentBar } from "./PresentBar";
 
 export function PresentStage({
   /* "recipient" + sharedHash are passed by SharedPreview (the shared-link
-     route) to swap the PresentBar's exit for Fork-and-edit + Home. The
+     route) to swap the PresentBar's exit for Edit + Home. The
      in-app author path (BuilderApp) renders <PresentStage/> with no props
      → PresentBar defaults to the "author" variant. */
   barVariant,

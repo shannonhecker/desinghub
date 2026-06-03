@@ -21,7 +21,7 @@ export type SampleImageCategory =
 
 export type SampleImageAspect = "landscape" | "portrait" | "square";
 
-export type SampleImageSource = "pexels" | "unsplash" | "pravatar";
+export type SampleImageSource = "pexels" | "unsplash" | "pravatar" | "local";
 
 export interface SampleImage {
   /** Stable kebab-case id, unique across the whole library. */
@@ -112,6 +112,38 @@ export const SAMPLE_IMAGES: SampleImage[] = [
     category: "product-ui",
     aspect: "landscape",
     source: "unsplash",
+  },
+  {
+    id: "generated-enterprise-analytics",
+    url: "/media/dummy/enterprise-analytics.png",
+    alt: "Dark enterprise analytics dashboard with charts and data panels",
+    category: "product-ui",
+    aspect: "landscape",
+    source: "local",
+  },
+  {
+    id: "generated-material-mobile-collage",
+    url: "/media/dummy/material-mobile-collage.png",
+    alt: "Bright mobile app collage with rounded cards and colorful UI panels",
+    category: "product-ui",
+    aspect: "landscape",
+    source: "local",
+  },
+  {
+    id: "generated-saas-collaboration",
+    url: "/media/dummy/saas-collaboration.png",
+    alt: "Light SaaS collaboration dashboard with kanban cards and charts",
+    category: "product-ui",
+    aspect: "landscape",
+    source: "local",
+  },
+  {
+    id: "generated-glass-creative-studio",
+    url: "/media/dummy/glass-creative-studio.png",
+    alt: "Glassmorphism creative studio interface with media timeline and color tools",
+    category: "product-ui",
+    aspect: "landscape",
+    source: "local",
   },
 
   // ── people ──────────────────────────────────────────────────────────────
@@ -357,7 +389,7 @@ export function getImageById(id: string): SampleImage | undefined {
  */
 const SLOT_DEFAULTS: Record<ImageSlot, string> = {
   hero: "abstract-texture-pastel-pink-blue-gradient",
-  product: "product-ui-analytics-dashboard-laptop",
+  product: "generated-enterprise-analytics",
   "feature-1": "office-business-team-meeting-table",
   "feature-2": "office-business-colleagues-at-laptop",
   "feature-3": "office-business-planning-meeting",
@@ -371,4 +403,14 @@ const SLOT_DEFAULTS: Record<ImageSlot, string> = {
  */
 export function pickImage(slot: ImageSlot): SampleImage {
   return getImageById(SLOT_DEFAULTS[slot]) ?? SAMPLE_IMAGES[0];
+}
+
+/** Resolve root-relative public assets under any configured Next basePath. */
+export function publicAssetUrl(src: string): string {
+  if (/^(?:https?:|data:|blob:)/.test(src)) return src;
+  const basePath = typeof window !== "undefined"
+    ? ((window as unknown as { __NEXT_DATA__?: { basePath?: string } }).__NEXT_DATA__?.basePath ?? "")
+    : "";
+  const normalized = src.startsWith("/") ? src : `/${src}`;
+  return `${basePath}${normalized}`;
 }

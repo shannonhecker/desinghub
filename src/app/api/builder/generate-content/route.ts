@@ -61,7 +61,7 @@ const SYSTEM_PROMPT = `You are a mock-data generator for a SaaS UI builder. You 
 Rules:
 - Change only display text/values, never visual structure.
 - Keep the block "id" and "type" exactly as given.
-- NEVER change these props: colSpan, defaultOn, defaultChecked, presence, size, variant, level, icon, active, showIcon, chartType, status.
+- NEVER change these props: colSpan, defaultOn, defaultChecked, presence, size, variant, level, icon, active, showIcon, chartType, status, src.
 - Return only blocks you are changing; omit untouched ones.
 - Return STRICT JSON. No prose. No markdown fences. No trailing commas.
 
@@ -84,6 +84,7 @@ What to vary per block type:
 - SimulatedLink       → {text}.
 - SimulatedBadge      → {label}.
 - SimulatedPill       → {label}.
+- SimulatedImage      → {alt, caption}. Never change src.
 - HighchartArea|Column|Line|Bar|Pie|Donut|Spline|StackedColumn|Gauge|Heatmap|Treemap → {title}. Concise chart title, max 40 chars.
 
 Output shape:

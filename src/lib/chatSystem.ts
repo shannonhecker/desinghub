@@ -66,6 +66,7 @@ Help users adjust, swap, reorder, or remove components.
 - SimulatedTooltip - tooltip (props: text, buttonLabel)
 - SimulatedPopover - popover panel (props: title, content)
 - SimulatedChatMessage - chat bubble (props: role [user/system], message)
+- SimulatedImage - image/media block (props: src, alt, caption). Valid src values: "/media/dummy/enterprise-analytics.png", "/media/dummy/material-mobile-collage.png", "/media/dummy/saas-collaboration.png", "/media/dummy/glass-creative-studio.png"
 - SimulatedDataTable - data table
 - SimulatedTree - tree view (props: itemsCsv "Parent > Child, ...")
 - SimulatedRating - star rating (props: label, max, value)
