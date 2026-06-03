@@ -31,9 +31,7 @@ type HeroArt = {
   subtitle: string;
   mark: string;
   palette: string[];
-  metricLabel: string;
   metricValue: string;
-  metricDelta: string;
   chips: string[];
   bars: number[];
   lanes: string[];
@@ -46,9 +44,7 @@ const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
     subtitle: "Density and data",
     mark: "S",
     palette: ["#0b7fab", "#16a6c9", "#4cc9f0", "#ed3124", "#f5a623", "#7a5aa6", "#9b7a55"],
-    metricLabel: "Token coverage",
     metricValue: "3 layers",
-    metricDelta: "AA ready",
     chips: ["Compact", "Medium", "Touch"],
     bars: [44, 72, 58, 84, 62, 48, 76],
     lanes: ["Action", "Containment", "Market data"],
@@ -59,9 +55,7 @@ const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
     subtitle: "Dynamic color",
     mark: "M3",
     palette: ["#6750a4", "#d0bcff", "#eaddff", "#ffd8e4", "#b3261e", "#fef7ff", "#625b71"],
-    metricLabel: "Tonal roles",
     metricValue: "13",
-    metricDelta: "adaptive",
     chips: ["Filled", "Tonal", "Outlined"],
     bars: [56, 80, 66, 92, 74, 60, 86],
     lanes: ["Surface", "Primary", "Container"],
@@ -72,9 +66,7 @@ const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
     subtitle: "App surfaces",
     mark: "F2",
     palette: ["#0078d4", "#2899f5", "#60cdff", "#8a8886", "#c8c6c4", "#f3f2f1", "#2b88d8"],
-    metricLabel: "Shell states",
     metricValue: "3 sizes",
-    metricDelta: "cross platform",
     chips: ["Command", "Pane", "Focus"],
     bars: [38, 62, 88, 70, 46, 78, 54],
     lanes: ["Navigation", "Toolbar", "Content"],
@@ -85,9 +77,7 @@ const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
     subtitle: "Aurora glass",
     mark: "UA",
     palette: ["#8A58C9", "#9D71D2", "#9575F0", "#f46a9b", "#27aeef", "#1a1035", "#E8EAED"],
-    metricLabel: "Glass depth",
     metricValue: "4 layers",
-    metricDelta: "motion tuned",
     chips: ["Frosted", "Aurora", "Glow"],
     bars: [50, 74, 96, 68, 82, 58, 88],
     lanes: ["Glass", "Gradient", "Ambient"],
@@ -98,9 +88,7 @@ const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
     subtitle: "2px grid",
     mark: "01",
     palette: ["#0f62fe", "#78a9ff", "#33b1ff", "#42be65", "#fa4d56", "#f4f4f4", "#393939"],
-    metricLabel: "Grid rhythm",
     metricValue: "2px",
-    metricDelta: "flat",
     chips: ["Data", "Tiles", "Plex"],
     bars: [64, 40, 82, 58, 92, 46, 74],
     lanes: ["Column", "Row", "Tile"],
@@ -214,18 +202,82 @@ function HeroSystemScene({ system, art }: { system: SystemId; art: HeroArt }) {
   );
 }
 
-function HeroInsightPanel({ art }: { art: HeroArt }) {
+function HeroDetailPanel({ system, art }: { system: SystemId; art: HeroArt }) {
+  if (system === "salt") {
+    return (
+      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.saltDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
+        <div className={styles.quoteGrid}>
+          {["Bid", "Ask", "Vol", "PnL"].map((label, i) => (
+            <span key={label}>
+              <em>{label}</em>
+              <strong>{["41.92", "42.08", "1.2M", "+18"][i]}</strong>
+            </span>
+          ))}
+        </div>
+        <div className={styles.marketLadder}>
+          {art.bars.map((bar, i) => <span key={i} style={{ width: `${bar}%` }} />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (system === "m3") {
+    return (
+      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.materialDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
+        <div className={styles.blobField}>
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className={styles.materialTokenGrid}>
+          {art.chips.map((chip, i) => <span key={chip} style={{ "--tone": art.palette[i + 1] } as React.CSSProperties}>{chip}</span>)}
+        </div>
+      </div>
+    );
+  }
+
+  if (system === "fluent") {
+    return (
+      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.fluentDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
+        <div className={styles.ribbonRow}>
+          {["add", "edit", "send"].map((icon) => <span key={icon} className="material-symbols-outlined">{icon}</span>)}
+        </div>
+        <div className={styles.fluentStatusCards}>
+          {art.lanes.map((lane, i) => (
+            <span key={lane}>
+              <em>{lane}</em>
+              <strong>{["Ready", "Synced", "Live"][i]}</strong>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (system === "uoaui") {
+    return (
+      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.auroraDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
+        <div className={styles.orbitControls}>
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className={styles.waveform}>
+          {art.bars.map((bar, i) => <span key={i} style={{ height: `${bar}%` }} />)}
+        </div>
+        <div className={styles.glowChips}>
+          {art.chips.map((chip) => <span key={chip}>{chip}</span>)}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`${styles.showcasePanel} ${styles.insightPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-      <div className={styles.insightMetric}>
-        <span>{art.metricLabel}</span>
-        <strong>{art.metricValue}</strong>
-        <em>{art.metricDelta}</em>
+    <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.carbonDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
+      <div className={styles.carbonTileSet}>
+        {art.bars.slice(0, 6).map((bar, i) => <span key={i} style={{ "--height": `${bar}%` } as React.CSSProperties} />)}
       </div>
-      <div className={styles.insightBars}>
-        {art.bars.map((bar, i) => <span key={i} style={{ height: `${bar}%` }} />)}
-      </div>
-      <div className={styles.chipRow}>
+      <div className={styles.carbonDataRows}>
         {art.chips.map((chip) => <span key={chip}>{chip}</span>)}
       </div>
     </div>
@@ -339,7 +391,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
             <div className={`${styles.showcasePanel} ${styles.systemPanel}`} style={{ "--delay": "0.42s" } as React.CSSProperties}>
               <HeroSystemScene system={activeSystem} art={heroArt} />
             </div>
-            <HeroInsightPanel art={heroArt} />
+            <HeroDetailPanel system={activeSystem} art={heroArt} />
           </div>
         </div>
       </div>
