@@ -262,6 +262,22 @@ export function PresentBar({
         </span>
       </button>
 
+      {/* Compare — toggle the 2×2 design-system grid. Moved into present
+          mode (owner ask) so you can compare without returning to edit.
+          Active state is non-colour: aria-pressed + the underline cue. */}
+      <button
+        type="button"
+        className={`present-bar-btn present-bar-btn-icon${compareMode ? " present-bar-btn-active" : ""}`}
+        onClick={() => useBuilder.getState().toggleCompareMode()}
+        aria-pressed={compareMode}
+        title={compareMode ? "Exit compare" : "Compare all design systems"}
+        aria-label={compareMode ? "Exit compare mode" : "Compare design systems"}
+      >
+        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
+          compare
+        </span>
+      </button>
+
       {/* Share — copies a stateless preview URL to the clipboard. */}
       <button
         type="button"
