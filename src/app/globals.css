@@ -659,18 +659,18 @@ a { color: inherit; text-decoration: none; }
 .dh-matrix-cell {
   padding: 0;
 }
-/* Each cell hosts the live specimen, scaled down + clipped so the grid reads as
-   a calm anatomy matrix rather than N copies of a full demo. */
+/* Each cell hosts the REAL per-cell control (this variant in this state). A
+   uniform min-height aligns the grid; content is centred and allowed to size to
+   its natural height so nothing clips. overflow-x scrolls a wide control rather
+   than cropping it; the cell never hides overflow. */
 .dh-matrix-specimen {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 120px;
-  height: 88px;
-  padding: var(--dh-space-12, 12px);
-  overflow: hidden;
-  transform: scale(0.82);
-  transform-origin: center;
+  min-width: 132px;
+  min-height: 96px;
+  padding: var(--dh-space-16, 16px) var(--dh-space-12, 12px);
+  overflow-x: auto;
 }
 
 /* ── Props table. ── */

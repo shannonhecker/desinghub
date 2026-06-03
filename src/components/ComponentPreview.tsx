@@ -92,6 +92,22 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     : store.fluent.size;
   const css = getFullCSS(activeSystem, t.T, densityOrSize);
 
+  /* Light vs dark + a Salt-family density, for the real per-cell VariantsMatrix
+     renderer (mirrors DesignHubApp's isDark detection + ComponentRenderer's
+     density guard). M3/Fluent/Carbon ignore saltDensity in the renderer. */
+  const isDark = activeSystem === "salt" ? store.salt.themeKey.includes("dark")
+    : activeSystem === "m3" ? store.m3.themeKey.startsWith("dark")
+    : activeSystem === "uoaui" ? store.uoaui.themeKey === "dark"
+    : activeSystem === "carbon" ? (store.carbon.themeKey === "g90" || store.carbon.themeKey === "g100")
+    : store.fluent.themeKey === "dark";
+  const matrixMode: "light" | "dark" = isDark ? "dark" : "light";
+  const saltLikeDensity = activeSystem === "salt" ? store.salt.density
+    : activeSystem === "uoaui" ? store.uoaui.density
+    : "medium";
+  const matrixDensity = (["high", "medium", "low", "touch"].includes(saltLikeDensity as string)
+    ? saltLikeDensity
+    : "medium") as "high" | "medium" | "low" | "touch";
+
   const DemoComponent = getDemoComponent(activeSystem, componentId);
 
   const tabCls = activeSystem === "salt" ? "s-tab" : activeSystem === "m3" ? "m3-tab" : activeSystem === "uoaui" ? "a-tab" : activeSystem === "carbon" ? "cb-tab" : "f-tab";
@@ -262,7 +278,15 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
             The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
             {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
           </p>
-          <VariantsMatrix matrix={variants} Demo={DemoComponent} t={t} />
+          <VariantsMatrix
+            matrix={variants}
+            componentId={metaId as UiKitComponentId}
+            system={ds}
+            mode={matrixMode}
+            saltDensity={matrixDensity}
+            Demo={DemoComponent}
+            t={t}
+          />
         </section>
       )}
 

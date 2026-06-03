@@ -48,6 +48,13 @@ const s = (v: unknown, fallback = ""): string => String(v ?? fallback);
 const slug = (v: unknown, fallback = "field"): string =>
   s(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
 
+/** Resolve a Carbon control's DOM id: prefer an explicit, cell-unique `id` from
+    the caller (e.g. VariantsMatrix salts variant+state so cells don't collide);
+    otherwise derive from the label. Carbon requires this id to be unique per page,
+    and the variants matrix renders the same label in every cell. */
+const fieldId = (p: Record<string, unknown>, fallback: string): string =>
+  p.id != null && s(p.id) ? s(p.id) : slug(p.label, fallback);
+
 /** A render fn takes the block's resolved props and returns the real markup. */
 export type RealBlockRenderer = (props: Record<string, unknown>) => React.ReactNode;
 
@@ -73,24 +80,41 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedButton: (p) =>
     React.createElement(
       "button",
-      { type: "button", className: `a-btn ${uoauiButtonClass(s(p.variant, "primary"))}` },
+      {
+        type: "button",
+        className: `a-btn ${uoauiButtonClass(s(p.variant, "primary"))}`,
+        disabled: Boolean(p.disabled),
+      },
       s(p.label, "Button"),
     ),
 
-  SimulatedTextInput: (p) =>
-    React.createElement(
+  SimulatedTextInput: (p) => {
+    const status = s(p.validationStatus); // "" | error | warning | success
+    return React.createElement(
       "div",
-      { className: "a-input-wrap" },
+      { className: `a-input-wrap${status ? ` a-input-${status}` : ""}` },
       React.createElement("label", { className: "a-input-label" }, s(p.label, "Label")),
-      React.createElement("input", { className: "a-input", placeholder: s(p.placeholder), readOnly: true }),
-    ),
+      React.createElement("input", {
+        className: "a-input",
+        placeholder: s(p.placeholder),
+        value: s(p.value) || undefined,
+        disabled: Boolean(p.disabled),
+        readOnly: true,
+      }),
+    );
+  },
 
   SimulatedCheckbox: (p) => {
     const checked = Boolean(p.defaultChecked);
+    const indeterminate = Boolean(p.indeterminate);
+    const mark = indeterminate ? "–" : checked ? "✓" : "";
     return React.createElement(
       "label",
-      { className: `a-checkbox${checked ? " checked" : ""}` },
-      React.createElement("span", { className: "a-cb-box", "aria-hidden": "true" }, checked ? "✓" : ""),
+      {
+        className: `a-checkbox${checked || indeterminate ? " checked" : ""}${p.disabled ? " disabled" : ""}`,
+        "aria-disabled": p.disabled ? "true" : undefined,
+      },
+      React.createElement("span", { className: "a-cb-box", "aria-hidden": "true" }, mark),
       s(p.label),
     );
   },
@@ -101,9 +125,17 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
      For the read-only live demo we render the on/off CSS state directly. */
   SimulatedSwitch: (p) => {
     const on = Boolean(p.defaultOn);
+    const disabled = Boolean(p.disabled);
     return React.createElement(
       "button",
-      { type: "button", className: `a-switch${on ? " on" : ""}`, role: "switch", "aria-checked": on, "aria-label": s(p.label, "Switch") },
+      {
+        type: "button",
+        className: `a-switch${on ? " on" : ""}${disabled ? " disabled" : ""}`,
+        role: "switch",
+        "aria-checked": on,
+        "aria-label": s(p.label, "Switch"),
+        disabled,
+      },
       React.createElement("span", { className: "a-sw-thumb" }),
     );
   },
@@ -144,31 +176,44 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedButton: (p) =>
     React.createElement(
       CarbonButton,
-      { kind: carbonButtonKind(s(p.variant, "primary")) },
+      { kind: carbonButtonKind(s(p.variant, "primary")), disabled: Boolean(p.disabled) },
       s(p.label, "Button"),
     ),
 
-  SimulatedTextInput: (p) =>
-    React.createElement(CarbonTextInput, {
-      id: slug(p.label, "input"),
+  SimulatedTextInput: (p) => {
+    const status = s(p.validationStatus);
+    return React.createElement(CarbonTextInput, {
+      id: fieldId(p, "input"),
       labelText: s(p.label, "Label"),
       placeholder: s(p.placeholder),
+      value: s(p.value) || undefined,
+      invalid: status === "error",
+      invalidText: status === "error" ? "This field has an error" : undefined,
+      warn: status === "warning",
+      warnText: status === "warning" ? "This field has a warning" : undefined,
+      disabled: Boolean(p.disabled),
       readOnly: true,
-    }),
+    });
+  },
 
   SimulatedCheckbox: (p) =>
     React.createElement(CarbonCheckbox, {
-      id: slug(p.label, "checkbox"),
+      id: fieldId(p, "checkbox"),
       labelText: s(p.label),
-      defaultChecked: Boolean(p.defaultChecked),
+      checked: Boolean(p.defaultChecked),
+      indeterminate: Boolean(p.indeterminate),
+      disabled: Boolean(p.disabled),
+      readOnly: true,
     }),
 
   /* Carbon's Switch maps to Toggle (a labelled on/off switch). */
   SimulatedSwitch: (p) =>
     React.createElement(CarbonToggle, {
-      id: slug(p.label, "toggle"),
+      id: fieldId(p, "toggle"),
       labelText: s(p.label, "Switch"),
-      defaultToggled: Boolean(p.defaultOn),
+      toggled: Boolean(p.defaultOn),
+      disabled: Boolean(p.disabled),
+      readOnly: true,
     }),
 
   /* Carbon's Card maps to Tile. */
