@@ -21,7 +21,13 @@ async function hashToken(password: string): Promise<string> {
  * 2. Visitor - must log in with STAGING_PASSWORD via /login.
  *
  * Protected routes: /builder (and any sub-paths)
- * Public routes:    /, /login, /landing, /landing-*, /ui-kit, /api/*, /_next/*, static assets
+ * Public routes:    /, /login, /landing, /landing-*, /ui-kit, /preview/share/*,
+ *                   /api/*, /_next/*, static assets
+ *
+ * /preview/share/<hash> is public by design: it is a stateless, read-only
+ * render of a canvas encoded entirely in the URL (no server storage, no
+ * session data), with the hash hard-sanitized on decode. Shared links must
+ * resolve for external recipients who don't have the staging password.
  *
  * Configuration:
  *   - STAGING_PASSWORD absent  → auth disabled (public mode)
@@ -56,7 +62,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/landing" ||
     pathname.startsWith("/landing-") ||
-    pathname === "/ui-kit"
+    pathname === "/ui-kit" ||
+    // Shared canvas links must open for recipients without the staging
+    // password. Scoped to /preview/share only — /builder etc. stay gated.
+    pathname.startsWith("/preview/share")
   ) {
     return NextResponse.next();
   }
