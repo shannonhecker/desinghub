@@ -28,29 +28,11 @@
 import { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useSessionStore, type LocalSessionSnapshot } from "@/store/useSessionStore";
+import { TRACKED_KEYS } from "./autoSaveTrackedKeys";
 
 /* localStorage writes are synchronous and cheap, so a short debounce is
  *  plenty to collapse rapid edits without losing the latest state. */
 const DEBOUNCE_MS = 800;
-
-/** Fields whose changes should trigger a save. Kept in sync with
- *  useAutoSave's TRACKED_KEYS so both paths react to the same edits. */
-const TRACKED_KEYS = [
-  "messages",
-  "blocks",
-  "headerBlocks",
-  "sidebarBlocks",
-  "footerBlocks",
-  "zoneLayouts",
-  "designSystem",
-  "mode",
-  "density",
-  "interfaceType",
-  "selectedComponents",
-  "colorOverrides",
-  "activeTemplateId",
-  "sessionTitle",
-] as const;
 
 const refIds = new WeakMap<object, string>();
 let refCounter = 0;

@@ -2416,6 +2416,17 @@
   background: rgba(255, 255, 255, 0.14);
 }
 
+/* Neutral "Dismiss" affordance on the local-first "Saved on this device"
+   state. Without this it would inherit the red error-tinted --retry base,
+   which would read as alarming on an affirmative saved pill. */
+.save-indicator--saved .save-indicator-retry {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg2, rgba(255, 255, 255, 0.82));
+}
+.save-indicator--saved .save-indicator-retry:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 /* Light mode */
 .builder-light .save-indicator { color: rgba(0, 0, 0, 0.55); }
 .builder-light .save-indicator--saved .save-indicator-icon { color: #2f9a68; }
@@ -2434,6 +2445,13 @@
   color: rgba(0, 0, 0, 0.72);
 }
 .builder-light .save-indicator--off .save-indicator-retry:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+.builder-light .save-indicator--saved .save-indicator-retry {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.72);
+}
+.builder-light .save-indicator--saved .save-indicator-retry:hover {
   background: rgba(0, 0, 0, 0.1);
 }
 
