@@ -87,7 +87,7 @@ export function TokenSwatches({ tokens, t, scopeRef }: TokenSwatchesProps) {
     <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
       <table className="dh-tokens" style={{ fontFamily: t.font }}>
         <thead>
-          <tr style={{ borderBottomColor: t.borderSubtle }}>
+          <tr>
             <th scope="col" className="dh-tokens-h dh-tokens-h-swatch" style={{ color: t.fg3 }}>
               Sample
             </th>
@@ -103,7 +103,7 @@ export function TokenSwatches({ tokens, t, scopeRef }: TokenSwatchesProps) {
           {resolved.map((s) => {
             const colorish = isColorish(s.value);
             return (
-              <tr key={s.token} style={{ borderBottomColor: t.borderSubtle }}>
+              <tr key={s.token}>
                 <td className="dh-tokens-cell">
                   <span
                     className="dh-token-chip"

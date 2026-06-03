@@ -258,7 +258,7 @@ export function DesignHubApp() {
           {(() => {
             const DS_LIST: { id: SystemId; label: string; short: string }[] = [
               { id: "salt", label: "Salt DS", short: "Salt" },
-              { id: "m3", label: "Material 3", short: "M3" },
+              { id: "m3", label: "Material 3", short: "Material" },
               { id: "fluent", label: "Fluent 2", short: "Fluent" },
               { id: "uoaui", label: "uoaui DS", short: "uoaui" },
               { id: "carbon", label: "Carbon DS", short: "Carbon" },
@@ -290,7 +290,7 @@ export function DesignHubApp() {
                           border: isActive ? "1px solid transparent" : `1px solid ${t.borderSubtle}`,
                         }}
                       >
-                        <span className="uikit-rail-glyph" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>
+                        <span className="uikit-rail-glyph" aria-hidden="true" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>
                         <span className="uikit-rail-label">{ds.short}</span>
                       </button>
                     );

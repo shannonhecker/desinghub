@@ -188,7 +188,7 @@ export function VariantsMatrix({
                 <th
                   scope="row"
                   className="dh-matrix-rowhead"
-                  style={{ color: t.fg2, borderColor: t.borderSubtle }}
+                  style={{ color: t.fg2 }}
                 >
                   {pretty(variant)}
                 </th>
@@ -198,7 +198,6 @@ export function VariantsMatrix({
                     <td
                       key={`${variant}-${state}`}
                       className="dh-matrix-cell"
-                      style={{ borderColor: t.borderSubtle }}
                     >
                       <div className="dh-matrix-specimen">
                         {real && blockType ? (
