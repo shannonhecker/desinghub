@@ -44,7 +44,6 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
   SimulatedTokenizedInput: "Input with deletable token chips.",
   Alert: "Info / success / warning / error banner with title + message.",
   SimulatedCard: "Container with a title + body area.",
-  SimulatedImage: "Media placeholder with aspect ratio + optional caption.",
   SimulatedStatCard: "Metric + value + progress bar. Supports colSpan.",
   SimulatedBadge: "Small label chip with status colour.",
   SimulatedPill: "Dismissible tag with optional X.",
