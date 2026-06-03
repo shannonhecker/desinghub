@@ -166,6 +166,11 @@ export interface ZoneLayout {
   wrap?: boolean;
   /** align-items on the cross-axis. */
   align?: LayoutAlign;
+  /** Zone customization (PR2): whether the zone is shown. Undefined =
+     visible, so existing layouts and share links default to shown.
+     Removing a zone sets this false; its blocks are retained so re-adding
+     restores them. Body is always visible regardless of this flag. */
+  visible?: boolean;
 }
 
 interface BuilderState {

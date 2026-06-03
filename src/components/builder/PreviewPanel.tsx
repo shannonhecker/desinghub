@@ -192,6 +192,9 @@ function PreviewBar() {
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const compareMode = useBuilder((s) => s.compareMode);
   const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
+  /* Zone customization (PR2): show/hide peripheral panels. */
+  const zoneLayouts = useBuilder((s) => s.zoneLayouts);
+  const setZoneLayout = useBuilder((s) => s.setZoneLayout);
 
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [dsMenuOpen, setDsMenuOpen] = useState(false);
@@ -565,6 +568,32 @@ function PreviewBar() {
               <span className="material-symbols-outlined" aria-hidden="true">compare</span>
               {compareMode ? "Exit compare mode" : "Compare design systems"}
             </button>
+            <div className="preview-bar-overflow-divider" />
+            {/* Panels (PR2): show/hide the peripheral zones. Hiding keeps the
+                zone's blocks, so toggling back restores its content. */}
+            <div className="preview-bar-overflow-group-label" aria-hidden="true">Panels</div>
+            {([
+              { z: "header", label: "Header" },
+              { z: "sidebar", label: "Left panel" },
+              { z: "footer", label: "Footer" },
+            ] as const).map(({ z, label }) => {
+              const visible = zoneLayouts[z].visible !== false;
+              return (
+                <button
+                  key={z}
+                  className={`preview-bar-overflow-item${visible ? " preview-bar-overflow-item-active" : ""}`}
+                  role="menuitemcheckbox"
+                  aria-checked={visible}
+                  onClick={() => setZoneLayout(z, { visible: !visible })}
+                  title={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">
+                    {visible ? "check_box" : "check_box_outline_blank"}
+                  </span>
+                  {label}
+                </button>
+              );
+            })}
             <div className="preview-bar-overflow-divider" />
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleToggleLibrary}>
               <span className="material-symbols-outlined" aria-hidden="true">category</span>
@@ -1095,11 +1124,18 @@ export function BuilderCanvas({
      library re-populates sidebarBlocks and the rail returns. */
   const sidebarBlockCount = useBuilder((s) => s.sidebarBlocks.length);
 
+  /* Zone customization (PR2): per-zone visibility. Undefined defaults to
+     visible. Removing a zone hides it but keeps its blocks (re-adding via
+     the Panels menu restores them). Body is always shown. */
+  const headerVisible = useBuilder((s) => s.zoneLayouts.header.visible !== false);
+  const sidebarVisible = useBuilder((s) => s.zoneLayouts.sidebar.visible !== false);
+  const footerVisible = useBuilder((s) => s.zoneLayouts.footer.visible !== false);
+
   /* Responsive shells compact the header + drop the sidebar on the
      mobile device; the standalone pop-out stays full desktop layout.
      Also hidden when there are no sidebar blocks (full-width layouts). */
   const compact = responsive && isMobile;
-  const showSidebar = !(responsive && isMobile) && sidebarBlockCount > 0;
+  const showSidebar = sidebarVisible && !(responsive && isMobile) && sidebarBlockCount > 0;
 
   const dashboard = isCodeView ? (
     <CodeViewer blocks={blocks} />
@@ -1109,7 +1145,7 @@ export function BuilderCanvas({
       key={previewKey}
       {...officialScope.attrs}
     >
-      <DashboardHeader compact={compact} />
+      {headerVisible && <DashboardHeader compact={compact} />}
 
       <div className="bp-body">
         {showSidebar && (
@@ -1140,7 +1176,7 @@ export function BuilderCanvas({
         </main>
       </div>
 
-      <DashboardFooter />
+      {footerVisible && <DashboardFooter />}
     </div>
   );
 
