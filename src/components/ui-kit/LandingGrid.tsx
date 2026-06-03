@@ -5,6 +5,7 @@ import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getComponents, getCategories, getSystemInfo, getPreviews } from "@/data/registry";
 import { getUiKitGroup, BUILDER_BLOCKS } from "./uiKitGroups";
+import { getStageBg } from "./stageTint";
 
 export const LandingGrid = React.memo(function LandingGrid() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
@@ -65,39 +66,127 @@ export const LandingGrid = React.memo(function LandingGrid() {
   const pillWeight = activeSystem === "salt" ? 600 : activeSystem === "carbon" ? 400 : 500;
   const catWeight = activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 400 : 600;
 
+  /* C2 stage alignment: the landing root uses the SAME per-DS stage tint as
+     the shell (getStageBg) so the page reads as one deliberate surface.
+     uoaui returns "transparent" so the app-level aurora shows through. */
+  const stageBg = getStageBg(t);
+
+  /* A1 HERO SLAB tint — a brand-tinted editorial slab behind the hero copy.
+     uoaui rides the signature aurora gradient; M3 a tonal surface step;
+     Carbon a flat $layer-accent (no radius, no shadow); Salt/Fluent a quiet
+     accent wash mixed into the stage. All token-derived — no raw hex. */
+  const slabBg = activeSystem === "uoaui"
+    ? (t.T.gradient as string)
+    : activeSystem === "m3"
+    ? ((t.T.surfaceContainerLow as string) ?? t.bg2)
+    : activeSystem === "carbon"
+    ? ((t.T.layerAccent01 as string) ?? t.bg2)
+    : `color-mix(in srgb, ${t.accent} 6%, ${t.bg})`;
+  /* Carbon slab is flat; everyone else gets a soft editorial corner. */
+  const slabRadius = activeSystem === "carbon" ? 0 : activeSystem === "m3" ? 28 : 24;
+  /* Slab text uses the active theme's own mode-aware foreground tokens. For
+     uoaui this matters: the slab rides t.T.gradient, which is the DARK aurora
+     in dark mode (light fg #E8EAED reads) and the LIGHT lavender wash in light
+     mode (dark fg #2D1B4E reads) — both clear AA. Pinning a literal white/dark
+     would invert and fail in one mode. */
+  const slabFg = t.fg;
+  const slabFg2 = t.fg2;
+  const slabAccent = t.accent;
+
+  /* Hand-picked LIVE specimens for the hero collage — the SAME registry
+     previews the cards render, so no new render machinery and no
+     screenshots. We try an ordered candidate set and keep the first 3 that
+     actually exist for the active DS (component IDs + coverage differ per DS:
+     e.g. Carbon uses singular `badge`, M3 has no `inputs`). buttons + cards
+     exist in all 5, so every DS gets a full collage. */
+  const COLLAGE_IDS = [
+    "buttons", "cards", "inputs", "badges", "badge",
+    "switches", "chips", "tags", "checkboxes", "avatars",
+  ];
+  const collage = COLLAGE_IDS
+    .filter(id => previews[id])
+    .slice(0, 3);
+  /* Specimen tile surface mirrors the card thumb so the collage feels native
+     to the page; Carbon flat, uoaui glass-on-gradient, M3/others tonal. */
+  const specimenTileBg = activeSystem === "uoaui"
+    ? t.T.cardBg
+    : activeSystem === "m3"
+    ? t.bg2
+    : activeSystem === "carbon"
+    ? t.T.layer01
+    : t.bg;
+
   return (
-    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: t.bg, minHeight: "100%" }}>
-      {/* Hero */}
-      <div style={{ marginBottom: Math.round(outerPad * 1.5), borderBottom: `1px solid ${t.borderSubtle}`, paddingBottom: outerPad }}>
-        <div style={{ fontSize: t.scale.labF, fontWeight: activeSystem === "m3" ? 500 : 700, color: t.accent, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4 }}>
-          {orgLabel}
+    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: stageBg, minHeight: "100%" }}>
+      {/* A1 EXPRESSIVE HERO SLAB — an aurora/brand-tinted editorial slab with
+          the headline + copy on the left and a collage of LIVE real
+          components on the right (collapses to one column under 900px). */}
+      <div className="uikit-hero-slab" style={{
+        marginBottom: Math.round(outerPad * 1.5),
+        background: slabBg,
+        borderRadius: slabRadius,
+        border: activeSystem === "carbon" ? `1px solid ${t.borderSubtle}` : activeSystem === "uoaui" ? `1px solid ${t.border}` : "none",
+      }}>
+        <div className="uikit-hero-copy">
+          <div style={{ fontSize: t.scale.labF, fontWeight: activeSystem === "m3" ? 500 : 700, color: slabAccent, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: t.scale.gap + 4 }}>
+            {orgLabel}
+          </div>
+          <h1 style={{ fontSize: "var(--uikit-hero-display, var(--uikit-hero-size, 48px))", fontWeight: heroWeight, color: slabFg, lineHeight: 1.08, margin: `0 0 ${t.scale.gap + (activeSystem === "m3" ? 8 : 12)}px`, letterSpacing: activeSystem === "m3" ? "-0.25px" : "-0.5px" }}>
+            {sysInfo.name}
+          </h1>
+          <p style={{ fontSize: t.scale.navF + 3, color: slabFg2, lineHeight: 1.5, maxWidth: 520, margin: "0 0 10px", fontWeight: 500 }}>
+            Preview, compare, and copy tokens across five design systems.
+          </p>
+          <p style={{ fontSize: bodySize, color: slabFg2, opacity: 0.9, lineHeight: 1.6, maxWidth: 560, margin: 0 }}>
+            {components.length} components across {categories.length} categories:{descSuffix}
+          </p>
+          <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 12, flexWrap: "wrap" }}>
+            {featurePills.map(s => (
+              <div key={s.label} style={{
+                display: "flex", alignItems: "center", gap: t.scale.gap - 2,
+                padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: pillRadius,
+                /* On the tinted slab, pills use a translucent-on-slab fill so
+                   they read against the brand wash. uoaui rides its mode-aware
+                   glass card fill over the aurora; Carbon keeps its $layer-01
+                   tag; others mix a faint surface wash from the base bg. */
+                background: activeSystem === "uoaui"
+                  ? (t.T.cardBg as string)
+                  : activeSystem === "carbon"
+                  ? (t.T.layer01 || t.bg)
+                  : `color-mix(in srgb, ${t.bg} 70%, transparent)`,
+                border: activeSystem === "carbon" ? "none" : `1px solid ${t.borderSubtle}`,
+                fontSize: t.scale.navF - 1, color: slabFg2, fontWeight: pillWeight,
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: slabAccent }}>{s.icon}</span>
+                {s.label}
+              </div>
+            ))}
+          </div>
         </div>
-        <h1 style={{ fontSize: heroSize, fontWeight: heroWeight, color: t.fg, lineHeight: 1.15, margin: `0 0 ${t.scale.gap + (activeSystem === "m3" ? 8 : 12)}px`, letterSpacing: activeSystem === "m3" ? "-0.25px" : "-0.5px" }}>
-          {sysInfo.name}
-        </h1>
-        <p style={{ fontSize: t.scale.navF + 1, color: t.fg2, lineHeight: 1.5, maxWidth: 560, margin: "0 0 10px", fontWeight: 500 }}>
-          Preview, compare, and copy tokens across five design systems.
-        </p>
-        <p style={{ fontSize: bodySize, color: t.fg2, opacity: 0.85, lineHeight: 1.6, maxWidth: 640, margin: 0 }}>
-          {components.length} components across {categories.length} categories:{descSuffix}
-        </p>
-        <div style={{ display: "flex", gap: t.scale.gap - 2, marginTop: t.scale.gap + 10, flexWrap: "wrap" }}>
-          {featurePills.map(s => (
-            <div key={s.label} style={{
-              display: "flex", alignItems: "center", gap: t.scale.gap - 2,
-              padding: `${t.scale.gap - 2}px ${t.scale.gap + 6}px`, borderRadius: pillRadius,
-              /* Carbon pills use $layer-accent (no border, pill radius)
-                 so they read as Carbon tags; others keep their existing
-                 bordered-pill look. */
-              background: activeSystem === "carbon" ? (t.T.layerAccent01 || t.bg2) : activeSystem === "m3" ? t.bg2 : t.bg,
-              border: activeSystem === "carbon" ? "none" : `1px solid ${t.border}`,
-              fontSize: t.scale.navF - 1, color: t.fg2, fontWeight: pillWeight,
-            }}>
-              <span className="material-symbols-outlined" style={{ fontSize: t.scale.navF, color: t.accent }}>{s.icon}</span>
-              {s.label}
-            </div>
-          ))}
-        </div>
+
+        {/* HERO COLLAGE — live specimens, same render path as the cards. */}
+        {collage.length > 0 && (
+          <div className="uikit-hero-collage" aria-hidden="true">
+            {collage.map(id => {
+              const Preview = previews[id];
+              return (
+                <div
+                  key={id}
+                  className="uikit-hero-specimen"
+                  style={{
+                    background: specimenTileBg,
+                    borderRadius: activeSystem === "carbon" ? 0 : 14,
+                    border: `1px solid ${t.borderSubtle}`,
+                    backdropFilter: activeSystem === "uoaui" ? (t.T.glass as string) : undefined,
+                    pointerEvents: "none",
+                  }}
+                >
+                  {Preview ? <Preview /> : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Tools section — Tokens, Design Audit, Builder Blocks. Sourced from

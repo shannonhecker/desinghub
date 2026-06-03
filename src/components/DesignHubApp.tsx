@@ -14,6 +14,7 @@ import { SidebarSearch } from "./ui-kit/SidebarSearch";
 import { ContentTopBar } from "./ui-kit/ContentTopBar";
 import { ComponentList } from "./ui-kit/ComponentList";
 import { MainContent } from "./ui-kit/MainContent";
+import { getStageBg, getRailBg, getPanelBg } from "./ui-kit/stageTint";
 
 /**
  * @deprecated Use `useTheme()` from `@/contexts/ThemeContext` instead.
@@ -29,6 +30,33 @@ export function DesignHubApp() {
   const { sidebarOpen, activeSystem } = store;
   const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
+
+  /* B2 ICON-RAIL: which secondary-panel section the rail last opened.
+     The rail is always visible; this drives what the (toggleable) panel
+     shows. "components" = the full DS brand + theme controls + search +
+     tree (the prior sidebar verbatim); "search"/"theme" focus the panel
+     intent for screen readers + the auto-focus effect below. The panel's
+     open/closed state stays on the store's `sidebarOpen` flag so the
+     ContentTopBar hamburger + narrow auto-close + Cmd-shortcuts all keep
+     working unchanged. */
+  type PanelSection = "components" | "search" | "theme";
+  const [panelSection, setPanelSection] = React.useState<PanelSection>("components");
+  const searchWrapRef = React.useRef<HTMLDivElement | null>(null);
+
+  /* Open the panel to a given section. If the panel is closed, open it. */
+  const openPanel = React.useCallback((section: PanelSection) => {
+    setPanelSection(section);
+    if (!store.sidebarOpen) store.toggleSidebar();
+  }, [store]);
+
+  /* When the rail opens the panel on "search", move focus into the search
+     field so the keyboard path matches the visual intent (WCAG 2.4.3). */
+  React.useEffect(() => {
+    if (sidebarOpen && panelSection === "search") {
+      const el = searchWrapRef.current?.querySelector<HTMLInputElement>("input");
+      el?.focus();
+    }
+  }, [sidebarOpen, panelSection]);
 
   /* Hydrate from URL params on mount — Builder → UI Kit handoff
      passes ?ds=&mode=&density=&themeKey= so the UI Kit opens on the
@@ -142,12 +170,23 @@ export function DesignHubApp() {
   /* Logo stays black on white headers, white on dark/Carbon headers. */
   const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
 
+  /* C2 PER-DS STAGE: the component stage background changes per selected DS
+     (neutral grey for Salt/Fluent, seam-matched canvas for Carbon, tonal
+     surface for M3, transparent-over-aurora for uoaui). Computed once here
+     and shared with LandingGrid via getStageBg so the shell + landing agree.
+     railBg / panelBg mirror the prior <aside> per-DS fill. */
+  const stageBg = getStageBg(t);
+  const railBg = getRailBg(t);
+  const panelBg = getPanelBg(t);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh",
-      /* Carbon uses its own canvas bg (white / g100) so the main area
-         and the outer wrapper are the same colour, matching the
-         "no seam" aesthetic of carbondesignsystem.com. */
-      background: activeSystem === "uoaui" ? t.bg : isCarbon ? t.bg : t.bg2,
+      /* C2 PER-DS STAGE at the shell level. uoaui gets the signature
+         aurora gradient as the app-level wash so the transparent stage +
+         landing + hero slab read against it; Carbon stays seam-matched
+         to its own canvas (white / g100); everyone else uses the neutral
+         stage tint behind the rail + panel + content. */
+      background: activeSystem === "uoaui" ? (t.T.gradient as string) : isCarbon ? t.bg : stageBg,
       fontFamily: t.font, color: t.fg, transition: "background 200ms, color 200ms" }}>
       {/* Skip link is provided once by the root layout (app/layout.tsx),
           targeting this shell's <main id="main-content"> below. A per-shell
@@ -284,24 +323,139 @@ export function DesignHubApp() {
       </header>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* Sidebar - DS brand → controls → sticky search → scrollable list */}
-        {sidebarOpen && (
-          <aside style={{
-            width: t.scale.panelW,
+        {/* B2 ICON-RAIL — the PRIMARY nav. Always visible (not gated by
+            sidebarOpen). Top cluster = the 5 DS as icon buttons; below a
+            divider = section/tool buttons (Overview, Components, Search,
+            Theme) that open the secondary panel. Every icon-only button
+            carries aria-label + title (tooltip); the active DS carries
+            aria-pressed. Carbon keeps its flat seam-matched layer + 0
+            radius; uoaui rides transparent over the aurora. */}
+        <nav
+          aria-label="Design systems and sections"
+          className="uikit-rail"
+          style={{
+            ["--dh-focus-ring" as string]: t.focusRing,
             borderRight: `1px solid ${t.borderSubtle}`,
-            /* Carbon sidebar sits at $layer-01 (one step up from
-               canvas) matching the Carbon docs sidenav. */
-            background: activeSystem === "uoaui" ? "transparent" : activeSystem === "m3" ? t.bg2 : isCarbon ? t.T.layer01 : t.bg,
-            display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
+            background: railBg,
             transition: "background 200ms",
-          }}>
+          }}
+        >
+          {(() => {
+            const DS_LIST: { id: SystemId; label: string }[] = [
+              { id: "salt", label: "Salt DS" },
+              { id: "m3", label: "Material 3" },
+              { id: "fluent", label: "Fluent 2" },
+              { id: "uoaui", label: "uoaui DS" },
+              { id: "carbon", label: "Carbon DS" },
+            ];
+            /* Carbon stays flat (radius 0, no shadow) to honour the IBM
+               aesthetic; every other DS uses the rail-button curve token. */
+            const railRadius = isCarbon ? 0 : "var(--dh-curve-sm, 6px)";
+            return (
+              <>
+                <div className="uikit-rail-group" role="group" aria-label="Switch design system">
+                  {DS_LIST.map(ds => {
+                    const info = getSystemInfo(ds.id);
+                    const isActive = activeSystem === ds.id;
+                    return (
+                      <button
+                        key={ds.id}
+                        type="button"
+                        className="uikit-rail-btn"
+                        aria-label={ds.label}
+                        aria-pressed={isActive}
+                        title={ds.label}
+                        onClick={() => store.setActiveSystem(ds.id)}
+                        style={{
+                          borderRadius: railRadius,
+                          fontFamily: t.font, fontWeight: 700,
+                          fontSize: t.scale.navF + 1,
+                          color: isActive ? t.accentFg : t.fg2,
+                          background: isActive ? t.accent : "transparent",
+                          border: isActive ? "1px solid transparent" : `1px solid ${t.borderSubtle}`,
+                        }}
+                      >
+                        {info.icon}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="uikit-rail-divider" style={{ background: t.borderSubtle }} aria-hidden="true" />
+
+                <div className="uikit-rail-group" role="group" aria-label="Sections">
+                  <button
+                    type="button"
+                    className="uikit-rail-btn"
+                    aria-label="Overview"
+                    title="Overview"
+                    onClick={() => store.setSelectedComponent(null)}
+                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>home</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="uikit-rail-btn"
+                    aria-label="Components"
+                    aria-pressed={sidebarOpen && panelSection === "components"}
+                    title="Components"
+                    onClick={() => openPanel("components")}
+                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="uikit-rail-btn"
+                    aria-label="Search components"
+                    aria-pressed={sidebarOpen && panelSection === "search"}
+                    title="Search components"
+                    onClick={() => openPanel("search")}
+                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>search</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="uikit-rail-btn"
+                    aria-label="Theme controls"
+                    aria-pressed={sidebarOpen && panelSection === "theme"}
+                    title="Theme controls"
+                    onClick={() => openPanel("theme")}
+                    style={{ borderRadius: railRadius, color: t.fg2, background: "transparent", border: `1px solid ${t.borderSubtle}` }}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>tune</span>
+                  </button>
+                </div>
+              </>
+            );
+          })()}
+        </nav>
+
+        {/* SECONDARY PANEL — slides out of the rail. Holds the EXISTING
+            DS brand → theme controls → search → component tree, verbatim.
+            Open/close is the store's sidebarOpen flag (driven by the rail
+            section buttons + the ContentTopBar hamburger + narrow
+            auto-close), so all prior wiring keeps working. */}
+        {sidebarOpen && (
+          <aside
+            className="uikit-panel"
+            aria-label="Component navigation panel"
+            style={{
+              width: t.scale.panelW,
+              borderRight: `1px solid ${t.borderSubtle}`,
+              background: panelBg,
+              display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
+            }}
+          >
             <div style={{ flexShrink: 0, borderBottom: `1px solid ${t.borderSubtle}` }}>
               <SidebarDSBrand />
             </div>
             <div style={{ padding: "20px 24px 12px", flexShrink: 0 }}>
               <ThemeControls />
             </div>
-            <div style={{ padding: "12px 24px 16px", flexShrink: 0 }}>
+            <div ref={searchWrapRef} style={{ padding: "12px 24px 16px", flexShrink: 0 }}>
               <SidebarSearch />
             </div>
             <div style={{ padding: "8px 24px 24px", overflowY: "auto", flex: 1 }}>
@@ -311,7 +465,7 @@ export function DesignHubApp() {
         )}
 
         {/* Main - ContentTopBar (hamburger + breadcrumb) always at top */}
-        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: activeSystem === "uoaui" ? "transparent" : t.bg }}>
+        <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
           <div style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
