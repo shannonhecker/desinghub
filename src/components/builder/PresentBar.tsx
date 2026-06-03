@@ -14,7 +14,7 @@
    writes usePreviewMode.setMode (edit/preview). They're aliased
    on import so the two never get crossed. */
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
 import { useBuilder, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
@@ -29,11 +29,121 @@ const DS_LABEL: Record<DesignSystem, string> = {
   carbon: "Carbon",
 };
 
+/* Switch order mirrors the rest of the app (assumptionDims.DS_ORDER).
+   Kept local so this construction-only bar stays self-contained. */
+const DS_ORDER: DesignSystem[] = ["salt", "m3", "fluent", "uoaui", "carbon"];
+
 const DEVICES: { key: DeviceMode; Icon: typeof Monitor; label: string }[] = [
   { key: "desktop", Icon: Monitor, label: "Desktop" },
   { key: "tablet", Icon: Tablet, label: "Tablet" },
   { key: "mobile", Icon: Smartphone, label: "Mobile" },
 ];
+
+/* Live design-system switcher — re-themes the whole canvas in place.
+   setDesignSystem already remaps themeKey per DS (useBuilder) and the
+   blocks are DS-agnostic, so the swap is a pure re-render. Rendered for
+   both author and recipient (non-destructive: it only changes how the
+   shared canvas is drawn, which is the cross-DS showcase). A WAI-ARIA
+   listbox: roving tabindex on the options, Esc/outside-click close, and
+   Esc is captured + stopped so it closes the menu instead of exiting
+   Present mode (BuilderApp's global Esc handler). */
+function PresentDSDropdown() {
+  const designSystem = useBuilder((s) => s.designSystem);
+  const setDesignSystem = useBuilder((s) => s.setDesignSystem);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  /* Close on outside click + Esc (captured so it beats the global
+     Present-mode Esc handler while the menu is open). Esc returns focus
+     to the trigger (WCAG 2.4.3); an outside click does not steal it. */
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { e.stopPropagation(); setOpen(false); triggerRef.current?.focus(); }
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  /* Move focus to the selected option when the menu opens. */
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]')?.focus();
+  }, [open]);
+
+  /* Select + close, returning focus to the trigger for keyboard users. */
+  const select = (ds: DesignSystem) => { setDesignSystem(ds); setOpen(false); triggerRef.current?.focus(); };
+
+  const onListKeyDown = (e: React.KeyboardEvent<HTMLUListElement>) => {
+    const items = Array.from(listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
+    const i = items.findIndex((el) => el === document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); items[Math.min(items.length - 1, i + 1)]?.focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); items[Math.max(0, i - 1)]?.focus(); }
+    else if (e.key === "Home") { e.preventDefault(); items[0]?.focus(); }
+    else if (e.key === "End") { e.preventDefault(); items[items.length - 1]?.focus(); }
+  };
+
+  return (
+    <div className="present-bar-ds" ref={rootRef}>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="present-bar-btn present-bar-ds-trigger"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Design system: ${DS_LABEL[designSystem]}. Change design system.`}
+        title="Change design system"
+      >
+        {DS_LABEL[designSystem]}
+        {/* Bar is fixed bottom-centre, so the menu opens upward: caret
+            points up when closed (toward the menu), down to collapse. */}
+        <span className="material-symbols-outlined present-bar-ds-caret" aria-hidden="true" style={{ fontSize: 18 }}>
+          {open ? "arrow_drop_down" : "arrow_drop_up"}
+        </span>
+      </button>
+      {open && (
+        <ul
+          className="present-bar-ds-menu"
+          role="listbox"
+          aria-label="Design system"
+          ref={listRef}
+          onKeyDown={onListKeyDown}
+          tabIndex={-1}
+        >
+          {DS_ORDER.map((ds) => {
+            const selected = ds === designSystem;
+            return (
+              <li
+                key={ds}
+                role="option"
+                aria-selected={selected}
+                tabIndex={selected ? 0 : -1}
+                className={`present-bar-ds-option${selected ? " present-bar-ds-option-selected" : ""}`}
+                onClick={() => select(ds)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(ds); } }}
+              >
+                <span className="material-symbols-outlined present-bar-ds-check" aria-hidden="true" style={{ fontSize: 16 }}>
+                  {selected ? "check" : ""}
+                </span>
+                {DS_LABEL[ds]}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function PresentBar({
   /* "author" (default): in-app Present mode — exits back to the editor.
@@ -127,11 +237,17 @@ export function PresentBar({
 
       <span className="present-bar-sep" aria-hidden="true" />
 
-      {/* DS read-only badge — the recipient sees the author's chosen
-          system; the switcher is intentionally deferred (Decision #2). */}
-      <span className="present-bar-ds-badge" aria-label={`Design system: ${DS_LABEL[designSystem]}`}>
-        {DS_LABEL[designSystem]}
-      </span>
+      {/* DS switcher — live re-theme across all 5 systems (re-renders the
+          canvas in place via setDesignSystem). In Compare mode each
+          quadrant is its own DS, so a single switcher doesn't apply:
+          fall back to the read-only badge there. */}
+      {compareMode ? (
+        <span className="present-bar-ds-badge" aria-label={`Design system: ${DS_LABEL[designSystem]}`}>
+          {DS_LABEL[designSystem]}
+        </span>
+      ) : (
+        <PresentDSDropdown />
+      )}
 
       {/* Theme toggle (light/dark canvas) */}
       <button
@@ -200,9 +316,6 @@ export function PresentBar({
           title="Edit canvas (Esc)"
           aria-label="Edit canvas"
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
-            close
-          </span>
           Edit
         </button>
       )}

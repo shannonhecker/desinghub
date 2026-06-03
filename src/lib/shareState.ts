@@ -13,13 +13,17 @@
  * Chat messages, preview-open flags, and other UI state are NOT
  * included - the share URL represents a canvas, not a session.
  *
- * Encoding is JSON → URL-safe base64 (no deflate/compress for now;
- * most templates encode to <3KB which stays well below URL limits.
- * If that becomes a problem, swap in LZ-String later.)
+ * Encoding is JSON → LZ-String (compressToEncodedURIComponent). The
+ * enriched templates pushed the old raw-base64 payload past a
+ * platform-friendly URL length ("Too large to share"); LZ-String
+ * compresses the repetitive block JSON ~5-10× so realistic canvases
+ * fit comfortably. decodeShareState keeps a raw-base64 fallback so
+ * links generated before compression was added still resolve.
  */
 
 import type { Block, DesignSystem, BuilderMode, DeviceMode } from "@/store/useBuilder";
 import { isValidBlockSource } from "@/store/useBuilder";
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { migrateBlocks } from "./blockMigrations";
 
 export interface SharedCanvas {
@@ -43,18 +47,9 @@ const DESIGN_SYSTEMS = new Set<DesignSystem>(["salt", "m3", "fluent", "uoaui", "
 const MODES = new Set<BuilderMode>(["light", "dark"]);
 const DEVICE_MODES = new Set<DeviceMode>(["desktop", "tablet", "mobile"]);
 
-/* URL-safe base64: replace +/ with -_ and strip = padding. */
-function urlSafeB64Encode(s: string): string {
-  const utf8 = typeof TextEncoder !== "undefined"
-    ? new TextEncoder().encode(s)
-    : Buffer.from(s, "utf-8");
-  let binary = "";
-  for (let i = 0; i < utf8.byteLength; i++) binary += String.fromCharCode(utf8[i]);
-  // btoa works on binary strings
-  const b64 = typeof btoa !== "undefined" ? btoa(binary) : Buffer.from(binary, "binary").toString("base64");
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
+/* Legacy URL-safe base64 decoder — retained so share links generated
+ * before LZ-String compression (raw base64 of the JSON, +/ → -_, no
+ * padding) still decode. New links use compressToEncodedURIComponent. */
 function urlSafeB64Decode(s: string): string | null {
   try {
     const padded = s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4);
@@ -193,12 +188,27 @@ function validateAndSanitizeBlockArray(a: unknown): Block[] | null {
 }
 
 export function encodeShareState(s: SharedCanvas): string {
-  return urlSafeB64Encode(JSON.stringify(s));
+  return compressToEncodedURIComponent(JSON.stringify(s));
+}
+
+/** Decode a share hash back to its JSON string. Tries the current
+ *  LZ-String format first; if that doesn't yield JSON, falls back to
+ *  the legacy raw-base64 format so links created before compression
+ *  was introduced still resolve. */
+function decodeShareHash(hash: string): string | null {
+  try {
+    const lz = decompressFromEncodedURIComponent(hash);
+    // A valid payload is a JSON object, so it must start with '{' (123).
+    if (lz && lz.charCodeAt(0) === 123) return lz;
+  } catch {
+    /* fall through to the legacy decoder */
+  }
+  return urlSafeB64Decode(hash);
 }
 
 export function decodeShareState(hash: string): SharedCanvas | null {
   if (!hash || hash.length > 64 * 1024) return null; // hash string cap (loose)
-  const json = urlSafeB64Decode(hash);
+  const json = decodeShareHash(hash);
   if (!json) return null;
   if (json.length > MAX_JSON_BYTES) return null;     // DECODED payload cap (tight)
 
@@ -256,10 +266,15 @@ export function decodeShareState(hash: string): SharedCanvas | null {
 
 /** Build a share URL from the current client-side state.
  *  Returns { url, tooLong } - tooLong is true when the URL exceeds
- *  a platform-friendly cap (~3500 chars); caller should warn user. */
+ *  a platform-friendly cap (12000 chars); caller should warn user.
+ *  Now that the payload is LZ-String-compressed (was raw base64 at a
+ *  conservative 3500) the cap can be generous: mainstream channels
+ *  (browser, Slack, email, clipboard) handle 12k+ char URLs easily,
+ *  and a heavy ~20KB-JSON enriched canvas compresses to ~7.8k chars,
+ *  so realistic builds no longer trip "Too large to share". */
 export function buildShareUrl(state: SharedCanvas): { url: string; tooLong: boolean; hash: string } {
   const hash = encodeShareState(state);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/preview/share/${hash}`;
-  return { url, tooLong: url.length > 3500, hash };
+  return { url, tooLong: url.length > 12000, hash };
 }

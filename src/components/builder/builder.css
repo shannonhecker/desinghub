@@ -4917,6 +4917,70 @@
   white-space: nowrap;
 }
 
+/* ── Live DS switcher (replaces the read-only badge outside Compare) ── */
+.present-bar-ds {
+  position: relative;
+  display: inline-flex;
+}
+.present-bar-ds-trigger {
+  gap: 1px;
+  padding: 0 4px 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.present-bar-ds-caret { color: var(--bc-fg-muted); }
+/* Opaque menu surface — NO backdrop-filter (lightningcss can strip it,
+   leaving the busy canvas bleeding through the menu). --bc-bg-raised is
+   ~opaque and theme-aware, so no separate light override is needed.
+   Opens UPWARD: the bar is fixed bottom-centre. */
+.present-bar-ds-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  min-width: 168px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-md, 10px);
+  box-shadow: var(--bc-shadow-lg);
+  animation: present-bar-ds-in 0.14s ease-out;
+}
+@keyframes present-bar-ds-in {
+  from { opacity: 0; transform: translate(-50%, 6px) scale(0.98); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.present-bar-ds-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--bc-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bc-fg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.present-bar-ds-option:hover { background: var(--bc-bg-hover); }
+.present-bar-ds-option:focus-visible {
+  outline: 2px solid var(--bc-accent);
+  outline-offset: -2px;
+}
+.present-bar-ds-option-selected { color: var(--bc-accent); }
+.present-bar-ds-check {
+  width: 16px;
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--bc-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .present-bar-ds-menu { animation: none; }
+}
+
 /* Preview exit/edit action = primary action, but kept NEUTRAL not accent-filled:
    --bc-fg-on-accent (near-black) on the light-mode accent (#0b69d9) only
    hits 3.76:1 (fails AA for 13px text). A neutral fill uses --bc-fg on
