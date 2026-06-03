@@ -187,17 +187,29 @@ function validateAndSanitizeBlockArray(a: unknown): Block[] | null {
   return out;
 }
 
+/* compressToEncodedURIComponent emits A-Za-z0-9 plus `+ - $`. `+` and `$`
+   are NOT safe in a URL *path* segment (the share hash lives at
+   /preview/share/<hash>): a browser navigating to a path with a raw `+`
+   404s the route. So we map the two offenders to unreserved chars that
+   the LZ alphabet never produces — `+`→`_`, `$`→`~` — yielding a hash of
+   only [A-Za-z0-9-_~], all RFC-3986 unreserved and path-safe. decode
+   reverses it before decompressing. (Legacy base64 links used `-_`; the
+   reverse is applied only on the LZ attempt, and the legacy fallback
+   below still sees the raw hash, so those keep resolving.) */
 export function encodeShareState(s: SharedCanvas): string {
-  return compressToEncodedURIComponent(JSON.stringify(s));
+  return compressToEncodedURIComponent(JSON.stringify(s))
+    .replace(/\+/g, "_")
+    .replace(/\$/g, "~");
 }
 
 /** Decode a share hash back to its JSON string. Tries the current
- *  LZ-String format first; if that doesn't yield JSON, falls back to
- *  the legacy raw-base64 format so links created before compression
- *  was introduced still resolve. */
+ *  LZ-String format first (reversing the path-safe char mapping); if
+ *  that doesn't yield JSON, falls back to the legacy raw-base64 format
+ *  (on the untouched hash) so links created before compression was
+ *  introduced still resolve. */
 function decodeShareHash(hash: string): string | null {
   try {
-    const lz = decompressFromEncodedURIComponent(hash);
+    const lz = decompressFromEncodedURIComponent(hash.replace(/_/g, "+").replace(/~/g, "$"));
     // A valid payload is a JSON object, so it must start with '{' (123).
     if (lz && lz.charCodeAt(0) === 123) return lz;
   } catch {
