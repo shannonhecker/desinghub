@@ -10126,13 +10126,14 @@
 .bp-viewport-wrapper {
   flex: 1;
   display: flex;
-  /* flex-start + matting + a capped, auto-centred frame mirror Present mode so
-     the edit canvas reads contained, not edge-to-edge "loose". The frame's
-     width still comes from the device preset (set inline in PreviewPanel); the
-     rule below only caps + centres it. */
+  /* Full-bleed: NO mat padding, so the edit canvas matches Present mode
+     exactly (PresentStage has no mat either — its frame is width:100%
+     capped at --bc-stage-cap, centred). The frame width still comes from
+     the device preset; the rule below caps + centres it the same way
+     present does. Owner decision 2026-06-03: edit == preview, edge-to-edge. */
   align-items: flex-start;
   justify-content: center;
-  padding: var(--bc-stage-mat);
+  padding: 0;
   overflow: auto;
   background: var(--b-bg);
 }
@@ -13041,8 +13042,9 @@
   justify-content: center;
   flex-shrink: 0;
   z-index: var(--bc-z-slot);
-  transition: height var(--bc-duration-fast) var(--bc-ease),
-              width var(--bc-duration-fast) var(--bc-ease);
+  /* Let the absolutely-positioned + overflow the thin idle strip so it can
+     appear on hover without the slot reserving space / shifting siblings. */
+  overflow: visible;
   pointer-events: auto;
 }
 /* Horizontal strips sit between stacked items - full width, short. */
@@ -13051,20 +13053,16 @@
   height: var(--bc-size-slot);
   margin: calc(var(--bc-gap-xxs) * -1) 0;
 }
-.insertion-slot-horizontal:hover,
-.insertion-slot-horizontal:focus-within {
-  height: var(--bc-size-slot-hover);
-}
+/* No hover-expand: the slot keeps its idle size so hovering never shifts
+   sibling blocks. The + overlays absolutely instead (.insertion-slot-plus),
+   so the affordance appears on hover without nudging the layout. */
 /* Vertical strips sit between row items - full height, short. */
 .insertion-slot-vertical {
   width: var(--bc-size-slot);
   align-self: stretch;
   margin: 0 calc(var(--bc-gap-xxs) * -1);
 }
-.insertion-slot-vertical:hover,
-.insertion-slot-vertical:focus-within {
-  width: var(--bc-size-slot-hover);
-}
+/* No hover-expand for vertical slots either (see horizontal note above). */
 
 /* Idle center line - appears on hover-within-strip only, so zones
    with no hover remain visually untouched. Uses accent-muted so
@@ -13091,7 +13089,11 @@
 /* The + button - 24px circle, accent foreground on raised surface.
    Lives in the center of the strip; only visible on hover/focus. */
 .insertion-slot-plus {
-  position: relative;
+  /* Absolutely centred overlay — escapes the thin slot so revealing it on
+     hover never reserves space or shifts sibling blocks. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13105,17 +13107,16 @@
   box-shadow: var(--bc-shadow-sm);
   cursor: pointer;
   opacity: 0;
-  transform: scale(0.8);
+  transform: translate(-50%, -50%) scale(0.8);
   transition: opacity var(--bc-duration-fast) var(--bc-ease),
               transform var(--bc-duration-fast) var(--bc-ease),
               box-shadow var(--bc-duration-fast) var(--bc-ease),
               border-color var(--bc-duration-fast) var(--bc-ease);
-  flex-shrink: 0;
 }
 .insertion-slot:hover .insertion-slot-plus,
 .insertion-slot:focus-within .insertion-slot-plus {
   opacity: 1;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 .insertion-slot-plus:hover {
   border-color: var(--bc-accent-ring);
@@ -13125,7 +13126,7 @@
   outline: 2px solid var(--bc-accent-ring);
   outline-offset: 2px;
   opacity: 1;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 .insertion-slot-plus-icon {
   font: var(--bc-type-value);
