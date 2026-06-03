@@ -1,6 +1,7 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { BuilderTemplate } from "@/lib/builderTemplates";
+import { usePreviewMode } from "@/store/usePreviewMode";
 
 /* ── Shared template-apply ───────────────────────────────────────
    Writes a template's full payload to the canvas (all four zones +
@@ -30,4 +31,8 @@ export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
   s.setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
   s.setActiveTemplateId(tpl.id);
   s.bumpPreview();
+  /* #16 (owner): once a template populates the canvas, show it in PREVIEW first
+     (chrome hidden, the rendered UI front-and-centre) instead of dropping the
+     user straight into edit. They flip to edit via the preview/edit toggle. */
+  usePreviewMode.getState().setMode("preview");
 }
