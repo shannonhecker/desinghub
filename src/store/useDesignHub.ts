@@ -35,6 +35,12 @@ interface DesignHubState {
   /* Carried across every DS switch + persisted across reload. */
   globalMode: GlobalMode;
   globalDensity: GlobalDensity;
+  /* False until the user EXPLICITLY changes density in any DS. While false,
+     setActiveSystem leaves the target DS at its own default density so a
+     user who never touches density isn't force-folded (e.g. M3 Default ->
+     Compact, Carbon Normal -> Compact) just by clicking through the
+     switcher. Flips true in every density setter. */
+  densityTouched: boolean;
   selectedComponent: string | null;
   searchQuery: string;
   activeTab: ActiveTab;
@@ -106,6 +112,24 @@ const m3LevelOf = (d: number): GlobalDensity =>
 const fluentLevelOf = (s: string): GlobalDensity => (s === 'small' ? 1 : s === 'large' ? 3 : 2);
 const carbonLevelOf = (d: string): GlobalDensity => (d === 'compact' ? 1 : d === 'spacious' ? 3 : 2);
 
+/* ── 3-level fold-aware inverse (P1-b): the most-compact 3-level value
+   ('small' / 'compact') covers BOTH abstract levels 0 and 1. When a user
+   picks it, do NOT clobber an already-more-compact abstract level — keep
+   globalDensity as the single source of truth. If the current globalDensity
+   already falls inside the picked value's fold-range, leave it untouched;
+   otherwise snap to that value's canonical (least-compact) level. ── */
+const foldedLevel = (
+  picked: GlobalDensity,
+  current: GlobalDensity,
+  range: readonly GlobalDensity[],
+): GlobalDensity => (range.includes(current) ? current : picked);
+const FLUENT_SMALL_RANGE = [0, 1] as const;   // 'small' folds levels 0 + 1
+const CARBON_COMPACT_RANGE = [0, 1] as const; // 'compact' folds levels 0 + 1
+const fluentLevelFold = (s: string, current: GlobalDensity): GlobalDensity =>
+  s === 'small' ? foldedLevel(1, current, FLUENT_SMALL_RANGE) : fluentLevelOf(s);
+const carbonLevelFold = (d: string, current: GlobalDensity): GlobalDensity =>
+  d === 'compact' ? foldedLevel(1, current, CARBON_COMPACT_RANGE) : carbonLevelOf(d);
+
 export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   activeSystem: 'salt',
   /* Dark-default across all 5 DS — matches the uoaui.ai brand (dark-first
@@ -122,6 +146,7 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
      density in any DS, and mapped into the target DS on every switch. */
   globalMode: 'dark',
   globalDensity: 1, // level 1 == Salt/uoaui 'medium'
+  densityTouched: false, // no explicit density choice yet — don't fold target DS defaults
   selectedComponent: null,
   searchQuery: '',
   activeTab: 'preview',
@@ -133,38 +158,52 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   setActiveSystem: (s) => set((st) => {
     const m = st.globalMode;
     const lvl = st.globalDensity;
+    /* Only carry density into the target DS once the user has EXPLICITLY
+       chosen a density somewhere (P1-a). Until then, leave each DS at its
+       own default density rather than force-folding the seed level into it.
+       NOTE: setActiveSystem only READS globalDensity to map it into the
+       target slice — it never WRITES globalDensity back, so the abstract
+       level stays the single source of truth across round-trips (P1-b). */
+    const carryDensity = st.densityTouched;
     const next: Partial<DesignHubState> = {
       activeSystem: s, selectedComponent: null, searchQuery: '', activeTab: 'preview',
     };
-    if (s === 'salt')   next.salt   = { ...st.salt,   themeKey: applyModeToSalt(st.salt.themeKey, m), density: SALT_DENSITY_BY_LEVEL[lvl] };
-    if (s === 'uoaui')  next.uoaui  = { ...st.uoaui,  themeKey: m,                                    density: UOAUI_DENSITY_BY_LEVEL[lvl] };
-    if (s === 'fluent') next.fluent = { ...st.fluent, themeKey: m,                                    size: FLUENT_SIZE_BY_LEVEL[lvl] };
-    if (s === 'm3')     next.m3     = { ...st.m3,     themeKey: applyModeToM3(st.m3.themeKey, m), isDarkCustom: m === 'dark', density: M3_DENSITY_BY_LEVEL[lvl] };
-    if (s === 'carbon') next.carbon = { ...st.carbon, themeKey: applyModeToCarbon(st.carbon.themeKey, m), density: CARBON_DENSITY_BY_LEVEL[lvl] };
+    if (s === 'salt')   next.salt   = { ...st.salt,   themeKey: applyModeToSalt(st.salt.themeKey, m), ...(carryDensity && { density: SALT_DENSITY_BY_LEVEL[lvl] }) };
+    if (s === 'uoaui')  next.uoaui  = { ...st.uoaui,  themeKey: m,                                    ...(carryDensity && { density: UOAUI_DENSITY_BY_LEVEL[lvl] }) };
+    if (s === 'fluent') next.fluent = { ...st.fluent, themeKey: m,                                    ...(carryDensity && { size: FLUENT_SIZE_BY_LEVEL[lvl] }) };
+    /* P2: a 'custom' M3 theme owns its own light/dark via isDarkCustom —
+       don't flip a user's custom-LIGHT theme to dark on switch. Only map
+       light/dark into isDarkCustom for the NON-custom (preset) themes. */
+    if (s === 'm3')     next.m3     = { ...st.m3,     themeKey: applyModeToM3(st.m3.themeKey, m), ...(st.m3.themeKey !== 'custom' && { isDarkCustom: m === 'dark' }), ...(carryDensity && { density: M3_DENSITY_BY_LEVEL[lvl] }) };
+    if (s === 'carbon') next.carbon = { ...st.carbon, themeKey: applyModeToCarbon(st.carbon.themeKey, m), ...(carryDensity && { density: CARBON_DENSITY_BY_LEVEL[lvl] }) };
     return next;
   }),
   /* Mode/density setters ALSO update the carry-over so the latest user
      choice in any DS wins on the next switch. Palette/accent-only setters
      leave the carry-over untouched (they don't change mode or density). */
   setSaltTheme: (key) => set((st) => ({ salt: { ...st.salt, themeKey: key }, globalMode: saltModeOf(key) })),
-  setSaltDensity: (d) => set((st) => ({ salt: { ...st.salt, density: d }, globalDensity: saltLevelOf(d) })),
+  setSaltDensity: (d) => set((st) => ({ salt: { ...st.salt, density: d }, globalDensity: saltLevelOf(d), densityTouched: true })),
   setM3Theme: (key) => set((st) => ({ m3: { ...st.m3, themeKey: key }, globalMode: m3ModeOf(key, st.m3.isDarkCustom) })),
-  setM3Density: (d) => set((st) => ({ m3: { ...st.m3, density: d }, globalDensity: m3LevelOf(d) })),
+  setM3Density: (d) => set((st) => ({ m3: { ...st.m3, density: d }, globalDensity: m3LevelOf(d), densityTouched: true })),
   setM3CustomColor: (c) => {
     if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
     set((st) => ({ m3: { ...st.m3, customColor: c } }));
   },
   setM3DarkCustom: (d) => set((st) => ({ m3: { ...st.m3, isDarkCustom: d }, globalMode: d ? 'dark' : 'light' })),
   setFluentTheme: (key) => set((st) => ({ fluent: { ...st.fluent, themeKey: key }, globalMode: key === 'dark' ? 'dark' : 'light' })),
-  setFluentSize: (s) => set((st) => ({ fluent: { ...st.fluent, size: s }, globalDensity: fluentLevelOf(s) })),
+  /* Fold-aware (P1-b): picking 'small' won't clobber an already-more-compact
+     abstract level — globalDensity stays the single source of truth. */
+  setFluentSize: (s) => set((st) => ({ fluent: { ...st.fluent, size: s }, globalDensity: fluentLevelFold(s, st.globalDensity), densityTouched: true })),
   setUoauiTheme: (key) => set((st) => ({ uoaui: { ...st.uoaui, themeKey: key }, globalMode: key === 'dark' ? 'dark' : 'light' })),
-  setUoauiDensity: (d) => set((st) => ({ uoaui: { ...st.uoaui, density: d }, globalDensity: saltLevelOf(d) })),
+  setUoauiDensity: (d) => set((st) => ({ uoaui: { ...st.uoaui, density: d }, globalDensity: saltLevelOf(d), densityTouched: true })),
   setUoauiAccent: (c) => {
     if (!/^#[0-9a-fA-F]{6}$/.test(c)) return;
     set((st) => ({ uoaui: { ...st.uoaui, accentColor: c } }));
   },
   setCarbonTheme: (key) => set((st) => ({ carbon: { ...st.carbon, themeKey: key }, globalMode: carbonModeOf(key) })),
-  setCarbonDensity: (d) => set((st) => ({ carbon: { ...st.carbon, density: d }, globalDensity: carbonLevelOf(d) })),
+  /* Fold-aware (P1-b): picking 'compact' won't clobber an already-more-compact
+     abstract level — globalDensity stays the single source of truth. */
+  setCarbonDensity: (d) => set((st) => ({ carbon: { ...st.carbon, density: d }, globalDensity: carbonLevelFold(d, st.globalDensity), densityTouched: true })),
   setSelectedComponent: (id) => set({ selectedComponent: id, activeTab: 'preview' }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),
@@ -188,6 +227,7 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
     carbon: state.carbon,
     globalMode: state.globalMode,
     globalDensity: state.globalDensity,
+    densityTouched: state.densityTouched,
   }),
   /* v1 blobs predate globalMode/globalDensity. Seed them from the user's
      CURRENTLY-active DS slice so the very first cross-DS switch after this
@@ -204,7 +244,10 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
       else if (active === 'fluent' && p.fluent) { mode = p.fluent.themeKey === 'dark' ? 'dark' : 'light'; density = fluentLevelOf(p.fluent.size); }
       else if (active === 'm3' && p.m3) { mode = m3ModeOf(p.m3.themeKey, p.m3.isDarkCustom); density = m3LevelOf(p.m3.density); }
       else if (active === 'carbon' && p.carbon) { mode = carbonModeOf(p.carbon.themeKey); density = carbonLevelOf(p.carbon.density); }
-      return { ...p, globalMode: mode, globalDensity: density };
+      /* v1 users were already viewing a specific density: seed it AND mark it
+         touched so the first cross-DS switch honors what they were looking
+         at, rather than reverting to each DS's own default. */
+      return { ...p, globalMode: mode, globalDensity: density, densityTouched: true };
     }
     return p;
   },
