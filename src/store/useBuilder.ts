@@ -171,6 +171,11 @@ export interface ZoneLayout {
      Removing a zone sets this false; its blocks are retained so re-adding
      restores them. Body is always visible regardless of this flag. */
   visible?: boolean;
+  /** Zone customization (PR3): the resizable dimension in px — width for a
+     left/right-docked zone, height for top/bottom. Undefined = the zone's
+     default. Persisted (zoneLayouts is a TRACKED_KEY) so a resize sticks
+     across reload + sessions. */
+  size?: number;
 }
 
 interface BuilderState {

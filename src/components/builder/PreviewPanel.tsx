@@ -1116,7 +1116,12 @@ export function BuilderCanvas({
     selectedBlockId !== null;
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [dashSidebarWidth, setDashSidebarWidth] = useState(180);
+  /* PR3: the sidebar (left panel) width persists via zoneLayouts.sidebar.size
+     (a TRACKED_KEY) instead of ephemeral local state, so a resize survives
+     reload + sessions instead of snapping back to 180. */
+  const dashSidebarWidth = useBuilder((s) => s.zoneLayouts.sidebar.size ?? 180);
+  const setZoneLayoutFn = useBuilder((s) => s.setZoneLayout);
+  const setDashSidebarWidth = useCallback((w: number) => setZoneLayoutFn("sidebar", { size: w }), [setZoneLayoutFn]);
   const handleSidebarToggle = useCallback(() => setSidebarCollapsed((v) => !v), []);
   /* Full-width support: a template/layout with no sidebar blocks (landing,
      ecommerce, blog, portfolio — top-nav marketing pages) should render
