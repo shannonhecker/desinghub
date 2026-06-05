@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { saltTokenVars, SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER } from "./tokens";
+/* Real Salt layout for gallery patterns — "let the DS define the layout".
+   SaltProvider supplies the .salt-theme/.salt-density context so @salt-ds/theme
+   tokens resolve; StackLayout/FlexLayout are Salt's real layout primitives. */
+import { SaltProvider, StackLayout as SaltStack, FlexLayout as SaltFlex } from "@salt-ds/core";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, CATS as SALT_CATS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
@@ -791,19 +795,24 @@ function PatListDetail(){
 }
 
 function PatAppShell(){
-  return <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",fontFamily:FONT,fontSize:10}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",background:T.bg2,borderBottom:`1px solid ${T.border}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:18,height:18,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:8,fontWeight:700}}>A</div><span style={{fontWeight:600,color:T.fg}}>App Name</span></div>
-      <div style={{display:"flex",gap:4}}><div style={{width:18,height:18,borderRadius:9,background:T.bg3}}/></div>
-    </div>
-    <div style={{display:"flex",height:100}}>
-      <div style={{width:48,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 0"}}>
-        {["home","dashboard","settings"].map(i=><div key={i} style={{width:28,height:22,borderRadius:3,background:i==="home"?T.accentWeak:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:12,color:i==="home"?T.accent:T.fg3}}>{i}</span></div>)}
-      </div>
-      <div style={{flex:1,padding:8,color:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>Main Content Area</div>
-    </div>
-    <div style={{padding:"4px 10px",borderTop:`1px solid ${T.border}`,color:T.fg3,fontSize:9,background:T.bg2}}>Footer · v1.0</div>
-  </div>;
+  /* header / body-row / footer composed with Salt's real StackLayout (vertical)
+     + FlexLayout (horizontal), inside a SaltProvider so the DS owns the layout
+     and its tokens resolve. */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltStack gap={0} style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",fontFamily:FONT,fontSize:10}}>
+      <SaltFlex justify="space-between" align="center" gap={1} style={{padding:"6px 10px",background:T.bg2,borderBottom:`1px solid ${T.border}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:18,height:18,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:8,fontWeight:700}}>A</div><span style={{fontWeight:600,color:T.fg}}>App Name</span></div>
+        <div style={{display:"flex",gap:4}}><div style={{width:18,height:18,borderRadius:9,background:T.bg3}}/></div>
+      </SaltFlex>
+      <SaltFlex gap={0} align="stretch" style={{height:100}}>
+        <div style={{width:48,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 0"}}>
+          {["home","dashboard","settings"].map(i=><div key={i} style={{width:28,height:22,borderRadius:3,background:i==="home"?T.accentWeak:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:12,color:i==="home"?T.accent:T.fg3}}>{i}</span></div>)}
+        </div>
+        <div style={{flex:1,padding:8,color:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>Main Content Area</div>
+      </SaltFlex>
+      <div style={{padding:"4px 10px",borderTop:`1px solid ${T.border}`,color:T.fg3,fontSize:9,background:T.bg2}}>Footer · v1.0</div>
+    </SaltStack>
+  </SaltProvider>;
 }
 
 function PatLogin(){
