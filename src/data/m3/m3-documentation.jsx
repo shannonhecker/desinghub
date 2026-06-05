@@ -1,4 +1,10 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from "react";
+/* Real MUI layout for gallery patterns — "let the DS define the layout".
+   Stack (flex) + Grid (v9 size-based) are MUI's real layout primitives; colors
+   still come from the active M3 theme tokens (T) so no MUI ThemeProvider is
+   needed for layout. */
+import MuiStack from "@mui/material/Stack";
+import MuiGrid from "@mui/material/Grid";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 import { m3ShapeVars, M3_SHAPE, M3_TYPE, M3_DENSITY, M3_BORDER } from "./tokens";
@@ -1668,7 +1674,8 @@ function M3PatForm(){
 function M3PatListDetail(){
   const [sel,setSel]=useState(0);
   const items=[{t:"Dashboard Report",d:"Q4 revenue analysis"},{t:"User Metrics",d:"Monthly active users"},{t:"System Alerts",d:"Health monitoring"}];
-  return <div style={{display:"flex",border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:180,fontFamily:"Roboto,sans-serif"}}>
+  /* Two-pane records layout via MUI's real Stack (list + detail). */
+  return <MuiStack direction="row" spacing={0} style={{border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:180,fontFamily:"Roboto,sans-serif"}}>
     <div style={{width:160,background:T.surfaceContainerLow}}>
       {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:"12px 16px",fontSize:13,cursor:"pointer",background:sel===i?T.secondaryContainer:"transparent",color:sel===i?T.onSecondaryContainer:T.onSurface,fontWeight:sel===i?500:400,borderRadius:sel===i?"0 28px 28px 0":"0"}}>{it.t}</div>)}
     </div>
@@ -1677,7 +1684,7 @@ function M3PatListDetail(){
       <div style={{fontSize:13,color:T.onSurfaceVariant}}>{items[sel].d}</div>
       <div style={{marginTop:12,display:"flex",gap:8}}><button className="m3-btn m3-btn-tonal" style={{borderRadius:20,fontSize:12}}>Edit</button><button className="m3-btn m3-btn-text" style={{fontSize:12}}>Delete</button></div>
     </div>
-  </div>;
+  </MuiStack>;
 }
 function M3PatLogin(){
   return <div style={{maxWidth:280,margin:"0 auto",fontFamily:"Roboto,sans-serif"}}>
@@ -1717,12 +1724,14 @@ function M3PatWizard(){
 }
 
 function M3PatAppShell(){
-  return <div style={{border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",fontFamily:"Roboto,sans-serif",fontSize:11}}>
+  /* top app bar / body-row / bottom nav composed with MUI's real Stack (the
+     body-row rail+content is a horizontal Stack). */
+  return <MuiStack spacing={0} style={{border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",fontFamily:"Roboto,sans-serif",fontSize:11}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px",background:T.surface,borderBottom:`1px solid ${T.outlineVariant}`}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}><span className="material-symbols-outlined" style={{fontSize:18,color:T.onSurface}}>menu</span><span style={{fontSize:16,fontWeight:400,color:T.onSurface,letterSpacing:"-0.25px"}}>App Name</span></div>
       <div style={{width:28,height:28,borderRadius:14,background:T.primaryContainer}}/>
     </div>
-    <div style={{display:"flex",height:110}}>
+    <MuiStack direction="row" spacing={0} style={{height:110}}>
       <div style={{width:56,background:T.surfaceContainerLow,display:"flex",flexDirection:"column",alignItems:"center",gap:6,paddingTop:8}}>
         {[{i:"home",a:true},{i:"dashboard",a:false},{i:"settings",a:false}].map(n=>
           <div key={n.i} style={{width:40,padding:"4px 0",borderRadius:20,background:n.a?T.secondaryContainer:"transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
@@ -1731,18 +1740,19 @@ function M3PatAppShell(){
         )}
       </div>
       <div style={{flex:1,padding:12,display:"flex",alignItems:"center",justifyContent:"center",color:T.onSurfaceVariant}}>Main Content Area</div>
-    </div>
+    </MuiStack>
     <div style={{display:"flex",justifyContent:"space-around",padding:"6px 0",borderTop:`1px solid ${T.outlineVariant}`,background:T.surfaceContainer}}>
       {["home","search","person"].map((i,idx)=><div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
         <div style={{width:32,height:18,borderRadius:9,background:idx===0?T.secondaryContainer:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:16,color:idx===0?T.onSecondaryContainer:T.onSurfaceVariant}}>{i}</span></div>
       </div>)}
     </div>
-  </div>;
+  </MuiStack>;
 }
 function M3PatSettings(){
   const [tab,setTab]=useState(0);
   const tabs=["General","Security","Notifications"];
-  return <div style={{display:"flex",border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:160,fontFamily:"Roboto,sans-serif"}}>
+  /* Settings shell via MUI's real Stack (icon rail + form pane). */
+  return <MuiStack direction="row" spacing={0} style={{border:`1px solid ${T.outlineVariant}`,borderRadius:12,overflow:"hidden",height:160,fontFamily:"Roboto,sans-serif"}}>
     <div style={{width:56,background:T.surfaceContainerLow,display:"flex",flexDirection:"column",alignItems:"center",gap:8,paddingTop:12}}>
       {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{width:40,padding:"4px 0",borderRadius:20,background:tab===i?T.secondaryContainer:"transparent",display:"flex",flexDirection:"column",alignItems:"center",cursor:"pointer"}}>
         <span className="material-symbols-outlined" style={{fontSize:18,color:tab===i?T.onSecondaryContainer:T.onSurfaceVariant}}>{["settings","lock","notifications"][i]}</span>
@@ -1755,7 +1765,7 @@ function M3PatSettings(){
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:13,color:T.onSurfaceVariant}}>Dark Mode</span><div style={{width:32,height:18,borderRadius:9,background:T.primary,cursor:"pointer",position:"relative"}}><div style={{width:14,height:14,borderRadius:7,background:T.onPrimary,position:"absolute",top:2,right:2}}/></div></div>
       </div>
     </div>
-  </div>;
+  </MuiStack>;
 }
 function M3PatSearch(){
   return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:"Roboto,sans-serif"}}>
