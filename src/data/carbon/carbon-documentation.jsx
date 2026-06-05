@@ -18,6 +18,11 @@
 
 import React, { useState, useEffect } from "react";
 import { showToast } from "@/lib/toast";
+/* Real @carbon/react grid for the App Shell pattern — "let the DS define the
+   grid" (gallery DS-layout, slice 1). Styled by the build-time-scoped Carbon
+   sheet that CarbonScopeStyles lazy-loads, scoped to .carbon-live-scope. */
+import { Grid as CarbonGrid, Column as CarbonColumn } from "@carbon/react";
+import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 import {
   carbonStaticTokenVars, carbonTypeClasses,
   CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
@@ -2387,21 +2392,31 @@ function PatForm() {
 }
 
 function PatAppShell() {
+  /* The header + sidenav + main are now laid out by Carbon's REAL CSS grid
+     (@carbon/react Grid/Column), not a hand-rolled flexbox. The whole thing is
+     wrapped in `.carbon-live-scope cds--white` so the build-time-scoped Carbon
+     sheet (lazy-loaded by CarbonScopeStyles) styles the grid + resolves --cds-*
+     tokens, without leaking @carbon/styles' global reset app-wide. */
   return (
-    <div style={{ fontFamily: CARBON_FONT, border: `1px solid ${T.borderSubtle01}`, height: 280 }}>
-      <div className="cb-header" style={{ color: "#ffffff" }}>
-        <strong style={{ marginRight: 8 }}>IBM</strong> Design Hub
-        <span style={{ marginLeft: "auto", color: GRAY_30, fontSize: 14 }}>v2.4</span>
-      </div>
-      <div style={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <div className="cb-sidenav" style={{ width: 200, borderRight: `1px solid ${T.borderSubtle01}` }}>
-          {[["Home", true], ["Deploy", false], ["Logs", false], ["Settings", false]].map(([l, a]) => (
-            <div key={l} className={`cb-sidenav-item${a ? " active" : ""}`}>{l}</div>
-          ))}
+    <>
+      <CarbonScopeStyles />
+      <div className="carbon-live-scope cds--white" style={{ fontFamily: CARBON_FONT, border: `1px solid ${T.borderSubtle01}`, height: 280, background: T.background }}>
+        <div className="cb-header" style={{ color: "#ffffff" }}>
+          <strong style={{ marginRight: 8 }}>IBM</strong> Design Hub
+          <span style={{ marginLeft: "auto", color: GRAY_30, fontSize: 14 }}>v2.4</span>
         </div>
-        <div style={{ flex: 1, padding: 24, background: T.background, color: T.textSecondary, fontSize: 14 }}>Main content area</div>
+        <CarbonGrid condensed fullWidth style={{ height: "calc(100% - 48px)" }}>
+          <CarbonColumn sm={1} md={2} lg={4} style={{ borderRight: `1px solid ${T.borderSubtle01}`, paddingInline: 0 }}>
+            {[["Home", true], ["Deploy", false], ["Logs", false], ["Settings", false]].map(([l, a]) => (
+              <div key={l} className={`cb-sidenav-item${a ? " active" : ""}`}>{l}</div>
+            ))}
+          </CarbonColumn>
+          <CarbonColumn sm={3} md={6} lg={12} style={{ padding: 24, color: T.textSecondary, fontSize: 14 }}>
+            Main content area
+          </CarbonColumn>
+        </CarbonGrid>
       </div>
-    </div>
+    </>
   );
 }
 
