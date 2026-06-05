@@ -38,7 +38,7 @@ const SYSTEM_PACKAGES: Record<string, { pkg: string; docsUrl: string; componentB
 /* ═══════════════════════════════════════════════════════════
    Code Block - single-pass tokenizer, CSS class highlighting
    ═══════════════════════════════════════════════════════════ */
-function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnType<typeof useActiveTheme>; cardClass: string }) {
+export function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnType<typeof useActiveTheme>; cardClass: string }) {
   const [copied, setCopied] = useState(false);
   const [tokenToast, setTokenToast] = useState<string | null>(null);
   const copy = () => {
@@ -107,6 +107,12 @@ function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: ReturnT
   return (
     <div className={`${cardClass}${isLight ? " syn-light" : ""}`} style={{
       position: "relative", overflow: "hidden", cursor: "default",
+      /* The code container reuses the active DS's card class for its themed
+         border/bg/radius, but some DS cards carry an intrinsic demo width
+         (M3's .m3-card is width:200px) which would clamp + clip the code and
+         drop the absolute Copy button onto the first line. Force full width
+         here so no donor card class can leak its sizing into the code box. */
+      width: "100%", boxSizing: "border-box",
     }}>
       <button className={btnCls} onClick={copy} aria-label="Copy code" style={{
         position: "absolute", top: 8, right: 8, padding: "4px 10px",
