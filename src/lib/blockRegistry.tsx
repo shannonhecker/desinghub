@@ -9,6 +9,8 @@ import {
   publicAssetUrl,
   type SampleImageCategory,
 } from "@/lib/sampleImages";
+import { DsControlScope, DsText, DsSelect, DsToggle, supportsDsControls, type Mode } from "@/components/builder/DsInspectorControls";
+import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -203,18 +205,29 @@ function ImagePicker({
   );
 }
 
-/* ── Generic SchemaFields renderer ── */
+/* ── Schema-driven inspector renderer ──
+   Text/Select/Toggle render as the ACTIVE DS's real components (Salt/M3/Fluent)
+   wrapped once in DsControlScope; the rest stay neutral. Carbon/uoaui fall back
+   to neutral controls until their scope machinery lands (supportsDsControls). */
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
   const { props, set } = useBlockProps(blockId);
+  const system = useBuilder((s) => s.designSystem) as SystemId;
+  const mode = (useBuilder((s) => s.mode) === "dark" ? "dark" : "light") as Mode;
+  const useDs = supportsDsControls(system);
   return (
-    <div>
+    <DsControlScope system={system} mode={mode}>
       {fields.map((f, i) => {
         switch (f.type) {
           case "text":
             return (
               <InspectorField key={i} label={f.label}>
-                <input className="inspector-input" type="text" value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
-                  onChange={(e) => set({ [f.propKey]: e.target.value })} />
+                {useDs ? (
+                  <DsText system={system} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
+                    onChange={(v) => set({ [f.propKey]: v })} />
+                ) : (
+                  <input className="inspector-input" type="text" value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
+                    onChange={(e) => set({ [f.propKey]: e.target.value })} />
+                )}
               </InspectorField>
             );
           case "textarea":
@@ -227,19 +240,28 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
           case "select":
             return (
               <InspectorField key={i} label={f.label}>
-                <select className="inspector-select" value={(props[f.propKey] as string) ?? f.options[0]?.value}
-                  onChange={(e) => set({ [f.propKey]: e.target.value })}>
-                  {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
+                {useDs ? (
+                  <DsSelect system={system} value={(props[f.propKey] as string) ?? f.options[0]?.value ?? ""} options={f.options}
+                    onChange={(v) => set({ [f.propKey]: v })} />
+                ) : (
+                  <select className="inspector-select" value={(props[f.propKey] as string) ?? f.options[0]?.value}
+                    onChange={(e) => set({ [f.propKey]: e.target.value })}>
+                    {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                )}
               </InspectorField>
             );
           case "toggle": {
             const checked = Boolean(props[f.propKey]);
             return (
               <InspectorField key={i} label={f.label}>
-                <button className={`inspector-toggle-btn${checked ? " active" : ""}`} onClick={() => set({ [f.propKey]: !checked })} style={{ width: "100%" }}>
-                  {checked ? "On" : "Off"}
-                </button>
+                {useDs ? (
+                  <DsToggle system={system} checked={checked} onChange={(v) => set({ [f.propKey]: v })} />
+                ) : (
+                  <button className={`inspector-toggle-btn${checked ? " active" : ""}`} onClick={() => set({ [f.propKey]: !checked })} style={{ width: "100%" }}>
+                    {checked ? "On" : "Off"}
+                  </button>
+                )}
               </InspectorField>
             );
           }
@@ -267,7 +289,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             return <ActionButton key={i} blockId={blockId} label={f.label} action={f.action} />;
         }
       })}
-    </div>
+    </DsControlScope>
   );
 }
 
