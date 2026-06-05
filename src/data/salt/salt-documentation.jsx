@@ -779,19 +779,22 @@ function PatForm(){
 function PatListDetail(){
   const [sel,setSel]=useState(0);
   const items=[{t:"Dashboard Report",d:"Q4 revenue analysis with regional breakdowns"},{t:"User Metrics",d:"Monthly active users and retention data"},{t:"System Alerts",d:"Infrastructure health and uptime monitoring"}];
-  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
-    <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
-      {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
-    </div>
-    <div style={{flex:1,padding:12}}>
-      <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
-      <div style={{fontSize:11,color:T.fg3,lineHeight:1.5}}>{items[sel].d}</div>
-      <div style={{marginTop:12,display:"flex",gap:6}}>
-        <button className="s-btn s-btn-bordered" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Edit</button>
-        <button className="s-btn s-btn-transparent" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Delete</button>
+  /* Two-pane records layout via Salt's real FlexLayout (list + detail). */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltFlex gap={0} align="stretch" style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
+      <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
+        {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
       </div>
-    </div>
-  </div>;
+      <div style={{flex:1,padding:12}}>
+        <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
+        <div style={{fontSize:11,color:T.fg3,lineHeight:1.5}}>{items[sel].d}</div>
+        <div style={{marginTop:12,display:"flex",gap:6}}>
+          <button className="s-btn s-btn-bordered" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Edit</button>
+          <button className="s-btn s-btn-transparent" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Delete</button>
+        </div>
+      </div>
+    </SaltFlex>
+  </SaltProvider>;
 }
 
 function PatAppShell(){
@@ -834,18 +837,21 @@ function PatLogin(){
 function PatSettings(){
   const [tab,setTab]=useState(0);
   const tabs=["General","Security","Notifications"];
-  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
-    <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
-      {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
-    </div>
-    <div style={{flex:1,padding:12}}>
-      <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        <div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" defaultValue="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:10,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.accent,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.accentFg,position:"absolute",top:2,right:2}}/></div></div>
+  /* Settings shell via Salt's real FlexLayout (tab rail + form pane). */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltFlex gap={0} align="stretch" style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
+      <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
+        {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
       </div>
-    </div>
-  </div>;
+      <div style={{flex:1,padding:12}}>
+        <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" defaultValue="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:10,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.accent,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.accentFg,position:"absolute",top:2,right:2}}/></div></div>
+        </div>
+      </div>
+    </SaltFlex>
+  </SaltProvider>;
 }
 
 function PatSearch(){
