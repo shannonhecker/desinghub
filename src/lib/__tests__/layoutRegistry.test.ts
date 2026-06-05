@@ -65,8 +65,18 @@ describe("layoutRegistry — Fluent (idiomatic token CSS, no layout component)",
     expect(jsx).toContain('gridColumn: "span 6"');
     expect(jsx).toContain("tokens.spacingHorizontalM");
   });
-  it("imports the tokens object", () => {
-    expect(collectLayoutImports("fluent", ["grid"])).toContain('import { tokens } from "@fluentui/react-components";');
+  it("stack -> flex column with the VERTICAL spacing token", () => {
+    const jsx = layoutToJsx("fluent", "stack", {}, [child("<X/>")])!;
+    expect(jsx).toContain('flexDirection: "column"');
+    expect(jsx).toContain("tokens.spacingVerticalM");
+  });
+  it("row -> flex (no column) with the HORIZONTAL spacing token", () => {
+    const jsx = layoutToJsx("fluent", "row", {}, [child("<X/>")])!;
+    expect(jsx).not.toContain("flexDirection");
+    expect(jsx).toContain("tokens.spacingHorizontalM");
+  });
+  it("imports the tokens object for any primitive", () => {
+    expect(collectLayoutImports("fluent", ["grid", "stack", "row"])).toContain('import { tokens } from "@fluentui/react-components";');
   });
 });
 

@@ -539,7 +539,7 @@ const M3: Record<string, ComponentApiEntry> = {
   SimulatedSearchbox: {
     imports: p2(() => ({ from: MUI, names: ["TextField", "InputAdornment"] }), () => ({ from: "@mui/icons-material/Search", names: ["default as SearchIcon"] })),
     toJsx: (p) =>
-      `<TextField placeholder="${jsxAttr(p.placeholder, "Search...")}" variant="outlined" size="small" InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) }} />`,
+      `<TextField placeholder="${jsxAttr(p.placeholder, "Search...")}" variant="outlined" size="small" slotProps={{ input: { startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) } }} />`,
   },
   SimulatedRating: {
     imports: { from: MUI, names: ["Rating"] },

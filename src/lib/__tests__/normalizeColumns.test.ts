@@ -23,6 +23,15 @@ describe("normalizeColumns — canonical 12-fr maps to each DS's native grid", (
     expect(normalizeColumns(0, 12)).toBe(1);
     expect(normalizeColumns(99, 16)).toBe(16);
     expect(normalizeColumns(NaN, 12)).toBe(12); // unsized => full native row
+    // all non-finite values are "full row", not just NaN (guards a
+    // !Number.isFinite -> Number.isNaN refactor slip)
+    expect(normalizeColumns(Infinity, 12)).toBe(12);
+    expect(normalizeColumns(-Infinity, 16)).toBe(16);
+  });
+
+  it("Carbon lower-clamp boundary: a tiny fr still rounds to >=1, never 0", () => {
+    expect(normalizeColumns(1, 16)).toBe(1); // round(1.333)=1
+    expect(normalizeColumns(0.5, 16)).toBe(1); // round(0.667)=1, clamp holds
   });
 
   it("nativeColumnsFor returns 16 for carbon, 12 otherwise", () => {
