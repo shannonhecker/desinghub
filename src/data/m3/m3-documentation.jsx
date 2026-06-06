@@ -1665,11 +1665,11 @@ function M3PatDashboard(){
   </div>;
 }
 function M3PatForm(){
-  return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:"Roboto,sans-serif",maxWidth:320}}>
+  return <MuiStack spacing={1.5} style={{fontFamily:"Roboto,sans-serif",maxWidth:320}}>
     <div><label style={{fontSize:12,fontWeight:500,color:T.onSurfaceVariant}}>Full Name *</label><div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",marginTop:4,display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Jane Doe</div></div>
     <div><label style={{fontSize:12,fontWeight:500,color:T.onSurfaceVariant}}>Email *</label><div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",marginTop:4,display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>jane@company.com</div></div>
     <div style={{display:"flex",gap:8,marginTop:4}}><button className="m3-btn m3-btn-filled" style={{borderRadius:20}}>Submit</button><button className="m3-btn m3-btn-outlined" style={{borderRadius:20}}>Cancel</button></div>
-  </div>;
+  </MuiStack>;
 }
 function M3PatListDetail(){
   const [sel,setSel]=useState(0);
@@ -1693,16 +1693,16 @@ function M3PatLogin(){
       <div style={{fontSize:22,fontWeight:400,color:T.onSurface}}>Welcome back</div>
       <div style={{fontSize:14,color:T.onSurfaceVariant}}>Sign in to your account</div>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+    <MuiStack spacing={1.5}>
       <div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Email</div>
       <div style={{height:56,border:`1px solid ${T.outline}`,borderRadius:4,padding:"8px 16px",display:"flex",alignItems:"center",color:T.onSurfaceVariant,fontSize:14}}>Password</div>
       <button className="m3-btn m3-btn-filled" style={{borderRadius:20,width:"100%",marginTop:4}}>Sign In</button>
-    </div>
+    </MuiStack>
   </div>;
 }
 function M3PatWizard(){
   const [step,setStep]=useState(1);
-  return <div style={{fontFamily:"Roboto,sans-serif"}}>
+  return <MuiStack style={{fontFamily:"Roboto,sans-serif"}}>
     <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:16}}>
       {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
         {i>0&&<div style={{flex:1,height:2,background:i<=step?T.primary:T.outlineVariant}}/>}
@@ -1720,7 +1720,7 @@ function M3PatWizard(){
       <button className="m3-btn m3-btn-outlined" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{borderRadius:20,opacity:step===0?0.38:1}}>Back</button>
       <button className="m3-btn m3-btn-filled" onClick={()=>setStep(Math.min(2,step+1))} style={{borderRadius:20}}>{step===2?"Submit":"Next"}</button>
     </div>
-  </div>;
+  </MuiStack>;
 }
 
 function M3PatAppShell(){
@@ -1768,7 +1768,7 @@ function M3PatSettings(){
   </MuiStack>;
 }
 function M3PatSearch(){
-  return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:"Roboto,sans-serif"}}>
+  return <MuiStack spacing={1.25} style={{fontFamily:"Roboto,sans-serif"}}>
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 16px",borderRadius:28,background:T.surfaceContainerHighest}}>
       <span className="material-symbols-outlined" style={{fontSize:20,color:T.onSurfaceVariant}}>search</span>
       <span style={{fontSize:14,color:T.onSurfaceVariant}}>Search components...</span>
@@ -1782,7 +1782,7 @@ function M3PatSearch(){
         <span className="material-symbols-outlined" style={{fontSize:18,color:T.onSurfaceVariant}}>chevron_right</span>
       </div>
     )}
-  </div>;
+  </MuiStack>;
 }
 function M3PatFeed(){
   return <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,fontFamily:"Roboto,sans-serif"}}>
