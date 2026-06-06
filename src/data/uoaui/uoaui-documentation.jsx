@@ -38,6 +38,7 @@ export function getUoauiDensityCSS(density) {
     .a-shell{display:flex;flex-direction:column;}
     .a-cols{display:flex;}
     .a-cols-gap{display:flex;gap:${sz.gap}px;}
+    .a-stack{display:flex;flex-direction:column;gap:${sz.gap}px;}
   `;
 }
 
@@ -917,7 +918,7 @@ function PatDashboard() {
 
 function PatForm() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, fontFamily: FONT, maxWidth: 320 }}>
+    <div className="a-stack" style={{ fontFamily: FONT, maxWidth: 320 }}>
       <div className="a-input-wrap"><label className="a-input-label">Full Name *</label><input className="a-input" defaultValue="Jane Doe" readOnly /></div>
       <div className="a-input-wrap"><label className="a-input-label">Email *</label><input className="a-input" defaultValue="jane@company.com" readOnly /></div>
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -1053,7 +1054,7 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Auth form with glass inputs and accent button.", render: function() {
-    return <div style={{fontFamily:FONT,maxWidth:240,margin:"0 auto"}}>
+    return <div className="a-stack" style={{fontFamily:FONT,maxWidth:240,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:12}}><div style={{fontSize:16,fontWeight:700,color:T.fg}}>Sign in</div><div style={{fontSize:10,color:T.fg3}}>Enter your credentials</div></div>
       <div className="a-input-wrap" style={{marginBottom:8}}><label className="a-input-label">Email</label><input className="a-input" readOnly defaultValue="user@example.com"/></div>
       <div className="a-input-wrap" style={{marginBottom:12}}><label className="a-input-label">Password</label><input className="a-input" type="password" readOnly defaultValue="••••••••"/></div>
@@ -1072,7 +1073,7 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search input with filterable glass cards.", render: function() {
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <input className="a-input" readOnly defaultValue="Dashboard templates" style={{width:"100%",marginBottom:10}}/>
       <div style={{display:"flex",gap:6,marginBottom:8}}>{["All","Free","Pro"].map((f,i)=><button key={f} className={`a-btn ${i===0?"a-btn-primary":"a-btn-ghost"}`} style={{height:24,fontSize:10,minWidth:0,padding:"0 10px"}}>{f}</button>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>{["Dashboard Kit","Admin Panel"].map(t=><div key={t} className="a-card" style={{padding:8}}><div style={{fontSize:10,fontWeight:600,color:T.fg}}>{t}</div><div style={{fontSize:8,color:T.fg3}}>Template</div></div>)}</div>
@@ -1080,7 +1081,7 @@ const COMPS = [
   }},
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress indicator.", render: function() {
     const steps=["Details","Review","Done"];
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>{steps.map((s,i)=><><div key={s} style={{width:24,height:24,borderRadius:12,background:i===0?T.accent:i===1?T.accentSurface:"transparent",border:i>1?`2px solid ${T.borderStrong}`:"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600,color:i===0?T.accentFg:i===1?T.accent:T.fg3}}>{i+1}</div>{i<2&&<div style={{flex:1,height:2,borderRadius:1,background:i===0?T.accent:T.borderMd}}/>}</>)}</div>
       <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:6}}>Step 1: Details</div>
       <div className="a-input-wrap"><label className="a-input-label">Name</label><input className="a-input" readOnly defaultValue="My Project"/></div>
