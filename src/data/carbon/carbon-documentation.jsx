@@ -186,7 +186,7 @@ function carbonScopeThemeClass() {
   for (const key of ["white", "g10", "g90", "g100"]) {
     if (T === CARBON_THEMES[key]) return `cds--${key}`;
   }
-  const hex = String(T.background || "#ffffff").replace("#", "");
+  const hex = String(T.background || "").replace("#", "");
   if (hex.length === 6) {
     const r = parseInt(hex.slice(0, 2), 16);
     const g = parseInt(hex.slice(2, 4), 16);
