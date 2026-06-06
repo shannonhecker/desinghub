@@ -35,6 +35,9 @@ export function getUoauiDensityCSS(density) {
     .a-switch .a-sw-thumb{width:${Math.round(sz.h/1.8)}px;height:${Math.round(sz.h/1.8)}px;border-radius:${sz.h}px;}
     .a-switch.on .a-sw-thumb{left:${sz.h-3}px;}
     .a-sidebar-item{padding:${sz.sideItemPad};font-size:${sz.sideFs}px;border-radius:${Math.round(sz.cardRadius/2)}px;}
+    .a-shell{display:flex;flex-direction:column;}
+    .a-cols{display:flex;}
+    .a-cols-gap{display:flex;gap:${sz.gap}px;}
   `;
 }
 
@@ -929,7 +932,7 @@ function PatListDetail() {
   const [sel, setSel] = useState(0);
   const items = [{ t: "Dashboard Report", d: "Q4 revenue analysis" }, { t: "User Metrics", d: "Monthly active users" }, { t: "System Alerts", d: "Health monitoring" }];
   return (
-    <div style={{ display: "flex", gap: 1, fontFamily: FONT, borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
+    <div className="a-cols" style={{ fontFamily: FONT, borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
       <div style={{ width: 160, borderRight: `1px solid ${T.border}`, background: T.surface, backdropFilter: T.glass }}>
         {items.map((item, i) => (
           <div key={item.t} className={`a-sidebar-item${sel === i ? " active" : ""}`} onClick={() => setSel(i)} style={{ borderRadius: 0 }}>
@@ -1039,9 +1042,11 @@ const COMPS = [
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Glass input fields + validation + button bar.", render: PatForm },
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list + glass detail pane.", render: PatListDetail },
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, glass sidebar, content area, footer.", render: function() {
-    return <div style={{fontFamily:FONT,borderRadius:12,border:`1px solid ${T.borderMd}`,overflow:"hidden",height:140}}>
+    /* uoaui has no layout component — its layout system is class + token CSS.
+       .a-shell (column) + .a-cols (flush row) are uoaui's layout classes. */
+    return <div className="a-shell" style={{fontFamily:FONT,borderRadius:12,border:`1px solid ${T.borderMd}`,overflow:"hidden",height:140}}>
       <div style={{height:28,background:T.surface,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 10px",fontSize:11,fontWeight:600,color:T.fg}}>App Shell</div>
-      <div style={{display:"flex",flex:1,height:112}}>
+      <div className="a-cols" style={{flex:1,height:112}}>
         <div style={{width:60,background:T.surface,borderRight:`1px solid ${T.border}`,padding:6}}>{["Home","Data","Settings"].map((n,i)=><div key={n} style={{padding:"4px 6px",fontSize:9,borderRadius:6,color:i===0?T.accent:T.fg3,background:i===0?T.accentSurface:"transparent",marginBottom:2}}>{n}</div>)}</div>
         <div style={{flex:1,padding:10,fontSize:10,color:T.fg2}}>Content area</div>
       </div>
@@ -1056,7 +1061,8 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections.", render: function() {
-    return <div style={{fontFamily:FONT,display:"flex",gap:12}}>
+    /* uoaui layout: .a-cols-gap (flex row, gap from the density token). */
+    return <div className="a-cols-gap" style={{fontFamily:FONT}}>
       <div style={{width:80}}>{["General","Security","Notifs"].map((n,i)=><div key={n} className={`a-sidebar-item${i===0?" active":""}`} style={{fontSize:10,marginBottom:2}}>{n}</div>)}</div>
       <div style={{flex:1}}>
         <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:8}}>General</div>
