@@ -9,6 +9,7 @@ const useFluentShellStyles = makeStyles({
   shell: { display: "flex", flexDirection: "column" },
   body: { display: "flex" },
   navrail: { display: "flex", flexDirection: "column", alignItems: "center", rowGap: fTokens.spacingVerticalXS },
+  vstack: { display: "flex", flexDirection: "column", rowGap: fTokens.spacingVerticalM },
 });
 
 /* ── EXPORTED FOR DESIGN HUB ── */
@@ -1281,11 +1282,12 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT,maxWidth:320}}>
       <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Full Name *</label><div className="f-input" style={{marginTop:4}}>Jane Doe</div></div>
       <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Email *</label><div className="f-input" style={{marginTop:4}}>jane@company.com</div></div>
       <div style={{display:"flex",gap:8,marginTop:4}}><button className="f-btn f-btn-primary">Submit</button><button className="f-btn f-btn-secondary">Cancel</button></div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: function(){
     const styles = useFluentShellStyles();
@@ -1322,18 +1324,19 @@ const COMPS = [
     </FluentProvider>;
   }},
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function(){
-    return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
       <div style={{textAlign:"center",marginBottom:12}}>
         <div style={{width:40,height:40,borderRadius:4,background:T.brandBg,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:18,fontWeight:600,marginBottom:6}}>A</div>
         <div style={{fontSize:16,fontWeight:600,color:T.fg1}}>Welcome back</div>
         <div style={{fontSize:12,color:T.fg3}}>Sign in to your account</div>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div className={styles.vstack}>
         <div className="f-input" style={{fontSize:12}}>Email</div>
         <div className="f-input" style={{fontSize:12}}>Password</div>
         <button className="f-btn f-btn-primary" style={{width:"100%",marginTop:4}}>Sign In</button>
       </div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: function(){
     const styles = useFluentShellStyles();
@@ -1354,7 +1357,8 @@ const COMPS = [
     </FluentProvider>;
   }},
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,background:T.bg1}}>
         <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
         <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
@@ -1368,11 +1372,12 @@ const COMPS = [
           <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
         </div>
       )}
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function(){
     const [step,setStep]=useState(1);
-    return <div style={{fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
         {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
           {i>0&&<div style={{flex:1,height:2,background:i<=step?T.brandBg:T.stroke2}}/>}
@@ -1390,7 +1395,7 @@ const COMPS = [
         <button className="f-btn f-btn-secondary" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{opacity:step===0?0.3:1}}>Back</button>
         <button className="f-btn f-btn-primary" onClick={()=>setStep(Math.min(2,step+1))}>{step===2?"Submit":"Next"}</button>
       </div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function(){
     const cols=["Name","Status","Amount","Date"];
