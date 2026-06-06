@@ -175,7 +175,10 @@ export function SimulatedDropdown({
 }: DropdownProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>("settings");
+  /* Start unselected so a caller-provided `placeholder` (used by templates as the
+     field's display value, e.g. "Last 30 days" / a timezone) is what shows,
+     instead of always defaulting to the demo roster's "Settings" item. */
+  const [selected, setSelected] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   /* Close on outside click */
