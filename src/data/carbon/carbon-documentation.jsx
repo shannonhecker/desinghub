@@ -2389,12 +2389,18 @@ function CodeSnippetDemo() {
 
 /* ───── Patterns ───── */
 function PatDashboard() {
+  /* Dashboard sections stacked with Carbon's real Stack. */
   return (
-    <Col gap={16}>
-      <TilesDemo />
-      <DataTableDemo />
-      <PaginationDemo />
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={5}>
+          <TilesDemo />
+          <DataTableDemo />
+          <PaginationDemo />
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
@@ -2556,7 +2562,10 @@ function PatDataTable() {
     setSel(n);
   };
   return (
-    <Col gap={0} style={{ border: `1px solid ${T.borderSubtle01}` }}>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={0} style={{ border: `1px solid ${T.borderSubtle01}` }}>
       {/* Bulk-action toolbar */}
       {sel.size > 0 ? (
         <div style={{ background: T.interactive, color: "#ffffff", padding: "0 16px", height: 48, display: "flex", alignItems: "center", gap: 16, fontFamily: CARBON_FONT, fontSize: 14 }}>
@@ -2619,7 +2628,9 @@ function PatDataTable() {
         </tbody>
       </table>
       <PaginationDemo />
-    </Col>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
