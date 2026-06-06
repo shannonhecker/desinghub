@@ -9,10 +9,17 @@
  * Architecture mirrors RealComponentRenderer: each JS-provider DS renders inside
  * its own provider subtree (SaltProvider / MUI ThemeProvider / FluentProvider),
  * behind a `mounted` SSR gate so MUI's emotion / Fluent's griffel style engines
- * never run during SSR/first hydration. Carbon + uoaui need scoped-CSS machinery
+ * never run during SSR/first hydration. The caller (SchemaFields) gates its
+ * control swap on the SAME `useMounted()` signal, so the DS controls never render
+ * a frame outside their provider. Carbon + uoaui need scoped-CSS machinery
  * (CarbonScopeStyles / .preview-uoaui) and are handled in a follow-up; until then
  * `supportsDsControls` returns false for them and the caller keeps the neutral
  * controls — an honest, crash-free fallback.
+ *
+ * Each control accepts an `ariaLabel` (the inspector field label) and routes it to
+ * the element that actually carries the role, per DS: Salt Input/Switch via
+ * `inputProps`, MUI via `slotProps.htmlInput`/`select`/`input`, Salt Dropdown +
+ * all Fluent controls via a top-level `aria-label` (their primary slot).
  */
 import React from "react";
 import type { SystemId } from "@/lib/componentApiRegistry";
@@ -45,8 +52,11 @@ export function supportsDsControls(system: SystemId): boolean {
   return DS_CONTROL_SYSTEMS.has(system);
 }
 
-/* One-time client mount gate (style engines must not run on the server). */
-function useMounted(): boolean {
+/* One-time client mount gate (style engines must not run on the server).
+   Exported so the caller (SchemaFields) can gate its control swap on the SAME
+   signal — otherwise the DS controls render for one frame before this provider
+   mounts, i.e. outside their theme context. */
+export function useMounted(): boolean {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   return mounted;
@@ -65,6 +75,8 @@ export function DsControlScope({
   children: React.ReactNode;
 }) {
   const mounted = useMounted();
+  /* Memoise so the MUI theme isn't rebuilt every render (mirrors RealComponentRenderer). */
+  const m3Theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
   if (!mounted || !supportsDsControls(system)) return <>{children}</>;
   switch (system) {
     case "salt":
@@ -75,7 +87,7 @@ export function DsControlScope({
       );
     case "m3":
       return (
-        <MuiThemeProvider theme={createTheme({ palette: { mode } })}>
+        <MuiThemeProvider theme={m3Theme}>
           <div className="ds-inspector-controls" data-ds="m3">{children}</div>
         </MuiThemeProvider>
       );
@@ -95,20 +107,49 @@ export function DsText({
   system,
   value,
   placeholder,
+  ariaLabel,
   onChange,
 }: {
   system: SystemId;
   value: string;
   placeholder?: string;
+  ariaLabel?: string;
   onChange: (v: string) => void;
 }) {
   switch (system) {
     case "salt":
-      return <SaltInput value={value} placeholder={placeholder} onChange={(e) => onChange((e.target as HTMLInputElement).value)} style={{ width: "100%" }} />;
+      /* Salt's Input extends div props — the component-level onChange would land
+         on the wrapper <div> and never fire. Route change + name via inputProps. */
+      return (
+        <SaltInput
+          value={value}
+          placeholder={placeholder}
+          inputProps={{ "aria-label": ariaLabel, onChange: (e) => onChange(e.currentTarget.value) }}
+          style={{ width: "100%" }}
+        />
+      );
     case "m3":
-      return <MuiTextField size="small" fullWidth variant="outlined" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />;
+      return (
+        <MuiTextField
+          size="small"
+          fullWidth
+          variant="outlined"
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          slotProps={{ htmlInput: { "aria-label": ariaLabel } }}
+        />
+      );
     case "fluent":
-      return <FluentInput value={value} placeholder={placeholder} onChange={(_e, data) => onChange(data.value)} style={{ width: "100%" }} />;
+      return (
+        <FluentInput
+          value={value}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          onChange={(_e, data) => onChange(data.value)}
+          style={{ width: "100%" }}
+        />
+      );
     default:
       return null;
   }
@@ -119,11 +160,13 @@ export function DsSelect({
   system,
   value,
   options,
+  ariaLabel,
   onChange,
 }: {
   system: SystemId;
   value: string;
   options: SelectOption[];
+  ariaLabel?: string;
   onChange: (v: string) => void;
 }) {
   const current = options.find((o) => o.value === value) ?? options[0];
@@ -133,6 +176,7 @@ export function DsSelect({
         <SaltDropdown
           selected={current ? [current.value] : []}
           value={current?.label}
+          aria-label={ariaLabel}
           onSelectionChange={(_e, sel) => onChange((sel?.[0] as string) ?? "")}
           style={{ width: "100%" }}
         >
@@ -145,7 +189,15 @@ export function DsSelect({
       );
     case "m3":
       return (
-        <MuiTextField select size="small" fullWidth variant="outlined" value={current?.value ?? ""} onChange={(e) => onChange(e.target.value)}>
+        <MuiTextField
+          select
+          size="small"
+          fullWidth
+          variant="outlined"
+          value={current?.value ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          slotProps={{ select: { "aria-label": ariaLabel } }}
+        >
           {options.map((o) => (
             <MuiMenuItem value={o.value} key={o.value}>
               {o.label}
@@ -158,6 +210,7 @@ export function DsSelect({
         <FluentDropdown
           value={current?.label ?? ""}
           selectedOptions={current ? [current.value] : []}
+          aria-label={ariaLabel}
           onOptionSelect={(_e, data) => onChange(data.optionValue ?? "")}
           style={{ width: "100%", minWidth: "auto" }}
         >
@@ -177,19 +230,34 @@ export function DsSelect({
 export function DsToggle({
   system,
   checked,
+  ariaLabel,
   onChange,
 }: {
   system: SystemId;
   checked: boolean;
+  ariaLabel?: string;
   onChange: (v: boolean) => void;
 }) {
   switch (system) {
     case "salt":
-      return <SaltSwitch checked={checked} onChange={(e) => onChange((e.target as HTMLInputElement).checked)} />;
+      return (
+        <SaltSwitch
+          checked={checked}
+          inputProps={{ "aria-label": ariaLabel }}
+          onChange={(e) => onChange((e.target as HTMLInputElement).checked)}
+        />
+      );
     case "m3":
-      return <MuiSwitch checked={checked} onChange={(e) => onChange(e.target.checked)} size="small" />;
+      return (
+        <MuiSwitch
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          size="small"
+          slotProps={{ input: { "aria-label": ariaLabel } }}
+        />
+      );
     case "fluent":
-      return <FluentSwitch checked={checked} onChange={(_e, data) => onChange(data.checked)} />;
+      return <FluentSwitch checked={checked} aria-label={ariaLabel} onChange={(_e, data) => onChange(data.checked)} />;
     default:
       return null;
   }

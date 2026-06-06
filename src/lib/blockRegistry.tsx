@@ -9,7 +9,7 @@ import {
   publicAssetUrl,
   type SampleImageCategory,
 } from "@/lib/sampleImages";
-import { DsControlScope, DsText, DsSelect, DsToggle, supportsDsControls, type Mode } from "@/components/builder/DsInspectorControls";
+import { DsControlScope, DsText, DsSelect, DsToggle, supportsDsControls, useMounted, type Mode } from "@/components/builder/DsInspectorControls";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* ═══════════════════════════════════════════════════════════
@@ -208,12 +208,15 @@ function ImagePicker({
 /* ── Schema-driven inspector renderer ──
    Text/Select/Toggle render as the ACTIVE DS's real components (Salt/M3/Fluent)
    wrapped once in DsControlScope; the rest stay neutral. Carbon/uoaui fall back
-   to neutral controls until their scope machinery lands (supportsDsControls). */
+   to neutral controls until their scope machinery lands (supportsDsControls).
+   `useDs` is gated on client mount (same signal as DsControlScope) so the DS
+   controls never render a frame before their provider exists. */
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
   const { props, set } = useBlockProps(blockId);
   const system = useBuilder((s) => s.designSystem) as SystemId;
   const mode = (useBuilder((s) => s.mode) === "dark" ? "dark" : "light") as Mode;
-  const useDs = supportsDsControls(system);
+  const mounted = useMounted();
+  const useDs = mounted && supportsDsControls(system);
   return (
     <DsControlScope system={system} mode={mode}>
       {fields.map((f, i) => {
@@ -222,7 +225,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             return (
               <InspectorField key={i} label={f.label}>
                 {useDs ? (
-                  <DsText system={system} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
+                  <DsText system={system} ariaLabel={f.label} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
                     onChange={(v) => set({ [f.propKey]: v })} />
                 ) : (
                   <input className="inspector-input" type="text" value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
@@ -241,7 +244,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             return (
               <InspectorField key={i} label={f.label}>
                 {useDs ? (
-                  <DsSelect system={system} value={(props[f.propKey] as string) ?? f.options[0]?.value ?? ""} options={f.options}
+                  <DsSelect system={system} ariaLabel={f.label} value={(props[f.propKey] as string) ?? f.options[0]?.value ?? ""} options={f.options}
                     onChange={(v) => set({ [f.propKey]: v })} />
                 ) : (
                   <select className="inspector-select" value={(props[f.propKey] as string) ?? f.options[0]?.value}
@@ -256,7 +259,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             return (
               <InspectorField key={i} label={f.label}>
                 {useDs ? (
-                  <DsToggle system={system} checked={checked} onChange={(v) => set({ [f.propKey]: v })} />
+                  <DsToggle system={system} ariaLabel={f.label} checked={checked} onChange={(v) => set({ [f.propKey]: v })} />
                 ) : (
                   <button className={`inspector-toggle-btn${checked ? " active" : ""}`} onClick={() => set({ [f.propKey]: !checked })} style={{ width: "100%" }}>
                     {checked ? "On" : "Off"}
