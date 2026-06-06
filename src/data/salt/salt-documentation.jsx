@@ -754,7 +754,8 @@ function PatDashboard(){
 
 function PatForm(){
   const [valid,setValid]=useState(true);
-  return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+  /* Vertical form layout via Salt's real StackLayout. */
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT,maxWidth:320}}>
     <div style={{display:"flex",flexDirection:"column",gap:3}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Full Name <span style={{color:T.negative}}>*</span></label>
       <input className="s-input" placeholder="Jane Doe" style={{fontSize:12}}/>
@@ -773,7 +774,7 @@ function PatForm(){
       <button className="s-btn s-btn-bordered" style={{fontSize:12}}>Cancel</button>
     </div>
     <div style={{fontSize:10,color:T.fg3}}>Form pattern: FormField + Input + Dropdown + Button bar. Validation with FormFieldHelperText.</div>
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatListDetail(){
@@ -819,19 +820,19 @@ function PatAppShell(){
 }
 
 function PatLogin(){
-  return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
     <div style={{textAlign:"center",marginBottom:12}}>
       <div style={{width:36,height:36,borderRadius:8,background:T.accent,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:16,fontWeight:700,marginBottom:6}}>A</div>
       <div style={{fontSize:14,fontWeight:700,color:T.fg}}>Welcome back</div>
       <div style={{fontSize:11,color:T.fg3}}>Sign in to your account</div>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+    <SaltStack gap={1}>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Email</label><input className="s-input" placeholder="you@company.com" style={{fontSize:11,marginTop:2}}/></div>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Password</label><input className="s-input" type="password" placeholder="••••••••" style={{fontSize:11,marginTop:2}}/></div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox" name="remember"/> Remember me</label><a href="#forgot-password" style={{fontSize:10,color:T.accent,textDecoration:"none"}}>Forgot your password?</a></div>
       <button className="s-btn s-btn-solid" style={{width:"100%",marginTop:4}}>Sign In</button>
-    </div>
-  </div>;
+    </SaltStack>
+  </div></SaltProvider>;
 }
 
 function PatSettings(){
@@ -855,7 +856,7 @@ function PatSettings(){
 }
 
 function PatSearch(){
-  return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT}}>
     <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",background:T.bg}}>
       <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
       <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
@@ -869,12 +870,12 @@ function PatSearch(){
         <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
       </div>
     )}
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatWizard(){
   const [step,setStep]=useState(1);
-  return <div style={{fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT}}>
     <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
       {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
         {i>0&&<div style={{flex:1,height:2,background:i<=step?T.accent:T.border}}/>}
@@ -894,7 +895,7 @@ function PatWizard(){
       <button className="s-btn s-btn-bordered" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{fontSize:10,opacity:step===0?0.3:1}}>Back</button>
       <button className="s-btn s-btn-solid" onClick={()=>setStep(Math.min(2,step+1))} style={{fontSize:10}}>{step===2?"Submit":"Next"}</button>
     </div>
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatDataTable(){
