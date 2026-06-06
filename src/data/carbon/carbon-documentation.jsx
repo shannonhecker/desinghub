@@ -21,7 +21,7 @@ import { showToast } from "@/lib/toast";
 /* Real @carbon/react grid for the App Shell pattern — "let the DS define the
    grid" (gallery DS-layout, slice 1). Styled by the build-time-scoped Carbon
    sheet that CarbonScopeStyles lazy-loads, scoped to .carbon-live-scope. */
-import { Grid as CarbonGrid, Column as CarbonColumn } from "@carbon/react";
+import { Grid as CarbonGrid, Column as CarbonColumn, Stack as CarbonStack } from "@carbon/react";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 import {
   carbonStaticTokenVars, carbonTypeClasses,
@@ -2399,14 +2399,20 @@ function PatDashboard() {
 }
 
 function PatForm() {
+  /* Vertical form layout via Carbon's real Stack (gap=5 == --cds-spacing-05). */
   return (
-    <Col gap={16} style={{ maxWidth: 480 }}>
-      <InputsDemo />
-      <Row>
-        <button className="cb-btn cb-btn-secondary">Cancel</button>
-        <button className="cb-btn cb-btn-primary">Save changes</button>
-      </Row>
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 480 }}>
+        <CarbonStack gap={5}>
+          <InputsDemo />
+          <CarbonStack orientation="horizontal" gap={4}>
+            <button className="cb-btn cb-btn-secondary">Cancel</button>
+            <button className="cb-btn cb-btn-primary">Save changes</button>
+          </CarbonStack>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
@@ -2443,10 +2449,12 @@ function PatLogin() {
   const idEmail = React.useId();
   const idPwd = React.useId();
   return (
-    <form style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
+    <>
+      <CarbonScopeStyles />
+      <form className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
       <div style={{ fontSize: 32, fontWeight: 400, color: T.textPrimary, marginBottom: 12 }}>Log in</div>
       <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your <span translate="no">IBMid</span> to continue.</div>
-      <Col gap={16}>
+      <CarbonStack gap={5}>
         <div className="cb-input-wrap">
           <label className="cb-input-label" htmlFor={idEmail}>IBMid</label>
           <input
@@ -2475,8 +2483,9 @@ function PatLogin() {
           Continue <CIcon name="arrow_forward" size={16} color="#ffffff" aria-hidden="true" />
         </button>
         <a className="cb-link" href="#forgot-ibmid">Forgot your <span translate="no">IBMid</span>?</a>
-      </Col>
-    </form>
+      </CarbonStack>
+      </form>
+    </>
   );
 }
 
@@ -2508,21 +2517,27 @@ function PatListDetail() {
 }
 
 function PatSearch() {
+  /* Search results stacked with Carbon's real Stack. */
   return (
-    <Col gap={16}>
-      <SearchDemo />
-      <Row>
-        <span className="cb-tag cb-tag-blue">
-          Category: Foundations
-          <CIcon name="close" size={14} color={T.interactive} />
-        </span>
-        <span className="cb-tag cb-tag-gray">
-          Type: Component
-          <CIcon name="close" size={14} color={T.textSecondary} />
-        </span>
-      </Row>
-      <StructuredListDemo />
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={5}>
+          <SearchDemo />
+          <CarbonStack orientation="horizontal" gap={4}>
+            <span className="cb-tag cb-tag-blue">
+              Category: Foundations
+              <CIcon name="close" size={14} color={T.interactive} />
+            </span>
+            <span className="cb-tag cb-tag-gray">
+              Type: Component
+              <CIcon name="close" size={14} color={T.textSecondary} />
+            </span>
+          </CarbonStack>
+          <StructuredListDemo />
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
@@ -2673,7 +2688,10 @@ function PatWizard() {
   const steps = ["Profile", "Team", "Review"];
   const canNext = step === 1 ? name.trim().length > 0 : true;
   return (
-    <Col gap={24} style={{ maxWidth: 560 }}>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 560 }}>
+        <CarbonStack gap={6}>
       <div className="cb-steps">
         {steps.map((label, idx) => {
           const i = idx + 1;
@@ -2745,7 +2763,9 @@ function PatWizard() {
           <button className="cb-btn cb-btn-primary">Finish</button>
         )}
       </Row>
-    </Col>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
