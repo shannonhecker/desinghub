@@ -44,7 +44,7 @@ const VERSION_MAP: Record<string, string> = {
   "@salt-ds/theme": "^1.18.0",
   "@salt-ds/lab": "latest",
   "@salt-ds/icons": "^1.14.0",
-  "@mui/material": "^6.4.0",
+  "@mui/material": "^9.0.0",
   "@emotion/react": "^11.14.0",
   "@emotion/styled": "^11.14.0",
   "@mui/x-tree-view": "latest",

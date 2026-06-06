@@ -18,6 +18,7 @@
  */
 
 import type { Block, LayoutProps, LayoutWidth, ZoneLayout } from "@/store/useBuilder";
+import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* Translate a LayoutWidth token to a CSS length string, or `null`
    for special modes (auto/fill) that flow through other properties.
@@ -40,6 +41,24 @@ export function colSpanToWidth(colSpan: unknown): LayoutWidth | undefined {
   if (n === 2) return "66.666%";
   if (n === 3) return "fill";
   return undefined;
+}
+
+/* Each DS's native grid column count. Canonical pattern widths are authored in
+   12-fr; Carbon's grid is 16-col, the rest are 12. The layout registry is the
+   ONLY place this normalization happens, so one pattern def lands correctly on
+   every DS's real grid. (Verified against installed packages: @carbon/react
+   Column supports lg up to 16; Salt GridLayout / MUI Grid default to 12.) */
+export function nativeColumnsFor(ds: SystemId): number {
+  return ds === "carbon" ? 16 : 12;
+}
+
+/* Map a canonical 12-fr span to a DS's native column count. round-half-up,
+   clamped to [1, nativeCols]. Non-finite fr (an unsized block) spans the full
+   native row. */
+export function normalizeColumns(fr: number, nativeCols: number): number {
+  if (!Number.isFinite(fr)) return nativeCols;
+  const scaled = Math.round((fr / 12) * nativeCols);
+  return Math.max(1, Math.min(nativeCols, scaled));
 }
 
 /* Resolve the effective layout for a block given its container mode.

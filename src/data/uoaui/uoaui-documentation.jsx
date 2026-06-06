@@ -39,6 +39,8 @@ export function getUoauiDensityCSS(density) {
     .a-cols{display:flex;}
     .a-cols-gap{display:flex;gap:${sz.gap}px;}
     .a-stack{display:flex;flex-direction:column;gap:${sz.gap}px;}
+    .a-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:${sz.gridGap}px;}
+    .a-row{display:flex;gap:${sz.gap}px;}
   `;
 }
 
