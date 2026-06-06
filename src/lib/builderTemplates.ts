@@ -187,8 +187,11 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: settingsProfile.initials, src: getImageById(settingsProfile.avatarId)?.url, size: "lg", presence: "available" }, layout: { width: "2fr" } },
     { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Upload photo", variant: "secondary" }, layout: { width: "4fr" } },
     { id: tid("sp-btn-remove"), type: "SimulatedButton", props: { label: "Remove", variant: "ghost" }, layout: { width: "3fr" } },
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", placeholder: settingsProfile.email }, layout: { width: "12fr" } },
+    /* Current-value fields: `value` renders solid in the read-only Preview (real
+       Salt/MUI Input show value); `placeholder` mirrors it so the edit canvas
+       (which reads placeholder) stays populated rather than blank. */
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "12fr" } },
     { id: tid("sp-tz"), type: "SimulatedDropdown", props: { placeholder: settingsProfile.timezone }, layout: { width: "12fr" } },
 
     /* NOTIFICATIONS - one setting per row (label left / switch right) */
