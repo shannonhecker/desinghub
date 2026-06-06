@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { saltTokenVars, SALT_MOTION, SALT_CURVE, SALT_ELEVATION, SALT_TYPE, SALT_BORDER } from "./tokens";
+/* Real Salt layout for gallery patterns — "let the DS define the layout".
+   SaltProvider supplies the .salt-theme/.salt-density context so @salt-ds/theme
+   tokens resolve; StackLayout/FlexLayout are Salt's real layout primitives. */
+import { SaltProvider, StackLayout as SaltStack, FlexLayout as SaltFlex } from "@salt-ds/core";
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as SALT_THEMES, buildCSS as saltBuildCSS, SIcon, COMPS as SALT_COMPS, CATS as SALT_CATS, FONT as SALT_FONT, FONT_HEAD as SALT_FONT_HEAD };
@@ -750,7 +754,8 @@ function PatDashboard(){
 
 function PatForm(){
   const [valid,setValid]=useState(true);
-  return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+  /* Vertical form layout via Salt's real StackLayout. */
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT,maxWidth:320}}>
     <div style={{display:"flex",flexDirection:"column",gap:3}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Full Name <span style={{color:T.negative}}>*</span></label>
       <input className="s-input" placeholder="Jane Doe" style={{fontSize:12}}/>
@@ -769,78 +774,89 @@ function PatForm(){
       <button className="s-btn s-btn-bordered" style={{fontSize:12}}>Cancel</button>
     </div>
     <div style={{fontSize:10,color:T.fg3}}>Form pattern: FormField + Input + Dropdown + Button bar. Validation with FormFieldHelperText.</div>
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatListDetail(){
   const [sel,setSel]=useState(0);
   const items=[{t:"Dashboard Report",d:"Q4 revenue analysis with regional breakdowns"},{t:"User Metrics",d:"Monthly active users and retention data"},{t:"System Alerts",d:"Infrastructure health and uptime monitoring"}];
-  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
-    <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
-      {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
-    </div>
-    <div style={{flex:1,padding:12}}>
-      <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
-      <div style={{fontSize:11,color:T.fg3,lineHeight:1.5}}>{items[sel].d}</div>
-      <div style={{marginTop:12,display:"flex",gap:6}}>
-        <button className="s-btn s-btn-bordered" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Edit</button>
-        <button className="s-btn s-btn-transparent" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Delete</button>
+  /* Two-pane records layout via Salt's real FlexLayout (list + detail). */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltFlex gap={0} align="stretch" style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:180,fontFamily:FONT}}>
+      <div style={{width:160,borderRight:`1px solid ${T.border}`,overflowY:"auto"}}>
+        {items.map((it,i)=><button key={i} type="button" onClick={()=>setSel(i)} aria-pressed={sel===i} style={{display:"block",width:"100%",textAlign:"left",padding:8,fontSize:11,cursor:"pointer",borderBottom:`1px solid ${T.border}`,background:sel===i?T.accentWeak:"transparent",color:sel===i?T.accent:T.fg,fontWeight:sel===i?600:400,borderLeft:sel===i?`3px solid ${T.accent}`:"3px solid transparent",borderTop:"none",borderRight:"none",fontFamily:FONT}}>{it.t}</button>)}
       </div>
-    </div>
-  </div>;
+      <div style={{flex:1,padding:12}}>
+        <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:4}}>{items[sel].t}</div>
+        <div style={{fontSize:11,color:T.fg3,lineHeight:1.5}}>{items[sel].d}</div>
+        <div style={{marginTop:12,display:"flex",gap:6}}>
+          <button className="s-btn s-btn-bordered" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Edit</button>
+          <button className="s-btn s-btn-transparent" style={{fontSize:10,padding:"2px 8px",height:"auto",minWidth:0}}>Delete</button>
+        </div>
+      </div>
+    </SaltFlex>
+  </SaltProvider>;
 }
 
 function PatAppShell(){
-  return <div style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",fontFamily:FONT,fontSize:10}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",background:T.bg2,borderBottom:`1px solid ${T.border}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:18,height:18,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:8,fontWeight:700}}>A</div><span style={{fontWeight:600,color:T.fg}}>App Name</span></div>
-      <div style={{display:"flex",gap:4}}><div style={{width:18,height:18,borderRadius:9,background:T.bg3}}/></div>
-    </div>
-    <div style={{display:"flex",height:100}}>
-      <div style={{width:48,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 0"}}>
-        {["home","dashboard","settings"].map(i=><div key={i} style={{width:28,height:22,borderRadius:3,background:i==="home"?T.accentWeak:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:12,color:i==="home"?T.accent:T.fg3}}>{i}</span></div>)}
-      </div>
-      <div style={{flex:1,padding:8,color:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>Main Content Area</div>
-    </div>
-    <div style={{padding:"4px 10px",borderTop:`1px solid ${T.border}`,color:T.fg3,fontSize:9,background:T.bg2}}>Footer · v1.0</div>
-  </div>;
+  /* header / body-row / footer composed with Salt's real StackLayout (vertical)
+     + FlexLayout (horizontal), inside a SaltProvider so the DS owns the layout
+     and its tokens resolve. */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltStack gap={0} style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",fontFamily:FONT,fontSize:10}}>
+      <SaltFlex justify="space-between" align="center" gap={1} style={{padding:"6px 10px",background:T.bg2,borderBottom:`1px solid ${T.border}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:18,height:18,borderRadius:4,background:T.accent,display:"flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:8,fontWeight:700}}>A</div><span style={{fontWeight:600,color:T.fg}}>App Name</span></div>
+        <div style={{display:"flex",gap:4}}><div style={{width:18,height:18,borderRadius:9,background:T.bg3}}/></div>
+      </SaltFlex>
+      <SaltFlex gap={0} align="stretch" style={{height:100}}>
+        <div style={{width:48,background:T.bg2,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"8px 0"}}>
+          {["home","dashboard","settings"].map(i=><div key={i} style={{width:28,height:22,borderRadius:3,background:i==="home"?T.accentWeak:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:12,color:i==="home"?T.accent:T.fg3}}>{i}</span></div>)}
+        </div>
+        <div style={{flex:1,padding:8,color:T.fg3,display:"flex",alignItems:"center",justifyContent:"center"}}>Main Content Area</div>
+      </SaltFlex>
+      <div style={{padding:"4px 10px",borderTop:`1px solid ${T.border}`,color:T.fg3,fontSize:9,background:T.bg2}}>Footer · v1.0</div>
+    </SaltStack>
+  </SaltProvider>;
 }
 
 function PatLogin(){
-  return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
     <div style={{textAlign:"center",marginBottom:12}}>
       <div style={{width:36,height:36,borderRadius:8,background:T.accent,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.accentFg,fontSize:16,fontWeight:700,marginBottom:6}}>A</div>
       <div style={{fontSize:14,fontWeight:700,color:T.fg}}>Welcome back</div>
       <div style={{fontSize:11,color:T.fg3}}>Sign in to your account</div>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+    <SaltStack gap={1}>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Email</label><input className="s-input" placeholder="you@company.com" style={{fontSize:11,marginTop:2}}/></div>
       <div><label style={{fontSize:10,fontWeight:600,color:T.fg}}>Password</label><input className="s-input" type="password" placeholder="••••••••" style={{fontSize:11,marginTop:2}}/></div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><label style={{fontSize:10,color:T.fg2,display:"flex",gap:4,alignItems:"center"}}><input type="checkbox" name="remember"/> Remember me</label><a href="#forgot-password" style={{fontSize:10,color:T.accent,textDecoration:"none"}}>Forgot your password?</a></div>
       <button className="s-btn s-btn-solid" style={{width:"100%",marginTop:4}}>Sign In</button>
-    </div>
-  </div>;
+    </SaltStack>
+  </div></SaltProvider>;
 }
 
 function PatSettings(){
   const [tab,setTab]=useState(0);
   const tabs=["General","Security","Notifications"];
-  return <div style={{display:"flex",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
-    <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
-      {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
-    </div>
-    <div style={{flex:1,padding:12}}>
-      <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        <div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" defaultValue="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:10,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.accent,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.accentFg,position:"absolute",top:2,right:2}}/></div></div>
+  /* Settings shell via Salt's real FlexLayout (tab rail + form pane). */
+  return <SaltProvider mode={modeOf(T)}>
+    <SaltFlex gap={0} align="stretch" style={{border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",overflow:"hidden",height:160,fontFamily:FONT}}>
+      <div style={{width:110,background:T.bg2,borderRight:`1px solid ${T.border}`,padding:4}}>
+        {tabs.map((t,i)=><button key={t} type="button" onClick={()=>setTab(i)} aria-pressed={tab===i} style={{display:"block",width:"100%",textAlign:"left",padding:"6px 8px",fontSize:11,cursor:"pointer",borderRadius:"var(--cr,4px)",background:tab===i?T.accentWeak:"transparent",color:tab===i?T.accent:T.fg2,fontWeight:tab===i?600:400,marginBottom:2,border:"none",fontFamily:FONT}}>{t}</button>)}
       </div>
-    </div>
-  </div>;
+      <div style={{flex:1,padding:12}}>
+        <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:8}}>{tabs[tab]}</div>
+        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div><label style={{fontSize:10,color:T.fg2}}>Display Name</label><input className="s-input" defaultValue="Jane Doe" style={{fontSize:11,marginTop:2}}/></div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:10,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.accent,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.accentFg,position:"absolute",top:2,right:2}}/></div></div>
+        </div>
+      </div>
+    </SaltFlex>
+  </SaltProvider>;
 }
 
 function PatSearch(){
-  return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT}}>
     <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",background:T.bg}}>
       <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
       <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
@@ -854,12 +870,12 @@ function PatSearch(){
         <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
       </div>
     )}
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatWizard(){
   const [step,setStep]=useState(1);
-  return <div style={{fontFamily:FONT}}>
+  return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT}}>
     <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
       {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
         {i>0&&<div style={{flex:1,height:2,background:i<=step?T.accent:T.border}}/>}
@@ -879,7 +895,7 @@ function PatWizard(){
       <button className="s-btn s-btn-bordered" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{fontSize:10,opacity:step===0?0.3:1}}>Back</button>
       <button className="s-btn s-btn-solid" onClick={()=>setStep(Math.min(2,step+1))} style={{fontSize:10}}>{step===2?"Submit":"Next"}</button>
     </div>
-  </div>;
+  </SaltStack></SaltProvider>;
 }
 
 function PatDataTable(){

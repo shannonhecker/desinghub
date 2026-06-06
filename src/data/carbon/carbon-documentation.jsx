@@ -18,6 +18,11 @@
 
 import React, { useState, useEffect } from "react";
 import { showToast } from "@/lib/toast";
+/* Real @carbon/react grid for the App Shell pattern — "let the DS define the
+   grid" (gallery DS-layout, slice 1). Styled by the build-time-scoped Carbon
+   sheet that CarbonScopeStyles lazy-loads, scoped to .carbon-live-scope. */
+import { Grid as CarbonGrid, Column as CarbonColumn, Stack as CarbonStack } from "@carbon/react";
+import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 import {
   carbonStaticTokenVars, carbonTypeClasses,
   CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER,
@@ -171,6 +176,25 @@ export const CARBON_THEMES = { white, g10, g90, g100 };
 let T = CARBON_THEMES.white;
 export const setCarbonT = (theme) => { T = theme; };
 export const getCarbonT = () => T;
+
+/* The Carbon theme class for a .carbon-live-scope wrapper, matching the ACTIVE
+   theme T so the build-time-scoped sheet sets --cds-* to values consistent with
+   the Design Hub Carbon tokens — otherwise a light scope under a dark theme
+   renders white-on-white (invisible) content. Reference-match against
+   CARBON_THEMES first; fall back to a luminance check on T.background. */
+function carbonScopeThemeClass() {
+  for (const key of ["white", "g10", "g90", "g100"]) {
+    if (T === CARBON_THEMES[key]) return `cds--${key}`;
+  }
+  const hex = String(T.background || "").replace("#", "");
+  if (hex.length === 6) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128 ? "cds--g100" : "cds--white";
+  }
+  return "cds--white";
+}
 
 /* ──────────────────────────────────────────────
    CSS BUILDER - injected into UI Kit iframe
@@ -2365,43 +2389,65 @@ function CodeSnippetDemo() {
 
 /* ───── Patterns ───── */
 function PatDashboard() {
+  /* Dashboard sections stacked with Carbon's real Stack. */
   return (
-    <Col gap={16}>
-      <TilesDemo />
-      <DataTableDemo />
-      <PaginationDemo />
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={5}>
+          <TilesDemo />
+          <DataTableDemo />
+          <PaginationDemo />
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
 function PatForm() {
+  /* Vertical form layout via Carbon's real Stack (gap=5 == --cds-spacing-05). */
   return (
-    <Col gap={16} style={{ maxWidth: 480 }}>
-      <InputsDemo />
-      <Row>
-        <button className="cb-btn cb-btn-secondary">Cancel</button>
-        <button className="cb-btn cb-btn-primary">Save changes</button>
-      </Row>
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 480 }}>
+        <CarbonStack gap={5}>
+          <InputsDemo />
+          <CarbonStack orientation="horizontal" gap={4}>
+            <button className="cb-btn cb-btn-secondary">Cancel</button>
+            <button className="cb-btn cb-btn-primary">Save changes</button>
+          </CarbonStack>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
 function PatAppShell() {
+  /* The header + sidenav + main are now laid out by Carbon's REAL CSS grid
+     (@carbon/react Grid/Column), not a hand-rolled flexbox. The whole thing is
+     wrapped in `.carbon-live-scope cds--white` so the build-time-scoped Carbon
+     sheet (lazy-loaded by CarbonScopeStyles) styles the grid + resolves --cds-*
+     tokens, without leaking @carbon/styles' global reset app-wide. */
   return (
-    <div style={{ fontFamily: CARBON_FONT, border: `1px solid ${T.borderSubtle01}`, height: 280 }}>
-      <div className="cb-header" style={{ color: "#ffffff" }}>
-        <strong style={{ marginRight: 8 }}>IBM</strong> Design Hub
-        <span style={{ marginLeft: "auto", color: GRAY_30, fontSize: 14 }}>v2.4</span>
-      </div>
-      <div style={{ display: "flex", height: "calc(100% - 48px)" }}>
-        <div className="cb-sidenav" style={{ width: 200, borderRight: `1px solid ${T.borderSubtle01}` }}>
-          {[["Home", true], ["Deploy", false], ["Logs", false], ["Settings", false]].map(([l, a]) => (
-            <div key={l} className={`cb-sidenav-item${a ? " active" : ""}`}>{l}</div>
-          ))}
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ fontFamily: CARBON_FONT, border: `1px solid ${T.borderSubtle01}`, height: 280, background: T.background }}>
+        <div className="cb-header" style={{ color: "#ffffff" }}>
+          <strong style={{ marginRight: 8 }}>IBM</strong> Design Hub
+          <span style={{ marginLeft: "auto", color: GRAY_30, fontSize: 14 }}>v2.4</span>
         </div>
-        <div style={{ flex: 1, padding: 24, background: T.background, color: T.textSecondary, fontSize: 14 }}>Main content area</div>
+        <CarbonGrid condensed fullWidth style={{ height: "calc(100% - 48px)" }}>
+          <CarbonColumn sm={1} md={2} lg={4} style={{ borderRight: `1px solid ${T.borderSubtle01}`, paddingInline: 0 }}>
+            {[["Home", true], ["Deploy", false], ["Logs", false], ["Settings", false]].map(([l, a]) => (
+              <div key={l} className={`cb-sidenav-item${a ? " active" : ""}`}>{l}</div>
+            ))}
+          </CarbonColumn>
+          <CarbonColumn sm={3} md={6} lg={12} style={{ padding: 24, color: T.textSecondary, fontSize: 14 }}>
+            Main content area
+          </CarbonColumn>
+        </CarbonGrid>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2409,10 +2455,12 @@ function PatLogin() {
   const idEmail = React.useId();
   const idPwd = React.useId();
   return (
-    <form style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
+    <>
+      <CarbonScopeStyles />
+      <form className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 360, fontFamily: CARBON_FONT }} onSubmit={(e) => e.preventDefault()}>
       <div style={{ fontSize: 32, fontWeight: 400, color: T.textPrimary, marginBottom: 12 }}>Log in</div>
       <div style={{ fontSize: 14, color: T.textSecondary, marginBottom: 24 }}>Enter your <span translate="no">IBMid</span> to continue.</div>
-      <Col gap={16}>
+      <CarbonStack gap={5}>
         <div className="cb-input-wrap">
           <label className="cb-input-label" htmlFor={idEmail}>IBMid</label>
           <input
@@ -2441,48 +2489,61 @@ function PatLogin() {
           Continue <CIcon name="arrow_forward" size={16} color="#ffffff" aria-hidden="true" />
         </button>
         <a className="cb-link" href="#forgot-ibmid">Forgot your <span translate="no">IBMid</span>?</a>
-      </Col>
-    </form>
+      </CarbonStack>
+      </form>
+    </>
   );
 }
 
 function PatListDetail() {
   const [sel, setSel] = useState(0);
   const items = ["Project Apollo", "Project Zeus", "Project Hermes"];
+  /* Two-pane records layout via Carbon's REAL grid (list lg=4 / detail lg=12). */
   return (
-    <div style={{ display: "flex", border: `1px solid ${T.borderSubtle01}`, height: 280, fontFamily: CARBON_FONT }}>
-      <div style={{ width: 200, borderRight: `1px solid ${T.borderSubtle01}`, background: T.layer01 }}>
-        {items.map((n, i) => (
-          <div key={n} onClick={() => setSel(i)} style={{ padding: "12px 16px", cursor: "pointer", fontSize: 14, background: i === sel ? T.layerHover01 : "transparent", borderLeft: i === sel ? `3px solid ${T.interactive}` : "3px solid transparent", color: T.textPrimary }}>
-            {n}
-          </div>
-        ))}
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ border: `1px solid ${T.borderSubtle01}`, height: 280, fontFamily: CARBON_FONT }}>
+        <CarbonGrid condensed fullWidth style={{ height: "100%" }}>
+          <CarbonColumn sm={1} md={2} lg={4} style={{ borderRight: `1px solid ${T.borderSubtle01}`, background: T.layer01, paddingInline: 0 }}>
+            {items.map((n, i) => (
+              <div key={n} onClick={() => setSel(i)} style={{ padding: "12px 16px", cursor: "pointer", fontSize: 14, background: i === sel ? T.layerHover01 : "transparent", borderLeft: i === sel ? `3px solid ${T.interactive}` : "3px solid transparent", color: T.textPrimary }}>
+                {n}
+              </div>
+            ))}
+          </CarbonColumn>
+          <CarbonColumn sm={3} md={6} lg={12} style={{ padding: 24 }}>
+            <div style={{ fontSize: 20, fontWeight: 400, color: T.textPrimary }}>{items[sel]}</div>
+            <div style={{ fontSize: 12, color: T.textSecondary, marginTop: 4 }}>Last updated 3 hours ago</div>
+            <div style={{ fontSize: 14, color: T.textPrimary, marginTop: 16 }}>Detail pane content for the selected list item.</div>
+          </CarbonColumn>
+        </CarbonGrid>
       </div>
-      <div style={{ flex: 1, padding: 24 }}>
-        <div style={{ fontSize: 20, fontWeight: 400, color: T.textPrimary }}>{items[sel]}</div>
-        <div style={{ fontSize: 12, color: T.textSecondary, marginTop: 4 }}>Last updated 3 hours ago</div>
-        <div style={{ fontSize: 14, color: T.textPrimary, marginTop: 16 }}>Detail pane content for the selected list item.</div>
-      </div>
-    </div>
+    </>
   );
 }
 
 function PatSearch() {
+  /* Search results stacked with Carbon's real Stack. */
   return (
-    <Col gap={16}>
-      <SearchDemo />
-      <Row>
-        <span className="cb-tag cb-tag-blue">
-          Category: Foundations
-          <CIcon name="close" size={14} color={T.interactive} />
-        </span>
-        <span className="cb-tag cb-tag-gray">
-          Type: Component
-          <CIcon name="close" size={14} color={T.textSecondary} />
-        </span>
-      </Row>
-      <StructuredListDemo />
-    </Col>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={5}>
+          <SearchDemo />
+          <CarbonStack orientation="horizontal" gap={4}>
+            <span className="cb-tag cb-tag-blue">
+              Category: Foundations
+              <CIcon name="close" size={14} color={T.interactive} />
+            </span>
+            <span className="cb-tag cb-tag-gray">
+              Type: Component
+              <CIcon name="close" size={14} color={T.textSecondary} />
+            </span>
+          </CarbonStack>
+          <StructuredListDemo />
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
@@ -2501,7 +2562,10 @@ function PatDataTable() {
     setSel(n);
   };
   return (
-    <Col gap={0} style={{ border: `1px solid ${T.borderSubtle01}` }}>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`}>
+        <CarbonStack gap={0} style={{ border: `1px solid ${T.borderSubtle01}` }}>
       {/* Bulk-action toolbar */}
       {sel.size > 0 ? (
         <div style={{ background: T.interactive, color: "#ffffff", padding: "0 16px", height: 48, display: "flex", alignItems: "center", gap: 16, fontFamily: CARBON_FONT, fontSize: 14 }}>
@@ -2564,28 +2628,36 @@ function PatDataTable() {
         </tbody>
       </table>
       <PaginationDemo />
-    </Col>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 
 function PatSettings() {
   const [active, setActive] = useState("Profile");
   const sections = ["Profile", "Preferences", "Security", "Billing"];
+  /* Settings shell via Carbon's REAL grid (side-nav lg=4 / form lg=12). */
   return (
-    <div style={{ display: "flex", border: `1px solid ${T.borderSubtle01}`, minHeight: 420, fontFamily: CARBON_FONT }}>
-      <nav className="cb-sidenav" aria-label="Settings navigation" style={{ width: 200 }}>
-        {sections.map((s) => (
-          <div
-            key={s}
-            className={`cb-sidenav-item${active === s ? " active" : ""}`}
-            onClick={() => setActive(s)}
-          >
-            {s}
-          </div>
-        ))}
-      </nav>
-      <div style={{ flex: 1, padding: 24, background: T.background }}>
-        <h2 className="cds--type-heading-04" style={{ margin: 0, marginBottom: 8 }}>{active}</h2>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ border: `1px solid ${T.borderSubtle01}`, minHeight: 420, fontFamily: CARBON_FONT }}>
+        <CarbonGrid condensed fullWidth style={{ minHeight: 420 }}>
+          <CarbonColumn sm={1} md={2} lg={4} style={{ paddingInline: 0 }}>
+            <nav className="cb-sidenav" aria-label="Settings navigation">
+              {sections.map((s) => (
+                <div
+                  key={s}
+                  className={`cb-sidenav-item${active === s ? " active" : ""}`}
+                  onClick={() => setActive(s)}
+                >
+                  {s}
+                </div>
+              ))}
+            </nav>
+          </CarbonColumn>
+          <CarbonColumn sm={3} md={6} lg={12} style={{ padding: 24, background: T.background }}>
+            <h2 className="cds--type-heading-04" style={{ margin: 0, marginBottom: 8 }}>{active}</h2>
         <p className="cds--type-body-01" style={{ color: T.textSecondary, margin: 0, marginBottom: 24 }}>
           Manage your {active.toLowerCase()} preferences.
         </p>
@@ -2614,8 +2686,10 @@ function PatSettings() {
             <button className="cb-btn cb-btn-primary">Save changes</button>
           </Row>
         </Col>
+          </CarbonColumn>
+        </CarbonGrid>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -2625,7 +2699,10 @@ function PatWizard() {
   const steps = ["Profile", "Team", "Review"];
   const canNext = step === 1 ? name.trim().length > 0 : true;
   return (
-    <Col gap={24} style={{ maxWidth: 560 }}>
+    <>
+      <CarbonScopeStyles />
+      <div className={`carbon-live-scope ${carbonScopeThemeClass()}`} style={{ maxWidth: 560 }}>
+        <CarbonStack gap={6}>
       <div className="cb-steps">
         {steps.map((label, idx) => {
           const i = idx + 1;
@@ -2697,7 +2774,9 @@ function PatWizard() {
           <button className="cb-btn cb-btn-primary">Finish</button>
         )}
       </Row>
-    </Col>
+        </CarbonStack>
+      </div>
+    </>
   );
 }
 

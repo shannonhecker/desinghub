@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { fluentTokenVars, fluentColorVars, FLUENT_MOTION, FLUENT_RADIUS, FLUENT_SHADOW, FLUENT_STROKE_WIDTH, FLUENT_SPACING } from "./tokens";
+/* Fluent v9 ships no layout component — its idiomatic layout is makeStyles
+   (griffel) with spacing tokens, inside a FluentProvider. That IS "the DS's
+   layout" for Fluent. Colors still come from the active Fluent theme tokens (T). */
+import { FluentProvider, webLightTheme, webDarkTheme, makeStyles, tokens as fTokens } from "@fluentui/react-components";
+
+const useFluentShellStyles = makeStyles({
+  shell: { display: "flex", flexDirection: "column" },
+  body: { display: "flex" },
+  navrail: { display: "flex", flexDirection: "column", alignItems: "center", rowGap: fTokens.spacingVerticalXS },
+  vstack: { display: "flex", flexDirection: "column", rowGap: fTokens.spacingVerticalM },
+});
 
 /* ── EXPORTED FOR DESIGN HUB ── */
 export { THEMES as FLUENT_THEMES, buildCSS as fluentBuildCSS, COMPS as FLUENT_COMPS, CATS as FLUENT_CATS, FIcon, FONT as FLUENT_FONT };
@@ -1257,7 +1268,8 @@ const COMPS = [
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Patterns
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
         {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
           <div key={s.l} style={{background:T.bg1,border:`1px solid ${T.stroke2}`,borderRadius:4,padding:10}}>
@@ -1268,70 +1280,86 @@ const COMPS = [
         )}
       </div>
       <div style={{fontSize:10,color:T.fg3}}>Dashboard pattern: stat cards + charts + data tables.</div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:10,fontFamily:FONT,maxWidth:320}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT,maxWidth:320}}>
       <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Full Name *</label><div className="f-input" style={{marginTop:4}}>Jane Doe</div></div>
       <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Email *</label><div className="f-input" style={{marginTop:4}}>jane@company.com</div></div>
       <div style={{display:"flex",gap:8,marginTop:4}}><button className="f-btn f-btn-primary">Submit</button><button className="f-btn f-btn-secondary">Cancel</button></div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: function(){
+    const styles = useFluentShellStyles();
     const [sel,setSel]=useState(0);
     const items=[{t:"Dashboard Report",d:"Q4 revenue analysis"},{t:"User Metrics",d:"Monthly active users"},{t:"System Alerts",d:"Health monitoring"}];
-    return <div style={{display:"flex",border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:160,fontFamily:FONT}}>
-      <div style={{width:150,background:T.bg2,borderRight:`1px solid ${T.stroke2}`}}>
-        {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:"8px 12px",fontSize:12,cursor:"pointer",background:sel===i?T.subtleBgSelected:"transparent",color:sel===i?T.brandFg1:T.fg1,fontWeight:sel===i?600:400}}>{it.t}</div>)}
+    /* Two-pane via Fluent makeStyles flex (styles.body) inside FluentProvider. */
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}>
+      <div className={styles.body} style={{border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:160,fontFamily:FONT}}>
+        <div style={{width:150,background:T.bg2,borderRight:`1px solid ${T.stroke2}`}}>
+          {items.map((it,i)=><div key={i} onClick={()=>setSel(i)} style={{padding:"8px 12px",fontSize:12,cursor:"pointer",background:sel===i?T.subtleBgSelected:"transparent",color:sel===i?T.brandFg1:T.fg1,fontWeight:sel===i?600:400}}>{it.t}</div>)}
+        </div>
+        <div style={{flex:1,padding:12}}><div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{items[sel].t}</div><div style={{fontSize:12,color:T.fg3,marginTop:4}}>{items[sel].d}</div></div>
       </div>
-      <div style={{flex:1,padding:12}}><div style={{fontSize:14,fontWeight:600,color:T.fg1}}>{items[sel].t}</div><div style={{fontSize:12,color:T.fg3,marginTop:4}}>{items[sel].d}</div></div>
-    </div>;
+    </FluentProvider>;
   }},
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: function(){
-    return <div style={{border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",fontFamily:FONT,fontSize:11}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 12px",background:T.bg2,borderBottom:`1px solid ${T.stroke2}`}}>
-        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:20,height:20,borderRadius:4,background:T.brandBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:9,fontWeight:600}}>A</div><span style={{fontWeight:600,color:T.fg1}}>App Name</span></div>
-        <div style={{width:20,height:20,borderRadius:10,background:T.bg4}}/>
-      </div>
-      <div style={{display:"flex",height:90}}>
-        <div style={{width:44,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"6px 0"}}>
-          {["home","dashboard","settings"].map((i,idx)=><div key={i} style={{width:32,height:24,borderRadius:4,background:idx===0?T.subtleBgSelected:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:14,color:idx===0?T.brandFg1:T.fg3}}>{i}</span></div>)}
+    const styles = useFluentShellStyles();
+    /* Layout via Fluent's makeStyles (griffel) inside FluentProvider — the DS's
+       real styling system. Colors from the active Fluent theme tokens (T). */
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}>
+      <div className={styles.shell} style={{border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",fontFamily:FONT,fontSize:11}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 12px",background:T.bg2,borderBottom:`1px solid ${T.stroke2}`}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:20,height:20,borderRadius:4,background:T.brandBg,display:"flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:9,fontWeight:600}}>A</div><span style={{fontWeight:600,color:T.fg1}}>App Name</span></div>
+          <div style={{width:20,height:20,borderRadius:10,background:T.bg4}}/>
         </div>
-        <div style={{flex:1,padding:8,display:"flex",alignItems:"center",justifyContent:"center",color:T.fg3}}>Main Content</div>
+        <div className={styles.body} style={{height:90}}>
+          <div className={styles.navrail} style={{width:44,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,padding:"6px 0"}}>
+            {["home","dashboard","settings"].map((i,idx)=><div key={i} style={{width:32,height:24,borderRadius:4,background:idx===0?T.subtleBgSelected:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}><span className="material-symbols-outlined" style={{fontSize:14,color:idx===0?T.brandFg1:T.fg3}}>{i}</span></div>)}
+          </div>
+          <div style={{flex:1,padding:8,display:"flex",alignItems:"center",justifyContent:"center",color:T.fg3}}>Main Content</div>
+        </div>
+        <div style={{padding:"3px 12px",borderTop:`1px solid ${T.stroke2}`,background:T.bg2,fontSize:9,color:T.fg3}}>Footer · v1.0</div>
       </div>
-      <div style={{padding:"3px 12px",borderTop:`1px solid ${T.stroke2}`,background:T.bg2,fontSize:9,color:T.fg3}}>Footer · v1.0</div>
-    </div>;
+    </FluentProvider>;
   }},
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function(){
-    return <div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
       <div style={{textAlign:"center",marginBottom:12}}>
         <div style={{width:40,height:40,borderRadius:4,background:T.brandBg,display:"inline-flex",alignItems:"center",justifyContent:"center",color:T.fgOnBrand,fontSize:18,fontWeight:600,marginBottom:6}}>A</div>
         <div style={{fontSize:16,fontWeight:600,color:T.fg1}}>Welcome back</div>
         <div style={{fontSize:12,color:T.fg3}}>Sign in to your account</div>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <div className={styles.vstack}>
         <div className="f-input" style={{fontSize:12}}>Email</div>
         <div className="f-input" style={{fontSize:12}}>Password</div>
         <button className="f-btn f-btn-primary" style={{width:"100%",marginTop:4}}>Sign In</button>
       </div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: function(){
+    const styles = useFluentShellStyles();
     const [tab,setTab]=useState(0);
     const tabs=["General","Security","Notifications"];
-    return <div style={{display:"flex",border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:150,fontFamily:FONT}}>
-      <div style={{width:120,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,padding:4}}>
-        {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 10px",fontSize:12,cursor:"pointer",borderRadius:4,background:tab===i?T.subtleBgSelected:"transparent",color:tab===i?T.brandFg1:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+    /* Settings shell via Fluent makeStyles flex (styles.body) inside FluentProvider. */
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}>
+      <div className={styles.body} style={{border:`1px solid ${T.stroke2}`,borderRadius:4,overflow:"hidden",height:150,fontFamily:FONT}}>
+        <div style={{width:120,background:T.bg2,borderRight:`1px solid ${T.stroke2}`,padding:4}}>
+          {tabs.map((t,i)=><div key={t} onClick={()=>setTab(i)} style={{padding:"6px 10px",fontSize:12,cursor:"pointer",borderRadius:4,background:tab===i?T.subtleBgSelected:"transparent",color:tab===i?T.brandFg1:T.fg2,fontWeight:tab===i?600:400,marginBottom:2}}>{t}</div>)}
+        </div>
+        <div style={{flex:1,padding:12}}>
+          <div style={{fontSize:14,fontWeight:600,color:T.fg1,marginBottom:8}}>{tabs[tab]}</div>
+          <div className="f-input" style={{marginBottom:6,fontSize:11}}>Display Name</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.brandBg,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.fgOnBrand,position:"absolute",top:2,right:2}}/></div></div>
+        </div>
       </div>
-      <div style={{flex:1,padding:12}}>
-        <div style={{fontSize:14,fontWeight:600,color:T.fg1,marginBottom:8}}>{tabs[tab]}</div>
-        <div className="f-input" style={{marginBottom:6,fontSize:11}}>Display Name</div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><span style={{fontSize:11,color:T.fg2}}>Dark Mode</span><div style={{width:28,height:14,borderRadius:7,background:T.brandBg,cursor:"pointer",position:"relative"}}><div style={{width:10,height:10,borderRadius:5,background:T.fgOnBrand,position:"absolute",top:2,right:2}}/></div></div>
-      </div>
-    </div>;
+    </FluentProvider>;
   }},
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:8,fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,background:T.bg1}}>
         <span className="material-symbols-outlined" style={{fontSize:16,color:T.fg3}}>search</span>
         <span style={{fontSize:12,color:T.fg3}}>Search components...</span>
@@ -1345,11 +1373,12 @@ const COMPS = [
           <span className="material-symbols-outlined" style={{fontSize:14,color:T.fg3}}>chevron_right</span>
         </div>
       )}
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function(){
     const [step,setStep]=useState(1);
-    return <div style={{fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:0,marginBottom:12}}>
         {["Account","Profile","Review"].map((s,i)=><React.Fragment key={s}>
           {i>0&&<div style={{flex:1,height:2,background:i<=step?T.brandBg:T.stroke2}}/>}
@@ -1367,12 +1396,13 @@ const COMPS = [
         <button className="f-btn f-btn-secondary" onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} style={{opacity:step===0?0.3:1}}>Back</button>
         <button className="f-btn f-btn-primary" onClick={()=>setStep(Math.min(2,step+1))}>{step===2?"Submit":"Next"}</button>
       </div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function(){
     const cols=["Name","Status","Amount","Date"];
     const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
-    return <div style={{fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <div style={{display:"flex",gap:4}}>
           <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,fontSize:11,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:14}}>filter_list</span>Filter</div>
@@ -1384,7 +1414,7 @@ const COMPS = [
         <thead><tr>{cols.map(c=><th key={c} style={{textAlign:"left",padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:T.fg2,fontWeight:600,fontSize:11}}>{c}</th>)}</tr></thead>
         <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:j===1?(c==="Active"?(T.successFg1||"#107C10"):(T.warningFg1||"#C19C00")):T.fg1,fontWeight:j===1?600:400}}>{c}</td>)}</tr>)}</tbody>
       </table>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Fluent 2 tokens. Sorting, filtering, pagination, row selection.", render: () => null },

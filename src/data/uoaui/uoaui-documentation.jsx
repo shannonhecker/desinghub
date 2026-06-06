@@ -35,8 +35,11 @@ export function getUoauiDensityCSS(density) {
     .a-switch .a-sw-thumb{width:${Math.round(sz.h/1.8)}px;height:${Math.round(sz.h/1.8)}px;border-radius:${sz.h}px;}
     .a-switch.on .a-sw-thumb{left:${sz.h-3}px;}
     .a-sidebar-item{padding:${sz.sideItemPad};font-size:${sz.sideFs}px;border-radius:${Math.round(sz.cardRadius/2)}px;}
-    .a-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:${sz.gridGap}px;}
+    .a-shell{display:flex;flex-direction:column;}
+    .a-cols{display:flex;}
+    .a-cols-gap{display:flex;gap:${sz.gap}px;}
     .a-stack{display:flex;flex-direction:column;gap:${sz.gap}px;}
+    .a-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:${sz.gridGap}px;}
     .a-row{display:flex;gap:${sz.gap}px;}
   `;
 }
@@ -851,7 +854,7 @@ function PatDashboard() {
   ];
   return (
     <div style={{ background: T.gradient, borderRadius: 16, padding: 20 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: FONT }}>
+      <div className="a-stack" style={{ fontFamily: FONT }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -917,7 +920,7 @@ function PatDashboard() {
 
 function PatForm() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, fontFamily: FONT, maxWidth: 320 }}>
+    <div className="a-stack" style={{ fontFamily: FONT, maxWidth: 320 }}>
       <div className="a-input-wrap"><label className="a-input-label">Full Name *</label><input className="a-input" defaultValue="Jane Doe" readOnly /></div>
       <div className="a-input-wrap"><label className="a-input-label">Email *</label><input className="a-input" defaultValue="jane@company.com" readOnly /></div>
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -932,7 +935,7 @@ function PatListDetail() {
   const [sel, setSel] = useState(0);
   const items = [{ t: "Dashboard Report", d: "Q4 revenue analysis" }, { t: "User Metrics", d: "Monthly active users" }, { t: "System Alerts", d: "Health monitoring" }];
   return (
-    <div style={{ display: "flex", gap: 1, fontFamily: FONT, borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
+    <div className="a-cols" style={{ fontFamily: FONT, borderRadius: 10, overflow: "hidden", border: `1px solid ${T.border}` }}>
       <div style={{ width: 160, borderRight: `1px solid ${T.border}`, background: T.surface, backdropFilter: T.glass }}>
         {items.map((item, i) => (
           <div key={item.t} className={`a-sidebar-item${sel === i ? " active" : ""}`} onClick={() => setSel(i)} style={{ borderRadius: 0 }}>
@@ -1042,16 +1045,18 @@ const COMPS = [
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Glass input fields + validation + button bar.", render: PatForm },
   { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list + glass detail pane.", render: PatListDetail },
   { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, glass sidebar, content area, footer.", render: function() {
-    return <div style={{fontFamily:FONT,borderRadius:12,border:`1px solid ${T.borderMd}`,overflow:"hidden",height:140}}>
+    /* uoaui has no layout component — its layout system is class + token CSS.
+       .a-shell (column) + .a-cols (flush row) are uoaui's layout classes. */
+    return <div className="a-shell" style={{fontFamily:FONT,borderRadius:12,border:`1px solid ${T.borderMd}`,overflow:"hidden",height:140}}>
       <div style={{height:28,background:T.surface,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 10px",fontSize:11,fontWeight:600,color:T.fg}}>App Shell</div>
-      <div style={{display:"flex",flex:1,height:112}}>
+      <div className="a-cols" style={{flex:1,height:112}}>
         <div style={{width:60,background:T.surface,borderRight:`1px solid ${T.border}`,padding:6}}>{["Home","Data","Settings"].map((n,i)=><div key={n} style={{padding:"4px 6px",fontSize:9,borderRadius:6,color:i===0?T.accent:T.fg3,background:i===0?T.accentSurface:"transparent",marginBottom:2}}>{n}</div>)}</div>
         <div style={{flex:1,padding:10,fontSize:10,color:T.fg2}}>Content area</div>
       </div>
     </div>;
   }},
   { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Auth form with glass inputs and accent button.", render: function() {
-    return <div style={{fontFamily:FONT,maxWidth:240,margin:"0 auto"}}>
+    return <div className="a-stack" style={{fontFamily:FONT,maxWidth:240,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:12}}><div style={{fontSize:16,fontWeight:700,color:T.fg}}>Sign in</div><div style={{fontSize:10,color:T.fg3}}>Enter your credentials</div></div>
       <div className="a-input-wrap" style={{marginBottom:8}}><label className="a-input-label">Email</label><input className="a-input" readOnly defaultValue="user@example.com"/></div>
       <div className="a-input-wrap" style={{marginBottom:12}}><label className="a-input-label">Password</label><input className="a-input" type="password" readOnly defaultValue="••••••••"/></div>
@@ -1059,7 +1064,8 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation sidebar with form sections.", render: function() {
-    return <div style={{fontFamily:FONT,display:"flex",gap:12}}>
+    /* uoaui layout: .a-cols-gap (flex row, gap from the density token). */
+    return <div className="a-cols-gap" style={{fontFamily:FONT}}>
       <div style={{width:80}}>{["General","Security","Notifs"].map((n,i)=><div key={n} className={`a-sidebar-item${i===0?" active":""}`} style={{fontSize:10,marginBottom:2}}>{n}</div>)}</div>
       <div style={{flex:1}}>
         <div style={{fontSize:13,fontWeight:600,color:T.fg,marginBottom:8}}>General</div>
@@ -1069,7 +1075,7 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Search input with filterable glass cards.", render: function() {
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <input className="a-input" readOnly defaultValue="Dashboard templates" style={{width:"100%",marginBottom:10}}/>
       <div style={{display:"flex",gap:6,marginBottom:8}}>{["All","Free","Pro"].map((f,i)=><button key={f} className={`a-btn ${i===0?"a-btn-primary":"a-btn-ghost"}`} style={{height:24,fontSize:10,minWidth:0,padding:"0 10px"}}>{f}</button>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>{["Dashboard Kit","Admin Panel"].map(t=><div key={t} className="a-card" style={{padding:8}}><div style={{fontSize:10,fontWeight:600,color:T.fg}}>{t}</div><div style={{fontSize:8,color:T.fg3}}>Template</div></div>)}</div>
@@ -1077,14 +1083,14 @@ const COMPS = [
   }},
   { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress indicator.", render: function() {
     const steps=["Details","Review","Done"];
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>{steps.map((s,i)=><><div key={s} style={{width:24,height:24,borderRadius:12,background:i===0?T.accent:i===1?T.accentSurface:"transparent",border:i>1?`2px solid ${T.borderStrong}`:"none",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:600,color:i===0?T.accentFg:i===1?T.accent:T.fg3}}>{i+1}</div>{i<2&&<div style={{flex:1,height:2,borderRadius:1,background:i===0?T.accent:T.borderMd}}/>}</>)}</div>
       <div style={{fontSize:12,fontWeight:600,color:T.fg,marginBottom:6}}>Step 1: Details</div>
       <div className="a-input-wrap"><label className="a-input-label">Name</label><input className="a-input" readOnly defaultValue="My Project"/></div>
     </div>;
   }},
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable glass grid, pagination.", render: function() {
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <div style={{display:"flex",gap:6,marginBottom:8}}><input className="a-input" aria-label="Filter" type="search" autoComplete="off" spellCheck={false} readOnly placeholder="Filter&hellip;" style={{flex:1}}/><button type="button" className="a-btn a-btn-primary" style={{minWidth:0,padding:"0 12px"}}>Export</button></div>
       <div style={{borderRadius:10,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}>
         <table className="a-table" style={{width:"100%"}}><thead><tr><th>Name</th><th>Status</th><th>Users</th></tr></thead>
