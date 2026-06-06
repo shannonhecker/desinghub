@@ -4,8 +4,9 @@
  */
 
 import { useBuilder } from "@/store/useBuilder";
-import type { Block, ZoneId } from "@/store/useBuilder";
+import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
+import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 
@@ -29,6 +30,31 @@ function safeLevel(v: unknown): string {
 const FALLBACK_AVATAR_SIZES = new Set(["sm", "md", "lg"]);
 function slugSize(v: unknown): string {
   return safeToken(v, FALLBACK_AVATAR_SIZES, "md");
+}
+
+/* A ZoneLayout mode -> the abstract layout primitive the registry resolves to
+   each DS's real layout component. Anything else (no layout) -> null (keep the
+   generic zone div). */
+function primitiveForMode(mode: ZoneLayout["mode"] | undefined): LayoutPrimitive | null {
+  return mode === "grid" ? "grid" : mode === "stack" ? "stack" : mode === "row" ? "row" : null;
+}
+
+/* Derive a block's canonical 12-fr column span from its layout.width for grid
+   export. "Nfr" -> N; "X%" -> proportional; fill/auto/px/undefined -> full row
+   (12, which normalizeColumns maps to the DS's full native width). */
+function spanOf(block: Block): number {
+  const w = block.layout?.width;
+  if (typeof w === "string") {
+    if (w.endsWith("fr")) {
+      const n = parseFloat(w);
+      if (Number.isFinite(n)) return n;
+    }
+    if (w.endsWith("%")) {
+      const pct = parseFloat(w);
+      if (Number.isFinite(pct)) return Math.max(1, Math.round((pct / 100) * 12));
+    }
+  }
+  return 12;
 }
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
@@ -117,8 +143,32 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   }
 }
 
-function renderZone(blocks: Block[], zoneName: string, indent: string, system: SystemId, mode: "light" | "dark"): string {
+function renderZone(
+  blocks: Block[],
+  zoneName: string,
+  indent: string,
+  system: SystemId,
+  mode: "light" | "dark",
+  layout: ZoneLayout | undefined,
+  useDsLayout: boolean,
+  usedPrimitives: Set<LayoutPrimitive>,
+): string {
   if (blocks.length === 0) return "";
+  /* When we're emitting real DS code, let the DS own the layout: wrap the
+     zone's blocks in the DS's real grid/stack/row primitive (carrying each
+     block's canonical 12-fr span), instead of a custom `zone-*` div. */
+  const prim = primitiveForMode(layout?.mode);
+  if (useDsLayout && prim) {
+    const children: LayoutChild[] = blocks.map((b) => ({
+      jsx: blockToJSX(b, "", system, mode).trim(),
+      span: prim === "grid" ? spanOf(b) : undefined,
+    }));
+    const wrapped = layoutToJsx(system, prim, { columns: layout?.columns ?? 12, gap: layout?.gap ?? 3 }, children);
+    if (wrapped) {
+      usedPrimitives.add(prim);
+      return `${indent}  {/* ${zoneName} */}\n${indent}  ${wrapped}`;
+    }
+  }
   const inner = blocks.map((b) => blockToJSX(b, indent + "    ", system, mode)).join("\n");
   return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
 }
@@ -129,13 +179,6 @@ export function exportReact(): string {
   const ds = DS_IMPORTS[s.designSystem] || DS_IMPORTS.salt;
 
   const mode: "light" | "dark" = s.mode === "dark" ? "dark" : "light";
-
-  const zones = [
-    renderZone(s.headerBlocks, "Header", "    ", system, mode),
-    renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode),
-    renderZone(s.blocks, "Body", "    ", system, mode),
-    renderZone(s.footerBlocks, "Footer", "    ", system, mode),
-  ].filter(Boolean).join("\n\n");
 
   /* Real DS-component imports for the blocks the registry covers. When present
      we emit the real provider + theme + a wrapped tree; otherwise we keep the
@@ -152,6 +195,20 @@ export function exportReact(): string {
   const real = componentImports.length > 0;
   const charts = hasCharts(allTypes);
 
+  /* Zones: when emitting real DS code, the DS owns the layout — each zone's
+     blocks are wrapped in its real grid/stack/row primitive (driven by the
+     zone's ZoneLayout mode + each block's 12-fr span). usedPrimitives feeds the
+     layout-component import line below. */
+  const zl: Partial<Record<ZoneId, ZoneLayout>> = s.zoneLayouts ?? {};
+  const usedPrimitives = new Set<LayoutPrimitive>();
+  const zones = [
+    renderZone(s.headerBlocks, "Header", "    ", system, mode, zl.header, real, usedPrimitives),
+    renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode, zl.sidebar, real, usedPrimitives),
+    renderZone(s.blocks, "Body", "    ", system, mode, zl.body, real, usedPrimitives),
+    renderZone(s.footerBlocks, "Footer", "    ", system, mode, zl.footer, real, usedPrimitives),
+  ].filter(Boolean).join("\n\n");
+  const layoutImports = collectLayoutImports(system, [...usedPrimitives]);
+
   const imports = ['import React from "react";'];
   /* Chart components use hooks + window, so the exported file must be a client
      component to also work if pasted into a Next.js App Router project. "use
@@ -163,6 +220,9 @@ export function exportReact(): string {
   if (charts) imports.push(...chartImports());
   if (real) {
     imports.push(...componentImports);
+    /* Real DS layout-component imports (GridLayout/Grid/Column/Stack/...) for
+       the zone primitives used above. uoaui contributes none (className-only). */
+    imports.push(...layoutImports);
     /* Provider import differs per DS API. */
     if (system === "m3") {
       imports.push('import { ThemeProvider, createTheme } from "@mui/material";');

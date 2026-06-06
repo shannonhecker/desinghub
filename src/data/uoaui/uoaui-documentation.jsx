@@ -35,6 +35,9 @@ export function getUoauiDensityCSS(density) {
     .a-switch .a-sw-thumb{width:${Math.round(sz.h/1.8)}px;height:${Math.round(sz.h/1.8)}px;border-radius:${sz.h}px;}
     .a-switch.on .a-sw-thumb{left:${sz.h-3}px;}
     .a-sidebar-item{padding:${sz.sideItemPad};font-size:${sz.sideFs}px;border-radius:${Math.round(sz.cardRadius/2)}px;}
+    .a-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:${sz.gridGap}px;}
+    .a-stack{display:flex;flex-direction:column;gap:${sz.gap}px;}
+    .a-row{display:flex;gap:${sz.gap}px;}
   `;
 }
 
