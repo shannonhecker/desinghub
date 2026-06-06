@@ -852,7 +852,7 @@ function PatDashboard() {
   ];
   return (
     <div style={{ background: T.gradient, borderRadius: 16, padding: 20 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: FONT }}>
+      <div className="a-stack" style={{ fontFamily: FONT }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
@@ -1088,7 +1088,7 @@ const COMPS = [
     </div>;
   }},
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable glass grid, pagination.", render: function() {
-    return <div style={{fontFamily:FONT}}>
+    return <div className="a-stack" style={{fontFamily:FONT}}>
       <div style={{display:"flex",gap:6,marginBottom:8}}><input className="a-input" aria-label="Filter" type="search" autoComplete="off" spellCheck={false} readOnly placeholder="Filter&hellip;" style={{flex:1}}/><button type="button" className="a-btn a-btn-primary" style={{minWidth:0,padding:"0 12px"}}>Export</button></div>
       <div style={{borderRadius:10,border:`1px solid ${T.borderMd}`,overflow:"hidden"}}>
         <table className="a-table" style={{width:"100%"}}><thead><tr><th>Name</th><th>Status</th><th>Users</th></tr></thead>

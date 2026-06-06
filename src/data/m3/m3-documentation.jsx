@@ -1635,7 +1635,7 @@ const M3_PREVIEWS = {
 
 /* ── M3 PATTERN DEMOS ── */
 function M3PatDashboard(){
-  return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:"Roboto,sans-serif"}}>
+  return <MuiStack spacing={1.5} style={{fontFamily:"Roboto,sans-serif"}}>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
       {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
         <div key={s.l} className="m3-card m3-card-elevated" style={{padding:12,borderRadius:12,cursor:"default"}}>
@@ -1662,7 +1662,7 @@ function M3PatDashboard(){
         )}
       </div>
     </div>
-  </div>;
+  </MuiStack>;
 }
 function M3PatForm(){
   return <MuiStack spacing={1.5} style={{fontFamily:"Roboto,sans-serif",maxWidth:320}}>
@@ -1800,7 +1800,7 @@ function M3PatFeed(){
 function M3PatDataTable(){
   const cols=["Name","Status","Amount","Date"];
   const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
-  return <div style={{fontFamily:"Roboto,sans-serif"}}>
+  return <MuiStack style={{fontFamily:"Roboto,sans-serif"}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
       <div style={{display:"flex",gap:6}}>
         <div style={{display:"flex",alignItems:"center",gap:4,padding:"6px 12px",borderRadius:20,background:T.surfaceContainerHighest,fontSize:12,color:T.onSurfaceVariant}}><span className="material-symbols-outlined" style={{fontSize:16}}>filter_list</span>Filter</div>
@@ -1814,7 +1814,7 @@ function M3PatDataTable(){
       <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"10px 16px",borderBottom:`1px solid ${T.outlineVariant}`,color:j===1?(c==="Active"?T.tertiary:T.error):T.onSurface,fontWeight:j===1?500:400}}>{c}</td>)}</tr>)}</tbody>
     </table>
     </div>
-  </div>;
+  </MuiStack>;
 }
 
 const COMPS = [

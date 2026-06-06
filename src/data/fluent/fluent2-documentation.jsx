@@ -1268,7 +1268,8 @@ const COMPS = [
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Patterns
   { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function(){
-    return <div style={{display:"flex",flexDirection:"column",gap:12,fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
         {[{l:"Revenue",v:"$42.8K",p:60},{l:"Users",v:"1,247",p:75},{l:"Growth",v:"+18%",p:90}].map(s=>
           <div key={s.l} style={{background:T.bg1,border:`1px solid ${T.stroke2}`,borderRadius:4,padding:10}}>
@@ -1279,7 +1280,7 @@ const COMPS = [
         )}
       </div>
       <div style={{fontSize:10,color:T.fg3}}>Dashboard pattern: stat cards + charts + data tables.</div>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function(){
     const styles = useFluentShellStyles();
@@ -1400,7 +1401,8 @@ const COMPS = [
   { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function(){
     const cols=["Name","Status","Amount","Date"];
     const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
-    return <div style={{fontFamily:FONT}}>
+    const styles = useFluentShellStyles();
+    return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
         <div style={{display:"flex",gap:4}}>
           <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,fontSize:11,color:T.fg3}}><span className="material-symbols-outlined" style={{fontSize:14}}>filter_list</span>Filter</div>
@@ -1412,7 +1414,7 @@ const COMPS = [
         <thead><tr>{cols.map(c=><th key={c} style={{textAlign:"left",padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:T.fg2,fontWeight:600,fontSize:11}}>{c}</th>)}</tr></thead>
         <tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j} style={{padding:"8px 10px",borderBottom:`1px solid ${T.stroke2}`,color:j===1?(c==="Active"?(T.successFg1||"#107C10"):(T.warningFg1||"#C19C00")):T.fg1,fontWeight:j===1?600:400}}>{c}</td>)}</tr>)}</tbody>
       </table>
-    </div>;
+    </div></FluentProvider>;
   }},
   { id: "charts", name: "Charts & Dataviz", cat: "Patterns", desc: "12 chart types: line, area, column, pie, scatter, bar, donut, spline, stacked column, gauge, heatmap, treemap.", render: () => null },
   { id: "ag-grid", name: "AG Grid", cat: "Components & Patterns", desc: "AG Grid data table themed with Fluent 2 tokens. Sorting, filtering, pagination, row selection.", render: () => null },
