@@ -1,6 +1,47 @@
 import { describe, it, expect } from "vitest";
-import { computeItemStyle, computeGroupItemStyle } from "../layoutResolver";
+import { computeItemStyle, computeGroupItemStyle, computeContainerStyle } from "../layoutResolver";
 import type { Block, ZoneLayout } from "@/store/useBuilder";
+
+describe("computeContainerStyle — main-axis justify is additive (no regression)", () => {
+  it("grid mode emits NO justify-items by default (fill/span items must keep stretching to their span)", () => {
+    const style = computeContainerStyle({ mode: "grid", columns: 12 });
+    expect(style.justifyItems).toBeUndefined();
+  });
+
+  it("grid mode honors an explicit justify", () => {
+    const style = computeContainerStyle({ mode: "grid", columns: 12, justify: "center" });
+    expect(style.justifyItems).toBe("center");
+  });
+
+  it("flex mode emits NO justify-content by default", () => {
+    const style = computeContainerStyle({ mode: "row" });
+    expect(style.justifyContent).toBeUndefined();
+  });
+
+  it("flex (row) mode maps an explicit justify to justify-content", () => {
+    const style = computeContainerStyle({ mode: "row", justify: "center" });
+    expect(style.justifyContent).toBe("center");
+  });
+
+  it("flex (row) mode supports space-between distribution", () => {
+    const style = computeContainerStyle({ mode: "row", justify: "space-between" });
+    expect(style.justifyContent).toBe("space-between");
+  });
+});
+
+describe("computeItemStyle — fixed-width grid items pin to start (#298)", () => {
+  it("a px-width block in a grid gets justifySelf:start so it does not float centered in its track", () => {
+    const block = { id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: "240px" } } as Block;
+    const style = computeItemStyle(block, { mode: "grid", columns: 12 });
+    expect(style.justifySelf).toBe("start");
+  });
+
+  it("does NOT pin fill/span grid items (they must keep stretching to their column span)", () => {
+    const fill = { id: "b2", type: "SimulatedStatCard", props: {}, layout: { width: "fill" } } as Block;
+    const style = computeItemStyle(fill, { mode: "grid", columns: 12 });
+    expect(style.justifySelf).toBeUndefined();
+  });
+});
 
 /* Minimal body block carrying a given layout.width. The cast keeps the
    helper readable without fighting the LayoutWidth template-literal union. */

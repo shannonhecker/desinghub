@@ -17,7 +17,7 @@
  *   a stable contract to read.
  */
 
-import type { Block, LayoutProps, LayoutWidth, ZoneLayout } from "@/store/useBuilder";
+import type { Block, LayoutProps, LayoutWidth, ZoneLayout, LayoutJustify } from "@/store/useBuilder";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* Translate a LayoutWidth token to a CSS length string, or `null`
@@ -149,7 +149,13 @@ export function computeItemStyle(
          block lands on the now-default 12-col grid. */
       style.gridColumn = "1 / -1";
     } else if (widthCss) {
+      /* A fixed-px block is narrower than its auto-placed 1fr track, so pin it
+         to the start of the track instead of letting it float centered — the
+         resize-recenter bug (#298). The fill / span branches above set
+         `gridColumn` and must keep stretching to their span, so they are
+         deliberately left un-pinned (no container-level justify-items:start). */
       style.width = widthCss;
+      style.justifySelf = "start";
     }
     if (minCss) style.minWidth = minCss;
     else if (isTinyWidth(layout.width)) style.minWidth = `${SLIVER_MIN_PX}px`;
@@ -209,8 +215,29 @@ export function computeItemStyle(
   return style;
 }
 
+/* Main-axis distribution → CSS. justify-content (flex) and justify-items (grid)
+   take different value sets, so map each. Default `start` pins items to the
+   start of their track — without it a sub-span / fixed-width grid item floats
+   centered, which was the resize-recenter bug (#298). */
+const FLEX_JUSTIFY: Record<LayoutJustify, NonNullable<React.CSSProperties["justifyContent"]>> = {
+  start: "flex-start",
+  center: "center",
+  end: "flex-end",
+  "space-between": "space-between",
+  "space-around": "space-around",
+};
+const GRID_JUSTIFY_ITEMS: Record<LayoutJustify, NonNullable<React.CSSProperties["justifyItems"]>> = {
+  start: "start",
+  center: "center",
+  end: "end",
+  // justify-items has no space-* value; pin items to start and let the
+  // grid tracks distribute via justify-content below.
+  "space-between": "start",
+  "space-around": "start",
+};
+
 /* Inline style for the container itself. Picks flex-direction,
-   wrap, gap, padding, and align-items based on the ZoneLayout. */
+   wrap, gap, padding, align-items, and main-axis justify based on the ZoneLayout. */
 export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperties {
   const base: React.CSSProperties = {};
   if (zoneLayout.padding) base.padding = `${zoneLayout.padding}px`;
@@ -221,10 +248,20 @@ export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperti
     base.display = "grid";
     base.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     base.alignItems = zoneLayout.align ?? "start";
+    /* Additive: only emit justify when the user sets one. Leaving it unset
+       keeps the default justify-items behavior (stretch) so fill / span items
+       fill their column span — forcing `start` here would shrink them. */
+    if (zoneLayout.justify) {
+      base.justifyItems = GRID_JUSTIFY_ITEMS[zoneLayout.justify];
+      if (zoneLayout.justify === "space-between" || zoneLayout.justify === "space-around") {
+        base.justifyContent = zoneLayout.justify;
+      }
+    }
     return base;
   }
 
   base.display = "flex";
+  if (zoneLayout.justify) base.justifyContent = FLEX_JUSTIFY[zoneLayout.justify];
   base.flexDirection = zoneLayout.mode === "stack" ? "column" : "row";
   /* Stack mode defaults to nowrap (items flow down, never into a
      second column). Row mode defaults to wrap (overflow items

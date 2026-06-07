@@ -67,6 +67,11 @@ export type LayoutWidth =
 
 /** Main-axis alignment applied to an item inside its container. */
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+/* Main-axis distribution (Figma "Auto layout" align row). Maps to
+   justify-content (flex) / justify-items (grid). `start` is the default and is
+   what pins fixed-width / sub-span blocks to the start of their track instead
+   of floating centered — the fix for the resize-recenter bug (#298). */
+export type LayoutJustify = 'start' | 'center' | 'end' | 'space-between' | 'space-around';
 
 /** Container flow mode. Stack = vertical flex, Row = horizontal
    flex with wrap, Grid = CSS Grid with a column count. */
@@ -166,6 +171,9 @@ export interface ZoneLayout {
   wrap?: boolean;
   /** align-items on the cross-axis. */
   align?: LayoutAlign;
+  /** Main-axis distribution (justify-content / justify-items). Undefined =
+     `start`, which pins items to the start of their track (fixes #298). */
+  justify?: LayoutJustify;
   /** Zone customization (PR2): whether the zone is shown. Undefined =
      visible, so existing layouts and share links default to shown.
      Removing a zone sets this false; its blocks are retained so re-adding
