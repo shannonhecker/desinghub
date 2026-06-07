@@ -87,6 +87,12 @@ import {
   AccordionHeader as SaltAccordionHeader,
   AccordionPanel as SaltAccordionPanel,
   NavigationItem as SaltNavigationItem,
+  Table as SaltTable,
+  THead as SaltTHead,
+  TBody as SaltTBody,
+  TH as SaltTH,
+  TR as SaltTR,
+  TD as SaltTD,
 } from "@salt-ds/core";
 import { ChevronRightIcon, SearchIcon } from "@salt-ds/icons";
 
@@ -119,6 +125,13 @@ import MuiListItem from "@mui/material/ListItem";
 import MuiListItemButton from "@mui/material/ListItemButton";
 import MuiListItemIcon from "@mui/material/ListItemIcon";
 import MuiListItemText from "@mui/material/ListItemText";
+import MuiTable from "@mui/material/Table";
+import MuiTableHead from "@mui/material/TableHead";
+import MuiTableBody from "@mui/material/TableBody";
+import MuiTableRow from "@mui/material/TableRow";
+import MuiTableCell from "@mui/material/TableCell";
+import MuiTableContainer from "@mui/material/TableContainer";
+import MuiPaper from "@mui/material/Paper";
 
 import {
   FluentProvider,
@@ -153,7 +166,14 @@ import {
   AccordionHeader as FluentAccordionHeader,
   AccordionPanel as FluentAccordionPanel,
   Toolbar as FluentToolbar,
+  Table as FluentTable,
+  TableHeader as FluentTableHeader,
+  TableRow as FluentTableRow,
+  TableHeaderCell as FluentTableHeaderCell,
+  TableBody as FluentTableBody,
+  TableCell as FluentTableCell,
 } from "@fluentui/react-components";
+import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 
 import type { SystemId } from "@/lib/componentApiRegistry";
 
@@ -190,6 +210,9 @@ const MID_BLOCKS = [
   "NavItem",
 ] as const;
 
+/* PR-5: DataTable rendered as a real DS table across every DS. */
+const TABLE_BLOCKS = ["SimulatedDataTable"] as const;
+
 /* Carbon ships no first-party Heading / Footer / Avatar component, so those stay
    Simulated for carbon ONLY (honest fallback). Every other DS covers all. */
 const CARBON_OMITS = new Set<string>(["SimulatedTitle", "FooterText", "SimulatedAvatar"]);
@@ -198,11 +221,11 @@ const CARBON_OMITS = new Set<string>(["SimulatedTitle", "FooterText", "Simulated
    coverage can differ per DS (e.g. carbon's omits above). Shared by the builder
    Preview, the /ui-kit gallery, and VariantsMatrix (all route through here). */
 const COVERAGE: Record<SystemId, Set<string>> = {
-  salt: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
-  m3: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
-  fluent: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
-  uoaui: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
-  carbon: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS].filter((t) => !CARBON_OMITS.has(t))),
+  salt: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS, ...TABLE_BLOCKS]),
+  m3: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS, ...TABLE_BLOCKS]),
+  fluent: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS, ...TABLE_BLOCKS]),
+  uoaui: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS, ...TABLE_BLOCKS]),
+  carbon: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS, ...TABLE_BLOCKS].filter((t) => !CARBON_OMITS.has(t))),
 };
 
 /** True when (system, blockType) renders a real official component here. */
@@ -388,6 +411,26 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
     );
   } else if (type === "NavItem") {
     inner = <SaltNavigationItem href="#" active={Boolean(props.active)} orientation="vertical">{s(props.label, "Nav")}</SaltNavigationItem>;
+  } else if (type === "SimulatedDataTable") {
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    inner = (
+      <SaltTable>
+        <SaltTHead>
+          <SaltTR>{cols.map((c) => <SaltTH key={c}>{s(c)}</SaltTH>)}</SaltTR>
+        </SaltTHead>
+        <SaltTBody>
+          {rows.map((row, ri) => (
+            <SaltTR key={ri}>
+              {cols.map((col, ci) => {
+                const v = resolveCell(row, col, ci);
+                return <SaltTD key={ci}>{isStatusColumn(col) ? <SaltPill onClick={() => {}}>{v}</SaltPill> : v}</SaltTD>;
+              })}
+            </SaltTR>
+          ))}
+        </SaltTBody>
+      </SaltTable>
+    );
   }
   /* Default SaltProvider wraps children in a scoped `.salt-theme` element (no
      global :root/body reset), so this nested provider can't leak to the app. */
@@ -515,6 +558,28 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
         </MuiListItemButton>
       </MuiListItem>
     );
+  } else if (type === "SimulatedDataTable") {
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    inner = (
+      <MuiTableContainer component={MuiPaper}>
+        <MuiTable size="small">
+          <MuiTableHead>
+            <MuiTableRow>{cols.map((c) => <MuiTableCell key={c} sx={{ fontWeight: 600 }}>{s(c)}</MuiTableCell>)}</MuiTableRow>
+          </MuiTableHead>
+          <MuiTableBody>
+            {rows.map((row, ri) => (
+              <MuiTableRow key={ri} hover>
+                {cols.map((col, ci) => {
+                  const v = resolveCell(row, col, ci);
+                  return <MuiTableCell key={ci}>{isStatusColumn(col) ? <MuiChip label={v} color={muiChipColor(statusToClass(v))} size="small" /> : v}</MuiTableCell>;
+                })}
+              </MuiTableRow>
+            ))}
+          </MuiTableBody>
+        </MuiTable>
+      </MuiTableContainer>
+    );
   }
   return <MuiThemeProvider theme={theme}>{inner}</MuiThemeProvider>;
 }
@@ -611,6 +676,27 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
     );
   } else if (type === "NavItem") {
     inner = <FluentButton appearance={props.active ? "primary" : "subtle"}>{s(props.label, "Nav")}</FluentButton>;
+  } else if (type === "SimulatedDataTable") {
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    const tagColor = (st: string): "success" | "warning" | "subtle" => (st === "success" ? "success" : st === "warning" ? "warning" : "subtle");
+    inner = (
+      <FluentTable>
+        <FluentTableHeader>
+          <FluentTableRow>{cols.map((c) => <FluentTableHeaderCell key={c}>{s(c)}</FluentTableHeaderCell>)}</FluentTableRow>
+        </FluentTableHeader>
+        <FluentTableBody>
+          {rows.map((row, ri) => (
+            <FluentTableRow key={ri}>
+              {cols.map((col, ci) => {
+                const v = resolveCell(row, col, ci);
+                return <FluentTableCell key={ci}>{isStatusColumn(col) ? <FluentTag appearance="filled" color={tagColor(statusToClass(v))}>{v}</FluentTag> : v}</FluentTableCell>;
+              })}
+            </FluentTableRow>
+          ))}
+        </FluentTableBody>
+      </FluentTable>
+    );
   }
   /* FluentProvider scopes its `--color*` vars + griffel styles to a wrapper
      element; webLight/webDark drive the mode. No global reset. */
