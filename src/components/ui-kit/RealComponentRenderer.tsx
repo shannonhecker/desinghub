@@ -67,7 +67,21 @@ import {
   Checkbox as SaltCheckbox,
   Switch as SaltSwitch,
   Card as SaltCard,
+  H1 as SaltH1,
+  H2 as SaltH2,
+  H3 as SaltH3,
+  H4 as SaltH4,
+  Link as SaltLink,
+  Badge as SaltBadge,
+  Pill as SaltPill,
+  Banner as SaltBanner,
+  BannerContent as SaltBannerContent,
+  Text as SaltText,
+  StatusIndicator as SaltStatusIndicator,
+  LinearProgress as SaltLinearProgress,
+  Avatar as SaltAvatar,
 } from "@salt-ds/core";
+import { ChevronRightIcon } from "@salt-ds/icons";
 
 import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import MuiButton from "@mui/material/Button";
@@ -77,6 +91,13 @@ import MuiSwitch from "@mui/material/Switch";
 import MuiFormControlLabel from "@mui/material/FormControlLabel";
 import MuiCard from "@mui/material/Card";
 import MuiCardContent from "@mui/material/CardContent";
+import MuiTypography from "@mui/material/Typography";
+import MuiLink from "@mui/material/Link";
+import MuiChip from "@mui/material/Chip";
+import MuiLinearProgress from "@mui/material/LinearProgress";
+import MuiAvatar from "@mui/material/Avatar";
+import MuiAlert from "@mui/material/Alert";
+import MuiAlertTitle from "@mui/material/AlertTitle";
 
 import {
   FluentProvider,
@@ -89,32 +110,89 @@ import {
   Switch as FluentSwitch,
   Card as FluentCard,
   CardHeader as FluentCardHeader,
+  Title1 as FluentTitle1,
+  Title2 as FluentTitle2,
+  Title3 as FluentTitle3,
+  Subtitle2 as FluentSubtitle2,
+  Link as FluentLink,
+  Badge as FluentBadge,
+  Tag as FluentTag,
+  MessageBar as FluentMessageBar,
+  MessageBarBody as FluentMessageBarBody,
+  MessageBarTitle as FluentMessageBarTitle,
+  Caption1 as FluentCaption1,
+  ProgressBar as FluentProgressBar,
+  Avatar as FluentAvatar,
 } from "@fluentui/react-components";
 
 import type { SystemId } from "@/lib/componentApiRegistry";
 
-/* The systems that render REAL components here. Salt/M3/Fluent via their own
-   provider subtree; uoaui (W6-P2a) via the scoped-CSS UoauiReal subtree; carbon
-   (W6-P2b) via the CarbonReal subtree (build-time-scoped @carbon/styles +
-   theme class). All 5 DSs now render real. See file header. */
-const REAL_SYSTEMS = new Set<SystemId>(["salt", "m3", "fluent", "uoaui", "carbon"]);
-
-/* The CORE SET of block types we render real, per the PR scope. Anything else
-   returns null so the caller falls back to the Simulated ComponentRenderer. */
-const CORE_BLOCKS = new Set<string>([
+/* The CORE SET of block types rendered real across every DS (W6). */
+const CORE_BLOCKS = [
   "SimulatedButton",
   "SimulatedTextInput",
   "SimulatedCheckbox",
   "SimulatedSwitch",
   "SimulatedCard",
-]);
+] as const;
+
+/* PR-3 extended coverage: low-complexity types now rendered real in Preview. */
+const EXTENDED_BLOCKS = [
+  "SimulatedTitle",
+  "SimulatedLink",
+  "SimulatedBadge",
+  "SimulatedPill",
+  "Alert",
+  "AppBrand",
+  "StatusPill",
+  "FooterText",
+  "SimulatedProgress",
+  "SimulatedAvatar",
+] as const;
+
+/* Carbon ships no first-party Heading / Footer / Avatar component, so those stay
+   Simulated for carbon ONLY (honest fallback). Every other DS covers all. */
+const CARBON_OMITS = new Set<string>(["SimulatedTitle", "FooterText", "SimulatedAvatar"]);
+
+/* Per-(system, blockType) coverage — replaces the old global CORE_BLOCKS set so
+   coverage can differ per DS (e.g. carbon's omits above). Shared by the builder
+   Preview, the /ui-kit gallery, and VariantsMatrix (all route through here). */
+const COVERAGE: Record<SystemId, Set<string>> = {
+  salt: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
+  m3: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
+  fluent: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
+  uoaui: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
+  carbon: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS].filter((t) => !CARBON_OMITS.has(t))),
+};
 
 /** True when (system, blockType) renders a real official component here. */
 export function canRenderReal(system: SystemId, blockType: string): boolean {
-  return REAL_SYSTEMS.has(system) && CORE_BLOCKS.has(blockType);
+  return COVERAGE[system]?.has(blockType) ?? false;
 }
 
 const s = (v: unknown, fallback = ""): string => String(v ?? fallback);
+
+/** Coerce a builder field to a finite number with a fallback (mirrors registry `num`). */
+const num = (v: unknown, fallback = 0): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+/* ── extended-coverage prop maps (PR-3), mirrored from componentApiRegistry. ── */
+/* Alert variant -> Salt Banner status. */
+function saltAlertStatus(variant: string): "info" | "success" | "warning" | "error" {
+  const map: Record<string, "info" | "success" | "warning" | "error"> = { info: "info", success: "success", warning: "warning", error: "error" };
+  return map[variant] ?? "info";
+}
+/* Avatar size token -> Salt Avatar `size` multiplier (sm:1, md:2, lg:4). */
+function saltAvatarSize(size: string): number {
+  return ({ sm: 1, md: 2, lg: 4 } as Record<string, number>)[size] ?? 2;
+}
+/* Badge/Pill status -> MUI Chip `color`. */
+function muiChipColor(status: string): "default" | "info" | "success" | "warning" | "error" {
+  const map: Record<string, "default" | "info" | "success" | "warning" | "error"> = { default: "default", info: "info", success: "success", warning: "warning", error: "error" };
+  return map[status] ?? "default";
+}
 
 /* ── Salt: variant -> sentiment + appearance (mirrors saltButtonAttrs). ── */
 function saltButtonProps(variant: string): { sentiment: "accented" | "neutral" | "negative"; appearance: "solid" | "bordered" | "transparent" } {
@@ -206,6 +284,30 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
         <p style={{ margin: 0 }}>{s(props.content)}</p>
       </SaltCard>
     );
+  } else if (type === "SimulatedTitle") {
+    const TitleComponent = ({ h1: SaltH1, h2: SaltH2, h3: SaltH3, h4: SaltH4 } as Record<string, React.ComponentType<{ children?: React.ReactNode }>>)[s(props.level, "h2")] ?? SaltH2;
+    inner = <TitleComponent>{s(props.text, "Heading")}</TitleComponent>;
+  } else if (type === "SimulatedLink") {
+    inner = props.showIcon
+      ? <SaltLink href="#" IconComponent={ChevronRightIcon}>{s(props.text, "Learn more")}</SaltLink>
+      : <SaltLink href="#">{s(props.text, "Learn more")}</SaltLink>;
+  } else if (type === "SimulatedBadge") {
+    inner = <SaltBadge value={1}><SaltButton>{s(props.label, "Badge")}</SaltButton></SaltBadge>;
+  } else if (type === "SimulatedPill") {
+    inner = <SaltPill onClick={() => {}}>{s(props.label, "Tag")}</SaltPill>;
+  } else if (type === "Alert") {
+    const title = s(props.title) ? `${s(props.title)} ` : "";
+    inner = <SaltBanner status={saltAlertStatus(s(props.variant, "info"))}><SaltBannerContent>{title}{s(props.message)}</SaltBannerContent></SaltBanner>;
+  } else if (type === "AppBrand") {
+    inner = <SaltText styleAs="h4"><strong>{s(props.label, "App Name")}</strong></SaltText>;
+  } else if (type === "StatusPill") {
+    inner = <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><SaltStatusIndicator status="success" /><SaltText>{s(props.label, "Active")}</SaltText></span>;
+  } else if (type === "FooterText") {
+    inner = <footer><SaltText variant="secondary">{s(props.label, "Footer")}</SaltText>{" "}<SaltText variant="secondary" styleAs="label">{s(props.version, "v1.0")}</SaltText></footer>;
+  } else if (type === "SimulatedProgress") {
+    inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} />;
+  } else if (type === "SimulatedAvatar") {
+    inner = <SaltAvatar name={s(props.initials, "?")} size={saltAvatarSize(s(props.size, "md"))} />;
   }
   /* Default SaltProvider wraps children in a scoped `.salt-theme` element (no
      global :root/body reset), so this nested provider can't leak to the app. */
@@ -254,6 +356,28 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
         </MuiCardContent>
       </MuiCard>
     );
+  } else if (type === "SimulatedTitle") {
+    const variant = ({ h1: "h3", h2: "h4", h3: "h5", h4: "h6" } as Record<string, "h3" | "h4" | "h5" | "h6">)[s(props.level, "h2")] ?? "h4";
+    inner = <MuiTypography variant={variant} component={s(props.level, "h2") as React.ElementType}>{s(props.text, "Heading")}</MuiTypography>;
+  } else if (type === "SimulatedLink") {
+    inner = <MuiLink href="#" underline="hover">{s(props.text, "Learn more")}</MuiLink>;
+  } else if (type === "SimulatedBadge") {
+    inner = <MuiChip label={s(props.label, "Badge")} color={muiChipColor(s(props.status, "default"))} size="small" />;
+  } else if (type === "SimulatedPill") {
+    inner = <MuiChip label={s(props.label, "Tag")} color={muiChipColor(s(props.status, "default"))} {...(props.dismissible ? { onDelete: () => {} } : {})} />;
+  } else if (type === "Alert") {
+    inner = <MuiAlert severity={saltAlertStatus(s(props.variant, "info"))}><MuiAlertTitle>{s(props.title, "Alert")}</MuiAlertTitle>{s(props.message)}</MuiAlert>;
+  } else if (type === "AppBrand") {
+    inner = <MuiTypography variant="h6" noWrap component="div">{s(props.label, "App Name")}</MuiTypography>;
+  } else if (type === "StatusPill") {
+    inner = <MuiChip label={s(props.label, "Active")} color="success" size="small" variant="outlined" />;
+  } else if (type === "FooterText") {
+    inner = <MuiTypography variant="body2" color="text.secondary">{s(props.label, "Footer")} · {s(props.version, "v1.0")}</MuiTypography>;
+  } else if (type === "SimulatedProgress") {
+    inner = <MuiLinearProgress variant="determinate" value={num(props.value, 50)} />;
+  } else if (type === "SimulatedAvatar") {
+    const dim = ({ sm: 28, md: 40, lg: 56 } as Record<string, number>)[s(props.size, "md")] ?? 40;
+    inner = <MuiAvatar sx={{ width: dim, height: dim }}>{s(props.initials, "?")}</MuiAvatar>;
   }
   return <MuiThemeProvider theme={theme}>{inner}</MuiThemeProvider>;
 }
@@ -284,6 +408,40 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
         <FluentCardHeader header={s(props.title, "Card")} description={s(props.content)} />
       </FluentCard>
     );
+  } else if (type === "SimulatedTitle") {
+    const TitleComponent = ({ h1: FluentTitle1, h2: FluentTitle2, h3: FluentTitle3, h4: FluentSubtitle2 } as Record<string, React.ComponentType<{ children?: React.ReactNode }>>)[s(props.level, "h2")] ?? FluentTitle2;
+    inner = <TitleComponent>{s(props.text, "Heading")}</TitleComponent>;
+  } else if (type === "SimulatedLink") {
+    inner = <FluentLink href="#">{s(props.text, "Learn more")}</FluentLink>;
+  } else if (type === "SimulatedBadge") {
+    const color = ({ default: "brand", info: "informative", success: "success", warning: "warning", error: "danger" } as Record<string, "brand" | "informative" | "success" | "warning" | "danger">)[s(props.status, "default")] ?? "brand";
+    inner = <FluentBadge appearance="filled" color={color}>{s(props.label, "Badge")}</FluentBadge>;
+  } else if (type === "SimulatedPill") {
+    inner = <FluentTag dismissible={Boolean(props.dismissible)}>{s(props.label, "Tag")}</FluentTag>;
+  } else if (type === "Alert") {
+    inner = (
+      <FluentMessageBar intent={saltAlertStatus(s(props.variant, "info"))}>
+        <FluentMessageBarBody>
+          {s(props.title) ? <FluentMessageBarTitle>{s(props.title)}</FluentMessageBarTitle> : null}
+          {s(props.message)}
+        </FluentMessageBarBody>
+      </FluentMessageBar>
+    );
+  } else if (type === "AppBrand") {
+    inner = <FluentTitle3>{s(props.label, "App Name")}</FluentTitle3>;
+  } else if (type === "StatusPill") {
+    inner = <FluentBadge appearance="filled" color="success">{s(props.label, "Active")}</FluentBadge>;
+  } else if (type === "FooterText") {
+    inner = <FluentCaption1>{s(props.label, "Footer")} · {s(props.version, "v1.0")}</FluentCaption1>;
+  } else if (type === "SimulatedProgress") {
+    inner = (
+      <FluentField label={s(props.label, "Progress")}>
+        <FluentProgressBar value={num(props.value, 50) / 100} />
+      </FluentField>
+    );
+  } else if (type === "SimulatedAvatar") {
+    const size = ({ sm: 24, md: 32, lg: 48 } as Record<string, 24 | 32 | 48>)[s(props.size, "md")] ?? 32;
+    inner = <FluentAvatar name={s(props.initials, "?")} size={size} />;
   }
   /* FluentProvider scopes its `--color*` vars + griffel styles to a wrapper
      element; webLight/webDark drive the mode. No global reset. */
