@@ -30,6 +30,25 @@ function toCss(w: LayoutWidth | undefined): string | null {
   return w;
 }
 
+/* Sliver guard: a block sized to an extremely small EXPLICIT width (a typo'd
+   "3%", a fat-fingered px) collapses to an unusable column and its content
+   ladders character-by-character. When the block carries no explicit minWidth,
+   floor it so it degrades to a readable minimum instead of breaking. Scoped to
+   TINY explicit widths only — auto / fill / normal percentages and any block
+   that sets its own minWidth are untouched, so intentionally-narrow inline
+   blocks (chips, badges) keep their size. This is the single render-time
+   chokepoint, so it heals slivers from any entry path AND already-saved
+   projects, not just new input. */
+const SLIVER_MIN_PX = 80;
+function isTinyWidth(w: LayoutWidth | undefined): boolean {
+  if (typeof w === "number") return w > 0 && w < 60;
+  if (typeof w === "string") {
+    if (w.endsWith("px")) { const n = parseFloat(w); return n > 0 && n < 60; }
+    if (w.endsWith("%")) { const n = parseFloat(w); return n > 0 && n < 10; }
+  }
+  return false;
+}
+
 /* Map colSpan 1|2|3 to a percentage width so old templates keep
    looking right in the new flex body. Anything outside 1..3 is
    treated as "fill" (100%). Exported so the one-time colSpan→width
@@ -133,6 +152,7 @@ export function computeItemStyle(
       style.width = widthCss;
     }
     if (minCss) style.minWidth = minCss;
+    else if (isTinyWidth(layout.width)) style.minWidth = `${SLIVER_MIN_PX}px`;
     if (maxCss) style.maxWidth = maxCss;
     if (layout.align) style.alignSelf = layout.align;
     if (layout.margin) style.margin = `${layout.margin}px`;
@@ -181,6 +201,7 @@ export function computeItemStyle(
   }
 
   if (minCss && layout.width !== "fill") style.minWidth = minCss;
+  else if (!minCss && isTinyWidth(layout.width)) style.minWidth = `${SLIVER_MIN_PX}px`;
   if (maxCss) style.maxWidth = maxCss;
   if (layout.align) style.alignSelf = layout.align;
   if (layout.margin) style.margin = `${layout.margin}px`;

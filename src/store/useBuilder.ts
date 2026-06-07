@@ -189,6 +189,11 @@ interface BuilderState {
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
+  /* Edit-canvas spacing fidelity. 'tight' (default) = WYSIWYG: blocks carry no
+     editor-only padding/margin so the canvas matches the rendered/exported UI.
+     'comfortable' = roomier per-block spacing for fiddly editing. Drives the
+     [data-canvas-spacing] attr on the builder shell. */
+  canvasSpacing: 'tight' | 'comfortable';
   themeKey: string;
   interfaceType: InterfaceType;
   selectedComponents: string[];
@@ -334,6 +339,7 @@ interface BuilderState {
   setDesignSystem: (ds: DesignSystem) => void;
   setMode: (m: BuilderMode) => void;
   setDensity: (d: string) => void;
+  setCanvasSpacing: (s: 'tight' | 'comfortable') => void;
   setThemeKey: (k: string) => void;
   setInterfaceType: (t: InterfaceType) => void;
   toggleComponent: (id: string) => void;
@@ -644,6 +650,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   designSystem: 'salt',
   mode: 'dark',
   density: 'medium',
+  canvasSpacing: 'tight',
   themeKey: 'jpm-dark',
   interfaceType: 'dashboard',
   selectedComponents: ['buttons', 'inputs', 'cards', 'tabs'],
@@ -812,6 +819,7 @@ export const useBuilder = create<BuilderState>((set) => ({
     return { mode: m, themeKey: m === 'dark' ? 'dark' : 'light' };
   }),
   setDensity: (d) => set({ density: d }),
+  setCanvasSpacing: (s) => set({ canvasSpacing: s }),
   setThemeKey: (k) => set({ themeKey: k }),
   setInterfaceType: (t) => set({ interfaceType: t }),
   toggleComponent: (id) =>

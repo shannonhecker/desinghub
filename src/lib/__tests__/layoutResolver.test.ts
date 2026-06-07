@@ -47,6 +47,35 @@ describe("computeItemStyle — non-percentage / non-row widths are untouched", (
   });
 });
 
+describe("computeItemStyle — sliver guard floors over-narrow explicit widths", () => {
+  const GRID: ZoneLayout = { mode: "grid", columns: 12, gap: 12 };
+  const withMin = (width: unknown, minWidth: unknown): Block =>
+    ({ id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: width as never, minWidth: minWidth as never } } as Block);
+
+  it("floors a typo'd 3% to a usable min-width in a row (no more vertical ladder)", () => {
+    expect(computeItemStyle(withWidth("3%"), ROW).minWidth).toBe("80px");
+  });
+
+  it("floors a tiny 3% in a grid too", () => {
+    expect(computeItemStyle(withWidth("3%"), GRID).minWidth).toBe("80px");
+  });
+
+  it("floors a fat-fingered tiny px width", () => {
+    expect(computeItemStyle(withWidth("12px"), ROW).minWidth).toBe("80px");
+  });
+
+  it("leaves normal widths alone — no sliver floor on 33%/50%/fill", () => {
+    // 33% in a row resolves minWidth via the gap-aware path, not the sliver floor
+    expect(computeItemStyle(withWidth("50%"), STACK).minWidth).toBeUndefined();
+    expect(computeItemStyle(withWidth("fill"), STACK).minWidth).toBeUndefined();
+    expect(computeItemStyle(withWidth("240px"), ROW).minWidth).toBeUndefined();
+  });
+
+  it("respects an explicit minWidth instead of the sliver floor", () => {
+    expect(computeItemStyle(withMin("3%", 120), ROW).minWidth).toBe("120px");
+  });
+});
+
 describe("computeGroupItemStyle — horizontal groups are gap-aware like zones", () => {
   const group = (direction: string, gap: number): Block =>
     ({ id: "g1", type: "LayoutGroup", props: { direction, gap }, children: [] } as Block);

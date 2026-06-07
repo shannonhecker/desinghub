@@ -177,6 +177,8 @@ function PreviewBar() {
   const colorOverrides = useBuilder((s) => s.colorOverrides);
   const density = useBuilder((s) => s.density);
   const setDensity = useBuilder((s) => s.setDensity);
+  const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+  const setCanvasSpacing = useBuilder((s) => s.setCanvasSpacing);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
@@ -536,6 +538,21 @@ function PreviewBar() {
             >
               <span className="preview-bar-code-glyph" aria-hidden="true" style={{ fontSize: 13, width: 18, textAlign: "center" }}>&lt;/&gt;</span>
               {canvasViewMode === "code" ? "Show UI preview" : "Show code view"}
+            </button>
+            <div className="preview-bar-overflow-divider" />
+            {/* Canvas spacing — WYSIWYG (tight, matches the rendered/exported UI)
+                vs Comfortable (roomier per-block spacing for fiddly editing). */}
+            <button
+              className={`preview-bar-overflow-item${canvasSpacing === "comfortable" ? " preview-bar-overflow-item-active" : ""}`}
+              role="menuitemcheckbox"
+              aria-checked={canvasSpacing === "comfortable"}
+              onClick={() => { setCanvasSpacing(canvasSpacing === "tight" ? "comfortable" : "tight"); setOverflowOpen(false); }}
+              title="Tight matches the real UI; Comfortable adds editing room"
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {canvasSpacing === "comfortable" ? "check" : "fit_screen"}
+              </span>
+              Comfortable spacing
             </button>
             <div className="preview-bar-overflow-divider" />
             {/* Density submenu — checkmark on active. Normalised labels

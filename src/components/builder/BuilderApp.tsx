@@ -117,6 +117,7 @@ export function BuilderApp() {
      `:root`-scoped so every nested zone / canvas / block reads the
      same scale. */
   const structurePadding = useBuilder((s) => s.structurePadding);
+  const canvasSpacing = useBuilder((s) => s.canvasSpacing);
   useEffect(() => {
     const v = resolveStructurePadding(designSystem, structurePadding);
     const root = document.documentElement;
@@ -513,6 +514,7 @@ export function BuilderApp() {
     <div
       className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode={builderMode}
+      data-canvas-spacing={canvasSpacing}
     >
       {/* Skip link is provided once by the root layout (app/layout.tsx),
           targeting this shell's <main id="main-content"> below. A per-shell
