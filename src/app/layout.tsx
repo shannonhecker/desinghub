@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { fontVariables } from "@/lib/fonts";
+import { uoauiLandingSchemeVars } from "@/data/uoaui/tokens";
 import "./globals.css";
 import "./conversion.css";
 
@@ -41,6 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           rel="stylesheet"
         />
+        {/* uoaui DS "landing" scheme — Refined Aurora palette + editorial type
+            families, emitted globally as --a-landing-* so marketing surfaces
+            (landing, login) alias their --lsl-* layer onto the DS source.
+            Separate from component THEMES → no ripple into builder/preview. */}
+        <style id="uoaui-landing-scheme">{`:root{${uoauiLandingSchemeVars()}}`}</style>
       </head>
       <body>
         {GA_ID && (

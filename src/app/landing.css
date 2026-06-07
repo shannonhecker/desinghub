@@ -33,43 +33,48 @@ html:has(.landing-southleft) body {
 }
 
 .landing-southleft {
-  /* ── Refined Aurora — uoaui brand, 2026-tuned ─────────────────────────────
-     Tuned from the portfolio source for 2026 dark-mode best practice:
-     deeper navy base, M3-style elevation tiers, brighter accents that pass
-     WCAG AA on the new bg. Brand vocabulary unchanged (Teal Input · Purple
-     Compute · Peach Output · Midnight Canvas) — values refined.
-     Source research: Vercel Geist, Linear, Radix Colors, M3 dark scheme. */
-  --lsl-bg:           #0A0E1A;  /* refined Midnight Canvas — cleaner navy */
-  --lsl-bg-soft:      #131829;  /* surf-1 — primary elevated (cards, nav) */
-  --lsl-bg-elevated:  #1C2238;  /* surf-2 — secondary elevated (hover, nav-scrolled) */
-  --lsl-fg:           rgba(255, 255, 255, 0.92);  /* high emphasis (was 0.87) */
-  --lsl-fg-strong:    #FFFFFF;                    /* display + brand mark */
-  --lsl-fg-muted:     rgba(255, 255, 255, 0.65);  /* medium emphasis (was 0.60) */
-  --lsl-fg-subtle:    rgba(255, 255, 255, 0.50);  /* hint / fine print (was 0.45) */
-  --lsl-rule:         rgba(255, 255, 255, 0.10);
-  --lsl-rule-strong:  rgba(255, 255, 255, 0.22);
-  --lsl-accent:       #A78BFA;  /* Purple Compute — primary (5.4:1 AA on #0A0E1A) */
-  --lsl-accent-hover: #B89BFB;
-  --lsl-accent-soft:  rgba(167, 139, 250, 0.18);
-  /* Shared accent for small mono tag labels (hero eyebrow, section labels,
-     token-scale labels) so they match by construction. Violet at 78% — 4.6:1
-     AA on --lsl-bg. */
-  --lsl-label-accent: rgba(167, 139, 250, 0.78);
-  --lsl-amber:        #F0B5A4;  /* Peach Output — secondary highlight (9.1:1) */
-  --lsl-amber-soft:   rgba(240, 181, 164, 0.18);
-  --lsl-teal:         #3DDCC4;  /* Teal Input — demoted to tertiary signal (9.8:1) */
-  --lsl-teal-soft:    rgba(61, 220, 196, 0.16);
-  --lsl-purple:       #A78BFA;  /* alias of --lsl-accent for legend continuity */
-  --lsl-aurora-cyan:  rgba(130, 224, 255, 0.10);
-  --lsl-aurora-pale:  rgba(175, 240, 255, 0.06);
+  /* ── Refined Aurora — BRIDGED to the uoaui DS "landing" scheme ────────────
+     These --lsl-* tokens now ALIAS the uoaui DS landing scheme (--a-landing-*,
+     the canonical source in src/data/uoaui/tokens.ts UOAUI_LANDING, emitted
+     globally by app/layout.tsx) so the landing and the DS share one source and
+     can no longer drift. The literal after each var() is a byte-identical
+     fallback: the rendered colour is unchanged whether or not the DS var
+     resolves. The card hover-inversion still works — it overrides these
+     --lsl-* vars at element scope, layering above the alias default.
+     Brand vocab: Teal Input · Purple Compute · Peach Output · Midnight Canvas.
+     Contrast (verified on #0A0E1A): accent 7.08:1, peach 10.87:1, teal 11.22:1,
+     label-accent 4.71:1 — all WCAG AA. */
+  --lsl-bg:           var(--a-landing-bg, #0A0E1A);
+  --lsl-bg-soft:      var(--a-landing-bg-soft, #131829);
+  --lsl-bg-elevated:  var(--a-landing-bg-elevated, #1C2238);
+  --lsl-fg:           var(--a-landing-fg, rgba(255, 255, 255, 0.92));
+  --lsl-fg-strong:    var(--a-landing-fg-strong, #FFFFFF);
+  --lsl-fg-muted:     var(--a-landing-fg-muted, rgba(255, 255, 255, 0.65));
+  --lsl-fg-subtle:    var(--a-landing-fg-subtle, rgba(255, 255, 255, 0.50));
+  --lsl-rule:         var(--a-landing-rule, rgba(255, 255, 255, 0.10));
+  --lsl-rule-strong:  var(--a-landing-rule-strong, rgba(255, 255, 255, 0.22));
+  --lsl-accent:       var(--a-landing-accent, #A78BFA);
+  --lsl-accent-hover: var(--a-landing-accent-hover, #B89BFB);
+  --lsl-accent-soft:  var(--a-landing-accent-soft, rgba(167, 139, 250, 0.18));
+  --lsl-label-accent: var(--a-landing-label-accent, rgba(167, 139, 250, 0.78));
+  --lsl-amber:        var(--a-landing-peach, #F0B5A4);
+  --lsl-amber-soft:   var(--a-landing-peach-soft, rgba(240, 181, 164, 0.18));
+  --lsl-teal:         var(--a-landing-teal, #3DDCC4);
+  --lsl-teal-soft:    var(--a-landing-teal-soft, rgba(61, 220, 196, 0.16));
+  --lsl-purple:       var(--a-landing-accent, #A78BFA);  /* alias of --lsl-accent */
+  --lsl-aurora-cyan:  var(--a-landing-aurora-cyan, rgba(130, 224, 255, 0.10));
+  --lsl-aurora-pale:  var(--a-landing-aurora-pale, rgba(175, 240, 255, 0.06));
 
   /* ── Type scale ──────────────────────────────────────────────────────── */
-  --lsl-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
-                   "Segoe UI", system-ui, sans-serif;
-  --lsl-font-display: var(--font-bricolage), var(--font-outfit),
-                      -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --lsl-font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
-                   Menlo, Consolas, monospace;
+  /* Editorial type families — bridged to the uoaui DS landing scheme
+     (--a-landing-font-*), with the full stack as a byte-identical fallback. */
+  --lsl-font-sans: var(--a-landing-font-sans, var(--font-inter), -apple-system,
+                   BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  --lsl-font-display: var(--a-landing-font-display, var(--font-bricolage),
+                      var(--font-outfit), -apple-system, BlinkMacSystemFont,
+                      system-ui, sans-serif);
+  --lsl-font-mono: var(--a-landing-font-mono, var(--font-ibm-plex-mono),
+                   ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* ── Spacing rhythm ──────────────────────────────────────────────────── */
   --lsl-section-y: 140px;
@@ -176,6 +181,18 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-nav-link:focus-visible {
   outline: 2px solid var(--lsl-accent);
   outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* a11y: keyboard focus rings for interactive elements that previously relied on
+   the faint UA default ring (invisible on near-black). The system cards, the
+   hero secondary link, and the footer links are all real anchors. Accent ring
+   is 7.08:1 on --lsl-bg — well past the 3:1 non-text-UI threshold. */
+.landing-southleft .lsl-syscard:focus-visible,
+.landing-southleft .lsl-hero-secondary:focus-visible,
+.landing-southleft .lsl-footer-list a:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
   border-radius: 2px;
 }
 
@@ -441,6 +458,10 @@ html:has(.landing-southleft) body {
   --lsl-fg-subtle:    rgba(10,14,26, 0.45);
   --lsl-rule:         rgba(10,14,26, 0.10);
   --lsl-rule-strong:  rgba(10,14,26, 0.22);
+  /* a11y: Peach #F0B5A4 is 1.77:1 on the inverted white card (AA fail) and the
+     service number 01-04 is real text. Swap to a warm on-white rust (5.55:1)
+     for the inverted state; the resting dark card keeps the peach. */
+  --lsl-amber:        #B0492E;
   background: #FFFFFF;
   color: rgba(10,14,26, 0.87);
   border-color: transparent;
