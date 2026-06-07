@@ -54,6 +54,16 @@ const SCOPE = ".carbon-live-scope";
    inside the scope); when standalone they're remapped to the scope itself. */
 const ROOT_LEVEL = new Set(["html", "body", ":root"]);
 
+/* Carbon theme-token selectors. Carbon defines ALL its --cds-* colour tokens
+   (plus `background-color: var(--cds-background)`) inside these standalone class
+   blocks and relies on a container carrying the class so descendants inherit the
+   tokens. The CarbonReal wrapper carries the active theme class ON the scope root
+   itself (`<div class="carbon-live-scope cds--g100">`), so these must be COMPOUND
+   with the scope (`.carbon-live-scope.cds--g100`), NOT descendant — otherwise the
+   override never matches the wrapper, --cds-* stay unset, and dark mode silently
+   renders with Carbon's light fallbacks. Same anchor intent as :root above. */
+const THEME_CLASSES = new Set([".cds--white", ".cds--g10", ".cds--g90", ".cds--g100"]);
+
 /* At-rules whose INNER rules should be scoped but whose params stay global. */
 const SCOPE_INNER_ATRULES = new Set(["media", "supports", "layer", "container", "scope", "starting-style"]);
 
@@ -81,6 +91,10 @@ function scopeSelectorList(selectorList) {
   for (const sel of parts) {
     if (sel === ":root" || sel === "html") {
       out.push(SCOPE);
+    } else if (THEME_CLASSES.has(sel)) {
+      // Theme token block -> anchor to the scope wrapper itself (compound, no
+      // space), so the wrapper's own theme class activates the right --cds-*.
+      out.push(`${SCOPE}${sel}`);
     } else if (sel === "body") {
       // Standalone `body` -> scope; inside a big reset list, drop it entirely.
       if (!isCombined) out.push(SCOPE);
