@@ -104,7 +104,7 @@ export function PreviewCanvas() {
     blocks, setBlocks,
     selectedBlockId, setSelectedBlock,
     addMenuOpen, setAddMenuOpen,
-    density,
+    density, activePageId,
   } = useBuilder();
   /* Read the body zone's container layout via the new store
      slice. The resolver uses this to size every block. */
@@ -125,6 +125,12 @@ export function PreviewCanvas() {
     if (initializedRef.current) return;
     initializedRef.current = true;
     if (blocks.length > 0) return; // template-applied or restored layout - don't overwrite
+    /* Multi-page: an empty body is INTENTIONAL (a freshly-opened page the user
+       will author), and this component remounts on every page switch (keyed by
+       previewKey). Without this guard the convenience seed would re-fill each
+       blank page with starter blocks. Only seed the very first single-page
+       canvas (activePageId === null). */
+    if (activePageId != null) return;
 
     const seen = new Set<string>();
     const initial: Block[] = [];
@@ -150,7 +156,7 @@ export function PreviewCanvas() {
     setBlocks(initial);
     // `blocks.length` is read inside to guard template-applied layouts;
     // the initializedRef short-circuits re-runs so adding it here is safe.
-  }, [selectedComponents, setBlocks, blocks.length]);
+  }, [selectedComponents, setBlocks, blocks.length, activePageId]);
 
   /* ── Sync blocks back to selectedComponents when blocks change ── */
   const syncToStore = useCallback(
