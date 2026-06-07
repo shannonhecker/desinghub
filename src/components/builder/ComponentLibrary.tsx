@@ -271,6 +271,18 @@ export function ComponentLibrary() {
           /* Inspector - each section is collapsible so users can hide the ones
              they don't need; state persists per section key in sessionStorage. */
           <div className="inspector-stack">
+            {/* P1 Figma-shaped order: the FRAME clusters lead (Size of the
+                selected block, then the Auto-layout of its container), then
+                the component/DS props, then accent + chart colours. This
+                mirrors Figma's right rail where W/H + auto-layout sit at the
+                top and element-specific props follow. */}
+
+            {/* Size — per-block W/H sizing + alignment (Fixed/Hug/Fill labels). */}
+            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
+
+            {/* Auto-layout — container flow (direction / gap / padding / align). */}
+            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
+
             <InspectorSection
               id={`props-${selectedBlock.type}`}
               title={`${selectedBlock.type.replace("Simulated", "")} Properties`}
@@ -278,14 +290,9 @@ export function ComponentLibrary() {
               <FieldsComponent blockId={selectedBlock.id} />
             </InspectorSection>
 
-            {/* Layout panel - per-block sizing + alignment. */}
-            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-
             {/* Issue #13: per-block accent override. Lets one block diverge
                 from the global accent without affecting siblings. */}
             <BlockAccentSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-
-            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
 
             {/* Chart colours - only for Highchart blocks (P1.3). */}
             {selectedBlock.type.startsWith("Highchart") && (
@@ -378,20 +385,88 @@ function LayoutSection({
     if (customValue !== "") applyCustom(customValue, unit);
   };
 
+  /* SIZE row — Figma's W sizing mode. LABELS map to the existing
+     LayoutWidth union (do NOT rename the store values, P1 is visual-only):
+       Fixed → a px value (we use the typed Custom px, or a sane default)
+       Hug   → "auto"
+       Fill  → "fill"
+     The fraction presets (⅓ ½ ⅔) remain under "Custom width" below. */
+  const sizeMode: "fixed" | "hug" | "fill" =
+    w === undefined || w === "fill" ? "fill"
+    : w === "auto" ? "hug"
+    : "fixed"; // any px / % / fr value reads as an explicit (Fixed) size
+
+  const applySizeMode = (mode: "fixed" | "hug" | "fill") => {
+    if (mode === "fill") return applyPreset("fill");
+    if (mode === "hug") return applyPreset("auto");
+    // Fixed: keep an existing explicit value; otherwise seed a px default so
+    // the control has an effect even before the user types a Custom value.
+    if (sizeMode !== "fixed") applyPreset("320px");
+  };
+
   const WIDTH_PRESETS: { value: string; label: string; aria: string }[] = [
-    { value: "fill", label: "Fill", aria: "Fill remaining space" },
-    { value: "auto", label: "Auto", aria: "Hug contents" },
     { value: "33.333%", label: "⅓", aria: "One third" },
     { value: "50%", label: "½", aria: "Half" },
     { value: "66.666%", label: "⅔", aria: "Two thirds" },
   ];
 
   return (
-    <InspectorSection id="layout" title="Layout">
-      {/* Width — preset chips (Fill / Auto / ⅓ / ½ / ⅔). */}
+    <InspectorSection id="layout" title="Size">
+      {/* Size row — W and H side by side, Figma-style. W is a Fixed/Hug/Fill
+          segmented (labels only; writes the existing LayoutWidth union). H is
+          a disabled placeholder until P3 wires per-block height. */}
+      <div className="inspector-size-row">
+        <div className="inspector-size-cell">
+          <label className="inspector-field-label">W</label>
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width mode">
+            {([
+              ["fixed", "Fixed", "Fixed width in pixels"],
+              ["hug", "Hug", "Hug contents"],
+              ["fill", "Fill", "Fill available space"],
+            ] as const).map(([m, lbl, aria]) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={sizeMode === m}
+                aria-label={aria}
+                title={aria}
+                className={`inspector-toggle-btn${sizeMode === m ? " active" : ""}`}
+                onClick={() => applySizeMode(m)}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="inspector-size-cell">
+          <label className="inspector-field-label">H</label>
+          <div
+            className="inspector-toggle-group"
+            role="radiogroup"
+            aria-label="Block height mode"
+            aria-disabled="true"
+          >
+            {(["Fixed", "Hug", "Fill"] as const).map((lbl) => (
+              <button
+                key={lbl}
+                type="button"
+                disabled
+                className="inspector-toggle-btn"
+                title="Height sizing is coming soon"
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Custom width — fraction presets + free numeric value. Typing or
+          picking a fraction sets an explicit (Fixed) width. */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Width</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width">
+        <label className="inspector-field-label">Custom width</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Width fraction preset">
           {WIDTH_PRESETS.map((p) => (
             <button
               key={p.value}
@@ -409,9 +484,8 @@ function LayoutSection({
         </div>
       </div>
 
-      {/* Custom width — always visible; typing overrides the preset. */}
+      {/* Custom width — numeric value + unit; typing overrides the preset. */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Custom</label>
         <div className="inspector-width-custom">
           <input
             type="number"
@@ -555,11 +629,18 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
 
   return (
-    <InspectorSection id={`zone-layout-${zone}`} title={`${label} Zone Layout`} defaultOpen={false}>
-      {/* Flow mode - stack / row / grid */}
+    /* Figma names this cluster "Auto layout" (direction / gap / padding /
+       align). We keep the store model ('stack'|'row'|'grid') untouched —
+       these are LABELS only. The zone name is shown as a sub-hint so it's
+       clear which container ({Header}/{Body}/…) this affects. */
+    <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen>
+      {/* Direction - stack / row / grid */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Flow</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Zone flow mode">
+        <label className="inspector-field-label">
+          <span>Direction</span>
+          <span className="inspector-zone-hint">{label}</span>
+        </label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout direction">
           {([
             ["stack", "Stack"],
             ["row", "Row"],
