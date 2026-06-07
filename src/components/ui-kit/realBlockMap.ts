@@ -39,12 +39,9 @@ import {
   Tile as CarbonTile,
   Link as CarbonLink,
   Tag as CarbonTag,
-  DismissibleTag as CarbonDismissibleTag,
   InlineNotification as CarbonInlineNotification,
   HeaderName as CarbonHeaderName,
   ProgressBar as CarbonProgressBar,
-  ContentSwitcher as CarbonContentSwitcher,
-  Switch as CarbonSwitch,
   Dropdown as CarbonDropdown,
   Search as CarbonSearch,
   Accordion as CarbonAccordion,
@@ -462,10 +459,11 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedBadge: (p) =>
     React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Badge")),
 
+  /* Always render a plain CarbonTag (text-visible). DismissibleTag rendered as an
+     empty grey block in the scoped dark stage, so we drop the × affordance in
+     favour of a readable tag. */
   SimulatedPill: (p) =>
-    p.dismissible
-      ? React.createElement(CarbonDismissibleTag, { type: carbonTagType(s(p.status, "default")), text: s(p.label, "Tag"), title: "Remove", onClose: () => {} })
-      : React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
+    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
 
   Alert: (p) =>
     React.createElement(CarbonInlineNotification, {
@@ -492,12 +490,16 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
 
   /* ── PR-4 mid-complexity coverage. NavItem renders without an icon (mapping
      material-symbol names to @carbon/icons-react components is deferred). ── */
+  /* A row of Carbon Buttons (selected=primary, rest=tertiary) — readable in both
+     themes, unlike ContentSwitcher whose selected segment went dark-on-dark in the
+     scoped dark stage. */
   SimulatedSegmentedGroup: (p) => {
     const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
+    const di = num(p.defaultIndex, 0);
     return React.createElement(
-      CarbonContentSwitcher,
-      { selectedIndex: num(p.defaultIndex, 0), onChange: () => {} },
-      ...opts.map((o) => React.createElement(CarbonSwitch, { key: slug(o), name: slug(o), text: s(o) })),
+      "div",
+      { style: { display: "inline-flex" } },
+      ...opts.map((o, i) => React.createElement(CarbonButton, { key: slug(o), kind: i === di ? "primary" : "tertiary", size: "sm" }, s(o))),
     );
   },
 
