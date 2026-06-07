@@ -5632,7 +5632,9 @@
   cursor: not-allowed;
 }
 .f-dropdown-item-disabled:hover { background: transparent; }
-.f-dropdown-placeholder { color: var(--colorNeutralForeground4); }
+/* F6: --colorNeutralForeground4 is a watermark/disabled tier (4.95:1, marginal AA).
+   Fluent placeholder text is real content, so step up to NeutralForeground3 (6.19:1). */
+.f-dropdown-placeholder { color: var(--colorNeutralForeground3); }
 
 /* ── Dark mode overrides for simulated components ── */
 .builder-light .s-avatar { background: var(--salt-palette-accent); }
@@ -6467,7 +6469,9 @@
   color: var(--salt-content-primary-foreground);
   font-size: 13px;
 }
-.s-input::placeholder { color: var(--salt-content-secondary-foreground); opacity: 0.7; }
+/* F5: secondary-foreground alone clears AA (~5.6:1 light); the opacity:0.7
+   multiplier dragged it below 4.5:1. Drop the multiplier, keep the token. */
+.s-input::placeholder { color: var(--salt-content-secondary-foreground); }
 .s-input:focus {
   border-color: var(--salt-palette-accent);
   box-shadow: 0 0 0 1px var(--salt-palette-accent);
@@ -6496,7 +6500,9 @@
   color: var(--md-sys-color-on-surface);
   font-size: 14px;
 }
-.m3-input::placeholder { color: var(--md-sys-color-on-surface-variant); opacity: 0.7; }
+/* F5: on-surface-variant alone clears AA (~9.3:1 light); the opacity:0.7
+   multiplier dragged it below 4.5:1. Drop the multiplier, keep the token. */
+.m3-input::placeholder { color: var(--md-sys-color-on-surface-variant); }
 .m3-input:focus {
   border-color: var(--md-sys-color-primary);
   border-width: 2px;
@@ -7528,6 +7534,29 @@
   --ds-hover: rgba(255,255,255,0.85);
   --ds-primary: #6B5AA8;
   --ds-on-primary: #FFFFFF;
+  /* uoaui-light status overrides: the dark scheme above uses neon glow values
+     (#4ADE80 / #F87171 / #FBBF24) tuned for the #0b1120 dark surface. As text on
+     light surfaces they fail AA (positive 1.74:1, negative 2.77:1, warning 1.67:1),
+     so light mode needs its own darker greens/reds/ambers. Verified on #FFFFFF and
+     on the [class*="-pill-*"] tint:
+       positive #15803d -> 5.02:1 / 4.67:1
+       negative #b91c1c -> 6.47:1 / 5.76:1
+       warning  #92400e -> 7.09:1 / 6.71:1   (all clear 4.5:1 AA) */
+  --ds-status-positive: #15803d;
+  --ds-status-negative: #b91c1c;
+  --ds-status-warning: #92400e;
+}
+
+/* F4: uoaui placeholder text uses --ds-fg-tertiary (fg3), which fails AA in both
+   modes (dark #6B7280 = 3.89:1, light #9688AD = 3.27:1). The generic
+   [class*="-...-input"]::placeholder rules are shared by all five DS, so this swap
+   is scoped to .preview-uoaui only and bumps it to --ds-fg-secondary (fg2):
+   dark #9CA3AF = 7.42:1, light #5C4A78 = 7.76:1 (both clear 4.5:1 AA). The other
+   four systems already map fg3 to AA-passing tokens, so they keep --ds-fg-tertiary. */
+.preview-uoaui [class*="-multiline-textarea"]::placeholder,
+.preview-uoaui [class*="-combobox-input"]::placeholder,
+.preview-uoaui [class*="-searchbox-input"]::placeholder {
+  color: var(--ds-fg-secondary);
 }
 
 /* ─── DnD Canvas ─── */
@@ -13307,7 +13336,9 @@
   border-radius: 0;
 }
 .cb-input::placeholder {
-  color: var(--cds-text-placeholder, var(--ds-fg-tertiary));
+  /* F3: --cds-text-placeholder is #a8a8a8 (2.38:1, fails AA). Carbon's own
+     helper tier #6f6f6f (5.02:1) is the lightest text that still clears AA. */
+  color: var(--cds-text-helper, var(--ds-fg-tertiary));
 }
 .cb-input-bottom-line {
   display: none; /* Carbon uses border-bottom; explicit line not needed */
@@ -13699,7 +13730,9 @@
   background: var(--cds-field-hover-01, var(--ds-surface-hover));
 }
 .cb-dropdown-placeholder {
-  color: var(--cds-text-placeholder, var(--ds-fg-tertiary));
+  /* F3: --cds-text-placeholder is #a8a8a8 (2.38:1, fails AA). Use Carbon's
+     helper tier #6f6f6f (5.02:1), the lightest text that still clears AA. */
+  color: var(--cds-text-helper, var(--ds-fg-tertiary));
 }
 .cb-dropdown-chevron {
   color: var(--cds-icon-primary, var(--ds-fg));
@@ -14060,7 +14093,9 @@
   color: var(--cds-text-primary, var(--ds-fg));
 }
 .cb-searchbox-input::placeholder {
-  color: var(--cds-text-placeholder, var(--ds-fg-tertiary));
+  /* F3: --cds-text-placeholder is #a8a8a8 (2.38:1, fails AA). Use Carbon's
+     helper tier #6f6f6f (5.02:1), the lightest text that still clears AA. */
+  color: var(--cds-text-helper, var(--ds-fg-tertiary));
 }
 .cb-searchbox-clear {
   background: transparent;
@@ -14237,7 +14272,9 @@
   border-radius: 0;
 }
 .cb-combobox-input::placeholder {
-  color: var(--cds-text-placeholder, var(--ds-fg-tertiary));
+  /* F3: --cds-text-placeholder is #a8a8a8 (2.38:1, fails AA). Use Carbon's
+     helper tier #6f6f6f (5.02:1), the lightest text that still clears AA. */
+  color: var(--cds-text-helper, var(--ds-fg-tertiary));
 }
 .cb-combobox-clear {
   background: transparent;
