@@ -68,6 +68,20 @@ export function useBuilderShortcuts() {
           }
           return;
         }
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+          /* Figma-style keyboard reorder: nudge the single selected block up or
+             down within its zone. Up/Down only. The resize handle owns
+             Left/Right (SortableBlock handleKeyDown), so they never collide.
+             Single-selection for v1; multi-select nudge is deferred. */
+          const s = useBuilder.getState();
+          if (s.selectedBlockZone && s.selectedBlockIds.length === 1) {
+            e.preventDefault();
+            const id = s.selectedBlockIds[0];
+            if (e.key === "ArrowUp") s.moveBlockUp(s.selectedBlockZone, id);
+            else s.moveBlockDown(s.selectedBlockZone, id);
+          }
+          return;
+        }
         return;
       }
 
