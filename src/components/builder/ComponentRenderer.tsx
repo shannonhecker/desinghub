@@ -1066,12 +1066,14 @@ function SimulatedStatCardBlock({
         transform: hovered ? "translateY(-1px)" : "none",
       }}
     >
-      <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4 }}>
+      {/* nowrap + ellipsis so an over-narrow card truncates ("$12…") instead of
+          laddering the value character-by-character down a sliver column. */}
+      <div style={{ fontSize: 11, color: t.fgSecondary, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {isSelected && blockId ? (
           <InlineEditable value={displayLabel} onChange={(v) => handleUpdate("label", v)} style={{ outline: "none" }} />
         ) : displayLabel}
       </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: t.fg }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: t.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {isSelected && blockId ? (
           <InlineEditable value={displayValue} onChange={(v) => handleUpdate("value", v)} style={{ outline: "none" }} />
         ) : displayValue}

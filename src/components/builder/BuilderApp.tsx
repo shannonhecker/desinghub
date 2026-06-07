@@ -56,6 +56,25 @@ export function BuilderApp() {
     footerBlocks.length > 0 ||
     Boolean(activeTemplateId);
 
+  /* Chat auto-collapse (owner pref): the floating chat opens for onboarding,
+     then tucks itself into the corner FAB once the user has actually applied a
+     template — so it never sits over the work once you've started, but stays
+     open through the whole onboarding (incl. the in-chat "which DS?" picker).
+     Keyed on `activeTemplateId` (null on the default/demo canvas, set only by
+     applyTemplateToCanvas AFTER the DS pick) — NOT raw block presence, since the
+     builder seeds a demo canvas on mount. One-shot: a ref guards it so
+     re-opening from the FAB sticks and we never re-collapse. A returning user
+     whose saved project carries a template id also boots collapsed. */
+  const hasAppliedTemplate = Boolean(activeTemplateId);
+  const autoCollapsedChatRef = useRef(false);
+  useEffect(() => {
+    if (autoCollapsedChatRef.current) return;
+    if (hasAppliedTemplate && chatFloating && isChatOpen) {
+      autoCollapsedChatRef.current = true;
+      setChatOpen(false);
+    }
+  }, [hasAppliedTemplate, chatFloating, isChatOpen, setChatOpen]);
+
   /* #15 moveable chat: drag the floating card by its grip, then on release
      snap to the nearest edge (left/right/bottom) if close, else keep a free
      position. We move the card directly via the ref during the drag (no
@@ -117,6 +136,7 @@ export function BuilderApp() {
      `:root`-scoped so every nested zone / canvas / block reads the
      same scale. */
   const structurePadding = useBuilder((s) => s.structurePadding);
+  const canvasSpacing = useBuilder((s) => s.canvasSpacing);
   useEffect(() => {
     const v = resolveStructurePadding(designSystem, structurePadding);
     const root = document.documentElement;
@@ -513,6 +533,7 @@ export function BuilderApp() {
     <div
       className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode={builderMode}
+      data-canvas-spacing={canvasSpacing}
     >
       {/* Skip link is provided once by the root layout (app/layout.tsx),
           targeting this shell's <main id="main-content"> below. A per-shell

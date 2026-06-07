@@ -9941,6 +9941,30 @@
 /* Apply structure padding (S/M/L) to canvas blocks; density-card-padding
    stays as fallback for callers that don't yet emit --dh-pad-block. */
 .preview-canvas-root .canvas-block { padding: var(--dh-pad-block, var(--density-card-padding, 12px)); margin-bottom: var(--dh-pad-gap, var(--density-gap, 8px)); }
+
+/* ── WYSIWYG canvas spacing (data-canvas-spacing="tight", default) ──
+   The edit canvas should read as the real product, so blocks carry NO
+   editor-only box-model chrome: the 12px padding / 8px margin / 1px border on
+   .canvas-block (base + the .preview-canvas-root override above) are zeroed,
+   leaving the zone gap (--dh-pad-gap) as the SOLE inter-block spacing — exactly
+   what the export emits. Selection ring (outline+box-shadow), the dashed hover
+   outline, and the "+" insert slot are overlays with no layout cost, so they're
+   untouched. "comfortable" mode keeps the roomy spacing for fiddly editing. */
+[data-canvas-spacing="tight"] .canvas-block,
+[data-canvas-spacing="tight"] .preview-canvas-root .canvas-block {
+  padding: 0;
+  margin-bottom: 0;
+  border-width: 0;
+}
+/* At padding:0 the hover/pin inspector controls (top:6px, inside .hover-inspector
+   which is inset:0 = block bounds) would sit over the block's own content. Dock
+   them ABOVE the block (mirrors the selected-dock A1 pattern) so they never
+   overlap content in the faithful canvas. */
+[data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-handle,
+[data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-remove,
+[data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-swap {
+  top: calc(-1 * (var(--bc-size-chip, 26px) + var(--bc-gap-xs, 4px)));
+}
 .preview-canvas-root .s-input,
 .preview-canvas-root .m3-input,
 .preview-canvas-root .f-input { padding: var(--density-input-padding, 6px 12px); font-size: var(--density-font-size, 13px); }
