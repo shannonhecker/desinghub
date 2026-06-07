@@ -262,9 +262,24 @@ function saltAvatarSize(size: string): number {
   return ({ sm: 1, md: 2, lg: 4 } as Record<string, number>)[size] ?? 2;
 }
 /* Badge/Pill status -> MUI Chip `color`. */
-function muiChipColor(status: string): "default" | "info" | "success" | "warning" | "error" {
-  const map: Record<string, "default" | "info" | "success" | "warning" | "error"> = { default: "default", info: "info", success: "success", warning: "warning", error: "error" };
+function muiChipColor(status: string): "default" | "info" | "success" | "warning" | "error" | "secondary" {
+  /* indigo (SQL stage) -> MUI `secondary` (the theme's purple), keeping it
+     distinct from info (MQL, blue). */
+  const map: Record<string, "default" | "info" | "success" | "warning" | "error" | "secondary"> = {
+    default: "default", neutral: "default", info: "info", indigo: "secondary",
+    success: "success", warning: "warning", error: "error",
+  };
   return map[status] ?? "default";
+}
+
+/* status -> Salt StatusIndicator `status` (ValidationStatus: info/success/
+   warning/error). Salt has no neutral or indigo: Lead (neutral) shows no dot
+   (just the label), and SQL (indigo) borrows info -> reads like MQL in Salt. */
+function saltIndicatorStatus(status: string): "info" | "success" | "warning" | "error" | null {
+  const map: Record<string, "info" | "success" | "warning" | "error"> = {
+    info: "info", indigo: "info", success: "success", warning: "warning", error: "error",
+  };
+  return map[status] ?? null;
 }
 
 /* ── Salt: variant -> sentiment + appearance (mirrors saltButtonAttrs). ── */
@@ -424,7 +439,16 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
             <SaltTR key={ri}>
               {cols.map((col, ci) => {
                 const v = resolveCell(row, col, ci);
-                return <SaltTD key={ci}>{isStatusColumn(col) ? <SaltPill onClick={() => {}}>{v}</SaltPill> : v}</SaltTD>;
+                if (!isStatusColumn(col)) return <SaltTD key={ci}>{v}</SaltTD>;
+                const st = saltIndicatorStatus(statusToClass(v));
+                return (
+                  <SaltTD key={ci}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      {st && <SaltStatusIndicator status={st} />}
+                      <SaltText>{v}</SaltText>
+                    </span>
+                  </SaltTD>
+                );
               })}
             </SaltTR>
           ))}
@@ -679,7 +703,17 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
   } else if (type === "SimulatedDataTable") {
     const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
     const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
-    const tagColor = (st: string): "success" | "warning" | "subtle" => (st === "success" ? "success" : st === "warning" ? "warning" : "subtle");
+    /* status -> Fluent Badge color (Tag has no color prop; Badge does, and is
+       what the badge blocks + export already use). Fluent has no purple, so the
+       funnel uses: info (MQL) -> brand (a clean solid blue), indigo (SQL) ->
+       important (high-contrast) to stay distinct. */
+    const tagColor = (st: string): "success" | "warning" | "subtle" | "brand" | "important" | "danger" =>
+      st === "success" ? "success"
+      : st === "warning" ? "warning"
+      : st === "info" ? "brand"
+      : st === "indigo" ? "important"
+      : st === "error" ? "danger"
+      : "subtle";
     inner = (
       <FluentTable>
         <FluentTableHeader>
@@ -690,7 +724,7 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
             <FluentTableRow key={ri}>
               {cols.map((col, ci) => {
                 const v = resolveCell(row, col, ci);
-                return <FluentTableCell key={ci}>{isStatusColumn(col) ? <FluentTag appearance="filled" color={tagColor(statusToClass(v))}>{v}</FluentTag> : v}</FluentTableCell>;
+                return <FluentTableCell key={ci}>{isStatusColumn(col) ? <FluentBadge appearance="filled" color={tagColor(statusToClass(v))}>{v}</FluentBadge> : v}</FluentTableCell>;
               })}
             </FluentTableRow>
           ))}
