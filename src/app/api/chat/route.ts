@@ -100,10 +100,26 @@ export async function POST(req: Request) {
   const validatedMessages = messages as { role: "user" | "assistant"; content: string }[];
   const anthropic = getClient(apiKey);
 
+  /* Prompt caching: the ~18KB DS-aware SYSTEM_PROMPT is byte-stable per design
+     system (5 warm prefixes), well above the ~1024-token minimum, so cache it
+     with an ephemeral breakpoint. Render order is system → messages, so the
+     volatile turn content stays after the cached prefix. ~90% cheaper on the
+     cached tokens + faster TTFT across the multi-turn loop. Verify via the
+     cache_read log below (should be > 0 from the 2nd request onward).
+
+     max_tokens raised 4096 → 16000: it is a per-response ceiling, not a
+     reservation (billed on actual output), so headroom is free and it closes
+     the mid-layout truncation trap. Streaming has no HTTP-timeout concern. */
   const stream = await anthropic.messages.stream({
     model: MODEL_ID,
-    max_tokens: 4096,
-    system: buildSystemPrompt((designSystem as string | undefined) ?? "salt"),
+    max_tokens: 16000,
+    system: [
+      {
+        type: "text",
+        text: buildSystemPrompt((designSystem as string | undefined) ?? "salt"),
+        cache_control: { type: "ephemeral" },
+      },
+    ],
     messages: validatedMessages,
   });
 
@@ -113,6 +129,18 @@ export async function POST(req: Request) {
     async start(controller) {
       try {
         for await (const event of stream) {
+          /* Cache-hit telemetry: message_start carries the input-token usage,
+             incl. cache_read / cache_creation. Logged once per request so the
+             prompt-cache can be confirmed working (cache_read > 0 after the
+             first warm-up). Server-side only; never reaches the client. */
+          if (event.type === "message_start") {
+            const u = event.message.usage;
+            console.log(
+              `[api/chat] cache_read=${u.cache_read_input_tokens ?? 0} ` +
+                `cache_creation=${u.cache_creation_input_tokens ?? 0} ` +
+                `input=${u.input_tokens}`,
+            );
+          }
           if (
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
