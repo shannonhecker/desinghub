@@ -1272,9 +1272,12 @@ function SimulatedDropdownBlock({
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
   const placeholder = (block?.props.placeholder as string) ?? "Select an option";
+  /* A `value` means the field is meant to look CHOSEN (renders in primary ink);
+     an empty/absent `value` keeps `placeholder` showing in the muted tier. */
+  const value = (block?.props.value as string) || undefined;
 
   return (
-    <SimulatedDropdown system={system} placeholder={placeholder} />
+    <SimulatedDropdown system={system} placeholder={placeholder} value={value} />
   );
 }
 

@@ -430,6 +430,7 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "label", label: "Label" }, { type: "toggle", propKey: "defaultOn", label: "Default On" },
   ]},
   { type: "SimulatedDropdown", label: "Dropdown", icon: "arrow_drop_down_circle", defaults: { placeholder: "Select an option" }, fields: [
+    { type: "text", propKey: "value", label: "Selected value" },
     { type: "text", propKey: "placeholder", label: "Placeholder" },
   ]},
 

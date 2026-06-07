@@ -160,6 +160,11 @@ interface DropdownItem {
 interface DropdownProps extends SimProps {
   items?: DropdownItem[];
   placeholder?: string;
+  /** Pre-selected display value (e.g. "Last 30 days" / a timezone). When set, the
+     trigger renders it as a CHOSEN value in the DS's primary foreground ink, not
+     in the faint placeholder/watermark tier. `placeholder` is reserved for the
+     genuinely-empty prompt ("Select an option"). */
+  value?: string;
 }
 
 const DEFAULT_ITEMS: DropdownItem[] = [
@@ -172,13 +177,15 @@ export function SimulatedDropdown({
   system,
   items = DEFAULT_ITEMS,
   placeholder = "Select an option",
+  value,
 }: DropdownProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [open, setOpen] = useState(false);
-  /* Start unselected so a caller-provided `placeholder` (used by templates as the
-     field's display value, e.g. "Last 30 days" / a timezone) is what shows,
-     instead of always defaulting to the demo roster's "Settings" item. */
-  const [selected, setSelected] = useState<string | null>(null);
+  /* Seed selection from a caller-provided `value` so a template's intended
+     display value (e.g. "Last 30 days" / a timezone) renders as a CHOSEN value
+     in primary ink, not the washed-out placeholder tier. Falls back to unselected
+     so a true `placeholder` ("Select an option") still shows in the muted tier. */
+  const [selected, setSelected] = useState<string | null>(value ?? null);
   const ref = useRef<HTMLDivElement>(null);
 
   /* Close on outside click */
@@ -197,7 +204,12 @@ export function SimulatedDropdown({
     setOpen(false);
   };
 
-  const selectedLabel = items.find((i) => i.value === selected)?.label;
+  /* Resolve the trigger label: a matched item label when a roster value is
+     chosen, else the raw `selected` string (a free-text display value seeded
+     from `value`). A non-null `selected` always renders in primary ink. */
+  const selectedLabel = selected != null
+    ? (items.find((i) => i.value === selected)?.label ?? selected)
+    : undefined;
 
   return (
     <div className={`${prefix}-dropdown ${open ? `${prefix}-dropdown-open` : ""}`} ref={ref}>
@@ -206,8 +218,8 @@ export function SimulatedDropdown({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
-        <span className={selected ? "" : `${prefix}-dropdown-placeholder`}>
-          {selectedLabel || placeholder}
+        <span className={selected != null ? "" : `${prefix}-dropdown-placeholder`}>
+          {selectedLabel ?? placeholder}
         </span>
         <SimIcon
           system={system}
