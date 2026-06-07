@@ -22,11 +22,12 @@ const builderAppSrc = readFileSync(join(builderDir, "BuilderApp.tsx"), "utf8");
 const popout = previewPanelSrc.match(/const handlePopOut = \(\) => \{[\s\S]*?\n  \};/)?.[0] ?? "";
 
 describe("PR-D: pop-out routes through the share encoder (fixes empty pop-out)", () => {
-  it("handlePopOut encodes the full canvas via buildShareUrl", () => {
-    expect(popout).toMatch(/buildShareUrl\(/);
-    expect(popout).toMatch(/headerBlocks: s\.headerBlocks/);
-    expect(popout).toMatch(/deviceMode: s\.deviceMode/);
-    expect(popout).toMatch(/themeKey: s\.themeKey/);
+  it("handlePopOut encodes the full canvas via buildShareUrl(buildSharedCanvas(s))", () => {
+    /* Phase 2 (multi-page) moved the field-mapping into buildSharedCanvas
+       (lazy v:1/v:2), which is covered behaviourally by shareState.multipage
+       round-trips. The pop-out now just routes the current store state through
+       it — so the full canvas (incl. all pages when multi-page) travels. */
+    expect(popout).toMatch(/buildShareUrl\(buildSharedCanvas\(s\)\)/);
   });
 
   it("opens /builder?preview=1&shared=<hash> and preserves the pop-out window size", () => {

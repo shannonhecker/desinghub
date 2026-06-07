@@ -682,6 +682,30 @@ function seedPages(s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "
   return { pages: [{ id, name, body: s.blocks, bodyLayout: s.zoneLayouts.body }], activePageId: id };
 }
 
+/* Persistence helper: returns the pages array with the ACTIVE page's body synced
+   from the live `s.blocks` mirror (and bodyLayout from the shared zone). Seeds first
+   when the canvas hasn't split yet. Pure (no set). Every persistence sink (history
+   snapshot, autosave, share-link) MUST flush through this before serializing, or it
+   captures a stale page body and silently drops the current page's in-progress edits
+   — `s.blocks` only syncs back into `pages` on a page switch otherwise. */
+export function flushActiveBody(
+  s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts">,
+): { pages: Page[]; activePageId: string } {
+  const seeded = seedPages(s);
+  const pages = seeded.pages.map((p) =>
+    p.id === seeded.activePageId ? { ...p, body: s.blocks, bodyLayout: s.zoneLayouts.body } : p,
+  );
+  return { pages, activePageId: seeded.activePageId };
+}
+
+/* A canvas is "multi-page" once it owns more than one page. Single-page canvases
+   persist byte-identically to the pre-multi-page schema (no `pages`/`activePageId`
+   written, share-link stays v:1); only genuinely multi-page canvases gain the
+   additive fields. Lazy-additive migration — owner decision 2026-06-07. */
+export function isMultiPage(pages: Page[]): boolean {
+  return pages.length > 1;
+}
+
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat - start empty so hero shows
   messages: [],

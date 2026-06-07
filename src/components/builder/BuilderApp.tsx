@@ -266,21 +266,9 @@ export function BuilderApp() {
   }, [exportMenuOpen]);
 
   const handleExportShare = async () => {
-    const { buildShareUrl } = await import("@/lib/shareState");
+    const { buildShareUrl, buildSharedCanvas } = await import("@/lib/shareState");
     const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl({
-      v: 1,
-      designSystem: s.designSystem,
-      mode: s.mode,
-      density: s.density,
-      deviceMode: s.deviceMode,
-      themeKey: s.themeKey,
-      activeTemplateId: s.activeTemplateId,
-      headerBlocks: s.headerBlocks,
-      sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks,
-      footerBlocks: s.footerBlocks,
-    });
+    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
     if (tooLong) {
       setExportShareState("too-long");
       setTimeout(() => setExportShareState("idle"), 3000);
@@ -504,6 +492,21 @@ export function BuilderApp() {
            (legacy links decode themeKey as null → keep setMode's default). */
         store.setDeviceMode(state.deviceMode);
         if (state.themeKey) store.setThemeKey(state.themeKey);
+        /* v:2 multi-page: hydrate the page set + active page so the pop-out /
+           forked editor can navigate tabs. state.blocks already holds the
+           active page body (setBlocks above); also seed zoneLayouts.body from
+           the active page's bodyLayout so first paint uses the author's per-page
+           layout, not the default grid. v:1 links omit these. */
+        if (state.pages && state.activePageId) {
+          const activePage = state.pages.find((p) => p.id === state.activePageId);
+          useBuilder.setState({
+            pages: state.pages,
+            activePageId: state.activePageId,
+            ...(activePage?.bodyLayout
+              ? { zoneLayouts: { ...useBuilder.getState().zoneLayouts, body: activePage.bodyLayout } }
+              : {}),
+          });
+        }
         store.setPreviewOpen(true);
         /* Pop-out: now that the canvas is populated, flip to standalone. */
         if (isPopout) setIsStandalone(true);

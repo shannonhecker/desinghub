@@ -30,4 +30,20 @@ describe("useAutoSave TRACKED_KEYS", () => {
       /const TRACKED_KEYS = \[[\s\S]*?"zoneLayouts"[\s\S]*?\] as const/
     );
   });
+
+  /* Multi-page Phase 2 (2026-06-07): a page-structure edit (rename / reorder /
+     add / delete a page) can change `pages`/`activePageId` WITHOUT touching
+     `blocks`, so both must be tracked or the change never arms the debounce —
+     the same class of bug as the zoneLayouts finding above. */
+  it("tracks pages so a page-structure edit triggers an autosave", () => {
+    expect(src).toMatch(
+      /const TRACKED_KEYS = \[[\s\S]*?"pages"[\s\S]*?\] as const/
+    );
+  });
+
+  it("tracks activePageId so switching the active page triggers an autosave", () => {
+    expect(src).toMatch(
+      /const TRACKED_KEYS = \[[\s\S]*?"activePageId"[\s\S]*?\] as const/
+    );
+  });
 });
