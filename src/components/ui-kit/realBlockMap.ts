@@ -39,10 +39,13 @@ import {
   Tile as CarbonTile,
   Link as CarbonLink,
   Tag as CarbonTag,
-  DismissibleTag as CarbonDismissibleTag,
   InlineNotification as CarbonInlineNotification,
   HeaderName as CarbonHeaderName,
   ProgressBar as CarbonProgressBar,
+  Dropdown as CarbonDropdown,
+  Search as CarbonSearch,
+  Accordion as CarbonAccordion,
+  AccordionItem as CarbonAccordionItem,
 } from "@carbon/react";
 import { ArrowRight } from "@carbon/icons-react";
 import type { SystemId } from "@/lib/componentApiRegistry";
@@ -66,6 +69,12 @@ const fieldId = (p: Record<string, unknown>, fallback: string): string =>
 const num = (v: unknown, fallback = 0): number => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+};
+
+/** Split a CSV field into trimmed options with a fallback (mirrors registry `csv`). */
+const csv = (v: unknown, fallback: string[] = []): string[] => {
+  const parts = s(v).split(",").map((t) => t.trim()).filter(Boolean);
+  return parts.length ? parts : fallback;
 };
 
 /* Carbon Tag `type` union (from @carbon/react Tag). */
@@ -296,6 +305,69 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       dot,
     );
   },
+
+  /* ── PR-4 mid-complexity coverage (real .a-* classes verified to exist). ── */
+  SimulatedStatCard: (p) => {
+    const pct = num(p.pct, 0);
+    return React.createElement(
+      "div",
+      { className: "a-card", style: { padding: 16 } },
+      React.createElement("div", { style: { fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 } }, s(p.label, "Metric")),
+      React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" } }, s(p.value, "0")),
+      React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${pct}%` } })),
+    );
+  },
+
+  SimulatedDropdown: (p) =>
+    React.createElement(
+      "div",
+      { className: "a-dropdown" },
+      React.createElement(
+        "button",
+        { type: "button", className: "a-dropdown-trigger", "aria-haspopup": "listbox" },
+        React.createElement("span", null, s(p.placeholder, "Select an option")),
+        React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, "expand_more"),
+      ),
+    ),
+
+  SimulatedSearchbox: (p) =>
+    React.createElement(
+      "div",
+      { className: "a-input-wrap", style: { position: "relative" } },
+      React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true", style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, "search"),
+      React.createElement("input", { className: "a-input", type: "search", placeholder: s(p.placeholder, "Search..."), "aria-label": "Search", readOnly: true, style: { paddingLeft: 34 } }),
+    ),
+
+  SimulatedSegmentedGroup: (p) => {
+    const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
+    const di = num(p.defaultIndex, 0);
+    return React.createElement(
+      "div",
+      { className: "a-tabs", role: "tablist", "aria-label": "View" },
+      ...opts.map((o, i) => React.createElement("button", { key: i, type: "button", role: "tab", "aria-selected": i === di, className: `a-tab${i === di ? " active" : ""}` }, s(o))),
+    );
+  },
+
+  SimulatedAccordion: (p) =>
+    React.createElement(
+      "div",
+      { className: "a-accordion" },
+      React.createElement(
+        "button",
+        { type: "button", className: "a-accordion-header", "aria-expanded": true },
+        React.createElement("span", null, s(p.title, "Section")),
+        React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, "expand_less"),
+      ),
+      React.createElement("div", { className: "a-accordion-body" }, s(p.content)),
+    ),
+
+  NavItem: (p) =>
+    React.createElement(
+      "button",
+      { type: "button", className: `a-sidebar-item${Boolean(p.active) ? " active" : ""}`, "aria-current": Boolean(p.active) ? "page" : undefined },
+      React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, s(p.icon, "chat")),
+      s(p.label, "Nav"),
+    ),
 };
 
 /* ── carbon: variant -> Carbon Button `kind` (mirrors carbonButtonAttrs in
@@ -387,10 +459,11 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedBadge: (p) =>
     React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Badge")),
 
+  /* Always render a plain CarbonTag (text-visible). DismissibleTag rendered as an
+     empty grey block in the scoped dark stage, so we drop the × affordance in
+     favour of a readable tag. */
   SimulatedPill: (p) =>
-    p.dismissible
-      ? React.createElement(CarbonDismissibleTag, { type: carbonTagType(s(p.status, "default")), text: s(p.label, "Tag"), title: "Remove", onClose: () => {} })
-      : React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
+    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
 
   Alert: (p) =>
     React.createElement(CarbonInlineNotification, {
@@ -414,6 +487,57 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       value: num(p.value, 50),
       max: 100,
     }),
+
+  /* ── PR-4 mid-complexity coverage. NavItem renders without an icon (mapping
+     material-symbol names to @carbon/icons-react components is deferred). ── */
+  /* A row of Carbon Buttons (selected=primary, rest=tertiary) — readable in both
+     themes, unlike ContentSwitcher whose selected segment went dark-on-dark in the
+     scoped dark stage. */
+  SimulatedSegmentedGroup: (p) => {
+    const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
+    const di = num(p.defaultIndex, 0);
+    return React.createElement(
+      "div",
+      { style: { display: "inline-flex" } },
+      ...opts.map((o, i) => React.createElement(CarbonButton, { key: slug(o), kind: i === di ? "primary" : "tertiary", size: "sm" }, s(o))),
+    );
+  },
+
+  SimulatedDropdown: (p) =>
+    React.createElement(CarbonDropdown, {
+      id: fieldId(p, "dropdown"),
+      titleText: "",
+      label: s(p.placeholder, "Select an option"),
+      items: ["Option 1", "Option 2", "Option 3"],
+      itemToString: (item: unknown) => s(item),
+    }),
+
+  SimulatedSearchbox: (p) =>
+    React.createElement(CarbonSearch, {
+      id: fieldId(p, "search"),
+      labelText: "Search",
+      placeholder: s(p.placeholder, "Search..."),
+      size: "md",
+    }),
+
+  SimulatedStatCard: (p) =>
+    React.createElement(
+      CarbonTile,
+      null,
+      React.createElement("p", { className: "cds--type-label-01" }, s(p.label, "Metric")),
+      React.createElement("p", { className: "cds--type-heading-04" }, s(p.value, "0")),
+      React.createElement("span", { style: { color: "var(--cds-support-success)" } }, `+${num(p.pct, 0)}%`),
+    ),
+
+  SimulatedAccordion: (p) =>
+    React.createElement(
+      CarbonAccordion,
+      null,
+      React.createElement(CarbonAccordionItem, { title: s(p.title, "Section") }, s(p.content)),
+    ),
+
+  NavItem: (p) =>
+    React.createElement(CarbonLink, { href: "#" }, s(p.label, "Nav")),
 };
 
 /**

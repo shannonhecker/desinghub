@@ -80,8 +80,15 @@ import {
   StatusIndicator as SaltStatusIndicator,
   LinearProgress as SaltLinearProgress,
   Avatar as SaltAvatar,
+  Dropdown as SaltDropdown,
+  Option as SaltOption,
+  SegmentedButtonGroup as SaltSegmentedButtonGroup,
+  Accordion as SaltAccordion,
+  AccordionHeader as SaltAccordionHeader,
+  AccordionPanel as SaltAccordionPanel,
+  NavigationItem as SaltNavigationItem,
 } from "@salt-ds/core";
-import { ChevronRightIcon } from "@salt-ds/icons";
+import { ChevronRightIcon, SearchIcon } from "@salt-ds/icons";
 
 import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import MuiButton from "@mui/material/Button";
@@ -98,6 +105,20 @@ import MuiLinearProgress from "@mui/material/LinearProgress";
 import MuiAvatar from "@mui/material/Avatar";
 import MuiAlert from "@mui/material/Alert";
 import MuiAlertTitle from "@mui/material/AlertTitle";
+import MuiFormControl from "@mui/material/FormControl";
+import MuiInputLabel from "@mui/material/InputLabel";
+import MuiSelect from "@mui/material/Select";
+import MuiMenuItem from "@mui/material/MenuItem";
+import MuiToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import MuiToggleButton from "@mui/material/ToggleButton";
+import MuiInputAdornment from "@mui/material/InputAdornment";
+import MuiAccordion from "@mui/material/Accordion";
+import MuiAccordionSummary from "@mui/material/AccordionSummary";
+import MuiAccordionDetails from "@mui/material/AccordionDetails";
+import MuiListItem from "@mui/material/ListItem";
+import MuiListItemButton from "@mui/material/ListItemButton";
+import MuiListItemIcon from "@mui/material/ListItemIcon";
+import MuiListItemText from "@mui/material/ListItemText";
 
 import {
   FluentProvider,
@@ -123,6 +144,15 @@ import {
   Caption1 as FluentCaption1,
   ProgressBar as FluentProgressBar,
   Avatar as FluentAvatar,
+  ToggleButton as FluentToggleButton,
+  Dropdown as FluentDropdown,
+  Option as FluentOption,
+  SearchBox as FluentSearchBox,
+  Accordion as FluentAccordion,
+  AccordionItem as FluentAccordionItem,
+  AccordionHeader as FluentAccordionHeader,
+  AccordionPanel as FluentAccordionPanel,
+  Toolbar as FluentToolbar,
 } from "@fluentui/react-components";
 
 import type { SystemId } from "@/lib/componentApiRegistry";
@@ -150,6 +180,16 @@ const EXTENDED_BLOCKS = [
   "SimulatedAvatar",
 ] as const;
 
+/* PR-4 mid-complexity coverage: rendered real across every DS. */
+const MID_BLOCKS = [
+  "SimulatedStatCard",
+  "SimulatedDropdown",
+  "SimulatedSearchbox",
+  "SimulatedSegmentedGroup",
+  "SimulatedAccordion",
+  "NavItem",
+] as const;
+
 /* Carbon ships no first-party Heading / Footer / Avatar component, so those stay
    Simulated for carbon ONLY (honest fallback). Every other DS covers all. */
 const CARBON_OMITS = new Set<string>(["SimulatedTitle", "FooterText", "SimulatedAvatar"]);
@@ -158,11 +198,11 @@ const CARBON_OMITS = new Set<string>(["SimulatedTitle", "FooterText", "Simulated
    coverage can differ per DS (e.g. carbon's omits above). Shared by the builder
    Preview, the /ui-kit gallery, and VariantsMatrix (all route through here). */
 const COVERAGE: Record<SystemId, Set<string>> = {
-  salt: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
-  m3: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
-  fluent: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
-  uoaui: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS]),
-  carbon: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS].filter((t) => !CARBON_OMITS.has(t))),
+  salt: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
+  m3: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
+  fluent: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
+  uoaui: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS]),
+  carbon: new Set<string>([...CORE_BLOCKS, ...EXTENDED_BLOCKS, ...MID_BLOCKS].filter((t) => !CARBON_OMITS.has(t))),
 };
 
 /** True when (system, blockType) renders a real official component here. */
@@ -177,6 +217,16 @@ const num = (v: unknown, fallback = 0): number => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 };
+
+/** Split a CSV field into trimmed options with a fallback (mirrors registry `csv`). */
+const csv = (v: unknown, fallback: string[] = []): string[] => {
+  const parts = s(v).split(",").map((t) => t.trim()).filter(Boolean);
+  return parts.length ? parts : fallback;
+};
+
+/** Stable slug from a label (mirrors registry `slug`). */
+const slug = (v: unknown, fallback = "item"): string =>
+  s(v).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
 
 /* ── extended-coverage prop maps (PR-3), mirrored from componentApiRegistry. ── */
 /* Alert variant -> Salt Banner status. */
@@ -308,6 +358,36 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
     inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} />;
   } else if (type === "SimulatedAvatar") {
     inner = <SaltAvatar name={s(props.initials, "?")} size={saltAvatarSize(s(props.size, "md"))} />;
+  } else if (type === "SimulatedStatCard") {
+    inner = (
+      <SaltCard>
+        <SaltText styleAs="label" variant="secondary">{s(props.label, "Metric")}</SaltText>
+        <SaltText styleAs="h2"><strong>{s(props.value, "0")}</strong></SaltText>
+        <SaltLinearProgress aria-label={s(props.label, "Metric")} value={num(props.pct, 0)} />
+      </SaltCard>
+    );
+  } else if (type === "SimulatedDropdown") {
+    inner = (
+      <SaltDropdown placeholder={s(props.placeholder, "Select an option")}>
+        <SaltOption value="option-1">Option 1</SaltOption>
+        <SaltOption value="option-2">Option 2</SaltOption>
+      </SaltDropdown>
+    );
+  } else if (type === "SimulatedSearchbox") {
+    inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly />;
+  } else if (type === "SimulatedSegmentedGroup") {
+    const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
+    const di = num(props.defaultIndex, 0);
+    inner = <SaltSegmentedButtonGroup>{opts.map((o, i) => <SaltButton key={i} sentiment={i === di ? "accented" : "neutral"}>{s(o)}</SaltButton>)}</SaltSegmentedButtonGroup>;
+  } else if (type === "SimulatedAccordion") {
+    inner = (
+      <SaltAccordion value="section">
+        <SaltAccordionHeader>{s(props.title, "Section")}</SaltAccordionHeader>
+        <SaltAccordionPanel>{s(props.content, "Content")}</SaltAccordionPanel>
+      </SaltAccordion>
+    );
+  } else if (type === "NavItem") {
+    inner = <SaltNavigationItem href="#" active={Boolean(props.active)} orientation="vertical">{s(props.label, "Nav")}</SaltNavigationItem>;
   }
   /* Default SaltProvider wraps children in a scoped `.salt-theme` element (no
      global :root/body reset), so this nested provider can't leak to the app. */
@@ -378,6 +458,63 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
   } else if (type === "SimulatedAvatar") {
     const dim = ({ sm: 28, md: 40, lg: 56 } as Record<string, number>)[s(props.size, "md")] ?? 40;
     inner = <MuiAvatar sx={{ width: dim, height: dim }}>{s(props.initials, "?")}</MuiAvatar>;
+  } else if (type === "SimulatedStatCard") {
+    inner = (
+      <MuiCard variant="outlined">
+        <MuiCardContent>
+          <MuiTypography variant="body2" color="text.secondary">{s(props.label, "Metric")}</MuiTypography>
+          <MuiTypography variant="h4">{s(props.value, "0")}</MuiTypography>
+          <MuiLinearProgress variant="determinate" value={num(props.pct, 0)} sx={{ mt: 1 }} />
+        </MuiCardContent>
+      </MuiCard>
+    );
+  } else if (type === "SimulatedDropdown") {
+    inner = (
+      <MuiFormControl fullWidth size="small">
+        <MuiInputLabel id="sel-label">{s(props.placeholder, "Select an option")}</MuiInputLabel>
+        <MuiSelect labelId="sel-label" label={s(props.placeholder, "Select an option")} defaultValue="">
+          <MuiMenuItem value="opt1">Option 1</MuiMenuItem>
+          <MuiMenuItem value="opt2">Option 2</MuiMenuItem>
+        </MuiSelect>
+      </MuiFormControl>
+    );
+  } else if (type === "SimulatedSearchbox") {
+    inner = (
+      <MuiTextField
+        placeholder={s(props.placeholder, "Search...")}
+        variant="outlined"
+        size="small"
+        slotProps={{ input: { readOnly: true, startAdornment: (<MuiInputAdornment position="start"><span className="material-symbols-outlined">search</span></MuiInputAdornment>) } }}
+      />
+    );
+  } else if (type === "SimulatedSegmentedGroup") {
+    const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
+    const selected = slug(opts[num(props.defaultIndex, 0)] ?? opts[0]);
+    inner = (
+      <MuiToggleButtonGroup exclusive value={selected} size="small">
+        {opts.map((o) => <MuiToggleButton key={slug(o)} value={slug(o)}>{s(o)}</MuiToggleButton>)}
+      </MuiToggleButtonGroup>
+    );
+  } else if (type === "SimulatedAccordion") {
+    inner = (
+      <MuiAccordion>
+        <MuiAccordionSummary>
+          <MuiTypography>{s(props.title, "Section")}</MuiTypography>
+        </MuiAccordionSummary>
+        <MuiAccordionDetails>
+          <MuiTypography>{s(props.content)}</MuiTypography>
+        </MuiAccordionDetails>
+      </MuiAccordion>
+    );
+  } else if (type === "NavItem") {
+    inner = (
+      <MuiListItem disablePadding>
+        <MuiListItemButton selected={Boolean(props.active)}>
+          <MuiListItemIcon><span className="material-symbols-outlined">{s(props.icon, "home")}</span></MuiListItemIcon>
+          <MuiListItemText primary={s(props.label, "Nav")} />
+        </MuiListItemButton>
+      </MuiListItem>
+    );
   }
   return <MuiThemeProvider theme={theme}>{inner}</MuiThemeProvider>;
 }
@@ -442,6 +579,38 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
   } else if (type === "SimulatedAvatar") {
     const size = ({ sm: 24, md: 32, lg: 48 } as Record<string, 24 | 32 | 48>)[s(props.size, "md")] ?? 32;
     inner = <FluentAvatar name={s(props.initials, "?")} size={size} />;
+  } else if (type === "SimulatedStatCard") {
+    inner = (
+      <FluentCard>
+        <FluentCardHeader header={<FluentCaption1>{s(props.label, "Metric")}</FluentCaption1>} />
+        <FluentTitle3>{s(props.value, "0")}</FluentTitle3>
+        <FluentProgressBar value={num(props.pct, 0) / 100} />
+      </FluentCard>
+    );
+  } else if (type === "SimulatedDropdown") {
+    inner = (
+      <FluentDropdown placeholder={s(props.placeholder, "Select an option")}>
+        <FluentOption>Option 1</FluentOption>
+        <FluentOption>Option 2</FluentOption>
+      </FluentDropdown>
+    );
+  } else if (type === "SimulatedSearchbox") {
+    inner = <FluentSearchBox placeholder={s(props.placeholder, "Search...")} />;
+  } else if (type === "SimulatedSegmentedGroup") {
+    const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
+    const di = num(props.defaultIndex, 0);
+    inner = <FluentToolbar aria-label="Segmented">{opts.map((o, i) => <FluentToggleButton key={i} appearance="subtle" checked={i === di}>{s(o)}</FluentToggleButton>)}</FluentToolbar>;
+  } else if (type === "SimulatedAccordion") {
+    inner = (
+      <FluentAccordion collapsible>
+        <FluentAccordionItem value="1">
+          <FluentAccordionHeader>{s(props.title, "Section")}</FluentAccordionHeader>
+          <FluentAccordionPanel>{s(props.content)}</FluentAccordionPanel>
+        </FluentAccordionItem>
+      </FluentAccordion>
+    );
+  } else if (type === "NavItem") {
+    inner = <FluentButton appearance={props.active ? "primary" : "subtle"}>{s(props.label, "Nav")}</FluentButton>;
   }
   /* FluentProvider scopes its `--color*` vars + griffel styles to a wrapper
      element; webLight/webDark drive the mode. No global reset. */
