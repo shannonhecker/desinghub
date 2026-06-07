@@ -1504,6 +1504,21 @@
   height: min(720px, calc(100dvh - 120px));
   inset: 0;
   margin: auto;
+  /* Landing-page first-land (owner 2026-06-07): nothing is built yet, so the
+     hero IS the page, not a floating widget. Strip the card chrome — border,
+     glass background, blur, and shadow — so the headline + composer read as a
+     landing page on the empty canvas. The composer keeps its own input frame. */
+  border-color: transparent;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+/* And hide the widget-only chrome (drag grip + dock/minimize controls) on the
+   landing hero — there is nothing to drag, dock away from, or close yet; the
+   chat docks itself to the rail on the first message. */
+.chat-float-onboarding .chat-float-grip,
+.chat-float-onboarding .chat-controls {
+  display: none;
 }
 
 /* #15 drag handle — a slim grab strip at the top of the floating card. */

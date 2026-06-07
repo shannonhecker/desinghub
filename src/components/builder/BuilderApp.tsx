@@ -35,8 +35,8 @@ export function BuilderApp() {
     designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen, setChatOpen,
-    chatMode, chatPlacement, setChatPlacement,
-    blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks, activeTemplateId,
+    chatMode, chatPlacement, setChatPlacement, setChatMode,
+    activeTemplateId, messages,
     toggleSessionsDrawer, startNewSession,
   } = useBuilder();
 
@@ -44,36 +44,30 @@ export function BuilderApp() {
      chat is the legacy left column that splits width with the preview. */
   const chatFloating = chatMode === "floating";
 
-  /* Whether the user has anything on the canvas yet. Drives the floating
-     card's size: roomy while the canvas is empty (onboarding has room to
-     breathe), compact once there's a canvas to float over. NB: this is
-     content presence, NOT `previewOpen` (which toggles the separate
-     read-only preview side panel and stays off during normal editing). */
-  const hasCanvasContent =
-    bodyBlocks.length > 0 ||
-    headerBlocks.length > 0 ||
-    sidebarBlocks.length > 0 ||
-    footerBlocks.length > 0 ||
-    Boolean(activeTemplateId);
+  /* Whether the user has actually STARTED — sent a first message or applied a
+     template. Drives both the first-land hero (centered, full-screen when not
+     started) and the auto-dock to the left rail (once started). Keyed on
+     messages/template, NOT block presence: the builder seeds a demo canvas on
+     mount, so block counts are non-zero from boot and would wrongly suppress
+     the hero (the original first-land-in-the-corner defect). */
+  const userStarted = messages.length > 0 || Boolean(activeTemplateId);
 
-  /* Chat auto-collapse (owner pref): the floating chat opens for onboarding,
-     then tucks itself into the corner FAB once the user has actually applied a
-     template — so it never sits over the work once you've started, but stays
-     open through the whole onboarding (incl. the in-chat "which DS?" picker).
-     Keyed on `activeTemplateId` (null on the default/demo canvas, set only by
-     applyTemplateToCanvas AFTER the DS pick) — NOT raw block presence, since the
-     builder seeds a demo canvas on mount. One-shot: a ref guards it so
-     re-opening from the FAB sticks and we never re-collapse. A returning user
-     whose saved project carries a template id also boots collapsed. */
-  const hasAppliedTemplate = Boolean(activeTemplateId);
-  const autoCollapsedChatRef = useRef(false);
+  /* Chat auto-dock (owner direction 2026-06-07): the floating chat owns the
+     screen as a centered, full-screen hero on first land (nothing built yet),
+     then docks to the left rail the moment the user actually STARTS — sends a
+     first message or applies a template — handing the canvas/preview the
+     dominant right pane. This replaces the prior auto-collapse-to-corner-FAB
+     behaviour. One-shot: a ref guards it so a later manual switch back to
+     floating sticks and we never re-dock. A returning user whose saved project
+     already carries content also boots straight into the docked rail. */
+  const autoDockedChatRef = useRef(false);
   useEffect(() => {
-    if (autoCollapsedChatRef.current) return;
-    if (hasAppliedTemplate && chatFloating && isChatOpen) {
-      autoCollapsedChatRef.current = true;
-      setChatOpen(false);
+    if (autoDockedChatRef.current) return;
+    if (userStarted && chatFloating) {
+      autoDockedChatRef.current = true;
+      setChatMode("docked");
     }
-  }, [hasAppliedTemplate, chatFloating, isChatOpen, setChatOpen]);
+  }, [userStarted, chatFloating, setChatMode]);
 
   /* #15 moveable chat: drag the floating card by its grip, then on release
      snap to the nearest edge (left/right/bottom) if close, else keep a free
@@ -727,7 +721,7 @@ export function BuilderApp() {
         {chatFloating && isChatOpen && (
           <aside
             ref={chatFloatRef}
-            className={`chat-float ${hasCanvasContent ? "chat-float-compact" : "chat-float-onboarding"}${
+            className={`chat-float ${userStarted ? "chat-float-compact" : "chat-float-onboarding"}${
               chatPlacement && chatPlacement.dock !== "free" ? ` chat-float-pin-${chatPlacement.dock}` : ""
             }`}
             style={
