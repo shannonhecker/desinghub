@@ -37,7 +37,14 @@ import {
   Checkbox as CarbonCheckbox,
   Toggle as CarbonToggle,
   Tile as CarbonTile,
+  Link as CarbonLink,
+  Tag as CarbonTag,
+  DismissibleTag as CarbonDismissibleTag,
+  InlineNotification as CarbonInlineNotification,
+  HeaderName as CarbonHeaderName,
+  ProgressBar as CarbonProgressBar,
 } from "@carbon/react";
+import { ArrowRight } from "@carbon/icons-react";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /** Coerce a builder field to a string with a fallback (mirrors registry `s`). */
@@ -54,6 +61,32 @@ const slug = (v: unknown, fallback = "field"): string =>
     and the variants matrix renders the same label in every cell. */
 const fieldId = (p: Record<string, unknown>, fallback: string): string =>
   p.id != null && s(p.id) ? s(p.id) : slug(p.label, fallback);
+
+/** Coerce a builder field to a finite number with a fallback (mirrors registry `num`). */
+const num = (v: unknown, fallback = 0): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+/* Carbon Tag `type` union (from @carbon/react Tag). */
+type CarbonTagType = "outline" | "gray" | "blue" | "green" | "warm-gray" | "red" | "cyan" | "magenta" | "purple" | "teal" | "cool-gray" | "high-contrast";
+
+/* status -> Carbon Tag `type` (mirrors carbonTagType in componentApiRegistry). */
+function carbonTagType(status: string): CarbonTagType {
+  const map: Record<string, CarbonTagType> = {
+    default: "gray", info: "blue", success: "green", warning: "warm-gray", error: "red",
+  };
+  return map[status] ?? "gray";
+}
+
+/* StatusPill label -> Carbon Tag `type` heuristic (mirrors carbonStatusType). */
+function carbonStatusType(label: string): CarbonTagType {
+  const l = label.toLowerCase();
+  if (/(active|online|success|live)/.test(l)) return "green";
+  if (/(pending|warning)/.test(l)) return "warm-gray";
+  if (/(inactive|error|offline|failed)/.test(l)) return "red";
+  return "gray";
+}
 
 /** A render fn takes the block's resolved props and returns the real markup. */
 export type RealBlockRenderer = (props: Record<string, unknown>) => React.ReactNode;
@@ -147,6 +180,122 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       React.createElement("h3", { style: { margin: "0 0 4px" } }, s(p.title, "Card")),
       React.createElement("p", { style: { margin: 0 } }, s(p.content)),
     ),
+
+  /* ── extended coverage (PR-3) — uoaui has no a-title/a-link class, so Title is
+     a bare heading + Link a styled anchor; the rest use real .a-* classes. ── */
+  SimulatedTitle: (p) => {
+    const level = s(p.level, "h2");
+    const tag = ({ h1: "h1", h2: "h2", h3: "h3", h4: "h4" } as Record<string, string>)[level] ?? "h2";
+    return React.createElement(tag, { style: { margin: 0, color: "var(--a-fg)" } }, s(p.text, "Heading"));
+  },
+
+  SimulatedLink: (p) => {
+    const children: React.ReactNode[] = [s(p.text, "Learn more")];
+    if (p.showIcon) {
+      children.push(
+        React.createElement(
+          "span",
+          { className: "material-symbols-outlined", style: { fontSize: 16 }, "aria-hidden": "true" },
+          "arrow_forward",
+        ),
+      );
+    }
+    return React.createElement(
+      "a",
+      { href: "#", style: { color: "var(--a-accent)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4 } },
+      ...children,
+    );
+  },
+
+  SimulatedBadge: (p) => {
+    const badgeClass = ({ default: "a-badge-default", info: "a-badge-accent", success: "a-badge-success", warning: "a-badge-warning", error: "a-badge-danger" } as Record<string, string>)[s(p.status, "default")] ?? "a-badge-default";
+    return React.createElement("span", { className: `a-badge ${badgeClass}` }, s(p.label, "Badge"));
+  },
+
+  SimulatedPill: (p) => {
+    const badgeClass = ({ default: "a-badge-default", info: "a-badge-accent", success: "a-badge-success", warning: "a-badge-warning", error: "a-badge-danger" } as Record<string, string>)[s(p.status, "default")] ?? "a-badge-default";
+    const children: React.ReactNode[] = [s(p.label, "Tag")];
+    if (p.dismissible) {
+      children.push(
+        React.createElement(
+          "span",
+          { className: "material-symbols-outlined", style: { fontSize: 14, marginLeft: 4 }, "aria-hidden": "true" },
+          "close",
+        ),
+      );
+    }
+    return React.createElement("span", { className: `a-badge ${badgeClass}` }, ...children);
+  },
+
+  Alert: (p) => {
+    const variant = s(p.variant, "info");
+    const alertClass = ({ info: "a-alert-info", success: "a-alert-success", warning: "a-alert-warning", error: "a-alert-danger" } as Record<string, string>)[variant] ?? "a-alert-info";
+    const icon = ({ info: "info", success: "check_circle", warning: "warning", error: "error" } as Record<string, string>)[variant] ?? "info";
+    return React.createElement(
+      "div",
+      { className: `a-alert ${alertClass}`, role: variant === "warning" || variant === "error" ? "alert" : "status" },
+      React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, icon),
+      React.createElement(
+        "div",
+        null,
+        React.createElement("strong", null, s(p.title, "Alert")),
+        React.createElement("div", null, s(p.message)),
+      ),
+    );
+  },
+
+  AppBrand: (p) =>
+    React.createElement(
+      "div",
+      { style: { display: "flex", alignItems: "center", gap: 8 } },
+      React.createElement("span", { style: { width: 24, height: 24, borderRadius: 8, background: "var(--a-accent)" }, "aria-hidden": "true" }),
+      React.createElement("span", { style: { fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.01em" } }, s(p.label, "App Name")),
+    ),
+
+  StatusPill: (p) =>
+    React.createElement(
+      "span",
+      { className: "a-badge a-badge-success" },
+      React.createElement("span", { style: { width: 6, height: 6, borderRadius: "50%", background: "currentColor", marginRight: 6, display: "inline-block" }, "aria-hidden": "true" }),
+      s(p.label, "Active"),
+    ),
+
+  FooterText: (p) =>
+    React.createElement(
+      "footer",
+      { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--a-fg-3)" } },
+      React.createElement("span", null, s(p.label, "Footer")),
+      React.createElement("span", { className: "a-badge a-badge-default" }, s(p.version, "v1.0")),
+    ),
+
+  SimulatedProgress: (p) => {
+    const value = num(p.value, 50);
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--a-fg-2)", marginBottom: 4 } },
+        React.createElement("span", null, s(p.label, "Progress")),
+        React.createElement("span", null, `${value}%`),
+      ),
+      React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${value}%` } })),
+    );
+  },
+
+  SimulatedAvatar: (p) => {
+    const presence = s(p.presence);
+    const dotColor = ({ available: "var(--a-success-fg)", busy: "var(--a-danger-fg)", away: "var(--a-warning-fg)", offline: "var(--a-fg-3)" } as Record<string, string>)[presence];
+    const dot = dotColor
+      ? React.createElement("span", { style: { position: "absolute", bottom: 0, right: 0, width: 8, height: 8, borderRadius: "50%", background: dotColor, border: "2px solid var(--a-bg)" }, "aria-hidden": "true" })
+      : null;
+    return React.createElement(
+      "div",
+      { style: { position: "relative", display: "inline-flex" } },
+      React.createElement("div", { className: "a-avatar" }, s(p.initials, "?")),
+      dot,
+    );
+  },
 };
 
 /* ── carbon: variant -> Carbon Button `kind` (mirrors carbonButtonAttrs in
@@ -224,6 +373,47 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       React.createElement("h3", { style: { margin: "0 0 4px" } }, s(p.title, "Card")),
       React.createElement("p", { style: { margin: 0 } }, s(p.content)),
     ),
+
+  /* ── extended coverage (PR-3). Carbon ships no Heading / Footer / Avatar
+     component, so SimulatedTitle / FooterText / SimulatedAvatar are OMITTED here
+     and fall back to Simulated (honest) via canRenderReal. ── */
+  SimulatedLink: (p) =>
+    React.createElement(
+      CarbonLink,
+      { href: "#", renderIcon: p.showIcon ? ArrowRight : undefined },
+      s(p.text, "Learn more"),
+    ),
+
+  SimulatedBadge: (p) =>
+    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Badge")),
+
+  SimulatedPill: (p) =>
+    p.dismissible
+      ? React.createElement(CarbonDismissibleTag, { type: carbonTagType(s(p.status, "default")), text: s(p.label, "Tag"), title: "Remove", onClose: () => {} })
+      : React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
+
+  Alert: (p) =>
+    React.createElement(CarbonInlineNotification, {
+      kind: s(p.variant, "info") as "info" | "error" | "success" | "warning",
+      title: s(p.title, "Alert"),
+      subtitle: s(p.message),
+      lowContrast: true,
+      hideCloseButton: true,
+    }),
+
+  AppBrand: (p) =>
+    React.createElement(CarbonHeaderName, { href: "#", prefix: "" }, s(p.label, "App Name")),
+
+  StatusPill: (p) =>
+    React.createElement(CarbonTag, { type: carbonStatusType(s(p.label, "Active")) }, s(p.label, "Active")),
+
+  SimulatedProgress: (p) =>
+    React.createElement(CarbonProgressBar, {
+      label: s(p.label, "Progress"),
+      helperText: `${num(p.value, 50)}%`,
+      value: num(p.value, 50),
+      max: 100,
+    }),
 };
 
 /**
