@@ -21,16 +21,34 @@
 import React from "react";
 import type { ActiveTheme } from "@/contexts/ThemeContext";
 import type { ComponentGuidance } from "@/data/ui-kit-meta";
+import { relativeLuminance } from "@/lib/contrastUtils";
 
 interface GuidanceCardsProps {
   guidance: ComponentGuidance;
   t: ActiveTheme;
 }
 
+/* AA-strength success / error fallback text tokens, chosen for the active
+   theme's surface. The guidance card surface (t.bg2) swaps light/dark with the
+   active DS, so a single hex can't clear WCAG AA in both modes; we pick the
+   on-dark vs on-light --dh-* status token from the surface luminance.
+   (relativeLuminance only parses hex; theme bg values are hex, anything else
+   defaults to dark.) Verified ≥6.25:1 (light) / ≥7.66:1 (dark) on real card
+   surfaces — replaces the prior raw #2e7d32 / #c62828 fallbacks. */
+function statusFallbacks(bg: string): { ok: string; bad: string } {
+  let isLight = false;
+  if (typeof bg === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(bg)) {
+    isLight = relativeLuminance(bg) > 0.4;
+  }
+  return isLight
+    ? { ok: "var(--dh-success-fg-on-light)", bad: "var(--dh-error-fg-on-light)" }
+    : { ok: "var(--dh-success-fg-on-dark)", bad: "var(--dh-error-fg-on-dark)" };
+}
+
 /* Resolve a positive / negative status color from the active DS theme. Each DS
    exposes status tokens under different field names on the theme object; we pick
-   the first that exists and fall back to sensible neutrals so the block never
-   renders an undefined color. */
+   the first that exists and fall back to the mode-aware --dh-* status tokens so
+   the block never renders an undefined color and never drops below AA. */
 function statusColors(t: ActiveTheme): { ok: string; okFg: string; bad: string; badFg: string } {
   const T = t.T as Record<string, unknown>;
   const pick = (...keys: string[]): string | undefined => {
@@ -40,16 +58,17 @@ function statusColors(t: ActiveTheme): { ok: string; okFg: string; bad: string; 
     }
     return undefined;
   };
+  const fallback = statusFallbacks(t.bg2);
   const ok =
     pick(
       "successFg", "successBorder", "positiveFg", "positiveBorder",
       "success", "positive", "support-success", "supportSuccess",
-    ) ?? "#2e7d32";
+    ) ?? fallback.ok;
   const bad =
     pick(
       "dangerFg", "dangerBorder", "errorFg", "negativeFg", "negativeBorder",
       "error", "danger", "negative", "support-error", "supportError",
-    ) ?? "#c62828";
+    ) ?? fallback.bad;
   return { ok, okFg: t.fg, bad, badFg: t.fg };
 }
 

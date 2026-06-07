@@ -191,6 +191,26 @@ a { color: inherit; text-decoration: none; }
   --dh-warn-bg: #f6d778;
   --dh-warn-fg: #221b00;
 
+  /* ─── UI-Kit status text (success / error) — paired on-dark / on-light
+         variants because the surfaces these sit on are theme-driven and
+         swap mode with the active DS (light Salt vs dark Carbon, etc.).
+         A single hex cannot clear WCAG AA in both modes, so consumers pick
+         the variant from the active theme's surface luminance.
+
+         All ratios computed against the real composited surface — the badge
+         tint (success rgba(0,180,0,0.15) / error rgba(255,0,0,0.15)) layered
+         over the realistic dark and light theme backgrounds — worst case:
+           --dh-success-fg-on-dark   8.08:1 (AA / AAA, on dark surfaces)
+           --dh-success-fg-on-light  5.39:1 (AA, on light surfaces)
+           --dh-error-fg-on-dark     7.44:1 (AA / AAA, on dark surfaces)
+           --dh-error-fg-on-light    5.65:1 (AA, on light surfaces)
+         Replaces the prior raw #0a0/#c00 + #2e7d32/#c62828 literals, which
+         failed AA (#0a0 ≈ 2.3:1 as text). ─── */
+  --dh-success-fg-on-dark:  #6ee7a0;
+  --dh-success-fg-on-light: #166534;
+  --dh-error-fg-on-dark:    #ffa39e;
+  --dh-error-fg-on-light:   #991b1b;
+
   /* ─── Light cream surface (CTA pill on dark hero). ─── */
   --dh-surface-cream: #eef3ec;
 

@@ -6,9 +6,25 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { getSystemInfo } from "@/data/registry";
 import { categorizeTokens, checkContrast, mergeTheme, exportThemeJSON, importThemeJSON } from "@/lib/themeBuilder";
 import { isValidHex } from "@/lib/sanitizeCSS";
+import { relativeLuminance } from "@/lib/contrastUtils";
 import { showToast } from "@/lib/toast";
 
 type HistoryEntry = { key: string; prev: string | undefined; next: string };
+
+/* Pick the AA-strength success / error text token for the active theme's
+   surface. The badge sits on a theme-driven background that swaps light/dark
+   with the active DS, so we choose the on-dark vs on-light --dh-* status
+   token from the surface luminance. (relativeLuminance only parses hex;
+   theme bg values are hex, but default to dark on anything else.) */
+function statusFgVars(bg: string): { ok: string; bad: string } {
+  let isLight = false;
+  if (typeof bg === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(bg)) {
+    isLight = relativeLuminance(bg) > 0.4;
+  }
+  return isLight
+    ? { ok: "var(--dh-success-fg-on-light)", bad: "var(--dh-error-fg-on-light)" }
+    : { ok: "var(--dh-success-fg-on-dark)", bad: "var(--dh-error-fg-on-dark)" };
+}
 
 const HISTORY_CAP = 5;
 
@@ -46,6 +62,10 @@ export function ThemeBuilder() {
 
   const mergedTheme = useMemo(() => mergeTheme(t.T, overrides), [t.T, overrides]);
   const categories = useMemo(() => categorizeTokens(mergedTheme), [mergedTheme]);
+
+  /* AA-strength success / error text tokens for the contrast badge, chosen
+     for the active theme's surface (light vs dark). */
+  const statusFg = useMemo(() => statusFgVars(t.bg), [t.bg]);
 
   const pushHistory = (entry: HistoryEntry) => {
     const next = [...history.current, entry];
@@ -345,7 +365,7 @@ export function ThemeBuilder() {
                             padding: "1px 4px",
                             borderRadius: "var(--dh-curve-sm)",
                             background: contrast.passAA ? "rgba(0,180,0,0.15)" : "rgba(255,0,0,0.15)",
-                            color: contrast.passAA ? "#0a0" : "#c00",
+                            color: contrast.passAA ? statusFg.ok : statusFg.bad,
                           }}
                           aria-label={`Contrast ratio ${contrast.ratio.toFixed(1)} to 1, ${contrast.passAA ? "passes" : "fails"} WCAG AA`}
                         >
