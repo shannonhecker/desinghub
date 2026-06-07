@@ -46,6 +46,22 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
     store.setFooterBlocks(state.footerBlocks);
     store.setDeviceMode(state.deviceMode);
     if (state.themeKey) store.setThemeKey(state.themeKey);
+    /* v:2 multi-page: hydrate the page set + active page so the recipient can
+       navigate between tabs. `state.blocks` already holds the active page body
+       (setBlocks above); also seed zoneLayouts.body from the active page's
+       bodyLayout so the FIRST paint uses the author's per-page layout (not the
+       recipient's default grid) — otherwise it would only correct itself after
+       a tab switch. v:1 links omit these → single page. */
+    if (state.pages && state.activePageId) {
+      const activePage = state.pages.find((p) => p.id === state.activePageId);
+      useBuilder.setState({
+        pages: state.pages,
+        activePageId: state.activePageId,
+        ...(activePage?.bodyLayout
+          ? { zoneLayouts: { ...useBuilder.getState().zoneLayouts, body: activePage.bodyLayout } }
+          : {}),
+      });
+    }
   }
 
   return <PresentStage barVariant="recipient" sharedHash={hash} />;

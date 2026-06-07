@@ -15,7 +15,7 @@
  * - Bounded ring buffer (MAX_HISTORY = 50) caps memory.
  */
 
-import { useBuilder, type Block, type DesignSystem, type BuilderMode, type ZoneId, type ZoneLayout } from "@/store/useBuilder";
+import { useBuilder, type Block, type DesignSystem, type BuilderMode, type ZoneId, type ZoneLayout, type Page } from "@/store/useBuilder";
 
 const MAX_HISTORY = 50;
 
@@ -41,6 +41,15 @@ interface CanvasSnapshot {
      Persisted to Firebase already but was absent here, so a layout-mode
      change was silently un-undoable (audit finding #4, 2026-05-30). */
   zoneLayouts: Record<ZoneId, ZoneLayout>;
+  /* Multi-page (2026-06-07): captured so undo/redo restores the active page
+     and the full page set. `pages` is the RAW store reference (stable across
+     body edits — body edits only change `blocks` — so reference equality still
+     tracks change correctly; a page op replaces the array). `blocks` already
+     captures the active page's live body; apply() reconciles it back into the
+     active page so a restored snapshot stays internally consistent. Empty
+     pages + null activePageId = single-page (legacy), restores unchanged. */
+  pages: Page[];
+  activePageId: string | null;
 }
 
 let past: CanvasSnapshot[] = [];
@@ -77,6 +86,10 @@ function snap(): CanvasSnapshot {
        fresh top-level object, and nothing mutates zoneLayouts in place, so
        reference identity reliably tracks change for sameSnapshot/the gate. */
     zoneLayouts: s.zoneLayouts,
+    /* Raw store reference (not flushed): page actions replace s.pages, body
+       edits don't touch it, so reference identity tracks change correctly. */
+    pages: s.pages,
+    activePageId: s.activePageId,
   };
 }
 
@@ -96,7 +109,9 @@ function sameSnapshot(a: CanvasSnapshot, b: CanvasSnapshot): boolean {
     a.density === b.density &&
     a.themeKey === b.themeKey &&
     a.colorOverrides === b.colorOverrides &&
-    a.zoneLayouts === b.zoneLayouts
+    a.zoneLayouts === b.zoneLayouts &&
+    a.pages === b.pages &&
+    a.activePageId === b.activePageId
   );
 }
 
@@ -130,6 +145,15 @@ function scheduleCapture() {
 
 function apply(snapshot: CanvasSnapshot) {
   applyingCount++;
+  /* Reconcile the active page's body from snapshot.blocks: `pages` was captured
+     raw (its active-page body may be stale relative to the live `blocks` at
+     capture time), so re-point it here. Restored state is then consistent —
+     blocks === pages[activePageId].body. Single-page (pages=[]) is a no-op. */
+  const pages = snapshot.activePageId
+    ? snapshot.pages.map((p) =>
+        p.id === snapshot.activePageId ? { ...p, body: snapshot.blocks, bodyLayout: snapshot.zoneLayouts.body } : p,
+      )
+    : snapshot.pages;
   useBuilder.setState({
     blocks: snapshot.blocks,
     headerBlocks: snapshot.headerBlocks,
@@ -143,6 +167,8 @@ function apply(snapshot: CanvasSnapshot) {
     themeKey: snapshot.themeKey,
     colorOverrides: snapshot.colorOverrides,
     zoneLayouts: snapshot.zoneLayouts,
+    pages,
+    activePageId: snapshot.activePageId,
     /* hasOverrides is a derived flag that store/useBuilderHistory used
        to set alongside colorOverrides. Mirror that derivation so a
        restored snapshot with overrides preserves the conditional UI. */
@@ -204,7 +230,9 @@ export function initBuilderHistory(): () => void {
       state.density === prev.density &&
       state.themeKey === prev.themeKey &&
       state.colorOverrides === prev.colorOverrides &&
-      state.zoneLayouts === prev.zoneLayouts
+      state.zoneLayouts === prev.zoneLayouts &&
+      state.pages === prev.pages &&
+      state.activePageId === prev.activePageId
     ) {
       return;
     }

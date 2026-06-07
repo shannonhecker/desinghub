@@ -21,13 +21,13 @@
  * links generated before compression was added still resolve.
  */
 
-import type { Block, DesignSystem, BuilderMode, DeviceMode } from "@/store/useBuilder";
-import { isValidBlockSource } from "@/store/useBuilder";
+import type { Block, DesignSystem, BuilderMode, DeviceMode, Page } from "@/store/useBuilder";
+import { isValidBlockSource, useBuilder, flushActiveBody, isMultiPage } from "@/store/useBuilder";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { migrateBlocks } from "./blockMigrations";
 
 export interface SharedCanvas {
-  v: 1; // schema version - bumps allow older URLs to error cleanly
+  v: 1 | 2; // schema version - bumps allow older URLs to error cleanly
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
@@ -41,6 +41,13 @@ export interface SharedCanvas {
   sidebarBlocks: Block[];
   blocks: Block[];
   footerBlocks: Block[];
+  /* v:2 multi-page (lazy-additive, 2026-06-07). Present ONLY for genuinely
+     multi-page canvases; single-page canvases omit these and encode as v:1 —
+     byte-identical to the legacy schema, so old v:1 links stay evergreen.
+     `blocks` always mirrors the ACTIVE page body, so a v:1 reader / the
+     single-page render path keeps working. */
+  pages?: Page[];
+  activePageId?: string;
 }
 
 const DESIGN_SYSTEMS = new Set<DesignSystem>(["salt", "m3", "fluent", "uoaui", "carbon"]);
@@ -77,6 +84,11 @@ const MAX_PROP_KEYS = 50;
    children. Anything deeper is truncated on sanitize. */
 const MAX_BLOCK_DEPTH = 2;
 const MAX_CHILDREN_PER_GROUP = 60;
+/* v:2 multi-page caps — bound payload growth (pages × bodies) so a forged
+   share URL can't balloon store state. ~3-5 pages of typical content stay
+   well under the 12k URL cap after LZ compression; 50 is a defensive ceiling. */
+const MAX_PAGES = 50;
+const MAX_PAGE_NAME = 120;
 
 /** Recursively deep-sanitize a value so only JSON-primitive, render-safe
  *  shapes survive: strings (capped), finite numbers, booleans, null, and
@@ -196,6 +208,39 @@ function validateAndSanitizeBlockArray(a: unknown): Block[] | null {
    reverses it before decompressing. (Legacy base64 links used `-_`; the
    reverse is applied only on the LZ attempt, and the legacy fallback
    below still sees the raw hash, so those keep resolving.) */
+/* Build the share payload from the current store state. Lazy-additive
+   (owner decision 2026-06-07): a single-page canvas yields v:1 (byte-identical
+   to the legacy schema, no pages); a genuinely multi-page canvas yields v:2
+   with flushed pages + activePageId. flushActiveBody syncs the live `blocks`
+   mirror into the active page so an in-progress edit isn't lost, and `blocks`
+   always carries the active page body for v:1 readers / the single-page path. */
+export function buildSharedCanvas(s: ReturnType<typeof useBuilder.getState>): SharedCanvas {
+  const flushed = flushActiveBody(s);
+  if (isMultiPage(flushed.pages)) {
+    const active = flushed.pages.find((p) => p.id === flushed.activePageId);
+    return {
+      v: 2,
+      designSystem: s.designSystem, mode: s.mode, density: s.density,
+      deviceMode: s.deviceMode, themeKey: s.themeKey, activeTemplateId: s.activeTemplateId,
+      headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
+      blocks: active?.body ?? s.blocks, footerBlocks: s.footerBlocks,
+      pages: flushed.pages, activePageId: flushed.activePageId,
+    };
+  }
+  /* v:1 key order matches the legacy inline literal EXACTLY (blocks before
+     footerBlocks) so a single-page canvas serializes byte-identically to the
+     pre-multi-page hash — the lazy-additive guarantee. Do not spread a shared
+     base object here: JSON.stringify preserves insertion order, so a reordered
+     key set would change the hash for an unchanged canvas. */
+  return {
+    v: 1,
+    designSystem: s.designSystem, mode: s.mode, density: s.density,
+    deviceMode: s.deviceMode, themeKey: s.themeKey, activeTemplateId: s.activeTemplateId,
+    headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
+    blocks: s.blocks, footerBlocks: s.footerBlocks,
+  };
+}
+
 export function encodeShareState(s: SharedCanvas): string {
   return compressToEncodedURIComponent(JSON.stringify(s))
     .replace(/\+/g, "_")
@@ -233,7 +278,8 @@ export function decodeShareState(hash: string): SharedCanvas | null {
   if (typeof parsed !== "object" || parsed === null) return null;
   const obj = parsed as Record<string, unknown>;
 
-  if (obj.v !== 1) return null;
+  if (obj.v !== 1 && obj.v !== 2) return null;
+  const version: 1 | 2 = obj.v === 2 ? 2 : 1;
   if (typeof obj.designSystem !== "string" || !DESIGN_SYSTEMS.has(obj.designSystem as DesignSystem)) return null;
   if (typeof obj.mode !== "string" || !MODES.has(obj.mode as BuilderMode)) return null;
   if (typeof obj.density !== "string" || obj.density.length > 40) return null;
@@ -261,8 +307,54 @@ export function decodeShareState(hash: string): SharedCanvas | null {
 
   if (!headerBlocks || !sidebarBlocks || !blocks || !footerBlocks) return null;
 
+  /* v:2 multi-page payload: validate + sanitize each page body, cap the page
+     count, and guard a stale/absent activePageId by falling back to the first
+     page. A v:2 link missing/empty `pages` is malformed → reject (don't silently
+     downgrade). v:1 links have no pages and decode exactly as before. */
+  let pages: Page[] | undefined;
+  let activePageId: string | undefined;
+  if (version === 2) {
+    if (!Array.isArray(obj.pages) || obj.pages.length === 0 || obj.pages.length > MAX_PAGES) return null;
+    const validated: Page[] = [];
+    for (const p of obj.pages) {
+      if (typeof p !== "object" || p === null) return null;
+      const pg = p as Record<string, unknown>;
+      if (typeof pg.id !== "string" || pg.id.length === 0 || pg.id.length > 120) return null;
+      const name = typeof pg.name === "string" && pg.name.length <= MAX_PAGE_NAME ? pg.name : "Page";
+      const body = validateAndSanitizeBlockArray(pg.body);
+      if (!body) return null;
+      const page: Page = { id: pg.id, name, body: migrateBlocks(body) };
+      if (pg.bodyLayout && typeof pg.bodyLayout === "object") {
+        const bl = sanitizeValue(pg.bodyLayout) as Record<string, unknown> | null;
+        /* Clamp the layout numerics. v:2 is the FIRST attacker-reachable path
+           that carries zone-layout numbers (the prior share schema had none):
+           an unbounded columns/gap/padding from a forged hash would emit
+           repeat(1e6, 1fr) etc. into the recipient's grid — a layout bomb.
+           Mirror the colSpan clamp; 1-12 columns matches the documented range. */
+        if (bl) {
+          if (bl.columns != null) bl.columns = Math.max(1, Math.min(12, Math.floor(Number(bl.columns)) || 1));
+          for (const k of ["gap", "padding", "size"]) {
+            if (bl[k] != null) bl[k] = Math.max(0, Math.min(2000, Number(bl[k]) || 0));
+          }
+        }
+        page.bodyLayout = bl as unknown as Page["bodyLayout"];
+      }
+      validated.push(page);
+    }
+    pages = validated;
+    activePageId =
+      typeof obj.activePageId === "string" && validated.some((p) => p.id === obj.activePageId)
+        ? obj.activePageId
+        : validated[0].id;
+  }
+
+  /* For v:2, `blocks` is the active page's body (keeps the legacy field + the
+     single-page render path consistent); for v:1 it's the decoded blocks. */
+  const activeBody =
+    pages && activePageId ? pages.find((p) => p.id === activePageId)!.body : migrateBlocks(blocks);
+
   return {
-    v: 1,
+    v: version,
     designSystem: obj.designSystem as DesignSystem,
     mode: obj.mode as BuilderMode,
     density: obj.density,
@@ -271,8 +363,9 @@ export function decodeShareState(hash: string): SharedCanvas | null {
     activeTemplateId,
     headerBlocks: migrateBlocks(headerBlocks),
     sidebarBlocks: migrateBlocks(sidebarBlocks),
-    blocks: migrateBlocks(blocks),
+    blocks: activeBody,
     footerBlocks: migrateBlocks(footerBlocks),
+    ...(pages ? { pages, activePageId } : {}),
   };
 }
 

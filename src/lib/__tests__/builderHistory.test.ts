@@ -210,4 +210,70 @@ describe("builderHistory", () => {
 
     expect(useBuilder.getState().zoneLayouts.body.mode).toBe("row");
   });
+
+  /* Multi-page Phase 2 (2026-06-07): undo/redo must be page-aware. A page
+     switch changes activePageId + blocks; undoing it has to restore BOTH the
+     active page id and that page's body. CanvasSnapshot captures pages (raw
+     ref, for change detection) + activePageId; apply() reconciles the active
+     page's body from the snapshot's blocks so the restored state stays
+     consistent (blocks === pages[active].body). */
+  const mpCard = (id: string) => ({ id, type: "SimulatedCard", props: { title: id } });
+  function anchorMultiPage() {
+    teardown?.();
+    useBuilder.setState({
+      blocks: [mpCard("a1")],
+      sidebarBlocks: [],
+      pages: [
+        { id: "A", name: "Page A", body: [mpCard("a1")] },
+        { id: "B", name: "Page B", body: [] },
+      ],
+      activePageId: "A",
+    } as never);
+    teardown = initBuilderHistory();
+  }
+
+  it("undo restores the prior active page AND its body after a page switch", () => {
+    anchorMultiPage();
+    pushSnapshot(); // capture page A active with [a1]
+    useBuilder.getState().openNavPage("B", "Page B"); // switch to empty B
+    useBuilder.getState().setBlocks([mpCard("b1")]);   // author B
+
+    expect(useBuilder.getState().activePageId).toBe("B");
+    expect(useBuilder.getState().blocks).toEqual([mpCard("b1")]);
+
+    undo();
+
+    expect(useBuilder.getState().activePageId).toBe("A"); // active page restored
+    expect(useBuilder.getState().blocks).toEqual([mpCard("a1")]); // its body restored, consistent
+  });
+
+  it("redo re-applies a page switch after undo", () => {
+    anchorMultiPage();
+    pushSnapshot();
+    useBuilder.getState().openNavPage("B", "Page B");
+
+    undo();
+    expect(useBuilder.getState().activePageId).toBe("A");
+    redo();
+    expect(useBuilder.getState().activePageId).toBe("B");
+  });
+
+  /* Review finding (2026-06-07): apply() must reconcile the active page's
+     bodyLayout too, not just its body. snap() captures pages by raw ref, so the
+     active page's stored bodyLayout lags the live zoneLayouts.body; restoring
+     only body left pages[active].bodyLayout stale → a later page round-trip
+     reloaded the stale layout (same class as the audit-#4 zoneLayouts gap). */
+  it("undo reconciles the active page's bodyLayout to the restored zoneLayouts (no internal desync)", () => {
+    anchorMultiPage();
+    useBuilder.getState().setZoneLayout("body", { mode: "grid" });
+    pushSnapshot();
+    useBuilder.getState().setZoneLayout("body", { mode: "stack" });
+
+    undo();
+
+    const s = useBuilder.getState();
+    expect(s.zoneLayouts.body.mode).toBe("grid");
+    const activePage = s.pages.find((p) => p.id === s.activePageId);
+    expect(activePage?.bodyLayout?.mode).toBe("grid"); // reconciled, not stale/undefined
+  });
 });

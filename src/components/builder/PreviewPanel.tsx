@@ -47,7 +47,7 @@ import type { SystemId } from "@/store/useDesignHub";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
 import { CompareView } from "./CompareView";
-import { buildShareUrl } from "@/lib/shareState";
+import { buildShareUrl, buildSharedCanvas } from "@/lib/shareState";
 import { BLOCK_TO_ID } from "@/lib/componentMaps";
 import { PreviewCanvas, CodeViewer, makeBlockId } from "./PreviewCanvas";
 import { ComponentLibrary } from "./ComponentLibrary";
@@ -275,19 +275,9 @@ function PreviewBar() {
        URL reuses the ?shared= fork flow (BuilderApp hydrates from the hash)
        plus ?preview=1 to land in standalone mode. */
     const s = useBuilder.getState();
-    const { hash, tooLong } = buildShareUrl({
-      v: 1,
-      designSystem: s.designSystem,
-      mode: s.mode,
-      density: s.density,
-      deviceMode: s.deviceMode,
-      themeKey: s.themeKey,
-      activeTemplateId: s.activeTemplateId,
-      headerBlocks: s.headerBlocks,
-      sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks,
-      footerBlocks: s.footerBlocks,
-    });
+    /* buildSharedCanvas → v:2 when multi-page so the pop-out carries the full
+       page set (not just the active page); v:1 otherwise. */
+    const { hash, tooLong } = buildShareUrl(buildSharedCanvas(s));
     if (tooLong) {
       showToast("Canvas too large to pop out. Try the share link instead.", { icon: "error" });
       setOverflowOpen(false);
@@ -302,19 +292,7 @@ function PreviewBar() {
 
   const handleShare = async () => {
     const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl({
-      v: 1,
-      designSystem: s.designSystem,
-      mode: s.mode,
-      density: s.density,
-      deviceMode: s.deviceMode,
-      themeKey: s.themeKey,
-      activeTemplateId: s.activeTemplateId,
-      headerBlocks: s.headerBlocks,
-      sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks,
-      footerBlocks: s.footerBlocks,
-    });
+    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
     if (tooLong) {
       setShareState("too-long");
       setTimeout(() => setShareState("idle"), 3000);

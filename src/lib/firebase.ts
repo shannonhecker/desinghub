@@ -22,7 +22,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, flushActiveBody, isMultiPage } from "@/store/useBuilder";
 import { migrateBlocks } from "./blockMigrations";
 import type {
   ChatMessage,
@@ -32,6 +32,7 @@ import type {
   InterfaceType,
   ZoneLayout,
   ZoneId,
+  Page,
 } from "@/store/useBuilder";
 
 // ── Firebase config ─────────────────────────────────────────────────────────
@@ -79,6 +80,60 @@ export interface ProjectSnapshot {
   /* Optional - the active template id so Regenerate-content knows
    * which prompt to send after a session reload. */
   activeTemplateId?: string | null;
+  /* Multi-page (2026-06-07). LAZY-ADDITIVE: written ONLY for genuinely
+   * multi-page canvases (pages.length > 1). Single-page docs omit these and
+   * stay byte-identical to the pre-multi-page schema; `blocks` always carries
+   * the active page's body so older clients still deserialize. */
+  pages?: Page[];
+  activePageId?: string | null;
+}
+
+/* Pure: build the Firestore snapshot from the current store state. Lazy-additive
+   multi-page — only canvases with >1 page gain `pages`/`activePageId` (owner
+   decision 2026-06-07). flushActiveBody syncs the live `blocks` mirror into the
+   active page first, so an in-progress page edit is never lost to a stale copy. */
+export function buildProjectSnapshot(s: ReturnType<typeof useBuilder.getState>): ProjectSnapshot {
+  const snapshot: ProjectSnapshot = {
+    messages: s.messages,
+    blocks: s.blocks,
+    headerBlocks: s.headerBlocks,
+    sidebarBlocks: s.sidebarBlocks,
+    footerBlocks: s.footerBlocks,
+    zoneLayouts: s.zoneLayouts,
+    designSystem: s.designSystem,
+    mode: s.mode,
+    density: s.density,
+    interfaceType: s.interfaceType,
+    selectedComponents: s.selectedComponents,
+    colorOverrides: s.colorOverrides,
+    activeTemplateId: s.activeTemplateId,
+  };
+  const flushed = flushActiveBody(s);
+  if (isMultiPage(flushed.pages)) {
+    snapshot.pages = flushed.pages;
+    snapshot.activePageId = flushed.activePageId;
+    /* Keep the legacy `blocks` field equal to the active page body so an old
+       client (or the load path) still renders the right page. */
+    snapshot.blocks = flushed.pages.find((p) => p.id === flushed.activePageId)?.body ?? s.blocks;
+  }
+  return snapshot;
+}
+
+/* Pure: derive the multi-page restore payload from a loaded snapshot, or null
+   when the doc is single-page (leave the store lazy — seedPages handles it on
+   first switch). Migrates each page body and guards a stale/absent activePageId
+   by falling back to the first page. */
+export function pagesRestoreFromSnapshot(
+  snapshot: Pick<ProjectSnapshot, "pages" | "activePageId" | "blocks">,
+  migrate: (b: Block[]) => Block[] = (b) => b,
+): { pages: Page[]; activePageId: string } | null {
+  if (!snapshot.pages || snapshot.pages.length === 0) return null;
+  const pages = snapshot.pages.map((p) => ({ ...p, body: migrate(p.body ?? []) }));
+  const activePageId =
+    snapshot.activePageId && pages.some((p) => p.id === snapshot.activePageId)
+      ? snapshot.activePageId
+      : pages[0].id;
+  return { pages, activePageId };
 }
 
 export interface SavedProject {
@@ -97,19 +152,10 @@ export function useCloudStorage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const messages = useBuilder((s) => s.messages);
-  const blocks = useBuilder((s) => s.blocks);
-  const headerBlocks = useBuilder((s) => s.headerBlocks);
-  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
-  const footerBlocks = useBuilder((s) => s.footerBlocks);
-  const designSystem = useBuilder((s) => s.designSystem);
-  const mode = useBuilder((s) => s.mode);
-  const density = useBuilder((s) => s.density);
-  const interfaceType = useBuilder((s) => s.interfaceType);
-  const selectedComponents = useBuilder((s) => s.selectedComponents);
-  const colorOverrides = useBuilder((s) => s.colorOverrides);
-  const activeTemplateId = useBuilder((s) => s.activeTemplateId);
-  const zoneLayouts = useBuilder((s) => s.zoneLayouts);
+  /* The canvas snapshot is built from useBuilder.getState() at save time (see
+     buildProjectSnapshot) rather than from subscribed selectors — that keeps
+     `blocks` and the multi-page `pages` consistent (read from one state object)
+     and matches how useAutoSave already reads the store imperatively. */
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -175,21 +221,7 @@ export function useCloudStorage() {
     try {
       const { db } = getFirebaseInstances();
       const u = await ensureAuth();
-      const projectSnapshot: ProjectSnapshot = {
-        messages,
-        blocks,
-        headerBlocks,
-        sidebarBlocks,
-        footerBlocks,
-        zoneLayouts,
-        designSystem,
-        mode,
-        density,
-        interfaceType,
-        selectedComponents,
-        colorOverrides,
-        activeTemplateId,
-      };
+      const projectSnapshot = buildProjectSnapshot(useBuilder.getState());
 
       let savedId: string;
       if (opts?.id) {
@@ -239,12 +271,25 @@ export function useCloudStorage() {
          can be missing colorOverrides entirely, and Object.keys(undefined)
          below would otherwise throw and crash the whole builder. */
       const colorOverrides = snapshot.colorOverrides ?? {};
+      /* Multi-page restore (lazy-additive): a doc with >1 page restores its
+         pages + active page; a single-page (legacy) doc resets to the lazy
+         empty state so a prior multi-page session can't leak stale pages into
+         this one. seedPages re-derives the single page on first switch. */
+      const pagesRestore = pagesRestoreFromSnapshot(snapshot, migrateBlocks);
+      /* When multi-page, blocks must equal the ACTIVE page's body (pagesRestore
+         already migrated it). Sourcing blocks from pagesRestore — not the
+         snapshot's legacy blocks field — keeps the store consistent even if
+         activePageId fell back to the first page (blocks === pages[active].body),
+         so a later page switch can't save the wrong body over a real page. */
+      const restoredActiveBody = pagesRestore?.pages.find((p) => p.id === pagesRestore.activePageId)?.body;
       useBuilder.setState({
         messages: snapshot.messages ?? [],
-        blocks: migrateBlocks(snapshot.blocks ?? []),
+        blocks: restoredActiveBody ?? migrateBlocks(snapshot.blocks ?? []),
         headerBlocks: migrateBlocks(snapshot.headerBlocks ?? []),
         sidebarBlocks: migrateBlocks(snapshot.sidebarBlocks ?? []),
         footerBlocks: migrateBlocks(snapshot.footerBlocks ?? []),
+        pages: pagesRestore?.pages ?? [],
+        activePageId: pagesRestore?.activePageId ?? null,
         /* Restore zone layouts if present in the snapshot; otherwise
            fall through to whatever the store currently holds (the
            default config). Pre-flex-layout sessions deserialize with
