@@ -1444,13 +1444,18 @@ function StatusPillBlock({ blockId }: { blockId?: string }) {
     <div style={{
       display: "flex", alignItems: "center", gap: 6,
       padding: "4px 10px 4px 8px", borderRadius: 20,
-      background: "rgba(34, 197, 94, 0.1)", border: "1px solid rgba(34, 197, 94, 0.2)",
+      // Tokenized: tie the pill to the active DS's status-positive token instead
+      // of a raw bright green (the #22c55e text failed AA at ~2.2:1). The dark
+      // fallback (#15803d) guarantees AA if the token is absent. (Edit-mode
+      // facsimile; the real DS StatusIndicator renders in Preview/Present.)
+      background: "color-mix(in srgb, var(--ds-status-positive, #15803d) 14%, transparent)",
+      border: "1px solid color-mix(in srgb, var(--ds-status-positive, #15803d) 32%, transparent)",
     }}>
       <span style={{
-        width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
-        boxShadow: "0 0 6px rgba(34, 197, 94, 0.5)",
+        width: 7, height: 7, borderRadius: "50%", background: "var(--ds-status-positive, #15803d)",
+        boxShadow: "0 0 6px color-mix(in srgb, var(--ds-status-positive, #15803d) 50%, transparent)",
       }} />
-      <span style={{ fontSize: 11, fontWeight: 600, color: "#22c55e" }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--ds-status-positive, #15803d)" }}>{label}</span>
     </div>
   );
 }
