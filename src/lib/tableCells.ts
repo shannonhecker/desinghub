@@ -50,16 +50,44 @@ export function isStatusColumn(column: string): boolean {
   return c === "status" || c === "stage" || c === "state";
 }
 
+/* The six semantic buckets a status/stage pill can resolve to. Each DS maps
+   these onto its own native tag palette (see carbonTagType / muiChipColor /
+   tagColor / the uoaui badge map, all keyed off this union), so the funnel
+   reads as a progression in every system, not a wall of grey. */
+export type StatusClass = "success" | "warning" | "neutral" | "info" | "indigo" | "error";
+
+/* CRM lifecycle funnel, cool -> warm = closer to won. Matched on the EXACT
+   normalised value so only real lifecycle stages map; any other string still
+   falls through to the generic POSITIVE / WARNING / NEGATIVE sets below, then
+   neutral. Both the spelled-out and abbreviated forms are recognised. */
+const STAGE: Record<string, StatusClass> = {
+  "lead": "neutral",
+  "marketing qualified lead": "info",
+  "mql": "info",
+  "sales qualified lead": "indigo",
+  "sql": "indigo",
+  "opportunity": "warning",
+  "customer": "success",
+};
+
 const POSITIVE = new Set([
   "active", "success", "paid", "healthy", "online", "done",
-  "complete", "completed", "approved", "open", "won", "live",
+  "complete", "completed", "approved", "open", "won", "live", "subscribed",
 ]);
 const WARNING = new Set([
   "pending", "warning", "in progress", "at risk", "review", "overdue", "hold", "draft",
 ]);
+/* Hard-negative states (a refund, a lost deal, a churned account). Previously
+   these fell through to neutral grey, reading the same as a brand-new lead. */
+const NEGATIVE = new Set([
+  "refunded", "failed", "churned", "cancelled", "canceled", "lost",
+  "rejected", "declined", "expired", "suspended", "blocked", "inactive", "offline",
+]);
 
-export function statusToClass(status: unknown): "success" | "warning" | "neutral" {
+export function statusToClass(status: unknown): StatusClass {
   const s = String(status ?? "").trim().toLowerCase();
+  if (s in STAGE) return STAGE[s];
+  if (NEGATIVE.has(s)) return "error";
   if (POSITIVE.has(s)) return "success";
   if (WARNING.has(s)) return "warning";
   return "neutral";

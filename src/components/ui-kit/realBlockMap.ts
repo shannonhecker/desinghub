@@ -87,10 +87,13 @@ const csv = (v: unknown, fallback: string[] = []): string[] => {
 /* Carbon Tag `type` union (from @carbon/react Tag). */
 type CarbonTagType = "outline" | "gray" | "blue" | "green" | "warm-gray" | "red" | "cyan" | "magenta" | "purple" | "teal" | "cool-gray" | "high-contrast";
 
-/* status -> Carbon Tag `type` (mirrors carbonTagType in componentApiRegistry). */
+/* status -> Carbon Tag `type` (mirrors carbonTagType in componentApiRegistry).
+   indigo (SQL stage) -> purple; Carbon has no amber tag so warning stays
+   warm-gray (its established convention). */
 function carbonTagType(status: string): CarbonTagType {
   const map: Record<string, CarbonTagType> = {
-    default: "gray", info: "blue", success: "green", warning: "warm-gray", error: "red",
+    default: "gray", neutral: "gray", info: "blue", indigo: "purple",
+    success: "green", warning: "warm-gray", error: "red",
   };
   return map[status] ?? "gray";
 }
@@ -397,7 +400,9 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
             ...columns.map((col, ci) => {
               const v = resolveCell(row, col, ci);
               if (isStatusColumn(col)) {
-                const badgeClass = ({ success: "a-badge-success", warning: "a-badge-warning", neutral: "a-badge-default" } as Record<string, string>)[statusToClass(v)] ?? "a-badge-default";
+                /* uoaui has no blue badge, so info+indigo (MQL+SQL) both map to
+                   accent (the brand violet) -> they read alike in uoaui only. */
+                const badgeClass = ({ success: "a-badge-success", warning: "a-badge-warning", neutral: "a-badge-default", info: "a-badge-accent", indigo: "a-badge-accent", error: "a-badge-danger" } as Record<string, string>)[statusToClass(v)] ?? "a-badge-default";
                 return React.createElement("td", { key: ci }, React.createElement("span", { className: `a-badge ${badgeClass}` }, v));
               }
               return React.createElement("td", { key: ci }, v);

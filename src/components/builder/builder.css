@@ -5799,6 +5799,20 @@
 .f-status-warning { background: rgba(234,163,0,0.15); color: #EAA300; }
 .f-status-neutral { background: rgba(173,173,173,0.12); color: #ADADAD; }
 
+/* ── CRM funnel status keys (edit-mode Simulated tables) ──
+   info / indigo / error are DS-agnostic: every DS prefix (s-/m3-/f-/cb-/a-)
+   reuses these generic tints, so the Lead -> MQL -> SQL -> Opportunity ->
+   Customer funnel + negatives read the same in the edit canvas as the real-DS
+   Preview. Placed before the Carbon block (~14714) so .cb-status-error's
+   cds-token red still wins for Carbon; info/indigo have no per-DS override and
+   so colour all five systems. success/warning/neutral keep their per-DS tints. */
+[class*="-status-info"]   { background: rgba(37,99,235,0.15);  color: #4f83f5; }
+[class*="-status-indigo"] { background: rgba(99,102,241,0.15); color: #8f93ff; }
+[class*="-status-error"]  { background: rgba(220,38,38,0.15);  color: #f87171; }
+.builder-light [class*="-status-info"]   { color: #1d4ed8; }
+.builder-light [class*="-status-indigo"] { color: #4f46e5; }
+.builder-light [class*="-status-error"]  { color: #b91c1c; }
+
 
 /* ═══════════════════════════════════════════════════════════
    Simulated DatePicker - Salt DS (s-), Material 3 (m3-), Fluent 2 (f-)

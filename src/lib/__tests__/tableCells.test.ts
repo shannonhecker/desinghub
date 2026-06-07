@@ -23,6 +23,23 @@ describe("statusToClass", () => {
     expect(statusToClass("Archived")).toBe("neutral");
     expect(statusToClass(42)).toBe("neutral");
   });
+
+  it("maps CRM lifecycle stages to a distinct funnel progression", () => {
+    expect(statusToClass("Lead")).toBe("neutral");
+    expect(statusToClass("Marketing qualified lead")).toBe("info");
+    expect(statusToClass("MQL")).toBe("info");
+    expect(statusToClass("Sales qualified lead")).toBe("indigo");
+    expect(statusToClass("SQL")).toBe("indigo");
+    expect(statusToClass("Opportunity")).toBe("warning");
+    expect(statusToClass("Customer")).toBe("success");
+  });
+
+  it("maps hard-negative states to error (were silently neutral before)", () => {
+    expect(statusToClass("Refunded")).toBe("error");
+    expect(statusToClass("Churned")).toBe("error");
+    expect(statusToClass("Failed")).toBe("error");
+    expect(statusToClass("Cancelled")).toBe("error");
+  });
 });
 
 describe("isStatusColumn", () => {
