@@ -20,26 +20,30 @@
    -------------------------------------------------------------------------- */
 
 .login-shell.login-shell {
-  /* Token re-declaration (see header note). */
-  --lsl-bg:           #0A0E1A;
-  --lsl-fg:           rgba(255, 255, 255, 0.92);
-  --lsl-fg-strong:    #FFFFFF;
-  --lsl-fg-muted:     rgba(255, 255, 255, 0.65);
-  --lsl-rule:         rgba(255, 255, 255, 0.10);
-  --lsl-rule-strong:  rgba(255, 255, 255, 0.22);
-  --lsl-accent:       #A78BFA;
-  --lsl-accent-hover: #B89BFB;
-  --lsl-accent-soft:  rgba(167, 139, 250, 0.18);
-  --lsl-amber:        #F0B5A4;
-  --lsl-aurora-cyan:  rgba(130, 224, 255, 0.10);
-  --lsl-aurora-pale:  rgba(175, 240, 255, 0.06);
+  /* Token re-declaration BRIDGED to the uoaui DS landing scheme (--a-landing-*,
+     canonical source src/data/uoaui/tokens.ts, emitted globally by layout.tsx)
+     so login + landing share one source and can't drift. Literal fallbacks keep
+     the render byte-identical if the DS var ever fails to resolve. */
+  --lsl-bg:           var(--a-landing-bg, #0A0E1A);
+  --lsl-fg:           var(--a-landing-fg, rgba(255, 255, 255, 0.92));
+  --lsl-fg-strong:    var(--a-landing-fg-strong, #FFFFFF);
+  --lsl-fg-muted:     var(--a-landing-fg-muted, rgba(255, 255, 255, 0.65));
+  --lsl-rule:         var(--a-landing-rule, rgba(255, 255, 255, 0.10));
+  --lsl-rule-strong:  var(--a-landing-rule-strong, rgba(255, 255, 255, 0.22));
+  --lsl-accent:       var(--a-landing-accent, #A78BFA);
+  --lsl-accent-hover: var(--a-landing-accent-hover, #B89BFB);
+  --lsl-accent-soft:  var(--a-landing-accent-soft, rgba(167, 139, 250, 0.18));
+  --lsl-amber:        var(--a-landing-peach, #F0B5A4);
+  --lsl-aurora-cyan:  var(--a-landing-aurora-cyan, rgba(130, 224, 255, 0.10));
+  --lsl-aurora-pale:  var(--a-landing-aurora-pale, rgba(175, 240, 255, 0.06));
 
-  --lsl-font-sans:    var(--font-inter), -apple-system, BlinkMacSystemFont,
-                      "Segoe UI", system-ui, sans-serif;
-  --lsl-font-display: var(--font-bricolage), var(--font-outfit),
-                      -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --lsl-font-mono:    var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
-                      Menlo, Consolas, monospace;
+  --lsl-font-sans:    var(--a-landing-font-sans, var(--font-inter), -apple-system,
+                      BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  --lsl-font-display: var(--a-landing-font-display, var(--font-bricolage),
+                      var(--font-outfit), -apple-system, BlinkMacSystemFont,
+                      system-ui, sans-serif);
+  --lsl-font-mono:    var(--a-landing-font-mono, var(--font-ibm-plex-mono),
+                      ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* Type-scale tokens (--lsl-text-*) live on :root in globals.css.
      Login picks slots by name, never invents a px value. */

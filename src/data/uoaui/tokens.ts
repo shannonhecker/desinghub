@@ -107,6 +107,83 @@ export const UOAUI_BORDER = {
   focus: `${BORDER_WIDTH_PX.focus}px`,
 } as const;
 
+/* ── LANDING / MARKETING SCHEME ────────────────────────────────────────
+   The uoaui DS "Refined Aurora" scheme used by the marketing surfaces
+   (landing + login). Kept SEPARATE from the component THEMES (dark/light)
+   so promoting these values doesn't ripple into builder / preview / export
+   rendering — owner decision 2026-06-07 ("new uoaui 'landing' scheme").
+
+   This is the canonical source of record for the aurora palette + editorial
+   type families. Emitted globally as `--a-landing-*` vars (see
+   uoauiLandingSchemeVars + app/layout.tsx) so the .landing-southleft /
+   conversion surfaces can alias their local --lsl-* layer onto the DS.
+
+   Contrast (verified on #0A0E1A, 2026-06-07): accent 7.08:1, peach 10.87:1,
+   teal 11.22:1, label-accent 4.71:1 — all clear WCAG AA. Brand vocabulary:
+   Teal Input · Purple Compute · Peach Output · Midnight Canvas. */
+export const UOAUI_LANDING = {
+  // Midnight Canvas — background tiers
+  bg:          '#0A0E1A',
+  bgSoft:      '#131829',
+  bgElevated:  '#1C2238',
+  // Ink ladder — intentional white-alpha (aurora wash), not the DS solid-grey ladder
+  fg:          'rgba(255, 255, 255, 0.92)',
+  fgStrong:    '#FFFFFF',
+  fgMuted:     'rgba(255, 255, 255, 0.65)',
+  fgSubtle:    'rgba(255, 255, 255, 0.50)',
+  rule:        'rgba(255, 255, 255, 0.10)',
+  ruleStrong:  'rgba(255, 255, 255, 0.22)',
+  // Purple Compute — primary marketing accent (text-grade violet, 7.08:1)
+  accent:      '#A78BFA',
+  accentHover: '#B89BFB',
+  accentSoft:  'rgba(167, 139, 250, 0.18)',
+  labelAccent: 'rgba(167, 139, 250, 0.78)',
+  // Peach Output — secondary highlight
+  peach:       '#F0B5A4',
+  peachSoft:   'rgba(240, 181, 164, 0.18)',
+  // Teal Input — tertiary signal
+  teal:        '#3DDCC4',
+  tealSoft:    'rgba(61, 220, 196, 0.16)',
+  // Decorative hero-wash radial stops
+  auroraCyan:  'rgba(130, 224, 255, 0.10)',
+  auroraPale:  'rgba(175, 240, 255, 0.06)',
+  // Editorial type families (resolve through next/font CSS vars)
+  fontSans:    "var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  fontDisplay: "var(--font-bricolage), var(--font-outfit), -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+  fontMono:    "var(--font-ibm-plex-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+} as const;
+
+/* Emit the landing scheme as `--a-landing-*` custom properties (`:root` body,
+   no braces). Injected once, globally, by app/layout.tsx so marketing surfaces
+   can alias --lsl-* onto var(--a-landing-*). */
+export function uoauiLandingSchemeVars(): string {
+  const L = UOAUI_LANDING;
+  return [
+    `--a-landing-bg: ${L.bg};`,
+    `--a-landing-bg-soft: ${L.bgSoft};`,
+    `--a-landing-bg-elevated: ${L.bgElevated};`,
+    `--a-landing-fg: ${L.fg};`,
+    `--a-landing-fg-strong: ${L.fgStrong};`,
+    `--a-landing-fg-muted: ${L.fgMuted};`,
+    `--a-landing-fg-subtle: ${L.fgSubtle};`,
+    `--a-landing-rule: ${L.rule};`,
+    `--a-landing-rule-strong: ${L.ruleStrong};`,
+    `--a-landing-accent: ${L.accent};`,
+    `--a-landing-accent-hover: ${L.accentHover};`,
+    `--a-landing-accent-soft: ${L.accentSoft};`,
+    `--a-landing-label-accent: ${L.labelAccent};`,
+    `--a-landing-peach: ${L.peach};`,
+    `--a-landing-peach-soft: ${L.peachSoft};`,
+    `--a-landing-teal: ${L.teal};`,
+    `--a-landing-teal-soft: ${L.tealSoft};`,
+    `--a-landing-aurora-cyan: ${L.auroraCyan};`,
+    `--a-landing-aurora-pale: ${L.auroraPale};`,
+    `--a-landing-font-sans: ${L.fontSans};`,
+    `--a-landing-font-display: ${L.fontDisplay};`,
+    `--a-landing-font-mono: ${L.fontMono};`,
+  ].join(' ');
+}
+
 /* ── CSS-var injection helper ──────────────────────────────────────────
    Returns the `:root` block body (without braces) expressing all uoaui
    tokens for the given mode as CSS custom properties. Called from
@@ -131,8 +208,11 @@ export function uoauiTokenVars(mode: 'dark' | 'light'): string {
     `--a-radius-none: ${r.none};`,
     `--a-radius-xs: ${r.xs};`,
     `--a-radius-sm: ${r.sm};`,
+    `--a-radius-sm-plus: ${r['sm-plus']};`,
     `--a-radius-md: ${r.md};`,
+    `--a-radius-md-plus: ${r['md-plus']};`,
     `--a-radius-lg: ${r.lg};`,
+    `--a-radius-lg-plus: ${r['lg-plus']};`,
     `--a-radius-xl: ${r.xl};`,
     `--a-radius-2xl: ${r['2xl']};`,
     `--a-radius-full: ${r.full};`,

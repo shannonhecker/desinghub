@@ -524,6 +524,8 @@ export default function LandingSouthleftPage() {
   const rootRef = useRef<HTMLElement>(null);
   const navGlass = useNavGlassStyle();
   useRevealOnScroll(rootRef);
+  /* a11y: gate the looping hero demo video (WCAG 2.2.2). */
+  const reduce = useReducedMotion();
 
   return (
     // `hero` class is required to enable page scroll (see globals.css :has(.hero)).
@@ -596,12 +598,14 @@ export default function LandingSouthleftPage() {
             aria-label="uoaui.ai builder walkthrough"
           >
             <div className="lsl-hero-demo-frame">
+              {/* a11y (WCAG 2.2.2): don't autoplay/loop the demo for
+                  reduced-motion users — show a static first frame instead. */}
               <video
                 className="lsl-hero-demo-video"
                 src="/uoaui-demo.mp4"
-                autoPlay
+                autoPlay={!reduce}
                 muted
-                loop
+                loop={!reduce}
                 playsInline
                 preload="metadata"
                 aria-hidden="true"
