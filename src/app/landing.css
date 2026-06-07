@@ -848,7 +848,10 @@ html:has(.landing-southleft) body {
   font-weight: 500;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--lsl-amber);
+  /* Light-purple brand accent (Purple Compute) via --lsl-accent
+     (= var(--a-landing-accent, #A78BFA), 7.08:1 on the near-black bg),
+     replacing the orange-coral peach that read as off-brand here (issue #302). */
+  color: var(--lsl-accent);
   margin: 0 0 24px;
 }
 .landing-southleft .lsl-tokens-list {
@@ -931,7 +934,11 @@ html:has(.landing-southleft) body {
   font-size: var(--lsl-text-micro);
   width: 28px;
   flex-shrink: 0;
-  color: var(--lsl-label-accent);
+  /* Light-purple brand accent (Purple Compute). Full-strength --lsl-accent
+     (= var(--a-landing-accent, #A78BFA), 7.08:1 on the near-black bg) instead
+     of the alpha-reduced label-accent (4.71:1), which read as near-invisible
+     on the space-token numbers (issue #302). */
+  color: var(--lsl-accent);
 }
 .landing-southleft .lsl-token-bar {
   height: 14px;
