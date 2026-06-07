@@ -791,6 +791,8 @@ function DashboardSidebar({
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
   const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
   const selectedBlockId = useBuilder((s) => s.selectedBlockId);
+  const openNavPage = useBuilder((s) => s.openNavPage);
+  const activePageId = useBuilder((s) => s.activePageId);
   const readOnly = usePreviewReadOnly();
 
   const handleSetActive = (id: string) => {
@@ -821,7 +823,9 @@ function DashboardSidebar({
             if (block.type === "NavItem") {
               const iconKey = block.props.icon as string;
               const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
-              const active = block.props.active as boolean;
+              /* Once the canvas is split into pages, the active tab follows the
+                 active page; before that it uses the cosmetic `active` prop. */
+              const active = activePageId != null ? activePageId === block.id : (block.props.active as boolean);
               return (
                 <SortableBlock
                   key={block.id}
@@ -834,7 +838,19 @@ function DashboardSidebar({
                     <button
                       className={`bp-nav-item${active ? " bp-nav-item--active" : ""}`}
                       title={block.props.label as string}
-                      onClick={readOnly ? undefined : (e) => { e.stopPropagation(); handleSetActive(block.id); setSelectedBlock(block.id, "sidebar"); }}
+                      aria-current={active ? "page" : undefined}
+                      /* Multi-page: a tab click switches the body to that page
+                         (creating it empty on first visit) in BOTH modes. In
+                         edit it also selects the NavItem for styling; in preview
+                         it only navigates. handleSetActive keeps the cosmetic
+                         `active` prop in sync so the lazy page-seed can find the
+                         active nav. */
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openNavPage(block.id, String(block.props.label ?? "Page"));
+                        handleSetActive(block.id);
+                        if (!readOnly) setSelectedBlock(block.id, "sidebar");
+                      }}
                     >
                       <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
                       {/* Plain span — was previously a framer-motion

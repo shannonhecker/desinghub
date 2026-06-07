@@ -178,6 +178,19 @@ export interface ZoneLayout {
   size?: number;
 }
 
+/* Multi-page (2026-06-07): a page owns one BODY block set. Header/sidebar/footer
+   are SHARED chrome across all pages. `s.blocks` is the live working copy of the
+   ACTIVE page's body; switching pages saves blocks back to the current page and
+   loads the target page's body. NavItem.id is the page id (auto-nav). See
+   docs/specs/2026-06-07-multipage-nav-design.md. */
+export interface Page {
+  id: string;
+  name: string;
+  body: Block[];
+  /** Per-page body zone layout; falls back to the shared zoneLayouts.body. */
+  bodyLayout?: ZoneLayout;
+}
+
 interface BuilderState {
   // Chat
   messages: ChatMessage[];
@@ -287,6 +300,12 @@ interface BuilderState {
      "body = 3-col grid" rule with an explicit, editable contract
      per zone. Defaults keep visual parity with the old Builder. */
   zoneLayouts: Record<ZoneId, ZoneLayout>;
+
+  /* Multi-page state. `pages` is empty until the canvas is first split into
+     pages (lazy: the first page-switch seeds it from the current canvas, bound
+     to the active sidebar NavItem). `activePageId` is null in single-page mode. */
+  pages: Page[];
+  activePageId: string | null;
 
   // UI state
   settingsOpen: boolean;
@@ -409,6 +428,18 @@ interface BuilderState {
   /** Tear down the current session and reset canvas state so the user
    *  can start a fresh build from the empty state. */
   startNewSession: () => void;
+
+  // Actions - Multi-page
+  /** Switch the active page, saving the current body and loading the target's.
+     Lazily seeds `pages` from the current canvas on first switch. No-op if the
+     target is already active or doesn't exist. */
+  setActivePage: (pageId: string) => void;
+  /** Append a page (used by the Pages panel + auto-nav provisioning). */
+  addPage: (page: Page) => void;
+  /** Open the page a sidebar NavItem owns (NavItem.id === page id): seed pages
+     if needed, create the page empty if it doesn't exist yet, then switch. This
+     is what a nav-tab click calls. */
+  openNavPage: (navId: string, name: string) => void;
 
   // Actions - Canvas blocks & selection
   setBlocks: (blocks: Block[]) => void;
@@ -633,6 +664,18 @@ export function mapBlockInTree(
   return changed ? next : blocks;
 }
 
+/* Lazy multi-page seed: when `pages` is empty, the current canvas IS the active
+   page — bound to the active sidebar NavItem's id (so its tab stays highlighted),
+   or a synthetic 'page-1' when no nav is active. Returns the seeded pages + active
+   id, or the existing ones when the canvas is already split. Pure (no set). */
+function seedPages(s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts">): { pages: Page[]; activePageId: string } {
+  if (s.pages.length > 0 && s.activePageId) return { pages: s.pages, activePageId: s.activePageId };
+  const activeNav = s.sidebarBlocks.find((b) => b.type === "NavItem" && b.props.active === true);
+  const id = activeNav?.id ?? "page-1";
+  const name = String(activeNav?.props.label ?? "Page 1");
+  return { pages: [{ id, name, body: s.blocks, bodyLayout: s.zoneLayouts.body }], activePageId: id };
+}
+
 export const useBuilder = create<BuilderState>((set) => ({
   // Chat - start empty so hero shows
   messages: [],
@@ -694,6 +737,8 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Canvas blocks & selection
   blocks: [],
+  pages: [],
+  activePageId: null,
   selectedBlockId: null,
   selectedBlockZone: null,
   selectedBlockIds: [],
@@ -942,6 +987,8 @@ export const useBuilder = create<BuilderState>((set) => ({
      *  workspace setup, not part of the session. */
     messages: [],
     blocks: [],
+    pages: [],
+    activePageId: null,
     headerBlocks: [],
     sidebarBlocks: [],
     footerBlocks: [],
@@ -974,6 +1021,50 @@ export const useBuilder = create<BuilderState>((set) => ({
     /* Fresh session returns to the chatbox-first hero (guided wizard opt-in). */
     wizardStep: 'done',
     builtViaWizard: false,
+  }),
+
+  setActivePage: (pageId) => set((s) => {
+    const seeded = seedPages(s);
+    const commitSeed = s.pages.length === 0 ? { pages: seeded.pages, activePageId: seeded.activePageId } : {};
+    if (pageId === seeded.activePageId) return commitSeed;
+    const target = seeded.pages.find((p) => p.id === pageId);
+    if (!target) return commitSeed;
+    const saved = seeded.pages.map((p) => (p.id === seeded.activePageId ? { ...p, body: s.blocks, bodyLayout: s.zoneLayouts.body } : p));
+    return {
+      pages: saved,
+      activePageId: pageId,
+      blocks: target.body,
+      zoneLayouts: { ...s.zoneLayouts, body: target.bodyLayout ?? s.zoneLayouts.body },
+      selectedBlockId: null,
+      selectedBlockZone: null,
+      selectedBlockIds: [],
+      previewKey: s.previewKey + 1,
+    };
+  }),
+
+  addPage: (page) => set((s) => {
+    const seeded = seedPages(s);
+    if (seeded.pages.some((p) => p.id === page.id)) return s.pages.length === 0 ? { pages: seeded.pages, activePageId: seeded.activePageId } : {};
+    return { pages: [...seeded.pages, page], activePageId: seeded.activePageId };
+  }),
+
+  openNavPage: (navId, name) => set((s) => {
+    const seeded = seedPages(s);
+    let pages = seeded.pages;
+    if (!pages.some((p) => p.id === navId)) pages = [...pages, { id: navId, name, body: [] }];
+    if (navId === seeded.activePageId) return { pages, activePageId: seeded.activePageId };
+    pages = pages.map((p) => (p.id === seeded.activePageId ? { ...p, body: s.blocks, bodyLayout: s.zoneLayouts.body } : p));
+    const target = pages.find((p) => p.id === navId)!;
+    return {
+      pages,
+      activePageId: navId,
+      blocks: target.body,
+      zoneLayouts: { ...s.zoneLayouts, body: target.bodyLayout ?? s.zoneLayouts.body },
+      selectedBlockId: null,
+      selectedBlockZone: null,
+      selectedBlockIds: [],
+      previewKey: s.previewKey + 1,
+    };
   }),
 
   setBlocks: (blocks) => set({ blocks }),
