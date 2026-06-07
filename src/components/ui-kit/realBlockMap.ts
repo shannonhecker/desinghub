@@ -46,8 +46,15 @@ import {
   Search as CarbonSearch,
   Accordion as CarbonAccordion,
   AccordionItem as CarbonAccordionItem,
+  Table as CarbonTable,
+  TableHead as CarbonTableHead,
+  TableHeader as CarbonTableHeader,
+  TableRow as CarbonTableRow,
+  TableBody as CarbonTableBody,
+  TableCell as CarbonTableCell,
 } from "@carbon/react";
 import { ArrowRight } from "@carbon/icons-react";
+import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /** Coerce a builder field to a string with a fallback (mirrors registry `s`). */
@@ -368,6 +375,38 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, s(p.icon, "chat")),
       s(p.label, "Nav"),
     ),
+
+  /* PR-5: real .a-table over the columns/rows; status columns -> .a-badge pills. */
+  SimulatedDataTable: (p) => {
+    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : ["Name", "Status"];
+    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [];
+    if (rows.length === 0) {
+      return React.createElement("div", { style: { padding: 24, textAlign: "center", opacity: 0.6, fontSize: 13 } }, "No data yet. Describe the records you want, or add rows.");
+    }
+    return React.createElement(
+      "table",
+      { className: "a-table" },
+      React.createElement("thead", null, React.createElement("tr", null, ...columns.map((c) => React.createElement("th", { key: c }, c)))),
+      React.createElement(
+        "tbody",
+        null,
+        ...rows.map((row, ri) =>
+          React.createElement(
+            "tr",
+            { key: ri },
+            ...columns.map((col, ci) => {
+              const v = resolveCell(row, col, ci);
+              if (isStatusColumn(col)) {
+                const badgeClass = ({ success: "a-badge-success", warning: "a-badge-warning", neutral: "a-badge-default" } as Record<string, string>)[statusToClass(v)] ?? "a-badge-default";
+                return React.createElement("td", { key: ci }, React.createElement("span", { className: `a-badge ${badgeClass}` }, v));
+              }
+              return React.createElement("td", { key: ci }, v);
+            }),
+          ),
+        ),
+      ),
+    );
+  },
 };
 
 /* ── carbon: variant -> Carbon Button `kind` (mirrors carbonButtonAttrs in
@@ -538,6 +577,43 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
 
   NavItem: (p) =>
     React.createElement(CarbonLink, { href: "#" }, s(p.label, "Nav")),
+
+  /* PR-5: plain Carbon Table (not the DataTable render-prop) over the real
+     columns/rows; status columns render as Carbon Tags. */
+  SimulatedDataTable: (p) => {
+    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : ["Name", "Status"];
+    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [];
+    if (rows.length === 0) {
+      return React.createElement("div", { style: { padding: 24, textAlign: "center", opacity: 0.6, fontSize: 13 } }, "No data yet. Describe the records you want, or add rows.");
+    }
+    return React.createElement(
+      CarbonTable,
+      null,
+      React.createElement(
+        CarbonTableHead,
+        null,
+        React.createElement(CarbonTableRow, null, ...columns.map((c) => React.createElement(CarbonTableHeader, { key: c, id: slug(c) }, c))),
+      ),
+      React.createElement(
+        CarbonTableBody,
+        null,
+        ...rows.map((row, ri) =>
+          React.createElement(
+            CarbonTableRow,
+            { key: ri },
+            ...columns.map((col, ci) => {
+              const v = resolveCell(row, col, ci);
+              return React.createElement(
+                CarbonTableCell,
+                { key: ci },
+                isStatusColumn(col) ? React.createElement(CarbonTag, { type: carbonTagType(statusToClass(v)) }, v) : v,
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  },
 };
 
 /**
