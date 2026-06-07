@@ -163,6 +163,11 @@ export function ConversationalOnboarding({
   const [audience, setAudience] = useState<"internal" | "public">("internal");
   const [note, setNote] = useState("");
   const [announce, setAnnounce] = useState("");
+  /* Whether the user has actively picked an interface type. Until they do, the
+     type step shows NO pre-selected chip (owner: don't pre-select "Dashboard").
+     The store's interfaceType still defaults to dashboard for the live preview;
+     this only governs the wizard's visible selection. */
+  const [typeChosen, setTypeChosen] = useState(false);
 
   const activeRef = useRef<HTMLDivElement>(null);
 
@@ -193,6 +198,7 @@ export function ConversationalOnboarding({
      The Look step (two picks) and Confirm advance via an explicit button. */
   const pickType = (value: string) => {
     setInterfaceType(value as typeof interfaceType);
+    setTypeChosen(true);
     setFreeText("");
     advance();
   };
@@ -253,7 +259,7 @@ export function ConversationalOnboarding({
                 value: o.value,
                 label: o.recommended ? `${o.label} (recommended)` : o.label,
               }))}
-              value={freeText.trim() ? null : interfaceType}
+              value={typeChosen && !freeText.trim() ? interfaceType : null}
               onSelect={pickType}
               autoFocusFirst
               renderLead={(opt) => (
