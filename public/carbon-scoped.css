@@ -2714,7 +2714,7 @@
   --cds-layout-density-padding-inline-max: 999999999px;
 }
 
-.carbon-live-scope .cds--white {
+.carbon-live-scope.cds--white {
   background-color: var(--cds-background);
   color: var(--cds-text-primary);
   --cds-ai-aura-end: rgba(255, 255, 255, 0);
@@ -3047,7 +3047,7 @@
   --cds-content-switcher-selected: #ffffff;
 }
 
-.carbon-live-scope .cds--g10 {
+.carbon-live-scope.cds--g10 {
   background-color: var(--cds-background);
   color: var(--cds-text-primary);
   --cds-ai-aura-end: rgba(255, 255, 255, 0);
@@ -3380,7 +3380,7 @@
   --cds-content-switcher-selected: #ffffff;
 }
 
-.carbon-live-scope .cds--g90 {
+.carbon-live-scope.cds--g90 {
   background-color: var(--cds-background);
   color: var(--cds-text-primary);
   --cds-ai-aura-end: rgba(0, 0, 0, 0);
@@ -3712,7 +3712,7 @@
   --cds-content-switcher-selected: rgba(141, 141, 141, 0.24);
 }
 
-.carbon-live-scope .cds--g100 {
+.carbon-live-scope.cds--g100 {
   background-color: var(--cds-background);
   color: var(--cds-text-primary);
   --cds-ai-aura-end: rgba(0, 0, 0, 0);
