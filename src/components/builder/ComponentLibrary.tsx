@@ -359,24 +359,24 @@ function LayoutSection({
      click reproduces the legacy 1/2/3 widths exactly. null = a custom
      value; an undefined width resolves to "fill" (the row-mode default). */
   const w = layout.width;
-  const activePreset =
-    w === undefined || w === "fill" ? "fill"
-    : w === "auto" ? "auto"
-    : w === "33.333%" ? "33.333%"
-    : w === "50%" ? "50%"
-    : w === "66.666%" ? "66.666%"
-    : null;
 
-  /* Custom value + unit. The unit is stateful so the px/% toggle
-     reflects the user's choice before they type a value; it re-seeds
-     when a different block is selected. */
+  /* Width sizing mode derived from the stored LayoutWidth union (P1 is
+     visual-only — never rename the store values): fill/undefined → Fill,
+     auto → Hug, any explicit px/%/fr → Fixed. */
+  const sizeMode: "fixed" | "hug" | "fill" =
+    w === undefined || w === "fill" ? "fill"
+    : w === "auto" ? "hug"
+    : "fixed";
+
+  /* Custom value + unit for the Fixed case. The unit is stateful so the
+     dropdown reflects px vs % before a value is typed; re-seeds per block. */
   const customIsPx = typeof w === "number" || (typeof w === "string" && w.endsWith("px"));
   const [customUnit, setCustomUnit] = useState<"px" | "%">(customIsPx ? "px" : "%");
   useEffect(() => {
     setCustomUnit(customIsPx ? "px" : "%");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [block.id]);
-  const customValue = activePreset !== null ? "" : parseWidthValue(w);
+  const customValue = sizeMode === "fixed" ? parseWidthValue(w) : "";
 
   const applyPreset = (value: string) =>
     updateBlockLayout(zone, block.id, { width: value as LayoutWidth });
@@ -385,35 +385,26 @@ function LayoutSection({
     if (trimmed === "") return; // empty input: leave the width unchanged
     updateBlockLayout(zone, block.id, { width: `${trimmed}${unit}` as LayoutWidth });
   };
-  const switchUnit = (unit: "px" | "%") => {
-    setCustomUnit(unit);
-    if (customValue !== "") applyCustom(customValue, unit);
-  };
-
-  /* SIZE row — Figma's W sizing mode. LABELS map to the existing
-     LayoutWidth union (do NOT rename the store values, P1 is visual-only):
-       Fixed → a px value (we use the typed Custom px, or a sane default)
-       Hug   → "auto"
-       Fill  → "fill"
-     The fraction presets (⅓ ½ ⅔) remain under "Custom width" below. */
-  const sizeMode: "fixed" | "hug" | "fill" =
-    w === undefined || w === "fill" ? "fill"
-    : w === "auto" ? "hug"
-    : "fixed"; // any px / % / fr value reads as an explicit (Fixed) size
 
   const applySizeMode = (mode: "fixed" | "hug" | "fill") => {
     if (mode === "fill") return applyPreset("fill");
     if (mode === "hug") return applyPreset("auto");
-    // Fixed: keep an existing explicit value; otherwise seed a px default so
-    // the control has an effect even before the user types a Custom value.
+    // Fixed: keep an existing explicit value; otherwise seed a px default.
     if (sizeMode !== "fixed") applyPreset("320px");
   };
 
-  const WIDTH_PRESETS: { value: string; label: string; aria: string }[] = [
-    { value: "33.333%", label: "⅓", aria: "One third" },
-    { value: "50%", label: "½", aria: "Half" },
-    { value: "66.666%", label: "⅔", aria: "Two thirds" },
-  ];
+  /* Figma-style W dropdown: Fill / Hug / px / % in one caret — "px"/"%"
+     imply Fixed, folding the old separate mode-segmented + unit-toggle into
+     a single control. */
+  const applyWMode = (v: string) => {
+    if (v === "fill") return applySizeMode("fill");
+    if (v === "hug") return applySizeMode("hug");
+    const unit: "px" | "%" = v === "%" ? "%" : "px";
+    setCustomUnit(unit);
+    if (sizeMode !== "fixed") applyPreset(unit === "%" ? "50%" : "320px");
+    else if (customValue !== "") applyCustom(customValue, unit);
+  };
+  const wModeValue = sizeMode === "fill" ? "fill" : sizeMode === "hug" ? "hug" : customUnit;
 
   /* HEIGHT (counter-axis) — P3. Same Fixed/Hug/Fill labels as W, writing the
      existing LayoutWidth union to `layout.height`:
@@ -450,146 +441,68 @@ function LayoutSection({
     if (trimmed === "") return;
     updateBlockLayout(zone, block.id, { height: `${trimmed}${unit}` as LayoutWidth });
   };
-  const switchHeightUnit = (unit: "px" | "%") => {
+  const applyHMode = (v: string) => {
+    if (v === "fill") return applyHeightMode("fill");
+    if (v === "hug") return applyHeightMode("hug");
+    const unit: "px" | "%" = v === "%" ? "%" : "px";
     setHeightUnit(unit);
-    if (heightCustomValue !== "") applyCustomHeight(heightCustomValue, unit);
+    if (heightMode !== "fixed") updateBlockLayout(zone, block.id, { height: (unit === "%" ? "50%" : "240px") as LayoutWidth });
+    else if (heightCustomValue !== "") applyCustomHeight(heightCustomValue, unit);
   };
+  const hModeValue = heightMode === "fill" ? "fill" : heightMode === "hug" ? "hug" : heightUnit;
 
   return (
     <InspectorSection id="layout" title="Size">
-      {/* Size row — W and H side by side, Figma-style. W is a Fixed/Hug/Fill
-          segmented (labels only; writes the existing LayoutWidth union). H is
-          a disabled placeholder until P3 wires per-block height. */}
-      <div className="inspector-size-row">
-        <div className="inspector-size-cell">
-          <label className="inspector-field-label">W</label>
-          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width mode">
-            {([
-              ["fixed", "Fixed", "Fixed width in pixels"],
-              ["hug", "Hug", "Hug contents"],
-              ["fill", "Fill", "Fill available space"],
-            ] as const).map(([m, lbl, aria]) => (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={sizeMode === m}
-                aria-label={aria}
-                title={aria}
-                className={`inspector-toggle-btn${sizeMode === m ? " active" : ""}`}
-                onClick={() => applySizeMode(m)}
-              >
-                {lbl}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="inspector-size-cell">
-          <label className="inspector-field-label">H</label>
-          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block height mode">
-            {([
-              ["fixed", "Fixed", "Fixed height in pixels"],
-              ["hug", "Hug", "Hug contents (content height)"],
-              ["fill", "Fill", "Fill available height"],
-            ] as const).map(([m, lbl, aria]) => (
-              <button
-                key={m}
-                type="button"
-                role="radio"
-                aria-checked={heightMode === m}
-                aria-label={aria}
-                title={aria}
-                className={`inspector-toggle-btn${heightMode === m ? " active" : ""}`}
-                onClick={() => applyHeightMode(m)}
-              >
-                {lbl}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Custom height — numeric value + unit; only relevant in Fixed mode but
-          always editable (typing flips the mode to Fixed via the height write). */}
-      <div className="inspector-field">
-        <label className="inspector-field-label">Custom height</label>
-        <div className="inspector-width-custom">
-          <ScrubNumberField
-            layout="inline"
-            glyph="H"
-            value={heightCustomValue}
-            placeholder={heightUnit === "%" ? "e.g. 60" : "e.g. 240"}
-            min={heightUnit === "%" ? 1 : 0}
-            max={heightUnit === "%" ? 100 : undefined}
-            ariaLabel="Custom height value"
-            onValueChange={(v) => applyCustomHeight(v, heightUnit)}
-          />
-          <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom height unit">
-            {(["px", "%"] as const).map((u) => (
-              <button
-                key={u}
-                type="button"
-                role="radio"
-                aria-checked={heightUnit === u}
-                className={`inspector-toggle-btn${heightUnit === u ? " active" : ""}`}
-                onClick={() => switchHeightUnit(u)}
-              >
-                {u}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Custom width — fraction presets + free numeric value. Typing or
-          picking a fraction sets an explicit (Fixed) width. */}
-      <div className="inspector-field">
-        <label className="inspector-field-label">Custom width</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Width fraction preset">
-          {WIDTH_PRESETS.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              role="radio"
-              aria-checked={activePreset === p.value}
-              aria-label={p.aria}
-              className={`inspector-toggle-btn${activePreset === p.value ? " active" : ""}`}
-              onClick={() => applyPreset(p.value)}
-              title={p.aria}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Custom width — numeric value + unit; typing overrides the preset. */}
-      <div className="inspector-field">
-        <div className="inspector-width-custom">
+      {/* Dimensions — W and H side by side, each a value field + a
+          Fill / Hug / px / % dropdown (Figma-style). Folds the old six
+          stacked segmented + custom-value rows into two cells; the dropdown
+          carries both the sizing mode AND the unit ("px"/"%" imply Fixed). */}
+      <div className="inspector-field inspector-field-row">
+        <div className="inspector-dim-cell">
           <ScrubNumberField
             layout="inline"
             glyph="W"
             value={customValue}
-            placeholder={customUnit === "%" ? "e.g. 40" : "e.g. 320"}
+            placeholder={sizeMode === "fill" ? "Fill" : sizeMode === "hug" ? "Hug" : customUnit === "%" ? "%" : "px"}
             min={customUnit === "%" ? 1 : 0}
             max={customUnit === "%" ? 100 : undefined}
-            ariaLabel="Custom width value"
+            ariaLabel="Width value"
             onValueChange={(v) => applyCustom(v, customUnit)}
           />
-          <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom width unit">
-            {(["px", "%"] as const).map((u) => (
-              <button
-                key={u}
-                type="button"
-                role="radio"
-                aria-checked={customUnit === u}
-                className={`inspector-toggle-btn${customUnit === u ? " active" : ""}`}
-                onClick={() => switchUnit(u)}
-              >
-                {u}
-              </button>
-            ))}
-          </div>
+          <select
+            className="inspector-select inspector-dim-mode"
+            aria-label="Width sizing mode"
+            value={wModeValue}
+            onChange={(e) => applyWMode(e.target.value)}
+          >
+            <option value="fill">Fill</option>
+            <option value="hug">Hug</option>
+            <option value="px">px</option>
+            <option value="%">%</option>
+          </select>
+        </div>
+        <div className="inspector-dim-cell">
+          <ScrubNumberField
+            layout="inline"
+            glyph="H"
+            value={heightCustomValue}
+            placeholder={heightMode === "fill" ? "Fill" : heightMode === "hug" ? "Hug" : heightUnit === "%" ? "%" : "px"}
+            min={heightUnit === "%" ? 1 : 0}
+            max={heightUnit === "%" ? 100 : undefined}
+            ariaLabel="Height value"
+            onValueChange={(v) => applyCustomHeight(v, heightUnit)}
+          />
+          <select
+            className="inspector-select inspector-dim-mode"
+            aria-label="Height sizing mode"
+            value={hModeValue}
+            onChange={(e) => applyHMode(e.target.value)}
+          >
+            <option value="fill">Fill</option>
+            <option value="hug">Hug</option>
+            <option value="px">px</option>
+            <option value="%">%</option>
+          </select>
         </div>
       </div>
 

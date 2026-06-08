@@ -33,9 +33,10 @@ describe("inspector progressive disclosure", () => {
   it("Size section leads with W/H size row + Align (core); min/max/grow/margin in an Advanced subgroup", () => {
     const sg = cl.indexOf('<InspectorSubgroup id="layout-advanced"');
     expect(sg).toBeGreaterThan(-1);
-    // The section is now titled "Size" and leads with a W/H size row.
+    // The section is titled "Size" and leads with a W/H dimensions row
+    // (Figma-style: each axis is a value field + a Fill/Hug/px/% dropdown).
     expect(cl).toMatch(/<InspectorSection id="layout" title="Size">/);
-    const sizeRow = cl.indexOf('className="inspector-size-row"');
+    const sizeRow = cl.indexOf('className="inspector-dim-cell"');
     expect(sizeRow).toBeGreaterThan(-1);
     expect(sizeRow).toBeLessThan(sg);
     // Align is core → appears before the Advanced subgroup
