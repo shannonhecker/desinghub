@@ -8317,6 +8317,27 @@
   gap: var(--bc-gap-xs, 4px);
 }
 
+/* P6 Scrubbable NumberField — drag the label / glyph to scrub the value,
+   Figma-style. The handle advertises horizontal scrubbing; the real <input>
+   stays the focusable target so keyboard + screen-reader are unaffected.
+   Tokens / keywords only (no new px/ms/hex literals → tokens:audit baseline). */
+.inspector-scrub-handle {
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.inspector-scrub-handle:hover {
+  color: var(--bc-accent);
+}
+.inspector-scrub-inline {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--bc-gap-xxs);
+  min-width: 0;
+}
+
 /* Chart colour section (P1.3) */
 .inspector-chart-reset {
   font-size: 9.5px;
