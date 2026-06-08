@@ -539,6 +539,15 @@ interface BuilderState {
   /** Patch a zone's container layout (mode/columns/gap/padding/wrap/align).
      Used by the zone layout-mode picker. */
   setZoneLayout: (zone: ZoneId, patch: Partial<ZoneLayout>) => void;
+  /** P2 Frames: show/hide a peripheral frame (header/sidebar/footer). Hiding
+     keeps the zone's blocks so re-adding restores them; the canvas + export
+     both drop a hidden zone. BODY is mandatory — calling with zone === 'body'
+     is a no-op. Writes a fresh zoneLayouts object so undo/redo + autosave (both
+     keyed on the zoneLayouts reference) capture the change like any other
+     layout edit. */
+  setZoneVisible: (zone: ZoneId, visible: boolean) => void;
+  /** P2 Frames: flip a peripheral frame's visibility. No-op for BODY. */
+  toggleZoneVisible: (zone: ZoneId) => void;
 
   // Actions - UI
   toggleSettings: () => void;
@@ -1511,6 +1520,33 @@ export const useBuilder = create<BuilderState>((set) => ({
       [zone]: { ...s.zoneLayouts[zone], ...patch },
     },
   })),
+
+  /* P2 Frames: peripheral-frame visibility. BODY is mandatory — guard it here
+     so no UI control (or future caller) can accidentally remove the only
+     required zone. The set() produces a fresh zoneLayouts object, so the
+     existing reference-equality hooks (builderHistory snapshot + useAutoSave
+     fingerprint, both keyed on zoneLayouts) treat it as an undoable, persisted
+     change — no separate tracking plumbing needed. */
+  setZoneVisible: (zone, visible) => set((s) => {
+    if (zone === 'body') return {};
+    if ((s.zoneLayouts[zone].visible !== false) === visible) return {}; // no-op: already in that state
+    return {
+      zoneLayouts: {
+        ...s.zoneLayouts,
+        [zone]: { ...s.zoneLayouts[zone], visible },
+      },
+    };
+  }),
+  toggleZoneVisible: (zone) => set((s) => {
+    if (zone === 'body') return {};
+    const nextVisible = s.zoneLayouts[zone].visible === false; // currently hidden → make visible
+    return {
+      zoneLayouts: {
+        ...s.zoneLayouts,
+        [zone]: { ...s.zoneLayouts[zone], visible: nextVisible },
+      },
+    };
+  }),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

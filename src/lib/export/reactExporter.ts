@@ -201,11 +201,17 @@ export function exportReact(): string {
      layout-component import line below. */
   const zl: Partial<Record<ZoneId, ZoneLayout>> = s.zoneLayouts ?? {};
   const usedPrimitives = new Set<LayoutPrimitive>();
+  /* P2 Frames: a peripheral frame the user removed (zoneLayouts[zone].visible
+     === false) must NOT reach the generated code — otherwise exported output
+     diverges from the canvas (the export trap). Body has no visibility flag and
+     is always emitted. visible === undefined defaults to shown (back-compat with
+     saved projects that predate the flag). */
+  const zoneVisible = (zone: ZoneId): boolean => zl[zone]?.visible !== false;
   const zones = [
-    renderZone(s.headerBlocks, "Header", "    ", system, mode, zl.header, real, usedPrimitives),
-    renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode, zl.sidebar, real, usedPrimitives),
+    zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ", system, mode, zl.header, real, usedPrimitives) : "",
+    zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode, zl.sidebar, real, usedPrimitives) : "",
     renderZone(s.blocks, "Body", "    ", system, mode, zl.body, real, usedPrimitives),
-    renderZone(s.footerBlocks, "Footer", "    ", system, mode, zl.footer, real, usedPrimitives),
+    zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ", system, mode, zl.footer, real, usedPrimitives) : "",
   ].filter(Boolean).join("\n\n");
   const layoutImports = collectLayoutImports(system, [...usedPrimitives]);
 

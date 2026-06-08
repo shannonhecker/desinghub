@@ -615,6 +615,90 @@ function PreviewBar() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   P2 Frames — FrameTab + ZoneAddBar
+   ══════════════════════════════════════════════════════════
+   A Figma-like frame label that pins to a peripheral frame
+   (header / sidebar / footer) in EDIT mode only. It names the
+   frame and carries a remove (×) affordance. Removing a frame
+   routes through setZoneVisible(zone, false) (undo-safe; keeps
+   the zone's blocks) and surfaces an Undo toast.
+
+   When a frame is hidden, ZoneAddBar renders an "+ Add <frame>"
+   chip so it can be brought back. Both are chrome (— bc-* tokens,
+   AA, focus rings, keyboard-activatable) and never render under
+   [data-builder-mode="preview"] (gated on readOnly).
+   ══════════════════════════════════════════════════════════ */
+const FRAME_META: Record<"header" | "sidebar" | "footer", { label: string; icon: string }> = {
+  header:  { label: "Header",  icon: "top_panel_open" },
+  sidebar: { label: "Sidebar", icon: "left_panel_open" },
+  footer:  { label: "Footer",  icon: "bottom_panel_open" },
+};
+
+function FrameTab({ zone }: { zone: "header" | "sidebar" | "footer" }) {
+  const readOnly = usePreviewReadOnly();
+  const setZoneVisible = useBuilder((s) => s.setZoneVisible);
+  if (readOnly) return null;
+  const meta = FRAME_META[zone];
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setZoneVisible(zone, false);
+    showToast(`${meta.label} removed`, {
+      icon: "delete",
+      durationMs: 4000,
+      action: { label: "Undo", onClick: () => setZoneVisible(zone, true) },
+    });
+  };
+  return (
+    <div className={`bp-frame-tab bp-frame-tab-${zone}`} contentEditable={false} aria-hidden={false}>
+      <span className="material-symbols-outlined bp-frame-tab-icon" aria-hidden="true">{meta.icon}</span>
+      <span className="bp-frame-tab-label">{meta.label}</span>
+      <button
+        type="button"
+        className="bp-frame-tab-remove"
+        onClick={handleRemove}
+        title={`Remove ${meta.label.toLowerCase()}`}
+        aria-label={`Remove ${meta.label.toLowerCase()} frame`}
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </div>
+  );
+}
+
+/* Add-frame strip — renders a chip for each currently-hidden peripheral frame
+   so a removed frame can be restored. Hidden entirely in preview mode and when
+   every frame is already present. */
+function ZoneAddBar() {
+  const readOnly = usePreviewReadOnly();
+  const zoneLayouts = useBuilder((s) => s.zoneLayouts);
+  const setZoneVisible = useBuilder((s) => s.setZoneVisible);
+  if (readOnly) return null;
+  const hidden = (["header", "sidebar", "footer"] as const).filter(
+    (z) => zoneLayouts[z].visible === false,
+  );
+  if (hidden.length === 0) return null;
+  return (
+    <div className="bp-zone-add-bar" role="group" aria-label="Add a removed frame">
+      {hidden.map((z) => {
+        const meta = FRAME_META[z];
+        return (
+          <button
+            key={z}
+            type="button"
+            className="bp-zone-add-chip"
+            onClick={() => setZoneVisible(z, true)}
+            title={`Add ${meta.label.toLowerCase()}`}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">add</span>
+            <span>{meta.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    Dashboard Header - sticky top bar inside device frame
    Driven by headerBlocks from store; labels are inline-editable
    ══════════════════════════════════════════════════════════ */
@@ -629,6 +713,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
 
   return (
     <header className="bp-header">
+      <FrameTab zone="header" />
       <ZoneDropContainer zoneId="header" blocks={headerBlocks} direction="horizontal">
         {headerBlocks.map((block) => {
           /* Native zone types get custom rendering */
@@ -811,6 +896,7 @@ function DashboardSidebar({
       animate={{ width: collapsed ? 48 : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
+      {!collapsed && <FrameTab zone="sidebar" />}
       <nav className="bp-sidebar-nav">
         <ZoneDropContainer zoneId="sidebar" blocks={sidebarBlocks} direction="vertical">
           {sidebarBlocks.map((block) => {
@@ -968,6 +1054,7 @@ function DashboardFooter() {
 
   return (
     <footer className="bp-footer">
+      <FrameTab zone="footer" />
       <ZoneDropContainer zoneId="footer" blocks={footerBlocks} direction="horizontal">
         {footerBlocks.map((block) => {
           /* Native FooterText rendering */
@@ -1161,6 +1248,7 @@ export function BuilderCanvas({
       key={previewKey}
       {...officialScope.attrs}
     >
+      <ZoneAddBar />
       {headerVisible && <DashboardHeader compact={compact} />}
 
       <div className="bp-body">

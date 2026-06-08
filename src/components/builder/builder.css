@@ -10674,6 +10674,119 @@
   z-index: 10;
 }
 
+/* ── P2 Frames: Figma-like frame label + remove (×) ──────────────────
+   A small chrome tab pinned to the top-left of a peripheral frame
+   (header / sidebar / footer) in EDIT mode. Names the frame and carries
+   a remove affordance. Built from --bc-* chrome tokens so it stays
+   theme-stable across the 5 design systems; AA text + visible focus
+   rings + keyboard-activatable. Hidden in Present mode via the
+   [data-builder-mode="preview"] rule below. */
+.bp-frame-tab {
+  position: absolute;
+  top: var(--bc-gap-xs);
+  left: var(--bc-gap-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: 18px;
+  padding: 0 var(--bc-gap-xs) 0 var(--bc-gap-sm);
+  border-radius: var(--bc-radius-xs);
+  /* Solid raised chrome surface (not the translucent accent-muted) so the
+     11px accent label keeps AA contrast over any of the 5 DS surfaces. */
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-accent-muted);
+  color: var(--bc-accent);
+  font: var(--bc-type-label);
+  white-space: nowrap;
+  pointer-events: auto;
+  opacity: 0.72;
+  box-shadow: var(--bc-shadow-sm);
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+  z-index: var(--bc-z-guide);
+}
+.bp-header:hover .bp-frame-tab,
+.bp-sidebar:hover .bp-frame-tab,
+.bp-footer:hover .bp-frame-tab,
+.bp-frame-tab:focus-within {
+  opacity: 1;
+}
+.bp-frame-tab-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+.bp-frame-tab-label {
+  letter-spacing: 0.02em;
+}
+.bp-frame-tab-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--bc-radius-xs);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.bp-frame-tab-remove:hover {
+  background: var(--bc-bg-hover);
+}
+.bp-frame-tab-remove:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 1px;
+}
+.bp-frame-tab-remove .material-symbols-outlined {
+  font-size: 13px;
+  line-height: 1;
+}
+/* Frame labels are an edit-time affordance only; never in Present mode. */
+[data-builder-mode="preview"] .bp-frame-tab,
+[data-builder-mode="preview"] .bp-zone-add-bar {
+  display: none !important;
+}
+
+/* ── P2 Frames: add-back strip for removed frames ──────────────────── */
+.bp-zone-add-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-gap-sm);
+  padding: var(--bc-gap-sm) var(--bc-gap-md);
+  background: var(--bc-bg-hover);
+  border-bottom: 1px dashed var(--bc-border);
+  flex-shrink: 0;
+}
+.bp-zone-add-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: var(--bc-size-chip);
+  padding: 0 var(--bc-gap-md) 0 var(--bc-gap-sm);
+  border: 1px solid var(--bc-border-strong);
+  border-radius: var(--bc-radius-pill);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  font: var(--bc-type-value);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease),
+              border-color var(--bc-duration-fast) var(--bc-ease);
+}
+.bp-zone-add-chip:hover {
+  background: var(--bc-bg-active);
+  border-color: var(--bc-accent);
+}
+.bp-zone-add-chip:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+}
+.bp-zone-add-chip .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--bc-accent);
+}
+
 .bp-header-brand {
   display: flex;
   align-items: center;
@@ -10746,6 +10859,8 @@
   border-right: 1px solid var(--ds-border);
   overflow: hidden;
   flex-shrink: 0;
+  /* P2 Frames: positioning context for the absolute frame label tab. */
+  position: relative;
 }
 
 .bp-sidebar-nav {
@@ -11036,6 +11151,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  /* P2 Frames: positioning context for the absolute frame label tab. */
+  position: relative;
   /* Was `8px 16px`. Same ratio as header. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
   border-top: 1px solid var(--ds-border);

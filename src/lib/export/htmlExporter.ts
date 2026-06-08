@@ -4,7 +4,7 @@
  */
 
 import { useBuilder } from "@/store/useBuilder";
-import type { Block } from "@/store/useBuilder";
+import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
 
 /* class-concat tokens (variant/status/size/level) must be known, slug-safe
@@ -93,11 +93,15 @@ function renderZone(blocks: Block[], zoneName: string, indent: string): string {
 
 export function exportHTML(): string {
   const s = useBuilder.getState();
+  /* P2 Frames: skip a removed peripheral frame (visible === false) so the
+     exported page matches the canvas. Body is always emitted; an undefined flag
+     defaults to shown (back-compat with pre-flag saved projects). */
+  const zoneVisible = (zone: ZoneId): boolean => s.zoneLayouts?.[zone]?.visible !== false;
   const zones = [
-    renderZone(s.headerBlocks, "Header", "    "),
-    renderZone(s.sidebarBlocks, "Sidebar", "    "),
+    zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ") : "",
+    zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ") : "",
     renderZone(s.blocks, "Body", "    "),
-    renderZone(s.footerBlocks, "Footer", "    "),
+    zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ") : "",
   ].filter(Boolean).join("\n\n");
 
   return `<!DOCTYPE html>
