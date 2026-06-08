@@ -330,7 +330,11 @@ export function SimulatedDataTable({
             type="button"
             onClick={submitDesc}
             disabled={generating || desc.trim().length === 0}
-            style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none", background: "var(--bc-accent, #7cc4ff)", color: "var(--bc-fg-on-accent, #0b0c0e)", cursor: generating ? "default" : "pointer", opacity: generating || desc.trim().length === 0 ? 0.6 : 1, whiteSpace: "nowrap" }}
+            /* Neutral solid fill (not accent) — accent-on-text fails AA on the
+               light-mode accent; the house pattern (present-bar-btn-exit) uses
+               --bc-bg-active + --bc-fg + a strong border + weight, high-contrast
+               in both themes. */
+            style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "1px solid var(--bc-border-strong, rgba(255,255,255,0.2))", background: "var(--bc-bg-active, rgba(255,255,255,0.1))", color: "var(--bc-fg, #e4e4e7)", cursor: generating ? "default" : "pointer", opacity: generating || desc.trim().length === 0 ? 0.6 : 1, whiteSpace: "nowrap" }}
           >
             {generating ? "Generating…" : "✨ Generate"}
           </button>
