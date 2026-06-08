@@ -239,6 +239,158 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const specimenBg = isUoaui && t.T.gradient ? t.T.gradient : t.bg;
   const specimenRadius = isUoaui ? 14 : activeSystem === "m3" ? 12 : 8;
 
+  /* Shared section nodes — rendered by the single-scroll layout below and
+     (regrouped into tabs) by the M3 rich layout. Computed once. */
+  const specimenSection = (
+    <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-specimen">
+      <h3 id="dh-h-specimen" className="dh-section-h" style={{ color: t.fg }}>Specimen</h3>
+      <div
+        ref={scopeRef}
+        className={isUoaui ? "preview-uoaui a-app dh-specimen" : "dh-specimen"}
+        style={{ background: specimenBg, borderRadius: specimenRadius, border: `1px solid ${t.border}`, color: t.fg }}
+      >
+        <style dangerouslySetInnerHTML={{ __html: css }} />
+        {DemoComponent ? <DemoComponent /> : (
+          <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
+            Demo loading...
+          </div>
+        )}
+      </div>
+    </section>
+  );
+  const variantsSection = variants ? (
+    <section id="dh-sec-variants" className="dh-section" aria-labelledby="dh-h-variants">
+      <h3 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h3>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
+        {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
+      </p>
+      <VariantsMatrix matrix={variants} componentId={metaId as UiKitComponentId} system={ds}
+        mode={matrixMode} saltDensity={matrixDensity} Demo={DemoComponent} t={t} />
+    </section>
+  ) : null;
+  const propsSection = propRows ? (
+    <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
+      <h3 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h3>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        The real {comp.name.toLowerCase()} API for this design system. Prop names and
+        defaults follow the official package, not a normalised abstraction.
+      </p>
+      <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
+        <table className="dh-props" style={{ fontFamily: t.font }}>
+          <thead>
+            <tr style={{ borderBottomColor: t.borderSubtle }}>
+              {["Prop", "Type", "Default", "Description"].map((h) => (
+                <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg3 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {propRows.map((p) => (
+              <tr key={p.name} style={{ borderBottomColor: t.borderSubtle }}>
+                <td className="dh-props-cell dh-props-name" style={{ color: t.fg }}>{p.name}</td>
+                <td className="dh-props-cell dh-props-type" style={{ color: t.accentText }}>{p.type}</td>
+                <td className="dh-props-cell dh-props-default" style={{ color: t.fg3 }}>{p.default}</td>
+                <td className="dh-props-cell" style={{ color: t.fg2 }}>{p.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ) : null;
+  const codeSection = (
+    <section id="dh-sec-code" className="dh-section" aria-labelledby="dh-h-code">
+      <h3 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h3>
+      <CodePanel componentId={componentId} />
+    </section>
+  );
+  const guidanceSection = guidance ? (
+    <section id="dh-sec-guidance" className="dh-section" aria-labelledby="dh-h-guidance">
+      <h3 id="dh-h-guidance" className="dh-section-h" style={{ color: t.fg }}>Guidance</h3>
+      <GuidanceCards guidance={guidance} t={t} />
+    </section>
+  ) : null;
+  const tokensSection = (tokens && tokens.length > 0) ? (
+    <section id="dh-sec-tokens" className="dh-section" aria-labelledby="dh-h-tokens">
+      <h3 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h3>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        The design tokens that drive this {comp.name.toLowerCase()}. Values resolve live
+        against the current theme, mode, and density.
+      </p>
+      <TokenSwatches tokens={tokens} t={t} scopeRef={scopeRef} />
+    </section>
+  ) : null;
+  const accessibilitySection = (
+    <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
+      <h3 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h3>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        {comp.name} follows WCAG 2.1 AA: it is keyboard operable, exposes a visible focus
+        state, and is labelled for assistive technology. Full keyboard + screen-reader
+        guidance lands in a later pass.
+      </p>
+    </section>
+  );
+
+  /* ── M3: rich tabbed layout (Overview / Specs / Guidelines / Accessibility),
+     modelled on m3.material.io. Self-contained + full-width (no external TOC).
+     Skins entirely from the M3 theme `t`, so it reads as M3, not generic. ── */
+  if (activeSystem === "m3") {
+    const M3_TABS = [
+      ["overview", "Overview"],
+      ["specs", "Specs"],
+      ["guidelines", "Guidelines"],
+      ["accessibility", "Accessibility"],
+    ] as const;
+    const m3Tab = (M3_TABS as readonly (readonly string[])[]).some((x) => x[0] === activeTab)
+      ? (activeTab as string)
+      : "overview";
+    return (
+      <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
+        <header className="dh-detail-header">
+          <h2 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h2>
+          <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
+        </header>
+        {/* M3 pill tab bar */}
+        <div role="tablist" aria-label="Component view" style={{
+          display: "flex", gap: 4, padding: 4, marginBottom: 32, width: "fit-content",
+          background: t.bg2, borderRadius: 999, border: `1px solid ${t.border}`,
+        }}>
+          {M3_TABS.map(([id, label]) => {
+            const active = m3Tab === id;
+            return (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(id)}
+                style={{
+                  height: 36, padding: "0 18px", border: 0, borderRadius: 999, cursor: "pointer",
+                  fontSize: 14, fontFamily: t.font, fontWeight: active ? 600 : 500,
+                  background: active ? t.bg : "transparent",
+                  color: active ? t.fg : t.fg2,
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.14)" : "none",
+                  transition: "background 120ms, color 120ms",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {m3Tab === "overview" && specimenSection}
+        {m3Tab === "specs" && <>{variantsSection}{propsSection}{tokensSection}{codeSection}</>}
+        {m3Tab === "guidelines" && (guidanceSection ?? (
+          <p className="dh-section-lede" style={{ color: t.fg3 }}>
+            Usage guidance for the {comp.name.toLowerCase()} lands in a later pass.
+          </p>
+        ))}
+        {m3Tab === "accessibility" && accessibilitySection}
+      </div>
+    );
+  }
+
   return (
     <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
       {/* Header */}
@@ -248,105 +400,15 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       </header>
 
       {/* 1 ── Specimen: the live demo, in a generous framed stage. ── */}
-      <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-specimen">
-        <h3 id="dh-h-specimen" className="dh-section-h" style={{ color: t.fg }}>Specimen</h3>
-        <div
-          ref={scopeRef}
-          className={isUoaui ? "preview-uoaui a-app dh-specimen" : "dh-specimen"}
-          style={{
-            background: specimenBg,
-            borderRadius: specimenRadius,
-            border: `1px solid ${t.border}`,
-            color: t.fg,
-          }}
-        >
-          <style dangerouslySetInnerHTML={{ __html: css }} />
-          {DemoComponent ? <DemoComponent /> : (
-            <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
-              display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
-              Demo loading...
-            </div>
-          )}
-        </div>
-      </section>
+      {specimenSection}
 
-      {/* 2 ── Variants × states matrix. ── */}
-      {variants && (
-        <section id="dh-sec-variants" className="dh-section" aria-labelledby="dh-h-variants">
-          <h3 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h3>
-          <p className="dh-section-lede" style={{ color: t.fg3 }}>
-            The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
-            {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
-          </p>
-          <VariantsMatrix
-            matrix={variants}
-            componentId={metaId as UiKitComponentId}
-            system={ds}
-            mode={matrixMode}
-            saltDensity={matrixDensity}
-            Demo={DemoComponent}
-            t={t}
-          />
-        </section>
-      )}
-
-      {/* 3 ── Props table (all 5 DS, generalized from DS_PROPS). ── */}
-      {propRows && (
-        <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
-          <h3 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h3>
-          <p className="dh-section-lede" style={{ color: t.fg3 }}>
-            The real {comp.name.toLowerCase()} API for this design system. Prop names and
-            defaults follow the official package, not a normalised abstraction.
-          </p>
-          <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
-            <table className="dh-props" style={{ fontFamily: t.font }}>
-              <thead>
-                <tr style={{ borderBottomColor: t.borderSubtle }}>
-                  {["Prop", "Type", "Default", "Description"].map((h) => (
-                    <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg3 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {propRows.map((p) => (
-                  <tr key={p.name} style={{ borderBottomColor: t.borderSubtle }}>
-                    <td className="dh-props-cell dh-props-name" style={{ color: t.fg }}>{p.name}</td>
-                    <td className="dh-props-cell dh-props-type" style={{ color: t.accentText }}>{p.type}</td>
-                    <td className="dh-props-cell dh-props-default" style={{ color: t.fg3 }}>{p.default}</td>
-                    <td className="dh-props-cell" style={{ color: t.fg2 }}>{p.description}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* 4 ── Code (existing CodePanel). ── */}
-      <section id="dh-sec-code" className="dh-section" aria-labelledby="dh-h-code">
-        <h3 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h3>
-        <CodePanel componentId={componentId} />
-      </section>
-
-      {/* 5 ── Do / Don't guidance. ── */}
-      {guidance && (
-        <section id="dh-sec-guidance" className="dh-section" aria-labelledby="dh-h-guidance">
-          <h3 id="dh-h-guidance" className="dh-section-h" style={{ color: t.fg }}>Guidance</h3>
-          <GuidanceCards guidance={guidance} t={t} />
-        </section>
-      )}
-
-      {/* 6 ── Design tokens (live getComputedStyle, resolved off the specimen scope). ── */}
-      {tokens && tokens.length > 0 && (
-        <section id="dh-sec-tokens" className="dh-section" aria-labelledby="dh-h-tokens">
-          <h3 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h3>
-          <p className="dh-section-lede" style={{ color: t.fg3 }}>
-            The design tokens that drive this {comp.name.toLowerCase()}. Values resolve live
-            against the current theme, mode, and density.
-          </p>
-          <TokenSwatches tokens={tokens} t={t} scopeRef={scopeRef} />
-        </section>
-      )}
+      {/* Variants → Props → Code → Guidance → Tokens (m3.material.io order),
+          rendered from the shared section nodes computed above. */}
+      {variantsSection}
+      {propsSection}
+      {codeSection}
+      {guidanceSection}
+      {tokensSection}
     </div>
   );
 }
@@ -361,7 +423,9 @@ export function getDetailSections(
   system: string,
   componentId: string,
 ): { id: string; label: string }[] {
-  if (system === "carbon") return [];
+  // Carbon (5-tab) and M3 (4-tab, Figma/M3-style) render self-contained
+  // tabbed layouts full-width, so they opt out of the single-scroll TOC rail.
+  if (system === "carbon" || system === "m3") return [];
   if (componentId === "charts" || componentId === "ag-grid") return [];
 
   const metaId = META_ID[componentId];
