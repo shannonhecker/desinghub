@@ -168,6 +168,44 @@ export interface Block {
    a LayoutGroup is effectively a zone-in-a-block. */
 export type LayoutGroupDirection = LayoutMode;
 
+/* P5 padding+gap shape-unions. The OLD `number` shape stays valid (saved
+   projects predate the object form), so both renderings (resolver + export)
+   normalize first. Object shape lets the inspector drive per-side padding +
+   independent H/V gap like Figma, without re-modelling any persisted Page.
+
+   PaddingValue: a single number = uniform px padding (legacy); the object form
+   = explicit per-side px (top/right/bottom/left, Figma's T/R/B/L order). */
+export interface PaddingObject { t: number; r: number; b: number; l: number; }
+export type PaddingValue = number | PaddingObject;
+/* GapValue: a single number = uniform px gap (legacy); the object form = an
+   independent row (between rows / cross-axis) + col (between columns / main-
+   axis) gap, mapped to CSS rowGap/columnGap. */
+export interface GapObject { row: number; col: number; }
+export type GapValue = number | GapObject;
+
+/* Normalize the legacy number shape to the object form so the resolver +
+   exporter can read per-side / per-axis values uniformly. A number expands to
+   the uniform object (back-compat); an object passes through unchanged. */
+export function normalizePadding(p: PaddingValue | undefined): PaddingObject | undefined {
+  if (p === undefined) return undefined;
+  if (typeof p === "number") return { t: p, r: p, b: p, l: p };
+  return p;
+}
+export function normalizeGap(g: GapValue | undefined): GapObject | undefined {
+  if (g === undefined) return undefined;
+  if (typeof g === "number") return { row: g, col: g };
+  return g;
+}
+/* True when every side / axis is equal — used by the resolver + exporter to
+   prefer the compact single-value CSS (`padding`/`gap`) over the per-side form,
+   keeping output lean and identical to the legacy number path. */
+export function isUniformPadding(p: PaddingObject): boolean {
+  return p.t === p.r && p.r === p.b && p.b === p.l;
+}
+export function isUniformGap(g: GapObject): boolean {
+  return g.row === g.col;
+}
+
 /* Per-zone layout configuration (separate from individual block
    layouts). Defaults stay backward-compatible: body defaults to
    "row" with wrap, header/footer to "row", sidebar to "stack". */
@@ -175,10 +213,12 @@ export interface ZoneLayout {
   mode: LayoutMode;
   /** Used only when mode === "grid" - column count (1–12). */
   columns?: number;
-  /** Gap between items in px. Defaults via CSS. */
-  gap?: number;
-  /** Padding inside the zone in px. Optional. */
-  padding?: number;
+  /** Gap between items in px. Legacy `number` = uniform; P5 object form =
+     independent row/col gap (mapped to rowGap/columnGap). Defaults via CSS. */
+  gap?: GapValue;
+  /** Padding inside the zone in px. Legacy `number` = uniform; P5 object form =
+     per-side {t,r,b,l} (Figma linked/unlinked). Optional. */
+  padding?: PaddingValue;
   /** For Row mode: whether items wrap to new lines. */
   wrap?: boolean;
   /** align-items on the cross-axis. */

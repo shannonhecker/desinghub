@@ -5,9 +5,13 @@ import { useDraggable } from "@dnd-kit/core";
 import {
   useBuilder,
   resolveDestinationZone,
+  normalizePadding,
+  normalizeGap,
   type LayoutProps,
   type LayoutWidth,
   type ZoneId,
+  type PaddingObject,
+  type GapObject,
 } from "@/store/useBuilder";
 import {
   LIBRARY_BLUEPRINTS,
@@ -738,6 +742,30 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
 
+  /* P5 padding — normalize the stored value (legacy number | {t,r,b,l}) to the
+     object form for the per-side inputs. "Linked" mode (all four sides equal)
+     writes back a single NUMBER so saved projects stay in the compact legacy
+     shape until the user actually splits a side. */
+  const pad: PaddingObject = normalizePadding(zoneLayout.padding) ?? { t: 0, r: 0, b: 0, l: 0 };
+  const padLinked = pad.t === pad.r && pad.r === pad.b && pad.b === pad.l;
+  const [padUnlinked, setPadUnlinked] = useState(false);
+  const showPerSide = padUnlinked || !padLinked;
+  const writeLinkedPad = (v: number) => setZoneLayout(zone, { padding: Math.max(0, v) });
+  const writeSide = (side: keyof PaddingObject, v: number) =>
+    setZoneLayout(zone, { padding: { ...pad, [side]: Math.max(0, v) } });
+
+  /* P5 gap — normalize to {row,col}. "Linked" (row === col) writes back a
+     single NUMBER (legacy compact shape); splitting writes the object. */
+  const gap: GapObject = normalizeGap(zoneLayout.gap) ?? { row: 0, col: 0 };
+  const gapLinked = gap.row === gap.col;
+  const [gapUnlinked, setGapUnlinked] = useState(false);
+  const showGapSplit = gapUnlinked || !gapLinked;
+  const writeLinkedGap = (v: number) => setZoneLayout(zone, { gap: Math.max(0, v) });
+  const writeGapAxis = (axis: keyof GapObject, v: number) =>
+    setZoneLayout(zone, { gap: { ...gap, [axis]: Math.max(0, v) } });
+
+  const numFromEvent = (raw: string): number => Math.max(0, Number(raw) || 0);
+
   return (
     /* Figma names this cluster "Auto layout" (direction / gap / padding /
        align). We keep the store model ('stack'|'row'|'grid') untouched —
@@ -810,28 +838,128 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
         </div>
       )}
 
-      {/* Gap - space between children in px */}
-      <div className="inspector-field inspector-field-row">
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Gap (px)</label>
+      {/* Gap — Figma-style H/V gap. Linked = one value (legacy number shape);
+          unlinked splits into row (vertical / between rows) + col (horizontal /
+          between columns). The link toggle is keyboard-operable + announces its
+          state via aria-pressed. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">
+          <span>Gap (px)</span>
+          <button
+            type="button"
+            className={`inspector-link-toggle${showGapSplit ? " is-unlinked" : ""}`}
+            aria-pressed={showGapSplit}
+            aria-label={showGapSplit ? "Link row + column gap to one value" : "Unlink row + column gap"}
+            title={showGapSplit ? "Link H/V gap" : "Split into H + V gap"}
+            onClick={() => {
+              if (showGapSplit) {
+                /* Re-link: collapse to a single value (use col / horizontal). */
+                writeLinkedGap(gap.col);
+                setGapUnlinked(false);
+              } else {
+                setGapUnlinked(true);
+              }
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {showGapSplit ? "link_off" : "link"}
+            </span>
+          </button>
+        </label>
+        {showGapSplit ? (
+          <div className="inspector-pad-grid inspector-pad-grid--2">
+            <label className="inspector-pad-cell">
+              <span className="inspector-pad-side" aria-hidden="true">V</span>
+              <input
+                type="number"
+                className="inspector-input inspector-pad-input"
+                min={0}
+                aria-label="Vertical gap (between rows) in px"
+                value={gap.row}
+                onChange={(e) => writeGapAxis("row", numFromEvent(e.target.value))}
+              />
+            </label>
+            <label className="inspector-pad-cell">
+              <span className="inspector-pad-side" aria-hidden="true">H</span>
+              <input
+                type="number"
+                className="inspector-input inspector-pad-input"
+                min={0}
+                aria-label="Horizontal gap (between columns) in px"
+                value={gap.col}
+                onChange={(e) => writeGapAxis("col", numFromEvent(e.target.value))}
+              />
+            </label>
+          </div>
+        ) : (
           <input
             type="number"
             className="inspector-input"
             min={0}
-            value={zoneLayout.gap ?? 0}
-            onChange={(e) => setZoneLayout(zone, { gap: Math.max(0, Number(e.target.value) || 0) })}
+            aria-label="Gap between children in px"
+            value={gap.row}
+            onChange={(e) => writeLinkedGap(numFromEvent(e.target.value))}
           />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Padding (px)</label>
+        )}
+      </div>
+
+      {/* Padding — Figma-style 4-side control. Linked = one value (legacy number
+          shape); unlinked splits into T/R/B/L. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">
+          <span>Padding (px)</span>
+          <button
+            type="button"
+            className={`inspector-link-toggle${showPerSide ? " is-unlinked" : ""}`}
+            aria-pressed={showPerSide}
+            aria-label={showPerSide ? "Link all sides to one padding value" : "Unlink padding sides"}
+            title={showPerSide ? "Link all sides" : "Set each side"}
+            onClick={() => {
+              if (showPerSide) {
+                /* Re-link: collapse to a single value (use top). */
+                writeLinkedPad(pad.t);
+                setPadUnlinked(false);
+              } else {
+                setPadUnlinked(true);
+              }
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {showPerSide ? "link_off" : "link"}
+            </span>
+          </button>
+        </label>
+        {showPerSide ? (
+          <div className="inspector-pad-grid">
+            {([
+              ["t", "T", "Top padding in px"],
+              ["r", "R", "Right padding in px"],
+              ["b", "B", "Bottom padding in px"],
+              ["l", "L", "Left padding in px"],
+            ] as const).map(([side, glyph, hint]) => (
+              <label className="inspector-pad-cell" key={side} title={hint}>
+                <span className="inspector-pad-side" aria-hidden="true">{glyph}</span>
+                <input
+                  type="number"
+                  className="inspector-input inspector-pad-input"
+                  min={0}
+                  aria-label={hint}
+                  value={pad[side]}
+                  onChange={(e) => writeSide(side, numFromEvent(e.target.value))}
+                />
+              </label>
+            ))}
+          </div>
+        ) : (
           <input
             type="number"
             className="inspector-input"
             min={0}
-            value={zoneLayout.padding ?? 0}
-            onChange={(e) => setZoneLayout(zone, { padding: Math.max(0, Number(e.target.value) || 0) })}
+            aria-label="Padding on all sides in px"
+            value={pad.t}
+            onChange={(e) => writeLinkedPad(numFromEvent(e.target.value))}
           />
-        </div>
+        )}
       </div>
 
       {/* Align - align-items on the cross axis */}

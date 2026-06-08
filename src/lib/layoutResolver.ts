@@ -18,6 +18,7 @@
  */
 
 import type { Block, LayoutProps, LayoutWidth, ZoneLayout, LayoutJustify } from "@/store/useBuilder";
+import { normalizePadding, normalizeGap } from "@/store/useBuilder";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* Translate a LayoutWidth token to a CSS length string, or `null`
@@ -248,7 +249,11 @@ export function computeItemStyle(
        summing to >100%) still wraps. px is left literal (an explicit
        fixed size), auto/fill are handled above, and stack mode is
        excluded because its gap runs along the cross axis (vertical). */
-    const gap = zoneLayout.gap ?? 0;
+    /* The row %-width trap is about the MAIN-axis (between-column) gap, so use
+       the object form's `col` when present, else the uniform value (legacy
+       number normalizes to col === row). */
+    const gapObj = normalizeGap(zoneLayout.gap);
+    const gap = gapObj?.col ?? 0;
     const gapAware =
       zoneLayout.mode === "row" &&
       gap > 0 &&
@@ -296,8 +301,33 @@ const GRID_JUSTIFY_ITEMS: Record<LayoutJustify, NonNullable<React.CSSProperties[
    wrap, gap, padding, align-items, and main-axis justify based on the ZoneLayout. */
 export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperties {
   const base: React.CSSProperties = {};
-  if (zoneLayout.padding) base.padding = `${zoneLayout.padding}px`;
-  if (zoneLayout.gap !== undefined) base.gap = `${zoneLayout.gap}px`;
+  /* P5 padding — normalize the legacy number / new {t,r,b,l} object to one
+     shape, then emit compact `padding` when uniform (identical to the legacy
+     single-number output) or explicit per-side properties otherwise. A 0 on
+     every side is a no-op (matches the old `if (zoneLayout.padding)` truthiness
+     for a 0 number). */
+  const pad = normalizePadding(zoneLayout.padding);
+  if (pad && (pad.t || pad.r || pad.b || pad.l)) {
+    if (pad.t === pad.r && pad.r === pad.b && pad.b === pad.l) {
+      base.padding = `${pad.t}px`;
+    } else {
+      base.paddingTop = `${pad.t}px`;
+      base.paddingRight = `${pad.r}px`;
+      base.paddingBottom = `${pad.b}px`;
+      base.paddingLeft = `${pad.l}px`;
+    }
+  }
+  /* P5 gap — normalize the legacy number / new {row,col} object; emit compact
+     `gap` when both axes match (identical to the legacy single-number output)
+     or rowGap/columnGap otherwise. */
+  const gap = normalizeGap(zoneLayout.gap);
+  if (gap) {
+    if (gap.row === gap.col) base.gap = `${gap.row}px`;
+    else {
+      base.rowGap = `${gap.row}px`;
+      base.columnGap = `${gap.col}px`;
+    }
+  }
 
   if (zoneLayout.mode === "grid") {
     const cols = zoneLayout.columns ?? 3;

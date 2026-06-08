@@ -8208,6 +8208,76 @@
   min-width: 0;
 }
 
+/* P5 padding/gap — Figma-style link toggle + per-side grid. Flat chrome,
+   token-driven, AA in both themes, keyboard-operable with a visible focus ring.
+   The link toggle is a small icon button sitting at the end of the field label
+   row (label uses justify-content: space-between). */
+.inspector-link-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-xs, 3px);
+  background: transparent;
+  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.inspector-link-toggle:hover {
+  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
+  color: var(--b-fg, #e4e4e7);
+}
+.inspector-link-toggle:focus-visible {
+  outline: 2px solid var(--bc-accent, #7cc4ff);
+  outline-offset: 1px;
+}
+/* Unlinked = active: filled chip + accent underline so the state is never
+   color-only (mirrors .inspector-toggle-btn.active). */
+.inspector-link-toggle.is-unlinked {
+  background: var(--bc-bg-active, rgba(255, 255, 255, 0.10));
+  border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
+  color: var(--bc-accent, #7cc4ff);
+}
+.inspector-link-toggle .material-symbols-outlined {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Per-side padding grid (4 cells) / per-axis gap grid (2 cells). Each cell is a
+   side-glyph + a compact number input. */
+.inspector-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--bc-gap-xs, 4px);
+}
+.inspector-pad-grid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.inspector-pad-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs, 2px);
+  min-width: 0;
+}
+.inspector-pad-side {
+  flex: 0 0 auto;
+  width: 12px;
+  text-align: center;
+  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
+  font-weight: 600;
+  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
+}
+.inspector-pad-input {
+  flex: 1;
+  min-width: 0;
+  /* tighter horizontal padding so a 2- or 3-digit value fits in a quarter cell */
+  padding-left: 6px;
+  padding-right: 4px;
+}
+
 /* P1 zone hint — the small {Header}/{Body}/… tag beside the Auto-layout
    "Direction" label so it's clear which container the cluster affects. */
 .inspector-zone-hint {

@@ -29,6 +29,85 @@ describe("computeContainerStyle — main-axis justify is additive (no regression
   });
 });
 
+/* ── P5: per-side padding + row/col gap — both shapes (number + object) ──
+   The legacy NUMBER shape must stay identical (back-compat with saved Pages);
+   the new OBJECT shape emits per-side padding + rowGap/columnGap. */
+describe("computeContainerStyle — P5 padding (number | {t,r,b,l})", () => {
+  it("number padding → compact `padding` (legacy shape unchanged)", () => {
+    const style = computeContainerStyle({ mode: "row", padding: 16 });
+    expect(style.padding).toBe("16px");
+    expect(style.paddingTop).toBeUndefined();
+  });
+
+  it("uniform object padding collapses to compact `padding` (lean output)", () => {
+    const style = computeContainerStyle({ mode: "row", padding: { t: 12, r: 12, b: 12, l: 12 } });
+    expect(style.padding).toBe("12px");
+    expect(style.paddingTop).toBeUndefined();
+  });
+
+  it("per-side object padding emits paddingTop/Right/Bottom/Left", () => {
+    const style = computeContainerStyle({ mode: "row", padding: { t: 8, r: 16, b: 8, l: 16 } });
+    expect(style.paddingTop).toBe("8px");
+    expect(style.paddingRight).toBe("16px");
+    expect(style.paddingBottom).toBe("8px");
+    expect(style.paddingLeft).toBe("16px");
+    expect(style.padding).toBeUndefined();
+  });
+
+  it("all-zero padding is a no-op (matches legacy `if (padding)` truthiness)", () => {
+    const num = computeContainerStyle({ mode: "row", padding: 0 });
+    expect(num.padding).toBeUndefined();
+    const obj = computeContainerStyle({ mode: "row", padding: { t: 0, r: 0, b: 0, l: 0 } });
+    expect(obj.padding).toBeUndefined();
+    expect(obj.paddingTop).toBeUndefined();
+  });
+
+  it("undefined padding emits nothing (back-compat)", () => {
+    const style = computeContainerStyle({ mode: "row" });
+    expect(style.padding).toBeUndefined();
+    expect(style.paddingTop).toBeUndefined();
+  });
+});
+
+describe("computeContainerStyle — P5 gap (number | {row,col})", () => {
+  it("number gap → compact `gap` (legacy shape unchanged)", () => {
+    const style = computeContainerStyle({ mode: "row", gap: 12 });
+    expect(style.gap).toBe("12px");
+    expect(style.rowGap).toBeUndefined();
+  });
+
+  it("uniform object gap collapses to compact `gap`", () => {
+    const style = computeContainerStyle({ mode: "row", gap: { row: 8, col: 8 } });
+    expect(style.gap).toBe("8px");
+    expect(style.rowGap).toBeUndefined();
+  });
+
+  it("per-axis object gap emits rowGap + columnGap", () => {
+    const style = computeContainerStyle({ mode: "row", gap: { row: 4, col: 12 } });
+    expect(style.rowGap).toBe("4px");
+    expect(style.columnGap).toBe("12px");
+    expect(style.gap).toBeUndefined();
+  });
+
+  it("a 0 number gap still emits gap:0px (unchanged from legacy)", () => {
+    expect(computeContainerStyle({ mode: "row", gap: 0 }).gap).toBe("0px");
+  });
+});
+
+describe("computeItemStyle — P5 row %-trap uses the col (main-axis) gap", () => {
+  it("object gap subtracts the COL gap from a % flex-basis (between-columns)", () => {
+    const block = { id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: "33.333%" } } as Block;
+    const style = computeItemStyle(block, { mode: "row", gap: { row: 4, col: 12 }, wrap: true });
+    expect(style.flex).toBe("0 1 calc(33.333% - 12px)");
+  });
+
+  it("number gap path is unchanged by the union widening", () => {
+    const block = { id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: "50%" } } as Block;
+    const style = computeItemStyle(block, { mode: "row", gap: 12, wrap: true });
+    expect(style.flex).toBe("0 1 calc(50% - 12px)");
+  });
+});
+
 describe("computeItemStyle — fixed-width grid items pin to start (#298)", () => {
   it("a px-width block in a grid gets justifySelf:start so it does not float centered in its track", () => {
     const block = { id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: "240px" } } as Block;

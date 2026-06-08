@@ -211,3 +211,110 @@ describe("reactExporter — P4 justify/align projection reaches generated code",
     expect(code).not.toContain('justify="');
   });
 });
+
+/* ── P5 export twin: per-side padding {t,r,b,l} + per-axis gap {row,col} must
+   survive into generated code on EVERY DS. NO DS layout primitive exposes a
+   per-side padding prop, so padding ALWAYS rides a CSS-wrapper / style / sx;
+   the DS-native spacing prop carries the (col) gap, and rowGap/columnGap is
+   emitted only when the two axes differ. Asserts the legacy number shape stays
+   valid AND the new object shape reaches code. */
+describe("reactExporter — P5 per-side padding + row/col gap reach generated code", () => {
+  const card2 = (id: string, span: number) => ({
+    id,
+    type: "SimulatedCard",
+    props: { title: id, content: "x" },
+    layout: { width: `${span}fr` },
+  });
+
+  function setBody(ds: string, mode: string, layout: Record<string, unknown>) {
+    useBuilder.setState({
+      designSystem: ds as never,
+      mode: "light" as never,
+      density: "medium",
+      headerBlocks: [],
+      sidebarBlocks: [],
+      footerBlocks: [],
+      blocks: [card2("a", 6), card2("b", 6)] as never,
+      zoneLayouts: { body: { mode, ...layout } } as never,
+    });
+  }
+
+  it("Salt grid: object padding {t:8,r:16,b:8,l:16} wraps GridLayout in a styled grid div", () => {
+    setBody("salt", "grid", { columns: 12, gap: 3, padding: { t: 8, r: 16, b: 8, l: 16 } });
+    const code = exportReact();
+    expect(code).toContain('paddingTop: "8px"');
+    expect(code).toContain('paddingRight: "16px"');
+    expect(code).toContain('paddingBottom: "8px"');
+    expect(code).toContain('paddingLeft: "16px"');
+    expect(code).toMatch(/<div style=\{\{ display: "grid",[^}]*paddingTop: "8px"[^}]*\}\}><GridLayout/);
+  });
+
+  it("Salt row: per-axis gap {row:4,col:12} → native FlexLayout gap={12} (col) + rowGap/columnGap CSS override", () => {
+    setBody("salt", "row", { gap: { row: 4, col: 12 } });
+    const code = exportReact();
+    // DS-native spacing prop carries the col (main-axis) gap
+    expect(code).toContain("<FlexLayout gap={12}");
+    // the per-axis split rides a CSS wrapper since FlexLayout has one gap prop
+    expect(code).toContain('rowGap: "4px"');
+    expect(code).toContain('columnGap: "12px"');
+  });
+
+  it("M3 grid: object padding + per-axis gap merge into the Grid sx prop", () => {
+    setBody("m3", "grid", { columns: 12, gap: { row: 4, col: 12 }, padding: { t: 8, r: 16, b: 8, l: 16 } });
+    const code = exportReact();
+    expect(code).toContain("<Grid container");
+    expect(code).toMatch(/sx=\{\{[^}]*paddingTop: "8px"/);
+    expect(code).toContain('rowGap: "4px"');
+    expect(code).toContain('columnGap: "12px"');
+  });
+
+  it("Fluent row (CSS-div DS): object padding + per-axis gap merge into the container div style", () => {
+    setBody("fluent", "row", { gap: { row: 4, col: 12 }, padding: { t: 8, r: 16, b: 8, l: 16 } });
+    const code = exportReact();
+    expect(code).toContain('paddingTop: "8px"');
+    expect(code).toContain('paddingLeft: "16px"');
+    expect(code).toContain('rowGap: "4px"');
+    expect(code).toContain('columnGap: "12px"');
+  });
+
+  it("Carbon stack: object padding + per-axis gap reach the Stack style; native gap carries col", () => {
+    setBody("carbon", "stack", { gap: { row: 4, col: 12 }, padding: { t: 8, r: 16, b: 8, l: 16 } });
+    const code = exportReact();
+    expect(code).toContain("<Stack gap={12}"); // native = col
+    expect(code).toMatch(/style=\{\{[^}]*paddingTop: "8px"/);
+    expect(code).toContain('rowGap: "4px"');
+    expect(code).toContain('columnGap: "12px"');
+  });
+
+  it("uoaui grid: object padding reaches the .a-grid div style", () => {
+    setBody("uoaui", "grid", { columns: 12, gap: 3, padding: { t: 8, r: 16, b: 8, l: 16 } });
+    const code = exportReact();
+    expect(code).toMatch(/<div className="a-grid" style=\{\{[^}]*paddingTop: "8px"/);
+  });
+
+  it("uniform object padding collapses to compact `padding` in exported code (lean)", () => {
+    setBody("fluent", "row", { padding: { t: 12, r: 12, b: 12, l: 12 } });
+    const code = exportReact();
+    expect(code).toContain('padding: "12px"');
+    expect(code).not.toContain("paddingTop");
+  });
+
+  it("legacy NUMBER padding/gap still export unchanged (back-compat)", () => {
+    setBody("salt", "row", { gap: 3, padding: 16 });
+    const code = exportReact();
+    // uniform number padding → compact padding via the row CSS wrapper
+    expect(code).toContain('padding: "16px"');
+    // single gap stays the DS-native prop; no per-axis CSS override
+    expect(code).toContain("<FlexLayout gap={3}");
+    expect(code).not.toContain("rowGap");
+    expect(code).not.toContain("columnGap");
+  });
+
+  it("a zone with NO padding and a uniform gap emits NO padding/rowGap CSS (lean, common case)", () => {
+    setBody("salt", "row", { gap: 3 });
+    const code = exportReact();
+    expect(code).not.toContain("padding:");
+    expect(code).not.toContain("paddingTop");
+    expect(code).not.toContain("rowGap");
+  });
+});

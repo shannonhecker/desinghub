@@ -198,15 +198,24 @@ function renderZone(
          wraps it in a styled div where the DS primitive can't set height. */
       heightStyle: heightStyleOf(b),
     }));
-    /* P4 export twin: thread BOTH justify (main-axis distribution) AND align
-       (cross-axis) from the ZoneLayout into the registry's per-DS toJsx so the
-       values reach generated code (the export trap — they silently die if the
-       projection only forwards columns/gap). Each DS maps them to a native prop
-       (Salt FlexLayout justify/align, MUI sx) or a CSS-wrapper style fallback. */
+    /* P4/P5 export twin: thread justify (main-axis distribution), align (cross-
+       axis), and the P5 per-side padding + per-axis gap from the ZoneLayout into
+       the registry's per-DS toJsx so the values reach generated code (the export
+       trap — they silently die if the projection only forwards columns/gap).
+       Each DS maps them to a native prop (Salt FlexLayout justify/align, MUI sx)
+       or a CSS-wrapper style fallback. Pass `gap` (number | {row,col}) and
+       `padding` (number | {t,r,b,l}) UNCHANGED so the registry can derive both
+       the DS-native single-value gap AND the per-side/per-axis CSS overrides. */
     const wrapped = layoutToJsx(
       system,
       prim,
-      { columns: layout?.columns ?? 12, gap: layout?.gap ?? 3, justify: layout?.justify, align: layout?.align },
+      {
+        columns: layout?.columns ?? 12,
+        gap: layout?.gap ?? 3,
+        padding: layout?.padding,
+        justify: layout?.justify,
+        align: layout?.align,
+      },
       children,
     );
     if (wrapped) {
