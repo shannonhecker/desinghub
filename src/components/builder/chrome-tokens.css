@@ -57,6 +57,12 @@
   --bc-accent-muted: rgba(124, 196, 255, 0.24);
   --bc-accent-ring: rgba(124, 196, 255, 0.50);
 
+  /* Sibling smart-guide (P7) — magenta, deliberately distinct from the
+     blue --bc-accent (the 12-col percent guide) and from --bc-danger
+     (error) so an align-to-sibling snap reads as its own thing, Figma
+     style. Bright enough to pop on the dark canvas. */
+  --bc-guide-sibling: #f25cc1;
+
   /* Selection (block "currently being edited" outline).
      Distinct from --bc-accent (chrome action color), --ds-primary
      (per-DS brand), and from brand-mode accents like --brand-teal
@@ -170,6 +176,10 @@
   --bc-accent:      #0b69d9;
   --bc-accent-muted: rgba(11, 105, 217, 0.14);
   --bc-accent-ring: rgba(11, 105, 217, 0.44);
+
+  /* Sibling smart-guide (P7) — deeper magenta for adequate contrast on
+     the light canvas. Distinct from the blue accent + red danger. */
+  --bc-guide-sibling: #c01d83;
 
   /* Light-mode selection: deeper blue for adequate contrast on light surfaces. */
   --builder-selection-color: #2f5fd9;

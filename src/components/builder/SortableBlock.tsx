@@ -6,6 +6,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
 import { useBuilder, findBlockInTree } from "@/store/useBuilder";
+import { computeSiblingSnap, type SiblingCandidate } from "@/lib/siblingSnap";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
@@ -78,6 +79,9 @@ function ExperimentalResize({
     containerWidth: number;
     containerRect: DOMRect;
     snapPct: number | null;
+    /* Active sibling smart-guide lines (viewport x) — one per aligned
+       reference. Empty when the edge isn't snapped to a sibling. */
+    siblingGuides: { pos: number }[];
   } | null>(null);
 
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
@@ -115,6 +119,15 @@ function ExperimentalResize({
      before unsnapping. Prevents the 1–2px jitter band. */
   const isSnappedRef = useRef<boolean>(false);
   const lastSnapPctRef = useRef<number | null>(null);
+
+  /* Sibling smart-guide state (P7). Candidates (sibling edge/center
+     viewport-x) are sampled once at pointer-down; blockLeft anchors
+     the moving right edge; the snapped/lastPos refs carry the same
+     hysteresis the percent snap uses, scoped to sibling lines. */
+  const siblingCandidatesRef = useRef<SiblingCandidate[]>([]);
+  const blockLeftRef = useRef<number>(0);
+  const siblingSnappedRef = useRef<boolean>(false);
+  const lastSiblingPosRef = useRef<number | null>(null);
 
   /* Seed unit from current width on mount / when the block
      changes so the HUD shows a sensible unit from the first
@@ -256,8 +269,34 @@ function ExperimentalResize({
       isSnappedRef.current = false;
       lastSnapPctRef.current = null;
 
+      /* P7: sample sibling snap-lines once at pointer-down (mirrors
+         MarqueeLayer's rect sweep). Each sibling in this zone offers
+         its left edge, center, and right edge as candidates the
+         resized right edge can align to. Sampled once — siblings to
+         the right may reflow as this block grows, same as Figma's
+         gesture-start sampling. */
+      const zoneAttr = blockEl?.getAttribute("data-zone");
+      const selfId = blockEl?.getAttribute("data-block-id");
+      const cands: SiblingCandidate[] = [];
+      if (containerEl && zoneAttr) {
+        containerEl
+          .querySelectorAll<HTMLElement>(`[data-block-id][data-zone="${zoneAttr}"]`)
+          .forEach((el) => {
+            const sid = el.getAttribute("data-block-id");
+            if (!sid || sid === selfId) return;
+            const r = el.getBoundingClientRect();
+            cands.push({ pos: r.left, kind: "edge", siblingId: sid });
+            cands.push({ pos: r.left + r.width / 2, kind: "center", siblingId: sid });
+            cands.push({ pos: r.right, kind: "edge", siblingId: sid });
+          });
+      }
+      siblingCandidatesRef.current = cands;
+      blockLeftRef.current = blockEl?.getBoundingClientRect().left ?? 0;
+      siblingSnappedRef.current = false;
+      lastSiblingPosRef.current = null;
+
       startRef.current = { x: e.clientX, startWidth, containerWidth, containerRect };
-      setDragState({ widthPx: startWidth, containerWidth, containerRect, snapPct: null });
+      setDragState({ widthPx: startWidth, containerWidth, containerRect, snapPct: null, siblingGuides: [] });
       setAnchorRect(blockEl?.getBoundingClientRect() ?? null);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
@@ -272,9 +311,49 @@ function ExperimentalResize({
       const rawPx = startWidth + delta;
 
       const { nextPx, widthString, snapPct } = applyWidth(rawPx, containerWidth, unit);
-      onWidth(widthString);
 
-      setDragState({ widthPx: nextPx, containerWidth, containerRect, snapPct });
+      /* P7 sibling smart-guide layer — POINTER ONLY. applyWidth is
+         reused by keyboard arrow-resize, which must stay precise, so
+         the sibling magnetism lives here, never inside applyWidth. If
+         the resized right edge lands within pull of a sibling line it
+         wins over the percent grid and we draw a guide per coincident
+         reference. */
+      let finalPx = nextPx;
+      let finalWidthString = widthString;
+      let finalSnapPct = snapPct;
+      let siblingGuides: { pos: number }[] = [];
+      const cands = siblingCandidatesRef.current;
+      if (cands.length > 0) {
+        const edgeX = blockLeftRef.current + nextPx;
+        const snap = computeSiblingSnap({
+          edge: edgeX,
+          candidates: cands,
+          wasSnapped: siblingSnappedRef.current,
+          lastSnapPos: lastSiblingPosRef.current,
+        });
+        if (snap.snappedPos !== null) {
+          const desiredPx = snap.snappedPos - blockLeftRef.current;
+          const minPx = minWidth ?? 80;
+          const maxPx = maxWidth ?? containerWidth;
+          /* Only honour the sibling snap if the block can actually
+             reach that width — otherwise the guide would lie. */
+          if (desiredPx >= minPx && desiredPx <= maxPx) {
+            finalPx = desiredPx;
+            finalWidthString =
+              unit === "px"
+                ? `${Math.round(desiredPx)}px`
+                : `${Math.round((desiredPx / containerWidth) * 100)}%`;
+            finalSnapPct = null; /* one guide system at a time — hide the % line */
+            siblingGuides = snap.guides.map((g) => ({ pos: g.pos }));
+          }
+        }
+        siblingSnappedRef.current = snap.snappedPos !== null;
+        lastSiblingPosRef.current = snap.snappedPos;
+      }
+
+      onWidth(finalWidthString);
+
+      setDragState({ widthPx: finalPx, containerWidth, containerRect, snapPct: finalSnapPct, siblingGuides });
 
       /* Update the anchor rect so HUD tracks the resized block's
          new top-right corner. Prefer the cached ref over closest(). */
@@ -282,7 +361,7 @@ function ExperimentalResize({
         ?? ((e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null);
       setAnchorRect(blockEl?.getBoundingClientRect() ?? null);
     },
-    [applyWidth, onWidth, unit],
+    [applyWidth, onWidth, unit, minWidth, maxWidth],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -297,6 +376,10 @@ function ExperimentalResize({
     /* Reset snap hysteresis so the next drag starts fresh (P0-3). */
     isSnappedRef.current = false;
     lastSnapPctRef.current = null;
+    /* Reset sibling smart-guide state too (P7). */
+    siblingCandidatesRef.current = [];
+    siblingSnappedRef.current = false;
+    lastSiblingPosRef.current = null;
     /* Reset keyboard baseline so the next keyboard interaction
        re-seeds from the now-committed currentWidth (P0-1). */
     keyboardWidthRef.current = null;
@@ -741,6 +824,28 @@ function ExperimentalResize({
         >
           <span className="bc-snap-guide__label">{`${snapGuide.pct}%`}</span>
         </div>,
+        document.body,
+      )}
+
+      {/* P7 sibling smart-guides — one magenta line per aligned
+          reference. Portalled to body so they sit above everything,
+          spanning the zone container's vertical extent. */}
+      {dragState && dragState.siblingGuides.length > 0 && typeof document !== "undefined" && createPortal(
+        <>
+          {dragState.siblingGuides.map((g, i) => (
+            <div
+              key={i}
+              className="bc-sibling-guide"
+              style={{
+                position: "fixed",
+                left: g.pos,
+                top: dragState.containerRect.top,
+                height: dragState.containerRect.height,
+              }}
+              aria-hidden="true"
+            />
+          ))}
+        </>,
         document.body,
       )}
     </>

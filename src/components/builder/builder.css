@@ -1229,6 +1229,7 @@
 [data-builder-mode="preview"] .insertion-slot,
 [data-builder-mode="preview"] .bp-sidebar-resize-handle,
 [data-builder-mode="preview"] .bc-snap-guide,
+[data-builder-mode="preview"] .bc-sibling-guide,
 [data-builder-mode="preview"] .component-sidebar,
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
@@ -13406,6 +13407,22 @@
   font: var(--bc-type-label);
   box-shadow: var(--bc-shadow-sm);
   white-space: nowrap;
+}
+
+/* Sibling smart-guide (P7 / Figma-parity) — a magenta vertical line
+   drawn while a resized block's edge aligns with a sibling's edge or
+   center. Deliberately a different colour from the blue .bc-snap-guide
+   (the 12-col percent grid) so the two snap layers never get confused.
+   One element per coincident reference (see SortableBlock's guides map).
+   Chrome only — listed in the preview-hide block above, so it never
+   leaks into rendered preview or exported output. */
+.bc-sibling-guide {
+  width: 1px;
+  background: var(--bc-guide-sibling);
+  opacity: 0.9;
+  z-index: var(--bc-z-guide);
+  pointer-events: none;
+  transform: translateX(-0.5px);
 }
 
 /* ══════════════════════════════════════════════════════════
