@@ -18,6 +18,7 @@
  */
 import type { SystemId, ImportRequirement, ImportSpec } from "./componentApiRegistry";
 import { normalizeColumns } from "./layoutResolver";
+import type { LayoutJustify, LayoutAlign } from "@/store/useBuilder";
 
 export type LayoutPrimitive = "grid" | "stack" | "row" | "appShell" | "split";
 
@@ -46,6 +47,85 @@ const num = (v: unknown, fallback: number): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+/* ── P4 export twin: justify (main-axis distribution) + align (cross-axis) ──
+   ZoneLayout.justify / .align are resolved to CSS by layoutResolver for the
+   edit canvas + preview; the export path must carry the SAME values into
+   generated code or they silently die (the export trap). These helpers mirror
+   layoutResolver's FLEX_JUSTIFY / cross-axis maps so exported code matches what
+   the user sees in the builder.
+
+   `justify`/`align` arrive on the registry `props` object (forwarded by
+   reactExporter). undefined => emit nothing (additive — most zones never set
+   them, keeps output lean). */
+const isJustify = (v: unknown): v is LayoutJustify =>
+  v === "start" || v === "center" || v === "end" || v === "space-between" || v === "space-around";
+const isAlign = (v: unknown): v is LayoutAlign =>
+  v === "start" || v === "center" || v === "end" || v === "stretch";
+
+const justifyOf = (p: Record<string, unknown>): LayoutJustify | undefined =>
+  isJustify(p.justify) ? p.justify : undefined;
+const alignOf = (p: Record<string, unknown>): LayoutAlign | undefined =>
+  isAlign(p.align) ? p.align : undefined;
+
+/* CSS justify-content value for flex containers (mirrors FLEX_JUSTIFY). */
+const FLEX_JUSTIFY_CSS: Record<LayoutJustify, string> = {
+  start: "flex-start",
+  center: "center",
+  end: "flex-end",
+  "space-between": "space-between",
+  "space-around": "space-around",
+};
+/* CSS align-items value for the cross axis. */
+const ALIGN_ITEMS_CSS: Record<LayoutAlign, string> = {
+  start: "flex-start",
+  center: "center",
+  end: "flex-end",
+  stretch: "stretch",
+};
+/* CSS justify-items value for grid containers (mirrors GRID_JUSTIFY_ITEMS:
+   space-* has no justify-items value, so those pin items to start and the
+   container distributes via justify-content instead). */
+const GRID_JUSTIFY_ITEMS_CSS: Record<LayoutJustify, string> = {
+  start: "start",
+  center: "center",
+  end: "end",
+  "space-between": "start",
+  "space-around": "start",
+};
+
+/* Salt FlexLayout/StackLayout use their OWN value vocabulary (start/center/end/
+   stretch/space-*), NOT the CSS flex-start/flex-end spelling — so Salt native
+   props take the raw LayoutJustify/LayoutAlign value directly. */
+
+/* Build the body of a JSX style-object (no braces) for a FLEX container's
+   justify + align. Returns "" when neither is set so callers can skip the
+   style prop entirely. */
+const flexJustifyAlignBody = (p: Record<string, unknown>): string => {
+  const j = justifyOf(p);
+  const a = alignOf(p);
+  const parts: string[] = [];
+  if (j) parts.push(`justifyContent: ${JSON.stringify(FLEX_JUSTIFY_CSS[j])}`);
+  if (a) parts.push(`alignItems: ${JSON.stringify(ALIGN_ITEMS_CSS[a])}`);
+  return parts.join(", ");
+};
+
+/* Build the body of a JSX style-object (no braces) for a GRID container's
+   justify + align. Grid uses justify-items for positional values and
+   justify-content for space-* distribution; cross-axis stays alignItems. */
+const gridJustifyAlignBody = (p: Record<string, unknown>): string => {
+  const j = justifyOf(p);
+  const a = alignOf(p);
+  const parts: string[] = [];
+  if (j) {
+    parts.push(`justifyItems: ${JSON.stringify(GRID_JUSTIFY_ITEMS_CSS[j])}`);
+    if (j === "space-between" || j === "space-around") {
+      parts.push(`justifyContent: ${JSON.stringify(j)}`);
+    }
+  }
+  if (a) parts.push(`alignItems: ${JSON.stringify(ALIGN_ITEMS_CSS[a])}`);
+  return parts.join(", ");
+};
+
 /* P3 export twin: when a child carries a height projection, wrap its JSX in a
    plain <div style={{…}}> so the height reaches the generated code even where
    the DS layout primitive (GridItem / Stack / Column) can't set it. No height
@@ -66,16 +146,41 @@ const SALT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
       const items = children
         .map((c) => `<GridItem colSpan={${normalizeColumns(c.span ?? 12, cols)}}>${withHeight(c)}</GridItem>`)
         .join("");
-      return `<GridLayout columns={${cols}} gap={${gap}}>${items}</GridLayout>`;
+      const grid = `<GridLayout columns={${cols}} gap={${gap}}>${items}</GridLayout>`;
+      /* GridLayout exposes no justify/align prop -> wrap in a styled grid div
+         so the distribution/alignment value still reaches generated code. */
+      const body = gridJustifyAlignBody(p);
+      return body ? `<div style={{ display: "grid", ${body} }}>${grid}</div>` : grid;
     },
   },
   stack: {
     imports: { from: SALT_CORE, names: ["StackLayout"] },
-    toJsx: (p, children) => `<StackLayout gap={${num(p.gap, 3)}}>${joinKids(children)}</StackLayout>`,
+    toJsx: (p, children) => {
+      /* StackLayout supports `align` natively but has NO justify prop. Emit
+         align natively; when justify is set, wrap the StackLayout in a flex
+         column carrying justifyContent (CSS-wrapper fallback per the export
+         trap rule). */
+      const a = alignOf(p);
+      const alignAttr = a ? ` align="${a}"` : "";
+      const stack = `<StackLayout gap={${num(p.gap, 3)}}${alignAttr}>${joinKids(children)}</StackLayout>`;
+      const j = justifyOf(p);
+      return j
+        ? `<div style={{ display: "flex", flexDirection: "column", justifyContent: ${JSON.stringify(FLEX_JUSTIFY_CSS[j])} }}>${stack}</div>`
+        : stack;
+    },
   },
   row: {
     imports: { from: SALT_CORE, names: ["FlexLayout"] },
-    toJsx: (p, children) => `<FlexLayout gap={${num(p.gap, 3)}}>${joinKids(children)}</FlexLayout>`,
+    toJsx: (p, children) => {
+      /* FlexLayout supports BOTH justify + align natively (Salt's own
+         start/center/end/stretch/space-* vocabulary == our LayoutJustify/
+         LayoutAlign value set). */
+      const j = justifyOf(p);
+      const a = alignOf(p);
+      const justifyAttr = j ? ` justify="${j}"` : "";
+      const alignAttr = a ? ` align="${a}"` : "";
+      return `<FlexLayout gap={${num(p.gap, 3)}}${justifyAttr}${alignAttr}>${joinKids(children)}</FlexLayout>`;
+    },
   },
 };
 
@@ -88,16 +193,28 @@ const M3: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
       const items = children
         .map((c) => `<Grid size={${normalizeColumns(c.span ?? 12, 12)}}>${withHeight(c)}</Grid>`)
         .join("");
-      return `<Grid container spacing={${num(p.gap, 2)}}>${items}</Grid>`;
+      /* MUI Grid container is a flexbox -> use flex justifyContent/alignItems
+         via the native `sx` prop (NOT justify-items). */
+      const body = flexJustifyAlignBody(p);
+      const sx = body ? ` sx={{ ${body} }}` : "";
+      return `<Grid container spacing={${num(p.gap, 2)}}${sx}>${items}</Grid>`;
     },
   },
   stack: {
     imports: { from: MUI, names: ["Stack"] },
-    toJsx: (p, children) => `<Stack spacing={${num(p.gap, 2)}}>${joinKids(children)}</Stack>`,
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const sx = body ? ` sx={{ ${body} }}` : "";
+      return `<Stack spacing={${num(p.gap, 2)}}${sx}>${joinKids(children)}</Stack>`;
+    },
   },
   row: {
     imports: { from: MUI, names: ["Stack"] },
-    toJsx: (p, children) => `<Stack direction="row" spacing={${num(p.gap, 2)}}>${joinKids(children)}</Stack>`,
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const sx = body ? ` sx={{ ${body} }}` : "";
+      return `<Stack direction="row" spacing={${num(p.gap, 2)}}${sx}>${joinKids(children)}</Stack>`;
+    },
   },
 };
 
@@ -106,20 +223,36 @@ const CARBON = "@carbon/react";
 const CARBON_REG: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: { from: CARBON, names: ["Grid", "Column"] },
-    toJsx: (_p, children) => {
+    toJsx: (p, children) => {
       const items = children
         .map((c) => `<Column lg={${normalizeColumns(c.span ?? 12, 16)}}>${withHeight(c)}</Column>`)
         .join("");
-      return `<Grid>${items}</Grid>`;
+      /* Carbon Grid is a CSS grid and spreads ...rest (incl. style) onto its
+         root element (verified in @carbon/react CSSGrid.js) -> forward grid
+         justify-items/justify-content + alignItems via style. */
+      const body = gridJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<Grid${style}>${items}</Grid>`;
     },
   },
   stack: {
     imports: { from: CARBON, names: ["Stack"] },
-    toJsx: (p, children) => `<Stack gap={${num(p.gap, 5)}}>${joinKids(children)}</Stack>`,
+    toJsx: (p, children) => {
+      /* Carbon Stack extends React.HTMLAttributes and merges rest.style onto
+         the element (verified in @carbon/react Stack.js) -> forward flex
+         justifyContent/alignItems via style. */
+      const body = flexJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<Stack gap={${num(p.gap, 5)}}${style}>${joinKids(children)}</Stack>`;
+    },
   },
   row: {
     imports: { from: CARBON, names: ["Stack"] },
-    toJsx: (p, children) => `<Stack orientation="horizontal" gap={${num(p.gap, 5)}}>${joinKids(children)}</Stack>`,
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<Stack orientation="horizontal" gap={${num(p.gap, 5)}}${style}>${joinKids(children)}</Stack>`;
+    },
   },
 };
 
@@ -131,21 +264,30 @@ const FLUENT_PKG = "@fluentui/react-components";
 const FLUENT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: { from: FLUENT_PKG, names: ["tokens"] },
-    toJsx: (_p, children) => {
+    toJsx: (p, children) => {
       const items = children
         .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
-      return `<div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: tokens.spacingHorizontalM }}>${items}</div>`;
+      const body = gridJustifyAlignBody(p);
+      const ja = body ? `, ${body}` : "";
+      return `<div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: tokens.spacingHorizontalM${ja} }}>${items}</div>`;
     },
   },
   stack: {
     imports: { from: FLUENT_PKG, names: ["tokens"] },
-    toJsx: (_p, children) =>
-      `<div style={{ display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM }}>${joinKids(children)}</div>`,
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const ja = body ? `, ${body}` : "";
+      return `<div style={{ display: "flex", flexDirection: "column", gap: tokens.spacingVerticalM${ja} }}>${joinKids(children)}</div>`;
+    },
   },
   row: {
     imports: { from: FLUENT_PKG, names: ["tokens"] },
-    toJsx: (_p, children) => `<div style={{ display: "flex", gap: tokens.spacingHorizontalM }}>${joinKids(children)}</div>`,
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const ja = body ? `, ${body}` : "";
+      return `<div style={{ display: "flex", gap: tokens.spacingHorizontalM${ja} }}>${joinKids(children)}</div>`;
+    },
   },
 };
 
@@ -157,15 +299,31 @@ const FLUENT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
 const UOAUI: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: [],
-    toJsx: (_p, children) => {
+    toJsx: (p, children) => {
       const items = children
         .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
-      return `<div className="a-grid">${items}</div>`;
+      const body = gridJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<div className="a-grid"${style}>${items}</div>`;
     },
   },
-  stack: { imports: [], toJsx: (_p, children) => `<div className="a-stack">${joinKids(children)}</div>` },
-  row: { imports: [], toJsx: (_p, children) => `<div className="a-row">${joinKids(children)}</div>` },
+  stack: {
+    imports: [],
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<div className="a-stack"${style}>${joinKids(children)}</div>`;
+    },
+  },
+  row: {
+    imports: [],
+    toJsx: (p, children) => {
+      const body = flexJustifyAlignBody(p);
+      const style = body ? ` style={{ ${body} }}` : "";
+      return `<div className="a-row"${style}>${joinKids(children)}</div>`;
+    },
+  },
 };
 
 const LAYOUT_REGISTRY: Record<SystemId, Partial<Record<LayoutPrimitive, LayoutApiEntry>>> = {

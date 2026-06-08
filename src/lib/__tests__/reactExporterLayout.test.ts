@@ -147,3 +147,67 @@ describe("reactExporter — P3 height projection reaches generated code", () => 
     expect(code).toContain('<div style={{ height: "200px" }}>');
   });
 });
+
+/* ── P4 export twin: a zone's justify (main-axis distribution) + align
+   (cross-axis) must survive into generated code on EVERY DS — natively where a
+   DS layout primitive supports it (Salt FlexLayout justify/align prop), via a
+   CSS-wrapper style fallback where it does not (Fluent/uoaui/Carbon divs, Salt
+   GridLayout). Asserts Salt (real component primitive) + Fluent (CSS-div DS). */
+describe("reactExporter — P4 justify/align projection reaches generated code", () => {
+  const card = (id: string, span: number) => ({
+    id,
+    type: "SimulatedCard",
+    props: { title: id, content: "x" },
+    layout: { width: `${span}fr` },
+  });
+
+  function setRowCanvas(ds: string, justify: string, align: string) {
+    useBuilder.setState({
+      designSystem: ds as never,
+      mode: "light" as never,
+      density: "medium",
+      headerBlocks: [],
+      sidebarBlocks: [],
+      footerBlocks: [],
+      blocks: [card("a", 6), card("b", 6)] as never,
+      zoneLayouts: { body: { mode: "row", gap: 3, justify, align } } as never,
+    });
+  }
+
+  it("Salt row: space-between + center reach FlexLayout as NATIVE justify/align props", () => {
+    setRowCanvas("salt", "space-between", "center");
+    const code = exportReact();
+    expect(code).toContain('<FlexLayout gap={3} justify="space-between" align="center">');
+  });
+
+  it("Fluent row (CSS-div DS): space-between + center merge into the container div style", () => {
+    setRowCanvas("fluent", "space-between", "center");
+    const code = exportReact();
+    expect(code).toContain('justifyContent: "space-between"');
+    expect(code).toContain('alignItems: "center"');
+  });
+
+  it("Salt grid: justify wraps GridLayout in a styled grid div (GridLayout has no justify prop)", () => {
+    useBuilder.setState({
+      designSystem: "salt" as never,
+      mode: "light" as never,
+      density: "medium",
+      headerBlocks: [],
+      sidebarBlocks: [],
+      footerBlocks: [],
+      blocks: [card("a", 6), card("b", 6)] as never,
+      zoneLayouts: { body: { mode: "grid", columns: 12, gap: 3, justify: "center", align: "end" } } as never,
+    });
+    const code = exportReact();
+    // grid justify -> justify-items; cross-axis -> align-items; wraps the GridLayout
+    expect(code).toMatch(/<div style=\{\{ display: "grid", justifyItems: "center", alignItems: "flex-end" \}\}><GridLayout/);
+  });
+
+  it("a zone with NO justify/align emits NO style/native attr (lean output, common case)", () => {
+    setGridCanvas("salt", [card("a", 6)]);
+    const code = exportReact();
+    expect(code).not.toContain("justifyContent");
+    expect(code).not.toContain("justifyItems");
+    expect(code).not.toContain('justify="');
+  });
+});

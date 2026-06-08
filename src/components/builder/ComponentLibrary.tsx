@@ -849,6 +849,38 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
           ))}
         </div>
       </div>
+
+      {/* Distribute - main-axis distribution (Figma "Auto layout" packing row).
+          Writes ZoneLayout.justify. `start` is the default (unset = start), so
+          picking Start clears the value to keep saved projects lean + back-
+          compatible. Maps to justify-content (flex) / justify-items (grid) in
+          the resolver + threads into export via the P4 export twin. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Distribute</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout distribution">
+          {([
+            ["start", "Start", "Pack children to the start of the main axis (default)"],
+            ["center", "Center", "Center children along the main axis"],
+            ["end", "End", "Pack children to the end of the main axis"],
+            ["space-between", "Between", "Spread children with equal space between them"],
+          ] as const).map(([v, lbl, hint]) => {
+            const active = (zoneLayout.justify ?? "start") === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`inspector-toggle-btn${active ? " active" : ""}`}
+                onClick={() => setZoneLayout(zone, { justify: v === "start" ? undefined : v })}
+                title={hint}
+              >
+                {lbl}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </InspectorSection>
   );
 }
