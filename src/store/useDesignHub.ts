@@ -20,7 +20,9 @@ export type GlobalDensity = 0 | 1 | 2 | 3;
 export type ActiveTab =
   | 'preview' | 'code'
   | 'tokens' | 'charts' | 'audit'
-  | 'usage' | 'style' | 'accessibility';
+  | 'usage' | 'style' | 'accessibility'
+  /* M3 rich component-page tabs (accessibility shared above). */
+  | 'overview' | 'specs' | 'guidelines';
 
 interface DesignHubState {
   activeSystem: SystemId;
