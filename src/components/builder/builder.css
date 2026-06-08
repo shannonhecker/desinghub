@@ -13089,6 +13089,60 @@
   background: var(--bc-accent);
 }
 
+/* ── P3 bottom-edge (height) handle ── overrides the right-edge geometry
+   to sit along the block's bottom edge. Reuses the --experimental visuals
+   (opacity, focus ring, accent grip) so width + height handles feel paired.
+   Inherits the preview-mode hide via the .block-resize-handle--experimental
+   rule above. */
+.block-resize-handle--bottom {
+  top: auto;
+  right: 0;
+  bottom: calc(var(--bc-size-handle) * -0.5);
+  left: 0;
+  width: 100%;
+  height: var(--bc-size-handle);
+  cursor: row-resize;
+}
+.block-resize-grip--horizontal {
+  width: 24px;
+  height: 3px;
+  border-radius: var(--bc-radius-pill);
+}
+
+/* ── P3 bottom-right corner (both-axes) handle ── small square in the
+   block's bottom-right corner. Hidden in preview via the
+   .block-resize-corner rule already present in the preview-mode block. */
+.block-resize-corner--experimental {
+  position: absolute;
+  right: calc(var(--bc-size-handle) * -0.5);
+  bottom: calc(var(--bc-size-handle) * -0.5);
+  width: var(--bc-size-handle);
+  height: var(--bc-size-handle);
+  cursor: nwse-resize;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+  outline: none;
+  border-radius: var(--bc-radius-sm);
+}
+.canvas-block:hover .block-resize-corner--experimental,
+.block-resize-corner--experimental:hover {
+  opacity: 1;
+}
+.block-resize-corner--experimental:focus-visible {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.block-resize-corner--experimental .block-resize-grip-corner {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--bc-accent);
+}
+
 /* ── ResizeHUD pill ── */
 .bc-resize-hud {
   display: inline-flex;

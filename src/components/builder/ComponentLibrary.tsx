@@ -410,6 +410,46 @@ function LayoutSection({
     { value: "66.666%", label: "⅔", aria: "Two thirds" },
   ];
 
+  /* HEIGHT (counter-axis) — P3. Same Fixed/Hug/Fill labels as W, writing the
+     existing LayoutWidth union to `layout.height`:
+       Fixed → a px value (typed Custom H px, or a seeded default)
+       Hug   → "auto" / undefined (content-driven)
+       Fill  → "fill"
+     undefined height = Hug (the implicit content-driven default), so an
+     un-set block shows "Hug" active and renders exactly as pre-P3. */
+  const h = layout.height;
+  const heightMode: "fixed" | "hug" | "fill" =
+    h === undefined || h === "auto" ? "hug"
+    : h === "fill" ? "fill"
+    : "fixed";
+
+  const applyHeightMode = (mode: "fixed" | "hug" | "fill") => {
+    if (mode === "hug") return updateBlockLayout(zone, block.id, { height: undefined });
+    if (mode === "fill") return updateBlockLayout(zone, block.id, { height: "fill" as LayoutWidth });
+    // Fixed: keep an existing explicit value; otherwise seed a px default.
+    if (heightMode !== "fixed") updateBlockLayout(zone, block.id, { height: "240px" as LayoutWidth });
+  };
+
+  /* Custom height value + unit (mirrors the width custom field). Height
+     defaults to px since blocks live in a vertically-flowing canvas. */
+  const [heightUnit, setHeightUnit] = useState<"px" | "%">(
+    typeof h === "string" && h.endsWith("%") ? "%" : "px",
+  );
+  useEffect(() => {
+    setHeightUnit(typeof h === "string" && h.endsWith("%") ? "%" : "px");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [block.id]);
+  const heightCustomValue = heightMode === "fixed" ? parseWidthValue(h) : "";
+  const applyCustomHeight = (value: string, unit: "px" | "%") => {
+    const trimmed = value.trim();
+    if (trimmed === "") return;
+    updateBlockLayout(zone, block.id, { height: `${trimmed}${unit}` as LayoutWidth });
+  };
+  const switchHeightUnit = (unit: "px" | "%") => {
+    setHeightUnit(unit);
+    if (heightCustomValue !== "") applyCustomHeight(heightCustomValue, unit);
+  };
+
   return (
     <InspectorSection id="layout" title="Size">
       {/* Size row — W and H side by side, Figma-style. W is a Fixed/Hug/Fill
@@ -441,21 +481,55 @@ function LayoutSection({
         </div>
         <div className="inspector-size-cell">
           <label className="inspector-field-label">H</label>
-          <div
-            className="inspector-toggle-group"
-            role="radiogroup"
-            aria-label="Block height mode"
-            aria-disabled="true"
-          >
-            {(["Fixed", "Hug", "Fill"] as const).map((lbl) => (
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block height mode">
+            {([
+              ["fixed", "Fixed", "Fixed height in pixels"],
+              ["hug", "Hug", "Hug contents (content height)"],
+              ["fill", "Fill", "Fill available height"],
+            ] as const).map(([m, lbl, aria]) => (
               <button
-                key={lbl}
+                key={m}
                 type="button"
-                disabled
-                className="inspector-toggle-btn"
-                title="Height sizing is coming soon"
+                role="radio"
+                aria-checked={heightMode === m}
+                aria-label={aria}
+                title={aria}
+                className={`inspector-toggle-btn${heightMode === m ? " active" : ""}`}
+                onClick={() => applyHeightMode(m)}
               >
                 {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Custom height — numeric value + unit; only relevant in Fixed mode but
+          always editable (typing flips the mode to Fixed via the height write). */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Custom height</label>
+        <div className="inspector-width-custom">
+          <input
+            type="number"
+            className="inspector-input"
+            value={heightCustomValue}
+            placeholder={heightUnit === "%" ? "e.g. 60" : "e.g. 240"}
+            min={heightUnit === "%" ? 1 : 0}
+            max={heightUnit === "%" ? 100 : undefined}
+            aria-label="Custom height value"
+            onChange={(e) => applyCustomHeight(e.target.value, heightUnit)}
+          />
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom height unit">
+            {(["px", "%"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                role="radio"
+                aria-checked={heightUnit === u}
+                className={`inspector-toggle-btn${heightUnit === u ? " active" : ""}`}
+                onClick={() => switchHeightUnit(u)}
+              >
+                {u}
               </button>
             ))}
           </div>
@@ -563,6 +637,42 @@ function LayoutSection({
                 const v = e.target.value;
                 updateBlockLayout(zone, block.id, {
                   maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Min / max height (px). Empty string clears the constraint. */}
+        <div className="inspector-field inspector-field-row">
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Min height (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.minHeight)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  minHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Max height (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.maxHeight)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  maxHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
                 });
               }}
             />

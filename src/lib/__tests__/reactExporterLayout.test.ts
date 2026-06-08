@@ -69,3 +69,81 @@ describe("reactExporter — body grid emits real DS layout primitives", () => {
     expect(code).not.toContain("InputProps=");
   });
 });
+
+/* ── P3 export twin: a block's height (Fixed / Fill) must survive into the
+   generated code on EVERY DS — even where the DS grid primitive (GridItem /
+   Column) can't set height, the registry wraps the child in a styled div (the
+   export trap). Asserts Salt (real component primitive) + Fluent (CSS-div DS). */
+describe("reactExporter — P3 height projection reaches generated code", () => {
+  const cardH = (id: string, height: string) => ({
+    id,
+    type: "SimulatedCard",
+    props: { title: id, content: "x" },
+    layout: { width: "6fr", height },
+  });
+
+  it("Salt grid: a Fixed 240px block emits height:\"240px\" inside the GridItem (wrapper div)", () => {
+    setGridCanvas("salt", [cardH("a", "240px")]);
+    const code = exportReact();
+    // GridItem can't take height → registry wraps the child in <div style={{ height: "240px" }}>
+    expect(code).toMatch(/<GridItem colSpan=\{6\}><div style=\{\{ height: "240px" \}\}>/);
+  });
+
+  it("Fluent grid (CSS-div DS): Fixed 240px merges into the column div's style", () => {
+    setGridCanvas("fluent", [cardH("a", "240px")]);
+    const code = exportReact();
+    // Fluent already wraps each child in a <div style={{ gridColumn… }}> → height merges in
+    expect(code).toMatch(/gridColumn: "span \d+", height: "240px"/);
+  });
+
+  it("Fill height projects height:\"100%\" (stretch) into generated code (Salt)", () => {
+    setGridCanvas("salt", [cardH("a", "fill")]);
+    const code = exportReact();
+    expect(code).toContain('height: "100%"');
+  });
+
+  it("min/max height project even when height mode is Hug (no explicit height)", () => {
+    setGridCanvas("salt", [{
+      id: "a",
+      type: "SimulatedCard",
+      props: { title: "a", content: "x" },
+      layout: { width: "6fr", minHeight: "120px", maxHeight: "400px" },
+    } as never]);
+    const code = exportReact();
+    expect(code).toContain('minHeight: "120px"');
+    expect(code).toContain('maxHeight: "400px"');
+  });
+
+  it("a block with NO height sizing emits NO wrapper div (lean output, common case)", () => {
+    setGridCanvas("salt", [{
+      id: "a",
+      type: "SimulatedCard",
+      props: { title: "a", content: "x" },
+      layout: { width: "6fr" },
+    } as never]);
+    const code = exportReact();
+    // GridItem child is the card JSX directly, no intervening height div
+    expect(code).not.toMatch(/<GridItem colSpan=\{6\}><div style=\{\{ height/);
+  });
+
+  it("stack mode: Fixed height wraps each child via joinKids (Salt StackLayout)", () => {
+    useBuilder.setState({
+      designSystem: "salt" as never,
+      mode: "light" as never,
+      density: "medium",
+      headerBlocks: [],
+      sidebarBlocks: [],
+      footerBlocks: [],
+      blocks: [{
+        id: "a",
+        type: "SimulatedCard",
+        props: { title: "a", content: "x" },
+        layout: { height: "200px" },
+      }] as never,
+      zoneLayouts: { body: { mode: "stack", gap: 3 } } as never,
+    });
+    const code = exportReact();
+    expect(code).toContain("<StackLayout");
+    expect(code).toContain('<div style={{ height: "200px" }}>');
+  });
+});

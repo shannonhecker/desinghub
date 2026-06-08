@@ -126,3 +126,63 @@ describe("computeGroupItemStyle — horizontal groups are gap-aware like zones",
     expect(style.flex).toBe("0 1 calc(50% - 12px)");
   });
 });
+
+/* ── P3 height engine — counter-axis Hug / Fill / Fixed × stack / row / grid ──
+   Height reuses the LayoutWidth union: 'auto' = Hug, 'fill' = Fill (stretch),
+   '{N}px' / '{N}%' = Fixed. undefined height = Hug (no-op; back-compat). */
+describe("computeItemStyle — P3 height (counter-axis) Hug/Fill/Fixed", () => {
+  const GRID: ZoneLayout = { mode: "grid", columns: 12, gap: 12 };
+  const withLayout = (layout: Record<string, unknown>): Block =>
+    ({ id: "b1", type: "SimulatedStatCard", props: {}, layout: layout as never } as Block);
+
+  it("undefined height is a no-op (back-compat — pre-P3 saved blocks unchanged)", () => {
+    expect(computeItemStyle(withLayout({ width: "fill" }), STACK).height).toBeUndefined();
+    expect(computeItemStyle(withLayout({ width: "fill" }), ROW).height).toBeUndefined();
+    expect(computeItemStyle(withLayout({ width: "fill" }), GRID).height).toBeUndefined();
+  });
+
+  it("Hug (auto) → height:auto in every mode", () => {
+    expect(computeItemStyle(withLayout({ height: "auto" }), STACK).height).toBe("auto");
+    expect(computeItemStyle(withLayout({ height: "auto" }), ROW).height).toBe("auto");
+    expect(computeItemStyle(withLayout({ height: "auto" }), GRID).height).toBe("auto");
+  });
+
+  it("Fixed px height → explicit height in every mode", () => {
+    expect(computeItemStyle(withLayout({ height: "240px" }), STACK).height).toBe("240px");
+    expect(computeItemStyle(withLayout({ height: "240px" }), ROW).height).toBe("240px");
+    expect(computeItemStyle(withLayout({ height: "240px" }), GRID).height).toBe("240px");
+  });
+
+  it("Fixed % height → explicit percent height", () => {
+    expect(computeItemStyle(withLayout({ height: "60%" }), GRID).height).toBe("60%");
+  });
+
+  it("Fill in STACK (vertical main axis) → flexGrow:1 + height:100%", () => {
+    const style = computeItemStyle(withLayout({ height: "fill" }), STACK);
+    expect(style.flexGrow).toBe(1);
+    expect(style.height).toBe("100%");
+  });
+
+  it("Fill in ROW / GRID (height is cross axis) → alignSelf:stretch + height:100%", () => {
+    const row = computeItemStyle(withLayout({ height: "fill" }), ROW);
+    expect(row.alignSelf).toBe("stretch");
+    expect(row.height).toBe("100%");
+    const grid = computeItemStyle(withLayout({ height: "fill" }), GRID);
+    expect(grid.alignSelf).toBe("stretch");
+    expect(grid.height).toBe("100%");
+  });
+
+  it("minHeight / maxHeight project even when height is Hug (undefined)", () => {
+    const style = computeItemStyle(withLayout({ minHeight: "100px", maxHeight: "400px" }), STACK);
+    expect(style.minHeight).toBe("100px");
+    expect(style.maxHeight).toBe("400px");
+    expect(style.height).toBeUndefined();
+  });
+
+  it("height sizing does not disturb width sizing (axes are independent)", () => {
+    const style = computeItemStyle(withLayout({ width: "240px", height: "120px" }), ROW);
+    expect(style.flex).toBe("0 0 240px"); // width path intact
+    expect(style.width).toBe("240px");
+    expect(style.height).toBe("120px");   // height path applied
+  });
+});

@@ -26,6 +26,14 @@ export interface LayoutChild {
   jsx: string;
   span?: number; // canonical 12-fr; undefined => full native row
   region?: "header" | "sidenav" | "main" | "footer";
+  /** P3 export twin: a per-child counter-axis (height) projection. When the
+     block carries a layout.height / minHeight / maxHeight, the exporter sets
+     this to a JSX style-object literal body (e.g. `height: "240px"`). The DS
+     layout primitives below wrap such a child in a <div style={{…}}> so the
+     height value survives into generated code even when the DS's own grid /
+     stack / row primitive can't express it (the export trap). undefined =>
+     no wrapper (the common case — most blocks are content-height/Hug). */
+  heightStyle?: string;
 }
 
 export interface LayoutApiEntry {
@@ -38,7 +46,14 @@ const num = (v: unknown, fallback: number): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
-const joinKids = (children: LayoutChild[]): string => children.map((c) => c.jsx).join("");
+/* P3 export twin: when a child carries a height projection, wrap its JSX in a
+   plain <div style={{…}}> so the height reaches the generated code even where
+   the DS layout primitive (GridItem / Stack / Column) can't set it. No height
+   projection => return the JSX untouched (the common Hug case, zero overhead). */
+const withHeight = (c: LayoutChild): string =>
+  c.heightStyle ? `<div style={{ ${c.heightStyle} }}>${c.jsx}</div>` : c.jsx;
+
+const joinKids = (children: LayoutChild[]): string => children.map(withHeight).join("");
 
 /* ── SALT — @salt-ds/core (12-col GridLayout) ─────────────────────────── */
 const SALT_CORE = "@salt-ds/core";
@@ -49,7 +64,7 @@ const SALT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
       const cols = num(p.columns, 12);
       const gap = num(p.gap, 3);
       const items = children
-        .map((c) => `<GridItem colSpan={${normalizeColumns(c.span ?? 12, cols)}}>${c.jsx}</GridItem>`)
+        .map((c) => `<GridItem colSpan={${normalizeColumns(c.span ?? 12, cols)}}>${withHeight(c)}</GridItem>`)
         .join("");
       return `<GridLayout columns={${cols}} gap={${gap}}>${items}</GridLayout>`;
     },
@@ -71,7 +86,7 @@ const M3: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     imports: { from: MUI, names: ["Grid"] },
     toJsx: (p, children) => {
       const items = children
-        .map((c) => `<Grid size={${normalizeColumns(c.span ?? 12, 12)}}>${c.jsx}</Grid>`)
+        .map((c) => `<Grid size={${normalizeColumns(c.span ?? 12, 12)}}>${withHeight(c)}</Grid>`)
         .join("");
       return `<Grid container spacing={${num(p.gap, 2)}}>${items}</Grid>`;
     },
@@ -93,7 +108,7 @@ const CARBON_REG: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     imports: { from: CARBON, names: ["Grid", "Column"] },
     toJsx: (_p, children) => {
       const items = children
-        .map((c) => `<Column lg={${normalizeColumns(c.span ?? 12, 16)}}>${c.jsx}</Column>`)
+        .map((c) => `<Column lg={${normalizeColumns(c.span ?? 12, 16)}}>${withHeight(c)}</Column>`)
         .join("");
       return `<Grid>${items}</Grid>`;
     },
@@ -118,7 +133,7 @@ const FLUENT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     imports: { from: FLUENT_PKG, names: ["tokens"] },
     toJsx: (_p, children) => {
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}" }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
       return `<div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: tokens.spacingHorizontalM }}>${items}</div>`;
     },
@@ -144,7 +159,7 @@ const UOAUI: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     imports: [],
     toJsx: (_p, children) => {
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}" }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
       return `<div className="a-grid">${items}</div>`;
     },

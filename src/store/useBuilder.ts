@@ -87,6 +87,18 @@ export interface LayoutProps {
   minWidth?: LayoutWidth;
   /** Cap on computed width. Ignored for auto. */
   maxWidth?: LayoutWidth;
+  /** Counter-axis (height) sizing. Reuses the LayoutWidth union VERBATIM
+     so Figma's per-axis Hug/Fill/Fixed maps to existing tokens:
+       'auto' → Hug (content height), 'fill' → Fill (stretch to container),
+       '{N}px' / '{N}%' → Fixed. Optional + no default → back-compatible:
+     a saved Page predating P3 loads with height undefined (renders exactly
+     as before, content-driven). The resolver, the on-canvas bottom handle,
+     and the export twin all read this same field. */
+  height?: LayoutWidth;
+  /** Floor on computed height. Ignored for auto (Hug). */
+  minHeight?: LayoutWidth;
+  /** Cap on computed height. Ignored for auto (Hug). */
+  maxHeight?: LayoutWidth;
   /** flex-grow override. 0 disables growing, 1 enables. */
   grow?: 0 | 1;
   /** align-self on the cross-axis. */

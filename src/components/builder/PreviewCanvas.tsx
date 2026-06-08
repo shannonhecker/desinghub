@@ -246,7 +246,8 @@ export function PreviewCanvas() {
               zone="body"
               isSelected={selectedBlockId === block.id}
               currentWidth={block.layout?.width}
-              layoutHints={block.layout ? { minWidth: block.layout.minWidth, maxWidth: block.layout.maxWidth } : undefined}
+              currentHeight={block.layout?.height}
+              layoutHints={block.layout ? { minWidth: block.layout.minWidth, maxWidth: block.layout.maxWidth, minHeight: block.layout.minHeight, maxHeight: block.layout.maxHeight } : undefined}
               onWidthChange={(w) => {
                 /* Write the continuous width to block.layout.width so
                    the resolver renders an exact pixel or percent value.
@@ -258,6 +259,16 @@ export function PreviewCanvas() {
                   void _drop;
                   return { ...b, layout: { ...(b.layout ?? {}), width: w as LayoutWidth }, props: restProps };
                 });
+                setBlocks(next);
+              }}
+              onHeightChange={(hStr) => {
+                /* P3: write the continuous px height to block.layout.height.
+                   The resolver + export twin both read this same field. */
+                const next = blocks.map((b) =>
+                  b.id === block.id
+                    ? { ...b, layout: { ...(b.layout ?? {}), height: hStr as LayoutWidth } }
+                    : b,
+                );
                 setBlocks(next);
               }}
               onSwapClick={() =>

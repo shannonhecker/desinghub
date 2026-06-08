@@ -103,6 +103,55 @@ function effectiveLayout(block: Block, containerMode: ZoneLayout["mode"]): Layou
   return explicit;
 }
 
+/* Counter-axis (height) sizing — P3 height engine. Mirrors the width
+   contract on the LayoutWidth union but writes the height / minHeight /
+   maxHeight / align-self properties:
+     'auto'       → Hug   (content height; nothing emitted, the box hugs)
+     'fill'       → Fill  (stretch to the container). In stack mode the
+                    item is the MAIN axis (flex-grow vertically); in
+                    row / grid mode height is the CROSS axis, so we stretch
+                    via alignSelf:stretch (+ height:100% as a definite-parent
+                    fallback so it works even when the row has a height).
+     '{N}px/%/fr' → Fixed (explicit height).
+   Mutates `style` in place. Height is undefined on pre-P3 saved blocks, so
+   this is a no-op for them (full back-compat — the box renders as before). */
+function applyHeight(style: React.CSSProperties, layout: LayoutProps, mode: ZoneLayout["mode"]): void {
+  const h = layout.height;
+  if (h === undefined) {
+    /* Hug is the implicit default. Still honour explicit min/max so a
+       content-sized box can be floored / capped without setting a height. */
+    const minH = toCss(layout.minHeight);
+    const maxH = toCss(layout.maxHeight);
+    if (minH) style.minHeight = minH;
+    if (maxH) style.maxHeight = maxH;
+    return;
+  }
+  if (h === "auto") {
+    style.height = "auto";
+  } else if (h === "fill") {
+    if (mode === "stack") {
+      /* Stack = vertical main axis: grow to fill remaining column height.
+         The width logic owns the cross axis (horizontal) here, so setting
+         flex-grow for vertical fill is safe and additive. */
+      style.flexGrow = 1;
+      style.height = "100%";
+    } else {
+      /* Row / grid = height is the cross axis → stretch. */
+      style.alignSelf = "stretch";
+      style.height = "100%";
+    }
+  } else {
+    /* Fixed: px / % / fr (fr is non-sensical for a single box → treat as the
+       raw string, CSS will ignore an invalid value gracefully). */
+    const hCss = toCss(h);
+    if (hCss) style.height = hCss;
+  }
+  const minH = toCss(layout.minHeight);
+  const maxH = toCss(layout.maxHeight);
+  if (minH) style.minHeight = minH;
+  if (maxH) style.maxHeight = maxH;
+}
+
 /* Compute the inline style object applied to a block's wrapper.
    Items are placed by their container (flex or grid); this helper
    just controls sizing + growth. The container class handles the
@@ -162,6 +211,10 @@ export function computeItemStyle(
     if (maxCss) style.maxWidth = maxCss;
     if (layout.align) style.alignSelf = layout.align;
     if (layout.margin) style.margin = `${layout.margin}px`;
+    /* Counter-axis height (Hug/Fill/Fixed). align-self is set by `layout.align`
+       above when present; applyHeight only overrides it for fill on the cross
+       axis (grid). */
+    applyHeight(style, layout, zoneLayout.mode);
     return style;
   }
 
@@ -211,6 +264,9 @@ export function computeItemStyle(
   if (maxCss) style.maxWidth = maxCss;
   if (layout.align) style.alignSelf = layout.align;
   if (layout.margin) style.margin = `${layout.margin}px`;
+
+  /* Counter-axis height (Hug/Fill/Fixed) for flex (row / stack) containers. */
+  applyHeight(style, layout, zoneLayout.mode);
 
   return style;
 }

@@ -39,6 +39,38 @@ function primitiveForMode(mode: ZoneLayout["mode"] | undefined): LayoutPrimitive
   return mode === "grid" ? "grid" : mode === "stack" ? "stack" : mode === "row" ? "row" : null;
 }
 
+/* P3 export twin: project a block's counter-axis (height) sizing into a JSX
+   style-object body (no surrounding braces) for the layout registry to wrap
+   the child in a <div style={{…}}>. Mirrors layoutResolver.applyHeight so the
+   exported code matches the edit canvas + preview:
+     'auto'       -> Hug (nothing — content height; honour min/max if present)
+     'fill'       -> Fill (height:100%) so the child stretches in its track
+     '{N}px/%'    -> Fixed (height: "…")
+   minHeight / maxHeight always projected when present. Returns undefined when
+   the block has NO height sizing at all (the common case — keeps output lean
+   and avoids gratuitous wrapper divs). */
+function heightStyleOf(block: Block): string | undefined {
+  const h = block.layout?.height;
+  const minH = block.layout?.minHeight;
+  const maxH = block.layout?.maxHeight;
+  const toLen = (v: typeof h): string | undefined => {
+    if (v === undefined || v === "fill" || v === "auto") return undefined;
+    if (typeof v === "number") return `${v}px`;
+    return v;
+  };
+  const parts: string[] = [];
+  if (h === "fill") parts.push(`height: "100%"`);
+  else {
+    const hLen = toLen(h);
+    if (hLen) parts.push(`height: ${JSON.stringify(hLen)}`);
+  }
+  const minLen = toLen(minH);
+  if (minLen) parts.push(`minHeight: ${JSON.stringify(minLen)}`);
+  const maxLen = toLen(maxH);
+  if (maxLen) parts.push(`maxHeight: ${JSON.stringify(maxLen)}`);
+  return parts.length ? parts.join(", ") : undefined;
+}
+
 /* Derive a block's canonical 12-fr column span from its layout.width for grid
    export. "Nfr" -> N; "X%" -> proportional; fill/auto/px/undefined -> full row
    (12, which normalizeColumns maps to the DS's full native width). */
@@ -162,6 +194,9 @@ function renderZone(
     const children: LayoutChild[] = blocks.map((b) => ({
       jsx: blockToJSX(b, "", system, mode).trim(),
       span: prim === "grid" ? spanOf(b) : undefined,
+      /* P3 export twin: carry each block's height projection so the registry
+         wraps it in a styled div where the DS primitive can't set height. */
+      heightStyle: heightStyleOf(b),
     }));
     const wrapped = layoutToJsx(system, prim, { columns: layout?.columns ?? 12, gap: layout?.gap ?? 3 }, children);
     if (wrapped) {
@@ -169,7 +204,16 @@ function renderZone(
       return `${indent}  {/* ${zoneName} */}\n${indent}  ${wrapped}`;
     }
   }
-  const inner = blocks.map((b) => blockToJSX(b, indent + "    ", system, mode)).join("\n");
+  /* Generic-zone fallback (DSs / blocks the registry doesn't cover): still
+     honour height by wrapping the block's JSX in a styled div (the export
+     trap — height must not silently die on the non-registry path either). */
+  const inner = blocks
+    .map((b) => {
+      const hs = heightStyleOf(b);
+      if (!hs) return blockToJSX(b, indent + "    ", system, mode);
+      return `${indent}    <div style={{ ${hs} }}>\n${blockToJSX(b, indent + "      ", system, mode)}\n${indent}    </div>`;
+    })
+    .join("\n");
   return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
 }
 
