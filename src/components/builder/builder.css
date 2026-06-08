@@ -8111,13 +8111,21 @@
    reads as a subtle filled chip + bolder weight (NOT a doubled box). Driven
    by --bc-* tokens; AA in both light and dark; keeps focus-visible ring and
    keyboard arrow operation. */
+/* Salt-style segmented toggle (Fixed/Hug/Fill, px/%, width presets):
+   ONE bordered track whose segments share borders, with a solid neutral
+   selected fill — reads as a toggle group, not the old underline-active
+   "tabs". Selected uses --bc-bg-active + --bc-fg (NOT accent-fill: accent
+   text only hits 3.76:1 on the light-mode accent — see present-bar-btn-exit
+   for the same house decision), so selection is fill + weight, AA in both
+   themes, never color-only. */
 .inspector-toggle-group {
   display: flex;
   width: 100%;
   min-width: 0;
-  gap: var(--bc-gap-xxs, 2px);
+  gap: 0;
   background: transparent;
-  border-radius: 0;
+  border: 1px solid var(--bc-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--bc-radius-sm, 6px);
   padding: 0;
 }
 
@@ -8127,15 +8135,25 @@
   white-space: nowrap;
   text-align: center;
   padding: 4px 6px;
-  border: 1px solid transparent;
-  border-radius: var(--bc-radius-xs, 3px);
+  border: none;
+  border-right: 1px solid var(--bc-border, rgba(255, 255, 255, 0.12));
+  border-radius: 0;
   background: transparent;
   color: var(--b-fg2, rgba(245, 247, 250, 0.62));
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
   font-family: inherit;
+}
+.inspector-toggle-btn:first-child {
+  border-top-left-radius: var(--bc-radius-sm, 6px);
+  border-bottom-left-radius: var(--bc-radius-sm, 6px);
+}
+.inspector-toggle-btn:last-child {
+  border-right: none;
+  border-top-right-radius: var(--bc-radius-sm, 6px);
+  border-bottom-right-radius: var(--bc-radius-sm, 6px);
 }
 .inspector-toggle-btn:hover {
   background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
@@ -8143,16 +8161,12 @@
 }
 .inspector-toggle-btn:focus-visible {
   outline: 2px solid var(--bc-accent, #7cc4ff);
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 .inspector-toggle-btn.active {
-  background: var(--bc-bg-active, rgba(255, 255, 255, 0.10));
-  border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
+  background: var(--bc-bg-active, rgba(255, 255, 255, 0.12));
   color: var(--b-fg, #e4e4e7);
   font-weight: 600;
-  /* Subtle accent underline — the Figma "this segment is on" tell, in
-     addition to the fill + weight so selection is never color-only. */
-  box-shadow: inset 0 -2px 0 var(--bc-accent, #7cc4ff);
 }
 
 .inspector-divider {
@@ -11061,6 +11075,28 @@
   transition: background var(--bc-duration-fast, 120ms) var(--bc-ease),
               color var(--bc-duration-fast, 120ms) var(--bc-ease),
               border-color var(--bc-duration-fast, 120ms) var(--bc-ease);
+}
+
+/* Collapsed sidebar (48px icon rail): labels + the add-item button are
+   removed from the DOM when collapsed, but the surviving nav-item kept its
+   label-era left padding + icon→label gap (pushing the icon off-centre), and
+   the toggle was pinned flush-right against the 48px edge. Re-centre both so
+   the rail reads as a clean icon column. */
+.bp-sidebar[data-collapsed="true"] .bp-sidebar-nav {
+  padding-left: var(--bc-gap-xs, 4px);
+  padding-right: var(--bc-gap-xs, 4px);
+}
+.bp-sidebar[data-collapsed="true"] .bp-nav-item,
+.bp-sidebar[data-collapsed="true"] .bp-nav-item-row {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.bp-sidebar[data-collapsed="true"] .bp-sidebar-toggle {
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 @media (prefers-reduced-motion: reduce) {
   .bp-sidebar-toggle {

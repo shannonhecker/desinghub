@@ -893,6 +893,7 @@ function DashboardSidebar({
   return (
     <motion.aside
       className="bp-sidebar"
+      data-collapsed={collapsed ? "true" : undefined}
       animate={{ width: collapsed ? 48 : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
