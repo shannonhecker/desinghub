@@ -5,9 +5,13 @@ import { useDraggable } from "@dnd-kit/core";
 import {
   useBuilder,
   resolveDestinationZone,
+  normalizePadding,
+  normalizeGap,
   type LayoutProps,
   type LayoutWidth,
   type ZoneId,
+  type PaddingObject,
+  type GapObject,
 } from "@/store/useBuilder";
 import {
   LIBRARY_BLUEPRINTS,
@@ -271,6 +275,18 @@ export function ComponentLibrary() {
           /* Inspector - each section is collapsible so users can hide the ones
              they don't need; state persists per section key in sessionStorage. */
           <div className="inspector-stack">
+            {/* P1 Figma-shaped order: the FRAME clusters lead (Size of the
+                selected block, then the Auto-layout of its container), then
+                the component/DS props, then accent + chart colours. This
+                mirrors Figma's right rail where W/H + auto-layout sit at the
+                top and element-specific props follow. */}
+
+            {/* Size — per-block W/H sizing + alignment (Fixed/Hug/Fill labels). */}
+            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
+
+            {/* Auto-layout — container flow (direction / gap / padding / align). */}
+            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
+
             <InspectorSection
               id={`props-${selectedBlock.type}`}
               title={`${selectedBlock.type.replace("Simulated", "")} Properties`}
@@ -278,14 +294,9 @@ export function ComponentLibrary() {
               <FieldsComponent blockId={selectedBlock.id} />
             </InspectorSection>
 
-            {/* Layout panel - per-block sizing + alignment. */}
-            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-
             {/* Issue #13: per-block accent override. Lets one block diverge
                 from the global accent without affecting siblings. */}
             <BlockAccentSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-
-            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
 
             {/* Chart colours - only for Highchart blocks (P1.3). */}
             {selectedBlock.type.startsWith("Highchart") && (
@@ -378,20 +389,162 @@ function LayoutSection({
     if (customValue !== "") applyCustom(customValue, unit);
   };
 
+  /* SIZE row — Figma's W sizing mode. LABELS map to the existing
+     LayoutWidth union (do NOT rename the store values, P1 is visual-only):
+       Fixed → a px value (we use the typed Custom px, or a sane default)
+       Hug   → "auto"
+       Fill  → "fill"
+     The fraction presets (⅓ ½ ⅔) remain under "Custom width" below. */
+  const sizeMode: "fixed" | "hug" | "fill" =
+    w === undefined || w === "fill" ? "fill"
+    : w === "auto" ? "hug"
+    : "fixed"; // any px / % / fr value reads as an explicit (Fixed) size
+
+  const applySizeMode = (mode: "fixed" | "hug" | "fill") => {
+    if (mode === "fill") return applyPreset("fill");
+    if (mode === "hug") return applyPreset("auto");
+    // Fixed: keep an existing explicit value; otherwise seed a px default so
+    // the control has an effect even before the user types a Custom value.
+    if (sizeMode !== "fixed") applyPreset("320px");
+  };
+
   const WIDTH_PRESETS: { value: string; label: string; aria: string }[] = [
-    { value: "fill", label: "Fill", aria: "Fill remaining space" },
-    { value: "auto", label: "Auto", aria: "Hug contents" },
     { value: "33.333%", label: "⅓", aria: "One third" },
     { value: "50%", label: "½", aria: "Half" },
     { value: "66.666%", label: "⅔", aria: "Two thirds" },
   ];
 
+  /* HEIGHT (counter-axis) — P3. Same Fixed/Hug/Fill labels as W, writing the
+     existing LayoutWidth union to `layout.height`:
+       Fixed → a px value (typed Custom H px, or a seeded default)
+       Hug   → "auto" / undefined (content-driven)
+       Fill  → "fill"
+     undefined height = Hug (the implicit content-driven default), so an
+     un-set block shows "Hug" active and renders exactly as pre-P3. */
+  const h = layout.height;
+  const heightMode: "fixed" | "hug" | "fill" =
+    h === undefined || h === "auto" ? "hug"
+    : h === "fill" ? "fill"
+    : "fixed";
+
+  const applyHeightMode = (mode: "fixed" | "hug" | "fill") => {
+    if (mode === "hug") return updateBlockLayout(zone, block.id, { height: undefined });
+    if (mode === "fill") return updateBlockLayout(zone, block.id, { height: "fill" as LayoutWidth });
+    // Fixed: keep an existing explicit value; otherwise seed a px default.
+    if (heightMode !== "fixed") updateBlockLayout(zone, block.id, { height: "240px" as LayoutWidth });
+  };
+
+  /* Custom height value + unit (mirrors the width custom field). Height
+     defaults to px since blocks live in a vertically-flowing canvas. */
+  const [heightUnit, setHeightUnit] = useState<"px" | "%">(
+    typeof h === "string" && h.endsWith("%") ? "%" : "px",
+  );
+  useEffect(() => {
+    setHeightUnit(typeof h === "string" && h.endsWith("%") ? "%" : "px");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [block.id]);
+  const heightCustomValue = heightMode === "fixed" ? parseWidthValue(h) : "";
+  const applyCustomHeight = (value: string, unit: "px" | "%") => {
+    const trimmed = value.trim();
+    if (trimmed === "") return;
+    updateBlockLayout(zone, block.id, { height: `${trimmed}${unit}` as LayoutWidth });
+  };
+  const switchHeightUnit = (unit: "px" | "%") => {
+    setHeightUnit(unit);
+    if (heightCustomValue !== "") applyCustomHeight(heightCustomValue, unit);
+  };
+
   return (
-    <InspectorSection id="layout" title="Layout">
-      {/* Width — preset chips (Fill / Auto / ⅓ / ½ / ⅔). */}
+    <InspectorSection id="layout" title="Size">
+      {/* Size row — W and H side by side, Figma-style. W is a Fixed/Hug/Fill
+          segmented (labels only; writes the existing LayoutWidth union). H is
+          a disabled placeholder until P3 wires per-block height. */}
+      <div className="inspector-size-row">
+        <div className="inspector-size-cell">
+          <label className="inspector-field-label">W</label>
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width mode">
+            {([
+              ["fixed", "Fixed", "Fixed width in pixels"],
+              ["hug", "Hug", "Hug contents"],
+              ["fill", "Fill", "Fill available space"],
+            ] as const).map(([m, lbl, aria]) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={sizeMode === m}
+                aria-label={aria}
+                title={aria}
+                className={`inspector-toggle-btn${sizeMode === m ? " active" : ""}`}
+                onClick={() => applySizeMode(m)}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="inspector-size-cell">
+          <label className="inspector-field-label">H</label>
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Block height mode">
+            {([
+              ["fixed", "Fixed", "Fixed height in pixels"],
+              ["hug", "Hug", "Hug contents (content height)"],
+              ["fill", "Fill", "Fill available height"],
+            ] as const).map(([m, lbl, aria]) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={heightMode === m}
+                aria-label={aria}
+                title={aria}
+                className={`inspector-toggle-btn${heightMode === m ? " active" : ""}`}
+                onClick={() => applyHeightMode(m)}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Custom height — numeric value + unit; only relevant in Fixed mode but
+          always editable (typing flips the mode to Fixed via the height write). */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Width</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Block width">
+        <label className="inspector-field-label">Custom height</label>
+        <div className="inspector-width-custom">
+          <input
+            type="number"
+            className="inspector-input"
+            value={heightCustomValue}
+            placeholder={heightUnit === "%" ? "e.g. 60" : "e.g. 240"}
+            min={heightUnit === "%" ? 1 : 0}
+            max={heightUnit === "%" ? 100 : undefined}
+            aria-label="Custom height value"
+            onChange={(e) => applyCustomHeight(e.target.value, heightUnit)}
+          />
+          <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom height unit">
+            {(["px", "%"] as const).map((u) => (
+              <button
+                key={u}
+                type="button"
+                role="radio"
+                aria-checked={heightUnit === u}
+                className={`inspector-toggle-btn${heightUnit === u ? " active" : ""}`}
+                onClick={() => switchHeightUnit(u)}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Custom width — fraction presets + free numeric value. Typing or
+          picking a fraction sets an explicit (Fixed) width. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Custom width</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Width fraction preset">
           {WIDTH_PRESETS.map((p) => (
             <button
               key={p.value}
@@ -409,9 +562,8 @@ function LayoutSection({
         </div>
       </div>
 
-      {/* Custom width — always visible; typing overrides the preset. */}
+      {/* Custom width — numeric value + unit; typing overrides the preset. */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Custom</label>
         <div className="inspector-width-custom">
           <input
             type="number"
@@ -495,6 +647,42 @@ function LayoutSection({
           </div>
         </div>
 
+        {/* Min / max height (px). Empty string clears the constraint. */}
+        <div className="inspector-field inspector-field-row">
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Min height (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.minHeight)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  minHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="inspector-field-label">Max height (px)</label>
+            <input
+              type="number"
+              className="inspector-input"
+              value={parseWidthValue(layout.maxHeight)}
+              min={0}
+              placeholder="—"
+              onChange={(e) => {
+                const v = e.target.value;
+                updateBlockLayout(zone, block.id, {
+                  maxHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
+                });
+              }}
+            />
+          </div>
+        </div>
+
         {/* Grow toggle - flex-grow 0 vs 1 */}
         <div className="inspector-field">
           <label className="inspector-field-label">Grow</label>
@@ -554,12 +742,43 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
 
+  /* P5 padding — normalize the stored value (legacy number | {t,r,b,l}) to the
+     object form for the per-side inputs. "Linked" mode (all four sides equal)
+     writes back a single NUMBER so saved projects stay in the compact legacy
+     shape until the user actually splits a side. */
+  const pad: PaddingObject = normalizePadding(zoneLayout.padding) ?? { t: 0, r: 0, b: 0, l: 0 };
+  const padLinked = pad.t === pad.r && pad.r === pad.b && pad.b === pad.l;
+  const [padUnlinked, setPadUnlinked] = useState(false);
+  const showPerSide = padUnlinked || !padLinked;
+  const writeLinkedPad = (v: number) => setZoneLayout(zone, { padding: Math.max(0, v) });
+  const writeSide = (side: keyof PaddingObject, v: number) =>
+    setZoneLayout(zone, { padding: { ...pad, [side]: Math.max(0, v) } });
+
+  /* P5 gap — normalize to {row,col}. "Linked" (row === col) writes back a
+     single NUMBER (legacy compact shape); splitting writes the object. */
+  const gap: GapObject = normalizeGap(zoneLayout.gap) ?? { row: 0, col: 0 };
+  const gapLinked = gap.row === gap.col;
+  const [gapUnlinked, setGapUnlinked] = useState(false);
+  const showGapSplit = gapUnlinked || !gapLinked;
+  const writeLinkedGap = (v: number) => setZoneLayout(zone, { gap: Math.max(0, v) });
+  const writeGapAxis = (axis: keyof GapObject, v: number) =>
+    setZoneLayout(zone, { gap: { ...gap, [axis]: Math.max(0, v) } });
+
+  const numFromEvent = (raw: string): number => Math.max(0, Number(raw) || 0);
+
   return (
-    <InspectorSection id={`zone-layout-${zone}`} title={`${label} Zone Layout`} defaultOpen={false}>
-      {/* Flow mode - stack / row / grid */}
+    /* Figma names this cluster "Auto layout" (direction / gap / padding /
+       align). We keep the store model ('stack'|'row'|'grid') untouched —
+       these are LABELS only. The zone name is shown as a sub-hint so it's
+       clear which container ({Header}/{Body}/…) this affects. */
+    <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen>
+      {/* Direction - stack / row / grid */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Flow</label>
-        <div className="inspector-toggle-group" role="radiogroup" aria-label="Zone flow mode">
+        <label className="inspector-field-label">
+          <span>Direction</span>
+          <span className="inspector-zone-hint">{label}</span>
+        </label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout direction">
           {([
             ["stack", "Stack"],
             ["row", "Row"],
@@ -619,28 +838,128 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
         </div>
       )}
 
-      {/* Gap - space between children in px */}
-      <div className="inspector-field inspector-field-row">
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Gap (px)</label>
+      {/* Gap — Figma-style H/V gap. Linked = one value (legacy number shape);
+          unlinked splits into row (vertical / between rows) + col (horizontal /
+          between columns). The link toggle is keyboard-operable + announces its
+          state via aria-pressed. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">
+          <span>Gap (px)</span>
+          <button
+            type="button"
+            className={`inspector-link-toggle${showGapSplit ? " is-unlinked" : ""}`}
+            aria-pressed={showGapSplit}
+            aria-label={showGapSplit ? "Link row + column gap to one value" : "Unlink row + column gap"}
+            title={showGapSplit ? "Link H/V gap" : "Split into H + V gap"}
+            onClick={() => {
+              if (showGapSplit) {
+                /* Re-link: collapse to a single value (use col / horizontal). */
+                writeLinkedGap(gap.col);
+                setGapUnlinked(false);
+              } else {
+                setGapUnlinked(true);
+              }
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {showGapSplit ? "link_off" : "link"}
+            </span>
+          </button>
+        </label>
+        {showGapSplit ? (
+          <div className="inspector-pad-grid inspector-pad-grid--2">
+            <label className="inspector-pad-cell">
+              <span className="inspector-pad-side" aria-hidden="true">V</span>
+              <input
+                type="number"
+                className="inspector-input inspector-pad-input"
+                min={0}
+                aria-label="Vertical gap (between rows) in px"
+                value={gap.row}
+                onChange={(e) => writeGapAxis("row", numFromEvent(e.target.value))}
+              />
+            </label>
+            <label className="inspector-pad-cell">
+              <span className="inspector-pad-side" aria-hidden="true">H</span>
+              <input
+                type="number"
+                className="inspector-input inspector-pad-input"
+                min={0}
+                aria-label="Horizontal gap (between columns) in px"
+                value={gap.col}
+                onChange={(e) => writeGapAxis("col", numFromEvent(e.target.value))}
+              />
+            </label>
+          </div>
+        ) : (
           <input
             type="number"
             className="inspector-input"
             min={0}
-            value={zoneLayout.gap ?? 0}
-            onChange={(e) => setZoneLayout(zone, { gap: Math.max(0, Number(e.target.value) || 0) })}
+            aria-label="Gap between children in px"
+            value={gap.row}
+            onChange={(e) => writeLinkedGap(numFromEvent(e.target.value))}
           />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label className="inspector-field-label">Padding (px)</label>
+        )}
+      </div>
+
+      {/* Padding — Figma-style 4-side control. Linked = one value (legacy number
+          shape); unlinked splits into T/R/B/L. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">
+          <span>Padding (px)</span>
+          <button
+            type="button"
+            className={`inspector-link-toggle${showPerSide ? " is-unlinked" : ""}`}
+            aria-pressed={showPerSide}
+            aria-label={showPerSide ? "Link all sides to one padding value" : "Unlink padding sides"}
+            title={showPerSide ? "Link all sides" : "Set each side"}
+            onClick={() => {
+              if (showPerSide) {
+                /* Re-link: collapse to a single value (use top). */
+                writeLinkedPad(pad.t);
+                setPadUnlinked(false);
+              } else {
+                setPadUnlinked(true);
+              }
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {showPerSide ? "link_off" : "link"}
+            </span>
+          </button>
+        </label>
+        {showPerSide ? (
+          <div className="inspector-pad-grid">
+            {([
+              ["t", "T", "Top padding in px"],
+              ["r", "R", "Right padding in px"],
+              ["b", "B", "Bottom padding in px"],
+              ["l", "L", "Left padding in px"],
+            ] as const).map(([side, glyph, hint]) => (
+              <label className="inspector-pad-cell" key={side} title={hint}>
+                <span className="inspector-pad-side" aria-hidden="true">{glyph}</span>
+                <input
+                  type="number"
+                  className="inspector-input inspector-pad-input"
+                  min={0}
+                  aria-label={hint}
+                  value={pad[side]}
+                  onChange={(e) => writeSide(side, numFromEvent(e.target.value))}
+                />
+              </label>
+            ))}
+          </div>
+        ) : (
           <input
             type="number"
             className="inspector-input"
             min={0}
-            value={zoneLayout.padding ?? 0}
-            onChange={(e) => setZoneLayout(zone, { padding: Math.max(0, Number(e.target.value) || 0) })}
+            aria-label="Padding on all sides in px"
+            value={pad.t}
+            onChange={(e) => writeLinkedPad(numFromEvent(e.target.value))}
           />
-        </div>
+        )}
       </div>
 
       {/* Align - align-items on the cross axis */}
@@ -656,6 +975,38 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
               {a === "start" ? "Top" : a === "center" ? "Center" : a === "end" ? "Bottom" : "Stretch"}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Distribute - main-axis distribution (Figma "Auto layout" packing row).
+          Writes ZoneLayout.justify. `start` is the default (unset = start), so
+          picking Start clears the value to keep saved projects lean + back-
+          compatible. Maps to justify-content (flex) / justify-items (grid) in
+          the resolver + threads into export via the P4 export twin. */}
+      <div className="inspector-field">
+        <label className="inspector-field-label">Distribute</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout distribution">
+          {([
+            ["start", "Start", "Pack children to the start of the main axis (default)"],
+            ["center", "Center", "Center children along the main axis"],
+            ["end", "End", "Pack children to the end of the main axis"],
+            ["space-between", "Between", "Spread children with equal space between them"],
+          ] as const).map(([v, lbl, hint]) => {
+            const active = (zoneLayout.justify ?? "start") === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`inspector-toggle-btn${active ? " active" : ""}`}
+                onClick={() => setZoneLayout(zone, { justify: v === "start" ? undefined : v })}
+                title={hint}
+              >
+                {lbl}
+              </button>
+            );
+          })}
         </div>
       </div>
     </InspectorSection>

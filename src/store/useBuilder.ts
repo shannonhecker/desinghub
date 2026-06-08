@@ -87,6 +87,18 @@ export interface LayoutProps {
   minWidth?: LayoutWidth;
   /** Cap on computed width. Ignored for auto. */
   maxWidth?: LayoutWidth;
+  /** Counter-axis (height) sizing. Reuses the LayoutWidth union VERBATIM
+     so Figma's per-axis Hug/Fill/Fixed maps to existing tokens:
+       'auto' → Hug (content height), 'fill' → Fill (stretch to container),
+       '{N}px' / '{N}%' → Fixed. Optional + no default → back-compatible:
+     a saved Page predating P3 loads with height undefined (renders exactly
+     as before, content-driven). The resolver, the on-canvas bottom handle,
+     and the export twin all read this same field. */
+  height?: LayoutWidth;
+  /** Floor on computed height. Ignored for auto (Hug). */
+  minHeight?: LayoutWidth;
+  /** Cap on computed height. Ignored for auto (Hug). */
+  maxHeight?: LayoutWidth;
   /** flex-grow override. 0 disables growing, 1 enables. */
   grow?: 0 | 1;
   /** align-self on the cross-axis. */
@@ -156,6 +168,44 @@ export interface Block {
    a LayoutGroup is effectively a zone-in-a-block. */
 export type LayoutGroupDirection = LayoutMode;
 
+/* P5 padding+gap shape-unions. The OLD `number` shape stays valid (saved
+   projects predate the object form), so both renderings (resolver + export)
+   normalize first. Object shape lets the inspector drive per-side padding +
+   independent H/V gap like Figma, without re-modelling any persisted Page.
+
+   PaddingValue: a single number = uniform px padding (legacy); the object form
+   = explicit per-side px (top/right/bottom/left, Figma's T/R/B/L order). */
+export interface PaddingObject { t: number; r: number; b: number; l: number; }
+export type PaddingValue = number | PaddingObject;
+/* GapValue: a single number = uniform px gap (legacy); the object form = an
+   independent row (between rows / cross-axis) + col (between columns / main-
+   axis) gap, mapped to CSS rowGap/columnGap. */
+export interface GapObject { row: number; col: number; }
+export type GapValue = number | GapObject;
+
+/* Normalize the legacy number shape to the object form so the resolver +
+   exporter can read per-side / per-axis values uniformly. A number expands to
+   the uniform object (back-compat); an object passes through unchanged. */
+export function normalizePadding(p: PaddingValue | undefined): PaddingObject | undefined {
+  if (p === undefined) return undefined;
+  if (typeof p === "number") return { t: p, r: p, b: p, l: p };
+  return p;
+}
+export function normalizeGap(g: GapValue | undefined): GapObject | undefined {
+  if (g === undefined) return undefined;
+  if (typeof g === "number") return { row: g, col: g };
+  return g;
+}
+/* True when every side / axis is equal — used by the resolver + exporter to
+   prefer the compact single-value CSS (`padding`/`gap`) over the per-side form,
+   keeping output lean and identical to the legacy number path. */
+export function isUniformPadding(p: PaddingObject): boolean {
+  return p.t === p.r && p.r === p.b && p.b === p.l;
+}
+export function isUniformGap(g: GapObject): boolean {
+  return g.row === g.col;
+}
+
 /* Per-zone layout configuration (separate from individual block
    layouts). Defaults stay backward-compatible: body defaults to
    "row" with wrap, header/footer to "row", sidebar to "stack". */
@@ -163,10 +213,12 @@ export interface ZoneLayout {
   mode: LayoutMode;
   /** Used only when mode === "grid" - column count (1–12). */
   columns?: number;
-  /** Gap between items in px. Defaults via CSS. */
-  gap?: number;
-  /** Padding inside the zone in px. Optional. */
-  padding?: number;
+  /** Gap between items in px. Legacy `number` = uniform; P5 object form =
+     independent row/col gap (mapped to rowGap/columnGap). Defaults via CSS. */
+  gap?: GapValue;
+  /** Padding inside the zone in px. Legacy `number` = uniform; P5 object form =
+     per-side {t,r,b,l} (Figma linked/unlinked). Optional. */
+  padding?: PaddingValue;
   /** For Row mode: whether items wrap to new lines. */
   wrap?: boolean;
   /** align-items on the cross-axis. */
@@ -539,6 +591,15 @@ interface BuilderState {
   /** Patch a zone's container layout (mode/columns/gap/padding/wrap/align).
      Used by the zone layout-mode picker. */
   setZoneLayout: (zone: ZoneId, patch: Partial<ZoneLayout>) => void;
+  /** P2 Frames: show/hide a peripheral frame (header/sidebar/footer). Hiding
+     keeps the zone's blocks so re-adding restores them; the canvas + export
+     both drop a hidden zone. BODY is mandatory — calling with zone === 'body'
+     is a no-op. Writes a fresh zoneLayouts object so undo/redo + autosave (both
+     keyed on the zoneLayouts reference) capture the change like any other
+     layout edit. */
+  setZoneVisible: (zone: ZoneId, visible: boolean) => void;
+  /** P2 Frames: flip a peripheral frame's visibility. No-op for BODY. */
+  toggleZoneVisible: (zone: ZoneId) => void;
 
   // Actions - UI
   toggleSettings: () => void;
@@ -1511,6 +1572,33 @@ export const useBuilder = create<BuilderState>((set) => ({
       [zone]: { ...s.zoneLayouts[zone], ...patch },
     },
   })),
+
+  /* P2 Frames: peripheral-frame visibility. BODY is mandatory — guard it here
+     so no UI control (or future caller) can accidentally remove the only
+     required zone. The set() produces a fresh zoneLayouts object, so the
+     existing reference-equality hooks (builderHistory snapshot + useAutoSave
+     fingerprint, both keyed on zoneLayouts) treat it as an undoable, persisted
+     change — no separate tracking plumbing needed. */
+  setZoneVisible: (zone, visible) => set((s) => {
+    if (zone === 'body') return {};
+    if ((s.zoneLayouts[zone].visible !== false) === visible) return {}; // no-op: already in that state
+    return {
+      zoneLayouts: {
+        ...s.zoneLayouts,
+        [zone]: { ...s.zoneLayouts[zone], visible },
+      },
+    };
+  }),
+  toggleZoneVisible: (zone) => set((s) => {
+    if (zone === 'body') return {};
+    const nextVisible = s.zoneLayouts[zone].visible === false; // currently hidden → make visible
+    return {
+      zoneLayouts: {
+        ...s.zoneLayouts,
+        [zone]: { ...s.zoneLayouts[zone], visible: nextVisible },
+      },
+    };
+  }),
 
   toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),

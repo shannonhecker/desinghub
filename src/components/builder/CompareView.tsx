@@ -36,12 +36,18 @@ interface CompareQuadrantProps {
   sidebarBlocks: Block[];
   bodyBlocks: Block[];
   footerBlocks: Block[];
+  /* P2 Frames: a removed peripheral frame (visible === false) is dropped from
+     every compare quadrant too, so compare mode matches the canvas + export. */
+  headerVisible: boolean;
+  sidebarVisible: boolean;
+  footerVisible: boolean;
   onOpen: () => void;
 }
 
 const CompareQuadrant = React.memo(function CompareQuadrant({
   ds, label, color, org, active, density,
   headerBlocks, sidebarBlocks, bodyBlocks, footerBlocks,
+  headerVisible, sidebarVisible, footerVisible,
   onOpen,
 }: CompareQuadrantProps) {
   return (
@@ -67,22 +73,26 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
 
       {/* Mini dashboard - scoped by preview-${ds} class, read-only content */}
       <div className={`compare-quadrant-body bp-dashboard preview-${ds} density-${density}`}>
-        <header className="bp-header compare-mini-zone">
-          {headerBlocks.map((b) => (
-            <div key={b.id} className="compare-mini-block">
-              <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
-            </div>
-          ))}
-        </header>
-
-        <div className="bp-body">
-          <nav className="bp-sidebar compare-mini-zone compare-mini-sidebar">
-            {sidebarBlocks.map((b) => (
+        {headerVisible && (
+          <header className="bp-header compare-mini-zone">
+            {headerBlocks.map((b) => (
               <div key={b.id} className="compare-mini-block">
                 <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
               </div>
             ))}
-          </nav>
+          </header>
+        )}
+
+        <div className="bp-body">
+          {sidebarVisible && (
+            <nav className="bp-sidebar compare-mini-zone compare-mini-sidebar">
+              {sidebarBlocks.map((b) => (
+                <div key={b.id} className="compare-mini-block">
+                  <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
+                </div>
+              ))}
+            </nav>
+          )}
           <main className="bp-main compare-mini-main">
             {bodyBlocks.length === 0 ? (
               <div className="compare-mini-empty">No blocks yet - start building in the editor.</div>
@@ -108,13 +118,15 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
           </main>
         </div>
 
-        <footer className="bp-footer compare-mini-zone">
-          {footerBlocks.map((b) => (
-            <div key={b.id} className="compare-mini-block">
-              <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
-            </div>
-          ))}
-        </footer>
+        {footerVisible && (
+          <footer className="bp-footer compare-mini-zone">
+            {footerBlocks.map((b) => (
+              <div key={b.id} className="compare-mini-block">
+                <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
+              </div>
+            ))}
+          </footer>
+        )}
       </div>
     </div>
   );
@@ -125,6 +137,10 @@ export function CompareView() {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
   const footerBlocks = useBuilder((s) => s.footerBlocks);
+  /* P2 Frames: per-zone visibility (undefined defaults to shown). */
+  const headerVisible = useBuilder((s) => s.zoneLayouts.header.visible !== false);
+  const sidebarVisible = useBuilder((s) => s.zoneLayouts.sidebar.visible !== false);
+  const footerVisible = useBuilder((s) => s.zoneLayouts.footer.visible !== false);
   const density = useBuilder((s) => s.density);
   const activeDS = useBuilder((s) => s.designSystem);
   const setDesignSystem = useBuilder((s) => s.setDesignSystem);
@@ -164,6 +180,9 @@ export function CompareView() {
             sidebarBlocks={sidebarBlocks}
             bodyBlocks={blocks}
             footerBlocks={footerBlocks}
+            headerVisible={headerVisible}
+            sidebarVisible={sidebarVisible}
+            footerVisible={footerVisible}
             onOpen={() => handleOpen(s.key)}
           />
         ))}

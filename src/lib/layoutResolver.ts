@@ -18,6 +18,7 @@
  */
 
 import type { Block, LayoutProps, LayoutWidth, ZoneLayout, LayoutJustify } from "@/store/useBuilder";
+import { normalizePadding, normalizeGap } from "@/store/useBuilder";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 /* Translate a LayoutWidth token to a CSS length string, or `null`
@@ -103,6 +104,55 @@ function effectiveLayout(block: Block, containerMode: ZoneLayout["mode"]): Layou
   return explicit;
 }
 
+/* Counter-axis (height) sizing — P3 height engine. Mirrors the width
+   contract on the LayoutWidth union but writes the height / minHeight /
+   maxHeight / align-self properties:
+     'auto'       → Hug   (content height; nothing emitted, the box hugs)
+     'fill'       → Fill  (stretch to the container). In stack mode the
+                    item is the MAIN axis (flex-grow vertically); in
+                    row / grid mode height is the CROSS axis, so we stretch
+                    via alignSelf:stretch (+ height:100% as a definite-parent
+                    fallback so it works even when the row has a height).
+     '{N}px/%/fr' → Fixed (explicit height).
+   Mutates `style` in place. Height is undefined on pre-P3 saved blocks, so
+   this is a no-op for them (full back-compat — the box renders as before). */
+function applyHeight(style: React.CSSProperties, layout: LayoutProps, mode: ZoneLayout["mode"]): void {
+  const h = layout.height;
+  if (h === undefined) {
+    /* Hug is the implicit default. Still honour explicit min/max so a
+       content-sized box can be floored / capped without setting a height. */
+    const minH = toCss(layout.minHeight);
+    const maxH = toCss(layout.maxHeight);
+    if (minH) style.minHeight = minH;
+    if (maxH) style.maxHeight = maxH;
+    return;
+  }
+  if (h === "auto") {
+    style.height = "auto";
+  } else if (h === "fill") {
+    if (mode === "stack") {
+      /* Stack = vertical main axis: grow to fill remaining column height.
+         The width logic owns the cross axis (horizontal) here, so setting
+         flex-grow for vertical fill is safe and additive. */
+      style.flexGrow = 1;
+      style.height = "100%";
+    } else {
+      /* Row / grid = height is the cross axis → stretch. */
+      style.alignSelf = "stretch";
+      style.height = "100%";
+    }
+  } else {
+    /* Fixed: px / % / fr (fr is non-sensical for a single box → treat as the
+       raw string, CSS will ignore an invalid value gracefully). */
+    const hCss = toCss(h);
+    if (hCss) style.height = hCss;
+  }
+  const minH = toCss(layout.minHeight);
+  const maxH = toCss(layout.maxHeight);
+  if (minH) style.minHeight = minH;
+  if (maxH) style.maxHeight = maxH;
+}
+
 /* Compute the inline style object applied to a block's wrapper.
    Items are placed by their container (flex or grid); this helper
    just controls sizing + growth. The container class handles the
@@ -162,6 +212,10 @@ export function computeItemStyle(
     if (maxCss) style.maxWidth = maxCss;
     if (layout.align) style.alignSelf = layout.align;
     if (layout.margin) style.margin = `${layout.margin}px`;
+    /* Counter-axis height (Hug/Fill/Fixed). align-self is set by `layout.align`
+       above when present; applyHeight only overrides it for fill on the cross
+       axis (grid). */
+    applyHeight(style, layout, zoneLayout.mode);
     return style;
   }
 
@@ -195,7 +249,11 @@ export function computeItemStyle(
        summing to >100%) still wraps. px is left literal (an explicit
        fixed size), auto/fill are handled above, and stack mode is
        excluded because its gap runs along the cross axis (vertical). */
-    const gap = zoneLayout.gap ?? 0;
+    /* The row %-width trap is about the MAIN-axis (between-column) gap, so use
+       the object form's `col` when present, else the uniform value (legacy
+       number normalizes to col === row). */
+    const gapObj = normalizeGap(zoneLayout.gap);
+    const gap = gapObj?.col ?? 0;
     const gapAware =
       zoneLayout.mode === "row" &&
       gap > 0 &&
@@ -211,6 +269,9 @@ export function computeItemStyle(
   if (maxCss) style.maxWidth = maxCss;
   if (layout.align) style.alignSelf = layout.align;
   if (layout.margin) style.margin = `${layout.margin}px`;
+
+  /* Counter-axis height (Hug/Fill/Fixed) for flex (row / stack) containers. */
+  applyHeight(style, layout, zoneLayout.mode);
 
   return style;
 }
@@ -240,8 +301,33 @@ const GRID_JUSTIFY_ITEMS: Record<LayoutJustify, NonNullable<React.CSSProperties[
    wrap, gap, padding, align-items, and main-axis justify based on the ZoneLayout. */
 export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperties {
   const base: React.CSSProperties = {};
-  if (zoneLayout.padding) base.padding = `${zoneLayout.padding}px`;
-  if (zoneLayout.gap !== undefined) base.gap = `${zoneLayout.gap}px`;
+  /* P5 padding — normalize the legacy number / new {t,r,b,l} object to one
+     shape, then emit compact `padding` when uniform (identical to the legacy
+     single-number output) or explicit per-side properties otherwise. A 0 on
+     every side is a no-op (matches the old `if (zoneLayout.padding)` truthiness
+     for a 0 number). */
+  const pad = normalizePadding(zoneLayout.padding);
+  if (pad && (pad.t || pad.r || pad.b || pad.l)) {
+    if (pad.t === pad.r && pad.r === pad.b && pad.b === pad.l) {
+      base.padding = `${pad.t}px`;
+    } else {
+      base.paddingTop = `${pad.t}px`;
+      base.paddingRight = `${pad.r}px`;
+      base.paddingBottom = `${pad.b}px`;
+      base.paddingLeft = `${pad.l}px`;
+    }
+  }
+  /* P5 gap — normalize the legacy number / new {row,col} object; emit compact
+     `gap` when both axes match (identical to the legacy single-number output)
+     or rowGap/columnGap otherwise. */
+  const gap = normalizeGap(zoneLayout.gap);
+  if (gap) {
+    if (gap.row === gap.col) base.gap = `${gap.row}px`;
+    else {
+      base.rowGap = `${gap.row}px`;
+      base.columnGap = `${gap.col}px`;
+    }
+  }
 
   if (zoneLayout.mode === "grid") {
     const cols = zoneLayout.columns ?? 3;

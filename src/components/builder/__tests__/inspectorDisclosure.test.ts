@@ -2,13 +2,19 @@
    Inspector progressive disclosure — reduce the per-block
    COMPONENTS panel's cognitive load. Source-pin.
    ════════════════════════════════════════════════════════════
-   Pins: (1) InspectorSubgroup collapsible exists; (2) Layout leads
-   with Width + Align (core), min/max/grow/margin in a collapsed
-   Advanced subgroup; (3) Accent collapses unless the block overrides
-   global; (4) Zone Layout collapses by default but is STILL rendered
-   (deliberately NOT hidden — it edits the zone's flow, and you only
-   select blocks, so hiding it on leaf blocks would orphan zone-flow
-   access). Visual feel is verified on the Vercel preview.
+   Pins: (1) InspectorSubgroup collapsible exists; (2) the Size section
+   leads with the W/H size row + Align (core), min/max/grow/margin in a
+   collapsed Advanced subgroup; (3) Accent collapses unless the block
+   overrides global; (4) the Auto-layout cluster (formerly "Zone Layout")
+   leads expanded but is STILL rendered unconditionally (deliberately NOT
+   hidden — it edits the container's flow, and you only select blocks, so
+   gating it to container types would orphan auto-layout access).
+
+   P1 (flat-Figma inspector): the per-block sizing section is titled
+   "Size" and leads with a W/H size row using Fixed/Hug/Fill LABELS (the
+   store still writes the LayoutWidth union); the container-flow section is
+   titled "Auto layout" and now defaults open (Figma leads with it).
+   Visual feel is verified on the Vercel preview.
    ════════════════════════════════════════════════════════════ */
 
 import { describe, it, expect } from "vitest";
@@ -24,9 +30,14 @@ describe("inspector progressive disclosure", () => {
     expect(cl).toMatch(/function InspectorSubgroup\(/);
   });
 
-  it("Layout leads with Width + Align (core); min/max/grow/margin in an Advanced subgroup", () => {
+  it("Size section leads with W/H size row + Align (core); min/max/grow/margin in an Advanced subgroup", () => {
     const sg = cl.indexOf('<InspectorSubgroup id="layout-advanced"');
     expect(sg).toBeGreaterThan(-1);
+    // The section is now titled "Size" and leads with a W/H size row.
+    expect(cl).toMatch(/<InspectorSection id="layout" title="Size">/);
+    const sizeRow = cl.indexOf('className="inspector-size-row"');
+    expect(sizeRow).toBeGreaterThan(-1);
+    expect(sizeRow).toBeLessThan(sg);
     // Align is core → appears before the Advanced subgroup
     expect(cl.indexOf('inspector-field-label">Align')).toBeGreaterThan(-1);
     expect(cl.indexOf('inspector-field-label">Align')).toBeLessThan(sg);
@@ -39,8 +50,10 @@ describe("inspector progressive disclosure", () => {
     expect(cl).toMatch(/title="Accent" defaultOpen=\{Boolean\(current\)\}/);
   });
 
-  it("Zone Layout collapses by default but stays rendered (not hidden)", () => {
-    expect(cl).toMatch(/title=\{`\$\{label\} Zone Layout`\} defaultOpen=\{false\}/);
+  it("Auto layout cluster leads expanded but stays rendered (not hidden)", () => {
+    // P1: titled "Auto layout" (Figma vocab; store model unchanged) and
+    // defaults open so the frame's flow controls lead.
+    expect(cl).toMatch(/title="Auto layout" defaultOpen>/);
     // Still rendered unconditionally — NOT gated to container types.
     expect(cl).toMatch(/<ZoneLayoutSection zone=/);
   });

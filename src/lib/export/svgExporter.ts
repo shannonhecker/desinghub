@@ -278,10 +278,17 @@ export function exportSvg(): string {
   const mode: "light" | "dark" = s.mode === "dark" ? "dark" : "light";
   const p = paletteFor(s.designSystem, mode);
 
+  /* P2 Frames: a removed peripheral frame (visible === false) is dropped from
+     the wireframe too, so the SVG thumbnail matches the live canvas + export.
+     visible === undefined defaults to shown (back-compat). Body never hides. */
+  const showHeader = s.zoneLayouts?.header?.visible !== false && s.headerBlocks.length > 0;
+  const showSidebar = s.zoneLayouts?.sidebar?.visible !== false && s.sidebarBlocks.length > 0;
+  const showFooter = s.zoneLayouts?.footer?.visible !== false && s.footerBlocks.length > 0;
+
   /* Header bar — full width; blocks laid as a simple left-anchored row at a
      fixed row height (wireframe approximation of the live header flex). */
   let headerSvg = "";
-  if (s.headerBlocks.length > 0) {
+  if (showHeader) {
     const items: string[] = [];
     let hx = PAD;
     for (const block of s.headerBlocks) {
@@ -291,13 +298,16 @@ export function exportSvg(): string {
     headerSvg = `  <g id="zone-header">\n    <rect x="0" y="0" width="${CANVAS_W}" height="${HEADER_H}" fill="${p.surface}" />\n    <line x1="0" y1="${HEADER_H}" x2="${CANVAS_W}" y2="${HEADER_H}" stroke="${p.border}" stroke-width="1" />\n${items.join("\n")}\n  </g>`;
   }
 
-  const bodyTop = (s.headerBlocks.length > 0 ? HEADER_H : 0) + PAD;
+  const bodyTop = (showHeader ? HEADER_H : 0) + PAD;
 
-  /* Sidebar — left column, fixed-height nav rows. */
-  const sidebar = drawZone(s.sidebarBlocks, "sidebar", PAD, bodyTop, SIDEBAR_W - PAD, p, SIDEBAR_ITEM_H);
+  /* Sidebar — left column, fixed-height nav rows. Drawn empty (height 0) when
+     the frame is removed so the body reclaims the full width. */
+  const sidebar = showSidebar
+    ? drawZone(s.sidebarBlocks, "sidebar", PAD, bodyTop, SIDEBAR_W - PAD, p, SIDEBAR_ITEM_H)
+    : { svg: "", height: 0 };
 
   /* Body — vertical card stack to the right of the sidebar. */
-  const bodyX = (s.sidebarBlocks.length > 0 ? SIDEBAR_W : 0) + PAD;
+  const bodyX = (showSidebar ? SIDEBAR_W : 0) + PAD;
   const bodyW = CANVAS_W - bodyX - PAD;
   const body = drawZone(s.blocks, "body", bodyX, bodyTop, bodyW, p);
 
@@ -306,7 +316,7 @@ export function exportSvg(): string {
   /* Footer — full-width bar pinned below content. */
   let footerSvg = "";
   let footerBottom = contentBottom;
-  if (s.footerBlocks.length > 0) {
+  if (showFooter) {
     const footY = contentBottom + PAD;
     const items: string[] = [];
     let fx = PAD;

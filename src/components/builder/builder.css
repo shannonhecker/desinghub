@@ -7987,30 +7987,29 @@
 .inspector-stack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bc-gap-xs, 4px);
 }
 .inspector-section {
   display: flex;
   flex-direction: column;
 }
+/* P1 flat-Figma inspector: sections are flush. The only separator is a
+   hairline rule between adjacent sections — no padding-card stacking, no
+   nested boxes. Single-level spacing rhythm driven by --bc-gap-* tokens. */
 .inspector-section + .inspector-section {
-  border-top: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
-  padding-top: 8px;
-  margin-top: 2px;
-}
-.builder-light .inspector-section + .inspector-section {
-  border-top-color: rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--bc-border, rgba(255, 255, 255, 0.10));
+  margin-top: var(--bc-gap-xs, 4px);
 }
 .inspector-section-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bc-gap-sm, 8px);
   width: 100%;
-  padding: 6px 4px;
+  padding: var(--bc-gap-xs, 4px) var(--bc-gap-xxs, 2px);
   background: transparent;
   border: 0;
-  border-radius: var(--dh-curve-sm, 6px);
-  color: var(--b-fg-secondary, #888);
+  border-radius: var(--bc-radius-sm, 6px);
+  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
   font-family: inherit;
   font-size: 10px;
   font-weight: 700;
@@ -8021,16 +8020,12 @@
   text-align: left;
 }
 .inspector-section-head:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
+  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
+  color: var(--b-fg, rgba(245, 247, 250, 0.96));
 }
 .inspector-section-head:focus-visible {
-  outline: 2px solid var(--ds-primary, #5ee7df);
+  outline: 2px solid var(--bc-accent, #7cc4ff);
   outline-offset: 2px;
-}
-.builder-light .inspector-section-head:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--dh-fg, rgba(15, 16, 30, 0.92));
 }
 .inspector-section-title-text {
   flex: 1;
@@ -8046,25 +8041,27 @@
   transform: rotate(90deg);
 }
 .inspector-section-body {
-  padding-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-sm, 8px);
+  padding-top: var(--bc-gap-xxs, 2px);
 }
 
 /* Inspector sub-group — nested collapsible inside a section (e.g. Layout
    "Advanced"). Indented with a left rule, lighter header, leading caret. */
 .inspector-subgroup {
-  margin-top: 6px;
-  padding-left: 8px;
-  border-left: 1px solid var(--b-border, rgba(255, 255, 255, 0.08));
+  padding-left: var(--bc-gap-sm, 8px);
+  border-left: 1px solid var(--bc-border, rgba(255, 255, 255, 0.10));
 }
 .inspector-subgroup-head {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--bc-gap-xs, 4px);
   width: 100%;
-  padding: 4px 2px;
+  padding: var(--bc-gap-xs, 4px) var(--bc-gap-xxs, 2px);
   background: transparent;
   border: 0;
-  border-radius: var(--dh-curve-sm, 6px);
+  border-radius: var(--bc-radius-sm, 6px);
   color: var(--b-fg3);
   font-family: inherit;
   font-size: 10px;
@@ -8099,40 +8096,62 @@
   flex: 1;
 }
 .inspector-subgroup-body {
-  padding-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-sm, 8px);
+  padding-top: var(--bc-gap-xxs, 2px);
 }
 @media (prefers-reduced-motion: reduce) {
   .inspector-subgroup-caret { transition: none; }
 }
 
+/* P1 flat-Figma segmented control. Figma's segmented controls sit flush:
+   no wrapper box, no inner padding, transparent track. The active segment
+   reads as a subtle filled chip + bolder weight (NOT a doubled box). Driven
+   by --bc-* tokens; AA in both light and dark; keeps focus-visible ring and
+   keyboard arrow operation. */
 .inspector-toggle-group {
   display: flex;
-  gap: 2px;
-  background: rgba(255,255,255,0.04);
-  border-radius: 6px;
-  padding: 2px;
+  width: 100%;
+  min-width: 0;
+  gap: var(--bc-gap-xxs, 2px);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
 }
 
 .inspector-toggle-btn {
-  flex: 1;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+  text-align: center;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-xs, 3px);
   background: transparent;
-  color: var(--b-fg-secondary, #888);
+  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   font-family: inherit;
 }
 .inspector-toggle-btn:hover {
+  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
   color: var(--b-fg, #e4e4e7);
 }
+.inspector-toggle-btn:focus-visible {
+  outline: 2px solid var(--bc-accent, #7cc4ff);
+  outline-offset: 1px;
+}
 .inspector-toggle-btn.active {
-  background: rgba(255,255,255,0.1);
+  background: var(--bc-bg-active, rgba(255, 255, 255, 0.10));
+  border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
   color: var(--b-fg, #e4e4e7);
   font-weight: 600;
+  /* Subtle accent underline — the Figma "this segment is on" tell, in
+     addition to the fill + weight so selection is never color-only. */
+  box-shadow: inset 0 -2px 0 var(--bc-accent, #7cc4ff);
 }
 
 .inspector-divider {
@@ -8142,33 +8161,33 @@
   margin: 0 2px;
 }
 
+/* P1 flat-Figma field rhythm. Even, single-level spacing — the
+   section-body owns the gap BETWEEN fields (var(--bc-gap-sm)); each field
+   keeps a tight label→control gap and no own margin so there are no
+   compounding margins / nested boxes. */
 .inspector-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-.inspector-field:last-child {
-  margin-bottom: 0;
+  gap: var(--bc-gap-xxs, 2px);
 }
 /* Horizontal row variant - used when two short inputs need to
    sit side-by-side (e.g. Min / Max width fields). */
 .inspector-field-row {
   flex-direction: row;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--bc-gap-sm, 8px);
 }
 .inspector-field-row > div {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--bc-gap-xxs, 2px);
 }
 
 /* Custom-width row: the numeric input grows, the px/% unit toggle
    sits beside it at its intrinsic width. */
 .inspector-width-custom {
   display: flex;
-  gap: 6px;
+  gap: var(--bc-gap-xs, 4px);
   align-items: stretch;
 }
 .inspector-width-custom .inspector-input {
@@ -8179,16 +8198,123 @@
   flex: 0 0 auto;
 }
 
-.inspector-field-label {
-  font-size: 10px;
+/* P1 SIZE row — W and H stacked full-width. The Fixed/Hug/Fill segmented
+   control needs the full panel width to read; at the ~240px inspector width
+   two 3-button segments side by side overlap, so each axis gets its own row. */
+.inspector-size-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-sm, 8px);
+}
+.inspector-size-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-xxs, 2px);
+  min-width: 0;
+}
+
+/* P5 padding/gap — Figma-style link toggle + per-side grid. Flat chrome,
+   token-driven, AA in both themes, keyboard-operable with a visible focus ring.
+   The link toggle is a small icon button sitting at the end of the field label
+   row (label uses justify-content: space-between). */
+.inspector-link-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--bc-radius-xs, 3px);
+  background: transparent;
+  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.inspector-link-toggle:hover {
+  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
+  color: var(--b-fg, #e4e4e7);
+}
+.inspector-link-toggle:focus-visible {
+  outline: 2px solid var(--bc-accent, #7cc4ff);
+  outline-offset: 1px;
+}
+/* Unlinked = active: filled chip + accent underline so the state is never
+   color-only (mirrors .inspector-toggle-btn.active). */
+.inspector-link-toggle.is-unlinked {
+  background: var(--bc-bg-active, rgba(255, 255, 255, 0.10));
+  border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
+  color: var(--bc-accent, #7cc4ff);
+}
+.inspector-link-toggle .material-symbols-outlined {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Per-side padding grid (4 cells) / per-axis gap grid (2 cells). Each cell is a
+   side-glyph + a compact number input. */
+.inspector-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--bc-gap-xs, 4px);
+}
+.inspector-pad-grid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.inspector-pad-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs, 2px);
+  min-width: 0;
+}
+.inspector-pad-side {
+  flex: 0 0 auto;
+  width: 12px;
+  text-align: center;
+  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--b-fg-secondary, #888);
+  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
+}
+.inspector-pad-input {
+  flex: 1;
+  min-width: 0;
+  /* tighter horizontal padding so a 2- or 3-digit value fits in a quarter cell */
+  padding-left: 6px;
+  padding-right: 4px;
+}
+
+/* P1 zone hint — the small {Header}/{Body}/… tag beside the Auto-layout
+   "Direction" label so it's clear which container the cluster affects. */
+.inspector-zone-hint {
+  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
+  font-weight: 600;
+  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* P1 disabled control — used where a control has no backing field yet
+   (e.g. Height before P3 wires it). Reads as present-but-inert, with a
+   tooltip on hover, rather than a missing control. */
+.inspector-toggle-btn:disabled,
+.inspector-toggle-group[aria-disabled="true"] .inspector-toggle-btn {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.inspector-toggle-btn:disabled:hover {
+  background: transparent;
+  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
+}
+
+.inspector-field-label {
+  /* P1: labels use the chrome label token. Figma uses sentence-case
+     subdued labels, not all-caps shout — drop the uppercase + tracking. */
+  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
+  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--bc-gap-xs, 4px);
 }
 
 /* Chart colour section (P1.3) */
@@ -8336,19 +8462,10 @@
   background: #f8f8f8;
   border-bottom-color: rgba(0,0,0,0.08);
 }
-.builder-light .inspector-toggle-group {
-  background: rgba(0,0,0,0.04);
-}
-.builder-light .inspector-toggle-btn {
-  color: #71717a;
-}
-.builder-light .inspector-toggle-btn:hover {
-  color: #18181b;
-}
-.builder-light .inspector-toggle-btn.active {
-  background: rgba(0,0,0,0.08);
-  color: #18181b;
-}
+/* P1: toggle-group / toggle-btn now resolve from mode-aware --bc-* tokens,
+   so they need no separate light-mode override (the old override re-painted
+   the boxed background the flat look removes). Only inputs/selects keep an
+   explicit light treatment below. */
 .builder-light .inspector-input,
 .builder-light .inspector-select {
   background: #fff;
@@ -10632,6 +10749,119 @@
   z-index: 10;
 }
 
+/* ── P2 Frames: Figma-like frame label + remove (×) ──────────────────
+   A small chrome tab pinned to the top-left of a peripheral frame
+   (header / sidebar / footer) in EDIT mode. Names the frame and carries
+   a remove affordance. Built from --bc-* chrome tokens so it stays
+   theme-stable across the 5 design systems; AA text + visible focus
+   rings + keyboard-activatable. Hidden in Present mode via the
+   [data-builder-mode="preview"] rule below. */
+.bp-frame-tab {
+  position: absolute;
+  top: var(--bc-gap-xs);
+  left: var(--bc-gap-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: 18px;
+  padding: 0 var(--bc-gap-xs) 0 var(--bc-gap-sm);
+  border-radius: var(--bc-radius-xs);
+  /* Solid raised chrome surface (not the translucent accent-muted) so the
+     11px accent label keeps AA contrast over any of the 5 DS surfaces. */
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-accent-muted);
+  color: var(--bc-accent);
+  font: var(--bc-type-label);
+  white-space: nowrap;
+  pointer-events: auto;
+  opacity: 0.72;
+  box-shadow: var(--bc-shadow-sm);
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+  z-index: var(--bc-z-guide);
+}
+.bp-header:hover .bp-frame-tab,
+.bp-sidebar:hover .bp-frame-tab,
+.bp-footer:hover .bp-frame-tab,
+.bp-frame-tab:focus-within {
+  opacity: 1;
+}
+.bp-frame-tab-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+.bp-frame-tab-label {
+  letter-spacing: 0.02em;
+}
+.bp-frame-tab-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: var(--bc-radius-xs);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.bp-frame-tab-remove:hover {
+  background: var(--bc-bg-hover);
+}
+.bp-frame-tab-remove:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 1px;
+}
+.bp-frame-tab-remove .material-symbols-outlined {
+  font-size: 13px;
+  line-height: 1;
+}
+/* Frame labels are an edit-time affordance only; never in Present mode. */
+[data-builder-mode="preview"] .bp-frame-tab,
+[data-builder-mode="preview"] .bp-zone-add-bar {
+  display: none !important;
+}
+
+/* ── P2 Frames: add-back strip for removed frames ──────────────────── */
+.bp-zone-add-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-gap-sm);
+  padding: var(--bc-gap-sm) var(--bc-gap-md);
+  background: var(--bc-bg-hover);
+  border-bottom: 1px dashed var(--bc-border);
+  flex-shrink: 0;
+}
+.bp-zone-add-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: var(--bc-size-chip);
+  padding: 0 var(--bc-gap-md) 0 var(--bc-gap-sm);
+  border: 1px solid var(--bc-border-strong);
+  border-radius: var(--bc-radius-pill);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  font: var(--bc-type-value);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease),
+              border-color var(--bc-duration-fast) var(--bc-ease);
+}
+.bp-zone-add-chip:hover {
+  background: var(--bc-bg-active);
+  border-color: var(--bc-accent);
+}
+.bp-zone-add-chip:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+}
+.bp-zone-add-chip .material-symbols-outlined {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--bc-accent);
+}
+
 .bp-header-brand {
   display: flex;
   align-items: center;
@@ -10704,6 +10934,8 @@
   border-right: 1px solid var(--ds-border);
   overflow: hidden;
   flex-shrink: 0;
+  /* P2 Frames: positioning context for the absolute frame label tab. */
+  position: relative;
 }
 
 .bp-sidebar-nav {
@@ -10994,6 +11226,8 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  /* P2 Frames: positioning context for the absolute frame label tab. */
+  position: relative;
   /* Was `8px 16px`. Same ratio as header. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
   border-top: 1px solid var(--ds-border);
@@ -12927,6 +13161,60 @@
   box-shadow: 0 0 0 2px var(--bc-accent-ring);
 }
 .block-resize-handle--experimental .block-resize-grip {
+  background: var(--bc-accent);
+}
+
+/* ── P3 bottom-edge (height) handle ── overrides the right-edge geometry
+   to sit along the block's bottom edge. Reuses the --experimental visuals
+   (opacity, focus ring, accent grip) so width + height handles feel paired.
+   Inherits the preview-mode hide via the .block-resize-handle--experimental
+   rule above. */
+.block-resize-handle--bottom {
+  top: auto;
+  right: 0;
+  bottom: calc(var(--bc-size-handle) * -0.5);
+  left: 0;
+  width: 100%;
+  height: var(--bc-size-handle);
+  cursor: row-resize;
+}
+.block-resize-grip--horizontal {
+  width: 24px;
+  height: 3px;
+  border-radius: var(--bc-radius-pill);
+}
+
+/* ── P3 bottom-right corner (both-axes) handle ── small square in the
+   block's bottom-right corner. Hidden in preview via the
+   .block-resize-corner rule already present in the preview-mode block. */
+.block-resize-corner--experimental {
+  position: absolute;
+  right: calc(var(--bc-size-handle) * -0.5);
+  bottom: calc(var(--bc-size-handle) * -0.5);
+  width: var(--bc-size-handle);
+  height: var(--bc-size-handle);
+  cursor: nwse-resize;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+  outline: none;
+  border-radius: var(--bc-radius-sm);
+}
+.canvas-block:hover .block-resize-corner--experimental,
+.block-resize-corner--experimental:hover {
+  opacity: 1;
+}
+.block-resize-corner--experimental:focus-visible {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+.block-resize-corner--experimental .block-resize-grip-corner {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
   background: var(--bc-accent);
 }
 

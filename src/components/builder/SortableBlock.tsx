@@ -37,8 +37,16 @@ interface ExperimentalResizeProps {
      valuenow and HUD fallbacks on first drag. */
   currentWidth: LayoutWidth | undefined;
   onWidth: (width: string) => void;
+  /** P3 height engine: current height token (block.layout.height) for ARIA
+     seeding, and the writer the bottom + corner handles drive. When omitted
+     the height handles are not rendered (back-compat / capability gate). */
+  currentHeight?: LayoutWidth | undefined;
+  onHeight?: (height: string) => void;
   minWidth?: number;
   maxWidth?: number;
+  /** Floor / ceiling (px) for the height drag clamp. */
+  minHeight?: number;
+  maxHeight?: number;
   /** Zone flow mode — drives the default unit (stack → px, else %). */
   zoneMode: "stack" | "row" | "grid";
 }
@@ -48,8 +56,12 @@ function ExperimentalResize({
   blockId: _blockId,
   currentWidth,
   onWidth,
+  currentHeight,
+  onHeight,
   minWidth,
   maxWidth,
+  minHeight,
+  maxHeight,
   zoneMode,
 }: ExperimentalResizeProps) {
   void _zone;
@@ -70,6 +82,15 @@ function ExperimentalResize({
 
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
   const [liveMessage, setLiveMessage] = useState<string>("");
+
+  /* ── P3 height drag state ── separate from width so a corner drag can run
+     both simultaneously without one clobbering the other's start baseline.
+     Height is always px in this phase (single-box height has no meaningful
+     percentage parent), so the HUD shows px. */
+  const [heightDrag, setHeightDrag] = useState<{ heightPx: number } | null>(null);
+  const heightStartRef = useRef<{ y: number; startHeight: number } | null>(null);
+  const keyboardHeightRef = useRef<number | null>(null);
+  const keyboardHeightResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startRef = useRef<{ x: number; startWidth: number; containerWidth: number; containerRect: DOMRect } | null>(null);
 
@@ -281,6 +302,125 @@ function ExperimentalResize({
     keyboardWidthRef.current = null;
   }, []);
 
+  /* ── P3 height drag (bottom handle) ── px-based vertical resize that
+     reuses the same min/max clamp + HUD machinery as width. Snap is
+     intentionally not applied to height in this phase (Figma height-snap is
+     content/sibling based — out of scope; bottom + corner is enough here). */
+  const clampHeight = useCallback(
+    (rawPx: number): number => {
+      const minPx = minHeight ?? 40;
+      const maxPx = maxHeight ?? 4000;
+      return Math.max(minPx, Math.min(maxPx, rawPx));
+    },
+    [minHeight, maxHeight],
+  );
+
+  const handleHeightPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
+      const wrapperEl = blockEl?.parentElement as HTMLElement | null;
+      const startHeight = wrapperEl?.getBoundingClientRect().height ?? 120;
+      blockElRef.current = blockEl;
+      heightStartRef.current = { y: e.clientY, startHeight };
+      setHeightDrag({ heightPx: startHeight });
+      setAnchorRect(blockEl?.getBoundingClientRect() ?? null);
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    },
+    [],
+  );
+
+  const handleHeightPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!heightStartRef.current || !onHeight) return;
+      const { y: startY, startHeight } = heightStartRef.current;
+      const nextPx = clampHeight(startHeight + (e.clientY - startY));
+      onHeight(`${Math.round(nextPx)}px`);
+      setHeightDrag({ heightPx: nextPx });
+      const blockEl = blockElRef.current
+        ?? ((e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null);
+      setAnchorRect(blockEl?.getBoundingClientRect() ?? null);
+    },
+    [clampHeight, onHeight],
+  );
+
+  const handleHeightPointerUp = useCallback(() => {
+    heightStartRef.current = null;
+    setHeightDrag(null);
+    setAnchorRect(null);
+    blockElRef.current = null;
+    keyboardHeightRef.current = null;
+  }, []);
+
+  /* ── P3 corner drag (bottom-right) ── runs BOTH the width X-math (with snap)
+     and the height Y-math at once, so dragging the corner resizes both axes
+     like Figma. Reuses applyWidth + clampHeight; no new math. */
+  const handleCornerPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      handlePointerDown(e);
+      // seed the height baseline too
+      const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
+      const wrapperEl = blockEl?.parentElement as HTMLElement | null;
+      const startHeight = wrapperEl?.getBoundingClientRect().height ?? 120;
+      heightStartRef.current = { y: e.clientY, startHeight };
+      setHeightDrag({ heightPx: startHeight });
+    },
+    [handlePointerDown],
+  );
+
+  const handleCornerPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      handlePointerMove(e);
+      if (heightStartRef.current && onHeight) {
+        const { y: startY, startHeight } = heightStartRef.current;
+        const nextPx = clampHeight(startHeight + (e.clientY - startY));
+        onHeight(`${Math.round(nextPx)}px`);
+        setHeightDrag({ heightPx: nextPx });
+      }
+    },
+    [handlePointerMove, clampHeight, onHeight],
+  );
+
+  const handleCornerPointerUp = useCallback(() => {
+    handlePointerUp();
+    handleHeightPointerUp();
+  }, [handlePointerUp, handleHeightPointerUp]);
+
+  /* ── P3 height keyboard (bottom handle slider) ── ArrowUp / ArrowDown step
+     the px height; Shift = 1px fine step. Mirrors the width keyboard path. */
+  const handleHeightKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      if (!onHeight) return;
+      e.preventDefault();
+      const handleEl = e.currentTarget;
+      const blockEl = handleEl.closest(".canvas-block") as HTMLElement | null;
+      const wrapperEl = blockEl?.parentElement as HTMLElement | null;
+      const measuredPx = wrapperEl?.getBoundingClientRect().height ?? 120;
+      if (keyboardHeightRef.current === null) {
+        keyboardHeightRef.current =
+          typeof currentHeight === "number"
+            ? currentHeight
+            : typeof currentHeight === "string" && currentHeight.endsWith("px")
+              ? parseFloat(currentHeight) || measuredPx
+              : measuredPx;
+      }
+      const sign = e.key === "ArrowDown" ? 1 : -1;
+      const step = e.shiftKey ? 1 : 8;
+      const nextPx = clampHeight(keyboardHeightRef.current + sign * step);
+      onHeight(`${Math.round(nextPx)}px`);
+      keyboardHeightRef.current = nextPx;
+      if (keyboardHeightResetTimerRef.current) clearTimeout(keyboardHeightResetTimerRef.current);
+      keyboardHeightResetTimerRef.current = setTimeout(() => {
+        keyboardHeightRef.current = null;
+        keyboardHeightResetTimerRef.current = null;
+      }, 300);
+      setLiveMessage(`Height ${Math.round(nextPx)} pixels`);
+    },
+    [onHeight, clampHeight, currentHeight],
+  );
+
   /* P0-2: During an active drag, re-sample the anchor rect and
      containerRect whenever the window scrolls or resizes. Using
      capture:true on scroll catches nested scroll containers too
@@ -398,12 +538,16 @@ function ExperimentalResize({
     [applyWidth, onWidth, unit, currentWidth, resolveWidthToPx],
   );
 
-  /* Clean up the keyboard debounce timer on unmount. */
+  /* Clean up the keyboard debounce timers on unmount. */
   useEffect(() => {
     return () => {
       if (keyboardResetTimerRef.current) {
         clearTimeout(keyboardResetTimerRef.current);
         keyboardResetTimerRef.current = null;
+      }
+      if (keyboardHeightResetTimerRef.current) {
+        clearTimeout(keyboardHeightResetTimerRef.current);
+        keyboardHeightResetTimerRef.current = null;
       }
     };
   }, []);
@@ -473,6 +617,19 @@ function ExperimentalResize({
     return { x, top: rect.top, height: rect.height, pct: nearestPct, snapped };
   })() : null;
 
+  /* ── P3 height ARIA + HUD ── height is reported in px (the only sensible
+     readout for a single-box height). undefined / auto / fill → report the
+     live drag value or a 120px fallback. */
+  const heightAria = (() => {
+    if (typeof currentHeight === "number") return Math.round(currentHeight);
+    if (typeof currentHeight === "string" && currentHeight.endsWith("px")) {
+      const n = parseFloat(currentHeight);
+      return Number.isFinite(n) ? Math.round(n) : 120;
+    }
+    return 120;
+  })();
+  const heightHudValue = heightDrag ? heightDrag.heightPx : heightAria;
+
   return (
     <>
       {/* Single right-edge handle. role="slider" for a11y. */}
@@ -496,8 +653,64 @@ function ExperimentalResize({
         <div className="block-resize-grip" />
       </div>
 
+      {/* P3: bottom-edge handle drives height. role="slider", vertical
+          orientation. Only rendered when the parent wired onHeight. */}
+      {onHeight && (
+        <div
+          className="block-resize-handle block-resize-handle--experimental block-resize-handle--bottom"
+          role="slider"
+          tabIndex={0}
+          aria-orientation="vertical"
+          aria-label="Resize height"
+          aria-valuemin={minHeight ?? 40}
+          aria-valuemax={maxHeight ?? 4000}
+          aria-valuenow={heightAria}
+          aria-valuetext={`${heightAria} pixels`}
+          onPointerDown={handleHeightPointerDown}
+          onPointerMove={handleHeightPointerMove}
+          onPointerUp={handleHeightPointerUp}
+          onPointerCancel={handleHeightPointerUp}
+          onKeyDown={handleHeightKeyDown}
+          title="Drag or use up/down arrow keys to resize height"
+        >
+          <div className="block-resize-grip block-resize-grip--horizontal" />
+        </div>
+      )}
+
+      {/* P3: bottom-right corner handle drives BOTH width + height at once. */}
+      {onHeight && (
+        <div
+          className="block-resize-corner block-resize-corner--experimental"
+          role="slider"
+          tabIndex={0}
+          aria-label="Resize width and height"
+          aria-valuenow={heightAria}
+          aria-valuetext={`${valueText}, ${heightAria} pixels`}
+          onPointerDown={handleCornerPointerDown}
+          onPointerMove={handleCornerPointerMove}
+          onPointerUp={handleCornerPointerUp}
+          onPointerCancel={handleCornerPointerUp}
+          title="Drag to resize width and height"
+        >
+          <div className="block-resize-grip-corner" />
+        </div>
+      )}
+
       {/* Screen-reader live region for keyboard resize announcements. */}
       <span className="bc-sr-only" role="status" aria-live="polite">{liveMessage}</span>
+
+      {/* HUD overlay for height / corner drag — px readout. */}
+      {(heightDrag) && typeof document !== "undefined" && createPortal(
+        <ResizeHUD
+          value={heightHudValue}
+          unit="px"
+          onUnitChange={() => { /* height is px-only in P3 */ }}
+          anchorRect={anchorRect}
+          min={minHeight ?? 40}
+          max={maxHeight ?? 4000}
+        />,
+        document.body,
+      )}
 
       {/* HUD overlay — only during drag. Portalled to body so it
          escapes any overflow:hidden ancestor. */}
@@ -549,11 +762,16 @@ interface SortableBlockProps {
   /** New layout-system hook. Writes a width string
      ("{N}px" / "{N}%") directly to the block's layout.width. */
   onWidthChange?: (width: string) => void;
+  /** P3 height engine hook. Writes a height string ("{N}px") to the block's
+     layout.height. When provided, the bottom + corner resize handles render. */
+  onHeightChange?: (height: string) => void;
   /** Passed through to the resize handles to clamp during drag. */
-  layoutHints?: Pick<LayoutProps, "minWidth" | "maxWidth">;
+  layoutHints?: Pick<LayoutProps, "minWidth" | "maxWidth" | "minHeight" | "maxHeight">;
   /** Current width token from block.layout.width — only consumed
      by the experimental flow (ARIA + HUD seeding). */
   currentWidth?: LayoutWidth;
+  /** Current height token from block.layout.height — ARIA + HUD seeding. */
+  currentHeight?: LayoutWidth;
   onSwapClick?: () => void;
   onRemove?: () => void;
   children: React.ReactNode;
@@ -566,8 +784,10 @@ export function SortableBlock({
   compact,
   isSelected,
   onWidthChange,
+  onHeightChange,
   layoutHints,
   currentWidth,
+  currentHeight,
   onSwapClick,
   onRemove,
   children,
@@ -729,8 +949,16 @@ export function SortableBlock({
   const maxPx = typeof layoutHints?.maxWidth === "string" && layoutHints.maxWidth.endsWith("px")
     ? parseFloat(layoutHints.maxWidth)
     : typeof layoutHints?.maxWidth === "number" ? layoutHints.maxWidth : undefined;
+  /* Height clamp hints (px) — parsed the same way as width. */
+  const minHPx = typeof layoutHints?.minHeight === "string" && layoutHints.minHeight.endsWith("px")
+    ? parseFloat(layoutHints.minHeight)
+    : typeof layoutHints?.minHeight === "number" ? layoutHints.minHeight : undefined;
+  const maxHPx = typeof layoutHints?.maxHeight === "string" && layoutHints.maxHeight.endsWith("px")
+    ? parseFloat(layoutHints.maxHeight)
+    : typeof layoutHints?.maxHeight === "number" ? layoutHints.maxHeight : undefined;
 
   const handleWidthChange = (w: string) => onWidthChange?.(w);
+  const handleHeightChange = (h: string) => onHeightChange?.(h);
 
   const resizable = !!onWidthChange && !compact && !!zone;
 
@@ -783,8 +1011,12 @@ export function SortableBlock({
           blockId={id}
           currentWidth={currentWidth}
           onWidth={handleWidthChange}
+          currentHeight={currentHeight}
+          onHeight={onHeightChange ? handleHeightChange : undefined}
           minWidth={minPx}
           maxWidth={maxPx}
+          minHeight={minHPx}
+          maxHeight={maxHPx}
           zoneMode={zoneMode}
         />
       )}
