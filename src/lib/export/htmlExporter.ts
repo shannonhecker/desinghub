@@ -6,6 +6,21 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
+import { computeGroupStyle } from "@/lib/layoutResolver";
+
+/* Serialize a React.CSSProperties object to an inline CSS string
+   (camelCase → kebab-case; bare numbers → px, matching how the canvas
+   renders the same computeGroupStyle output). Used to give an exported
+   LayoutGroup the same flex/grid layout it has on the canvas. */
+function cssPropsToInlineCss(style: Record<string, string | number | undefined>): string {
+  return Object.entries(style)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => {
+      const prop = k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+      return `${prop}: ${typeof v === "number" ? `${v}px` : v}`;
+    })
+    .join("; ");
+}
 
 /* class-concat tokens (variant/status/size/level) must be known, slug-safe
    values, never user free text — they form a class name or an element tag. */
@@ -80,6 +95,18 @@ function blockToHTML(block: Block, indent: string): string {
       return `${indent}<button class="nav-item${p.active ? " active" : ""}">${htmlText(p.label, "Nav")}</button>`;
     case "FooterText":
       return `${indent}<footer class="footer-text">${htmlText(p.label)} ${htmlText(p.version)}</footer>`;
+    case "LayoutGroup": {
+      /* Recurse children into a plain styled flex/grid div mirroring the
+         canvas (computeGroupStyle) — export == edit. Before this case the
+         default branch dropped every child into an empty placeholder div. */
+      const styleCss = cssPropsToInlineCss(computeGroupStyle(block) as Record<string, string | number>);
+      const kids = block.children ?? [];
+      if (kids.length === 0) {
+        return `${indent}<div class="layout-group" style="${styleCss}"></div>`;
+      }
+      const inner = kids.map((c) => blockToHTML(c, indent + "  ")).join("\n");
+      return `${indent}<div class="layout-group" style="${styleCss}">\n${inner}\n${indent}</div>`;
+    }
     default:
       return `${indent}<div class="${block.type.toLowerCase()}"><!-- ${block.type} --></div>`;
   }
