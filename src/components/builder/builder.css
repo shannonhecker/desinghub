@@ -8112,6 +8112,8 @@
    keyboard arrow operation. */
 .inspector-toggle-group {
   display: flex;
+  width: 100%;
+  min-width: 0;
   gap: var(--bc-gap-xxs, 2px);
   background: transparent;
   border-radius: 0;
@@ -8119,8 +8121,11 @@
 }
 
 .inspector-toggle-btn {
-  flex: 1;
-  padding: 4px 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+  text-align: center;
+  padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: var(--bc-radius-xs, 3px);
   background: transparent;
@@ -8193,18 +8198,18 @@
   flex: 0 0 auto;
 }
 
-/* P1 SIZE row — W and H sit side by side like Figma's W/H pair. Each cell
-   is a label + segmented control stack; the two cells share the row gap. */
+/* P1 SIZE row — W and H stacked full-width. The Fixed/Hug/Fill segmented
+   control needs the full panel width to read; at the ~240px inspector width
+   two 3-button segments side by side overlap, so each axis gets its own row. */
 .inspector-size-row {
   display: flex;
+  flex-direction: column;
   gap: var(--bc-gap-sm, 8px);
-  align-items: flex-start;
 }
 .inspector-size-cell {
   display: flex;
   flex-direction: column;
   gap: var(--bc-gap-xxs, 2px);
-  flex: 1;
   min-width: 0;
 }
 
