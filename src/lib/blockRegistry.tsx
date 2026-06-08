@@ -436,7 +436,7 @@ const BLOCK_DEFS: BlockDef[] = [
 
   /* ── Data Display ── */
   { type: "SimulatedDataTable", label: "Data Table", icon: "table_chart", defaults: {}, fields: [
-    { type: "static", text: "Click cells on the canvas to edit data" },
+    { type: "static", text: "Use the Describe bar above the table to fill it with AI, e.g. \"8 customers with plan and MRR\"." },
   ]},
   { type: "SimulatedProgress", label: "Progress Bar", icon: "percent", defaults: { label: "Uploading assets...", value: 50 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
