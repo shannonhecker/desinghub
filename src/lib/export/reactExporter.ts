@@ -7,6 +7,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
+import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 
@@ -97,6 +98,31 @@ const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   carbon: { provider: "Theme", importFrom: "@carbon/react" },
 };
 
+/* Serialize a React.CSSProperties object to a JSX inline-style body
+   (e.g. `display: "flex", gap: 12`). camelCase keys are valid JS
+   identifiers so they need no quoting; string values are JSON-quoted,
+   numbers emit bare (React reads a bare number as px — matching how the
+   canvas renders the same computeGroupStyle output). */
+function cssPropsToJsxStyle(style: Record<string, string | number | undefined>): string {
+  return Object.entries(style)
+    .filter(([, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}: ${typeof v === "number" ? v : JSON.stringify(v)}`)
+    .join(", ");
+}
+
+/* Flatten a block list into a depth-first sequence including every
+   LayoutGroup descendant, so import / primitive / chart collection sees
+   nested real-DS components (a group child still needs its DS import, or
+   the emitted JSX references an un-imported name → TS2304). */
+function flattenBlocks(blocks: Block[]): Block[] {
+  const out: Block[] = [];
+  for (const b of blocks) {
+    out.push(b);
+    if (b.children && b.children.length) out.push(...flattenBlocks(b.children));
+  }
+  return out;
+}
+
 function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light" | "dark"): string {
   /* Charts emit a runnable <ChartBlock> (real Highcharts) — handled before the
      registry-first path since the ComponentAPIRegistry doesn't cover charts. */
@@ -170,6 +196,22 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
       return `${indent}<button className="nav-item${p.active ? " active" : ""}">\n${indent}  <span className="material-symbols-outlined">${jsxText(p.icon, "home")}</span>\n${indent}  ${jsxText(p.label, "Nav")}\n${indent}</button>`;
     case "FooterText":
       return `${indent}<footer className="footer-text">${jsxText(p.label)} ${jsxText(p.version)}</footer>`;
+    case "LayoutGroup": {
+      /* Export the group as a plain styled flex/grid div, mirroring the
+         CANVAS exactly (computeGroupStyle) so export == edit, and recurse
+         each child through blockToJSX. Groups render as plain divs on the
+         canvas — NOT a DS layout primitive — so we keep parity here;
+         wrapping them in Salt/MUI/Carbon layout components would also
+         break for Fluent, which ships no Grid/Stack. Before this case the
+         default branch below dropped every child into an empty div. */
+      const groupStyle = cssPropsToJsxStyle(computeGroupStyle(block) as Record<string, string | number>);
+      const kids = block.children ?? [];
+      if (kids.length === 0) {
+        return `${indent}<div className="layout-group" style={{ ${groupStyle} }} />`;
+      }
+      const inner = kids.map((c) => blockToJSX(c, indent + "  ", system, mode)).join("\n");
+      return `${indent}<div className="layout-group" style={{ ${groupStyle} }}>\n${inner}\n${indent}</div>`;
+    }
     default:
       return `${indent}<div className="${block.type.toLowerCase()}">{/* ${block.type} */}</div>`;
   }
@@ -252,7 +294,7 @@ export function exportReact(): string {
      import specs (e.g. Fluent/Carbon NavItem, whose icon import is chosen from
      `props.icon`) must see real props, or every block resolves to the default
      icon's import — leaving the JSX referencing un-imported names (TS2304). */
-  const allBlocks = [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks];
+  const allBlocks = flattenBlocks([...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks]);
   const allTypes = allBlocks.map((b) => b.type);
   const componentImports = collectImports(system, allBlocks);
   const real = componentImports.length > 0;
