@@ -22,6 +22,7 @@ import {
   type LibraryCategory,
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
+import { ScrubNumberField } from "./ScrubNumberField";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
@@ -513,15 +514,15 @@ function LayoutSection({
       <div className="inspector-field">
         <label className="inspector-field-label">Custom height</label>
         <div className="inspector-width-custom">
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="inline"
+            glyph="H"
             value={heightCustomValue}
             placeholder={heightUnit === "%" ? "e.g. 60" : "e.g. 240"}
             min={heightUnit === "%" ? 1 : 0}
             max={heightUnit === "%" ? 100 : undefined}
-            aria-label="Custom height value"
-            onChange={(e) => applyCustomHeight(e.target.value, heightUnit)}
+            ariaLabel="Custom height value"
+            onValueChange={(v) => applyCustomHeight(v, heightUnit)}
           />
           <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom height unit">
             {(["px", "%"] as const).map((u) => (
@@ -565,15 +566,15 @@ function LayoutSection({
       {/* Custom width — numeric value + unit; typing overrides the preset. */}
       <div className="inspector-field">
         <div className="inspector-width-custom">
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="inline"
+            glyph="W"
             value={customValue}
             placeholder={customUnit === "%" ? "e.g. 40" : "e.g. 320"}
             min={customUnit === "%" ? 1 : 0}
             max={customUnit === "%" ? 100 : undefined}
-            aria-label="Custom width value"
-            onChange={(e) => applyCustom(e.target.value, customUnit)}
+            ariaLabel="Custom width value"
+            onValueChange={(v) => applyCustom(v, customUnit)}
           />
           <div className="inspector-toggle-group" role="radiogroup" aria-label="Custom width unit">
             {(["px", "%"] as const).map((u) => (
@@ -614,35 +615,31 @@ function LayoutSection({
         {/* Min / max width (px). Empty string clears the constraint. */}
         <div className="inspector-field inspector-field-row">
           <div style={{ flex: 1 }}>
-            <label className="inspector-field-label">Min width (px)</label>
-            <input
-              type="number"
-              className="inspector-input"
+            <ScrubNumberField
+              layout="stacked"
+              label="Min width (px)"
               value={parseWidthValue(layout.minWidth)}
               min={0}
               placeholder="—"
-              onChange={(e) => {
-                const v = e.target.value;
+              onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   minWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
-                });
-              }}
+                })
+              }
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label className="inspector-field-label">Max width (px)</label>
-            <input
-              type="number"
-              className="inspector-input"
+            <ScrubNumberField
+              layout="stacked"
+              label="Max width (px)"
               value={parseWidthValue(layout.maxWidth)}
               min={0}
               placeholder="—"
-              onChange={(e) => {
-                const v = e.target.value;
+              onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
-                });
-              }}
+                })
+              }
             />
           </div>
         </div>
@@ -650,35 +647,31 @@ function LayoutSection({
         {/* Min / max height (px). Empty string clears the constraint. */}
         <div className="inspector-field inspector-field-row">
           <div style={{ flex: 1 }}>
-            <label className="inspector-field-label">Min height (px)</label>
-            <input
-              type="number"
-              className="inspector-input"
+            <ScrubNumberField
+              layout="stacked"
+              label="Min height (px)"
               value={parseWidthValue(layout.minHeight)}
               min={0}
               placeholder="—"
-              onChange={(e) => {
-                const v = e.target.value;
+              onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   minHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
-                });
-              }}
+                })
+              }
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label className="inspector-field-label">Max height (px)</label>
-            <input
-              type="number"
-              className="inspector-input"
+            <ScrubNumberField
+              layout="stacked"
+              label="Max height (px)"
               value={parseWidthValue(layout.maxHeight)}
               min={0}
               placeholder="—"
-              onChange={(e) => {
-                const v = e.target.value;
+              onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   maxHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
-                });
-              }}
+                })
+              }
             />
           </div>
         </div>
@@ -701,17 +694,15 @@ function LayoutSection({
 
         {/* Margin - single-value px; applied to all sides. */}
         <div className="inspector-field">
-          <label className="inspector-field-label">Margin (px)</label>
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="stacked"
+            label="Margin (px)"
             value={layout.margin ?? ""}
             min={0}
             placeholder="0"
-            onChange={(e) => {
-              const v = e.target.value;
-              updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) });
-            }}
+            onValueChange={(v) =>
+              updateBlockLayout(zone, block.id, { margin: v === "" ? undefined : Number(v) })
+            }
           />
         </div>
       </InspectorSubgroup>
@@ -805,14 +796,13 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
       {/* Grid column count - only shown in Grid mode */}
       {zoneLayout.mode === "grid" && (
         <div className="inspector-field">
-          <label className="inspector-field-label">Columns</label>
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="stacked"
+            label="Columns"
             min={1}
             max={12}
             value={zoneLayout.columns ?? 3}
-            onChange={(e) => setZoneLayout(zone, { columns: Math.max(1, Math.min(12, Number(e.target.value) || 3)) })}
+            onValueChange={(v) => setZoneLayout(zone, { columns: Math.max(1, Math.min(12, Number(v) || 3)) })}
           />
         </div>
       )}
@@ -868,37 +858,33 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
         </label>
         {showGapSplit ? (
           <div className="inspector-pad-grid inspector-pad-grid--2">
-            <label className="inspector-pad-cell">
-              <span className="inspector-pad-side" aria-hidden="true">V</span>
-              <input
-                type="number"
-                className="inspector-input inspector-pad-input"
-                min={0}
-                aria-label="Vertical gap (between rows) in px"
-                value={gap.row}
-                onChange={(e) => writeGapAxis("row", numFromEvent(e.target.value))}
-              />
-            </label>
-            <label className="inspector-pad-cell">
-              <span className="inspector-pad-side" aria-hidden="true">H</span>
-              <input
-                type="number"
-                className="inspector-input inspector-pad-input"
-                min={0}
-                aria-label="Horizontal gap (between columns) in px"
-                value={gap.col}
-                onChange={(e) => writeGapAxis("col", numFromEvent(e.target.value))}
-              />
-            </label>
+            <ScrubNumberField
+              layout="cell"
+              glyph="V"
+              inputClassName="inspector-pad-input"
+              min={0}
+              ariaLabel="Vertical gap (between rows) in px"
+              value={gap.row}
+              onValueChange={(v) => writeGapAxis("row", numFromEvent(v))}
+            />
+            <ScrubNumberField
+              layout="cell"
+              glyph="H"
+              inputClassName="inspector-pad-input"
+              min={0}
+              ariaLabel="Horizontal gap (between columns) in px"
+              value={gap.col}
+              onValueChange={(v) => writeGapAxis("col", numFromEvent(v))}
+            />
           </div>
         ) : (
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="inline"
+            glyph="↔"
             min={0}
-            aria-label="Gap between children in px"
+            ariaLabel="Gap between children in px"
             value={gap.row}
-            onChange={(e) => writeLinkedGap(numFromEvent(e.target.value))}
+            onValueChange={(v) => writeLinkedGap(numFromEvent(v))}
           />
         )}
       </div>
@@ -937,27 +923,27 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
               ["b", "B", "Bottom padding in px"],
               ["l", "L", "Left padding in px"],
             ] as const).map(([side, glyph, hint]) => (
-              <label className="inspector-pad-cell" key={side} title={hint}>
-                <span className="inspector-pad-side" aria-hidden="true">{glyph}</span>
-                <input
-                  type="number"
-                  className="inspector-input inspector-pad-input"
-                  min={0}
-                  aria-label={hint}
-                  value={pad[side]}
-                  onChange={(e) => writeSide(side, numFromEvent(e.target.value))}
-                />
-              </label>
+              <ScrubNumberField
+                key={side}
+                layout="cell"
+                glyph={glyph}
+                cellTitle={hint}
+                inputClassName="inspector-pad-input"
+                min={0}
+                ariaLabel={hint}
+                value={pad[side]}
+                onValueChange={(v) => writeSide(side, numFromEvent(v))}
+              />
             ))}
           </div>
         ) : (
-          <input
-            type="number"
-            className="inspector-input"
+          <ScrubNumberField
+            layout="inline"
+            glyph="↔"
             min={0}
-            aria-label="Padding on all sides in px"
+            ariaLabel="Padding on all sides in px"
             value={pad.t}
-            onChange={(e) => writeLinkedPad(numFromEvent(e.target.value))}
+            onValueChange={(v) => writeLinkedPad(numFromEvent(v))}
           />
         )}
       </div>
