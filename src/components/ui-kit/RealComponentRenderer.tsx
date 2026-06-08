@@ -54,6 +54,7 @@
 import React from "react";
 
 import { getFullCSS, getTheme } from "@/data/registry";
+import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
@@ -427,8 +428,8 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
   } else if (type === "NavItem") {
     inner = <SaltNavigationItem href="#" active={Boolean(props.active)} orientation="vertical">{s(props.label, "Nav")}</SaltNavigationItem>;
   } else if (type === "SimulatedDataTable") {
-    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
-    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     inner = (
       <SaltTable>
         <SaltTHead>
@@ -583,8 +584,8 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
       </MuiListItem>
     );
   } else if (type === "SimulatedDataTable") {
-    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
-    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     inner = (
       <MuiTableContainer component={MuiPaper}>
         <MuiTable size="small">
@@ -701,8 +702,8 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
   } else if (type === "NavItem") {
     inner = <FluentButton appearance={props.active ? "primary" : "subtle"}>{s(props.label, "Nav")}</FluentButton>;
   } else if (type === "SimulatedDataTable") {
-    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : ["Name", "Status"];
-    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [];
+    const cols = Array.isArray(props.columns) ? (props.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
+    const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     /* status -> Fluent Badge color (Tag has no color prop; Badge does, and is
        what the badge blocks + export already use). Fluent has no purple, so the
        funnel uses: info (MQL) -> brand (a clean solid blue), indigo (SQL) ->

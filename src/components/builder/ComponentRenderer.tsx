@@ -1294,8 +1294,48 @@ function SimulatedDataTableBlock({
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
   const data = (block?.props.rows as unknown[]) ?? undefined;
   const columns = (block?.props.columns as string[]) ?? undefined;
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
 
-  return <SimulatedDataTable system={system} data={data} columns={columns} />;
+  /* AI-describe: POST the description to the generate-table route, then
+     write the sanitized {columns, rows} straight onto the block's props.
+     The store update re-renders both this edit view and the preview, so
+     "describe the records you want" finally does something. */
+  const onGenerate = useCallback(
+    async (description: string) => {
+      if (!blockId) return;
+      setGenerating(true);
+      setGenError(null);
+      try {
+        const res = await fetch("/api/builder/generate-table", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description }),
+        });
+        const payload = (await res.json()) as { columns?: string[]; rows?: string[][]; error?: string };
+        if (!res.ok || !Array.isArray(payload.columns)) {
+          throw new Error(payload.error || "Could not generate table data");
+        }
+        useBuilder.getState().updateBlockProps(blockId, { columns: payload.columns, rows: payload.rows ?? [] });
+      } catch (e) {
+        setGenError(e instanceof Error ? e.message : "Could not generate table data");
+      } finally {
+        setGenerating(false);
+      }
+    },
+    [blockId],
+  );
+
+  return (
+    <SimulatedDataTable
+      system={system}
+      data={data}
+      columns={columns}
+      onGenerate={onGenerate}
+      generating={generating}
+      genError={genError}
+    />
+  );
 }
 
 function SimulatedProgressBlock({

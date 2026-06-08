@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import * as CarbonIcons from "@carbon/icons-react";
 import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 import { publicAssetUrl } from "@/lib/sampleImages";
+import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 
 interface SimProps {
   system: "salt" | "m3" | "fluent" | "uoaui" | "carbon";
@@ -262,9 +263,14 @@ interface DataTableProps extends SimProps {
      (objects keyed by header, the legacy {name,status,role,date} object, or
      arrays). resolveCell() handles every shape defensively. */
   data?: unknown[];
+  /* Edit-only AI affordance. When provided, an inline "Describe the
+     records you want" bar renders above the table (fulfilling the block's
+     long-standing empty-state promise). Preview renderers omit it, so the
+     table CONTENT stays identical edit↔preview — only edit chrome differs. */
+  onGenerate?: (description: string) => void;
+  generating?: boolean;
+  genError?: string | null;
 }
-
-const DEFAULT_COLUMNS = ["Name", "Status", "Role", "Last Active"];
 
 /* No DEFAULT_DATA fallback by design: a table with no rows renders an explicit
    empty state instead of a generic "Jane Doe / John Smith / Alice Jones"
@@ -275,12 +281,20 @@ export function SimulatedDataTable({
   system,
   columns,
   data,
+  onGenerate,
+  generating,
+  genError,
 }: DataTableProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [desc, setDesc] = useState("");
+  const submitDesc = () => {
+    const d = desc.trim();
+    if (d && !generating && onGenerate) onGenerate(d);
+  };
 
   const handleSort = (colIdx: number) => {
     if (sortCol === colIdx) {
@@ -292,24 +306,43 @@ export function SimulatedDataTable({
     }
   };
 
-  const cols = columns ?? DEFAULT_COLUMNS;
-  const rows = Array.isArray(data) ? data : [];
-
-  if (rows.length === 0) {
-    return (
-      <div
-        className={`${prefix}-table-container`}
-        style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120, padding: 24, textAlign: "center", opacity: 0.6 }}
-      >
-        <span style={{ fontSize: 13, lineHeight: 1.5 }}>
-          No data yet. Describe the records you want, or add rows.
-        </span>
-      </div>
-    );
-  }
+  /* Fall back to the SHARED sample data (the same module the preview
+     renderers use) so a fresh table is never broken-empty and edit ==
+     preview. Real generated/typed rows replace it once present. */
+  const cols = columns ?? [...DEFAULT_TABLE_COLUMNS];
+  const rows = Array.isArray(data) && data.length > 0 ? data : (DEFAULT_TABLE_ROWS as readonly (readonly string[])[]);
 
   return (
     <div className={`${prefix}-table-container`}>
+      {onGenerate && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitDesc(); } }}
+            placeholder={'Describe the records, e.g. "8 customers with plan and MRR"'}
+            aria-label="Describe the records you want"
+            disabled={generating}
+            style={{ flex: 1, minWidth: 0, padding: "6px 10px", fontSize: 13, borderRadius: 6, border: "1px solid var(--bc-border, rgba(255,255,255,0.12))", background: "var(--bc-bg-raised, rgba(255,255,255,0.04))", color: "inherit" }}
+          />
+          <button
+            type="button"
+            onClick={submitDesc}
+            disabled={generating || desc.trim().length === 0}
+            /* Neutral solid fill (not accent) — accent-on-text fails AA on the
+               light-mode accent; the house pattern (present-bar-btn-exit) uses
+               --bc-bg-active + --bc-fg + a strong border + weight, high-contrast
+               in both themes. */
+            style={{ padding: "6px 12px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "1px solid var(--bc-border-strong, rgba(255,255,255,0.2))", background: "var(--bc-bg-active, rgba(255,255,255,0.1))", color: "var(--bc-fg, #e4e4e7)", cursor: generating ? "default" : "pointer", opacity: generating || desc.trim().length === 0 ? 0.6 : 1, whiteSpace: "nowrap" }}
+          >
+            {generating ? "Generating…" : "✨ Generate"}
+          </button>
+        </div>
+      )}
+      {onGenerate && genError && (
+        <div role="alert" style={{ fontSize: 12, color: "var(--bc-danger, #ff7a7a)", marginBottom: 8 }}>{genError}</div>
+      )}
       <table className={`${prefix}-table`}>
         <thead>
           <tr>

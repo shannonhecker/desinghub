@@ -31,6 +31,7 @@
  */
 
 import React from "react";
+import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import {
   Button as CarbonButton,
   TextInput as CarbonTextInput,
@@ -381,8 +382,8 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
 
   /* PR-5: real .a-table over the columns/rows; status columns -> .a-badge pills. */
   SimulatedDataTable: (p) => {
-    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : ["Name", "Status"];
-    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [];
+    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
+    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     if (rows.length === 0) {
       return React.createElement("div", { style: { padding: 24, textAlign: "center", opacity: 0.6, fontSize: 13 } }, "No data yet. Describe the records you want, or add rows.");
     }
@@ -586,8 +587,8 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   /* PR-5: plain Carbon Table (not the DataTable render-prop) over the real
      columns/rows; status columns render as Carbon Tags. */
   SimulatedDataTable: (p) => {
-    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : ["Name", "Status"];
-    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [];
+    const columns = Array.isArray(p.columns) ? (p.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
+    const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     if (rows.length === 0) {
       return React.createElement("div", { style: { padding: 24, textAlign: "center", opacity: 0.6, fontSize: 13 } }, "No data yet. Describe the records you want, or add rows.");
     }
