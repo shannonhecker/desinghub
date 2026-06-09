@@ -10063,7 +10063,7 @@
   color: var(--ds-fg);
   font-family: var(--ds-font);
   flex: 1;
-  padding: var(--density-padding, 16px);
+  padding: var(--dh-pad-canvas, var(--density-padding, 16px));
   font-size: var(--density-font-size, 13px);
 }
 

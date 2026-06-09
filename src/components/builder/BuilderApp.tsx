@@ -131,14 +131,34 @@ export function BuilderApp() {
      same scale. */
   const structurePadding = useBuilder((s) => s.structurePadding);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+  const interfaceType = useBuilder((s) => s.interfaceType);
   useEffect(() => {
     const v = resolveStructurePadding(designSystem, structurePadding);
     const root = document.documentElement;
-    root.style.setProperty('--dh-pad-canvas', `${v.canvas}px`);
-    root.style.setProperty('--dh-pad-zone', `${v.zone}px`);
+    /* The Stripe-moderate density redefinition is scoped to uoaui + M3
+       only. Salt / Fluent / Carbon keep their unchanged structure-padding
+       scale: no marketing multiplier and no --dh-pad-canvas override, so
+       their canvas falls through to the base --density-padding. */
+    const dsInScope = designSystem === "uoaui" || designSystem === "m3";
+    /* Marketing interface types (landing / blog / portfolio) stay airy
+       for in-scope DS: widen zone and gap so hero/section rhythm breathes,
+       while app and dashboard types tighten to the redefined moderate
+       density. Block padding follows the DS scale unchanged. */
+    const isMarketing =
+      interfaceType === 'landing' ||
+      interfaceType === 'blog' ||
+      interfaceType === 'portfolio';
+    const zoneMul = (isMarketing && dsInScope) ? 2 : 1;
+    const gapMul = (isMarketing && dsInScope) ? 2.5 : 1;
+    if (dsInScope) {
+      root.style.setProperty('--dh-pad-canvas', `${v.canvas}px`);
+    } else {
+      root.style.removeProperty('--dh-pad-canvas');
+    }
+    root.style.setProperty('--dh-pad-zone', `${v.zone * zoneMul}px`);
     root.style.setProperty('--dh-pad-block', `${v.block}px`);
-    root.style.setProperty('--dh-pad-gap', `${v.gap}px`);
-  }, [designSystem, structurePadding]);
+    root.style.setProperty('--dh-pad-gap', `${v.gap * gapMul}px`);
+  }, [designSystem, structurePadding, interfaceType]);
 
   /* Accent override: when a user sets `colorOverrides.accent` in
      SettingsPanel, paint the per-DS accent CSS var so the canvas

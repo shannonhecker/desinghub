@@ -97,8 +97,8 @@ import type { StructurePaddingScale } from "../_shared/structure";
 
 export const M3_STRUCTURE_PADDING: StructurePaddingScale = {
   small:  { canvas: 12, zone: 8,  block: 8,  gap: 12 },
-  medium: { canvas: 20, zone: 16, block: 12, gap: 16 },
-  large:  { canvas: 32, zone: 24, block: 16, gap: 24 },
+  medium: { canvas: 20, zone: 12, block: 12, gap: 16 },
+  large:  { canvas: 24, zone: 16, block: 14, gap: 20 },
 };
 
 /* ── Types ───────────────────────────────────────────────────────────── */
