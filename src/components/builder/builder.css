@@ -8044,7 +8044,9 @@
 .inspector-section-body {
   display: flex;
   flex-direction: column;
-  gap: var(--bc-gap-sm, 8px);
+  /* Breathing room between control rows (was --bc-gap-sm/8px — read as
+     cramped). --bc-gap-md gives each field a calmer vertical rhythm. */
+  gap: var(--bc-gap-md, 12px);
   padding-top: var(--bc-gap-xxs, 2px);
 }
 
@@ -8196,6 +8198,25 @@
   display: flex;
   flex-direction: column;
   gap: var(--bc-gap-xxs, 2px);
+}
+
+/* Figma dimensions cell: a value field + a compact sizing/unit dropdown,
+   inline. Lives in an .inspector-field-row so W and H sit side by side. */
+.inspector-field-row > .inspector-dim-cell {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--bc-gap-xs, 4px);
+  min-width: 0;
+}
+.inspector-dim-cell > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.inspector-dim-cell .inspector-select.inspector-dim-mode {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  padding-right: 22px; /* room for the baked-in caret */
 }
 
 /* Custom-width row: the numeric input grows, the px/% unit toggle

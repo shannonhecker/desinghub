@@ -70,8 +70,10 @@ describe("ComponentLibrary wires ScrubNumberField into every numeric field", () 
     expect(cl).toMatch(/Margin \(px\)/);
   });
 
-  it("covers the headline custom width + height fields", () => {
-    expect(cl).toMatch(/Custom width value/);
-    expect(cl).toMatch(/Custom height value/);
+  it("covers the headline W/H dimension value fields", () => {
+    // Figma-style dimensions row: each axis is a scrubbable value field
+    // labelled "Width value" / "Height value" + a Fill/Hug/px/% dropdown.
+    expect(cl).toMatch(/ariaLabel="Width value"/);
+    expect(cl).toMatch(/ariaLabel="Height value"/);
   });
 });
