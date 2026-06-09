@@ -1,0 +1,87 @@
+/* ════════════════════════════════════════════════════════════
+   AnatomyDiagram — UI-Kit "Specs ‣ Anatomy" primitive (M3 pilot).
+   ════════════════════════════════════════════════════════════
+   Renders a component schematic on a dotted-grid stage with numbered
+   callout badges, a part legend, and dp measurement annotations —
+   mirroring m3.material.io's component-anatomy section. The diagram is
+   data-driven (parts + measures) and colour-free (skins from theme `t`)
+   so the SAME primitive renders per-DS once each DS supplies its data.
+
+   No RTL in the repo — uses react-dom/client + act() directly, matching
+   codePanel.test.tsx / dsPreviewStylesHooks.test.tsx.
+   ════════════════════════════════════════════════════════════ */
+
+import { describe, it, expect, afterEach } from "vitest";
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { AnatomyDiagram } from "../AnatomyDiagram";
+
+/* Minimal theme stand-in — AnatomyDiagram reads only colour/type slots. */
+const fakeTheme = {
+  fg: "#111111",
+  bg: "#ffffff",
+  accent: "#6750A4",
+  accentText: "#ffffff",
+  border: "#cccccc",
+  fg2: "#555555",
+  fg3: "#888888",
+  font: "system-ui",
+} as never;
+
+const anatomy = {
+  parts: [
+    { n: 1, label: "Container", x: 50, y: 50 },
+    { n: 2, label: "Label text", x: 50, y: 50 },
+    { n: 3, label: "State layer", x: 32, y: 50 },
+  ],
+  measures: [
+    { label: "Height", value: "40dp" },
+    { label: "Padding", value: "24dp" },
+    { label: "Corner", value: "Full" },
+  ],
+};
+
+let root: Root | null = null;
+afterEach(() => {
+  if (root) {
+    const r = root;
+    act(() => r.unmount());
+    root = null;
+  }
+});
+
+function renderDiagram(a: typeof anatomy): HTMLElement {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  act(() => {
+    root = createRoot(container);
+    root.render(<AnatomyDiagram anatomy={a} t={fakeTheme} specimen="Label" />);
+  });
+  return container;
+}
+
+describe("AnatomyDiagram", () => {
+  it("renders one numbered callout badge per part", () => {
+    const c = renderDiagram(anatomy);
+    expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(anatomy.parts.length);
+  });
+
+  it("renders a legend entry naming each part", () => {
+    const c = renderDiagram(anatomy);
+    expect(c.querySelectorAll(".dh-anatomy-legend li").length).toBe(anatomy.parts.length);
+    expect(c.textContent).toContain("Container");
+    expect(c.textContent).toContain("State layer");
+  });
+
+  it("annotates each measurement value", () => {
+    const c = renderDiagram(anatomy);
+    expect(c.textContent).toContain("40dp");
+    expect(c.textContent).toContain("24dp");
+    expect(c.textContent).toContain("Full");
+  });
+
+  it("renders nothing extra when there are no parts (graceful empty)", () => {
+    const c = renderDiagram({ parts: [], measures: [] });
+    expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(0);
+  });
+});
