@@ -49,14 +49,10 @@ describe("autoSave TRACKED_KEYS", () => {
      `blocks`, so both must be tracked or the change never arms the debounce —
      the same class of bug as the zoneLayouts finding above. */
   it("tracks pages so a page-structure edit triggers an autosave", () => {
-    expect(src).toMatch(
-      /const TRACKED_KEYS = \[[\s\S]*?"pages"[\s\S]*?\] as const/
-    );
+    expect(TRACKED_KEYS).toContain("pages");
   });
 
   it("tracks activePageId so switching the active page triggers an autosave", () => {
-    expect(src).toMatch(
-      /const TRACKED_KEYS = \[[\s\S]*?"activePageId"[\s\S]*?\] as const/
-    );
+    expect(TRACKED_KEYS).toContain("activePageId");
   });
 });

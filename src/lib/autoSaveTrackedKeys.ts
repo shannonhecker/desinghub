@@ -28,6 +28,13 @@ export const TRACKED_KEYS = [
   "selectedComponents",
   "colorOverrides",
   "activeTemplateId",
+  /* Multi-page (2026-06-07): a page-structure edit (rename / reorder / add /
+     delete) can change pages/activePageId without touching blocks, so track
+     both or the change never arms the autosave debounce (same class of bug as
+     the zoneLayouts finding). Both the cloud and local writers import this
+     list, so adding here fixes persistence on both paths at once. */
+  "pages",
+  "activePageId",
   "sessionTitle",
 ] as const;
 
