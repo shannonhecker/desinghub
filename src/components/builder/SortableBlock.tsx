@@ -961,17 +961,9 @@ export function SortableBlock({
     return () => window.clearTimeout(t);
   }, []);
 
-  /* Block element ref. Forwarded to dnd-kit via setNodeRef and used as
-     the Floating UI anchor for SizeChipRail (S2, 2026-05-29 audit).
-     The pre-Floating-UI measurement effect that flipped a wrapping
-     `bc-rail-top` / `bc-rail-bottom` class was removed: Floating UI's
-     `flip()` middleware handles viewport-top occlusion directly, and
-     `shift()` handles horizontal canvas-edge collisions that the old
-     y-axis-only fallback couldn't catch. */
-  const blockElRef = useRef<HTMLElement | null>(null);
+  /* Block element ref forwarded to dnd-kit via setNodeRef. */
   const setRefs = useCallback(
     (el: HTMLElement | null) => {
-      blockElRef.current = el;
       setNodeRef(el);
     },
     [setNodeRef],
