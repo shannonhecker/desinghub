@@ -883,3 +883,99 @@ export const COMPONENT_ANATOMY: Partial<
     },
   },
 };
+
+/* ════════════════════════════════════════════════════════════
+   6. COMPONENT_VARIANT_NAMING — the named variants of a component in
+   THIS DS's own vocabulary, with one-line guidance. Drives the Overview
+   "Variants & naming" block. Data-gated (renders only where present), so
+   M3 surfaces its real Filled/Tonal/Elevated/Outlined/Text taxonomy even
+   though the cross-DS variants matrix uses a generic axis. Propagation to
+   other DS = adding entries here.
+   ════════════════════════════════════════════════════════════ */
+export interface VariantNaming {
+  name: string;
+  /** Emphasis level + what the variant is. */
+  desc: string;
+  /** Best-practice guidance: when to reach for this variant. */
+  use: string;
+  /** Appearance of the live example rendered in the card. The set spans
+   *  components: button (solid/tonal/elevated/outlined/text), card
+   *  (elevated/filled/outlined), text field (filled/outlined). */
+  style: "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled";
+}
+export const COMPONENT_VARIANT_NAMING: Partial<
+  Record<UiKitComponentId, Partial<Record<DesignSystemId, VariantNaming[]>>>
+> = {
+  button: {
+    m3: [
+      {
+        name: "Filled",
+        desc: "Highest emphasis. A solid accent fill.",
+        use: "The single most important action on the screen, like Save, Confirm, or Send. Use only one per view so it stays the clear focus.",
+        style: "solid",
+      },
+      {
+        name: "Tonal",
+        desc: "Medium-high emphasis. A soft tonal fill.",
+        use: "A prominent action that should not compete with a filled button, like Add, Next, or Reply. Good middle ground between filled and outlined.",
+        style: "tonal",
+      },
+      {
+        name: "Elevated",
+        desc: "Medium emphasis. An outline-free button with a shadow.",
+        use: "When the button sits over an image, a busy, or a patterned surface and needs separation from the content behind it.",
+        style: "elevated",
+      },
+      {
+        name: "Outlined",
+        desc: "Medium emphasis. An outline, no fill.",
+        use: "Secondary actions placed beside a filled button, like Cancel next to Save, or Back next to Continue.",
+        style: "outlined",
+      },
+      {
+        name: "Text",
+        desc: "Lowest emphasis. No container.",
+        use: "The least prominent action, like Learn more or dismissive actions inside dialogs, cards, and snackbars where a heavy button would be too much.",
+        style: "text",
+      },
+    ],
+  },
+  card: {
+    m3: [
+      {
+        name: "Elevated",
+        desc: "A surface with a soft shadow.",
+        use: "When the card needs to lift off the background, or sits on a plain surface that wouldn't otherwise separate it.",
+        style: "elevated",
+      },
+      {
+        name: "Filled",
+        desc: "A tonal surface, no shadow.",
+        use: "The lowest-emphasis container. Groups related content without drawing attention to the card itself.",
+        style: "filled",
+      },
+      {
+        name: "Outlined",
+        desc: "An outline, no fill or shadow.",
+        use: "A clearly bounded container with the least visual weight. Good for dense layouts or sitting alongside other cards.",
+        style: "outlined",
+      },
+    ],
+  },
+  textInput: {
+    m3: [
+      {
+        name: "Filled",
+        desc: "A tonal fill with an underline.",
+        use: "The default M3 text field. Use in most forms; the fill makes the field read clearly as a tap target.",
+        style: "filled",
+      },
+      {
+        name: "Outlined",
+        desc: "An outline, no fill.",
+        use: "When fields sit on a busy or tonal surface where a filled field would blend in, or when you want a lighter, more contained look.",
+        style: "outlined",
+      },
+    ],
+  },
+};
