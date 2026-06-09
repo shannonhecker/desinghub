@@ -155,3 +155,23 @@ describe("buildSystemPrompt — simplicity / de-noise discipline", () => {
     expect(SYSTEM_PROMPT).toContain('never mix percentage widths and "fill" in the same row');
   });
 });
+
+/* Owner bug (2026-06-08): asked the chat to add a SECOND Data Table; it refused
+   because "at most 1 table" read as a hard rule. The block budget and one-table
+   limits are defaults for GENERATING a fresh layout, not a cap on what the user
+   can explicitly ask to add. The prompt must carve out explicit add-requests so
+   a duplicate of any existing block type is honored. */
+describe("buildSystemPrompt — explicit add-requests override generation defaults", () => {
+  it("frames the budget + one-table limits as generation defaults, not hard caps", () => {
+    expect(SYSTEM_PROMPT).toContain("defaults for GENERATING a fresh");
+  });
+
+  it("honors an explicit request to add a duplicate block type (incl. a second table)", () => {
+    expect(SYSTEM_PROMPT).toContain("explicitly asks to add");
+    expect(SYSTEM_PROMPT).toContain("Never refuse to add a block just because");
+  });
+
+  it("relaxes the one-table rule when the user explicitly asks for more", () => {
+    expect(SYSTEM_PROMPT).toContain("the user explicitly asks for another table");
+  });
+});

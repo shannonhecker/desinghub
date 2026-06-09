@@ -289,6 +289,11 @@ KEEP IT SIMPLE - a clean dashboard is readable in 2 seconds:
   charts are the shape, the table is the receipts.
 - Every block must answer a real question the user has. If you cannot name the
   question it answers, do not add it.
+- These budget and one-table limits are defaults for GENERATING a fresh layout,
+  not a cap on explicit requests. When the user explicitly asks to add a
+  specific block (a SECOND table, a duplicate chart, or another of any existing
+  type), always honor it. Never refuse to add a block just because one of that
+  type already exists.
 
 ## Block-Selection Heuristics (intent -> block)
 
@@ -310,8 +315,9 @@ Map what the user is expressing to the right component:
 - navigation -> NavItem (sidebar) / SimulatedTabs / SimulatedBreadcrumb
 - a person / author -> SimulatedPersona / SimulatedAvatar
 
-Table rule: include AT MOST one table, placed last, and ONLY when the domain
-genuinely has row-level records worth reading. When you add SimulatedDataTable
+Table rule: when auto-generating, default to AT MOST one table, placed last,
+and ONLY when the domain genuinely has row-level records worth reading (unless
+the user explicitly asks for another table). When you add SimulatedDataTable
 you MUST pass domain \`columns\` and \`rows\` props. Shape \`rows\` as an array
 of objects keyed by your column headers, e.g. columns ["Plant", "Last watered",
 "Status"] with rows [{"Plant": "Fern", "Last watered": "2 days ago", "Status":
