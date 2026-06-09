@@ -333,10 +333,12 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     </section>
   );
 
-  /* ── M3: rich tabbed layout (Overview / Specs / Guidelines / Accessibility),
-     modelled on m3.material.io. Self-contained + full-width (no external TOC).
-     Skins entirely from the M3 theme `t`, so it reads as M3, not generic. ── */
-  if (activeSystem === "m3") {
+  /* ── Rich tabbed layout (Overview / Specs / Guidelines / Accessibility),
+     modelled on m3.material.io, for every non-Carbon DS. Self-contained +
+     full-width (no external TOC). Skins entirely from the active theme `t`,
+     so each DS reads as ITSELF (Salt looks Salt, Fluent looks Fluent, …) —
+     the shell carries no DS-specific colour. ── */
+  if (["m3", "salt", "fluent", "uoaui"].includes(activeSystem)) {
     const M3_TABS = [
       ["overview", "Overview"],
       ["specs", "Specs"],
@@ -425,7 +427,7 @@ export function getDetailSections(
 ): { id: string; label: string }[] {
   // Carbon (5-tab) and M3 (4-tab, Figma/M3-style) render self-contained
   // tabbed layouts full-width, so they opt out of the single-scroll TOC rail.
-  if (system === "carbon" || system === "m3") return [];
+  if (system === "carbon" || ["m3", "salt", "fluent", "uoaui"].includes(system)) return [];
   if (componentId === "charts" || componentId === "ag-grid") return [];
 
   const metaId = META_ID[componentId];
