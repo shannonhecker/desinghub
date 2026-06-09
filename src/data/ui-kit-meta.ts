@@ -838,3 +838,48 @@ export const COMPONENT_TOKENS: Record<UiKitComponentId, DsTokensByComponent> = {
     ],
   },
 };
+
+/* ════════════════════════════════════════════════════════════
+   5. COMPONENT_ANATOMY — labelled part callouts + dp measurements
+   ════════════════════════════════════════════════════════════
+   Drives the Specs ‣ Anatomy section (AnatomyDiagram). The diagram is
+   colour-free, so the SAME shape skins per DS from its own theme. `x`/`y`
+   are percent anchors for the callout badge within the dotted stage.
+   Seeded for the M3 Button pilot; propagation to the other DS is purely
+   adding entries here — no component change. */
+export interface AnatomyPart {
+  /** Callout number, shown in both the badge and the legend. */
+  n: number;
+  label: string;
+  /** Badge anchor as a percent of the stage box (0–100). */
+  x: number;
+  y: number;
+}
+export interface AnatomyMeasure {
+  label: string;
+  /** Display value, e.g. "40dp" or "Full". */
+  value: string;
+}
+export interface ComponentAnatomy {
+  parts: AnatomyPart[];
+  measures: AnatomyMeasure[];
+}
+
+export const COMPONENT_ANATOMY: Partial<
+  Record<UiKitComponentId, Partial<Record<DesignSystemId, ComponentAnatomy>>>
+> = {
+  button: {
+    m3: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 15 },
+        { n: 2, label: "Label text", x: 50, y: 85 },
+        { n: 3, label: "State layer", x: 15, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "40dp" },
+        { label: "Padding", value: "24dp" },
+        { label: "Corner", value: "Full" },
+      ],
+    },
+  },
+};

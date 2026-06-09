@@ -10,10 +10,12 @@ import { DSAgGrid } from "./DSAgGrid";
 import { VariantsMatrix } from "./ui-kit/VariantsMatrix";
 import { GuidanceCards } from "./ui-kit/GuidanceCards";
 import { TokenSwatches } from "./ui-kit/TokenSwatches";
+import { AnatomyDiagram } from "./ui-kit/AnatomyDiagram";
 import {
   COMPONENT_VARIANTS,
   COMPONENT_GUIDANCE,
   COMPONENT_TOKENS,
+  COMPONENT_ANATOMY,
   DS_PROPS,
   type UiKitComponentId,
   type DesignSystemId,
@@ -270,6 +272,19 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         mode={matrixMode} saltDensity={matrixDensity} Demo={DemoComponent} t={t} />
     </section>
   ) : null;
+  /* Specs ‣ Anatomy — data-gated: renders only where COMPONENT_ANATOMY
+     carries an entry for this component + DS (M3 Button pilot today;
+     propagation = adding data, no code change here). */
+  const anatomy = COMPONENT_ANATOMY[metaId as UiKitComponentId]?.[ds];
+  const anatomySection = anatomy ? (
+    <section id="dh-sec-anatomy" className="dh-section" aria-labelledby="dh-h-anatomy">
+      <h3 id="dh-h-anatomy" className="dh-section-h" style={{ color: t.fg }}>Anatomy</h3>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        The parts of the {comp.name.toLowerCase()} and their key measurements.
+      </p>
+      <AnatomyDiagram anatomy={anatomy} t={t} />
+    </section>
+  ) : null;
   const propsSection = propRows ? (
     <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
       <h3 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h3>
@@ -382,7 +397,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
           })}
         </div>
         {m3Tab === "overview" && specimenSection}
-        {m3Tab === "specs" && <>{variantsSection}{propsSection}{tokensSection}{codeSection}</>}
+        {m3Tab === "specs" && <>{variantsSection}{anatomySection}{propsSection}{tokensSection}{codeSection}</>}
         {m3Tab === "guidelines" && (guidanceSection ?? (
           <p className="dh-section-lede" style={{ color: t.fg3 }}>
             Usage guidance for the {comp.name.toLowerCase()} lands in a later pass.
