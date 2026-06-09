@@ -107,7 +107,7 @@ export function AnatomyDiagram({
                   left: -6,
                   top: "50%",
                   transform: "translate(-100%,-50%)",
-                  color: measureColor,
+                  color: t.fg,
                   font: `600 11px/1 ${t.font}`,
                   whiteSpace: "nowrap",
                 }}
@@ -201,7 +201,7 @@ export function AnatomyDiagram({
             {measures.map((m) => (
               <Fragment key={m.label}>
                 <dt style={{ color: t.fg3, font: `400 13px/1.3 ${t.font}` }}>{m.label}</dt>
-                <dd style={{ margin: 0, color: measureColor, font: `600 13px/1.3 ${t.font}` }}>
+                <dd style={{ margin: 0, color: t.fg, font: `600 13px/1.3 ${t.font}` }}>
                   {m.value}
                 </dd>
               </Fragment>
