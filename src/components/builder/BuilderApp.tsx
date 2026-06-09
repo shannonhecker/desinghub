@@ -24,6 +24,7 @@ import { usePreviewMode } from "@/store/usePreviewMode";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
 import { useAutoSave } from "@/lib/useAutoSave";
+import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
@@ -115,8 +116,14 @@ export function BuilderApp() {
     window.addEventListener("pointerup", onUp);
   }, [setChatPlacement]);
 
-  /* Auto-save subscription - kicks in the moment a session is started
-     (either by picking a template or sending a first message). */
+  /* Auto-save subscriptions - kick in the moment a session is started
+     (either by picking a template or sending a first message).
+     - useLocalAutoSave persists to localStorage (uoaui-sessions): the
+       always-on, no-network source of truth so the Sessions drawer is
+       never empty.
+     - useAutoSave additionally mirrors to Firebase when it's configured;
+       it no-ops otherwise, so the two coexist without double-writing. */
+  useLocalAutoSave();
   useAutoSave();
 
   /* One-shot /api/health probe to learn which backend-gated features

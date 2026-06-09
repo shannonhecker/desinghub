@@ -25,33 +25,9 @@
 import { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage, isFirebaseConfigured } from "./firebase";
+import { TRACKED_KEYS } from "./autoSaveTrackedKeys";
 
 const DEBOUNCE_MS = 2500;
-
-/** Fields whose changes should trigger a save. Unrelated UI state
- *  (drawer toggles, input focus, preview-open, etc.) is filtered
- *  out so we don't burn Firestore writes on noise. */
-const TRACKED_KEYS = [
-  "messages",
-  "blocks",
-  "headerBlocks",
-  "sidebarBlocks",
-  "footerBlocks",
-  "zoneLayouts",
-  "designSystem",
-  "mode",
-  "density",
-  "interfaceType",
-  "selectedComponents",
-  "colorOverrides",
-  "activeTemplateId",
-  /* Multi-page (2026-06-07): a page-structure edit (rename/reorder/add/delete)
-     can change pages/activePageId without touching blocks — track both so the
-     change arms the autosave debounce (mirrors the zoneLayouts fix). */
-  "pages",
-  "activePageId",
-  "sessionTitle",
-] as const;
 
 /** Shallow fingerprint across tracked keys - uses reference equality
  *  on each slot and collapses into a pipe-separated hash string. Two
