@@ -11,11 +11,13 @@ import { VariantsMatrix } from "./ui-kit/VariantsMatrix";
 import { GuidanceCards } from "./ui-kit/GuidanceCards";
 import { TokenSwatches } from "./ui-kit/TokenSwatches";
 import { AnatomyDiagram } from "./ui-kit/AnatomyDiagram";
+import { VariantExample } from "./ui-kit/VariantExample";
 import {
   COMPONENT_VARIANTS,
   COMPONENT_GUIDANCE,
   COMPONENT_TOKENS,
   COMPONENT_ANATOMY,
+  COMPONENT_VARIANT_NAMING,
   DS_PROPS,
   type UiKitComponentId,
   type DesignSystemId,
@@ -46,6 +48,8 @@ const META_ID: Record<string, UiKitComponentId> = {
   inputs: "textInput",
   input: "textInput",
   "text-input": "textInput",
+  "text-fields": "textInput",
+  "text-field": "textInput",
   textInput: "textInput",
   // Checkbox
   checkboxes: "checkbox",
@@ -243,22 +247,135 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
 
   /* Shared section nodes — rendered by the single-scroll layout below and
      (regrouped into tabs) by the M3 rich layout. Computed once. */
+  /* Overview hero — the component shown generously on a tonal surface with a
+     soft accent wash + spec chips, mirroring m3.material.io's lead visual.
+     Colour-free (skins per DS from `t`): M3 reads as a tonal surface, Carbon
+     stays flat (radius 0), uoaui glows over its aurora. */
+  const heroSurface = (t.T.surfaceContainerLow as string) ?? t.bg2;
+  const heroRadius = activeSystem === "carbon" ? 0 : 24;
   const specimenSection = (
-    <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-specimen">
-      <h3 id="dh-h-specimen" className="dh-section-h" style={{ color: t.fg }}>Specimen</h3>
+    <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-overview">
+      <h3 id="dh-h-overview" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>Overview</h3>
       <div
-        ref={scopeRef}
-        className={isUoaui ? "preview-uoaui a-app dh-specimen" : "dh-specimen"}
-        style={{ background: specimenBg, borderRadius: specimenRadius, border: `1px solid ${t.border}`, color: t.fg }}
+        style={{
+          position: "relative",
+          borderRadius: heroRadius,
+          border: `1px solid ${t.border}`,
+          background: heroSurface,
+          overflow: "hidden",
+          padding: "60px 48px",
+          minHeight: 248,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        <style dangerouslySetInnerHTML={{ __html: css }} />
-        {DemoComponent ? <DemoComponent /> : (
-          <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
-            display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
-            Demo loading...
-          </div>
-        )}
+        {/* m3-signature dotted-grid texture, faded at the edges */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            backgroundImage: `radial-gradient(color-mix(in srgb, ${t.fg} 14%, transparent) 1px, transparent 1.4px)`,
+            backgroundSize: "18px 18px",
+            backgroundPosition: "center",
+            maskImage: "radial-gradient(120% 100% at 50% 50%, #000 52%, transparent 90%)",
+            WebkitMaskImage: "radial-gradient(120% 100% at 50% 50%, #000 52%, transparent 90%)",
+          }}
+        />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            background: `radial-gradient(130% 120% at 50% -10%, color-mix(in srgb, ${t.accent} 18%, transparent), transparent 62%)`,
+          }}
+        />
+        <div
+          ref={scopeRef}
+          className={isUoaui ? "preview-uoaui a-app" : undefined}
+          style={{
+            position: "relative",
+            display: "flex",
+            gap: 16,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "center",
+            transform: "scale(1.2)",
+            color: t.fg,
+          }}
+        >
+          <style dangerouslySetInnerHTML={{ __html: css }} />
+          {DemoComponent ? <DemoComponent /> : (
+            <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
+              display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
+              Demo loading...
+            </div>
+          )}
+        </div>
       </div>
+      <div style={{ marginTop: 24, display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {[comp.cat, "WCAG 2.1 AA", "Keyboard operable"].filter(Boolean).map((chip) => (
+          <span
+            key={chip as string}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              height: 30,
+              padding: "0 14px",
+              borderRadius: 999,
+              border: `1px solid ${t.border}`,
+              background: t.bg,
+              color: t.fg2,
+              font: `500 12.5px/1 ${t.font}`,
+              letterSpacing: 0.1,
+            }}
+          >
+            {chip as string}
+          </span>
+        ))}
+      </div>
+      {(() => {
+        const naming = COMPONENT_VARIANT_NAMING[metaId as UiKitComponentId]?.[ds];
+        if (!naming) return null;
+        return (
+          <div style={{ marginTop: 44 }}>
+            <h4 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h4>
+            <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
+              The {comp.name.toLowerCase()} emphasis ladder, highest to lowest.
+            </p>
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+            }}>
+              {naming.map((v, i) => (
+                <div key={v.name} style={{ flex: "1 1 300px", minWidth: 280, background: t.bg, border: `1px solid ${t.border}`, borderRadius: 14, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 9 }}>
+                  {/* live, component-appropriate example of this variant */}
+                  <div style={{ alignSelf: "flex-start", marginBottom: 4 }}>
+                    <VariantExample componentId={metaId} style={v.style} label={v.name} t={t} />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{
+                      flex: "0 0 auto", width: 22, height: 22, borderRadius: 999,
+                      background: t.bg2, color: t.fg2, display: "inline-flex",
+                      alignItems: "center", justifyContent: "center", font: `600 11px/1 ${t.font}`,
+                    }}>{i + 1}</span>
+                    <span style={{ color: t.fg, font: `600 15px/1.2 ${t.font}` }}>{v.name}</span>
+                  </div>
+                  <p style={{ margin: 0, color: t.fg2, font: `400 13px/1.5 ${t.font}` }}>{v.desc}</p>
+                  <div style={{ marginTop: 2, paddingTop: 11, borderTop: `1px solid ${t.border}` }}>
+                    <span style={{ display: "block", color: t.fg3, font: `700 10px/1 ${t.font}`, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>Use when</span>
+                    <span style={{ color: t.fg2, font: `400 13px/1.55 ${t.font}` }}>{v.use}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </section>
   );
   const variantsSection = variants ? (
@@ -268,8 +385,22 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
         {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
       </p>
-      <VariantsMatrix matrix={variants} componentId={metaId as UiKitComponentId} system={ds}
-        mode={matrixMode} saltDensity={matrixDensity} Demo={DemoComponent} t={t} />
+      <div style={{
+        position: "relative", borderRadius: heroRadius, border: `1px solid ${t.border}`,
+        background: heroSurface, padding: "32px 28px", overflow: "hidden",
+      }}>
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          backgroundImage: `radial-gradient(color-mix(in srgb, ${t.fg} 12%, transparent) 1px, transparent 1.4px)`,
+          backgroundSize: "18px 18px", backgroundPosition: "center",
+          maskImage: "radial-gradient(130% 110% at 50% 50%, #000 60%, transparent 95%)",
+          WebkitMaskImage: "radial-gradient(130% 110% at 50% 50%, #000 60%, transparent 95%)",
+        }} />
+        <div style={{ position: "relative" }}>
+          <VariantsMatrix matrix={variants} componentId={metaId as UiKitComponentId} system={ds}
+            mode={matrixMode} saltDensity={matrixDensity} Demo={DemoComponent} t={t} />
+        </div>
+      </div>
     </section>
   ) : null;
   /* Specs ‣ Anatomy — data-gated: renders only where COMPONENT_ANATOMY
