@@ -32,8 +32,8 @@ export interface VariantExampleTheme {
 export interface VariantExampleProps {
   componentId: string;
   /** Generic appearance key (per component): button solid/tonal/elevated/outlined/text;
-   *  card elevated/filled/outlined; field filled/outlined; chip (badge)
-   *  assist/filter/input/suggestion. */
+   *  card elevated/filled/outlined; field filled/outlined; chip
+   *  assist/filter/input/suggestion; badge dot/count. */
   style: string;
   label: string;
   t: VariantExampleTheme;
@@ -94,8 +94,8 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
     );
   }
 
-  /* ── Badge → an M3 chip, one per type ── */
-  if (componentId === "badge") {
+  /* ── Chip → an M3 chip, one per type ── */
+  if (componentId === "chip") {
     /* Type-distinct: each chip type carries its signature affordance —
        assist is elevated with a leading icon, filter shows its selected
        tonal fill + check, input has the trailing remove, suggestion is
@@ -124,6 +124,37 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
         {style === "filter" && icon("check")}
         {label}
         {style === "input" && icon("close", { color: t.fg2 })}
+      </span>
+    );
+  }
+
+  /* ── Badge → a true M3 badge, anchored top-right on a host glyph ── */
+  if (componentId === "badge") {
+    /* M3 canon: small badge is a 6dp error-colour dot; large badge is a
+       16dp-tall counter pill (min-width 16dp, 8dp corner, label-small).
+       dangerStrong/dangerStrongFg are optional on the theme type (some
+       DSs carry no real error token), so TS needs the ?? fallback to
+       accent - it is never hit for m3, which always supplies them. */
+    const badgeBg = t.dangerStrong ?? t.accent;
+    const map: Record<string, React.CSSProperties> = {
+      dot: { width: 6, height: 6, borderRadius: 999, background: badgeBg },
+      count: {
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        height: 16, minWidth: 16, borderRadius: 8, padding: "0 4px",
+        font: `500 11px/1 ${t.font}`, background: badgeBg,
+        color: t.dangerStrongFg ?? t.accentText,
+      },
+    };
+    const badge = map[style] ?? map.count;
+    const isDot = badge === map.dot;
+    return (
+      <span style={{ position: "relative", display: "inline-flex", padding: "4px 8px 0 0" }}>
+        {/* Neutral host glyph: badges read as badges only when anchored,
+            mirroring the icon anchor in the M3 docs demos. */}
+        <span style={{ width: 24, height: 24, borderRadius: 6, background: t.bg2, border: `1px solid ${t.border}` }} />
+        <span style={{ position: "absolute", top: 0, right: 0, boxSizing: "border-box", ...badge }}>
+          {isDot ? null : "3"}
+        </span>
       </span>
     );
   }
