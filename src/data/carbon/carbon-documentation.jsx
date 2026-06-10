@@ -99,6 +99,12 @@ const white = {
   linkSecondary: BLUE_70, linkVisited: PURPLE_60, linkInverse: BLUE_40,
   supportError: RED_60, supportSuccess: GREEN_50, supportWarning: YELLOW_30, supportInfo: BLUE_70,
   supportErrorInverse: RED_50, supportSuccessInverse: GREEN_40,
+  // Tag tints - hand-copied from @carbon/themes@11.74.0 tagTokens (white/g10)
+  // tokens-audit-ignore-block - canon values verified against the installed package
+  tagBackgroundRed: "#ffd7d9", tagColorRed: "#a2191f",     // $tag-background-red / $tag-color-red
+  tagBackgroundGreen: "#a7f0ba", tagColorGreen: "#0e6027", // $tag-background-green / $tag-color-green
+  tagBackgroundBlue: "#d0e2ff", tagColorBlue: BLUE_70,     // $tag-background-blue / $tag-color-blue (#0043ce)
+  // tokens-audit-ignore-end
   focus: BLUE_60, focusInset: "#ffffff", focusInverse: "#ffffff",
   highlight: "#d0e2ff", interactive: BLUE_60,
   toggleOff: GRAY_50, overlay: "rgba(22,22,22,0.5)", skeletonElement: GRAY_30,
@@ -150,6 +156,12 @@ const g90 = {
   linkVisited: "#be95ff", linkInverse: BLUE_60,
   supportError: "#ff8389", supportSuccess: GREEN_40, supportWarning: YELLOW_30, supportInfo: BLUE_50,
   supportErrorInverse: RED_60, supportSuccessInverse: GREEN_50,
+  // Tag tints - hand-copied from @carbon/themes@11.74.0 tagTokens (g90/g100)
+  // tokens-audit-ignore-block - canon values verified against the installed package
+  tagBackgroundRed: "#a2191f", tagColorRed: "#ffd7d9",     // $tag-background-red / $tag-color-red
+  tagBackgroundGreen: "#0e6027", tagColorGreen: "#a7f0ba", // $tag-background-green / $tag-color-green
+  tagBackgroundBlue: BLUE_70, tagColorBlue: "#d0e2ff",     // $tag-background-blue / $tag-color-blue (#0043ce)
+  // tokens-audit-ignore-end
   focus: "#ffffff", focusInset: GRAY_100, focusInverse: BLUE_60,
   highlight: "#002d9c", interactive: BLUE_50,
   toggleOff: GRAY_60, overlay: "rgba(0,0,0,0.65)", skeletonElement: GRAY_70,

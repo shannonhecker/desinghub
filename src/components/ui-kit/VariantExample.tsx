@@ -21,6 +21,12 @@ export interface VariantExampleTheme {
   accentText: string;
   border: string;
   font: string;
+  /* Optional semantic status slots (mirrors ActiveTheme) - undefined
+     where the active DS has no real token for that role. */
+  successBg?: string; successFg?: string; successStrong?: string; successStrongFg?: string;
+  warningBg?: string; warningFg?: string; warningStrong?: string; warningStrongFg?: string;
+  dangerBg?: string; dangerFg?: string; dangerStrong?: string; dangerStrongFg?: string;
+  infoBg?: string; infoFg?: string; infoStrong?: string; infoStrongFg?: string;
 }
 
 export interface VariantExampleProps {
