@@ -26,7 +26,8 @@ export interface VariantExampleTheme {
 export interface VariantExampleProps {
   componentId: string;
   /** Generic appearance key (per component): button solid/tonal/elevated/outlined/text;
-   *  card elevated/filled/outlined; field filled/outlined. */
+   *  card elevated/filled/outlined; field filled/outlined; chip (badge)
+   *  assist/filter/input/suggestion. */
   style: string;
   label: string;
   t: VariantExampleTheme;
@@ -84,6 +85,40 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
           borderRadius: filled ? "8px 8px 0 0" : 8,
         }}>Value</div>
       </div>
+    );
+  }
+
+  /* ── Badge → an M3 chip, one per type ── */
+  if (componentId === "badge") {
+    /* Type-distinct: each chip type carries its signature affordance —
+       assist is elevated with a leading icon, filter shows its selected
+       tonal fill + check, input has the trailing remove, suggestion is
+       the plain outlined baseline. M3 spec: 32dp container, 8dp corner,
+       label-large, 18dp icons, 8dp padding on the icon side / 16dp on
+       the text side. */
+    const map: Record<string, React.CSSProperties> = {
+      assist: { background: t.bg2, color: t.fg, border: "1px solid transparent", boxShadow: "0 2px 7px rgba(0,0,0,0.24)" },
+      filter: { background: `color-mix(in srgb, ${t.accent} 24%, ${t.bg})`, color: t.fg, border: "1px solid transparent" },
+      input: { background: "transparent", color: t.fg, border: `1px solid ${t.border}` },
+      suggestion: { background: "transparent", color: t.fg, border: `1px solid ${t.border}` },
+    };
+    const icon = (name: string, extra?: React.CSSProperties) => (
+      <span className="material-symbols-outlined" aria-hidden style={{ fontSize: 18, lineHeight: 1, ...extra }}>
+        {name}
+      </span>
+    );
+    return (
+      <span style={{
+        display: "inline-flex", alignItems: "center", gap: 8, height: 32,
+        padding: style === "input" ? "0 8px 0 16px" : style === "suggestion" ? "0 16px" : "0 16px 0 8px",
+        borderRadius: 8, font: `500 14px/1 ${t.font}`, letterSpacing: 0.1,
+        whiteSpace: "nowrap", ...(map[style] ?? map.suggestion),
+      }}>
+        {style === "assist" && icon("event", { color: t.accent })}
+        {style === "filter" && icon("check")}
+        {label}
+        {style === "input" && icon("close", { color: t.fg2 })}
+      </span>
     );
   }
 

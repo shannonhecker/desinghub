@@ -34,6 +34,10 @@ export interface AnatomyDiagramProps {
   /** Measurement-overlay colour. A cross-DS doc affordance, not a DS
    *  token — defaults to the M3 doc pink via the --dh-measure token. */
   measureColor?: string;
+  /** Picks the schematic shape (same switch pattern as VariantExample):
+   *  "badge" renders an M3 chip with leading + trailing icons so the icon
+   *  callouts anchor to real parts; anything else keeps the button pill. */
+  componentId?: string;
 }
 
 export function AnatomyDiagram({
@@ -41,6 +45,7 @@ export function AnatomyDiagram({
   t,
   specimen = "Label",
   measureColor = "var(--dh-measure, #e5398b)",
+  componentId,
 }: AnatomyDiagramProps) {
   const { parts, measures } = anatomy;
   const height = measures.find((m) => /height/i.test(m.label));
@@ -68,25 +73,54 @@ export function AnatomyDiagram({
       >
         {/* Specimen wrapper — callouts + overlays anchor to this box. */}
         <div className="dh-anatomy-spec" style={{ position: "relative" }}>
-          {/* The component schematic (M3 filled button, theme-skinned). */}
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: 52,
-              padding: "0 30px",
-              borderRadius: 999,
-              background: t.accent,
-              color: t.accentText,
-              font: `500 16px/1 ${t.font}`,
-              letterSpacing: 0.1,
-              boxShadow: "0 1px 2px rgba(0,0,0,0.18)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {specimen}
-          </div>
+          {/* The component schematic, theme-skinned. The button pill draws
+              40dp at 1.3x (52px); the chip draws 32dp at the same 1.3x
+              (42px, 8dp corner -> 10px, 18dp icons -> 23px). */}
+          {componentId === "badge" ? (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                height: 42,
+                padding: "0 10px",
+                borderRadius: 10,
+                background: t.bg,
+                border: `1.5px solid ${t.border}`,
+                color: t.fg,
+                font: `500 18px/1 ${t.font}`,
+                letterSpacing: 0.1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span className="material-symbols-outlined" aria-hidden style={{ fontSize: 23, lineHeight: 1, color: t.accent }}>
+                event
+              </span>
+              {specimen}
+              <span className="material-symbols-outlined" aria-hidden style={{ fontSize: 23, lineHeight: 1, color: t.fg2 }}>
+                close
+              </span>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 52,
+                padding: "0 30px",
+                borderRadius: 999,
+                background: t.accent,
+                color: t.accentText,
+                font: `500 16px/1 ${t.font}`,
+                letterSpacing: 0.1,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.18)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {specimen}
+            </div>
+          )}
 
           {/* Signature pink height bracket on the left edge. */}
           {height && (
@@ -117,31 +151,55 @@ export function AnatomyDiagram({
             </div>
           )}
 
-          {/* Numbered callout badges, anchored by percent within the stage. */}
-          {parts.map((p) => (
-            <span
-              key={p.n}
-              className="dh-anatomy-callout"
-              style={{
-                position: "absolute",
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                transform: "translate(-50%,-50%)",
-                width: 22,
-                height: 22,
-                borderRadius: 999,
-                background: t.fg,
-                color: t.bg,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                font: `600 12px/1 ${t.font}`,
-                boxShadow: `0 0 0 2px ${t.bg}`,
-              }}
-            >
-              {p.n}
-            </span>
-          ))}
+          {/* Numbered callout badges, anchored by percent within the stage.
+              Anchors outside 0–100 push the badge off the specimen (small
+              schematics like the chip would otherwise be buried under their
+              own callouts) — those get a vertical leader tick connecting the
+              badge back to the specimen edge. */}
+          {parts.map((p) => {
+            const above = p.y < 0;
+            const below = p.y > 100;
+            return (
+              <Fragment key={p.n}>
+                {(above || below) && (
+                  <span
+                    aria-hidden
+                    className="dh-anatomy-tick"
+                    style={{
+                      position: "absolute",
+                      left: `${p.x}%`,
+                      top: above ? `${p.y}%` : "100%",
+                      height: above ? `${-p.y}%` : `${p.y - 100}%`,
+                      width: 0,
+                      borderLeft: `1.5px solid ${t.fg3}`,
+                      transform: "translateX(-50%)",
+                    }}
+                  />
+                )}
+                <span
+                  className="dh-anatomy-callout"
+                  style={{
+                    position: "absolute",
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    transform: "translate(-50%,-50%)",
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    background: t.fg,
+                    color: t.bg,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    font: `600 12px/1 ${t.font}`,
+                    boxShadow: `0 0 0 2px ${t.bg}`,
+                  }}
+                >
+                  {p.n}
+                </span>
+              </Fragment>
+            );
+          })}
         </div>
       </div>
 
