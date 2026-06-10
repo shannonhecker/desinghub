@@ -349,7 +349,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
             <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
               {/* Chips are types with distinct jobs, badges signal status; neither is an emphasis ladder. */}
               {metaId === "chip"
-                ? "The four chip types, each shaped for a different job."
+                ? `The ${["zero", "one", "two", "three", "four", "five", "six"][naming.length] ?? naming.length} chip types, each shaped for a different job.`
                 : metaId === "badge"
                 ? "Dot for presence, count for magnitude."
                 : `The ${comp.name.toLowerCase()} emphasis ladder, highest to lowest.`}
