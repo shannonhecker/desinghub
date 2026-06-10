@@ -72,8 +72,8 @@ describe("VariantExample", () => {
     expect(c.querySelector(".material-symbols-outlined")).toBeNull();
   });
 
-  it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING", () => {
-    expect((COMPONENT_VARIANT_NAMING.badge?.m3 ?? []).map((v) => v.style)).toEqual([
+  it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING under chip", () => {
+    expect((COMPONENT_VARIANT_NAMING.chip?.m3 ?? []).map((v) => v.style)).toEqual([
       "assist",
       "filter",
       "input",
@@ -82,6 +82,17 @@ describe("VariantExample", () => {
   });
 
   it("registers M3 chip anatomy for the Specs anatomy section", () => {
+    expect(COMPONENT_ANATOMY.chip?.m3?.parts.length).toBeGreaterThan(0);
+  });
+
+  it("registers the M3 dot + count badge types in COMPONENT_VARIANT_NAMING under badge", () => {
+    expect((COMPONENT_VARIANT_NAMING.badge?.m3 ?? []).map((v) => v.style)).toEqual([
+      "dot",
+      "count",
+    ]);
+  });
+
+  it("registers M3 count-badge anatomy for the Specs anatomy section", () => {
     expect(COMPONENT_ANATOMY.badge?.m3?.parts.length).toBeGreaterThan(0);
   });
 });
