@@ -1053,6 +1053,23 @@ export const COMPONENT_ANATOMY: Partial<
         { label: "Font", value: "12dp" },
       ],
     },
+    /* Carbon Tag, md size. Source: @carbon/styles dist css .cds--tag —
+       --cds-layout-size-height-md 1.5rem (24), border-radius 1rem (16),
+       padding-inline 0.5rem (8), type label-01 (weight 400, size 12). */
+    carbon: {
+      parts: [
+        /* Off-specimen anchors, same convention as chip.m3 above. */
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+        { n: 3, label: "Close icon (dismissible)", x: 84, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "24dp" },
+        { label: "Corner", value: "16dp" },
+        { label: "Padding", value: "8dp" },
+        { label: "Font", value: "12dp" },
+      ],
+    },
   },
 };
 
@@ -1074,12 +1091,14 @@ export interface VariantNaming {
    *  components: button (solid/tonal/elevated/outlined/text), card
    *  (elevated/filled/outlined), text field (filled/outlined), chip
    *  (assist/filter/input/suggestion), badge (dot/count). DS-prefixed keys
-   *  (salt-*, fluent-*, glass-*) render that DS's own example treatment. */
+   *  (salt-*, fluent-*, glass-*, carbon-*) render that DS's own example
+   *  treatment. */
   style:
     | "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled"
     | "assist" | "filter" | "input" | "suggestion"
     | "dot" | "count"
     | "salt-pill" | "salt-tag"
+    | "carbon-tag" | "carbon-dismissible" | "carbon-selectable" | "carbon-operational"
     | "salt-accent" | "salt-positive" | "salt-caution" | "salt-negative" | "salt-dot"
     | "fluent-filled" | "fluent-tint" | "fluent-outline" | "fluent-ghost"
     | "glass-accent" | "glass-default" | "glass-danger" | "glass-success" | "glass-warning";
@@ -1178,8 +1197,9 @@ export const COMPONENT_VARIANT_NAMING: Partial<
       },
     ],
     /* Salt's badge statuses. Four full-corner sentiment counters plus the
-       labelless presence dot. Carbon is deliberately absent here: its 5-tab
-       layout never renders this premium meta. */
+       labelless presence dot. Carbon stays absent here because no real
+       @carbon/react Badge ships (see the DS_PROPS + TOKENS notes); its Tag
+       primitive is chip semantics and lives under chip.carbon below. */
     salt: [
       {
         name: "Accent",
@@ -1318,6 +1338,36 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         desc: "Dismissible, removable metadata. A label drawn from the 20-step category palette, with an optional close affordance.",
         use: "Showing metadata the user applied and can take away, like labels on a record or tokens in a filter bar. Keep one category number per meaning so related tags share a color.",
         style: "salt-tag",
+      },
+    ],
+    /* Carbon's Tag family, per the four documented variants on
+       carbondesignsystem.com (the @carbon/react components are Tag /
+       DismissibleTag / SelectableTag / OperationalTag). Not an emphasis
+       ladder: each member adds one interaction on the same 24dp primitive. */
+    carbon: [
+      {
+        name: "Read-only",
+        desc: "The base Tag. A tinted label that categorizes; no interaction.",
+        use: "Labelling and grouping records, like a status or type column in a list. Keep one color per meaning so related tags read as a family.",
+        style: "carbon-tag",
+      },
+      {
+        name: "Dismissible",
+        desc: "A DismissibleTag with a trailing close affordance.",
+        use: "Filter bars and token fields where users remove applied items one by one, like active search filters above a data table.",
+        style: "carbon-dismissible",
+      },
+      {
+        name: "Selectable",
+        desc: "A SelectableTag that toggles. Selecting it swaps the tint for the high-contrast inverse fill.",
+        use: "Letting users pick facets or topics from a set, singly or in a group, like interests on a profile or filters before a search runs.",
+        style: "carbon-selectable",
+      },
+      {
+        name: "Operational",
+        desc: "An OperationalTag with a hairline border. Clicking it acts.",
+        use: "Tags that do something when clicked, like disclosing the records behind a label or jumping to a filtered view.",
+        style: "carbon-operational",
       },
     ],
   },
