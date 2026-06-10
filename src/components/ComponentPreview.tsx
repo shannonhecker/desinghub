@@ -133,94 +133,9 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const tokens = metaId ? COMPONENT_TOKENS[metaId]?.[ds] : undefined;
 
   const pad = 48;
-  /* Carbon components on the docs site always show a 5-tab nav:
-     Overview (preview demo), Usage (plain-English guidance),
-     Style (tokens + sizing), Code (snippet), Accessibility
-     (WCAG + keyboard notes). Carbon keeps its faithful docs-tab layout;
-     the other four DSs use the premium single-scroll detail page. */
-  const carbonTabs = ["preview", "usage", "style", "code", "accessibility"] as const;
-
   /* Charts + ag-grid are full-surface tools, not catalog components — they keep
      their own single-pane render (no detail sections / TOC). */
   const isToolPage = componentId === "charts" || componentId === "ag-grid";
-
-  /* ── Carbon: preserve the authentic 5-tab carbondesignsystem.com layout. ── */
-  if (isCarbon && !isToolPage) {
-    const visibleTabs = carbonTabs;
-    const currentTab: typeof visibleTabs[number] =
-      (visibleTabs as readonly string[]).includes(activeTab as string)
-        ? (activeTab as typeof visibleTabs[number])
-        : "preview";
-    return (
-      <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h2>
-          <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
-        </div>
-        <div role="tablist" aria-label="Component view" style={{
-          display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: 32,
-        }}>
-          {visibleTabs.map((tab) => {
-            const active = currentTab === tab;
-            const label = tab === "preview" ? "Overview"
-              : tab === "code" ? "Code"
-              : tab === "usage" ? "Usage"
-              : tab === "style" ? "Style"
-              : "Accessibility";
-            return (
-              <button
-                key={tab}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveTab(tab)}
-                style={{
-                  position: "relative", height: 40, padding: "10px 16px", border: 0,
-                  background: "transparent", cursor: "pointer", fontSize: 14,
-                  fontWeight: active ? 600 : 400, fontFamily: t.font,
-                  color: active ? t.fg : t.fg2,
-                  borderBottom: active ? `2px solid ${t.accent}` : "2px solid transparent",
-                  marginBottom: -1, transition: "color 70ms cubic-bezier(0.2, 0, 0.38, 0.9)",
-                }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-        {currentTab === "code" ? (
-          <CodePanel componentId={componentId} />
-        ) : currentTab === "usage" ? (
-          <CarbonDocStub title="Usage" componentId={componentId} sectionSlug="usage" body={
-            `${comp.name} is for ${comp.desc.toLowerCase()} Use it when the interaction calls for ${comp.cat.toLowerCase()} guidance. For the full usage rules, anatomy, and do/don't examples, see the official ${comp.name} usage page on carbondesignsystem.com.`
-          } t={t} />
-        ) : currentTab === "style" ? (
-          <CarbonDocStub title="Style" componentId={componentId} sectionSlug="style" body={
-            `Exact sizing, spacing, and typography specs for ${comp.name} live in the Style tab on carbondesignsystem.com. The demo in Overview is built with the same token set (see Code tab for the @carbon/react import).`
-          } t={t} />
-        ) : currentTab === "accessibility" ? (
-          <CarbonDocStub title="Accessibility" componentId={componentId} sectionSlug="accessibility" body={
-            `${comp.name} ships with WCAG 2.1 AA compliance. Focus rings, keyboard navigation, and ARIA semantics are documented on the Accessibility tab on carbondesignsystem.com.`
-          } t={t} />
-        ) : (
-          <div
-            className={`cds--${store.carbon.themeKey}`}
-            style={{
-              background: t.T.layer01, borderRadius: 0,
-              border: `1px solid ${t.border}`, padding: pad, color: t.fg,
-            }}
-          >
-            <style dangerouslySetInnerHTML={{ __html: css }} />
-            {DemoComponent ? <DemoComponent /> : (
-              <div style={{ padding: pad, borderRadius: 8, border: `1px dashed ${t.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center", color: t.fg2, fontSize: t.scale.navF }}>
-                Demo loading...
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   /* ── Tool pages (Charts / ag-grid): single-pane, no detail sections. ── */
   if (isToolPage) {
@@ -487,6 +402,87 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     </section>
   );
 
+  /* ── Carbon: authentic 5-tab carbondesignsystem.com shell, premium content
+     (#330, owner-picked). The same shared section nodes as the other DSs,
+     regrouped into Carbon's canonical docs tabs (Overview / Usage / Style /
+     Code / Accessibility). The cds--<theme> class on the root scopes the
+     --cds-* token blocks emitted by getFullCSS, so every live demo inside
+     (specimen, variants matrix) resolves real Carbon tokens; the old
+     early-return branch wrapped only the Overview demo. ── */
+  if (isCarbon) {
+    const CARBON_TABS = [
+      ["preview", "Overview"],
+      ["usage", "Usage"],
+      ["style", "Style"],
+      ["code", "Code"],
+      ["accessibility", "Accessibility"],
+    ] as const;
+    const carbonTab = (CARBON_TABS as readonly (readonly string[])[]).some((x) => x[0] === activeTab)
+      ? (activeTab as string)
+      : "preview";
+    return (
+      <div className={`dh-detail cds--${store.carbon.themeKey}`} style={{ fontFamily: t.font, color: t.fg }}>
+        <header className="dh-detail-header">
+          <h2 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h2>
+          <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
+        </header>
+        {/* Carbon underline tab bar: 40px tabs, 2px accent underline,
+            productive-motion easing — kept verbatim from the docs-faithful shell. */}
+        <div role="tablist" aria-label="Component view" style={{
+          display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: 32,
+        }}>
+          {CARBON_TABS.map(([id, label]) => {
+            const active = carbonTab === id;
+            return (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(id)}
+                style={{
+                  position: "relative", height: 40, padding: "10px 16px", border: 0,
+                  background: "transparent", cursor: "pointer", fontSize: 14,
+                  fontWeight: active ? 600 : 400, fontFamily: t.font,
+                  color: active ? t.fg : t.fg2,
+                  borderBottom: active ? `2px solid ${t.accent}` : "2px solid transparent",
+                  marginBottom: -1, transition: "color 70ms cubic-bezier(0.2, 0, 0.38, 0.9)",
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {carbonTab === "preview" && specimenSection}
+        {carbonTab === "usage" && (
+          <>
+            {guidanceSection ?? (
+              <p className="dh-section-lede" style={{ color: t.fg3 }}>
+                Usage guidance for the {comp.name.toLowerCase()} lands in a later pass.
+              </p>
+            )}
+            {/* Carbon's authoritative guidance lives on carbondesignsystem.com;
+                deep-link rather than duplicate IBM's content. */}
+            <p style={{ marginTop: 28, font: `400 14px/1.5 ${t.font}` }}>
+              <a
+                href={carbonDocsHref(componentId, "usage")}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, color: t.accentText, textDecoration: "underline" }}
+              >
+                Read the full usage guide on carbondesignsystem.com
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden>arrow_forward</span>
+              </a>
+            </p>
+          </>
+        )}
+        {carbonTab === "style" && <>{variantsSection}{anatomySection}{tokensSection}</>}
+        {carbonTab === "code" && <>{propsSection}{codeSection}</>}
+        {carbonTab === "accessibility" && accessibilitySection}
+      </div>
+    );
+  }
+
   /* ── Rich tabbed layout (Overview / Specs / Guidelines / Accessibility),
      modelled on m3.material.io, for every non-Carbon DS. Self-contained +
      full-width (no external TOC). Skins entirely from the active theme `t`,
@@ -598,79 +594,30 @@ export function getDetailSections(
 }
 
 /* ══════════════════════════════════════════════════════════
-   CarbonDocStub - Usage / Style / Accessibility tab content
+   carbonDocsHref - deep link into carbondesignsystem.com
    ══════════════════════════════════════════════════════════
-   Carbon's authoritative source for these tabs is carbondesignsystem.com.
-   We render a brief component-specific intro + a deep link to
-   the official page. Keeps the UI Kit faithful to Carbon's docs
-   layout without duplicating IBM's content. */
-function CarbonDocStub({
-  title,
-  componentId,
-  sectionSlug,
-  body,
-  t,
-}: {
-  title: string;
-  componentId: string;
-  sectionSlug: "usage" | "style" | "accessibility";
-  body: string;
-  t: ReturnType<typeof useActiveTheme>;
-}) {
-  /* Map our internal componentId to Carbon's URL slug. Most match
-     directly (e.g. "button"); a few aliases are listed below. */
-  const urlSlug: Record<string, string> = {
-    buttons: "button",
-    "icon-button": "button",
-    inputs: "text-input",
-    alerts: "notification",
-    tags: "tag",
-    cards: "tile",
-    radios: "radio-button",
-    switches: "toggle",
-    dropdowns: "dropdown",
-    tabs: "tabs",
-    accordion: "accordion",
-    breadcrumbs: "breadcrumb",
-    "data-table": "data-table",
-    "structured-list": "structured-list",
-    pagination: "pagination",
-    dialog: "modal",
-    tooltips: "tooltip",
-    link: "link",
-    slider: "slider",
-    progress: "progress-bar",
-    loading: "loading",
-    "content-switcher": "content-switcher",
-    skeleton: "skeleton",
-    popover: "popover",
-    checkboxes: "checkbox",
-    search: "search",
-    avatars: "button", /* Carbon has no Avatar component */
-  };
-  const slug = urlSlug[componentId] ?? componentId;
-  const href = `https://carbondesignsystem.com/components/${slug}/${sectionSlug}/`;
-
-  return (
-    <div style={{ maxWidth: 720, fontFamily: t.font }}>
-      <h3 style={{ fontSize: 28, fontWeight: 400, color: t.fg, lineHeight: 1.2, marginBottom: 16, letterSpacing: "-0.16px" }}>
-        {title}
-      </h3>
-      <p style={{ fontSize: 16, color: t.fg2, lineHeight: 1.5, marginBottom: 24 }}>
-        {body}
-      </p>
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 8,
-          fontSize: 14, color: t.accent, textDecoration: "underline",
-        }}
-      >
-        Read the full {title.toLowerCase()} guide on carbondesignsystem.com
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
-      </a>
-    </div>
-  );
+   Carbon's authoritative guidance lives on carbondesignsystem.com; the
+   Usage tab links straight to the official page rather than duplicating
+   IBM's content. Most internal ids match Carbon's URL slugs directly;
+   the aliases below cover the rest. */
+const CARBON_URL_SLUG: Record<string, string> = {
+  buttons: "button",
+  "icon-button": "button",
+  inputs: "text-input",
+  alerts: "notification",
+  tags: "tag",
+  cards: "tile",
+  radios: "radio-button",
+  switches: "toggle",
+  dropdowns: "dropdown",
+  breadcrumbs: "breadcrumb",
+  dialog: "modal",
+  tooltips: "tooltip",
+  progress: "progress-bar",
+  checkboxes: "checkbox",
+  avatars: "button", /* Carbon has no Avatar component */
+};
+function carbonDocsHref(componentId: string, sectionSlug: "usage" | "style" | "accessibility"): string {
+  const slug = CARBON_URL_SLUG[componentId] ?? componentId;
+  return `https://carbondesignsystem.com/components/${slug}/${sectionSlug}/`;
 }
