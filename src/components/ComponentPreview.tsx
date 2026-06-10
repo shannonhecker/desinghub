@@ -69,6 +69,7 @@ const META_ID: Record<string, UiKitComponentId> = {
   tag: "badge",
   pill: "badge",
   chip: "badge",
+  chips: "badge",
   // Select / dropdown
   dropdowns: "select",
   dropdown: "select",
@@ -344,7 +345,10 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
           <div style={{ marginTop: 44 }}>
             <h4 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h4>
             <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
-              The {comp.name.toLowerCase()} emphasis ladder, highest to lowest.
+              {/* Chips are types with distinct jobs, not an emphasis ladder. */}
+              {metaId === "badge"
+                ? "The four chip types, each shaped for a different job."
+                : `The ${comp.name.toLowerCase()} emphasis ladder, highest to lowest.`}
             </p>
             <div style={{
               display: "flex",
@@ -413,7 +417,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         The parts of the {comp.name.toLowerCase()} and their key measurements.
       </p>
-      <AnatomyDiagram anatomy={anatomy} t={t} />
+      <AnatomyDiagram anatomy={anatomy} t={t} componentId={metaId} />
     </section>
   ) : null;
   const propsSection = propRows ? (

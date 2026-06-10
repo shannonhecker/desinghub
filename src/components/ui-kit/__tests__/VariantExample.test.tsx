@@ -7,6 +7,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { VariantExample } from "../VariantExample";
+import { COMPONENT_VARIANT_NAMING, COMPONENT_ANATOMY } from "@/data/ui-kit-meta";
 
 const t = {
   bg: "#111111", bg2: "#222222", fg: "#ffffff", fg2: "#aaaaaa",
@@ -45,5 +46,42 @@ describe("VariantExample", () => {
 
   it("renders nothing for a component without an example shape", () => {
     expect(render("avatar", "image").childElementCount).toBe(0);
+  });
+
+  it("renders a labelled chip with a leading icon for badge assist", () => {
+    const c = render("badge", "assist");
+    expect(c.textContent).toContain("Ex");
+    expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(1);
+  });
+
+  it("renders a leading check on the selected tonal chip for badge filter", () => {
+    const c = render("badge", "filter");
+    expect(c.textContent).toContain("Ex");
+    expect(c.querySelector(".material-symbols-outlined")?.textContent).toBe("check");
+  });
+
+  it("renders a trailing remove affordance for badge input", () => {
+    const c = render("badge", "input");
+    expect(c.textContent).toContain("Ex");
+    expect(c.querySelector(".material-symbols-outlined")?.textContent).toBe("close");
+  });
+
+  it("renders a plain outlined chip with no icon for badge suggestion", () => {
+    const c = render("badge", "suggestion");
+    expect(c.textContent).toContain("Ex");
+    expect(c.querySelector(".material-symbols-outlined")).toBeNull();
+  });
+
+  it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING", () => {
+    expect((COMPONENT_VARIANT_NAMING.badge?.m3 ?? []).map((v) => v.style)).toEqual([
+      "assist",
+      "filter",
+      "input",
+      "suggestion",
+    ]);
+  });
+
+  it("registers M3 chip anatomy for the Specs anatomy section", () => {
+    expect(COMPONENT_ANATOMY.badge?.m3?.parts.length).toBeGreaterThan(0);
   });
 });

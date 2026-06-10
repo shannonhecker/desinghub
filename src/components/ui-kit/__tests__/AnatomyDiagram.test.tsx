@@ -60,6 +60,18 @@ function renderDiagram(a: typeof anatomy): HTMLElement {
   return container;
 }
 
+function renderDiagramFor(componentId: string, a: typeof anatomy): HTMLElement {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  act(() => {
+    root = createRoot(container);
+    root.render(
+      <AnatomyDiagram anatomy={a} t={fakeTheme} specimen="Label" componentId={componentId} />,
+    );
+  });
+  return container;
+}
+
 describe("AnatomyDiagram", () => {
   it("renders one numbered callout badge per part", () => {
     const c = renderDiagram(anatomy);
@@ -83,5 +95,16 @@ describe("AnatomyDiagram", () => {
   it("renders nothing extra when there are no parts (graceful empty)", () => {
     const c = renderDiagram({ parts: [], measures: [] });
     expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(0);
+  });
+
+  it("renders a chip schematic with leading + trailing icons for badge", () => {
+    const c = renderDiagramFor("badge", anatomy);
+    expect(c.querySelectorAll(".dh-anatomy-spec .material-symbols-outlined").length).toBe(2);
+    expect(c.textContent).toContain("Label");
+  });
+
+  it("keeps the icon-free button schematic when componentId is absent", () => {
+    const c = renderDiagram(anatomy);
+    expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
   });
 });

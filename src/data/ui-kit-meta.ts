@@ -882,6 +882,22 @@ export const COMPONENT_ANATOMY: Partial<
       ],
     },
   },
+  badge: {
+    m3: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 12 },
+        { n: 2, label: "Label text", x: 50, y: 88 },
+        { n: 3, label: "Leading icon (optional)", x: 14, y: 50 },
+        { n: 4, label: "Trailing icon (optional)", x: 86, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "32dp" },
+        { label: "Corner", value: "8dp" },
+        { label: "Icon", value: "18dp" },
+        { label: "Padding", value: "16dp" },
+      ],
+    },
+  },
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -900,8 +916,11 @@ export interface VariantNaming {
   use: string;
   /** Appearance of the live example rendered in the card. The set spans
    *  components: button (solid/tonal/elevated/outlined/text), card
-   *  (elevated/filled/outlined), text field (filled/outlined). */
-  style: "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled";
+   *  (elevated/filled/outlined), text field (filled/outlined), chip
+   *  (assist/filter/input/suggestion). */
+  style:
+    | "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled"
+    | "assist" | "filter" | "input" | "suggestion";
 }
 export const COMPONENT_VARIANT_NAMING: Partial<
   Record<UiKitComponentId, Partial<Record<DesignSystemId, VariantNaming[]>>>
@@ -975,6 +994,37 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         desc: "An outline, no fill.",
         use: "When fields sit on a busy or tonal surface where a filled field would blend in, or when you want a lighter, more contained look.",
         style: "outlined",
+      },
+    ],
+  },
+  badge: {
+    /* M3's four chip types. Unlike buttons these are not an emphasis
+       ladder; each type does a different job, and each carries its own
+       signature affordance (leading icon, check, trailing remove). */
+    m3: [
+      {
+        name: "Assist",
+        desc: "A smart contextual action. Elevated, with a leading icon.",
+        use: "Surfacing a contextual smart action that helps the user complete a task in place, like adding an event to the calendar.",
+        style: "assist",
+      },
+      {
+        name: "Filter",
+        desc: "A toggleable facet. Selecting it swaps the outline for a tonal fill and a checkmark.",
+        use: "Letting users refine a collection by toggling facets on and off, like narrowing search results by category.",
+        style: "filter",
+      },
+      {
+        name: "Input",
+        desc: "A discrete piece of user input, with a trailing remove affordance.",
+        use: "Representing things the user entered, like recipients or tags, that they can edit or remove one by one.",
+        style: "input",
+      },
+      {
+        name: "Suggestion",
+        desc: "A suggested prompt. Plain outline, lowest emphasis.",
+        use: "Offering quick follow-ups or query refinements before the user commits to one, like reply suggestions under a message.",
+        style: "suggestion",
       },
     ],
   },
