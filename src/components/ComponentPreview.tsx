@@ -62,14 +62,16 @@ const META_ID: Record<string, UiKitComponentId> = {
   cards: "card",
   card: "card",
   tile: "card",
-  // Badge / tag / pill / chip
+  // Chip / tag / pill (interactive selection elements)
+  chips: "chip",
+  chip: "chip",
+  tags: "chip",
+  tag: "chip",
+  pill: "chip",
+  pills: "chip",
+  // Badge (status indicators: dot, count)
   badges: "badge",
   badge: "badge",
-  tags: "badge",
-  tag: "badge",
-  pill: "badge",
-  chip: "badge",
-  chips: "badge",
   // Select / dropdown
   dropdowns: "select",
   dropdown: "select",
@@ -345,9 +347,11 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
           <div style={{ marginTop: 44 }}>
             <h4 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h4>
             <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
-              {/* Chips are types with distinct jobs, not an emphasis ladder. */}
-              {metaId === "badge"
+              {/* Chips are types with distinct jobs, badges signal status; neither is an emphasis ladder. */}
+              {metaId === "chip"
                 ? "The four chip types, each shaped for a different job."
+                : metaId === "badge"
+                ? "Dot for presence, count for magnitude."
                 : `The ${comp.name.toLowerCase()} emphasis ladder, highest to lowest.`}
             </p>
             <div style={{
