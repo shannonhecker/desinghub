@@ -48,32 +48,46 @@ describe("VariantExample", () => {
     expect(render("avatar", "image").childElementCount).toBe(0);
   });
 
-  it("renders a labelled chip with a leading icon for badge assist", () => {
-    const c = render("badge", "assist");
+  it("renders a labelled chip with a leading icon for chip assist", () => {
+    const c = render("chip", "assist");
     expect(c.textContent).toContain("Ex");
     expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(1);
   });
 
-  it("renders a leading check on the selected tonal chip for badge filter", () => {
-    const c = render("badge", "filter");
+  it("renders a leading check on the selected tonal chip for chip filter", () => {
+    const c = render("chip", "filter");
     expect(c.textContent).toContain("Ex");
     expect(c.querySelector(".material-symbols-outlined")?.textContent).toBe("check");
   });
 
-  it("renders a trailing remove affordance for badge input", () => {
-    const c = render("badge", "input");
+  it("renders a trailing remove affordance for chip input", () => {
+    const c = render("chip", "input");
     expect(c.textContent).toContain("Ex");
     expect(c.querySelector(".material-symbols-outlined")?.textContent).toBe("close");
   });
 
-  it("renders a plain outlined chip with no icon for badge suggestion", () => {
-    const c = render("badge", "suggestion");
+  it("renders a plain outlined chip with no icon for chip suggestion", () => {
+    const c = render("chip", "suggestion");
     expect(c.textContent).toContain("Ex");
     expect(c.querySelector(".material-symbols-outlined")).toBeNull();
   });
 
-  it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING", () => {
-    expect((COMPONENT_VARIANT_NAMING.badge?.m3 ?? []).map((v) => v.style)).toEqual([
+  it("renders an iconless 6px dot for badge dot", () => {
+    const c = render("badge", "dot");
+    expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
+    const dot = Array.from(c.querySelectorAll<HTMLElement>("span")).find(
+      (el) => el.style.width === "6px",
+    );
+    expect(dot).toBeTruthy();
+    expect(dot?.style.height).toBe("6px");
+  });
+
+  it("renders the counter label for badge count", () => {
+    expect(render("badge", "count").textContent).toContain("3");
+  });
+
+  it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING under chip", () => {
+    expect((COMPONENT_VARIANT_NAMING.chip?.m3 ?? []).map((v) => v.style)).toEqual([
       "assist",
       "filter",
       "input",
@@ -82,6 +96,17 @@ describe("VariantExample", () => {
   });
 
   it("registers M3 chip anatomy for the Specs anatomy section", () => {
+    expect(COMPONENT_ANATOMY.chip?.m3?.parts.length).toBeGreaterThan(0);
+  });
+
+  it("registers the M3 dot + count badge types in COMPONENT_VARIANT_NAMING under badge", () => {
+    expect((COMPONENT_VARIANT_NAMING.badge?.m3 ?? []).map((v) => v.style)).toEqual([
+      "dot",
+      "count",
+    ]);
+  });
+
+  it("registers M3 count-badge anatomy for the Specs anatomy section", () => {
     expect(COMPONENT_ANATOMY.badge?.m3?.parts.length).toBeGreaterThan(0);
   });
 });

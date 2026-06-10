@@ -23,6 +23,13 @@ export interface ActiveTheme {
   accent: string; accentFg: string; accentWeak: string; accentText: string;
   border: string; borderStrong: string; borderSubtle: string;
   focusRing: string;
+  /* Optional semantic status slots - left undefined where the active DS
+     has no real token for that role (no invented colours). Bg/Fg = the
+     tinted (weak) pair; Strong/StrongFg = the solid (filled) pair. */
+  successBg?: string; successFg?: string; successStrong?: string; successStrongFg?: string;
+  warningBg?: string; warningFg?: string; warningStrong?: string; warningStrongFg?: string;
+  dangerBg?: string; dangerFg?: string; dangerStrong?: string; dangerStrongFg?: string;
+  infoBg?: string; infoFg?: string; infoStrong?: string; infoStrongFg?: string;
   activeSystem: SystemId;
   densityOrSize: string | number;
   scale: Scale;
@@ -131,6 +138,21 @@ function computeTheme(
     : activeSystem === "carbon" ? T[carbon]
     : T[uoaui];
 
+  /* Like n(), but for OPTIONAL semantic slots: pass undefined where the
+     DS has no real token for the role, and the slot stays undefined
+     rather than borrowing a wrong colour. */
+  const ns = (salt?: string, m3?: string, fluent?: string, uoaui?: string, carbon?: string): string | undefined =>
+    activeSystem === "salt" ? (salt ? T[salt] : undefined)
+    : activeSystem === "m3" ? (m3 ? T[m3] : undefined)
+    : activeSystem === "fluent" ? (fluent ? T[fluent] : undefined)
+    : activeSystem === "carbon" ? (carbon ? T[carbon] : undefined)
+    : (uoaui ? T[uoaui] : undefined);
+
+  /* Carbon's solid warning chip is canon black-on-yellow (white on
+     #f1c21b fails contrast at 1.68:1): the near-black ink is textPrimary
+     in the light themes and textInverse in the dark themes. */
+  const carbonIsDark = carbonThemeKey === "g90" || carbonThemeKey === "g100";
+
   return {
     T, css, font,
     bg: n("bg", "surface", "bg1", "bg", "bg"),
@@ -165,6 +187,29 @@ function computeTheme(
     focusRing: activeSystem === "carbon" ? (T.focus ?? T.accent)
       : activeSystem === "fluent" ? (T.fg1 ?? T.fg)
       : n("accent", "primary", "brandBg", "accent", "accent"),
+    /* ── Semantic status slots (optional) ──
+       M3 only defines the error role family; success/warning/info stay
+       undefined. Fluent ships no info palette here. Carbon's tinted pairs
+       come from the v11 tag tokens; it has no yellow tag, so warningBg/Fg
+       stay undefined. uoaui has tinted pairs only (no solid variant). */
+    successBg: ns("positiveWeak", undefined, "successBg1", "successBg", "tagBackgroundGreen"),
+    successFg: ns("positiveFg", undefined, "successFg1", "successFg", "tagColorGreen"),
+    successStrong: ns("positive", undefined, "successBg3", undefined, "supportSuccess"),
+    successStrongFg: ns("fgInv", undefined, "fgOnBrand", undefined, "textInverse"),
+    warningBg: ns("cautionWeak", undefined, "warningBg1", "warningBg", undefined),
+    warningFg: ns("cautionFg", undefined, "warningFg1", "warningFg", undefined),
+    warningStrong: ns("caution", undefined, "warningBg3", undefined, "supportWarning"),
+    warningStrongFg: activeSystem === "carbon"
+      ? (carbonIsDark ? T.textInverse : T.textPrimary)
+      : ns("fgInv", undefined, "fgOnBrand", undefined, undefined),
+    dangerBg: ns("negativeWeak", "errorContainer", "dangerBg1", "dangerBg", "tagBackgroundRed"),
+    dangerFg: ns("negativeFg", "onErrorContainer", "dangerFg1", "dangerFg", "tagColorRed"),
+    dangerStrong: ns("negative", "error", "dangerBg3", undefined, "supportError"),
+    dangerStrongFg: ns("fgInv", "onError", "fgOnBrand", undefined, "textInverse"),
+    infoBg: ns("infoWeak", undefined, undefined, "infoBg", "tagBackgroundBlue"),
+    infoFg: ns("infoFg", undefined, undefined, "infoFg", "tagColorBlue"),
+    infoStrong: ns("info", undefined, undefined, undefined, "supportInfo"),
+    infoStrongFg: ns("fgInv", undefined, undefined, undefined, "textInverse"),
     activeSystem,
     densityOrSize,
     scale: computeScale(activeSystem, densityOrSize),

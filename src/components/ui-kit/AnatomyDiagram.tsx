@@ -35,8 +35,9 @@ export interface AnatomyDiagramProps {
    *  token — defaults to the M3 doc pink via the --dh-measure token. */
   measureColor?: string;
   /** Picks the schematic shape (same switch pattern as VariantExample):
-   *  "badge" renders an M3 chip with leading + trailing icons so the icon
-   *  callouts anchor to real parts; anything else keeps the button pill. */
+   *  "chip" renders an M3 chip with leading + trailing icons so the icon
+   *  callouts anchor to real parts; "badge" renders an M3 count badge;
+   *  anything else keeps the button pill. */
   componentId?: string;
 }
 
@@ -75,8 +76,9 @@ export function AnatomyDiagram({
         <div className="dh-anatomy-spec" style={{ position: "relative" }}>
           {/* The component schematic, theme-skinned. The button pill draws
               40dp at 1.3x (52px); the chip draws 32dp at the same 1.3x
-              (42px, 8dp corner -> 10px, 18dp icons -> 23px). */}
-          {componentId === "badge" ? (
+              (42px, 8dp corner -> 10px, 18dp icons -> 23px); the count
+              badge draws 16dp at 1.3x (21px, 8dp corner -> 10.5px). */}
+          {componentId === "chip" ? (
             <div
               style={{
                 display: "inline-flex",
@@ -100,6 +102,30 @@ export function AnatomyDiagram({
               <span className="material-symbols-outlined" aria-hidden style={{ fontSize: 23, lineHeight: 1, color: t.fg2 }}>
                 close
               </span>
+            </div>
+          ) : componentId === "badge" ? (
+            /* M3 count badge — spec-neutral like the chip schematic: the
+               anatomy stage is structural, so it reuses the stage's own
+               fill/border skin rather than the semantic error container. */
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
+                height: 21,
+                minWidth: 21,
+                padding: "0 5px",
+                borderRadius: 10.5,
+                background: t.bg,
+                border: `1.5px solid ${t.border}`,
+                color: t.fg,
+                font: `500 14px/1 ${t.font}`,
+                letterSpacing: 0.1,
+                whiteSpace: "nowrap",
+              }}
+            >
+              3
             </div>
           ) : (
             <div
