@@ -165,7 +165,7 @@ import MenuItem from "@mui/material/MenuItem";
   badges: {
     react: `import Badge from "@mui/material/Badge";
 
-<Badge badgeContent={4} color="primary">
+<Badge badgeContent={4} color="error">
   <MailIcon />
 </Badge>
 <Badge badgeContent={99} color="error" max={99}>
