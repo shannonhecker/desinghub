@@ -404,6 +404,17 @@ export const DS_PROPS: Record<UiKitComponentId, DsPropsByComponent> = {
 
   /* ── Chip (labelled M3 chips / Carbon tags) ───────────────────────── */
   chip: {
+    salt: [
+      // Verified against @salt-ds/core 1.63.0 dist-types: PillProps extends
+      // ComponentPropsWithoutRef<"button"> + value; selection state lives on
+      // PillGroup, not the Pill. TagProps = bordered / variant / category.
+      { name: "onClick (Pill)", type: "(e: MouseEvent) => void", default: "-", description: "Pill renders a real <button>; click toggles or acts." },
+      { name: "value (Pill)", type: "string", default: "-", description: "Selection value reported to a wrapping PillGroup." },
+      { name: "selected / defaultSelected (PillGroup)", type: "string[]", default: "-", description: 'Selection lives on PillGroup (selectionVariant="multiple"), not the Pill.' },
+      { name: "variant (Tag)", type: '"primary" | "secondary"', default: '"primary"', description: "Tag emphasis; secondary uses the bold category fill." },
+      { name: "category (Tag)", type: "number", default: "1", description: "Categorical palette index 1-20; drives the --salt-category-N colors." },
+      { name: "bordered (Tag)", type: "boolean", default: "false", description: "Adds the full category border to the Tag." },
+    ],
     m3: [
       // Labelled status badge maps to MUI Chip (verified in registry).
       { name: "label", type: "ReactNode", default: "-", description: "Chip text (status badge = Chip)." },
@@ -814,6 +825,13 @@ export const COMPONENT_TOKENS: Record<UiKitComponentId, DsTokensByComponent> = {
 
   /* ── Chip (labelled M3 chips / Carbon tags) ───────────────────────── */
   chip: {
+    salt: [
+      { token: "--salt-actionable-bold-background", role: "Pill fill" },
+      { token: "--salt-actionable-bold-foreground", role: "Pill label" },
+      { token: "--salt-category-1-background", role: "Tag category fill" },
+      { token: "--salt-category-1-foreground", role: "Tag label" },
+      { token: "--salt-palette-corner-strongest", role: "Tag full corner" },
+    ],
     m3: [
       { token: "--md-sys-color-error", role: "Error chip fill" },
       { token: "--md-sys-color-on-error", role: "Error chip text" },
@@ -946,6 +964,54 @@ export const COMPONENT_ANATOMY: Partial<
         { label: "Padding", value: "4dp" },
       ],
     },
+    /* Salt Badge. Source: @salt-ds/core Badge.css — height and min-width
+       both track --salt-text-notation-lineHeight, the corner is
+       --salt-palette-corner-strongest (full fallback), the type is
+       --salt-text-notation-fontSize. */
+    salt: {
+      parts: [
+        /* Off-specimen anchors, same convention as badge.m3 above. */
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "16dp" },
+        { label: "Corner", value: "Full" },
+        { label: "Min width", value: "16dp" },
+        { label: "Font", value: "11dp" },
+      ],
+    },
+    /* Fluent Badge, medium size. Source: @fluentui/react-badge dist
+       useBadgeStyles — height 20, min-width 20, padding per side is
+       spacingHorizontalXS plus the XXS text padding (4 + 2 = 6), corner
+       borderRadiusCircular, type caption1Strong (fontSizeBase200 = 12,
+       semibold). */
+    fluent: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "20dp" },
+        { label: "Corner", value: "Circular" },
+        { label: "Padding", value: "6dp" },
+        { label: "Font", value: "12dp" },
+      ],
+    },
+    /* uoaui glass badge. Source: uoaui-documentation.jsx buildCSS .a-badge —
+       height 22, radius var(--a-radius-full), padding 0 10, font 11. */
+    uoaui: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "22dp" },
+        { label: "Corner", value: "Full" },
+        { label: "Padding", value: "10dp" },
+        { label: "Font", value: "11dp" },
+      ],
+    },
   },
   chip: {
     m3: {
@@ -962,6 +1028,29 @@ export const COMPONENT_ANATOMY: Partial<
         { label: "Corner", value: "8dp" },
         { label: "Icon", value: "18dp" },
         { label: "Padding", value: "16dp" },
+      ],
+    },
+    /* Salt Pill + Tag, medium density. Source: @salt-ds/core Pill.css and
+       Tag.css — both share height calc(--salt-size-base minus
+       --salt-spacing-100), 28 minus 8 = 20 at medium density; font is
+       --salt-text-fontSize (12 at MD); padding is Tag's horizontal
+       --salt-spacing-100 (8; the Pill itself runs tighter on
+       --salt-spacing-50). Corner shown as the Salt curve family midpoint
+       --salt-curve-100 (4 at MD); the Pill resolves
+       --salt-palette-corner-weaker while the Tag is full
+       (--salt-palette-corner-strongest). */
+    salt: {
+      parts: [
+        /* Off-specimen anchors, same convention as chip.m3 above. */
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+        { n: 3, label: "Close icon (optional)", x: 84, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "20dp" },
+        { label: "Corner", value: "4dp" },
+        { label: "Padding", value: "8dp" },
+        { label: "Font", value: "12dp" },
       ],
     },
   },
@@ -984,11 +1073,16 @@ export interface VariantNaming {
   /** Appearance of the live example rendered in the card. The set spans
    *  components: button (solid/tonal/elevated/outlined/text), card
    *  (elevated/filled/outlined), text field (filled/outlined), chip
-   *  (assist/filter/input/suggestion), badge (dot/count). */
+   *  (assist/filter/input/suggestion), badge (dot/count). DS-prefixed keys
+   *  (salt-*, fluent-*, glass-*) render that DS's own example treatment. */
   style:
     | "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled"
     | "assist" | "filter" | "input" | "suggestion"
-    | "dot" | "count";
+    | "dot" | "count"
+    | "salt-pill" | "salt-tag"
+    | "salt-accent" | "salt-positive" | "salt-caution" | "salt-negative" | "salt-dot"
+    | "fluent-filled" | "fluent-tint" | "fluent-outline" | "fluent-ghost"
+    | "glass-accent" | "glass-default" | "glass-danger" | "glass-success" | "glass-warning";
 }
 export const COMPONENT_VARIANT_NAMING: Partial<
   Record<UiKitComponentId, Partial<Record<DesignSystemId, VariantNaming[]>>>
@@ -1083,6 +1177,102 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         style: "count",
       },
     ],
+    /* Salt's badge statuses. Four full-corner sentiment counters plus the
+       labelless presence dot. Carbon is deliberately absent here: its 5-tab
+       layout never renders this premium meta. */
+    salt: [
+      {
+        name: "Accent",
+        desc: "The default counter. A neutral count on the accent sentiment fill.",
+        use: "General totals with no judgement attached, like unread messages or items in a queue. Cap large values (99+) so the counter stays compact.",
+        style: "salt-accent",
+      },
+      {
+        name: "Positive",
+        desc: "A success counter. The positive sentiment fill.",
+        use: "Counting things that are going well, like passing checks or completed tasks. Keep it for genuinely good news so the green stays meaningful.",
+        style: "salt-positive",
+      },
+      {
+        name: "Caution",
+        desc: "A warning counter. The caution sentiment fill.",
+        use: "Counting things that need attention soon, like expiring entitlements or pending reviews. Pair it with a text label nearby, never color alone.",
+        style: "salt-caution",
+      },
+      {
+        name: "Negative",
+        desc: "An error counter. The negative sentiment fill.",
+        use: "Counting failures and blocking problems, like failed jobs or rejected rows. Reserve it for true errors so the signal keeps its weight.",
+        style: "salt-negative",
+      },
+      {
+        name: "Dot",
+        desc: "A small labelless dot.",
+        use: "Signal that something new or unseen exists, like activity behind a navigation icon. It marks presence, not magnitude.",
+        style: "salt-dot",
+      },
+    ],
+    /* Fluent's four appearances of the one Badge component. Same semantics,
+       descending visual volume: filled, tint, outline, ghost. */
+    fluent: [
+      {
+        name: "Filled",
+        desc: "The default appearance. A solid color fill with high contrast.",
+        use: "Most counters and status markers; the solid fill stays legible at small sizes. Reach for it unless the badge competes with nearby emphasis.",
+        style: "fluent-filled",
+      },
+      {
+        name: "Tint",
+        desc: "A subtle appearance. A soft tint fill with a matching stroke.",
+        use: "Quieter status beside filled badges, or dense surfaces where solid fills would shout. Same semantics at a lower volume.",
+        style: "fluent-tint",
+      },
+      {
+        name: "Outline",
+        desc: "A stroke-only appearance. Transparent fill with a colored border.",
+        use: "The lightest bounded treatment, like secondary metadata in tables and lists where fills would add noise.",
+        style: "fluent-outline",
+      },
+      {
+        name: "Ghost",
+        desc: "A bare appearance. Colored text with no fill or border.",
+        use: "Inline counts and labels that should read as text, like a count beside a heading. The lowest emphasis of the four.",
+        style: "fluent-ghost",
+      },
+    ],
+    /* uoaui's glass pill badges. One .a-badge base, five semantic tints. */
+    uoaui: [
+      {
+        name: "Accent",
+        desc: "The brand glass pill. An accent-tinted surface with a soft border.",
+        use: "Highlighting the active or featured item, like the current plan or a live status. One per cluster keeps the highlight meaningful.",
+        style: "glass-accent",
+      },
+      {
+        name: "Default",
+        desc: "The neutral glass pill. A plain surface tint.",
+        use: "General labels with no semantic charge, like counts and categories. The default when no status applies.",
+        style: "glass-default",
+      },
+      {
+        name: "Danger",
+        desc: "An error pill. The danger tint and border.",
+        use: "Flagging failures and destructive states, like a failed sync or an expired key.",
+        style: "glass-danger",
+      },
+      {
+        name: "Success",
+        desc: "A success pill. The success tint and border.",
+        use: "Confirming healthy state, like passing checks or an active connection.",
+        style: "glass-success",
+      },
+      {
+        name: "Warning",
+        desc: "A warning pill. The warning tint and border.",
+        use: "Calling out things that need attention soon, like approaching limits or actions awaiting the user.",
+        style: "glass-warning",
+      },
+    ],
   },
   chip: {
     /* M3's four chip types. Unlike buttons these are not an emphasis
@@ -1112,6 +1302,22 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         desc: "A suggested prompt. Plain outline, lowest emphasis.",
         use: "Offering quick follow-ups or query refinements before the user commits to one, like reply suggestions under a message.",
         style: "suggestion",
+      },
+    ],
+    /* Salt's two chip-shaped components. Not an emphasis ladder: Pill is
+       the selectable one, Tag the dismissible one, per the Salt docs. */
+    salt: [
+      {
+        name: "Pill",
+        desc: "A selectable pill. A real button on the actionable bold fill.",
+        use: "Letting users toggle a selection on and off, like filtering by category or picking skills, singly or inside a PillGroup. Reach for Tag when the item is metadata rather than a choice.",
+        style: "salt-pill",
+      },
+      {
+        name: "Tag",
+        desc: "Dismissible, removable metadata. A label drawn from the 20-step category palette, with an optional close affordance.",
+        use: "Showing metadata the user applied and can take away, like labels on a record or tokens in a filter bar. Keep one category number per meaning so related tags share a color.",
+        style: "salt-tag",
       },
     ],
   },
