@@ -49,6 +49,7 @@ export type UiKitComponentId =
   | "switch"
   | "card"
   | "badge"
+  | "chip"
   | "select"
   | "avatar";
 
@@ -171,8 +172,16 @@ export const COMPONENT_VARIANTS: Record<UiKitComponentId, ComponentVariantMatrix
     ["default", "outlined", "elevated", "interactive"],
     ["rest", "hover", "focus"],
   ),
-  // registry: SimulatedBadge / SimulatedPill / StatusPill
+  // dot/count notification overlays (Salt Badge, MUI Badge, Fluent Badge);
+  // no Simulated* block — the labelled status pills live under chip now.
   badge: matrix(
+    "Type",
+    ["dot", "count"],
+    ["default", "error"],
+    "Status",
+  ),
+  // registry: SimulatedBadge / SimulatedPill / StatusPill (labelled status chips)
+  chip: matrix(
     "Status",
     ["default", "info", "success", "warning", "error"],
     ["rest", "dismissible"],
@@ -364,7 +373,7 @@ export const DS_PROPS: Record<UiKitComponentId, DsPropsByComponent> = {
     ],
   },
 
-  /* ── Badge ────────────────────────────────────────────────────────── */
+  /* ── Badge (dot / count notification overlays) ────────────────────── */
   badge: {
     salt: [
       // Salt Badge is a count overlay; a labelled status badge maps to Pill/StatusIndicator.
@@ -373,11 +382,12 @@ export const DS_PROPS: Record<UiKitComponentId, DsPropsByComponent> = {
       { name: "status (StatusIndicator)", type: '"info" | "success" | "warning" | "error"', default: '"info"', description: "For labelled status, use StatusIndicator + Text." },
     ],
     m3: [
-      // Labelled status badge maps to MUI Chip (verified in registry).
-      { name: "label", type: "ReactNode", default: "-", description: "Chip text (status badge = Chip)." },
-      { name: "color", type: '"default" | "primary" | "info" | "success" | "warning" | "error"', default: '"default"', description: "Chip semantic color." },
-      { name: "variant", type: '"filled" | "outlined"', default: '"filled"', description: "Fill vs. bordered." },
-      { name: "size", type: '"small" | "medium"', default: '"medium"', description: "Chip size." },
+      // M3 badge = MUI Badge, a dot/count overlay anchored to a child (verified in @mui/material Badge.d.ts).
+      { name: "badgeContent", type: "ReactNode", default: "-", description: "Counter content; omit for the dot variant." },
+      { name: "variant", type: '"standard" | "dot"', default: '"standard"', description: "Counter (M3 large badge) vs. 6dp dot (M3 small badge)." },
+      { name: "color", type: '"default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"', default: '"default"', description: "Badge fill; M3 spec uses the error role." },
+      { name: "max", type: "number", default: "99", description: "Caps the displayed count (99+)." },
+      { name: "invisible", type: "boolean", default: "false", description: "Hides the badge (e.g. when the count is zero)." },
     ],
     fluent: [
       { name: "appearance", type: '"filled" | "ghost" | "outline" | "tint"', default: '"filled"', description: "Badge fill treatment." },
@@ -385,15 +395,27 @@ export const DS_PROPS: Record<UiKitComponentId, DsPropsByComponent> = {
       { name: "size", type: '"tiny" | "extra-small" | "small" | "medium" | "large" | "extra-large"', default: '"medium"', description: "Badge size." },
       { name: "shape", type: '"circular" | "rounded" | "square"', default: '"circular"', description: "Badge shape." },
     ],
+    // Carbon omitted: its Tag primitive is chip semantics (see chip); no dot/count badge ships.
+    uoaui: [
+      { name: "className", type: '"a-badge a-badge-default" | "a-badge a-badge-accent" | "a-badge a-badge-success" | "a-badge a-badge-warning" | "a-badge a-badge-danger"', default: '"a-badge a-badge-default"', description: "Class composition; no info variant (accent is closest)." },
+      { name: "children", type: "ReactNode", default: "-", description: "Badge label." },
+    ],
+  },
+
+  /* ── Chip (labelled M3 chips / Carbon tags) ───────────────────────── */
+  chip: {
+    m3: [
+      // Labelled status badge maps to MUI Chip (verified in registry).
+      { name: "label", type: "ReactNode", default: "-", description: "Chip text (status badge = Chip)." },
+      { name: "color", type: '"default" | "primary" | "info" | "success" | "warning" | "error"', default: '"default"', description: "Chip semantic color." },
+      { name: "variant", type: '"filled" | "outlined"', default: '"filled"', description: "Fill vs. bordered." },
+      { name: "size", type: '"small" | "medium"', default: '"medium"', description: "Chip size." },
+    ],
     carbon: [
       // Carbon's status badge primitive IS the Tag component (verified in registry).
       { name: "type", type: '"gray" | "blue" | "green" | "warm-gray" | "red" | "magenta" | "purple" | "cyan" | "teal"', default: '"gray"', description: "Tag color (success -> green, error -> red, info -> blue)." },
       { name: "size", type: '"sm" | "md" | "lg"', default: '"md"', description: "Tag size." },
       { name: "filter", type: "boolean", default: "false", description: "Renders a dismissible (filter) tag." },
-    ],
-    uoaui: [
-      { name: "className", type: '"a-badge a-badge-default" | "a-badge a-badge-accent" | "a-badge a-badge-success" | "a-badge a-badge-warning" | "a-badge a-badge-danger"', default: '"a-badge a-badge-default"', description: "Class composition; no info variant (accent is closest)." },
-      { name: "children", type: "ReactNode", default: "-", description: "Badge label." },
     ],
   },
 
@@ -537,16 +559,30 @@ export const COMPONENT_GUIDANCE: Record<UiKitComponentId, ComponentGuidance> = {
   },
   badge: {
     dos: [
-      "Use a badge for short, scannable status ('Active', 'Pending', '3 new').",
-      "Pick the semantic color that matches meaning (success/warning/error).",
       "Use the count-overlay flavour (Salt Badge, MUI Badge) only for numeric notifications.",
-      "Keep badge text to one or two words.",
+      "Use a dot badge for presence (something new exists) and a count badge for magnitude.",
+      "Anchor the badge to the element it annotates (icon, avatar, tab), never floating free.",
+      "Cap large counts (99+) so the badge stays compact.",
     ],
     donts: [
       "Don't use a badge as a button; it isn't an actionable control.",
-      "Don't communicate status with color alone; include the text label.",
-      "Don't put a long sentence in a badge; use an Alert/Banner instead.",
+      "Don't show a count of zero; hide the badge instead.",
+      "Don't rely on the dot alone for critical state; pair it with an accessible label.",
       "Don't expect a uoaui 'info' badge; map info to the accent variant.",
+    ],
+  },
+  chip: {
+    dos: [
+      "Use a chip for short, scannable status ('Active', 'Pending', '3 new').",
+      "Pick the semantic color that matches meaning (success/warning/error).",
+      "Keep chip text to one or two words.",
+      "Match the chip type to its job (M3: assist acts, filter toggles, input represents entries, suggestion prompts).",
+    ],
+    donts: [
+      "Don't communicate status with color alone; include the text label.",
+      "Don't put a long sentence in a chip; use an Alert/Banner instead.",
+      "Don't mix chip types within one set; each type does a different job.",
+      "Don't use a chip for the screen's primary action; that's a button's job.",
     ],
   },
   select: {
@@ -749,7 +785,7 @@ export const COMPONENT_TOKENS: Record<UiKitComponentId, DsTokensByComponent> = {
     ],
   },
 
-  /* ── Badge ────────────────────────────────────────────────────────── */
+  /* ── Badge (dot / count notification overlays) ────────────────────── */
   badge: {
     salt: [
       { token: "--salt-status-info-background", role: "Info fill (StatusIndicator)" },
@@ -758,9 +794,9 @@ export const COMPONENT_TOKENS: Record<UiKitComponentId, DsTokensByComponent> = {
       { token: "--salt-status-error-background", role: "Error fill" },
     ],
     m3: [
-      { token: "--md-sys-color-error", role: "Error chip fill" },
-      { token: "--md-sys-color-on-error", role: "Error chip text" },
-      { token: "--md-sys-color-secondary-container", role: "Default chip fill" },
+      { token: "--md-sys-color-error", role: "Badge fill (dot + count)" },
+      { token: "--md-sys-color-on-error", role: "Count label" },
+      { token: "--md-sys-shape-corner-full", role: "Rounded shape" },
     ],
     fluent: [
       { token: "--colorBrandBackground", role: "Brand fill" },
@@ -768,16 +804,26 @@ export const COMPONENT_TOKENS: Record<UiKitComponentId, DsTokensByComponent> = {
       { token: "--colorPaletteRedBackground3", role: "Danger fill" },
       { token: "--colorPaletteMarigoldBackground3", role: "Warning fill" },
     ],
+    // Carbon omitted: Tag tokens are chip semantics (see chip).
+    uoaui: [
+      { token: "--a-accent", role: "Accent badge fill" },
+      { token: "--a-surface", role: "Default badge fill" },
+      { token: "--a-radius-full", role: "Pill corner radius" },
+    ],
+  },
+
+  /* ── Chip (labelled M3 chips / Carbon tags) ───────────────────────── */
+  chip: {
+    m3: [
+      { token: "--md-sys-color-error", role: "Error chip fill" },
+      { token: "--md-sys-color-on-error", role: "Error chip text" },
+      { token: "--md-sys-color-secondary-container", role: "Default chip fill" },
+    ],
     carbon: [
       { token: "--cds-support-success", role: "Green tag" },
       { token: "--cds-support-warning", role: "Warm-gray/warning tag" },
       { token: "--cds-support-error", role: "Red tag" },
       { token: "--cds-support-info", role: "Blue tag" },
-    ],
-    uoaui: [
-      { token: "--a-accent", role: "Accent badge fill" },
-      { token: "--a-surface", role: "Default badge fill" },
-      { token: "--a-radius-full", role: "Pill corner radius" },
     ],
   },
 
@@ -888,6 +934,22 @@ export const COMPONENT_ANATOMY: Partial<
   badge: {
     m3: {
       parts: [
+        /* Off-specimen anchors: the 16dp count badge is far too small to
+           carry its callouts — badges sit above/below with leader ticks. */
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+      ],
+      measures: [
+        { label: "Height", value: "16dp" },
+        { label: "Corner", value: "8dp" },
+        { label: "Dot", value: "6dp" },
+        { label: "Padding", value: "4dp" },
+      ],
+    },
+  },
+  chip: {
+    m3: {
+      parts: [
         /* Off-specimen anchors: the 32dp chip is too small to carry its
            callouts — badges sit above/below with leader ticks instead. */
         { n: 1, label: "Container", x: 50, y: -55 },
@@ -922,10 +984,11 @@ export interface VariantNaming {
   /** Appearance of the live example rendered in the card. The set spans
    *  components: button (solid/tonal/elevated/outlined/text), card
    *  (elevated/filled/outlined), text field (filled/outlined), chip
-   *  (assist/filter/input/suggestion). */
+   *  (assist/filter/input/suggestion), badge (dot/count). */
   style:
     | "solid" | "tonal" | "elevated" | "outlined" | "text" | "filled"
-    | "assist" | "filter" | "input" | "suggestion";
+    | "assist" | "filter" | "input" | "suggestion"
+    | "dot" | "count";
 }
 export const COMPONENT_VARIANT_NAMING: Partial<
   Record<UiKitComponentId, Partial<Record<DesignSystemId, VariantNaming[]>>>
@@ -1003,6 +1066,25 @@ export const COMPONENT_VARIANT_NAMING: Partial<
     ],
   },
   badge: {
+    /* M3's two badge sizes. Badges are non-interactive notification
+       markers anchored to another component (a navigation icon, avatar,
+       or tab); the labelled chip taxonomy lives under chip below. */
+    m3: [
+      {
+        name: "Dot",
+        desc: "The M3 small badge. A 6dp dot with no label.",
+        use: "Signal that something new or unseen exists, like unread activity behind a navigation icon. It marks presence, not magnitude.",
+        style: "dot",
+      },
+      {
+        name: "Count",
+        desc: "The M3 large badge. A 16dp counter set in label-small type on an error container fill with an on-error label.",
+        use: "Show how many items await the user, like unread messages on a tab icon. Cap large values (99+) so the counter stays compact.",
+        style: "count",
+      },
+    ],
+  },
+  chip: {
     /* M3's four chip types. Unlike buttons these are not an emphasis
        ladder; each type does a different job, and each carries its own
        signature affordance (leading icon, check, trailing remove). */
