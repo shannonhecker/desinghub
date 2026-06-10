@@ -151,31 +151,55 @@ export function AnatomyDiagram({
             </div>
           )}
 
-          {/* Numbered callout badges, anchored by percent within the stage. */}
-          {parts.map((p) => (
-            <span
-              key={p.n}
-              className="dh-anatomy-callout"
-              style={{
-                position: "absolute",
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                transform: "translate(-50%,-50%)",
-                width: 22,
-                height: 22,
-                borderRadius: 999,
-                background: t.fg,
-                color: t.bg,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                font: `600 12px/1 ${t.font}`,
-                boxShadow: `0 0 0 2px ${t.bg}`,
-              }}
-            >
-              {p.n}
-            </span>
-          ))}
+          {/* Numbered callout badges, anchored by percent within the stage.
+              Anchors outside 0–100 push the badge off the specimen (small
+              schematics like the chip would otherwise be buried under their
+              own callouts) — those get a vertical leader tick connecting the
+              badge back to the specimen edge. */}
+          {parts.map((p) => {
+            const above = p.y < 0;
+            const below = p.y > 100;
+            return (
+              <Fragment key={p.n}>
+                {(above || below) && (
+                  <span
+                    aria-hidden
+                    className="dh-anatomy-tick"
+                    style={{
+                      position: "absolute",
+                      left: `${p.x}%`,
+                      top: above ? `${p.y}%` : "100%",
+                      height: above ? `${-p.y}%` : `${p.y - 100}%`,
+                      width: 0,
+                      borderLeft: `1.5px solid ${t.fg3}`,
+                      transform: "translateX(-50%)",
+                    }}
+                  />
+                )}
+                <span
+                  className="dh-anatomy-callout"
+                  style={{
+                    position: "absolute",
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    transform: "translate(-50%,-50%)",
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    background: t.fg,
+                    color: t.bg,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    font: `600 12px/1 ${t.font}`,
+                    boxShadow: `0 0 0 2px ${t.bg}`,
+                  }}
+                >
+                  {p.n}
+                </span>
+              </Fragment>
+            );
+          })}
         </div>
       </div>
 

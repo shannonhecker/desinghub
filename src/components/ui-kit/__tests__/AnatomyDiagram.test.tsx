@@ -103,6 +103,28 @@ describe("AnatomyDiagram", () => {
     expect(c.textContent).toContain("Label");
   });
 
+  it("draws a leader tick for each callout anchored outside the schematic", () => {
+    /* Chip-style data: callouts pushed off the specimen (y<0 above, y>100
+       below) so small schematics aren't buried under their own badges. */
+    const offset = {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+        { n: 3, label: "Leading icon (optional)", x: 16, y: 155 },
+        { n: 4, label: "Trailing icon (optional)", x: 84, y: 155 },
+      ],
+      measures: [],
+    };
+    const c = renderDiagramFor("badge", offset as typeof anatomy);
+    expect(c.querySelectorAll(".dh-anatomy-tick").length).toBe(4);
+    expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(4);
+  });
+
+  it("renders no leader ticks when all callouts are in-bounds (button unchanged)", () => {
+    const c = renderDiagram(anatomy);
+    expect(c.querySelectorAll(".dh-anatomy-tick").length).toBe(0);
+  });
+
   it("keeps the icon-free button schematic when componentId is absent", () => {
     const c = renderDiagram(anatomy);
     expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);

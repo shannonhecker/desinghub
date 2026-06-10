@@ -851,7 +851,10 @@ export interface AnatomyPart {
   /** Callout number, shown in both the badge and the legend. */
   n: number;
   label: string;
-  /** Badge anchor as a percent of the stage box (0–100). */
+  /** Badge anchor as a percent of the stage box. Values outside 0–100
+   *  place the callout off the specimen with a leader tick back to its
+   *  edge — used by small schematics (e.g. the 32dp chip) whose parts
+   *  would otherwise be buried under the badges. */
   x: number;
   y: number;
 }
@@ -885,10 +888,12 @@ export const COMPONENT_ANATOMY: Partial<
   badge: {
     m3: {
       parts: [
-        { n: 1, label: "Container", x: 50, y: 12 },
-        { n: 2, label: "Label text", x: 50, y: 88 },
-        { n: 3, label: "Leading icon (optional)", x: 14, y: 50 },
-        { n: 4, label: "Trailing icon (optional)", x: 86, y: 50 },
+        /* Off-specimen anchors: the 32dp chip is too small to carry its
+           callouts — badges sit above/below with leader ticks instead. */
+        { n: 1, label: "Container", x: 50, y: -55 },
+        { n: 2, label: "Label text", x: 50, y: 155 },
+        { n: 3, label: "Leading icon (optional)", x: 16, y: 155 },
+        { n: 4, label: "Trailing icon (optional)", x: 84, y: 155 },
       ],
       measures: [
         { label: "Height", value: "32dp" },
