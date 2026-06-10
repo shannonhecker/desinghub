@@ -41,6 +41,21 @@ const anatomy = {
   ],
 };
 
+/* Mirrors the real badge meta: 2 off-specimen parts + count-badge measures.
+   None of the dp values contain the digit 3, so the count label "3" can
+   only come from the schematic itself. */
+const badgeAnatomy = {
+  parts: [
+    { n: 1, label: "Container", x: 50, y: -55 },
+    { n: 2, label: "Label text", x: 50, y: 155 },
+  ],
+  measures: [
+    { label: "Height", value: "16dp" },
+    { label: "Corner", value: "8dp" },
+    { label: "Padding", value: "4dp" },
+  ],
+} as typeof anatomy;
+
 let root: Root | null = null;
 afterEach(() => {
   if (root) {
@@ -97,10 +112,16 @@ describe("AnatomyDiagram", () => {
     expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(0);
   });
 
-  it("renders a chip schematic with leading + trailing icons for badge", () => {
-    const c = renderDiagramFor("badge", anatomy);
+  it("renders a chip schematic with leading + trailing icons for chip", () => {
+    const c = renderDiagramFor("chip", anatomy);
     expect(c.querySelectorAll(".dh-anatomy-spec .material-symbols-outlined").length).toBe(2);
     expect(c.textContent).toContain("Label");
+  });
+
+  it("renders an icon-free count schematic labelled 3 for badge", () => {
+    const c = renderDiagramFor("badge", badgeAnatomy);
+    expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
+    expect(c.textContent).toContain("3");
   });
 
   it("draws a leader tick for each callout anchored outside the schematic", () => {
@@ -115,7 +136,7 @@ describe("AnatomyDiagram", () => {
       ],
       measures: [],
     };
-    const c = renderDiagramFor("badge", offset as typeof anatomy);
+    const c = renderDiagramFor("chip", offset as typeof anatomy);
     expect(c.querySelectorAll(".dh-anatomy-tick").length).toBe(4);
     expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(4);
   });
