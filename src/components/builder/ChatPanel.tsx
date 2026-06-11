@@ -1319,6 +1319,33 @@ export function ChatPanel() {
             <p className="hero-subtitle">
               Describe the app you want in your own words.
             </p>
+            {/* Starter prompts (QW6) - one tap fires a full composed build
+                through the unchanged send pipeline. Each maps to a locked
+                template pattern + a DS keyword (the fast-path applies the
+                system before the build) and bakes in an audience signal so
+                the pre-build audience gate never interrupts the click. */}
+            <div
+              className="prompt-bubbles hero-starter-chips"
+              role="group"
+              aria-label="Example prompts"
+            >
+              {[
+                "A CRM dashboard in Salt for my sales team, dark mode",
+                "A settings page in Material 3",
+                "An analytics dashboard in Fluent 2 for the ops team",
+                "A marketing landing page in uoaui",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="prompt-bubble"
+                  onClick={() => handleSend(prompt)}
+                  title="Build this with one tap"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
             <div className="hero-setup-links">
               <button type="button" className="hero-setup-link" onClick={() => setWizardStep("type")}>
                 <span className="material-symbols-outlined" aria-hidden="true">tune</span>
