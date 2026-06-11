@@ -797,6 +797,24 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
+/* ── Foundation doc pages (FoundationPage.tsx). Structure/type only —
+   colours come inline from the active DS theme, like every dh-* class.
+   Eyebrow mirrors the .dh-toc-title small-caps label ramp; the context
+   line is the quiet active-DS name closing the header block, below the
+   entry's .dh-detail-desc one-liner. ── */
+.dh-foundation-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 var(--dh-space-8, 8px);
+}
+.dh-foundation-context {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: var(--dh-space-4, 4px) 0 0;
+}
+
 /* ── Right-rail TOC. ── */
 .dh-toc {
   font-size: 13px;

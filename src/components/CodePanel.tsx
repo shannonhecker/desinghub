@@ -24,6 +24,23 @@ const codeMapLoaders: Record<string, () => Promise<CodeSnippets>> = {
 };
 const codeMapCache: Record<string, CodeSnippets> = {};
 
+/**
+ * Resolve (and cache) the active DS's code-snippet map. Shared by
+ * CodePanel below and by FoundationPage, which needs to know whether an
+ * entry HAS authored code before rendering its Code section at all —
+ * foundations without snippets must not fall back to the component
+ * skeleton.
+ */
+export async function loadCodeMap(system: string): Promise<CodeSnippets> {
+  const cached = codeMapCache[system];
+  if (cached) return cached;
+  const loader = codeMapLoaders[system];
+  if (!loader) return {};
+  const map = await loader();
+  codeMapCache[system] = map;
+  return map;
+}
+
 /* Per-DS metadata used by the fallback renderer when a registered
    component has no authored snippet yet. Keeps the Code panel useful
    even for newly-added entries instead of dead-ending at "coming soon". */
@@ -170,15 +187,9 @@ export function CodePanel({ componentId }: { componentId: string }) {
       setCodeMap(cached);
       return;
     }
-    const loader = codeMapLoaders[activeSystem];
-    if (!loader) {
-      setCodeMap({});
-      return;
-    }
     setCodeMap(null);
-    loader().then((map) => {
+    loadCodeMap(activeSystem).then((map) => {
       if (cancelledRef.current) return;
-      codeMapCache[activeSystem] = map;
       setCodeMap(map);
     });
     return () => {
