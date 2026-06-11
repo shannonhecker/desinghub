@@ -800,7 +800,8 @@ a { color: inherit; text-decoration: none; }
 /* ── Foundation doc pages (FoundationPage.tsx). Structure/type only —
    colours come inline from the active DS theme, like every dh-* class.
    Eyebrow mirrors the .dh-toc-title small-caps label ramp; the context
-   line is the quiet active-DS name under the title. ── */
+   line is the quiet active-DS name closing the header block, below the
+   entry's .dh-detail-desc one-liner. ── */
 .dh-foundation-eyebrow {
   font-size: 11px;
   font-weight: 600;
