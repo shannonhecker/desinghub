@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
-import { useChatAPI } from "@/lib/useChatAPI";
+import { useChatAPI, CHAT_ERROR_PREFIXES } from "@/lib/useChatAPI";
 import { BUILDER_TEMPLATES, getLoginDashboardBody, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
@@ -12,7 +12,7 @@ import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
-import { ToolUseCard } from "./cards/ToolUseCard";
+import { ToolUseEventCard } from "./cards/ToolUseCard";
 import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
@@ -433,7 +433,13 @@ export function ChatPanel() {
     return { friendly, detail: null as string | null };
   })();
 
-  const { sendMessage: sendToAPI, abort: abortAPI } = useChatAPI();
+  const {
+    sendMessage: sendToAPI,
+    abort: abortAPI,
+    retrySeconds,
+    failedSend,
+    retryFailedSend,
+  } = useChatAPI();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
@@ -480,8 +486,7 @@ export function ChatPanel() {
          message starts with one of these, surface as error. */
       const isError =
         typeof lastAiContent === "string" &&
-        (lastAiContent.startsWith("I'm having trouble connecting") ||
-          lastAiContent.startsWith("AI is off"));
+        CHAT_ERROR_PREFIXES.some((p) => lastAiContent.startsWith(p));
       setLifecycleState(isError ? "error" : "done");
       const t = setTimeout(() => setLifecycleState("idle"), 800);
       return () => clearTimeout(t);
@@ -533,77 +538,23 @@ export function ChatPanel() {
     return undefined;
   };
 
-  /* Map ToolUseAction → display title for the base wrapper. PR (b)
-     replaces this with per-action card components. */
-  const TOOL_USE_TITLE: Record<string, string> = {
-    addBlock: "Add block",
-    removeBlock: "Remove block",
-    moveBlock: "Move block",
-    updateBlockProps: "Update block props",
-    updateBlockLayout: "Update block layout",
-    setDesignSystem: "Switch design system",
-    setMode: "Switch mode",
-    setDensity: "Switch density",
-    setComponents: "Set components",
-    setInterfaceType: "Set interface type",
-    setThemeKey: "Switch theme",
-    setColorOverride: "Override color",
-    clearCanvas: "Clear canvas",
-    setZoneLayout: "Update zone layout",
-  };
-  const TOOL_USE_ICON: Record<string, string> = {
-    addBlock: "add_box",
-    removeBlock: "remove",
-    moveBlock: "swap_horiz",
-    updateBlockProps: "tune",
-    updateBlockLayout: "view_quilt",
-    setDesignSystem: "palette",
-    setMode: "contrast",
-    setDensity: "density_medium",
-    setComponents: "widgets",
-    setInterfaceType: "dashboard",
-    setThemeKey: "format_color_fill",
-    setColorOverride: "colorize",
-    clearCanvas: "delete_sweep",
-    setZoneLayout: "view_module",
-  };
-
+  /* PR (b): per-action display logic lives in cards/ToolUseCard.tsx
+     (ToolUseEventCard dispatches addBlock / setDesignSystem /
+     removeBlock to typed variants; other actions keep the base
+     card with raw params). */
   function renderToolUseCards(messageId: string) {
     const events = toolUseByMessage[messageId];
     if (!events || events.length === 0) return null;
     return (
       <div className="tool-use-card-stack">
-        {events.map((event, idx) => {
-          const title = TOOL_USE_TITLE[event.action] ?? event.action;
-          const icon = TOOL_USE_ICON[event.action] ?? "bolt";
-          /* Short subtitle for the head: addBlock shows type + zone;
-             other actions show a short value summary. PR (b) variants
-             render typed param rows instead. */
-          let subtitle: string | undefined;
-          if (event.action === "addBlock") {
-            const v = event.value as { type?: string } | null;
-            subtitle = v?.type ? `${v.type} → ${event.zone ?? "body"}` : undefined;
-          } else if (typeof event.value === "string") {
-            subtitle = event.value;
-          }
-          const onUndo = handleToolUseUndo(event);
-          return (
-            <ToolUseCard
-              key={`${event.action}-${event.ts}-${idx}`}
-              icon={icon}
-              title={title}
-              subtitle={subtitle}
-              staggerIndex={idx}
-              onUndo={onUndo}
-            >
-              {/* PR (a) base: collapsed params show the raw JSON. PR
-                  (b) variants slot typed param rows in here. */}
-              <pre className="tool-use-card__params-pre">
-                {JSON.stringify(event.value, null, 2)}
-              </pre>
-            </ToolUseCard>
-          );
-        })}
+        {events.map((event, idx) => (
+          <ToolUseEventCard
+            key={`${event.action}-${event.ts}-${idx}`}
+            event={event}
+            staggerIndex={idx}
+            onUndo={handleToolUseUndo(event)}
+          />
+        ))}
       </div>
     );
   }
@@ -861,7 +812,9 @@ export function ChatPanel() {
 
   const handleSend = (text?: string, opts?: { skipFirstTurn?: boolean }) => {
     const msg = (text || inputText).trim();
-    if (!msg || isGenerating) return;
+    /* retrySeconds gates send while a 429 countdown runs (QW4) -
+       useChatAPI re-enables it when the countdown hits zero. */
+    if (!msg || isGenerating || retrySeconds !== null) return;
 
     /* First freeform refinement after a wizard build: clear the flag so the
        Assumption Row resumes for AI/freeform builds. Only fires once the
@@ -1380,6 +1333,29 @@ export function ChatPanel() {
                       Cards persist for the lifetime of the panel
                       (in-memory only — refresh wipes them). */}
                   {msg.role === "ai" && renderToolUseCards(msg.id)}
+                  {/* QW4: retry affordance on the failed message -
+                      5xx / network errors keep the user's text so one
+                      click re-sends it (the error bubble is dropped
+                      from history by retryFailedSend). */}
+                  {msg.role === "ai" && failedSend?.messageId === msg.id && (
+                    <button
+                      type="button"
+                      className="chat-retry-btn"
+                      onClick={() => {
+                        void retryFailedSend();
+                      }}
+                      aria-label="Retry sending your last message"
+                    >
+                      <span
+                        className="material-symbols-outlined"
+                        aria-hidden="true"
+                        style={{ fontSize: 14 }}
+                      >
+                        refresh
+                      </span>
+                      Retry
+                    </button>
+                  )}
                   {/* Per-AI-message action row (regenerate / thumbs / copy)
                      was wired to UI only; click handlers were placeholders.
                      Hidden until properly wired (issue #73). Silent no-ops
@@ -1494,8 +1470,12 @@ export function ChatPanel() {
                   <button
                     className="send-btn"
                     onClick={() => handleSend()}
-                    disabled={!hasText}
-                    aria-label="Send"
+                    disabled={!hasText || retrySeconds !== null}
+                    aria-label={
+                      retrySeconds !== null
+                        ? `Send disabled, rate limit clears in ${retrySeconds}s`
+                        : "Send"
+                    }
                   >
                     <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                   </button>
