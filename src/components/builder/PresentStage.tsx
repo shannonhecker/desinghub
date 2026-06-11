@@ -52,6 +52,17 @@ export function PresentStage({
      StandalonePreview does. */
   const mode = useBuilder((s) => s.mode);
 
+  /* Box-model parity with the editor shell. BuilderApp sets BOTH
+     data-builder-mode AND data-canvas-spacing on .builder-shell, but
+     PresentStage REPLACES that shell (early return) — so without this
+     attribute no ancestor carries the spacing value in Present mode and
+     the [data-canvas-spacing="tight"] gate in builder.css (padding /
+     margin-bottom / border-width: 0 on .canvas-block) never applies:
+     preview blocks pick up the editor-only 12px/8px/1px box while edit
+     shows 0/0/0. Mirroring the store value keeps both modes on one box
+     model ("component locations and padding styles the same"). */
+  const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+
   const stageRef = useRef<HTMLDivElement | null>(null);
 
   /* Focus capture on enter / restore on exit. On mount we remember
@@ -81,6 +92,7 @@ export function PresentStage({
       ref={stageRef}
       className={`present-stage ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode="preview"
+      data-canvas-spacing={canvasSpacing}
       role="region"
       aria-label="Present mode preview"
       tabIndex={-1}
