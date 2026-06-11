@@ -10,7 +10,8 @@ import { AuditPanel } from "@/components/AuditPanel";
 import { useActiveTheme } from "@/components/DesignHubApp";
 import { InPageTOC } from "./InPageTOC";
 import { LandingGrid } from "./LandingGrid";
-import { COMPONENT_ROUTES } from "./uiKitGroups";
+import { FoundationPage } from "./FoundationPage";
+import { COMPONENT_ROUTES, getUiKitGroup } from "./uiKitGroups";
 
 /* Lazy-load the builder-vocabulary gallery: it pulls in the builder's
    ComponentRenderer (SimulatedUI + Highcharts), so deferring it keeps the
@@ -71,6 +72,19 @@ export function MainContent() {
   }
 
   const components = getComponents(activeSystem);
-  if (!components.find(c => c.id === selectedComponent)) return <LandingGrid />;
+  const entry = components.find(c => c.id === selectedComponent);
+  if (!entry) return <LandingGrid />;
+
+  /* Foundations (discriminated by CATEGORY via getUiKitGroup, not id —
+     Salt/Carbon/uoaui/fluent use dl-* ids, M3 uses a11y / guide-* /
+     *-tokens) are self-contained reference documents with no metaId, so
+     the component shell would only wrap them in empty Variants / Props /
+     Guidance filler. Route them to the doc-style template instead. The
+     Tools ids (tokens / audit / builder-blocks) never reach here — they
+     resolve via COMPONENT_ROUTES above. */
+  if (getUiKitGroup(entry.id, entry.cat) === "Foundations") {
+    return <FoundationPage componentId={selectedComponent} />;
+  }
+
   return <DetailLayout componentId={selectedComponent} />;
 }
