@@ -813,8 +813,10 @@ export function ChatPanel() {
   const handleSend = (text?: string, opts?: { skipFirstTurn?: boolean }) => {
     const msg = (text || inputText).trim();
     /* retrySeconds gates send while a 429 countdown runs (QW4) -
-       useChatAPI re-enables it when the countdown hits zero. */
-    if (!msg || isGenerating || retrySeconds !== null) return;
+       useChatAPI re-enables it when the countdown hits zero. Loose
+       inequality on purpose: only an ACTIVE countdown (a number) blocks;
+       null and undefined (hook variants, partial test doubles) must not. */
+    if (!msg || isGenerating || retrySeconds != null) return;
 
     /* First freeform refinement after a wizard build: clear the flag so the
        Assumption Row resumes for AI/freeform builds. Only fires once the
