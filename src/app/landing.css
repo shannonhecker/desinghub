@@ -131,6 +131,19 @@ html:has(.landing-southleft) body {
   background: transparent;
   border-bottom: 1px solid transparent;
   will-change: backdrop-filter;
+  /* One-shot entrance: slide-down + fade. 100ms delay so the hero headline
+     paints first (LCP). fill-mode backwards holds opacity 0 through the
+     delay, then the effect ends cleanly (no lingering transform on the
+     sticky context). Reduced motion swaps to an opacity-only fade. */
+  animation: lsl-nav-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) 100ms backwards;
+}
+@keyframes lsl-nav-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lsl-nav-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .landing-southleft .lsl-nav-inner {
   display: flex;
@@ -178,6 +191,24 @@ html:has(.landing-southleft) body {
   transition: color 160ms ease;
 }
 .landing-southleft .lsl-nav-link:hover { color: var(--lsl-accent); }
+/* Underline-grow: 1px pseudo-element scaleX 0 → 1, origin left, on hover
+   AND :focus-visible (keyboard parity). */
+.landing-southleft .lsl-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 160ms ease-out;
+}
+.landing-southleft .lsl-nav-link:hover::after,
+.landing-southleft .lsl-nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
 .landing-southleft .lsl-nav-link:focus-visible {
   outline: 2px solid var(--lsl-accent);
   outline-offset: 4px;
@@ -262,6 +293,45 @@ html:has(.landing-southleft) body {
   margin: 0 0 40px;
   max-width: 18ch;
   font-feature-settings: "ss01" 1;
+  /* LCP-safe entrance: the h1 paints at opacity 1 on first paint and rises
+     transform-only (transform does not affect LCP). A one-shot spotlight
+     sweep (background-clip: text, gradient through --lsl-accent) runs 300ms
+     after load, then reverts to static base styles (no `forwards`, so the
+     em accent color is untouched after the sweep). Unprefixed background-clip
+     only — lightningcss adds -webkit- per browserslist. */
+  animation:
+    lsl-headline-rise 700ms cubic-bezier(0.2, 0, 0, 1) backwards,
+    lsl-headline-sweep 900ms ease-in-out 300ms 1 backwards;
+}
+@keyframes lsl-headline-rise {
+  from { transform: translateY(14px); }
+  to   { transform: translateY(0); }
+}
+@keyframes lsl-headline-sweep {
+  from {
+    background-image: linear-gradient(
+      100deg,
+      var(--lsl-fg-strong) 38%,
+      var(--lsl-accent) 50%,
+      var(--lsl-fg-strong) 62%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    background-position: 160% 0;
+  }
+  to {
+    background-image: linear-gradient(
+      100deg,
+      var(--lsl-fg-strong) 38%,
+      var(--lsl-accent) 50%,
+      var(--lsl-fg-strong) 62%
+    );
+    background-size: 250% 100%;
+    background-clip: text;
+    color: transparent;
+    background-position: -60% 0;
+  }
 }
 .landing-southleft .lsl-hero-headline em {
   font-style: normal;
@@ -280,6 +350,11 @@ html:has(.landing-southleft) body {
   gap: 24px;
   flex-wrap: wrap;
 }
+/* Magnetic CTA wrapper (hero primary only). The motion.div carries the
+   spring transform; the pill inside keeps its house hover lift. */
+.landing-southleft .lsl-magnetic {
+  display: inline-flex;
+}
 .landing-southleft .lsl-hero-secondary {
   font-size: var(--lsl-text-body-s);
   font-weight: 500;
@@ -295,6 +370,14 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-hero-secondary:hover {
   color: var(--lsl-accent);
   border-color: var(--lsl-accent);
+}
+/* Arrow nudge on hover, 180ms. Smooth-scroll behaviour untouched. */
+.landing-southleft .lsl-hero-secondary span {
+  display: inline-block;
+  transition: transform 180ms ease;
+}
+.landing-southleft .lsl-hero-secondary:hover span {
+  transform: translateX(3px);
 }
 
 /* ── Hero aurora wash (Midnight Canvas + cyan/pale glow) ──────────────
@@ -356,6 +439,20 @@ html:has(.landing-southleft) body {
   aspect-ratio: 2056 / 1236;
   object-fit: contain;
 }
+/* Frame settle: the video scales 0.985 → 1 + fades inside its reserved
+   aspect-ratio box (zero CLS), triggered by the figure's existing
+   data-reveal IO. Expo-out feel. */
+.landing-southleft .lsl-hero-demo[data-reveal] .lsl-hero-demo-video {
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.landing-southleft .lsl-hero-demo[data-revealed="true"] .lsl-hero-demo-video {
+  opacity: 1;
+  transform: scale(1);
+}
 /* Subtle inner gradient — masks any letterboxing + ties video to bg */
 .landing-southleft .lsl-hero-demo-shield {
   position: absolute;
@@ -380,6 +477,21 @@ html:has(.landing-southleft) body {
   background: var(--lsl-rule);
   border: 0;
   margin: 0;
+}
+/* Divider draw: scaleX 0 → 1 via the existing data-reveal IO (one-shot CSS
+   transition, no new JS). Alternating transform-origin per divider as a
+   cheap rhythm device. Overrides the generic [data-reveal] opacity ramp. */
+.landing-southleft .lsl-rule[data-reveal] {
+  opacity: 1;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+.landing-southleft .lsl-rule[data-reveal]:nth-of-type(even) {
+  transform-origin: right;
+}
+.landing-southleft .lsl-rule[data-reveal][data-revealed="true"] {
+  transform: scaleX(1);
 }
 
 /* ── Section shell ────────────────────────────────────────────────────── */
@@ -469,6 +581,30 @@ html:has(.landing-southleft) body {
   box-shadow: 0 18px 60px rgba(167,139,250, 0.18),
               0 2px 8px rgba(10,14,26, 0.20);
 }
+
+/* Cursor-aware glow: a soft radial (existing --lsl-accent-soft, no new color
+   literals) follows the pointer via --glow-x/--glow-y custom props set by a
+   rAF-throttled pointermove listener (see ServiceCard in page.tsx). Paint
+   only — pointer-events: none, transform-free. Keyboard parity: the same
+   glow shows centered (custom props default to 50%) on :focus-visible. */
+.landing-southleft .lsl-service-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    var(--lsl-accent-soft) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .landing-southleft .lsl-service-card:hover::before { opacity: 1; }
+}
+.landing-southleft .lsl-service-card:focus-visible::before { opacity: 1; }
 
 .landing-southleft .lsl-card-arrow {
   position: absolute;
@@ -780,6 +916,20 @@ html:has(.landing-southleft) body {
   gap: 14px;
   text-decoration: none;
   color: inherit;
+  /* Hover/focus lift moved from the frame to the link: the frame's
+     transform is now owned by the settle-to-grid MotionValue (inline
+     style), so a CSS hover transform there would be overridden. */
+  transition: transform 180ms ease-out;
+}
+.landing-southleft .lsl-syscard:hover,
+.landing-southleft .lsl-syscard:focus-visible {
+  transform: translateY(-2px);
+}
+/* 1px ring in each system's own brand color (spec.brand via inline custom
+   prop, no new literals). Shows on hover and keyboard focus alike. */
+.landing-southleft .lsl-syscard:hover .lsl-syscard-frame,
+.landing-southleft .lsl-syscard:focus-visible .lsl-syscard-frame {
+  box-shadow: 0 0 0 1px var(--syscard-brand, var(--lsl-accent));
 }
 .landing-southleft .lsl-syscard-frame {
   aspect-ratio: 11 / 8;
@@ -793,10 +943,6 @@ html:has(.landing-southleft) body {
   background: transparent;
   border: 0;
   border-radius: 0;
-  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
-}
-.landing-southleft .lsl-syscard:hover .lsl-syscard-frame {
-  transform: translateY(-3px);
 }
 .landing-southleft .lsl-syscard-svg {
   width: 100%;
@@ -866,7 +1012,53 @@ html:has(.landing-southleft) body {
   display: flex;
   align-items: center;
   gap: 14px;
+  /* Hover wash: existing elevated tone, 120ms — signals future
+     clickability without promising it. Negative margin keeps layout. */
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 6px;
+  transition: background-color 120ms ease;
 }
+.landing-southleft .lsl-token-row:hover {
+  background-color: var(--lsl-bg-elevated);
+}
+
+/* ── Tokens entrances (pure CSS children of the existing data-reveal IO,
+   zero new JS). Bars animate scaleX over the inline width (never width
+   itself); swatches pop scale + opacity. Staggered via transition-delay. */
+.landing-southleft .lsl-tokens[data-reveal] .lsl-token-bar {
+  transform: scaleX(0.35);
+  transform-origin: left;
+  transition: transform 500ms cubic-bezier(0.2, 0, 0, 1);
+}
+.landing-southleft .lsl-tokens[data-revealed="true"] .lsl-token-bar {
+  transform: scaleX(1);
+}
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(1) .lsl-token-bar { transition-delay: 0ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(2) .lsl-token-bar { transition-delay: 40ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(3) .lsl-token-bar { transition-delay: 80ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(4) .lsl-token-bar { transition-delay: 120ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(5) .lsl-token-bar { transition-delay: 160ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(6) .lsl-token-bar { transition-delay: 200ms; }
+.landing-southleft .lsl-tokens-list-space .lsl-token-row:nth-child(7) .lsl-token-bar { transition-delay: 240ms; }
+
+.landing-southleft .lsl-tokens[data-reveal] .lsl-token-swatch {
+  transform: scale(0.85);
+  opacity: 0;
+  transition:
+    transform 400ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 400ms cubic-bezier(0.2, 0, 0, 1);
+}
+.landing-southleft .lsl-tokens[data-revealed="true"] .lsl-token-swatch {
+  transform: scale(1);
+  opacity: 1;
+}
+.landing-southleft .lsl-token-row:nth-child(1) .lsl-token-swatch { transition-delay: 0ms; }
+.landing-southleft .lsl-token-row:nth-child(2) .lsl-token-swatch { transition-delay: 50ms; }
+.landing-southleft .lsl-token-row:nth-child(3) .lsl-token-swatch { transition-delay: 100ms; }
+.landing-southleft .lsl-token-row:nth-child(4) .lsl-token-swatch { transition-delay: 150ms; }
+.landing-southleft .lsl-token-row:nth-child(5) .lsl-token-swatch { transition-delay: 200ms; }
+.landing-southleft .lsl-token-row:nth-child(6) .lsl-token-swatch { transition-delay: 250ms; }
 
 /* Colour swatch */
 .landing-southleft .lsl-token-swatch {
@@ -950,6 +1142,91 @@ html:has(.landing-southleft) body {
   margin-left: auto;
 }
 
+/* ── Closing CTA band ─────────────────────────────────────────────────── */
+.landing-southleft .lsl-cta-band {
+  position: relative;
+  overflow: hidden;
+}
+/* The page's only second aurora moment — same recipe family as
+   .lsl-hero-aurora (existing aurora tokens + byte-identical tinted-zero
+   end-stops), glow on a background layer only, never on content surfaces.
+   Animated via transform (scale + drift) from the section's scroll
+   progress; the gradient itself never repaints. */
+.landing-southleft .lsl-cta-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 65% at 50% 85% in oklab, var(--lsl-aurora-cyan) 0%, rgba(130, 224, 255, 0) 70%),
+    radial-gradient(40% 50% at 22% 30% in oklab, rgba(167, 139, 250, 0.07) 0%, rgba(167, 139, 250, 0) 70%),
+    radial-gradient(45% 55% at 80% 60% in oklab, var(--lsl-aurora-pale) 0%, rgba(175, 240, 255, 0) 75%);
+  will-change: transform;
+}
+.landing-southleft .lsl-cta-band > .lsl-container {
+  position: relative;
+  z-index: 1;
+}
+.landing-southleft .lsl-cta-band .lsl-section-lede {
+  margin-bottom: 48px;
+}
+.landing-southleft .lsl-cta-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+/* Band primary: white fill per house convention (no accent fill). Keeps
+   the pill lift; focus ring goes teal at 2px / offset 3px. */
+.landing-southleft .lsl-cta-band .lsl-cta {
+  background: var(--lsl-fg-strong);
+  border-color: var(--lsl-fg-strong);
+  color: var(--lsl-bg);
+}
+.landing-southleft .lsl-cta-band .lsl-cta:hover {
+  background: var(--lsl-fg-strong);
+  border-color: var(--lsl-fg-strong);
+  transform: translateY(-1px);
+}
+.landing-southleft .lsl-cta-band .lsl-cta:focus-visible {
+  outline: 2px solid var(--lsl-teal);
+  outline-offset: 3px;
+}
+/* Secondary: underline-grow text link (same device as the nav links). */
+.landing-southleft .lsl-cta-textlink {
+  position: relative;
+  font-size: var(--lsl-text-body-s);
+  font-weight: 500;
+  color: var(--lsl-fg-strong);
+  text-decoration: none;
+  padding: 8px 4px;
+  transition: color 160ms ease;
+}
+.landing-southleft .lsl-cta-textlink::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 160ms ease-out;
+}
+.landing-southleft .lsl-cta-textlink:hover {
+  color: var(--lsl-accent);
+}
+.landing-southleft .lsl-cta-textlink:hover::after,
+.landing-southleft .lsl-cta-textlink:focus-visible::after {
+  transform: scaleX(1);
+}
+.landing-southleft .lsl-cta-textlink:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-footer {
   background: var(--lsl-bg);
@@ -972,6 +1249,17 @@ html:has(.landing-southleft) body {
   height: 38px;
   width: auto;
   display: block;
+}
+/* Macron accent draws in (scaleX, fill-box) when the footer brand block
+   reveals. One-shot, 600ms, restraint-grade. */
+.landing-southleft .lsl-footer-brand[data-reveal] .lsl-mark-macron {
+  transform: scaleX(0);
+  transform-origin: left;
+  transform-box: fill-box;
+  transition: transform 600ms cubic-bezier(0.2, 0, 0, 1) 200ms;
+}
+.landing-southleft .lsl-footer-brand[data-revealed="true"] .lsl-mark-macron {
+  transform: scaleX(1);
 }
 .landing-southleft .lsl-footer-brand-mark {
   font-family: var(--lsl-font-display);
@@ -1038,24 +1326,99 @@ html:has(.landing-southleft) body {
 }
 /* Section-scoped stagger: children reveal in cascade once any sibling
    triggers, telegraphing the rhythm of each section. */
+/* h1 (child 2) is no longer data-reveal (LCP fix) — eyebrow / sub / actions /
+   demo keep the 0/100/200/300ms stagger on their new child indices. */
 .landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
-.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 100ms; }
-.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 200ms; }
-.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 300ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 100ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 200ms; }
+.landing-southleft .lsl-hero > .lsl-container > [data-reveal]:nth-child(5) { transition-delay: 300ms; }
 
 .landing-southleft .lsl-services > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
 .landing-southleft .lsl-services > [data-reveal]:nth-child(2) { transition-delay: 90ms; }
 .landing-southleft .lsl-services > [data-reveal]:nth-child(3) { transition-delay: 180ms; }
 .landing-southleft .lsl-services > [data-reveal]:nth-child(4) { transition-delay: 270ms; }
 
-.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
-.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 80ms; }
-.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 160ms; }
-.landing-southleft #projects > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 240ms; }
+.landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 80ms; }
+.landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 160ms; }
+.landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 240ms; }
+
+.landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 90ms; }
+.landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 180ms; }
+.landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 270ms; }
 @media (prefers-reduced-motion: reduce) {
   .landing-southleft [data-reveal],
   .landing-southleft [data-reveal][data-revealed="true"] {
     opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── Reduced-motion guards for the 2026-06 motion pass ──────────────────
+   Every new animation/transition above has an explicit fallback here.
+   MotionValue-driven effects (parallax, settle-to-grid, magnetic CTA,
+   CTA-band aurora) are separately collapsed in page.tsx via
+   useReducedMotion() ranges of [0,0]. */
+@media (prefers-reduced-motion: reduce) {
+  /* Nav entrance: opacity-only fade. */
+  .landing-southleft .lsl-nav {
+    animation-name: lsl-nav-fade;
+  }
+  /* Underline-grow appears instantly. */
+  .landing-southleft .lsl-nav-link::after,
+  .landing-southleft .lsl-cta-textlink::after {
+    transition: none;
+  }
+  /* Headline rise + spotlight sweep killed; paints static. */
+  .landing-southleft .lsl-hero-headline {
+    animation: none;
+  }
+  /* Demo frame settle killed; video renders at final state. */
+  .landing-southleft .lsl-hero-demo[data-reveal] .lsl-hero-demo-video {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  /* Arrow nudge instant. */
+  .landing-southleft .lsl-hero-secondary span {
+    transition: none;
+  }
+  /* Divider draw killed; rules render at full width. */
+  .landing-southleft .lsl-rule[data-reveal] {
+    transform: none;
+    transition: none;
+  }
+  /* Card glow fades instantly (position-driven, not time-driven; the
+     pointermove listener is also disabled in JS under reduce). */
+  .landing-southleft .lsl-service-card::before {
+    transition: none;
+  }
+  /* Syscard lift becomes instant ring-only. */
+  .landing-southleft .lsl-syscard {
+    transition: none;
+  }
+  .landing-southleft .lsl-syscard:hover,
+  .landing-southleft .lsl-syscard:focus-visible {
+    transform: none;
+  }
+  /* Token bars and swatches render at final state. */
+  .landing-southleft .lsl-tokens[data-reveal] .lsl-token-bar {
+    transform: none;
+    transition: none;
+  }
+  .landing-southleft .lsl-tokens[data-reveal] .lsl-token-swatch {
+    transform: none;
+    opacity: 1;
+    transition: none;
+  }
+  /* Token-row hover wash applies instantly. */
+  .landing-southleft .lsl-token-row {
+    transition: none;
+  }
+  /* Footer macron rendered complete. */
+  .landing-southleft .lsl-footer-brand[data-reveal] .lsl-mark-macron {
     transform: none;
     transition: none;
   }
