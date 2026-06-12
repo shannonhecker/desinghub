@@ -150,9 +150,19 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
         for (const zone of VALID_ZONES) {
           const key = zone === "body" ? "blocks" : `${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks";
           const arr = zone === "body" ? st.blocks : st[key];
-          if (arr.some((b) => b.id === blockId)) {
+          const target = arr.find((b) => b.id === blockId);
+          if (target) {
             store.removeBlockFromZone(zone, blockId);
-            emitToolUse({ messageId, action: "removeBlock", value: { blockId }, blockId, zone });
+            /* Phase 3a PR (b): carry the removed block's type so the
+               RemoveBlockCard can label it - the block is gone from
+               the store by the time the card renders. */
+            emitToolUse({
+              messageId,
+              action: "removeBlock",
+              value: { blockId, type: target.type },
+              blockId,
+              zone,
+            });
             break;
           }
         }

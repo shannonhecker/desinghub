@@ -1,6 +1,11 @@
 "use client";
 
 import React, { useId, useState } from "react";
+import { MiniPreview } from "../MiniPreview";
+import { DS_LABELS } from "@/lib/assumptionDims";
+import type { ToolUseEvent } from "@/lib/toolUseEvents";
+import type { DesignSystem, ZoneId } from "@/store/useBuilder";
+import "./chat-feedback.css";
 
 /* ── Phase 3a (N4 Tool-Use Cards): base wrapper ──
  *
@@ -44,8 +49,15 @@ export interface ToolUseCardProps {
      parent assistant turn. Drives `animation-delay` via CSS var so
      multi-action turns reveal in sequence without JS timing. */
   staggerIndex?: number;
+  /* PR (b): always-visible typed summary row rendered below the head
+     (thumbnail + labels). Replaces the expandable JSON dump for the
+     typed variants — when a card supplies `summary` and no `children`,
+     the expand affordance is dropped entirely. */
+  summary?: React.ReactNode;
   /* Optional expanded-state body. PR (a) base passes a generic
-     param dump; PR (b) variants render typed param rows. */
+     param dump; PR (b) variants render typed summary rows instead and
+     omit this. When absent the head renders as a static row (no
+     chevron, no aria-expanded button). */
   children?: React.ReactNode;
   /* When supplied, the card surfaces an "Undo this action" button.
      Variants are responsible for the actual reversal (e.g. removeBlock
@@ -60,6 +72,7 @@ export function ToolUseCard({
   title,
   subtitle,
   staggerIndex = 0,
+  summary,
   children,
   onUndo,
   defaultExpanded = false,
@@ -75,45 +88,66 @@ export function ToolUseCard({
     setUndone(true);
   };
 
+  /* Typed variants pass `summary` with no `children`: the card has
+     nothing to expand, so the head drops the button semantics + the
+     chevron rather than offering an affordance that opens nothing. */
+  const expandable = children !== undefined && children !== null;
+
+  const headContent = (
+    <>
+      <span
+        className="material-symbols-outlined tool-use-card__icon"
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      <span className="tool-use-card__title">{title}</span>
+      {subtitle && (
+        <span className="tool-use-card__subtitle">{subtitle}</span>
+      )}
+    </>
+  );
+
   return (
     <div
       className={`tool-use-card${undone ? " tool-use-card--undone" : ""}`}
       style={{ ["--tu-stagger-index" as string]: staggerIndex }}
       data-action={title}
     >
-      <button
-        type="button"
-        className="tool-use-card__head"
-        aria-expanded={expanded}
-        aria-controls={paramsId}
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <span
-          className="material-symbols-outlined tool-use-card__icon"
-          aria-hidden="true"
+      {expandable ? (
+        <button
+          type="button"
+          className="tool-use-card__head"
+          aria-expanded={expanded}
+          aria-controls={paramsId}
+          onClick={() => setExpanded((v) => !v)}
         >
-          {icon}
-        </span>
-        <span className="tool-use-card__title">{title}</span>
-        {subtitle && (
-          <span className="tool-use-card__subtitle">{subtitle}</span>
-        )}
-        <span
-          className="material-symbols-outlined tool-use-card__chevron"
-          aria-hidden="true"
-          data-open={expanded}
-        >
-          expand_more
-        </span>
-      </button>
+          {headContent}
+          <span
+            className="material-symbols-outlined tool-use-card__chevron"
+            aria-hidden="true"
+            data-open={expanded}
+          >
+            expand_more
+          </span>
+        </button>
+      ) : (
+        <div className="tool-use-card__head tool-use-card__head--static">
+          {headContent}
+        </div>
+      )}
 
-      <div
-        id={paramsId}
-        className="tool-use-card__params"
-        hidden={!expanded}
-      >
-        {children}
-      </div>
+      {summary && <div className="tool-use-card__summary">{summary}</div>}
+
+      {expandable && (
+        <div
+          id={paramsId}
+          className="tool-use-card__params"
+          hidden={!expanded}
+        >
+          {children}
+        </div>
+      )}
 
       {onUndo && (
         <div className="tool-use-card__footer">
@@ -137,4 +171,180 @@ export function ToolUseCard({
       )}
     </div>
   );
+}
+
+/* ════════════════════════════════════════════════════════════
+   Phase 3a PR (b): typed per-action card variants.
+   ────────────────────────────────────────────────────────────
+   Each variant slots a typed, always-visible summary into the base
+   shell instead of the PR (a) JSON dump. Actions without a typed
+   variant fall back to the base card (raw params behind the
+   expand affordance) via ToolUseEventCard below.
+   ════════════════════════════════════════════════════════════ */
+
+/* "SimulatedStatCard" → "Stat Card". Mirrors the scope-chip labeller
+   in ChatPanel so AI cards and the composer speak the same names. */
+function friendlyBlockType(type: string): string {
+  return type
+    .replace(/^Simulated/, "")
+    .replace(/([A-Z])/g, " $1")
+    .trim();
+}
+
+const ZONE_LABEL: Record<ZoneId, string> = {
+  header: "Header",
+  sidebar: "Sidebar",
+  body: "Body",
+  footer: "Footer",
+};
+
+interface VariantProps {
+  event: ToolUseEvent;
+  staggerIndex?: number;
+  onUndo?: () => void;
+}
+
+/* MiniPreview SVG thumbnail of the block type + zone label. Reuses
+   the library panel's silhouette renderer so the card thumbnail and
+   the palette tile read as the same object. */
+export function AddBlockCard({ event, staggerIndex, onUndo }: VariantProps) {
+  const v = (event.value ?? {}) as { type?: string };
+  const type = typeof v.type === "string" ? v.type : "Block";
+  const zone: ZoneId = event.zone ?? "body";
+  return (
+    <ToolUseCard
+      icon="add_box"
+      title="Add block"
+      staggerIndex={staggerIndex}
+      onUndo={onUndo}
+      summary={
+        <>
+          <span className="tool-use-card__thumb">
+            <MiniPreview type={type} />
+          </span>
+          <span className="tool-use-card__summary-label">
+            {friendlyBlockType(type)}
+          </span>
+          <span className="tool-use-card__summary-zone">
+            {ZONE_LABEL[zone]}
+          </span>
+        </>
+      }
+    />
+  );
+}
+
+/* DS display name + icon dot pair. The dot reuses the data-ds
+   convention from the DS reply chips (.prompt-bubble-ds-dot). */
+export function ChangeDSCard({ event, staggerIndex }: VariantProps) {
+  const ds =
+    typeof event.value === "string" && event.value in DS_LABELS
+      ? (event.value as DesignSystem)
+      : null;
+  const label = ds ? DS_LABELS[ds] : String(event.value ?? "");
+  return (
+    <ToolUseCard
+      icon="palette"
+      title="Switch design system"
+      staggerIndex={staggerIndex}
+      summary={
+        <>
+          <span
+            className="tool-use-card__ds-dot"
+            data-ds={ds ?? undefined}
+            aria-hidden="true"
+          />
+          <span className="tool-use-card__summary-label">{label}</span>
+        </>
+      }
+    />
+  );
+}
+
+/* Removed block's label. applyAIActions enriches the event value with
+   the block's `type` at emit time (the block is gone from the store
+   by render time); the id is the fallback for older emitters. */
+export function RemoveBlockCard({ event, staggerIndex }: VariantProps) {
+  const v = (event.value ?? {}) as { blockId?: string; type?: string };
+  const label =
+    typeof v.type === "string" && v.type
+      ? friendlyBlockType(v.type)
+      : (v.blockId ?? "Block");
+  return (
+    <ToolUseCard
+      icon="remove"
+      title="Remove block"
+      staggerIndex={staggerIndex}
+      summary={<span className="tool-use-card__summary-label">{label}</span>}
+    />
+  );
+}
+
+/* Display maps for actions without a typed variant yet. Moved here
+   from ChatPanel so card concerns live in the cards layer. */
+const TOOL_USE_TITLE: Record<string, string> = {
+  addBlock: "Add block",
+  removeBlock: "Remove block",
+  moveBlock: "Move block",
+  updateBlockProps: "Update block props",
+  updateBlockLayout: "Update block layout",
+  setDesignSystem: "Switch design system",
+  setMode: "Switch mode",
+  setDensity: "Switch density",
+  setComponents: "Set components",
+  setInterfaceType: "Set interface type",
+  setThemeKey: "Switch theme",
+  setColorOverride: "Override color",
+  clearCanvas: "Clear canvas",
+  setZoneLayout: "Update zone layout",
+};
+const TOOL_USE_ICON: Record<string, string> = {
+  addBlock: "add_box",
+  removeBlock: "remove",
+  moveBlock: "swap_horiz",
+  updateBlockProps: "tune",
+  updateBlockLayout: "view_quilt",
+  setDesignSystem: "palette",
+  setMode: "contrast",
+  setDensity: "density_medium",
+  setComponents: "widgets",
+  setInterfaceType: "dashboard",
+  setThemeKey: "format_color_fill",
+  setColorOverride: "colorize",
+  clearCanvas: "delete_sweep",
+  setZoneLayout: "view_module",
+};
+
+/* Single entry point ChatPanel renders per event: dispatches to the
+   typed variant for the action, or the base card with raw params. */
+export function ToolUseEventCard({ event, staggerIndex = 0, onUndo }: VariantProps) {
+  switch (event.action) {
+    case "addBlock":
+      return (
+        <AddBlockCard event={event} staggerIndex={staggerIndex} onUndo={onUndo} />
+      );
+    case "setDesignSystem":
+      return <ChangeDSCard event={event} staggerIndex={staggerIndex} />;
+    case "removeBlock":
+      return <RemoveBlockCard event={event} staggerIndex={staggerIndex} />;
+    default: {
+      const title = TOOL_USE_TITLE[event.action] ?? event.action;
+      const icon = TOOL_USE_ICON[event.action] ?? "bolt";
+      const subtitle =
+        typeof event.value === "string" ? event.value : undefined;
+      return (
+        <ToolUseCard
+          icon={icon}
+          title={title}
+          subtitle={subtitle}
+          staggerIndex={staggerIndex}
+          onUndo={onUndo}
+        >
+          <pre className="tool-use-card__params-pre">
+            {JSON.stringify(event.value, null, 2)}
+          </pre>
+        </ToolUseCard>
+      );
+    }
+  }
 }

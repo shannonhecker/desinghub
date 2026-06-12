@@ -185,6 +185,25 @@ describe("applyAIActions", () => {
     expect(TOOL_USE_EVENT_NAME).toBe("builder:tool-use");
   });
 
+  it("Phase 3a PR(b): removeBlock event carries the removed block's type for the card label", () => {
+    applyAIActions([{ action: "addBlock", value: { type: "SimulatedDataTable", zone: "body" } }]);
+    const blockId = useBuilder.getState().blocks[0].id;
+    const events: ToolUseEvent[] = [];
+    const unsubscribe = subscribeToolUse((e) => events.push(e));
+    try {
+      applyAIActions([{ action: "removeBlock", value: { blockId } }], "msg-rm");
+    } finally {
+      unsubscribe();
+    }
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      action: "removeBlock",
+      messageId: "msg-rm",
+      zone: "body",
+      value: { blockId, type: "SimulatedDataTable" },
+    });
+  });
+
   it("Phase 3a: events fire even without a messageId (callers without context)", () => {
     const events: ToolUseEvent[] = [];
     const unsubscribe = subscribeToolUse((e) => events.push(e));

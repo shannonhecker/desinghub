@@ -1,0 +1,101 @@
+/* ════════════════════════════════════════════════════════════
+   Chat feedback layer — typed tool-use card variants (Phase 3a
+   PR (b)) + differentiated chat error affordances (QW4).
+   ────────────────────────────────────────────────────────────
+   Lives in the cards layer (imported by ToolUseCard.tsx), NOT in
+   builder.css (one-PR-at-a-time file). Base .tool-use-card styles
+   remain in builder.css from PR (a); this file only adds the new
+   variant + retry classes. All values resolve through --bc-*
+   chrome tokens (chrome-tokens.css). Zero raw hex.
+   ════════════════════════════════════════════════════════════ */
+
+/* Typed cards have nothing to expand: the head renders as a static
+   row, so drop the button cursor from the PR (a) base rule. */
+.tool-use-card__head--static {
+  cursor: default;
+}
+
+/* ── Always-visible typed summary row ── */
+.tool-use-card__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-sm);
+  margin-top: var(--bc-gap-xs);
+  min-width: 0;
+}
+
+/* MiniPreview thumbnail frame — 80×50 viewBox scaled down, skinned
+   via currentColor so the silhouette inherits muted chrome ink. */
+.tool-use-card__thumb {
+  flex: 0 0 auto;
+  display: block;
+  width: 48px;
+  height: 30px;
+  padding: var(--bc-gap-xxs);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-xs);
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg-muted);
+  overflow: hidden;
+}
+
+.tool-use-card__summary-label {
+  font: var(--bc-type-value);
+  color: var(--bc-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Zone pill pushed to the trailing edge (Header / Sidebar / Body /
+   Footer) so placement reads at a glance. */
+.tool-use-card__summary-zone {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: var(--bc-gap-xxs) var(--bc-gap-sm);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-pill);
+  font: var(--bc-type-label);
+  color: var(--bc-fg-muted);
+}
+
+/* DS icon dot — same data-ds convention as .prompt-bubble-ds-dot.
+   Falls back to chrome accent outside builder-theme scope. */
+.tool-use-card__ds-dot {
+  flex: 0 0 auto;
+  width: var(--bc-gap-sm);
+  height: var(--bc-gap-sm);
+  border-radius: var(--bc-radius-pill);
+  background: var(--b-accent, var(--bc-accent));
+}
+
+/* ── Retry affordance on failed chat messages (QW4) ──
+   Mirrors .tool-use-card__undo so recovery actions share one
+   visual voice in the thread. */
+.chat-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  margin-top: var(--bc-gap-sm);
+  padding: var(--bc-gap-xs) var(--bc-gap-sm);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-xs);
+  background: transparent;
+  color: var(--bc-fg-muted);
+  font: var(--bc-type-label);
+  cursor: pointer;
+  transition:
+    background var(--bc-duration-fast) var(--bc-ease),
+    color var(--bc-duration-fast) var(--bc-ease),
+    border-color var(--bc-duration-fast) var(--bc-ease);
+}
+.chat-retry-btn:hover {
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+  border-color: var(--bc-border-strong);
+}
+.chat-retry-btn:focus-visible {
+  outline: 2px solid var(--bc-accent-ring);
+  outline-offset: 2px;
+}
