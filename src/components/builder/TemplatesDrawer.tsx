@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
+import type { DesignSystem } from "@/store/useBuilder";
 import {
   BUILDER_TEMPLATES,
   TEMPLATE_ORDER,
@@ -9,6 +10,9 @@ import {
   type TemplateId,
 } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
+import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { DS_LABELS } from "@/lib/assumptionDims";
+import { titleFromTemplate } from "@/lib/sessionTitle";
 
 /* ══════════════════════════════════════════════════════════
    TemplatesDrawer - full visual gallery with SVG wireframes.
@@ -16,10 +20,14 @@ import { TemplatePreview } from "./TemplatePreviews";
    so the compact empty state stays clean while preserving the
    rich previews we shipped in Phase C.
 
-   Clicking a template from the drawer follows the same
-   conversational flow as clicking a compact card: it stages
-   the template as pending and asks the user to pick a DS as
-   the next chat turn. The drawer closes on selection.
+   Clicking a template applies it IMMEDIATELY in the store's
+   current design system (the first decisive action yields a
+   canvas, not a question - QW5). The DS question becomes a
+   non-blocking follow-up turn: the template stays staged as
+   pending, so the existing DS reply chips render under the AI
+   offer and tapping one re-applies the same template in the
+   chosen DS. The swap is lossless via the templates-as-DS-
+   framework registry. The drawer closes on selection.
    ══════════════════════════════════════════════════════════ */
 export function TemplatesDrawer() {
   const {
@@ -29,6 +37,10 @@ export function TemplatesDrawer() {
     setPendingFirstMessage,
     addMessage,
     isGenerating,
+    designSystem,
+    previewOpen,
+    setPreviewOpen,
+    ensureSessionStarted,
   } = useBuilder();
 
   /* Esc to dismiss - standard drawer UX */
@@ -60,14 +72,28 @@ export function TemplatesDrawer() {
 
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
-    // Mirror handlePatternSelect in ChatPanel - stage and ask DS next.
     const article = /^[aeiouAEIOU]/.test(tpl.label) ? "an" : "a";
+
+    /* Apply NOW in the current DS - canvas first, question never blocks. */
+    ensureSessionStarted(titleFromTemplate(tpl.label));
+    applyTemplateToCanvas(tpl, designSystem);
+    if (!previewOpen) setPreviewOpen(true);
+
+    /* Keep the template staged so the existing DS reply chips render
+       under the follow-up turn; tapping one re-applies this template in
+       the chosen DS (applyPendingIntentWithDs case 1) - lossless swap. */
     setPendingTemplateId(tpl.id);
     setPendingFirstMessage(null);
+
+    const others = (Object.keys(DS_LABELS) as DesignSystem[])
+      .filter((ds) => ds !== designSystem)
+      .map((ds) => DS_LABELS[ds]);
+    const offer = `${others.slice(0, -1).join(", ")}, or ${others[others.length - 1]}`;
+
     addMessage("user", `Build me ${article} ${tpl.label}`);
     addMessage(
       "ai",
-      `Great choice - ${article} ${tpl.label} with ${tpl.desc.toLowerCase()}. Which design system should I use?`
+      `Built in ${DS_LABELS[designSystem]}. Want it in ${offer}? Tap a chip to swap. The layout carries over.`
     );
     setTemplatesDrawerOpen(false);
   };
