@@ -54,6 +54,7 @@ import { ComponentLibrary } from "./ComponentLibrary";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
+import { defaultLayoutForType } from "@/lib/blockLayoutDefaults";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
@@ -1500,7 +1501,8 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         const groupId = resolveGroupId(over.id, overData);
         if (groupId && type !== "LayoutGroup") {
           const newId = makeBlockId();
-          const newBlock: Block = { id: newId, type, props: { ...defaults } };
+          const groupLayout = defaultLayoutForType(type);
+          const newBlock: Block = { id: newId, type, props: { ...defaults }, ...(groupLayout ? { layout: groupLayout } : {}) };
           /* If the hover target is a sortable child, insert just
              before it; otherwise append at end. */
           const state = useBuilder.getState();
@@ -1521,7 +1523,8 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         /* 1b. Drop onto a top-level zone. */
         const targetZone = resolveZone(over.id, overData) || "body";
         const newId = makeBlockId();
-        const newBlock: Block = { id: newId, type, props: { ...defaults } };
+        const zoneLayout = defaultLayoutForType(type);
+        const newBlock: Block = { id: newId, type, props: { ...defaults }, ...(zoneLayout ? { layout: zoneLayout } : {}) };
 
         const targetArr = getZoneArr(targetZone);
         const overIndex = targetArr.findIndex((b) => b.id === String(over.id));

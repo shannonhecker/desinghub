@@ -198,6 +198,13 @@ export function computeItemStyle(
          template sets width:"fill" in a grid body, or when an unsized
          block lands on the now-default 12-col grid. */
       style.gridColumn = "1 / -1";
+    } else if (w === "auto") {
+      /* Hug: pin to the track start so the box shrinks to its content
+         instead of stretching to fill the track (grid's justify-items
+         default is stretch). Without this, Hug was a no-op in grid
+         zones — e.g. a checkbox stamped with the content-hug default
+         still rendered as a full-track bar. */
+      style.justifySelf = "start";
     } else if (widthCss) {
       /* A fixed-px block is narrower than its auto-placed 1fr track, so pin it
          to the start of the track instead of letting it float centered — the

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { defaultLayoutForType } from '@/lib/blockLayoutDefaults';
 
 export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
@@ -1032,7 +1033,14 @@ export const useBuilder = create<BuilderState>((set) => ({
     /* Phase 3a: stamp provenance. Default `palette` since drag-from-
        library is the original call site; chatComponentDelta overrides
        to `chat`. */
-    const newBlock: Block = { id, type, props: { ...defaults }, source: source ?? 'palette' };
+    const defaultLayout = defaultLayoutForType(type);
+    const newBlock: Block = {
+      id,
+      type,
+      props: { ...defaults },
+      ...(defaultLayout ? { layout: defaultLayout } : {}),
+      source: source ?? 'palette',
+    };
     const existing = state[key] as Block[];
     /* When an explicit index is supplied (e.g. from an InsertionSlot +
        button), splice the new block at that position. Otherwise fall
