@@ -134,6 +134,25 @@ describe("S4, collapse button uses chrome tokens", () => {
   });
 });
 
+describe("QW1, Present-entry animation replay suppression", () => {
+  /* Quick win 1 (2026-06-11 builder UX analysis): PresentStage mounts a
+     fresh BuilderCanvas, so the canvas-block-in entrance animation
+     (260ms scale pop, fill-mode backwards) replayed on EVERY block each
+     time Present mode opened. The E1 preview chrome gate now also kills
+     the animation; this pins the rule so a future builder.css refactor
+     cannot silently drop it. */
+  it("the preview-gated .canvas-block rule contains animation: none", () => {
+    const match = builderCss.match(
+      /\[data-builder-mode="preview"\] \.canvas-block\s*\{([\s\S]*?)\n\}/,
+    );
+    expect(
+      match,
+      'E1 gate must contain a plain [data-builder-mode="preview"] .canvas-block rule',
+    ).not.toBeNull();
+    expect(match![1]).toMatch(/animation:\s*none/);
+  });
+});
+
 describe("S5, resizer idle affordance + reduce-motion", () => {
   it(".bp-sidebar-resize-handle has BOTH ::before and ::after idle dots", () => {
     expect(builderCss).toMatch(

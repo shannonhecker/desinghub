@@ -1239,11 +1239,18 @@
    the plain `.canvas-block` selector here (rather than the more
    specific `.canvas-block.is-selected`) keeps the structural
    regex in chromeLeakageFixes.test.ts pointing at the canonical
-   rule at line ~8200. */
+   rule at line ~8200. Also kills the canvas-block-in entrance
+   animation (260ms scale(0.94) pop, fill-mode backwards, see
+   ~line 7595): PresentStage mounts a fresh BuilderCanvas, so
+   without this gate the entrance would replay on EVERY block
+   each time Present mode opens. (The is-newly-mounted drag
+   handle pulse refires on the same remount, but its handle is
+   already display:none in the gate above, so it never paints.) */
 [data-builder-mode="preview"] .canvas-block {
   outline: none !important;
   box-shadow: none !important;
   border-color: transparent !important;
+  animation: none !important;
 }
 /* Belt-and-braces: the edit-mode root attribute scopes the
    "show me chrome" assumption so any future selector that
