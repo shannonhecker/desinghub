@@ -22,7 +22,16 @@ import { audienceUnguessable } from "@/lib/assumptionDims";
 const sendMessage = vi.fn(() => Promise.resolve());
 
 vi.mock("@/lib/useChatAPI", () => ({
-  useChatAPI: () => ({ sendMessage, abort: vi.fn() }),
+  /* Mirror the REAL hook's full return shape (QW4 added retrySeconds /
+     failedSend / retryFailedSend): a partial double left retrySeconds
+     undefined, which read as an active send gate and no-opped handleSend. */
+  useChatAPI: () => ({
+    sendMessage,
+    abort: vi.fn(),
+    retrySeconds: null,
+    failedSend: null,
+    retryFailedSend: vi.fn(),
+  }),
 }));
 vi.mock("react-markdown", () => ({ default: () => null }));
 vi.mock("../FadingWords", () => ({ FadingWords: () => null }));

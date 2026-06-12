@@ -19,13 +19,15 @@
  * copy. Colons, commas, periods only.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useMotionTemplate,
   useReducedMotion,
+  useSpring,
+  type MotionValue,
 } from "framer-motion";
 import Link from "next/link";
 
@@ -268,8 +270,8 @@ function SystemCardMock({ spec }: { spec: SystemSpec }) {
 
 const NAV_LINKS = [
   { href: "#services", label: "Workbench" },
-  { href: "#projects", label: "Featured" },
-  { href: "#voices", label: "Voices" },
+  { href: "#systems", label: "Systems" },
+  { href: "#tokens", label: "Tokens" },
   { href: "#about", label: "About" },
 ] as const;
 
@@ -518,6 +520,191 @@ function useRevealOnScroll(rootRef: React.RefObject<HTMLElement | null>): void {
   }, [rootRef]);
 }
 
+/** Gate for all scrubbed/parallax motion: off under prefers-reduced-motion
+ *  and below the 900px breakpoint (mobile address-bar resize jank). All
+ *  parallax ranges collapse to [0,0] when this returns false. */
+function useParallaxEnabled(): boolean {
+  const reduce = useReducedMotion();
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 901px)");
+    const update = () => setWide(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return !reduce && wide;
+}
+
+/** True when the device has a fine hover pointer (mouse/trackpad). Gates
+ *  the cursor-glow + magnetic effects so touch devices never attach work. */
+function useFinePointer(): boolean {
+  const [fine, setFine] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setFine(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return fine;
+}
+
+/* ── Motion components (additive wrappers, no markup restructuring) ──── */
+
+/** Magnetic primary CTA: lerps max 8px toward the cursor with a spring
+ *  return. The ONLY magnetic element on the page. Disabled entirely under
+ *  reduced motion and on coarse pointers. */
+const MAGNET_MAX_PX = 8;
+
+function MagneticCta({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const reduce = useReducedMotion();
+  const fine = useFinePointer();
+  const enabled = !reduce && fine;
+  const x = useSpring(0, { stiffness: 260, damping: 18 });
+  const y = useSpring(0, { stiffness: 260, damping: 18 });
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!enabled) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    x.set(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dx * 0.15)));
+    y.set(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dy * 0.3)));
+  };
+  const onPointerLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      className="lsl-magnetic"
+      style={{ x, y }}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    </motion.div>
+  );
+}
+
+/** Service card: per-card graphic parallax (figure leads scroll, ±12px)
+ *  plus a cursor-aware glow border via --glow-x/--glow-y custom props.
+ *  Glow painting is gated in CSS to (hover:hover) and (pointer:fine);
+ *  the pointermove listener is rAF-throttled and disabled under reduce. */
+function ServiceCard({
+  service,
+  index,
+  parallaxOn,
+}: {
+  service: Service;
+  index: number;
+  parallaxOn: boolean;
+}) {
+  const reduce = useReducedMotion();
+  const fine = useFinePointer();
+  const glowOn = !reduce && fine;
+  const ref = useRef<HTMLAnchorElement>(null);
+  const frame = useRef(0);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const figY = useTransform(
+    scrollYProgress,
+    [0, 1],
+    parallaxOn ? [12, -12] : [0, 0],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (frame.current) cancelAnimationFrame(frame.current);
+    };
+  }, []);
+
+  const onPointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
+    if (!glowOn || frame.current) return;
+    const el = e.currentTarget;
+    const cx = e.clientX;
+    const cy = e.clientY;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = 0;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--glow-x", `${((cx - r.left) / r.width) * 100}%`);
+      el.style.setProperty("--glow-y", `${((cy - r.top) / r.height) * 100}%`);
+    });
+  };
+
+  const Graphic = GRAPHIC_MAP[service.graphic];
+  const num = String(index + 1).padStart(2, "0");
+  return (
+    <Link
+      ref={ref}
+      href={service.href}
+      className="lsl-service-card"
+      data-tone={service.tone}
+      data-reveal
+      onPointerMove={onPointerMove}
+    >
+      <ArrowUpRight />
+      <div className="lsl-service-content">
+        <p className="lsl-service-num">{num}</p>
+        <h3 className="lsl-service-heading">{service.heading}</h3>
+        <ul className="lsl-service-bullets">
+          {service.bullets.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
+        </ul>
+      </div>
+      <motion.div className="lsl-service-figure" style={{ y: figY }}>
+        <Graphic />
+      </motion.div>
+    </Link>
+  );
+}
+
+/** Systems-strip card: settle-to-grid scrub. Alternating ±10px offsets
+ *  ease to 0 as the section's scroll progress reaches center, reading as
+ *  the five renderings snapping into alignment. */
+function SystemCardItem({
+  spec,
+  index,
+  progress,
+  parallaxOn,
+}: {
+  spec: SystemSpec;
+  index: number;
+  progress: MotionValue<number>;
+  parallaxOn: boolean;
+}) {
+  const offset = index % 2 === 0 ? 10 : -10; /* 1-based odd +10, even -10 */
+  const y = useTransform(progress, [0, 1], parallaxOn ? [offset, 0] : [0, 0]);
+  return (
+    <Link
+      href={spec.href}
+      className="lsl-syscard"
+      data-system={spec.name.toLowerCase().replace(/\s+/g, "-")}
+      style={{ "--syscard-brand": spec.brand } as React.CSSProperties}
+    >
+      <motion.div className="lsl-syscard-frame" style={{ y }}>
+        <SystemCardMock spec={spec} />
+      </motion.div>
+      <p className="lsl-syscard-label">{spec.name}</p>
+    </Link>
+  );
+}
+
 /* ── Page ────────────────────────────────────────────────────────────── */
 
 export default function LandingSouthleftPage() {
@@ -526,6 +713,54 @@ export default function LandingSouthleftPage() {
   useRevealOnScroll(rootRef);
   /* a11y: gate the looping hero demo video (WCAG 2.2.2). */
   const reduce = useReducedMotion();
+
+  /* 3-tier parallax depth model (transform-only, MotionValue-driven).
+     Tier A background lags (~0.92x feel, max +24px), Tier B content at 1x,
+     Tier C foreground product imagery leads (~1.04x feel, max 16px).
+     All ranges collapse to [0,0] under reduce / below 900px. */
+  const parallaxOn = useParallaxEnabled();
+
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  /* Tier A: aurora lags scroll (+24px as the hero scrolls out). */
+  const auroraY = useTransform(
+    heroProgress,
+    [0, 1],
+    parallaxOn ? [0, 24] : [0, 0],
+  );
+  /* Tier C: demo frame leads scroll (-16px), floats off the background. */
+  const demoY = useTransform(
+    heroProgress,
+    [0, 1],
+    parallaxOn ? [0, -16] : [0, 0],
+  );
+
+  /* Systems strip: settle-to-grid progress (start → center of viewport). */
+  const systemsRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: systemsProgress } = useScroll({
+    target: systemsRef,
+    offset: ["start end", "center center"],
+  });
+
+  /* CTA band: the page's only second aurora moment, echoing the hero. */
+  const ctaRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: ctaProgress } = useScroll({
+    target: ctaRef,
+    offset: ["start end", "center center"],
+  });
+  const ctaAuroraScale = useTransform(
+    ctaProgress,
+    [0, 1],
+    parallaxOn ? [0.9, 1] : [1, 1],
+  );
+  const ctaAuroraY = useTransform(
+    ctaProgress,
+    [0, 1],
+    parallaxOn ? [12, 0] : [0, 0],
+  );
 
   return (
     // `hero` class is required to enable page scroll (see globals.css :has(.hero)).
@@ -557,31 +792,39 @@ export default function LandingSouthleftPage() {
       </motion.nav>
 
       {/* ── Hero ── */}
-      <section className="lsl-hero" aria-labelledby="lsl-hero-headline">
+      <section
+        ref={heroRef}
+        className="lsl-hero"
+        aria-labelledby="lsl-hero-headline"
+      >
         {/* Aurora wash — cyan + pale glow, matches portfolio's .proj-nda-glow
-            motif. Pure decoration, kept under content. */}
-        <div className="lsl-hero-aurora" aria-hidden="true" />
+            motif. Pure decoration, kept under content. Tier A parallax:
+            lags scroll via transform only (the gradient never repaints). */}
+        <motion.div
+          className="lsl-hero-aurora"
+          aria-hidden="true"
+          style={{ y: auroraY }}
+        />
 
         <div className="lsl-container">
           <p className="lsl-hero-eyebrow" data-reveal>
-            uoaui.ai / dark-mode first
+            uoaui.ai / five systems, one canvas
           </p>
-          <h1
-            id="lsl-hero-headline"
-            className="lsl-hero-headline"
-            data-reveal
-          >
+          {/* LCP: no data-reveal here — the headline paints at opacity 1 on
+              first paint and animates transform-only (rise + one-shot
+              spotlight sweep, both in CSS). */}
+          <h1 id="lsl-hero-headline" className="lsl-hero-headline">
             A visual web builder for designers who <em>think in systems</em>.
           </h1>
           <p className="lsl-hero-sub" data-reveal>
             UI Kit plus private-preview Builder across Salt, Material 3,
-            Fluent 2, Carbon, and the uoaui system. Token-aware, dark-mode
-            first, with vibrant aurora accents.
+            Fluent 2, Carbon, and the uoaui system. The canvas renders real
+            components, and the export is code you can run.
           </p>
           <div className="lsl-hero-actions" data-reveal>
-            <Link href="/builder" className="lsl-cta">
+            <MagneticCta href="/builder" className="lsl-cta">
               Open the workbench
-            </Link>
+            </MagneticCta>
             <a className="lsl-hero-secondary" href="#demo">
               Watch the demo
               <span aria-hidden="true">{"→"}</span>
@@ -597,7 +840,9 @@ export default function LandingSouthleftPage() {
             data-reveal
             aria-label="uoaui.ai builder walkthrough"
           >
-            <div className="lsl-hero-demo-frame">
+            {/* Tier C parallax: the frame leads scroll (-16px), floating the
+                product shot off the lagging aurora. Transform-only. */}
+            <motion.div className="lsl-hero-demo-frame" style={{ y: demoY }}>
               {/* a11y (WCAG 2.2.2): don't autoplay/loop the demo for
                   reduced-motion users — show a static first frame instead. */}
               <video
@@ -611,7 +856,7 @@ export default function LandingSouthleftPage() {
                 aria-hidden="true"
               />
               <div className="lsl-hero-demo-shield" aria-hidden="true" />
-            </div>
+            </motion.div>
             <figcaption className="lsl-hero-demo-caption">
               Live capture · Workbench across Salt, Material 3, Fluent 2,
               Carbon, and uoaui
@@ -620,7 +865,7 @@ export default function LandingSouthleftPage() {
         </div>
       </section>
 
-      <hr className="lsl-rule" />
+      <hr className="lsl-rule" data-reveal />
 
       {/* ── Services / what it does ── */}
       <section
@@ -638,47 +883,29 @@ export default function LandingSouthleftPage() {
             A working canvas for design-system decisions.
           </h2>
           <p className="lsl-section-lede" data-reveal>
-            Built for the part of the process where teams compare, audit, and
-            hand off across systems. The four moves below cover the day to day.
+            Compare, audit, and hand off across systems without leaving the
+            canvas. Four moves cover the day to day.
           </p>
 
           <div className="lsl-services">
-            {SERVICES.map((s, idx) => {
-              const Graphic = GRAPHIC_MAP[s.graphic];
-              const num = String(idx + 1).padStart(2, "0");
-              return (
-                <Link
-                  key={s.heading}
-                  href={s.href}
-                  className="lsl-service-card"
-                  data-tone={s.tone}
-                  data-reveal
-                >
-                  <ArrowUpRight />
-                  <div className="lsl-service-content">
-                    <p className="lsl-service-num">{num}</p>
-                    <h3 className="lsl-service-heading">{s.heading}</h3>
-                    <ul className="lsl-service-bullets">
-                      {s.bullets.map((b) => (
-                        <li key={b}>{b}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="lsl-service-figure">
-                    <Graphic />
-                  </div>
-                </Link>
-              );
-            })}
+            {SERVICES.map((s, idx) => (
+              <ServiceCard
+                key={s.heading}
+                service={s}
+                index={idx}
+                parallaxOn={parallaxOn}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      <hr className="lsl-rule" />
+      <hr className="lsl-rule" data-reveal />
 
       {/* ── Same comp, five systems ── */}
       <section
-        id="projects"
+        id="systems"
+        ref={systemsRef}
         className="lsl-section"
         aria-labelledby="lsl-systems-heading"
       >
@@ -695,32 +922,29 @@ export default function LandingSouthleftPage() {
           </h2>
           <p className="lsl-section-lede" data-reveal>
             Pick a system to compose with. Swap later without rewriting the
-            comp. Tokens carry the design intent across renderers.
+            comp. Tokens carry the intent, the renderer is a choice you can
+            unmake.
           </p>
 
           <div className="lsl-systems" data-reveal>
-            {SYSTEMS.map((s) => (
-              <Link
+            {SYSTEMS.map((s, idx) => (
+              <SystemCardItem
                 key={s.name}
-                href={s.href}
-                className="lsl-syscard"
-                data-system={s.name.toLowerCase().replace(/\s+/g, "-")}
-              >
-                <div className="lsl-syscard-frame">
-                  <SystemCardMock spec={s} />
-                </div>
-                <p className="lsl-syscard-label">{s.name}</p>
-              </Link>
+                spec={s}
+                index={idx}
+                progress={systemsProgress}
+                parallaxOn={parallaxOn}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      <hr className="lsl-rule" />
+      <hr className="lsl-rule" data-reveal />
 
       {/* ── Tokens you can read ── */}
       <section
-        id="voices"
+        id="tokens"
         className="lsl-section"
         aria-labelledby="lsl-tokens-heading"
       >
@@ -735,7 +959,8 @@ export default function LandingSouthleftPage() {
           </h2>
           <p className="lsl-section-lede" data-reveal>
             The unit of portability across five systems. Same primitives,
-            different rendering. Below is a slice of the actual canvas.
+            different rendering. This is a slice of the actual canvas, not a
+            style guide.
           </p>
 
           <div className="lsl-tokens" data-reveal>
@@ -802,7 +1027,43 @@ export default function LandingSouthleftPage() {
         </div>
       </section>
 
-      <hr className="lsl-rule" />
+      <hr className="lsl-rule" data-reveal />
+
+      {/* ── Closing CTA band ── */}
+      <section
+        id="cta"
+        ref={ctaRef}
+        className="lsl-section lsl-cta-band"
+        aria-labelledby="lsl-cta-heading"
+      >
+        {/* The page's only second aurora moment — same recipe as the hero,
+            background pseudo-layer only, never on content surfaces. */}
+        <motion.div
+          className="lsl-cta-aurora"
+          aria-hidden="true"
+          style={{ scale: ctaAuroraScale, y: ctaAuroraY }}
+        />
+        <div className="lsl-container">
+          <p className="lsl-section-label" data-reveal>
+            builder / private preview
+          </p>
+          <h2 id="lsl-cta-heading" className="lsl-section-heading" data-reveal>
+            Stop choosing. Start composing.
+          </h2>
+          <p className="lsl-section-lede" data-reveal>
+            Open the workbench, drop a block, and watch five systems render
+            it. The export is real code, ready to run.
+          </p>
+          <div className="lsl-cta-actions" data-reveal>
+            <Link href="/builder" className="lsl-cta">
+              Open the workbench
+            </Link>
+            <Link href="/ui-kit" className="lsl-cta-textlink">
+              Browse the UI Kit
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ── Footer ── */}
       <footer
@@ -814,7 +1075,7 @@ export default function LandingSouthleftPage() {
           Site footer
         </h2>
         <div className="lsl-container">
-          <div className="lsl-footer-brand">
+          <div className="lsl-footer-brand" data-reveal>
             <div className="lsl-footer-brand-lockup">
               <UoauiMark className="lsl-footer-brand-mark-svg" />
               <p className="lsl-footer-brand-mark">uoaui.ai</p>
