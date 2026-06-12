@@ -1163,6 +1163,15 @@ html:has(.landing-southleft) body {
     radial-gradient(45% 55% at 80% 60% in oklab, var(--lsl-aurora-pale) 0%, rgba(175, 240, 255, 0) 75%);
   will-change: transform;
 }
+/* a11y (WCAG 1.4.3): the band label rides ON TOP of the drifting aurora,
+   so the global rgba label-accent (4.71:1 on the clean band) can sink to
+   3.33:1 where radial peaks stack. Step up to the existing accent-hover
+   token (solid, one step lighter in the same purple family): 5.29:1 on
+   the worst-case full-overlap composite, 8.36:1 on the clean band.
+   Proven by the composite test in landingPolish.test.tsx. */
+.landing-southleft .lsl-cta-band .lsl-section-label {
+  color: var(--lsl-accent-hover);
+}
 .landing-southleft .lsl-cta-band > .lsl-container {
   position: relative;
   z-index: 1;

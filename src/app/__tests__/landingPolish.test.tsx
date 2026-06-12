@@ -22,6 +22,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import LandingPage from "../page";
+import { contrastRatio } from "@/lib/contrastUtils";
 
 const CSS_PATH = resolve(process.cwd(), "src/app/landing.css");
 const PAGE_PATH = resolve(process.cwd(), "src/app/page.tsx");
@@ -375,5 +376,130 @@ describe("section structure", () => {
     // The dual-prefix form must never appear in the CSS file.
     const cssSrc = readFileSync(CSS_PATH, "utf8");
     expect(cssSrc).not.toMatch(/-webkit-backdrop-filter/);
+  });
+});
+
+/* ── 7. CTA band label contrast: WCAG 1.4.3 worst-case proof ──── */
+/* The CTA band label sits over .lsl-cta-aurora, whose radials scale
+   and drift with scroll, so the label cannot rely on the clean
+   #0A0E1A band: the proof composites the band bg plus EVERY radial
+   peak stacked at one point (the maximum tint any animation position
+   can place under the label) using plain sRGB alpha-over math. The
+   gradients interpolate in oklab, but each 0% stop IS the authored
+   stop color, so the peak composite is interpolation-space
+   independent. All colors are parsed from landing.css (var fallbacks
+   resolved recursively), so a future tint or label tweak fails this
+   test loudly instead of shipping a silent AA regression. */
+
+type RGBA = [number, number, number, number];
+
+function cssVarFallback(css: string, name: string): string {
+  // Definition shape: --name: var(--a-..., FALLBACK);
+  const m = css.match(
+    new RegExp(`${name}:\\s*var\\([^,()]+,\\s*(.+?)\\)\\s*;`),
+  );
+  if (!m) throw new Error(`No var fallback literal found for ${name}`);
+  return m[1].trim();
+}
+
+function parseColor(css: string, value: string): RGBA {
+  const v = value.trim();
+  const viaVar = v.match(/^var\((--[\w-]+)\)$/);
+  if (viaVar) return parseColor(css, cssVarFallback(css, viaVar[1]));
+  const rgba = v.match(
+    /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/,
+  );
+  if (rgba) return [+rgba[1], +rgba[2], +rgba[3], +rgba[4]];
+  const hex = v.match(/^#([0-9a-fA-F]{6})$/);
+  if (hex) {
+    const h = hex[1];
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+      1,
+    ];
+  }
+  throw new Error(`Unparseable CSS color: ${value}`);
+}
+
+/* sRGB alpha-over: composite a translucent layer onto an opaque base. */
+function over(base: RGBA, layer: RGBA): RGBA {
+  const a = layer[3];
+  return [
+    layer[0] * a + base[0] * (1 - a),
+    layer[1] * a + base[1] * (1 - a),
+    layer[2] * a + base[2] * (1 - a),
+    1,
+  ];
+}
+
+function toHex(c: RGBA): string {
+  return (
+    "#" +
+    c
+      .slice(0, 3)
+      .map((v) => Math.round(v).toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+function ruleBody(css: string, selector: string): string {
+  const m = css.match(
+    new RegExp(selector.replace(/[.\\]/g, "\\$&") + "\\s*\\{([^}]+)\\}"),
+  );
+  if (!m) throw new Error(`Rule not found: ${selector}`);
+  return m[1];
+}
+
+/* Parsed lazily inside each test so a missing rule fails THESE tests
+   with a readable error instead of killing the whole suite at collect. */
+function readCtaContrastInputs() {
+  const css = readFileSync(CSS_PATH, "utf8");
+
+  // Opaque band background behind the aurora.
+  const bandBg = parseColor(css, cssVarFallback(css, "--lsl-bg"));
+
+  // Every radial peak (the 0% stop) inside .lsl-cta-aurora. The zero-alpha
+  // end-stops sit at 70%/75% and never match this pattern.
+  const aurora = ruleBody(css, ".landing-southleft .lsl-cta-aurora");
+  const peaks = Array.from(
+    aurora.matchAll(/(var\(--[\w-]+\)|rgba\([^()]*\))\s+0%/g),
+  ).map((m) => parseColor(css, m[1]));
+
+  // The CTA-band-scoped label color override.
+  const labelDecl = ruleBody(
+    css,
+    ".landing-southleft .lsl-cta-band .lsl-section-label",
+  ).match(/color:\s*([^;]+);/);
+  if (!labelDecl) throw new Error("CTA band label color override missing");
+  const label = parseColor(css, labelDecl[1]);
+
+  return { bandBg, peaks, label };
+}
+
+describe("CTA band label contrast (WCAG 1.4.3, small mono text, AA 4.5:1)", () => {
+  it("parses exactly the three authored aurora radial peaks", () => {
+    const { peaks } = readCtaContrastInputs();
+    expect(peaks).toHaveLength(3);
+  });
+
+  it("label clears AA on the worst-case composite (band bg + all radial peaks stacked)", () => {
+    const { bandBg, peaks, label } = readCtaContrastInputs();
+    // CSS paints the FIRST listed gradient topmost, so composite bottom-up.
+    const worstBg = [...peaks]
+      .reverse()
+      .reduce((base, peak) => over(base, peak), bandBg);
+    const fg = over(worstBg, label);
+    const ratio = contrastRatio(toHex(fg), toHex(worstBg));
+    expect(ratio).toBeGreaterThanOrEqual(4.5); // WCAG 1.4.3 floor
+    expect(ratio).toBeGreaterThanOrEqual(4.7); // house margin so tint tweaks fail loudly
+  });
+
+  it("label still clears AA with margin on the clean band background", () => {
+    const { bandBg, label } = readCtaContrastInputs();
+    const fg = over(bandBg, label);
+    const ratio = contrastRatio(toHex(fg), toHex(bandBg));
+    expect(ratio).toBeGreaterThanOrEqual(4.7);
   });
 });
