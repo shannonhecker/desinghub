@@ -276,17 +276,14 @@ export function ComponentLibrary() {
           /* Inspector - each section is collapsible so users can hide the ones
              they don't need; state persists per section key in sessionStorage. */
           <div className="inspector-stack">
-            {/* P1 Figma-shaped order: the FRAME clusters lead (Size of the
-                selected block, then the Auto-layout of its container), then
-                the component/DS props, then accent + chart colours. This
-                mirrors Figma's right rail where W/H + auto-layout sit at the
-                top and element-specific props follow. */}
-
-            {/* Size — per-block W/H sizing + alignment (Fixed/Hug/Fill labels). */}
-            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
-
-            {/* Auto-layout — container flow (direction / gap / padding / align). */}
-            <ZoneLayoutSection zone={selectedBlockZone ?? "body"} />
+            {/* Quick-win order (owner QA 2026-06): the COMPONENT'S OWN
+                properties lead — that's what users select a block to edit —
+                then the frame clusters (Size, then the container's Auto
+                layout), then accent + chart colours. Auto layout defaults
+                collapsed for LEAF blocks (it edits the container, not the
+                block) and its container-only controls (Columns / Distribute)
+                are hidden for leaves; selecting a Group column shows the
+                full set expanded. */}
 
             <InspectorSection
               id={`props-${selectedBlock.type}`}
@@ -294,6 +291,15 @@ export function ComponentLibrary() {
             >
               <FieldsComponent blockId={selectedBlock.id} />
             </InspectorSection>
+
+            {/* Size — per-block W/H sizing + alignment (Fixed/Hug/Fill labels). */}
+            <LayoutSection block={selectedBlock} zone={selectedBlockZone ?? "body"} />
+
+            {/* Auto-layout — container flow (direction / gap / padding / align). */}
+            <ZoneLayoutSection
+              zone={selectedBlockZone ?? "body"}
+              leaf={selectedBlock.type !== "LayoutGroup"}
+            />
 
             {/* Issue #13: per-block accent override. Lets one block diverge
                 from the global accent without affecting siblings. */}
@@ -641,7 +647,7 @@ function LayoutSection({
    ZoneDropContainer reads the same slice + applies
    computeContainerStyle, so picking a new mode immediately
    re-flows the canvas. */
-function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
+function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolean }) {
   const zoneLayout = useBuilder((s) => s.zoneLayouts[zone]);
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
   const label = zone.charAt(0).toUpperCase() + zone.slice(1);
@@ -674,8 +680,11 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
     /* Figma names this cluster "Auto layout" (direction / gap / padding /
        align). We keep the store model ('stack'|'row'|'grid') untouched —
        these are LABELS only. The zone name is shown as a sub-hint so it's
-       clear which container ({Header}/{Body}/…) this affects. */
-    <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen>
+       clear which container ({Header}/{Body}/…) this affects.
+       LEAF blocks (anything but a Group column) collapse it by default —
+       it edits the container, not the selected block — and hide the
+       container-only Columns / Distribute controls. */
+    <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen={!leaf}>
       {/* Direction - stack / row / grid */}
       <div className="inspector-field">
         <label className="inspector-field-label">
@@ -706,8 +715,8 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
         </div>
       </div>
 
-      {/* Grid column count - only shown in Grid mode */}
-      {zoneLayout.mode === "grid" && (
+      {/* Grid column count - only shown in Grid mode, container selections only */}
+      {zoneLayout.mode === "grid" && !leaf && (
         <div className="inspector-field">
           <ScrubNumberField
             layout="stacked"
@@ -881,7 +890,9 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
           Writes ZoneLayout.justify. `start` is the default (unset = start), so
           picking Start clears the value to keep saved projects lean + back-
           compatible. Maps to justify-content (flex) / justify-items (grid) in
-          the resolver + threads into export via the P4 export twin. */}
+          the resolver + threads into export via the P4 export twin.
+          Container-only: hidden for leaf selections. */}
+      {!leaf && (
       <div className="inspector-field">
         <label className="inspector-field-label">Distribute</label>
         <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout distribution">
@@ -908,6 +919,7 @@ function ZoneLayoutSection({ zone }: { zone: ZoneId }) {
           })}
         </div>
       </div>
+      )}
     </InspectorSection>
   );
 }

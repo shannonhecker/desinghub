@@ -1605,6 +1605,12 @@
 .chat-scroll {
   flex: 1;
   overflow-y: auto;
+  /* Never scroll horizontally: with overflow-y:auto alone, overflow-x
+     computes to auto, so any 1-2px content overflow (e.g. the widest
+     starter chip at card width) paints a horizontal scrollbar thumb as
+     a floating gray bar between the hero links and the composer. All
+     chat content wraps, so clip the axis outright. */
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1668,6 +1674,11 @@
   flex-wrap: wrap;
   margin-top: 2px;
 }
+/* Docked/narrow card hero: let the starter-chip block and the setup
+   links breathe — at card width the chips stack 4-up and 2px reads
+   cramped against them. */
+.hero-greeting .hero-starter-chips { margin-top: 12px; }
+.hero-greeting .hero-setup-links { margin-top: 16px; }
 .hero-setup-link {
   display: inline-flex;
   align-items: center;
@@ -2803,6 +2814,9 @@
 
 .prompt-bubble {
   padding: 8px 18px;
+  /* Containment: the widest starter chip must never push the hero's
+     scroll context wider than its card (see .chat-scroll overflow note). */
+  max-width: 100%;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -12867,6 +12881,29 @@
   align-items: start;
 }
 
+/* ── Graceful narrow-canvas wrap for grid bodies ──
+   The 12-col grid is authored for desktop canvas widths; when the body
+   container squeezes (docked chat + inspector), 1fr tracks collapse to
+   slivers and template rows (6/3/3 scope bar, 3/3/3/3 KPI row) read as
+   broken. Below the cutoff, re-span the canonical widths so rows stack
+   INTENTIONALLY: half-row items go full row, third/quarter-row items go
+   half row (KPI 4-up becomes a clean 2x2). Container query + !important
+   because the resolver writes spans inline; canvas-only — exported code
+   keeps each DS's native responsive grid. */
+.zone-drop-body.zone-grid {
+  container-type: inline-size;
+  container-name: zone-body-grid;
+}
+@container zone-body-grid (max-width: 640px) {
+  .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 4;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 5;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 6;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
+  .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
+  .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+}
+
 /* Empty body zone state - visual dropzone. Now applies to
    zone-grid, zone-row, and zone-stack since the body zone's
    flow mode is configurable. */
@@ -13551,6 +13588,11 @@
   width: var(--bc-size-slot);
   align-self: stretch;
   margin: 0 calc(var(--bc-gap-xxs) * -1);
+}
+/* Grid zones render only the trailing append slot (ZoneDropContainer);
+   span it across the full row so it never consumes a column track. */
+.zone-grid > .insertion-slot-horizontal {
+  grid-column: 1 / -1;
 }
 /* No hover-expand for vertical slots either (see horizontal note above). */
 

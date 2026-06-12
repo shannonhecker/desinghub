@@ -52,11 +52,12 @@ describe("inspector progressive disclosure", () => {
   });
 
   it("Auto layout cluster leads expanded but stays rendered (not hidden)", () => {
-    // P1: titled "Auto layout" (Figma vocab; store model unchanged) and
-    // defaults open so the frame's flow controls lead.
-    expect(cl).toMatch(/title="Auto layout" defaultOpen>/);
-    // Still rendered unconditionally — NOT gated to container types.
-    expect(cl).toMatch(/<ZoneLayoutSection zone=/);
+    // Visual QA batch 1 (2026-06): still titled "Auto layout" and still
+    // rendered for EVERY selection (it edits the container's flow), but
+    // leaf selections now collapse it by default — component properties
+    // lead the stack. Behavioural coverage in visualQaBatch1.test.tsx.
+    expect(cl).toMatch(/title="Auto layout" defaultOpen=\{!leaf\}>/);
+    expect(cl).toMatch(/<ZoneLayoutSection\b/);
   });
 
   it("has inspector-subgroup styling", () => {

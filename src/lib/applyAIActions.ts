@@ -4,6 +4,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { AIAction } from "./parseAIResponse";
 import type { DesignSystem, BuilderMode, InterfaceType, ZoneId, Block, LayoutProps, ZoneLayout } from "@/store/useBuilder";
 import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
+import { defaultLayoutForType } from "./blockLayoutDefaults";
 import { pushSnapshot } from "./builderHistory";
 import { emitToolUse } from "./toolUseEvents";
 
@@ -126,7 +127,11 @@ export function applyAIActions(actions: AIAction[], messageId?: string): void {
           type: v.type,
           props: { ...defaults, ...v.props },
           source: "ai-action",
-          ...(v.layout ? { layout: v.layout as LayoutProps } : {}),
+          /* AI-provided layout wins; otherwise stamp the per-type default
+             (e.g. checkbox/switch hug content instead of stretching). */
+          ...(v.layout
+            ? { layout: v.layout as LayoutProps }
+            : (() => { const d = defaultLayoutForType(v.type); return d ? { layout: d } : {}; })()),
         };
         store.addBlockToZone(zone, block, v.index);
         /* Phase 3a (N4): emit a tool-use event carrying the new

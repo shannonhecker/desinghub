@@ -85,25 +85,38 @@ export function ZoneDropContainer({
 
   /* Interleave InsertionSlot strips between every mapped child.
      `React.Children.toArray` preserves the caller's keys + strips
-     falsy children, which matches the existing behavior. */
+     falsy children, which matches the existing behavior.
+
+     GRID EXCEPTION: every auto-placed grid child occupies a track, so
+     interleaved slots silently steal one column each — a 6/3/3 scope
+     row plus its slots can never fit a 12-col row, collapsing template
+     rows (Export CSV wrapping, KPI 4-up turning into a staircase).
+     Grid zones therefore render only the trailing append slot, styled
+     full-row via `.zone-grid > .insertion-slot-horizontal` so it takes
+     no column track. Insert-at-position in grid stays reachable via
+     drag-and-drop and the "/" SlashInserter. */
   const childArray = React.Children.toArray(children);
   const slotOrientation: "horizontal" | "vertical" = mode === "row" ? "vertical" : "horizontal";
-  const renderedChildren = childArray.flatMap((child, i) => [
-        <InsertionSlot
-          key={`slot-${zoneId}-${i}`}
-          zone={zoneId}
-          index={i}
-          orientation={slotOrientation}
-        />,
-        child,
-      ]).concat(
-        <InsertionSlot
-          key={`slot-${zoneId}-end`}
-          zone={zoneId}
-          index={childArray.length}
-          orientation={slotOrientation}
-        />,
-      );
+  const endSlot = (
+    <InsertionSlot
+      key={`slot-${zoneId}-end`}
+      zone={zoneId}
+      index={childArray.length}
+      orientation={slotOrientation}
+    />
+  );
+  const renderedChildren =
+    mode === "grid"
+      ? childArray.concat(endSlot)
+      : childArray.flatMap((child, i) => [
+          <InsertionSlot
+            key={`slot-${zoneId}-${i}`}
+            zone={zoneId}
+            index={i}
+            orientation={slotOrientation}
+          />,
+          child,
+        ]).concat(endSlot);
 
   return (
     <div

@@ -402,7 +402,18 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
       <SaltCard>
         <SaltText styleAs="label" variant="secondary">{s(props.label, "Metric")}</SaltText>
         <SaltText styleAs="h2"><strong>{s(props.value, "0")}</strong></SaltText>
-        <SaltLinearProgress aria-label={s(props.label, "Metric")} value={num(props.pct, 0)} />
+        {/* Salt LinearProgress ships a fixed 400px track (width AND
+            min-width); inside a KPI card that overflows the card and reads
+            as a full-bleed bar misaligned with the padded label/value. Pin
+            it to the card's content width so the bar shares the text
+            block's inset. hideLabel: the pct is a decorative fill here —
+            M3/Fluent/uoaui stat cards show no number either. */}
+        <SaltLinearProgress
+          aria-label={s(props.label, "Metric")}
+          value={num(props.pct, 0)}
+          hideLabel
+          style={{ width: "100%", minWidth: 0 }}
+        />
       </SaltCard>
     );
   } else if (type === "SimulatedDropdown") {
