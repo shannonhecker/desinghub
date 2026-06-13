@@ -1617,6 +1617,17 @@
   padding: 0 24px 16px;
 }
 
+/* Clear the absolute .chat-controls pill at rest. Scoped to the two states
+   where the pill is shown (docked .chat-slide + floating .chat-float-compact)
+   so the floating onboarding hero — where .chat-controls is display:none and
+   content is vertically centered — keeps its geometry unshifted. 44px matches
+   the existing scroll-padding-top above so resting layout and anchor-landing
+   agree. Builder chrome layer = literal px (no --b-space token exists). #8. */
+.chat-slide .chat-scroll,
+.chat-float-compact .chat-scroll {
+  padding-top: 44px;
+}
+
 /* Spacer pushes messages to the bottom when content is short */
 .chat-scroll-spacer {
   flex: 1;
