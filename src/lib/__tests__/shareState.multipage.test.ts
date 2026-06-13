@@ -49,7 +49,7 @@ describe("buildSharedCanvas — lazy v:1 / v:2", () => {
     const s = useBuilder.getState();
     const legacy = {
       v: 1,
-      designSystem: s.designSystem, mode: s.mode, density: s.density,
+      designSystem: s.designSystem, mode: s.mode, density: s.density, canvasSpacing: s.canvasSpacing,
       deviceMode: s.deviceMode, themeKey: s.themeKey, activeTemplateId: s.activeTemplateId,
       headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
       blocks: s.blocks, footerBlocks: s.footerBlocks,
