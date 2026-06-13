@@ -10888,7 +10888,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--bc-gap-xs);
-  height: 18px;
+  height: var(--bc-size-frame-tab, 18px);
   padding: 0 var(--bc-gap-xs) 0 var(--bc-gap-sm);
   border-radius: var(--bc-radius-xs);
   /* Solid raised chrome surface (not the translucent accent-muted) so the
@@ -11070,6 +11070,21 @@
   /* Was `8px 6px`. Slightly tighter horizontal than vertical to keep
      the sidebar feeling like a rail. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 0.75);
+}
+
+/* Edit mode: reserve the band occupied by the absolute .bp-frame-tab so the
+   first nav item never renders under the frame label. The ZoneDropContainer
+   ref is unchanged, so drop-target hit areas are untouched - this pushes
+   content, not the droppable. Present mode hides the tab and keeps the
+   original spacing (parity preserved). QA-sweep batch 2 finding #11. */
+[data-builder-mode="edit"] .bp-sidebar-nav {
+  padding-top: calc(var(--dh-pad-zone, 8px) + var(--bc-frame-tab-clear));
+}
+/* Collapsed rail renders no frame tab (gated in PreviewPanel), so drop the
+   reserved band to avoid dead top space. Higher specificity than the rule
+   above, so it wins regardless of source order. */
+[data-builder-mode="edit"] .bp-sidebar[data-collapsed="true"] .bp-sidebar-nav {
+  padding-top: var(--dh-pad-zone, 8px);
 }
 
 .bp-nav-item {
