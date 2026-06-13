@@ -1373,6 +1373,13 @@
 .content-split.has-preview .chat-slide-open {
   flex: none;
   width: var(--chat-width, 55%);
+  /* Floor the docked chat so the default 20% split can't collapse the message
+     column to a one-word-per-line strip on mid-size screens. Mirrors
+     .preview-side.open's 300px floor; the base .chat-slide-open keeps
+     min-width:0 (hero/onboarding + mobile stack reset below). Math: 300 chat +
+     ~10 handle + 300 preview min = 610 < 768 side-by-side breakpoint, no
+     horizontal overflow. #7. */
+  min-width: 300px;
 }
 
 .chat-slide-closed {
@@ -12110,6 +12117,9 @@
   .content-split.has-preview .chat-slide-open {
     flex: none !important;
     width: 100% !important;
+    /* Reset the desktop docked floor: stacked layout is full-width, the
+       300px side-by-side floor must not apply here (#7). */
+    min-width: 0;
     max-height: 42vh;
     min-height: 160px;
   }
