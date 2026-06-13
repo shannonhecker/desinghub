@@ -1405,8 +1405,12 @@
    hover treatment; honors reduced-motion. */
 .chat-reopen-fab {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
+  /* Left edge, vertically centered: fully decoupled from the canvas footer's
+     bottom-left frame-tab chip (footer scrolls with the canvas; this FAB is
+     viewport-fixed, so a bottom-left FAB collided at some scroll offsets). #9. */
+  left: var(--bc-gap-lg);
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 60;
   display: inline-flex;
   align-items: center;
