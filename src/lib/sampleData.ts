@@ -121,6 +121,11 @@ export const analyticsOrders: TableData = {
     { Order: "#INV-10480", Customer: "Globex", Plan: "Pro", Seats: "8", Amount: "$192.00", Status: "Paid", Date: "Jun 3" },
     { Order: "#INV-10478", Customer: "Initech", Plan: "Team", Seats: "30", Amount: "$1,500.00", Status: "Paid", Date: "Jun 2" },
     { Order: "#INV-10475", Customer: "Soylent Corp", Plan: "Pro", Seats: "12", Amount: "$288.00", Status: "Refunded", Date: "Jun 1" },
+    { Order: "#INV-10472", Customer: "Umbrella Health", Plan: "Enterprise", Seats: "200", Amount: "$16,000.00", Status: "Paid", Date: "May 31" },
+    { Order: "#INV-10470", Customer: "Stark Industries", Plan: "Team", Seats: "40", Amount: "$2,000.00", Status: "Pending", Date: "May 30" },
+    { Order: "#INV-10468", Customer: "Wonka Labs", Plan: "Pro", Seats: "15", Amount: "$360.00", Status: "Paid", Date: "May 29" },
+    { Order: "#INV-10465", Customer: "Hooli", Plan: "Enterprise", Seats: "95", Amount: "$7,600.00", Status: "Paid", Date: "May 28" },
+    { Order: "#INV-10463", Customer: "Pied Piper", Plan: "Team", Seats: "22", Amount: "$1,100.00", Status: "Refunded", Date: "May 27" },
   ],
 };
 
@@ -144,6 +149,11 @@ export const crmContacts: TableData = {
     { Name: "Yuki Tanaka", Company: "Meridian Labs", Title: "Product Manager", Stage: "Marketing qualified lead", Owner: "Sasha Lin", Phone: "+81 3-4567-8901", "Last activity": "3 days ago" },
     { Name: "Elena Vasquez", Company: "BrightPath Education", Title: "Director of Ops", Stage: "Lead", Owner: "Unassigned", Phone: "+1 (312) 555-0198", "Last activity": "1 week ago" },
     { Name: "Tom Okonkwo", Company: "VantaPay", Title: "CTO", Stage: "Opportunity", Owner: "Devin Okafor", Phone: "+1 (646) 555-0177", "Last activity": "12 min ago" },
+    { Name: "Hannah Cole", Company: "Atlas Freight", Title: "Operations Lead", Stage: "Customer", Owner: "Sasha Lin", Phone: "+1 (206) 555-0123", "Last activity": "4h ago" },
+    { Name: "Omar Haddad", Company: "Vertex Robotics", Title: "VP Sales", Stage: "Opportunity", Owner: "Devin Okafor", Phone: "+1 (512) 555-0166", "Last activity": "Yesterday" },
+    { Name: "Lucia Romano", Company: "Cobalt Media", Title: "CMO", Stage: "Sales qualified lead", Owner: "Sasha Lin", Phone: "+39 06 555 0144", "Last activity": "2 days ago" },
+    { Name: "Wei Zhang", Company: "Nimbus Data", Title: "Head of Platform", Stage: "Marketing qualified lead", Owner: "Unassigned", Phone: "+1 (408) 555-0190", "Last activity": "5 days ago" },
+    { Name: "Grace Mbeki", Company: "Solstice Retail", Title: "Director of CX", Stage: "Lead", Owner: "Devin Okafor", Phone: "+27 11 555 0102", "Last activity": "1 week ago" },
   ],
 };
 
@@ -209,6 +219,9 @@ export const settingsInvoices: TableData = {
     { Date: "Jun 1, 2026", Invoice: "INV-2026-0042", Amount: "$300.00", Status: "Paid", Download: "PDF" },
     { Date: "May 1, 2026", Invoice: "INV-2026-0039", Amount: "$300.00", Status: "Paid", Download: "PDF" },
     { Date: "Apr 1, 2026", Invoice: "INV-2026-0036", Amount: "$264.00", Status: "Paid", Download: "PDF" },
+    { Date: "Mar 1, 2026", Invoice: "INV-2026-0033", Amount: "$264.00", Status: "Paid", Download: "PDF" },
+    { Date: "Feb 1, 2026", Invoice: "INV-2026-0030", Amount: "$240.00", Status: "Paid", Download: "PDF" },
+    { Date: "Jan 1, 2026", Invoice: "INV-2026-0027", Amount: "$240.00", Status: "Paid", Download: "PDF" },
   ],
 };
 
