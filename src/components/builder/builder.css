@@ -10245,11 +10245,36 @@
 /* At padding:0 the hover/pin inspector controls (top:6px, inside .hover-inspector
    which is inset:0 = block bounds) would sit over the block's own content. Dock
    them ABOVE the block (mirrors the selected-dock A1 pattern) so they never
-   overlap content in the faithful canvas. */
+   overlap content in the faithful canvas. box-sizing:border-box so the controls
+   never grow on the backing-strip border add below (chrome tiles aren't border-box). */
 [data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-handle,
 [data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-remove,
 [data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector .canvas-block-swap {
   top: calc(-1 * (var(--bc-size-chip, 26px) + var(--bc-gap-xs, 4px)));
+  box-sizing: border-box;
+}
+/* QA fix (#10 chart-cluster): the lifted handle/remove/swap are three SEPARATE
+   absolutely-positioned tiles (handle anchored left, remove+swap right) with
+   background:none, so docked above a chart they read as loose icons floating
+   over the legend. Back them with ONE contiguous opaque chrome strip: a single
+   ::before on the shared .hover-inspector container at the same lifted offset,
+   spanning the docked row so all three sit on one raised surface (toolbar
+   convention). pointer-events:none keeps clicks flowing to the tiles. Builder
+   chrome (--bc-*), DS-agnostic. Only renders in the tight WYSIWYG canvas; the
+   preview + sidebar gates already display:none the inspector. */
+[data-canvas-spacing="tight"] .canvas-block:not([data-zone="sidebar"]) .hover-inspector::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * (var(--bc-size-chip, 26px) + var(--bc-gap-xs, 4px)));
+  left: 0;
+  right: 0;
+  height: var(--bc-size-chip, 26px);
+  box-sizing: border-box;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: var(--bc-radius-sm, 6px);
+  box-shadow: var(--bc-shadow-md);
+  pointer-events: none;
 }
 .preview-canvas-root .s-input,
 .preview-canvas-root .m3-input,
