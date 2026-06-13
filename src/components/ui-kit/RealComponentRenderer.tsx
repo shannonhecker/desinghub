@@ -394,7 +394,11 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
   } else if (type === "FooterText") {
     inner = <footer><SaltText variant="secondary">{s(props.label, "Footer")}</SaltText>{" "}<SaltText variant="secondary" styleAs="label">{s(props.version, "v1.0")}</SaltText></footer>;
   } else if (type === "SimulatedProgress") {
-    inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} />;
+    // Salt LinearProgress ships a fixed 400px track (width AND min-width), so a
+    // standalone progress block overflows narrow columns and floats at a fixed
+    // size in wide ones. M3 (MuiLinearProgress) and Fluent (ProgressBar) both
+    // fill their container; pin Salt to match so the bar tracks its cell width.
+    inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} style={{ width: "100%", minWidth: 0 }} />;
   } else if (type === "SimulatedAvatar") {
     inner = <SaltAvatar name={s(props.initials, "?")} size={saltAvatarSize(s(props.size, "md"))} />;
   } else if (type === "SimulatedStatCard") {
