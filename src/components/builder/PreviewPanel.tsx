@@ -1194,6 +1194,9 @@ export function BuilderCanvas({
   const compareMode = useBuilder((s) => s.compareMode);
   const mode = useBuilder((s) => s.mode);
   const themeKey = useBuilder((s) => s.themeKey);
+  /* Interface type drives the body working-width cap (Part 2 of #229),
+     stamped on .bp-dashboard below so .bp-main > * mats to a sane measure. */
+  const interfaceType = useBuilder((s) => s.interfaceType);
 
   /* Official-token scope wiring (#9 PR-2a): for Salt/Carbon, add the
      `.salt-theme`[data-mode] / `[data-cds-theme]` scope so the official
@@ -1248,6 +1251,7 @@ export function BuilderCanvas({
     <div
       className={`bp-dashboard preview-${designSystem} density-${density}${officialScope.className ? ` ${officialScope.className}` : ""}`}
       key={previewKey}
+      data-interface={interfaceType}
       {...officialScope.attrs}
     >
       <ZoneAddBar />
@@ -1707,7 +1711,7 @@ export function PreviewSidePanel() {
 
   /* ── Component library sidebar resize ── */
   const compBodyRef = useRef<HTMLDivElement>(null);
-  const [compSidebarWidth, setCompSidebarWidth] = useState(240);
+  const [compSidebarWidth, setCompSidebarWidth] = useState(300);
   const isCompDragging = useRef(false);
   const [compDragActive, setCompDragActive] = useState(false);
 
@@ -1725,7 +1729,7 @@ export function PreviewSidePanel() {
       }
     };
     const schedule = (width: number) => {
-      pendingWidth = Math.max(180, Math.min(400, width));
+      pendingWidth = Math.max(248, Math.min(420, width));
       if (rafId === null) rafId = requestAnimationFrame(flush);
     };
 
