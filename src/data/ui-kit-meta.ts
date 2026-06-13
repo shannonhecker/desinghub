@@ -1120,6 +1120,23 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         style: "text",
       },
     ],
+    salt: [
+      { name: "Solid", desc: "Highest emphasis. The actionable bold fill.", use: "The primary action in a view, like Save or Submit. Keep one solid button per area so it stays the clear focus.", style: "solid" },
+      { name: "Bordered", desc: "Medium emphasis. An outline with no fill.", use: "Secondary actions placed beside a solid button, like Cancel next to Save.", style: "outlined" },
+      { name: "Transparent", desc: "Lowest emphasis. No container.", use: "Tertiary, low-stakes actions inside dense toolbars or cards where a filled button would be too heavy.", style: "text" },
+    ],
+    fluent: [
+      { name: "Primary", desc: "Highest emphasis. The solid brand fill.", use: "The single most important action in a surface. Use one per view so it reads as the main path.", style: "solid" },
+      { name: "Secondary", desc: "Medium-high emphasis. A soft neutral fill.", use: "A prominent action that should not outweigh the primary button, like Add or Next.", style: "tonal" },
+      { name: "Outline", desc: "Medium emphasis. A stroke, no fill.", use: "Secondary actions beside a primary button where a fill would compete.", style: "outlined" },
+      { name: "Subtle", desc: "Low emphasis. Text-only, no container.", use: "Quiet, repeated actions inside lists, toolbars, and menus.", style: "text" },
+    ],
+    uoaui: [
+      { name: "Primary", desc: "Highest emphasis. The accent glass fill.", use: "The main action on a glass surface, like Continue or Generate. One per cluster keeps it the focus.", style: "solid" },
+      { name: "Secondary", desc: "Medium emphasis. A tinted glass surface.", use: "A supporting action that sits beside the primary without competing with it.", style: "tonal" },
+      { name: "Outline", desc: "Medium emphasis. A hairline border over glass.", use: "Secondary actions on busy or image-backed surfaces that need a clear edge.", style: "outlined" },
+      { name: "Ghost", desc: "Lowest emphasis. Bare label, no container.", use: "Quiet actions inside panels and menus where a fill would add noise.", style: "text" },
+    ],
   },
   card: {
     m3: [
@@ -1142,6 +1159,21 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         style: "outlined",
       },
     ],
+    salt: [
+      { name: "Primary", desc: "A raised surface with a soft shadow.", use: "When the card should lift off the page, or sits on a plain background that would not otherwise separate it.", style: "elevated" },
+      { name: "Secondary", desc: "A tonal surface, no shadow.", use: "A quieter container that groups related content without drawing attention to the card itself.", style: "filled" },
+      { name: "Tertiary", desc: "A bordered surface, no fill or shadow.", use: "The lightest bounded container. Good for dense layouts and side-by-side cards.", style: "outlined" },
+    ],
+    fluent: [
+      { name: "Filled", desc: "A neutral surface fill.", use: "The default Fluent card. Groups content on a calm surface in most layouts.", style: "filled" },
+      { name: "Filled alternative", desc: "A raised surface with elevation.", use: "When the card needs to separate from the content behind it, like a floating panel.", style: "elevated" },
+      { name: "Outline", desc: "A bordered surface, no fill.", use: "A clearly bounded, low-weight container for dense lists and grids.", style: "outlined" },
+    ],
+    uoaui: [
+      { name: "Elevated", desc: "A glass surface with a soft lift.", use: "When the card should float above the aurora background and read as a distinct layer.", style: "elevated" },
+      { name: "Filled", desc: "A tinted glass surface, flatter.", use: "Grouping related content quietly without a strong lift.", style: "filled" },
+      { name: "Outlined", desc: "A hairline-bordered glass surface.", use: "The lightest container, for dense layouts where blur on blur would muddy the surface.", style: "outlined" },
+    ],
   },
   textInput: {
     m3: [
@@ -1157,6 +1189,18 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         use: "When fields sit on a busy or tonal surface where a filled field would blend in, or when you want a lighter, more contained look.",
         style: "outlined",
       },
+    ],
+    salt: [
+      { name: "Primary", desc: "A bordered field with a fill.", use: "The default Salt input. Use in most forms; the fill makes the field read clearly as a target.", style: "filled" },
+      { name: "Secondary", desc: "A bordered field, no fill.", use: "When fields sit on a tonal or busy surface where a filled field would blend in, or for a lighter look.", style: "outlined" },
+    ],
+    fluent: [
+      { name: "Filled", desc: "A soft neutral fill with an underline.", use: "The default Fluent input in most forms; the fill reads clearly as an editable target.", style: "filled" },
+      { name: "Outline", desc: "A bordered field, no fill.", use: "On busy or tonal surfaces where a filled field blends in, or when a lighter, more contained look fits.", style: "outlined" },
+    ],
+    uoaui: [
+      { name: "Filled", desc: "A glass field with a tinted fill and accent underline.", use: "The default uoaui input; the fill keeps the field legible over the aurora background.", style: "filled" },
+      { name: "Outlined", desc: "A hairline-bordered glass field.", use: "When a lighter, more contained field suits the surface and a fill would add noise.", style: "outlined" },
     ],
   },
   badge: {
