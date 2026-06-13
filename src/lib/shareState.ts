@@ -31,6 +31,10 @@ export interface SharedCanvas {
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
+  /* Author's block-spacing preset, so a shared link renders with the same
+     rhythm as the author's canvas (PresentStage reads it as data-canvas-spacing).
+     v1-compatible — decode defaults to 'tight' for older links that lack it. */
+  canvasSpacing: 'tight' | 'comfortable';
   /* PR-C: device frame + theme so a shared link opens exactly as the
      author framed it. v1-compatible — decode defaults these for older
      links that lack them, so no version bump is needed. */
@@ -220,7 +224,7 @@ export function buildSharedCanvas(s: ReturnType<typeof useBuilder.getState>): Sh
     const active = flushed.pages.find((p) => p.id === flushed.activePageId);
     return {
       v: 2,
-      designSystem: s.designSystem, mode: s.mode, density: s.density,
+      designSystem: s.designSystem, mode: s.mode, density: s.density, canvasSpacing: s.canvasSpacing,
       deviceMode: s.deviceMode, themeKey: s.themeKey, activeTemplateId: s.activeTemplateId,
       headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
       blocks: active?.body ?? s.blocks, footerBlocks: s.footerBlocks,
@@ -234,7 +238,7 @@ export function buildSharedCanvas(s: ReturnType<typeof useBuilder.getState>): Sh
      key set would change the hash for an unchanged canvas. */
   return {
     v: 1,
-    designSystem: s.designSystem, mode: s.mode, density: s.density,
+    designSystem: s.designSystem, mode: s.mode, density: s.density, canvasSpacing: s.canvasSpacing,
     deviceMode: s.deviceMode, themeKey: s.themeKey, activeTemplateId: s.activeTemplateId,
     headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
     blocks: s.blocks, footerBlocks: s.footerBlocks,
@@ -294,6 +298,10 @@ export function decodeShareState(hash: string): SharedCanvas | null {
       : "desktop";
   const themeKey: string | null =
     typeof obj.themeKey === "string" && obj.themeKey.length <= 40 ? obj.themeKey : null;
+  /* canvasSpacing: defaults to 'tight' (the store default) for links that
+     predate the field or carry anything other than the two valid values. */
+  const canvasSpacing: 'tight' | 'comfortable' =
+    obj.canvasSpacing === 'comfortable' ? 'comfortable' : 'tight';
 
   const activeTemplateId =
     typeof obj.activeTemplateId === "string" && obj.activeTemplateId.length <= 80
@@ -358,6 +366,7 @@ export function decodeShareState(hash: string): SharedCanvas | null {
     designSystem: obj.designSystem as DesignSystem,
     mode: obj.mode as BuilderMode,
     density: obj.density,
+    canvasSpacing,
     deviceMode,
     themeKey,
     activeTemplateId,

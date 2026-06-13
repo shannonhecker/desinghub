@@ -17,6 +17,7 @@ const base: SharedCanvas = {
   designSystem: "carbon",
   mode: "dark",
   density: "medium",
+  canvasSpacing: "comfortable",
   deviceMode: "tablet",
   themeKey: "g90",
   activeTemplateId: null,
@@ -72,6 +73,39 @@ describe("shareState — deviceMode + themeKey (PR-C, v1-compatible)", () => {
     expect(back!.designSystem).toBe("carbon");
     expect(back!.mode).toBe("dark");
     expect(back!.density).toBe("medium");
+  });
+});
+
+describe("shareState — canvasSpacing (share/present parity, v1-compatible)", () => {
+  it("round-trips a non-default canvasSpacing so a shared link matches the author's rhythm", () => {
+    const back = decodeShareState(encodeShareState(base)); // base.canvasSpacing = "comfortable"
+    expect(back).not.toBeNull();
+    expect(back!.canvasSpacing).toBe("comfortable");
+  });
+
+  it("decodes a legacy link (no canvasSpacing) to the 'tight' store default", () => {
+    /* Links encoded before this field lack canvasSpacing — they must decode
+       (not error) to the same 'tight' default the store starts at. */
+    const legacy = {
+      v: 1,
+      designSystem: "salt",
+      mode: "light",
+      density: "medium",
+      activeTemplateId: null,
+      headerBlocks: [],
+      sidebarBlocks: [],
+      blocks: [],
+      footerBlocks: [],
+    };
+    const back = decodeShareState(encodeShareState(legacy as unknown as SharedCanvas));
+    expect(back).not.toBeNull();
+    expect(back!.canvasSpacing).toBe("tight");
+  });
+
+  it("coerces an invalid canvasSpacing to 'tight'", () => {
+    const bad = { ...base, canvasSpacing: "roomy" } as unknown as SharedCanvas;
+    const back = decodeShareState(encodeShareState(bad));
+    expect(back!.canvasSpacing).toBe("tight");
   });
 });
 

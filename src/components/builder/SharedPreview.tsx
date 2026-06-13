@@ -40,6 +40,7 @@ export function SharedPreview({ state, hash }: { state: SharedCanvas; hash: stri
     store.setDesignSystem(state.designSystem);
     store.setMode(state.mode);
     store.setDensity(state.density);
+    store.setCanvasSpacing(state.canvasSpacing);
     store.setHeaderBlocks(state.headerBlocks);
     store.setSidebarBlocks(state.sidebarBlocks);
     store.setBlocks(state.blocks);
