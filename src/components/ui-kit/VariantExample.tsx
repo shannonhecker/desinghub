@@ -47,7 +47,11 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
   /* ── Button → a pill ── */
   if (componentId === "button") {
     const map: Record<string, React.CSSProperties> = {
-      solid: { background: t.accent, color: t.accentText, border: "1px solid transparent" },
+      // Solid fill needs the ON-accent foreground (M3 onPrimary / Fluent fgOnBrand),
+      // not accentText (the accent-as-text colour for links/outlined/text variants).
+      // For M3 accent===accentText===primary, so accentText here painted primary text
+      // on a primary fill — an invisible label. Mirrors fluent-filled / salt-accent below.
+      solid: { background: t.accent, color: t.accentFg ?? t.accentText, border: "1px solid transparent" },
       tonal: { background: `color-mix(in srgb, ${t.accent} 24%, ${t.bg})`, color: t.fg, border: "1px solid transparent" },
       elevated: { background: t.bg2, color: t.accent, border: `1px solid ${t.border}`, boxShadow: "0 2px 7px rgba(0,0,0,0.24)" },
       outlined: { background: "transparent", color: t.accent, border: `1px solid ${t.border}` },
