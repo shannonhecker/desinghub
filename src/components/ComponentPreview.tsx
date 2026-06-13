@@ -258,7 +258,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const heroRadius = activeSystem === "carbon" ? 0 : 24;
   const specimenSection = (
     <section id="dh-sec-specimen" className="dh-section" aria-labelledby="dh-h-overview">
-      <h3 id="dh-h-overview" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>Overview</h3>
+      <h2 id="dh-h-overview" style={{ position: "absolute", width: 1, height: 1, margin: -1, padding: 0, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>Overview</h2>
       <div
         style={{
           position: "relative",
@@ -345,7 +345,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         if (!naming) return null;
         return (
           <div style={{ marginTop: 44 }}>
-            <h4 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h4>
+            <h3 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h3>
             <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
               {/* Chips are types with distinct jobs, badges signal status; neither is an emphasis ladder. */}
               {metaId === "chip"
@@ -388,7 +388,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   );
   const variantsSection = variants ? (
     <section id="dh-sec-variants" className="dh-section" aria-labelledby="dh-h-variants">
-      <h3 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h3>
+      <h2 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
         {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
@@ -417,7 +417,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const anatomy = COMPONENT_ANATOMY[metaId as UiKitComponentId]?.[ds];
   const anatomySection = anatomy ? (
     <section id="dh-sec-anatomy" className="dh-section" aria-labelledby="dh-h-anatomy">
-      <h3 id="dh-h-anatomy" className="dh-section-h" style={{ color: t.fg }}>Anatomy</h3>
+      <h2 id="dh-h-anatomy" className="dh-section-h" style={{ color: t.fg }}>Anatomy</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         The parts of the {comp.name.toLowerCase()} and their key measurements.
       </p>
@@ -426,7 +426,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   ) : null;
   const propsSection = propRows ? (
     <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
-      <h3 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h3>
+      <h2 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         The real {comp.name.toLowerCase()} API for this design system. Prop names and
         defaults follow the official package, not a normalised abstraction.
@@ -456,19 +456,19 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   ) : null;
   const codeSection = (
     <section id="dh-sec-code" className="dh-section" aria-labelledby="dh-h-code">
-      <h3 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h3>
+      <h2 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h2>
       <CodePanel componentId={componentId} />
     </section>
   );
   const guidanceSection = guidance ? (
     <section id="dh-sec-guidance" className="dh-section" aria-labelledby="dh-h-guidance">
-      <h3 id="dh-h-guidance" className="dh-section-h" style={{ color: t.fg }}>Guidance</h3>
+      <h2 id="dh-h-guidance" className="dh-section-h" style={{ color: t.fg }}>Guidance</h2>
       <GuidanceCards guidance={guidance} t={t} />
     </section>
   ) : null;
   const tokensSection = (tokens && tokens.length > 0) ? (
     <section id="dh-sec-tokens" className="dh-section" aria-labelledby="dh-h-tokens">
-      <h3 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h3>
+      <h2 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         The design tokens that drive this {comp.name.toLowerCase()}. Values resolve live
         against the current theme, mode, and density.
@@ -478,7 +478,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   ) : null;
   const accessibilitySection = (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
-      <h3 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h3>
+      <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
         {comp.name} follows WCAG 2.1 AA: it is keyboard operable, exposes a visible focus
         state, and is labelled for assistive technology. Full keyboard + screen-reader
