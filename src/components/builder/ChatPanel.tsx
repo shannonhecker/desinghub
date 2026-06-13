@@ -1296,30 +1296,41 @@ export function ChatPanel() {
             <p className="hero-subtitle">
               Describe the app you want in your own words.
             </p>
-            {/* Starter prompts (QW6) - one tap fires a full composed build
-                through the unchanged send pipeline. Each maps to a locked
-                template pattern + a DS keyword (the fast-path applies the
-                system before the build) and bakes in an audience signal so
-                the pre-build audience gate never interrupts the click. */}
+            {/* Starter chips: one tap seeds the FULL rich template from the
+                canonical registry (BUILDER_TEMPLATES) via applyTemplateById,
+                the same path "Browse templates" uses. Previously these fired
+                handleSend() -> the thin LAYOUT_PRESETS skeleton, so a new user
+                landed on a sparse placeholder instead of a believable app.
+                Each chip sets its design system (and mode) first, then applies
+                the template, so the result matches the chip's promise. */}
             <div
               className="prompt-bubbles hero-starter-chips"
               role="group"
               aria-label="Example prompts"
             >
-              {[
-                "A CRM dashboard in Salt for my sales team, dark mode",
-                "A settings page in Material 3",
-                "An analytics dashboard in Fluent 2 for the ops team",
-                "A marketing landing page in uoaui",
-              ].map((prompt) => (
+              {(
+                [
+                  { label: "CRM dashboard for my sales team", id: "crm-contacts", ds: "salt", mode: "dark" },
+                  { label: "Settings page in Material 3", id: "settings-page", ds: "m3" },
+                  { label: "Analytics dashboard for the ops team", id: "analytics-dashboard", ds: "fluent" },
+                  { label: "Marketing landing page in uoaui", id: "landing-page", ds: "uoaui" },
+                ] as { label: string; id: TemplateId; ds: DesignSystem; mode?: BuilderMode }[]
+              ).map((chip) => (
                 <button
-                  key={prompt}
+                  key={chip.id}
                   type="button"
                   className="prompt-bubble"
-                  onClick={() => handleSend(prompt)}
-                  title="Build this with one tap"
+                  onClick={() => {
+                    if (isGenerating) return;
+                    setDesignSystem(chip.ds);
+                    if (chip.mode) setMode(chip.mode);
+                    setPreviewOpen(true);
+                    ensureSessionStarted(titleFromTemplate(BUILDER_TEMPLATES[chip.id].label));
+                    applyTemplateById(chip.id, chip.ds);
+                  }}
+                  title="Start from this template with one tap"
                 >
-                  {prompt}
+                  {chip.label}
                 </button>
               ))}
             </div>

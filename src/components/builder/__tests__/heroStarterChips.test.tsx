@@ -1,12 +1,13 @@
 /* ════════════════════════════════════════════════════════════
-   Hero starter-prompt chips (builder UX quick win QW6).
+   Hero starter chips (builder UX).
    ════════════════════════════════════════════════════════════
-   The chatbox-first hero previously offered zero one-click example
-   prompts. This asserts 4 starter chips render under the hero
-   subtitle, each firing the EXISTING send pipeline in one tap, with
-   copy that names a template pattern + a design system keyword and
-   carries an audience signal so the pre-build audience gate never
-   interrupts the click.
+   The chatbox-first hero offers 4 one-click starter chips. Each
+   chip now seeds the FULL rich template from the canonical registry
+   (BUILDER_TEMPLATES) via applyTemplateById - the same path that
+   "Browse templates" uses - instead of firing handleSend() into the
+   thin LAYOUT_PRESETS skeleton (which dropped a new user onto a
+   sparse placeholder). This asserts the chips render and that one
+   click lands a populated template in the chip's own design system.
 
    Uses react-dom/client + React act() directly (no RTL in the repo).
    Heavy siblings (chat API, markdown, onboarding, tool-use cards)
@@ -17,14 +18,12 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useBuilder } from "@/store/useBuilder";
-import { audienceUnguessable } from "@/lib/assumptionDims";
 
 const sendMessage = vi.fn(() => Promise.resolve());
 
 vi.mock("@/lib/useChatAPI", () => ({
-  /* Mirror the REAL hook's full return shape (QW4 added retrySeconds /
-     failedSend / retryFailedSend): a partial double left retrySeconds
-     undefined, which read as an active send gate and no-opped handleSend. */
+  /* Mirror the REAL hook's full return shape (retrySeconds / failedSend /
+     retryFailedSend) so the send gate reads as inactive in the test. */
   useChatAPI: () => ({
     sendMessage,
     abort: vi.fn(),
@@ -107,25 +106,20 @@ function getChips(): HTMLButtonElement[] {
   );
 }
 
-describe("Hero starter-prompt chips (QW6)", () => {
+describe("Hero starter chips", () => {
   it("renders 4 starter chips on the empty-state hero", () => {
     mountPanel();
     const chips = getChips();
     expect(chips.length).toBe(4);
     for (const chip of chips) {
       const copy = chip.textContent ?? "";
-      // Every chip names a design system so the DS keyword fast-path
-      // applies it before the build.
-      expect(copy).toMatch(/salt|material 3|fluent|uoaui/i);
+      expect(copy.trim().length).toBeGreaterThan(0);
       // No em or en dashes in display copy (house rule).
       expect(copy).not.toMatch(/[–—]/);
-      // Copy must not trip the pre-build audience gate - one click
-      // means a build, not another question.
-      expect(audienceUnguessable(copy)).toBe(false);
     }
   });
 
-  it("fires the existing send pipeline in one click, with no follow-up question", () => {
+  it("seeds the full rich template in one click, in the chip's design system", () => {
     mountPanel();
     const chips = getChips();
     const settingsChip = chips.find((c) =>
@@ -136,12 +130,13 @@ describe("Hero starter-prompt chips (QW6)", () => {
     act(() => settingsChip!.click());
 
     const s = useBuilder.getState();
-    // The chip text became the user's first message.
-    expect(s.messages[0]?.role).toBe("user");
-    expect(s.messages[0]?.content).toBe(settingsChip!.textContent);
-    // DS keyword fast-path applied the named system.
+    // The full registry template was applied (not the thin LAYOUT_PRESETS skeleton).
+    expect(s.activeTemplateId).toBe("settings-page");
+    // A substantial body was seeded, so the user lands on a believable app.
+    expect(s.blocks.length).toBeGreaterThan(10);
+    // The chip's named design system is live.
     expect(s.designSystem).toBe("m3");
-    // No blocking question was injected.
+    // No blocking question was injected - one click means a build.
     const allAi = s.messages.filter((m) => m.role === "ai");
     for (const m of allAi) {
       expect(m.content).not.toMatch(/which design system/i);
@@ -149,7 +144,7 @@ describe("Hero starter-prompt chips (QW6)", () => {
     }
   });
 
-  it("hides the starter chips once the conversation has started", () => {
+  it("hides the starter chips once a template has been applied", () => {
     mountPanel();
     const chips = getChips();
     act(() => chips[0]!.click());
