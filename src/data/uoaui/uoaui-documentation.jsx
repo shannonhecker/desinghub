@@ -170,8 +170,8 @@ const buildCSS = (T) => `
 .a-btn-secondary:hover { background:${T.surfaceHover}; color:${T.fg}; border-color:${T.borderMd}; }
 .a-btn-secondary:active { background:${T.surfaceActive}; }
 
-.a-btn-ghost { background:transparent; color:${T.fg3}; border-color:transparent; }
-.a-btn-ghost:hover { background:${T.surface}; color:${T.fg2}; border-color:${T.border}; }
+.a-btn-ghost { background:transparent; color:${T.fg2}; border-color:transparent; }
+.a-btn-ghost:hover { background:${T.surface}; color:${T.fg}; border-color:${T.border}; }
 .a-btn-ghost:active { background:${T.surfaceHover}; }
 
 .a-btn-outline { background:transparent; color:${T.fg2}; border-color:${T.borderMd}; }
