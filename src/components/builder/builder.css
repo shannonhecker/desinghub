@@ -8368,6 +8368,17 @@
   letter-spacing: 0;
 }
 
+/* Scope lead-in for the zone Auto-layout cluster (finding #6). This is
+   load-bearing SENTENCE copy, so it must clear AA 4.5:1 — uses --b-fg2
+   (passes all four builder themes: 7.36/5.11/7.42/7.64:1), NOT the
+   decorative --b-fg3 used above (fails AA in 3 of 4 themes for body copy). */
+.inspector-section-scope {
+  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
+  color: var(--b-fg2, rgba(238, 242, 237, 0.64));
+  margin: 0 0 var(--bc-gap-sm, 8px);
+  line-height: 1.35;
+}
+
 /* P1 disabled control — used where a control has no backing field yet
    (e.g. Height before P3 wires it). Reads as present-but-inert, with a
    tooltip on hover, rather than a missing control. */

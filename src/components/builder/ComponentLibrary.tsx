@@ -685,6 +685,10 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
        it edits the container, not the selected block — and hide the
        container-only Columns / Distribute controls. */
     <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen={!leaf}>
+      {/* Scope lead-in: this cluster edits the parent CONTAINER's flow, not the
+          selected leaf block. Without it the Auto-layout suite reads as the
+          selected block's own controls (QA-sweep batch 2, finding #6). */}
+      <p className="inspector-section-scope">Controls the {label} container, not the selected block.</p>
       {/* Direction - stack / row / grid */}
       <div className="inspector-field">
         <label className="inspector-field-label">
