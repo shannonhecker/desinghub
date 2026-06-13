@@ -812,11 +812,14 @@ export function ChatPanel() {
 
   const handleSend = (text?: string, opts?: { skipFirstTurn?: boolean }) => {
     const msg = (text || inputText).trim();
-    /* retrySeconds gates send while a 429 countdown runs (QW4) -
-       useChatAPI re-enables it when the countdown hits zero. Loose
-       inequality on purpose: only an ACTIVE countdown (a number) blocks;
-       null and undefined (hook variants, partial test doubles) must not. */
-    if (!msg || isGenerating || retrySeconds != null) return;
+    /* C-429: the 429 countdown only gates NETWORK sends, not local keyword
+       commands ("add buttons", "build a dashboard", theme/DS toggles), which
+       resolve entirely client-side. So the top guard NO LONGER blocks on
+       retrySeconds; the gate moves to the two sendToAPI() call sites below,
+       where it surfaces feedback and re-stages the text instead of silently
+       dropping the message (the user turn + input clear happen at addMessage
+       below, so a bare drop after it would orphan the turn and lose the text). */
+    if (!msg || isGenerating) return;
 
     /* First freeform refinement after a wizard build: clear the flag so the
        Assumption Row resumes for AI/freeform builds. Only fires once the
@@ -892,6 +895,17 @@ export function ChatPanel() {
     if (selectedBlockId) {
       if (aiDisabled) {
         addMessage("ai", "Editing the selected block needs AI. Try \"add buttons\", \"add a nav bar\", or \"build a dashboard\" — those work without an API key.");
+        setGenerating(false);
+        return;
+      }
+      /* C-429: NETWORK send is the gated layer. Loose != null on purpose
+         (only an ACTIVE numeric countdown blocks; null/undefined from hook
+         variants or partial test doubles must pass). Surface feedback and
+         re-stage the text (addMessage above cleared the input) so the turn is
+         not orphaned and nothing is lost; the user resends once it clears. */
+      if (retrySeconds != null) {
+        addMessage("ai", `Rate limit active. Your message is back in the box; resend it once the countdown clears. Local commands still work now.`);
+        setInputText(msg);
         setGenerating(false);
         return;
       }
@@ -1004,6 +1018,14 @@ export function ChatPanel() {
     }
 
     // Route to Claude API for intelligent responses
+    /* C-429: NETWORK send is the gated layer (see the selected-block gate
+       above for the rationale). Loose != null on purpose. */
+    if (retrySeconds != null) {
+      addMessage("ai", `Rate limit active. Your message is back in the box; resend it once the countdown clears. Local commands still work now.`);
+      setInputText(msg);
+      setGenerating(false);
+      return;
+    }
     setGenerating(false); // sendToAPI manages its own generating state
     sendToAPI(msg).then(() => bumpPreview());
   };
@@ -1499,10 +1521,10 @@ export function ChatPanel() {
                   <button
                     className="send-btn"
                     onClick={() => handleSend()}
-                    disabled={!hasText || retrySeconds !== null}
+                    disabled={!hasText}
                     aria-label={
                       retrySeconds !== null
-                        ? `Send disabled, rate limit clears in ${retrySeconds}s`
+                        ? `Send. Local commands run now; network sends resend after ${retrySeconds}s`
                         : "Send"
                     }
                   >
