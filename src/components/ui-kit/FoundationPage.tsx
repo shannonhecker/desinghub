@@ -70,7 +70,7 @@ export function FoundationPage({ componentId }: { componentId: string }) {
           aria-labelledby="dh-h-code"
           style={{ marginTop: "var(--dh-space-64, 64px)" }}
         >
-          <h3 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h3>
+          <h2 id="dh-h-code" className="dh-section-h" style={{ color: t.fg }}>Code</h2>
           <CodePanel componentId={componentId} />
         </section>
       )}
