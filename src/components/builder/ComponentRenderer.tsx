@@ -839,7 +839,25 @@ function SimulatedButtonBlock({
       border: "none",
     },
   };
-  const vs = variantStyles[variant ?? "primary"] || variantStyles.primary;
+  let vs = variantStyles[variant ?? "primary"] || variantStyles.primary;
+  /* Carbon split-brain fix: edit-mode Simulated* renders the generic
+     t.surface/t.fg/t.border "secondary" as a LIGHT layer-01 chip, but
+     present-mode swaps in the REAL @carbon/react `kind="secondary"`, which
+     is a SOLID button. Route the Carbon sim secondary through the SAME
+     token-correct values the existing `.cb-btn-secondary` rule uses
+     (--cds-button-secondary fill + --cds-text-on-color label) so edit
+     matches present. The literal #393939/#fff fallbacks mirror
+     `.cb-btn-secondary` for SSR/first-paint; the vars resolve in the edit
+     `.preview-carbon` scope via the facsimile `:root` block from
+     carbonBuildCSS (tracks themeKey: white #393939 / g100 #6f6f6f). Carbon
+     ONLY: Salt/M3/Fluent/uoaui keep their bordered secondary chip. */
+  if (system === "carbon" && (variant ?? "primary") === "secondary") {
+    vs = {
+      background: "var(--cds-button-secondary, #393939)",
+      color: "var(--cds-text-on-color, #fff)",
+      border: "none",
+    };
+  }
 
   return (
     <div
