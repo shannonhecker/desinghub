@@ -110,7 +110,15 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
        20px container, 4px corner, label in 12px. Pill carries its selected
        look (accentWeak fill + accent border); Tag is the neutral removable
        entry with a trailing close. */
+    /* Carbon's Tag family rides it at Carbon md metrics (verified in
+       @carbon/styles dist css): 24px container, full 16px corner, label-01
+       (400 12px). Colours stay slot-only: read-only is the default gray
+       (fg-mix, the textInput-filled recipe at tag depth), dismissible the
+       red tag pair, operational the blue pair with the glass-badge hairline,
+       and selected selectable the high-contrast inverse (fg on bg). Carbon
+       ships no yellow tag, so nothing here reads the warning slots. */
     const salt = style === "salt-pill" || style === "salt-tag";
+    const carbon = style.startsWith("carbon-");
     const map: Record<string, React.CSSProperties> = {
       assist: { background: t.bg2, color: t.fg, border: "1px solid transparent", boxShadow: "0 2px 7px rgba(0,0,0,0.24)" },
       filter: { background: `color-mix(in srgb, ${t.accent} 24%, ${t.bg})`, color: t.fg, border: "1px solid transparent" },
@@ -118,22 +126,36 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
       suggestion: { background: "transparent", color: t.fg, border: `1px solid ${t.border}` },
       "salt-pill": { background: t.accentWeak ?? t.bg2, color: t.accentText, border: `1px solid ${t.accent}` },
       "salt-tag": { background: t.bg2, color: t.fg2, border: `1px solid ${t.border}` },
+      "carbon-tag": { background: `color-mix(in srgb, ${t.fg} 12%, ${t.bg})`, color: t.fg, border: "1px solid transparent" },
+      "carbon-dismissible": { background: t.dangerBg ?? t.bg2, color: t.dangerFg ?? t.fg, border: "1px solid transparent" },
+      "carbon-selectable": { background: t.fg, color: t.bg, border: "1px solid transparent" },
+      "carbon-operational": {
+        background: t.infoBg ?? t.bg2,
+        color: t.infoFg ?? t.fg,
+        border: "1px solid color-mix(in srgb, currentColor 25%, transparent)",
+      },
     };
     const icon = (name: string, extra?: React.CSSProperties) => (
-      <span className="material-symbols-outlined" aria-hidden style={{ fontSize: salt ? 14 : 18, lineHeight: 1, ...extra }}>
+      <span className="material-symbols-outlined" aria-hidden style={{ fontSize: salt ? 14 : carbon ? 16 : 18, lineHeight: 1, ...extra }}>
         {name}
       </span>
     );
     return (
       <span style={{
-        display: "inline-flex", alignItems: "center", gap: salt ? 4 : 8, height: salt ? 20 : 32,
+        display: "inline-flex", alignItems: "center",
+        gap: salt || carbon ? 4 : 8,
+        height: salt ? 20 : carbon ? 24 : 32,
         padding:
           style === "salt-pill" ? "0 8px"
           : style === "salt-tag" ? "0 4px 0 8px"
+          : style === "carbon-dismissible" ? "0 4px 0 8px"
+          : carbon ? "0 8px"
           : style === "input" ? "0 8px 0 16px"
           : style === "suggestion" ? "0 16px"
           : "0 16px 0 8px",
-        borderRadius: salt ? 4 : 8, font: `500 ${salt ? 12 : 14}px/1 ${t.font}`, letterSpacing: 0.1,
+        borderRadius: salt ? 4 : carbon ? 16 : 8,
+        font: `${carbon ? 400 : 500} ${salt || carbon ? 12 : 14}px/1 ${t.font}`,
+        letterSpacing: carbon ? 0.32 : 0.1,
         whiteSpace: "nowrap", ...(map[style] ?? map.suggestion),
       }}>
         {style === "assist" && icon("event", { color: t.accent })}
@@ -141,6 +163,7 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
         {label}
         {style === "input" && icon("close", { color: t.fg2 })}
         {style === "salt-tag" && icon("close", { color: t.fg2 })}
+        {style === "carbon-dismissible" && icon("close")}
       </span>
     );
   }

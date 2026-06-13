@@ -21,6 +21,7 @@ const t = {
   successBg: "rgb(10, 50, 25)", successFg: "rgb(120, 230, 170)",
   warningBg: "rgb(60, 45, 5)", warningFg: "rgb(250, 200, 90)",
   dangerBg: "rgb(60, 10, 10)", dangerFg: "rgb(255, 1, 2)",
+  infoBg: "rgb(10, 25, 60)", infoFg: "rgb(120, 180, 255)",
 } as never;
 
 /* jsdom-normalised forms of the hex mock values above. */
@@ -273,6 +274,46 @@ describe("VariantExample", () => {
     expect(pill?.style.color).toBe("rgb(250, 200, 90)");
   });
 
+  /* ── Carbon tags (the Tag family at Carbon metrics on the chip branch) ── */
+
+  it("renders the gray default fill at Carbon md metrics for chip carbon-tag", () => {
+    const c = render("chip", "carbon-tag");
+    const tag = c.querySelector<HTMLElement>("span");
+    expect(c.textContent).toContain("Ex");
+    expect(tag?.style.height).toBe("24px");
+    expect(tag?.style.borderRadius).toBe("16px");
+    expect(tag?.style.background).toContain("color-mix");
+    expect(c.querySelector(".material-symbols-outlined")).toBeNull();
+  });
+
+  it("renders one trailing 16px close icon on the red tag pair for chip carbon-dismissible", () => {
+    const c = render("chip", "carbon-dismissible");
+    const tag = c.querySelector<HTMLElement>("span");
+    expect(c.textContent).toContain("Ex");
+    expect(tag?.style.background).toBe("rgb(60, 10, 10)");
+    expect(tag?.style.color).toBe("rgb(255, 1, 2)");
+    const icons = c.querySelectorAll<HTMLElement>(".material-symbols-outlined");
+    expect(icons.length).toBe(1);
+    expect(icons[0].textContent).toBe("close");
+    expect(icons[0].style.fontSize).toBe("16px");
+  });
+
+  it("renders the selected high-contrast inverse fill for chip carbon-selectable", () => {
+    const c = render("chip", "carbon-selectable");
+    const tag = c.querySelector<HTMLElement>("span");
+    expect(tag?.style.height).toBe("24px");
+    expect(tag?.style.background).toBe("rgb(255, 255, 255)");
+    expect(tag?.style.color).toBe("rgb(17, 17, 17)");
+    expect(c.querySelector(".material-symbols-outlined")).toBeNull();
+  });
+
+  it("renders the blue tag pair with a hairline currentColor border for chip carbon-operational", () => {
+    const tag = render("chip", "carbon-operational").querySelector<HTMLElement>("span");
+    expect(tag?.style.background).toBe("rgb(10, 25, 60)");
+    expect(tag?.style.color).toBe("rgb(120, 180, 255)");
+    expect(tag?.style.border).toContain("color-mix");
+  });
+
   /* ── Meta registration: cross-worktree contract ──
      The new DS entries below are authored in the sibling worktree's
      ui-kit-meta.ts; these assertions pin the agreed style keys + names
@@ -321,6 +362,34 @@ describe("VariantExample", () => {
       "glass-warning",
     ]);
     expect(glass.map((v) => v.name)).toEqual(["Accent", "Default", "Danger", "Success", "Warning"]);
+  });
+
+  it("registers the Carbon Tag family in COMPONENT_VARIANT_NAMING under chip", () => {
+    const carbon = COMPONENT_VARIANT_NAMING.chip?.carbon ?? [];
+    expect(carbon.map((v) => v.style)).toEqual([
+      "carbon-tag",
+      "carbon-dismissible",
+      "carbon-selectable",
+      "carbon-operational",
+    ]);
+    expect(carbon.map((v) => v.name)).toEqual([
+      "Read-only",
+      "Dismissible",
+      "Selectable",
+      "Operational",
+    ]);
+  });
+
+  it("registers Carbon tag anatomy with the dist-verified md metrics", () => {
+    const a = COMPONENT_ANATOMY.chip?.carbon;
+    expect(a?.parts.length).toBeGreaterThan(0);
+    expect(a?.measures).toContainEqual({ label: "Height", value: "24dp" });
+    expect(a?.measures).toContainEqual({ label: "Corner", value: "16dp" });
+  });
+
+  it("keeps badge.carbon absent (no real @carbon/react Badge ships; Tag is chip semantics)", () => {
+    expect(COMPONENT_VARIANT_NAMING.badge?.carbon).toBeUndefined();
+    expect(COMPONENT_ANATOMY.badge?.carbon).toBeUndefined();
   });
 
   it("registers the four M3 chip types in COMPONENT_VARIANT_NAMING under chip", () => {
