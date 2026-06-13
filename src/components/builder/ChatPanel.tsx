@@ -921,8 +921,12 @@ export function ChatPanel() {
       return;
     }
 
-    /* ── Layout generation - highest priority ── */
-    const layoutResult = processLayoutCommand(msg);
+    /* ── Layout generation (OFFLINE FALLBACK ONLY) ──
+       AI-first: when Claude is available, build/create intents ("build a
+       dashboard") fall through to the model so the result is real and
+       contextual, not a fixed local LAYOUT_PRESETS skeleton. Without an API
+       key we keep the local layout preset so the builder still works offline. */
+    const layoutResult = aiDisabled ? processLayoutCommand(msg) : null;
     if (layoutResult) {
       /* Apply the delta to the canvas before updating the onboarding
          pick list so the body zone reflects the newly-generated
@@ -958,8 +962,14 @@ export function ChatPanel() {
     else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
     else if (l.includes("uoaui"))                          { setDesignSystem("uoaui");  dsChanged = true; }
 
-    /* ── Component command matched - apply and respond ── */
-    if (newComponents !== null) {
+    /* ── Component command matched ──
+       AI-first: when Claude is available, ADDITIVE intents ("add buttons")
+       fall through to the model so additions are contextual rather than a
+       generic local component group. Destructive ops (clear all / clear body /
+       remove) stay instant and deterministic even with AI on; offline,
+       everything applies locally as the fallback. ── */
+    const isDestructiveCmd = clearAll || clearBody || Boolean(alsoRemoveIds && alsoRemoveIds.length);
+    if (newComponents !== null && (aiDisabled || isDestructiveCmd)) {
       /* Write the delta to the canvas before updating the onboarding
          pick list. PreviewCanvas mirrors selectedComponents → blocks
          only on first mount, so without this the chat-add is
