@@ -17,6 +17,7 @@ import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { usePreviewMode } from "@/store/usePreviewMode";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -1037,7 +1038,35 @@ export function ChatPanel() {
       return;
     }
     setGenerating(false); // sendToAPI manages its own generating state
-    sendToAPI(msg).then(() => bumpPreview());
+    /* Capture whether the canvas was empty BEFORE this build so we only flip to
+       Preview on the first build (the empty -> content transition), never on a
+       later refinement that would yank the user out of a deliberate edit. */
+    const canvasWasEmpty = (() => {
+      const s = useBuilder.getState();
+      return (
+        s.blocks.length === 0 &&
+        s.headerBlocks.length === 0 &&
+        s.sidebarBlocks.length === 0 &&
+        s.footerBlocks.length === 0
+      );
+    })();
+    sendToAPI(msg).then(() => {
+      bumpPreview();
+      /* Lovable-style "see your real app": after the FIRST AI build populates an
+         empty canvas, surface the rendered result in Preview mode the way
+         applyTemplateToCanvas does, instead of leaving the user on the edit-mode
+         Simulated* facsimile. Scoped to the empty -> content transition + only
+         when still in edit, so refinements never interrupt an edit session. */
+      const s = useBuilder.getState();
+      const nowHasContent =
+        s.blocks.length > 0 ||
+        s.headerBlocks.length > 0 ||
+        s.sidebarBlocks.length > 0 ||
+        s.footerBlocks.length > 0;
+      if (canvasWasEmpty && nowHasContent && usePreviewMode.getState().mode === "edit") {
+        usePreviewMode.getState().setMode("preview");
+      }
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
