@@ -27,7 +27,7 @@
    ════════════════════════════════════════════════════════════ */
 
 import { describe, it, expect } from "vitest";
-import { getTheme, getThemeKeys } from "@/data/registry";
+import { getTheme, getThemeKeys, MATERIAL_COLORS } from "@/data/registry";
 import type { SystemId } from "@/store/useDesignHub";
 import { contrastRatio, hexToRGB, isHex } from "@/lib/contrastUtils";
 import { getStageBg } from "../stageTint";
@@ -176,6 +176,45 @@ describe("FoundationPage text role (fg2) clears WCAG AA 4.5:1 on the PAINTED sta
     // Emit the per-theme table for PR evidence.
     console.log(
       "\nFoundationPage painted-stage contrast evidence:\n" + evidence.join("\n"),
+    );
+  });
+});
+
+/* ── Custom M3 themes (dynamic color from a source hex) ──────────────────
+   The 18-theme loop above covers only the BUILT-IN themes. The custom
+   dynamic-color path — getTheme('m3','custom', sourceHex, isDark) ->
+   generateM3Theme — derives BOTH the painted stage (surfaceContainerLow)
+   and fg2 (onSurfaceVariant) from the source hue, so its contrast is
+   hue-DEPENDENT and is NOT exercised by the built-in proof. Pin that every
+   Material source color, in light and dark, keeps fg2 over the painted stage
+   at AA 4.5:1. NOTE: must use the FOUR-arg getTheme signature; the two-arg
+   form falls through to the built-in 'light' theme and would silently
+   re-test a default instead of the dynamic path. ALL_THEMES / toBe(18) above
+   are intentionally left untouched — this is a separate, additive block. */
+describe("FoundationPage fg2 clears AA 4.5:1 on the painted stage for CUSTOM M3 themes (18 Material source colors x light/dark)", () => {
+  const evidence: string[] = [];
+
+  for (const c of MATERIAL_COLORS as Array<{ name: string; hex: string }>) {
+    for (const isDark of [false, true]) {
+      const mode = isDark ? "dark" : "light";
+      it(`m3/custom ${c.name} (${mode}): fg2 vs painted stage >= 4.5`, () => {
+        const t = toActiveTheme("m3", getTheme("m3", "custom", c.hex, isDark));
+        const stops = resolveStageColors(t);
+        const { ratio, stop } = worstCase(t.fg2, stops);
+        evidence.push(
+          `m3/custom ${c.name} ${mode}: fg2 ${t.fg2} worst ${ratio.toFixed(2)}:1 on ${stop}`,
+        );
+        expect(
+          ratio,
+          `m3/custom ${c.name} ${mode} fg2 ${t.fg2} on painted stage ${stop} = ${ratio.toFixed(2)}:1`,
+        ).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+
+  it("documents the custom-theme painted-stage contrast table", () => {
+    console.log(
+      "\nCustom M3 painted-stage contrast evidence:\n" + evidence.join("\n"),
     );
   });
 });
