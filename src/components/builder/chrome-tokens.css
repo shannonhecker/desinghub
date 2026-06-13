@@ -101,6 +101,13 @@
   --bc-size-slot-hover: 20px; /* InsertionSlot expanded height */
   --bc-size-handle: 10px;   /* Resize handle width */
   --bc-size-frame-tab: 18px; /* .bp-frame-tab height (lifted from a builder.css literal) */
+  /* Component/blocks library panel — comfortable default + resize bounds.
+     Was a 240px literal scattered across builder.css + PreviewPanel state;
+     hoisted here so the panel reads at a usable width and is single-sourced. */
+  --bc-comp-sidebar-width:        300px;
+  --bc-comp-sidebar-width-min:    248px;
+  --bc-comp-sidebar-width-max:    420px;
+  --bc-comp-sidebar-width-tablet: 248px;
   /* Vertical band the absolute .bp-frame-tab occupies (top offset + its height);
      zones reserve this in edit mode so the label can't overlap zone content. */
   --bc-frame-tab-clear: calc(var(--bc-gap-xs) + var(--bc-size-frame-tab));

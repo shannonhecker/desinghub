@@ -8763,7 +8763,7 @@
 
 /* ── Right component sidebar (outside the device frame) ── */
 .component-sidebar {
-  width: var(--comp-sidebar-width, 240px);
+  width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width, 300px));
   flex-shrink: 0;
   background: var(--b-bg);
   border-left: 1px solid var(--b-border2);
@@ -10032,8 +10032,8 @@
    ══════════════════════════════════════════════════════════ */
 .lib-tile-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--bc-gap-md, 12px);
 }
 .lib-tile {
   display: flex;
@@ -11305,6 +11305,31 @@
   overflow-x: hidden;
 }
 
+/* Working-width cap for the body column (Part 2 of #229 — the matting that
+   was tokenised in chrome-tokens.css but never wired). data-interface (set on
+   .bp-dashboard) maps the interface type to a content cap so demo + authored
+   content sits in a centered, capped column with a fluid page gutter instead
+   of stretching edge-to-edge inside the 1320px stage. min(100%, cap) collapses
+   to full width on narrow canvases, so the mobile shell is untouched. */
+.bp-main {
+  align-items: center;
+}
+.bp-main > * {
+  width: 100%;
+  max-width: min(100%, var(--bc-content-cap-app));
+  margin-inline: auto;
+  padding-inline: var(--bc-gutter);
+}
+[data-interface="form"] .bp-main > *,
+[data-interface="blog"] .bp-main > * {
+  max-width: min(100%, var(--bc-content-cap-doc));
+}
+[data-interface="landing"] .bp-main > *,
+[data-interface="ecommerce"] .bp-main > *,
+[data-interface="portfolio"] .bp-main > * {
+  max-width: min(100%, var(--bc-content-cap-marketing));
+}
+
 /* ── Chat area ── */
 .bp-chat-area {
   flex: 1;
@@ -12123,7 +12148,7 @@
   .bp-controls { padding: 6px 12px; gap: 8px; }
   .bp-dimensions { display: none; }
   .preview-toolbar { padding: 4px 12px; }
-  .component-sidebar { width: var(--comp-sidebar-width, 200px); }
+  .component-sidebar { width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width-tablet, 248px)); }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -12313,7 +12338,7 @@
   }
   .gsb-inner { width: 240px; }
   /* Narrow the right-hand component library so canvas keeps breathing room */
-  .component-sidebar { width: var(--comp-sidebar-width, 200px); }
+  .component-sidebar { width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width-tablet, 248px)); }
 }
 
 /* ══════════════════════════════════════════════════════════
