@@ -101,6 +101,7 @@ describe("shareState round-trips", () => {
       designSystem: "salt",
       mode: "dark",
       density: "medium",
+      canvasSpacing: "tight",
       deviceMode: "desktop",
       themeKey: null,
       activeTemplateId: null,
