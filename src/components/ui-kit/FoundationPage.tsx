@@ -58,7 +58,7 @@ export function FoundationPage({ componentId }: { componentId: string }) {
     <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
       <header className="dh-detail-header">
         <p className="dh-foundation-eyebrow" style={{ color: t.fg2 }}>Foundations</p>
-        <h2 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h2>
+        <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
         <p className="dh-detail-desc" style={{ color: t.fg2 }}>{comp.desc}</p>
         <p className="dh-foundation-context" style={{ color: t.fg2 }}>{system.name}</p>
       </header>

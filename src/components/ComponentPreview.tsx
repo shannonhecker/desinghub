@@ -154,7 +154,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     return (
       <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h2>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
           <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
         </div>
         <div role="tablist" aria-label="Component view" style={{
@@ -227,7 +227,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     return (
       <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h2>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
           <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
         </div>
         {componentId === "charts"
@@ -505,7 +505,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     return (
       <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
         <header className="dh-detail-header">
-          <h2 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h2>
+          <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
           <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
         </header>
         {/* M3 pill tab bar */}
@@ -551,7 +551,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
       {/* Header */}
       <header className="dh-detail-header">
-        <h2 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h2>
+        <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
         <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
       </header>
 
