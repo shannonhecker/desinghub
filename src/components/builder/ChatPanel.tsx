@@ -1090,9 +1090,11 @@ export function ChatPanel() {
        • messages.length === 0 - the canonical first-turn signal (mirrors
          handleSend); so a re-mount that already has history never re-fires
        • the URL is cleaned    - so a manual refresh doesn't re-stage it
-     With AI on in prod (aiDisabled === false) this routes straight into a
-     real model build via handleSend; offline it falls into the keyword
-     fast-paths / onboarding like any other first message. We read
+     With AI on in prod (aiDisabled === false) this routes through the AI-first
+     handleSend path: it builds directly, or for an app-like prompt that names
+     no audience it asks the one "who is this for?" question first, then builds.
+     Offline it falls into the keyword fast-paths / onboarding like any other
+     first message. We read
      window.location.search directly (NOT the Next useSearchParams hook) to
      avoid a Suspense/CSR-bailout requirement, matching the existing
      BuilderApp param effects. Placed AFTER handleSend so the closure is

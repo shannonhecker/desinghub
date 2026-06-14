@@ -1,13 +1,15 @@
 /* ════════════════════════════════════════════════════════════
    Builder chat deep-link prompt auto-fire.
    ════════════════════════════════════════════════════════════
-   /builder?prompt=<text> stages the text and fires ONE build on
-   mount. With Claude available (anthropicConfigured) and an empty
-   conversation, the deep-linked prompt routes through the AI-first
-   handleSend path - it must NOT add the offline "which design
-   system?" onboarding question, and it must fire exactly once
-   (one-shot ref + messages.length===0 guard). The URL is cleaned
-   afterwards so a refresh does not re-stage.
+   /builder?prompt=<text> stages the text and auto-fires handleSend
+   exactly ONCE on mount (one-shot ref + messages.length===0 guard),
+   then cleans the URL so a refresh does not re-stage. With Claude on
+   (anthropicConfigured) the prompt routes through the AI-first
+   handleSend path: an app-like prompt that names no audience gets the
+   one pre-build "who is this for?" question first (NO build yet); a
+   prompt that names an audience (or is not app-like) reaches the real
+   model build (sendToAPI === the mocked sendMessage). It must NEVER add
+   the offline "which design system?" onboarding question when AI is on.
 
    Uses react-dom/client + React act() directly (no RTL in the repo),
    mirroring builderAiFirst.test.tsx.
@@ -119,7 +121,7 @@ function userMessages(): string[] {
 }
 
 describe("Builder chat deep-link ?prompt= auto-fire", () => {
-  it("fires handleSend once with the decoded prompt and never asks the DS question (AI on)", () => {
+  it("fires handleSend once with the decoded prompt; an app-like prompt with no audience defers to the one audience question, not a build (AI on)", () => {
     window.history.replaceState({}, "", "/builder?prompt=build%20a%20dashboard");
     reset({ anthropicConfigured: true });
 
@@ -131,16 +133,56 @@ describe("Builder chat deep-link ?prompt= auto-fire", () => {
     });
     vi.useRealTimers();
 
-    // handleSend ran exactly once with the DECODED text: the build path always
-    // records the user turn, so exactly one matching user message proves it.
+    // handleSend ran exactly once with the DECODED text: the user turn is
+    // recorded before the audience gate, so exactly one matching turn proves it.
     expect(
       userMessages().filter((m) => m === "build a dashboard"),
     ).toHaveLength(1);
+
+    // "dashboard" is app-like with no audience signal -> the ONE pre-build
+    // audience question fires, and NO model build runs yet (sendMessage idle).
+    expect(
+      aiMessages().some((m) => m.toLowerCase().includes("who is this for")),
+    ).toBe(true);
+    expect(sendMessage).not.toHaveBeenCalled();
 
     // AI on -> the offline "which design system?" onboarding was NOT added.
     expect(aiMessages().some((m) => m.includes(DS_QUESTION))).toBe(false);
 
     // The prompt param was stripped so a refresh would not re-stage.
+    expect(window.location.search).not.toContain("prompt=");
+  });
+
+  it("a deep-linked prompt that names an audience reaches the real model build (sendMessage), bypassing the audience gate", () => {
+    // "internal ... for the team" carries an audience signal, so audienceUnguessable
+    // is false and handleSend falls through to the build path -> sendToAPI (the
+    // mocked sendMessage). This is the assertion that proves the deep link can
+    // actually trigger a build, not merely run handleSend.
+    window.history.replaceState(
+      {},
+      "",
+      "/builder?prompt=an%20internal%20admin%20dashboard%20for%20the%20team",
+    );
+    reset({ anthropicConfigured: true });
+
+    vi.useFakeTimers();
+    mountPanel();
+    act(() => {
+      vi.advanceTimersByTime(60);
+    });
+    vi.useRealTimers();
+
+    expect(
+      userMessages().filter(
+        (m) => m === "an internal admin dashboard for the team",
+      ),
+    ).toHaveLength(1);
+    // Audience already named -> no "who is this for?" interruption.
+    expect(
+      aiMessages().some((m) => m.toLowerCase().includes("who is this for")),
+    ).toBe(false);
+    // The real build path ran: the API send was invoked.
+    expect(sendMessage).toHaveBeenCalled();
     expect(window.location.search).not.toContain("prompt=");
   });
 
