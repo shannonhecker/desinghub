@@ -685,7 +685,7 @@ function StatsCardsBlock({ blockId }: { system?: DesignSystem; blockId?: string 
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
       {stats.map((stat, i) => (
         <div
           key={i}

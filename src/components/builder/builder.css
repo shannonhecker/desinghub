@@ -12982,20 +12982,44 @@
   align-items: start;
 }
 
-/* ── Graceful narrow-canvas wrap for grid bodies ──
+/* ── Graceful narrow-canvas wrap for grid bodies (tiered ladder) ──
    The 12-col grid is authored for desktop canvas widths; when the body
-   container squeezes (docked chat + inspector), 1fr tracks collapse to
-   slivers and template rows (6/3/3 scope bar, 3/3/3/3 KPI row) read as
-   broken. Below the cutoff, re-span the canonical widths so rows stack
-   INTENTIONALLY: half-row items go full row, third/quarter-row items go
-   half row (KPI 4-up becomes a clean 2x2). Container query + !important
+   container squeezes (docked chat + inspector) the fixed repeat(12,1fr)
+   tracks exceed the body width and the right-hand KPI/stat cards clip
+   against .bp-main's overflow-x:hidden. A single low cutoff (the old
+   640px query) never fired for dense dashboards because the CRM/Analytics
+   body sits ~900-1050px — well above 640px — so the cards clipped between
+   ~640px and the 1320px stage cap with no relief.
+
+   Fix = a tiered ladder that re-spans BEFORE clipping, while still under
+   the cap. Ordered widest-cutoff-first so the narrower query wins by
+   source order at narrower widths:
+     • ≤1100px : quarter-row (span 3) → third-row (span 4)  → 4-up becomes 3-up
+     • ≤760px  : quarter/third-row     → half-row (span 6)  → clean 2x2
+     • ≤640px  : also collapses half-row (span 6) → full row (span 12)
+   Net ladder: 4-up → 3-up → 2x2 → stacked. Container query + !important
    because the resolver writes spans inline; canvas-only — exported code
-   keeps each DS's native responsive grid. */
+   keeps each DS's native responsive grid (this block never reaches the
+   generated React/CSS output). */
 .zone-drop-body.zone-grid {
   container-type: inline-size;
   container-name: zone-body-grid;
 }
+@container zone-body-grid (max-width: 1100px) {
+  /* dense KPI rows go 4-up → 3-up before they can clip */
+  .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 4 !important; }
+}
+@container zone-body-grid (max-width: 760px) {
+  /* third/quarter-row items fold to a clean 2x2 (half-row) */
+  .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 4;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 5;"] { grid-column: span 6 !important; }
+  .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
+  .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
+  .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+}
 @container zone-body-grid (max-width: 640px) {
+  /* deepest tier: everything stacks to full / half rows */
   .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 6 !important; }
   .zone-drop-body.zone-grid > [style*="grid-column: span 4;"] { grid-column: span 6 !important; }
   .zone-drop-body.zone-grid > [style*="grid-column: span 5;"] { grid-column: span 6 !important; }
