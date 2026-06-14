@@ -443,6 +443,10 @@ export function ChatPanel() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
+  /* One-shot guard for the ?prompt= deep-link auto-fire (below, after
+     handleSend is defined). A ref (not state) so it never triggers a
+     re-render and survives the effect's own setInputText. */
+  const promptFiredRef = useRef(false);
 
 
   /* ── Lifecycle state for the status pill ──
@@ -1039,6 +1043,43 @@ export function ChatPanel() {
     setGenerating(false); // sendToAPI manages its own generating state
     sendToAPI(msg).then(() => bumpPreview());
   };
+
+  /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
+     A link like /builder?prompt=build%20a%20dashboard stages the text and
+     fires ONE build on mount. The /start sibling page (separate PR) is the
+     producer of these links. Three guards keep it a true one-shot:
+       • promptFiredRef       - never fires twice in one mount/lifecycle
+       • messages.length === 0 - the canonical first-turn signal (mirrors
+         handleSend); so a re-mount that already has history never re-fires
+       • the URL is cleaned    - so a manual refresh doesn't re-stage it
+     With AI on in prod (aiDisabled === false) this routes straight into a
+     real model build via handleSend; offline it falls into the keyword
+     fast-paths / onboarding like any other first message. We read
+     window.location.search directly (NOT the Next useSearchParams hook) to
+     avoid a Suspense/CSR-bailout requirement, matching the existing
+     BuilderApp param effects. Placed AFTER handleSend so the closure is
+     defined; the deps are intentionally mount-only (handleSend is a stable
+     closure recreated each render, but the ref + messages.length guards make
+     re-runs no-ops, so we keep the dep list empty like the sibling effects). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (promptFiredRef.current || messages.length !== 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const prompt = params.get("prompt");
+    if (!prompt) return;
+    promptFiredRef.current = true;
+    setInputText(prompt);
+    setTimeout(() => handleSend(prompt), 50);
+    /* Clean ONLY the prompt param so a refresh doesn't re-stage, while
+       preserving any sibling params (?ds, ?mode, ...). Mirrors the ?shared
+       cleanup precedent in BuilderApp, scoped to one key. */
+    params.delete("prompt");
+    const qs = params.toString();
+    const newUrl =
+      window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    window.history.replaceState({}, "", newUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
