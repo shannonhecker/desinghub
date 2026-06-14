@@ -497,6 +497,20 @@ export function ChatPanel() {
     }
   }, [isGenerating, lastAiContent]);
 
+  /* Phase-aware label for the full-width generating-state block. Derived
+     purely from the existing lifecycleState the effect above maintains:
+       thinking  -> "Thinking…"          (model deciding, no tokens yet)
+       streaming -> "Building…"          (tokens / layout arriving)
+       tool      -> "Applying changes…"  (a tool-use action just landed)
+     done/error/idle never coincide with isGenerating, so they fall back to
+     "Thinking…". Uses the ellipsis char to match the surrounding copy. */
+  const generatingLabel =
+    lifecycleState === "streaming"
+      ? "Building…"
+      : lifecycleState === "tool"
+        ? "Applying changes…"
+        : "Thinking…";
+
   /* ── Phase 3a (N4 Tool-Use Cards) ──
      Subscribe to `builder:tool-use` events emitted by applyAIActions.
      Group by messageId so each assistant message renders its own
@@ -508,9 +522,14 @@ export function ChatPanel() {
     Record<string, ToolUseEvent[]>
   >({});
 
+  /* Holds the active "Applying changes…" revert timer so a burst of
+     tool-use events coalesces into one pill window instead of stacking
+     timers (mirrors the single-timer discipline of the done-state effect). */
+  const toolPillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const unsubscribe = subscribeToolUse((event) => {
       if (!event.messageId) return;
+      let isNew = false;
       setToolUseByMessage((prev) => {
         const existing = prev[event.messageId!] ?? [];
         /* Dedupe by (action + ts) so a re-emit (e.g. React StrictMode
@@ -519,10 +538,29 @@ export function ChatPanel() {
           (e) => e.action === event.action && e.ts === event.ts,
         );
         if (exists) return prev;
+        isNew = true;
         return { ...prev, [event.messageId!]: [...existing, event] };
       });
+      /* Surface the unused 'tool' pill state briefly when a NEW tool-use
+         action lands for the in-flight message. Only while generating, so a
+         late/replayed event never resurrects the pill after the turn settled.
+         Read isGenerating fresh from the store (the effect's empty deps would
+         otherwise capture a stale value). Hand back to "streaming" after a
+         short window; the done->idle effect owns the final settle. */
+      if (isNew && useBuilder.getState().isGenerating) {
+        setLifecycleState("tool");
+        if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+        toolPillTimerRef.current = setTimeout(() => {
+          /* Only fall back to streaming if we're still mid-generation;
+             otherwise leave the done/idle the lifecycle effect set. */
+          if (useBuilder.getState().isGenerating) setLifecycleState("streaming");
+        }, 900);
+      }
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+    };
   }, []);
 
   /* Per-card undo wiring. For PR (a) we ship a working undo for
@@ -1514,7 +1552,7 @@ export function ChatPanel() {
                     being loud. */}
                 <div className="generating-shimmer">
                   <span className="generating-shimmer-dot" aria-hidden="true" />
-                  <span className="generating-shimmer-text">Thinking…</span>
+                  <span className="generating-shimmer-text">{generatingLabel}</span>
                 </div>
                 <span className="generating-text">Drafting layout and applying design tokens…</span>
               </div>
