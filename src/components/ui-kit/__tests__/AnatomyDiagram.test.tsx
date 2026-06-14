@@ -15,6 +15,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { AnatomyDiagram } from "../AnatomyDiagram";
+import { COMPONENT_ANATOMY } from "@/data/ui-kit-meta";
 
 /* Minimal theme stand-in — AnatomyDiagram reads only colour/type slots. */
 const fakeTheme = {
@@ -149,5 +150,18 @@ describe("AnatomyDiagram", () => {
   it("keeps the icon-free button schematic when componentId is absent", () => {
     const c = renderDiagram(anatomy);
     expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
+  });
+
+  it("renders the real Salt Button anatomy as an icon-free pill with its measures", () => {
+    const salt = COMPONENT_ANATOMY.button?.salt;
+    expect(salt).toBeDefined();
+    const c = renderDiagramFor("button", salt as typeof anatomy);
+    /* Button schematic is icon-free (no leading/trailing glyphs). */
+    expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
+    /* One callout + legend entry per Salt part. */
+    expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(salt!.parts.length);
+    /* Salt's MD-density measures are annotated. */
+    expect(c.textContent).toContain("36dp");
+    expect(c.textContent).toContain("Focus ring");
   });
 });
