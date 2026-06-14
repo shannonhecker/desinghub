@@ -1668,6 +1668,12 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
 
   return (
     <DndContext
+      /* Stable id so dnd-kit's internal a11y "describedby" element gets a
+         deterministic id across SSR and client. Without it dnd-kit falls back
+         to an unstable counter (DndDescribedBy-N) that differs between server
+         and client, triggering a hydration mismatch that can leave the builder
+         non-interactive on the first (cold) load until a reload warms it. */
+      id="builder-dnd"
       sensors={sensors}
       collisionDetection={multiZoneCollision}
       onDragStart={handleDragStart}
