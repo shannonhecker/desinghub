@@ -1,0 +1,435 @@
+/* ════════════════════════════════════════════════════════════
+   /start: scoped styles for the prompt-first cold-start sibling.
+
+   SCOPE CONTRACT
+   - Every selector is under `.start-root` (or a `.start-*` child).
+     Nothing here can leak onto the live hero or any other surface.
+   - Colours, radii, spacing, motion and the type scale all reference
+     EXISTING root tokens from globals.css (--dh-*, --aurora-*,
+     --lsl-text-*). No --lsl-* / --dh-* / --a-* token is redefined.
+   - Only `--start-*` locals are introduced, and only where no token
+     fit existed (page surface composite, blob sizing, max width,
+     the font stack which is otherwise scoped to .landing-southleft).
+
+   BRAND
+   Teal Input, Purple Compute, Peach Output, Midnight Canvas: the
+   same palette the landing uses, sourced from the root aurora/brand
+   tokens (teal = --aurora-blob-1-inner, purple = --dh-brand-primary-
+   soft, peach = --aurora-blob-3-inner, midnight = --dh-brand-bg-deep).
+   ════════════════════════════════════════════════════════════ */
+
+.start-root {
+  /* Font stack: mirrors the landing's --lsl-font-* which is scoped to
+     .landing-southleft, so we re-express it here from the same source
+     font vars rather than redefining the scoped token. */
+  --start-font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", system-ui, sans-serif;
+  --start-font-display: var(--font-bricolage), var(--font-outfit),
+    -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --start-font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono",
+    Menlo, Consolas, monospace;
+
+  /* Brand palette pulled straight from root tokens. */
+  --start-teal: var(--aurora-blob-1-inner);
+  --start-purple: var(--dh-brand-primary-soft);
+  --start-peach: var(--aurora-blob-3-inner);
+
+  /* Composite midnight surface: layered radial brand washes over the
+     deepest brand background. Token-built; no raw hex. */
+  --start-shell-max: 760px;
+
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--dh-space-64) var(--dh-space-24);
+  box-sizing: border-box;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 90% at 50% -10%,
+      color-mix(in srgb, var(--start-purple) 16%, transparent),
+      transparent 60%
+    ),
+    var(--dh-brand-bg-deep);
+  color: var(--dh-brand-fg);
+  font-family: var(--start-font-sans);
+  color-scheme: dark;
+}
+
+.start-root *,
+.start-root *::before,
+.start-root *::after {
+  box-sizing: border-box;
+}
+
+.start-root ::selection {
+  background: var(--start-teal);
+  color: var(--dh-brand-bg-deep);
+}
+
+/* ── Atmospheric brand blobs ─────────────────────────────────── */
+.start-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.start-blob {
+  position: absolute;
+  border-radius: var(--dh-curve-full);
+  filter: blur(90px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.start-blob-teal {
+  width: 46vmin;
+  height: 46vmin;
+  top: -8vmin;
+  left: -6vmin;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--start-teal),
+    transparent 70%
+  );
+  animation: start-drift-a 22s var(--dh-motion-ease) infinite alternate;
+}
+
+.start-blob-purple {
+  width: 52vmin;
+  height: 52vmin;
+  bottom: -14vmin;
+  right: -10vmin;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--start-purple),
+    transparent 70%
+  );
+  opacity: 0.42;
+  animation: start-drift-b 26s var(--dh-motion-ease) infinite alternate;
+}
+
+.start-blob-peach {
+  width: 30vmin;
+  height: 30vmin;
+  top: 38%;
+  left: 58%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--start-peach),
+    transparent 70%
+  );
+  opacity: 0.3;
+  animation: start-drift-a 30s var(--dh-motion-ease) infinite alternate-reverse;
+}
+
+@keyframes start-drift-a {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(4%, 6%, 0);
+  }
+}
+
+@keyframes start-drift-b {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-5%, -4%, 0);
+  }
+}
+
+/* ── Content shell ───────────────────────────────────────────── */
+.start-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: var(--start-shell-max);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-24);
+  animation: start-enter var(--dh-motion-dur-emphasis) var(--dh-motion-ease)
+    both;
+}
+
+@keyframes start-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Eyebrow ─────────────────────────────────────────────────── */
+.start-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-space-8);
+  margin: 0;
+  font-family: var(--start-font-mono);
+  font-size: var(--lsl-text-eyebrow);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--start-teal);
+}
+
+.start-eyebrow-dot {
+  width: var(--dh-space-8);
+  height: var(--dh-space-8);
+  border-radius: var(--dh-curve-full);
+  background: var(--start-teal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--start-teal) 22%, transparent);
+}
+
+/* ── Headline + lede ─────────────────────────────────────────── */
+.start-headline {
+  margin: 0;
+  font-family: var(--start-font-display);
+  font-weight: 800;
+  font-size: var(--lsl-text-display-m);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--dh-brand-fg);
+}
+
+.start-headline em {
+  font-style: normal;
+  background: linear-gradient(
+    100deg,
+    var(--start-teal),
+    var(--start-purple) 55%,
+    var(--start-peach)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.start-lede {
+  margin: 0;
+  max-width: 54ch;
+  font-size: var(--lsl-text-body-xl);
+  line-height: 1.55;
+  color: var(--dh-brand-fg-muted);
+}
+
+/* ── Form ────────────────────────────────────────────────────── */
+.start-form {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-12);
+}
+
+.start-label {
+  font-family: var(--start-font-mono);
+  font-size: var(--lsl-text-micro);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--dh-brand-fg-muted);
+}
+
+.start-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-12);
+  padding: var(--dh-space-16);
+  border-radius: var(--dh-curve-lg);
+  background: color-mix(in srgb, var(--dh-brand-fg) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dh-brand-fg) 14%, transparent);
+  box-shadow: var(--dh-shadow-lg);
+  transition:
+    border-color var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    box-shadow var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+
+/* Glow the whole field while the textarea inside has focus. */
+.start-field:focus-within {
+  border-color: color-mix(in srgb, var(--start-teal) 60%, transparent);
+  box-shadow:
+    var(--dh-shadow-lg),
+    0 0 0 1px color-mix(in srgb, var(--start-teal) 40%, transparent);
+}
+
+.start-textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--dh-brand-fg);
+  font-family: var(--start-font-sans);
+  font-size: var(--lsl-text-body-l);
+  line-height: 1.55;
+  padding: 0;
+  outline: none;
+}
+
+.start-textarea::placeholder {
+  color: var(--dh-brand-fg-disabled);
+}
+
+/* ── Actions row (hint + submit) ─────────────────────────────── */
+.start-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dh-space-16);
+  flex-wrap: wrap;
+}
+
+.start-hint {
+  margin: 0;
+  font-size: var(--lsl-text-meta);
+  color: var(--dh-brand-fg-muted);
+}
+
+.start-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-space-8);
+  min-height: var(--dh-touch-target);
+  padding: 0 var(--dh-space-20);
+  border: 0;
+  border-radius: var(--dh-curve-pill);
+  cursor: pointer;
+  font-family: var(--start-font-sans);
+  font-size: var(--lsl-text-body-s);
+  font-weight: 600;
+  color: var(--dh-brand-bg-deep);
+  background: linear-gradient(
+    100deg,
+    var(--start-teal),
+    var(--start-purple)
+  );
+  box-shadow: var(--dh-shadow-md);
+  transition:
+    transform var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    box-shadow var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    opacity var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+
+.start-submit:hover:not(:disabled) {
+  transform: var(--dh-motion-hover-lift);
+  box-shadow: var(--dh-shadow-lg);
+}
+
+.start-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.start-submit-arrow {
+  transition: transform var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+
+.start-submit:hover:not(:disabled) .start-submit-arrow {
+  transform: translateX(2px);
+}
+
+/* ── Example chips ───────────────────────────────────────────── */
+.start-examples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-space-12);
+}
+
+.start-examples-label {
+  margin: 0;
+  font-family: var(--start-font-mono);
+  font-size: var(--lsl-text-micro);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--dh-brand-fg-muted);
+}
+
+.start-chip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dh-space-8);
+}
+
+.start-chip {
+  display: inline-flex;
+  align-items: center;
+  text-align: left;
+  min-height: var(--dh-space-40);
+  padding: var(--dh-space-8) var(--dh-space-16);
+  border-radius: var(--dh-curve-pill);
+  cursor: pointer;
+  font-family: var(--start-font-sans);
+  font-size: var(--lsl-text-body-s);
+  line-height: 1.35;
+  color: var(--dh-brand-fg);
+  background: color-mix(in srgb, var(--dh-brand-fg) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dh-brand-fg) 14%, transparent);
+  transition:
+    background var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    border-color var(--dh-motion-dur-hover) var(--dh-motion-ease),
+    transform var(--dh-motion-dur-hover) var(--dh-motion-ease);
+}
+
+.start-chip:hover {
+  background: color-mix(in srgb, var(--start-purple) 16%, transparent);
+  border-color: color-mix(in srgb, var(--start-purple) 50%, transparent);
+  transform: var(--dh-motion-hover-lift);
+}
+
+/* ── Focus-visible ring (>= 3:1 against the dark surface) ─────── */
+.start-root :is(.start-textarea, .start-submit, .start-chip):focus-visible {
+  outline: 3px solid var(--start-teal);
+  outline-offset: 2px;
+}
+
+/* The textarea outline would sit inside the field padding; lift the
+   field border instead so the ring is clearly visible. */
+.start-field:has(.start-textarea:focus-visible) {
+  border-color: color-mix(in srgb, var(--start-teal) 70%, transparent);
+}
+
+/* ── Reduced motion: kill all decorative animation ───────────── */
+@media (prefers-reduced-motion: reduce) {
+  .start-shell,
+  .start-blob-teal,
+  .start-blob-purple,
+  .start-blob-peach {
+    animation: none;
+  }
+  .start-submit,
+  .start-submit-arrow,
+  .start-chip,
+  .start-field {
+    transition: none;
+  }
+  .start-submit:hover:not(:disabled),
+  .start-chip:hover {
+    transform: none;
+  }
+}
+
+/* ── Small screens ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .start-root {
+    padding: var(--dh-space-40) var(--dh-space-20);
+    place-items: start center;
+  }
+  .start-actions {
+    align-items: stretch;
+  }
+  .start-submit {
+    justify-content: center;
+    width: 100%;
+  }
+}
