@@ -948,6 +948,29 @@ export const COMPONENT_ANATOMY: Partial<
         { label: "Corner", value: "Full" },
       ],
     },
+    /* Salt Button, medium density. Source: @salt-ds/core Button.css — the
+       container height tracks --salt-size-base (36 at MD), horizontal padding
+       is --salt-spacing-100 (8 at MD), the corner is --salt-curve-100 (4 at
+       MD; Salt's idiom is flat + lightly rounded, NOT the M3 full pill), and
+       the label type is --salt-text-fontSize (14 at MD). The third part is the
+       focus ring rather than M3's state-layer overlay: Salt has no Material
+       ripple, it draws a 2-pixel --salt-focused-outline on :focus-visible.
+       Measures shown as their resolved MD values (display strings, like the
+       M3 "40dp" convention) with the driving token named in the role column
+       of COMPONENT_TOKENS; no raw px literal is introduced here. */
+    salt: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 15 },
+        { n: 2, label: "Label text", x: 50, y: 85 },
+        { n: 3, label: "Focus ring", x: 15, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "36dp" },
+        { label: "Padding", value: "8dp" },
+        { label: "Corner", value: "4dp" },
+        { label: "Font", value: "14dp" },
+      ],
+    },
   },
   badge: {
     m3: {
@@ -1364,5 +1387,313 @@ export const COMPONENT_VARIANT_NAMING: Partial<
         style: "salt-tag",
       },
     ],
+  },
+};
+
+/* ════════════════════════════════════════════════════════════
+   7. COMPONENT_ACCESSIBILITY — per-component, per-DS keyboard +
+   screen-reader / ARIA notes.
+   ════════════════════════════════════════════════════════════
+   Drives the Accessibility tab (ComponentPreview). Data-gated exactly like
+   COMPONENT_ANATOMY / COMPONENT_GUIDANCE: where an entry exists for the
+   active component + DS it renders the real keyboard map + ARIA/SR notes
+   (+ an optional contrast line); otherwise the tab falls back to the
+   shared WCAG boilerplate. Strings only — no tokens, so this is audit-safe.
+
+   Notes are sourced from each DS's published accessibility guidance and the
+   WAI-ARIA Authoring Practices the components implement (button, checkbox,
+   switch patterns; native <input> semantics for the text field). Where the
+   behaviour is genuinely identical across DS the same lines are reused; where
+   a DS diverges (e.g. Carbon's 2-pixel focus indicator and flat controls, M3's
+   state-layer, Fluent's switch role choice) the notes are tailored.
+
+   `keyboard`  — ordered key → effect lines.
+   `aria`      — screen-reader / ARIA / focus semantics the component exposes.
+   `contrast`  — optional one-line note on the relevant WCAG contrast minima.
+   ════════════════════════════════════════════════════════════ */
+export interface ComponentAccessibility {
+  keyboard: string[];
+  aria: string[];
+  contrast?: string;
+}
+
+export const COMPONENT_ACCESSIBILITY: Partial<
+  Record<UiKitComponentId, Partial<Record<DesignSystemId, ComponentAccessibility>>>
+> = {
+  /* ── Button — WAI-ARIA button pattern; native <button> across all DS. ── */
+  button: {
+    m3: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the button.",
+        "Enter: activate the button.",
+        "Space: activate the button on key-up.",
+      ],
+      aria: [
+        "Renders a native <button>, so the role, focusability, and Enter/Space activation come from the platform.",
+        "Icon-only buttons carry an aria-label naming the action; text buttons take their accessible name from the visible label.",
+        "Disabled buttons set the disabled attribute and are removed from the tab order.",
+        "A visible state layer plus a focus indicator mark the focused control, never colour alone.",
+      ],
+      contrast: "Label text meets 4.5:1; the container and focus indicator meet 3:1 against adjacent colours.",
+    },
+    salt: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the button.",
+        "Enter: activate the button.",
+        "Space: activate the button.",
+      ],
+      aria: [
+        "Renders a native <button>; role, focus order, and Enter/Space activation are native.",
+        "Icon-only Salt buttons require an aria-label; labelled buttons name themselves from their text.",
+        "Disabled buttons are not focusable and expose the disabled state to assistive tech.",
+        "Focus is shown with the 2-pixel Salt focus ring (--salt-focused-outline), not by a colour change alone.",
+      ],
+      contrast: "Label meets 4.5:1; the focus ring and bordered edge clear the 3:1 non-text minimum.",
+    },
+    fluent: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the button.",
+        "Enter: activate the button.",
+        "Space: activate the button.",
+      ],
+      aria: [
+        "Renders a native <button> with platform role and keyboard activation.",
+        "Icon-only buttons need an aria-label; toggle buttons expose aria-pressed for their on/off state.",
+        "Disabled buttons set disabled and leave the tab order; Fluent's focus-indicator stroke marks the focused button.",
+      ],
+      contrast: "Label meets 4.5:1; the focus stroke and outline variants meet the 3:1 non-text minimum.",
+    },
+    uoaui: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the button.",
+        "Enter: activate the button.",
+        "Space: activate the button.",
+      ],
+      aria: [
+        "Renders a native <button>; role and Enter/Space activation are native.",
+        "Icon-only glass buttons require an aria-label so the action is announced.",
+        "Because the surface is translucent glass, a solid focus ring is drawn so focus stays visible over any backdrop, never relying on the blur or tint alone.",
+      ],
+      contrast: "Verify label and focus-ring contrast against the live backdrop, not the glass tint, since the surface is see-through.",
+    },
+    carbon: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the button.",
+        "Enter: activate the button.",
+        "Space: activate the button.",
+      ],
+      aria: [
+        "Renders a native <button> with platform role and activation.",
+        "Icon-only buttons require an aria-label; Carbon pairs them with a tooltip naming the action.",
+        "Disabled buttons set disabled and drop out of the tab order.",
+        "Focus is shown with Carbon's 2-pixel focus border (--cds-focus), distinct from the flat resting border, so focus never relies on colour alone.",
+      ],
+      contrast: "Label meets 4.5:1; the 2-pixel focus border and control edges meet the 3:1 non-text minimum.",
+    },
+  },
+
+  /* ── Text field — native <input>/<textarea>, labelled programmatically. ── */
+  textInput: {
+    m3: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the field.",
+        "Type to enter text; arrow keys and Home/End move the caret.",
+        "Native editing shortcuts (select, copy, paste, undo) all apply.",
+      ],
+      aria: [
+        "A real <label> is programmatically tied to the input, so the label, not just the placeholder, names the field.",
+        "Helper and error text are linked with aria-describedby and announced with the field.",
+        "An invalid field sets aria-invalid='true'; required fields set the required attribute.",
+        "Placeholder text is never the only label, since it disappears on input.",
+      ],
+      contrast: "Input text and label meet 4.5:1; the field outline and focus indicator meet the 3:1 non-text minimum.",
+    },
+    salt: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the input.",
+        "Type to enter text; arrow keys and Home/End move the caret.",
+        "Native editing shortcuts (select, copy, paste, undo) all apply.",
+      ],
+      aria: [
+        "Wrapped in a Salt FormField, so FormFieldLabel becomes the input's programmatic label.",
+        "FormFieldHelperText is linked via aria-describedby and read with the field.",
+        "validationStatus='error' sets aria-invalid and surfaces the error text to assistive tech.",
+        "Focus is shown with the 2-pixel Salt focus ring, not a colour swap alone.",
+      ],
+      contrast: "Input text and label meet 4.5:1; the field border and focus ring clear the 3:1 non-text minimum.",
+    },
+    fluent: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the input.",
+        "Type to enter text; arrow keys and Home/End move the caret.",
+        "Native editing shortcuts (select, copy, paste, undo) all apply.",
+      ],
+      aria: [
+        "Pair the Input with a Field (or a <label>) so it has a programmatic name; the Fluent Field wires label, hint, and validation text for you.",
+        "Validation messages are linked with aria-describedby and announced with the field.",
+        "An error field sets aria-invalid='true'; the underline/filled variants keep a visible focus and resting border.",
+      ],
+      contrast: "Input text and label meet 4.5:1; the field border and focus stroke meet the 3:1 non-text minimum.",
+    },
+    uoaui: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the input.",
+        "Type to enter text; arrow keys and Home/End move the caret.",
+        "Native editing shortcuts (select, copy, paste, undo) all apply.",
+      ],
+      aria: [
+        "A real <label> is tied to the input; placeholder text never stands in for the label.",
+        "Helper and error text are linked with aria-describedby; an invalid field sets aria-invalid='true'.",
+        "On the translucent glass surface, the field border and focus ring are kept solid enough to read against any backdrop, not the tint alone.",
+      ],
+      contrast: "Check input text, label, and the field border against the live backdrop behind the glass, not only the surface tint.",
+    },
+    carbon: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the input.",
+        "Type to enter text; arrow keys and Home/End move the caret.",
+        "Native editing shortcuts (select, copy, paste, undo) all apply.",
+      ],
+      aria: [
+        "labelText renders a real <label> bound to the input; the label is always present, never placeholder-only.",
+        "helperText is linked with aria-describedby; invalid sets aria-invalid and ties invalidText to the field with role-appropriate announcement.",
+        "Focus is shown with Carbon's 2-pixel focus border (--cds-focus); the flat field keeps a visible resting border too.",
+      ],
+      contrast: "Input text and label meet 4.5:1; the resting and 2-pixel focus borders meet the 3:1 non-text minimum.",
+    },
+  },
+
+  /* ── Checkbox — WAI-ARIA checkbox pattern; native <input type=checkbox>. ── */
+  checkbox: {
+    m3: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the checkbox.",
+        "Space: toggle between checked and unchecked.",
+      ],
+      aria: [
+        "Renders a native checkbox input, so the role and checked state are exposed without extra ARIA.",
+        "The visible <label> is programmatically associated, so clicking the label and the box both toggle it.",
+        "An indeterminate checkbox sets the indeterminate property, announced as 'mixed'.",
+        "State is shown by the check/indeterminate glyph plus the box fill, never by colour alone.",
+      ],
+      contrast: "The label meets 4.5:1; the box outline, fill, and focus indicator meet the 3:1 non-text minimum.",
+    },
+    salt: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the checkbox.",
+        "Space: toggle between checked and unchecked.",
+      ],
+      aria: [
+        "Salt Checkbox renders a native checkbox input with its label associated, so both label and box toggle it.",
+        "The indeterminate prop sets the indeterminate state, announced as 'mixed'.",
+        "error/validationStatus is exposed to assistive tech; focus uses the 2-pixel Salt focus ring.",
+        "The checked glyph plus the box fill carry the state, not colour alone.",
+      ],
+      contrast: "Label meets 4.5:1; the box border, fill, and focus ring clear the 3:1 non-text minimum.",
+    },
+    fluent: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the checkbox.",
+        "Space: toggle between checked and unchecked.",
+      ],
+      aria: [
+        "Fluent Checkbox wraps a native checkbox input; the label prop becomes its associated label.",
+        "A 'mixed' value renders the indeterminate state, announced as mixed to assistive tech.",
+        "Focus is shown with Fluent's focus indicator; the checkmark glyph plus fill mark the checked state.",
+      ],
+      contrast: "Label meets 4.5:1; the box border, fill, and focus indicator meet the 3:1 non-text minimum.",
+    },
+    uoaui: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the checkbox.",
+        "Space: toggle between checked and unchecked.",
+      ],
+      aria: [
+        "Renders a native checkbox input with an associated label; both toggle the box.",
+        "The checked glyph and box fill mark the state, reinforced over the glass surface so it never rides on tint alone.",
+        "Focus draws a solid ring that stays visible against any backdrop behind the glass.",
+      ],
+      contrast: "Check the box outline, fill, and focus ring against the live backdrop behind the glass, not only the tint.",
+    },
+    carbon: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the checkbox.",
+        "Space: toggle between checked and unchecked.",
+      ],
+      aria: [
+        "Carbon Checkbox renders a native checkbox input; labelText is its associated label, so label and box both toggle.",
+        "The indeterminate prop sets the mixed state, announced as 'mixed'.",
+        "Focus is shown with Carbon's 2-pixel focus border (--cds-focus); the flat checked box keeps a visible border.",
+        "The checkmark glyph plus fill carry the state, not colour alone.",
+      ],
+      contrast: "Label meets 4.5:1; the box border, fill, and 2-pixel focus border meet the 3:1 non-text minimum.",
+    },
+  },
+
+  /* ── Switch — WAI-ARIA switch pattern. DS differ on role + element. ── */
+  switch: {
+    m3: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the switch.",
+        "Space: toggle the switch on and off.",
+        "Enter: toggle the switch on and off.",
+      ],
+      aria: [
+        "Exposes role='switch' with aria-checked reflecting the on/off state, so assistive tech announces 'on'/'off', not 'checked'.",
+        "Takes its accessible name from an associated <label> or aria-label.",
+        "The thumb position plus the selected icon mark the state, never the track colour alone.",
+        "Focus is shown with a visible focus indicator on the switch.",
+      ],
+      contrast: "Any label meets 4.5:1; the track, thumb, and focus indicator meet the 3:1 non-text minimum.",
+    },
+    salt: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the switch.",
+        "Space: toggle the switch on and off.",
+      ],
+      aria: [
+        "Salt Switch renders a checkbox input styled as a switch; its label is programmatically associated.",
+        "The on/off state is exposed via the native checked state and read with the label.",
+        "The thumb position carries the state alongside the track fill, not colour alone; focus uses the 2-pixel Salt focus ring.",
+      ],
+      contrast: "Label meets 4.5:1; the track, thumb, and focus ring clear the 3:1 non-text minimum.",
+    },
+    fluent: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the switch.",
+        "Space: toggle the switch on and off.",
+      ],
+      aria: [
+        "Fluent Switch renders a checkbox input with the toggle role; pair it with a Field or label so it has an accessible name.",
+        "The on/off state is exposed through the native checked state and announced with the field.",
+        "The thumb position plus track marks the state; Fluent's focus indicator shows focus.",
+      ],
+      contrast: "Any label meets 4.5:1; the track, thumb, and focus indicator meet the 3:1 non-text minimum.",
+    },
+    uoaui: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the switch.",
+        "Space: toggle the switch on and off.",
+      ],
+      aria: [
+        "Exposes role='switch' with aria-checked for the on/off state and takes its name from a label or aria-label.",
+        "The thumb position marks the state, reinforced so it reads over the translucent glass track, not the tint alone.",
+        "Focus draws a solid ring that stays visible against any backdrop behind the glass.",
+      ],
+      contrast: "Check the track, thumb, and focus ring against the live backdrop behind the glass, not only the tint.",
+    },
+    carbon: {
+      keyboard: [
+        "Tab / Shift+Tab: move focus to and from the toggle.",
+        "Space: toggle on and off.",
+        "Enter: toggle on and off.",
+      ],
+      aria: [
+        "Carbon Toggle exposes role='switch' with aria-checked, so it announces as on/off; labelText names it and labelA/labelB give the per-state text.",
+        "The visible on/off state text plus the thumb position carry the state, not colour alone.",
+        "Focus is shown with Carbon's 2-pixel focus border (--cds-focus).",
+      ],
+      contrast: "Label and state text meet 4.5:1; the track, thumb, and 2-pixel focus border meet the 3:1 non-text minimum.",
+    },
   },
 };
