@@ -43,8 +43,9 @@ function primitiveForMode(mode: ZoneLayout["mode"] | undefined): LayoutPrimitive
 /* Map a zone to its semantic landmark element so the exported page has a real
    document outline (header/aside/main/footer) instead of anonymous <div>s — a
    keyboard + screen-reader win at zero visual cost (the zone-* className is
-   preserved, so the shell CSS still applies). Body becomes <main> with the
-   skip-link target id; unknown zones fall back to a plain div. */
+   preserved, so the shell CSS still applies). Body becomes <main
+   id="main-content"> — the target of the skip link emitted as the app root's
+   first child; unknown zones fall back to a plain div. */
 const ZONE_TAG: Record<string, { open: string; close: string }> = {
   header: { open: "<header", close: "</header>" },
   sidebar: { open: '<aside aria-label="Sidebar"', close: "</aside>" },
@@ -399,6 +400,7 @@ export function exportReact(): string {
 export default function Dashboard() {
   return (
     ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
 ${zones}
     </div>${close}
   );

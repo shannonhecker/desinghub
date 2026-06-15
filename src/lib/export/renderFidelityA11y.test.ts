@@ -190,6 +190,26 @@ describe("(d) exportReact maps zones to semantic landmarks", () => {
   });
 });
 
+describe("(f) both exporters emit a skip link to #main-content", () => {
+  it("exportReact emits an <a href=\"#main-content\"> skip link", () => {
+    setCanvas({ body: [{ id: "b1", type: "SimulatedTitle", props: { text: "Hi", level: 2 } }] });
+    const jsx = exportReact();
+    expect(jsx).toMatch(/<a\b[^>]*href="#main-content"/);
+    // the link targets the <main> landmark, so both must be present.
+    expect(jsx).toContain('<main id="main-content"');
+  });
+
+  it("exportHTML emits an <a href=\"#main-content\"> skip link", () => {
+    setCanvas({ body: [{ id: "b1", type: "SimulatedTitle", props: { text: "Hi", level: 2 } }] });
+    const html = exportHTML();
+    expect(html).toMatch(/<a\b[^>]*href="#main-content"/);
+    expect(html).toContain('<main id="main-content"');
+    // the skip-link selector must exist in the <style> so it's visually hidden until focus.
+    const styleBlock = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
+    expect(styleBlock).toMatch(/\.skip-link\b/);
+  });
+});
+
 describe("(e) empty-canvas vite export ships only react + react-dom", () => {
   it("package.json deps == {react, react-dom} for an empty salt canvas", () => {
     setCanvas({ designSystem: "salt" });

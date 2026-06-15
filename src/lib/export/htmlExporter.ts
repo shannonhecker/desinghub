@@ -115,7 +115,8 @@ function blockToHTML(block: Block, indent: string): string {
 /* Map a zone to its semantic landmark element (consistent with reactExporter)
    so the exported page has a real document outline — header/aside/main/footer —
    instead of anonymous divs. The zone-* class is kept so the shell CSS applies.
-   Body becomes <main id="main-content">; unknown zones fall back to a div. */
+   Body becomes <main id="main-content"> — the target of the skip link emitted
+   as the first body child; unknown zones fall back to a div. */
 const ZONE_TAG: Record<string, { open: string; tag: string }> = {
   header: { open: "<header", tag: "header" },
   sidebar: { open: '<aside aria-label="Sidebar"', tag: "aside" },
@@ -153,6 +154,10 @@ export function exportHTML(): string {
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: ${s.mode === "dark" ? "#0b1120" : "#fff"}; color: ${s.mode === "dark" ? "#e8eaed" : "#1a1a1a"}; }
+    /* Skip link — visually hidden until keyboard focus, then reveals at the
+       top-left so a keyboard/screen-reader user can jump straight to <main>. */
+    .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: ${s.mode === "dark" ? "#0b1120" : "#fff"}; color: inherit; border-radius: 6px; }
+    .skip-link:focus { left: 8px; top: 8px; outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 2px; }
     .dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 240px 1fr; min-height: 100vh; }
     .zone-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .zone-sidebar { padding: 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
@@ -196,6 +201,7 @@ export function exportHTML(): string {
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="dashboard-layout" data-mode="${s.mode}" data-ds="${s.designSystem}">
 ${zones}
   </div>

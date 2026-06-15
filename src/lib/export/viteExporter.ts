@@ -234,6 +234,12 @@ const STYLES_CSS = `/* ── Design tokens - swap these with real DS imports wh
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--bg); color: var(--fg); min-height: 100vh; }
 
+/* Skip link — visually hidden off-screen until it receives keyboard focus,
+   then it positions itself top-left with a visible focus ring so a keyboard or
+   screen-reader user can jump straight to <main id="main-content">. */
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: var(--bg); color: var(--fg); border-radius: 6px; }
+.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ── Shell layout — selectors MUST match the classes reactExporter emits:
    .dashboard-layout wraps the four zones; the body zone is the KPI grid;
    the sidebar sits in a 220px track beside the 1fr body. ── */
