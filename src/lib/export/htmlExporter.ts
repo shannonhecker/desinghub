@@ -112,10 +112,22 @@ function blockToHTML(block: Block, indent: string): string {
   }
 }
 
+/* Map a zone to its semantic landmark element (consistent with reactExporter)
+   so the exported page has a real document outline — header/aside/main/footer —
+   instead of anonymous divs. The zone-* class is kept so the shell CSS applies.
+   Body becomes <main id="main-content">; unknown zones fall back to a div. */
+const ZONE_TAG: Record<string, { open: string; tag: string }> = {
+  header: { open: "<header", tag: "header" },
+  sidebar: { open: '<aside aria-label="Sidebar"', tag: "aside" },
+  body: { open: '<main id="main-content"', tag: "main" },
+  footer: { open: "<footer", tag: "footer" },
+};
+
 function renderZone(blocks: Block[], zoneName: string, indent: string): string {
   if (blocks.length === 0) return "";
   const inner = blocks.map((b) => blockToHTML(b, indent + "    ")).join("\n");
-  return `${indent}  <!-- ${zoneName} -->\n${indent}  <div class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
+  const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };
+  return `${indent}  <!-- ${zoneName} -->\n${indent}  ${z.open} class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </${z.tag}>`;
 }
 
 export function exportHTML(): string {
@@ -152,10 +164,35 @@ export function exportHTML(): string {
     .btn-primary { background: ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; color: #fff; }
     .nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: 6px; color: inherit; text-align: left; }
     .nav-item.active { background: ${s.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}; font-weight: 600; }
-    .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-    .alert { padding: 12px 16px; border-radius: 8px; border-left: 4px solid; }
+    .btn-secondary { background: ${s.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}; color: inherit; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; }
+    .btn-outline { background: transparent; color: inherit; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.24)" : "rgba(0,0,0,0.24)"}; }
+    .btn-ghost { background: transparent; color: inherit; }
+    .btn-danger, .btn-destructive { background: #d92d20; color: #fff; }
+    .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${s.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; }
+    .badge-info { background: rgba(96,165,250,0.16); border-color: #60a5fa; }
+    .badge-success { background: rgba(74,222,128,0.16); border-color: #4ade80; }
+    .badge-warning { background: rgba(250,204,21,0.16); border-color: #facc15; }
+    .badge-error { background: rgba(248,113,113,0.16); border-color: #f87171; }
+    /* Alerts carry a textual prefix (::before) so the meaning never relies on
+       colour alone (use-of-color). */
+    .alert { padding: 12px 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; border-left-width: 4px; }
+    .alert::before { font-weight: 700; margin-right: 6px; }
+    .alert-info { background: rgba(96,165,250,0.12); border-left-color: #60a5fa; }
+    .alert-info::before { content: "Info:"; }
+    .alert-success { background: rgba(74,222,128,0.12); border-left-color: #4ade80; }
+    .alert-success::before { content: "Success:"; }
+    .alert-warning { background: rgba(250,204,21,0.12); border-left-color: #facc15; }
+    .alert-warning::before { content: "Warning:"; }
+    .alert-error { background: rgba(248,113,113,0.12); border-left-color: #f87171; }
+    .alert-error::before { content: "Error:"; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
+    .tab { padding: 8px 12px; border: 0; background: transparent; color: inherit; opacity: 0.7; font-family: inherit; font-size: 13px; cursor: pointer; }
+    .tab:hover { opacity: 1; }
     .form-field { display: flex; flex-direction: column; gap: 4px; }
     .form-field input { padding: 8px 12px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}; border-radius: 4px; background: transparent; color: inherit; }
+    /* Keyboard focus rings — .btn sets border:none, so the ring is an outline. */
+    .btn:focus-visible, .tab:focus-visible, .nav-item:focus-visible, a:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 2px; }
+    input:focus-visible, .checkbox input:focus-visible, .switch input:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 1px; }
   </style>
 </head>
 <body>
