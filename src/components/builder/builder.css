@@ -10547,8 +10547,12 @@
 .compare-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  /* Auto-flow so the grid accommodates all five design systems
+     (3 across, 2 on the wrap row) without hard-locking a count.
+     Adding/removing a system in SYSTEMS reflows automatically. */
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  grid-auto-flow: row;
   gap: 12px;
   min-height: 0;
 }
