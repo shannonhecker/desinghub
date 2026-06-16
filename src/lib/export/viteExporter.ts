@@ -97,9 +97,16 @@ function packageOf(from: string): string | null {
  */
 function packageJson(system: string, allTypes: string[], hasCharts: boolean): string {
   const pkgs = new Set<string>(["react", "react-dom"]);
-  for (const p of DS_PROVIDER_PKGS[system] ?? []) pkgs.add(p);
   /* Discover the real component packages from the codegen's own imports. */
-  for (const imp of collectImports(system as SystemId, allTypes)) {
+  const componentImports = collectImports(system as SystemId, allTypes);
+  /* Only ship the DS provider/theme packages when the canvas actually emits
+     real DS code (the same "real" signal reactExporter uses). An empty or
+     unknown-block canvas falls back to plain markup + the bundled styles.css,
+     so it must NOT drag in unused @salt-ds / @mui / @fluentui / @carbon deps. */
+  if (componentImports.length > 0) {
+    for (const p of DS_PROVIDER_PKGS[system] ?? []) pkgs.add(p);
+  }
+  for (const imp of componentImports) {
     const m = imp.match(/from\s+"([^"]+)"/) ?? imp.match(/^import\s+"([^"]+)"/);
     const pkg = m ? packageOf(m[1]) : null;
     if (pkg) pkgs.add(pkg);
@@ -226,14 +233,29 @@ const STYLES_CSS = `/* ── Design tokens - swap these with real DS imports wh
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--bg); color: var(--fg); min-height: 100vh; }
-.app-root { max-width: 1280px; margin: 0 auto; padding: 24px; }
 
-/* Layout */
-.app-header, .app-footer { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-.app-footer { border-top: 1px solid var(--border); border-bottom: 0; color: var(--fg-muted); font-size: 13px; }
-.app-body { display: grid; grid-template-columns: 220px 1fr; gap: 16px; padding: 16px 0; }
-.app-sidebar { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; display: flex; flex-direction: column; gap: 4px; }
-.app-main { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-content: start; }
+/* Skip link — visually hidden off-screen until it receives keyboard focus,
+   then it positions itself top-left with a visible focus ring so a keyboard or
+   screen-reader user can jump straight to <main id="main-content">. */
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: var(--bg); color: var(--fg); border-radius: 6px; }
+.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Shell layout — selectors MUST match the classes reactExporter emits:
+   .dashboard-layout wraps the four zones; the body zone is the KPI grid;
+   the sidebar sits in a 220px track beside the 1fr body. ── */
+.dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.zone-header { grid-column: 1 / -1; padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.zone-sidebar { border-right: 1px solid var(--border); padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; }
+.zone-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-content: start; padding: 16px; }
+.zone-footer { grid-column: 1 / -1; padding: 12px 16px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 13px; text-align: center; }
+.layout-group { display: flex; gap: 12px; }
+
+/* Mobile — stack the shell into a single column under 768px. */
+@media (max-width: 768px) {
+  .dashboard-layout { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
+  .zone-sidebar { border-right: 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+  .zone-body { grid-template-columns: 1fr; }
+}
 
 /* Primitives */
 h1 { font-size: 28px; margin: 4px 0; letter-spacing: -0.02em; }
@@ -274,6 +296,37 @@ progress { width: 100%; height: 6px; }
 .tab:hover { color: var(--fg); }
 
 .checkbox, .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); cursor: pointer; }
+
+/* Shell-block primitives (emitted by the generic markup path) */
+.app-brand { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.status-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); }
+.footer-text { color: var(--fg-muted); font-size: 13px; }
+.nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: 0; background: transparent; color: var(--fg); font-family: inherit; font-size: 14px; text-align: left; border-radius: 6px; cursor: pointer; }
+.nav-item.active { background: var(--surface); font-weight: 600; }
+.nav-item:hover { background: var(--surface); }
+.sim-image { margin: 0; }
+.sim-image img { width: 100%; height: auto; display: block; border-radius: var(--radius); }
+.sim-image figcaption { font-size: 12px; color: var(--fg-muted); margin-top: 4px; }
+.sim-image-placeholder { aspect-ratio: 16 / 9; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+.avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); object-fit: cover; overflow: hidden; }
+.avatar-sm { width: 28px; height: 28px; font-size: 12px; }
+.avatar-md { width: 40px; height: 40px; font-size: 14px; }
+.avatar-lg { width: 56px; height: 56px; font-size: 18px; }
+
+/* Focus rings — keyboard-visible only. .btn sets border:0, so its ring is an
+   outline + offset (never a border) so it stays visible against any fill. */
+.btn:focus-visible,
+.tab:focus-visible,
+.nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+input:focus-visible,
+.checkbox input:focus-visible,
+.switch input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 `;
 
 /* uoaui is a CSS-only DS. reactExporter emits `import "./uoaui-theme.css"` as a

@@ -40,6 +40,22 @@ function primitiveForMode(mode: ZoneLayout["mode"] | undefined): LayoutPrimitive
   return mode === "grid" ? "grid" : mode === "stack" ? "stack" : mode === "row" ? "row" : null;
 }
 
+/* Map a zone to its semantic landmark element so the exported page has a real
+   document outline (header/aside/main/footer) instead of anonymous <div>s — a
+   keyboard + screen-reader win at zero visual cost (the zone-* className is
+   preserved, so the shell CSS still applies). Body becomes <main
+   id="main-content"> — the target of the skip link emitted as the app root's
+   first child; unknown zones fall back to a plain div. */
+const ZONE_TAG: Record<string, { open: string; close: string }> = {
+  header: { open: "<header", close: "</header>" },
+  sidebar: { open: '<aside aria-label="Sidebar"', close: "</aside>" },
+  body: { open: '<main id="main-content"', close: "</main>" },
+  footer: { open: "<footer", close: "</footer>" },
+};
+function zoneTag(zoneName: string): { open: string; close: string } {
+  return ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", close: "</div>" };
+}
+
 /* P3 export twin: project a block's counter-axis (height) sizing into a JSX
    style-object body (no surrounding braces) for the layout registry to wrap
    the child in a <div style={{…}}>. Mirrors layoutResolver.applyHeight so the
@@ -275,7 +291,8 @@ function renderZone(
       return `${indent}    <div style={{ ${hs} }}>\n${blockToJSX(b, indent + "      ", system, mode)}\n${indent}    </div>`;
     })
     .join("\n");
-  return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
+  const tag = zoneTag(zoneName);
+  return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  ${tag.close}`;
 }
 
 export function exportReact(): string {
@@ -383,6 +400,7 @@ export function exportReact(): string {
 export default function Dashboard() {
   return (
     ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
 ${zones}
     </div>${close}
   );
