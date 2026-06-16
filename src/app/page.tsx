@@ -557,6 +557,44 @@ function useFinePointer(): boolean {
  *  reduced motion and on coarse pointers. */
 const MAGNET_MAX_PX = 8;
 
+/** Hero prompt control: the cold-start entry point. Type an app idea, submit,
+ *  and deep-link into the builder via /builder?prompt=… (the builder reads URL
+ *  query params, same mechanism as the DS cards' ?ds=… links). This is the
+ *  Lovable-style "land, type, build" loop. Strictly additive: the headline,
+ *  subhead, graphics, and the #demo link are untouched. A small "open the
+ *  builder" link preserves the old href="/builder" fallback behaviour.
+ *  Copy rule: no em-/en-dashes in any visible string. */
+function HeroPrompt() {
+  // Native GET form: submitting navigates to /builder?prompt=<input value>
+  // with zero client JS or router context, so it works in SSR, in the test
+  // renderer (no App Router provider needed), and even with JS disabled. The
+  // builder reads the prompt query param, the same mechanism as the DS cards'
+  // ?ds= links. `required` blocks an empty submit natively.
+  return (
+    <form className="lsl-hero-prompt" action="/builder" method="get" role="search">
+      <label className="lsl-hero-prompt-label" htmlFor="lsl-hero-prompt-input">
+        Describe the app you want to build
+      </label>
+      <div className="lsl-hero-prompt-field">
+        <input
+          id="lsl-hero-prompt-input"
+          name="prompt"
+          type="text"
+          className="lsl-hero-prompt-input"
+          placeholder="Describe an app to build…"
+          autoComplete="off"
+          enterKeyHint="go"
+          required
+        />
+        <button type="submit" className="lsl-hero-prompt-submit">
+          <span>Build it</span>
+          <span aria-hidden="true">{"→"}</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function MagneticCta({
   href,
   className,
@@ -822,13 +860,16 @@ export default function LandingSouthleftPage() {
             components, and the export is code you can run.
           </p>
           <div className="lsl-hero-actions" data-reveal>
-            <MagneticCta href="/builder" className="lsl-cta">
-              Open the workbench
-            </MagneticCta>
-            <a className="lsl-hero-secondary" href="#demo">
-              Watch the demo
-              <span aria-hidden="true">{"→"}</span>
-            </a>
+            <HeroPrompt />
+            <div className="lsl-hero-actions-row">
+              <a className="lsl-hero-secondary" href="#demo">
+                Watch the demo
+                <span aria-hidden="true">{"→"}</span>
+              </a>
+              <Link className="lsl-hero-actions-link" href="/builder">
+                or open the builder
+              </Link>
+            </div>
           </div>
 
           {/* Demo video — restored from the portfolio. Matches the
