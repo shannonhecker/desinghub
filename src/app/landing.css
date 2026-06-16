@@ -380,6 +380,146 @@ html:has(.landing-southleft) body {
   transform: translateX(3px);
 }
 
+/* ── Hero prompt control (cold-start: land, type, build) ───────────────
+   Additive. The primary action is now a real prompt field that deep-links
+   into /builder?prompt=…  Matches the house pill language: 999px radius,
+   48px control height, --lsl-accent submit echoing .lsl-cta. The actions
+   row stacks the field above the demo + builder-fallback links.
+   Tokens only, no raw literals beyond the existing palette vars. */
+.landing-southleft .lsl-hero-actions {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+.landing-southleft .lsl-hero-prompt {
+  width: 100%;
+  max-width: 560px;
+}
+/* Visually-hidden label: present for AT and form semantics, never painted. */
+.landing-southleft .lsl-hero-prompt-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.landing-southleft .lsl-hero-prompt-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 6px 0 22px;
+  background: var(--lsl-bg-elevated);
+  border: 1px solid var(--lsl-rule-strong);
+  border-radius: 999px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+/* Glow the whole field when the input is focused (the input itself carries
+   no border, so the focus signal lives on the field shell). */
+.landing-southleft .lsl-hero-prompt-field:focus-within {
+  border-color: var(--lsl-accent);
+  box-shadow: 0 0 0 1px var(--lsl-accent), 0 0 0 4px var(--lsl-accent-soft);
+}
+.landing-southleft .lsl-hero-prompt-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--lsl-fg-strong);
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-body-m);
+  letter-spacing: 0;
+}
+.landing-southleft .lsl-hero-prompt-input::placeholder {
+  color: var(--lsl-fg-subtle);
+}
+/* Submit pill: same fill/hover/focus contract as .lsl-cta. */
+.landing-southleft .lsl-hero-prompt-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 22px;
+  background: var(--lsl-accent);
+  color: var(--lsl-bg);
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-body-s);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  border: 1px solid var(--lsl-accent);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease,
+              transform 160ms ease;
+}
+.landing-southleft .lsl-hero-prompt-submit:hover {
+  background: var(--lsl-accent-hover);
+  border-color: var(--lsl-accent-hover);
+  transform: translateY(-1px);
+}
+.landing-southleft .lsl-hero-prompt-submit span:last-child {
+  display: inline-block;
+  transition: transform 180ms ease;
+}
+.landing-southleft .lsl-hero-prompt-submit:hover span:last-child {
+  transform: translateX(3px);
+}
+.landing-southleft .lsl-hero-prompt-submit:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+}
+/* Secondary row: demo link plus the old-behaviour builder fallback. */
+.landing-southleft .lsl-hero-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.landing-southleft .lsl-hero-actions-link {
+  font-size: var(--lsl-text-body-s);
+  font-weight: 500;
+  color: var(--lsl-fg-muted);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.landing-southleft .lsl-hero-actions-link:hover {
+  color: var(--lsl-accent);
+}
+.landing-southleft .lsl-hero-actions-link:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+/* Reduced motion: drop the submit lift/nudge. */
+@media (prefers-reduced-motion: reduce) {
+  .landing-southleft .lsl-hero-prompt-submit:hover {
+    transform: none;
+  }
+  .landing-southleft .lsl-hero-prompt-submit:hover span:last-child {
+    transform: none;
+  }
+}
+/* Narrow viewports: let the field grow to the column and the submit shrink
+   to an icon-weight pill so the input keeps room. */
+@media (max-width: 560px) {
+  .landing-southleft .lsl-hero-prompt {
+    max-width: 100%;
+  }
+  .landing-southleft .lsl-hero-prompt-field {
+    padding-left: 18px;
+  }
+  .landing-southleft .lsl-hero-prompt-submit {
+    padding: 0 16px;
+  }
+}
+
 /* ── Hero aurora wash (Midnight Canvas + cyan/pale glow) ──────────────
    Mirrors the portfolio's .proj-nda-glow motif: low-alpha radials
    layered over the bg. Pure decoration, never interferes with content. */
