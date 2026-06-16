@@ -443,6 +443,10 @@ export function ChatPanel() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
+  /* One-shot guard for the ?prompt= deep-link auto-fire (below, after
+     handleSend is defined). A ref (not state) so it never triggers a
+     re-render and survives the effect's own setInputText. */
+  const promptFiredRef = useRef(false);
 
 
   /* ── Lifecycle state for the status pill ──
@@ -493,6 +497,20 @@ export function ChatPanel() {
     }
   }, [isGenerating, lastAiContent]);
 
+  /* Phase-aware label for the full-width generating-state block. Derived
+     purely from the existing lifecycleState the effect above maintains:
+       thinking  -> "Thinking…"          (model deciding, no tokens yet)
+       streaming -> "Building…"          (tokens / layout arriving)
+       tool      -> "Applying changes…"  (a tool-use action just landed)
+     done/error/idle never coincide with isGenerating, so they fall back to
+     "Thinking…". Uses the ellipsis char to match the surrounding copy. */
+  const generatingLabel =
+    lifecycleState === "streaming"
+      ? "Building…"
+      : lifecycleState === "tool"
+        ? "Applying changes…"
+        : "Thinking…";
+
   /* ── Phase 3a (N4 Tool-Use Cards) ──
      Subscribe to `builder:tool-use` events emitted by applyAIActions.
      Group by messageId so each assistant message renders its own
@@ -504,9 +522,14 @@ export function ChatPanel() {
     Record<string, ToolUseEvent[]>
   >({});
 
+  /* Holds the active "Applying changes…" revert timer so a burst of
+     tool-use events coalesces into one pill window instead of stacking
+     timers (mirrors the single-timer discipline of the done-state effect). */
+  const toolPillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const unsubscribe = subscribeToolUse((event) => {
       if (!event.messageId) return;
+      let isNew = false;
       setToolUseByMessage((prev) => {
         const existing = prev[event.messageId!] ?? [];
         /* Dedupe by (action + ts) so a re-emit (e.g. React StrictMode
@@ -515,10 +538,29 @@ export function ChatPanel() {
           (e) => e.action === event.action && e.ts === event.ts,
         );
         if (exists) return prev;
+        isNew = true;
         return { ...prev, [event.messageId!]: [...existing, event] };
       });
+      /* Surface the unused 'tool' pill state briefly when a NEW tool-use
+         action lands for the in-flight message. Only while generating, so a
+         late/replayed event never resurrects the pill after the turn settled.
+         Read isGenerating fresh from the store (the effect's empty deps would
+         otherwise capture a stale value). Hand back to "streaming" after a
+         short window; the done->idle effect owns the final settle. */
+      if (isNew && useBuilder.getState().isGenerating) {
+        setLifecycleState("tool");
+        if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+        toolPillTimerRef.current = setTimeout(() => {
+          /* Only fall back to streaming if we're still mid-generation;
+             otherwise leave the done/idle the lifecycle effect set. */
+          if (useBuilder.getState().isGenerating) setLifecycleState("streaming");
+        }, 900);
+      }
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+    };
   }, []);
 
   /* Per-card undo wiring. For PR (a) we ship a working undo for
@@ -1040,6 +1082,45 @@ export function ChatPanel() {
     sendToAPI(msg).then(() => bumpPreview());
   };
 
+  /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
+     A link like /builder?prompt=build%20a%20dashboard stages the text and
+     fires ONE build on mount. The /start sibling page (separate PR) is the
+     producer of these links. Three guards keep it a true one-shot:
+       • promptFiredRef       - never fires twice in one mount/lifecycle
+       • messages.length === 0 - the canonical first-turn signal (mirrors
+         handleSend); so a re-mount that already has history never re-fires
+       • the URL is cleaned    - so a manual refresh doesn't re-stage it
+     With AI on in prod (aiDisabled === false) this routes through the AI-first
+     handleSend path: it builds directly, or for an app-like prompt that names
+     no audience it asks the one "who is this for?" question first, then builds.
+     Offline it falls into the keyword fast-paths / onboarding like any other
+     first message. We read
+     window.location.search directly (NOT the Next useSearchParams hook) to
+     avoid a Suspense/CSR-bailout requirement, matching the existing
+     BuilderApp param effects. Placed AFTER handleSend so the closure is
+     defined; the deps are intentionally mount-only (handleSend is a stable
+     closure recreated each render, but the ref + messages.length guards make
+     re-runs no-ops, so we keep the dep list empty like the sibling effects). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (promptFiredRef.current || messages.length !== 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const prompt = params.get("prompt");
+    if (!prompt) return;
+    promptFiredRef.current = true;
+    setInputText(prompt);
+    setTimeout(() => handleSend(prompt), 50);
+    /* Clean ONLY the prompt param so a refresh doesn't re-stage, while
+       preserving any sibling params (?ds, ?mode, ...). Mirrors the ?shared
+       cleanup precedent in BuilderApp, scoped to one key. */
+    params.delete("prompt");
+    const qs = params.toString();
+    const newUrl =
+      window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    window.history.replaceState({}, "", newUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -1473,7 +1554,7 @@ export function ChatPanel() {
                     being loud. */}
                 <div className="generating-shimmer">
                   <span className="generating-shimmer-dot" aria-hidden="true" />
-                  <span className="generating-shimmer-text">Thinking…</span>
+                  <span className="generating-shimmer-text">{generatingLabel}</span>
                 </div>
                 <span className="generating-text">Drafting layout and applying design tokens…</span>
               </div>
