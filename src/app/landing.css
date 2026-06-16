@@ -634,6 +634,75 @@ html:has(.landing-southleft) body {
   transform: scaleX(1);
 }
 
+/* ── Systems trust strip (additive): honest DS wordmark band under the hero.
+   Names the five systems uoaui renders. Muted by default, hovering to each
+   system's real brand color (passed via --trust-brand). Doubles as a second
+   path into the builder (?ds=). No fabricated logos or endorsement. ── */
+.landing-southleft .lsl-trust {
+  padding-top: 4px;
+  padding-bottom: var(--lsl-section-y-tight);
+}
+.landing-southleft .lsl-trust-eyebrow {
+  font-family: var(--lsl-font-mono);
+  font-size: var(--lsl-text-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lsl-fg-muted);
+  margin: 0 0 22px;
+}
+.landing-southleft .lsl-trust-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 18px 44px;
+}
+.landing-southleft .lsl-trust-item {
+  margin: 0;
+}
+.landing-southleft .lsl-trust-mark {
+  font-family: var(--lsl-font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--lsl-fg-muted);
+  opacity: 0.78;
+  text-decoration: none;
+  transition: color 200ms ease, opacity 200ms ease;
+}
+.landing-southleft .lsl-trust-mark:hover {
+  color: var(--trust-brand);
+  opacity: 1;
+}
+.landing-southleft .lsl-trust-mark:focus-visible {
+  color: var(--trust-brand);
+  opacity: 1;
+  outline: 2px solid var(--trust-brand);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-southleft .lsl-trust-mark {
+    transition: none;
+  }
+}
+@media (pointer: coarse) {
+  .landing-southleft .lsl-trust-mark {
+    padding: 11px 0;
+  }
+}
+@media (max-width: 560px) {
+  .landing-southleft .lsl-trust-row {
+    gap: 14px 28px;
+  }
+  .landing-southleft .lsl-trust-mark {
+    font-size: 18px;
+  }
+}
+
 /* ── Section shell ────────────────────────────────────────────────────── */
 .landing-southleft .lsl-section {
   padding-top: var(--lsl-section-y);

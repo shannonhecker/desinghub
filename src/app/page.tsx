@@ -906,6 +906,28 @@ export default function LandingSouthleftPage() {
         </div>
       </section>
 
+      {/* ── Systems trust strip (additive): real components from five systems ── */}
+      <section className="lsl-trust" aria-label="Design systems uoaui renders">
+        <div className="lsl-container">
+          <p className="lsl-trust-eyebrow" data-reveal>
+            Renders real components from
+          </p>
+          <ul className="lsl-trust-row" data-reveal>
+            {SYSTEMS.map((s) => (
+              <li key={s.name} className="lsl-trust-item">
+                <Link
+                  href={s.href}
+                  className="lsl-trust-mark"
+                  style={{ "--trust-brand": s.brand } as React.CSSProperties}
+                >
+                  {s.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       <hr className="lsl-rule" data-reveal />
 
       {/* ── Services / what it does ── */}
