@@ -5,17 +5,18 @@ import { useBuilder, type DesignSystem, type Block } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
 
 /* ══════════════════════════════════════════════════════════
-   Compare DS Mode - 2x2 grid showing the same canvas in all
-   four design systems simultaneously.
+   Compare DS Mode - grid showing the same canvas in all five
+   design systems simultaneously.
 
    Purpose: non-technical users want to see "what does our
-   app look like in Salt vs Material 3 vs Fluent vs uoaui?"
-   without manually swapping the DS switcher four times.
+   app look like in Salt vs Material 3 vs Fluent vs uoaui vs
+   IBM Carbon?" without manually swapping the DS switcher five
+   times.
 
    The mini canvases are read-only (pointer-events: none on
    the content) but every block comes from the live store,
    so changes made in the main editor are reflected across
-   all four previews.
+   all five previews.
    ══════════════════════════════════════════════════════════ */
 
 const SYSTEMS: { key: DesignSystem; label: string; color: string; org: string }[] = [
@@ -23,6 +24,7 @@ const SYSTEMS: { key: DesignSystem; label: string; color: string; org: string }[
   { key: "m3",     label: "Material 3",  color: "#6750A4", org: "Google" },
   { key: "fluent", label: "Fluent 2",    color: "#0F6CBD", org: "Microsoft" },
   { key: "uoaui",  label: "uoaui DS",    color: "#8A58C9", org: "uoaui" },
+  { key: "carbon", label: "IBM Carbon",  color: "#0F62FE", org: "IBM" },
 ];
 
 interface CompareQuadrantProps {
@@ -150,7 +152,7 @@ export function CompareView() {
      across renders. Without it, the inline arrow at the call site
      produced a new function reference per CompareView render —
      defeating React.memo on CompareQuadrant entirely and causing
-     all four quadrants to re-render on any unrelated store change. */
+     all five quadrants to re-render on any unrelated store change. */
   const handleOpen = useCallback((ds: DesignSystem) => {
     setDesignSystem(ds);
     setCompareMode(false);
@@ -162,7 +164,7 @@ export function CompareView() {
         <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 6 }}>
           dashboard
         </span>
-        Compare mode - same canvas, four design systems.
+        Compare mode - same canvas, five design systems.
         Click <strong>Open</strong> on any quadrant to keep building in that DS, or
         press the <kbd>Compare</kbd> toolbar button again to return to a single view.
       </div>
