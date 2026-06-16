@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useShallow } from "zustand/react/shallow";
 import { useBuilder } from "@/store/useBuilder";
 import {
   canonicalDesignSystem,
@@ -31,15 +32,48 @@ import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets
 import "./builder.css";
 
 export function BuilderApp() {
+  /* Narrow subscription (perf): the shell reads only this slice, compared
+     shallowly. The bare no-selector `useBuilder()` it replaced re-rendered
+     the whole builder shell on EVERY store notification — so the per-frame
+     message flush during AI streaming repainted the entire shell at ~60fps.
+     The shell only ever derived a boolean from `messages` (whether the user
+     has started), so we keep the DERIVED boolean in the slice instead of the
+     array itself: `hasMessages: s.messages.length > 0`. Every append after
+     the first leaves that boolean unchanged, so the slice stays shallow-equal
+     and the streaming flush no longer re-renders the shell — the same
+     streaming-flush immunity PreviewCanvas has. Setter identities are stable,
+     so including them is free. */
   const {
     mode, previewOpen, setMode,
     designSystem, density, themeKey,
     setDesignSystem, setInterfaceType, setSelectedComponents,
     chatOpen: isChatOpen, setChatOpen,
     chatMode, chatPlacement, setChatPlacement, setChatMode,
-    activeTemplateId, messages,
+    activeTemplateId, hasMessages,
     toggleSessionsDrawer, startNewSession,
-  } = useBuilder();
+  } = useBuilder(
+    useShallow((s) => ({
+      mode: s.mode,
+      previewOpen: s.previewOpen,
+      setMode: s.setMode,
+      designSystem: s.designSystem,
+      density: s.density,
+      themeKey: s.themeKey,
+      setDesignSystem: s.setDesignSystem,
+      setInterfaceType: s.setInterfaceType,
+      setSelectedComponents: s.setSelectedComponents,
+      chatOpen: s.chatOpen,
+      setChatOpen: s.setChatOpen,
+      chatMode: s.chatMode,
+      chatPlacement: s.chatPlacement,
+      setChatPlacement: s.setChatPlacement,
+      setChatMode: s.setChatMode,
+      activeTemplateId: s.activeTemplateId,
+      hasMessages: s.messages.length > 0,
+      toggleSessionsDrawer: s.toggleSessionsDrawer,
+      startNewSession: s.startNewSession,
+    })),
+  );
 
   /* Floating chat is a fixed overlay card over a full-bleed canvas; docked
      chat is the legacy left column that splits width with the preview. */
@@ -51,7 +85,7 @@ export function BuilderApp() {
      messages/template, NOT block presence: the builder seeds a demo canvas on
      mount, so block counts are non-zero from boot and would wrongly suppress
      the hero (the original first-land-in-the-corner defect). */
-  const userStarted = messages.length > 0 || Boolean(activeTemplateId);
+  const userStarted = hasMessages || Boolean(activeTemplateId);
 
   /* Chat auto-dock (owner direction 2026-06-07): the floating chat owns the
      screen as a centered, full-screen hero on first land (nothing built yet),
