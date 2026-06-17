@@ -844,7 +844,11 @@ export const useBuilder = create<BuilderState>((set) => ({
   selectedBlockZone: null,
   selectedBlockIds: [],
   blockContextMenu: null,
-  componentLibraryOpen: true,
+  // Edit screen opens as chat + canvas. The right-rail component palette
+  // starts collapsed (reopen via the "Components" pill in the preview bar, or
+  // ⌘.) so the first impression is a conversation + canvas, not a Webflow-style
+  // page-builder. One source of truth — every consumer reads this boolean.
+  componentLibraryOpen: false,
   addMenuOpen: false,
   canvasViewMode: 'ui',
   libraryHoverZone: null,
