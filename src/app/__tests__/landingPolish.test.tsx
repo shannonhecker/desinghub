@@ -503,3 +503,305 @@ describe("CTA band label contrast (WCAG 1.4.3, small mono text, AA 4.5:1)", () =
     expect(ratio).toBeGreaterThanOrEqual(4.7);
   });
 });
+
+/* ── 8. Showcase reskin gallery ──────────────────────────────── */
+
+describe("showcase reskin gallery", () => {
+  const sectionOf = (el: HTMLElement): HTMLElement => {
+    const s = el.querySelector<HTMLElement>("#showcase");
+    if (!s) throw new Error("#showcase section not found");
+    return s;
+  };
+
+  it("sits immediately after the trust strip and before #services", () => {
+    const el = renderPage();
+    const main = el.querySelector("main")!;
+    const kids = Array.from(main.children);
+    const trustIdx = kids.findIndex((c) => c.classList.contains("lsl-trust"));
+    const showIdx = kids.findIndex((c) => c.id === "showcase");
+    const servIdx = kids.findIndex((c) => c.id === "services");
+    expect(trustIdx).toBeGreaterThanOrEqual(0);
+    expect(showIdx).toBe(trustIdx + 1);
+    expect(servIdx).toBeGreaterThan(showIdx);
+  });
+
+  it("exposes a labelled tablist with exactly 5 tabs in canonical order", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tablist = sec.querySelector('[role="tablist"]');
+    expect(tablist).not.toBeNull();
+    expect(tablist?.getAttribute("aria-label")).toBeTruthy();
+    const tabs = Array.from(sec.querySelectorAll('[role="tab"]'));
+    expect(tabs).toHaveLength(5);
+    expect(tabs.map((t) => norm(t.textContent))).toEqual([
+      "Salt DS",
+      "Material 3",
+      "Fluent 2",
+      "Carbon",
+      "uoaui",
+    ]);
+  });
+
+  it("selects Salt by default with a roving tabindex", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const selected = tabs.filter(
+      (t) => t.getAttribute("aria-selected") === "true",
+    );
+    expect(selected).toHaveLength(1);
+    expect(norm(selected[0].textContent)).toBe("Salt DS");
+    expect(selected[0].getAttribute("tabindex")).toBe("0");
+    tabs
+      .filter((t) => t.getAttribute("aria-selected") !== "true")
+      .forEach((t) => expect(t.getAttribute("tabindex")).toBe("-1"));
+  });
+
+  it("wires each tab to its panel and shows exactly one panel", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(sec.querySelectorAll('[role="tab"]'));
+    tabs.forEach((tab) => {
+      const panelId = tab.getAttribute("aria-controls")!;
+      const panel = sec.querySelector(`#${panelId}`);
+      expect(panel).not.toBeNull();
+      expect(panel?.getAttribute("aria-labelledby")).toBe(tab.id);
+    });
+    const visible = Array.from(
+      sec.querySelectorAll('[role="tabpanel"]'),
+    ).filter((p) => p.getAttribute("aria-hidden") !== "true");
+    expect(visible).toHaveLength(1);
+  });
+
+  it("maps every system to its own capture slug", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const srcs = Array.from(
+      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
+    ).map((img) => img.getAttribute("src"));
+    expect(new Set(srcs)).toEqual(
+      new Set([
+        "/showcase/salt.webp",
+        "/showcase/md3.webp",
+        "/showcase/fluent.webp",
+        "/showcase/carbon.webp",
+        "/showcase/uoaui.webp",
+      ]),
+    );
+  });
+
+  it("the default capture has descriptive, honest alt text", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const salt = sec.querySelector<HTMLImageElement>(
+      "#lsl-showcase-panel-salt img",
+    );
+    expect(salt?.getAttribute("src")).toBe("/showcase/salt.webp");
+    const alt = salt?.getAttribute("alt") ?? "";
+    expect(alt).toMatch(/Salt DS/);
+    expect(alt).toMatch(/dashboard/i);
+    expect(alt).not.toMatch(/mock|placeholder|illustration/i);
+    expect(alt.length).toBeGreaterThan(20);
+  });
+
+  it("every capture reserves layout (width/height) and defers below-fold load", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const imgs = Array.from(
+      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
+    );
+    expect(imgs).toHaveLength(5);
+    imgs.forEach((img) => {
+      expect(img.getAttribute("width")).toBeTruthy();
+      expect(img.getAttribute("height")).toBeTruthy();
+      // The section is below the fold, so every capture defers and never
+      // competes with the hero on initial load.
+      expect(img.getAttribute("loading")).toBe("lazy");
+    });
+  });
+
+  it("every alt string is dash-free, descriptive display copy", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const alts = Array.from(
+      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
+    ).map((img) => img.getAttribute("alt") ?? "");
+    expect(alts).toHaveLength(5);
+    alts.forEach((alt) => {
+      // STOP-class no-dash rule applies to alt copy too (read aloud by AT).
+      expect(alt).not.toMatch(/[–—]/);
+      expect(alt.length).toBeGreaterThan(20);
+    });
+  });
+
+  it("clicking a tab switches the selected tab and the visible panel", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const carbon = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ).find((t) => norm(t.textContent) === "Carbon")!;
+    act(() =>
+      carbon.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+    );
+    const selected = Array.from(sec.querySelectorAll('[role="tab"]')).filter(
+      (t) => t.getAttribute("aria-selected") === "true",
+    );
+    expect(selected).toHaveLength(1);
+    expect(norm(selected[0].textContent)).toBe("Carbon");
+    const visible = Array.from(
+      sec.querySelectorAll('[role="tabpanel"]'),
+    ).filter((p) => p.getAttribute("aria-hidden") !== "true");
+    expect(visible).toHaveLength(1);
+    expect(visible[0].id).toBe("lsl-showcase-panel-carbon");
+    expect(
+      visible[0].querySelector("img")?.getAttribute("src"),
+    ).toBe("/showcase/carbon.webp");
+  });
+
+  it("holds a single-selection invariant across every tab", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    tabs.forEach((tab) => {
+      act(() => tab.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+      const sel = Array.from(sec.querySelectorAll('[role="tab"]')).filter(
+        (t) => t.getAttribute("aria-selected") === "true",
+      );
+      expect(sel).toHaveLength(1);
+      const vis = Array.from(
+        sec.querySelectorAll('[role="tabpanel"]'),
+      ).filter((p) => p.getAttribute("aria-hidden") !== "true");
+      expect(vis).toHaveLength(1);
+    });
+  });
+
+  it("gallery copy carries no em/en dashes and frames captures honestly", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    expect(sec.textContent).not.toMatch(/[–—]/);
+    const heading = norm(sec.querySelector(".lsl-section-heading")?.textContent);
+    const lede = norm(sec.querySelector(".lsl-section-lede")?.textContent);
+    const caption = norm(sec.querySelector(".lsl-showcase-caption")?.textContent);
+    const copy = `${heading} ${lede} ${caption}`;
+    // The moat claim: ONE dashboard rendered by all five systems.
+    expect(copy).toMatch(/dashboard|app/i);
+    // Positive honesty: these are described as real builder output, not art.
+    expect(copy).toMatch(/real|capture|builder|present mode/i);
+    // The captures are explicitly disclaimed as NOT mockups (the word "mock"
+    // may appear, but only inside a negation, e.g. "not redrawn mockups").
+    expect(copy).toMatch(/not\b[^.]*\bmock|real builder output/i);
+  });
+
+  it("drives the visual crossfade via data-active on exactly the active panel", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    let activePanels = sec.querySelectorAll(
+      '[role="tabpanel"][data-active="true"]',
+    );
+    expect(activePanels).toHaveLength(1);
+    expect(activePanels[0].id).toBe("lsl-showcase-panel-salt");
+    expect((activePanels[0] as HTMLElement).getAttribute("tabindex")).toBe("0");
+
+    const carbon = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ).find((t) => norm(t.textContent) === "Carbon")!;
+    act(() => carbon.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+    activePanels = sec.querySelectorAll('[role="tabpanel"][data-active="true"]');
+    expect(activePanels).toHaveLength(1);
+    expect(activePanels[0].id).toBe("lsl-showcase-panel-carbon");
+    // the now-inactive salt panel drops both the visual flag and focusability
+    const salt = sec.querySelector("#lsl-showcase-panel-salt")!;
+    expect(salt.getAttribute("data-active")).toBeNull();
+    expect(salt.getAttribute("tabindex")).toBeNull();
+  });
+
+  it("arrow keys move selection AND focus, wrapping at both ends", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const press = (tab: HTMLButtonElement, key: string) => {
+      tab.focus();
+      const ev = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        tab.dispatchEvent(ev);
+      });
+      return ev;
+    };
+    // ArrowRight from Salt -> Material 3, both selected and focused.
+    const ev1 = press(tabs[0], "ArrowRight");
+    expect(ev1.defaultPrevented).toBe(true);
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[1]);
+    // ArrowLeft from Salt (index 0) wraps to uoaui (guards negative modulo).
+    const ev2 = press(tabs[0], "ArrowLeft");
+    expect(ev2.defaultPrevented).toBe(true);
+    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[4]);
+    // ArrowRight from uoaui (last) wraps back to Salt.
+    press(tabs[4], "ArrowRight");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  it("Home/End jump to ends, Up/Down alias Left/Right, other keys pass through", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const press = (tab: HTMLButtonElement, key: string) => {
+      tab.focus();
+      const ev = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        tab.dispatchEvent(ev);
+      });
+      return ev;
+    };
+    press(tabs[0], "End");
+    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[4]);
+    press(tabs[4], "Home");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[0]);
+    press(tabs[0], "ArrowDown");
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    press(tabs[1], "ArrowUp");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    // An unrelated key neither preventDefaults nor changes selection.
+    const ev = press(tabs[0], "a");
+    expect(ev.defaultPrevented).toBe(false);
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+  });
+});
+
+describe("showcase gallery CSS contract", () => {
+  const css = readFileSync(CSS_PATH, "utf8");
+
+  it("guards the crossfade under prefers-reduced-motion", () => {
+    expect(reduceBlocks(css)).toContain(".lsl-showcase-panel");
+  });
+
+  it("the showcase rules use lsl tokens and leak no raw hex", () => {
+    const showcaseRules = (
+      css.match(/\.lsl-showcase[^{]*\{[^}]*\}/g) ?? []
+    ).join("\n");
+    expect(showcaseRules.length).toBeGreaterThan(0);
+    expect(showcaseRules).toMatch(/var\(--lsl-/);
+    expect(showcaseRules).not.toMatch(/#[0-9a-fA-F]{6}\b/);
+  });
+});

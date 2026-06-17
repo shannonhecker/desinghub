@@ -703,6 +703,115 @@ html:has(.landing-southleft) body {
   }
 }
 
+/* ── Showcase: one real dashboard, reskinned across the five systems ──────
+   Present-mode captures of the SAME canvas, swapped in place by an ARIA
+   tablist (one tab per design system). The frame is fixed by aspect-ratio so
+   only the rendering changes between systems. Per-DS accent arrives via the
+   inline --showcase-brand prop (no raw hex), mirroring .lsl-trust-mark. The
+   opacity crossfade is guarded for reduced motion in the 2026-06 block. ── */
+.landing-southleft .lsl-showcase-stage {
+  margin-top: 8px;
+}
+.landing-southleft .lsl-showcase-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  border-bottom: 1px solid var(--lsl-rule);
+  margin: 0 0 28px;
+}
+.landing-southleft .lsl-showcase-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* overlap the tablist hairline */
+  padding: 10px 14px;
+  min-height: 44px;
+  font-family: var(--lsl-font-sans);
+  font-size: var(--lsl-text-body-s);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  color: var(--lsl-fg-muted);
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.landing-southleft .lsl-showcase-tab:hover {
+  color: var(--showcase-brand);
+}
+.landing-southleft .lsl-showcase-tab[aria-selected="true"] {
+  color: var(--lsl-fg-strong);
+  font-weight: 600;
+  border-bottom-color: var(--showcase-brand);
+}
+.landing-southleft .lsl-showcase-tab:focus-visible {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.landing-southleft .lsl-showcase-viewport {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 2400 / 1356;
+  border: 1px solid var(--lsl-rule-strong);
+  border-radius: 14px; /* matches .lsl-hero-demo-frame */
+  overflow: hidden;
+  background: var(--lsl-bg-soft);
+  /* Midnight-tinted elevation, matching .lsl-hero-demo-frame (not pure black). */
+  box-shadow: 0 18px 48px rgba(10, 14, 26, 0.55);
+}
+.landing-southleft .lsl-showcase-panel {
+  grid-area: 1 / 1;
+  /* soft surface behind the capture: a slow/failed load reads as a clean
+     framed panel, never a torn-image box. */
+  background: var(--lsl-bg-soft);
+  opacity: 0;
+  visibility: hidden;
+  /* no static will-change: only one outgoing + one incoming panel ever
+     animates, so permanently promoting all five is wasted compositor memory. */
+  transition: opacity 280ms cubic-bezier(0.2, 0, 0, 1),
+              visibility 0s linear 280ms;
+}
+.landing-southleft .lsl-showcase-panel[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 280ms cubic-bezier(0.2, 0, 0, 1),
+              visibility 0s linear 0s;
+}
+.landing-southleft .lsl-showcase-shot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.landing-southleft .lsl-showcase-caption {
+  margin: 18px 0 0;
+  font-size: var(--lsl-text-meta);
+  line-height: 1.5;
+  color: var(--lsl-fg-subtle);
+  max-width: 64ch;
+}
+@media (pointer: coarse) {
+  .landing-southleft .lsl-showcase-tab {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+}
+@media (max-width: 560px) {
+  .landing-southleft .lsl-showcase-tabs {
+    gap: 2px;
+  }
+  .landing-southleft .lsl-showcase-tab {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: var(--lsl-text-meta);
+  }
+  .landing-southleft .lsl-showcase-viewport {
+    border-radius: 10px;
+  }
+}
+
 /* ── Section shell ────────────────────────────────────────────────────── */
 .landing-southleft .lsl-section {
   padding-top: var(--lsl-section-y);
@@ -1561,6 +1670,11 @@ html:has(.landing-southleft) body {
 .landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 160ms; }
 .landing-southleft #systems > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 240ms; }
 
+.landing-southleft #showcase > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
+.landing-southleft #showcase > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 80ms; }
+.landing-southleft #showcase > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 160ms; }
+.landing-southleft #showcase > .lsl-container > [data-reveal]:nth-child(4) { transition-delay: 240ms; }
+
 .landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(1) { transition-delay: 0ms; }
 .landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(2) { transition-delay: 90ms; }
 .landing-southleft #cta > .lsl-container > [data-reveal]:nth-child(3) { transition-delay: 180ms; }
@@ -1638,6 +1752,15 @@ html:has(.landing-southleft) body {
   /* Footer macron rendered complete. */
   .landing-southleft .lsl-footer-brand[data-reveal] .lsl-mark-macron {
     transform: none;
+    transition: none;
+  }
+  /* Showcase reskin: the opacity crossfade collapses to an instant swap, and
+     the tab color/underline shift applies instantly. */
+  .landing-southleft .lsl-showcase-panel,
+  .landing-southleft .lsl-showcase-panel[data-active="true"] {
+    transition: none;
+  }
+  .landing-southleft .lsl-showcase-tab {
     transition: none;
   }
 }
