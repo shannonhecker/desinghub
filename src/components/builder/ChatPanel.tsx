@@ -5,6 +5,9 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI, CHAT_ERROR_PREFIXES } from "@/lib/useChatAPI";
+import { saveTurnSnapshot, getTurnSnapshot } from "@/lib/turnSnapshots";
+import { restoreSnapshot } from "@/lib/builderHistory";
+import { TurnHistoryCard } from "./cards/TurnHistoryCard";
 import { BUILDER_TEMPLATES, getLoginDashboardBody, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
@@ -612,6 +615,22 @@ export function ChatPanel() {
     );
   }
 
+  /* Phase 2: the per-turn "Restore" card under a USER message. Shows when a
+     pre-turn snapshot was captured for that turn; restoring is non-destructive
+     (the current canvas goes onto the undo stack first). */
+  function renderTurnHistoryCard(messageId: string) {
+    const snapshot = getTurnSnapshot(messageId);
+    if (!snapshot) return null;
+    return (
+      <TurnHistoryCard
+        onRestore={() => {
+          restoreSnapshot(snapshot);
+          bumpPreview();
+        }}
+      />
+    );
+  }
+
   /* Handler for the stop button - aborts the in-flight fetch and
      drops back to idle. Mirrors the existing setGenerating(false)
      contract so the UI consistently reflects "not running". */
@@ -936,7 +955,13 @@ export function ChatPanel() {
       }
     }
 
-    addMessage("user", msg);
+    /* Phase 2 (turn history): snapshot the canvas BEFORE this turn builds,
+       keyed by the user message id, so the chat can offer a non-destructive
+       "Restore" card under this turn. Only the real build path (here) is
+       captured — the earlier pre-build question turns (DS pick / audience)
+       change nothing on the canvas. */
+    const turnMsgId = addMessage("user", msg);
+    saveTurnSnapshot(turnMsgId);
     setGenerating(true);
     const l = msg.toLowerCase();
 
@@ -1544,6 +1569,7 @@ export function ChatPanel() {
                       Cards persist for the lifetime of the panel
                       (in-memory only — refresh wipes them). */}
                   {msg.role === "ai" && renderToolUseCards(msg.id)}
+                  {msg.role === "user" && renderTurnHistoryCard(msg.id)}
                   {/* QW4: retry affordance on the failed message -
                       5xx / network errors keep the user's text so one
                       click re-sends it (the error bubble is dropped

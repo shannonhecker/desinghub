@@ -25,7 +25,7 @@ const MAX_HISTORY = 50;
    stack, so an AI DS-switch followed by Cmd+Z silently failed to restore
    the DS (the lib/ snapshot didn't carry that field). Unifying here so
    one stack handles every undoable change. */
-interface CanvasSnapshot {
+export interface CanvasSnapshot {
   blocks: Block[];
   headerBlocks: Block[];
   sidebarBlocks: Block[];
@@ -209,6 +209,19 @@ export function pushSnapshot() {
      so the imminent setState() calls don't double-push this same
      pre-mutation state. */
   suppressNextCapture = true;
+}
+
+/* ── Phase 2 (turn history): public capture/restore for the per-turn snapshot
+   layer (lib/turnSnapshots + the chat "Restore" cards). captureSnapshot reads
+   the current canvas; restoreSnapshot rewinds to a snapshot NON-DESTRUCTIVELY
+   — it pushes the current state onto the undo stack first (git-revert style),
+   so nothing downstream is lost and Cmd+Z returns from a restore. */
+export function captureSnapshot(): CanvasSnapshot {
+  return snap();
+}
+export function restoreSnapshot(snapshot: CanvasSnapshot): void {
+  pushSnapshot();
+  apply(snapshot);
 }
 
 export function initBuilderHistory(): () => void {
