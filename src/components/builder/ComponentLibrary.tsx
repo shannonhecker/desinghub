@@ -1248,20 +1248,37 @@ function CollapsibleGroup({
   );
 }
 
-/* Default expand state for category accordions — all open on first
-   paint, so users see the full palette until they choose to collapse.
-   Persisted per-key to sessionStorage. */
+/* Default expand state for category accordions (hierarchy pass).
+   Previously EVERY category opened on first paint, so the panel rested as a
+   ~28-row wall of every tile and the categorization was invisible. Now we
+   open only the 1-2 heaviest / most-used categories (Inputs, Charts) so the
+   panel rests as a scannable INDEX of headers; the rest stay one click away.
+   `isCategoryOpen` treats `!== false` as open, so collapsed keys are explicit
+   `false`. The user's own per-key choices (sessionStorage) always win. */
 const LIB_EXPANDED_STORAGE_KEY = "dh-lib-expanded";
 
+export const LIB_DEFAULT_EXPANDED: Record<string, boolean> = {
+  actions: false,
+  inputs: true,
+  "data-display": false,
+  charts: true,
+  navigation: false,
+  feedback: false,
+  containment: false,
+  content: false,
+};
+
 function readExpanded(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
+  if (typeof window === "undefined") return { ...LIB_DEFAULT_EXPANDED };
   try {
     const saved = sessionStorage.getItem(LIB_EXPANDED_STORAGE_KEY);
-    if (!saved) return {};
+    if (!saved) return { ...LIB_DEFAULT_EXPANDED };
     const parsed = JSON.parse(saved);
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return parsed && typeof parsed === "object"
+      ? { ...LIB_DEFAULT_EXPANDED, ...parsed }
+      : { ...LIB_DEFAULT_EXPANDED };
   } catch {
-    return {};
+    return { ...LIB_DEFAULT_EXPANDED };
   }
 }
 
@@ -1457,7 +1474,11 @@ function LibraryBrowser() {
               type="button"
               className="lib-collapse-toggle"
               onClick={() => setAllCategories(!anyCategoryOpen)}
+              aria-label={anyCategoryOpen ? "Collapse all categories" : "Expand all categories"}
             >
+              <span className="material-symbols-outlined lib-collapse-icon" aria-hidden="true">
+                {anyCategoryOpen ? "unfold_less" : "unfold_more"}
+              </span>
               {anyCategoryOpen ? "Collapse all" : "Expand all"}
             </button>
           </div>

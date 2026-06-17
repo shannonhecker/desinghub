@@ -61,11 +61,17 @@ const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
   { label: "Carbon DS", value: "carbon" },
 ];
 
-/* Trimmed display set (issue #14). The local-command handlers + offline
-   keyword fast-paths are untouched - this only cuts which chips show. */
-const REFINE_CHIPS = [
-  "Add Image", "Add Chart", "Add Data Table", "Dark Mode", "Build Dashboard", "Clear All",
-];
+/* Tiered refine actions (hierarchy pass). The local-command handlers +
+   offline keyword fast-paths are untouched - labels are unchanged so
+   handleSend keyword matching still fires; this only changes WHERE each
+   chip shows. Primary = the likeliest next adds, kept visible above the
+   composer (Lovable caps quick-actions at ~3). The rest fold behind one
+   "More" disclosure. The destructive Clear All gets its own quiet slot so a
+   canvas-wiping action never sits at equal weight with additive ones.
+   Nothing is removed - every command is still reachable. */
+const REFINE_PRIMARY = ["Add Chart", "Add Data Table", "Add Image"];
+const REFINE_MORE = ["Build Dashboard", "Dark Mode"];
+const REFINE_DESTRUCTIVE = "Clear All";
 
 /* ── Component keyword → ID mapping for free-form chat ── */
 
@@ -521,6 +527,11 @@ export function ChatPanel() {
   const [toolUseByMessage, setToolUseByMessage] = useState<
     Record<string, ToolUseEvent[]>
   >({});
+
+  /* Disclosure for the secondary refine actions (hierarchy pass). Primary
+     adds stay visible; Build Dashboard / Dark Mode / Regenerate-data fold
+     behind "More" so the action row stops out-shouting the AI message. */
+  const [showMoreRefine, setShowMoreRefine] = useState(false);
 
   /* Holds the active "Applying changes…" revert timer so a burst of
      tool-use events coalesces into one pill window instead of stacking
@@ -1164,37 +1175,84 @@ export function ChatPanel() {
      ═══════════════════════════════════ */
 
   const renderRefineChips = () => (
-    <div className="prompt-bubbles">
-      {/* Regenerate chip is AI-gated - hide it entirely when ANTHROPIC_API_KEY
-          is absent so users aren't offered a button that will fail. The rest
-          of the refine chips stay since they route through handleSend, which
-          also gates on aiDisabled below. */}
-      {activeTemplateId && !aiDisabled && (
+    <div className="refine-actions">
+      {/* Primary tier: the ~3 likeliest next adds stay visible. */}
+      <div
+        className="prompt-bubbles refine-primary"
+        role="group"
+        aria-label="Suggested next actions"
+      >
+        {REFINE_PRIMARY.map((label) => (
+          <button
+            key={label}
+            className="prompt-bubble"
+            onClick={() => handleSend(label)}
+          >
+            {label}
+          </button>
+        ))}
         <button
-          className="prompt-bubble prompt-bubble-accent"
-          onClick={handleRegenerateContent}
-          disabled={isRegeneratingContent}
-          title="Ask Claude for fresh mock data for this template"
+          type="button"
+          className="prompt-bubble prompt-bubble-more"
+          aria-expanded={showMoreRefine}
+          onClick={() => setShowMoreRefine((v) => !v)}
         >
+          More
           <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
+            className={`refine-more-caret${showMoreRefine ? " is-open" : ""}`}
             aria-hidden="true"
           >
-            {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
+            ›
           </span>
-          {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
         </button>
-      )}
-      {REFINE_CHIPS.map((label) => (
-        <button
-          key={label}
-          className="prompt-bubble"
-          onClick={() => handleSend(label)}
+      </div>
+
+      {/* Tertiary tier: the rest, disclosed on demand. Regenerate-data is
+          AI-gated - hidden when ANTHROPIC_API_KEY is absent so users aren't
+          offered a button that will fail. Clear All is destructive, so it
+          sits apart from the additive commands with its own quiet slot. */}
+      {showMoreRefine && (
+        <div
+          className="prompt-bubbles refine-more-row"
+          role="group"
+          aria-label="More actions"
         >
-          {label}
-        </button>
-      ))}
+          {activeTemplateId && !aiDisabled && (
+            <button
+              className="prompt-bubble prompt-bubble-accent"
+              onClick={handleRegenerateContent}
+              disabled={isRegeneratingContent}
+              title="Ask Claude for fresh mock data for this template"
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
+                aria-hidden="true"
+              >
+                {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
+              </span>
+              {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
+            </button>
+          )}
+          {REFINE_MORE.map((label) => (
+            <button
+              key={label}
+              className="prompt-bubble"
+              onClick={() => handleSend(label)}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="refine-clear"
+            onClick={() => handleSend(REFINE_DESTRUCTIVE)}
+            title="Remove every block from the canvas"
+          >
+            {REFINE_DESTRUCTIVE}
+          </button>
+        </div>
+      )}
     </div>
   );
 
