@@ -12,6 +12,7 @@ import type { ZoneId, Block, ZoneLayout } from "@/store/useBuilder";
 import { useBuilder } from "@/store/useBuilder";
 import { computeContainerStyle } from "@/lib/layoutResolver";
 import { InsertionSlot } from "./InsertionSlot";
+import { ZoneLayoutOverlay } from "./ZoneLayoutOverlay";
 
 /* ══════════════════════════════════════════════════════════
    ZoneDropContainer - shared droppable + SortableContext
@@ -125,6 +126,10 @@ export function ZoneDropContainer({
       style={style}
       data-layout-mode={mode}
     >
+      {/* On-canvas align/justify cluster — Edit-mode only (gated in CSS),
+          revealed on zone hover. Writes the SAME container tokens the
+          inspector does, so it's export-neutral. */}
+      <ZoneLayoutOverlay zoneId={zoneId} zoneLayout={zoneLayout} />
       <SortableContext
         items={itemIds}
         strategy={strategy}
