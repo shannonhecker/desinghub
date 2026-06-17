@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useBuilder, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify } from "@/store/useBuilder";
+import { useBuilder, normalizeGap, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify } from "@/store/useBuilder";
 
 /* ══════════════════════════════════════════════════════════
    ZoneLayoutOverlay — Placement P2 (align/justify handles).
@@ -65,6 +65,88 @@ export function mainAxisJustifyOptions(mode: LayoutMode): JustifyOption[] {
   ];
 }
 
+/* ── Gap snap-handle ──────────────────────────────────────────
+   The zone's gap may ONLY take a design-token value. "Snapping" here
+   is magnetism on this token scale: the drag math is throwaway; the
+   single committed artifact is ZoneLayout.gap (which the resolver
+   already emits as `gap: Npx`). No coordinate is ever stored. */
+export const GAP_STOPS = [0, 4, 8, 12, 16, 24, 32] as const;
+
+/** Snap an arbitrary px gap to the nearest token stop (clamped to range). */
+export function snapGapToToken(px: number): number {
+  let best: number = GAP_STOPS[0];
+  let bestDist = Infinity;
+  for (const stop of GAP_STOPS) {
+    const d = Math.abs(stop - px);
+    if (d < bestDist) { bestDist = d; best = stop; }
+  }
+  return best;
+}
+
+/** Step to the adjacent token stop from the current value (dir +1 / -1). */
+export function stepGap(current: number, dir: 1 | -1): number {
+  const i = GAP_STOPS.indexOf(snapGapToToken(current) as (typeof GAP_STOPS)[number]);
+  const next = Math.max(0, Math.min(GAP_STOPS.length - 1, i + dir));
+  return GAP_STOPS[next];
+}
+
+const PX_PER_STOP = 16; // horizontal drag distance to advance one token stop
+
+function GapScrubber({ zoneId, zoneLayout }: { zoneId: ZoneId; zoneLayout: ZoneLayout }) {
+  const setZoneLayout = useBuilder((s) => s.setZoneLayout);
+  const g = normalizeGap(zoneLayout.gap);
+  const currentGap = g ? Math.max(g.row, g.col) : 8;
+  const dragRef = React.useRef<{ startX: number; startIndex: number } | null>(null);
+
+  /* Write a uniform gap (both axes) — the inspector keeps independent
+     row/col control; the on-canvas handle is the quick uniform path. */
+  const commit = (n: number) => {
+    if (n !== currentGap) setZoneLayout(zoneId, { gap: { row: n, col: n } });
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const idx = GAP_STOPS.indexOf(snapGapToToken(currentGap) as (typeof GAP_STOPS)[number]);
+    dragRef.current = { startX: e.clientX, startIndex: idx < 0 ? 0 : idx };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const steps = Math.round((e.clientX - dragRef.current.startX) / PX_PER_STOP);
+    const ni = Math.max(0, Math.min(GAP_STOPS.length - 1, dragRef.current.startIndex + steps));
+    commit(GAP_STOPS[ni]);
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    dragRef.current = null;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); commit(stepGap(currentGap, 1)); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); commit(stepGap(currentGap, -1)); }
+  };
+
+  return (
+    <div
+      className="zlo-gap"
+      role="slider"
+      tabIndex={0}
+      aria-label="Gap between items"
+      aria-valuemin={0}
+      aria-valuemax={32}
+      aria-valuenow={currentGap}
+      aria-valuetext={`${currentGap}px`}
+      title={`Gap ${currentGap}px — drag or arrow keys to snap`}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onKeyDown={onKeyDown}
+    >
+      <span className="material-symbols-outlined" aria-hidden="true">width</span>
+      <span className="zlo-gap-val">{currentGap}</span>
+    </div>
+  );
+}
+
 interface ZoneLayoutOverlayProps {
   zoneId: ZoneId;
   zoneLayout: ZoneLayout | undefined;
@@ -117,6 +199,8 @@ export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps
           </button>
         ))}
       </div>
+      <span className="zlo-sep" aria-hidden="true" />
+      <GapScrubber zoneId={zoneId} zoneLayout={zoneLayout} />
     </div>
   );
 }

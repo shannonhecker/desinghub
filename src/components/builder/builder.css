@@ -13236,6 +13236,28 @@
 .zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-btn.active { background: var(--bc-accent); color: #fff; }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+/* Gap snap-handle: drag horizontally (or arrow keys) to magnetize the zone
+   gap to a token stop. Token-snapped by construction, never an arbitrary px. */
+.zlo-gap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.7));
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.zlo-gap:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-gap:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+.zlo-gap .material-symbols-outlined { font-size: 15px; }
+.zlo-gap-val { min-width: 14px; text-align: center; }
 
 /* Issue #79: zone preview when a library tile is being hovered. The
    tile's onMouseEnter sets `libraryHoverZone` in the store; the
