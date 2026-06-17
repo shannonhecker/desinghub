@@ -1231,6 +1231,7 @@
 [data-builder-mode="preview"] .bc-snap-guide,
 [data-builder-mode="preview"] .bc-sibling-guide,
 [data-builder-mode="preview"] .component-sidebar,
+[data-builder-mode="preview"] .zone-layout-overlay,
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
@@ -13170,12 +13171,71 @@
 
 /* Zone drop containers - base */
 .zone-drop-container {
+  /* Anchor for the absolutely-positioned ZoneLayoutOverlay. Safe on a
+     flex/grid container — does not change child flow. */
+  position: relative;
   min-height: 8px;
   /* Inter-block gap inside each zone scales with structure padding (S/M/L).
      Falls back to 8px when --dh-pad-gap isn't set (legacy callers). */
   gap: var(--dh-pad-gap, 8px);
   transition: background 0.2s, box-shadow 0.2s, outline-color 0.12s;
 }
+
+/* ── Placement P2: on-canvas align/justify overlay ──────────────
+   Pinned to the zone's top-right, revealed on zone hover. Edit-mode
+   only (added to the [data-builder-mode="preview"] hide cluster).
+   Writes container align/justify tokens via setZoneLayout — no
+   coordinates, export-neutral. */
+.zone-layout-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--b-radius-sm, 6px);
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity 0.12s var(--bc-ease, ease), transform 0.12s var(--bc-ease, ease);
+}
+/* Reveal on zone hover or when a control inside has focus (keyboard). */
+.zone-drop-container:hover > .zone-layout-overlay,
+.zone-layout-overlay:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+/* Hide while this zone is an active drop target so it never sits over a
+   block being dragged in. */
+.zone-drop-container.is-over > .zone-layout-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+.zlo-group { display: flex; align-items: center; gap: 1px; }
+.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--glass-border-subtle); }
+.zlo-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.zlo-btn .material-symbols-outlined { font-size: 17px; }
+.zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-btn.active { background: var(--bc-accent); color: #fff; }
+.zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
 
 /* Issue #79: zone preview when a library tile is being hovered. The
    tile's onMouseEnter sets `libraryHoverZone` in the store; the
