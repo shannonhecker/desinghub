@@ -9,10 +9,11 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { ZoneId, Block, ZoneLayout } from "@/store/useBuilder";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, normalizeGap } from "@/store/useBuilder";
 import { computeContainerStyle } from "@/lib/layoutResolver";
 import { InsertionSlot } from "./InsertionSlot";
 import { ZoneLayoutOverlay } from "./ZoneLayoutOverlay";
+import { ColumnGuides } from "./ColumnGuides";
 
 /* ══════════════════════════════════════════════════════════
    ZoneDropContainer - shared droppable + SortableContext
@@ -130,6 +131,15 @@ export function ZoneDropContainer({
           revealed on zone hover. Writes the SAME container tokens the
           inspector does, so it's export-neutral. */}
       <ZoneLayoutOverlay zoneId={zoneId} zoneLayout={zoneLayout} />
+      {/* Grid column guides — faint dashed boundaries shown only while a
+          block is being dragged into this grid zone. Pure editor visual,
+          writes no data. */}
+      {mode === "grid" && (
+        <ColumnGuides
+          columns={zoneLayout?.columns ?? 12}
+          gap={normalizeGap(zoneLayout?.gap)?.col ?? 12}
+        />
+      )}
       <SortableContext
         items={itemIds}
         strategy={strategy}
