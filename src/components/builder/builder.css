@@ -5005,6 +5005,143 @@
 
 /* Slim floating control bar, bottom-centre. Glass on the nav layer
    only (never on canvas content). */
+/* ════════ Amend flow (Phase 1): selection ring + in-place composer ════════ */
+
+/* Selection ring on the clicked block in the author's Present mode. Outline
+   (not border) so it never shifts layout; offset to sit just outside. */
+/* Selection ring as an ::after overlay painted ON TOP of the block's content
+   (z-index), so an opaque child card/background can't hide it and ancestor
+   overflow can't clip it. pointer-events:none keeps clicks flowing to the
+   block. Functional selection affordance, not decorative depth. */
+.present-stage .canvas-block[data-amend-selected="true"] {
+  position: relative;
+}
+.present-stage .canvas-block[data-amend-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--b-accent);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 4px var(--b-accent-glow);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* The floating "amend in place" composer — sits just above the present-bar,
+   centered, sharing the bar's chrome tokens. */
+.present-amend {
+  position: fixed;
+  bottom: clamp(72px, 12vh, 104px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(440px, calc(100vw - 32px));
+  padding: 12px;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: 14px;
+  box-shadow: var(--bc-shadow-lg);
+  backdrop-filter: blur(12px);
+  color: var(--bc-fg);
+  animation: present-amend-in 0.16s ease-out;
+}
+@keyframes present-amend-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .present-amend { animation: none; }
+}
+.present-amend-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.present-amend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-accent);
+  flex-shrink: 0;
+}
+.present-amend-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.present-amend-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--bc-fg);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+.present-amend-clear:hover { background: var(--bc-bg-hover); opacity: 1; }
+.present-amend-clear:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 2px; }
+.present-amend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.present-amend-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--bc-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--bc-fg);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.present-amend-input::placeholder { color: var(--bc-fg); opacity: 0.5; }
+.present-amend-input:focus {
+  border-color: var(--b-accent);
+  box-shadow: 0 0 0 3px var(--b-accent-glow);
+}
+.present-amend-input:disabled { opacity: 0.6; }
+.present-amend-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--b-accent);
+  color: var(--bc-on-accent, #fff);
+  cursor: pointer;
+  transition: filter 0.12s, opacity 0.12s;
+}
+.present-amend-send:hover:not(:disabled) { filter: brightness(1.08); }
+.present-amend-send:disabled { opacity: 0.4; cursor: default; }
+.present-amend-send:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 2px; }
+.present-amend-hint {
+  font-size: 11.5px;
+  color: var(--bc-fg);
+  opacity: 0.75;
+}
+
 .present-bar {
   position: fixed;
   bottom: clamp(16px, 4vh, 32px);
