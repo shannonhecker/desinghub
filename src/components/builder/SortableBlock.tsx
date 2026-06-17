@@ -6,6 +6,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ZoneId, LayoutProps, LayoutWidth } from "@/store/useBuilder";
 import { useBuilder, findBlockInTree } from "@/store/useBuilder";
+import { useAmendable } from "./previewAmendable";
 import { computeSiblingSnap, type SiblingCandidate } from "@/lib/siblingSnap";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { usePreviewReadOnly } from "./previewReadOnly";
@@ -913,6 +914,7 @@ export function SortableBlock({
   const selectedBlockIds = useBuilder((s) => s.selectedBlockIds);
   const primarySelectedId = useBuilder((s) => s.selectedBlockId);
   const toggleBlockSelection = useBuilder((s) => s.toggleBlockSelection);
+  const setSelectedBlock = useBuilder((s) => s.setSelectedBlock);
   const openBlockContextMenu = useBuilder((s) => s.openBlockContextMenu);
   const setSelection = useBuilder((s) => s.setSelection);
 
@@ -988,8 +990,11 @@ export function SortableBlock({
      selection. Runs in capture phase so it wins over the parent's
      onClick + stopPropagation. */
   const handleClickCapture = (e: React.MouseEvent) => {
-    if (!zone || readOnly) return;
+    if (!zone) return;
     if (!e.shiftKey) return;
+    /* Multi-select via shift-click: in the editable canvas, and in the
+       author's amendable Present mode; plain read-only previews stay inert. */
+    if (readOnly && !amendable) return;
     e.stopPropagation();
     e.preventDefault();
     toggleBlockSelection(id, zone);
@@ -1008,6 +1013,10 @@ export function SortableBlock({
      affordance — selection, multi-select, inspector-pin, context menu —
      per the previewReadOnly contract. Editable canvas → context default false. */
   const readOnly = usePreviewReadOnly();
+  /* In the author's Present mode (amendable), a read-only canvas still lets a
+     click SELECT a block for the in-place amend composer — see previewAmendable.
+     Other read-only surfaces (in-app preview, shared recipient) stay inert. */
+  const amendable = useAmendable();
 
   const handlePointerEnter = () => {
     if (!zone || zone === "sidebar") return;
@@ -1018,9 +1027,15 @@ export function SortableBlock({
     setInspectorHover(null);
   };
   const handleClick = (e: React.MouseEvent) => {
-    if (!zone || zone === "sidebar" || readOnly) return;
+    if (!zone || zone === "sidebar") return;
     /* Shift-click is consumed by handleClickCapture already. */
     if (e.shiftKey) return;
+    if (readOnly) {
+      /* Amend flow: a plain click on the live Present render selects this
+         block for the in-place composer. Other read-only surfaces ignore it. */
+      if (amendable) setSelectedBlock(id, zone);
+      return;
+    }
     pinInspector(id);
   };
 
@@ -1066,6 +1081,7 @@ export function SortableBlock({
       className={cls}
       data-block-id={id}
       data-zone={zone}
+      data-amend-selected={readOnly && amendable && selectedBlockIds.includes(id) ? "true" : undefined}
       onClickCapture={handleClickCapture}
       onClick={handleClick}
       onPointerEnter={handlePointerEnter}
