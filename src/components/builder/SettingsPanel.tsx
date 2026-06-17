@@ -152,6 +152,7 @@ export function SettingsPanel() {
     mode, setMode,
     density, setDensity,
     structurePadding, setStructurePadding,
+    placementMode, setPlacementMode,
     themeKey, setThemeKey,
     interfaceType, setInterfaceType,
     selectedComponents, toggleComponent,
@@ -267,6 +268,38 @@ export function SettingsPanel() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Placement mode (Auto / Grid / Freeform) — how a dropped block
+              resolves its position inside a zone. Auto = today's responsive
+              flow (export-safe default). Grid + Freeform are scaffolded for the
+              placement roadmap; they land disabled with a "Soon" pill so the
+              picker is honest rather than a no-op that reads as fake. */}
+          <div className="settings-group">
+            <label>Placement</label>
+            <div className="settings-toggle-row" role="radiogroup" aria-label="Placement mode">
+              {([
+                { v: "auto", label: "Auto", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
+                { v: "grid", label: "Grid", ready: false, tip: "Coming soon: drop into a chosen grid cell" },
+                { v: "freeform", label: "Freeform", ready: false, tip: "Coming soon: opt-in free positioning" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  role="radio"
+                  aria-checked={placementMode === opt.v}
+                  aria-disabled={opt.ready ? undefined : true}
+                  disabled={!opt.ready}
+                  className={`settings-toggle-btn ${placementMode === opt.v ? "active" : ""}${opt.ready ? "" : " soon"}`}
+                  onClick={() => opt.ready && setPlacementMode(opt.v)}
+                  title={opt.tip}
+                >
+                  {opt.label}
+                  {!opt.ready && <span className="settings-toggle-soon" aria-hidden="true">Soon</span>}
+                </button>
+              ))}
+            </div>
+            <p className="settings-group-hint">How dropped blocks resolve position. Auto keeps your export responsive.</p>
           </div>
 
           {/* Components */}

@@ -180,6 +180,8 @@ function PreviewBar() {
   const setDensity = useBuilder((s) => s.setDensity);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
   const setCanvasSpacing = useBuilder((s) => s.setCanvasSpacing);
+  const placementMode = useBuilder((s) => s.placementMode);
+  const setPlacementMode = useBuilder((s) => s.setPlacementMode);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
@@ -550,6 +552,34 @@ function PreviewBar() {
                   {density === d.key ? "check" : "density_medium"}
                 </span>
                 {d.label}
+              </button>
+            ))}
+            <div className="preview-bar-overflow-divider" />
+            {/* Placement — how a dropped block resolves its position. Auto is
+                the responsive, export-safe default (wired today); Grid + Freeform
+                are scaffolded for the placement roadmap and carry a "Soon" tag so
+                the menu is honest rather than a no-op that reads as fake. */}
+            <div className="preview-bar-overflow-group-label" aria-hidden="true">Placement</div>
+            {([
+              { v: "auto", label: "Auto", icon: "reorder", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
+              { v: "grid", label: "Grid", icon: "grid_view", ready: false, tip: "Coming soon: drop into a chosen grid cell" },
+              { v: "freeform", label: "Freeform", icon: "drag_pan", ready: false, tip: "Coming soon: opt-in free positioning" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                className={`preview-bar-overflow-item${placementMode === opt.v ? " preview-bar-overflow-item-active" : ""}${opt.ready ? "" : " preview-bar-overflow-item-soon"}`}
+                role="menuitemradio"
+                aria-checked={placementMode === opt.v}
+                aria-disabled={opt.ready ? undefined : true}
+                disabled={!opt.ready}
+                onClick={() => { if (opt.ready) { setPlacementMode(opt.v); setOverflowOpen(false); } }}
+                title={opt.tip}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  {placementMode === opt.v ? "check" : opt.icon}
+                </span>
+                {opt.label}
+                {!opt.ready && <span className="preview-bar-overflow-soon" aria-hidden="true">Soon</span>}
               </button>
             ))}
             <div className="preview-bar-overflow-divider" />
@@ -1462,6 +1492,10 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
        Skipping here avoids oscillating between zone.add and
        group.add during pointer movement. */
     const overData = over.data.current as Record<string, unknown> | undefined;
+    /* Over an InsertionSlot: the precise placement is committed on drop
+       (handleDragEnd). Skipping here keeps the source array — and therefore
+       the slot indices — stable during hover instead of live-appending. */
+    if (overData?.isInsertionSlot) return;
     if (resolveGroupId(over.id, overData)) return;
 
     const sourceZone = activeInfo.zone;
@@ -1532,7 +1566,13 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
 
         const targetArr = getZoneArr(targetZone);
         const overIndex = targetArr.findIndex((b) => b.id === String(over.id));
-        const insertAt = overIndex >= 0 ? overIndex : 0;
+        /* Library drop onto an InsertionSlot lands at the slot's exact index;
+           otherwise fall back to the over-block index (or prepend). */
+        const insertAt = overData?.isInsertionSlot
+          ? Number(overData.index)
+          : overIndex >= 0
+          ? overIndex
+          : 0;
 
         addBlockToZone(targetZone, newBlock, insertAt);
 
@@ -1558,6 +1598,38 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
          block snaps back silently. Tell them. */
       if (activeInfo && !over) {
         showToast("Couldn't move here — try a zone in the canvas", { icon: "error" });
+        activeItemRef.current = null;
+        return;
+      }
+
+      /* Case 2 (precise): existing block dropped onto an InsertionSlot.
+         Resolves the EXACT gap the live line showed, instead of the
+         block-to-block arrayMove approximation. Group sources stay on the
+         MVP within-group path below. */
+      if (activeInfo && over && overData?.isInsertionSlot && !activeInfo.parentGroupId) {
+        const tz = overData.zone as ZoneId;
+        const ti = Number(overData.index);
+        const srcZone = activeInfo.zone;
+        if (srcZone === tz) {
+          const arr = getZoneArr(tz);
+          const oldIndex = arr.findIndex((b) => b.id === activeInfo.id);
+          if (oldIndex >= 0) {
+            /* Slot index ti counts gaps in the CURRENT array (active block
+               included). Removing the active block shifts later targets left
+               by one, so adjust before arrayMove. */
+            let newIndex = oldIndex < ti ? ti - 1 : ti;
+            newIndex = Math.max(0, Math.min(newIndex, arr.length - 1));
+            if (newIndex !== oldIndex) {
+              const reordered = arrayMove(arr, oldIndex, newIndex);
+              if (tz === "body") syncBodyToStore(reordered);
+              else setZoneBlocks(tz, reordered);
+            }
+          }
+        } else {
+          /* Cross-zone precise insert. handleDragOver skips slots, so the
+             block is still in its source zone at drop time. */
+          moveBlockBetweenZones(srcZone, tz, activeInfo.id, ti);
+        }
         activeItemRef.current = null;
         return;
       }
@@ -1643,6 +1715,7 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
       addBlockToZone,
       addBlockToGroup,
       moveBlockIntoGroup,
+      moveBlockBetweenZones,
       removeBlockFromGroup,
       syncBodyToStore,
       setZoneBlocks,
