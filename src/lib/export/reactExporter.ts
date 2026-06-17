@@ -151,6 +151,13 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   if (real) return real.split("\n").map((line) => indent + line).join("\n");
   const p = block.props;
   switch (block.type) {
+    case "Spacer": {
+      /* A flow gutter: an empty, sized flex/grid child. NEVER a positioned
+         element — only a width|height token + flexShrink:0 keeps it responsive
+         across all 5 design systems with no DS-specific code. */
+      const ax = p.axis === "v" ? "height" : "width";
+      return `${indent}<div style={{ ${ax}: "${Number(p.size) || 24}px", flexShrink: 0 }} aria-hidden="true" />`;
+    }
     case "SimulatedTitle": {
       const lvl = safeLevel(p.level);
       return `${indent}<${lvl}>${jsxText(p.text, "Heading")}</${lvl}>`;

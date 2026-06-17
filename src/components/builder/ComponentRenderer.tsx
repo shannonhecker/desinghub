@@ -1729,7 +1729,26 @@ function LayoutGroupBlock({ system, blockId }: { system: DesignSystem; blockId?:
   );
 }
 
+/* Spacer: a flow gutter. On the canvas it shows a hatched, sized placeholder
+   so the designer can see the space they added; builder.css strips the hatch
+   in Present/Preview mode while keeping the gutter. It is purely structural —
+   aria-hidden so screen readers skip it. No x/y, only a size on one axis. */
+function SpacerBlock({ size, axis }: { size?: number | string; axis?: string }) {
+  const px = Number(size) || 24;
+  const vertical = axis === "v";
+  return (
+    <div
+      className="spacer-block"
+      aria-hidden="true"
+      style={vertical
+        ? { height: px, minWidth: 24, flexShrink: 0 }
+        : { width: px, minHeight: 24, flexShrink: 0 }}
+    />
+  );
+}
+
 const RENDERERS: Record<string, React.FC<any>> = {
+  Spacer: SpacerBlock,
   Alert: AlertBlock,
   DataTable: DataTableBlock,
   FormFields: FormFieldsBlock,
