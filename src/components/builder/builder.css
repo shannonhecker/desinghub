@@ -1232,6 +1232,7 @@
 [data-builder-mode="preview"] .bc-sibling-guide,
 [data-builder-mode="preview"] .component-sidebar,
 [data-builder-mode="preview"] .zone-layout-overlay,
+[data-builder-mode="preview"] .zone-justify-handle,
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
@@ -13201,6 +13202,54 @@
   .zone-col-guides { animation: zone-col-guides-in 0.12s ease; }
 }
 @keyframes zone-col-guides-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Placement P2: distribute-handle ───────────────────────────
+   A grip on the zone's main-axis end edge; drag to cycle justify
+   (incl. space-around). Edit-mode only, revealed on zone hover.
+   Writes only the justify token. */
+.zone-justify-handle {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.12s var(--bc-ease, ease);
+  touch-action: none;
+}
+.zone-drop-container:hover > .zone-justify-handle,
+.zone-justify-handle:focus-visible,
+.zone-justify-handle.is-dragging { opacity: 1; }
+.zone-justify-handle.is-horizontal {
+  top: 50%; right: 0; transform: translateY(-50%);
+  width: 14px; height: 44px; cursor: ew-resize;
+}
+.zone-justify-handle.is-vertical {
+  left: 50%; bottom: 0; transform: translateX(-50%);
+  width: 44px; height: 14px; cursor: ns-resize;
+}
+.zone-justify-grip {
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+.zone-justify-handle.is-horizontal .zone-justify-grip { width: 5px; height: 28px; }
+.zone-justify-handle.is-vertical .zone-justify-grip { width: 28px; height: 5px; }
+.zone-justify-handle.is-dragging .zone-justify-grip { background: var(--bc-accent); border-color: var(--bc-accent); }
+.zone-justify-handle:focus-visible .zone-justify-grip { outline: 2px solid var(--bc-accent-ring); outline-offset: 2px; }
+.zone-justify-badge {
+  position: absolute;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--bc-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.zone-justify-handle.is-horizontal .zone-justify-badge { right: calc(100% + 6px); top: 50%; transform: translateY(-50%); }
+.zone-justify-handle.is-vertical .zone-justify-badge { bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); }
 
 /* ── Placement P2: on-canvas align/justify overlay ──────────────
    Pinned to the zone's top-right, revealed on zone hover. Edit-mode

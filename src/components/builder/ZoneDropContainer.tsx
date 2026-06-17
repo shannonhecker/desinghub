@@ -14,6 +14,7 @@ import { computeContainerStyle } from "@/lib/layoutResolver";
 import { InsertionSlot } from "./InsertionSlot";
 import { ZoneLayoutOverlay } from "./ZoneLayoutOverlay";
 import { ColumnGuides } from "./ColumnGuides";
+import { JustifyHandle } from "./JustifyHandle";
 
 /* ══════════════════════════════════════════════════════════
    ZoneDropContainer - shared droppable + SortableContext
@@ -139,6 +140,12 @@ export function ZoneDropContainer({
           columns={zoneLayout?.columns ?? 12}
           gap={normalizeGap(zoneLayout?.gap)?.col ?? 12}
         />
+      )}
+      {/* Distribute-handle — drag the zone's main-axis edge to cycle
+          justify (incl. space-around). Edit-mode only (gated in CSS),
+          revealed on zone hover. Writes only the justify token. */}
+      {zoneLayout && zoneLayout.visible !== false && (
+        <JustifyHandle zoneId={zoneId} zoneLayout={zoneLayout} />
       )}
       <SortableContext
         items={itemIds}
