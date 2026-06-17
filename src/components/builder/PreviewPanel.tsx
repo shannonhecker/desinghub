@@ -43,6 +43,7 @@ import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/us
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
+import { DragActiveContext } from "./dragActiveContext";
 import type { SystemId } from "@/store/useDesignHub";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
@@ -1755,7 +1756,9 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
       onDragCancel={handleDragCancel}
     >
       <PreviewReadOnlyContext.Provider value={readOnly}>
-        {children}
+        <DragActiveContext.Provider value={activeDragId !== null}>
+          {children}
+        </DragActiveContext.Provider>
       </PreviewReadOnlyContext.Provider>
 
       {/* Drag overlay - ghost preview while dragging from library */}

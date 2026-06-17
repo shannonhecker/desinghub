@@ -13181,6 +13181,27 @@
   transition: background 0.2s, box-shadow 0.2s, outline-color 0.12s;
 }
 
+/* ── Placement P2: grid column guides ──────────────────────────
+   Faint dashed column boundaries shown only while a block is being
+   dragged into a grid zone. Absolute overlay (NOT a grid child),
+   pointer-events:none, with its own internal grid mirroring the
+   zone's columns + column-gap. Editor visual only — no data. */
+.zone-col-guides {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  pointer-events: none;
+  z-index: 5;
+}
+.zone-col-guide-cell {
+  border-right: 1px dashed color-mix(in srgb, var(--bc-accent, #6366f1) 32%, transparent);
+}
+.zone-col-guide-cell:last-child { border-right: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .zone-col-guides { animation: zone-col-guides-in 0.12s ease; }
+}
+@keyframes zone-col-guides-in { from { opacity: 0; } to { opacity: 1; } }
+
 /* ── Placement P2: on-canvas align/justify overlay ──────────────
    Pinned to the zone's top-right, revealed on zone hover. Edit-mode
    only (added to the [data-builder-mode="preview"] hide cluster).
