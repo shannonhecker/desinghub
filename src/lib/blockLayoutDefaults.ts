@@ -22,6 +22,9 @@ const DEFAULT_BLOCK_LAYOUTS: Record<string, LayoutProps> = {
   SimulatedCheckbox: HUG_CONTENT,
   SimulatedSwitch: HUG_CONTENT,
   SimulatedToggleButton: HUG_CONTENT,
+  /* Spacer is a fixed-size gutter sized by its own `size` prop; hugging keeps
+     it from stretching to fill a row and swallowing the whole zone. */
+  Spacer: HUG_CONTENT,
 };
 
 /** Default `layout` for a block type, or undefined when the type keeps

@@ -1234,6 +1234,30 @@
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
+
+/* ── Placement P2: Spacer block ──────────────────────────────────
+   A flow gutter. On the Edit canvas it shows a hatched, dashed
+   placeholder (derived from the accent token, not a literal) so the
+   designer can see the space they inserted. In Present/Preview the
+   hatch is stripped but the gutter is KEPT (size lives on the inline
+   style), so the spacing survives into the rendered/exported UI. */
+.spacer-block {
+  box-sizing: border-box;
+  border-radius: var(--b-radius-sm, 4px);
+  border: 1px dashed var(--bc-accent-muted);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    color-mix(in srgb, var(--bc-accent, #6366f1) 14%, transparent) 4px,
+    color-mix(in srgb, var(--bc-accent, #6366f1) 14%, transparent) 8px
+  );
+}
+[data-builder-mode="preview"] .spacer-block {
+  background: transparent;
+  border: none;
+}
+
 /* Preview mode: strip selection outlines + hover borders from
    every canvas-block, regardless of selected/hover state. Using
    the plain `.canvas-block` selector here (rather than the more
