@@ -844,20 +844,20 @@ function ShowcaseGallery() {
     >
       <div className="lsl-container">
         <p className="lsl-section-label" data-reveal>
-          showcase / one dashboard, five skins
+          showcase / reskinned live
         </p>
         <h2
           id="lsl-showcase-heading"
           className="lsl-section-heading"
           data-reveal
         >
-          One dashboard. Five systems rendered it.
+          One dashboard. Five skins, no rebuild.
         </h2>
         <p className="lsl-section-lede" data-reveal>
-          The same analytics dashboard, composed once on the canvas, then handed
-          to all five renderers. These are captures of the real Present mode,
-          not redrawn mockups. Switch a system and the layout holds, only the
-          rendering changes.
+          The same analytics dashboard, composed once on the canvas, then
+          reskinned across all five systems. These are captures of the real
+          Present mode, not redrawn mockups. Switch a system and the layout
+          holds, only the skin changes.
         </p>
 
         <div className="lsl-showcase-stage" data-reveal>
@@ -900,13 +900,14 @@ function ShowcaseGallery() {
                   className="lsl-showcase-panel"
                   data-active={isActive ? "true" : undefined}
                   aria-hidden={isActive ? undefined : true}
+                  tabIndex={isActive ? 0 : undefined}
                 >
                   <img
                     className="lsl-showcase-shot"
                     src={`/showcase/${s.id}.webp`}
                     width={2400}
-                    height={1500}
-                    loading={s.id === SHOWCASE_DEFAULT ? "eager" : "lazy"}
+                    height={1356}
+                    loading="lazy"
                     decoding="async"
                     alt={s.alt}
                   />

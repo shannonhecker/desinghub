@@ -606,7 +606,7 @@ describe("showcase reskin gallery", () => {
     expect(alt.length).toBeGreaterThan(20);
   });
 
-  it("every capture reserves layout (width/height) and only the default is eager", () => {
+  it("every capture reserves layout (width/height) and defers below-fold load", () => {
     const el = renderPage();
     const sec = sectionOf(el);
     const imgs = Array.from(
@@ -616,9 +616,24 @@ describe("showcase reskin gallery", () => {
     imgs.forEach((img) => {
       expect(img.getAttribute("width")).toBeTruthy();
       expect(img.getAttribute("height")).toBeTruthy();
+      // The section is below the fold, so every capture defers and never
+      // competes with the hero on initial load.
+      expect(img.getAttribute("loading")).toBe("lazy");
     });
-    const eager = imgs.filter((img) => img.getAttribute("loading") !== "lazy");
-    expect(eager).toHaveLength(1);
+  });
+
+  it("every alt string is dash-free, descriptive display copy", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const alts = Array.from(
+      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
+    ).map((img) => img.getAttribute("alt") ?? "");
+    expect(alts).toHaveLength(5);
+    alts.forEach((alt) => {
+      // STOP-class no-dash rule applies to alt copy too (read aloud by AT).
+      expect(alt).not.toMatch(/[–—]/);
+      expect(alt.length).toBeGreaterThan(20);
+    });
   });
 
   it("clicking a tab switches the selected tab and the visible panel", () => {
@@ -679,6 +694,98 @@ describe("showcase reskin gallery", () => {
     // The captures are explicitly disclaimed as NOT mockups (the word "mock"
     // may appear, but only inside a negation, e.g. "not redrawn mockups").
     expect(copy).toMatch(/not\b[^.]*\bmock|real builder output/i);
+  });
+
+  it("drives the visual crossfade via data-active on exactly the active panel", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    let activePanels = sec.querySelectorAll(
+      '[role="tabpanel"][data-active="true"]',
+    );
+    expect(activePanels).toHaveLength(1);
+    expect(activePanels[0].id).toBe("lsl-showcase-panel-salt");
+    expect((activePanels[0] as HTMLElement).getAttribute("tabindex")).toBe("0");
+
+    const carbon = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ).find((t) => norm(t.textContent) === "Carbon")!;
+    act(() => carbon.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+    activePanels = sec.querySelectorAll('[role="tabpanel"][data-active="true"]');
+    expect(activePanels).toHaveLength(1);
+    expect(activePanels[0].id).toBe("lsl-showcase-panel-carbon");
+    // the now-inactive salt panel drops both the visual flag and focusability
+    const salt = sec.querySelector("#lsl-showcase-panel-salt")!;
+    expect(salt.getAttribute("data-active")).toBeNull();
+    expect(salt.getAttribute("tabindex")).toBeNull();
+  });
+
+  it("arrow keys move selection AND focus, wrapping at both ends", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const press = (tab: HTMLButtonElement, key: string) => {
+      tab.focus();
+      const ev = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        tab.dispatchEvent(ev);
+      });
+      return ev;
+    };
+    // ArrowRight from Salt -> Material 3, both selected and focused.
+    const ev1 = press(tabs[0], "ArrowRight");
+    expect(ev1.defaultPrevented).toBe(true);
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[1]);
+    // ArrowLeft from Salt (index 0) wraps to uoaui (guards negative modulo).
+    const ev2 = press(tabs[0], "ArrowLeft");
+    expect(ev2.defaultPrevented).toBe(true);
+    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[4]);
+    // ArrowRight from uoaui (last) wraps back to Salt.
+    press(tabs[4], "ArrowRight");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  it("Home/End jump to ends, Up/Down alias Left/Right, other keys pass through", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = Array.from(
+      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    );
+    const press = (tab: HTMLButtonElement, key: string) => {
+      tab.focus();
+      const ev = new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        tab.dispatchEvent(ev);
+      });
+      return ev;
+    };
+    press(tabs[0], "End");
+    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[4]);
+    press(tabs[4], "Home");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[0]);
+    press(tabs[0], "ArrowDown");
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    press(tabs[1], "ArrowUp");
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
+    // An unrelated key neither preventDefaults nor changes selection.
+    const ev = press(tabs[0], "a");
+    expect(ev.defaultPrevented).toBe(false);
+    expect(tabs[0].getAttribute("aria-selected")).toBe("true");
   });
 });
 
