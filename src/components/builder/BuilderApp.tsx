@@ -172,6 +172,7 @@ export function BuilderApp() {
      same scale. */
   const structurePadding = useBuilder((s) => s.structurePadding);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+  const placementMode = useBuilder((s) => s.placementMode);
   const interfaceType = useBuilder((s) => s.interfaceType);
   useEffect(() => {
     const v = resolveStructurePadding(designSystem, structurePadding);
@@ -593,6 +594,7 @@ export function BuilderApp() {
       className={`builder-shell ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode={builderMode}
       data-canvas-spacing={canvasSpacing}
+      data-placement-mode={placementMode}
     >
       {/* Skip link is provided once by the root layout (app/layout.tsx),
           targeting this shell's <main id="main-content"> below. A per-shell

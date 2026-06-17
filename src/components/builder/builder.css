@@ -4322,6 +4322,34 @@
   border-color: var(--b-accent);
   color: white;
 }
+/* Scaffolded placement modes (Grid / Freeform) — present so the roadmap is
+   visible, but disabled with a "Soon" pill until their phases land. */
+.settings-toggle-btn.soon {
+  cursor: not-allowed;
+  opacity: 0.55;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.settings-toggle-btn.soon:hover { background: transparent; color: var(--b-fg2); }
+.settings-toggle-soon {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--b-fg3, var(--b-fg2));
+}
+.settings-group-hint {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--b-fg3, var(--b-fg2));
+}
 
 .comp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .comp-chip {
@@ -10124,6 +10152,27 @@
 }
 .preview-bar-overflow-item:hover { background: rgba(255, 255, 255, 0.06); }
 .preview-bar-overflow-item:disabled { opacity: 0.5; cursor: wait; }
+/* Scaffolded placement modes (Grid / Freeform) — disabled with a "Soon" pill
+   until their roadmap phases land. Override the loading-style :disabled cursor. */
+.preview-bar-overflow-item-soon:disabled { cursor: not-allowed; opacity: 0.6; }
+.preview-bar-overflow-item-soon:hover { background: transparent; }
+.preview-bar-overflow-soon {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.7);
+}
+.builder-light .preview-bar-overflow-soon {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.55);
+}
 .preview-bar-overflow-item.preview-bar-overflow-item-active {
   background: rgba(126, 107, 196, 0.14);
   color: var(--dh-fg);
@@ -14017,6 +14066,51 @@
 .insertion-slot:focus-within .insertion-slot-line {
   background: var(--bc-accent-muted);
 }
+
+/* ── Placement Option 1: real drop target ─────────────────────────
+   Invisible hit-area measured by dnd-kit. It bleeds ~9px into the
+   neighbouring blocks so the otherwise 1px gap is reliably catchable
+   during a drag. `pointer-events: none` keeps clicks on neighbours and
+   the + button intact; absolute positioning adds zero layout height. */
+.insertion-slot-hit {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.insertion-slot-horizontal .insertion-slot-hit {
+  left: 0;
+  right: 0;
+  top: -9px;
+  bottom: -9px;
+}
+.insertion-slot-vertical .insertion-slot-hit {
+  top: 0;
+  bottom: 0;
+  left: -9px;
+  right: -9px;
+}
+/* Active insertion line — shown while a block is dragged over this gap.
+   Bright accent + soft glow + endpoint caps so the user sees EXACTLY
+   where the block will land ("drops exactly here"). */
+.insertion-slot.is-drop-target .insertion-slot-line {
+  background: var(--bc-accent);
+  box-shadow: 0 0 10px 1px var(--bc-accent-glow, rgba(73, 208, 190, 0.55));
+}
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line { height: 2px; }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line { width: 2px; }
+.insertion-slot.is-drop-target .insertion-slot-line::before,
+.insertion-slot.is-drop-target .insertion-slot-line::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bc-accent);
+}
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line::before { left: -3px; top: 50%; transform: translateY(-50%); }
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line::after  { right: -3px; top: 50%; transform: translateY(-50%); }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line::before { top: -3px; left: 50%; transform: translateX(-50%); }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line::after  { bottom: -3px; left: 50%; transform: translateX(-50%); }
 
 /* The + button - 24px circle, accent foreground on raised surface.
    Lives in the center of the strip; only visible on hover/focus. */

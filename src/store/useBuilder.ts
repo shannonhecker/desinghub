@@ -268,6 +268,15 @@ interface BuilderState {
      'comfortable' = roomier per-block spacing for fiddly editing. Drives the
      [data-canvas-spacing] attr on the builder shell. */
   canvasSpacing: 'tight' | 'comfortable';
+  /* Placement mode — how a dropped block resolves its position within a zone.
+     'auto' (default) = today's responsive flow (stack / row / grid auto-place),
+     the cleanest, export-safe path 90% of users never leave. 'grid' = explicit
+     2D cell placement. 'freeform' = constrained free-positioning (per-element
+     opt-in, export-guarded). A user-level workspace preference: kept across
+     startNewSession and NOT a tracked canvas key. Only 'auto' is wired today;
+     'grid' / 'freeform' are scaffolded for the placement roadmap. Drives the
+     [data-placement-mode] attr on the builder shell. */
+  placementMode: 'auto' | 'grid' | 'freeform';
   themeKey: string;
   interfaceType: InterfaceType;
   selectedComponents: string[];
@@ -622,6 +631,9 @@ interface BuilderState {
   // Structure padding control (per-DS S/M/L)
   setStructurePadding: (size: 'small' | 'medium' | 'large') => void;
 
+  // Placement mode control (Auto / Grid / Freeform). Workspace preference.
+  setPlacementMode: (mode: 'auto' | 'grid' | 'freeform') => void;
+
   // Slash inserter imperative controls. `openInserter` with an anchor
   // scopes the picker to a specific zone + index (used by InsertionSlot
   // + buttons). `openInserter()` with no args falls back to the default
@@ -788,6 +800,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   mode: 'dark',
   density: 'medium',
   canvasSpacing: 'tight',
+  placementMode: 'auto',
   themeKey: 'jpm-dark',
   interfaceType: 'dashboard',
   selectedComponents: ['buttons', 'inputs', 'cards', 'tabs'],
@@ -966,6 +979,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   }),
   setDensity: (d) => set({ density: d }),
   setCanvasSpacing: (s) => set({ canvasSpacing: s }),
+  setPlacementMode: (m) => set({ placementMode: m }),
   setThemeKey: (k) => set({ themeKey: k }),
   setInterfaceType: (t) => set({ interfaceType: t }),
   toggleComponent: (id) =>
