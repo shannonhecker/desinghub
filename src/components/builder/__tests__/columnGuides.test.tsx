@@ -7,6 +7,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { ColumnGuides } from "../ColumnGuides";
 import { DragActiveContext } from "../dragActiveContext";
+import { usePreviewMode } from "@/store/usePreviewMode";
 
 let container: HTMLDivElement | null = null;
 let root: Root | null = null;
@@ -23,6 +24,8 @@ afterEach(() => {
   container?.remove();
   root = null;
   container = null;
+  // Preview mode is in-memory + global; reset so it can't leak between tests.
+  usePreviewMode.getState().setMode("edit");
 });
 
 describe("ColumnGuides", () => {
@@ -55,5 +58,29 @@ describe("ColumnGuides", () => {
       </DragActiveContext.Provider>,
     );
     expect(container!.querySelector(".zone-col-guides")).toBeNull();
+  });
+
+  it("renders nothing in Present/Preview mode even when alwaysShow is set (editor-only visual)", () => {
+    // Grid placement mode passes alwaysShow=true, but the guides are a pure
+    // editor visual — they must not leak into Present/Preview.
+    usePreviewMode.getState().setMode("preview");
+    render(
+      <DragActiveContext.Provider value={false}>
+        <ColumnGuides columns={12} gap={12} alwaysShow />
+      </DragActiveContext.Provider>,
+    );
+    expect(container!.querySelector(".zone-col-guides")).toBeNull();
+  });
+
+  it("renders guides in Edit mode when alwaysShow is set (grid placement mode), without a drag", () => {
+    usePreviewMode.getState().setMode("edit");
+    render(
+      <DragActiveContext.Provider value={false}>
+        <ColumnGuides columns={12} gap={12} alwaysShow />
+      </DragActiveContext.Provider>,
+    );
+    const guides = container!.querySelector(".zone-col-guides");
+    expect(guides).not.toBeNull();
+    expect(guides!.querySelectorAll(".zone-col-guide-cell").length).toBe(12);
   });
 });
