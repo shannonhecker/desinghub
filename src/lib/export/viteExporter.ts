@@ -246,7 +246,7 @@ html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--
 .dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 220px 1fr; min-height: 100vh; }
 .zone-header { grid-column: 1 / -1; padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
 .zone-sidebar { border-right: 1px solid var(--border); padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; }
-.zone-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; align-content: start; padding: 16px; }
+.zone-body { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; align-content: start; padding: 16px; }
 .zone-footer { grid-column: 1 / -1; padding: 12px 16px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 13px; text-align: center; }
 .layout-group { display: flex; gap: 12px; }
 
