@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useDragActive } from "./dragActiveContext";
+import { usePreviewMode } from "@/store/usePreviewMode";
 
 /* ══════════════════════════════════════════════════════════
    ColumnGuides — Placement P2.
@@ -19,10 +20,16 @@ import { useDragActive } from "./dragActiveContext";
    tracks.
    ══════════════════════════════════════════════════════════ */
 
-export function ColumnGuides({ columns, gap }: { columns: number; gap: number }) {
+export function ColumnGuides({ columns, gap, alwaysShow = false }: { columns: number; gap: number; alwaysShow?: boolean }) {
   const dragActive = useDragActive();
-  // Only meaningful while dragging, and only for a real multi-column grid.
-  if (!dragActive || columns < 2) return null;
+  const inPreview = usePreviewMode((s) => s.mode) === "preview";
+  /* Editor-only visual: never leak into Present/Preview, even in Grid
+     placement mode (which passes alwaysShow). */
+  if (inPreview) return null;
+  /* Visible while dragging (Auto mode) OR always when the user is in Grid
+     placement mode (so they can see + work the column grid). Only for a real
+     multi-column grid. */
+  if ((!dragActive && !alwaysShow) || columns < 2) return null;
   return (
     <div
       className="zone-col-guides"

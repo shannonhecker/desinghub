@@ -178,9 +178,12 @@ export function computeItemStyle(
     if (typeof w === "string" && w.endsWith("fr")) {
       const fr = parseFloat(w);
       if (Number.isFinite(fr)) {
-        /* fr-mode items span `round(fr)` columns out of the grid's
-           column count. Defaults to 1 if invalid. */
-        const span = Math.max(1, Math.min(cols, Math.round(fr)));
+        /* `fr` is a canonical-12 PROPORTION; the zone's column count is the
+           grid RESOLUTION. normalizeColumns(fr, cols) = round(fr/12 * cols)
+           preserves the proportion at any resolution (6fr = half on 8, 12 or
+           16 cols), so the canvas matches every exporter. At cols=12 this is
+           identical to the old round(fr) clamp. */
+        const span = normalizeColumns(fr, cols);
         style.gridColumn = `span ${span}`;
       }
     } else if (typeof w === "string" && w.endsWith("%")) {

@@ -280,7 +280,7 @@ export function SettingsPanel() {
             <div className="settings-toggle-row" role="radiogroup" aria-label="Placement mode">
               {([
                 { v: "auto", label: "Auto", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
-                { v: "grid", label: "Grid", ready: false, tip: "Coming soon: drop into a chosen grid cell" },
+                { v: "grid", label: "Grid", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
                 { v: "freeform", label: "Freeform", ready: false, tip: "Coming soon: opt-in free positioning" },
               ] as const).map((opt) => (
                 <button
