@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { useBuilder } from "@/store/useBuilder";
 import { exportHTML } from "../htmlExporter";
 import { exportReact } from "../reactExporter";
+import { exportViteBootstrap } from "../viteExporter";
 
 /* P3-0: the runnable exporters must agree on per-block grid SPAN before any new
    grid placement field ships. htmlExporter used to hardcode an auto-fill body
@@ -52,13 +53,22 @@ describe("htmlExporter — body grid honors per-block span (P3-0)", () => {
     expect(exportHTML()).toContain("grid-column: span 12");
   });
 
-  it("CROSS-EXPORTER PARITY: HTML span === React span for the same block", () => {
+  it("CROSS-EXPORTER PARITY (P3-1): HTML, React AND Vite agree on span for the same block", () => {
     setGridCanvas("uoaui", [card("a", "6fr")]);
     const html = exportHTML();
     const react = exportReact();
-    // HTML emits kebab `grid-column: span 6`; React (uoaui) emits camelCase
-    // `gridColumn: "span 6"`. Both derive from the shared spanOf → same span.
+    const vite = exportViteBootstrap(); // App.tsx IS exportReact(), embedded in the project
+    // HTML emits kebab `grid-column: span 6`; React + Vite (uoaui) emit camelCase
+    // `gridColumn: "span 6"`. All three derive from the shared spanOf → same span.
     expect(html).toContain("grid-column: span 6");
     expect(react).toContain("span 6");
+    expect(vite).toContain("span 6");
+  });
+
+  it("Vite shell grid matches the canvas + html (12-col, not the old 3-col)", () => {
+    setGridCanvas("uoaui", [card("a", "6fr")]);
+    const vite = exportViteBootstrap();
+    expect(vite).toContain("grid-template-columns: repeat(12, 1fr)");
+    expect(vite).not.toContain("grid-template-columns: repeat(3, 1fr)");
   });
 });
