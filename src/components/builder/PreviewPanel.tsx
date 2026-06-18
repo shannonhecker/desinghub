@@ -556,14 +556,14 @@ function PreviewBar() {
               </button>
             ))}
             <div className="preview-bar-overflow-divider" />
-            {/* Placement — how a dropped block resolves its position. Auto is
-                the responsive, export-safe default (wired today); Grid + Freeform
-                are scaffolded for the placement roadmap and carry a "Soon" tag so
-                the menu is honest rather than a no-op that reads as fake. */}
+            {/* Placement — how blocks resolve their position. Auto is the
+                responsive default; Grid foregrounds the body column grid (pick
+                the column count + always-on guides). Freeform stays scaffolded
+                with a "Soon" tag so the menu is honest. */}
             <div className="preview-bar-overflow-group-label" aria-hidden="true">Placement</div>
             {([
               { v: "auto", label: "Auto", icon: "reorder", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
-              { v: "grid", label: "Grid", icon: "grid_view", ready: false, tip: "Coming soon: drop into a chosen grid cell" },
+              { v: "grid", label: "Grid", icon: "grid_view", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
               { v: "freeform", label: "Freeform", icon: "drag_pan", ready: false, tip: "Coming soon: opt-in free positioning" },
             ] as const).map((opt) => (
               <button
@@ -583,6 +583,34 @@ function PreviewBar() {
                 {!opt.ready && <span className="preview-bar-overflow-soon" aria-hidden="true">Soon</span>}
               </button>
             ))}
+            {/* Grid columns — the body grid's RESOLUTION (not per-block coords).
+                `columns` is a single tracked, clamped scalar honored end-to-end
+                (canvas + all 3 exporters via normalizeColumns). Shown only in
+                Grid mode. */}
+            {placementMode === "grid" && (
+              <>
+                <div className="preview-bar-overflow-divider" />
+                <div className="preview-bar-overflow-group-label" aria-hidden="true">Grid columns</div>
+                {([6, 8, 12, 16] as const).map((n) => {
+                  const active = (zoneLayouts.body?.columns ?? 12) === n;
+                  return (
+                    <button
+                      key={n}
+                      className={`preview-bar-overflow-item${active ? " preview-bar-overflow-item-active" : ""}`}
+                      role="menuitemradio"
+                      aria-checked={active}
+                      onClick={() => { setZoneLayout("body", { columns: n }); setOverflowOpen(false); }}
+                      title={`Body grid: ${n} columns`}
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        {active ? "check" : "view_column"}
+                      </span>
+                      {n} columns
+                    </button>
+                  );
+                })}
+              </>
+            )}
             <div className="preview-bar-overflow-divider" />
             {/* Compare design systems — relocated from the bar to declutter.
                 Checkmark reflects the live compareMode state. */}

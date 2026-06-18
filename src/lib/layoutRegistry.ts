@@ -348,12 +348,13 @@ const FLUENT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: { from: FLUENT_PKG, names: ["tokens"] },
     toJsx: (p, children) => {
+      const cols = num(p.columns, 12);
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
       const body = mergeBodies(gridJustifyAlignBody(p), paddingGapCssBody(p));
       const ja = body ? `, ${body}` : "";
-      return `<div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: tokens.spacingHorizontalM${ja} }}>${items}</div>`;
+      return `<div style={{ display: "grid", gridTemplateColumns: "repeat(${cols}, 1fr)", gap: tokens.spacingHorizontalM${ja} }}>${items}</div>`;
     },
   },
   stack: {
@@ -383,10 +384,14 @@ const UOAUI: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: [],
     toJsx: (p, children) => {
+      const cols = num(p.columns, 12);
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, 12)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
-      const body = mergeBodies(gridJustifyAlignBody(p), paddingGapCssBody(p));
+      /* .a-grid CSS defaults to 12 tracks; override inline when the zone uses a
+         different column resolution so uoaui matches the canvas + other DSs. */
+      const colsOverride = cols === 12 ? "" : ` gridTemplateColumns: "repeat(${cols}, 1fr)"`;
+      const body = mergeBodies(colsOverride.trim() ? colsOverride.trim() : "", mergeBodies(gridJustifyAlignBody(p), paddingGapCssBody(p)));
       const style = body ? ` style={{ ${body} }}` : "";
       return `<div className="a-grid"${style}>${items}</div>`;
     },

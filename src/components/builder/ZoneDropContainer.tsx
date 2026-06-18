@@ -58,6 +58,7 @@ export function ZoneDropContainer({
      tile that would land here. Cleared on tile-leave or click/drag start. */
   const libraryHoverZone = useBuilder((s) => s.libraryHoverZone);
   const isLibraryHoverTarget = libraryHoverZone === zoneId;
+  const placementMode = useBuilder((s) => s.placementMode);
   const { setNodeRef, isOver } = useDroppable({
     id: `zone-${zoneId}`,
     data: { zone: zoneId },
@@ -138,6 +139,7 @@ export function ZoneDropContainer({
         <ColumnGuides
           columns={zoneLayout?.columns ?? 12}
           gap={normalizeGap(zoneLayout?.gap)?.col ?? 12}
+          alwaysShow={placementMode === "grid"}
         />
       )}
       <SortableContext

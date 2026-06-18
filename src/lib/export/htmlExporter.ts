@@ -6,7 +6,7 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
-import { computeGroupStyle } from "@/lib/layoutResolver";
+import { computeGroupStyle, normalizeColumns } from "@/lib/layoutResolver";
 import { spanOf } from "./gridSpan";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
@@ -125,18 +125,19 @@ const ZONE_TAG: Record<string, { open: string; tag: string }> = {
   footer: { open: "<footer", tag: "footer" },
 };
 
-function renderZone(blocks: Block[], zoneName: string, indent: string): string {
+function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12): string {
   if (blocks.length === 0) return "";
-  /* The body is a 12-col grid (matching the canvas + react/vite exporters).
-     Each block is wrapped in a grid-item that carries its span — derived from
-     the SAME spanOf as reactExporter, so all runnable exporters agree. Other
-     zones are flex and render their blocks directly. */
+  /* The body is an N-col grid (N = the zone's column count, matching the canvas
+     + react/vite exporters). Each block is wrapped in a grid-item carrying its
+     span — `fr` is a canonical-12 proportion, so the span is normalized to the
+     grid's resolution (normalizeColumns(fr, N)), keeping all exporters in sync.
+     Other zones are flex and render their blocks directly. */
   const isGrid = zoneName.toLowerCase() === "body";
   const inner = blocks
     .map((b) => {
       if (!isGrid) return blockToHTML(b, indent + "    ");
       const html = blockToHTML(b, indent + "      ");
-      return `${indent}    <div class="grid-item" style="grid-column: span ${spanOf(b)}">\n${html}\n${indent}    </div>`;
+      return `${indent}    <div class="grid-item" style="grid-column: span ${normalizeColumns(spanOf(b), cols)}">\n${html}\n${indent}    </div>`;
     })
     .join("\n");
   const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };
@@ -149,10 +150,11 @@ export function exportHTML(): string {
      exported page matches the canvas. Body is always emitted; an undefined flag
      defaults to shown (back-compat with pre-flag saved projects). */
   const zoneVisible = (zone: ZoneId): boolean => s.zoneLayouts?.[zone]?.visible !== false;
+  const bodyCols = s.zoneLayouts?.body?.columns ?? 12;
   const zones = [
     zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ") : "",
     zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ") : "",
-    renderZone(s.blocks, "Body", "    "),
+    renderZone(s.blocks, "Body", "    ", bodyCols),
     zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ") : "",
   ].filter(Boolean).join("\n\n");
 
@@ -173,7 +175,7 @@ export function exportHTML(): string {
     .dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 240px 1fr; min-height: 100vh; }
     .zone-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .zone-sidebar { padding: 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
-    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-content: start; }
+    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(${bodyCols}, 1fr); gap: 16px; align-content: start; }
     .zone-body > .grid-item { min-width: 0; }
     @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } }
     .zone-footer { grid-column: 1 / -1; padding: 12px 24px; border-top: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; text-align: center; opacity: 0.6; font-size: 12px; }
