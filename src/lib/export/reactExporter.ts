@@ -10,6 +10,7 @@ import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimiti
 import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
+import { spanOf } from "./gridSpan";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -86,24 +87,6 @@ function heightStyleOf(block: Block): string | undefined {
   const maxLen = toLen(maxH);
   if (maxLen) parts.push(`maxHeight: ${JSON.stringify(maxLen)}`);
   return parts.length ? parts.join(", ") : undefined;
-}
-
-/* Derive a block's canonical 12-fr column span from its layout.width for grid
-   export. "Nfr" -> N; "X%" -> proportional; fill/auto/px/undefined -> full row
-   (12, which normalizeColumns maps to the DS's full native width). */
-function spanOf(block: Block): number {
-  const w = block.layout?.width;
-  if (typeof w === "string") {
-    if (w.endsWith("fr")) {
-      const n = parseFloat(w);
-      if (Number.isFinite(n)) return n;
-    }
-    if (w.endsWith("%")) {
-      const pct = parseFloat(w);
-      if (Number.isFinite(pct)) return Math.max(1, Math.round((pct / 100) * 12));
-    }
-  }
-  return 12;
 }
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {

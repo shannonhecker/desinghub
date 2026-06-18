@@ -7,6 +7,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
 import { computeGroupStyle } from "@/lib/layoutResolver";
+import { spanOf } from "./gridSpan";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
    (camelCase → kebab-case; bare numbers → px, matching how the canvas
@@ -126,7 +127,18 @@ const ZONE_TAG: Record<string, { open: string; tag: string }> = {
 
 function renderZone(blocks: Block[], zoneName: string, indent: string): string {
   if (blocks.length === 0) return "";
-  const inner = blocks.map((b) => blockToHTML(b, indent + "    ")).join("\n");
+  /* The body is a 12-col grid (matching the canvas + react/vite exporters).
+     Each block is wrapped in a grid-item that carries its span — derived from
+     the SAME spanOf as reactExporter, so all runnable exporters agree. Other
+     zones are flex and render their blocks directly. */
+  const isGrid = zoneName.toLowerCase() === "body";
+  const inner = blocks
+    .map((b) => {
+      if (!isGrid) return blockToHTML(b, indent + "    ");
+      const html = blockToHTML(b, indent + "      ");
+      return `${indent}    <div class="grid-item" style="grid-column: span ${spanOf(b)}">\n${html}\n${indent}    </div>`;
+    })
+    .join("\n");
   const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };
   return `${indent}  <!-- ${zoneName} -->\n${indent}  ${z.open} class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </${z.tag}>`;
 }
@@ -161,7 +173,9 @@ export function exportHTML(): string {
     .dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 240px 1fr; min-height: 100vh; }
     .zone-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .zone-sidebar { padding: 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
-    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-content: start; }
+    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-content: start; }
+    .zone-body > .grid-item { min-width: 0; }
+    @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } }
     .zone-footer { grid-column: 1 / -1; padding: 12px 24px; border-top: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; text-align: center; opacity: 0.6; font-size: 12px; }
     .card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .stat-card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
