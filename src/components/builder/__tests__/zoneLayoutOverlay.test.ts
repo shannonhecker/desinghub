@@ -8,9 +8,11 @@ import { crossAxisAlignOptions, mainAxisJustifyOptions } from "../ZoneLayoutOver
  * axis so "align" reads correctly in a row (vertical) vs a stack (horizontal).
  */
 describe("ZoneLayoutOverlay — orientation-adaptive options", () => {
-  it("exposes the four cross-axis align values + the four main-axis justify values", () => {
+  it("exposes the four cross-axis align values + the five main-axis justify values", () => {
     expect(crossAxisAlignOptions("row").map((o) => o.v)).toEqual(["start", "center", "end", "stretch"]);
-    expect(mainAxisJustifyOptions("row").map((o) => o.v)).toEqual(["start", "center", "end", "space-between"]);
+    // Distribute now spans the full justify range incl. space-around.
+    expect(mainAxisJustifyOptions("row").map((o) => o.v)).toEqual(["start", "center", "end", "space-between", "space-around"]);
+    expect(mainAxisJustifyOptions("stack").map((o) => o.v)).toEqual(["start", "center", "end", "space-between", "space-around"]);
   });
 
   it("row/grid → align uses VERTICAL (top/middle/bottom) icons", () => {

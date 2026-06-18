@@ -55,6 +55,7 @@ export function mainAxisJustifyOptions(mode: LayoutMode): JustifyOption[] {
       { v: "center", icon: "vertical_align_center", label: "Center" },
       { v: "end", icon: "vertical_align_bottom", label: "Pack to bottom" },
       { v: "space-between", icon: "expand", label: "Space between" },
+      { v: "space-around", icon: "view_agenda", label: "Space around" },
     ];
   }
   return [
@@ -62,6 +63,7 @@ export function mainAxisJustifyOptions(mode: LayoutMode): JustifyOption[] {
     { v: "center", icon: "format_align_center", label: "Center" },
     { v: "end", icon: "format_align_right", label: "Pack to end" },
     { v: "space-between", icon: "view_week", label: "Space between" },
+    { v: "space-around", icon: "view_column", label: "Space around" },
   ];
 }
 
