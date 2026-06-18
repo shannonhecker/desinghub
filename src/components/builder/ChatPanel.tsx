@@ -20,6 +20,7 @@ import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { usePreviewMode } from "@/store/usePreviewMode";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -893,6 +894,17 @@ export function ChatPanel() {
        below, so a bare drop after it would orphan the turn and lose the text). */
     if (!msg || isGenerating) return;
 
+    /* Capture the first-turn signal BEFORE addMessage('user', ...) below
+       increments `messages`. This is the SAME canonical first-turn signal the
+       file already uses (messages.length === 0 at isFirstFreeform / the offline
+       onboarding gate). It drives the post-build flip to Preview: the seeded
+       chrome zones (headerBlocks/sidebarBlocks/footerBlocks) are NOT a reliable
+       "empty canvas" signal because useBuilder ships them as defaults, so the
+       only honest "first build" marker is that the conversation hadn't started
+       yet. (Limit: misfires only if a non-build chat precedes the first build;
+       a persisted hasBuiltOnce store flag would harden this, see PR note.) */
+    const isFirstBuild = messages.length === 0;
+
     /* First freeform refinement after a wizard build: clear the flag so the
        Assumption Row resumes for AI/freeform builds. Only fires once the
        conversation has started (messages.length > 0) so it never clears
@@ -1115,7 +1127,26 @@ export function ChatPanel() {
       return;
     }
     setGenerating(false); // sendToAPI manages its own generating state
-    sendToAPI(msg).then(() => bumpPreview());
+    sendToAPI(msg).then(() => {
+      bumpPreview();
+      /* Lovable-style "see your real app": after the FIRST AI build populates the
+         body, surface the rendered result in Preview mode the way
+         applyTemplateToCanvas does, instead of leaving the user on the edit-mode
+         Simulated* facsimile.
+
+         Gate on isFirstBuild (captured before this turn's addMessage), NOT on a
+         four-zone "was empty" check: useBuilder seeds 7 default chrome blocks
+         (header/sidebar/footer), so a four-zone all-empty check is ALWAYS false
+         on a real load and the flip would never fire. `blocks` (the body) is the
+         only zone an AI build reliably populates and the only one that starts
+         empty, so nowHasContent reads body length alone. The mode === 'edit'
+         guard keeps a refinement issued from Preview from being yanked. */
+      const s = useBuilder.getState();
+      const nowHasContent = s.blocks.length > 0;
+      if (isFirstBuild && nowHasContent && usePreviewMode.getState().mode === "edit") {
+        usePreviewMode.getState().setMode("preview");
+      }
+    });
   };
 
   /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
