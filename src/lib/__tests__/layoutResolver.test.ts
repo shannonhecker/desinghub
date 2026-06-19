@@ -122,6 +122,47 @@ describe("computeItemStyle — fixed-width grid items pin to start (#298)", () =
   });
 });
 
+/* ── P3-3 per-block column-START (gridCol) ──
+   A spanning grid item (fr / % width) pinned to a canonical-12 start line emits
+   `<start> / span <n>` instead of bare `span <n>`. Absent gridCol is a no-op
+   (auto-place, back-compat). The start is proportional + clamped so it holds
+   position across resolutions and never overflows. Full-row / auto / fixed
+   blocks ignore it. */
+describe("computeItemStyle — P3-3 grid column-start (gridCol)", () => {
+  const gridAt = (cols: number): ZoneLayout => ({ mode: "grid", columns: cols, gap: 12 });
+  const pinned = (width: unknown, gridCol: number): Block =>
+    ({ id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: width as never, gridCol } } as Block);
+
+  it("emits `<start> / span <n>` for an fr-width block pinned in a 12-col grid", () => {
+    // 6fr -> span 6; gridCol 7 -> start 7 -> right half
+    expect(computeItemStyle(pinned("6fr", 7), gridAt(12)).gridColumn).toBe("7 / span 6");
+  });
+
+  it("emits `<start> / span <n>` for a %-width block too", () => {
+    // 25% of 12 -> span 3; gridCol 10 -> start 10 -> cols 10,11,12
+    expect(computeItemStyle(pinned("25%", 10), gridAt(12)).gridColumn).toBe("10 / span 3");
+  });
+
+  it("is a no-op when gridCol is absent (back-compat: bare span)", () => {
+    const noPin = { id: "b1", type: "SimulatedStatCard", props: {}, layout: { width: "6fr" } } as Block;
+    expect(computeItemStyle(noPin, gridAt(12)).gridColumn).toBe("span 6");
+  });
+
+  it("holds its relative position on a 16-col (Carbon) grid — proportional, not absolute", () => {
+    // 6fr -> span 8 on 16 cols; gridCol 7 (50%) -> start 9 -> right half of 16
+    expect(computeItemStyle(pinned("6fr", 7), gridAt(16)).gridColumn).toBe("9 / span 8");
+  });
+
+  it("clamps a start so the block never overflows the row", () => {
+    // 6fr -> span 6; gridCol 12 would run past col 12 -> pulled flush to start 7
+    expect(computeItemStyle(pinned("6fr", 12), gridAt(12)).gridColumn).toBe("7 / span 6");
+  });
+
+  it("ignores gridCol on a full-row (fill) block — it stays `1 / -1`", () => {
+    expect(computeItemStyle(pinned("fill", 5), gridAt(12)).gridColumn).toBe("1 / -1");
+  });
+});
+
 /* Minimal body block carrying a given layout.width. The cast keeps the
    helper readable without fighting the LayoutWidth template-literal union. */
 const withWidth = (width: unknown): Block =>

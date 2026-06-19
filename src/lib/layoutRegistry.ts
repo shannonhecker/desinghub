@@ -17,7 +17,7 @@
  * where patterns need them.
  */
 import type { SystemId, ImportRequirement, ImportSpec } from "./componentApiRegistry";
-import { normalizeColumns } from "./layoutResolver";
+import { normalizeColumns, normalizeColumnStart } from "./layoutResolver";
 import { normalizePadding, normalizeGap } from "@/store/useBuilder";
 import type { LayoutJustify, LayoutAlign, PaddingValue, GapValue } from "@/store/useBuilder";
 
@@ -27,6 +27,12 @@ export type LayoutPrimitive = "grid" | "stack" | "row" | "appShell" | "split";
 export interface LayoutChild {
   jsx: string;
   span?: number; // canonical 12-fr; undefined => full native row
+  /** P3-3: canonical-12 column-START line (1..12); undefined => auto-place. The
+     per-DS toJsx maps it to its own resolution via normalizeColumnStart and
+     clamps against the child's span, emitting `<start> / span <n>` on the CSS-
+     grid DSs. M3 (MUI Grid is flexbox, not CSS grid) can't express an absolute
+     start, so it auto-places — documented in its toJsx. */
+  start?: number;
   region?: "header" | "sidenav" | "main" | "footer";
   /** P3 export twin: a per-child counter-axis (height) projection. When the
      block carries a layout.height / minHeight / maxHeight, the exporter sets
@@ -210,6 +216,35 @@ const withHeight = (c: LayoutChild): string =>
 
 const joinKids = (children: LayoutChild[]): string => children.map(withHeight).join("");
 
+/* P3-3: resolve a child's grid placement for a DS grid of `cols` tracks. Maps
+   the canonical-12 span + optional canonical-12 start to this resolution and
+   clamps so start + span never overflows. `start` is undefined for an un-pinned
+   block (auto-place). The single mapping point so the CSS-grid DSs (Salt /
+   Carbon / Fluent / uoaui) + html stay in parity. */
+const gridPlacement = (c: LayoutChild, cols: number): { span: number; start?: number } => {
+  const span = normalizeColumns(c.span ?? 12, cols);
+  const start = c.start !== undefined ? normalizeColumnStart(c.start, cols, span) : undefined;
+  return { span, start };
+};
+
+/* The inline `gridColumn` shorthand VALUE for a CSS-grid DS: `<start> / span <n>`
+   when pinned, else `span <n>` — byte-identical to the pre-P3-3 output for an
+   un-pinned block. An inline gridColumn overrides a DS's own colSpan/lg CSS
+   class (inline specificity wins), so the span prop can stay for shape. */
+const gridColumnValue = (c: LayoutChild, cols: number): string => {
+  const { span, start } = gridPlacement(c, cols);
+  return start !== undefined ? `${start} / span ${span}` : `span ${span}`;
+};
+
+/* The inline ` style={{ gridColumn: "<start> / span <n>" }}` attribute for the
+   DS-component grids (Salt GridItem / Carbon Column) when a block is pinned —
+   the shorthand overrides the component's own colSpan/lg placement. Empty string
+   when un-pinned, so output is byte-identical to before. */
+const gridStartStyleAttr = (c: LayoutChild, cols: number): string => {
+  const { span, start } = gridPlacement(c, cols);
+  return start !== undefined ? ` style={{ gridColumn: "${start} / span ${span}" }}` : "";
+};
+
 /* ── SALT — @salt-ds/core (12-col GridLayout) ─────────────────────────── */
 const SALT_CORE = "@salt-ds/core";
 const SALT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
@@ -219,7 +254,7 @@ const SALT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
       const cols = num(p.columns, 12);
       const gap = nativeGap(p, 3);
       const items = children
-        .map((c) => `<GridItem colSpan={${normalizeColumns(c.span ?? 12, cols)}}>${withHeight(c)}</GridItem>`)
+        .map((c) => `<GridItem colSpan={${normalizeColumns(c.span ?? 12, cols)}}${gridStartStyleAttr(c, cols)}>${withHeight(c)}</GridItem>`)
         .join("");
       const grid = `<GridLayout columns={${cols}} gap={${gap}}>${items}</GridLayout>`;
       /* GridLayout exposes no justify/align OR padding prop -> wrap in a styled
@@ -273,6 +308,12 @@ const M3: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
   grid: {
     imports: { from: MUI, names: ["Grid"] },
     toJsx: (p, children) => {
+      /* P3-3: MUI Grid (v9) is FLEXBOX-based, not CSS grid — the `gridColumn`
+         CSS property has no effect and `offset` is relative-to-previous, not an
+         absolute start. So a column-pinned block AUTO-PLACES in M3 export (span
+         only, no start). The honesty rule (never fabricate an API) forbids an
+         offset that silently mis-positions; the canvas + the 4 CSS-grid DSs
+         (Salt/Carbon/Fluent/uoaui) + html honor the pin. c.start is dropped. */
       const items = children
         .map((c) => `<Grid size={${normalizeColumns(c.span ?? 12, 12)}}>${withHeight(c)}</Grid>`)
         .join("");
@@ -308,7 +349,7 @@ const CARBON_REG: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     imports: { from: CARBON, names: ["Grid", "Column"] },
     toJsx: (p, children) => {
       const items = children
-        .map((c) => `<Column lg={${normalizeColumns(c.span ?? 12, 16)}}>${withHeight(c)}</Column>`)
+        .map((c) => `<Column lg={${normalizeColumns(c.span ?? 12, 16)}}${gridStartStyleAttr(c, 16)}>${withHeight(c)}</Column>`)
         .join("");
       /* Carbon Grid is a CSS grid and spreads ...rest (incl. style) onto its
          root element (verified in @carbon/react CSSGrid.js) -> forward grid
@@ -350,7 +391,7 @@ const FLUENT: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     toJsx: (p, children) => {
       const cols = num(p.columns, 12);
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "${gridColumnValue(c, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
       const body = mergeBodies(gridJustifyAlignBody(p), paddingGapCssBody(p));
       const ja = body ? `, ${body}` : "";
@@ -386,7 +427,7 @@ const UOAUI: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     toJsx: (p, children) => {
       const cols = num(p.columns, 12);
       const items = children
-        .map((c) => `<div style={{ gridColumn: "span ${normalizeColumns(c.span ?? 12, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
+        .map((c) => `<div style={{ gridColumn: "${gridColumnValue(c, cols)}"${c.heightStyle ? `, ${c.heightStyle}` : ""} }}>${c.jsx}</div>`)
         .join("");
       /* .a-grid CSS defaults to 12 tracks; override inline when the zone uses a
          different column resolution so uoaui matches the canvas + other DSs. */

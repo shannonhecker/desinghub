@@ -108,6 +108,14 @@ export interface LayoutProps {
      Per-side margins deliberately omitted to keep the prop
      shape simple; users can add padding via LayoutGroup. */
   margin?: number;
+  /** P3-3 per-block grid column-START, authored as a canonical-12 column LINE
+     (1..12). Honored ONLY in grid-mode containers (a sub-row span); undefined =
+     auto-place (today's flow, fully back-compatible). Stored DS-agnostic: the
+     resolver + every exporter map it to their own column resolution via
+     normalizeColumnStart and clamp so start + span never overflows, so the pin
+     holds its relative position across a DS / column-count switch with no
+     stored re-clamp. A full-row (fill) block ignores it. */
+  gridCol?: number;
 }
 
 export interface ChatMessage {

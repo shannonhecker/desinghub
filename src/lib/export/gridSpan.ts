@@ -26,3 +26,14 @@ export function spanOf(block: Block): number {
   }
   return 12;
 }
+
+/* startOf — the canonical-12 column-START line for a block (P3-3), or undefined
+   for an auto-placed block. The start-line analog of spanOf: gridCol is stored
+   canonical-12, so read it verbatim, coercing a missing / non-finite value to
+   undefined (= no pin). Each exporter maps it to its own resolution via
+   normalizeColumnStart and clamps against the block's span, so html / react /
+   vite stay byte-identical — the same parity contract spanOf holds for span. */
+export function startOf(block: Block): number | undefined {
+  const c = block.layout?.gridCol;
+  return typeof c === "number" && Number.isFinite(c) ? c : undefined;
+}
