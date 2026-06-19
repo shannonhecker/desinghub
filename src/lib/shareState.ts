@@ -156,10 +156,22 @@ function validateAndSanitizeBlock(b: unknown, depth = 1): Block | null {
   }
 
   /* Preserve layout metadata if present. The shape is a small
-     key/value bag (width/min/max/grow/align/margin) so the generic
+     key/value bag (width/min/max/grow/align/margin/gridCol) so the generic
      sanitizer covers it cleanly. */
   if (blk.layout && typeof blk.layout === "object") {
-    out.layout = sanitizeValue(blk.layout) as Block["layout"];
+    const layout = sanitizeValue(blk.layout) as Record<string, unknown>;
+    /* P3-3: clamp the column-start the same way colSpan is clamped above. A
+       forged gridCol must not emit an out-of-range grid line (a
+       `grid-column: 1000000` layout bomb). Coerce to a canonical-12 integer
+       [1, 12]; drop anything non-positive / non-finite so the block auto-places.
+       Defense-in-depth: migrateBlocks (run later in decode) normalizes the same
+       way, but the sanitize boundary stays self-sufficient. */
+    if ("gridCol" in layout) {
+      const n = Math.floor(Number(layout.gridCol));
+      if (Number.isFinite(n) && n >= 1) layout.gridCol = Math.min(n, 12);
+      else delete layout.gridCol;
+    }
+    out.layout = layout as Block["layout"];
   }
 
   /* Recurse into nested children for LayoutGroup blocks. Past the

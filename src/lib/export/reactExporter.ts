@@ -10,7 +10,7 @@ import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimiti
 import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
-import { spanOf } from "./gridSpan";
+import { spanOf, startOf } from "./gridSpan";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -242,6 +242,9 @@ function renderZone(
     const children: LayoutChild[] = blocks.map((b) => ({
       jsx: blockToJSX(b, "", system, mode).trim(),
       span: prim === "grid" ? spanOf(b) : undefined,
+      /* P3-3 export twin: the canonical-12 column-start, mapped + clamped per-DS
+         in the registry. undefined => auto-place (today's flow). */
+      start: prim === "grid" ? startOf(b) : undefined,
       /* P3 export twin: carry each block's height projection so the registry
          wraps it in a styled div where the DS primitive can't set height. */
       heightStyle: heightStyleOf(b),

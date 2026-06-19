@@ -109,6 +109,37 @@ describe("shareState — canvasSpacing (share/present parity, v1-compatible)", (
   });
 });
 
+/* P3-3 security: a shared link is attacker-reachable, so a forged per-block
+   `gridCol` must never survive decode as an out-of-range value (a
+   `grid-column: 1000000` layout bomb). Decode must clamp it to a canonical-12
+   integer or drop it — the same guarantee colSpan already gets. */
+describe("shareState — gridCol forged-payload defense (P3-3)", () => {
+  const decodedLayout = (gridCol: unknown): Record<string, unknown> => {
+    const payload = {
+      ...base,
+      blocks: [{ id: "b1", type: "Text", props: { text: "x" }, layout: { width: "6fr", gridCol } }],
+    } as unknown as SharedCanvas;
+    const back = decodeShareState(encodeShareState(payload));
+    return (back!.blocks[0].layout ?? {}) as Record<string, unknown>;
+  };
+
+  it("clamps a layout-bomb gridCol to the canonical max", () => {
+    expect(decodedLayout(1_000_000).gridCol).toBe(12);
+  });
+
+  it("floors a fractional gridCol and keeps a valid one (width preserved)", () => {
+    expect(decodedLayout(7.8).gridCol).toBe(7);
+    const valid = decodedLayout(9);
+    expect(valid.gridCol).toBe(9);
+    expect(valid.width).toBe("6fr");
+  });
+
+  it("drops a non-positive / non-finite gridCol so the block auto-places", () => {
+    expect("gridCol" in decodedLayout(0)).toBe(false);
+    expect("gridCol" in decodedLayout(-4)).toBe(false);
+  });
+});
+
 /* Regression: the share hash sits in a URL *path* (/preview/share/<hash>).
    compressToEncodedURIComponent emits `+` and `$`, which a browser 404s in
    a path segment (confirmed live). encodeShareState must map those to

@@ -81,6 +81,28 @@ export function normalizeColumns(fr: number, nativeCols: number): number {
   return Math.max(1, Math.min(nativeCols, scaled));
 }
 
+/* Map a canonical-12 column-START line to a grid's actual column count, the
+   start-line analog of normalizeColumns. `start12` is a 1-based line in the
+   canonical 12-col grid (a PROPORTION of the row); `cols` is the grid
+   RESOLUTION; `span` is the block's already-resolved cols-space span. The
+   proportional map round((start12-1)/12 * cols)+1 keeps a pinned block at the
+   same relative position on 8 / 12 / 16-col grids (so canvas == every exporter
+   and a DS switch never moves the pin), then clamps so start + span can never
+   overflow the row — an out-of-range start is pulled flush to the last track
+   that still fits. A non-finite start returns undefined = no pin (auto-place,
+   the back-compat default). This is the single mapping point, shared by the
+   resolver and all exporters, so a forged / stale gridCol can't emit an
+   out-of-range grid line. */
+export function normalizeColumnStart(
+  start12: number,
+  cols: number,
+  span: number,
+): number | undefined {
+  if (!Number.isFinite(start12)) return undefined;
+  const scaled = Math.round(((start12 - 1) / 12) * cols) + 1;
+  return Math.max(1, Math.min(scaled, cols - span + 1));
+}
+
 /* Resolve the effective layout for a block given its container mode.
    Merges, in priority order: the block's own `layout`, a colSpan
    fallback from `props`, and defaults implied by the container. */
@@ -175,6 +197,20 @@ export function computeItemStyle(
   if (zoneLayout.mode === "grid") {
     const cols = zoneLayout.columns ?? 3;
     const w = layout.width;
+    /* P3-3 per-block column-START. A spanning block (fr / %) carrying a
+       canonical-12 `gridCol` is pinned to an explicit start line via
+       `<start> / span <n>` instead of bare `span <n>`. normalizeColumnStart
+       resolves the start against THIS grid's column count + the block's span
+       (proportional + overflow-clamped), so the pin holds position on any
+       resolution and a forged value can't emit an out-of-range line. Absent
+       gridCol → bare span (auto-place, byte-identical to before). */
+    const gridColumnFor = (span: number): string => {
+      const start =
+        layout.gridCol !== undefined
+          ? normalizeColumnStart(layout.gridCol, cols, span)
+          : undefined;
+      return start !== undefined ? `${start} / span ${span}` : `span ${span}`;
+    };
     if (typeof w === "string" && w.endsWith("fr")) {
       const fr = parseFloat(w);
       if (Number.isFinite(fr)) {
@@ -184,7 +220,7 @@ export function computeItemStyle(
            16 cols), so the canvas matches every exporter. At cols=12 this is
            identical to the old round(fr) clamp. */
         const span = normalizeColumns(fr, cols);
-        style.gridColumn = `span ${span}`;
+        style.gridColumn = gridColumnFor(span);
       }
     } else if (typeof w === "string" && w.endsWith("%")) {
       /* Percentage in a grid maps to a proportional column span
@@ -193,7 +229,7 @@ export function computeItemStyle(
       const pct = parseFloat(w);
       if (Number.isFinite(pct)) {
         const span = Math.max(1, Math.min(cols, Math.round((pct / 100) * cols)));
-        style.gridColumn = `span ${span}`;
+        style.gridColumn = gridColumnFor(span);
       }
     } else if (w === "fill" || w === undefined) {
       /* fill / unset spans the full row. This is the fix for blocks

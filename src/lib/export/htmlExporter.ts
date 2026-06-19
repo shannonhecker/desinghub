@@ -6,8 +6,8 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
-import { computeGroupStyle, normalizeColumns } from "@/lib/layoutResolver";
-import { spanOf } from "./gridSpan";
+import { computeGroupStyle, normalizeColumns, normalizeColumnStart } from "@/lib/layoutResolver";
+import { spanOf, startOf } from "./gridSpan";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
    (camelCase → kebab-case; bare numbers → px, matching how the canvas
@@ -137,7 +137,14 @@ function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12
     .map((b) => {
       if (!isGrid) return blockToHTML(b, indent + "    ");
       const html = blockToHTML(b, indent + "      ");
-      return `${indent}    <div class="grid-item" style="grid-column: span ${normalizeColumns(spanOf(b), cols)}">\n${html}\n${indent}    </div>`;
+      /* P3-3: honor a per-block column-start. start is mapped + clamped against
+         this grid's resolution + the block's span, so the body's CSS grid renders
+         `<start> / span <n>` (an un-pinned block keeps the bare `span <n>`). */
+      const span = normalizeColumns(spanOf(b), cols);
+      const s = startOf(b);
+      const start = s !== undefined ? normalizeColumnStart(s, cols, span) : undefined;
+      const gridColumn = start !== undefined ? `${start} / span ${span}` : `span ${span}`;
+      return `${indent}    <div class="grid-item" style="grid-column: ${gridColumn}">\n${html}\n${indent}    </div>`;
     })
     .join("\n");
   const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };

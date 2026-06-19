@@ -64,3 +64,50 @@ describe("P3-2a — column count = grid resolution, fr = canonical-12 proportion
     expect(exportReact()).toContain("lg={8}"); // Carbon is 16-col → half = 8
   });
 });
+
+/* P3-3: a per-block column-start resolves to each DS's own grid resolution and
+   stays proportional, exactly like the span. The CSS-grid DSs (Salt / Carbon /
+   Fluent / uoaui) emit `<start> / span <n>`; M3 (MUI Grid is flexbox, no
+   absolute column-start) auto-places — a documented honest limitation. */
+describe("P3-3 — per-block column-start resolves per DS", () => {
+  const pinned = (id: string, width: string, gridCol: number) =>
+    ({ id, type: "SimulatedCard", props: { title: id }, layout: { width, gridCol } });
+
+  it("Salt (CSS-grid GridLayout) carries the start as an inline gridColumn beside colSpan", () => {
+    setCanvas("salt", 12, [pinned("a", "6fr", 7)]);
+    const salt = exportReact();
+    expect(salt).toContain("colSpan={6}");
+    expect(salt).toContain("7 / span 6"); // inline start overrides the colSpan class
+  });
+
+  it("Carbon scales the start to its native 16-col grid (proportional)", () => {
+    setCanvas("carbon", 12, [pinned("a", "6fr", 7)]);
+    const carbon = exportReact();
+    expect(carbon).toContain("lg={8}"); // 6fr -> half of 16
+    expect(carbon).toContain("9 / span 8"); // gridCol 7 (50%) -> start 9 of 16
+  });
+
+  it("Fluent (inline CSS grid) emits the start in its gridColumn", () => {
+    setCanvas("fluent", 12, [pinned("a", "6fr", 7)]);
+    expect(exportReact()).toContain("7 / span 6");
+  });
+
+  it("uoaui resolves the start at a non-12 resolution too", () => {
+    setCanvas("uoaui", 8, [pinned("a", "6fr", 7)]);
+    expect(exportReact()).toContain("5 / span 4"); // 6fr->span4, gridCol7(50%)->start5 of 8
+  });
+
+  it("M3 (MUI flexbox Grid) auto-places — span only, no start (documented)", () => {
+    setCanvas("m3", 12, [pinned("a", "6fr", 7)]);
+    const m3 = exportReact();
+    expect(m3).toContain("size={6}");
+    expect(m3).not.toContain("7 / span"); // MUI Grid cannot express an absolute start
+  });
+
+  it("an un-pinned block stays byte-identical per DS (no start prefix)", () => {
+    setCanvas("salt", 12, [card("a", "6fr")]);
+    expect(exportReact()).not.toContain("/ span");
+    setCanvas("carbon", 12, [card("a", "6fr")]);
+    expect(exportReact()).not.toContain("/ span");
+  });
+});

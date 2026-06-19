@@ -72,3 +72,35 @@ describe("htmlExporter — body grid honors per-block span (P3-0)", () => {
     expect(vite).not.toContain("grid-template-columns: repeat(3, 1fr)");
   });
 });
+
+/* P3-3: a per-block column-START (gridCol) emits `<start> / span <n>` and must
+   stay in parity across the 3 runnable exporters, exactly like span. An
+   un-pinned block stays byte-identical (bare span). */
+describe("P3-3 — per-block column-start (gridCol) cross-exporter parity", () => {
+  const pinned = (id: string, width: string, gridCol: number) => ({
+    id,
+    type: "SimulatedCard",
+    props: { title: id, content: "x" },
+    layout: { width, gridCol },
+  });
+
+  it("html emits `grid-column: <start> / span <n>` for a pinned block", () => {
+    // 6fr -> span 6 on a 12-col grid; gridCol 7 -> start 7 (right half)
+    setGridCanvas("uoaui", [pinned("a", "6fr", 7)]);
+    expect(exportHTML()).toContain("grid-column: 7 / span 6");
+  });
+
+  it("CROSS-EXPORTER PARITY: html, react AND vite agree on start + span", () => {
+    setGridCanvas("uoaui", [pinned("a", "6fr", 7)]);
+    expect(exportHTML()).toContain("grid-column: 7 / span 6");
+    expect(exportReact()).toContain("7 / span 6");
+    expect(exportViteBootstrap()).toContain("7 / span 6");
+  });
+
+  it("an un-pinned block is byte-identical (bare span, no start prefix)", () => {
+    setGridCanvas("uoaui", [card("a", "6fr")]);
+    const html = exportHTML();
+    expect(html).toContain("grid-column: span 6");
+    expect(html).not.toContain("/ span 6");
+  });
+});
