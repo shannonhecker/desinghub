@@ -69,15 +69,35 @@ function blockLayer(exported: string): string {
 
 function assertNoAbsolutePositioning(exported: string, label: string) {
   const body = blockLayer(exported);
-  expect(body, `${label}: position:absolute leaked past the chrome whitelist`).not.toMatch(/position:\s*absolute/);
+  // Match BOTH the CSS form `position: absolute` (html/vite) AND the React
+  // JSX style-object form `position: "absolute"` — the `["']?` is essential, a
+  // bare `\s*absolute` silently misses every React-export leak (the highest-
+  // traffic exporter). Also catch fixed / sticky: any of the three takes a
+  // block out of flow, which is the moat breach.
+  expect(body, `${label}: out-of-flow position leaked past the chrome whitelist`)
+    .not.toMatch(/position:\s*["']?(?:absolute|fixed|sticky)/);
   // `(?<!text-)` lets the typography property `text-transform` through while
   // still catching a real positioning `transform:` (or vendor-prefixed
   // `-webkit-transform:`). The guard is fail-closed: any genuine transform /
-  // translate / absolute on a block trips the build and must be consciously
-  // whitelisted, never slipped in — that is what keeps the export moat intact.
+  // translate / out-of-flow position on a block trips the build and must be
+  // consciously whitelisted, never slipped in — that keeps the export moat intact.
   expect(body, `${label}: transform leaked into export`).not.toMatch(/(?<!text-)transform\s*:/);
   expect(body, `${label}: translate() leaked into export`).not.toMatch(/translate\s*\(/);
 }
+
+describe("export moat guard — the matcher catches every absolute form", () => {
+  it("catches CSS, React-JSX, fixed and sticky forms — but not typography / chrome", () => {
+    // both real exporter dialects of an out-of-flow block
+    expect(() => assertNoAbsolutePositioning("x { position: absolute }", "css")).toThrow();
+    expect(() => assertNoAbsolutePositioning('style={{ position: "absolute", left: 0 }}', "jsx")).toThrow();
+    expect(() => assertNoAbsolutePositioning("y { position: fixed }", "fixed")).toThrow();
+    expect(() => assertNoAbsolutePositioning('style={{ position: "sticky" }}', "sticky")).toThrow();
+    expect(() => assertNoAbsolutePositioning("z { transform: translate(10px,4px) }", "xf")).toThrow();
+    // legit content / typography / whitelisted chrome must NOT trip it
+    expect(() => assertNoAbsolutePositioning(".l { text-transform: uppercase }", "typo")).not.toThrow();
+    expect(() => assertNoAbsolutePositioning('<a class="skip-link" style="position: absolute">', "skip")).not.toThrow();
+  });
+});
 
 describe("export moat guard — no block is ever absolutely positioned (P4 Freeform invariant)", () => {
   for (const ds of DS_LIST) {
