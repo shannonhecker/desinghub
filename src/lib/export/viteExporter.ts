@@ -255,6 +255,10 @@ html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--
   .dashboard-layout { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
   .zone-sidebar { border-right: 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
   .zone-body { grid-template-columns: 1fr; }
+  /* Inline grid-column (a P3-3 pin or a wide span) would spawn phantom tracks
+     and overflow on the 1-col mobile grid; !important neutralizes it so blocks
+     stack. */
+  .zone-body > .grid-item { grid-column: auto !important; }
 }
 
 /* Primitives */

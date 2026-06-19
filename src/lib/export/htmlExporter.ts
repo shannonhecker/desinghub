@@ -184,7 +184,8 @@ export function exportHTML(): string {
     .zone-sidebar { padding: 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(${bodyCols}, 1fr); gap: 16px; align-content: start; }
     .zone-body > .grid-item { min-width: 0; }
-    @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } }
+    /* mobile: drop each block's inline grid-column so pinned + wide blocks stack instead of overflowing the 1-col grid */
+    @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } .zone-body > .grid-item { grid-column: auto !important; } }
     .zone-footer { grid-column: 1 / -1; padding: 12px 24px; border-top: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; text-align: center; opacity: 0.6; font-size: 12px; }
     .card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .stat-card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
