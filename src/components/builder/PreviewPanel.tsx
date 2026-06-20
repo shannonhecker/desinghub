@@ -39,7 +39,7 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
+import { useBuilder, type DeviceMode, type Block, type ZoneId, type LayoutWidth } from "@/store/useBuilder";
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
@@ -56,6 +56,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { defaultLayoutForType } from "@/lib/blockLayoutDefaults";
+import { insertionIndexForDrop, quantizeColumn, quantizeWidth, type Rect } from "@/lib/freeQuantize";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
@@ -564,7 +565,7 @@ function PreviewBar() {
             {([
               { v: "auto", label: "Auto", icon: "reorder", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
               { v: "grid", label: "Grid", icon: "grid_view", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
-              { v: "freeform", label: "Freeform", icon: "drag_pan", ready: false, tip: "Coming soon: opt-in free positioning" },
+              { v: "freeform", label: "Snap grid (2D)", icon: "drag_pan", ready: true, tip: "Drag blocks anywhere; they snap to the grid. Vertical position is approximate (exports pack to flow)." },
             ] as const).map((opt) => (
               <button
                 key={opt.v}
@@ -1561,6 +1562,49 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
           defaults: Record<string, unknown>;
         };
         const overData = over.data.current as Record<string, unknown> | undefined;
+
+        /* P4 "Snap grid (2D)": in freeform mode a library drop onto the body grid
+           is placed by its 2D position — gridCol from the pointer x (snapped to
+           the column model), array index from the pointer y vs the other blocks'
+           rendered rows (reading order is the one ordering authority every
+           surface shares, so canvas == export). It stores ONLY width + gridCol +
+           array order — never absolute positioning. Gated entirely on freeform
+           mode + a grid body, so Auto / Grid are untouched. A snap-grid block
+           defaults to half width so its column pin is actually visible. */
+        const freeState = useBuilder.getState();
+        if (
+          freeState.placementMode === "freeform" &&
+          !resolveGroupId(over.id, overData) &&
+          resolveZone(over.id, overData) === "body" &&
+          freeState.zoneLayouts.body?.mode === "grid"
+        ) {
+          const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+          const zr = zoneEl?.getBoundingClientRect();
+          if (zoneEl && zr && zr.width > 0) {
+            const ae = event.activatorEvent as PointerEvent | null;
+            const px = (typeof ae?.clientX === "number" ? ae.clientX : zr.left) + (event.delta?.x ?? 0);
+            const py = (typeof ae?.clientY === "number" ? ae.clientY : zr.top) + (event.delta?.y ?? 0);
+            const xFrac = (px - zr.left) / zr.width;
+            const rects: Rect[] = [];
+            zoneEl.querySelectorAll('[data-block-id][data-zone="body"]').forEach((el) => {
+              const r = el.getBoundingClientRect();
+              rects.push({ top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+            });
+            const index = insertionIndexForDrop({ x: px, y: py }, rects);
+            const base = defaultLayoutForType(type) ?? {};
+            const baseFr = typeof base.width === "string" && base.width.endsWith("fr") ? parseFloat(base.width) / 12 : 0.5;
+            const widthFr = quantizeWidth(baseFr);
+            const newId = makeBlockId();
+            addBlockToZone(
+              "body",
+              { id: newId, type, props: { ...defaults }, layout: { ...base, width: `${widthFr}fr` as LayoutWidth, gridCol: quantizeColumn(xFrac, widthFr) } },
+              index,
+            );
+            setSelectedBlock(newId, "body");
+            activeItemRef.current = null;
+            return;
+          }
+        }
 
         /* 1a. Drop into a LayoutGroup's interior. MVP rule: groups-in-
            groups are out of scope, so LayoutGroup blueprints fall back

@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { quantizeWidth, quantizeColumn, assignRowBands, freeQuantize, type FreeDrop } from "../freeQuantize";
+import {
+  quantizeWidth,
+  quantizeColumn,
+  assignRowBands,
+  freeQuantize,
+  insertionIndexForDrop,
+  type FreeDrop,
+  type Rect,
+} from "../freeQuantize";
+
+const R = (top: number, bottom: number, left: number, right: number): Rect => ({ top, bottom, left, right });
 
 const D = (xFrac: number, yFrac: number, wFrac: number, hFrac: number): FreeDrop => ({ xFrac, yFrac, wFrac, hFrac });
 
@@ -78,5 +88,32 @@ describe("freeQuantize — free drops -> representable layouts", () => {
       // the type itself has only these 3 keys; this locks it at runtime too
       expect(Object.keys(q).sort()).toEqual(["gridCol", "gridRow", "width"]);
     }
+  });
+});
+
+describe("insertionIndexForDrop — 2D drop -> array index in reading order", () => {
+  // row 1: A(left) B(right) ; row 2: C(left)
+  const A = R(0, 100, 0, 100);
+  const B = R(0, 100, 100, 200);
+  const C = R(100, 200, 0, 100);
+
+  it("empty body -> index 0", () => {
+    expect(insertionIndexForDrop({ x: 0, y: 0 }, [])).toBe(0);
+  });
+
+  it("a block above the drop comes first; a block below does not", () => {
+    expect(insertionIndexForDrop({ x: 50, y: 200 }, [A])).toBe(1);
+    expect(insertionIndexForDrop({ x: 50, y: -50 }, [A])).toBe(0);
+  });
+
+  it("orders left-to-right within the same row", () => {
+    expect(insertionIndexForDrop({ x: 120, y: 50 }, [A, B])).toBe(1); // between A and B
+    expect(insertionIndexForDrop({ x: 10, y: 50 }, [A, B])).toBe(0); // left of both
+  });
+
+  it("orders by row then column across two rows", () => {
+    expect(insertionIndexForDrop({ x: 150, y: 150 }, [A, B, C])).toBe(3); // bottom-right, after all
+    expect(insertionIndexForDrop({ x: 50, y: 150 }, [A, B, C])).toBe(2); // bottom-left, before C
+    expect(insertionIndexForDrop({ x: 50, y: 50 }, [A, B, C])).toBe(0); // top-left, before all
   });
 });

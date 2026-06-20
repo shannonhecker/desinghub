@@ -281,7 +281,7 @@ export function SettingsPanel() {
               {([
                 { v: "auto", label: "Auto", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
                 { v: "grid", label: "Grid", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
-                { v: "freeform", label: "Freeform", ready: false, tip: "Coming soon: opt-in free positioning" },
+                { v: "freeform", label: "Snap grid (2D)", ready: true, tip: "Drag blocks anywhere; they snap to the grid. Vertical position is approximate (exports pack to flow)." },
               ] as const).map((opt) => (
                 <button
                   key={opt.v}
