@@ -5,6 +5,7 @@ import {
   assignRowBands,
   freeQuantize,
   insertionIndexForDrop,
+  layoutForFreeDrop,
   type FreeDrop,
   type Rect,
 } from "../freeQuantize";
@@ -88,6 +89,41 @@ describe("freeQuantize — free drops -> representable layouts", () => {
       // the type itself has only these 3 keys; this locks it at runtime too
       expect(Object.keys(q).sort()).toEqual(["gridCol", "gridRow", "width"]);
     }
+  });
+});
+
+describe("layoutForFreeDrop — drop's default layout -> snap-grid layout", () => {
+  it("KEEPS a hug-content width ('auto') and adds NO column pin (a sized control must not become a half-row span)", () => {
+    // checkbox/switch/toggle/Spacer default to width:'auto' on purpose; a column
+    // pin on a non-spanning block is meaningless and the 6fr overwrite was the
+    // 'selected bar' regression.
+    const out = layoutForFreeDrop({ width: "auto", align: "start" }, 0.5);
+    expect(out.width).toBe("auto");
+    expect(out.gridCol).toBeUndefined();
+    expect(out.align).toBe("start"); // other fields preserved
+  });
+
+  it("any explicit non-fr width ('fill') is also kept with no pin", () => {
+    const out = layoutForFreeDrop({ width: "fill" }, 0.5);
+    expect(out.width).toBe("fill");
+    expect(out.gridCol).toBeUndefined();
+  });
+
+  it("an UNSIZED block defaults to half width (6fr) and pins the dropped column", () => {
+    expect(layoutForFreeDrop({}, 0.5)).toEqual({ width: "6fr", gridCol: 7 });
+    expect(layoutForFreeDrop({}, 0).gridCol).toBe(1); // far left -> col 1
+    expect(layoutForFreeDrop({}, 1).gridCol).toBe(7); // far right -> clamped (12-6+1)
+  });
+
+  it("an fr-width block keeps its (quantized) span and pins the clamped column", () => {
+    const out = layoutForFreeDrop({ width: "4fr" }, 0.8);
+    expect(out.width).toBe("4fr");
+    expect(out.gridCol).toBe(9); // 0.8 wants col 11, clamps to 12-4+1
+  });
+
+  it("MOAT: a pinned result carries only flow fields — no x/y/left/top/position key", () => {
+    const out = layoutForFreeDrop({}, 0.3);
+    expect(Object.keys(out).some((k) => /^(x|y|left|top|position|transform)$/.test(k))).toBe(false);
   });
 });
 
