@@ -39,6 +39,7 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
@@ -56,6 +57,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { defaultLayoutForType } from "@/lib/blockLayoutDefaults";
+import { insertionIndexForDrop, layoutForFreeDrop, type Rect } from "@/lib/freeQuantize";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
@@ -564,7 +566,7 @@ function PreviewBar() {
             {([
               { v: "auto", label: "Auto", icon: "reorder", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
               { v: "grid", label: "Grid", icon: "grid_view", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
-              { v: "freeform", label: "Freeform", icon: "drag_pan", ready: false, tip: "Coming soon: opt-in free positioning" },
+              { v: "freeform", label: "Snap grid (2D)", icon: "drag_pan", ready: true, tip: "Drag blocks anywhere; they snap to the grid. Vertical position is approximate (exports pack to flow)." },
             ] as const).map((opt) => (
               <button
                 key={opt.v}
@@ -1561,6 +1563,64 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
           defaults: Record<string, unknown>;
         };
         const overData = over.data.current as Record<string, unknown> | undefined;
+
+        /* P4 "Snap grid (2D)": in freeform mode a library drop onto the body grid
+           is placed by its 2D position — gridCol from the pointer x (snapped to
+           the column model), array index from the pointer y vs the other blocks'
+           rendered rows (reading order is the one ordering authority every
+           surface shares, so canvas == export). It stores ONLY width + gridCol +
+           array order — never absolute positioning. Gated entirely on freeform
+           mode + a grid body, so Auto / Grid are untouched. A snap-grid block
+           defaults to half width so its column pin is actually visible. */
+        const freeState = useBuilder.getState();
+        if (
+          freeState.placementMode === "freeform" &&
+          !resolveGroupId(over.id, overData) &&
+          resolveZone(over.id, overData) === "body" &&
+          freeState.zoneLayouts.body?.mode === "grid"
+        ) {
+          /* Recover the activation point through dnd-kit's OWN helper. The
+             provider registers Mouse / Touch / Keyboard sensors (not
+             PointerSensor), so a raw activatorEvent.clientX is undefined for a
+             touch drag (coordinates live on changedTouches) and for keyboard.
+             getEventCoordinates resolves mouse + touch and returns null for a
+             keyboard drag — whose delta is node-relative, not an activator
+             translation, so it can't be mapped to a 2D point. Keyboard (and any
+             unresolvable activator) therefore falls through to the normal linear
+             library-drop path below instead of silently landing at column 1. */
+          const start = getEventCoordinates(event.activatorEvent);
+          const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+          const zr = zoneEl?.getBoundingClientRect();
+          if (start && zoneEl && zr && zr.width > 0) {
+            const px = start.x + (event.delta?.x ?? 0);
+            const py = start.y + (event.delta?.y ?? 0);
+            /* Measure the column against the CONTENT box. The grid tracks live
+               inside the zone's padding (computeContainerStyle puts padding +
+               the column gap on this same element), so a border-box xFrac would
+               pull every drop toward the right in a padded zone. */
+            const cs = typeof window !== "undefined" ? window.getComputedStyle(zoneEl) : null;
+            const padL = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+            const padR = cs ? parseFloat(cs.paddingRight) || 0 : 0;
+            const contentW = Math.max(1, zr.width - padL - padR);
+            const xFrac = (px - (zr.left + padL)) / contentW;
+            const rects: Rect[] = [];
+            zoneEl.querySelectorAll('[data-block-id][data-zone="body"]').forEach((el) => {
+              const r = el.getBoundingClientRect();
+              rects.push({ top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+            });
+            const index = insertionIndexForDrop({ x: px, y: py }, rects);
+            const base = defaultLayoutForType(type) ?? {};
+            const newId = makeBlockId();
+            addBlockToZone(
+              "body",
+              { id: newId, type, props: { ...defaults }, layout: layoutForFreeDrop(base, xFrac) },
+              index,
+            );
+            setSelectedBlock(newId, "body");
+            activeItemRef.current = null;
+            return;
+          }
+        }
 
         /* 1a. Drop into a LayoutGroup's interior. MVP rule: groups-in-
            groups are out of scope, so LayoutGroup blueprints fall back

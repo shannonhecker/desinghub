@@ -14,6 +14,8 @@
    cannot leak to export — the moat invariant is enforced at the source.
    ───────────────────────────────────────────────────────────────────────── */
 
+import type { LayoutProps } from "@/store/useBuilder";
+
 /* A free drop, in zone-fractions (0..1). Transient drag-layer input only —
    never stored, never exported. */
 export interface FreeDrop {
@@ -93,4 +95,54 @@ export function freeQuantize(drops: FreeDrop[]): QuantizedLayout[] {
     const w = quantizeWidth(d.wFrac);
     return { width: `${w}fr`, gridCol: quantizeColumn(d.xFrac, w), gridRow: rows[i] };
   });
+}
+
+/* A rendered block's bounding box (screen coords, y down). */
+export interface Rect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+/* Where in the body array a free-dropped block belongs, in READING order
+   (top-to-bottom rows, left-to-right within a row), given the rendered rects of
+   the OTHER blocks (in array order). This is the single-drop counterpart to
+   assignRowBands: rather than store a gridRow, we translate the 2D drop straight
+   into an array index, because array order is already the one ordering authority
+   every render surface shares (so canvas == export by construction). A block
+   counts as "before" the drop if its center is in an earlier row, or in the same
+   row (within half its height) and to the left. Returns 0..rects.length. */
+export function insertionIndexForDrop(point: { x: number; y: number }, rects: Rect[]): number {
+  let idx = 0;
+  for (const r of rects) {
+    const cy = (r.top + r.bottom) / 2;
+    const cx = (r.left + r.right) / 2;
+    const rowEps = (r.bottom - r.top) / 2;
+    let before: boolean;
+    if (cy < point.y - rowEps) before = true; // clearly an earlier row
+    else if (cy > point.y + rowEps) before = false; // clearly a later row
+    else before = cx < point.x; // same row -> left of the drop comes first
+    if (before) idx += 1;
+  }
+  return idx;
+}
+
+/* A free-dropped block's default layout, snapped to the grid by the drop's
+   content-box x-fraction. Two cases:
+     - explicit non-fr width ('auto' / 'fill' / px / %): an intentionally sized
+       block (e.g. a hug-content checkbox / switch / Spacer). A sized width in a
+       grid already renders as a span and a column pin on a non-spanning block is
+       meaningless, so keep the layout untouched. This is what stops a checkbox
+       dropped in Snap-grid mode from becoming a half-row "selected bar".
+     - fr-width OR unsized: snap to a canonical-12 span (half width when unsized,
+       so the column pin is actually visible) and pin the dropped column.
+   Pure + moat-safe: it only ever returns flow fields (width / gridCol), never
+   x/y/left/top, so absolute positioning cannot leak to export. */
+export function layoutForFreeDrop(base: LayoutProps, xFrac: number): LayoutProps {
+  const w = base.width;
+  if (typeof w === "string" && !w.endsWith("fr")) return { ...base };
+  const baseFr = typeof w === "string" ? parseFloat(w) / 12 : 0.5;
+  const widthFr = quantizeWidth(baseFr);
+  return { ...base, width: `${widthFr}fr` as LayoutProps["width"], gridCol: quantizeColumn(xFrac, widthFr) };
 }

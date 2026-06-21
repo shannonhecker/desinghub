@@ -1,5 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { quantizeWidth, quantizeColumn, assignRowBands, freeQuantize, type FreeDrop } from "../freeQuantize";
+import {
+  quantizeWidth,
+  quantizeColumn,
+  assignRowBands,
+  freeQuantize,
+  insertionIndexForDrop,
+  layoutForFreeDrop,
+  type FreeDrop,
+  type Rect,
+} from "../freeQuantize";
+
+const R = (top: number, bottom: number, left: number, right: number): Rect => ({ top, bottom, left, right });
 
 const D = (xFrac: number, yFrac: number, wFrac: number, hFrac: number): FreeDrop => ({ xFrac, yFrac, wFrac, hFrac });
 
@@ -78,5 +89,67 @@ describe("freeQuantize — free drops -> representable layouts", () => {
       // the type itself has only these 3 keys; this locks it at runtime too
       expect(Object.keys(q).sort()).toEqual(["gridCol", "gridRow", "width"]);
     }
+  });
+});
+
+describe("layoutForFreeDrop — drop's default layout -> snap-grid layout", () => {
+  it("KEEPS a hug-content width ('auto') and adds NO column pin (a sized control must not become a half-row span)", () => {
+    // checkbox/switch/toggle/Spacer default to width:'auto' on purpose; a column
+    // pin on a non-spanning block is meaningless and the 6fr overwrite was the
+    // 'selected bar' regression.
+    const out = layoutForFreeDrop({ width: "auto", align: "start" }, 0.5);
+    expect(out.width).toBe("auto");
+    expect(out.gridCol).toBeUndefined();
+    expect(out.align).toBe("start"); // other fields preserved
+  });
+
+  it("any explicit non-fr width ('fill') is also kept with no pin", () => {
+    const out = layoutForFreeDrop({ width: "fill" }, 0.5);
+    expect(out.width).toBe("fill");
+    expect(out.gridCol).toBeUndefined();
+  });
+
+  it("an UNSIZED block defaults to half width (6fr) and pins the dropped column", () => {
+    expect(layoutForFreeDrop({}, 0.5)).toEqual({ width: "6fr", gridCol: 7 });
+    expect(layoutForFreeDrop({}, 0).gridCol).toBe(1); // far left -> col 1
+    expect(layoutForFreeDrop({}, 1).gridCol).toBe(7); // far right -> clamped (12-6+1)
+  });
+
+  it("an fr-width block keeps its (quantized) span and pins the clamped column", () => {
+    const out = layoutForFreeDrop({ width: "4fr" }, 0.8);
+    expect(out.width).toBe("4fr");
+    expect(out.gridCol).toBe(9); // 0.8 wants col 11, clamps to 12-4+1
+  });
+
+  it("MOAT: a pinned result carries only flow fields — no x/y/left/top/position key", () => {
+    const out = layoutForFreeDrop({}, 0.3);
+    expect(Object.keys(out).some((k) => /^(x|y|left|top|position|transform)$/.test(k))).toBe(false);
+  });
+});
+
+describe("insertionIndexForDrop — 2D drop -> array index in reading order", () => {
+  // row 1: A(left) B(right) ; row 2: C(left)
+  const A = R(0, 100, 0, 100);
+  const B = R(0, 100, 100, 200);
+  const C = R(100, 200, 0, 100);
+
+  it("empty body -> index 0", () => {
+    expect(insertionIndexForDrop({ x: 0, y: 0 }, [])).toBe(0);
+  });
+
+  it("a block above the drop comes first; a block below does not", () => {
+    expect(insertionIndexForDrop({ x: 50, y: 200 }, [A])).toBe(1);
+    expect(insertionIndexForDrop({ x: 50, y: -50 }, [A])).toBe(0);
+  });
+
+  it("orders left-to-right within the same row", () => {
+    expect(insertionIndexForDrop({ x: 120, y: 50 }, [A, B])).toBe(1); // between A and B
+    expect(insertionIndexForDrop({ x: 10, y: 50 }, [A, B])).toBe(0); // left of both
+  });
+
+  it("orders by row then column across two rows", () => {
+    expect(insertionIndexForDrop({ x: 150, y: 150 }, [A, B, C])).toBe(3); // bottom-right, after all
+    expect(insertionIndexForDrop({ x: 50, y: 150 }, [A, B, C])).toBe(2); // bottom-left, before C
+    expect(insertionIndexForDrop({ x: 50, y: 50 }, [A, B, C])).toBe(0); // top-left, before all
   });
 });
