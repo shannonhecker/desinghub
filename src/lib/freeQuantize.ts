@@ -146,3 +146,17 @@ export function layoutForFreeDrop(base: LayoutProps, xFrac: number): LayoutProps
   const widthFr = quantizeWidth(baseFr);
   return { ...base, width: `${widthFr}fr` as LayoutProps["width"], gridCol: quantizeColumn(xFrac, widthFr) };
 }
+
+/* Reposition an EXISTING block: re-pin its grid column from the drop's
+   content-box x-fraction WITHOUT changing its width (a move, not a resize —
+   width has its own resize handles). Only a block that actually spans (fr width)
+   carries a column pin; hug / fill / full-row blocks ignore gridCol, so they are
+   returned untouched (and never gain a meaningless pin). The block's own current
+   span clamps the new start so start + span never overflows the row. An absent
+   layout is returned as-is. Moat-safe: only ever touches gridCol. */
+export function regridExistingBlock(layout: LayoutProps | undefined, xFrac: number): LayoutProps | undefined {
+  const w = layout?.width;
+  if (typeof w !== "string" || !w.endsWith("fr")) return layout;
+  const span = Math.max(1, Math.min(12, Math.round(parseFloat(w) || 1)));
+  return { ...layout, gridCol: quantizeColumn(xFrac, span) };
+}

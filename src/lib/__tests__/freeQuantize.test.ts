@@ -6,6 +6,7 @@ import {
   freeQuantize,
   insertionIndexForDrop,
   layoutForFreeDrop,
+  regridExistingBlock,
   type FreeDrop,
   type Rect,
 } from "../freeQuantize";
@@ -124,6 +125,27 @@ describe("layoutForFreeDrop — drop's default layout -> snap-grid layout", () =
   it("MOAT: a pinned result carries only flow fields — no x/y/left/top/position key", () => {
     const out = layoutForFreeDrop({}, 0.3);
     expect(Object.keys(out).some((k) => /^(x|y|left|top|position|transform)$/.test(k))).toBe(false);
+  });
+});
+
+describe("regridExistingBlock — reposition an existing block's column, never its width", () => {
+  it("re-pins gridCol from xFrac for an fr-spanning block and KEEPS its width (overwriting any old pin)", () => {
+    const out = regridExistingBlock({ width: "6fr", gridCol: 1 }, 0.5);
+    expect(out).toEqual({ width: "6fr", gridCol: 7 });
+  });
+
+  it("clamps the new column so span + start never overflows", () => {
+    expect(regridExistingBlock({ width: "4fr" }, 0.8)?.gridCol).toBe(9); // 12-4+1
+    expect(regridExistingBlock({ width: "12fr" }, 1)?.gridCol).toBe(1); // a full-span block can only start at 1
+  });
+
+  it("leaves hug / fill / full-row blocks untouched (no span -> a column pin is meaningless)", () => {
+    expect(regridExistingBlock({ width: "auto", align: "start" }, 0.5)).toEqual({ width: "auto", align: "start" });
+    expect(regridExistingBlock({ width: "fill" }, 0.5)?.gridCol).toBeUndefined();
+  });
+
+  it("returns an absent layout unchanged", () => {
+    expect(regridExistingBlock(undefined, 0.5)).toBeUndefined();
   });
 });
 
