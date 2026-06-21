@@ -57,7 +57,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { defaultLayoutForType } from "@/lib/blockLayoutDefaults";
-import { insertionIndexForDrop, layoutForFreeDrop, type Rect } from "@/lib/freeQuantize";
+import { insertionIndexForDrop, layoutForFreeDrop, regridExistingBlock, type Rect } from "@/lib/freeQuantize";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
@@ -1426,6 +1426,14 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
     parentGroupId?: string;
   } | null>(null);
 
+  /* Snap grid (2D) reposition: an existing body block IS a sortable item, so
+     rectSortingStrategy shifts its siblings mid-drag — their drop-time rects
+     reflect the last `over` index, not the resting layout. We therefore capture
+     the body blocks' RESTING rects (id + box) at drag start and read them at
+     drag end, so the 2D drop maps against where blocks actually are. Null unless
+     a freeform body-block drag is in flight. */
+  const freeBodyRectsRef = useRef<Array<{ id: string } & Rect> | null>(null);
+
   /* ── DnD sensors ── */
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -1473,6 +1481,7 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const id = String(event.active.id);
     setActiveDragId(id);
+    freeBodyRectsRef.current = null;
 
     /* If dragging an existing block, record its zone + index */
     if (!event.active.data.current?.fromLibrary) {
@@ -1502,6 +1511,25 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         const arr = getZoneArr(zone);
         const idx = arr.findIndex((b) => b.id === id);
         activeItemRef.current = { id, zone, originalZone: zone, originalIndex: idx };
+      }
+
+      /* Snapshot resting body rects now, before rectSortingStrategy shifts the
+         siblings, so a Snap grid (2D) reposition at drop maps against the real
+         layout (see freeBodyRectsRef). Only when a body block is dragged in
+         freeform + grid mode; cleared on every drag end / cancel. */
+      const fs = useBuilder.getState();
+      if (zone === "body" && fs.placementMode === "freeform" && fs.zoneLayouts.body?.mode === "grid") {
+        const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+        const snap: Array<{ id: string } & Rect> = [];
+        zoneEl?.querySelectorAll('[data-block-id][data-zone="body"]').forEach((el) => {
+          const bid = el.getAttribute("data-block-id");
+          if (!bid) return;
+          const r = el.getBoundingClientRect();
+          snap.push({ id: bid, top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+        });
+        freeBodyRectsRef.current = snap;
+      } else {
+        freeBodyRectsRef.current = null;
       }
     }
   }, [findBlockZone, getZoneArr]);
@@ -1689,6 +1717,57 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         showToast("Couldn't move here — try a zone in the canvas", { icon: "error" });
         activeItemRef.current = null;
         return;
+      }
+
+      /* Snap grid (2D) reposition: an existing body block dragged in freeform +
+         grid mode is placed by its 2D drop — gridCol re-pinned from the pointer
+         x (its own span clamps the start), array index from the pointer y vs the
+         OTHER blocks' RESTING rects (snapshotted at drag start, since
+         rectSortingStrategy shifts the live ones mid-drag). Pre-empts the linear
+         InsertionSlot / 2c paths. Width is never touched (a move, not a resize),
+         so only a width-preserving gridCol + the array order change — the moat
+         holds. Same reading-order authority every surface shares, so the canvas
+         and every export agree. */
+      if (activeInfo && over && !activeInfo.parentGroupId && activeInfo.zone === "body") {
+        const fs = useBuilder.getState();
+        if (
+          fs.placementMode === "freeform" &&
+          fs.zoneLayouts.body?.mode === "grid" &&
+          resolveZone(over.id, overData) === "body"
+        ) {
+          const start = getEventCoordinates(event.activatorEvent);
+          const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+          const zr = zoneEl?.getBoundingClientRect();
+          if (start && zoneEl && zr && zr.width > 0) {
+            const px = start.x + (event.delta?.x ?? 0);
+            const py = start.y + (event.delta?.y ?? 0);
+            const cs = typeof window !== "undefined" ? window.getComputedStyle(zoneEl) : null;
+            const padL = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+            const padR = cs ? parseFloat(cs.paddingRight) || 0 : 0;
+            const contentW = Math.max(1, zr.width - padL - padR);
+            const xFrac = (px - (zr.left + padL)) / contentW;
+            /* Resting rects from drag start, minus the block being moved -> the
+               index counts only the OTHER blocks, so it is the splice position
+               directly (no same-array off-by-one). */
+            const others = (freeBodyRectsRef.current ?? []).filter((r) => r.id !== activeInfo.id);
+            const targetIndex = insertionIndexForDrop({ x: px, y: py }, others);
+            const arr = getZoneArr("body");
+            const from = arr.findIndex((b) => b.id === activeInfo.id);
+            if (from >= 0) {
+              const block = arr[from];
+              const without = arr.filter((b) => b.id !== activeInfo.id);
+              without.splice(Math.min(targetIndex, without.length), 0, {
+                ...block,
+                layout: regridExistingBlock(block.layout, xFrac),
+              });
+              syncBodyToStore(without);
+              setSelectedBlock(activeInfo.id, "body");
+            }
+            freeBodyRectsRef.current = null;
+            activeItemRef.current = null;
+            return;
+          }
+        }
       }
 
       /* Case 2 (precise): existing block dropped onto an InsertionSlot.
