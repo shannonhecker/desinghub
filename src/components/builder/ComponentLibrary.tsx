@@ -396,7 +396,11 @@ function LayoutSection({
 
   /* P4: span-aware max for the Column start field. normalizeColumnStart already
      pulls any start past cols - span + 1 flush at render/export time; clamping
-     the field to the same bound makes the UI honest (all placement modes). */
+     the field to the same bound makes the UI honest (all placement modes).
+     The DISPLAYED value takes the same clamp: a pin stored before the block
+     widened (stale pin) renders flush at maxStart, so the field shows maxStart
+     rather than the stored, no-longer-rendered start. Entry and display now
+     agree with the canvas. */
   const displaySpan = gridCols !== null ? normalizeColumns(spanOf(block), gridCols) : 12;
   const maxStart = gridCols !== null ? Math.max(1, gridCols - displaySpan + 1) : 1;
 
@@ -577,7 +581,7 @@ function LayoutSection({
           <ScrubNumberField
             layout="stacked"
             label="Column start"
-            value={layout.gridCol !== undefined ? String(toDisplayColumn(layout.gridCol, gridCols)) : ""}
+            value={layout.gridCol !== undefined ? String(Math.min(maxStart, toDisplayColumn(layout.gridCol, gridCols))) : ""}
             placeholder="Auto"
             min={1}
             max={maxStart}
@@ -604,9 +608,12 @@ function LayoutSection({
       {/* P4 honesty: in freeform a hug/auto or px width can't take a column
           pin (gridCol is honored only on % / fr spans). Shown ONLY for an
           explicitly set non-fill width — fill is the default, so surfacing
-          the hint on every untouched block would be noise. Auto/Grid modes
-          keep today's silent-hidden behavior. */}
-      {isFreeform && zone === "body" && gridCols !== null && !isSpanning && w !== undefined && w !== "fill" && (
+          the hint on every untouched block would be noise. Gated to top-level
+          blocks (bodyIndex !== -1): a nested group child resolves against the
+          group's synthetic layout, so switching it to % / fr would NOT enable
+          a body-grid pin and the hint's promise would be false there.
+          Auto/Grid modes keep today's silent-hidden behavior. */}
+      {isFreeform && zone === "body" && gridCols !== null && bodyIndex !== -1 && !isSpanning && w !== undefined && w !== "fill" && (
         <p className="inspector-section-scope">Column pin needs a % or fr width.</p>
       )}
 
@@ -621,7 +628,12 @@ function LayoutSection({
         <div className="inspector-field">
           <label className="inspector-field-label">
             Order
-            <span aria-live="polite">{bodyIndex + 1} of {bodyCount}</span>
+            {/* role="status" (house pattern: lib-search-count) + aria-atomic
+                so SRs read the whole "2 of 7", never a bare "2" (React only
+                mutates the index text node on reorder). Keyed by block.id so
+                selecting a DIFFERENT block replaces the live region instead
+                of mutating it — only reorders announce, not selection. */}
+            <span key={block.id} role="status" aria-live="polite" aria-atomic="true">{bodyIndex + 1} of {bodyCount}</span>
           </label>
           <div className="inspector-toggle-group" role="group" aria-label="Reorder block">
             <button
@@ -639,8 +651,15 @@ function LayoutSection({
               onClick={() => { if (bodyIndex !== bodyCount - 1) moveBlockDown(zone, block.id); }}
             >Down</button>
           </div>
-          <p className="inspector-section-scope">Blocks flow in reading order. Vertical position is approximate (exports pack to flow).</p>
+          <p className="inspector-section-scope">Blocks flow in reading order. Vertical position is approximate. Exports stack blocks in this order.</p>
         </div>
+      )}
+
+      {/* P4 honesty: a nested group child can't be reordered here (the
+          adjacent swaps only walk top-level blocks) — say so instead of
+          silently hiding the control, mirroring the width-pin hint above. */}
+      {isFreeform && zone === "body" && gridCols !== null && bodyIndex === -1 && (
+        <p className="inspector-section-scope">Nested blocks move with their group. Select the group to reorder.</p>
       )}
 
       {/* Advanced sizing — collapsed by default so Layout leads with its

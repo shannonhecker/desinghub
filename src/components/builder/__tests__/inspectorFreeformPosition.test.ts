@@ -10,11 +10,14 @@
        adjacent swaps; array order stays the single ordering authority
        (moat rule: no stored row field, no new store actions).
    (2) Span-aware clamp on the shipped Column start field — the UI max
-       now matches what normalizeColumnStart already enforces at
-       render/export time (cols - span + 1), in ALL placement modes.
+       (entry AND display) now matches what normalizeColumnStart already
+       enforces at render/export time (cols - span + 1), in ALL placement
+       modes.
    (3) Honesty hints — non-spanning explicit widths can't take a pin
-       (freeform only), and M3 export auto-places by order so a set
-       pin only applies in the other systems.
+       (freeform, top-level only), M3 export auto-places by order so a
+       set pin only applies in the other systems, and nested group
+       children get a "moves with its group" hint where the Order
+       control hides.
    ════════════════════════════════════════════════════════════ */
 
 import { describe, it, expect } from "vitest";
@@ -53,9 +56,13 @@ describe("inspector Order control (freeform only)", () => {
     expect(cl).not.toMatch(/onClick=\{\(\) => moveBlockDown\(/);
   });
 
-  it("announces the N of M readout politely", () => {
+  it("announces the whole N of M readout atomically (role=status house pattern)", () => {
+    // role="status" carries aria-atomic implicitly; the explicit attribute is
+    // belt-and-braces so SRs never announce a bare "2" when React mutates only
+    // the index text node. key={block.id} replaces the live region on block
+    // selection change, so only reorders announce — not selecting a block.
     expect(cl).toMatch(
-      /<span aria-live="polite">\{bodyIndex \+ 1\} of \{bodyCount\}<\/span>/,
+      /<span key=\{block\.id\} role="status" aria-live="polite" aria-atomic="true">\{bodyIndex \+ 1\} of \{bodyCount\}<\/span>/,
     );
   });
 
@@ -67,8 +74,16 @@ describe("inspector Order control (freeform only)", () => {
 
   it("carries the reading-order honesty line in AA-verified scope copy", () => {
     expect(cl).toMatch(
-      /<p className="inspector-section-scope">Blocks flow in reading order\. Vertical position is approximate \(exports pack to flow\)\.<\/p>/,
+      /<p className="inspector-section-scope">Blocks flow in reading order\. Vertical position is approximate\. Exports stack blocks in this order\.<\/p>/,
     );
+  });
+
+  it("nested group children get a scope hint instead of a silently missing control", () => {
+    expect(cl).toMatch(
+      /<p className="inspector-section-scope">Nested blocks move with their group\. Select the group to reorder\.<\/p>/,
+    );
+    // Gated to exactly the case where the Order control hides for nesting.
+    expect(cl).toMatch(/gridCols !== null && bodyIndex === -1 && \(/);
   });
 
   it("keeps the moat: no gridRow vocabulary anywhere in the Inspector", () => {
@@ -87,6 +102,14 @@ describe("Column start span-aware clamp", () => {
     expect(cl).not.toMatch(/max=\{gridCols\}/);
     expect(cl).not.toMatch(/Math\.min\(gridCols, n\)/);
   });
+
+  it("clamps the DISPLAYED value too, so a stale pin reads as rendered", () => {
+    // A pin stored before the block widened renders flush at maxStart
+    // (normalizeColumnStart); the field must show that, not the stale start.
+    expect(cl).toMatch(
+      /Math\.min\(maxStart, toDisplayColumn\(layout\.gridCol, gridCols\)\)/,
+    );
+  });
 });
 
 describe("Column start honesty hints", () => {
@@ -95,8 +118,13 @@ describe("Column start honesty hints", () => {
       /<p className="inspector-section-scope">Column pin needs a % or fr width\.<\/p>/,
     );
     // Fill is the default width — the hint deliberately excludes it
-    // (showing it on every untouched block would be noise).
-    expect(cl).toMatch(/!isSpanning && w !== undefined && w !== "fill"/);
+    // (showing it on every untouched block would be noise) — and it is
+    // top-level only (bodyIndex !== -1): a nested group child resolves
+    // against the group's synthetic layout, where % / fr would NOT enable
+    // a body-grid pin, so the hint would over-promise.
+    expect(cl).toMatch(
+      /bodyIndex !== -1 && !isSpanning && w !== undefined && w !== "fill"/,
+    );
   });
 
   it("M3 hint: only when a pin is actually set on an M3 canvas", () => {
