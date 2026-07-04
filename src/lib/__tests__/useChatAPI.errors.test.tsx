@@ -23,7 +23,7 @@ import { useBuilder } from "@/store/useBuilder";
    heavy sibling; these tests never reach the action-apply path. */
 vi.mock("../applyAIActions", () => ({ applyAIActions: vi.fn() }));
 
-import { useChatAPI } from "../useChatAPI";
+import { useChatAPI, CHAT_EMPTY_CONFIRM } from "../useChatAPI";
 
 type ChatApi = ReturnType<typeof useChatAPI>;
 let api: ChatApi;
@@ -224,6 +224,53 @@ describe("useChatAPI error states", () => {
     });
 
     expect(lastMessage().content).toContain("trouble connecting");
+    expect(api.failedSend).toBeNull();
+  });
+
+  /* ── Empty-bubble resilience ──
+     A 200 stream that yields neither display text nor actions used to
+     overwrite the "..." placeholder with "" — a silent blank bubble.
+     Now: 0 text + 0 actions surfaces the retry affordance; json-only
+     (0 text + >0 actions) substitutes a terse confirmation. */
+
+  it("a DONE-only stream leaves a non-empty bubble and arms Retry", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(sseResponse(["data: [DONE]\n\n"]));
+
+    await act(async () => {
+      await api.sendMessage("hi");
+    });
+
+    const bubble = lastMessage();
+    /* Never blank, and never the bare placeholder. */
+    expect(bubble.content.trim()).not.toBe("");
+    expect(bubble.content).not.toBe("...");
+    /* Retry affordance is armed against this bubble. */
+    expect(api.failedSend).toEqual({
+      messageId: bubble.id,
+      userText: "hi",
+    });
+  });
+
+  it("a json-only frame renders a confirmation, not a blank bubble", async () => {
+    const jsonFrame =
+      'data: {"text":"```json\\n{\\"action\\":\\"setDesignSystem\\",\\"value\\":\\"m3\\"}\\n```"}\n\n';
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(sseResponse([jsonFrame, "data: [DONE]\n\n"]));
+
+    await act(async () => {
+      await api.sendMessage("switch to m3");
+    });
+
+    const bubble = lastMessage();
+    /* The display text was empty (json-only) but the bubble must not
+       go blank — a confirmation stands in. */
+    expect(bubble.content.trim()).not.toBe("");
+    expect(bubble.content).not.toBe("...");
+    expect(bubble.content).toBe(CHAT_EMPTY_CONFIRM(1));
+    /* Applying actions is not an error, so no retry affordance. */
     expect(api.failedSend).toBeNull();
   });
 });

@@ -10,6 +10,7 @@ import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimiti
 import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
+import { spanOf, startOf } from "./gridSpan";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -38,6 +39,22 @@ function slugSize(v: unknown): string {
    generic zone div). */
 function primitiveForMode(mode: ZoneLayout["mode"] | undefined): LayoutPrimitive | null {
   return mode === "grid" ? "grid" : mode === "stack" ? "stack" : mode === "row" ? "row" : null;
+}
+
+/* Map a zone to its semantic landmark element so the exported page has a real
+   document outline (header/aside/main/footer) instead of anonymous <div>s — a
+   keyboard + screen-reader win at zero visual cost (the zone-* className is
+   preserved, so the shell CSS still applies). Body becomes <main
+   id="main-content"> — the target of the skip link emitted as the app root's
+   first child; unknown zones fall back to a plain div. */
+const ZONE_TAG: Record<string, { open: string; close: string }> = {
+  header: { open: "<header", close: "</header>" },
+  sidebar: { open: '<aside aria-label="Sidebar"', close: "</aside>" },
+  body: { open: '<main id="main-content"', close: "</main>" },
+  footer: { open: "<footer", close: "</footer>" },
+};
+function zoneTag(zoneName: string): { open: string; close: string } {
+  return ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", close: "</div>" };
 }
 
 /* P3 export twin: project a block's counter-axis (height) sizing into a JSX
@@ -70,24 +87,6 @@ function heightStyleOf(block: Block): string | undefined {
   const maxLen = toLen(maxH);
   if (maxLen) parts.push(`maxHeight: ${JSON.stringify(maxLen)}`);
   return parts.length ? parts.join(", ") : undefined;
-}
-
-/* Derive a block's canonical 12-fr column span from its layout.width for grid
-   export. "Nfr" -> N; "X%" -> proportional; fill/auto/px/undefined -> full row
-   (12, which normalizeColumns maps to the DS's full native width). */
-function spanOf(block: Block): number {
-  const w = block.layout?.width;
-  if (typeof w === "string") {
-    if (w.endsWith("fr")) {
-      const n = parseFloat(w);
-      if (Number.isFinite(n)) return n;
-    }
-    if (w.endsWith("%")) {
-      const pct = parseFloat(w);
-      if (Number.isFinite(pct)) return Math.max(1, Math.round((pct / 100) * 12));
-    }
-  }
-  return 12;
 }
 
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
@@ -135,6 +134,13 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   if (real) return real.split("\n").map((line) => indent + line).join("\n");
   const p = block.props;
   switch (block.type) {
+    case "Spacer": {
+      /* A flow gutter: an empty, sized flex/grid child. NEVER a positioned
+         element — only a width|height token + flexShrink:0 keeps it responsive
+         across all 5 design systems with no DS-specific code. */
+      const ax = p.axis === "v" ? "height" : "width";
+      return `${indent}<div style={{ ${ax}: "${Number(p.size) || 24}px", flexShrink: 0 }} aria-hidden="true" />`;
+    }
     case "SimulatedTitle": {
       const lvl = safeLevel(p.level);
       return `${indent}<${lvl}>${jsxText(p.text, "Heading")}</${lvl}>`;
@@ -236,6 +242,9 @@ function renderZone(
     const children: LayoutChild[] = blocks.map((b) => ({
       jsx: blockToJSX(b, "", system, mode).trim(),
       span: prim === "grid" ? spanOf(b) : undefined,
+      /* P3-3 export twin: the canonical-12 column-start, mapped + clamped per-DS
+         in the registry. undefined => auto-place (today's flow). */
+      start: prim === "grid" ? startOf(b) : undefined,
       /* P3 export twin: carry each block's height projection so the registry
          wraps it in a styled div where the DS primitive can't set height. */
       heightStyle: heightStyleOf(b),
@@ -275,7 +284,8 @@ function renderZone(
       return `${indent}    <div style={{ ${hs} }}>\n${blockToJSX(b, indent + "      ", system, mode)}\n${indent}    </div>`;
     })
     .join("\n");
-  return `${indent}  {/* ${zoneName} */}\n${indent}  <div className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
+  const tag = zoneTag(zoneName);
+  return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  ${tag.close}`;
 }
 
 export function exportReact(): string {
@@ -383,6 +393,7 @@ export function exportReact(): string {
 export default function Dashboard() {
   return (
     ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
 ${zones}
     </div>${close}
   );

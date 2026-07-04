@@ -23,6 +23,7 @@ import {
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
+import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
@@ -351,6 +352,12 @@ function LayoutSection({
   zone: ZoneId;
 }) {
   const updateBlockLayout = useBuilder((s) => s.updateBlockLayout);
+  /* P3-3: the zone's column count when it is a grid (else null). Drives the
+     "Column start" control — column-pinning only exists in a grid container. */
+  const gridCols = useBuilder((s) => {
+    const zl = s.zoneLayouts?.[zone];
+    return zl?.mode === "grid" ? (zl.columns ?? 12) : null;
+  });
   const layout = block.layout ?? {};
 
   /* Numeric-only part of a LayoutWidth token, for editing. */
@@ -365,6 +372,11 @@ function LayoutSection({
      click reproduces the legacy 1/2/3 widths exactly. null = a custom
      value; an undefined width resolves to "fill" (the row-mode default). */
   const w = layout.width;
+
+  /* P3-3: gridCol is honored only on a sub-row SPAN (fr / %); a fill / hug / px
+     block ignores it (full-row or content-hugged), so the "Column start" control
+     only surfaces for spanning widths inside a grid zone. */
+  const isSpanning = typeof w === "string" && (w.endsWith("%") || w.endsWith("fr"));
 
   /* Width sizing mode derived from the stored LayoutWidth union (P1 is
      visual-only — never rename the store values): fill/undefined → Fill,
@@ -527,6 +539,34 @@ function LayoutSection({
           ))}
         </div>
       </div>
+
+      {/* P3-3 column-start: pin a spanning block to a grid column. Shown only for
+          a sub-row block in a grid zone (where pinning is meaningful). The field
+          reads/writes the zone's ACTUAL column count (1..N); the value is stored
+          DS-agnostic canonical-12, so the pin holds its position across a DS /
+          column-count switch. Empty = Auto (auto-place, today's flow). */}
+      {gridCols !== null && isSpanning && (
+        <div className="inspector-field">
+          <ScrubNumberField
+            layout="stacked"
+            label="Column start"
+            value={layout.gridCol !== undefined ? String(toDisplayColumn(layout.gridCol, gridCols)) : ""}
+            placeholder="Auto"
+            min={1}
+            max={gridCols}
+            ariaLabel="Grid column start"
+            onValueChange={(v) => {
+              const n = parseInt(v, 10);
+              updateBlockLayout(zone, block.id, {
+                gridCol:
+                  Number.isFinite(n) && n >= 1
+                    ? toCanonicalColumn(Math.min(gridCols, n), gridCols)
+                    : undefined,
+              });
+            }}
+          />
+        </div>
+      )}
 
       {/* Advanced sizing — collapsed by default so Layout leads with its
           core controls (Width + Align). */}
@@ -1248,20 +1288,37 @@ function CollapsibleGroup({
   );
 }
 
-/* Default expand state for category accordions — all open on first
-   paint, so users see the full palette until they choose to collapse.
-   Persisted per-key to sessionStorage. */
+/* Default expand state for category accordions (hierarchy pass).
+   Previously EVERY category opened on first paint, so the panel rested as a
+   ~28-row wall of every tile and the categorization was invisible. Now we
+   open only the 1-2 heaviest / most-used categories (Inputs, Charts) so the
+   panel rests as a scannable INDEX of headers; the rest stay one click away.
+   `isCategoryOpen` treats `!== false` as open, so collapsed keys are explicit
+   `false`. The user's own per-key choices (sessionStorage) always win. */
 const LIB_EXPANDED_STORAGE_KEY = "dh-lib-expanded";
 
+export const LIB_DEFAULT_EXPANDED: Record<string, boolean> = {
+  actions: false,
+  inputs: true,
+  "data-display": false,
+  charts: true,
+  navigation: false,
+  feedback: false,
+  containment: false,
+  content: false,
+};
+
 function readExpanded(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
+  if (typeof window === "undefined") return { ...LIB_DEFAULT_EXPANDED };
   try {
     const saved = sessionStorage.getItem(LIB_EXPANDED_STORAGE_KEY);
-    if (!saved) return {};
+    if (!saved) return { ...LIB_DEFAULT_EXPANDED };
     const parsed = JSON.parse(saved);
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return parsed && typeof parsed === "object"
+      ? { ...LIB_DEFAULT_EXPANDED, ...parsed }
+      : { ...LIB_DEFAULT_EXPANDED };
   } catch {
-    return {};
+    return { ...LIB_DEFAULT_EXPANDED };
   }
 }
 
@@ -1457,7 +1514,11 @@ function LibraryBrowser() {
               type="button"
               className="lib-collapse-toggle"
               onClick={() => setAllCategories(!anyCategoryOpen)}
+              aria-label={anyCategoryOpen ? "Collapse all categories" : "Expand all categories"}
             >
+              <span className="material-symbols-outlined lib-collapse-icon" aria-hidden="true">
+                {anyCategoryOpen ? "unfold_less" : "unfold_more"}
+              </span>
               {anyCategoryOpen ? "Collapse all" : "Expand all"}
             </button>
           </div>

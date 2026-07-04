@@ -410,6 +410,56 @@ const SYSTEMS: readonly SystemSpec[] = [
   },
 ] as const;
 
+/* The showcase reskin gallery: ONE real analytics dashboard, captured from the
+   builder's Present mode, then reskinned across all five systems. Unlike the
+   #systems strip (hand-rolled SVG card mocks that the canvas is the truth of),
+   these are real captures of the live canvas, swapped in place. Brand accents
+   mirror SYSTEMS; the capture itself is the source of truth, the hex only tints
+   the active-tab underline. Images live at /public/showcase/<id>.webp. */
+type ShowcaseDS = "salt" | "md3" | "fluent" | "carbon" | "uoaui";
+
+interface ShowcaseShot {
+  id: ShowcaseDS;
+  name: string;
+  brand: string;
+  alt: string;
+}
+
+const SHOWCASE_DEFAULT: ShowcaseDS = "salt";
+
+const SHOWCASE: readonly ShowcaseShot[] = [
+  {
+    id: "salt",
+    name: "Salt DS",
+    brand: "#0D7A95",
+    alt: "The analytics dashboard rendered in Salt DS: white card surfaces, teal accents, restrained 6px corners, reading as enterprise neutral.",
+  },
+  {
+    id: "md3",
+    name: "Material 3",
+    brand: "#6750A4",
+    alt: "The same analytics dashboard rendered in Material 3: tonal lilac surfaces, fully rounded pill buttons, generous 16px corners, and softly elevated cards.",
+  },
+  {
+    id: "fluent",
+    name: "Fluent 2",
+    brand: "#0F6CBD",
+    alt: "The same analytics dashboard rendered in Fluent 2: cool grey surfaces, brand blue accents, tight 4px corners, and a compact productivity layout.",
+  },
+  {
+    id: "carbon",
+    name: "Carbon",
+    brand: "#0F62FE",
+    alt: "The same analytics dashboard rendered in IBM Carbon: flat zero radius cards, IBM blue accents, hairline rules, and a precise gridded structure.",
+  },
+  {
+    id: "uoaui",
+    name: "uoaui",
+    brand: "#A78BFA",
+    alt: "The same analytics dashboard rendered in the uoaui system: translucent glass cards on a Midnight Canvas, Purple Compute accents, and fully rounded controls.",
+  },
+] as const;
+
 /* Token primitives shown verbatim in the "tokens you can read" section.
    Pulled from --dh-* / --lsl-* / brand vars so they read as the actual
    surface of the design system, not decorative swatches. */
@@ -556,6 +606,44 @@ function useFinePointer(): boolean {
  *  return. The ONLY magnetic element on the page. Disabled entirely under
  *  reduced motion and on coarse pointers. */
 const MAGNET_MAX_PX = 8;
+
+/** Hero prompt control: the cold-start entry point. Type an app idea, submit,
+ *  and deep-link into the builder via /builder?prompt=… (the builder reads URL
+ *  query params, same mechanism as the DS cards' ?ds=… links). This is the
+ *  Lovable-style "land, type, build" loop. Strictly additive: the headline,
+ *  subhead, graphics, and the #demo link are untouched. A small "open the
+ *  builder" link preserves the old href="/builder" fallback behaviour.
+ *  Copy rule: no em-/en-dashes in any visible string. */
+function HeroPrompt() {
+  // Native GET form: submitting navigates to /builder?prompt=<input value>
+  // with zero client JS or router context, so it works in SSR, in the test
+  // renderer (no App Router provider needed), and even with JS disabled. The
+  // builder reads the prompt query param, the same mechanism as the DS cards'
+  // ?ds= links. `required` blocks an empty submit natively.
+  return (
+    <form className="lsl-hero-prompt" action="/builder" method="get" role="search">
+      <label className="lsl-hero-prompt-label" htmlFor="lsl-hero-prompt-input">
+        Describe the app you want to build
+      </label>
+      <div className="lsl-hero-prompt-field">
+        <input
+          id="lsl-hero-prompt-input"
+          name="prompt"
+          type="text"
+          className="lsl-hero-prompt-input"
+          placeholder="Describe an app to build…"
+          autoComplete="off"
+          enterKeyHint="go"
+          required
+        />
+        <button type="submit" className="lsl-hero-prompt-submit">
+          <span>Build it</span>
+          <span aria-hidden="true">{"→"}</span>
+        </button>
+      </div>
+    </form>
+  );
+}
 
 function MagneticCta({
   href,
@@ -705,6 +793,139 @@ function SystemCardItem({
   );
 }
 
+/** Showcase reskin gallery: an ARIA tablist (one tab per design system) that
+ *  swaps a single large Present-mode capture of the SAME dashboard. The frame
+ *  is fixed by aspect-ratio so only the rendering changes between systems,
+ *  which is the whole point of the moat. Roving tabindex + arrow keys +
+ *  Home/End per the WAI-ARIA tabs pattern; the opacity crossfade collapses to
+ *  an instant swap under reduced motion (see landing.css). These are real
+ *  captures, never mockups. Copy rule: no em-/en-dashes. */
+function ShowcaseGallery() {
+  const [active, setActive] = useState<ShowcaseDS>(SHOWCASE_DEFAULT);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const selectAt = (i: number) => {
+    const n = (i + SHOWCASE.length) % SHOWCASE.length;
+    setActive(SHOWCASE[n].id);
+    tabRefs.current[n]?.focus();
+  };
+
+  const onTabKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    i: number,
+  ) => {
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        e.preventDefault();
+        selectAt(i + 1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        e.preventDefault();
+        selectAt(i - 1);
+        break;
+      case "Home":
+        e.preventDefault();
+        selectAt(0);
+        break;
+      case "End":
+        e.preventDefault();
+        selectAt(SHOWCASE.length - 1);
+        break;
+    }
+  };
+
+  return (
+    <section
+      id="showcase"
+      className="lsl-section lsl-showcase"
+      aria-labelledby="lsl-showcase-heading"
+    >
+      <div className="lsl-container">
+        <p className="lsl-section-label" data-reveal>
+          showcase / reskinned live
+        </p>
+        <h2
+          id="lsl-showcase-heading"
+          className="lsl-section-heading"
+          data-reveal
+        >
+          One dashboard. Five skins, no rebuild.
+        </h2>
+        <p className="lsl-section-lede" data-reveal>
+          The same analytics dashboard, composed once on the canvas, then
+          reskinned across all five systems. These are captures of the real
+          Present mode, not redrawn mockups. Switch a system and the layout
+          holds, only the skin changes.
+        </p>
+
+        <div className="lsl-showcase-stage" data-reveal>
+          <div
+            className="lsl-showcase-tabs"
+            role="tablist"
+            aria-label="Reskin the dashboard across design systems"
+          >
+            {SHOWCASE.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                id={`lsl-showcase-tab-${s.id}`}
+                aria-selected={active === s.id}
+                aria-controls={`lsl-showcase-panel-${s.id}`}
+                tabIndex={active === s.id ? 0 : -1}
+                className="lsl-showcase-tab"
+                style={{ "--showcase-brand": s.brand } as React.CSSProperties}
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                onClick={() => setActive(s.id)}
+                onKeyDown={(e) => onTabKeyDown(e, i)}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="lsl-showcase-viewport">
+            {SHOWCASE.map((s) => {
+              const isActive = active === s.id;
+              return (
+                <div
+                  key={s.id}
+                  role="tabpanel"
+                  id={`lsl-showcase-panel-${s.id}`}
+                  aria-labelledby={`lsl-showcase-tab-${s.id}`}
+                  className="lsl-showcase-panel"
+                  data-active={isActive ? "true" : undefined}
+                  aria-hidden={isActive ? undefined : true}
+                  tabIndex={isActive ? 0 : undefined}
+                >
+                  <img
+                    className="lsl-showcase-shot"
+                    src={`/showcase/${s.id}.webp`}
+                    width={2400}
+                    height={1356}
+                    loading="lazy"
+                    decoding="async"
+                    alt={s.alt}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="lsl-showcase-caption">
+            Real builder output, not a mockup. Each frame is a Present mode
+            capture of the live canvas, reskinned in place.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── Page ────────────────────────────────────────────────────────────── */
 
 export default function LandingSouthleftPage() {
@@ -822,13 +1043,16 @@ export default function LandingSouthleftPage() {
             components, and the export is code you can run.
           </p>
           <div className="lsl-hero-actions" data-reveal>
-            <MagneticCta href="/builder" className="lsl-cta">
-              Open the workbench
-            </MagneticCta>
-            <a className="lsl-hero-secondary" href="#demo">
-              Watch the demo
-              <span aria-hidden="true">{"→"}</span>
-            </a>
+            <HeroPrompt />
+            <div className="lsl-hero-actions-row">
+              <a className="lsl-hero-secondary" href="#demo">
+                Watch the demo
+                <span aria-hidden="true">{"→"}</span>
+              </a>
+              <Link className="lsl-hero-actions-link" href="/builder">
+                or open the builder
+              </Link>
+            </div>
           </div>
 
           {/* Demo video — restored from the portfolio. Matches the
@@ -864,6 +1088,31 @@ export default function LandingSouthleftPage() {
           </figure>
         </div>
       </section>
+
+      {/* ── Systems trust strip (additive): real components from five systems ── */}
+      <section className="lsl-trust" aria-label="Design systems uoaui renders">
+        <div className="lsl-container">
+          <p className="lsl-trust-eyebrow" data-reveal>
+            Renders real components from
+          </p>
+          <ul className="lsl-trust-row" data-reveal>
+            {SYSTEMS.map((s) => (
+              <li key={s.name} className="lsl-trust-item">
+                <Link
+                  href={s.href}
+                  className="lsl-trust-mark"
+                  style={{ "--trust-brand": s.brand } as React.CSSProperties}
+                >
+                  {s.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ── Showcase: one real dashboard, reskinned across five systems ── */}
+      <ShowcaseGallery />
 
       <hr className="lsl-rule" data-reveal />
 

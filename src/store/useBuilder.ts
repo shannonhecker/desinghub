@@ -108,6 +108,14 @@ export interface LayoutProps {
      Per-side margins deliberately omitted to keep the prop
      shape simple; users can add padding via LayoutGroup. */
   margin?: number;
+  /** P3-3 per-block grid column-START, authored as a canonical-12 column LINE
+     (1..12). Honored ONLY in grid-mode containers (a sub-row span); undefined =
+     auto-place (today's flow, fully back-compatible). Stored DS-agnostic: the
+     resolver + every exporter map it to their own column resolution via
+     normalizeColumnStart and clamp so start + span never overflows, so the pin
+     holds its relative position across a DS / column-count switch with no
+     stored re-clamp. A full-row (fill) block ignores it. */
+  gridCol?: number;
 }
 
 export interface ChatMessage {
@@ -268,6 +276,15 @@ interface BuilderState {
      'comfortable' = roomier per-block spacing for fiddly editing. Drives the
      [data-canvas-spacing] attr on the builder shell. */
   canvasSpacing: 'tight' | 'comfortable';
+  /* Placement mode — how a dropped block resolves its position within a zone.
+     'auto' (default) = today's responsive flow (stack / row / grid auto-place),
+     the cleanest, export-safe path 90% of users never leave. 'grid' = explicit
+     2D cell placement. 'freeform' = constrained free-positioning (per-element
+     opt-in, export-guarded). A user-level workspace preference: kept across
+     startNewSession and NOT a tracked canvas key. Only 'auto' is wired today;
+     'grid' / 'freeform' are scaffolded for the placement roadmap. Drives the
+     [data-placement-mode] attr on the builder shell. */
+  placementMode: 'auto' | 'grid' | 'freeform';
   themeKey: string;
   interfaceType: InterfaceType;
   selectedComponents: string[];
@@ -410,7 +427,7 @@ interface BuilderState {
 
   // Actions - Chat
   setInputText: (t: string) => void;
-  addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => void;
+  addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => string;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
@@ -622,6 +639,9 @@ interface BuilderState {
   // Structure padding control (per-DS S/M/L)
   setStructurePadding: (size: 'small' | 'medium' | 'large') => void;
 
+  // Placement mode control (Auto / Grid / Freeform). Workspace preference.
+  setPlacementMode: (mode: 'auto' | 'grid' | 'freeform') => void;
+
   // Slash inserter imperative controls. `openInserter` with an anchor
   // scopes the picker to a specific zone + index (used by InsertionSlot
   // + buttons). `openInserter()` with no args falls back to the default
@@ -788,6 +808,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   mode: 'dark',
   density: 'medium',
   canvasSpacing: 'tight',
+  placementMode: 'auto',
   themeKey: 'jpm-dark',
   interfaceType: 'dashboard',
   selectedComponents: ['buttons', 'inputs', 'cards', 'tabs'],
@@ -844,7 +865,11 @@ export const useBuilder = create<BuilderState>((set) => ({
   selectedBlockZone: null,
   selectedBlockIds: [],
   blockContextMenu: null,
-  componentLibraryOpen: true,
+  // Edit screen opens as chat + canvas. The right-rail component palette
+  // starts collapsed (reopen via the "Components" pill in the preview bar, or
+  // ⌘.) so the first impression is a conversation + canvas, not a Webflow-style
+  // page-builder. One source of truth — every consumer reads this boolean.
+  componentLibraryOpen: false,
   addMenuOpen: false,
   canvasViewMode: 'ui',
   libraryHoverZone: null,
@@ -894,11 +919,14 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
-  addMessage: (role, content, messageType) =>
+  addMessage: (role, content, messageType) => {
+    const id = uid();
     set((s) => ({
-      messages: [...s.messages, { id: uid(), role, content, timestamp: Date.now(), messageType }],
+      messages: [...s.messages, { id, role, content, timestamp: Date.now(), messageType }],
       inputText: role === 'user' ? '' : s.inputText,
-    })),
+    }));
+    return id;
+  },
   toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
   clearChat: () => set({
@@ -959,6 +987,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   }),
   setDensity: (d) => set({ density: d }),
   setCanvasSpacing: (s) => set({ canvasSpacing: s }),
+  setPlacementMode: (m) => set({ placementMode: m }),
   setThemeKey: (k) => set({ themeKey: k }),
   setInterfaceType: (t) => set({ interfaceType: t }),
   toggleComponent: (id) =>

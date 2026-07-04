@@ -39,10 +39,12 @@ import {
   arrayMove,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import { useBuilder, type DeviceMode, type Block, type ZoneId } from "@/store/useBuilder";
 import { getTheme, getFullCSS } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
+import { DragActiveContext } from "./dragActiveContext";
 import type { SystemId } from "@/store/useDesignHub";
 import { useCloudStorage } from "@/lib/firebase";
 import { undo as canvasUndo, redo as canvasRedo } from "@/lib/builderHistory";
@@ -55,6 +57,7 @@ import { ComponentRenderer } from "./ComponentRenderer";
 import { showToast } from "@/lib/toast";
 import { LIBRARY_BLUEPRINTS } from "@/lib/blockRegistry";
 import { defaultLayoutForType } from "@/lib/blockLayoutDefaults";
+import { insertionIndexForDrop, layoutForFreeDrop, regridExistingBlock, type Rect } from "@/lib/freeQuantize";
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
@@ -180,6 +183,8 @@ function PreviewBar() {
   const setDensity = useBuilder((s) => s.setDensity);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
   const setCanvasSpacing = useBuilder((s) => s.setCanvasSpacing);
+  const placementMode = useBuilder((s) => s.placementMode);
+  const setPlacementMode = useBuilder((s) => s.setPlacementMode);
   const canvasViewMode = useBuilder((s) => s.canvasViewMode);
   const toggleCanvasViewMode = useBuilder((s) => s.toggleCanvasViewMode);
   const toggleComponentLibrary = useBuilder((s) => s.toggleComponentLibrary);
@@ -552,6 +557,62 @@ function PreviewBar() {
                 {d.label}
               </button>
             ))}
+            <div className="preview-bar-overflow-divider" />
+            {/* Placement — how blocks resolve their position. Auto is the
+                responsive default; Grid foregrounds the body column grid (pick
+                the column count + always-on guides). Freeform stays scaffolded
+                with a "Soon" tag so the menu is honest. */}
+            <div className="preview-bar-overflow-group-label" aria-hidden="true">Placement</div>
+            {([
+              { v: "auto", label: "Auto", icon: "reorder", ready: true, tip: "Responsive flow: blocks auto-place (export-safe)" },
+              { v: "grid", label: "Grid", icon: "grid_view", ready: true, tip: "Work on the body column grid: pick columns + see guides" },
+              { v: "freeform", label: "Snap grid (2D)", icon: "drag_pan", ready: true, tip: "Drag blocks anywhere; they snap to the grid. Vertical position is approximate (exports pack to flow)." },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                className={`preview-bar-overflow-item${placementMode === opt.v ? " preview-bar-overflow-item-active" : ""}${opt.ready ? "" : " preview-bar-overflow-item-soon"}`}
+                role="menuitemradio"
+                aria-checked={placementMode === opt.v}
+                aria-disabled={opt.ready ? undefined : true}
+                disabled={!opt.ready}
+                onClick={() => { if (opt.ready) { setPlacementMode(opt.v); setOverflowOpen(false); } }}
+                title={opt.tip}
+              >
+                <span className="material-symbols-outlined" aria-hidden="true">
+                  {placementMode === opt.v ? "check" : opt.icon}
+                </span>
+                {opt.label}
+                {!opt.ready && <span className="preview-bar-overflow-soon" aria-hidden="true">Soon</span>}
+              </button>
+            ))}
+            {/* Grid columns — the body grid's RESOLUTION (not per-block coords).
+                `columns` is a single tracked, clamped scalar honored end-to-end
+                (canvas + all 3 exporters via normalizeColumns). Shown only in
+                Grid mode. */}
+            {placementMode === "grid" && (
+              <>
+                <div className="preview-bar-overflow-divider" />
+                <div className="preview-bar-overflow-group-label" aria-hidden="true">Grid columns</div>
+                {([6, 8, 12, 16] as const).map((n) => {
+                  const active = (zoneLayouts.body?.columns ?? 12) === n;
+                  return (
+                    <button
+                      key={n}
+                      className={`preview-bar-overflow-item${active ? " preview-bar-overflow-item-active" : ""}`}
+                      role="menuitemradio"
+                      aria-checked={active}
+                      onClick={() => { setZoneLayout("body", { columns: n }); setOverflowOpen(false); }}
+                      title={`Body grid: ${n} columns`}
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        {active ? "check" : "view_column"}
+                      </span>
+                      {n} columns
+                    </button>
+                  );
+                })}
+              </>
+            )}
             <div className="preview-bar-overflow-divider" />
             {/* Compare design systems — relocated from the bar to declutter.
                 Checkmark reflects the live compareMode state. */}
@@ -1365,6 +1426,14 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
     parentGroupId?: string;
   } | null>(null);
 
+  /* Snap grid (2D) reposition: an existing body block IS a sortable item, so
+     rectSortingStrategy shifts its siblings mid-drag — their drop-time rects
+     reflect the last `over` index, not the resting layout. We therefore capture
+     the body blocks' RESTING rects (id + box) at drag start and read them at
+     drag end, so the 2D drop maps against where blocks actually are. Null unless
+     a freeform body-block drag is in flight. */
+  const freeBodyRectsRef = useRef<Array<{ id: string } & Rect> | null>(null);
+
   /* ── DnD sensors ── */
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 10 },
@@ -1412,6 +1481,7 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const id = String(event.active.id);
     setActiveDragId(id);
+    freeBodyRectsRef.current = null;
 
     /* If dragging an existing block, record its zone + index */
     if (!event.active.data.current?.fromLibrary) {
@@ -1442,6 +1512,25 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         const idx = arr.findIndex((b) => b.id === id);
         activeItemRef.current = { id, zone, originalZone: zone, originalIndex: idx };
       }
+
+      /* Snapshot resting body rects now, before rectSortingStrategy shifts the
+         siblings, so a Snap grid (2D) reposition at drop maps against the real
+         layout (see freeBodyRectsRef). Only when a body block is dragged in
+         freeform + grid mode; cleared on every drag end / cancel. */
+      const fs = useBuilder.getState();
+      if (zone === "body" && fs.placementMode === "freeform" && fs.zoneLayouts.body?.mode === "grid") {
+        const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+        const snap: Array<{ id: string } & Rect> = [];
+        zoneEl?.querySelectorAll('[data-block-id][data-zone="body"]').forEach((el) => {
+          const bid = el.getAttribute("data-block-id");
+          if (!bid) return;
+          const r = el.getBoundingClientRect();
+          snap.push({ id: bid, top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+        });
+        freeBodyRectsRef.current = snap;
+      } else {
+        freeBodyRectsRef.current = null;
+      }
     }
   }, [findBlockZone, getZoneArr]);
 
@@ -1462,6 +1551,10 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
        Skipping here avoids oscillating between zone.add and
        group.add during pointer movement. */
     const overData = over.data.current as Record<string, unknown> | undefined;
+    /* Over an InsertionSlot: the precise placement is committed on drop
+       (handleDragEnd). Skipping here keeps the source array — and therefore
+       the slot indices — stable during hover instead of live-appending. */
+    if (overData?.isInsertionSlot) return;
     if (resolveGroupId(over.id, overData)) return;
 
     const sourceZone = activeInfo.zone;
@@ -1499,6 +1592,64 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
         };
         const overData = over.data.current as Record<string, unknown> | undefined;
 
+        /* P4 "Snap grid (2D)": in freeform mode a library drop onto the body grid
+           is placed by its 2D position — gridCol from the pointer x (snapped to
+           the column model), array index from the pointer y vs the other blocks'
+           rendered rows (reading order is the one ordering authority every
+           surface shares, so canvas == export). It stores ONLY width + gridCol +
+           array order — never absolute positioning. Gated entirely on freeform
+           mode + a grid body, so Auto / Grid are untouched. A snap-grid block
+           defaults to half width so its column pin is actually visible. */
+        const freeState = useBuilder.getState();
+        if (
+          freeState.placementMode === "freeform" &&
+          !resolveGroupId(over.id, overData) &&
+          resolveZone(over.id, overData) === "body" &&
+          freeState.zoneLayouts.body?.mode === "grid"
+        ) {
+          /* Recover the activation point through dnd-kit's OWN helper. The
+             provider registers Mouse / Touch / Keyboard sensors (not
+             PointerSensor), so a raw activatorEvent.clientX is undefined for a
+             touch drag (coordinates live on changedTouches) and for keyboard.
+             getEventCoordinates resolves mouse + touch and returns null for a
+             keyboard drag — whose delta is node-relative, not an activator
+             translation, so it can't be mapped to a 2D point. Keyboard (and any
+             unresolvable activator) therefore falls through to the normal linear
+             library-drop path below instead of silently landing at column 1. */
+          const start = getEventCoordinates(event.activatorEvent);
+          const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+          const zr = zoneEl?.getBoundingClientRect();
+          if (start && zoneEl && zr && zr.width > 0) {
+            const px = start.x + (event.delta?.x ?? 0);
+            const py = start.y + (event.delta?.y ?? 0);
+            /* Measure the column against the CONTENT box. The grid tracks live
+               inside the zone's padding (computeContainerStyle puts padding +
+               the column gap on this same element), so a border-box xFrac would
+               pull every drop toward the right in a padded zone. */
+            const cs = typeof window !== "undefined" ? window.getComputedStyle(zoneEl) : null;
+            const padL = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+            const padR = cs ? parseFloat(cs.paddingRight) || 0 : 0;
+            const contentW = Math.max(1, zr.width - padL - padR);
+            const xFrac = (px - (zr.left + padL)) / contentW;
+            const rects: Rect[] = [];
+            zoneEl.querySelectorAll('[data-block-id][data-zone="body"]').forEach((el) => {
+              const r = el.getBoundingClientRect();
+              rects.push({ top: r.top, bottom: r.bottom, left: r.left, right: r.right });
+            });
+            const index = insertionIndexForDrop({ x: px, y: py }, rects);
+            const base = defaultLayoutForType(type) ?? {};
+            const newId = makeBlockId();
+            addBlockToZone(
+              "body",
+              { id: newId, type, props: { ...defaults }, layout: layoutForFreeDrop(base, xFrac) },
+              index,
+            );
+            setSelectedBlock(newId, "body");
+            activeItemRef.current = null;
+            return;
+          }
+        }
+
         /* 1a. Drop into a LayoutGroup's interior. MVP rule: groups-in-
            groups are out of scope, so LayoutGroup blueprints fall back
            to body-zone behaviour even when the pointer is over a group. */
@@ -1532,7 +1683,13 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
 
         const targetArr = getZoneArr(targetZone);
         const overIndex = targetArr.findIndex((b) => b.id === String(over.id));
-        const insertAt = overIndex >= 0 ? overIndex : 0;
+        /* Library drop onto an InsertionSlot lands at the slot's exact index;
+           otherwise fall back to the over-block index (or prepend). */
+        const insertAt = overData?.isInsertionSlot
+          ? Number(overData.index)
+          : overIndex >= 0
+          ? overIndex
+          : 0;
 
         addBlockToZone(targetZone, newBlock, insertAt);
 
@@ -1558,6 +1715,89 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
          block snaps back silently. Tell them. */
       if (activeInfo && !over) {
         showToast("Couldn't move here — try a zone in the canvas", { icon: "error" });
+        activeItemRef.current = null;
+        return;
+      }
+
+      /* Snap grid (2D) reposition: an existing body block dragged in freeform +
+         grid mode is placed by its 2D drop — gridCol re-pinned from the pointer
+         x (its own span clamps the start), array index from the pointer y vs the
+         OTHER blocks' RESTING rects (snapshotted at drag start, since
+         rectSortingStrategy shifts the live ones mid-drag). Pre-empts the linear
+         InsertionSlot / 2c paths. Width is never touched (a move, not a resize),
+         so only a width-preserving gridCol + the array order change — the moat
+         holds. Same reading-order authority every surface shares, so the canvas
+         and every export agree. */
+      if (activeInfo && over && !activeInfo.parentGroupId && activeInfo.zone === "body") {
+        const fs = useBuilder.getState();
+        if (
+          fs.placementMode === "freeform" &&
+          fs.zoneLayouts.body?.mode === "grid" &&
+          resolveZone(over.id, overData) === "body"
+        ) {
+          const start = getEventCoordinates(event.activatorEvent);
+          const zoneEl = typeof document !== "undefined" ? document.querySelector(".zone-drop-body") : null;
+          const zr = zoneEl?.getBoundingClientRect();
+          if (start && zoneEl && zr && zr.width > 0) {
+            const px = start.x + (event.delta?.x ?? 0);
+            const py = start.y + (event.delta?.y ?? 0);
+            const cs = typeof window !== "undefined" ? window.getComputedStyle(zoneEl) : null;
+            const padL = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+            const padR = cs ? parseFloat(cs.paddingRight) || 0 : 0;
+            const contentW = Math.max(1, zr.width - padL - padR);
+            const xFrac = (px - (zr.left + padL)) / contentW;
+            /* Resting rects from drag start, minus the block being moved -> the
+               index counts only the OTHER blocks, so it is the splice position
+               directly (no same-array off-by-one). */
+            const others = (freeBodyRectsRef.current ?? []).filter((r) => r.id !== activeInfo.id);
+            const targetIndex = insertionIndexForDrop({ x: px, y: py }, others);
+            const arr = getZoneArr("body");
+            const from = arr.findIndex((b) => b.id === activeInfo.id);
+            if (from >= 0) {
+              const block = arr[from];
+              const without = arr.filter((b) => b.id !== activeInfo.id);
+              without.splice(Math.min(targetIndex, without.length), 0, {
+                ...block,
+                layout: regridExistingBlock(block.layout, xFrac),
+              });
+              syncBodyToStore(without);
+              setSelectedBlock(activeInfo.id, "body");
+            }
+            freeBodyRectsRef.current = null;
+            activeItemRef.current = null;
+            return;
+          }
+        }
+      }
+
+      /* Case 2 (precise): existing block dropped onto an InsertionSlot.
+         Resolves the EXACT gap the live line showed, instead of the
+         block-to-block arrayMove approximation. Group sources stay on the
+         MVP within-group path below. */
+      if (activeInfo && over && overData?.isInsertionSlot && !activeInfo.parentGroupId) {
+        const tz = overData.zone as ZoneId;
+        const ti = Number(overData.index);
+        const srcZone = activeInfo.zone;
+        if (srcZone === tz) {
+          const arr = getZoneArr(tz);
+          const oldIndex = arr.findIndex((b) => b.id === activeInfo.id);
+          if (oldIndex >= 0) {
+            /* Slot index ti counts gaps in the CURRENT array (active block
+               included). Removing the active block shifts later targets left
+               by one, so adjust before arrayMove. */
+            let newIndex = oldIndex < ti ? ti - 1 : ti;
+            newIndex = Math.max(0, Math.min(newIndex, arr.length - 1));
+            if (newIndex !== oldIndex) {
+              const reordered = arrayMove(arr, oldIndex, newIndex);
+              if (tz === "body") syncBodyToStore(reordered);
+              else setZoneBlocks(tz, reordered);
+            }
+          }
+        } else {
+          /* Cross-zone precise insert. handleDragOver skips slots, so the
+             block is still in its source zone at drop time. */
+          moveBlockBetweenZones(srcZone, tz, activeInfo.id, ti);
+        }
         activeItemRef.current = null;
         return;
       }
@@ -1643,6 +1883,7 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
       addBlockToZone,
       addBlockToGroup,
       moveBlockIntoGroup,
+      moveBlockBetweenZones,
       removeBlockFromGroup,
       syncBodyToStore,
       setZoneBlocks,
@@ -1682,7 +1923,9 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
       onDragCancel={handleDragCancel}
     >
       <PreviewReadOnlyContext.Provider value={readOnly}>
-        {children}
+        <DragActiveContext.Provider value={activeDragId !== null}>
+          {children}
+        </DragActiveContext.Provider>
       </PreviewReadOnlyContext.Provider>
 
       {/* Drag overlay - ghost preview while dragging from library */}

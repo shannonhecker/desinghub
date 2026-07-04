@@ -5,6 +5,9 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI, CHAT_ERROR_PREFIXES } from "@/lib/useChatAPI";
+import { saveTurnSnapshot, getTurnSnapshot } from "@/lib/turnSnapshots";
+import { restoreSnapshot } from "@/lib/builderHistory";
+import { TurnHistoryCard } from "./cards/TurnHistoryCard";
 import { BUILDER_TEMPLATES, getLoginDashboardBody, type TemplateId } from "@/lib/builderTemplates";
 import { regenerateTemplateContent } from "@/lib/regenerateTemplateContent";
 import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
@@ -61,11 +64,17 @@ const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
   { label: "Carbon DS", value: "carbon" },
 ];
 
-/* Trimmed display set (issue #14). The local-command handlers + offline
-   keyword fast-paths are untouched - this only cuts which chips show. */
-const REFINE_CHIPS = [
-  "Add Image", "Add Chart", "Add Data Table", "Dark Mode", "Build Dashboard", "Clear All",
-];
+/* Tiered refine actions (hierarchy pass). The local-command handlers +
+   offline keyword fast-paths are untouched - labels are unchanged so
+   handleSend keyword matching still fires; this only changes WHERE each
+   chip shows. Primary = the likeliest next adds, kept visible above the
+   composer (Lovable caps quick-actions at ~3). The rest fold behind one
+   "More" disclosure. The destructive Clear All gets its own quiet slot so a
+   canvas-wiping action never sits at equal weight with additive ones.
+   Nothing is removed - every command is still reachable. */
+const REFINE_PRIMARY = ["Add Chart", "Add Data Table", "Add Image"];
+const REFINE_MORE = ["Build Dashboard", "Dark Mode"];
+const REFINE_DESTRUCTIVE = "Clear All";
 
 /* ── Component keyword → ID mapping for free-form chat ── */
 
@@ -443,6 +452,10 @@ export function ChatPanel() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
+  /* One-shot guard for the ?prompt= deep-link auto-fire (below, after
+     handleSend is defined). A ref (not state) so it never triggers a
+     re-render and survives the effect's own setInputText. */
+  const promptFiredRef = useRef(false);
 
 
   /* ── Lifecycle state for the status pill ──
@@ -493,6 +506,20 @@ export function ChatPanel() {
     }
   }, [isGenerating, lastAiContent]);
 
+  /* Phase-aware label for the full-width generating-state block. Derived
+     purely from the existing lifecycleState the effect above maintains:
+       thinking  -> "Thinking…"          (model deciding, no tokens yet)
+       streaming -> "Building…"          (tokens / layout arriving)
+       tool      -> "Applying changes…"  (a tool-use action just landed)
+     done/error/idle never coincide with isGenerating, so they fall back to
+     "Thinking…". Uses the ellipsis char to match the surrounding copy. */
+  const generatingLabel =
+    lifecycleState === "streaming"
+      ? "Building…"
+      : lifecycleState === "tool"
+        ? "Applying changes…"
+        : "Thinking…";
+
   /* ── Phase 3a (N4 Tool-Use Cards) ──
      Subscribe to `builder:tool-use` events emitted by applyAIActions.
      Group by messageId so each assistant message renders its own
@@ -504,9 +531,19 @@ export function ChatPanel() {
     Record<string, ToolUseEvent[]>
   >({});
 
+  /* Disclosure for the secondary refine actions (hierarchy pass). Primary
+     adds stay visible; Build Dashboard / Dark Mode / Regenerate-data fold
+     behind "More" so the action row stops out-shouting the AI message. */
+  const [showMoreRefine, setShowMoreRefine] = useState(false);
+
+  /* Holds the active "Applying changes…" revert timer so a burst of
+     tool-use events coalesces into one pill window instead of stacking
+     timers (mirrors the single-timer discipline of the done-state effect). */
+  const toolPillTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const unsubscribe = subscribeToolUse((event) => {
       if (!event.messageId) return;
+      let isNew = false;
       setToolUseByMessage((prev) => {
         const existing = prev[event.messageId!] ?? [];
         /* Dedupe by (action + ts) so a re-emit (e.g. React StrictMode
@@ -515,10 +552,29 @@ export function ChatPanel() {
           (e) => e.action === event.action && e.ts === event.ts,
         );
         if (exists) return prev;
+        isNew = true;
         return { ...prev, [event.messageId!]: [...existing, event] };
       });
+      /* Surface the unused 'tool' pill state briefly when a NEW tool-use
+         action lands for the in-flight message. Only while generating, so a
+         late/replayed event never resurrects the pill after the turn settled.
+         Read isGenerating fresh from the store (the effect's empty deps would
+         otherwise capture a stale value). Hand back to "streaming" after a
+         short window; the done->idle effect owns the final settle. */
+      if (isNew && useBuilder.getState().isGenerating) {
+        setLifecycleState("tool");
+        if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+        toolPillTimerRef.current = setTimeout(() => {
+          /* Only fall back to streaming if we're still mid-generation;
+             otherwise leave the done/idle the lifecycle effect set. */
+          if (useBuilder.getState().isGenerating) setLifecycleState("streaming");
+        }, 900);
+      }
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (toolPillTimerRef.current) clearTimeout(toolPillTimerRef.current);
+    };
   }, []);
 
   /* Per-card undo wiring. For PR (a) we ship a working undo for
@@ -556,6 +612,22 @@ export function ChatPanel() {
           />
         ))}
       </div>
+    );
+  }
+
+  /* Phase 2: the per-turn "Restore" card under a USER message. Shows when a
+     pre-turn snapshot was captured for that turn; restoring is non-destructive
+     (the current canvas goes onto the undo stack first). */
+  function renderTurnHistoryCard(messageId: string) {
+    const snapshot = getTurnSnapshot(messageId);
+    if (!snapshot) return null;
+    return (
+      <TurnHistoryCard
+        onRestore={() => {
+          restoreSnapshot(snapshot);
+          bumpPreview();
+        }}
+      />
     );
   }
 
@@ -883,7 +955,13 @@ export function ChatPanel() {
       }
     }
 
-    addMessage("user", msg);
+    /* Phase 2 (turn history): snapshot the canvas BEFORE this turn builds,
+       keyed by the user message id, so the chat can offer a non-destructive
+       "Restore" card under this turn. Only the real build path (here) is
+       captured — the earlier pre-build question turns (DS pick / audience)
+       change nothing on the canvas. */
+    const turnMsgId = addMessage("user", msg);
+    saveTurnSnapshot(turnMsgId);
     setGenerating(true);
     const l = msg.toLowerCase();
 
@@ -1040,6 +1118,45 @@ export function ChatPanel() {
     sendToAPI(msg).then(() => bumpPreview());
   };
 
+  /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
+     A link like /builder?prompt=build%20a%20dashboard stages the text and
+     fires ONE build on mount. The /start sibling page (separate PR) is the
+     producer of these links. Three guards keep it a true one-shot:
+       • promptFiredRef       - never fires twice in one mount/lifecycle
+       • messages.length === 0 - the canonical first-turn signal (mirrors
+         handleSend); so a re-mount that already has history never re-fires
+       • the URL is cleaned    - so a manual refresh doesn't re-stage it
+     With AI on in prod (aiDisabled === false) this routes through the AI-first
+     handleSend path: it builds directly, or for an app-like prompt that names
+     no audience it asks the one "who is this for?" question first, then builds.
+     Offline it falls into the keyword fast-paths / onboarding like any other
+     first message. We read
+     window.location.search directly (NOT the Next useSearchParams hook) to
+     avoid a Suspense/CSR-bailout requirement, matching the existing
+     BuilderApp param effects. Placed AFTER handleSend so the closure is
+     defined; the deps are intentionally mount-only (handleSend is a stable
+     closure recreated each render, but the ref + messages.length guards make
+     re-runs no-ops, so we keep the dep list empty like the sibling effects). */
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (promptFiredRef.current || messages.length !== 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const prompt = params.get("prompt");
+    if (!prompt) return;
+    promptFiredRef.current = true;
+    setInputText(prompt);
+    setTimeout(() => handleSend(prompt), 50);
+    /* Clean ONLY the prompt param so a refresh doesn't re-stage, while
+       preserving any sibling params (?ds, ?mode, ...). Mirrors the ?shared
+       cleanup precedent in BuilderApp, scoped to one key. */
+    params.delete("prompt");
+    const qs = params.toString();
+    const newUrl =
+      window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+    window.history.replaceState({}, "", newUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -1083,37 +1200,84 @@ export function ChatPanel() {
      ═══════════════════════════════════ */
 
   const renderRefineChips = () => (
-    <div className="prompt-bubbles">
-      {/* Regenerate chip is AI-gated - hide it entirely when ANTHROPIC_API_KEY
-          is absent so users aren't offered a button that will fail. The rest
-          of the refine chips stay since they route through handleSend, which
-          also gates on aiDisabled below. */}
-      {activeTemplateId && !aiDisabled && (
+    <div className="refine-actions">
+      {/* Primary tier: the ~3 likeliest next adds stay visible. */}
+      <div
+        className="prompt-bubbles refine-primary"
+        role="group"
+        aria-label="Suggested next actions"
+      >
+        {REFINE_PRIMARY.map((label) => (
+          <button
+            key={label}
+            className="prompt-bubble"
+            onClick={() => handleSend(label)}
+          >
+            {label}
+          </button>
+        ))}
         <button
-          className="prompt-bubble prompt-bubble-accent"
-          onClick={handleRegenerateContent}
-          disabled={isRegeneratingContent}
-          title="Ask Claude for fresh mock data for this template"
+          type="button"
+          className="prompt-bubble prompt-bubble-more"
+          aria-expanded={showMoreRefine}
+          onClick={() => setShowMoreRefine((v) => !v)}
         >
+          More
           <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
+            className={`refine-more-caret${showMoreRefine ? " is-open" : ""}`}
             aria-hidden="true"
           >
-            {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
+            ›
           </span>
-          {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
         </button>
-      )}
-      {REFINE_CHIPS.map((label) => (
-        <button
-          key={label}
-          className="prompt-bubble"
-          onClick={() => handleSend(label)}
+      </div>
+
+      {/* Tertiary tier: the rest, disclosed on demand. Regenerate-data is
+          AI-gated - hidden when ANTHROPIC_API_KEY is absent so users aren't
+          offered a button that will fail. Clear All is destructive, so it
+          sits apart from the additive commands with its own quiet slot. */}
+      {showMoreRefine && (
+        <div
+          className="prompt-bubbles refine-more-row"
+          role="group"
+          aria-label="More actions"
         >
-          {label}
-        </button>
-      ))}
+          {activeTemplateId && !aiDisabled && (
+            <button
+              className="prompt-bubble prompt-bubble-accent"
+              onClick={handleRegenerateContent}
+              disabled={isRegeneratingContent}
+              title="Ask Claude for fresh mock data for this template"
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
+                aria-hidden="true"
+              >
+                {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
+              </span>
+              {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
+            </button>
+          )}
+          {REFINE_MORE.map((label) => (
+            <button
+              key={label}
+              className="prompt-bubble"
+              onClick={() => handleSend(label)}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="refine-clear"
+            onClick={() => handleSend(REFINE_DESTRUCTIVE)}
+            title="Remove every block from the canvas"
+          >
+            {REFINE_DESTRUCTIVE}
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -1405,6 +1569,7 @@ export function ChatPanel() {
                       Cards persist for the lifetime of the panel
                       (in-memory only — refresh wipes them). */}
                   {msg.role === "ai" && renderToolUseCards(msg.id)}
+                  {msg.role === "user" && renderTurnHistoryCard(msg.id)}
                   {/* QW4: retry affordance on the failed message -
                       5xx / network errors keep the user's text so one
                       click re-sends it (the error bubble is dropped
@@ -1473,7 +1638,7 @@ export function ChatPanel() {
                     being loud. */}
                 <div className="generating-shimmer">
                   <span className="generating-shimmer-dot" aria-hidden="true" />
-                  <span className="generating-shimmer-text">Thinking…</span>
+                  <span className="generating-shimmer-text">{generatingLabel}</span>
                 </div>
                 <span className="generating-text">Drafting layout and applying design tokens…</span>
               </div>

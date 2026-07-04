@@ -22,6 +22,13 @@ export const CHAT_ERROR_COPY = {
   generic: "I'm having trouble connecting right now. Please try again in a moment.",
 } as const;
 
+/* Stand-in confirmation when the model returns ONLY json action fences
+   (no prose): the "..." placeholder would otherwise be overwritten with
+   an empty string and the bubble goes silently blank. Terse, in the
+   builder's voice, and singular/plural aware. */
+export const CHAT_EMPTY_CONFIRM = (count: number): string =>
+  `Done. ${count} ${count === 1 ? "change" : "changes"} applied to the canvas.`;
+
 /* Prefixes ChatPanel uses to classify the last AI message as an error
    for the LifecyclePill. Kept next to the copy so they cannot drift. */
 export const CHAT_ERROR_PREFIXES = [
@@ -324,13 +331,35 @@ export function useChatAPI() {
       // Parse final response for actions
       const { displayText, actions } = parseAIResponse(accumulated);
 
-      // Update message with clean display text (no JSON blocks)
+      /* Resolve the bubble content. The model sometimes returns ONLY
+         json action fences (displayText === "") — overwriting the "..."
+         placeholder with "" leaves a silently blank bubble. Resolve:
+           • text present                 → show it (existing behaviour)
+           • no text + actions applied    → terse confirmation, not blank
+           • no text + no actions         → the turn produced nothing;
+                                            arm Retry via failedSend below
+         The empty/no-action case is handled after the bubble write so it
+         can anchor the retry affordance to this bubble's id. */
       const finalMsgs = useBuilder.getState().messages;
       const lastAi = finalMsgs[finalMsgs.length - 1];
+      const emptyText = displayText.trim() === "";
+      const noTextNoActions = emptyText && actions.length === 0;
+      const resolvedContent = emptyText
+        ? actions.length > 0
+          ? CHAT_EMPTY_CONFIRM(actions.length)
+          : CHAT_ERROR_COPY.generic
+        : displayText;
       if (lastAi && lastAi.role === "ai") {
         useBuilder.setState({
-          messages: [...finalMsgs.slice(0, -1), { ...lastAi, content: displayText }],
+          messages: [...finalMsgs.slice(0, -1), { ...lastAi, content: resolvedContent }],
         });
+      }
+
+      /* No text AND no actions: the request returned nothing usable.
+         Surface the retry affordance against this bubble so the user
+         isn't stranded on a dead-end turn. */
+      if (noTextNoActions && lastAi && lastAi.role === "ai") {
+        setFailedSend({ messageId: lastAi.id, userText });
       }
 
       // Apply any actions from the response.
