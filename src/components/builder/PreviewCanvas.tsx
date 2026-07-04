@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useBuilder, type Block, type LayoutWidth } from "@/store/useBuilder";
 import { showToast } from "@/lib/toast";
 import { undo as canvasUndo } from "@/lib/builderHistory";
@@ -99,13 +100,34 @@ export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Bl
    shares the same drag-and-drop context.
    ══════════════════════════════════════════════════════════ */
 export function PreviewCanvas() {
+  /* Narrow subscription (perf): subscribe only to the store slice this
+     canvas actually reads, compared shallowly. The bare no-selector
+     `useBuilder()` it replaced re-rendered the whole canvas on EVERY
+     store notification — so the per-frame message flush during AI
+     streaming repainted the canvas at ~60fps. Setter identities are
+     stable across notifications, so including them here is free; only a
+     change to one of these data fields now triggers a re-render. */
   const {
     designSystem, selectedComponents, setSelectedComponents,
     blocks, setBlocks,
     selectedBlockId, setSelectedBlock,
     addMenuOpen, setAddMenuOpen,
     density, activePageId,
-  } = useBuilder();
+  } = useBuilder(
+    useShallow((s) => ({
+      designSystem: s.designSystem,
+      selectedComponents: s.selectedComponents,
+      setSelectedComponents: s.setSelectedComponents,
+      blocks: s.blocks,
+      setBlocks: s.setBlocks,
+      selectedBlockId: s.selectedBlockId,
+      setSelectedBlock: s.setSelectedBlock,
+      addMenuOpen: s.addMenuOpen,
+      setAddMenuOpen: s.setAddMenuOpen,
+      density: s.density,
+      activePageId: s.activePageId,
+    })),
+  );
   /* Read the body zone's container layout via the new store
      slice. The resolver uses this to size every block. */
   const bodyZoneLayout = useBuilder((s) => s.zoneLayouts.body);

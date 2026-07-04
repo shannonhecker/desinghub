@@ -948,16 +948,10 @@ export const COMPONENT_ANATOMY: Partial<
         { label: "Corner", value: "Full" },
       ],
     },
-    /* Salt Button, medium density. Source: @salt-ds/core Button.css — the
-       container height tracks --salt-size-base (36 at MD), horizontal padding
-       is --salt-spacing-100 (8 at MD), the corner is --salt-curve-100 (4 at
-       MD; Salt's idiom is flat + lightly rounded, NOT the M3 full pill), and
-       the label type is --salt-text-fontSize (14 at MD). The third part is the
-       focus ring rather than M3's state-layer overlay: Salt has no Material
-       ripple, it draws a 2-pixel --salt-focused-outline on :focus-visible.
-       Measures shown as their resolved MD values (display strings, like the
-       M3 "40dp" convention) with the driving token named in the role column
-       of COMPONENT_TOKENS; no raw px literal is introduced here. */
+    /* Salt Button, medium density. Source: @salt-ds/core Button.css —
+       height tracks --salt-size-base (28 at MD), horizontal padding is
+       --salt-spacing-150 (12), corner is --salt-palette-corner-weaker
+       (--salt-curve-100 = 4 at MD), type is --salt-text-fontSize (12). */
     salt: {
       parts: [
         { n: 1, label: "Container", x: 50, y: 15 },
@@ -965,10 +959,61 @@ export const COMPONENT_ANATOMY: Partial<
         { n: 3, label: "Focus ring", x: 15, y: 50 },
       ],
       measures: [
-        { label: "Height", value: "36dp" },
-        { label: "Padding", value: "8dp" },
+        { label: "Height", value: "28dp" },
+        { label: "Padding", value: "12dp" },
+        { label: "Corner", value: "4dp" },
+        { label: "Font", value: "12dp" },
+      ],
+    },
+    /* Fluent Button, medium size. Source: @fluentui/react-button dist
+       useButtonStyles — height 32, horizontal padding spacingHorizontalM
+       (12), corner borderRadiusMedium (4), type body1 (fontSizeBase300 =
+       14). */
+    fluent: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 15 },
+        { n: 2, label: "Label text", x: 50, y: 85 },
+        { n: 3, label: "Focus ring", x: 15, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "32dp" },
+        { label: "Padding", value: "12dp" },
         { label: "Corner", value: "4dp" },
         { label: "Font", value: "14dp" },
+      ],
+    },
+    /* uoaui glass button. Source: uoaui-documentation.jsx buildCSS .a-btn —
+       height tracks --a-control-h, radius var(--a-radius-full), horizontal
+       padding 0 18, font var(--a-text-sm). */
+    uoaui: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 15 },
+        { n: 2, label: "Label text", x: 50, y: 85 },
+        { n: 3, label: "State layer", x: 15, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "36dp" },
+        { label: "Padding", value: "18dp" },
+        { label: "Corner", value: "Full" },
+        { label: "Font", value: "14dp" },
+      ],
+    },
+    /* Carbon Button, lg (default productive) size. Source: @carbon/styles
+       button — height $spacing-09 (48), horizontal padding $spacing-05
+       (16), corner 0 (square), type body-compact-01 (14). Carbon spec is
+       expressed in px; each measure carries the tokens-audit suppression
+       per the chip.carbon precedent. */
+    carbon: {
+      parts: [
+        { n: 1, label: "Container", x: 50, y: 15 },
+        { n: 2, label: "Label text", x: 50, y: 85 },
+        { n: 3, label: "Focus ring", x: 15, y: 50 },
+      ],
+      measures: [
+        { label: "Height", value: "48px" }, // tokens-audit-ignore
+        { label: "Padding", value: "16px" }, // tokens-audit-ignore
+        { label: "Corner", value: "0px" }, // tokens-audit-ignore
+        { label: "Font", value: "14px" }, // tokens-audit-ignore
       ],
     },
   },

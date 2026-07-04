@@ -1,11 +1,13 @@
 /* ════════════════════════════════════════════════════════════
    ui-kit-meta — accessibility data layer + Salt Button anatomy.
    ════════════════════════════════════════════════════════════
-   These are pure-data assertions on the two additions made in
-   feat/uikit-anatomy-a11y-data:
+   These are pure-data assertions on:
      - COMPONENT_ACCESSIBILITY: per-component, per-DS keyboard + ARIA notes
-       that gate the Accessibility tab (ComponentPreview).
-     - COMPONENT_ANATOMY.button.salt: the Salt Button anatomy entry.
+       that gate the Accessibility tab (ComponentPreview) — added by
+       feat/uikit-anatomy-a11y-data.
+     - COMPONENT_ANATOMY.button.salt: the Salt Button anatomy entry (shipped
+       on main via the button-anatomy batch; guarded here for shape + the
+       flat-Salt corner idiom).
    No DOM — the rendering of these is covered by AnatomyDiagram.test.tsx and
    verified visually on the /ui-kit capture. The point here is to guard the
    DATA shape + coverage + the copy rule (no em/en dashes in display strings).

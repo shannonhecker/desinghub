@@ -386,6 +386,23 @@ const BLOCK_DEFS: BlockDef[] = [
       { type: "action", label: "Ungroup", action: "ungroup" },
     ],
   },
+  {
+    /* Spacer: a flow GUTTER — an empty, sized flex/grid child that pushes
+       siblings apart. NOT a positioning device: it has no x/y, only a size
+       on one axis. Exports as an aria-hidden div with a width|height token +
+       flexShrink:0, so it stays responsive across all 5 design systems. */
+    type: "Spacer",
+    label: "Spacer",
+    icon: "space_bar",
+    defaults: { size: 24, axis: "h" },
+    fields: [
+      { type: "range", propKey: "size", label: "Size", min: 0, max: 400, suffix: "px" },
+      { type: "select", propKey: "axis", label: "Axis", options: [
+        { value: "h", label: "Horizontal" },
+        { value: "v", label: "Vertical" },
+      ] },
+    ],
+  },
 
   /* ── UI Components ── */
   { type: "SimulatedButton", label: "Button", icon: "smart_button", defaults: { variant: "primary", label: "New Button" }, fields: [
@@ -592,6 +609,7 @@ export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
    Card, "graph" -> a chart) so search doesn't dead-end on exact wording.
    Curated for the common misses; absent types just fall back to label/type. */
 export const SEARCH_ALIASES: Record<string, string[]> = {
+  Spacer: ["gap", "space", "divider", "blank", "empty", "gutter"],
   SimulatedImage: ["photo", "picture", "media", "pic", "img", "thumbnail", "hero image"],
   SimulatedButton: ["cta", "btn", "action", "submit"],
   SimulatedTextInput: ["field", "textbox", "text field", "form field"],
@@ -633,7 +651,8 @@ export type LibraryCategory =
   | "navigation"
   | "feedback"
   | "containment"
-  | "content";
+  | "content"
+  | "layout";
 
 export const LIBRARY_CATEGORY_ORDER: {
   key: LibraryCategory;
@@ -648,9 +667,13 @@ export const LIBRARY_CATEGORY_ORDER: {
   { key: "feedback",     label: "Feedback",     icon: "info" },
   { key: "containment",  label: "Containment",  icon: "inventory_2" },
   { key: "content",      label: "Content",      icon: "subject" },
+  { key: "layout",       label: "Layout",       icon: "space_bar" },
 ];
 
 export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
+  /* Layout */
+  Spacer: "layout",
+
   /* Actions */
   SimulatedButton: "actions",
   SimulatedToggleButton: "actions",

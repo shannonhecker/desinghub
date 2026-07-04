@@ -69,6 +69,7 @@ const SimulatedHighchart = dynamic(
   },
 );
 import { SortableBlock } from "./SortableBlock";
+import { BlockErrorBoundary } from "./BlockErrorBoundary";
 import { GroupDropContainer } from "./GroupDropContainer";
 import { computeGroupItemStyle } from "@/lib/layoutResolver";
 import type { Block } from "@/store/useBuilder";
@@ -1728,7 +1729,26 @@ function LayoutGroupBlock({ system, blockId }: { system: DesignSystem; blockId?:
   );
 }
 
+/* Spacer: a flow gutter. On the canvas it shows a hatched, sized placeholder
+   so the designer can see the space they added; builder.css strips the hatch
+   in Present/Preview mode while keeping the gutter. It is purely structural —
+   aria-hidden so screen readers skip it. No x/y, only a size on one axis. */
+function SpacerBlock({ size, axis }: { size?: number | string; axis?: string }) {
+  const px = Number(size) || 24;
+  const vertical = axis === "v";
+  return (
+    <div
+      className="spacer-block"
+      aria-hidden="true"
+      style={vertical
+        ? { height: px, minWidth: 24, flexShrink: 0 }
+        : { width: px, minHeight: 24, flexShrink: 0 }}
+    />
+  );
+}
+
 const RENDERERS: Record<string, React.FC<any>> = {
+  Spacer: SpacerBlock,
   Alert: AlertBlock,
   DataTable: DataTableBlock,
   FormFields: FormFieldsBlock,
@@ -1811,7 +1831,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
 };
 
 /* ── Main export ── */
-export function ComponentRenderer({ type, system, blockId, mode: modeProp, saltDensity: densityProp, ...props }: ComponentRendererProps & { blockId?: string; mode?: "light" | "dark"; saltDensity?: "high" | "medium" | "low" | "touch" }) {
+function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDensity: densityProp, ...props }: ComponentRendererProps & { blockId?: string; mode?: "light" | "dark"; saltDensity?: "high" | "medium" | "low" | "touch" }) {
   /* Phase 5 (P5.3 + PR-D): ComponentRenderer is the ONE render entry shared by
      the builder canvas AND the UI Kit gallery. In preview/present (read-only)
      mode it renders the REAL official DS component for covered combos via the
@@ -1830,13 +1850,15 @@ export function ComponentRenderer({ type, system, blockId, mode: modeProp, saltD
   if (mountedReal && readOnly && canRenderReal(system as SystemId, type)) {
     return (
       <div>
-        <RealComponentRenderer
-          system={system as SystemId}
-          type={type}
-          mode={builderMode === "dark" ? "dark" : "light"}
-          saltDensity={(["high", "medium", "low", "touch"].includes(density) ? density : "medium") as "high" | "medium" | "low" | "touch"}
-          props={props as Record<string, unknown>}
-        />
+        <BlockErrorBoundary blockType={type}>
+          <RealComponentRenderer
+            system={system as SystemId}
+            type={type}
+            mode={builderMode === "dark" ? "dark" : "light"}
+            saltDensity={(["high", "medium", "low", "touch"].includes(density) ? density : "medium") as "high" | "medium" | "low" | "touch"}
+            props={props as Record<string, unknown>}
+          />
+        </BlockErrorBoundary>
       </div>
     );
   }
@@ -1852,7 +1874,20 @@ export function ComponentRenderer({ type, system, blockId, mode: modeProp, saltD
 
   return (
     <div>
-      <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
+      {/* Each block render is boundaried so one throwing renderer
+          degrades to the placeholder card instead of unmounting the
+          whole /builder tree. */}
+      <BlockErrorBoundary blockType={type}>
+        <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
+      </BlockErrorBoundary>
     </div>
   );
 }
+
+/* React.memo: ComponentRenderer is rendered in a map across every
+   block; it reads its own state through fine-grained useBuilder
+   selectors, so memoizing on props is reference-transparent and skips
+   re-rendering blocks whose props didn't change. displayName preserved
+   so it still reads as <ComponentRenderer> in the tree. */
+export const ComponentRenderer = React.memo(ComponentRendererImpl);
+ComponentRenderer.displayName = "ComponentRenderer";

@@ -6,7 +6,8 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId } from "@/store/useBuilder";
 import { htmlText, htmlAttr } from "./escape";
-import { computeGroupStyle } from "@/lib/layoutResolver";
+import { computeGroupStyle, normalizeColumns, normalizeColumnStart } from "@/lib/layoutResolver";
+import { spanOf, startOf } from "./gridSpan";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
    (camelCase → kebab-case; bare numbers → px, matching how the canvas
@@ -112,10 +113,42 @@ function blockToHTML(block: Block, indent: string): string {
   }
 }
 
-function renderZone(blocks: Block[], zoneName: string, indent: string): string {
+/* Map a zone to its semantic landmark element (consistent with reactExporter)
+   so the exported page has a real document outline — header/aside/main/footer —
+   instead of anonymous divs. The zone-* class is kept so the shell CSS applies.
+   Body becomes <main id="main-content"> — the target of the skip link emitted
+   as the first body child; unknown zones fall back to a div. */
+const ZONE_TAG: Record<string, { open: string; tag: string }> = {
+  header: { open: "<header", tag: "header" },
+  sidebar: { open: '<aside aria-label="Sidebar"', tag: "aside" },
+  body: { open: '<main id="main-content"', tag: "main" },
+  footer: { open: "<footer", tag: "footer" },
+};
+
+function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12): string {
   if (blocks.length === 0) return "";
-  const inner = blocks.map((b) => blockToHTML(b, indent + "    ")).join("\n");
-  return `${indent}  <!-- ${zoneName} -->\n${indent}  <div class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </div>`;
+  /* The body is an N-col grid (N = the zone's column count, matching the canvas
+     + react/vite exporters). Each block is wrapped in a grid-item carrying its
+     span — `fr` is a canonical-12 proportion, so the span is normalized to the
+     grid's resolution (normalizeColumns(fr, N)), keeping all exporters in sync.
+     Other zones are flex and render their blocks directly. */
+  const isGrid = zoneName.toLowerCase() === "body";
+  const inner = blocks
+    .map((b) => {
+      if (!isGrid) return blockToHTML(b, indent + "    ");
+      const html = blockToHTML(b, indent + "      ");
+      /* P3-3: honor a per-block column-start. start is mapped + clamped against
+         this grid's resolution + the block's span, so the body's CSS grid renders
+         `<start> / span <n>` (an un-pinned block keeps the bare `span <n>`). */
+      const span = normalizeColumns(spanOf(b), cols);
+      const s = startOf(b);
+      const start = s !== undefined ? normalizeColumnStart(s, cols, span) : undefined;
+      const gridColumn = start !== undefined ? `${start} / span ${span}` : `span ${span}`;
+      return `${indent}    <div class="grid-item" style="grid-column: ${gridColumn}">\n${html}\n${indent}    </div>`;
+    })
+    .join("\n");
+  const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };
+  return `${indent}  <!-- ${zoneName} -->\n${indent}  ${z.open} class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </${z.tag}>`;
 }
 
 export function exportHTML(): string {
@@ -124,10 +157,11 @@ export function exportHTML(): string {
      exported page matches the canvas. Body is always emitted; an undefined flag
      defaults to shown (back-compat with pre-flag saved projects). */
   const zoneVisible = (zone: ZoneId): boolean => s.zoneLayouts?.[zone]?.visible !== false;
+  const bodyCols = s.zoneLayouts?.body?.columns ?? 12;
   const zones = [
     zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ") : "",
     zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ") : "",
-    renderZone(s.blocks, "Body", "    "),
+    renderZone(s.blocks, "Body", "    ", bodyCols),
     zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ") : "",
   ].filter(Boolean).join("\n\n");
 
@@ -141,10 +175,17 @@ export function exportHTML(): string {
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: ${s.mode === "dark" ? "#0b1120" : "#fff"}; color: ${s.mode === "dark" ? "#e8eaed" : "#1a1a1a"}; }
+    /* Skip link — visually hidden until keyboard focus, then reveals at the
+       top-left so a keyboard/screen-reader user can jump straight to <main>. */
+    .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: ${s.mode === "dark" ? "#0b1120" : "#fff"}; color: inherit; border-radius: 6px; }
+    .skip-link:focus { left: 8px; top: 8px; outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 2px; }
     .dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 240px 1fr; min-height: 100vh; }
     .zone-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .zone-sidebar { padding: 16px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
-    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-content: start; }
+    .zone-body { padding: 24px; display: grid; grid-template-columns: repeat(${bodyCols}, 1fr); gap: 16px; align-content: start; }
+    .zone-body > .grid-item { min-width: 0; }
+    /* mobile: drop each block's inline grid-column so pinned + wide blocks stack instead of overflowing the 1-col grid */
+    @media (max-width: 768px) { .zone-body { grid-template-columns: 1fr; } .zone-body > .grid-item { grid-column: auto !important; } }
     .zone-footer { grid-column: 1 / -1; padding: 12px 24px; border-top: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; text-align: center; opacity: 0.6; font-size: 12px; }
     .card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
     .stat-card { padding: 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
@@ -152,13 +193,39 @@ export function exportHTML(): string {
     .btn-primary { background: ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; color: #fff; }
     .nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; cursor: pointer; border-radius: 6px; color: inherit; text-align: left; }
     .nav-item.active { background: ${s.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}; font-weight: 600; }
-    .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-    .alert { padding: 12px 16px; border-radius: 8px; border-left: 4px solid; }
+    .btn-secondary { background: ${s.mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"}; color: inherit; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; }
+    .btn-outline { background: transparent; color: inherit; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.24)" : "rgba(0,0,0,0.24)"}; }
+    .btn-ghost { background: transparent; color: inherit; }
+    .btn-danger, .btn-destructive { background: #d92d20; color: #fff; }
+    .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${s.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; }
+    .badge-info { background: rgba(96,165,250,0.16); border-color: #60a5fa; }
+    .badge-success { background: rgba(74,222,128,0.16); border-color: #4ade80; }
+    .badge-warning { background: rgba(250,204,21,0.16); border-color: #facc15; }
+    .badge-error { background: rgba(248,113,113,0.16); border-color: #f87171; }
+    /* Alerts carry a textual prefix (::before) so the meaning never relies on
+       colour alone (use-of-color). */
+    .alert { padding: 12px 16px; border-radius: 8px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.16)"}; border-left-width: 4px; }
+    .alert::before { font-weight: 700; margin-right: 6px; }
+    .alert-info { background: rgba(96,165,250,0.12); border-left-color: #60a5fa; }
+    .alert-info::before { content: "Info:"; }
+    .alert-success { background: rgba(74,222,128,0.12); border-left-color: #4ade80; }
+    .alert-success::before { content: "Success:"; }
+    .alert-warning { background: rgba(250,204,21,0.12); border-left-color: #facc15; }
+    .alert-warning::before { content: "Warning:"; }
+    .alert-error { background: rgba(248,113,113,0.12); border-left-color: #f87171; }
+    .alert-error::before { content: "Error:"; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"}; }
+    .tab { padding: 8px 12px; border: 0; background: transparent; color: inherit; opacity: 0.7; font-family: inherit; font-size: 13px; cursor: pointer; }
+    .tab:hover { opacity: 1; }
     .form-field { display: flex; flex-direction: column; gap: 4px; }
     .form-field input { padding: 8px 12px; border: 1px solid ${s.mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}; border-radius: 4px; background: transparent; color: inherit; }
+    /* Keyboard focus rings — .btn sets border:none, so the ring is an outline. */
+    .btn:focus-visible, .tab:focus-visible, .nav-item:focus-visible, a:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 2px; }
+    input:focus-visible, .checkbox input:focus-visible, .switch input:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 1px; }
   </style>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <div class="dashboard-layout" data-mode="${s.mode}" data-ds="${s.designSystem}">
 ${zones}
   </div>

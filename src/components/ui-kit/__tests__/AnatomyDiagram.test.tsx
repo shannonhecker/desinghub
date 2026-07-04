@@ -160,8 +160,9 @@ describe("AnatomyDiagram", () => {
     expect(c.querySelectorAll(".material-symbols-outlined").length).toBe(0);
     /* One callout + legend entry per Salt part. */
     expect(c.querySelectorAll(".dh-anatomy-callout").length).toBe(salt!.parts.length);
-    /* Salt's MD-density measures are annotated. */
-    expect(c.textContent).toContain("36dp");
+    /* Salt's MD-density measures are annotated (28dp container at MD,
+       per the shipped COMPONENT_ANATOMY data on main). */
+    expect(c.textContent).toContain("28dp");
     expect(c.textContent).toContain("Focus ring");
   });
 });

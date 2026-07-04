@@ -9,9 +9,11 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { ZoneId, Block, ZoneLayout } from "@/store/useBuilder";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, normalizeGap } from "@/store/useBuilder";
 import { computeContainerStyle } from "@/lib/layoutResolver";
 import { InsertionSlot } from "./InsertionSlot";
+import { ZoneLayoutOverlay } from "./ZoneLayoutOverlay";
+import { ColumnGuides } from "./ColumnGuides";
 
 /* ══════════════════════════════════════════════════════════
    ZoneDropContainer - shared droppable + SortableContext
@@ -56,6 +58,7 @@ export function ZoneDropContainer({
      tile that would land here. Cleared on tile-leave or click/drag start. */
   const libraryHoverZone = useBuilder((s) => s.libraryHoverZone);
   const isLibraryHoverTarget = libraryHoverZone === zoneId;
+  const placementMode = useBuilder((s) => s.placementMode);
   const { setNodeRef, isOver } = useDroppable({
     id: `zone-${zoneId}`,
     data: { zone: zoneId },
@@ -125,6 +128,20 @@ export function ZoneDropContainer({
       style={style}
       data-layout-mode={mode}
     >
+      {/* On-canvas align/justify cluster — Edit-mode only (gated in CSS),
+          revealed on zone hover. Writes the SAME container tokens the
+          inspector does, so it's export-neutral. */}
+      <ZoneLayoutOverlay zoneId={zoneId} zoneLayout={zoneLayout} />
+      {/* Grid column guides — faint dashed boundaries shown only while a
+          block is being dragged into this grid zone. Pure editor visual,
+          writes no data. */}
+      {mode === "grid" && (
+        <ColumnGuides
+          columns={zoneLayout?.columns ?? 12}
+          gap={normalizeGap(zoneLayout?.gap)?.col ?? 12}
+          alwaysShow={placementMode === "grid"}
+        />
+      )}
       <SortableContext
         items={itemIds}
         strategy={strategy}

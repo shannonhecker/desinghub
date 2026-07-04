@@ -38,7 +38,32 @@ export function migrateColSpanToWidth(block: Block): Block {
   };
 }
 
-/** Migrate a whole zone array of blocks. */
+/**
+ * P3-3 column-start hygiene. `layout.gridCol` is authored as a canonical-12
+ * column LINE, so normalize it on load to a positive integer in [1, 12]: a
+ * fractional value is floored, an out-of-canonical value is clamped to 12, and a
+ * non-positive / non-finite / non-numeric value is DROPPED so the block
+ * auto-places (today's default) instead of carrying a bad pin. The resolver +
+ * exporters still re-clamp the range proportionally against each grid at render;
+ * this pass keeps the PERSISTED value clean, and the share-decode path adds its
+ * own clamp for forged payloads. Pure; recurses into LayoutGroup children.
+ */
+export function migrateGridCol(block: Block): Block {
+  const children = block.children?.map(migrateGridCol);
+  let nextLayout = block.layout;
+  if (block.layout && block.layout.gridCol !== undefined) {
+    const { gridCol, ...rest } = block.layout;
+    const n = Math.floor(Number(gridCol));
+    nextLayout = Number.isFinite(n) && n >= 1 ? { ...rest, gridCol: Math.min(n, 12) } : rest;
+  }
+  return {
+    ...block,
+    ...(nextLayout !== undefined ? { layout: nextLayout } : {}),
+    ...(children !== undefined ? { children } : {}),
+  };
+}
+
+/** Migrate a whole zone array of blocks: colSpan→width, then gridCol hygiene. */
 export function migrateBlocks(blocks: Block[]): Block[] {
-  return blocks.map(migrateColSpanToWidth);
+  return blocks.map((b) => migrateGridCol(migrateColSpanToWidth(b)));
 }

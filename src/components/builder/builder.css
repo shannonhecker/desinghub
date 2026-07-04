@@ -1231,9 +1231,34 @@
 [data-builder-mode="preview"] .bc-snap-guide,
 [data-builder-mode="preview"] .bc-sibling-guide,
 [data-builder-mode="preview"] .component-sidebar,
+[data-builder-mode="preview"] .zone-layout-overlay,
 [data-builder-mode="preview"] .hover-inspector {
   display: none !important;
 }
+
+/* ── Placement P2: Spacer block ──────────────────────────────────
+   A flow gutter. On the Edit canvas it shows a hatched, dashed
+   placeholder (derived from the accent token, not a literal) so the
+   designer can see the space they inserted. In Present/Preview the
+   hatch is stripped but the gutter is KEPT (size lives on the inline
+   style), so the spacing survives into the rendered/exported UI. */
+.spacer-block {
+  box-sizing: border-box;
+  border-radius: var(--b-radius-sm, 4px);
+  border: 1px dashed var(--bc-accent-muted);
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    color-mix(in srgb, var(--bc-accent, #6366f1) 14%, transparent) 4px,
+    color-mix(in srgb, var(--bc-accent, #6366f1) 14%, transparent) 8px
+  );
+}
+[data-builder-mode="preview"] .spacer-block {
+  background: transparent;
+  border: none;
+}
+
 /* Preview mode: strip selection outlines + hover borders from
    every canvas-block, regardless of selected/hover state. Using
    the plain `.canvas-block` selector here (rather than the more
@@ -2909,6 +2934,81 @@
   cursor: wait;
 }
 
+/* ── Refine actions (hierarchy pass) ──
+   A tight primary row of ~3 add chips + a quiet "More" disclosure, with the
+   rest + the destructive Clear All in the disclosed row. Stops the action
+   block out-shouting the AI message it sits beneath. */
+.refine-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.refine-actions .prompt-bubbles {
+  margin-top: 0;
+}
+/* "More" reads as a control, not an action: no fill, quieter, rotating caret. */
+.prompt-bubble.prompt-bubble-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-inline: 12px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--b-fg2);
+  box-shadow: none;
+}
+.prompt-bubble.prompt-bubble-more:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.09);
+  color: var(--b-fg);
+  box-shadow: none;
+}
+.builder-light .prompt-bubble.prompt-bubble-more {
+  background: transparent;
+  border-color: transparent;
+}
+.builder-light .prompt-bubble.prompt-bubble-more:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.refine-more-caret {
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+.refine-more-caret.is-open {
+  transform: rotate(90deg);
+}
+.refine-more-row {
+  margin-top: 0;
+  align-items: center;
+}
+/* Destructive Clear All: a quiet text affordance, never a peer pill of the
+   additive adds. Danger signal only on hover (token-driven). */
+.refine-clear {
+  border: 0;
+  background: transparent;
+  color: var(--b-fg2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+}
+.refine-clear:hover {
+  color: var(--bc-danger);
+  background: color-mix(in srgb, var(--bc-danger) 12%, transparent);
+  opacity: 1;
+}
+.refine-clear:focus-visible {
+  outline: 2px solid var(--b-accent);
+  outline-offset: 2px;
+}
+
 /* ── In-chat template cards (replaces the slide-over drawer) ──
    Rendered inside .messages-area as an AI 'templates' turn: a horizontal
    carousel of starting templates. The composer stays pinned below. Action
@@ -3059,6 +3159,33 @@
   align-items: center;
   gap: 4px;
   font-variant-numeric: tabular-nums;
+  /* Hierarchy pass: assumptions are reversible inferred STATE, not commands.
+     Quiet them below the primary add chips (transparent fill, lighter weight)
+     so the row reads as "correct what I guessed", distinct from forward
+     actions, via weight + grouping rather than a border box. */
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 400;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--b-fg2);
+  box-shadow: none;
+}
+.prompt-bubble-assumption:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--b-fg);
+  box-shadow: none;
+}
+.builder-light .prompt-bubble-assumption {
+  background: transparent;
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.55);
+}
+.builder-light .prompt-bubble-assumption:hover {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.14);
+  color: rgba(0, 0, 0, 0.8);
 }
 .assumption-row-caret {
   font-size: 14px;
@@ -4220,6 +4347,34 @@
   border-color: var(--b-accent);
   color: white;
 }
+/* Scaffolded placement modes (Grid / Freeform) — present so the roadmap is
+   visible, but disabled with a "Soon" pill until their phases land. */
+.settings-toggle-btn.soon {
+  cursor: not-allowed;
+  opacity: 0.55;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.settings-toggle-btn.soon:hover { background: transparent; color: var(--b-fg2); }
+.settings-toggle-soon {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--b-fg3, var(--b-fg2));
+}
+.settings-group-hint {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--b-fg3, var(--b-fg2));
+}
 
 .comp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .comp-chip {
@@ -4903,6 +5058,184 @@
 
 /* Slim floating control bar, bottom-centre. Glass on the nav layer
    only (never on canvas content). */
+/* ════════ Amend flow (Phase 1): selection ring + in-place composer ════════ */
+
+/* Selection ring on the clicked block in the author's Present mode. Outline
+   (not border) so it never shifts layout; offset to sit just outside. */
+/* Selection ring as an ::after overlay painted ON TOP of the block's content
+   (z-index), so an opaque child card/background can't hide it and ancestor
+   overflow can't clip it. pointer-events:none keeps clicks flowing to the
+   block. Functional selection affordance, not decorative depth. */
+.present-stage .canvas-block[data-amend-selected="true"] {
+  position: relative;
+}
+.present-stage .canvas-block[data-amend-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--b-accent);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 4px var(--b-accent-glow);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* The floating "amend in place" composer — sits just above the present-bar,
+   centered, sharing the bar's chrome tokens. */
+.present-amend {
+  position: fixed;
+  bottom: clamp(72px, 12vh, 104px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(440px, calc(100vw - 32px));
+  padding: 12px;
+  background: var(--bc-bg-raised);
+  border: 1px solid var(--bc-border);
+  border-radius: 14px;
+  box-shadow: var(--bc-shadow-lg);
+  backdrop-filter: blur(12px);
+  color: var(--bc-fg);
+  animation: present-amend-in 0.16s ease-out;
+}
+@keyframes present-amend-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .present-amend { animation: none; }
+}
+.present-amend-scope {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.present-amend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--b-accent);
+  flex-shrink: 0;
+}
+.present-amend-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.present-amend-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--bc-fg);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+.present-amend-clear:hover { background: var(--bc-bg-hover); opacity: 1; }
+.present-amend-clear:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 2px; }
+.present-amend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.present-amend-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--bc-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--bc-fg);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.present-amend-input::placeholder { color: var(--bc-fg); opacity: 0.5; }
+.present-amend-input:focus {
+  border-color: var(--b-accent);
+  box-shadow: 0 0 0 3px var(--b-accent-glow);
+}
+.present-amend-input:disabled { opacity: 0.6; }
+.present-amend-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--b-accent);
+  color: var(--bc-on-accent, #fff);
+  cursor: pointer;
+  transition: filter 0.12s, opacity 0.12s;
+}
+.present-amend-send:hover:not(:disabled) { filter: brightness(1.08); }
+.present-amend-send:disabled { opacity: 0.4; cursor: default; }
+.present-amend-send:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 2px; }
+.present-amend-hint {
+  font-size: 11.5px;
+  color: var(--bc-fg);
+  opacity: 0.75;
+}
+
+/* ── Turn history "Restore" card (Phase 2) ──
+   A quiet inline affordance under a user turn in the chat: rewind the canvas to
+   before that turn, non-destructively. */
+.turn-history-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--b-fg2);
+}
+.builder-light .turn-history-card { border-color: rgba(0, 0, 0, 0.08); }
+.turn-history-icon { font-size: 15px; opacity: 0.7; }
+.turn-history-label {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+.turn-history-restore {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--b-accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.turn-history-restore:hover { background: var(--b-accent-glow); }
+.turn-history-restore:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
+
 .present-bar {
   position: fixed;
   bottom: clamp(16px, 4vh, 32px);
@@ -8933,27 +9266,42 @@
 
 /* Row under the search input holding the Collapse-all / Expand-all
    text-button (right-aligned, low-emphasis). */
+/* Hierarchy pass: the collapse/expand-all control is the fastest cure for a
+   tile wall, so it leads the category list (left-aligned) with a real
+   affordance + icon instead of being the faintest right-tucked text. */
 .lib-search-row {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
+  justify-content: flex-start;
+  margin-top: 10px;
 }
 .lib-collapse-toggle {
-  border: 0;
-  background: transparent;
-  color: var(--b-fg2);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--b-fg);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 2px 4px;
-  border-radius: 5px;
+  letter-spacing: 0.01em;
+  padding: 5px 10px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.lib-collapse-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.builder-light .lib-collapse-toggle {
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
 }
 .lib-collapse-toggle:hover {
   color: var(--b-accent);
   background: var(--b-accent-glow);
+  border-color: color-mix(in srgb, var(--b-accent) 30%, transparent);
 }
 .lib-collapse-toggle:focus-visible {
   outline: 2px solid var(--bc-accent-ring);
@@ -9829,6 +10177,27 @@
 }
 .preview-bar-overflow-item:hover { background: rgba(255, 255, 255, 0.06); }
 .preview-bar-overflow-item:disabled { opacity: 0.5; cursor: wait; }
+/* Scaffolded placement modes (Grid / Freeform) — disabled with a "Soon" pill
+   until their roadmap phases land. Override the loading-style :disabled cursor. */
+.preview-bar-overflow-item-soon:disabled { cursor: not-allowed; opacity: 0.6; }
+.preview-bar-overflow-item-soon:hover { background: transparent; }
+.preview-bar-overflow-soon {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.7);
+}
+.builder-light .preview-bar-overflow-soon {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.55);
+}
 .preview-bar-overflow-item.preview-bar-overflow-item-active {
   background: rgba(126, 107, 196, 0.14);
   color: var(--dh-fg);
@@ -10547,8 +10916,12 @@
 .compare-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
+  /* Auto-flow so the grid accommodates all five design systems
+     (3 across, 2 on the wrap row) without hard-locking a count.
+     Adding/removing a system in SYSTEMS reflows automatically. */
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 1fr;
+  grid-auto-flow: row;
   gap: 12px;
   min-height: 0;
 }
@@ -12798,12 +13171,114 @@
 
 /* Zone drop containers - base */
 .zone-drop-container {
+  /* Anchor for the absolutely-positioned ZoneLayoutOverlay. Safe on a
+     flex/grid container — does not change child flow. */
+  position: relative;
   min-height: 8px;
   /* Inter-block gap inside each zone scales with structure padding (S/M/L).
      Falls back to 8px when --dh-pad-gap isn't set (legacy callers). */
   gap: var(--dh-pad-gap, 8px);
   transition: background 0.2s, box-shadow 0.2s, outline-color 0.12s;
 }
+
+/* ── Placement P2: grid column guides ──────────────────────────
+   Faint dashed column boundaries shown only while a block is being
+   dragged into a grid zone. Absolute overlay (NOT a grid child),
+   pointer-events:none, with its own internal grid mirroring the
+   zone's columns + column-gap. Editor visual only — no data. */
+.zone-col-guides {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  pointer-events: none;
+  z-index: 5;
+}
+.zone-col-guide-cell {
+  border-right: 1px dashed color-mix(in srgb, var(--bc-accent, #6366f1) 32%, transparent);
+}
+.zone-col-guide-cell:last-child { border-right: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .zone-col-guides { animation: zone-col-guides-in 0.12s ease; }
+}
+@keyframes zone-col-guides-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Placement P2: on-canvas align/justify overlay ──────────────
+   Pinned to the zone's top-right, revealed on zone hover. Edit-mode
+   only (added to the [data-builder-mode="preview"] hide cluster).
+   Writes container align/justify tokens via setZoneLayout — no
+   coordinates, export-neutral. */
+.zone-layout-overlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--b-radius-sm, 6px);
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity 0.12s var(--bc-ease, ease), transform 0.12s var(--bc-ease, ease);
+}
+/* Reveal on zone hover or when a control inside has focus (keyboard). */
+.zone-drop-container:hover > .zone-layout-overlay,
+.zone-layout-overlay:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+/* Hide while this zone is an active drop target so it never sits over a
+   block being dragged in. */
+.zone-drop-container.is-over > .zone-layout-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+.zlo-group { display: flex; align-items: center; gap: 1px; }
+.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--glass-border-subtle); }
+.zlo-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.7));
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.zlo-btn .material-symbols-outlined { font-size: 17px; }
+.zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-btn.active { background: var(--bc-accent); color: #fff; }
+.zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+/* Gap snap-handle: drag horizontally (or arrow keys) to magnetize the zone
+   gap to a token stop. Token-snapped by construction, never an arbitrary px. */
+.zlo-gap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--b-fg2, rgba(255, 255, 255, 0.7));
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.zlo-gap:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-gap:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+.zlo-gap .material-symbols-outlined { font-size: 15px; }
+.zlo-gap-val { min-width: 14px; text-align: center; }
 
 /* Issue #79: zone preview when a library tile is being hovered. The
    tile's onMouseEnter sets `libraryHoverZone` in the store; the
@@ -13718,6 +14193,51 @@
 .insertion-slot:focus-within .insertion-slot-line {
   background: var(--bc-accent-muted);
 }
+
+/* ── Placement Option 1: real drop target ─────────────────────────
+   Invisible hit-area measured by dnd-kit. It bleeds ~9px into the
+   neighbouring blocks so the otherwise 1px gap is reliably catchable
+   during a drag. `pointer-events: none` keeps clicks on neighbours and
+   the + button intact; absolute positioning adds zero layout height. */
+.insertion-slot-hit {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.insertion-slot-horizontal .insertion-slot-hit {
+  left: 0;
+  right: 0;
+  top: -9px;
+  bottom: -9px;
+}
+.insertion-slot-vertical .insertion-slot-hit {
+  top: 0;
+  bottom: 0;
+  left: -9px;
+  right: -9px;
+}
+/* Active insertion line — shown while a block is dragged over this gap.
+   Bright accent + soft glow + endpoint caps so the user sees EXACTLY
+   where the block will land ("drops exactly here"). */
+.insertion-slot.is-drop-target .insertion-slot-line {
+  background: var(--bc-accent);
+  box-shadow: 0 0 10px 1px var(--bc-accent-glow, rgba(73, 208, 190, 0.55));
+}
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line { height: 2px; }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line { width: 2px; }
+.insertion-slot.is-drop-target .insertion-slot-line::before,
+.insertion-slot.is-drop-target .insertion-slot-line::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bc-accent);
+}
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line::before { left: -3px; top: 50%; transform: translateY(-50%); }
+.insertion-slot-horizontal.is-drop-target .insertion-slot-line::after  { right: -3px; top: 50%; transform: translateY(-50%); }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line::before { top: -3px; left: 50%; transform: translateX(-50%); }
+.insertion-slot-vertical.is-drop-target .insertion-slot-line::after  { bottom: -3px; left: 50%; transform: translateX(-50%); }
 
 /* The + button - 24px circle, accent foreground on raised surface.
    Lives in the center of the strip; only visible on hover/focus. */

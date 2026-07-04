@@ -35,6 +35,8 @@ import React, { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { CanvasDndProvider, BuilderCanvas, DSPreviewStyles } from "./PreviewPanel";
 import { PresentBar } from "./PresentBar";
+import { AmendableContext } from "./previewAmendable";
+import { PresentAmendComposer } from "./PresentAmendComposer";
 
 export function PresentStage({
   /* "recipient" + sharedHash are passed by SharedPreview (the shared-link
@@ -62,6 +64,12 @@ export function PresentStage({
      shows 0/0/0. Mirroring the store value keeps both modes on one box
      model ("component locations and padding styles the same"). */
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+
+  /* Amend flow (Phase 1): only the AUTHOR's Present mode is amendable —
+     clicking a block selects it for the in-place composer. The shared-link
+     recipient variant stays a pure read-only preview. */
+  const amendable = barVariant !== "recipient";
+  const clearSelection = useBuilder((s) => s.clearSelection);
 
   const stageRef = useRef<HTMLDivElement | null>(null);
 
@@ -101,11 +109,28 @@ export function PresentStage({
           the other shells, so a Carbon canvas styles correctly here. */}
       <DSPreviewStyles />
 
-      <CanvasDndProvider readOnly>
-        <div className="present-stage-viewport">
-          <BuilderCanvas framed responsive resizableSidebar allowEmptyState />
-        </div>
-      </CanvasDndProvider>
+      <AmendableContext.Provider value={amendable}>
+        <CanvasDndProvider readOnly>
+          <div
+            className="present-stage-viewport"
+            onClick={
+              amendable
+                ? (e) => {
+                    /* Click on empty stage (not a block) clears the amend
+                       selection. Block clicks select via SortableBlock and
+                       carry a [data-block-id] ancestor, so they're skipped. */
+                    if (!(e.target as HTMLElement).closest("[data-block-id]")) {
+                      clearSelection();
+                    }
+                  }
+                : undefined
+            }
+          >
+            <BuilderCanvas framed responsive resizableSidebar allowEmptyState />
+          </div>
+        </CanvasDndProvider>
+        {amendable && <PresentAmendComposer />}
+      </AmendableContext.Provider>
 
       <PresentBar variant={barVariant} sharedHash={sharedHash} />
     </div>
