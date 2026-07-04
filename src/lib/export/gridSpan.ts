@@ -11,8 +11,13 @@ import type { Block } from "@/store/useBuilder";
    full row (12, which normalizeColumns maps to the DS's full native
    width). Spans stay RELATIVE so the container-level mobile collapse
    keeps reflowing them.
+
+   The parameter is Pick<Block, "layout"> (spanOf only reads
+   block.layout?.width): the Inspector's LayoutSection passes a
+   structural { id; type; props; layout? } block, not a full Block.
+   Type-only loosening — every exporter still passes Block.
    ────────────────────────────────────────────────────────────── */
-export function spanOf(block: Block): number {
+export function spanOf(block: Pick<Block, "layout">): number {
   const w = block.layout?.width;
   if (typeof w === "string") {
     if (w.endsWith("fr")) {

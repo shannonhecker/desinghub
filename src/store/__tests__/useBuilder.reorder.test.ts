@@ -38,4 +38,19 @@ describe("useBuilder — moveBlockUp / moveBlockDown reorder (powers Up/Down nud
     useBuilder.getState().moveBlockDown("header", "zzz");
     expect(ids()).toEqual(["a", "b", "c"]);
   });
+
+  it("moveBlockUp / moveBlockDown leave the selection untouched (Inspector stays on the block across nudges)", () => {
+    useBuilder.setState({
+      selectedBlockId: "b",
+      selectedBlockIds: ["b"],
+      selectedBlockZone: "header",
+    });
+    useBuilder.getState().moveBlockUp("header", "b");
+    expect(useBuilder.getState().selectedBlockId).toBe("b");
+    expect(useBuilder.getState().selectedBlockIds).toEqual(["b"]);
+    useBuilder.getState().moveBlockDown("header", "b");
+    expect(useBuilder.getState().selectedBlockId).toBe("b");
+    expect(useBuilder.getState().selectedBlockIds).toEqual(["b"]);
+    expect(ids()).toEqual(["a", "b", "c"]);
+  });
 });

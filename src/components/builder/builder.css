@@ -8738,13 +8738,23 @@
    (e.g. Height before P3 wires it). Reads as present-but-inert, with a
    tooltip on hover, rather than a missing control. */
 .inspector-toggle-btn:disabled,
+.inspector-toggle-btn[aria-disabled="true"],
 .inspector-toggle-group[aria-disabled="true"] .inspector-toggle-btn {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.inspector-toggle-btn:disabled:hover {
+.inspector-toggle-btn:disabled:hover,
+.inspector-toggle-btn[aria-disabled="true"]:hover {
   background: transparent;
   color: var(--b-fg2, rgba(245, 247, 250, 0.62));
+}
+
+/* P4 Order Up/Down — momentary action buttons (not toggles). min-height
+   lifts them to the WCAG 2.5.8 24px minimum target without touching the
+   global toggle sizing (dense desktop panel: deliberate 24px, not the
+   44px touch spec). */
+.inspector-order-btn {
+  min-height: 24px;
 }
 
 .inspector-field-label {
