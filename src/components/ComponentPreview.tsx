@@ -17,6 +17,7 @@ import {
   COMPONENT_GUIDANCE,
   COMPONENT_TOKENS,
   COMPONENT_ANATOMY,
+  COMPONENT_ACCESSIBILITY,
   COMPONENT_VARIANT_NAMING,
   DS_PROPS,
   type UiKitComponentId,
@@ -476,7 +477,72 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <TokenSwatches tokens={tokens} t={t} scopeRef={scopeRef} />
     </section>
   ) : null;
-  const accessibilitySection = (
+  /* Accessibility — data-gated, mirroring the anatomy/guidance pattern: when
+     COMPONENT_ACCESSIBILITY carries an entry for this component + DS, render
+     its real keyboard map + ARIA/SR notes (+ optional contrast line) using the
+     theme-skinned section styling; otherwise fall back to the shared WCAG
+     boilerplate. Strings only, colour-free shell — skins from the theme `t`. */
+  const a11y = metaId ? COMPONENT_ACCESSIBILITY[metaId as UiKitComponentId]?.[ds] : undefined;
+  const a11yListStyle: React.CSSProperties = {
+    listStyle: "none", margin: "0 0 24px", padding: 0, display: "grid", gap: 10,
+  };
+  const a11yItemStyle: React.CSSProperties = {
+    display: "flex", gap: 12, alignItems: "flex-start",
+    color: t.fg2, font: `400 14px/1.45 ${t.font}`,
+  };
+  const a11yMarkerStyle: React.CSSProperties = {
+    flex: "0 0 auto", color: t.accent, fontSize: 18, lineHeight: "21px",
+  };
+  const a11ySubheadStyle: React.CSSProperties = {
+    margin: "0 0 12px", color: t.fg, font: `600 15px/1.3 ${t.font}`,
+  };
+  const accessibilitySection = a11y ? (
+    <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
+      <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
+      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+        How the {comp.name.toLowerCase()} behaves with the keyboard and assistive
+        technology in this design system.
+      </p>
+
+      <h3 style={a11ySubheadStyle}>Keyboard</h3>
+      <ul style={a11yListStyle}>
+        {a11y.keyboard.map((line, i) => (
+          <li key={`kb-${i}`} style={a11yItemStyle}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
+              keyboard
+            </span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+
+      <h3 style={a11ySubheadStyle}>Screen reader &amp; ARIA</h3>
+      <ul style={a11yListStyle}>
+        {a11y.aria.map((line, i) => (
+          <li key={`aria-${i}`} style={a11yItemStyle}>
+            <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
+              hearing
+            </span>
+            <span>{line}</span>
+          </li>
+        ))}
+      </ul>
+
+      {a11y.contrast && (
+        <>
+          <h3 style={a11ySubheadStyle}>Contrast</h3>
+          <ul style={{ ...a11yListStyle, marginBottom: 0 }}>
+            <li style={a11yItemStyle}>
+              <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
+                contrast
+              </span>
+              <span>{a11y.contrast}</span>
+            </li>
+          </ul>
+        </>
+      )}
+    </section>
+  ) : (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
       <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
       <p className="dh-section-lede" style={{ color: t.fg3 }}>
