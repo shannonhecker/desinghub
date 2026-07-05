@@ -4,7 +4,7 @@ import {
   VALID_DESIGN_SYSTEMS,
   type DesignSystem,
 } from "../buildSystemPrompt";
-import { SYSTEM_PROMPT } from "../chatSystem";
+import { SYSTEM_PROMPT, MAX_ADD_BLOCKS_PER_TURN } from "../chatSystem";
 
 describe("buildSystemPrompt", () => {
   it("includes the Salt addendum for 'salt'", () => {
@@ -173,5 +173,71 @@ describe("buildSystemPrompt — explicit add-requests override generation defaul
 
   it("relaxes the one-table rule when the user explicitly asks for more", () => {
     expect(SYSTEM_PROMPT).toContain("the user explicitly asks for another table");
+  });
+});
+
+/* Chat add-anything: the prompt must guarantee that ANY block type can go in
+   ANY zone, that explicit add-requests (including duplicates and polite
+   question-form asks) always produce an addBlock in the same turn, and that
+   every composition limit is scoped to auto-generation only. These pins keep
+   a future prompt refactor from silently reintroducing refusals. */
+describe("buildSystemPrompt — any block, any zone, duplicates always land", () => {
+  it("declares any block type can live in any zone", () => {
+    expect(SYSTEM_PROMPT).toContain("ANY block type");
+    expect(SYSTEM_PROMPT).toContain("can go in ANY zone");
+  });
+
+  it("routes a user-named zone into the addBlock zone field", () => {
+    expect(SYSTEM_PROMPT).toContain("When the user names a zone");
+  });
+
+  it("budget + hard ceiling never block an explicit add-request", () => {
+    expect(SYSTEM_PROMPT).toContain("add-request is never blocked by them");
+  });
+
+  it("classifies polite question-form change requests as BUILD requests", () => {
+    expect(SYSTEM_PROMPT).toContain("is a BUILD request, not a question");
+  });
+
+  it("explicit adds always emit addBlock in the same turn", () => {
+    expect(SYSTEM_PROMPT).toContain("ALWAYS gets an addBlock");
+  });
+
+  it("explicit zone-move requests execute via moveBlock", () => {
+    expect(SYSTEM_PROMPT).toContain("do it - emit moveBlock");
+  });
+
+  it("scopes the answers-a-real-question test to model-chosen blocks", () => {
+    expect(SYSTEM_PROMPT).toContain("is its own justification");
+  });
+
+  it("scopes the one-primary-button rule to auto-generation", () => {
+    expect(SYSTEM_PROMPT).toContain("explicit ask for more primaries");
+  });
+
+  it("explicit table asks derive domain columns and rows from context", () => {
+    expect(SYSTEM_PROMPT).toContain("deriving domain columns and rows");
+  });
+});
+
+/* Honest partial delivery: applyAIActions hard-caps addBlock actions per
+   turn, so the prompt must state the cap and forbid claiming quantities
+   that were never emitted. The number is interpolated from the shared
+   constant so prompt and runtime cannot drift apart. Freeform deixis:
+   "could this chart go in the sidebar?" with two charts and nothing
+   selected must trigger a which-one question, not an arbitrary move. */
+describe("buildSystemPrompt: add-cap honesty + freeform disambiguation", () => {
+  it("states the hard per-turn addBlock cap using the runtime constant", () => {
+    expect(SYSTEM_PROMPT).toContain(
+      `at most ${MAX_ADD_BLOCKS_PER_TURN} addBlock actions per turn`,
+    );
+  });
+
+  it("forbids claiming a quantity that was not emitted", () => {
+    expect(SYSTEM_PROMPT).toContain("Never claim a quantity you did not emit");
+  });
+
+  it("guards ambiguous deixis in freeform scope with a which-one question", () => {
+    expect(SYSTEM_PROMPT).toContain("ask which one first");
   });
 });

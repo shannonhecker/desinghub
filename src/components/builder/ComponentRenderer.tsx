@@ -1254,8 +1254,7 @@ function SimulatedCheckboxBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const label = (block?.props.label as string) ?? "Accept terms and conditions";
   const defaultChecked = Boolean(block?.props.defaultChecked);
 
@@ -1271,8 +1270,7 @@ function SimulatedSwitchBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const label = (block?.props.label as string) ?? "Enable Notifications";
   const defaultOn = Boolean(block?.props.defaultOn);
 
@@ -1288,8 +1286,7 @@ function SimulatedDropdownBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const placeholder = (block?.props.placeholder as string) ?? "Select an option";
   /* A `value` means the field is meant to look CHOSEN (renders in primary ink);
      an empty/absent `value` keeps `placeholder` showing in the muted tier. */
@@ -1309,8 +1306,11 @@ function SimulatedDataTableBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  /* Chat + AI adds can place a table in ANY zone, so both the prop
+     read and the describe-bar write below must target the zone the
+     block actually lives in - the old body-only s.blocks lookup made
+     a header/sidebar/footer table ignore its AI-passed columns/rows. */
+  const { block, update } = useBlockInAnyZone(blockId);
   const data = (block?.props.rows as unknown[]) ?? undefined;
   const columns = (block?.props.columns as string[]) ?? undefined;
   const [generating, setGenerating] = useState(false);
@@ -1319,31 +1319,30 @@ function SimulatedDataTableBlock({
   /* AI-describe: POST the description to the generate-table route, then
      write the sanitized {columns, rows} straight onto the block's props.
      The store update re-renders both this edit view and the preview, so
-     "describe the records you want" finally does something. */
-  const onGenerate = useCallback(
-    async (description: string) => {
-      if (!blockId) return;
-      setGenerating(true);
-      setGenError(null);
-      try {
-        const res = await fetch("/api/builder/generate-table", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description }),
-        });
-        const payload = (await res.json()) as { columns?: string[]; rows?: string[][]; error?: string };
-        if (!res.ok || !Array.isArray(payload.columns)) {
-          throw new Error(payload.error || "Could not generate table data");
-        }
-        useBuilder.getState().updateBlockProps(blockId, { columns: payload.columns, rows: payload.rows ?? [] });
-      } catch (e) {
-        setGenError(e instanceof Error ? e.message : "Could not generate table data");
-      } finally {
-        setGenerating(false);
+     "describe the records you want" finally does something. Plain
+     closure (no useCallback): `update` is re-derived per render, so
+     memoizing here would pin a stale zone after a cross-zone move. */
+  const onGenerate = async (description: string) => {
+    if (!blockId) return;
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const res = await fetch("/api/builder/generate-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description }),
+      });
+      const payload = (await res.json()) as { columns?: string[]; rows?: string[][]; error?: string };
+      if (!res.ok || !Array.isArray(payload.columns)) {
+        throw new Error(payload.error || "Could not generate table data");
       }
-    },
-    [blockId],
-  );
+      update({ columns: payload.columns, rows: payload.rows ?? [] });
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "Could not generate table data");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <SimulatedDataTable
@@ -1364,8 +1363,7 @@ function SimulatedProgressBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const label = (block?.props.label as string) ?? "Uploading assets...";
   const value = Number(block?.props.value ?? 50);
 
@@ -1379,8 +1377,7 @@ function SimulatedAvatarBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const initials = (block?.props.initials as string) ?? "AB";
   const size = (block?.props.size as "sm" | "md" | "lg") ?? "md";
   const presence = (block?.props.presence as "available" | "busy" | "away" | "offline" | undefined) || undefined;
@@ -1398,8 +1395,7 @@ function SimulatedTabsBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const csv = (block?.props.tabsCsv as string) ?? "General, Security, Notifications";
   const tabs = csv.split(",").map((s) => s.trim()).filter(Boolean);
 
@@ -1442,8 +1438,7 @@ function SimulatedTooltipBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const text = (block?.props.text as string) ?? "This is a simulated tooltip";
   const buttonLabel = (block?.props.buttonLabel as string) ?? "Hover me";
 
@@ -1457,8 +1452,7 @@ function SimulatedDatePickerBlock({
   system: DesignSystem;
   blockId?: string;
 }) {
-  const blocks = useBuilder((s) => s.blocks);
-  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const { block } = useBlockInAnyZone(blockId);
   const month = (block?.props.month as string) ?? "October";
   const year = Number(block?.props.year ?? 2026);
 
