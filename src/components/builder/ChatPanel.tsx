@@ -5,6 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI, CHAT_ERROR_PREFIXES } from "@/lib/useChatAPI";
+import { useSpeechInput, type SpeechInputStatus } from "@/lib/useSpeechInput";
 import { saveTurnSnapshot, getTurnSnapshot } from "@/lib/turnSnapshots";
 import { restoreSnapshot } from "@/lib/builderHistory";
 import { TurnHistoryCard } from "./cards/TurnHistoryCard";
@@ -54,6 +55,21 @@ function hasMarkdown(text: string): boolean {
    a card instantly populates all four canvas
    zones with a realistic template layout.
    ═══════════════════════════════════════════ */
+
+/* ── Voice dictation announcements (sr-only status region + hint).
+   Textarea value changes are not announced by screen readers, so the
+   dictation lifecycle needs its own polite live region. Copy is
+   browser-agnostic: Safari surfaces service-not-allowed when OS
+   dictation is off, so no Chrome-specific instructions. ── */
+const VOICE_ANNOUNCEMENTS: Record<SpeechInputStatus, string> = {
+  listening: "Listening",
+  stopped: "Dictation stopped",
+  "no-speech": "Dictation stopped",
+  denied:
+    "Microphone is blocked for this site. Allow it in your browser settings, then try again.",
+  network: "Voice input needs a network connection",
+  "audio-capture": "No microphone found",
+};
 
 /* ── DS quick-switch (subtle affordance in hero) ── */
 const STYLE_CHIPS: { label: string; value: DesignSystem }[] = [
@@ -387,7 +403,7 @@ export function ChatPanel() {
     setTemplatesDrawerOpen,
     ensureSessionStarted,
     wizardStep, setWizardStep, builtViaWizard, setBuiltViaWizard,
-    chatMode, toggleChatMode, setChatOpen,
+    chatMode, toggleChatMode, chatOpen, setChatOpen,
   } = useBuilder();
 
   /* Backend feature flags from useBackendStatus (mounted in BuilderApp).
@@ -457,6 +473,85 @@ export function ChatPanel() {
      re-render and survives the effect's own setInputText. */
   const promptFiredRef = useRef(false);
 
+  /* ── Voice dictation (restores the mic removed in 87377bd) ──
+     `listening` lives in the hook, not the store: the old dormant
+     isVoiceActive/toggleVoice pair was toggle-only and onend needs
+     set-false semantics. The composer text present when dictation
+     starts is snapshotted so speech appends to it instead of
+     replacing it. Speech only fills the composer - no auto-send. */
+  const dictationBaseRef = useRef("");
+  const micBtnRef = useRef<HTMLButtonElement>(null);
+  const [voiceStatus, setVoiceStatus] = useState<SpeechInputStatus | null>(null);
+  /* Bumped on EVERY status callback so a repeat of the same status
+     (second denied in a row) still re-runs the announcement cycle. */
+  const [voiceStatusTick, setVoiceStatusTick] = useState(0);
+  const {
+    supported: speechSupported,
+    listening,
+    toggle: toggleSpeech,
+    abort: abortDictation,
+    resetTranscript,
+  } = useSpeechInput({
+    onTranscript: (transcript) => {
+      const base = dictationBaseRef.current;
+      setInputText(base && transcript ? `${base} ${transcript}` : base || transcript);
+    },
+    onStatus: (status) => {
+      setVoiceStatus(status);
+      setVoiceStatusTick((n) => n + 1);
+      /* Refocus so Enter-to-send works right after dictation ends, but
+         only for user-initiated stops: focus sitting on the mic or the
+         composer. Silence timeouts must not yank focus mid-task, and an
+         error keeps focus on the mic button it happened on. */
+      if (status === "stopped") {
+        const active = document.activeElement;
+        if (active === micBtnRef.current || active === inputRef.current) {
+          inputRef.current?.focus();
+        }
+      }
+    },
+  });
+  const toggleDictation = () => {
+    if (!listening) dictationBaseRef.current = inputText.trim();
+    toggleSpeech();
+  };
+  const handleComposerChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+    /* A manual edit mid-dictation becomes the new base and the session
+       transcript rebases to empty, so the next result appends to the
+       edited text instead of rebuilding over it from the start snapshot. */
+    if (listening) {
+      dictationBaseRef.current = e.target.value.trim();
+      resetTranscript();
+    }
+  };
+  /* Docked minimize only CSS-hides the panel (.chat-slide-closed keeps it
+     mounted), so the hook's abort-on-unmount never fires there; stop the
+     mic explicitly whenever the chat closes. */
+  useEffect(() => {
+    if (!chatOpen) abortDictation();
+  }, [chatOpen, abortDictation]);
+  /* Mic errors get a visible hint under the composer. Unlike the
+     aiDisabled hint it is NOT aria-hidden: the live-region announcement
+     is transient, and the hint is the only place a screen reader user
+     can re-read the error afterwards. */
+  const voiceHint =
+    voiceStatus === "denied" || voiceStatus === "network" || voiceStatus === "audio-capture"
+      ? VOICE_ANNOUNCEMENTS[voiceStatus]
+      : null;
+  /* Live-region text lands via a clear-then-fill cycle: a repeated status
+     maps to an identical string, and without the intermediate clear the
+     text node never mutates, so screen readers announce nothing. */
+  const [voiceAnnouncement, setVoiceAnnouncement] = useState("");
+  useEffect(() => {
+    if (!voiceStatus) return;
+    setVoiceAnnouncement("");
+    const id = window.setTimeout(
+      () => setVoiceAnnouncement(VOICE_ANNOUNCEMENTS[voiceStatus]),
+      50,
+    );
+    return () => window.clearTimeout(id);
+  }, [voiceStatus, voiceStatusTick]);
 
   /* ── Lifecycle state for the status pill ──
      Derived from existing signals only:
@@ -893,6 +988,11 @@ export function ChatPanel() {
        below, so a bare drop after it would orphan the turn and lose the text). */
     if (!msg || isGenerating) return;
 
+    /* Abort any active dictation BEFORE addMessage clears the input:
+       abort(), not stop(), so a late onresult cannot resurrect the sent
+       text into the composer. Covers programmatic sends too. */
+    abortDictation();
+
     /* First freeform refinement after a wizard build: clear the flag so the
        Assumption Row resumes for AI/freeform builds. Only fires once the
        conversation has started (messages.length > 0) so it never clears
@@ -1160,7 +1260,12 @@ export function ChatPanel() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (hasText && !isGenerating) handleSend();
+      if (hasText && !isGenerating) {
+        /* Kill dictation before the send clears the input (see the
+           matching abort at the top of handleSend). */
+        abortDictation();
+        handleSend();
+      }
     } else if (e.key === "Escape" && selectedBlockId) {
       // Esc clears the click-to-edit scope without submitting anything
       setSelectedBlock(null, null);
@@ -1386,7 +1491,9 @@ export function ChatPanel() {
     </div>
   );
 
-  const placeholderText = selectedBlock
+  const placeholderText = listening && !inputText
+    ? "Listening…"
+    : selectedBlock
     ? `Edit this ${selectedBlockLabel?.friendly.toLowerCase() ?? "element"} - what should it say or do?`
     : awaitingDs
       ? "Pick a design system above, or type a different request…"
@@ -1685,7 +1792,7 @@ export function ChatPanel() {
               className="input-textarea"
               aria-label="Chat message input"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={handleComposerChange}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={handleKeyDown}
@@ -1694,6 +1801,33 @@ export function ChatPanel() {
             />
             <div className="input-toolbar">
               <div className="toolbar-right">
+                {/* Mic before the send/stop swap so that swap never
+                    reflows it; hidden (not disabled) when the Web
+                    Speech API is unavailable. Coexists with send so
+                    dictated text can be reviewed before sending. */}
+                {speechSupported && (
+                  <button
+                    ref={micBtnRef}
+                    type="button"
+                    className={`mic-btn${listening ? " active" : ""}`}
+                    onClick={toggleDictation}
+                    aria-pressed={listening}
+                    aria-label="Voice input"
+                    title={
+                      listening
+                        ? "Stop dictation"
+                        : "Dictate: speech fills the message box"
+                    }
+                  >
+                    <span
+                      className="material-symbols-outlined"
+                      style={{ fontSize: 20 }}
+                      aria-hidden="true"
+                    >
+                      {listening ? "stop" : "mic"}
+                    </span>
+                  </button>
+                )}
                 {isGenerating ? (
                   <button
                     className="stop-btn"
@@ -1720,6 +1854,19 @@ export function ChatPanel() {
               </div>
             </div>
           </div>
+          {/* Dictation lifecycle announcements for screen readers: the
+              textarea filling with speech is otherwise silent. Polite so
+              it never interrupts; kept out of the chat log region. */}
+          {speechSupported && (
+            <span className="sr-only" role="status">
+              {voiceAnnouncement}
+            </span>
+          )}
+          {voiceHint && (
+            <div className="chat-input-hint">
+              {voiceHint}
+            </div>
+          )}
           {/* Local-command hint — only surfaced when AI is disabled.
               Reveals the vocabulary that routes through processComponent-
               Command without an API key, so users don't have to guess
