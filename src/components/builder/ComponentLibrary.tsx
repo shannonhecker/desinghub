@@ -24,6 +24,8 @@ import {
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
+import { spanOf } from "@/lib/export/gridSpan";
+import { normalizeColumns } from "@/lib/layoutResolver";
 import { BUILDER_TEMPLATES, TEMPLATE_ORDER, type BuilderTemplate, type TemplateId } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
 import { titleFromTemplate } from "@/lib/sessionTitle";
@@ -358,6 +360,20 @@ function LayoutSection({
     const zl = s.zoneLayouts?.[zone];
     return zl?.mode === "grid" ? (zl.columns ?? 12) : null;
   });
+  /* P4 Order control (freeform only). Primitives-only selectors; freeform is
+     body-only (the canonical drag-path gate), so only s.blocks is ever read.
+     bodyIndex === -1 means the block is nested inside a LayoutGroup — the
+     adjacent-swap actions only reorder top-level blocks, so the control hides. */
+  const isFreeform = useBuilder((s) => s.placementMode === "freeform");
+  const bodyIndex = useBuilder((s) =>
+    zone === "body" ? s.blocks.findIndex((b) => b.id === block.id) : -1,
+  );
+  const bodyCount = useBuilder((s) => (zone === "body" ? s.blocks.length : 0));
+  const moveBlockUp = useBuilder((s) => s.moveBlockUp);
+  const moveBlockDown = useBuilder((s) => s.moveBlockDown);
+  /* M3 export is flexbox and auto-places by document order, so a column pin is
+     honored in the other four DS exports only — surfaced as copy, not a gate. */
+  const isM3 = useBuilder((s) => s.designSystem === "m3");
   const layout = block.layout ?? {};
 
   /* Numeric-only part of a LayoutWidth token, for editing. */
@@ -377,6 +393,21 @@ function LayoutSection({
      block ignores it (full-row or content-hugged), so the "Column start" control
      only surfaces for spanning widths inside a grid zone. */
   const isSpanning = typeof w === "string" && (w.endsWith("%") || w.endsWith("fr"));
+
+  /* P4: span-aware max for the Column start field. normalizeColumnStart already
+     pulls any start past cols - span + 1 flush at render/export time; clamping
+     the field to the same bound makes the UI honest (all placement modes).
+     The DISPLAYED value takes the same clamp: a pin stored before the block
+     widened (stale pin) renders flush at maxStart, so the field shows maxStart
+     rather than the stored, no-longer-rendered start. Entry and display now
+     agree with the canvas. */
+  const displaySpan = gridCols !== null ? normalizeColumns(spanOf(block), gridCols) : 12;
+  const maxStart = gridCols !== null ? Math.max(1, gridCols - displaySpan + 1) : 1;
+
+  /* P4 Order gate — equals the canonical drag-path freeform gate (zone ===
+     "body" + the zone's grid layout via gridCols !== null); bodyIndex !== -1
+     hides (not disables) the control for nested group children. */
+  const showOrder = isFreeform && zone === "body" && gridCols !== null && bodyIndex !== -1;
 
   /* Width sizing mode derived from the stored LayoutWidth union (P1 is
      visual-only — never rename the store values): fill/undefined → Fill,
@@ -550,22 +581,85 @@ function LayoutSection({
           <ScrubNumberField
             layout="stacked"
             label="Column start"
-            value={layout.gridCol !== undefined ? String(toDisplayColumn(layout.gridCol, gridCols)) : ""}
+            value={layout.gridCol !== undefined ? String(Math.min(maxStart, toDisplayColumn(layout.gridCol, gridCols))) : ""}
             placeholder="Auto"
             min={1}
-            max={gridCols}
+            max={maxStart}
             ariaLabel="Grid column start"
             onValueChange={(v) => {
               const n = parseInt(v, 10);
               updateBlockLayout(zone, block.id, {
                 gridCol:
                   Number.isFinite(n) && n >= 1
-                    ? toCanonicalColumn(Math.min(gridCols, n), gridCols)
+                    ? toCanonicalColumn(Math.min(maxStart, n), gridCols)
                     : undefined,
               });
             }}
           />
+          {/* P4 honesty: only when a pin is actually set on an M3 canvas.
+              No exporter change — M3 flexbox auto-place stays; copy tells
+              the truth instead. */}
+          {isM3 && layout.gridCol !== undefined && (
+            <p className="inspector-section-scope">Material export auto-places by order; the column pin applies in the other systems.</p>
+          )}
         </div>
+      )}
+
+      {/* P4 honesty: in freeform a hug/auto or px width can't take a column
+          pin (gridCol is honored only on % / fr spans). Shown ONLY for an
+          explicitly set non-fill width — fill is the default, so surfacing
+          the hint on every untouched block would be noise. Gated to top-level
+          blocks (bodyIndex !== -1): a nested group child resolves against the
+          group's synthetic layout, so switching it to % / fr would NOT enable
+          a body-grid pin and the hint's promise would be false there.
+          Auto/Grid modes keep today's silent-hidden behavior. */}
+      {isFreeform && zone === "body" && gridCols !== null && bodyIndex !== -1 && !isSpanning && w !== undefined && w !== "fill" && (
+        <p className="inspector-section-scope">Column pin needs a % or fr width.</p>
+      )}
+
+      {/* P4 Order control — freeform only. Row position is EMERGENT from
+          array order (the moat rule): the only mutation surface is the
+          existing moveBlockUp/moveBlockDown adjacent swaps, so history +
+          autosave come free and no row field is ever stored. aria-disabled
+          (not disabled) keeps focus on a button that dims under the pointer
+          at the bounds; the onClick guard + store bounds no-op make an
+          unguarded activation harmless anyway. */}
+      {showOrder && (
+        <div className="inspector-field">
+          <label className="inspector-field-label">
+            Order
+            {/* role="status" (house pattern: lib-search-count) + aria-atomic
+                so SRs read the whole "2 of 7", never a bare "2" (React only
+                mutates the index text node on reorder). Keyed by block.id so
+                selecting a DIFFERENT block replaces the live region instead
+                of mutating it — only reorders announce, not selection. */}
+            <span key={block.id} role="status" aria-live="polite" aria-atomic="true">{bodyIndex + 1} of {bodyCount}</span>
+          </label>
+          <div className="inspector-toggle-group" role="group" aria-label="Reorder block">
+            <button
+              type="button"
+              className="inspector-toggle-btn inspector-order-btn"
+              aria-label="Move up"
+              aria-disabled={bodyIndex === 0}
+              onClick={() => { if (bodyIndex !== 0) moveBlockUp(zone, block.id); }}
+            >Up</button>
+            <button
+              type="button"
+              className="inspector-toggle-btn inspector-order-btn"
+              aria-label="Move down"
+              aria-disabled={bodyIndex === bodyCount - 1}
+              onClick={() => { if (bodyIndex !== bodyCount - 1) moveBlockDown(zone, block.id); }}
+            >Down</button>
+          </div>
+          <p className="inspector-section-scope">Blocks flow in reading order. Vertical position is approximate. Exports stack blocks in this order.</p>
+        </div>
+      )}
+
+      {/* P4 honesty: a nested group child can't be reordered here (the
+          adjacent swaps only walk top-level blocks) — say so instead of
+          silently hiding the control, mirroring the width-pin hint above. */}
+      {isFreeform && zone === "body" && gridCols !== null && bodyIndex === -1 && (
+        <p className="inspector-section-scope">Nested blocks move with their group. Select the group to reorder.</p>
       )}
 
       {/* Advanced sizing — collapsed by default so Layout leads with its
