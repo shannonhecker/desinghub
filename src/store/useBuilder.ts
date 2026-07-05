@@ -264,7 +264,6 @@ interface BuilderState {
   // Chat
   messages: ChatMessage[];
   inputText: string;
-  isVoiceActive: boolean;
   isGenerating: boolean;
 
   // Design configuration
@@ -428,7 +427,6 @@ interface BuilderState {
   // Actions - Chat
   setInputText: (t: string) => void;
   addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => string;
-  toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
 
@@ -800,7 +798,6 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Chat - start empty so hero shows
   messages: [],
   inputText: '',
-  isVoiceActive: false,
   isGenerating: false,
 
   // Design configuration
@@ -927,7 +924,6 @@ export const useBuilder = create<BuilderState>((set) => ({
     }));
     return id;
   },
-  toggleVoice: () => set((s) => ({ isVoiceActive: !s.isVoiceActive })),
   setGenerating: (v) => set({ isGenerating: v }),
   clearChat: () => set({
     messages: [],
