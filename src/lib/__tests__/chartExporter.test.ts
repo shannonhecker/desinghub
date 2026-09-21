@@ -74,6 +74,76 @@ describe("chartExporter — chartBlockJsx mapping", () => {
   });
 });
 
+describe("chartExporter — chartBlockJsx carries the canvas's domain data", () => {
+  it("emits categories + series for axis charts (what the canvas renders is what exports)", () => {
+    const jsx = chartBlockJsx(
+      block("HighchartColumn", {
+        chartType: "column",
+        title: "Revenue by plan",
+        categories: ["Free", "Pro", "Enterprise"],
+        series: [{ name: "2025", data: [31, 46, 23] }],
+      }),
+      "light",
+    );
+    expect(jsx).toContain('categories={["Free","Pro","Enterprise"]}');
+    expect(jsx).toContain('series={[{"name":"2025","data":[31,46,23]}]}');
+  });
+
+  it("emits seriesData for pie / donut charts", () => {
+    const jsx = chartBlockJsx(
+      block("HighchartDonut", { chartType: "donut", seriesData: [{ name: "Direct", y: 38 }, { name: "Organic", y: 62 }] }),
+    );
+    expect(jsx).toContain('seriesData={[{"name":"Direct","y":38},{"name":"Organic","y":62}]}');
+  });
+
+  it("emits position-indexed colour overrides, keeping holes so slot N still maps to series N", () => {
+    const jsx = chartBlockJsx(block("HighchartLine", { chartType: "line", seriesColors: ["", "#FF0000"] }));
+    expect(jsx).toContain('colors={["","#FF0000"]}');
+  });
+
+  it("omits the data attributes when the block has none (defaults render in the export)", () => {
+    const jsx = chartBlockJsx(block("HighchartLine", { chartType: "line" }));
+    expect(jsx).toBe('<ChartBlock type="line" mode="light" />');
+  });
+
+  it("drops malformed data instead of emitting broken TSX", () => {
+    const jsx = chartBlockJsx(
+      block("HighchartBar", {
+        chartType: "bar",
+        categories: ["ok", 42, null, ""],
+        series: [{ name: "A", data: [1, "2", NaN, 3] }, { name: "no data" }, "junk"],
+        seriesData: [{ name: "x", y: "1" }, { name: "y", y: 2 }],
+        seriesColors: ["red", "#12345", "#ABCDEF", "javascript:alert(1)"],
+      }),
+    );
+    expect(jsx).toContain('categories={["ok"]}');
+    expect(jsx).toContain('series={[{"name":"A","data":[1,3]}]}');
+    expect(jsx).toContain('seriesData={[{"name":"y","y":2}]}');
+    expect(jsx).toContain('colors={["","","#ABCDEF",""]}');
+    expect(jsx).not.toContain("javascript:");
+  });
+
+  it("escapes strings that could break out of the JSX expression", () => {
+    const jsx = chartBlockJsx(
+      block("HighchartLine", { chartType: "line", categories: ['a"b', "c</script>", "d\u2028e"] }),
+    );
+    expect(jsx).toContain('categories={["a\\"b","c</script>","d\\u2028e"]}');
+    expect(jsx).not.toContain("\u2028");
+  });
+});
+
+describe("chartExporter — chartHelperSource honours the data props", () => {
+  it("ChartBlock accepts categories / series / seriesData / colors and threads them into the options", () => {
+    const src = chartHelperSource("salt");
+    expect(src).toContain("categories, series, seriesData, colors");
+    expect(src).toContain("props.categories ??");
+    expect(src).toContain('withType(props.series, "line"');
+    expect(src).toContain('withType(props.series, "column"');
+    expect(src).toContain("points(props.seriesData,");
+    expect(src).toContain("chartColors(colors)");
+  });
+});
+
 describe("chartExporter — chartImports content", () => {
   it("includes highcharts, react wrapper, and the 4 advanced modules", () => {
     const imports = chartImports();
