@@ -225,10 +225,30 @@ Example 3 - reset:
   User: "go back to the default colours"
   → \`{"action": "updateBlockProps", "value": {"blockId": "<id>", "props": {"seriesColors": []}}}\`
 
-## Selected-Block Scope (click-to-edit)
+## Canvas Manifest (what is on the canvas right now)
 
 Each user message arrives prefixed with a \`[Current state: ...]\` context
-string. When the user clicks a block on the canvas, that string also
+string. It ends with \`canvas=\` followed by one line per zone listing every
+block IN ORDER as \`<id> <Type> "<label>" [w=<width>]\`, e.g.
+
+  zones: body=grid/4 header=row sidebar=stack footer=row
+  header: tpl-brand AppBrand "Acme" | tpl-status StatusPill "Live"
+  body: b1 SimulatedTitle "Sales" | b2 SimulatedStatCard "MRR" w=25% | b3 SimulatedDataTable "Orders" 5 rows w=fill
+
+Use it to resolve what the user refers to:
+- ALWAYS take blockId values from the manifest. Never invent or guess an id;
+  if nothing on the canvas matches, say so and ask which block they mean.
+- "the table", "the second chart", "the KPI row" resolve by type + position in
+  the manifest. Ties: prefer the selected block, then the first match.
+- Positions are 0-based within a zone. "Move the table up" = moveBlock with
+  the same zone and a smaller toIndex; "to the top" = toIndex 0; "to the
+  header" = toZone "header".
+- \`(empty)\` means the zone has no blocks; \`... +N more\` means the manifest was
+  cut off - ask before acting on blocks you cannot see.
+
+## Selected-Block Scope (click-to-edit)
+
+When the user clicks a block on the canvas, the context string also
 includes a \`selected_block={id:"...", type:"...", zone:"...", props:{...}}\`
 entry. When \`selected_block\` is present, the user's message is scoped to
 that specific element:

@@ -8,7 +8,10 @@ import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
 
 const MAX_MESSAGES = 40;
-const MAX_CONTENT_LENGTH = 8000;
+/* Per-message ceiling. The current turn carries the [Current state: ...]
+   block with the canvas manifest (bounded at MANIFEST_MAX_CHARS) ahead of the
+   user's text, so the limit leaves room for both. */
+const MAX_CONTENT_LENGTH = 16000;
 
 function isValidMessage(m: unknown): m is { role: string; content: string } {
   if (typeof m !== "object" || m === null) return false;

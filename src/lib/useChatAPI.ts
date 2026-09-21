@@ -5,6 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
 import { applyAIActions } from "./applyAIActions";
 import { cleanHistoryForAPI } from "./cleanMessageHistory";
+import { buildCanvasManifest } from "./canvasManifest";
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -182,7 +183,13 @@ export function useChatAPI() {
     const selectedSuffix = selectedBlock
       ? `, selected_block={id:"${selectedBlock.id}", type:"${selectedBlock.type}", zone:"${store.selectedBlockZone ?? ""}", props:${propsJson}}`
       : "";
-    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}]`;
+    /* The canvas manifest lists every block with its real id (per zone, in
+       order) plus each zone's flow mode, so the model can target blocks the
+       user did not click ("move the table up", "delete the second chart").
+       It sits inside the same [Current state: ...] block so the prefix
+       stripper removes it from prior turns; only this turn carries it. */
+    const manifest = buildCanvasManifest(store);
+    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}\ncanvas=\n${manifest}]`;
     history.push({ role: "user", content: `${context}\n\n${userText}` });
 
     store.setGenerating(true);
