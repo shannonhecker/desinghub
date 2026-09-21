@@ -317,10 +317,11 @@ function lastTurnBuilt(events: ToolUseEvent[] | undefined): boolean {
   if (!events) return false;
   return events.some(
     (e) =>
-      e.action === "addBlock" ||
+      e.status !== "skipped" &&
+      (e.action === "addBlock" ||
       e.action === "setInterfaceType" ||
       e.action === "clearCanvas" ||
-      e.action === "setZoneLayout",
+      e.action === "setZoneLayout"),
   );
 }
 

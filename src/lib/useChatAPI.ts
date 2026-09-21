@@ -3,8 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
-import { applyAIActions } from "./applyAIActions";
+import { applyAIActions, type ApplyReport, type SkippedAction } from "./applyAIActions";
+import { emitToolUse } from "./toolUseEvents";
 import { cleanHistoryForAPI } from "./cleanMessageHistory";
+import { buildCanvasManifest } from "./canvasManifest";
+import { toolUseToAction } from "./chatTools";
+import type { AIAction } from "./parseAIResponse";
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -30,6 +34,18 @@ export const CHAT_ERROR_COPY = {
    builder's voice, and singular/plural aware. */
 export const CHAT_EMPTY_CONFIRM = (count: number): string =>
   `Done. ${count} ${count === 1 ? "change" : "changes"} applied to the canvas.`;
+
+/* Appended to the bubble when the client could not apply some of the
+   model's changes. It is part of the persisted message, so the model reads
+   it back next turn (with the fresh canvas manifest) and can correct itself
+   - e.g. a block id it guessed that does not exist. */
+export const CHAT_SKIPPED_NOTE = (skipped: SkippedAction[]): string => {
+  const head = skipped.length === 1 ? "One change" : `${skipped.length} changes`;
+  return `${head} could not be applied: ${skipped.map((s) => s.reason).join("; ")}.`;
+};
+
+/* Stand-in when the turn had no prose and NOTHING landed. */
+export const CHAT_NOTHING_APPLIED = "I couldn't apply those changes.";
 
 /* Prefixes ChatPanel uses to classify the last AI message as an error
    for the LifecyclePill. Kept next to the copy so they cannot drift. */
@@ -182,7 +198,13 @@ export function useChatAPI() {
     const selectedSuffix = selectedBlock
       ? `, selected_block={id:"${selectedBlock.id}", type:"${selectedBlock.type}", zone:"${store.selectedBlockZone ?? ""}", props:${propsJson}}`
       : "";
-    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}]`;
+    /* The canvas manifest lists every block with its real id (per zone, in
+       order) plus each zone's flow mode, so the model can target blocks the
+       user did not click ("move the table up", "delete the second chart").
+       It sits inside the same [Current state: ...] block so the prefix
+       stripper removes it from prior turns; only this turn carries it. */
+    const manifest = buildCanvasManifest(store);
+    const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}\ncanvas=\n${manifest}]`;
     history.push({ role: "user", content: `${context}\n\n${userText}` });
 
     store.setGenerating(true);
@@ -195,6 +217,12 @@ export function useChatAPI() {
     // RAF-batched accumulator
     let accumulated = "";
     let rafId: number | null = null;
+    /* Structured actions from the model's tool calls, in emission order
+       (the route emits one {tool_use} frame per completed block). */
+    const toolActions: AIAction[] = [];
+    /* Calls that never became actions: an unknown tool name, or input the
+       route could not parse. Reported with the client-side skips below. */
+    const frameSkipped: (SkippedAction & { value?: unknown })[] = [];
 
     const flushToStore = () => {
       rafId = null;
@@ -274,6 +302,38 @@ export function useChatAPI() {
       // Add placeholder AI message
       store.addMessage("ai", "...");
 
+      /* One SSE frame: text delta, structured tool call, or a mid-stream
+         error. `{error}` throws OUTSIDE the JSON.parse try in the callers so
+         it propagates to the outer catch (user-facing error + LifecyclePill). */
+      type Frame = {
+        text?: string;
+        error?: string;
+        tool_use?: { name?: unknown; input?: unknown };
+        tool_skipped?: { name?: unknown; reason?: unknown };
+      };
+      const handleFrame = (parsed: Frame | null): void => {
+        if (!parsed) return;
+        if (parsed.error) throw new Error(parsed.error);
+        if (parsed.text) {
+          accumulated += parsed.text;
+          scheduleFlush();
+        }
+        if (parsed.tool_use && typeof parsed.tool_use.name === "string") {
+          const action = toolUseToAction(parsed.tool_use.name, parsed.tool_use.input);
+          if (action) toolActions.push(action);
+          else {
+            console.warn(`[useChatAPI] Dropping unknown tool "${parsed.tool_use.name}"`);
+            frameSkipped.push({ action: parsed.tool_use.name, reason: `unknown tool "${parsed.tool_use.name}"`, value: parsed.tool_use.input });
+          }
+        }
+        if (parsed.tool_skipped) {
+          const name = String(parsed.tool_skipped.name);
+          const reason = String(parsed.tool_skipped.reason);
+          console.warn(`[useChatAPI] Server skipped tool "${name}": ${reason}`);
+          frameSkipped.push({ action: name, reason: `${name}: ${reason}` });
+        }
+      };
+
       // Carry over the trailing partial line between chunk reads. Without
       // this, a `data: {...}` event split across two network reads gets
       // dropped silently in the JSON.parse catch — visible to the user
@@ -295,22 +355,13 @@ export function useChatAPI() {
             const data = line.slice(6);
             if (data === "[DONE]") break;
 
-            let parsed: { text?: string; error?: string } | null = null;
+            let parsed: Frame | null = null;
             try {
               parsed = JSON.parse(data);
             } catch {
               // Skip malformed SSE data
             }
-            /* Surface mid-stream server errors instead of swallowing them.
-               The route emits {error} frames on stream failure (route.ts).
-               Throw OUTSIDE the JSON.parse try so it isn't re-caught here —
-               it propagates to the outer catch, which shows the user-facing
-               error and flips the LifecyclePill to its error state. */
-            if (parsed?.error) throw new Error(parsed.error);
-            if (parsed?.text) {
-              accumulated += parsed.text;
-              scheduleFlush();
-            }
+            handleFrame(parsed);
           }
         }
       }
@@ -320,14 +371,13 @@ export function useChatAPI() {
       if (leftover.startsWith("data: ")) {
         const data = leftover.slice(6);
         if (data && data !== "[DONE]") {
-          let parsed: { text?: string; error?: string } | null = null;
+          let parsed: Frame | null = null;
           try {
             parsed = JSON.parse(data);
           } catch {
             // Skip malformed final fragment
           }
-          if (parsed?.error) throw new Error(parsed.error);
-          if (parsed?.text) accumulated += parsed.text;
+          handleFrame(parsed);
         }
       }
 
@@ -335,27 +385,49 @@ export function useChatAPI() {
       if (rafId !== null) cancelAnimationFrame(rafId);
       flushToStore();
 
-      // Parse final response for actions
-      const { displayText, actions } = parseAIResponse(accumulated);
+      /* Actions: the model's tool calls (structured, schema-guided) plus any
+         legacy ```json fences still present in the prose, fences first so a
+         mixed response keeps the same relative order as before. */
+      const { displayText, actions: fenceActions } = parseAIResponse(accumulated);
+      const actions: AIAction[] = [...fenceActions, ...toolActions];
 
-      /* Resolve the bubble content. The model sometimes returns ONLY
-         json action fences (displayText === "") — overwriting the "..."
-         placeholder with "" leaves a silently blank bubble. Resolve:
-           • text present                 → show it (existing behaviour)
-           • no text + actions applied    → terse confirmation, not blank
-           • no text + no actions         → the turn produced nothing;
-                                            arm Retry via failedSend below
-         The empty/no-action case is handled after the bubble write so it
-         can anchor the retry affordance to this bubble's id. */
       const finalMsgs = useBuilder.getState().messages;
       const lastAi = finalMsgs[finalMsgs.length - 1];
+      const bubbleId = lastAi && lastAi.role === "ai" ? lastAi.id : undefined;
+
+      /* Apply the actions FIRST so the bubble can say what actually landed.
+         Phase 3a (N4): pass the bubble id so each emitted tool-use event
+         ties back to the assistant bubble that produced it. ChatPanel
+         groups events by messageId to render the inline cards. Calls that
+         never became actions (unknown tool, unparseable input) are
+         surfaced the same way. */
+      for (const f of frameSkipped) {
+        emitToolUse({ messageId: bubbleId, action: f.action, value: f.value, status: "skipped", reason: f.reason });
+      }
+      const report: ApplyReport =
+        actions.length > 0 ? applyAIActions(actions, bubbleId) : { applied: 0, skipped: [] };
+      const skipped: SkippedAction[] = [...frameSkipped, ...report.skipped];
+
+      /* Resolve the bubble content. The model sometimes returns ONLY
+         actions (displayText === "") — overwriting the "..." placeholder
+         with "" leaves a silently blank bubble. Resolve:
+           • text present                 → show it (existing behaviour)
+           • no text + changes applied    → terse confirmation, not blank
+           • no text + nothing applied    → say so (skips) or the generic
+                                            copy; arm Retry when the turn
+                                            produced nothing at all
+         Skipped changes are appended in every case: the note persists in
+         the message history, so the model sees next turn what it got wrong. */
       const emptyText = displayText.trim() === "";
-      const noTextNoActions = emptyText && actions.length === 0;
-      const resolvedContent = emptyText
-        ? actions.length > 0
-          ? CHAT_EMPTY_CONFIRM(actions.length)
-          : CHAT_ERROR_COPY.generic
+      const noTextNoActions = emptyText && actions.length === 0 && skipped.length === 0;
+      let resolvedContent = emptyText
+        ? report.applied > 0
+          ? CHAT_EMPTY_CONFIRM(report.applied)
+          : skipped.length > 0
+            ? CHAT_NOTHING_APPLIED
+            : CHAT_ERROR_COPY.generic
         : displayText;
+      if (skipped.length > 0) resolvedContent = `${resolvedContent}\n\n${CHAT_SKIPPED_NOTE(skipped)}`;
       if (lastAi && lastAi.role === "ai") {
         useBuilder.setState({
           messages: [...finalMsgs.slice(0, -1), { ...lastAi, content: resolvedContent }],
@@ -367,14 +439,6 @@ export function useChatAPI() {
          isn't stranded on a dead-end turn. */
       if (noTextNoActions && lastAi && lastAi.role === "ai") {
         setFailedSend({ messageId: lastAi.id, userText });
-      }
-
-      // Apply any actions from the response.
-      // Phase 3a (N4): pass `lastAi.id` so each emitted tool-use event
-      // ties back to the assistant bubble that produced it. ChatPanel
-      // groups events by messageId to render the inline cards.
-      if (actions.length > 0) {
-        applyAIActions(actions, lastAi?.id);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {

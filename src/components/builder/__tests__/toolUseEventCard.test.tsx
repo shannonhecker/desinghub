@@ -119,3 +119,25 @@ describe("ToolUseEventCard", () => {
     expect(c.querySelector(".tool-use-card__chevron")).toBeTruthy();
   });
 });
+
+describe("ToolUseEventCard — skipped actions", () => {
+  it("renders a 'Not applied' card with the reason, no undo and nothing to expand", () => {
+    const c = renderCard(
+      { action: "moveBlock", value: { blockId: "nope" }, status: "skipped", reason: 'no block with id "nope"', ts: 1 },
+      () => {},
+    );
+    const card = c.querySelector(".tool-use-card");
+    expect(card?.classList.contains("tool-use-card--skipped")).toBe(true);
+    expect(card?.getAttribute("data-status")).toBe("skipped");
+    expect(c.textContent).toContain("Not applied: move block");
+    expect(c.textContent).toContain('no block with id "nope"');
+    expect(c.querySelector(".tool-use-card__undo")).toBeNull();
+    expect(c.querySelector("[aria-expanded]")).toBeNull();
+  });
+
+  it("an unknown tool name still gets a card, named after the tool the model used", () => {
+    const c = renderCard({ action: "deployToProd", value: {}, status: "skipped", reason: 'unknown tool "deployToProd"', ts: 2 });
+    expect(c.textContent).toContain("Not applied: deploytoprod");
+    expect(c.textContent).toContain('unknown tool "deployToProd"');
+  });
+});

@@ -39,6 +39,9 @@ export interface ToolUseCardProps {
   /* Icon glyph (Material Symbols name) — variants in PR (b) pass the
      right one per action type. Base accepts any string. */
   icon: string;
+  /* "skipped": the action was NOT applied (unknown block id, invalid
+     value, cap). Renders the muted/warning treatment and never an undo. */
+  tone?: "applied" | "skipped";
   /* Short action label rendered on the card head (e.g. "Add block",
      "Switch design system"). PR (b) variants supply per-type copy. */
   title: string;
@@ -69,6 +72,7 @@ export interface ToolUseCardProps {
 
 export function ToolUseCard({
   icon,
+  tone = "applied",
   title,
   subtitle,
   staggerIndex = 0,
@@ -110,9 +114,10 @@ export function ToolUseCard({
 
   return (
     <div
-      className={`tool-use-card${undone ? " tool-use-card--undone" : ""}`}
+      className={`tool-use-card${undone ? " tool-use-card--undone" : ""}${tone === "skipped" ? " tool-use-card--skipped" : ""}`}
       style={{ ["--tu-stagger-index" as string]: staggerIndex }}
       data-action={title}
+      data-status={tone}
     >
       {expandable ? (
         <button
@@ -315,9 +320,32 @@ const TOOL_USE_ICON: Record<string, string> = {
   setZoneLayout: "view_module",
 };
 
+/* A change the client could not apply. Shows WHICH action and WHY (the
+   reason applyAIActions recorded) so a turn that "did nothing" is legible;
+   no undo, nothing to expand. */
+export function SkippedActionCard({ event, staggerIndex }: VariantProps) {
+  const title = TOOL_USE_TITLE[event.action] ?? event.action;
+  return (
+    <ToolUseCard
+      icon="block"
+      tone="skipped"
+      title={`Not applied: ${title.toLowerCase()}`}
+      staggerIndex={staggerIndex}
+      summary={
+        <span className="tool-use-card__summary-label">
+          {event.reason ?? "The builder could not apply this change."}
+        </span>
+      }
+    />
+  );
+}
+
 /* Single entry point ChatPanel renders per event: dispatches to the
    typed variant for the action, or the base card with raw params. */
 export function ToolUseEventCard({ event, staggerIndex = 0, onUndo }: VariantProps) {
+  if (event.status === "skipped") {
+    return <SkippedActionCard event={event} staggerIndex={staggerIndex} />;
+  }
   switch (event.action) {
     case "addBlock":
       return (

@@ -15965,6 +15965,14 @@
 .tool-use-card--undone {
   opacity: 0.62;
 }
+/* A change the client could not apply (Sprint D): same shell, a danger-tinted
+   edge + icon so the skip reads as a warning, not as another success. */
+.tool-use-card--skipped {
+  border-color: color-mix(in srgb, var(--bc-danger) 45%, var(--bc-border));
+}
+.tool-use-card--skipped .tool-use-card__icon {
+  color: var(--bc-danger);
+}
 
 @keyframes toolUseCardIn {
   to { opacity: 1; transform: translateY(0); }
