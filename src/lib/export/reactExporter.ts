@@ -11,6 +11,7 @@ import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
+import { buildStylesCss } from "./stylesCss";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -288,6 +289,30 @@ function renderZone(
   return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  ${tag.close}`;
 }
 
+/** One file of a multi-file export. */
+export interface ExportFile {
+  path: string;
+  contents: string;
+  mime: string;
+}
+
+/**
+ * The React export as the files it actually needs: the component (which
+ * imports ./styles.css) and the stylesheet. The Export panel shows both as
+ * tabs and downloads them together; exportReact() alone is the .tsx.
+ */
+export function exportReactFiles(): ExportFile[] {
+  const s = useBuilder.getState();
+  return [
+    { path: "dashboard.tsx", contents: exportReact(), mime: "text/typescript" },
+    {
+      path: "styles.css",
+      contents: buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light"),
+      mime: "text/css",
+    },
+  ];
+}
+
 export function exportReact(): string {
   const s = useBuilder.getState();
   const system = s.designSystem as SystemId;
@@ -331,6 +356,11 @@ export function exportReact(): string {
   const layoutImports = collectLayoutImports(system, [...usedPrimitives]);
 
   const imports = ['import React from "react";'];
+  /* The fallback stylesheet (per-DS token block + .btn/.card/… primitives for
+     any block the registry doesn't cover, plus the shell layout). It ships
+     alongside this file: Export → React → styles.css tab, and as src/styles.css
+     in the Vite project. Without it the generic-markup blocks render unstyled. */
+  imports.push('import "./styles.css";');
   /* Chart components use hooks + window, so the exported file must be a client
      component to also work if pasted into a Next.js App Router project. "use
      client" must be the file's first line; it is a harmless no-op in the

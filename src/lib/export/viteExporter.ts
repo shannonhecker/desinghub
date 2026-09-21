@@ -187,10 +187,11 @@ const INDEX_HTML = `<!doctype html>
 </html>
 `;
 
+/* App.tsx owns the `import "./styles.css"` (reactExporter emits it, so the
+   standalone React download and the Vite project share one contract). */
 const MAIN_TSX = `import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
