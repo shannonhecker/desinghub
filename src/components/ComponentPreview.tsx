@@ -104,7 +104,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
 
   /* Light vs dark + a Salt-family density, for the real per-cell VariantsMatrix
      renderer (mirrors DesignHubApp's isDark detection + ComponentRenderer's
-     density guard). M3/Fluent/Carbon ignore saltDensity in the renderer. */
+     density guard). M3/Fluent/Carbon map it onto component sizes. */
   const isDark = activeSystem === "salt" ? store.salt.themeKey.includes("dark")
     : activeSystem === "m3" ? store.m3.themeKey.startsWith("dark")
     : activeSystem === "uoaui" ? store.uoaui.themeKey === "dark"

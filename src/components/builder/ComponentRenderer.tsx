@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
+import { coerceDensity } from "@/lib/densitySize";
 import { RealComponentRenderer, canRenderReal } from "../ui-kit/RealComponentRenderer";
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { showToast } from "@/lib/toast";
@@ -1877,7 +1878,7 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
             system={system as SystemId}
             type={type}
             mode={builderMode === "dark" ? "dark" : "light"}
-            saltDensity={(["high", "medium", "low", "touch"].includes(density) ? density : "medium") as "high" | "medium" | "low" | "touch"}
+            saltDensity={coerceDensity(density)}
             props={props as Record<string, unknown>}
           />
         </BlockErrorBoundary>

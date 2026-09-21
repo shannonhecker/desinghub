@@ -79,7 +79,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
 }: CompareQuadrantProps) {
   /* Same wiring PreviewPanel applies to the main canvas: the extra class +
      data attrs under which the OFFICIAL token values are defined. */
-  const officialScope = getPreviewOfficialScope(ds as SystemId, mode, themeKey);
+  const officialScope = getPreviewOfficialScope(ds as SystemId, mode, themeKey, density);
   return (
     /* One labelled region per DS. The quadrant's zones are plain divs: five
        nested <main>/<header>/<nav>/<footer> would be five duplicate landmark

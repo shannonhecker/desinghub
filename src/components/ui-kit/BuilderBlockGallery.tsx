@@ -25,6 +25,7 @@ import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getPreviewOfficialScope } from "@/lib/officialTokens";
 import { ComponentRenderer } from "@/components/builder/ComponentRenderer";
 import { canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
+import { coerceDensity, type DensityLevel } from "@/lib/densitySize";
 import { PreviewReadOnlyContext } from "@/components/builder/previewReadOnly";
 import {
   kitByCategory,
@@ -33,13 +34,12 @@ import {
 } from "@/lib/kitCatalog";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
-/* Salt's provider density is one of these literals; the store stores it as a
-   plain string, so coerce to a known value (medium default) for the real
-   SaltProvider. Other DSs ignore this. */
-type SaltDensity = "high" | "medium" | "low" | "touch";
-function coerceSaltDensity(d: unknown): SaltDensity {
-  return d === "high" || d === "low" || d === "touch" ? d : "medium";
-}
+/* The shared density level is one of four literals; the store keeps it as a
+   plain string (Fluent's store slot is a size, small/medium/large), so coerce
+   to a known level (medium default). Salt/uoaui scale tokens from it; M3,
+   Fluent and Carbon map it onto their component sizes (densitySize). */
+type SaltDensity = DensityLevel;
+const coerceSaltDensity = coerceDensity;
 
 /* Light vs dark is encoded in each DS's themeKey (the `.builder-light
    .preview-*` overrides in builder.css govern light mode). Salt/M3/Fluent/
@@ -80,7 +80,7 @@ export function BuilderBlockGallery() {
      OFFICIAL `--salt-*` / `--cds-*` vars (loaded on /ui-kit via the
      @salt-ds/theme import + <OfficialTokenStyles>) resolve here and the
      `.preview-<ds>` bridge reads genuine DS values. No-op for M3/Fluent/uoaui. */
-  const officialScope = getPreviewOfficialScope(ds, light ? "light" : "dark", themeKey);
+  const officialScope = getPreviewOfficialScope(ds, light ? "light" : "dark", themeKey, densityOrSize);
 
   /* Carbon also needs the cds--<themeKey> ancestor so the @carbon FACSIMILE
      source vars (from getFullCSS) still resolve as a fallback; builder-light

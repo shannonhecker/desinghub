@@ -57,6 +57,7 @@ import {
 import { ArrowRight } from "@carbon/icons-react";
 import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 import type { SystemId } from "@/lib/componentApiRegistry";
+import { carbonSize, carbonSize2, type DensityLevel } from "@/lib/densitySize";
 
 /** Coerce a builder field to a string with a fallback (mirrors registry `s`). */
 const s = (v: unknown, fallback = ""): string => String(v ?? fallback);
@@ -108,8 +109,17 @@ function carbonStatusType(label: string): CarbonTagType {
   return "gray";
 }
 
-/** A render fn takes the block's resolved props and returns the real markup. */
-export type RealBlockRenderer = (props: Record<string, unknown>) => React.ReactNode;
+/** Per-render context the real renderer threads in alongside the block props:
+    the builder's shared density level, which Carbon maps onto its per-component
+    `size` ladder (uoaui sizes from CSS, so its renderers ignore it). */
+export interface RealBlockContext {
+  density: DensityLevel;
+}
+
+/** A render fn takes the block's resolved props (+ context) and returns the real markup. */
+export type RealBlockRenderer = (props: Record<string, unknown>, ctx?: RealBlockContext) => React.ReactNode;
+
+const densityOf = (ctx?: RealBlockContext): DensityLevel => ctx?.density ?? "medium";
 
 /* ── uoaui: variant -> button class suffix (mirrors uoauiButtonClass in
    componentApiRegistry). uoaui has NO danger button, so danger falls to
@@ -439,17 +449,18 @@ function carbonButtonKind(variant: string): CarbonButtonKind {
    the store-free gallery demo.
    ════════════════════════════════════════════════════════════════════ */
 const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
-  SimulatedButton: (p) =>
+  SimulatedButton: (p, ctx) =>
     React.createElement(
       CarbonButton,
-      { kind: carbonButtonKind(s(p.variant, "primary")), disabled: Boolean(p.disabled) },
+      { kind: carbonButtonKind(s(p.variant, "primary")), disabled: Boolean(p.disabled), size: carbonSize(densityOf(ctx)) },
       s(p.label, "Button"),
     ),
 
-  SimulatedTextInput: (p) => {
+  SimulatedTextInput: (p, ctx) => {
     const status = s(p.validationStatus);
     return React.createElement(CarbonTextInput, {
       id: fieldId(p, "input"),
+      size: carbonSize(densityOf(ctx)),
       labelText: s(p.label, "Label"),
       placeholder: s(p.placeholder),
       value: s(p.value) || undefined,
@@ -473,9 +484,10 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
     }),
 
   /* Carbon's Switch maps to Toggle (a labelled on/off switch). */
-  SimulatedSwitch: (p) =>
+  SimulatedSwitch: (p, ctx) =>
     React.createElement(CarbonToggle, {
       id: fieldId(p, "toggle"),
+      size: carbonSize2(densityOf(ctx)),
       labelText: s(p.label, "Switch"),
       toggled: Boolean(p.defaultOn),
       disabled: Boolean(p.disabled),
@@ -501,14 +513,14 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       s(p.text, "Learn more"),
     ),
 
-  SimulatedBadge: (p) =>
-    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Badge")),
+  SimulatedBadge: (p, ctx) =>
+    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")), size: carbonSize(densityOf(ctx)) }, s(p.label, "Badge")),
 
   /* Always render a plain CarbonTag (text-visible). DismissibleTag rendered as an
      empty grey block in the scoped dark stage, so we drop the × affordance in
      favour of a readable tag. */
-  SimulatedPill: (p) =>
-    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")) }, s(p.label, "Tag")),
+  SimulatedPill: (p, ctx) =>
+    React.createElement(CarbonTag, { type: carbonTagType(s(p.status, "default")), size: carbonSize(densityOf(ctx)) }, s(p.label, "Tag")),
 
   Alert: (p) =>
     React.createElement(CarbonInlineNotification, {
@@ -522,8 +534,8 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   AppBrand: (p) =>
     React.createElement(CarbonHeaderName, { href: "#", prefix: "" }, s(p.label, "App Name")),
 
-  StatusPill: (p) =>
-    React.createElement(CarbonTag, { type: carbonStatusType(s(p.label, "Active")) }, s(p.label, "Active")),
+  StatusPill: (p, ctx) =>
+    React.createElement(CarbonTag, { type: carbonStatusType(s(p.label, "Active")), size: carbonSize(densityOf(ctx)) }, s(p.label, "Active")),
 
   SimulatedProgress: (p) =>
     React.createElement(CarbonProgressBar, {
@@ -538,31 +550,33 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   /* A row of Carbon Buttons (selected=primary, rest=tertiary) — readable in both
      themes, unlike ContentSwitcher whose selected segment went dark-on-dark in the
      scoped dark stage. */
-  SimulatedSegmentedGroup: (p) => {
+  SimulatedSegmentedGroup: (p, ctx) => {
     const opts = csv(p.optionsCsv, ["Day", "Week", "Month"]);
     const di = num(p.defaultIndex, 0);
+    const size = carbonSize(densityOf(ctx));
     return React.createElement(
       "div",
       { style: { display: "inline-flex" } },
-      ...opts.map((o, i) => React.createElement(CarbonButton, { key: slug(o), kind: i === di ? "primary" : "tertiary", size: "sm" }, s(o))),
+      ...opts.map((o, i) => React.createElement(CarbonButton, { key: slug(o), kind: i === di ? "primary" : "tertiary", size }, s(o))),
     );
   },
 
-  SimulatedDropdown: (p) =>
+  SimulatedDropdown: (p, ctx) =>
     React.createElement(CarbonDropdown, {
       id: fieldId(p, "dropdown"),
+      size: carbonSize(densityOf(ctx)),
       titleText: "",
       label: s(p.placeholder, "Select an option"),
       items: ["Option 1", "Option 2", "Option 3"],
       itemToString: (item: unknown) => s(item),
     }),
 
-  SimulatedSearchbox: (p) =>
+  SimulatedSearchbox: (p, ctx) =>
     React.createElement(CarbonSearch, {
       id: fieldId(p, "search"),
       labelText: "Search",
       placeholder: s(p.placeholder, "Search..."),
-      size: "md",
+      size: carbonSize(densityOf(ctx)),
     }),
 
   SimulatedStatCard: (p) =>
@@ -586,7 +600,8 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
 
   /* PR-5: plain Carbon Table (not the DataTable render-prop) over the real
      columns/rows; status columns render as Carbon Tags. */
-  SimulatedDataTable: (p) => {
+  SimulatedDataTable: (p, ctx) => {
+    const size = carbonSize(densityOf(ctx));
     const columns = Array.isArray(p.columns) ? (p.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
     const rows = Array.isArray(p.rows) ? (p.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     if (rows.length === 0) {
@@ -594,7 +609,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
     }
     return React.createElement(
       CarbonTable,
-      null,
+      { size },
       React.createElement(
         CarbonTableHead,
         null,
@@ -612,7 +627,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
               return React.createElement(
                 CarbonTableCell,
                 { key: ci },
-                isStatusColumn(col) ? React.createElement(CarbonTag, { type: carbonTagType(statusToClass(v)) }, v) : v,
+                isStatusColumn(col) ? React.createElement(CarbonTag, { type: carbonTagType(statusToClass(v)), size }, v) : v,
               );
             }),
           ),

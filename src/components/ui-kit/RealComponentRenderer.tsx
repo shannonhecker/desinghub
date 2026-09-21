@@ -57,6 +57,15 @@ import { getFullCSS, getTheme } from "@/data/registry";
 import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
+import {
+  coerceDensity,
+  muiSize,
+  muiSize2,
+  fluentSize,
+  fluentSize2,
+  fluentCheckboxSize,
+  type DensityLevel,
+} from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 
 import {
@@ -333,7 +342,7 @@ function fluentButtonProps(variant: string): { appearance: "primary" | "secondar
   return map[variant] ?? map.primary;
 }
 
-type SaltDensity = "high" | "medium" | "low" | "touch";
+type SaltDensity = DensityLevel;
 type SaltMode = "light" | "dark";
 
 interface RealComponentRendererProps {
@@ -341,7 +350,10 @@ interface RealComponentRendererProps {
   type: string;
   /** Light vs dark, derived from the active theme by the gallery. */
   mode: SaltMode;
-  /** Salt density (high/medium/low/touch). Ignored by M3/Fluent. */
+  /** The builder's shared density level (Salt's high/medium/low/touch ladder).
+      Salt and uoaui scale their tokens from it; M3, Fluent and Carbon map it
+      onto their per-component `size` props (see src/lib/densitySize.ts). The
+      prop keeps its historical name so existing callers need no change. */
   saltDensity?: SaltDensity;
   /** The block's default props (variant/label/title/content/...). */
   props: Record<string, unknown>;
@@ -483,20 +495,45 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
       </SaltTable>
     );
   }
-  /* Default SaltProvider wraps children in a scoped `.salt-theme` element (no
-     global :root/body reset), so this nested provider can't leak to the app. */
+  /* `applyClassesTo="scope"`: a SaltProvider with no provider above it is a
+     ROOT provider, and Salt's default for a root provider is to stamp its
+     `.salt-theme.salt-density-*` classes on <html> — leaking the theme to the
+     whole document and, on the canvas, losing to the closer preview scope so
+     density never changed. "scope" renders a wrapper element that carries the
+     classes, so this subtree is self-contained and its density wins. */
   return (
-    <SaltProvider mode={mode} density={saltDensity ?? "medium"}>
+    <SaltProvider mode={mode} density={coerceDensity(saltDensity)} applyClassesTo="scope">
       {inner}
     </SaltProvider>
   );
 }
 
 /* ── M3 (MUI) real subtree ── */
-function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system">) {
+function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
   /* createTheme with the active mode; emotion styles are scoped per component
-     (no global reset). Memoise so the theme isn't rebuilt every render. */
-  const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+     (no global reset). MUI has no global density knob, so the shared density
+     level becomes theme-wide default `size` props: every sized component in
+     this subtree follows the builder's High/Medium/Low/Touch control without
+     each branch repeating the mapping. Memoise so the theme isn't rebuilt
+     every render. */
+  const density = coerceDensity(saltDensity);
+  const theme = React.useMemo(() => {
+    const size3 = muiSize(density);
+    const size2 = muiSize2(density);
+    return createTheme({
+      palette: { mode },
+      components: {
+        MuiButton: { defaultProps: { size: size3 } },
+        MuiCheckbox: { defaultProps: { size: size3 } },
+        MuiToggleButtonGroup: { defaultProps: { size: size3 } },
+        MuiTextField: { defaultProps: { size: size2 } },
+        MuiFormControl: { defaultProps: { size: size2 } },
+        MuiChip: { defaultProps: { size: size2 } },
+        MuiSwitch: { defaultProps: { size: size2 } },
+        MuiTable: { defaultProps: { size: size2 } },
+      },
+    });
+  }, [mode, density]);
   const disabled = Boolean(props.disabled);
   const validation = props.validationStatus as ValidationStatus;
   let inner: React.ReactNode = null;
@@ -536,7 +573,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
   } else if (type === "SimulatedLink") {
     inner = <MuiLink href="#" underline="hover">{s(props.text, "Learn more")}</MuiLink>;
   } else if (type === "SimulatedBadge") {
-    inner = <MuiChip label={s(props.label, "Badge")} color={muiChipColor(s(props.status, "default"))} size="small" />;
+    inner = <MuiChip label={s(props.label, "Badge")} color={muiChipColor(s(props.status, "default"))} />;
   } else if (type === "SimulatedPill") {
     inner = <MuiChip label={s(props.label, "Tag")} color={muiChipColor(s(props.status, "default"))} {...(props.dismissible ? { onDelete: () => {} } : {})} />;
   } else if (type === "Alert") {
@@ -544,7 +581,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
   } else if (type === "AppBrand") {
     inner = <MuiTypography variant="h6" noWrap component="div">{s(props.label, "App Name")}</MuiTypography>;
   } else if (type === "StatusPill") {
-    inner = <MuiChip label={s(props.label, "Active")} color="success" size="small" variant="outlined" />;
+    inner = <MuiChip label={s(props.label, "Active")} color="success" variant="outlined" />;
   } else if (type === "FooterText") {
     inner = <MuiTypography variant="body2" color="text.secondary">{s(props.label, "Footer")} · {s(props.version, "v1.0")}</MuiTypography>;
   } else if (type === "SimulatedProgress") {
@@ -564,7 +601,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
     );
   } else if (type === "SimulatedDropdown") {
     inner = (
-      <MuiFormControl fullWidth size="small">
+      <MuiFormControl fullWidth>
         <MuiInputLabel id="sel-label">{s(props.placeholder, "Select an option")}</MuiInputLabel>
         <MuiSelect labelId="sel-label" label={s(props.placeholder, "Select an option")} defaultValue="">
           <MuiMenuItem value="opt1">Option 1</MuiMenuItem>
@@ -577,7 +614,6 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
       <MuiTextField
         placeholder={s(props.placeholder, "Search...")}
         variant="outlined"
-        size="small"
         slotProps={{ input: { readOnly: true, startAdornment: (<MuiInputAdornment position="start"><span className="material-symbols-outlined">search</span></MuiInputAdornment>) } }}
       />
     );
@@ -585,7 +621,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
     const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
     const selected = slug(opts[num(props.defaultIndex, 0)] ?? opts[0]);
     inner = (
-      <MuiToggleButtonGroup exclusive value={selected} size="small">
+      <MuiToggleButtonGroup exclusive value={selected}>
         {opts.map((o) => <MuiToggleButton key={slug(o)} value={slug(o)}>{s(o)}</MuiToggleButton>)}
       </MuiToggleButtonGroup>
     );
@@ -614,7 +650,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
     const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
     inner = (
       <MuiTableContainer component={MuiPaper}>
-        <MuiTable size="small">
+        <MuiTable>
           <MuiTableHead>
             <MuiTableRow>{cols.map((c) => <MuiTableCell key={c} sx={{ fontWeight: 600 }}>{s(c)}</MuiTableCell>)}</MuiTableRow>
           </MuiTableHead>
@@ -623,7 +659,7 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
               <MuiTableRow key={ri} hover>
                 {cols.map((col, ci) => {
                   const v = resolveCell(row, col, ci);
-                  return <MuiTableCell key={ci}>{isStatusColumn(col) ? <MuiChip label={v} color={muiChipColor(statusToClass(v))} size="small" /> : v}</MuiTableCell>;
+                  return <MuiTableCell key={ci}>{isStatusColumn(col) ? <MuiChip label={v} color={muiChipColor(statusToClass(v))} /> : v}</MuiTableCell>;
                 })}
               </MuiTableRow>
             ))}
@@ -636,28 +672,33 @@ function M3Real({ type, mode, props }: Omit<RealComponentRendererProps, "system"
 }
 
 /* ── Fluent real subtree ── */
-function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "system">) {
+function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
   const disabled = Boolean(props.disabled);
   const validation = props.validationStatus as ValidationStatus;
   /* Fluent Field validationState is error|warning|success|none. */
   const fluentValidation = validation ?? undefined;
+  /* Fluent 2 sizes per component (no provider-level density): the shared
+     level becomes each component's `size`, on the axis that component has. */
+  const density = coerceDensity(saltDensity);
+  const size = fluentSize(density);
+  const size2 = fluentSize2(density);
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { appearance, style } = fluentButtonProps(s(props.variant, "primary"));
-    inner = <FluentButton appearance={appearance} style={style} disabled={disabled}>{s(props.label, "Button")}</FluentButton>;
+    inner = <FluentButton appearance={appearance} style={style} disabled={disabled} size={size}>{s(props.label, "Button")}</FluentButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
-      <FluentField label={s(props.label, "Label")} validationState={fluentValidation}>
-        <FluentInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} disabled={disabled} readOnly />
+      <FluentField label={s(props.label, "Label")} validationState={fluentValidation} size={size}>
+        <FluentInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} disabled={disabled} readOnly size={size} />
       </FluentField>
     );
   } else if (type === "SimulatedCheckbox") {
-    inner = <FluentCheckbox label={s(props.label)} checked={Boolean(props.indeterminate) ? "mixed" : Boolean(props.defaultChecked)} disabled={disabled} readOnly />;
+    inner = <FluentCheckbox label={s(props.label)} checked={Boolean(props.indeterminate) ? "mixed" : Boolean(props.defaultChecked)} disabled={disabled} readOnly size={fluentCheckboxSize(density)} />;
   } else if (type === "SimulatedSwitch") {
-    inner = <FluentSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly />;
+    inner = <FluentSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly size={size2} />;
   } else if (type === "SimulatedCard") {
     inner = (
-      <FluentCard>
+      <FluentCard size={size}>
         <FluentCardHeader header={s(props.title, "Card")} description={s(props.content)} />
       </FluentCard>
     );
@@ -668,9 +709,9 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
     inner = <FluentLink href="#">{s(props.text, "Learn more")}</FluentLink>;
   } else if (type === "SimulatedBadge") {
     const color = ({ default: "brand", info: "informative", success: "success", warning: "warning", error: "danger" } as Record<string, "brand" | "informative" | "success" | "warning" | "danger">)[s(props.status, "default")] ?? "brand";
-    inner = <FluentBadge appearance="filled" color={color}>{s(props.label, "Badge")}</FluentBadge>;
+    inner = <FluentBadge appearance="filled" color={color} size={size}>{s(props.label, "Badge")}</FluentBadge>;
   } else if (type === "SimulatedPill") {
-    inner = <FluentTag dismissible={Boolean(props.dismissible)}>{s(props.label, "Tag")}</FluentTag>;
+    inner = <FluentTag dismissible={Boolean(props.dismissible)} size={size2}>{s(props.label, "Tag")}</FluentTag>;
   } else if (type === "Alert") {
     inner = (
       <FluentMessageBar intent={saltAlertStatus(s(props.variant, "info"))}>
@@ -683,12 +724,12 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
   } else if (type === "AppBrand") {
     inner = <FluentTitle3>{s(props.label, "App Name")}</FluentTitle3>;
   } else if (type === "StatusPill") {
-    inner = <FluentBadge appearance="filled" color="success">{s(props.label, "Active")}</FluentBadge>;
+    inner = <FluentBadge appearance="filled" color="success" size={size}>{s(props.label, "Active")}</FluentBadge>;
   } else if (type === "FooterText") {
     inner = <FluentCaption1>{s(props.label, "Footer")} · {s(props.version, "v1.0")}</FluentCaption1>;
   } else if (type === "SimulatedProgress") {
     inner = (
-      <FluentField label={s(props.label, "Progress")}>
+      <FluentField label={s(props.label, "Progress")} size={size}>
         <FluentProgressBar value={num(props.value, 50) / 100} />
       </FluentField>
     );
@@ -697,7 +738,7 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
     inner = <FluentAvatar name={s(props.initials, "?")} size={size} />;
   } else if (type === "SimulatedStatCard") {
     inner = (
-      <FluentCard>
+      <FluentCard size={size}>
         <FluentCardHeader header={<FluentCaption1>{s(props.label, "Metric")}</FluentCaption1>} />
         <FluentTitle3>{s(props.value, "0")}</FluentTitle3>
         <FluentProgressBar value={num(props.pct, 0) / 100} />
@@ -705,17 +746,17 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
     );
   } else if (type === "SimulatedDropdown") {
     inner = (
-      <FluentDropdown placeholder={s(props.placeholder, "Select an option")}>
+      <FluentDropdown placeholder={s(props.placeholder, "Select an option")} size={size}>
         <FluentOption>Option 1</FluentOption>
         <FluentOption>Option 2</FluentOption>
       </FluentDropdown>
     );
   } else if (type === "SimulatedSearchbox") {
-    inner = <FluentSearchBox placeholder={s(props.placeholder, "Search...")} />;
+    inner = <FluentSearchBox placeholder={s(props.placeholder, "Search...")} size={size} />;
   } else if (type === "SimulatedSegmentedGroup") {
     const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
     const di = num(props.defaultIndex, 0);
-    inner = <FluentToolbar aria-label="Segmented">{opts.map((o, i) => <FluentToggleButton key={i} appearance="subtle" checked={i === di}>{s(o)}</FluentToggleButton>)}</FluentToolbar>;
+    inner = <FluentToolbar aria-label="Segmented" size={size2}>{opts.map((o, i) => <FluentToggleButton key={i} appearance="subtle" checked={i === di} size={size}>{s(o)}</FluentToggleButton>)}</FluentToolbar>;
   } else if (type === "SimulatedAccordion") {
     inner = (
       <FluentAccordion collapsible>
@@ -726,7 +767,7 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
       </FluentAccordion>
     );
   } else if (type === "NavItem") {
-    inner = <FluentButton appearance={props.active ? "primary" : "subtle"}>{s(props.label, "Nav")}</FluentButton>;
+    inner = <FluentButton appearance={props.active ? "primary" : "subtle"} size={size}>{s(props.label, "Nav")}</FluentButton>;
   } else if (type === "SimulatedDataTable") {
     const cols = Array.isArray(props.columns) ? (props.columns as string[]) : [...DEFAULT_TABLE_COLUMNS];
     const rows = Array.isArray(props.rows) ? (props.rows as unknown[]) : [...DEFAULT_TABLE_ROWS];
@@ -742,7 +783,7 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
       : st === "error" ? "danger"
       : "subtle";
     inner = (
-      <FluentTable>
+      <FluentTable size={size2}>
         <FluentTableHeader>
           <FluentTableRow>{cols.map((c) => <FluentTableHeaderCell key={c}>{s(c)}</FluentTableHeaderCell>)}</FluentTableRow>
         </FluentTableHeader>
@@ -751,7 +792,7 @@ function FluentReal({ type, mode, props }: Omit<RealComponentRendererProps, "sys
             <FluentTableRow key={ri}>
               {cols.map((col, ci) => {
                 const v = resolveCell(row, col, ci);
-                return <FluentTableCell key={ci}>{isStatusColumn(col) ? <FluentBadge appearance="filled" color={tagColor(statusToClass(v))}>{v}</FluentBadge> : v}</FluentTableCell>;
+                return <FluentTableCell key={ci}>{isStatusColumn(col) ? <FluentBadge appearance="filled" color={tagColor(statusToClass(v))} size={size}>{v}</FluentBadge> : v}</FluentTableCell>;
               })}
             </FluentTableRow>
           ))}
@@ -845,14 +886,14 @@ function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendere
      the DS CSS via the shared registry helper. Memoised on mode+density so the
      string isn't reassembled every render. setUoauiT inside uoauiBuildCSS is a
      pure read of the passed theme, so this is render-safe. */
-  const density = saltDensity ?? "medium";
+  const density = coerceDensity(saltDensity);
   const scopedCss = React.useMemo(() => {
     const theme = getTheme("uoaui", mode === "dark" ? "dark" : "light");
     return scopeUoauiCSS(sanitizeCSS(getFullCSS("uoaui", theme, density)));
   }, [mode, density]);
 
   const render = getRealBlockRenderer("uoaui", type);
-  const inner = render ? render(props) : null;
+  const inner = render ? render(props, { density }) : null;
 
   return (
     <div className="preview-uoaui a-app">
@@ -870,10 +911,12 @@ function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendere
    values on the subtree (Carbon themes are class-based, not attribute-based).
    CarbonScopeStyles lazy-injects public/carbon-scoped.css once on first mount,
    so the heavy sheet only loads when Carbon is actually on screen. */
-function CarbonReal({ type, mode, props }: Omit<RealComponentRendererProps, "system">) {
+function CarbonReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
   const themeClass = mode === "dark" ? "cds--g100" : "cds--white";
   const render = getRealBlockRenderer("carbon", type);
-  const inner = render ? render(props) : null;
+  /* Carbon sizes per component (sm/md/lg field heights); the map applies the
+     shared density level to each real component's `size`. */
+  const inner = render ? render(props, { density: coerceDensity(saltDensity) }) : null;
 
   return (
     <>
@@ -906,9 +949,9 @@ export function RealComponentRenderer({
   if (!canRenderReal(system, type)) return null;
 
   if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
-  if (system === "m3") return <M3Real type={type} mode={mode} props={props} />;
-  if (system === "fluent") return <FluentReal type={type} mode={mode} props={props} />;
+  if (system === "m3") return <M3Real type={type} mode={mode} saltDensity={saltDensity} props={props} />;
+  if (system === "fluent") return <FluentReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
   if (system === "uoaui") return <UoauiReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
-  if (system === "carbon") return <CarbonReal type={type} mode={mode} props={props} />;
+  if (system === "carbon") return <CarbonReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
   return null;
 }

@@ -36,6 +36,7 @@
 
 import { white, g10, g90, g100 } from "@carbon/themes";
 import type { SystemId } from "@/store/useDesignHub";
+import { coerceDensity } from "@/lib/densitySize";
 
 /** Token-source provenance for a DS, surfaced in the UI as a small note. */
 export type TokenSource = "official" | "facsimile";
@@ -335,8 +336,9 @@ export function buildCarbonTokenCSS(): string {
  *     `.preview-carbon[data-cds-theme=<key>]`, so the wrapper needs the
  *     matching `data-cds-theme`.
  *
- * `salt-density-medium` is added alongside so the size/spacing tokens (which
- * Salt scopes under the density classes) also resolve; medium is the canonical
+ * `salt-density-<level>` is added alongside so the size/spacing tokens (which
+ * Salt scopes under the density classes) also resolve — for the ACTIVE density,
+ * so the canvas scales with the builder's density control. Medium is the
  * default and matches readOfficialComputedTokens()'s probe.
  * ──────────────────────────────────────────────────────────────────────── */
 export interface PreviewOfficialScope {
@@ -367,10 +369,11 @@ export function getPreviewOfficialScope(
   system: SystemId,
   mode: "light" | "dark",
   themeKey: string,
+  density: unknown = "medium",
 ): PreviewOfficialScope {
   if (system === "salt") {
     return {
-      className: "salt-theme salt-density-medium",
+      className: `salt-theme salt-density-${coerceDensity(density)}`,
       attrs: { "data-mode": mode === "dark" ? "dark" : "light" },
     };
   }

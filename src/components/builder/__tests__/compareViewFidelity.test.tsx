@@ -70,6 +70,16 @@ describe("CompareView — fidelity", () => {
     expect(carbon?.getAttribute("data-cds-theme")).toBe("g100");
   });
 
+  it("the Salt quadrant's density scope follows the builder density (not pinned to medium)", () => {
+    expect(container.querySelector(".preview-salt")?.classList.contains("salt-density-medium")).toBe(true);
+    act(() => {
+      useBuilder.setState({ density: "touch" } as never);
+    });
+    const salt = container.querySelector(".preview-salt");
+    expect(salt?.classList.contains("salt-density-touch")).toBe(true);
+    expect(salt?.classList.contains("salt-density-medium")).toBe(false);
+  });
+
   it("the active DS keeps its live theme key; other systems use their mode default", () => {
     act(() => {
       useBuilder.setState({ designSystem: "carbon", themeKey: "g90", mode: "dark" } as never);
