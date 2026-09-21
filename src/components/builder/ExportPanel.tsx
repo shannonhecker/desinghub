@@ -6,8 +6,9 @@ import { exportHTML } from "@/lib/export/htmlExporter";
 import { exportViteBootstrap, viteBootstrapFilename } from "@/lib/export/viteExporter";
 import { exportSvg } from "@/lib/export/svgExporter";
 import { exportFigmaSvg } from "@/lib/export/figmaSvgExporter";
+import { exportDesignTokens, designTokensFilename } from "@/lib/export/tokensExporter";
 
-type ExportFormat = "react" | "html" | "vite" | "svg" | "figma";
+type ExportFormat = "react" | "html" | "vite" | "svg" | "figma" | "tokens";
 
 /* exportFigmaSvg() measures the live DOM and returns null when no canvas is
    mounted. Surface a clear guard in the preview area instead of a broken
@@ -53,6 +54,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     const output =
       format === "html" ? exportHTML()
       : format === "svg" ? exportSvg()
+      : format === "tokens" ? exportDesignTokens()
       : exportViteBootstrap();
     setFiles([]);
     setCode(output);
@@ -160,6 +162,9 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     } else if (format === "figma") {
       filename = "dashboard-figma.svg";
       mime = "image/svg+xml";
+    } else if (format === "tokens") {
+      filename = designTokensFilename();
+      mime = "application/json";
     } else {
       filename = viteBootstrapFilename();
       mime = "application/x-sh";
@@ -219,6 +224,14 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             SVG
           </button>
           <button
+            className={`export-format-btn ${format === "tokens" ? "active" : ""}`}
+            onClick={() => selectFormat("tokens")}
+            title="The active design system's official tokens as W3C Design Tokens (DTCG) JSON - for Style Dictionary, Tokens Studio and Figma Variables importers"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>data_object</span>
+            Tokens (JSON)
+          </button>
+          <button
             className={`export-format-btn ${format === "figma" ? "active" : ""}`}
             onClick={() => selectFormat("figma")}
             title="Pixel-accurate SVG measured from the live canvas. Drag onto a Figma canvas - imports as editable layers. Requires Preview to be open."
@@ -236,9 +249,17 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             : format === "html" ? "HTML Page"
             : format === "svg" ? "Wireframe SVG"
             : format === "figma" ? "Figma SVG"
+            : format === "tokens" ? "Design Tokens JSON"
             : "Vite Project Bootstrap"
           }
         </button>
+
+        {format === "tokens" && code && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true">data_object</span>
+            W3C Design Tokens format, read from the official token packages for the active system and mode. Each token records its CSS variable under <code>$extensions</code>. Feed it to Style Dictionary, Tokens Studio or a Figma Variables importer.
+          </p>
+        )}
 
         {format === "react" && files.length > 1 && (
           <>
@@ -319,6 +340,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
                   files.length > 0 ? files[activeFile]?.path ?? ".tsx"
                   : format === "html" ? ".html"
                   : format === "svg" || format === "figma" ? ".svg"
+                  : format === "tokens" ? ".json"
                   : ".sh"
                 }
               </button>
