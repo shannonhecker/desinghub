@@ -6,6 +6,8 @@ Status: **P0 foundation** (scaffolding landed on `feat/tokens-foundation`). Per-
 
 Audit baseline: `scripts/tokens-baseline.json`. Refresh with `npm run tokens:audit:write` after a token-removing change.
 
+Audit scope: `src/data/**` (per-DS buckets) and `src/components/builder/**` (the `builder` bucket: renderers, `SimulatedUI`, `builder.css`). Tests, `tokens.ts` files and `chrome-tokens.css` are exempt. The gate fails only when a category rises, so the builder's pre-existing debt is frozen and ratchets down.
+
 ---
 
 ## Principles

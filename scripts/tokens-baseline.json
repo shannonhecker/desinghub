@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T21:23:40.740Z",
+  "generatedAt": "2026-09-21T10:54:47.351Z",
   "perDs": {
     "salt": {
       "hex": 204,
@@ -35,6 +35,13 @@
       "px": 262,
       "ms": 10,
       "files": 1
+    },
+    "builder": {
+      "hex": 607,
+      "rgba": 1102,
+      "px": 3866,
+      "ms": 158,
+      "files": 25
     }
   },
   "other": {
@@ -45,12 +52,50 @@
     "files": 1
   },
   "totals": {
-    "hex": 992,
-    "rgba": 153,
-    "px": 2592,
-    "ms": 96
+    "hex": 1599,
+    "rgba": 1255,
+    "px": 6458,
+    "ms": 254
   },
   "files": [
+    {
+      "path": "src/components/builder/builder.css",
+      "ds": "builder",
+      "hex": 542,
+      "rgba": 1088,
+      "px": 3765,
+      "ms": 138,
+      "samples": {
+        "hex": [
+          "#070b14",
+          "#0b1020",
+          "#111827",
+          "#b490f5",
+          "#c5f4de"
+        ],
+        "rgba": [
+          "rgba(7",
+          "rgba(2",
+          "rgba(1",
+          "rgba(0",
+          "rgba(9"
+        ],
+        "px": [
+          "12px",
+          "8px",
+          "16px",
+          "20px",
+          "70px"
+        ],
+        "ms": [
+          "180ms",
+          "200ms",
+          "360ms",
+          "600ms",
+          "300ms"
+        ]
+      }
+    },
     {
       "path": "src/data/m3/m3-documentation.jsx",
       "ds": "m3",
@@ -263,6 +308,183 @@
       }
     },
     {
+      "path": "src/components/builder/ComponentRenderer.tsx",
+      "ds": "builder",
+      "hex": 14,
+      "rgba": 1,
+      "px": 48,
+      "ms": 7,
+      "samples": {
+        "hex": [
+          "#185",
+          "#393939",
+          "#fff",
+          "#6f6f6f",
+          "#22c55e"
+        ],
+        "rgba": [
+          "rgba(1"
+        ],
+        "px": [
+          "1px",
+          "8px",
+          "10px",
+          "16px",
+          "120px"
+        ],
+        "ms": [
+          "150ms",
+          "500ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/SimulatedHighchart.tsx",
+      "ds": "builder",
+      "hex": 10,
+      "rgba": 0,
+      "px": 11,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#1B7F9E",
+          "#101820",
+          "#E2E4E5",
+          "#B0B4B8",
+          "#808488"
+        ],
+        "rgba": [],
+        "px": [
+          "13px",
+          "10px",
+          "11px",
+          "22px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/SimulatedUI.tsx",
+      "ds": "builder",
+      "hex": 6,
+      "rgba": 4,
+      "px": 6,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#e4e4e7",
+          "#ff7a7a",
+          "#22c55e",
+          "#ef4444",
+          "#f59e0b"
+        ],
+        "rgba": [
+          "rgba(2"
+        ],
+        "px": [
+          "6px",
+          "10px",
+          "1px",
+          "12px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/ComponentLibrary.tsx",
+      "ds": "builder",
+      "hex": 2,
+      "rgba": 0,
+      "px": 10,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#7c3aed",
+          "#7E6BC4"
+        ],
+        "rgba": [],
+        "px": [
+          "10px",
+          "120px",
+          "320px",
+          "240px",
+          "12px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/HoverInspector.tsx",
+      "ds": "builder",
+      "hex": 2,
+      "rgba": 0,
+      "px": 5,
+      "ms": 4,
+      "samples": {
+        "hex": [
+          "#167"
+        ],
+        "rgba": [],
+        "px": [
+          "1px",
+          "2px",
+          "3px",
+          "6px"
+        ],
+        "ms": [
+          "80ms",
+          "0ms",
+          "120ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/WaveHero.tsx",
+      "ds": "builder",
+      "hex": 9,
+      "rgba": 1,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#21F2CF",
+          "#0A0E27",
+          "#F15A22",
+          "#15FADA",
+          "#FC6919"
+        ],
+        "rgba": [
+          "rgba(2"
+        ],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/SortableBlock.tsx",
+      "ds": "builder",
+      "hex": 1,
+      "rgba": 0,
+      "px": 5,
+      "ms": 3,
+      "samples": {
+        "hex": [
+          "#167"
+        ],
+        "rgba": [],
+        "px": [
+          "2px",
+          "1px",
+          "8px",
+          "120px"
+        ],
+        "ms": [
+          "300ms",
+          "600ms"
+        ]
+      }
+    },
+    {
       "path": "src/data/registry.ts",
       "ds": "shared",
       "hex": 6,
@@ -274,7 +496,7 @@
           "#6750A4",
           "#1B7F9E",
           "#0F6CBD",
-          "#7E6BC4",
+          "#8A58C9",
           "#0f62fe"
         ],
         "rgba": [],
@@ -301,6 +523,307 @@
           "20px",
           "28px",
           "36px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/cards/chat-feedback.css",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 7,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "48px",
+          "30px",
+          "1px",
+          "2px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/PreviewPanel.tsx",
+      "ds": "builder",
+      "hex": 5,
+      "rgba": 0,
+      "px": 1,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#310",
+          "#229",
+          "#ff5f57",
+          "#febc2e",
+          "#28c840"
+        ],
+        "rgba": [],
+        "px": [
+          "1px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/CompareView.tsx",
+      "ds": "builder",
+      "hex": 5,
+      "rgba": 0,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#1B7F9E",
+          "#6750A4",
+          "#0F6CBD",
+          "#8A58C9",
+          "#0F62FE"
+        ],
+        "rgba": [],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/MiniPreview.tsx",
+      "ds": "builder",
+      "hex": 1,
+      "rgba": 4,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#9484D6"
+        ],
+        "rgba": [
+          "rgba(1",
+          "rgba(2"
+        ],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/TemplatePreviews.tsx",
+      "ds": "builder",
+      "hex": 1,
+      "rgba": 4,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#9484D6"
+        ],
+        "rgba": [
+          "rgba(1"
+        ],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/LiquidHero.tsx",
+      "ds": "builder",
+      "hex": 4,
+      "rgba": 0,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#A855F7",
+          "#3B82F6",
+          "#2DD4BF"
+        ],
+        "rgba": [],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/PresentStage.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 3,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "12px",
+          "8px",
+          "1px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/PreviewCanvas.tsx",
+      "ds": "builder",
+      "hex": 3,
+      "rgba": 0,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#ff5f57",
+          "#febc2e",
+          "#28c840"
+        ],
+        "rgba": [],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/cards/ToolUseCard.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 2,
+      "ms": 1,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "6px",
+          "10px"
+        ],
+        "ms": [
+          "40ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/FadingWords.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 0,
+      "ms": 2,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [],
+        "ms": [
+          "20ms",
+          "800ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/PreviewToggle.tsx",
+      "ds": "builder",
+      "hex": 2,
+      "rgba": 0,
+      "px": 0,
+      "ms": 0,
+      "samples": {
+        "hex": [
+          "#49D0BE",
+          "#E5A999"
+        ],
+        "rgba": [],
+        "px": [],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/ChatPanel.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 0,
+      "ms": 1,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [],
+        "ms": [
+          "800ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/HoverPreview.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 0,
+      "ms": 1,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [],
+        "ms": [
+          "300ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/InsertionSlot.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 1,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "1px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/LifecyclePill.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 0,
+      "ms": 1,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [],
+        "ms": [
+          "300ms"
+        ]
+      }
+    },
+    {
+      "path": "src/components/builder/ResizeHUD.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 1,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "8px"
+        ],
+        "ms": []
+      }
+    },
+    {
+      "path": "src/components/builder/Sidebar.tsx",
+      "ds": "builder",
+      "hex": 0,
+      "rgba": 0,
+      "px": 1,
+      "ms": 0,
+      "samples": {
+        "hex": [],
+        "rgba": [],
+        "px": [
+          "768px"
         ],
         "ms": []
       }
