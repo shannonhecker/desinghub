@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
-import { applyAIActions } from "./applyAIActions";
+import { applyAIActions, type ApplyReport, type SkippedAction } from "./applyAIActions";
+import { emitToolUse } from "./toolUseEvents";
 import { cleanHistoryForAPI } from "./cleanMessageHistory";
 import { buildCanvasManifest } from "./canvasManifest";
 import { toolUseToAction } from "./chatTools";
@@ -33,6 +34,18 @@ export const CHAT_ERROR_COPY = {
    builder's voice, and singular/plural aware. */
 export const CHAT_EMPTY_CONFIRM = (count: number): string =>
   `Done. ${count} ${count === 1 ? "change" : "changes"} applied to the canvas.`;
+
+/* Appended to the bubble when the client could not apply some of the
+   model's changes. It is part of the persisted message, so the model reads
+   it back next turn (with the fresh canvas manifest) and can correct itself
+   - e.g. a block id it guessed that does not exist. */
+export const CHAT_SKIPPED_NOTE = (skipped: SkippedAction[]): string => {
+  const head = skipped.length === 1 ? "One change" : `${skipped.length} changes`;
+  return `${head} could not be applied: ${skipped.map((s) => s.reason).join("; ")}.`;
+};
+
+/* Stand-in when the turn had no prose and NOTHING landed. */
+export const CHAT_NOTHING_APPLIED = "I couldn't apply those changes.";
 
 /* Prefixes ChatPanel uses to classify the last AI message as an error
    for the LifecyclePill. Kept next to the copy so they cannot drift. */
@@ -207,6 +220,9 @@ export function useChatAPI() {
     /* Structured actions from the model's tool calls, in emission order
        (the route emits one {tool_use} frame per completed block). */
     const toolActions: AIAction[] = [];
+    /* Calls that never became actions: an unknown tool name, or input the
+       route could not parse. Reported with the client-side skips below. */
+    const frameSkipped: (SkippedAction & { value?: unknown })[] = [];
 
     const flushToStore = () => {
       rafId = null;
@@ -305,10 +321,16 @@ export function useChatAPI() {
         if (parsed.tool_use && typeof parsed.tool_use.name === "string") {
           const action = toolUseToAction(parsed.tool_use.name, parsed.tool_use.input);
           if (action) toolActions.push(action);
-          else console.warn(`[useChatAPI] Dropping unknown tool "${parsed.tool_use.name}"`);
+          else {
+            console.warn(`[useChatAPI] Dropping unknown tool "${parsed.tool_use.name}"`);
+            frameSkipped.push({ action: parsed.tool_use.name, reason: `unknown tool "${parsed.tool_use.name}"`, value: parsed.tool_use.input });
+          }
         }
         if (parsed.tool_skipped) {
-          console.warn(`[useChatAPI] Server skipped tool "${String(parsed.tool_skipped.name)}": ${String(parsed.tool_skipped.reason)}`);
+          const name = String(parsed.tool_skipped.name);
+          const reason = String(parsed.tool_skipped.reason);
+          console.warn(`[useChatAPI] Server skipped tool "${name}": ${reason}`);
+          frameSkipped.push({ action: name, reason: `${name}: ${reason}` });
         }
       };
 
@@ -369,24 +391,43 @@ export function useChatAPI() {
       const { displayText, actions: fenceActions } = parseAIResponse(accumulated);
       const actions: AIAction[] = [...fenceActions, ...toolActions];
 
-      /* Resolve the bubble content. The model sometimes returns ONLY
-         json action fences (displayText === "") — overwriting the "..."
-         placeholder with "" leaves a silently blank bubble. Resolve:
-           • text present                 → show it (existing behaviour)
-           • no text + actions applied    → terse confirmation, not blank
-           • no text + no actions         → the turn produced nothing;
-                                            arm Retry via failedSend below
-         The empty/no-action case is handled after the bubble write so it
-         can anchor the retry affordance to this bubble's id. */
       const finalMsgs = useBuilder.getState().messages;
       const lastAi = finalMsgs[finalMsgs.length - 1];
+      const bubbleId = lastAi && lastAi.role === "ai" ? lastAi.id : undefined;
+
+      /* Apply the actions FIRST so the bubble can say what actually landed.
+         Phase 3a (N4): pass the bubble id so each emitted tool-use event
+         ties back to the assistant bubble that produced it. ChatPanel
+         groups events by messageId to render the inline cards. Calls that
+         never became actions (unknown tool, unparseable input) are
+         surfaced the same way. */
+      for (const f of frameSkipped) {
+        emitToolUse({ messageId: bubbleId, action: f.action, value: f.value, status: "skipped", reason: f.reason });
+      }
+      const report: ApplyReport =
+        actions.length > 0 ? applyAIActions(actions, bubbleId) : { applied: 0, skipped: [] };
+      const skipped: SkippedAction[] = [...frameSkipped, ...report.skipped];
+
+      /* Resolve the bubble content. The model sometimes returns ONLY
+         actions (displayText === "") — overwriting the "..." placeholder
+         with "" leaves a silently blank bubble. Resolve:
+           • text present                 → show it (existing behaviour)
+           • no text + changes applied    → terse confirmation, not blank
+           • no text + nothing applied    → say so (skips) or the generic
+                                            copy; arm Retry when the turn
+                                            produced nothing at all
+         Skipped changes are appended in every case: the note persists in
+         the message history, so the model sees next turn what it got wrong. */
       const emptyText = displayText.trim() === "";
-      const noTextNoActions = emptyText && actions.length === 0;
-      const resolvedContent = emptyText
-        ? actions.length > 0
-          ? CHAT_EMPTY_CONFIRM(actions.length)
-          : CHAT_ERROR_COPY.generic
+      const noTextNoActions = emptyText && actions.length === 0 && skipped.length === 0;
+      let resolvedContent = emptyText
+        ? report.applied > 0
+          ? CHAT_EMPTY_CONFIRM(report.applied)
+          : skipped.length > 0
+            ? CHAT_NOTHING_APPLIED
+            : CHAT_ERROR_COPY.generic
         : displayText;
+      if (skipped.length > 0) resolvedContent = `${resolvedContent}\n\n${CHAT_SKIPPED_NOTE(skipped)}`;
       if (lastAi && lastAi.role === "ai") {
         useBuilder.setState({
           messages: [...finalMsgs.slice(0, -1), { ...lastAi, content: resolvedContent }],
@@ -398,14 +439,6 @@ export function useChatAPI() {
          isn't stranded on a dead-end turn. */
       if (noTextNoActions && lastAi && lastAi.role === "ai") {
         setFailedSend({ messageId: lastAi.id, userText });
-      }
-
-      // Apply any actions from the response.
-      // Phase 3a (N4): pass `lastAi.id` so each emitted tool-use event
-      // ties back to the assistant bubble that produced it. ChatPanel
-      // groups events by messageId to render the inline cards.
-      if (actions.length > 0) {
-        applyAIActions(actions, lastAi?.id);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {

@@ -45,7 +45,14 @@ export interface ToolUseEvent {
      events by this key. Optional — tests / callers without a message
      context still emit usefully (events just don't render). */
   messageId?: string;
-  action: ToolUseAction;
+  /* A known action name, or - for a SKIPPED event only - whatever name the
+     model used (an unknown tool is itself something to show). */
+  action: ToolUseAction | (string & {});
+  /* Omitted = applied. "skipped" = the client could not apply it; `reason`
+     says why (unknown block id, invalid value, cap reached, unknown tool)
+     so the card can show it instead of the change silently vanishing. */
+  status?: "applied" | "skipped";
+  reason?: string;
   /* Raw action value (mirrors AIAction.value shape). The card variant
      in PR (b) discriminates on `action` to render the right summary. */
   value: unknown;

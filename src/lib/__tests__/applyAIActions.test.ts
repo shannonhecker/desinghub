@@ -385,3 +385,65 @@ describe("applyAIActions", () => {
     expect(useBuilder.getState().selectedBlockId).toBe("b1");
   });
 });
+
+/* ── Sprint D: every action that cannot be applied is reported, not dropped ── */
+describe("applyAIActions — apply report", () => {
+  beforeEach(resetStore);
+
+  it("counts what landed and lists what did not, with a reason per skip", () => {
+    useBuilder.setState({ blocks: [{ id: "b1", type: "SimulatedCard", props: { title: "A" } }] });
+    const report = applyAIActions([
+      { action: "setMode", value: "light" },
+      { action: "updateBlockProps", value: { blockId: "nope", props: { title: "B" } } },
+      { action: "moveBlock", value: { blockId: "b1", toZone: "attic", toIndex: 0 } },
+      { action: "setDesignSystem", value: "bootstrap" },
+      { action: "removeBlock", value: { blockId: "b1" } },
+    ]);
+    expect(report.applied).toBe(2);
+    expect(report.skipped).toEqual([
+      { action: "updateBlockProps", reason: 'no block with id "nope"', blockId: "nope" },
+      { action: "moveBlock", reason: 'unknown zone "attic"', blockId: "b1" },
+      { action: "setDesignSystem", reason: 'unknown design system "bootstrap"' },
+    ]);
+    expect(useBuilder.getState().blocks).toHaveLength(0);
+    expect(useBuilder.getState().mode).toBe("light");
+  });
+
+  it("the add cap and unknown block types are skips with reasons", () => {
+    const many: AIAction[] = Array.from({ length: 17 }, () => ({ action: "addBlock", value: { type: "SimulatedButton" } }));
+    many.push({ action: "addBlock", value: { type: "SimulatedHologram" } });
+    const report = applyAIActions(many);
+    expect(report.applied).toBe(16);
+    expect(report.skipped.map((s) => s.reason)).toEqual([
+      "more than 16 blocks in one turn",
+      "more than 16 blocks in one turn",
+    ]);
+    const unknownOnly = applyAIActions([{ action: "addBlock", value: { type: "SimulatedHologram" } }]);
+    expect(unknownOnly.skipped).toEqual([{ action: "addBlock", reason: 'unknown block type "SimulatedHologram"' }]);
+  });
+
+  it("an unknown action name is a skip, and a skipped action emits a tool-use event with status + reason", () => {
+    const seen: ToolUseEvent[] = [];
+    const off = subscribeToolUse((e) => seen.push(e));
+    const report = applyAIActions(
+      [{ action: "teleport" as AIAction["action"], value: 1 }, { action: "removeBlock", value: { blockId: "ghost" } }],
+      "msg-1",
+    );
+    off();
+    expect(report).toEqual({
+      applied: 0,
+      skipped: [
+        { action: "teleport", reason: 'unknown action "teleport"' },
+        { action: "removeBlock", reason: 'no block with id "ghost"', blockId: "ghost" },
+      ],
+    });
+    expect(seen.map((e) => [e.messageId, e.action, e.status, e.reason])).toEqual([
+      ["msg-1", "teleport", "skipped", 'unknown action "teleport"'],
+      ["msg-1", "removeBlock", "skipped", 'no block with id "ghost"'],
+    ]);
+  });
+
+  it("an empty batch reports zero without touching history or the store", () => {
+    expect(applyAIActions([])).toEqual({ applied: 0, skipped: [] });
+  });
+});

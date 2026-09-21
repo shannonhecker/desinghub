@@ -21,7 +21,9 @@ import { useBuilder } from "@/store/useBuilder";
 
 /* applyAIActions pulls blockRegistry (every block renderer) — mock the
    heavy sibling; these tests never reach the action-apply path. */
-vi.mock("../applyAIActions", () => ({ applyAIActions: vi.fn() }));
+vi.mock("../applyAIActions", () => ({
+  applyAIActions: vi.fn((actions: unknown[]) => ({ applied: actions.length, skipped: [] })),
+}));
 
 import { useChatAPI, CHAT_EMPTY_CONFIRM } from "../useChatAPI";
 
