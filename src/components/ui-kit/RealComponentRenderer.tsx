@@ -283,9 +283,17 @@ function saltIndicatorStatus(status: string): "info" | "success" | "warning" | "
   return map[status] ?? null;
 }
 
-/* ── Salt: variant -> sentiment + appearance (mirrors saltButtonAttrs). ── */
-function saltButtonProps(variant: string): { sentiment: "accented" | "neutral" | "negative"; appearance: "solid" | "bordered" | "transparent" } {
-  const map: Record<string, { sentiment: "accented" | "neutral" | "negative"; appearance: "solid" | "bordered" | "transparent" }> = {
+/* ── Salt: variant -> sentiment + appearance (mirrors saltButtonAttrs).
+   Explicit `appearance` / `sentiment` props (DS-variant presets, inspector)
+   override the generic-variant mapping so the live preview matches the
+   exported JSX. Validated against Salt's official enums. ── */
+type SaltSentiment = "accented" | "neutral" | "positive" | "caution" | "negative";
+type SaltAppearance = "solid" | "bordered" | "transparent";
+const SALT_SENTIMENTS = new Set<SaltSentiment>(["accented", "neutral", "positive", "caution", "negative"]);
+const SALT_APPEARANCES = new Set<SaltAppearance>(["solid", "bordered", "transparent"]);
+function saltButtonProps(props: Record<string, unknown>): { sentiment: SaltSentiment; appearance: SaltAppearance } {
+  const variant = s(props.variant, "primary");
+  const map: Record<string, { sentiment: SaltSentiment; appearance: SaltAppearance }> = {
     primary: { sentiment: "accented", appearance: "solid" },
     secondary: { sentiment: "neutral", appearance: "bordered" },
     outline: { sentiment: "neutral", appearance: "bordered" },
@@ -293,7 +301,10 @@ function saltButtonProps(variant: string): { sentiment: "accented" | "neutral" |
     danger: { sentiment: "negative", appearance: "solid" },
     destructive: { sentiment: "negative", appearance: "solid" },
   };
-  return map[variant] ?? map.primary;
+  const base = map[variant] ?? map.primary;
+  const sentiment = SALT_SENTIMENTS.has(props.sentiment as SaltSentiment) ? (props.sentiment as SaltSentiment) : base.sentiment;
+  const appearance = SALT_APPEARANCES.has(props.appearance as SaltAppearance) ? (props.appearance as SaltAppearance) : base.appearance;
+  return { sentiment, appearance };
 }
 
 /* ── MUI: variant -> { variant, color } (mirrors m3ButtonAttrs). ── */
@@ -353,7 +364,7 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
   const disabled = Boolean(props.disabled);
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
-    const { sentiment, appearance } = saltButtonProps(s(props.variant, "primary"));
+    const { sentiment, appearance } = saltButtonProps(props);
     inner = <SaltButton sentiment={sentiment} appearance={appearance} disabled={disabled}>{s(props.label, "Button")}</SaltButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (

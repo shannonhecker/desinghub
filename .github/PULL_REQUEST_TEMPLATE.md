@@ -21,7 +21,7 @@ Which gates apply? (see `docs/DESIGN-REVIEW.md § Scope selector`)
 ## Self-review checklist
 
 ### Tokens & design
-- [ ] No raw hex / rgba / px / ms in `src/data/**` outside `tokens.ts` files (`npm run tokens:audit` exits 0)
+- [ ] No new raw hex / rgba / px / ms in `src/data/**` or `src/components/builder/**` outside token-definition files (`npm run tokens:audit` exits 0)
 - [ ] Per-DS spec adherence — motion / shape / type / opacity follow the active DS's conventions
 - [ ] Hover / focus / pressed / disabled states defined (for interactive elements)
 - [ ] Density / size variants verified (if applicable)

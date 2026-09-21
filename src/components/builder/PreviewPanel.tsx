@@ -308,6 +308,10 @@ function PreviewBar() {
     { key: "high",   label: "High",   hint: "Tight spacing" },
     { key: "medium", label: "Medium", hint: "Default" },
     { key: "low",    label: "Low",    hint: "Roomy spacing" },
+    /* Salt's 4th level (uoaui inherits it; Carbon maps it to spacious). It was
+       defined in CSS + honoured by the real Salt provider but never reachable
+       from the UI, so the largest touch targets could not be designed for. */
+    { key: "touch",  label: "Touch",  hint: "Largest targets (Salt/uoaui touch, Carbon spacious)" },
   ];
 
   return (

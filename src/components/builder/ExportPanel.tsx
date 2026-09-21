@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { exportReact } from "@/lib/export/reactExporter";
+import { exportReactFiles, type ExportFile } from "@/lib/export/reactExporter";
 import { exportHTML } from "@/lib/export/htmlExporter";
 import { exportViteBootstrap, viteBootstrapFilename } from "@/lib/export/viteExporter";
 import { exportSvg } from "@/lib/export/svgExporter";
 import { exportFigmaSvg } from "@/lib/export/figmaSvgExporter";
+import { exportDesignTokens, designTokensFilename } from "@/lib/export/tokensExporter";
 
-type ExportFormat = "react" | "html" | "vite" | "svg" | "figma";
+type ExportFormat = "react" | "html" | "vite" | "svg" | "figma" | "tokens";
 
 /* exportFigmaSvg() measures the live DOM and returns null when no canvas is
    mounted. Surface a clear guard in the preview area instead of a broken
@@ -18,6 +19,10 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
   const [format, setFormat] = useState<ExportFormat>("react");
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  /* Multi-file formats (React = dashboard.tsx + styles.css): the generated
+     files and which one the preview / Copy / Download currently target. */
+  const [files, setFiles] = useState<ExportFile[]>([]);
+  const [activeFile, setActiveFile] = useState(0);
   /* True when the current `code` is a guard message, not real output — used to
      disable Copy/Download so the user can't save the message as a file. */
   const [isGuard, setIsGuard] = useState(false);
@@ -36,11 +41,22 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
       setCopied(false);
       return;
     }
+    if (format === "react") {
+      /* The component imports ./styles.css, so the download must ship both. */
+      const bundle = exportReactFiles();
+      setFiles(bundle);
+      setActiveFile(0);
+      setCode(bundle[0]?.contents ?? "");
+      setIsGuard(false);
+      setCopied(false);
+      return;
+    }
     const output =
-      format === "react" ? exportReact()
-      : format === "html" ? exportHTML()
+      format === "html" ? exportHTML()
       : format === "svg" ? exportSvg()
+      : format === "tokens" ? exportDesignTokens()
       : exportViteBootstrap();
+    setFiles([]);
     setCode(output);
     setIsGuard(false);
     setCopied(false);
@@ -49,9 +65,17 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
   const selectFormat = useCallback((next: ExportFormat) => {
     setFormat(next);
     setCode("");
+    setFiles([]);
+    setActiveFile(0);
     setIsGuard(false);
     setCopied(false);
   }, []);
+
+  const selectFile = useCallback((i: number) => {
+    setActiveFile(i);
+    setCode(files[i]?.contents ?? "");
+    setCopied(false);
+  }, [files]);
 
   const copyToClipboard = useCallback(async () => {
     if (!code || isGuard) return;
@@ -104,14 +128,32 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     };
   }, [onClose]);
 
+  const saveBlob = (contents: string, filename: string, mime: string) => {
+    const blob = new Blob([contents], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /* Multi-file formats: save every generated file (React = .tsx + .css). */
+  const downloadAll = useCallback(() => {
+    if (isGuard) return;
+    for (const f of files) saveBlob(f.contents, f.path, f.mime);
+  }, [files, isGuard]);
+
   const download = useCallback(() => {
     if (!code || isGuard) return;
+    if (files.length > 0) {
+      const f = files[activeFile];
+      if (f) saveBlob(f.contents, f.path, f.mime);
+      return;
+    }
     let filename: string;
     let mime: string;
-    if (format === "react") {
-      filename = "dashboard.tsx";
-      mime = "text/typescript";
-    } else if (format === "html") {
+    if (format === "html") {
       filename = "dashboard.html";
       mime = "text/html";
     } else if (format === "svg") {
@@ -120,18 +162,15 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
     } else if (format === "figma") {
       filename = "dashboard-figma.svg";
       mime = "image/svg+xml";
+    } else if (format === "tokens") {
+      filename = designTokensFilename();
+      mime = "application/json";
     } else {
       filename = viteBootstrapFilename();
       mime = "application/x-sh";
     }
-    const blob = new Blob([code], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [code, format, isGuard]);
+    saveBlob(code, filename, mime);
+  }, [code, format, isGuard, files, activeFile]);
 
   return (
     <div className="export-overlay" onClick={onClose}>
@@ -185,6 +224,14 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             SVG
           </button>
           <button
+            className={`export-format-btn ${format === "tokens" ? "active" : ""}`}
+            onClick={() => selectFormat("tokens")}
+            title="The active design system's official tokens as W3C Design Tokens (DTCG) JSON - for Style Dictionary, Tokens Studio and Figma Variables importers"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>data_object</span>
+            Tokens (JSON)
+          </button>
+          <button
             className={`export-format-btn ${format === "figma" ? "active" : ""}`}
             onClick={() => selectFormat("figma")}
             title="Pixel-accurate SVG measured from the live canvas. Drag onto a Figma canvas - imports as editable layers. Requires Preview to be open."
@@ -202,9 +249,45 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             : format === "html" ? "HTML Page"
             : format === "svg" ? "Wireframe SVG"
             : format === "figma" ? "Figma SVG"
+            : format === "tokens" ? "Design Tokens JSON"
             : "Vite Project Bootstrap"
           }
         </button>
+
+        {format === "tokens" && code && (
+          <p className="export-helper-note">
+            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true">data_object</span>
+            W3C Design Tokens format, read from the official token packages for the active system and mode. Each token records its CSS variable under <code>$extensions</code>. Feed it to Style Dictionary, Tokens Studio or a Figma Variables importer.
+          </p>
+        )}
+
+        {format === "react" && files.length > 1 && (
+          <>
+            {/* File tabs: the component imports ./styles.css, so both files are
+                part of the export. Copy / Download act on the active tab;
+                "Download all" saves every file. */}
+            <div className="export-format-row" role="tablist" aria-label="Export files">
+              {files.map((f, i) => (
+                <button
+                  key={f.path}
+                  role="tab"
+                  aria-selected={i === activeFile}
+                  className={`export-format-btn ${i === activeFile ? "active" : ""}`}
+                  onClick={() => selectFile(i)}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">
+                    {f.path.endsWith(".css") ? "palette" : "code"}
+                  </span>
+                  {f.path}
+                </button>
+              ))}
+            </div>
+            <p className="export-helper-note">
+              <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true">info</span>
+              <code>dashboard.tsx</code> imports <code>./styles.css</code> (the design-system token block + fallback styles for blocks the real component library does not cover). Save both files next to each other.
+            </p>
+          </>
+        )}
 
         {format === "vite" && code && (
           <p className="export-helper-note">
@@ -254,12 +337,19 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
               <button className="export-action-btn" onClick={download}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
                 Download {
-                  format === "react" ? ".tsx"
+                  files.length > 0 ? files[activeFile]?.path ?? ".tsx"
                   : format === "html" ? ".html"
                   : format === "svg" || format === "figma" ? ".svg"
+                  : format === "tokens" ? ".json"
                   : ".sh"
                 }
               </button>
+              {files.length > 1 && (
+                <button className="export-action-btn" onClick={downloadAll}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
+                  Download all ({files.length} files)
+                </button>
+              )}
             </div>
           </>
         )}

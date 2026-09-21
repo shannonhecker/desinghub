@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { useBuilder } from "@/store/useBuilder";
-import { exportReact } from "../export/reactExporter";
+import { exportReact, exportReactFiles, saltDensity } from "../export/reactExporter";
 
 function setCanvas(designSystem: string, blocks: Array<{ id: string; type: string; props: Record<string, unknown> }>) {
   useBuilder.setState({
@@ -106,5 +106,38 @@ describe("reactExporter — real Highcharts export bridge", () => {
     expect(code).not.toContain("function ChartBlock");
     expect(code).not.toContain("<ChartBlock");
     expect(code.startsWith('"use client"')).toBe(false); // no charts → plain presentational file
+  });
+});
+
+describe("reactExporter — the download ships its stylesheet", () => {
+  it("dashboard.tsx imports ./styles.css (the fallback primitives + DS token block it renders with)", () => {
+    setCanvas("salt", [{ id: "b1", type: "SimulatedButton", props: { label: "Submit", variant: "primary" } }]);
+    expect(exportReact()).toContain('import "./styles.css";');
+  });
+
+  it("exportReactFiles returns the component AND a per-DS styles.css", () => {
+    setCanvas("carbon", [{ id: "b1", type: "SimulatedStatCard", props: { label: "MRR", value: "$42k" } }]);
+    const files = exportReactFiles();
+    expect(files.map((f) => f.path)).toEqual(["dashboard.tsx", "styles.css"]);
+    const css = files[1].contents;
+    expect(css).toContain("Carbon DS tokens");
+    expect(css).toContain(".stat-card {"); // the generic block above renders from this sheet
+    expect(files[0].contents).toContain('import "./styles.css";');
+  });
+});
+
+describe("reactExporter — Salt density reaches the provider", () => {
+  it("SaltProvider carries the canvas density (all four Salt levels)", () => {
+    for (const d of ["high", "medium", "low", "touch"]) {
+      setCanvas("salt", [{ id: "b1", type: "SimulatedButton", props: { label: "Go", variant: "primary" } }]);
+      useBuilder.setState({ density: d });
+      expect(exportReact()).toContain(`<SaltProvider mode="light" density="${d}">`);
+    }
+  });
+
+  it("an unknown density falls back to Salt's default instead of emitting an invalid prop", () => {
+    expect(saltDensity("compact")).toBe("medium");
+    expect(saltDensity(undefined)).toBe("medium");
+    expect(saltDensity("touch")).toBe("touch");
   });
 });

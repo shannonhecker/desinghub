@@ -2,9 +2,15 @@
 /**
  * tokens-audit — literal-token scanner for Design Hub.
  *
- * Greps src/data/** for forbidden raw values (hex / rgba / px / ms) that
- * should have been tokenised. Emits a per-DS count and diffs against a
+ * Greps src/data/** AND src/components/builder/** for forbidden raw values
+ * (hex / rgba / px / ms) that should have been tokenised. Emits a per-DS
+ * count (the builder gets its own `builder` bucket) and diffs against a
  * committed baseline (scripts/tokens-baseline.json).
+ *
+ * The builder was exempt until 2026-09: its renderers + builder.css were
+ * the largest raw-value surface in the repo with zero enforcement. They now
+ * ratchet the same way src/data does — the gate fails only when a category
+ * RISES vs the baseline, so existing debt is frozen, not blocking.
  *
  * Usage:
  *   node scripts/tokens-audit.mjs              # report + exit 1 if count rose
@@ -29,10 +35,12 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const SRC = join(ROOT, 'src/data');
+const SRC_ROOTS = [join(ROOT, 'src/data'), join(ROOT, 'src/components/builder')];
 const BASELINE = join(ROOT, 'scripts/tokens-baseline.json');
 
 const DESIGN_SYSTEMS = ['salt', 'm3', 'fluent', 'carbon', 'uoaui'];
+/* Reporting buckets = the five DSs + the builder surface. */
+const BUCKETS = [...DESIGN_SYSTEMS, 'builder'];
 
 const PATTERNS = {
   hex: /#[0-9a-fA-F]{3,8}\b/g,
@@ -58,28 +66,32 @@ const ALLOWLIST_FILENAMES = [
   'brand.ts',         /* token-definition file: src/data/_shared/brand.ts */
   'primitives.ts',    /* token-definition file: src/data/_shared/primitives.ts */
   'accentPresets.ts', /* per-DS accent swatch presets: src/data/_shared/accentPresets.ts */
+  'chrome-tokens.css', /* token-definition file: src/components/builder/chrome-tokens.css */
+  '.test.ts', '.test.tsx', /* tests assert on literals by design */
 ];
 
-/** Recursively collect .ts / .tsx / .jsx files under dir. */
+/** Recursively collect .ts / .tsx / .jsx / .css files under dir. */
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const out = [];
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (entry.name === '__tests__') continue;
       out.push(...(await walk(full)));
-    } else if (/\.(ts|tsx|jsx)$/.test(entry.name)) {
+    } else if (/\.(ts|tsx|jsx|css)$/.test(entry.name)) {
       out.push(full);
     }
   }
   return out;
 }
 
-/** Resolve which DS a file belongs to (from its path). null = cross-cutting. */
+/** Resolve which bucket a file belongs to (from its path). null = cross-cutting. */
 function dsOf(path) {
   for (const ds of DESIGN_SYSTEMS) {
     if (path.includes(`/data/${ds}/`)) return ds;
   }
+  if (path.includes('/components/builder/')) return 'builder';
   return null;
 }
 
@@ -150,8 +162,8 @@ async function main() {
   const write = args.has('--write');
   const json = args.has('--json');
 
-  const files = await walk(SRC);
-  const perDs = Object.fromEntries(DESIGN_SYSTEMS.map((d) => [d, { hex: 0, rgba: 0, px: 0, ms: 0, files: 0 }]));
+  const files = (await Promise.all(SRC_ROOTS.map((r) => walk(r)))).flat();
+  const perDs = Object.fromEntries(BUCKETS.map((d) => [d, { hex: 0, rgba: 0, px: 0, ms: 0, files: 0 }]));
   const other = { hex: 0, rgba: 0, px: 0, ms: 0, files: 0 };
   const perFile = [];
 
@@ -192,9 +204,9 @@ async function main() {
   } else {
     const fmt = (ds, b) =>
       `  ${ds.padEnd(8)}  hex ${String(b.hex).padStart(3)}  rgba ${String(b.rgba).padStart(3)}  px ${String(b.px).padStart(4)}  ms ${String(b.ms).padStart(3)}   (${b.files} files)`;
-    console.log('tokens-audit — literal count per DS');
+    console.log('tokens-audit — literal count per DS (+ builder surface)');
     console.log('');
-    for (const ds of DESIGN_SYSTEMS) console.log(fmt(ds, perDs[ds]));
+    for (const ds of BUCKETS) console.log(fmt(ds, perDs[ds]));
     if (other.files > 0) console.log(fmt('shared', other));
     console.log('');
     console.log(`  total     hex ${report.totals.hex}  rgba ${report.totals.rgba}  px ${report.totals.px}  ms ${report.totals.ms}`);

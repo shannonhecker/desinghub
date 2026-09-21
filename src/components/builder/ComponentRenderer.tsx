@@ -955,6 +955,10 @@ function SimulatedTextInputBlock({
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
+  /* Programmatic label ↔ input association. While the block is selected the
+     label is an inline editor (contentEditable), so the input carries the
+     label text via aria-label instead. */
+  const inputId = React.useId();
 
   return (
     <div className={`${prefix}-input-container`}>
@@ -967,19 +971,22 @@ function SimulatedTextInputBlock({
           style={{ outline: "none", display: "block" }}
         />
       ) : (
-        <label className={`${prefix}-label`}>{label}</label>
+        <label htmlFor={inputId} className={`${prefix}-label`}>{label}</label>
       )}
       <div className={`${prefix}-input-wrapper`}>
         {isSelected && blockId ? (
           <input
+            id={inputId}
             type="text"
             className={`${prefix}-input`}
+            aria-label={`${label} placeholder`}
             value={placeholder}
             onChange={(e) => update({ placeholder: e.target.value })}
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <input
+            id={inputId}
             type="text"
             className={`${prefix}-input`}
             placeholder={placeholder}

@@ -110,7 +110,9 @@ const SALT_ICONS = "@salt-ds/icons";
 /* Generic block `variant` -> Salt's official sentiment + appearance.
    Salt API: sentiment = accented|neutral|positive|caution|negative,
    appearance = solid|bordered|transparent (NOT filled/outlined/text). */
-function saltButtonAttrs(props: Record<string, unknown>): string {
+const SALT_APPEARANCES = new Set(["solid", "bordered", "transparent"]);
+const SALT_SENTIMENTS = new Set(["accented", "neutral", "positive", "caution", "negative"]);
+export function saltButtonAttrs(props: Record<string, unknown>): string {
   const variant = s(props.variant, "primary");
   const map: Record<string, { sentiment: string; appearance: string }> = {
     primary: { sentiment: "accented", appearance: "solid" },
@@ -120,7 +122,15 @@ function saltButtonAttrs(props: Record<string, unknown>): string {
     danger: { sentiment: "negative", appearance: "solid" },
     destructive: { sentiment: "negative", appearance: "solid" },
   };
-  const { sentiment, appearance } = map[variant] ?? map.primary;
+  const base = map[variant] ?? map.primary;
+  /* Explicit Salt props win over the generic variant mapping. The DS-variant
+     presets (dsVariantPresets.ts) write `appearance` / `sentiment` directly —
+     e.g. "Negative Transparent" — and the block inspector can set them; before
+     this they were dropped and every Salt button re-derived from `variant`.
+     Values are validated against Salt's official enums so free text can't
+     reach the emitted JSX. */
+  const appearance = SALT_APPEARANCES.has(String(props.appearance)) ? String(props.appearance) : base.appearance;
+  const sentiment = SALT_SENTIMENTS.has(String(props.sentiment)) ? String(props.sentiment) : base.sentiment;
   return `sentiment="${sentiment}" appearance="${appearance}"`;
 }
 
@@ -1374,10 +1384,13 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => `<button className="a-btn ${uoauiButtonClass(p)}">${jsxText(p.label, "Button")}</button>`,
   },
+  /* uoaui is CSS-only, so the registry can't mint ids: the control is nested
+     inside its <label> (implicit association) instead of a sibling label. The
+     .a-input-wrap / .a-input-label classes are unchanged for the theme sheet. */
   SimulatedTextInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" placeholder="${jsxAttr(p.placeholder)}" />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <input className="a-input" placeholder="${jsxAttr(p.placeholder)}" />\n</label>`,
   },
   SimulatedCheckbox: {
     imports: uoauiImport,
@@ -1432,12 +1445,12 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${num(p.rows, 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <textarea className="a-input" rows={${num(p.rows, 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</label>`,
   },
   SimulatedNumberInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <input className="a-input" type="number" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</label>`,
   },
   /* SimulatedDatePicker — uoaui has a real role=grid calendar demo (no class);
      emit the accent-highlighted grid the DS itself uses. */

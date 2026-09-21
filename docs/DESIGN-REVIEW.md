@@ -47,7 +47,7 @@ A one-paragraph "why + what" you can paste at the top of the PR description, wit
 **During design.** For any visible change.
 
 ### Criteria
-- [ ] Tokens only — no raw hex, spacing px, font-size, duration, or radius in `src/data/**` outside `tokens.ts` files. Verified via `npm run tokens:audit`.
+- [ ] Tokens only — no raw hex, spacing px, font-size, duration, or radius in `src/data/**` or `src/components/builder/**` outside token-definition files (`tokens.ts`, `chrome-tokens.css`). Verified via `npm run tokens:audit` (the builder's existing literals are frozen in the baseline and may only go down).
 - [ ] Per-DS spec adherence — Salt characteristic tokens, M3 shape ladder, Fluent duration names (`durationFaster/Fast/Normal`), Carbon productive/expressive motion, uoaui glass opacity scale.
 - [ ] Interaction patterns consistent across the DS — hover / focus / pressed / disabled states all present.
 - [ ] Responsive behavior defined — if density/size variants apply (Salt H/M/L/T, Carbon compact/normal/spacious, Fluent S/M/L, M3 density offset, uoaui H/M/L/T).

@@ -17,13 +17,14 @@
  *   - index.html      (entry HTML)
  *   - src/main.tsx    (ReactDOM.createRoot bootstrap)
  *   - src/App.tsx     (generated from current canvas)
- *   - src/styles.css  (design-system CSS tokens + component styles)
+ *   - src/styles.css  (per-DS official token block + fallback component styles)
  *   - README.md       (next steps)
  */
 
 import { useBuilder } from "@/store/useBuilder";
 import { exportReact } from "./reactExporter";
 import { collectImports, type SystemId } from "@/lib/componentApiRegistry";
+import { buildStylesCss } from "./stylesCss";
 
 const PROJECT_NAME = "design-hub-app";
 
@@ -186,151 +187,17 @@ const INDEX_HTML = `<!doctype html>
 </html>
 `;
 
+/* App.tsx owns the `import "./styles.css"` (reactExporter emits it, so the
+   standalone React download and the Vite project share one contract). */
 const MAIN_TSX = `import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
 );
-`;
-
-/* Minimal CSS for the simulated components used by reactExporter.
- * DS-agnostic token structure so the exported app runs out of the
- * box without needing the actual Salt / M3 / Fluent packages. */
-const STYLES_CSS = `/* ── Design tokens - swap these with real DS imports when ready ── */
-:root {
-  --bg: #0b1120;
-  --fg: #e7e2f7;
-  --fg-muted: rgba(255, 255, 255, 0.6);
-  --surface: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.1);
-  --accent: #8A58C9;
-  --accent-fg: #ffffff;
-  --success: #4ade80;
-  --warn: #facc15;
-  --error: #f87171;
-  --info: #60a5fa;
-  --radius: 10px;
-  --font: "Inter", system-ui, -apple-system, sans-serif;
-}
-
-/* Light mode */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #ffffff;
-    --fg: #15102a;
-    --fg-muted: rgba(0, 0, 0, 0.6);
-    --surface: rgba(0, 0, 0, 0.03);
-    --border: rgba(0, 0, 0, 0.1);
-    --accent: #6b57b0;
-    --accent-fg: #ffffff;
-  }
-}
-
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; font-family: var(--font); background: var(--bg); color: var(--fg); min-height: 100vh; }
-
-/* Skip link — visually hidden off-screen until it receives keyboard focus,
-   then it positions itself top-left with a visible focus ring so a keyboard or
-   screen-reader user can jump straight to <main id="main-content">. */
-.skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: var(--bg); color: var(--fg); border-radius: 6px; }
-.skip-link:focus { left: 8px; top: 8px; outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* ── Shell layout — selectors MUST match the classes reactExporter emits:
-   .dashboard-layout wraps the four zones; the body zone is the KPI grid;
-   the sidebar sits in a 220px track beside the 1fr body. ── */
-.dashboard-layout { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 220px 1fr; min-height: 100vh; }
-.zone-header { grid-column: 1 / -1; padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-.zone-sidebar { border-right: 1px solid var(--border); padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; }
-.zone-body { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; align-content: start; padding: 16px; }
-.zone-footer { grid-column: 1 / -1; padding: 12px 16px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 13px; text-align: center; }
-.layout-group { display: flex; gap: 12px; }
-
-/* Mobile — stack the shell into a single column under 768px. */
-@media (max-width: 768px) {
-  .dashboard-layout { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
-  .zone-sidebar { border-right: 0; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
-  .zone-body { grid-template-columns: 1fr; }
-  /* Inline grid-column (a P3-3 pin or a wide span) would spawn phantom tracks
-     and overflow on the 1-col mobile grid; !important neutralizes it so blocks
-     stack. */
-  .zone-body > .grid-item { grid-column: auto !important; }
-}
-
-/* Primitives */
-h1 { font-size: 28px; margin: 4px 0; letter-spacing: -0.02em; }
-h2 { font-size: 20px; margin: 8px 0; letter-spacing: -0.01em; }
-h3 { font-size: 16px; margin: 6px 0; }
-h4 { font-size: 14px; margin: 4px 0; color: var(--fg-muted); font-weight: 500; }
-label { display: block; font-size: 12px; font-weight: 500; color: var(--fg-muted); }
-
-.btn { display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 6px; border: 0; font-family: inherit; font-size: 14px; cursor: pointer; }
-.btn-primary { background: var(--accent); color: var(--accent-fg); }
-.btn-secondary { background: var(--surface); color: var(--fg); border: 1px solid var(--border); }
-.btn-outline { background: transparent; color: var(--fg); border: 1px solid var(--border); }
-.btn-ghost { background: transparent; color: var(--fg); }
-.btn:hover { filter: brightness(1.1); }
-
-.form-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-.form-field input { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: inherit; }
-
-.card { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-.stat-card { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-.stat-label { display: block; font-size: 11px; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.stat-value { display: block; font-size: 24px; font-weight: 700; margin: 4px 0; }
-.progress-bar { height: 4px; background: var(--accent); border-radius: 2px; }
-
-.alert { padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--border); }
-.alert-info    { background: rgba(96, 165, 250, 0.1);  border-color: var(--info); }
-.alert-success { background: rgba(74, 222, 128, 0.1);  border-color: var(--success); }
-.alert-warning { background: rgba(250, 204, 21, 0.1);  border-color: var(--warn); }
-.alert-error   { background: rgba(248, 113, 113, 0.1); border-color: var(--error); }
-
-.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); }
-
-.progress { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); }
-progress { width: 100%; height: 6px; }
-
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
-.tab { padding: 8px 12px; border: 0; background: transparent; color: var(--fg-muted); font-family: inherit; cursor: pointer; font-size: 13px; }
-.tab:hover { color: var(--fg); }
-
-.checkbox, .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg); cursor: pointer; }
-
-/* Shell-block primitives (emitted by the generic markup path) */
-.app-brand { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
-.status-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--surface); border: 1px solid var(--border); }
-.footer-text { color: var(--fg-muted); font-size: 13px; }
-.nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: 0; background: transparent; color: var(--fg); font-family: inherit; font-size: 14px; text-align: left; border-radius: 6px; cursor: pointer; }
-.nav-item.active { background: var(--surface); font-weight: 600; }
-.nav-item:hover { background: var(--surface); }
-.sim-image { margin: 0; }
-.sim-image img { width: 100%; height: auto; display: block; border-radius: var(--radius); }
-.sim-image figcaption { font-size: 12px; color: var(--fg-muted); margin-top: 4px; }
-.sim-image-placeholder { aspect-ratio: 16 / 9; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
-.avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); object-fit: cover; overflow: hidden; }
-.avatar-sm { width: 28px; height: 28px; font-size: 12px; }
-.avatar-md { width: 40px; height: 40px; font-size: 14px; }
-.avatar-lg { width: 56px; height: 56px; font-size: 18px; }
-
-/* Focus rings — keyboard-visible only. .btn sets border:0, so its ring is an
-   outline + offset (never a border) so it stays visible against any fill. */
-.btn:focus-visible,
-.tab:focus-visible,
-.nav-item:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-input:focus-visible,
-.checkbox input:focus-visible,
-.switch input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
 `;
 
 /* uoaui is a CSS-only DS. reactExporter emits `import "./uoaui-theme.css"` as a
@@ -577,7 +444,8 @@ function buildProjectFiles(): ProjectFile[] {
     { path: "README.md",        contents: readmeMd(state.designSystem, hasCharts) },
     { path: "src/main.tsx",     contents: MAIN_TSX },
     { path: "src/App.tsx",      contents: appTsxSource() },
-    { path: "src/styles.css",   contents: STYLES_CSS },
+    /* Per-DS token block (official values, builder mode) + fallback primitives. */
+    { path: "src/styles.css",   contents: buildStylesCss(state.designSystem as SystemId, state.mode === "dark" ? "dark" : "light") },
   ];
 
   /* uoaui ships no JS package — reactExporter emits `import "./uoaui-theme.css"`,

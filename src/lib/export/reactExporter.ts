@@ -11,6 +11,7 @@ import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
+import { buildStylesCss } from "./stylesCss";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -28,6 +29,12 @@ function safeLevel(v: unknown): string {
   const str = String(v ?? "h2");
   return /^h[1-6]$/.test(str) ? str : "h2";
 }
+/* A stable, DOM-safe id for label/control association, derived from the
+   block id so the same block gets the same id on every export. */
+export function fieldId(blockId: string): string {
+  return `field-${String(blockId).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
 /* Avatar size suffixes a className (avatar-${size}); constrain to known tokens. */
 const FALLBACK_AVATAR_SIZES = new Set(["sm", "md", "lg"]);
 function slugSize(v: unknown): string {
@@ -89,6 +96,15 @@ function heightStyleOf(block: Block): string | undefined {
   return parts.length ? parts.join(", ") : undefined;
 }
 
+/* Salt is the one DS whose provider takes a global density. The builder's
+   shared density label maps 1:1 onto Salt's four levels; anything else (an
+   older saved value) falls back to Salt's default. Without this the export
+   silently dropped the density the canvas was designed at. */
+const SALT_DENSITIES = new Set(["high", "medium", "low", "touch"]);
+export function saltDensity(v: unknown): "high" | "medium" | "low" | "touch" {
+  return SALT_DENSITIES.has(String(v)) ? (String(v) as "high" | "medium" | "low" | "touch") : "medium";
+}
+
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   salt: { provider: "SaltProvider", importFrom: "@salt-ds/core" },
   m3: { provider: "ThemeProvider", importFrom: "@mui/material" },
@@ -147,8 +163,12 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
     }
     case "SimulatedButton":
       return `${indent}<button className="btn btn-${safeToken(p.variant, FALLBACK_BUTTON_VARIANTS, "primary")}">${jsxText(p.label, "Button")}</button>`;
-    case "SimulatedTextInput":
-      return `${indent}<div className="form-field">\n${indent}  <label>${jsxText(p.label, "Label")}</label>\n${indent}  <input type="text" placeholder="${jsxAttr(p.placeholder)}" />\n${indent}</div>`;
+    case "SimulatedTextInput": {
+      /* label ↔ input are programmatically associated (htmlFor/id): a sibling
+         <label> with no `for` is announced as an anonymous field. */
+      const id = fieldId(block.id);
+      return `${indent}<div className="form-field">\n${indent}  <label htmlFor="${id}">${jsxText(p.label, "Label")}</label>\n${indent}  <input id="${id}" type="text" placeholder="${jsxAttr(p.placeholder)}" />\n${indent}</div>`;
+    }
     case "SimulatedCard":
       return `${indent}<div className="card">\n${indent}  <h3>${jsxText(p.title, "Card")}</h3>\n${indent}  <p>${jsxText(p.content)}</p>\n${indent}</div>`;
     case "SimulatedStatCard":
@@ -161,8 +181,10 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
       return `${indent}<label className="checkbox"><input type="checkbox" ${p.defaultChecked ? "defaultChecked" : ""} /> ${jsxText(p.label, "Checkbox")}</label>`;
     case "SimulatedSwitch":
       return `${indent}<label className="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "defaultChecked" : ""} /> ${jsxText(p.label, "Toggle")}</label>`;
-    case "SimulatedProgress":
-      return `${indent}<div className="progress">\n${indent}  <label>${jsxText(p.label, "Progress")}</label>\n${indent}  <progress value="${Number(p.value) || 50}" max="100" />\n${indent}</div>`;
+    case "SimulatedProgress": {
+      const id = fieldId(block.id);
+      return `${indent}<div className="progress">\n${indent}  <label htmlFor="${id}">${jsxText(p.label, "Progress")}</label>\n${indent}  <progress id="${id}" value="${Number(p.value) || 50}" max="100" />\n${indent}</div>`;
+    }
     case "SimulatedTabs":
       return `${indent}<div className="tabs">\n${((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button className="tab">${jsxText(t.trim())}</button>`).join("\n")}\n${indent}</div>`;
     case "SimulatedAccordion":
@@ -288,6 +310,30 @@ function renderZone(
   return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  ${tag.close}`;
 }
 
+/** One file of a multi-file export. */
+export interface ExportFile {
+  path: string;
+  contents: string;
+  mime: string;
+}
+
+/**
+ * The React export as the files it actually needs: the component (which
+ * imports ./styles.css) and the stylesheet. The Export panel shows both as
+ * tabs and downloads them together; exportReact() alone is the .tsx.
+ */
+export function exportReactFiles(): ExportFile[] {
+  const s = useBuilder.getState();
+  return [
+    { path: "dashboard.tsx", contents: exportReact(), mime: "text/typescript" },
+    {
+      path: "styles.css",
+      contents: buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light"),
+      mime: "text/css",
+    },
+  ];
+}
+
 export function exportReact(): string {
   const s = useBuilder.getState();
   const system = s.designSystem as SystemId;
@@ -331,6 +377,11 @@ export function exportReact(): string {
   const layoutImports = collectLayoutImports(system, [...usedPrimitives]);
 
   const imports = ['import React from "react";'];
+  /* The fallback stylesheet (per-DS token block + .btn/.card/… primitives for
+     any block the registry doesn't cover, plus the shell layout). It ships
+     alongside this file: Export → React → styles.css tab, and as src/styles.css
+     in the Vite project. Without it the generic-markup blocks render unstyled. */
+  imports.push('import "./styles.css";');
   /* Chart components use hooks + window, so the exported file must be a client
      component to also work if pasted into a Next.js App Router project. "use
      client" must be the file's first line; it is a harmless no-op in the
@@ -373,7 +424,7 @@ export function exportReact(): string {
           ? `<Theme theme="${s.mode === "dark" ? "g100" : "white"}">\n    `
           : system === "uoaui"
             ? "" /* CSS-only DS — no provider wrapper, just a-* classNames */
-            : `<${ds.provider} mode="${s.mode}">\n    `;
+            : `<${ds.provider} mode="${s.mode}" density="${saltDensity(s.density)}">\n    `;
   const close = !real
     ? ""
     : system === "m3"
