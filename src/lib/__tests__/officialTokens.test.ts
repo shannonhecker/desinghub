@@ -6,6 +6,7 @@ import {
   buildCarbonTokenCSS,
   getCarbonOfficialTokens,
   getOfficialTokenList,
+  getPreviewOfficialScope,
 } from "@/lib/officialTokens";
 import { buildM3TokenCSS, buildFluentTokenCSS } from "@/lib/officialM3FluentTokens";
 import {
@@ -62,6 +63,21 @@ describe("officialTokens — provenance", () => {
     expect(getOfficialTokenList("m3").length).toBeGreaterThan(0);
     expect(getOfficialTokenList("fluent").length).toBeGreaterThan(0);
     expect(getOfficialTokenList("uoaui")).toEqual([]);
+  });
+});
+
+describe("officialTokens — preview scope follows the builder density", () => {
+  it("Salt: the scope carries salt-density-<level> for the active density (medium by default)", () => {
+    expect(getPreviewOfficialScope("salt", "dark", "jpm-dark").className).toBe("salt-theme salt-density-medium");
+    expect(getPreviewOfficialScope("salt", "dark", "jpm-dark", "high").className).toBe("salt-theme salt-density-high");
+    expect(getPreviewOfficialScope("salt", "light", "jpm-light", "touch").className).toBe("salt-theme salt-density-touch");
+    /* Fluent's UI-Kit store slot is a size, not a level — never a bogus class. */
+    expect(getPreviewOfficialScope("salt", "light", "jpm-light", "small").className).toBe("salt-theme salt-density-medium");
+    expect(getPreviewOfficialScope("salt", "dark", "jpm-dark", "high").attrs).toEqual({ "data-mode": "dark" });
+  });
+
+  it("Carbon ignores the density argument (its scope is the theme attribute)", () => {
+    expect(getPreviewOfficialScope("carbon", "dark", "g90", "high")).toEqual({ className: "", attrs: { "data-cds-theme": "g90" } });
   });
 });
 

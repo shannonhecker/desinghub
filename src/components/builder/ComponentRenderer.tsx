@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
+import { coerceDensity } from "@/lib/densitySize";
 import { RealComponentRenderer, canRenderReal } from "../ui-kit/RealComponentRenderer";
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { showToast } from "@/lib/toast";
@@ -1854,7 +1855,22 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
   const density = densityProp ?? storeDensity;
   const [mountedReal, setMountedReal] = useState(false);
   useEffect(() => { setMountedReal(true); }, []);
-  if (mountedReal && readOnly && canRenderReal(system as SystemId, type)) {
+  /* Edit-mode fidelity (resolves the edit-vs-preview decision left open in
+     PR 361 the other way round): covered blocks render REAL in Edit too, so
+     the surface users spend their time on is the real DS component — Salt's
+     focus ring, MUI's ripple, Carbon's 0-radius — not a facsimile. Their text
+     is edited through the block inspector (every library block has schema
+     fields), so selecting such a block opens the inspector panel, the same
+     hand-off the inline editors did via autoOpenComponentPanel. */
+  const editRendersReal = useBuilder((s) => s.editRendersReal);
+  const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
+  const coversReal = canRenderReal(system as SystemId, type);
+  const rendersRealInEdit = !readOnly && editRendersReal && coversReal;
+  const isSelectedBlock = useBuilder((s) => blockId != null && s.selectedBlockId === blockId);
+  useEffect(() => {
+    if (rendersRealInEdit && isSelectedBlock) setComponentLibraryOpen(true);
+  }, [rendersRealInEdit, isSelectedBlock, setComponentLibraryOpen]);
+  if (mountedReal && coversReal && (readOnly || editRendersReal)) {
     return (
       <div>
         <BlockErrorBoundary blockType={type}>
@@ -1862,7 +1878,7 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
             system={system as SystemId}
             type={type}
             mode={builderMode === "dark" ? "dark" : "light"}
-            saltDensity={(["high", "medium", "low", "touch"].includes(density) ? density : "medium") as "high" | "medium" | "low" | "touch"}
+            saltDensity={coerceDensity(density)}
             props={props as Record<string, unknown>}
           />
         </BlockErrorBoundary>
