@@ -3,6 +3,9 @@
 import React, { useCallback } from "react";
 import { useBuilder, type DesignSystem, type Block } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
+import { PreviewReadOnlyContext } from "./previewReadOnly";
+import { getPreviewOfficialScope } from "@/lib/officialTokens";
+import type { SystemId } from "@/store/useDesignHub";
 
 /* ══════════════════════════════════════════════════════════
    Compare DS Mode - grid showing the same canvas in all five
@@ -13,11 +16,29 @@ import { ComponentRenderer } from "./ComponentRenderer";
    IBM Carbon?" without manually swapping the DS switcher five
    times.
 
-   The mini canvases are read-only (pointer-events: none on
-   the content) but every block comes from the live store,
-   so changes made in the main editor are reflected across
-   all five previews.
+   The mini canvases are read-only but every block comes from
+   the live store, so changes made in the main editor are
+   reflected across all five previews.
+
+   Fidelity: each quadrant renders exactly what Preview / Present
+   render for that DS. It provides PreviewReadOnlyContext (so
+   ComponentRenderer takes the REAL component path for registry-
+   covered blocks) and carries getPreviewOfficialScope's class +
+   attrs (so the official --salt-* / --cds-* token values resolve).
+   Before this the flagship cross-DS screen showed five facsimiles
+   without official tokens — the least faithful view in the app.
    ══════════════════════════════════════════════════════════ */
+
+/* Default theme key per DS for a mode (mirrors the store's setDesignSystem
+   map). The ACTIVE DS keeps the store's live themeKey; the other four are
+   rendered at their mode default, exactly as switching to them would. */
+const DEFAULT_THEME_KEY: Record<DesignSystem, { light: string; dark: string }> = {
+  salt:   { light: "jpm-light", dark: "jpm-dark" },
+  m3:     { light: "light",     dark: "dark" },
+  fluent: { light: "light",     dark: "dark" },
+  uoaui:  { light: "light",     dark: "dark" },
+  carbon: { light: "white",     dark: "g100" },
+};
 
 const SYSTEMS: { key: DesignSystem; label: string; color: string; org: string }[] = [
   { key: "salt",   label: "Salt DS",     color: "#1B7F9E", org: "J.P. Morgan" },
@@ -34,6 +55,8 @@ interface CompareQuadrantProps {
   org: string;
   active: boolean;
   density: string;
+  mode: "light" | "dark";
+  themeKey: string;
   headerBlocks: Block[];
   sidebarBlocks: Block[];
   bodyBlocks: Block[];
@@ -43,17 +66,25 @@ interface CompareQuadrantProps {
   headerVisible: boolean;
   sidebarVisible: boolean;
   footerVisible: boolean;
-  onOpen: () => void;
+  /* Stable store-bound handler; the quadrant binds its own `ds` so the
+     parent never has to create a per-quadrant arrow (which defeated memo). */
+  onOpen: (ds: DesignSystem) => void;
 }
 
 const CompareQuadrant = React.memo(function CompareQuadrant({
-  ds, label, color, org, active, density,
+  ds, label, color, org, active, density, mode, themeKey,
   headerBlocks, sidebarBlocks, bodyBlocks, footerBlocks,
   headerVisible, sidebarVisible, footerVisible,
   onOpen,
 }: CompareQuadrantProps) {
+  /* Same wiring PreviewPanel applies to the main canvas: the extra class +
+     data attrs under which the OFFICIAL token values are defined. */
+  const officialScope = getPreviewOfficialScope(ds as SystemId, mode, themeKey);
   return (
-    <div className={`compare-quadrant ${active ? "is-active" : ""}`}>
+    /* One labelled region per DS. The quadrant's zones are plain divs: five
+       nested <main>/<header>/<nav>/<footer> would be five duplicate landmark
+       sets on one page (the page's own <main> is the builder canvas). */
+    <section className={`compare-quadrant ${active ? "is-active" : ""}`} aria-label={`${label} preview`}>
       {/* Label bar - always interactive */}
       <div className="compare-quadrant-header">
         <span className="compare-quadrant-dot" style={{ background: color }} aria-hidden="true" />
@@ -64,7 +95,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
         {active ? (
           <span className="compare-quadrant-active-badge">Editing</span>
         ) : (
-          <button className="compare-quadrant-open" onClick={onOpen} aria-label={`Switch editor to ${label}`}>
+          <button className="compare-quadrant-open" onClick={() => onOpen(ds)} aria-label={`Switch editor to ${label}`}>
             Open
             <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginLeft: 4 }}>
               arrow_forward
@@ -73,29 +104,34 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
         )}
       </div>
 
-      {/* Mini dashboard - scoped by preview-${ds} class, read-only content */}
-      <div className={`compare-quadrant-body bp-dashboard preview-${ds} density-${density}`}>
+      {/* Mini dashboard - scoped by preview-${ds} (+ the official-token scope),
+          read-only so registry-covered blocks render as REAL DS components. */}
+      <PreviewReadOnlyContext.Provider value={true}>
+      <div
+        className={`compare-quadrant-body bp-dashboard preview-${ds} density-${density}${officialScope.className ? ` ${officialScope.className}` : ""}`}
+        {...officialScope.attrs}
+      >
         {headerVisible && (
-          <header className="bp-header compare-mini-zone">
+          <div className="bp-header compare-mini-zone">
             {headerBlocks.map((b) => (
               <div key={b.id} className="compare-mini-block">
                 <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
               </div>
             ))}
-          </header>
+          </div>
         )}
 
         <div className="bp-body">
           {sidebarVisible && (
-            <nav className="bp-sidebar compare-mini-zone compare-mini-sidebar">
+            <div className="bp-sidebar compare-mini-zone compare-mini-sidebar">
               {sidebarBlocks.map((b) => (
                 <div key={b.id} className="compare-mini-block">
                   <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
                 </div>
               ))}
-            </nav>
+            </div>
           )}
-          <main className="bp-main compare-mini-main">
+          <div className="bp-main compare-mini-main">
             {bodyBlocks.length === 0 ? (
               <div className="compare-mini-empty">No blocks yet - start building in the editor.</div>
             ) : (
@@ -117,20 +153,21 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
                 })}
               </div>
             )}
-          </main>
+          </div>
         </div>
 
         {footerVisible && (
-          <footer className="bp-footer compare-mini-zone">
+          <div className="bp-footer compare-mini-zone">
             {footerBlocks.map((b) => (
               <div key={b.id} className="compare-mini-block">
                 <ComponentRenderer type={b.type} system={ds} blockId={b.id} {...b.props} />
               </div>
             ))}
-          </footer>
+          </div>
         )}
       </div>
-    </div>
+      </PreviewReadOnlyContext.Provider>
+    </section>
   );
 });
 
@@ -144,6 +181,8 @@ export function CompareView() {
   const sidebarVisible = useBuilder((s) => s.zoneLayouts.sidebar.visible !== false);
   const footerVisible = useBuilder((s) => s.zoneLayouts.footer.visible !== false);
   const density = useBuilder((s) => s.density);
+  const mode = useBuilder((s) => (s.mode === "light" ? "light" : "dark"));
+  const activeThemeKey = useBuilder((s) => s.themeKey);
   const activeDS = useBuilder((s) => s.designSystem);
   const setDesignSystem = useBuilder((s) => s.setDesignSystem);
   const setCompareMode = useBuilder((s) => s.setCompareMode);
@@ -178,6 +217,8 @@ export function CompareView() {
             org={s.org}
             active={activeDS === s.key}
             density={density}
+            mode={mode}
+            themeKey={activeDS === s.key ? activeThemeKey : DEFAULT_THEME_KEY[s.key][mode]}
             headerBlocks={headerBlocks}
             sidebarBlocks={sidebarBlocks}
             bodyBlocks={blocks}
@@ -185,7 +226,7 @@ export function CompareView() {
             headerVisible={headerVisible}
             sidebarVisible={sidebarVisible}
             footerVisible={footerVisible}
-            onOpen={() => handleOpen(s.key)}
+            onOpen={handleOpen}
           />
         ))}
       </div>
