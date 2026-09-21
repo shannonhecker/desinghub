@@ -2,7 +2,8 @@
 
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import type { DesignSystem, InterfaceType, BuilderMode } from "@/store/useBuilder";
+import type { DesignSystem, InterfaceType, BuilderMode, ZoneId } from "@/store/useBuilder";
+import { parseZoneTarget } from "@/lib/chatZoneParse";
 import { buildAssumptionDims, audienceUnguessable } from "@/lib/assumptionDims";
 import { useChatAPI, CHAT_ERROR_PREFIXES } from "@/lib/useChatAPI";
 import { saveTurnSnapshot, getTurnSnapshot } from "@/lib/turnSnapshots";
@@ -174,13 +175,26 @@ function processComponentCommand(
      blocks that aren't tracked in selectedComponents (e.g. dragged
      from the palette). */
   alsoRemoveIds?: string[];
+  /* Explicit duplicate instructions — set when the user's add intent
+     names ids that are ALREADY in selectedComponents. Without this the
+     (currentComponents → newComponents) delta is empty and "add a data
+     table" with one present reported Added while adding nothing. */
+  alsoAddIds?: string[];
   /* Wipe every body block — set by "clear all" style commands. */
   clearBody?: boolean;
   /* Wipe ALL zones (header, sidebar, body, footer) — "Clear all" means the
      whole canvas, not just the body content area. */
   clearAll?: boolean;
+  /* Zone target parsed from the message ("add a card to the sidebar").
+     Undefined when no zone is named — the delta defaults to body. */
+  zone?: ZoneId;
+  /* Honest fallback for explicit removals: shown INSTEAD of `response`
+     when the delta reports that nothing was actually removed (the type
+     lives in a different zone), so a miss never reads as success. */
+  removalNotFoundResponse?: string;
 } {
   const l = input.toLowerCase();
+  const zone = parseZoneTarget(l) ?? undefined;
 
   /* ── List / query current components ── */
   if (/\b(what components|list components|what do i have|show components|current components|what's in)\b/i.test(l)) {
@@ -273,13 +287,17 @@ function processComponentCommand(
   if (isRemove && mentionedIds.length > 0) {
     const newComps = currentComponents.filter((id) => !mentionedIds.includes(id));
     const remaining = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
+    const searchedZone = zone ?? "body";
+    const exampleZone = searchedZone === "header" ? "sidebar" : "header";
     return {
-      response: `Removed ${mentionedLabels.join(", ")}. ${remaining} group${remaining === 1 ? "" : "s"} remaining.`,
+      response: `Removed ${mentionedLabels.join(", ")}${zone && zone !== "body" ? ` from the ${zone}` : ""}. ${remaining} group${remaining === 1 ? "" : "s"} remaining.`,
       newComponents: newComps,
       /* Drive canvas removal explicitly — the (currentComponents →
          newComps) delta is empty when the user hasn't populated
          selectedComponents (e.g. blocks dragged from the palette). */
       alsoRemoveIds: mentionedIds,
+      zone,
+      removalNotFoundResponse: `I could not find ${mentionedLabels.join(", ")} in the ${searchedZone}, so nothing was removed. If it is in another zone, name it, for example: remove the ${mentionedLabels[0].toLowerCase()} from the ${exampleZone}.`,
     };
   }
 
@@ -287,12 +305,28 @@ function processComponentCommand(
   if ((isAdd || mentionedIds.length > 0) && mentionedIds.length > 0) {
     const newComps = [...new Set([...currentComponents, ...mentionedIds])];
     const total = COMPONENT_KEYWORDS.filter((g) => g.ids.some((id) => newComps.includes(id))).length;
+    /* Ids already in the wizard state produce an empty delta, so pass
+       them as explicit adds: a repeated "add a data table" must land a
+       real duplicate, not a no-op with a success message. Duplicates
+       need a stronger signal than the broad isAdd list, whose
+       generation verbs ("make", "build") also open edit requests like
+       "make the table smaller"; a bare mention ("the table looks
+       wrong") must never mutate the canvas. */
+    const isDuplicateAdd =
+      /\b(add|another|one more|second|extra|include|insert|put|give me|more|duplicate)\b/i.test(l);
+    const alreadyPresent = isDuplicateAdd
+      ? mentionedIds.filter((id) => currentComponents.includes(id))
+      : [];
     // Handle count phrases - cosmetic only
     const countMatch = l.match(/\b(\d+|two|three|four|five|six|seven|eight|nine|ten)\s+\w+/);
     const countNote = countMatch ? " (showing component variations)" : "";
+    const verb = alreadyPresent.length > 0 ? "Added another" : "Added";
+    const where = zone && zone !== "body" ? ` to the ${zone}` : " to your preview";
     return {
-      response: `Added ${mentionedLabels.join(", ")} to your preview${countNote}. You now have ${total} component groups.`,
+      response: `${verb} ${mentionedLabels.join(", ")}${where}${countNote}. You now have ${total} component groups.`,
       newComponents: newComps,
+      alsoAddIds: alreadyPresent.length > 0 ? alreadyPresent : undefined,
+      zone,
     };
   }
 
@@ -1027,7 +1061,7 @@ export function ChatPanel() {
       return;
     }
 
-    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll } =
+    const { response: compResponse, newComponents, alsoRemoveIds, alsoAddIds, clearBody, clearAll, zone, removalNotFoundResponse } =
       processComponentCommand(msg, selectedComponents);
 
     /* ── Theme changes ── */
@@ -1064,7 +1098,18 @@ export function ChatPanel() {
            action pattern), so a mis-typed "clear" is one click to recover. */
         clearCanvasWithUndo();
       } else {
-        applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, clearBody });
+        const { removedCount } = applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, alsoAddIds, clearBody, zone });
+        /* Honest miss: an explicit removal that touched no block must
+           not report success or strip the wizard pick list. Gated on
+           previewOpen: before first mount the canvas is empty by design
+           and selectedComponents (mirrored on mount) is the truth. */
+        if (removalNotFoundResponse && (alsoRemoveIds?.length ?? 0) > 0 && removedCount === 0 && previewOpen) {
+          setTimeout(() => {
+            addMessage("ai", removalNotFoundResponse);
+            setGenerating(false);
+          }, 600 + Math.random() * 800);
+          return;
+        }
       }
       setSelectedComponents(newComponents);
       if (!previewOpen) setPreviewOpen(true);

@@ -7,6 +7,7 @@ import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
 import { defaultLayoutForType } from "./blockLayoutDefaults";
 import { pushSnapshot } from "./builderHistory";
 import { emitToolUse } from "./toolUseEvents";
+import { MAX_ADD_BLOCKS_PER_TURN } from "./chatSystem";
 
 const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "uoaui", "carbon"];
 const VALID_MODES = ["light", "dark"];
@@ -14,11 +15,11 @@ const VALID_DENSITIES = ["high", "medium", "low", "touch"];
 const VALID_ZONES: ZoneId[] = ["body", "header", "sidebar", "footer"];
 const VALID_INTERFACE_TYPES = ["dashboard", "landing", "form", "ecommerce", "blog", "portfolio"];
 
-/* Runaway guard: a single AI turn should never carpet the canvas with a
-   20-30 block dashboard. The system prompt targets a 5-9 block budget; this
-   is a hard backstop against prompt drift. Generous enough that it never
-   clips a reasonable build, low enough to stop a pathological dump. */
-const MAX_ADD_BLOCKS_PER_TURN = 16;
+/* Runaway guard: MAX_ADD_BLOCKS_PER_TURN (imported above) caps addBlock
+   actions per turn so a single AI turn never carpets the canvas with a
+   20-30 block dashboard. Generous enough that it never clips a reasonable
+   build, low enough to stop a pathological dump. The constant lives in
+   chatSystem.ts so the prompt states the SAME number it enforces. */
 
 function uid() {
   return `ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
