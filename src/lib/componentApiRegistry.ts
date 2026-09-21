@@ -1384,10 +1384,13 @@ const UOAUI: Record<string, ComponentApiEntry> = {
     imports: uoauiImport,
     toJsx: (p) => `<button className="a-btn ${uoauiButtonClass(p)}">${jsxText(p.label, "Button")}</button>`,
   },
+  /* uoaui is CSS-only, so the registry can't mint ids: the control is nested
+     inside its <label> (implicit association) instead of a sibling label. The
+     .a-input-wrap / .a-input-label classes are unchanged for the theme sheet. */
   SimulatedTextInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" placeholder="${jsxAttr(p.placeholder)}" />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <input className="a-input" placeholder="${jsxAttr(p.placeholder)}" />\n</label>`,
   },
   SimulatedCheckbox: {
     imports: uoauiImport,
@@ -1442,12 +1445,12 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   SimulatedMultilineInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <textarea className="a-input" rows={${num(p.rows, 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <textarea className="a-input" rows={${num(p.rows, 3)}} placeholder="${jsxAttr(p.placeholder)}" style={{ height: "auto", paddingTop: 8 }} />\n</label>`,
   },
   SimulatedNumberInput: {
     imports: uoauiImport,
     toJsx: (p) =>
-      `<div className="a-input-wrap">\n  <label className="a-input-label">${jsxText(p.label, "Label")}</label>\n  <input className="a-input" type="number" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</div>`,
+      `<label className="a-input-wrap">\n  <span className="a-input-label">${jsxText(p.label, "Label")}</span>\n  <input className="a-input" type="number" defaultValue={${num(p.value, 1)}} min={${num(p.min, 0)}} max={${num(p.max, 99)}} step={${num(p.step, 1)}} />\n</label>`,
   },
   /* SimulatedDatePicker — uoaui has a real role=grid calendar demo (no class);
      emit the accent-highlighted grid the DS itself uses. */

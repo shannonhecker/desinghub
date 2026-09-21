@@ -218,3 +218,42 @@ describe("(e) empty-canvas vite export ships only react + react-dom", () => {
     expect(Object.keys(pkg.dependencies).sort()).toEqual(["react", "react-dom"]);
   });
 });
+
+/* ── (g) form labels are programmatically associated with their controls ──
+   A sibling <label> with no for/htmlFor is announced as an anonymous field;
+   both exporters must pair label ↔ control by id so screen readers read the
+   field name and clicking the label focuses the input. */
+describe("export a11y — label/control association", () => {
+  const body = [
+    { id: "email-1", type: "SimulatedTextInput", props: { label: "Email", placeholder: "you@co.com" } },
+    { id: "prog 2", type: "SimulatedProgress", props: { label: "Upload", value: 40 } },
+  ];
+
+  it("HTML export pairs every <label for> with a control id (and the id is DOM-safe)", () => {
+    setCanvas({ designSystem: "salt", body });
+    const html = exportHTML();
+    const fors = [...html.matchAll(/<label for="([^"]+)"/g)].map((m) => m[1]);
+    expect(fors).toEqual(["field-email-1", "field-prog-2"]);
+    for (const id of fors) {
+      expect(id).toMatch(/^[a-zA-Z0-9_-]+$/);
+      expect(html).toMatch(new RegExp(`<(input|progress) id="${id}"`));
+    }
+  });
+
+  it("React export pairs every htmlFor with a control id", () => {
+    /* The generic markup path only runs for (DS, block) pairs the registry
+       does not cover; every shipped DS covers progress, so drive it with an
+       unregistered system id exactly as an uncovered pair would. */
+    setCanvas({ designSystem: "unregistered-ds", body: [body[1]] });
+    const code = exportReact();
+    expect(code).toContain('<label htmlFor="field-prog-2">Upload</label>');
+    expect(code).toContain('<progress id="field-prog-2"');
+  });
+
+  it("uoaui text inputs nest the control inside its label (implicit association, no ids needed)", () => {
+    setCanvas({ designSystem: "uoaui", body: [body[0]] });
+    const code = exportReact();
+    expect(code).toMatch(/<label className="a-input-wrap">[\s\S]*<span className="a-input-label">Email<\/span>[\s\S]*<input className="a-input"[\s\S]*<\/label>/);
+    expect(code).not.toContain('<label className="a-input-label">');
+  });
+});

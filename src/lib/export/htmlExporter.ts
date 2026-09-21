@@ -38,6 +38,11 @@ function level(v: unknown): string {
   return /^h[1-6]$/.test(str) ? str : "h2";
 }
 
+/* Stable, DOM-safe id for label/control association (mirrors reactExporter). */
+function fieldId(blockId: string): string {
+  return `field-${String(blockId).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
 function blockToHTML(block: Block, indent: string): string {
   const p = block.props;
   switch (block.type) {
@@ -47,8 +52,10 @@ function blockToHTML(block: Block, indent: string): string {
     }
     case "SimulatedButton":
       return `${indent}<button class="btn btn-${token(p.variant, BUTTON_VARIANTS, "primary")}">${htmlText(p.label, "Button")}</button>`;
-    case "SimulatedTextInput":
-      return `${indent}<div class="form-field">\n${indent}  <label>${htmlText(p.label, "Label")}</label>\n${indent}  <input type="text" placeholder="${htmlAttr(p.placeholder)}" />\n${indent}</div>`;
+    case "SimulatedTextInput": {
+      const id = fieldId(block.id);
+      return `${indent}<div class="form-field">\n${indent}  <label for="${id}">${htmlText(p.label, "Label")}</label>\n${indent}  <input id="${id}" type="text" placeholder="${htmlAttr(p.placeholder)}" />\n${indent}</div>`;
+    }
     case "SimulatedCard":
       return `${indent}<div class="card">\n${indent}  <h3>${htmlText(p.title, "Card")}</h3>\n${indent}  <p>${htmlText(p.content)}</p>\n${indent}</div>`;
     case "SimulatedStatCard":
@@ -61,8 +68,10 @@ function blockToHTML(block: Block, indent: string): string {
       return `${indent}<label class="checkbox"><input type="checkbox" ${p.defaultChecked ? "checked" : ""} /> ${htmlText(p.label, "Checkbox")}</label>`;
     case "SimulatedSwitch":
       return `${indent}<label class="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "checked" : ""} /> ${htmlText(p.label, "Toggle")}</label>`;
-    case "SimulatedProgress":
-      return `${indent}<div class="progress">\n${indent}  <label>${htmlText(p.label, "Progress")}</label>\n${indent}  <progress value="${Number(p.value) || 50}" max="100"></progress>\n${indent}</div>`;
+    case "SimulatedProgress": {
+      const id = fieldId(block.id);
+      return `${indent}<div class="progress">\n${indent}  <label for="${id}">${htmlText(p.label, "Progress")}</label>\n${indent}  <progress id="${id}" value="${Number(p.value) || 50}" max="100"></progress>\n${indent}</div>`;
+    }
     case "SimulatedTabs": {
       const tabs = ((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button class="tab">${htmlText(t.trim())}</button>`).join("\n");
       return `${indent}<div class="tabs">\n${tabs}\n${indent}</div>`;

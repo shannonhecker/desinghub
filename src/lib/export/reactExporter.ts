@@ -29,6 +29,12 @@ function safeLevel(v: unknown): string {
   const str = String(v ?? "h2");
   return /^h[1-6]$/.test(str) ? str : "h2";
 }
+/* A stable, DOM-safe id for label/control association, derived from the
+   block id so the same block gets the same id on every export. */
+export function fieldId(blockId: string): string {
+  return `field-${String(blockId).replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
 /* Avatar size suffixes a className (avatar-${size}); constrain to known tokens. */
 const FALLBACK_AVATAR_SIZES = new Set(["sm", "md", "lg"]);
 function slugSize(v: unknown): string {
@@ -157,8 +163,12 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
     }
     case "SimulatedButton":
       return `${indent}<button className="btn btn-${safeToken(p.variant, FALLBACK_BUTTON_VARIANTS, "primary")}">${jsxText(p.label, "Button")}</button>`;
-    case "SimulatedTextInput":
-      return `${indent}<div className="form-field">\n${indent}  <label>${jsxText(p.label, "Label")}</label>\n${indent}  <input type="text" placeholder="${jsxAttr(p.placeholder)}" />\n${indent}</div>`;
+    case "SimulatedTextInput": {
+      /* label ↔ input are programmatically associated (htmlFor/id): a sibling
+         <label> with no `for` is announced as an anonymous field. */
+      const id = fieldId(block.id);
+      return `${indent}<div className="form-field">\n${indent}  <label htmlFor="${id}">${jsxText(p.label, "Label")}</label>\n${indent}  <input id="${id}" type="text" placeholder="${jsxAttr(p.placeholder)}" />\n${indent}</div>`;
+    }
     case "SimulatedCard":
       return `${indent}<div className="card">\n${indent}  <h3>${jsxText(p.title, "Card")}</h3>\n${indent}  <p>${jsxText(p.content)}</p>\n${indent}</div>`;
     case "SimulatedStatCard":
@@ -171,8 +181,10 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
       return `${indent}<label className="checkbox"><input type="checkbox" ${p.defaultChecked ? "defaultChecked" : ""} /> ${jsxText(p.label, "Checkbox")}</label>`;
     case "SimulatedSwitch":
       return `${indent}<label className="switch"><input type="checkbox" role="switch" ${p.defaultOn ? "defaultChecked" : ""} /> ${jsxText(p.label, "Toggle")}</label>`;
-    case "SimulatedProgress":
-      return `${indent}<div className="progress">\n${indent}  <label>${jsxText(p.label, "Progress")}</label>\n${indent}  <progress value="${Number(p.value) || 50}" max="100" />\n${indent}</div>`;
+    case "SimulatedProgress": {
+      const id = fieldId(block.id);
+      return `${indent}<div className="progress">\n${indent}  <label htmlFor="${id}">${jsxText(p.label, "Progress")}</label>\n${indent}  <progress id="${id}" value="${Number(p.value) || 50}" max="100" />\n${indent}</div>`;
+    }
     case "SimulatedTabs":
       return `${indent}<div className="tabs">\n${((p.tabsCsv as string) || "Tab 1, Tab 2").split(",").map((t: string) => `${indent}  <button className="tab">${jsxText(t.trim())}</button>`).join("\n")}\n${indent}</div>`;
     case "SimulatedAccordion":

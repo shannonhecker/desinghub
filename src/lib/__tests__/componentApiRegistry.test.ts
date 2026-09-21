@@ -175,7 +175,11 @@ describe("componentApiRegistry — uoaui (in-house, className + --a-* CSS) emits
   it("maps a text input to uoaui's a-input-wrap / a-input-label / a-input composition", () => {
     const jsx = blockToRealJsx("uoaui", b("SimulatedTextInput", { label: "Email", placeholder: "you@co" }))!;
     expect(jsx).toContain('className="a-input-wrap"');
-    expect(jsx).toContain('<label className="a-input-label">Email</label>');
+    /* Implicit association: the control nests inside its <label>; the visible
+       label text is a span carrying the same class for the theme sheet. */
+    expect(jsx).toMatch(/^<label className="a-input-wrap">/);
+    expect(jsx).toContain('<span className="a-input-label">Email</span>');
+    expect(jsx).toMatch(/<\/label>$/);
     expect(jsx).toContain('<input className="a-input" placeholder="you@co" />');
   });
 

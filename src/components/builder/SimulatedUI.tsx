@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, useId } from "react";
 import * as CarbonIcons from "@carbon/icons-react";
 import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
 import { publicAssetUrl } from "@/lib/sampleImages";
@@ -583,14 +583,16 @@ export function SimulatedInput({
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
+  const inputId = useId();
 
   return (
     <div className={`${prefix}-input-container${error ? ` ${prefix}-input-error` : ""}`}>
-      <label className={`${prefix}-label${focused ? ` ${prefix}-label-focused` : ""}`}>
+      <label htmlFor={inputId} className={`${prefix}-label${focused ? ` ${prefix}-label-focused` : ""}`}>
         {label}
       </label>
       <div className={`${prefix}-input-wrapper${focused ? ` ${prefix}-input-wrapper-focused` : ""}`}>
         <input
+          id={inputId}
           type={type}
           className={`${prefix}-input`}
           placeholder={placeholder}
@@ -1218,11 +1220,13 @@ export function SimulatedMultilineInput({
 }: MultilineInputProps) {
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
   const [value, setValue] = useState("");
+  const textareaId = useId();
 
   return (
     <div className={`${prefix}-multiline`}>
-      <label className={`${prefix}-multiline-label`}>{label}</label>
+      <label htmlFor={textareaId} className={`${prefix}-multiline-label`}>{label}</label>
       <textarea
+        id={textareaId}
         className={`${prefix}-multiline-textarea`}
         placeholder={placeholder}
         rows={rows}
@@ -1728,9 +1732,11 @@ export function SimulatedTokenizedInput({
     }
   };
 
+  const inputId = useId();
+
   return (
     <div className={`${prefix}-tokenized`}>
-      <label className={`${prefix}-tokenized-label`}>{label}</label>
+      <label htmlFor={inputId} className={`${prefix}-tokenized-label`}>{label}</label>
       <div className={`${prefix}-tokenized-field`}>
         {tokens.map((t, i) => (
           <span key={i} className={`${prefix}-tokenized-chip`}>
@@ -1741,6 +1747,7 @@ export function SimulatedTokenizedInput({
           </span>
         ))}
         <input
+          id={inputId}
           className={`${prefix}-tokenized-input`}
           value={input}
           onChange={(e) => setInput(e.target.value)}
