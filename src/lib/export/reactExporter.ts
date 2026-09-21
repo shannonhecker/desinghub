@@ -90,6 +90,15 @@ function heightStyleOf(block: Block): string | undefined {
   return parts.length ? parts.join(", ") : undefined;
 }
 
+/* Salt is the one DS whose provider takes a global density. The builder's
+   shared density label maps 1:1 onto Salt's four levels; anything else (an
+   older saved value) falls back to Salt's default. Without this the export
+   silently dropped the density the canvas was designed at. */
+const SALT_DENSITIES = new Set(["high", "medium", "low", "touch"]);
+export function saltDensity(v: unknown): "high" | "medium" | "low" | "touch" {
+  return SALT_DENSITIES.has(String(v)) ? (String(v) as "high" | "medium" | "low" | "touch") : "medium";
+}
+
 const DS_IMPORTS: Record<string, { provider: string; importFrom: string }> = {
   salt: { provider: "SaltProvider", importFrom: "@salt-ds/core" },
   m3: { provider: "ThemeProvider", importFrom: "@mui/material" },
@@ -403,7 +412,7 @@ export function exportReact(): string {
           ? `<Theme theme="${s.mode === "dark" ? "g100" : "white"}">\n    `
           : system === "uoaui"
             ? "" /* CSS-only DS — no provider wrapper, just a-* classNames */
-            : `<${ds.provider} mode="${s.mode}">\n    `;
+            : `<${ds.provider} mode="${s.mode}" density="${saltDensity(s.density)}">\n    `;
   const close = !real
     ? ""
     : system === "m3"
