@@ -28,6 +28,7 @@ import { useAutoSave } from "@/lib/useAutoSave";
 import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
+import { copyShareLink, downloadCanvasJson, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import "./builder.css";
 
@@ -322,43 +323,15 @@ export function BuilderApp() {
   }, [exportMenuOpen]);
 
   const handleExportShare = async () => {
-    const { buildShareUrl, buildSharedCanvas } = await import("@/lib/shareState");
-    const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
-    if (tooLong) {
-      setExportShareState("too-long");
-      setTimeout(() => setExportShareState("idle"), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setExportShareState("copied");
-      setTimeout(() => setExportShareState("idle"), 2000);
-    } catch {
-      setExportShareState("error");
-      setTimeout(() => setExportShareState("idle"), 2500);
-    }
-    setExportMenuOpen(false);
+    const result = await copyShareLink();
+    setExportShareState(result);
+    setTimeout(() => setExportShareState("idle"), SHARE_FEEDBACK_MS[result]);
+    if (result !== "too-long") setExportMenuOpen(false);
   };
 
   const handleExportDownloadJson = () => {
     setExportDownloading(true);
-    const s = useBuilder.getState();
-    const config = {
-      designSystem: s.designSystem, mode: s.mode, density: s.density,
-      interfaceType: s.interfaceType, selectedComponents: s.selectedComponents,
-      colorOverrides: s.colorOverrides,
-      headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks, footerBlocks: s.footerBlocks,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${s.interfaceType}-${s.designSystem}-canvas.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCanvasJson();
     setTimeout(() => setExportDownloading(false), 1500);
     setExportMenuOpen(false);
   };

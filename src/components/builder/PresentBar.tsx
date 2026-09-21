@@ -19,7 +19,7 @@ import Link from "next/link";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
 import { useBuilder, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
 import { usePreviewMode } from "@/store/usePreviewMode";
-import { buildShareUrl, buildSharedCanvas } from "@/lib/shareState";
+import { copyShareLink, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
 
 const DS_LABEL: Record<DesignSystem, string> = {
   salt: "Salt DS",
@@ -168,23 +168,9 @@ export function PresentBar({
   const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
 
   const handleShare = async () => {
-    const s = useBuilder.getState();
-    /* buildSharedCanvas picks v:1 (single-page) or v:2 (multi-page) and flushes
-       the active page body — keeps the share payload lazy-additive. */
-    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
-    if (tooLong) {
-      setShareState("too-long");
-      setTimeout(() => setShareState("idle"), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareState("copied");
-      setTimeout(() => setShareState("idle"), 2000);
-    } catch {
-      setShareState("error");
-      setTimeout(() => setShareState("idle"), 2500);
-    }
+    const result = await copyShareLink();
+    setShareState(result);
+    setTimeout(() => setShareState("idle"), SHARE_FEEDBACK_MS[result]);
   };
 
   const shareIcon =
