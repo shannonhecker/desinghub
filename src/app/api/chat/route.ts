@@ -6,6 +6,7 @@ import {
 } from "@/lib/buildSystemPrompt";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
+import { CANVAS_TOOLS } from "@/lib/chatTools";
 
 const MAX_MESSAGES = 40;
 /* Per-message ceiling. The current turn carries the [Current state: ...]
@@ -120,9 +121,17 @@ export async function POST(req: Request) {
      max_tokens raised 4096 → 16000: it is a per-response ceiling, not a
      reservation (billed on actual output), so headroom is free and it closes
      the mid-layout truncation trap. Streaming has no HTTP-timeout concern. */
+  /* Canvas actions are TOOLS (chatTools.ts): the model returns each change
+     as a structured tool_use block instead of a ```json fence in its prose.
+     The tool list is a stable constant and renders ahead of `system` in the
+     cache prefix, so it caches with the prompt. Input streaming is left in
+     its default (buffered) mode on purpose: the API then validates each
+     parameter before it is emitted, so the accumulated input is always
+     complete JSON when its block closes; the inputs are small. */
   const stream = await anthropic.messages.stream({
     model: MODEL_ID,
     max_tokens: 16000,
+    tools: CANVAS_TOOLS,
     system: [
       {
         type: "text",
@@ -135,8 +144,16 @@ export async function POST(req: Request) {
 
   const encoder = new TextEncoder();
 
+  /* Tool-use blocks arrive as content_block_start (name) → N input_json_delta
+     fragments → content_block_stop. Accumulate per block index and emit one
+     `{tool_use: {name, input}}` frame when the block closes, in the order the
+     model emitted them (order matters: setZoneLayout before addBlock). */
+  const pendingTools = new Map<number, { name: string; json: string }>();
+
   const readable = new ReadableStream({
     async start(controller) {
+      const send = (frame: Record<string, unknown>) =>
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(frame)}\n\n`));
       try {
         for await (const event of stream) {
           /* Cache-hit telemetry: message_start carries the input-token usage,
@@ -155,8 +172,32 @@ export async function POST(req: Request) {
             event.type === "content_block_delta" &&
             event.delta.type === "text_delta"
           ) {
-            const data = JSON.stringify({ text: event.delta.text });
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+            send({ text: event.delta.text });
+          } else if (
+            event.type === "content_block_start" &&
+            event.content_block.type === "tool_use"
+          ) {
+            pendingTools.set(event.index, { name: event.content_block.name, json: "" });
+          } else if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "input_json_delta"
+          ) {
+            const pending = pendingTools.get(event.index);
+            if (pending) pending.json += event.delta.partial_json;
+          } else if (event.type === "content_block_stop") {
+            const pending = pendingTools.get(event.index);
+            if (!pending) continue;
+            pendingTools.delete(event.index);
+            let input: unknown;
+            try {
+              input = pending.json.trim() ? JSON.parse(pending.json) : {};
+            } catch {
+              /* Should not happen with buffered input streaming; if it does,
+                 tell the client which call was lost rather than dropping it. */
+              send({ tool_skipped: { name: pending.name, reason: "invalid tool input JSON" } });
+              continue;
+            }
+            send({ tool_use: { name: pending.name, input } });
           }
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));

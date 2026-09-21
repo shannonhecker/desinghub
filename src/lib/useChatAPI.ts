@@ -6,6 +6,8 @@ import { parseAIResponse } from "./parseAIResponse";
 import { applyAIActions } from "./applyAIActions";
 import { cleanHistoryForAPI } from "./cleanMessageHistory";
 import { buildCanvasManifest } from "./canvasManifest";
+import { toolUseToAction } from "./chatTools";
+import type { AIAction } from "./parseAIResponse";
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -202,6 +204,9 @@ export function useChatAPI() {
     // RAF-batched accumulator
     let accumulated = "";
     let rafId: number | null = null;
+    /* Structured actions from the model's tool calls, in emission order
+       (the route emits one {tool_use} frame per completed block). */
+    const toolActions: AIAction[] = [];
 
     const flushToStore = () => {
       rafId = null;
@@ -281,6 +286,32 @@ export function useChatAPI() {
       // Add placeholder AI message
       store.addMessage("ai", "...");
 
+      /* One SSE frame: text delta, structured tool call, or a mid-stream
+         error. `{error}` throws OUTSIDE the JSON.parse try in the callers so
+         it propagates to the outer catch (user-facing error + LifecyclePill). */
+      type Frame = {
+        text?: string;
+        error?: string;
+        tool_use?: { name?: unknown; input?: unknown };
+        tool_skipped?: { name?: unknown; reason?: unknown };
+      };
+      const handleFrame = (parsed: Frame | null): void => {
+        if (!parsed) return;
+        if (parsed.error) throw new Error(parsed.error);
+        if (parsed.text) {
+          accumulated += parsed.text;
+          scheduleFlush();
+        }
+        if (parsed.tool_use && typeof parsed.tool_use.name === "string") {
+          const action = toolUseToAction(parsed.tool_use.name, parsed.tool_use.input);
+          if (action) toolActions.push(action);
+          else console.warn(`[useChatAPI] Dropping unknown tool "${parsed.tool_use.name}"`);
+        }
+        if (parsed.tool_skipped) {
+          console.warn(`[useChatAPI] Server skipped tool "${String(parsed.tool_skipped.name)}": ${String(parsed.tool_skipped.reason)}`);
+        }
+      };
+
       // Carry over the trailing partial line between chunk reads. Without
       // this, a `data: {...}` event split across two network reads gets
       // dropped silently in the JSON.parse catch — visible to the user
@@ -302,22 +333,13 @@ export function useChatAPI() {
             const data = line.slice(6);
             if (data === "[DONE]") break;
 
-            let parsed: { text?: string; error?: string } | null = null;
+            let parsed: Frame | null = null;
             try {
               parsed = JSON.parse(data);
             } catch {
               // Skip malformed SSE data
             }
-            /* Surface mid-stream server errors instead of swallowing them.
-               The route emits {error} frames on stream failure (route.ts).
-               Throw OUTSIDE the JSON.parse try so it isn't re-caught here —
-               it propagates to the outer catch, which shows the user-facing
-               error and flips the LifecyclePill to its error state. */
-            if (parsed?.error) throw new Error(parsed.error);
-            if (parsed?.text) {
-              accumulated += parsed.text;
-              scheduleFlush();
-            }
+            handleFrame(parsed);
           }
         }
       }
@@ -327,14 +349,13 @@ export function useChatAPI() {
       if (leftover.startsWith("data: ")) {
         const data = leftover.slice(6);
         if (data && data !== "[DONE]") {
-          let parsed: { text?: string; error?: string } | null = null;
+          let parsed: Frame | null = null;
           try {
             parsed = JSON.parse(data);
           } catch {
             // Skip malformed final fragment
           }
-          if (parsed?.error) throw new Error(parsed.error);
-          if (parsed?.text) accumulated += parsed.text;
+          handleFrame(parsed);
         }
       }
 
@@ -342,8 +363,11 @@ export function useChatAPI() {
       if (rafId !== null) cancelAnimationFrame(rafId);
       flushToStore();
 
-      // Parse final response for actions
-      const { displayText, actions } = parseAIResponse(accumulated);
+      /* Actions: the model's tool calls (structured, schema-guided) plus any
+         legacy ```json fences still present in the prose, fences first so a
+         mixed response keeps the same relative order as before. */
+      const { displayText, actions: fenceActions } = parseAIResponse(accumulated);
+      const actions: AIAction[] = [...fenceActions, ...toolActions];
 
       /* Resolve the bubble content. The model sometimes returns ONLY
          json action fences (displayText === "") — overwriting the "..."
