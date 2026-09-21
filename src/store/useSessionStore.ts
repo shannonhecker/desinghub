@@ -36,6 +36,7 @@ import type {
   InterfaceType,
   ZoneLayout,
   ZoneId,
+  Page,
 } from "@/store/useBuilder";
 
 /** The persisted slice of builder state for one session. Mirrors
@@ -54,6 +55,11 @@ export interface LocalSessionSnapshot {
   selectedComponents: string[];
   colorOverrides: Record<string, string>;
   activeTemplateId?: string | null;
+  /** Lazy-additive multi-page (mirrors firebase.ProjectSnapshot): present
+   *  only for canvases with >1 page. Single-page rows stay byte-identical
+   *  to the legacy shape; `blocks` always carries the active page's body. */
+  pages?: Page[];
+  activePageId?: string | null;
 }
 
 export interface LocalSession {
