@@ -16,6 +16,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { requireBuilderAuth } from "@/lib/apiAuth";
 import { MODEL_ID } from "@/lib/chatSystem";
 import { VALID_TEMPLATE_IDS } from "@/lib/builderTemplates";
 
@@ -96,6 +97,12 @@ Output shape:
 }`;
 
 export async function POST(req: Request) {
+  /* Staging gate: the middleware skips /api/*, so without this the AI
+     routes were reachable without the staging password (open proxy to the
+     Anthropic key). Public mode (no STAGING_PASSWORD) passes straight through. */
+  const denied = await requireBuilderAuth(req);
+  if (denied) return denied;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(

@@ -19,6 +19,8 @@ export const CHAT_ERROR_COPY = {
     "I could not reach the server. Check your connection, then use Retry to send your message again.",
   tooBig:
     "That request was too big for one turn. Try a smaller ask: one section or one change at a time.",
+  auth:
+    "Your sign-in has expired. Reload the page and sign in again to keep using AI. Templates and manual edits still work.",
   generic: "I'm having trouble connecting right now. Please try again in a moment.",
 } as const;
 
@@ -38,6 +40,7 @@ export const CHAT_ERROR_PREFIXES = [
   "Something went wrong on the server",
   "I could not reach the server",
   "That request was too big",
+  "Your sign-in has expired",
 ] as const;
 
 /* Refusal / context-overrun sentinels surfaced by the route's
@@ -62,6 +65,7 @@ type ChatErrorKind =
   | "server"
   | "network"
   | "too-big"
+  | "auth"
   | "generic";
 
 /* Replace one message's content by id (countdown ticks + retries). */
@@ -254,6 +258,9 @@ export function useChatAPI() {
               : FALLBACK_RETRY_SECONDS;
           throw new Error(`RATE_LIMITED:${seconds}`);
         }
+        /* Staging gate (api/chat/route.ts -> requireBuilderAuth): the
+           cookie expired or was never set. Not retryable until re-login. */
+        if (res.status === 401) throw new Error("AUTH_REQUIRED");
         /* Server-side failure: retryable - the user's text is intact. */
         if (res.status >= 500) throw new Error("SERVER_ERROR");
         throw new Error(`API error: ${res.status}`);
@@ -408,6 +415,8 @@ export function useChatAPI() {
         waitSeconds =
           Number(message.slice("RATE_LIMITED:".length)) ||
           FALLBACK_RETRY_SECONDS;
+      } else if (message === "AUTH_REQUIRED") {
+        kind = "auth";
       } else if (message === "SERVER_ERROR") {
         kind = "server";
       } else if (err instanceof TypeError) {
@@ -427,7 +436,9 @@ export function useChatAPI() {
                 ? CHAT_ERROR_COPY.network
                 : kind === "too-big"
                   ? CHAT_ERROR_COPY.tooBig
-                  : CHAT_ERROR_COPY.generic;
+                  : kind === "auth"
+                    ? CHAT_ERROR_COPY.auth
+                    : CHAT_ERROR_COPY.generic;
 
       /* On failure, surface the error in the thread - replacing the
          "..." placeholder when one is in flight, otherwise as a new

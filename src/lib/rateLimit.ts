@@ -1,6 +1,7 @@
 /**
  * Sliding-window rate limiter backed by Upstash Redis.
- * Falls back to no-op when env vars are absent (local dev).
+ * Falls back to no-op when env vars are absent (local dev). When Redis IS
+ * configured but unreachable it fails closed (denies) - see the catch.
  *
  * Required env vars (auto-set by Vercel Marketplace Redis integration):
  *   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
@@ -31,6 +32,8 @@ export function getClientIp(req: Request): string {
 
 const WINDOW_MS = 60_000; // 60 seconds
 const MAX_REQUESTS = 20;
+/** Retry-After advertised when the limiter itself is down (fail closed). */
+const FAIL_CLOSED_RETRY_SECONDS = 10;
 
 function getRedisClient(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
@@ -92,9 +95,13 @@ export async function checkRateLimit(
       remaining: MAX_REQUESTS - count,
       resetInSeconds: Math.ceil(WINDOW_MS / 1000),
     };
-  } catch {
-    // If Redis fails, allow the request (fail open) but log
-    console.warn("[rateLimit] Redis unavailable, skipping rate limit");
-    return { allowed: true, remaining: MAX_REQUESTS, resetInSeconds: 0 };
+  } catch (err) {
+    /* Redis is CONFIGURED but unreachable. Fail CLOSED: an outage of the
+       limiter must degrade to "AI is briefly unavailable", never to
+       "unlimited Anthropic spend for anyone who finds the URL". The
+       unconfigured (no env) case above still no-ops so local dev is
+       unaffected. Short reset so a transient blip clears quickly. */
+    console.error("[rateLimit] Redis unavailable; denying request (fail closed)", err);
+    return { allowed: false, remaining: 0, resetInSeconds: FAIL_CLOSED_RETRY_SECONDS };
   }
 }
