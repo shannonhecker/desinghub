@@ -197,6 +197,8 @@ function PreviewBar() {
   const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
   const compareMode = useBuilder((s) => s.compareMode);
   const toggleCompareMode = useBuilder((s) => s.toggleCompareMode);
+  const editRendersReal = useBuilder((s) => s.editRendersReal);
+  const toggleEditRendersReal = useBuilder((s) => s.toggleEditRendersReal);
   /* Zone customization (PR2): show/hide peripheral panels. */
   const zoneLayouts = useBuilder((s) => s.zoneLayouts);
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
@@ -586,6 +588,20 @@ function PreviewBar() {
             >
               <span className="material-symbols-outlined" aria-hidden="true">compare</span>
               {compareMode ? "Exit compare mode" : "Compare design systems"}
+            </button>
+            {/* Edit-mode fidelity: real DS components while editing (default) vs
+                the simulated facsimiles with inline text editing. */}
+            <button
+              className={`preview-bar-overflow-item${editRendersReal ? " preview-bar-overflow-item-active" : ""}`}
+              role="menuitemcheckbox"
+              aria-checked={editRendersReal}
+              onClick={() => { toggleEditRendersReal(); setOverflowOpen(false); }}
+              title="On: covered blocks render as the real design-system component while editing; edit their text in the inspector. Off: simulated blocks with inline text editing."
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {editRendersReal ? "check" : "auto_awesome"}
+              </span>
+              Real components in Edit
             </button>
             <div className="preview-bar-overflow-divider" />
             {/* Panels (PR2): show/hide the peripheral zones. Hiding keeps the

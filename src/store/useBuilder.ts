@@ -410,6 +410,13 @@ interface BuilderState {
   // simultaneously (2x2 grid) so designers can compare visual output.
   compareMode: boolean;
 
+  /* Edit-mode fidelity: when true (default), blocks the RealComponentRenderer
+     covers render as the REAL design-system component while editing, exactly
+     as in Preview / Present; their props are edited through the block
+     inspector. When false, edit mode shows the Simulated* facsimiles with
+     inline text editing. UI preference (not autosaved). */
+  editRendersReal: boolean;
+
   // User-adjustable canvas chrome rhythm. Drives padding on canvas
   // wrapper, every zone, every block wrapper, and the inter-block gap.
   // Per-DS native values resolved via lib/structurePadding.ts.
@@ -633,6 +640,8 @@ interface BuilderState {
   // Compare-DS
   toggleCompareMode: () => void;
   setCompareMode: (v: boolean) => void;
+  setEditRendersReal: (v: boolean) => void;
+  toggleEditRendersReal: () => void;
 
   // Structure padding control (per-DS S/M/L)
   setStructurePadding: (size: 'small' | 'medium' | 'large') => void;
@@ -910,6 +919,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   previewKey: 0,
   deviceMode: 'desktop',
   compareMode: false,
+  editRendersReal: true,
   structurePadding: 'medium',
   inserterOpen: false,
   inserterAnchor: null,
@@ -1648,6 +1658,8 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   toggleCompareMode: () => set((s) => ({ compareMode: !s.compareMode })),
   setCompareMode: (v) => set({ compareMode: v }),
+  setEditRendersReal: (v) => set({ editRendersReal: v }),
+  toggleEditRendersReal: () => set((s) => ({ editRendersReal: !s.editRendersReal })),
 
   setStructurePadding: (size) => set({ structurePadding: size }),
 
