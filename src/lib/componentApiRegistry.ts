@@ -110,7 +110,9 @@ const SALT_ICONS = "@salt-ds/icons";
 /* Generic block `variant` -> Salt's official sentiment + appearance.
    Salt API: sentiment = accented|neutral|positive|caution|negative,
    appearance = solid|bordered|transparent (NOT filled/outlined/text). */
-function saltButtonAttrs(props: Record<string, unknown>): string {
+const SALT_APPEARANCES = new Set(["solid", "bordered", "transparent"]);
+const SALT_SENTIMENTS = new Set(["accented", "neutral", "positive", "caution", "negative"]);
+export function saltButtonAttrs(props: Record<string, unknown>): string {
   const variant = s(props.variant, "primary");
   const map: Record<string, { sentiment: string; appearance: string }> = {
     primary: { sentiment: "accented", appearance: "solid" },
@@ -120,7 +122,15 @@ function saltButtonAttrs(props: Record<string, unknown>): string {
     danger: { sentiment: "negative", appearance: "solid" },
     destructive: { sentiment: "negative", appearance: "solid" },
   };
-  const { sentiment, appearance } = map[variant] ?? map.primary;
+  const base = map[variant] ?? map.primary;
+  /* Explicit Salt props win over the generic variant mapping. The DS-variant
+     presets (dsVariantPresets.ts) write `appearance` / `sentiment` directly —
+     e.g. "Negative Transparent" — and the block inspector can set them; before
+     this they were dropped and every Salt button re-derived from `variant`.
+     Values are validated against Salt's official enums so free text can't
+     reach the emitted JSX. */
+  const appearance = SALT_APPEARANCES.has(String(props.appearance)) ? String(props.appearance) : base.appearance;
+  const sentiment = SALT_SENTIMENTS.has(String(props.sentiment)) ? String(props.sentiment) : base.sentiment;
   return `sentiment="${sentiment}" appearance="${appearance}"`;
 }
 

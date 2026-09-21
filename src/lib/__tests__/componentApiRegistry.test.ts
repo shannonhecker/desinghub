@@ -13,6 +13,20 @@ describe("componentApiRegistry — Salt emits real @salt-ds/core components", ()
       .toBe('<Button sentiment="accented" appearance="solid">Submit</Button>');
   });
 
+  it("honours explicit Salt appearance + sentiment (DS-variant presets / inspector) over the generic variant", () => {
+    /* dsVariantPresets "Negative Transparent" writes variant=tertiary + the real Salt props;
+       before this the props were dropped and 'tertiary' fell back to accented/solid. */
+    expect(blockToRealJsx("salt", b("SimulatedButton", { label: "Delete", variant: "tertiary", appearance: "transparent", sentiment: "negative" })))
+      .toBe('<Button sentiment="negative" appearance="transparent">Delete</Button>');
+    expect(blockToRealJsx("salt", b("SimulatedButton", { label: "OK", variant: "primary", sentiment: "positive" })))
+      .toBe('<Button sentiment="positive" appearance="solid">OK</Button>');
+  });
+
+  it("rejects non-Salt appearance/sentiment values and keeps the variant mapping", () => {
+    expect(blockToRealJsx("salt", b("SimulatedButton", { label: "X", variant: "secondary", appearance: "filled", sentiment: "brand" })))
+      .toBe('<Button sentiment="neutral" appearance="bordered">X</Button>');
+  });
+
   it("maps a danger button to sentiment=negative", () => {
     expect(blockToRealJsx("salt", b("SimulatedButton", { label: "Delete", variant: "danger" })))
       .toContain('sentiment="negative"');
