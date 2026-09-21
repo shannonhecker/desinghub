@@ -1164,8 +1164,8 @@ function readInspectorExpanded(): Record<string, boolean> {
   }
 }
 
-/* Issue #13: per-block accent override section. Mirrors the
-   SettingsPanel accent presets but writes to the block's own
+/* Issue #13: per-block accent override section. Uses the shared
+   per-DS accent presets but writes to the block's own
    `colorOverrides` instead of the global one. Reset link clears the
    per-block value so the block re-inherits the global accent. */
 function BlockAccentSection({

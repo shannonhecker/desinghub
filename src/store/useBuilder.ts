@@ -391,7 +391,6 @@ interface BuilderState {
   activePageId: string | null;
 
   // UI state
-  settingsOpen: boolean;
   previewOpen: boolean;
   chatOpen: boolean;
   /* How the chat sits when open. 'floating' = a card over a full-bleed
@@ -620,7 +619,6 @@ interface BuilderState {
   toggleZoneVisible: (zone: ZoneId) => void;
 
   // Actions - UI
-  toggleSettings: () => void;
   togglePreview: () => void;
   setPreviewOpen: (v: boolean) => void;
   toggleChat: () => void;
@@ -904,7 +902,6 @@ export const useBuilder = create<BuilderState>((set) => ({
   },
 
   // UI state
-  settingsOpen: false,
   previewOpen: false,
   chatOpen: true,
   chatMode: 'floating',
@@ -1637,7 +1634,6 @@ export const useBuilder = create<BuilderState>((set) => ({
     };
   }),
 
-  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
   togglePreview: () => set((s) => ({ previewOpen: !s.previewOpen })),
   setPreviewOpen: (v) => set({ previewOpen: v }),
   toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),

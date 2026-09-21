@@ -97,7 +97,6 @@
    dimmed overlay). */
 .builder-shell.builder-shell .sessions-drawer,
 .builder-shell.builder-shell .templates-drawer,
-.builder-shell.builder-shell .settings-panel,
 .builder-shell.builder-shell .export-panel {
   border-color: rgba(255, 255, 255, 0.09);
   background:
@@ -4231,176 +4230,7 @@
   color: rgba(0, 0, 0, 0.9);
 }
 
-/* ── SETTINGS DRAWER (kept for color overrides) ── */
-.settings-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 50;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-mid);
-}
-.settings-overlay.open { opacity: 1; pointer-events: auto; }
-
-.settings-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 340px;
-  background: var(--glass-white);
-  backdrop-filter: blur(28px);
-  border-left: 1px solid var(--glass-border);
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.2);
-  z-index: 51;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 300ms var(--ease-glass);
-}
-.settings-panel.open { transform: translateX(0); }
-
-.settings-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--b-border);
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.settings-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--b-border);
-  background: transparent;
-  color: var(--b-fg3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all var(--b-transition);
-}
-.settings-close:hover { background: var(--b-surface); color: var(--b-fg); }
-
-.settings-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.settings-group label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--b-fg3);
-  margin-bottom: 8px;
-}
-
-.settings-select {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--b-radius-sm);
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
-  color: var(--b-fg);
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  backdrop-filter: blur(8px);
-  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
-}
-.settings-select:focus {
-  border-color: rgba(138, 171, 168, 0.5);
-  box-shadow: 0 0 0 3px rgba(138, 171, 168, 0.1);
-}
-
-.settings-toggle-row { display: flex; gap: 4px; }
-.settings-toggle-btn {
-  flex: 1;
-  padding: 8px 0;
-  border: 1px solid var(--b-border);
-  background: transparent;
-  color: var(--b-fg2);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--b-transition);
-}
-.settings-toggle-btn:first-child { border-radius: var(--b-radius-sm) 0 0 var(--b-radius-sm); }
-.settings-toggle-btn:last-child { border-radius: 0 var(--b-radius-sm) var(--b-radius-sm) 0; }
-.settings-toggle-btn.active {
-  background: var(--b-accent);
-  border-color: var(--b-accent);
-  color: white;
-}
-/* Scaffolded placement modes (Grid / Freeform) — present so the roadmap is
-   visible, but disabled with a "Soon" pill until their phases land. */
-.settings-toggle-btn.soon {
-  cursor: not-allowed;
-  opacity: 0.55;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-}
-.settings-toggle-btn.soon:hover { background: transparent; color: var(--b-fg2); }
-.settings-toggle-soon {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 1px 4px;
-  border-radius: 999px;
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
-  color: var(--b-fg3, var(--b-fg2));
-}
-.settings-group-hint {
-  margin: 6px 0 0;
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--b-fg3, var(--b-fg2));
-}
-
-.comp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.comp-chip {
-  padding: 5px 12px;
-  border-radius: 9999px;
-  border: 1px solid var(--glass-border-subtle);
-  background: var(--glass-white);
-  color: var(--b-fg2);
-  font-size: 11px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all var(--dur-fast) var(--ease-liquid);
-  backdrop-filter: blur(8px);
-}
-.comp-chip:hover {
-  background: var(--glass-white-md);
-  transform: translateY(-1px);
-}
-.comp-chip.selected {
-  background: rgba(138, 171, 168, 0.1);
-  border-color: rgba(138, 171, 168, 0.22);
-  color: var(--accent-aqua);
-  box-shadow: none;
-}
-
+/* ── COLOR OVERRIDE ROWS (per-block accent, ComponentLibrary) ── */
 .color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .color-label { flex: 1; font-size: 12px; color: var(--b-fg2); }
 .color-swatch {
@@ -4416,7 +4246,7 @@
 .color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
 .color-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
 
-/* Issue #11: per-DS accent preset swatch grid in SettingsPanel.
+/* Issue #11: per-DS accent preset swatch grid (per-block accent in ComponentLibrary).
    One-click presets sit alongside the native color input which acts
    as the custom-hex fallback. */
 .accent-preset-row {
@@ -5699,7 +5529,6 @@
   .hero-title { font-size: 28px; }
   .hero-hi { font-size: 20px; }
   .prompt-bubbles { gap: 6px; }
-  .settings-panel { width: 100%; }
   .top-bar-logo-text { display: none; }
   .top-bar-actions .preview-badge-inline { display: none; }
   .top-bar-btn:not(.icon-only) span:last-child { display: none; }
@@ -5722,13 +5551,10 @@
 
 /* ── SCROLLBAR ── */
 .chat-scroll::-webkit-scrollbar,
-.settings-body::-webkit-scrollbar,
 .sidebar-body::-webkit-scrollbar { width: 4px; }
 .chat-scroll::-webkit-scrollbar-track,
-.settings-body::-webkit-scrollbar-track,
 .sidebar-body::-webkit-scrollbar-track { background: transparent; }
 .chat-scroll::-webkit-scrollbar-thumb,
-.settings-body::-webkit-scrollbar-thumb,
 .sidebar-body::-webkit-scrollbar-thumb { background: var(--b-border2); border-radius: 2px; }
 
 /* ═══════════════════════════════════════════════════════════
@@ -8313,7 +8139,6 @@
   .top-bar,
   .chat-msg-ai,
   .input-box,
-  .settings-panel,
   .preview-toolbar,
   .chat-collapse-btn {
     background: rgba(16, 15, 26, 0.92) !important;
@@ -8322,7 +8147,6 @@
   .builder-light .top-bar,
   .builder-light .chat-msg-ai,
   .builder-light .input-box,
-  .builder-light .settings-panel,
   .builder-light .preview-toolbar,
   .builder-light .chat-collapse-btn {
     background: rgba(255, 255, 255, 0.94) !important;

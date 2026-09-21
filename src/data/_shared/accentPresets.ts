@@ -1,8 +1,8 @@
 /**
  * Per-DS accent preset swatches. Each DS exposes 5 brand-aligned
- * options that one-click into `colorOverrides.accent`. The native
- * `<input type="color">` in SettingsPanel still works as a custom
- * fallback for any other hex.
+ * options that one-click into `colorOverrides.accent` (per-block via
+ * ComponentLibrary's accent section; globally via the AI
+ * setColorOverride action). Any other hex is accepted as a custom value.
  *
  * Active swatch is matched on hex; case-insensitive comparison
  * recommended at the call site.
@@ -69,7 +69,7 @@ export const ACCENT_VAR_BY_DS: Record<DesignSystem, string> = {
 };
 
 /* Per-DS lookup key into `colorOverrides` for the primary accent.
-   Mirrors the first entry of each DS's COLOR_KEYS row in SettingsPanel. */
+   The first colour-override key each DS exposes ("accent" / "primary" etc.). */
 export const ACCENT_KEY_BY_DS: Record<DesignSystem, string> = {
   salt: "accent",
   m3: "primary",

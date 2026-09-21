@@ -12,7 +12,6 @@ import {
 /* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
  * no direct import here since BuilderApp no longer owns the save/load UI. */
 import { ChatPanel } from "./ChatPanel";
-import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import { PresentStage } from "./PresentStage";
 import { ExportPanel } from "./ExportPanel";
@@ -203,9 +202,9 @@ export function BuilderApp() {
     root.style.setProperty('--dh-pad-gap', `${v.gap * gapMul}px`);
   }, [designSystem, structurePadding, interfaceType]);
 
-  /* Accent override: when a user sets `colorOverrides.accent` in
-     SettingsPanel, paint the per-DS accent CSS var so the canvas
-     reflects the choice. Sa+uoaui share lineage; salt also gets
+  /* Accent override: when `colorOverrides.accent` is set (AI
+     setColorOverride action or a loaded session), paint the per-DS
+     accent CSS var so the canvas reflects the choice. Sa+uoaui share lineage; salt also gets
      the override so glass tints follow. */
   const colorOverrides = useBuilder((s) => s.colorOverrides);
   const accentOverride = colorOverrides[ACCENT_KEY_BY_DS[designSystem]];
@@ -802,8 +801,6 @@ export function BuilderApp() {
           <span className="material-symbols-outlined" aria-hidden="true">forum</span>
         </button>
       )}
-
-      <SettingsPanel />
 
       {/* ── Templates drawer - opened via the hero's "Browse templates"
            link, or programmatically from anywhere in the builder. ── */}
