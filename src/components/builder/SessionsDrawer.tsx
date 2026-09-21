@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
 import { restoreLocalSession } from "@/lib/localSession";
+import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import {
   useSessionStore,
   type LocalSession,
@@ -167,7 +168,7 @@ export function SessionsDrawer() {
   if (!sessionsDrawerOpen) return null;
 
   const handleNew = () => {
-    startNewSession();
+    startNewSessionWithUndo();
     setSessionsDrawerOpen(false);
   };
 

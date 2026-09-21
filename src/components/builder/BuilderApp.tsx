@@ -28,6 +28,7 @@ import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
 import { copyShareLink, downloadCanvasJson, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
+import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import "./builder.css";
 
@@ -50,7 +51,7 @@ export function BuilderApp() {
     chatOpen: isChatOpen, setChatOpen,
     chatMode, chatPlacement, setChatPlacement, setChatMode,
     activeTemplateId, hasMessages,
-    toggleSessionsDrawer, startNewSession,
+    toggleSessionsDrawer,
   } = useBuilder(
     useShallow((s) => ({
       mode: s.mode,
@@ -71,7 +72,6 @@ export function BuilderApp() {
       activeTemplateId: s.activeTemplateId,
       hasMessages: s.messages.length > 0,
       toggleSessionsDrawer: s.toggleSessionsDrawer,
-      startNewSession: s.startNewSession,
     })),
   );
 
@@ -607,7 +607,7 @@ export function BuilderApp() {
             </Link>
             <button
               className="top-bar-btn icon-only top-bar-new-session"
-              onClick={startNewSession}
+              onClick={startNewSessionWithUndo}
               title="Start a new session"
               aria-label="Start a new session"
             >
