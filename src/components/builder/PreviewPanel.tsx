@@ -176,9 +176,6 @@ function PreviewBar() {
   const setDesignSystem = useBuilder((s) => s.setDesignSystem);
   const mode = useBuilder((s) => s.mode);
   const setMode = useBuilder((s) => s.setMode);
-  const interfaceType = useBuilder((s) => s.interfaceType);
-  const selectedComponents = useBuilder((s) => s.selectedComponents);
-  const colorOverrides = useBuilder((s) => s.colorOverrides);
   const density = useBuilder((s) => s.density);
   const setDensity = useBuilder((s) => s.setDensity);
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
@@ -206,8 +203,6 @@ function PreviewBar() {
 
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [dsMenuOpen, setDsMenuOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [shareState, setShareState] = useState<"idle" | "copied" | "too-long" | "error">("idle");
 
   const overflowRef = useRef<HTMLDivElement | null>(null);
   const dsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -293,43 +288,6 @@ function PreviewBar() {
       `${window.location.origin}${basePath}/builder?preview=1&shared=${hash}`,
       "design-hub-preview", "width=900,height=700"
     );
-    setOverflowOpen(false);
-  };
-
-  const handleShare = async () => {
-    const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
-    if (tooLong) {
-      setShareState("too-long");
-      setTimeout(() => setShareState("idle"), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareState("copied");
-      setTimeout(() => setShareState("idle"), 2000);
-    } catch {
-      setShareState("error");
-      setTimeout(() => setShareState("idle"), 2500);
-    }
-    setOverflowOpen(false);
-  };
-
-  const handleDownload = () => {
-    setDownloading(true);
-    const config = {
-      designSystem, mode, density, interfaceType,
-      selectedComponents, colorOverrides,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${interfaceType}-${designSystem}-config.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setTimeout(() => setDownloading(false), 1500);
     setOverflowOpen(false);
   };
 

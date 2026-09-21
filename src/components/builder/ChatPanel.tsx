@@ -14,6 +14,7 @@ import { titleFromMessage, titleFromTemplate } from "@/lib/sessionTitle";
 import { FadingWords } from "./FadingWords";
 import { LifecyclePill, type LifecycleState } from "./LifecyclePill";
 import { applyChatComponentDelta } from "@/lib/chatComponentDelta";
+import { clearCanvasWithUndo } from "@/lib/sessionReset";
 import { subscribeToolUse, type ToolUseEvent } from "@/lib/toolUseEvents";
 import { ToolUseEventCard } from "./cards/ToolUseCard";
 import { ConversationalOnboarding } from "./ConversationalOnboarding";
@@ -376,7 +377,7 @@ export function ChatPanel() {
     previewOpen, setPreviewOpen,
     setDesignSystem, setMode, setDensity, setInterfaceType, setSelectedComponents,
     setHeaderBlocks, setSidebarBlocks, setBlocks, setFooterBlocks, setZoneLayout,
-    activeTemplateId, setActiveTemplateId,
+    activeTemplateId,
     isRegeneratingContent, setIsRegeneratingContent,
     selectedBlockId, selectedBlockZone, setSelectedBlock,
     blocks: bodyBlocks, headerBlocks, sidebarBlocks, footerBlocks,
@@ -1056,14 +1057,11 @@ export function ChatPanel() {
          selectedComponents doesn't reflect what's actually on canvas
          (dragged blocks, loaded sessions, etc.). */
       if (clearAll) {
-        /* "Clear all" wipes the WHOLE canvas, not just the body. Reset every
-           zone + the body layout + the active template. */
-        setHeaderBlocks([]);
-        setSidebarBlocks([]);
-        setBlocks([]);
-        setFooterBlocks([]);
-        setZoneLayout("body", { mode: "row", gap: 12, wrap: true, align: "stretch" });
-        setActiveTemplateId(null);
+        /* "Clear all" wipes the WHOLE canvas, not just the body: every zone,
+           the body layout and the active template. Recorded on the undo
+           stack + surfaced as a toast with Undo (the builder's destructive-
+           action pattern), so a mis-typed "clear" is one click to recover. */
+        clearCanvasWithUndo();
       } else {
         applyChatComponentDelta(selectedComponents, newComponents, { alsoRemoveIds, clearBody });
       }

@@ -27,8 +27,9 @@
 
 import { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
-import { useSessionStore, type LocalSessionSnapshot } from "@/store/useSessionStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { TRACKED_KEYS } from "./autoSaveTrackedKeys";
+import { buildLocalSessionSnapshot } from "./localSession";
 
 /* localStorage writes are synchronous and cheap, so a short debounce is
  *  plenty to collapse rapid edits without losing the latest state. */
@@ -79,21 +80,9 @@ export function useLocalAutoSave() {
       /* No session started yet -> nothing to save (correct gate). */
       if (!s.currentSessionId) return;
 
-      const snapshot: LocalSessionSnapshot = {
-        messages: s.messages,
-        blocks: s.blocks,
-        headerBlocks: s.headerBlocks,
-        sidebarBlocks: s.sidebarBlocks,
-        footerBlocks: s.footerBlocks,
-        zoneLayouts: s.zoneLayouts,
-        designSystem: s.designSystem,
-        mode: s.mode,
-        density: s.density,
-        interfaceType: s.interfaceType,
-        selectedComponents: s.selectedComponents,
-        colorOverrides: s.colorOverrides,
-        activeTemplateId: s.activeTemplateId,
-      };
+      /* Shared with the cloud path's field set (incl. multi-page pages /
+         activePageId, flushed from the live body mirror). */
+      const snapshot = buildLocalSessionSnapshot(s);
 
       try {
         s.setSaveState("saving");

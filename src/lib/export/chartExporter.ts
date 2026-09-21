@@ -76,7 +76,96 @@ export function chartBlockJsx(block: Block, mode: "light" | "dark" = "light"): s
   if (title != null && title !== "") parts.push(`title="${attr(title)}"`);
   if (typeof value === "number") parts.push(`value={${value}}`);
   parts.push(`mode="${mode}"`);
+  /* Domain data + per-chart colour overrides. The canvas renders these via
+     SimulatedHighchart (categories / series / seriesData / seriesColors); the
+     export must carry the same data or an AI-filled "Revenue by plan" chart
+     ships as the canned placeholder. Emitted as JSX expression literals. */
+  const data = chartDataOf(block);
+  if (data.categories) parts.push(`categories={${jsLiteral(data.categories)}}`);
+  if (data.series) parts.push(`series={${jsLiteral(data.series)}}`);
+  if (data.seriesData) parts.push(`seriesData={${jsLiteral(data.seriesData)}}`);
+  if (data.colors) parts.push(`colors={${jsLiteral(data.colors)}}`);
   return `<ChartBlock ${parts.join(" ")} />`;
+}
+
+/* ── Domain-data extraction (mirrors HighchartBlockRenderer's prop reads) ──
+ *   Every value is validated to the exact shape the exported ChartBlock
+ *   accepts so a malformed / hostile prop can't emit broken (or executable)
+ *   TSX. Empty arrays are dropped so the export falls back to defaults. */
+export interface ChartBlockData {
+  categories?: string[];
+  series?: { name: string; data: number[] }[];
+  seriesData?: { name: string; y: number }[];
+  colors?: string[];
+}
+
+const MAX_CHART_ITEMS = 200;
+const MAX_LABEL_LENGTH = 120;
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+function isFiniteNumber(n: unknown): n is number {
+  return typeof n === "number" && Number.isFinite(n);
+}
+function cleanLabel(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (!t) return null;
+  return t.slice(0, MAX_LABEL_LENGTH);
+}
+
+export function chartDataOf(block: Block): ChartBlockData {
+  const props = block.props ?? {};
+  const out: ChartBlockData = {};
+
+  if (Array.isArray(props.categories)) {
+    const cats = props.categories.slice(0, MAX_CHART_ITEMS).map(cleanLabel).filter((c): c is string => c !== null);
+    if (cats.length) out.categories = cats;
+  }
+
+  if (Array.isArray(props.series)) {
+    const series: { name: string; data: number[] }[] = [];
+    for (const s of props.series.slice(0, MAX_CHART_ITEMS)) {
+      if (typeof s !== "object" || s === null) continue;
+      const r = s as Record<string, unknown>;
+      const name = cleanLabel(r.name) ?? "Series";
+      if (!Array.isArray(r.data)) continue;
+      const data = r.data.slice(0, MAX_CHART_ITEMS).filter(isFiniteNumber);
+      if (!data.length) continue;
+      series.push({ name, data });
+    }
+    if (series.length) out.series = series;
+  }
+
+  if (Array.isArray(props.seriesData)) {
+    const points: { name: string; y: number }[] = [];
+    for (const d of props.seriesData.slice(0, MAX_CHART_ITEMS)) {
+      if (typeof d !== "object" || d === null) continue;
+      const r = d as Record<string, unknown>;
+      const name = cleanLabel(r.name);
+      if (name === null || !isFiniteNumber(r.y)) continue;
+      points.push({ name, y: r.y });
+    }
+    if (points.length) out.seriesData = points;
+  }
+
+  if (Array.isArray(props.seriesColors)) {
+    /* Position-indexed: keep holes as "" so slot N still maps to series N;
+       the exported helper falls back to the palette for empty slots. */
+    const colors = props.seriesColors
+      .slice(0, 12)
+      .map((c) => (typeof c === "string" && HEX_COLOR_RE.test(c.trim()) ? c.trim() : ""));
+    if (colors.some(Boolean)) out.colors = colors;
+  }
+
+  return out;
+}
+
+/** Serialise validated chart data as a JS literal for a JSX `{...}` slot.
+ *  Inputs are already shape-checked (strings / finite numbers only), so
+ *  JSON.stringify yields a valid TS expression. U+2028/2029 are escaped
+ *  defensively since JSON allows them raw inside strings. */
+function jsLiteral(v: unknown): string {
+  return JSON.stringify(v).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
 /* ── Imports the exported file needs for Highcharts to run ── */
@@ -140,9 +229,15 @@ function chartTheme(mode: "light" | "dark") {
   };
 }
 
-function chartBaseTheme(v: ReturnType<typeof chartTheme>) {
+/* Per-chart colour overrides overlay the palette slot-for-slot; empty slots
+   keep the DS palette colour (same rule as the builder canvas). */
+function chartColors(overrides?: string[]) {
+  return CHART_PALETTE.map((p, i) => (overrides && overrides[i]) || p);
+}
+
+function chartBaseTheme(v: ReturnType<typeof chartTheme>, colors: string[]) {
   return {
-    colors: CHART_PALETTE,
+    colors,
     chart: { backgroundColor: "transparent", style: { fontFamily: "inherit" }, height: 250 },
     title: { style: { color: v.fg, fontSize: "13px", fontWeight: "600" }, align: "left" },
     xAxis: {
@@ -174,31 +269,51 @@ function chartBaseTheme(v: ReturnType<typeof chartTheme>) {
   };
 }
 
-function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: { title?: string; value?: number }): any {
+type ChartSeries = { name: string; data: number[] };
+type ChartPoint = { name: string; y: number };
+type ChartProps = {
+  title?: string;
+  value?: number;
+  /* Domain data supplied by the canvas (template / model). When absent the
+     chart renders its illustrative default so the export always runs. */
+  categories?: string[];
+  series?: ChartSeries[];
+  seriesData?: ChartPoint[];
+};
+
+function withType(series: ChartSeries[] | undefined, type: string, fallback: any[]): any[] {
+  return series && series.length ? series.map((s) => ({ ...s, type })) : fallback;
+}
+function points(data: ChartPoint[] | undefined, fallback: ChartPoint[]): ChartPoint[] {
+  return data && data.length ? data : fallback;
+}
+
+function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: ChartProps): any {
   const tc = t.chart, tt = t.title, tx = t.xAxis, ty = t.yAxis;
+  const cats = (fallback: string[]) => props.categories ?? fallback;
   switch (chartType) {
     case "line":
       return {
         ...t,
         chart: { ...tc, type: "line" },
         title: { ...tt, text: props.title || "Monthly Revenue" },
-        xAxis: { ...tx, categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+        xAxis: { ...tx, categories: cats(["Jan", "Feb", "Mar", "Apr", "May", "Jun"]) },
         yAxis: { ...ty, title: { ...ty.title, text: "Revenue ($K)" } },
-        series: [
+        series: withType(props.series, "line", [
           { name: "2024", data: [120, 134, 145, 152, 168, 185], type: "line" },
           { name: "2025", data: [140, 155, 162, 178, 195, 210], type: "line" },
-        ],
+        ]),
       };
     case "area":
       return {
         ...t,
         chart: { ...tc, type: "area" },
         title: { ...tt, text: props.title || "User Growth" },
-        xAxis: { ...tx, categories: ["Q1", "Q2", "Q3", "Q4"] },
-        series: [
+        xAxis: { ...tx, categories: cats(["Q1", "Q2", "Q3", "Q4"]) },
+        series: withType(props.series, "area", [
           { name: "Free", data: [5000, 8200, 12400, 18000], type: "area" },
           { name: "Pro", data: [1200, 2400, 4100, 6800], type: "area" },
-        ],
+        ]),
         plotOptions: { ...t.plotOptions, area: { fillOpacity: 0.25 } },
       };
     case "column":
@@ -206,11 +321,11 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         ...t,
         chart: { ...tc, type: "column" },
         title: { ...tt, text: props.title || "Sales by Region" },
-        xAxis: { ...tx, categories: ["NA", "EMEA", "APAC", "LATAM"] },
-        series: [
+        xAxis: { ...tx, categories: cats(["NA", "EMEA", "APAC", "LATAM"]) },
+        series: withType(props.series, "column", [
           { name: "Q3", data: [420, 380, 290, 180], type: "column" },
           { name: "Q4", data: [480, 410, 340, 210], type: "column" },
-        ],
+        ]),
       };
     case "pie":
       return {
@@ -219,12 +334,12 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         title: { ...tt, text: props.title || "Market Share" },
         series: [{
           name: "Share", type: "pie",
-          data: [
+          data: points(props.seriesData, [
             { name: "Product A", y: 45 },
             { name: "Product B", y: 26 },
             { name: "Product C", y: 17 },
             { name: "Other", y: 12 },
-          ],
+          ]),
         }],
         plotOptions: {
           ...t.plotOptions,
@@ -255,8 +370,8 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         ...t,
         chart: { ...tc, type: "bar" },
         title: { ...tt, text: props.title || "Top Performers" },
-        xAxis: { ...tx, categories: ["Alice", "Bob", "Carol", "Dan", "Eve"] },
-        series: [{ name: "Score", data: [95, 88, 82, 76, 71], type: "bar" }],
+        xAxis: { ...tx, categories: cats(["Alice", "Bob", "Carol", "Dan", "Eve"]) },
+        series: withType(props.series, "bar", [{ name: "Score", data: [95, 88, 82, 76, 71], type: "bar" }]),
       };
     case "donut":
       return {
@@ -265,11 +380,11 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         title: { ...tt, text: props.title || "Breakdown" },
         series: [{
           name: "Share", type: "pie", innerSize: "60%",
-          data: [
+          data: points(props.seriesData, [
             { name: "Segment A", y: 42 },
             { name: "Segment B", y: 33 },
             { name: "Segment C", y: 25 },
-          ],
+          ]),
         }],
         plotOptions: {
           ...t.plotOptions,
@@ -287,24 +402,24 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         ...t,
         chart: { ...tc, type: "spline" },
         title: { ...tt, text: props.title || "Temperature Trend" },
-        xAxis: { ...tx, categories: ["6am", "9am", "12pm", "3pm", "6pm", "9pm"] },
-        series: [
+        xAxis: { ...tx, categories: cats(["6am", "9am", "12pm", "3pm", "6pm", "9pm"]) },
+        series: withType(props.series, "spline", [
           { name: "Today", data: [14, 18, 24, 27, 22, 16], type: "spline" },
           { name: "Yesterday", data: [12, 16, 22, 25, 20, 14], type: "spline" },
-        ],
+        ]),
       };
     case "stacked-column":
       return {
         ...t,
         chart: { ...tc, type: "column" },
         title: { ...tt, text: props.title || "Revenue Breakdown" },
-        xAxis: { ...tx, categories: ["Q1", "Q2", "Q3", "Q4"] },
+        xAxis: { ...tx, categories: cats(["Q1", "Q2", "Q3", "Q4"]) },
         plotOptions: { ...t.plotOptions, column: { stacking: "normal" } },
-        series: [
+        series: withType(props.series, "column", [
           { name: "Services", data: [120, 135, 148, 162], type: "column" },
           { name: "Products", data: [80, 95, 110, 125], type: "column" },
           { name: "Licensing", data: [40, 45, 52, 58], type: "column" },
-        ],
+        ]),
       };
     case "gauge": {
       const val = props.value != null ? props.value : 87;
@@ -383,9 +498,12 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
   }
 }
 
-function ChartBlock({ type = "line", title, value, mode = "light" }: { type?: string; title?: string; value?: number; mode?: "light" | "dark" }) {
+function ChartBlock({ type = "line", title, value, mode = "light", categories, series, seriesData, colors }: {
+  type?: string; title?: string; value?: number; mode?: "light" | "dark";
+  categories?: string[]; series?: ChartSeries[]; seriesData?: ChartPoint[]; colors?: string[];
+}) {
   const v = chartTheme(mode);
-  const options = chartOptionsFor(type, chartBaseTheme(v), v, { title, value });
+  const options = chartOptionsFor(type, chartBaseTheme(v, chartColors(colors)), v, { title, value, categories, series, seriesData });
   return (
     <div style={{ width: "100%", minHeight: 250 }}>
       <HighchartsReact highcharts={Highcharts} options={options} />

@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
-import { migrateBlocks } from "@/lib/blockMigrations";
+import { restoreLocalSession } from "@/lib/localSession";
+import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import {
   useSessionStore,
   type LocalSession,
@@ -48,50 +49,16 @@ function fromLocal(s: LocalSession): DrawerSession {
   };
 }
 
-/** Restore a snapshot into the builder. Mirrors firebase.loadProject's
- *  field set so local + cloud loads behave identically. Defensive against
- *  legacy/partial snapshots so one bad row never crashes the builder. */
+/** Restore a snapshot into the builder. Delegates to the shared local-session
+ *  restorer so the drawer and the local autosave can never disagree on the
+ *  persisted shape (multi-page pages / activePageId included). */
 function restoreSnapshot(session: DrawerSession) {
-  try {
-    const snap = session.snapshot;
-    const colorOverrides = snap.colorOverrides ?? {};
-    useBuilder.setState({
-      messages: snap.messages ?? [],
-      blocks: migrateBlocks(snap.blocks ?? []),
-      headerBlocks: migrateBlocks(snap.headerBlocks ?? []),
-      sidebarBlocks: migrateBlocks(snap.sidebarBlocks ?? []),
-      footerBlocks: migrateBlocks(snap.footerBlocks ?? []),
-      ...(snap.zoneLayouts ? { zoneLayouts: snap.zoneLayouts } : {}),
-      designSystem: snap.designSystem,
-      mode: snap.mode,
-      density: snap.density,
-      interfaceType: snap.interfaceType,
-      selectedComponents: snap.selectedComponents ?? [],
-      colorOverrides,
-      activeTemplateId: snap.activeTemplateId ?? null,
-      hasOverrides: Object.keys(colorOverrides).length > 0,
-      onboardingStep: "ready",
-      currentSessionId: session.id,
-      sessionTitle: session.name,
-      lastSavedAt: session.updatedAt.getTime(),
-      saveState: "saved",
-      saveError: null,
-      sessionsDrawerOpen: false,
-      templatesDrawerOpen: false,
-      pendingTemplateId: null,
-      pendingFirstMessage: null,
-      selectedBlockId: null,
-      selectedBlockZone: null,
-      previewOpen: true,
-    });
-  } catch (e) {
-    console.error("restoreSnapshot failed:", e);
-    useBuilder.setState({
-      saveState: "error",
-      saveError: "Couldn't open that session. It may be from an older version.",
-      sessionsDrawerOpen: false,
-    });
-  }
+  restoreLocalSession({
+    id: session.id,
+    name: session.name,
+    updatedAt: session.updatedAt.getTime(),
+    snapshot: session.snapshot,
+  });
 }
 
 export function SessionsDrawer() {
@@ -201,7 +168,7 @@ export function SessionsDrawer() {
   if (!sessionsDrawerOpen) return null;
 
   const handleNew = () => {
-    startNewSession();
+    startNewSessionWithUndo();
     setSessionsDrawerOpen(false);
   };
 

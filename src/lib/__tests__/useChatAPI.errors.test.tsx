@@ -216,6 +216,17 @@ describe("useChatAPI error states", () => {
     expect(api.failedSend).toBeNull();
   });
 
+  it("401 from the staging gate gets sign-in copy with no retry affordance", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(errorResponse(401, {}, { error: "Sign in required" }));
+
+    await act(async () => {
+      await api.sendMessage("hi");
+    });
+
+    expect(lastMessage().content).toContain("sign-in has expired");
+    expect(api.failedSend).toBeNull();
+  });
+
   it("other 4xx statuses keep the generic connection copy", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue(errorResponse(400));
 

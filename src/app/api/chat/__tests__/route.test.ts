@@ -41,6 +41,26 @@ async function post(body: unknown): Promise<Response> {
   );
 }
 
+describe("POST /api/chat: staging auth gate", () => {
+  it("rejects with 401 when the staging password is set and no cookie is sent", async () => {
+    process.env.STAGING_PASSWORD = "pw";
+    process.env.STAGING_TOKEN_SECRET = "secret";
+    try {
+      const res = await post({ messages: [{ role: "user", content: "hi" }] });
+      expect(res.status).toBe(401);
+    } finally {
+      delete process.env.STAGING_PASSWORD;
+      delete process.env.STAGING_TOKEN_SECRET;
+    }
+  });
+
+  it("public mode (no staging password) is unaffected", async () => {
+    delete process.env.STAGING_PASSWORD;
+    const res = await post({ messages: [{ role: "user", content: "hi" }] });
+    expect(res.status).not.toBe(401);
+  });
+});
+
 describe("POST /api/chat: designSystem validation", () => {
   it("returns 400 on prompt-injection-like designSystem value", async () => {
     const res = await post({

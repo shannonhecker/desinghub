@@ -271,11 +271,13 @@ function chartOptions(
         ...t,
         chart: { ...tc, type: "spline" },
         title: { ...tt, text: props.title || "Temperature Trend" },
-        xAxis: { ...tx, categories: ["6am", "9am", "12pm", "3pm", "6pm", "9pm"] },
-        series: [
-          { name: "Today", data: [14, 18, 24, 27, 22, 16], type: "spline" as const },
-          { name: "Yesterday", data: [12, 16, 22, 25, 20, 14], type: "spline" as const },
-        ],
+        xAxis: { ...tx, categories: props.categories ?? ["6am", "9am", "12pm", "3pm", "6pm", "9pm"] },
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "spline" as const }))
+          : [
+              { name: "Today", data: [14, 18, 24, 27, 22, 16], type: "spline" as const },
+              { name: "Yesterday", data: [12, 16, 22, 25, 20, 14], type: "spline" as const },
+            ],
       };
 
     case "stacked-column":
@@ -283,13 +285,15 @@ function chartOptions(
         ...t,
         chart: { ...tc, type: "column" },
         title: { ...tt, text: props.title || "Revenue Breakdown" },
-        xAxis: { ...tx, categories: ["Q1", "Q2", "Q3", "Q4"] },
+        xAxis: { ...tx, categories: props.categories ?? ["Q1", "Q2", "Q3", "Q4"] },
         plotOptions: { ...t.plotOptions, column: { stacking: "normal" } },
-        series: [
-          { name: "Services", data: [120, 135, 148, 162], type: "column" as const },
-          { name: "Products", data: [80, 95, 110, 125], type: "column" as const },
-          { name: "Licensing", data: [40, 45, 52, 58], type: "column" as const },
-        ],
+        series: props.series
+          ? props.series.map((s) => ({ ...s, type: "column" as const }))
+          : [
+              { name: "Services", data: [120, 135, 148, 162], type: "column" as const },
+              { name: "Products", data: [80, 95, 110, 125], type: "column" as const },
+              { name: "Licensing", data: [40, 45, 52, 58], type: "column" as const },
+            ],
       };
 
     /* ── Advanced charts ── */

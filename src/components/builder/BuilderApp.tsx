@@ -12,7 +12,6 @@ import {
 /* useCloudStorage is still indirectly used via SessionsDrawer + useAutoSave;
  * no direct import here since BuilderApp no longer owns the save/load UI. */
 import { ChatPanel } from "./ChatPanel";
-import { SettingsPanel } from "./SettingsPanel";
 import { PreviewSidePanel, StandalonePreview } from "./PreviewPanel";
 import { PresentStage } from "./PresentStage";
 import { ExportPanel } from "./ExportPanel";
@@ -28,6 +27,8 @@ import { useAutoSave } from "@/lib/useAutoSave";
 import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
 import { resolveStructurePadding } from "@/lib/structurePadding";
+import { copyShareLink, downloadCanvasJson, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
+import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
 import "./builder.css";
 
@@ -50,7 +51,7 @@ export function BuilderApp() {
     chatOpen: isChatOpen, setChatOpen,
     chatMode, chatPlacement, setChatPlacement, setChatMode,
     activeTemplateId, hasMessages,
-    toggleSessionsDrawer, startNewSession,
+    toggleSessionsDrawer,
   } = useBuilder(
     useShallow((s) => ({
       mode: s.mode,
@@ -71,7 +72,6 @@ export function BuilderApp() {
       activeTemplateId: s.activeTemplateId,
       hasMessages: s.messages.length > 0,
       toggleSessionsDrawer: s.toggleSessionsDrawer,
-      startNewSession: s.startNewSession,
     })),
   );
 
@@ -202,9 +202,9 @@ export function BuilderApp() {
     root.style.setProperty('--dh-pad-gap', `${v.gap * gapMul}px`);
   }, [designSystem, structurePadding, interfaceType]);
 
-  /* Accent override: when a user sets `colorOverrides.accent` in
-     SettingsPanel, paint the per-DS accent CSS var so the canvas
-     reflects the choice. Sa+uoaui share lineage; salt also gets
+  /* Accent override: when `colorOverrides.accent` is set (AI
+     setColorOverride action or a loaded session), paint the per-DS
+     accent CSS var so the canvas reflects the choice. Sa+uoaui share lineage; salt also gets
      the override so glass tints follow. */
   const colorOverrides = useBuilder((s) => s.colorOverrides);
   const accentOverride = colorOverrides[ACCENT_KEY_BY_DS[designSystem]];
@@ -322,43 +322,15 @@ export function BuilderApp() {
   }, [exportMenuOpen]);
 
   const handleExportShare = async () => {
-    const { buildShareUrl, buildSharedCanvas } = await import("@/lib/shareState");
-    const s = useBuilder.getState();
-    const { url, tooLong } = buildShareUrl(buildSharedCanvas(s));
-    if (tooLong) {
-      setExportShareState("too-long");
-      setTimeout(() => setExportShareState("idle"), 3000);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setExportShareState("copied");
-      setTimeout(() => setExportShareState("idle"), 2000);
-    } catch {
-      setExportShareState("error");
-      setTimeout(() => setExportShareState("idle"), 2500);
-    }
-    setExportMenuOpen(false);
+    const result = await copyShareLink();
+    setExportShareState(result);
+    setTimeout(() => setExportShareState("idle"), SHARE_FEEDBACK_MS[result]);
+    if (result !== "too-long") setExportMenuOpen(false);
   };
 
   const handleExportDownloadJson = () => {
     setExportDownloading(true);
-    const s = useBuilder.getState();
-    const config = {
-      designSystem: s.designSystem, mode: s.mode, density: s.density,
-      interfaceType: s.interfaceType, selectedComponents: s.selectedComponents,
-      colorOverrides: s.colorOverrides,
-      headerBlocks: s.headerBlocks, sidebarBlocks: s.sidebarBlocks,
-      blocks: s.blocks, footerBlocks: s.footerBlocks,
-      generatedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${s.interfaceType}-${s.designSystem}-canvas.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCanvasJson();
     setTimeout(() => setExportDownloading(false), 1500);
     setExportMenuOpen(false);
   };
@@ -635,7 +607,7 @@ export function BuilderApp() {
             </Link>
             <button
               className="top-bar-btn icon-only top-bar-new-session"
-              onClick={startNewSession}
+              onClick={startNewSessionWithUndo}
               title="Start a new session"
               aria-label="Start a new session"
             >
@@ -829,8 +801,6 @@ export function BuilderApp() {
           <span className="material-symbols-outlined" aria-hidden="true">forum</span>
         </button>
       )}
-
-      <SettingsPanel />
 
       {/* ── Templates drawer - opened via the hero's "Browse templates"
            link, or programmatically from anywhere in the builder. ── */}

@@ -5,6 +5,7 @@ import {
   VALID_DESIGN_SYSTEMS,
 } from "@/lib/buildSystemPrompt";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { requireBuilderAuth } from "@/lib/apiAuth";
 
 const MAX_MESSAGES = 40;
 const MAX_CONTENT_LENGTH = 8000;
@@ -30,6 +31,12 @@ function getClient(apiKey: string): Anthropic {
 }
 
 export async function POST(req: Request) {
+  /* Staging gate: the middleware skips /api/*, so without this the AI
+     routes were reachable without the staging password (open proxy to the
+     Anthropic key). Public mode (no STAGING_PASSWORD) passes straight through. */
+  const denied = await requireBuilderAuth(req);
+  if (denied) return denied;
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(
