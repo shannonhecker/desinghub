@@ -973,7 +973,10 @@ export function ChatPanel() {
        button's label" for a layout/add-component command) and send
        straight to Claude with the selected_block context attached by
        useChatAPI. ── */
-    if (selectedBlockId) {
+    /* A message that is only a theme / design-system switch is about the
+       whole canvas, not the selected block, and needs no model: let it fall
+       through to the switch handling below instead of being scoped. */
+    if (selectedBlockId && !parseThemeCommand(msg).pure) {
       if (aiDisabled) {
         addMessage("ai", "Editing the selected block needs AI. Try \"add buttons\", \"add a nav bar\", or \"build a dashboard\" — those work without an API key.");
         setGenerating(false);
