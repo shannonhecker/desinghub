@@ -10442,6 +10442,12 @@
   padding: 0 var(--dh-panel-pad) var(--dh-panel-pad);
 }
 
+/* Leading glyph of a labelled toolbar button (e.g. the report data button). */
+.preview-bar-btn-glyph {
+  font-size: var(--bc-toolbar-glyph);
+  margin-right: calc(var(--bc-toolbar-glyph) / 4);
+}
+
 /* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
 .dh-grid-selectable .ag-row {
   cursor: pointer;

@@ -42,6 +42,8 @@ const SESSION_KEYS = [
   "selectedBlockZone",
   "selectedBlockIds",
   "activeTemplateId",
+  "reportData",
+  "reportState",
   "pendingTemplateId",
   "pendingFirstMessage",
   "pendingAudience",

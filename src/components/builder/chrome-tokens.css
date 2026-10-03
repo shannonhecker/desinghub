@@ -47,6 +47,8 @@
   --dh-panel-title-size: 14px;
   --dh-panel-meta-size:  12px;
   --bc-hairline:         1px;
+  /* Leading glyph size in a labelled canvas-toolbar button. */
+  --bc-toolbar-glyph: 16px;
   /* Width of the accent bar on a selected master-grid row. */
   --dh-grid-select-bar: 3px;
   /* Header height when a canvas pins its structure across design systems. */

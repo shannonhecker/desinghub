@@ -67,6 +67,7 @@ import { insertionIndexForDrop, layoutForFreeDrop, regridExistingBlock, type Rec
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
+import { ReportDataButton } from "./ReportDataButton";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { PreviewReadOnlyContext, usePreviewReadOnly } from "./previewReadOnly";
 
@@ -443,6 +444,10 @@ function PreviewBar() {
       {/* Density + Code + Compare live in the ⋯ overflow menu — power-user
          toggles that don't need primary bar weight. Keeps the canvas row
          focused on device / DS / mode. */}
+
+      {/* Report data: download the data template / upload real data. Renders
+         only when the template on the canvas is data-bound. */}
+      <ReportDataButton />
 
       {/* Reopen component library — only visible when the panel is
          closed. When open, the in-panel × button handles close. */}

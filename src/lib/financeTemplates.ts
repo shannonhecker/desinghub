@@ -132,7 +132,7 @@ const riskSummary: DataBinding = {
   /* Sized to fit the full-width panel without scrolling sideways. */
   display: [
     money("marketValue", "PV", { width: 92 }),
-    pct("pvPct", "(%)", { width: 76 }),
+    pct("pvPct", "(%)", { width: 84 }),
     ...RISK_MEASURES.flatMap(([k]) => [money(k, "Value", { width: 92 }), pct(`${k}Pct`, "(%)", { width: 70 })]),
   ],
   groupMinWidth: 180,

@@ -26,6 +26,7 @@
  *  call any network here - that wiring is intentionally deferred.
  */
 
+import type { ReportDataset } from "@/lib/reportData/types";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type {
@@ -60,6 +61,9 @@ export interface LocalSessionSnapshot {
    *  to the legacy shape; `blocks` always carries the active page's body. */
   pages?: Page[];
   activePageId?: string | null;
+  /** Uploaded report data; present only when the user replaced the template's
+   *  sample data. */
+  reportData?: ReportDataset;
 }
 
 export interface LocalSession {
