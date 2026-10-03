@@ -74,7 +74,12 @@ export function useAutoSave() {
    *  in a ref and read it from there inside the async path. The
    *  useEffect below runs exactly once per mount. */
   const saveProjectRef = useRef(saveProject);
-  saveProjectRef.current = saveProject;
+  /* Updated in an effect, not during render (refs must not be written while
+     rendering). Saves are debounced, so the ref is current long before the
+     first one reads it. */
+  useEffect(() => {
+    saveProjectRef.current = saveProject;
+  });
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
