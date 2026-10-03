@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { buildProjectSnapshot, pagesRestoreFromSnapshot } from "../firebase";
+import { buildProjectSnapshot, createdAtForUpsert, pagesRestoreFromSnapshot } from "../firebase";
 import { useBuilder } from "@/store/useBuilder";
 import type { Block } from "@/store/useBuilder";
 
@@ -69,5 +69,30 @@ describe("pagesRestoreFromSnapshot — load-side guard", () => {
       pages: [{ id: "nav-overview", name: "Overview", body: [card("c1")] }],
     });
     expect(restore?.activePageId).toBe("nav-overview");
+  });
+});
+
+describe("createdAtForUpsert — first save of a new session", () => {
+  const stored = { exists: () => true, data: () => ({ createdAt: "stored" }) };
+  const missing = { exists: () => false, data: () => undefined };
+
+  it("keeps the stored createdAt when the doc exists", async () => {
+    expect(await createdAtForUpsert(async () => stored, "now")).toBe("stored");
+  });
+
+  it("stamps now when the doc does not exist", async () => {
+    expect(await createdAtForUpsert(async () => missing, "now")).toBe("now");
+  });
+
+  /* The rules refuse a read of a missing doc (resource is null) instead of
+     answering "not found"; that must not fail the save. */
+  it("treats a permission-denied read as a missing doc", async () => {
+    const denied = Object.assign(new Error("Missing or insufficient permissions."), { code: "permission-denied" });
+    expect(await createdAtForUpsert(async () => { throw denied; }, "now")).toBe("now");
+  });
+
+  it("rethrows any other read failure", async () => {
+    const offline = Object.assign(new Error("offline"), { code: "unavailable" });
+    await expect(createdAtForUpsert(async () => { throw offline; }, "now")).rejects.toThrow("offline");
   });
 });
