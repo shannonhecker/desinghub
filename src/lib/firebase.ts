@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReportDataset } from "@/lib/reportData/types";
 import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
@@ -87,9 +86,6 @@ export interface ProjectSnapshot {
    * the active page's body so older clients still deserialize. */
   pages?: Page[];
   activePageId?: string | null;
-  /* Uploaded report data; written only when the user replaced the template's
-   * sample data. */
-  reportData?: ReportDataset;
 }
 
 /* Pure: build the Firestore snapshot from the current store state. Lazy-additive
@@ -112,7 +108,10 @@ export function buildProjectSnapshot(s: ReturnType<typeof useBuilder.getState>):
     colorOverrides: s.colorOverrides,
     activeTemplateId: s.activeTemplateId,
   };
-  if (s.reportData) snapshot.reportData = s.reportData;
+  /* Uploaded report data is deliberately NOT part of the cloud snapshot: it
+     may be a client's real figures, so it stays in the browser (the local
+     session keeps it). A session opened from the cloud on another device
+     shows the template's sample data. */
   const flushed = flushActiveBody(s);
   if (isMultiPage(flushed.pages)) {
     snapshot.pages = flushed.pages;
@@ -331,7 +330,7 @@ export function useCloudStorage() {
         selectedComponents: snapshot.selectedComponents ?? [],
         colorOverrides,
         activeTemplateId: snapshot.activeTemplateId ?? null,
-        reportData: snapshot.reportData ?? null,
+        reportData: null,
         reportState: {},
         hasOverrides: Object.keys(colorOverrides).length > 0,
         onboardingStep: "ready",

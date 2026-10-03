@@ -96,3 +96,13 @@ describe("createdAtForUpsert — first save of a new session", () => {
     await expect(createdAtForUpsert(async () => { throw offline; }, "now")).rejects.toThrow("offline");
   });
 });
+
+describe("buildProjectSnapshot - uploaded report data stays in the browser", () => {
+  it("never writes uploaded data to the cloud snapshot", () => {
+    useBuilder.setState({ reportData: { id: "d", label: "D", baseCurrency: "GBP", tables: [] } } as never);
+    const snap = buildProjectSnapshot(useBuilder.getState());
+    expect("reportData" in snap).toBe(false);
+    expect(JSON.stringify(snap)).not.toContain("baseCurrency");
+    useBuilder.setState({ reportData: null } as never);
+  });
+});

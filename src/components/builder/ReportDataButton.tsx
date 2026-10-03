@@ -16,7 +16,8 @@ import { showToast } from "@/lib/toast";
    per table, filled with the sample data, plus a Guide sheet);
    "Upload your data" reads it back and re-renders every bound
    grid and chart on the user's figures. The file is read in the
-   browser and kept with the session; it is never sent anywhere.
+   browser and kept with the local session only: it is left out of
+   the cloud snapshot, so a client's figures never leave the device.
    ══════════════════════════════════════════════════════════ */
 
 /** What was loaded and what needs attention, as a chat message. */
@@ -138,7 +139,7 @@ export function ReportDataButton() {
       {open && (
         <div className="preview-bar-overflow" role="menu" aria-label="Report data">
           <div className="preview-bar-overflow-group-label" aria-hidden="true">
-            {uploaded ? "Showing your uploaded data" : "Showing sample data"}
+            {uploaded ? "Showing your data (kept in this browser only)" : "Showing sample data"}
           </div>
           <button type="button" className="preview-bar-overflow-item" role="menuitem" onClick={() => void download()} disabled={busy}>
             <span className="material-symbols-outlined" aria-hidden="true">download</span>
