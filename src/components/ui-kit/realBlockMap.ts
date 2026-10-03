@@ -30,6 +30,7 @@
  * inert (readOnly / static state) to match the store-free gallery demo.
  */
 
+import { dropdownModel } from "@/lib/dropdownModel";
 import React from "react";
 import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import {
@@ -339,17 +340,27 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     );
   },
 
-  SimulatedDropdown: (p) =>
-    React.createElement(
+  /* Label, chosen value and options from the block (dropdownModel). */
+  SimulatedDropdown: (p) => {
+    const m = dropdownModel(p);
+    const trigger = React.createElement(
       "div",
-      { className: "a-dropdown" },
+      { className: "a-dropdown", style: { flex: 1, minWidth: 0 } },
       React.createElement(
         "button",
-        { type: "button", className: "a-dropdown-trigger", "aria-haspopup": "listbox" },
-        React.createElement("span", null, s(p.placeholder, "Select an option")),
+        { type: "button", className: "a-dropdown-trigger", "aria-haspopup": "listbox", "aria-label": m.label ? `${m.label}: ${m.value || m.placeholder}` : undefined },
+        React.createElement("span", m.value ? null : { style: { opacity: 0.6 } }, m.value || m.placeholder),
         React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, "expand_more"),
       ),
-    ),
+    );
+    if (!m.label) return trigger;
+    return React.createElement(
+      "div",
+      { style: { display: "flex", alignItems: "center", gap: 8 } },
+      React.createElement("span", { className: "a-label", style: { whiteSpace: "nowrap" } }, m.label),
+      trigger,
+    );
+  },
 
   SimulatedSearchbox: (p) =>
     React.createElement(
@@ -561,15 +572,22 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
     );
   },
 
-  SimulatedDropdown: (p, ctx) =>
-    React.createElement(CarbonDropdown, {
+  /* Label, chosen value and options from the block (dropdownModel). Keyed on
+     the value so a prop edit re-seeds the initial selection. */
+  SimulatedDropdown: (p, ctx) => {
+    const m = dropdownModel(p);
+    return React.createElement(CarbonDropdown, {
+      key: m.value,
       id: fieldId(p, "dropdown"),
       size: carbonSize(densityOf(ctx)),
-      titleText: "",
-      label: s(p.placeholder, "Select an option"),
-      items: ["Option 1", "Option 2", "Option 3"],
+      titleText: m.label,
+      hideLabel: !m.label,
+      label: m.placeholder,
+      items: m.options,
+      initialSelectedItem: m.value || undefined,
       itemToString: (item: unknown) => s(item),
-    }),
+    });
+  },
 
   SimulatedSearchbox: (p, ctx) =>
     React.createElement(CarbonSearch, {

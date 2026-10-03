@@ -53,6 +53,7 @@ import {
   SimIcon,
 } from "./SimulatedUI";
 import type { HighchartType } from "./SimulatedHighchart";
+import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
    the builder's critical-path bundle / first paint. The `type` import above is
@@ -1298,13 +1299,25 @@ function SimulatedDropdownBlock({
 }) {
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
-  const placeholder = (block?.props.placeholder as string) ?? "Select an option";
-  /* A `value` means the field is meant to look CHOSEN (renders in primary ink);
-     an empty/absent `value` keeps `placeholder` showing in the muted tier. */
-  const value = (block?.props.value as string) || undefined;
-
+  /* Label, chosen value and options from the block (dropdownModel) - the same
+     model the real renderers and the export use. A bare block keeps the
+     simulated component's own demo items. */
+  const m = dropdownModel(block?.props ?? {});
+  const authored = Boolean(block?.props.optionsCsv || block?.props.value);
+  const dropdown = (
+    <SimulatedDropdown
+      system={system}
+      placeholder={m.placeholder}
+      value={m.value || undefined}
+      items={authored ? m.options.map((o) => ({ label: o, value: o })) : undefined}
+    />
+  );
+  if (!m.label) return dropdown;
   return (
-    <SimulatedDropdown system={system} placeholder={placeholder} value={value} />
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--density-gap, 8px)" }}>
+      <span style={{ color: "var(--ds-fg-secondary)", fontSize: "var(--density-font-size, 13px)", whiteSpace: "nowrap" }}>{m.label}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>{dropdown}</div>
+    </div>
   );
 }
 
