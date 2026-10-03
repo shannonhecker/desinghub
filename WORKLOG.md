@@ -10,6 +10,35 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-10-04 Session Log - trust fixes before the finance templates
+
+Branch `fix/trust-fixes-chat-parity`. Goal context: the J.P. Morgan and Barclays FX
+reports become builder templates (identical layout in all five systems, drivable from
+chat); these fixes are what that depends on. Detail per item is in CHANGELOG.md.
+
+- Chatbot: tool-result continuation loop in `/api/chat`; word-based theme commands.
+- Saving: first-save permission error, dropped saves, sessions that never started,
+  resume on refresh, flush on page hide.
+- Layout: border-box body, `minmax(0, 1fr)` tracks, frame scaled to the stage
+  (`frameFit.ts`), Carbon dark body, Carbon stat-card progress.
+- Tests: `e2e/builder-layout-parity.spec.ts` is new; the gestures spec's chat-input
+  locator was resolving to a hidden canvas field and is fixed.
+
+Notes for the next session:
+- **The chat loop is unverified against a real model.** Neither this machine nor the
+  Vercel Preview environment has `ANTHROPIC_API_KEY`. Verify on a deployment that has
+  it: "build a risk dashboard" should add blocks, not just clear the canvas.
+- The frame is scaled with CSS `zoom`. A hairline border snaps to a whole device
+  pixel, so at a scale of 0.86 a tall table is about 4 design px taller in Edit than
+  in Present. Blocks with a pinned height are exact.
+- Row heights still differ between design systems (a Material 3 stat card is taller
+  than a Salt one). The finance templates pin their row heights; the parity spec
+  asserts x and width only for the existing Analytics template.
+- A second agent's worktree (`../uoaui-quality`, branch `codex/quality-standard`)
+  shares this repo's `.git`. Do not commit from both at once.
+
+---
+
 ## 2026-06-03 Task Log
 - Removed the small UI Kit header label from DS pages while leaving logo/theme controls intact.
 - Reworked the UI Kit DS landing hero into a system-specific animated banner with media, motion rails, and live component previews.
