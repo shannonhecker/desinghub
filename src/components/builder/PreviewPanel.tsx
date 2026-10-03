@@ -2035,7 +2035,11 @@ export function PreviewSidePanel() {
   };
 
   return (
-    <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+    /* `inert` while closed: the panel stays mounted and is only slid out of
+       view, so without it every canvas control was still in the tab order
+       and exposed to screen readers - on the start screen Tab walked through
+       ~17 invisible buttons before reaching the prompt. */
+    <div className={`preview-side ${previewOpen ? "open" : ""}`} inert={!previewOpen}>
       {/* Inject DS-specific CSS (Carbon tokens + .cb-* component rules). */}
       <DSPreviewStyles />
       {/* Single consolidated preview toolbar (Phase F.2) */}
