@@ -38,15 +38,16 @@ const HEADER_HEIGHT = 36;
 const FONT_SIZE = 13;
 const HEADER_FONT_SIZE = 12;
 const INDENT_STEP = 16;
+const CELL_PADDING = 12;
 
 const gridTheme = themeQuartz.withParams({
   backgroundColor: "var(--ds-surface)",
   foregroundColor: "var(--ds-fg)",
   headerBackgroundColor: "var(--ds-surface)",
   headerTextColor: "var(--ds-fg-secondary)",
-  /* Row rules are quieter than the system's full border colour, which reads
-     as a heavy white line between every row in the dark themes. */
-  borderColor: "color-mix(in srgb, var(--ds-border) 45%, transparent)",
+  /* Row rules use the system's secondary separator: its primary border
+     reads as a heavy white line between every row in the dark themes. */
+  borderColor: "var(--ds-border-subtle, var(--ds-border))",
   accentColor: "var(--ds-primary)",
   rowHoverColor: "var(--ds-surface-hover)",
   fontFamily: "inherit",
@@ -55,6 +56,7 @@ const gridTheme = themeQuartz.withParams({
   headerFontWeight: 600,
   rowHeight: ROW_HEIGHT,
   headerHeight: HEADER_HEIGHT,
+  cellHorizontalPadding: CELL_PADDING,
   wrapperBorder: false,
   wrapperBorderRadius: 0,
   columnBorder: false,

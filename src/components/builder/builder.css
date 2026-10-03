@@ -7549,6 +7549,8 @@
   --ds-surface: var(--salt-container-secondary-background, #1C2830);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #4F5B66));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-font: 'Open Sans', sans-serif;
   --ds-radius: var(--salt-curve-100, 4px);
@@ -7570,6 +7572,8 @@
   --ds-surface: var(--salt-container-secondary-background, #F4F6F8);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #C4C8CC));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
 }
 
@@ -7595,6 +7599,8 @@
   --ds-surface: var(--mui-palette-background-paper, #2B2930);
   --ds-surface-hover: var(--mui-palette-action-hover, #36343C);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #36343C);
   --ds-font: 'Roboto', sans-serif;
   --ds-radius: 12px;
@@ -7616,6 +7622,8 @@
   --ds-surface: var(--mui-palette-background-paper, #F3EDF7);
   --ds-surface-hover: var(--mui-palette-action-hover, #E6E0EC);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #E6E0EC);
 }
 
@@ -7639,6 +7647,8 @@
   --ds-fg-tertiary: var(--colorNeutralForeground3, #FFFFFFB0);
   --ds-surface: var(--colorNeutralBackground2, #1F1F1F);
   --ds-border: var(--colorNeutralStroke1, #8A8A8A);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-surface-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-font: var(--fontFamilyBase, 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif);
@@ -7661,6 +7671,8 @@
   --ds-surface: var(--colorNeutralBackground2, #F5F5F5);
   --ds-surface-hover: var(--colorNeutralBackground3, #EBEBEB);
   --ds-border: var(--colorNeutralStroke1, #D1D1D1);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-hover: var(--colorNeutralBackground3, #EBEBEB);
 }
 
@@ -7686,6 +7698,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-font: var(--font-ibm-plex-sans), 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   /* Carbon is flat - 0 radius everywhere except tag/avatar. */
@@ -7706,6 +7720,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
 }
 
@@ -7734,6 +7750,8 @@
   --ds-surface: rgba(255,255,255,0.04);
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.08);
   --ds-font: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --ds-radius: 12px;
@@ -7753,6 +7771,8 @@
   --ds-surface: rgba(255,255,255,0.72);
   --ds-surface-hover: rgba(255,255,255,0.85);
   --ds-border: rgba(100,60,180,0.06);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.85);
   --ds-primary: #6B5AA8;
   --ds-on-primary: #FFFFFF;
@@ -10356,7 +10376,9 @@
   overflow: hidden;
   background: var(--ds-surface);
   color: var(--ds-fg);
-  border: var(--bc-hairline, thin) solid var(--ds-border);
+  /* The system's secondary separator: its primary border reads as a hard
+     white line around every card in the dark themes. */
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
   border-radius: var(--ds-radius);
   font-family: var(--ds-font);
 }
@@ -11194,7 +11216,7 @@
      visual rhythm at the new medium-default values. */
   padding: var(--dh-pad-zone, 10px) calc(var(--dh-pad-zone, 10px) * 1.6);
   background: var(--ds-surface);
-  border-bottom: 1px solid var(--ds-border);
+  border-bottom: 1px solid var(--ds-border-subtle, var(--ds-border));
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -11386,7 +11408,7 @@
   flex-direction: column;
   justify-content: space-between;
   background: var(--ds-surface);
-  border-right: 1px solid var(--ds-border);
+  border-right: 1px solid var(--ds-border-subtle, var(--ds-border));
   overflow: hidden;
   flex-shrink: 0;
   /* P2 Frames: positioning context for the absolute frame label tab. */
@@ -11757,7 +11779,7 @@
   position: relative;
   /* Was `8px 16px`. Same ratio as header. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
-  border-top: 1px solid var(--ds-border);
+  border-top: 1px solid var(--ds-border-subtle, var(--ds-border));
   background: var(--ds-surface);
   font-size: 10px;
   font-family: var(--ds-font);
