@@ -46,10 +46,16 @@ describe("toParts", () => {
 });
 
 describe("toGrid", () => {
+  it("a fixed-width group column is pinned; a flexible one is not", () => {
+    const r = runQuery(table, { groupBy: "fund", measures: [{ field: "mv" }] });
+    expect(toGrid(r, [mv], { groupHeader: "Fund", groupWidth: 220 }).columns[0]).toEqual({ field: GROUP_FIELD, header: "Fund", width: 220, pinned: true });
+    expect(toGrid(r, [mv], { groupHeader: "Fund", groupMinWidth: 90 }).columns[0]).toEqual({ field: GROUP_FIELD, header: "Fund", flex: 2, minWidth: 90 });
+  });
+
   it("flat: a pinned group column, one column per measure, total first and bold", () => {
     const g = toGrid(runQuery(table, { groupBy: "fund", measures: [{ field: "mv" }, { field: "var" }], total: true }), [mv, vr], { groupHeader: "Fund", totalLabel: "Aggregate" });
     expect(g.columns).toEqual([
-      { field: GROUP_FIELD, header: "Fund", pinned: true, flex: 2 },
+      { field: GROUP_FIELD, header: "Fund", flex: 2 },
       { field: "mv", header: "Market value", kind: "currency", compact: true },
       { field: "var", header: "VaR", kind: "currency" },
     ]);

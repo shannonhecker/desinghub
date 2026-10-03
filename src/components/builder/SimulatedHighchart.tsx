@@ -118,7 +118,7 @@ export type HighchartType =
  *  combination chart, where each series picks its own mark and axis. */
 export interface ChartSeries {
   name: string;
-  data: number[];
+  data: (number | null)[];
   type?: "column" | "line" | "spline" | "area";
   /** 0 = left axis (default), 1 = right axis. */
   yAxis?: 0 | 1;
@@ -147,6 +147,11 @@ export interface ChartProps {
   centerLabel?: string;
   /** false hides the legend. */
   legend?: boolean;
+  /** Upper bound of the value axis (e.g. 100 for shares of a whole). */
+  yAxisMax?: number;
+  /** Tooltip number format: decimal places and a suffix such as "%". */
+  valueDecimals?: number;
+  valueSuffix?: string;
 }
 
 /** Options for one chart: the per-type build, then the settings every type
@@ -162,14 +167,36 @@ export function buildChartOptions(
   if (props.height) o.chart = { ...(o.chart as any), height: props.height };
   if (props.hideTitle) o.title = { ...(o.title as any), text: undefined };
   if (props.legend === false) o.legend = { ...(o.legend as any), enabled: false };
+  if (props.valueDecimals !== undefined || props.valueSuffix) {
+    o.tooltip = {
+      ...(o.tooltip as any),
+      ...(props.valueDecimals !== undefined ? { valueDecimals: props.valueDecimals } : {}),
+      ...(props.valueSuffix ? { valueSuffix: props.valueSuffix } : {}),
+    };
+  }
   /* Value-axis format + title apply to the single-axis types; the
      combination chart builds its own pair of axes. */
   if (o.yAxis && !Array.isArray(o.yAxis) && chartType !== "gauge" && chartType !== "heatmap") {
     const y = o.yAxis as any;
     if (props.yAxisFormat) y.labels = { ...y.labels, format: props.yAxisFormat };
+    if (props.yAxisMax !== undefined) y.max = props.yAxisMax;
     if (props.yAxisTitle !== undefined || props.hideTitle) {
       y.title = { ...y.title, text: props.yAxisTitle || undefined };
     }
+  }
+  /* A framed pie / donut names its parts in the legend, with their share,
+     instead of leader-line labels: in a compact panel the labels squeeze the
+     ring to a fraction of the space and collide with a centre label. */
+  if (props.hideTitle && (chartType === "donut" || chartType === "pie")) {
+    const pie = { ...((o.plotOptions as any)?.pie ?? {}), dataLabels: { enabled: false }, showInLegend: true };
+    if (chartType === "donut") o.series = (o.series as any[]).map((s) => ({ ...s, innerSize: "68%" }));
+    o.plotOptions = { ...(o.plotOptions as any), pie };
+    o.legend = {
+      ...(o.legend as any),
+      labelFormatter(this: { name: string; percentage?: number }) {
+        return this.percentage === undefined ? this.name : `${this.name} ${Math.round(this.percentage)}%`;
+      },
+    };
   }
   if (props.centerLabel && chartType === "donut") {
     o.chart = { ...(o.chart as any), events: { render: centerLabelRenderer(props.centerLabel, v) } };
@@ -572,13 +599,16 @@ interface SimulatedHighchartProps {
   secondaryAxisTitle?: string;
   centerLabel?: string;
   legend?: boolean;
+  yAxisMax?: number;
+  valueDecimals?: number;
+  valueSuffix?: string;
 }
 
 const DEFAULT_CHART_HEIGHT = 250;
 
 export function SimulatedHighchart({
   chartType, title, value, system, seriesColors, seriesData, categories, series,
-  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend,
+  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
 }: SimulatedHighchartProps) {
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -628,10 +658,10 @@ export function SimulatedHighchart({
       chartType,
       baseTheme(vars, palette, seriesColors),
       vars,
-      { title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend },
+      { title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax]);
 
   const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (

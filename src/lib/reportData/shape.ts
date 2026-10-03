@@ -80,13 +80,16 @@ export const gridField = (pivotIndex: number | null, measureKey: string): string
 export function toGrid(
   result: QueryResult,
   measures: MeasureDisplay[],
-  opts: { groupHeader: string; totalLabel?: string; groupWidth?: number },
+  opts: { groupHeader: string; totalLabel?: string; groupWidth?: number; groupMinWidth?: number },
 ): { columns: GridColumn[]; rows: GridRow[] } {
+  /* A fixed-width group column is pinned (the grid is expected to scroll
+     sideways); otherwise it flexes to fill the width the measures leave.
+     AG Grid does not flex a pinned column, so the two do not combine. */
   const groupColumn: GridLeafColumn = {
     field: GROUP_FIELD,
     header: opts.groupHeader,
-    pinned: true,
-    ...(opts.groupWidth ? { width: opts.groupWidth } : { flex: 2 }),
+    ...(opts.groupWidth ? { width: opts.groupWidth, pinned: true } : { flex: 2 }),
+    ...(opts.groupMinWidth ? { minWidth: opts.groupMinWidth } : {}),
   };
   const columns: GridColumn[] = [groupColumn];
   if (result.pivots.length === 0) {

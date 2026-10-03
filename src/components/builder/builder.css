@@ -10442,6 +10442,15 @@
   padding: 0 var(--dh-panel-pad) var(--dh-panel-pad);
 }
 
+/* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
+.dh-grid-selectable .ag-row {
+  cursor: pointer;
+}
+.dh-grid .ag-row.dh-grid-row-selected {
+  background: color-mix(in srgb, var(--ds-primary) 14%, transparent);
+  box-shadow: inset var(--dh-grid-select-bar) 0 0 var(--ds-primary);
+}
+
 /* Preview canvas root - uses only design system tokens */
 .preview-canvas-root {
   background: var(--ds-bg);

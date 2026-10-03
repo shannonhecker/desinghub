@@ -56,16 +56,24 @@ export interface Adjustment {
   scale?: { keys: string[]; factor: number };
   offsets?: Record<string, number>;
   omit?: string[];
+  /** Computed measures that only apply while the rule is active. */
+  computed?: ComputedSpec[];
 }
 
 export interface BindingFilter {
-  field: string;
+  /** Field to filter on. Can follow state: a chart filtered by the master
+   *  grid's selection must filter on whatever the master is grouped by. A
+   *  filter on a field this table does not have is skipped, so a table with
+   *  fewer dimensions simply stays unfiltered. */
+  field: Dyn<string>;
   /** Fixed value, or... */
   value?: string;
   /** ...the value of this report state. */
   state?: string;
   /** State values that mean "no filter" (e.g. the Total row being selected). */
   ignore?: string[];
+  /** Value to filter by while the state is unset (e.g. the default periodicity). */
+  fallback?: string;
 }
 
 export interface DataBinding {
@@ -90,6 +98,11 @@ export interface DataBinding {
   total?: string;
   /** Header of the grid's first column. Default: the group field's label. */
   groupHeader?: Dyn<string>;
+  /** Grid: fixed width of the first column, which is then pinned (for a grid
+   *  wide enough to scroll sideways). Default: it flexes to fill. */
+  groupWidth?: number;
+  /** Grid: minimum width of a flexible first column. */
+  groupMinWidth?: number;
   /** Grid: wrap display measures under group headers (e.g. one per period). */
   columnGroups?: { header: string; keys: string[] }[];
   /** Grid: clicking a row stores its label in this report state. */
@@ -130,9 +143,11 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
 
   const filters: FilterSpec[] = [];
   for (const f of binding.filters ?? []) {
-    const value = f.value ?? (f.state ? state[f.state] : undefined);
+    const value = f.value ?? (f.state ? (state[f.state] ?? f.fallback) : undefined);
     if (value === undefined || value === "" || f.ignore?.includes(value)) continue;
-    filters.push({ field: f.field, in: [value] });
+    const field = dyn(f.field, state);
+    if (!fieldOf(table, field)) continue;
+    filters.push({ field, in: [value] });
   }
 
   const adjustments = (binding.adjustments ?? []).filter((a) => active(a, state));
@@ -146,6 +161,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
   for (const a of adjustments) {
     for (const key of a.scale?.keys ?? []) computed.push({ as: key, op: "adjust", of: [key], factor: a.scale!.factor });
     for (const [key, offset] of Object.entries(a.offsets ?? {})) computed.push({ as: key, op: "adjust", of: [key], offset });
+    computed.push(...(a.computed ?? []));
   }
   computed.push(...(binding.computed ?? []));
   const currency = state[CURRENCY_STATE] ?? dataset.baseCurrency;
@@ -196,7 +212,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
   if (binding.view === "grid") {
     const header = binding.groupHeader !== undefined ? dyn(binding.groupHeader, state) : (groupBy ? (fieldOf(table, groupBy)?.label ?? groupBy) : "");
     const withTotal: QueryResult = binding.total ? result : { ...result, total: undefined };
-    const grid = toGrid(withTotal, shown, { groupHeader: header, totalLabel: binding.total });
+    const grid = toGrid(withTotal, shown, { groupHeader: header, totalLabel: binding.total, groupWidth: binding.groupWidth, groupMinWidth: binding.groupMinWidth });
     const columns = binding.columnGroups && result.pivots.length === 0 ? groupColumns(grid.columns, binding.columnGroups) : grid.columns;
     return {
       view: "grid",

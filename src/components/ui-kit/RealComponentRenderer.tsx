@@ -241,14 +241,22 @@ const COVERAGE: Record<SystemId, Set<string>> = {
 
 /** True when (system, blockType) renders a real official component here. */
 /* ── Dropdown: label, chosen value and options come from the block
-   (dropdownModel), in each system's own field idiom. Keyed on the value so a
-   prop edit re-seeds the uncontrolled selection. ── */
-function SaltDropdownField({ model }: { model: DropdownModel }) {
+   (dropdownModel), in each system's own field idiom.
+
+   With `onChange` the dropdown is CONTROLLED: its value is canvas report
+   state (a context filter or a panel's "View by") and choosing an option
+   writes it back. Without it the dropdown is uncontrolled, keyed on the value
+   so a prop edit re-seeds the selection. ── */
+type DropdownChange = ((value: string) => void) | undefined;
+
+function SaltDropdownField({ model, onChange }: { model: DropdownModel; onChange: DropdownChange }) {
   const dropdown = (
     <SaltDropdown
-      key={model.value}
+      key={onChange ? undefined : model.value}
       placeholder={model.placeholder}
-      defaultSelected={model.value ? [model.value] : []}
+      {...(onChange
+        ? { selected: model.value ? [model.value] : [], onSelectionChange: (_e: unknown, selected: string[]) => { if (selected[0]) onChange(selected[0]); } }
+        : { defaultSelected: model.value ? [model.value] : [] })}
       aria-label={model.label || model.placeholder}
     >
       {model.options.map((o) => (
@@ -265,13 +273,20 @@ function SaltDropdownField({ model }: { model: DropdownModel }) {
   );
 }
 
-function MuiDropdownField({ model }: { model: DropdownModel }) {
+function MuiDropdownField({ model, onChange }: { model: DropdownModel; onChange: DropdownChange }) {
   const id = React.useId();
   const label = model.label || model.placeholder;
   return (
     <MuiFormControl fullWidth>
       <MuiInputLabel id={id}>{label}</MuiInputLabel>
-      <MuiSelect key={model.value} labelId={id} label={label} defaultValue={model.value}>
+      <MuiSelect
+        key={onChange ? undefined : model.value}
+        labelId={id}
+        label={label}
+        {...(onChange
+          ? { value: model.value, onChange: (e: { target: { value: unknown } }) => onChange(String(e.target.value)) }
+          : { defaultValue: model.value })}
+      >
         {model.options.map((o) => (
           <MuiMenuItem key={o} value={o}>{o}</MuiMenuItem>
         ))}
@@ -280,19 +295,24 @@ function MuiDropdownField({ model }: { model: DropdownModel }) {
   );
 }
 
-function FluentDropdownField({ model, size }: { model: DropdownModel; size: "small" | "medium" | "large" }) {
+function FluentDropdownField({ model, size, onChange }: { model: DropdownModel; size: "small" | "medium" | "large"; onChange: DropdownChange }) {
   const dropdown = (
     <FluentDropdown
-      key={model.value}
+      key={onChange ? undefined : model.value}
       placeholder={model.placeholder}
-      defaultValue={model.value || undefined}
-      defaultSelectedOptions={model.value ? [model.value] : []}
+      {...(onChange
+        ? {
+            value: model.value,
+            selectedOptions: model.value ? [model.value] : [],
+            onOptionSelect: (_e: unknown, data: { optionValue?: string }) => { if (data.optionValue) onChange(data.optionValue); },
+          }
+        : { defaultValue: model.value || undefined, defaultSelectedOptions: model.value ? [model.value] : [] })}
       aria-label={model.label ? undefined : model.placeholder}
       size={size}
       style={{ minWidth: 0, width: "100%" }}
     >
       {model.options.map((o) => (
-        <FluentOption key={o}>{o}</FluentOption>
+        <FluentOption key={o} value={o}>{o}</FluentOption>
       ))}
     </FluentDropdown>
   );
@@ -303,6 +323,10 @@ function FluentDropdownField({ model, size }: { model: DropdownModel; size: "sma
     </FluentField>
   );
 }
+
+/** The block's `onValueChange` prop, when the caller wired one. */
+const changeHandler = (props: Record<string, unknown>): DropdownChange =>
+  typeof props.onValueChange === "function" ? (props.onValueChange as (v: string) => void) : undefined;
 
 export function canRenderReal(system: SystemId, blockType: string): boolean {
   return COVERAGE[system]?.has(blockType) ?? false;
@@ -509,7 +533,7 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
       </SaltCard>
     );
   } else if (type === "SimulatedDropdown") {
-    inner = <SaltDropdownField model={dropdownModel(props)} />;
+    inner = <SaltDropdownField model={dropdownModel(props)} onChange={changeHandler(props)} />;
   } else if (type === "SimulatedSearchbox") {
     inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly />;
   } else if (type === "SimulatedSegmentedGroup") {
@@ -660,7 +684,7 @@ function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererPr
       </MuiCard>
     );
   } else if (type === "SimulatedDropdown") {
-    inner = <MuiDropdownField model={dropdownModel(props)} />;
+    inner = <MuiDropdownField model={dropdownModel(props)} onChange={changeHandler(props)} />;
   } else if (type === "SimulatedSearchbox") {
     inner = (
       <MuiTextField
@@ -797,7 +821,7 @@ function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRender
       </FluentCard>
     );
   } else if (type === "SimulatedDropdown") {
-    inner = <FluentDropdownField model={dropdownModel(props)} size={size} />;
+    inner = <FluentDropdownField model={dropdownModel(props)} size={size} onChange={changeHandler(props)} />;
   } else if (type === "SimulatedSearchbox") {
     inner = <FluentSearchBox placeholder={s(props.placeholder, "Search...")} size={size} />;
   } else if (type === "SimulatedSegmentedGroup") {

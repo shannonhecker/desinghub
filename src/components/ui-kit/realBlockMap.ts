@@ -340,17 +340,33 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     );
   },
 
-  /* Label, chosen value and options from the block (dropdownModel). */
+  /* Label, chosen value and options from the block (dropdownModel). The
+     trigger is the DS's own `.a-dropdown`; a native <select> laid invisibly
+     over it supplies the menu, keyboard handling and screen-reader semantics,
+     so the control really changes value. */
   SimulatedDropdown: (p) => {
     const m = dropdownModel(p);
+    const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
     const trigger = React.createElement(
       "div",
-      { className: "a-dropdown", style: { flex: 1, minWidth: 0 } },
+      { className: "a-dropdown", style: { flex: 1, minWidth: 0, position: "relative" } },
       React.createElement(
-        "button",
-        { type: "button", className: "a-dropdown-trigger", "aria-haspopup": "listbox", "aria-label": m.label ? `${m.label}: ${m.value || m.placeholder}` : undefined },
+        "div",
+        { className: "a-dropdown-trigger", "aria-hidden": "true" },
         React.createElement("span", m.value ? null : { style: { opacity: 0.6 } }, m.value || m.placeholder),
-        React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, "expand_more"),
+        React.createElement("span", { className: "material-symbols-outlined" }, "expand_more"),
+      ),
+      React.createElement(
+        "select",
+        {
+          "aria-label": m.label || m.placeholder,
+          style: { position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
+          ...(onChange
+            ? { value: m.value, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value) }
+            : { defaultValue: m.value, key: m.value }),
+        },
+        ...(m.value ? [] : [React.createElement("option", { key: "", value: "" }, m.placeholder)]),
+        ...m.options.map((o) => React.createElement("option", { key: o, value: o }, o)),
       ),
     );
     if (!m.label) return trigger;
@@ -576,15 +592,19 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
      the value so a prop edit re-seeds the initial selection. */
   SimulatedDropdown: (p, ctx) => {
     const m = dropdownModel(p);
+    const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
     return React.createElement(CarbonDropdown, {
-      key: m.value,
+      key: onChange ? undefined : m.value,
       id: fieldId(p, "dropdown"),
       size: carbonSize(densityOf(ctx)),
       titleText: m.label,
       hideLabel: !m.label,
       label: m.placeholder,
       items: m.options,
-      initialSelectedItem: m.value || undefined,
+      /* Controlled when the caller wired a change handler (report state). */
+      ...(onChange
+        ? { selectedItem: m.value || null, onChange: (e: { selectedItem?: unknown }) => { if (e.selectedItem != null) onChange(s(e.selectedItem)); } }
+        : { initialSelectedItem: m.value || undefined }),
       itemToString: (item: unknown) => s(item),
     });
   },

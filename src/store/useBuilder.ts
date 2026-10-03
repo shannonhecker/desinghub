@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { defaultLayoutForType } from '@/lib/blockLayoutDefaults';
 
+import type { ReportDataset } from "@/lib/reportData/types";
 export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
@@ -311,6 +312,15 @@ interface BuilderState {
   // Regenerate-content status - true while /api/builder/generate-content is pending
   isRegeneratingContent: boolean;
 
+  // ── Report data (data-bound templates) ──
+  /** Live values of the canvas's report controls: context filters, each
+     panel's "View by", the master grid's selected row. Blocks with a data
+     binding re-derive from it. Transient: it resets with the template. */
+  reportState: Record<string, string>;
+  /** An uploaded dataset that replaces the template's sample data. null =
+     use the sample dataset of the template on the canvas. */
+  reportData: ReportDataset | null;
+
   // ── Conversational onboarding ("pending" flow) ──
   // When the user picks a template OR sends their first freeform message,
   // we DON'T apply anything yet - we stage it here and prompt the user to
@@ -467,6 +477,9 @@ interface BuilderState {
 
   // Actions - Templates / regeneration
   setActiveTemplateId: (id: string | null) => void;
+  /** Set one report-state value; null (or "") clears it. */
+  setReportState: (key: string, value: string | null) => void;
+  setReportData: (data: ReportDataset | null) => void;
   setIsRegeneratingContent: (v: boolean) => void;
 
   // Actions - Pending (conversational onboarding)
@@ -839,6 +852,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Template / regeneration state
   activeTemplateId: null,
   isRegeneratingContent: false,
+  reportState: {},
+  reportData: null,
 
   // Conversational onboarding state
   pendingTemplateId: null,
@@ -1050,7 +1065,21 @@ export const useBuilder = create<BuilderState>((set) => ({
         : [...s.pendingComponents, label],
     })),
 
-  setActiveTemplateId: (id) => set({ activeTemplateId: id }),
+  /* A different template means different controls: start its report state
+     clean. Uploaded data belongs to the canvas it was uploaded to. */
+  setActiveTemplateId: (id) =>
+    set((s) => (s.activeTemplateId === id ? {} : { activeTemplateId: id, reportState: {}, reportData: null })),
+  setReportState: (key, value) =>
+    set((s) => {
+      if (value === null || value === "") {
+        if (!(key in s.reportState)) return {};
+        const next = { ...s.reportState };
+        delete next[key];
+        return { reportState: next };
+      }
+      return s.reportState[key] === value ? {} : { reportState: { ...s.reportState, [key]: value } };
+    }),
+  setReportData: (data) => set({ reportData: data }),
   setIsRegeneratingContent: (v) => set({ isRegeneratingContent: v }),
 
   setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
@@ -1130,6 +1159,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   }),
 
   startNewSession: () => set({
+    reportState: {},
+    reportData: null,
     /* Reset canvas + conversation state, but KEEP user-level preferences
      *  like designSystem, density, mode - they're part of the user's
      *  workspace setup, not part of the session. */

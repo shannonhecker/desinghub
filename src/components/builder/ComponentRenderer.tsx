@@ -54,8 +54,10 @@ import {
 } from "./SimulatedUI";
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
-import { panelContentHeight, panelHeightOf, viewByOf } from "@/lib/panelMetrics";
-import { readGridColumns, readGridRows } from "@/lib/dataGridModel";
+import { panelContentHeight, panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
+import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
+import { useBoundData, useCanvasDataset } from "./useBoundData";
+import { CURRENCY_STATE } from "@/lib/reportData/binding";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
@@ -1659,6 +1661,7 @@ function HighchartBlockRenderer({
     : null;
   const chartType = (block?.props.chartType as HighchartType) ?? "line";
   const p = block?.props ?? {};
+  const dataset = useCanvasDataset();
   const title = (p.title as string) ?? "";
   const value = p.value != null ? Number(p.value) : undefined;
   /* Per-chart colour override (P1.2) - position-indexed palette
@@ -1672,9 +1675,20 @@ function HighchartBlockRenderer({
   const seriesData = Array.isArray(p.seriesData)
     ? (p.seriesData as { name: string; y: number }[])
     : undefined;
-  const categories = Array.isArray(p.categories) ? (p.categories as string[]) : undefined;
-  const series = Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
   const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+  /* A data-bound chart derives its categories / series / parts from the
+     canvas dataset and report state; otherwise it draws its own props. */
+  const bound = useBoundData(p);
+  const boundSeries = bound?.view === "series" ? bound : null;
+  const boundParts = bound?.view === "parts" ? bound : null;
+  const categories = boundSeries ? boundSeries.categories : Array.isArray(p.categories) ? (p.categories as string[]) : undefined;
+  const series = boundSeries ? (boundSeries.series as ChartSeries[]) : Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
+  const parts = boundParts ? boundParts.seriesData : seriesData;
+  const currency = useBuilder((s) => s.reportState[CURRENCY_STATE]);
+  const centerLabel =
+    boundParts && boundParts.centerValue !== null
+      ? formatGridValue({ field: "", header: "", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency }, boundParts.centerValue)
+      : text(p.centerLabel);
 
   /* A framed panel shows the title in its header and gives the chart the
      space its fixed height leaves; an unframed chart keeps its own title. */
@@ -1687,7 +1701,7 @@ function HighchartBlockRenderer({
       value={value}
       system={system}
       seriesColors={seriesColors}
-      seriesData={seriesData}
+      seriesData={parts}
       categories={categories}
       series={series}
       height={framed ? panelContentHeight(panelHeight) : p.height != null ? panelHeightOf(p) : undefined}
@@ -1696,13 +1710,16 @@ function HighchartBlockRenderer({
       yAxisTitle={text(p.yAxisTitle)}
       secondaryAxisFormat={text(p.secondaryAxisFormat)}
       secondaryAxisTitle={text(p.secondaryAxisTitle)}
-      centerLabel={text(p.centerLabel)}
+      centerLabel={centerLabel}
       legend={p.legend === false ? false : undefined}
+      valueDecimals={typeof p.valueDecimals === "number" ? p.valueDecimals : undefined}
+      valueSuffix={text(p.valueSuffix)}
+      yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
     />
   );
   if (!framed) return chart;
   return (
-    <PanelFrame system={system} title={title} subtitle={text(p.subtitle)} viewBy={viewByOf(p)} height={panelHeight}>
+    <PanelFrame system={system} title={title} subtitle={text(p.subtitle)} viewBy={viewByOf(p)} viewByState={blockId ? viewByStateKey(blockId) : undefined} height={panelHeight}>
       {chart}
     </PanelFrame>
   );
@@ -1715,17 +1732,46 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
   const p = block?.props ?? {};
-  const columns = useMemo(() => readGridColumns(p.columns), [p.columns]);
-  const rows = useMemo(() => readGridRows(p.rows), [p.rows]);
+  /* Data-bound: columns and rows derive from the canvas dataset and report
+     state. Otherwise the block's own columns and rows. */
+  const bound = useBoundData(p);
+  const boundGrid = bound?.view === "grid" ? bound : null;
+  const staticColumns = useMemo(() => readGridColumns(p.columns), [p.columns]);
+  const staticRows = useMemo(() => readGridRows(p.rows), [p.rows]);
+  const columns = boundGrid ? boundGrid.columns : staticColumns;
+  const rows = boundGrid ? boundGrid.rows : staticRows;
   const title = typeof p.title === "string" ? p.title : "";
   const subtitle = typeof p.subtitle === "string" && p.subtitle.trim() ? p.subtitle : undefined;
   const panelHeight = panelHeightOf(p);
-  if (p.panel === false) {
-    return <SimulatedDataGrid columns={columns} rows={rows} height={panelHeight} label={title || "Data grid"} />;
-  }
+
+  /* Master grid: a row click stores the row's label in report state, and
+     blocks filtered by that state re-derive. Clicking the selected row again
+     clears it. */
+  const setReportState = useBuilder((s) => s.setReportState);
+  const selectState = boundGrid?.selectState;
+  const selected = boundGrid?.selected;
+  const onSelect = useMemo(
+    () => (selectState ? (label: string) => setReportState(selectState, label === selected ? null : label) : undefined),
+    [selectState, selected, setReportState],
+  );
+  /* The selection names a row of the CURRENT grouping; when "View by"
+     re-groups the grid it no longer names anything, so drop it. */
+  const grouping = boundGrid && boundGrid.columns[0] && !("children" in boundGrid.columns[0]) ? boundGrid.columns[0].header : "";
+  const lastGrouping = useRef(grouping);
+  useEffect(() => {
+    if (lastGrouping.current !== grouping) {
+      lastGrouping.current = grouping;
+      if (selectState) setReportState(selectState, null);
+    }
+  }, [grouping, selectState, setReportState]);
+
+  const grid = (height: number) => (
+    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} />
+  );
+  if (p.panel === false) return grid(panelHeight);
   return (
-    <PanelFrame system={system} title={title} subtitle={subtitle} viewBy={viewByOf(p)} height={panelHeight}>
-      <SimulatedDataGrid columns={columns} rows={rows} height={panelContentHeight(panelHeight)} label={title || "Data grid"} />
+    <PanelFrame system={system} title={title} subtitle={subtitle} viewBy={viewByOf(p)} viewByState={blockId ? viewByStateKey(blockId) : undefined} height={panelHeight}>
+      {grid(panelContentHeight(panelHeight))}
     </PanelFrame>
   );
 }
@@ -1928,6 +1974,16 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
      hand-off the inline editors did via autoOpenComponentPanel. */
   const editRendersReal = useBuilder((s) => s.editRendersReal);
   const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
+  /* A block with a `stateKey` is a report control: its value lives in the
+     canvas's report state (so bound charts and grids re-derive when it
+     changes), seeded by the block's own `value`. */
+  const rawProps = props as Record<string, unknown>;
+  const stateKey = typeof rawProps.stateKey === "string" && rawProps.stateKey ? rawProps.stateKey : null;
+  const stateValue = useBuilder((s) => (stateKey ? s.reportState[stateKey] : undefined));
+  const setReportState = useBuilder((s) => s.setReportState);
+  const liveProps: Record<string, unknown> = stateKey
+    ? { ...rawProps, value: stateValue ?? rawProps.value, onValueChange: (v: string) => setReportState(stateKey, v) }
+    : rawProps;
   const coversReal = canRenderReal(system as SystemId, type);
   const rendersRealInEdit = !readOnly && editRendersReal && coversReal;
   const isSelectedBlock = useBuilder((s) => blockId != null && s.selectedBlockId === blockId);
@@ -1943,7 +1999,7 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
             type={type}
             mode={builderMode === "dark" ? "dark" : "light"}
             saltDensity={coerceDensity(density)}
-            props={props as Record<string, unknown>}
+            props={liveProps}
           />
         </BlockErrorBoundary>
       </div>
@@ -1965,7 +2021,7 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
           degrades to the placeholder card instead of unmounting the
           whole /builder tree. */}
       <BlockErrorBoundary blockType={type}>
-        <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
+        <Renderer system={system} blockId={blockId} {...liveProps} />
       </BlockErrorBoundary>
     </div>
   );

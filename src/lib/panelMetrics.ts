@@ -40,3 +40,8 @@ export function viewByOf(props: Record<string, unknown>): string[] {
     .map((v) => v.trim())
     .filter(Boolean);
 }
+
+/** Report-state key holding a panel's current "View by" choice. */
+export function viewByStateKey(blockId: string): string {
+  return `viewBy:${blockId}`;
+}

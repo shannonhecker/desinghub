@@ -94,6 +94,9 @@ export interface BuilderTemplate {
    *  promise identical panel positions across systems set this; without it
    *  each system uses its own native structure scale. */
   uniformStructure?: boolean;
+  /** Sample dataset (reportData/registry) that the template's data-bound
+   *  blocks read. */
+  datasetId?: string;
   /** Gallery grouping. Omitted = "general". */
   category?: TemplateCategory;
   /** Stored in useBuilder.interfaceType so existing machinery keeps working. */

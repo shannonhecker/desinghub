@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -8,6 +8,7 @@ import {
   themeQuartz,
   type ColDef,
   type ColGroupDef,
+  type GridApi,
 } from "ag-grid-community";
 import {
   formatGridValue,
@@ -18,6 +19,7 @@ import {
   type GridLeafColumn,
   type GridRow,
 } from "@/lib/dataGridModel";
+import { usePreviewReadOnly } from "./previewReadOnly";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -49,7 +51,9 @@ const gridTheme = themeQuartz.withParams({
      reads as a heavy white line between every row in the dark themes. */
   borderColor: "var(--ds-border-subtle, var(--ds-border))",
   accentColor: "var(--ds-primary)",
-  rowHoverColor: "var(--ds-surface-hover)",
+  /* A light wash of the text colour: the system's surface-hover token is a
+     solid fill that hides negative-coloured values in the dark themes. */
+  rowHoverColor: "color-mix(in srgb, var(--ds-fg) 6%, transparent)",
   fontFamily: "inherit",
   fontSize: FONT_SIZE,
   headerFontSize: HEADER_FONT_SIZE,
@@ -67,7 +71,7 @@ function leafColDef(column: GridLeafColumn, isFirst: boolean): ColDef<GridRow> {
   return {
     field: column.field,
     headerName: column.header,
-    ...(column.width ? { width: column.width } : { flex: column.flex ?? 1, minWidth: numeric ? 88 : 120 }),
+    ...(column.width ? { width: column.width } : { flex: column.flex ?? 1, minWidth: column.minWidth ?? (numeric ? 88 : 120) }),
     pinned: column.pinned ? "left" : undefined,
     sortable: true,
     resizable: false,
@@ -113,17 +117,72 @@ interface SimulatedDataGridProps {
   height: number;
   /** Accessible name. */
   label?: string;
+  /** Label (first-column value) of the selected row, for a master grid. */
+  selected?: string;
+  /** Makes rows selectable: called with the clicked row's label. */
+  onSelect?: (label: string) => void;
 }
 
-export function SimulatedDataGrid({ columns, rows, height, label }: SimulatedDataGridProps) {
+/** A row's label: the value of the grid's first leaf column. */
+function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
+  const first = columns[0];
+  const field = first ? (isColumnGroup(first) ? first.children[0]?.field : first.field) : undefined;
+  return field && row ? String(row[field] ?? "") : "";
+}
+
+export function SimulatedDataGrid({ columns, rows, height, label, selected, onSelect }: SimulatedDataGridProps) {
   const columnDefs = useMemo(() => toColDefs(columns), [columns]);
+  const apiRef = useRef<GridApi<GridRow> | null>(null);
+  /* Row styling reads the latest selection through a ref, so the grid's
+     callbacks stay stable and only a redraw is needed when it changes. */
+  const selectedRef = useRef(selected);
+  useEffect(() => {
+    selectedRef.current = selected;
+    apiRef.current?.redrawRows();
+  }, [selected]);
+  const rowClassRules = useMemo(
+    () => ({ "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && rowLabel(columns, params.data) === selectedRef.current }),
+    [columns],
+  );
+  const selectable = Boolean(onSelect);
+  const readOnly = usePreviewReadOnly();
+
   return (
-    <div className="dh-grid" style={{ height, width: "100%" }} role="region" aria-label={label}>
+    <div
+      className={`dh-grid${selectable ? " dh-grid-selectable" : ""}`}
+      style={{ height, width: "100%" }}
+      role="region"
+      aria-label={label}
+      /* While presenting, a click in a selectable grid selects a ROW; it must
+         not also select the block for the amend composer. (In Edit a click
+         still selects the block, as everywhere else.) */
+      onClick={selectable && readOnly ? (e) => e.stopPropagation() : undefined}
+    >
       <AgGridReact<GridRow>
         theme={gridTheme}
         rowData={rows}
         columnDefs={columnDefs}
-        suppressCellFocus
+        rowClassRules={rowClassRules}
+        onGridReady={(e) => { apiRef.current = e.api; }}
+        onRowClicked={
+          selectable
+            ? (e) => onSelect!(rowLabel(columns, e.data))
+            : undefined
+        }
+        /* Keyboard: a selectable grid keeps cell focus so Enter / Space on a
+           focused row selects it. */
+        suppressCellFocus={!selectable}
+        onCellKeyDown={
+          selectable
+            ? (e) => {
+                const key = (e.event as KeyboardEvent | undefined)?.key;
+                if (key === "Enter" || key === " ") {
+                  (e.event as KeyboardEvent).preventDefault();
+                  onSelect!(rowLabel(columns, e.data));
+                }
+              }
+            : undefined
+        }
         suppressMovableColumns
         animateRows={false}
       />

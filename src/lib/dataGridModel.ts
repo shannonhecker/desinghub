@@ -27,6 +27,8 @@ export interface GridLeafColumn {
   flex?: number;
   /** Fixed width in px. */
   width?: number;
+  /** Smallest width a flexible column may shrink to. */
+  minWidth?: number;
   /** Colour negative values as negative. */
   signed?: boolean;
 }

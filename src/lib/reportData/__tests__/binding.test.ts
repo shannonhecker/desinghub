@@ -104,7 +104,8 @@ describe("resolveBinding - master grid selection filters other blocks", () => {
   };
 
   it("no selection (or the total row) shows everything", () => {
-    for (const state of [{}, { "select:fund": "Aggregate" }]) {
+    const states: Record<string, string>[] = [{}, { "select:fund": "Aggregate" }];
+    for (const state of states) {
       const d = resolveBinding(byClass, dataset, state);
       expect(d?.view === "series" && d.series[0].data).toEqual([600, 1400]);
     }
@@ -171,6 +172,29 @@ describe("resolveBinding - matrix with fee and benchmark rules", () => {
   it("is re-scoped by the selected row", () => {
     const d = resolveBinding(returns, dataset, { "select:fund": "Income" });
     expect(d?.view === "series" && d.series[0].data).toEqual([1, 2]);
+  });
+});
+
+describe("resolveBinding - filters that follow state", () => {
+  const chart: DataBinding = {
+    table: "holdings", view: "series", groupBy: "assetClass",
+    measures: [{ field: "mv" }], display: [{ key: "mv", label: "Market value" }],
+    filters: [{
+      field: { state: "viewBy:master", options: { Fund: "fund", "Asset class": "assetClass", Region: "region" }, fallback: "fund" },
+      state: "select:master",
+    }],
+  };
+
+  it("filters on whatever dimension the master grid is grouped by", () => {
+    const byFund = resolveBinding(chart, dataset, { "select:master": "Income" });
+    expect(byFund?.view === "series" && byFund.series[0].data).toEqual([1000]);
+    const byClass = resolveBinding(chart, dataset, { "viewBy:master": "Asset class", "select:master": "Equity" });
+    expect(byClass?.view === "series" && byClass.categories).toEqual(["Equity"]);
+  });
+
+  it("skips a filter on a field the table does not have, instead of emptying the chart", () => {
+    const d = resolveBinding(chart, dataset, { "viewBy:master": "Region", "select:master": "Europe" });
+    expect(d?.view === "series" && d.series[0].data).toEqual([600, 1400]);
   });
 });
 

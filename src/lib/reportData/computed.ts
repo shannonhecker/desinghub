@@ -17,6 +17,8 @@ export type ComputedSpec =
   | { as: string; op: "diff"; of: [string, string] }
   /** The measure as a percent of its grand total, e.g. "% of total". */
   | { as: string; op: "shareOfTotal"; of: [string] }
+  /** a + b, e.g. a net return plus its fee drag. */
+  | { as: string; op: "sum"; of: [string, string] }
   /** a * factor + offset, e.g. a benchmark scaled, or a fee drag added. */
   | { as: string; op: "adjust"; of: [string]; factor?: number; offset?: number };
 
@@ -30,6 +32,10 @@ function compute(spec: ComputedSpec, get: (key: string) => number | null, totalO
     case "diff": {
       const b = get(spec.of[1]);
       return a === null || b === null ? null : a - b;
+    }
+    case "sum": {
+      const b = get(spec.of[1]);
+      return a === null || b === null ? null : a + b;
     }
     case "shareOfTotal": {
       const t = totalOf(spec.of[0]);
