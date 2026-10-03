@@ -110,6 +110,42 @@ type FieldDef =
      the block's location in the store and mutates accordingly. */
   | { type: "action"; label: string; action: "ungroup" };
 
+/* ── Chart fields ──
+   A chart's kind is its `chartType` prop, so swapping it in place is one
+   select. The two families take different data (series over categories vs.
+   named parts of a whole), so each offers only the kinds its data can draw. */
+const PANEL_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "subtitle", label: "Subtitle", placeholder: "e.g. (Stacked)" },
+  { type: "toggle", propKey: "panel", label: "Framed panel" },
+  { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Asset type, Region" },
+  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+];
+const CATEGORY_CHART_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "title", label: "Title" },
+  { type: "select", propKey: "chartType", label: "Chart type", options: [
+    { value: "column", label: "Column" },
+    { value: "stacked-column", label: "Stacked column" },
+    { value: "bar", label: "Bar" },
+    { value: "stacked-bar", label: "Stacked bar" },
+    { value: "line", label: "Line" },
+    { value: "spline", label: "Spline" },
+    { value: "area", label: "Area" },
+    { value: "stacked-area", label: "Stacked area" },
+    { value: "combination", label: "Combination" },
+  ]},
+  ...PANEL_FIELDS,
+];
+const PART_CHART_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "title", label: "Title" },
+  { type: "select", propKey: "chartType", label: "Chart type", options: [
+    { value: "donut", label: "Donut" },
+    { value: "pie", label: "Pie" },
+  ]},
+  { type: "text", propKey: "centerLabel", label: "Centre label (donut)", placeholder: "e.g. a total" },
+  ...PANEL_FIELDS,
+];
+
+
 /* ── Stock-image picker ──
    Categorized grid of HTTP-200-verified stock photos (from
    src/lib/sampleImages.ts) plus a paste-your-own-URL input. Clicking a
@@ -490,15 +526,18 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
 
   /* ── Highcharts ── */
-  { type: "HighchartLine", label: "Line Chart", icon: "show_chart", defaults: { chartType: "line", title: "Monthly Revenue" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartArea", label: "Area Chart", icon: "area_chart", defaults: { chartType: "area", title: "User Growth" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartColumn", label: "Column Chart", icon: "insert_chart", defaults: { chartType: "column", title: "Sales by Region" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartPie", label: "Pie Chart", icon: "pie_chart", defaults: { chartType: "pie", title: "Market Share" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
+  { type: "HighchartLine", label: "Line Chart", icon: "show_chart", defaults: { chartType: "line", title: "Monthly Revenue" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartArea", label: "Area Chart", icon: "area_chart", defaults: { chartType: "area", title: "User Growth" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartColumn", label: "Column Chart", icon: "insert_chart", defaults: { chartType: "column", title: "Sales by Region" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartPie", label: "Pie Chart", icon: "pie_chart", defaults: { chartType: "pie", title: "Market Share" }, fields: PART_CHART_FIELDS },
   { type: "HighchartScatter", label: "Scatter Plot", icon: "scatter_plot", defaults: { chartType: "scatter", title: "Risk vs Return" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartBar", label: "Bar Chart", icon: "align_horizontal_left", defaults: { chartType: "bar", title: "Top Performers" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartDonut", label: "Donut Chart", icon: "donut_large", defaults: { chartType: "donut", title: "Portfolio Allocation" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartSpline", label: "Spline Chart", icon: "timeline", defaults: { chartType: "spline", title: "Temperature Trend" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartStackedColumn", label: "Stacked Column", icon: "stacked_bar_chart", defaults: { chartType: "stacked-column", title: "Revenue Breakdown" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
+  { type: "HighchartBar", label: "Bar Chart", icon: "align_horizontal_left", defaults: { chartType: "bar", title: "Top Performers" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartDonut", label: "Donut Chart", icon: "donut_large", defaults: { chartType: "donut", title: "Portfolio Allocation" }, fields: PART_CHART_FIELDS },
+  { type: "HighchartSpline", label: "Spline Chart", icon: "timeline", defaults: { chartType: "spline", title: "Temperature Trend" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedColumn", label: "Stacked Column", icon: "stacked_bar_chart", defaults: { chartType: "stacked-column", title: "Revenue Breakdown" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedBar", label: "Stacked Bar", icon: "stacked_bar_chart", defaults: { chartType: "stacked-bar", title: "Exposure by currency" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedArea", label: "Stacked Area", icon: "area_chart", defaults: { chartType: "stacked-area", title: "Allocation history" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartCombination", label: "Combination Chart", icon: "multiline_chart", defaults: { chartType: "combination", title: "Value at risk" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
@@ -724,6 +763,9 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartGauge: "charts",
   HighchartHeatmap: "charts",
   HighchartTreemap: "charts",
+  HighchartCombination: "charts",
+  HighchartStackedBar: "charts",
+  HighchartStackedArea: "charts",
 
   /* Navigation */
   SimulatedTabs: "navigation",

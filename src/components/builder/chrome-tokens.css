@@ -42,6 +42,12 @@
   --bc-content-cap-marketing: 1120px; /* landing / ecommerce / portfolio */
   --bc-gutter:                clamp(16px, 2.5vw, 32px); /* fluid page gutter */
 
+  /* Framed panel (PanelFrame.tsx) type sizes. The panel's box sizes come
+     from panelMetrics.ts; these two are its only fixed type sizes. */
+  --dh-panel-title-size: 14px;
+  --dh-panel-meta-size:  12px;
+  --bc-hairline:         1px;
+
   /* Text */
   --bc-fg:          rgba(245, 247, 250, 0.96);
   --bc-fg-muted:    rgba(245, 247, 250, 0.62);

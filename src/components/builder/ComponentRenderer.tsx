@@ -52,7 +52,9 @@ import {
   SimulatedAvatarGroup,
   SimIcon,
 } from "./SimulatedUI";
-import type { HighchartType } from "./SimulatedHighchart";
+import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
+import { PanelFrame } from "./PanelFrame";
+import { panelContentHeight, panelHeightOf, viewByOf } from "@/lib/panelMetrics";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
@@ -1649,27 +1651,29 @@ function HighchartBlockRenderer({
       ?? footerBlocks.find((b) => b.id === blockId))
     : null;
   const chartType = (block?.props.chartType as HighchartType) ?? "line";
-  const title = (block?.props.title as string) ?? "";
-  const value = block?.props.value != null ? Number(block.props.value) : undefined;
+  const p = block?.props ?? {};
+  const title = (p.title as string) ?? "";
+  const value = p.value != null ? Number(p.value) : undefined;
   /* Per-chart colour override (P1.2) - position-indexed palette
      slots. Only pass when non-empty to preserve the palette default. */
-  const raw = block?.props.seriesColors;
+  const raw = p.seriesColors;
   const seriesColors = Array.isArray(raw)
     ? (raw.filter((c) => typeof c === "string") as string[])
     : undefined;
   /* Domain chart data the template / model can supply so charts aren't
      generic finance placeholders (e.g. donut "Revenue by plan"). */
-  const seriesData = Array.isArray(block?.props.seriesData)
-    ? (block.props.seriesData as { name: string; y: number }[])
+  const seriesData = Array.isArray(p.seriesData)
+    ? (p.seriesData as { name: string; y: number }[])
     : undefined;
-  const categories = Array.isArray(block?.props.categories)
-    ? (block.props.categories as string[])
-    : undefined;
-  const series = Array.isArray(block?.props.series)
-    ? (block.props.series as { name: string; data: number[] }[])
-    : undefined;
+  const categories = Array.isArray(p.categories) ? (p.categories as string[]) : undefined;
+  const series = Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
+  const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
 
-  return (
+  /* A framed panel shows the title in its header and gives the chart the
+     space its fixed height leaves; an unframed chart keeps its own title. */
+  const framed = p.panel === true;
+  const panelHeight = panelHeightOf(p);
+  const chart = (
     <SimulatedHighchart
       chartType={chartType}
       title={title}
@@ -1679,7 +1683,21 @@ function HighchartBlockRenderer({
       seriesData={seriesData}
       categories={categories}
       series={series}
+      height={framed ? panelContentHeight(panelHeight) : p.height != null ? panelHeightOf(p) : undefined}
+      hideTitle={framed}
+      yAxisFormat={text(p.yAxisFormat)}
+      yAxisTitle={text(p.yAxisTitle)}
+      secondaryAxisFormat={text(p.secondaryAxisFormat)}
+      secondaryAxisTitle={text(p.secondaryAxisTitle)}
+      centerLabel={text(p.centerLabel)}
+      legend={p.legend === false ? false : undefined}
     />
+  );
+  if (!framed) return chart;
+  return (
+    <PanelFrame system={system} title={title} subtitle={text(p.subtitle)} viewBy={viewByOf(p)} height={panelHeight}>
+      {chart}
+    </PanelFrame>
   );
 }
 
@@ -1818,6 +1836,9 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartGauge: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartHeatmap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
   /* Batch 6 */

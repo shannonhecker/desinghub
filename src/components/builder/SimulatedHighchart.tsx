@@ -6,7 +6,7 @@ import HighchartsReact from "highcharts-react-official";
 import { useBuilder } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedHighchart - renders any of the 12 Highcharts
+   SimulatedHighchart - renders any of the 15 Highcharts
    chart types inside the builder canvas, themed via
    --ds-* CSS variables inherited from the preview wrapper.
 
@@ -20,7 +20,7 @@ import { getPalette } from "@/lib/categoricalPalettes";
 import type { DesignSystem } from "@/store/useBuilder";
 
 /* ── Read --ds-* CSS variables from a DOM element ── */
-interface ThemeVars {
+export interface ThemeVars {
   primary: string;
   bg: string;
   fg: string;
@@ -111,20 +111,104 @@ function prefersReducedMotion(): boolean {
 export type HighchartType =
   | "line" | "area" | "column" | "pie" | "scatter"
   | "bar" | "donut" | "gauge" | "heatmap" | "treemap"
-  | "spline" | "stacked-column";
+  | "spline" | "stacked-column"
+  | "combination" | "stacked-bar" | "stacked-area";
+
+/** One data series. `type`, `yAxis` and `dashStyle` only matter to the
+ *  combination chart, where each series picks its own mark and axis. */
+export interface ChartSeries {
+  name: string;
+  data: number[];
+  type?: "column" | "line" | "spline" | "area";
+  /** 0 = left axis (default), 1 = right axis. */
+  yAxis?: 0 | 1;
+  dashStyle?: "Solid" | "Dash" | "ShortDash" | "Dot";
+}
+
+/** Everything a chart block can say about itself. */
+export interface ChartProps {
+  title?: string;
+  value?: number;
+  /** Domain data the template/model can pass so charts aren't generic. */
+  seriesData?: { name: string; y: number }[];
+  categories?: string[];
+  series?: ChartSeries[];
+  /** Chart height in px (default 250). */
+  height?: number;
+  /** Drop the in-chart title (a framed panel shows it in its header). */
+  hideTitle?: boolean;
+  /** Highcharts label format for the value axis, e.g. "{value}%". */
+  yAxisFormat?: string;
+  yAxisTitle?: string;
+  /** Right-hand axis of a combination chart. */
+  secondaryAxisFormat?: string;
+  secondaryAxisTitle?: string;
+  /** Text drawn in the middle of a donut (e.g. a total). */
+  centerLabel?: string;
+  /** false hides the legend. */
+  legend?: boolean;
+}
+
+/** Options for one chart: the per-type build, then the settings every type
+ *  shares (height, title, axis format, legend, donut centre label). */
+export function buildChartOptions(
+  chartType: HighchartType,
+  t: Partial<Highcharts.Options>,
+  v: ThemeVars,
+  props: ChartProps,
+): Highcharts.Options {
+  const o = chartOptions(chartType, t, v, props);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  if (props.height) o.chart = { ...(o.chart as any), height: props.height };
+  if (props.hideTitle) o.title = { ...(o.title as any), text: undefined };
+  if (props.legend === false) o.legend = { ...(o.legend as any), enabled: false };
+  /* Value-axis format + title apply to the single-axis types; the
+     combination chart builds its own pair of axes. */
+  if (o.yAxis && !Array.isArray(o.yAxis) && chartType !== "gauge" && chartType !== "heatmap") {
+    const y = o.yAxis as any;
+    if (props.yAxisFormat) y.labels = { ...y.labels, format: props.yAxisFormat };
+    if (props.yAxisTitle !== undefined || props.hideTitle) {
+      y.title = { ...y.title, text: props.yAxisTitle || undefined };
+    }
+  }
+  if (props.centerLabel && chartType === "donut") {
+    o.chart = { ...(o.chart as any), events: { render: centerLabelRenderer(props.centerLabel, v) } };
+  }
+  /* The accessibility module describes the chart to assistive tech; give it
+     the title even when the visible title is hidden. */
+  o.accessibility = { ...(o.accessibility as any), description: props.title || undefined };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  return o;
+}
+
+const CENTER_LABEL_FONT_SIZE = 15;
+
+/** Highcharts `render` handler that keeps one text label centred on the pie.
+ *  Runs on every redraw, so the label follows a resize. */
+function centerLabelRenderer(text: string, v: ThemeVars) {
+  return function (this: Highcharts.Chart) {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const chart = this as any;
+    const series = chart.series?.[0];
+    if (!series?.center) return;
+    const [cx, cy] = series.center as number[];
+    if (!chart.dhCenterLabel) {
+      chart.dhCenterLabel = chart.renderer
+        .text(text, 0, 0)
+        .attr({ align: "center", zIndex: 5 })
+        .css({ color: v.fg, fontSize: `${CENTER_LABEL_FONT_SIZE}px`, fontWeight: "600" })
+        .add();
+    }
+    const box = chart.dhCenterLabel.getBBox();
+    chart.dhCenterLabel.attr({ text, x: chart.plotLeft + cx, y: chart.plotTop + cy + box.height / 4 });
+  };
+}
 
 function chartOptions(
   chartType: HighchartType,
   t: Partial<Highcharts.Options>,
   v: ThemeVars,
-  props: {
-    title?: string;
-    value?: number;
-    /** Domain data the template/model can pass so charts aren't generic. */
-    seriesData?: { name: string; y: number }[];
-    categories?: string[];
-    series?: { name: string; data: number[] }[];
-  },
+  props: ChartProps,
 ): Highcharts.Options {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const tc = t.chart as any;
@@ -296,6 +380,85 @@ function chartOptions(
             ],
       };
 
+    case "stacked-bar":
+      return {
+        ...t,
+        chart: { ...tc, type: "bar" },
+        title: { ...tt, text: props.title || "Exposure by currency" },
+        xAxis: { ...tx, categories: props.categories ?? ["USD", "EUR", "GBP", "JPY"] },
+        plotOptions: { ...t.plotOptions, bar: { stacking: "normal" } },
+        series: props.series
+          ? props.series.map((s) => ({ name: s.name, data: s.data, type: "bar" as const }))
+          : [
+              { name: "Bonds", data: [22, 14, 9, 4], type: "bar" as const },
+              { name: "Equity", data: [31, 12, 11, 6], type: "bar" as const },
+            ],
+      };
+
+    case "stacked-area":
+      return {
+        ...t,
+        chart: { ...tc, type: "areaspline" },
+        title: { ...tt, text: props.title || "Allocation history" },
+        xAxis: { ...tx, categories: props.categories ?? ["Q1", "Q2", "Q3", "Q4"] },
+        plotOptions: {
+          ...t.plotOptions,
+          areaspline: { stacking: "normal", fillOpacity: 0.5, lineWidth: 1, marker: { enabled: false } },
+        },
+        series: props.series
+          ? props.series.map((s) => ({ name: s.name, data: s.data, type: "areaspline" as const }))
+          : [
+              { name: "Bonds", data: [38, 36, 37, 35], type: "areaspline" as const },
+              { name: "Equity", data: [44, 47, 45, 48], type: "areaspline" as const },
+              { name: "Private assets", data: [18, 17, 18, 17], type: "areaspline" as const },
+            ],
+      };
+
+    /* Columns and lines on shared categories; each series chooses its mark
+       and, optionally, the right-hand axis. */
+    case "combination": {
+      const series: ChartSeries[] = props.series ?? [
+        { name: "Active", data: [4.1, 4.4, 3.9, 4.8, 5.2, 4.9], type: "column", yAxis: 1 },
+        { name: "Portfolio", data: [11.2, 11.9, 11.4, 12.6, 13.1, 12.8], type: "line" },
+        { name: "Benchmark", data: [10.4, 10.8, 10.9, 11.7, 12.0, 11.9], type: "line", dashStyle: "ShortDash" },
+      ];
+      const hasSecondary = series.some((s) => s.yAxis === 1);
+      const primaryAxis = {
+        ...ty,
+        title: { ...ty.title, text: props.yAxisTitle || undefined },
+        labels: { ...ty.labels, ...(props.yAxisFormat ? { format: props.yAxisFormat } : {}) },
+      };
+      const secondaryAxis = {
+        ...ty,
+        opposite: true,
+        gridLineWidth: 0,
+        title: { ...ty.title, text: props.secondaryAxisTitle || undefined },
+        labels: { ...ty.labels, ...(props.secondaryAxisFormat ? { format: props.secondaryAxisFormat } : {}) },
+      };
+      return {
+        ...t,
+        chart: { ...tc },
+        title: { ...tt, text: props.title || "Value at risk" },
+        xAxis: { ...tx, categories: props.categories ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+        yAxis: hasSecondary ? [primaryAxis, secondaryAxis] : primaryAxis,
+        tooltip: { ...t.tooltip, shared: true },
+        plotOptions: {
+          ...t.plotOptions,
+          line: { marker: { enabled: false } },
+          spline: { marker: { enabled: false } },
+        },
+        series: series.map((s) => ({
+          name: s.name,
+          data: s.data,
+          type: (s.type ?? "column") as any,
+          yAxis: hasSecondary ? (s.yAxis ?? 0) : 0,
+          ...(s.dashStyle ? { dashStyle: s.dashStyle } : {}),
+          /* Columns sit behind the lines. */
+          zIndex: (s.type ?? "column") === "column" ? 1 : 2,
+        })),
+      };
+    }
+
     /* ── Advanced charts ── */
 
     case "gauge": {
@@ -396,10 +559,24 @@ interface SimulatedHighchartProps {
   /** Domain chart data so templates/model output isn't generic. */
   seriesData?: { name: string; y: number }[];
   categories?: string[];
-  series?: { name: string; data: number[] }[];
+  series?: ChartSeries[];
+  /** Height, axis formats, legend, donut centre label, hidden title. */
+  height?: number;
+  hideTitle?: boolean;
+  yAxisFormat?: string;
+  yAxisTitle?: string;
+  secondaryAxisFormat?: string;
+  secondaryAxisTitle?: string;
+  centerLabel?: string;
+  legend?: boolean;
 }
 
-export function SimulatedHighchart({ chartType, title, value, system, seriesColors, seriesData, categories, series }: SimulatedHighchartProps) {
+const DEFAULT_CHART_HEIGHT = 250;
+
+export function SimulatedHighchart({
+  chartType, title, value, system, seriesColors, seriesData, categories, series,
+  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend,
+}: SimulatedHighchartProps) {
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
@@ -444,22 +621,23 @@ export function SimulatedHighchart({ chartType, title, value, system, seriesColo
 
   const options = useMemo(() => {
     if (!vars) return null;
-    return chartOptions(
+    return buildChartOptions(
       chartType,
       baseTheme(vars, palette, seriesColors),
       vars,
-      { title, value, seriesData, categories, series },
+      { title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend]);
 
+  const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (
-    <div ref={wrapperRef} style={{ width: "100%", minHeight: 250 }}>
+    <div ref={wrapperRef} style={{ width: "100%", minHeight: boxHeight }}>
       {options ? (
         <HighchartsReact ref={chartRef} highcharts={Highcharts} options={options} />
       ) : (
         <div style={{
-          height: 250,
+          height: boxHeight,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

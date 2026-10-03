@@ -10333,6 +10333,76 @@
   white-space: nowrap;
 }
 
+/* ── Framed panel (PanelFrame.tsx): the card a chart or data grid sits in.
+   Sizes arrive as custom properties from panelMetrics.ts and are the same in
+   every design system; colour, type and radius come from the active system's
+   --ds-* tokens. ── */
+.dh-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: var(--dh-panel-h);
+  min-width: 0;
+  overflow: hidden;
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-panel-header {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-panel-header-h);
+  height: var(--dh-panel-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dh-panel-pad);
+  padding-inline: var(--dh-panel-pad);
+  min-width: 0;
+}
+.dh-panel-heading {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--dh-panel-pad) / 2);
+  min-width: 0;
+}
+.dh-panel-title {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-panel-title-size);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ds-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dh-panel-subtitle {
+  flex: none;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.3;
+  color: var(--ds-fg-tertiary);
+  white-space: nowrap;
+}
+.dh-panel-viewby {
+  flex: 0 1 var(--dh-panel-viewby-w);
+  width: var(--dh-panel-viewby-w);
+  min-width: 0;
+}
+/* The select must not stretch the fixed header: whatever height the active
+   system gives it, it is centred in the row and clipped to it. */
+.dh-panel-viewby > * {
+  max-height: var(--dh-panel-header-h);
+}
+.dh-panel-body {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 var(--dh-panel-pad) var(--dh-panel-pad);
+}
+
 /* Preview canvas root - uses only design system tokens */
 .preview-canvas-root {
   background: var(--ds-bg);
