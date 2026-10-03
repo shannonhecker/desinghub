@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { fitFrame, FRAME_PRESETS } from "@/lib/frameFit";
 import {
   Monitor,
   Tablet,
@@ -106,12 +107,11 @@ export function DSPreviewStyles() {
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }
 
-/* ── Viewport presets ── */
-const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
-  desktop: { width: 1200, height: 800, label: "1200 \u00d7 800" },
-  tablet: { width: 768, height: 1024, label: "768 \u00d7 1024" },
-  mobile: { width: 375, height: 812, label: "375 \u00d7 812" },
-};
+/* ── Viewport presets ──
+   One design size per device (frameFit.ts). The frame is always laid out
+   at that width and scaled to the stage, so Edit and Present share one
+   layout. */
+const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = FRAME_PRESETS;
 
 /* ── Icon map for sidebar nav items ──
    Covers every icon key the builder templates use, plus a small set of
@@ -1156,22 +1156,50 @@ function DashboardFooter() {
    ══════════════════════════════════════════════════════════
    Extracted from PreviewSidePanel's inline motion.div so the
    exact same frame can be reused by the full-stage Present mode
-   (PresentStage). Width/height come from the active device
-   preset; desktop is fluid (100%), tablet/mobile are fixed.
+   (PresentStage).
 
-   The spring is now wrapped in useReducedMotion — when a user
-   prefers reduced motion the width/height changes apply
-   instantly (duration 0) instead of springing. No guard existed
-   on the inline version; this is an additive a11y improvement. */
+   Every device preset has a fixed design width. The frame is laid
+   out at that width and, when the stage is narrower, scaled down to
+   fit (frameFit.ts) rather than re-flowed - so the layout in Edit
+   (chat + inspector docked, narrow stage) is the layout in Present.
+   CSS `zoom` rather than a transform: it scales layout too, so the
+   frame occupies its scaled size and pointer coordinates, drag and
+   chart hit-testing keep working without compensation.
+
+   The spring is wrapped in useReducedMotion — when a user prefers
+   reduced motion the width/height changes apply instantly
+   (duration 0) instead of springing. */
 export function DeviceFrame({ children }: { children: React.ReactNode }) {
   const deviceMode = useBuilder((s) => s.deviceMode);
   const reduceMotion = useReducedMotion();
   const preset = PRESETS[deviceMode];
-  const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
+  const frameRef = useRef<HTMLDivElement>(null);
+  /* Room the stage offers the frame (its parent's content box). */
+  const [avail, setAvail] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const stage = frameRef.current?.parentElement;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const cs = getComputedStyle(stage);
+      const width = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const height = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      setAvail((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, []);
+
+  const fit = fitFrame(preset.width, preset.height, avail.width, avail.height);
   return (
     <motion.div
+      ref={frameRef}
       className="bp-device-frame"
-      animate={{ width: frameWidth, maxHeight: preset.height }}
+      data-frame-zoom={fit.zoom}
+      style={{ zoom: fit.zoom }}
+      animate={{ width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
       {children}

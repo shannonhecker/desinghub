@@ -18,10 +18,17 @@ import { test, expect, type Page } from "@playwright/test";
 
 const NEW_SESSION_LABEL = "Start a new session";
 
+/* The REAL chat input (ChatPanel.tsx aria-label). `getByRole("textbox").first()`
+   resolves to the canvas's decorative readonly chat field, which is first in
+   DOM order and sits behind the start screen, so a click on it never lands. */
+function chatInput(page: Page) {
+  return page.getByRole("textbox", { name: "Chat message input" });
+}
+
 async function gotoBuilderClean(page: Page) {
   await page.goto("/builder", { waitUntil: "domcontentloaded" });
   // Builder defers some hydration; wait for the chat input to mount.
-  await expect(page.getByRole("textbox").first()).toBeVisible({ timeout: 30_000 });
+  await expect(chatInput(page)).toBeVisible({ timeout: 30_000 });
   // Reset to a clean canvas if a previous test left state behind. The
   // top bar exposes a "Start a new session" icon-only button.
   const newSession = page.getByRole("button", { name: NEW_SESSION_LABEL });
@@ -37,7 +44,7 @@ test.describe("Builder — load + smoke", () => {
     await gotoBuilderClean(page);
     await expect(page.getByRole("log", { name: "Chat messages" })).toBeVisible();
     // Chat textarea should exist and be focusable.
-    const textarea = page.getByRole("textbox").first();
+    const textarea = chatInput(page);
     await expect(textarea).toBeVisible();
     await textarea.focus();
     await expect(textarea).toBeFocused();
@@ -57,7 +64,7 @@ test.describe("Builder — local-command path (no AI key required)", () => {
 
     // Send the local-command prompt. The chat input is a single textarea
     // that submits on Enter (no Shift required).
-    const textarea = page.getByRole("textbox").first();
+    const textarea = chatInput(page);
     await textarea.click();
     await textarea.fill("build a dashboard");
     await textarea.press("Enter");
@@ -95,7 +102,7 @@ test.describe("Builder — local-command path (no AI key required)", () => {
            historyCursor before/after. */
     await gotoBuilderClean(page);
 
-    const textarea = page.getByRole("textbox").first();
+    const textarea = chatInput(page);
     await textarea.click();
     await textarea.fill("build a dashboard");
     await textarea.press("Enter");
