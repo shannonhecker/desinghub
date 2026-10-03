@@ -30,6 +30,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { useSessionStore } from "@/store/useSessionStore";
 import { TRACKED_KEYS } from "./autoSaveTrackedKeys";
 import { buildLocalSessionSnapshot } from "./localSession";
+import { rememberActiveSession, resumeActiveSession } from "./activeSession";
 
 /* localStorage writes are synchronous and cheap, so a short debounce is
  *  plenty to collapse rapid edits without losing the latest state. */
@@ -106,8 +107,22 @@ export function useLocalAutoSave() {
       }
     }
 
+    /* Come back to the session that was open before a reload (no-op when
+       the URL hands the builder its own starting state). Runs before the
+       subscription below takes its first fingerprint, so restoring does not
+       count as an edit. */
+    resumeActiveSession(window.location.search);
+
     let lastFingerprint = fingerprint(useBuilder.getState());
+    let lastSessionId = useBuilder.getState().currentSessionId;
     const unsub = useBuilder.subscribe((state) => {
+      /* Track which session is open so a reload can reopen it; a new
+         session (id back to null) clears it. */
+      if (state.currentSessionId !== lastSessionId) {
+        lastSessionId = state.currentSessionId;
+        rememberActiveSession(lastSessionId);
+      }
+
       const fp = fingerprint(state);
       if (fp === lastFingerprint) return;
       lastFingerprint = fp;
@@ -118,8 +133,26 @@ export function useLocalAutoSave() {
       debounceRef.current = setTimeout(persistNow, DEBOUNCE_MS);
     });
 
+    /* An edit made inside the debounce window used to be lost to a quick
+       refresh or tab close. localStorage writes are synchronous, so a save
+       that is still waiting is written as the page is hidden. Both events:
+       pagehide covers reload / close, visibilitychange covers a mobile
+       browser that suspends a backgrounded tab without unloading it. */
+    const flushPending = () => {
+      if (!debounceRef.current) return;
+      clearTimeout(debounceRef.current);
+      persistNow();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushPending();
+    };
+    window.addEventListener("pagehide", flushPending);
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      window.removeEventListener("pagehide", flushPending);
+      document.removeEventListener("visibilitychange", onVisibility);
       unsub();
     };
   }, []);
