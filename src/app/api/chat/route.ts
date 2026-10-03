@@ -13,6 +13,18 @@ const MAX_MESSAGES = 40;
    block with the canvas manifest (bounded at MANIFEST_MAX_CHARS) ahead of the
    user's text, so the limit leaves room for both. */
 const MAX_CONTENT_LENGTH = 16000;
+/* Ceiling on model requests per chat turn (the first response plus its
+   continuations). A full dashboard build takes 2-3; the cap only stops a
+   model that never finishes asking for tools. */
+const MAX_TOOL_STEPS = 8;
+/* What the model is told about each canvas call. The calls are applied in
+   the browser when the stream ends, so the route can only say they are
+   queued - it must not claim an outcome it has not seen. */
+const TOOL_QUEUED =
+  "Queued. It is applied to the canvas, in order, when your turn ends. " +
+  "Blocks you add get their ids then; refer to them by position until the next message.";
+const TOOL_REJECTED =
+  "Not applied: the arguments were not valid JSON. Call the tool again with complete arguments.";
 
 function isValidMessage(m: unknown): m is { role: string; content: string } {
   if (typeof m !== "object" || m === null) return false;
@@ -128,77 +140,137 @@ export async function POST(req: Request) {
      its default (buffered) mode on purpose: the API then validates each
      parameter before it is emitted, so the accumulated input is always
      complete JSON when its block closes; the inputs are small. */
-  const stream = await anthropic.messages.stream({
-    model: MODEL_ID,
-    max_tokens: 16000,
-    tools: CANVAS_TOOLS,
-    system: [
-      {
-        type: "text",
-        text: buildSystemPrompt((designSystem as string | undefined) ?? "salt"),
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: validatedMessages,
-  });
+  const system: Anthropic.TextBlockParam[] = [
+    {
+      type: "text",
+      text: buildSystemPrompt((designSystem as string | undefined) ?? "salt"),
+      cache_control: { type: "ephemeral" },
+    },
+  ];
 
   const encoder = new TextEncoder();
 
-  /* Tool-use blocks arrive as content_block_start (name) → N input_json_delta
-     fragments → content_block_stop. Accumulate per block index and emit one
-     `{tool_use: {name, input}}` frame when the block closes, in the order the
-     model emitted them (order matters: setZoneLayout before addBlock). */
-  const pendingTools = new Map<number, { name: string; json: string }>();
+  /* The canvas tools run in the BROWSER (applyAIActions), after the stream
+     ends, so the route has no real tool result to return. Left unanswered,
+     the API ends the turn at the model's first batch of calls (stop_reason
+     "tool_use"): a build that opened with clearCanvas stopped right there
+     and the user was left with an emptied canvas and nothing added.
+
+     So the route keeps the turn going itself: each step's calls are
+     acknowledged with a tool_result and the conversation is sent back until
+     the model stops asking for tools. The client protocol is unchanged - it
+     still sees one stream of text and {tool_use} frames, in order. */
+  const conversation: Anthropic.MessageParam[] = [...validatedMessages];
 
   const readable = new ReadableStream({
     async start(controller) {
       const send = (frame: Record<string, unknown>) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(frame)}\n\n`));
+      /* Text from a later step is set apart from an earlier step's text so
+         the bubble does not read "On it.Added the chart." */
+      let textSent = false;
       try {
-        for await (const event of stream) {
-          /* Cache-hit telemetry: message_start carries the input-token usage,
-             incl. cache_read / cache_creation. Logged once per request so the
-             prompt-cache can be confirmed working (cache_read > 0 after the
-             first warm-up). Server-side only; never reaches the client. */
-          if (event.type === "message_start") {
-            const u = event.message.usage;
-            console.log(
-              `[api/chat] cache_read=${u.cache_read_input_tokens ?? 0} ` +
-                `cache_creation=${u.cache_creation_input_tokens ?? 0} ` +
-                `input=${u.input_tokens}`,
-            );
-          }
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            send({ text: event.delta.text });
-          } else if (
-            event.type === "content_block_start" &&
-            event.content_block.type === "tool_use"
-          ) {
-            pendingTools.set(event.index, { name: event.content_block.name, json: "" });
-          } else if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "input_json_delta"
-          ) {
-            const pending = pendingTools.get(event.index);
-            if (pending) pending.json += event.delta.partial_json;
-          } else if (event.type === "content_block_stop") {
-            const pending = pendingTools.get(event.index);
-            if (!pending) continue;
-            pendingTools.delete(event.index);
-            let input: unknown;
-            try {
-              input = pending.json.trim() ? JSON.parse(pending.json) : {};
-            } catch {
-              /* Should not happen with buffered input streaming; if it does,
-                 tell the client which call was lost rather than dropping it. */
-              send({ tool_skipped: { name: pending.name, reason: "invalid tool input JSON" } });
-              continue;
+        for (let step = 0; step < MAX_TOOL_STEPS; step++) {
+          const stream = await anthropic.messages.stream({
+            model: MODEL_ID,
+            max_tokens: 16000,
+            tools: CANVAS_TOOLS,
+            system,
+            /* A copy: the array grows between steps. */
+            messages: [...conversation],
+          });
+
+          /* Tool-use blocks arrive as content_block_start (name) → N
+             input_json_delta fragments → content_block_stop. Accumulate per
+             block index and emit one `{tool_use: {name, input}}` frame when
+             the block closes, in the order the model emitted them (order
+             matters: setZoneLayout before addBlock). */
+          const pendingTools = new Map<number, { id: string; name: string; json: string }>();
+          /* This step's assistant content and the acknowledgements owed for
+             it, replayed to the API if the model stops for tool results. */
+          const assistantContent: Anthropic.ContentBlockParam[] = [];
+          const toolResults: Anthropic.ToolResultBlockParam[] = [];
+          let stepText = "";
+          let stepTextStarted = false;
+          let stopReason: string | null = null;
+
+          for await (const event of stream) {
+            /* Cache-hit telemetry: message_start carries the input-token
+               usage, incl. cache_read / cache_creation. Logged per model
+               request so the prompt-cache can be confirmed working
+               (cache_read > 0 after the first warm-up). Server-side only;
+               never reaches the client. */
+            if (event.type === "message_start") {
+              const u = event.message.usage;
+              console.log(
+                `[api/chat] step=${step} cache_read=${u.cache_read_input_tokens ?? 0} ` +
+                  `cache_creation=${u.cache_creation_input_tokens ?? 0} ` +
+                  `input=${u.input_tokens}`,
+              );
             }
-            send({ tool_use: { name: pending.name, input } });
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
+              if (!stepTextStarted) {
+                stepTextStarted = true;
+                if (textSent) send({ text: "\n\n" });
+              }
+              textSent = true;
+              stepText += event.delta.text;
+              send({ text: event.delta.text });
+            } else if (
+              event.type === "content_block_start" &&
+              event.content_block.type === "tool_use"
+            ) {
+              if (stepText) {
+                assistantContent.push({ type: "text", text: stepText });
+                stepText = "";
+              }
+              pendingTools.set(event.index, {
+                id: event.content_block.id,
+                name: event.content_block.name,
+                json: "",
+              });
+            } else if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "input_json_delta"
+            ) {
+              const pending = pendingTools.get(event.index);
+              if (pending) pending.json += event.delta.partial_json;
+            } else if (event.type === "content_block_stop") {
+              const pending = pendingTools.get(event.index);
+              if (!pending) continue;
+              pendingTools.delete(event.index);
+              let input: unknown;
+              try {
+                input = pending.json.trim() ? JSON.parse(pending.json) : {};
+              } catch {
+                /* Should not happen with buffered input streaming; if it
+                   does, tell the client which call was lost rather than
+                   dropping it, and tell the model so it can send it again. */
+                send({ tool_skipped: { name: pending.name, reason: "invalid tool input JSON" } });
+                assistantContent.push({ type: "tool_use", id: pending.id, name: pending.name, input: {} });
+                toolResults.push({
+                  type: "tool_result",
+                  tool_use_id: pending.id,
+                  is_error: true,
+                  content: TOOL_REJECTED,
+                });
+                continue;
+              }
+              send({ tool_use: { name: pending.name, input } });
+              assistantContent.push({ type: "tool_use", id: pending.id, name: pending.name, input });
+              toolResults.push({ type: "tool_result", tool_use_id: pending.id, content: TOOL_QUEUED });
+            } else if (event.type === "message_delta") {
+              stopReason = event.delta.stop_reason ?? null;
+            }
           }
+
+          if (stopReason !== "tool_use" || toolResults.length === 0) break;
+          if (stepText) assistantContent.push({ type: "text", text: stepText });
+          conversation.push({ role: "assistant", content: assistantContent });
+          conversation.push({ role: "user", content: toolResults });
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
