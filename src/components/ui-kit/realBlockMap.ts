@@ -585,7 +585,9 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       null,
       React.createElement("p", { className: "cds--type-label-01" }, s(p.label, "Metric")),
       React.createElement("p", { className: "cds--type-heading-04" }, s(p.value, "0")),
-      React.createElement("span", { style: { color: "var(--cds-support-success)" } }, `+${num(p.pct, 0)}%`),
+      /* `pct` is progress toward a goal (a bar in the other four systems),
+         not a signed change - see the matching export entry. */
+      React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
     ),
 
   SimulatedAccordion: (p) =>
