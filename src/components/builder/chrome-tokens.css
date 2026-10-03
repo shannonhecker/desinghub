@@ -47,6 +47,8 @@
   --dh-panel-title-size: 14px;
   --dh-panel-meta-size:  12px;
   --bc-hairline:         1px;
+  /* Header height when a canvas pins its structure across design systems. */
+  --bc-uniform-header-h: 64px;
 
   /* Text */
   --bc-fg:          rgba(245, 247, 250, 0.96);

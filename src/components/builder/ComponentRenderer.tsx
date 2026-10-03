@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
@@ -55,11 +55,18 @@ import {
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
 import { panelContentHeight, panelHeightOf, viewByOf } from "@/lib/panelMetrics";
+import { readGridColumns, readGridRows } from "@/lib/dataGridModel";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
    the builder's critical-path bundle / first paint. The `type` import above is
    erased at build time, so it does not pull the module eagerly. */
+/* AG Grid is as heavy as Highcharts and only needed when a Data Grid block is
+   on the canvas: same lazy, client-only treatment. */
+const SimulatedDataGrid = dynamic(
+  () => import("./SimulatedDataGrid").then((m) => m.SimulatedDataGrid),
+  { ssr: false },
+);
 const SimulatedHighchart = dynamic(
   () => import("./SimulatedHighchart").then((m) => m.SimulatedHighchart),
   {
@@ -1701,6 +1708,28 @@ function HighchartBlockRenderer({
   );
 }
 
+/* ── Data Grid block renderer ──
+   Columns and rows come from the block (dataGridModel). Framed by default: a
+   grid needs the card around it; `panel: false` draws the bare grid. */
+function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const p = block?.props ?? {};
+  const columns = useMemo(() => readGridColumns(p.columns), [p.columns]);
+  const rows = useMemo(() => readGridRows(p.rows), [p.rows]);
+  const title = typeof p.title === "string" ? p.title : "";
+  const subtitle = typeof p.subtitle === "string" && p.subtitle.trim() ? p.subtitle : undefined;
+  const panelHeight = panelHeightOf(p);
+  if (p.panel === false) {
+    return <SimulatedDataGrid columns={columns} rows={rows} height={panelHeight} label={title || "Data grid"} />;
+  }
+  return (
+    <PanelFrame system={system} title={title} subtitle={subtitle} viewBy={viewByOf(p)} height={panelHeight}>
+      <SimulatedDataGrid columns={columns} rows={rows} height={panelContentHeight(panelHeight)} label={title || "Data grid"} />
+    </PanelFrame>
+  );
+}
+
 /* ── Renderer map ── */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 /* ══════════════════════════════════════════════════════════
@@ -1836,6 +1865,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartGauge: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartHeatmap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  DataGrid: DataGridBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,

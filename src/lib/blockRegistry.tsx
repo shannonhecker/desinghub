@@ -392,6 +392,8 @@ const NAV_ICON_OPTIONS = [
   { value: "settings", label: "Settings" }, { value: "bar_chart", label: "Bar Chart" },
   { value: "home", label: "Home" }, { value: "person", label: "Person" },
   { value: "search", label: "Search" }, { value: "notifications", label: "Notifications" },
+  { value: "shield", label: "Shield" }, { value: "trending_up", label: "Trend" },
+  { value: "layers", label: "Layers" }, { value: "filter", label: "Filter" },
 ];
 
 interface BlockDef {

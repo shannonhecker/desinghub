@@ -386,6 +386,9 @@ function chartOptions(
         chart: { ...tc, type: "bar" },
         title: { ...tt, text: props.title || "Exposure by currency" },
         xAxis: { ...tx, categories: props.categories ?? ["USD", "EUR", "GBP", "JPY"] },
+        /* reversedStacks off so the segments run in legend order, left to
+           right, instead of the first series landing at the far end. */
+        yAxis: { ...ty, reversedStacks: false },
         plotOptions: { ...t.plotOptions, bar: { stacking: "normal" } },
         series: props.series
           ? props.series.map((s) => ({ name: s.name, data: s.data, type: "bar" as const }))

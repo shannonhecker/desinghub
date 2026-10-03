@@ -20,6 +20,10 @@ import {
   User,
   Bell,
   Search,
+  Shield,
+  TrendingUp,
+  Layers,
+  Filter,
 } from "lucide-react";
 import {
   DndContext,
@@ -133,6 +137,11 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   person: User,
   notifications: Bell,
   search: Search,
+  /* Report navigation (finance templates). */
+  shield: Shield,
+  trending_up: TrendingUp,
+  layers: Layers,
+  filter: Filter,
 };
 
 /* ── Sample chat messages for the empty state ── */

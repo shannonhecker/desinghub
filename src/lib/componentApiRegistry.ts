@@ -779,6 +779,8 @@ function fluentIconName(icon: string): string {
     chat: "Chat24Regular", database: "Database24Regular", settings: "Settings24Regular",
     bar_chart: "DataBarVertical24Regular", home: "Home24Regular", person: "Person24Regular",
     search: "Search24Regular", notifications: "Alert24Regular",
+    shield: "Shield24Regular", trending_up: "ArrowTrending24Regular",
+    layers: "Layer24Regular", filter: "Filter24Regular",
   };
   return map[icon] ?? "Home24Regular";
 }
@@ -1110,6 +1112,7 @@ function carbonIconName(icon: string): string {
   const map: Record<string, string> = {
     chat: "Chat", database: "DataBase", settings: "Settings", bar_chart: "ChartColumn",
     home: "Home", person: "User", search: "Search", notifications: "Notification",
+    shield: "Security", trending_up: "Growth", layers: "Layers", filter: "Filter",
   };
   return map[icon] ?? "Home";
 }

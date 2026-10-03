@@ -10333,6 +10333,16 @@
   white-space: nowrap;
 }
 
+/* ── Uniform structure ──
+   Set on <html> by BuilderApp when the template on the canvas pins its
+   structural spacing across design systems (BuilderTemplate.uniformStructure).
+   The padding scale is pinned in JS; here the header takes one fixed height,
+   so the body starts at the same y in every system. ── */
+[data-uniform-structure] .bp-header {
+  box-sizing: border-box;
+  height: var(--bc-uniform-header-h);
+}
+
 /* ── Framed panel (PanelFrame.tsx): the card a chart or data grid sits in.
    Sizes arrive as custom properties from panelMetrics.ts and are the same in
    every design system; colour, type and radius come from the active system's
@@ -10362,12 +10372,15 @@
   min-width: 0;
 }
 .dh-panel-heading {
+  flex: 1 1 auto;
   display: flex;
   align-items: baseline;
   gap: calc(var(--dh-panel-pad) / 2);
   min-width: 0;
 }
 .dh-panel-title {
+  flex: 0 1 auto;
+  min-width: 0;
   margin: 0;
   font: inherit;
   font-size: var(--dh-panel-title-size);
@@ -10378,8 +10391,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* When the header is tight (a narrow panel with a "View by" select) the
+   subtitle gives way first, then the title truncates. */
 .dh-panel-subtitle {
-  flex: none;
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: var(--dh-panel-meta-size);
   line-height: 1.3;
   color: var(--ds-fg-tertiary);
@@ -11362,6 +11379,9 @@
 
 /* ── Sidebar ── */
 .bp-sidebar {
+  /* border-box so the divider is inside the sidebar width in every system
+     (Carbon's reset already did this; the others were one pixel wider). */
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
