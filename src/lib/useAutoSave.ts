@@ -26,6 +26,7 @@ import { useEffect, useRef } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage, isFirebaseConfigured } from "./firebase";
 import { TRACKED_KEYS } from "./autoSaveTrackedKeys";
+import { createCoalescedRunner } from "./coalescedRunner";
 
 const DEBOUNCE_MS = 2500;
 
@@ -76,7 +77,6 @@ export function useAutoSave() {
   saveProjectRef.current = saveProject;
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const savingRef = useRef(false);
 
   useEffect(() => {
     /* Graceful degrade: when Firebase isn't configured, skip the
@@ -86,13 +86,13 @@ export function useAutoSave() {
        rather than silently failing. */
     if (!isFirebaseConfigured) return;
 
-    async function scheduleSave() {
-      debounceRef.current = null;
+    /* One save at a time. A save that comes due while another is in flight
+       is queued (coalescedRunner) and runs when the current one ends, so
+       edits made during a slow write are still written. */
+    async function saveOnce() {
       const s = useBuilder.getState();
       if (!s.currentSessionId) return;
-      if (savingRef.current) return;
 
-      savingRef.current = true;
       s.setSaveState("saving");
       s.setSaveError(null);
 
@@ -104,15 +104,21 @@ export function useAutoSave() {
         /* Re-read - state may have mutated during the save */
         const after = useBuilder.getState();
         after.setLastSavedAt(Date.now());
-        after.setSaveState("saved");
+        /* Newer edits are waiting to be written: this save is already
+           stale, so do not announce "saved" until the follow-up lands. */
+        if (!runner.hasQueued()) after.setSaveState("saved");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Save failed";
         const after = useBuilder.getState();
         after.setSaveState("error");
         after.setSaveError(msg);
-      } finally {
-        savingRef.current = false;
       }
+    }
+    const runner = createCoalescedRunner(saveOnce);
+
+    function scheduleSave() {
+      debounceRef.current = null;
+      void runner.run();
     }
 
     /* Snapshot-compare via fingerprint - avoids relying on the
