@@ -47,6 +47,12 @@
   --dh-panel-title-size: 14px;
   --dh-panel-meta-size:  12px;
   --bc-hairline:         1px;
+  /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
+  --dh-panel-tool-size:  28px;
+  --dh-focus-ring:       2px;
+  --bc-expand-gap:       16px;
+  --dh-config-w:         320px;
+  --dh-config-header-h:  56px;
   /* Leading glyph size in a labelled canvas-toolbar button. */
   --bc-toolbar-glyph: 16px;
   /* Width of the accent bar on a selected master-grid row. */

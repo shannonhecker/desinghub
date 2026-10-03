@@ -94,6 +94,13 @@ export function toGrid(
   const columns: GridColumn[] = [groupColumn];
   if (result.pivots.length === 0) {
     for (const m of measures) columns.push(leaf(gridField(null, m.key), m.label, m));
+  } else if (measures.length === 1) {
+    /* One figure: the pivot value IS the column header. A group header
+       repeating the same measure name under every column would be noise. */
+    const m = measures[0];
+    result.pivots.forEach((p, pi) => {
+      columns.push({ ...leaf(gridField(pi, m.key), p, m), ...(m.width ? {} : { minWidth: Math.max(88, p.length * 8 + 28) }) });
+    });
   } else {
     result.pivots.forEach((p, pi) => {
       columns.push({ header: p, children: measures.map((m) => leaf(gridField(pi, m.key), m.label, m)) });
@@ -115,4 +122,35 @@ export function toGrid(
   const rows = result.groups.map((g, i) => toRow(g, result.cells[i]));
   if (result.total) rows.unshift(toRow(opts.totalLabel ?? "Total", result.total, { _bold: true }));
   return { columns, rows };
+}
+
+/** The data behind a category chart as a grid: one row per category, one
+ *  column per series. Shown under the chart when a panel is expanded. */
+export function seriesToGrid(
+  header: string,
+  categories: string[],
+  series: { name: string; data: (number | null)[] }[],
+  kind: GridColumnKind = "number",
+): { columns: GridColumn[]; rows: GridRow[] } {
+  return {
+    columns: [{ field: GROUP_FIELD, header, flex: 2, minWidth: 140 }, ...series.map((s, i) => ({ field: `s${i}`, header: s.name, kind, signed: true }))],
+    rows: categories.map((c, r) => {
+      const row: GridRow = { [GROUP_FIELD]: c };
+      series.forEach((s, i) => { row[`s${i}`] = s.data[r] ?? null; });
+      return row;
+    }),
+  };
+}
+
+/** The parts of a pie / donut as a grid: part, value, share. */
+export function partsToGrid(header: string, parts: { name: string; y: number }[], valueColumn: GridLeafColumn): { columns: GridColumn[]; rows: GridRow[] } {
+  const total = parts.reduce((a, p) => a + p.y, 0);
+  return {
+    columns: [
+      { field: GROUP_FIELD, header, flex: 2, minWidth: 140 },
+      { ...valueColumn, field: "value" },
+      { field: "share", header: "Share", kind: "percent" },
+    ],
+    rows: parts.map((p) => ({ [GROUP_FIELD]: p.name, value: p.y, share: total ? Number(((p.y / total) * 100).toFixed(4)) : null })),
+  };
 }

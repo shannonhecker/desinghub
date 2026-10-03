@@ -28,10 +28,14 @@ export function dropdownModel(props: Record<string, unknown>): DropdownModel {
   const label = text(props.label);
   const value = text(props.value);
   const placeholder = text(props.placeholder) || "Select an option";
-  let options = text(props.optionsCsv)
-    .split(",")
-    .map((o) => o.trim())
-    .filter(Boolean);
+  /* `options` (an array) wins over `optionsCsv`: it can hold a choice that
+     itself contains a comma. */
+  let options = Array.isArray(props.options)
+    ? props.options.map(text).filter(Boolean)
+    : text(props.optionsCsv)
+        .split(",")
+        .map((o) => o.trim())
+        .filter(Boolean);
   if (options.length === 0) options = value ? [value] : [...DEFAULT_DROPDOWN_OPTIONS];
   else if (value && !options.includes(value)) options = [value, ...options];
   return { label, value, placeholder, options };

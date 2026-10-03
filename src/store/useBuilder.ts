@@ -320,6 +320,9 @@ interface BuilderState {
   /** An uploaded dataset that replaces the template's sample data. null =
      use the sample dataset of the template on the canvas. */
   reportData: ReportDataset | null;
+  /** The panel currently maximised over the canvas body, and whether its
+     configuration drawer is open. Transient. */
+  expandedPanel: { id: string; config: boolean } | null;
 
   // ── Conversational onboarding ("pending" flow) ──
   // When the user picks a template OR sends their first freeform message,
@@ -480,6 +483,9 @@ interface BuilderState {
   /** Set one report-state value; null (or "") clears it. */
   setReportState: (key: string, value: string | null) => void;
   setReportData: (data: ReportDataset | null) => void;
+  setExpandedPanel: (panel: { id: string; config: boolean } | null) => void;
+  /** Replace one top-level body block's type and props (panel reconfiguration). */
+  replaceBlock: (id: string, next: { type: string; props: Record<string, unknown> }) => void;
   setIsRegeneratingContent: (v: boolean) => void;
 
   // Actions - Pending (conversational onboarding)
@@ -854,6 +860,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   isRegeneratingContent: false,
   reportState: {},
   reportData: null,
+  expandedPanel: null,
 
   // Conversational onboarding state
   pendingTemplateId: null,
@@ -1068,7 +1075,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   /* A different template means different controls: start its report state
      clean. Uploaded data belongs to the canvas it was uploaded to. */
   setActiveTemplateId: (id) =>
-    set((s) => (s.activeTemplateId === id ? {} : { activeTemplateId: id, reportState: {}, reportData: null })),
+    set((s) => (s.activeTemplateId === id ? {} : { activeTemplateId: id, reportState: {}, reportData: null, expandedPanel: null })),
   setReportState: (key, value) =>
     set((s) => {
       if (value === null || value === "") {
@@ -1080,6 +1087,9 @@ export const useBuilder = create<BuilderState>((set) => ({
       return s.reportState[key] === value ? {} : { reportState: { ...s.reportState, [key]: value } };
     }),
   setReportData: (data) => set({ reportData: data }),
+  setExpandedPanel: (panel) => set({ expandedPanel: panel }),
+  replaceBlock: (id, next) =>
+    set((s) => ({ blocks: s.blocks.map((b) => (b.id === id ? { ...b, type: next.type, props: next.props } : b)) })),
   setIsRegeneratingContent: (v) => set({ isRegeneratingContent: v }),
 
   setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
@@ -1161,6 +1171,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   startNewSession: () => set({
     reportState: {},
     reportData: null,
+    expandedPanel: null,
     /* Reset canvas + conversation state, but KEEP user-level preferences
      *  like designSystem, density, mode - they're part of the user's
      *  workspace setup, not part of the session. */

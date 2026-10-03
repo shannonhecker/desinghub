@@ -26,6 +26,10 @@ describe("dropdownModel", () => {
     expect(dropdownModel({ value: "JPY", optionsCsv: "GBP,USD" }).options).toEqual(["JPY", "GBP", "USD"]);
   });
 
+  it("an options array wins over the csv and may contain commas", () => {
+    expect(dropdownModel({ options: ["Fixed income, rates", "Equity"], optionsCsv: "A, B" }).options).toEqual(["Fixed income, rates", "Equity"]);
+  });
+
   it("keeps the caller's placeholder", () => {
     expect(dropdownModel({ placeholder: "Pick a fund" }).placeholder).toBe("Pick a fund");
   });

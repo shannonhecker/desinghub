@@ -10448,6 +10448,143 @@
   margin-right: calc(var(--bc-toolbar-glyph) / 4);
 }
 
+/* ── Panel tools, expanded panel and configuration drawer ── */
+.dh-panel-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--dh-panel-pad) / 8);
+  margin-right: calc(var(--dh-panel-pad) / -4);
+}
+.dh-panel-tool {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dh-panel-tool-size);
+  height: var(--dh-panel-tool-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-tertiary);
+  cursor: pointer;
+  transition: background-color var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-panel-tool:hover,
+.dh-panel-tool.is-active {
+  background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: var(--ds-fg);
+}
+.dh-panel-tool:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+/* The tools stay out of the way until the panel is pointed at or focused. */
+.dh-panel:not(.dh-panel-expanded) .dh-panel-tools {
+  opacity: 0;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-panel:hover .dh-panel-tools,
+.dh-panel:focus-within .dh-panel-tools {
+  opacity: 1;
+}
+@media (hover: none) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { opacity: 1; }
+}
+
+/* Expanded: the panel is portalled into .bp-main, whose other content is
+   hidden. The slot fills the body's visible height. */
+.bp-main.dh-expanded {
+  overflow: hidden;
+}
+.bp-main.dh-expanded > :not(.dh-expand) {
+  display: none;
+}
+.dh-expand {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding-block: var(--dh-pad-canvas, var(--bc-gutter));
+}
+.dh-expand-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: var(--bc-expand-gap);
+}
+.dh-panel-expanded {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+.dh-config {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-config-w);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-config-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--dh-config-header-h);
+  padding-inline: var(--bc-expand-gap);
+}
+.dh-config-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--bc-expand-gap) var(--bc-expand-gap);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--bc-expand-gap) * 0.75);
+}
+.dh-config-heading {
+  margin: calc(var(--bc-expand-gap) / 2) 0 0;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-config-note {
+  margin: 0;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.5;
+  color: var(--ds-fg-secondary);
+}
+.dh-config-footer {
+  flex: none;
+  padding: calc(var(--bc-expand-gap) * 0.75) var(--bc-expand-gap);
+  border-top: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-config-reset {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.dh-config-reset:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+
 /* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
 .dh-grid-selectable .ag-row {
   cursor: pointer;

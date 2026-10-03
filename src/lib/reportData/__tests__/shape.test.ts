@@ -63,13 +63,19 @@ describe("toGrid", () => {
     expect(g.rows[1]).toEqual({ [GROUP_FIELD]: "Growth", mv: 800, var: 34 });
   });
 
-  it("pivoted: one column group per pivot value", () => {
+  it("pivoted, one figure: the pivot value is the column header", () => {
     const g = toGrid(runQuery(table, { groupBy: "fund", pivotBy: "currency", measures: [{ field: "mv" }] }), [mv], { groupHeader: "Fund" });
     expect(g.columns).toHaveLength(3);
-    const usd = g.columns[1];
-    expect(isColumnGroup(usd) && usd.header).toBe("USD");
-    expect(isColumnGroup(usd) && usd.children[0].field).toBe("p0_mv");
+    expect(g.columns[1]).toMatchObject({ field: "p0_mv", header: "USD", kind: "currency" });
+    expect(isColumnGroup(g.columns[1])).toBe(false);
     expect(g.rows[0]).toEqual({ [GROUP_FIELD]: "Growth", p0_mv: 800, p1_mv: null });
     expect(g.rows[1]).toEqual({ [GROUP_FIELD]: "Income", p0_mv: 300, p1_mv: 700 });
+  });
+
+  it("pivoted, several figures: one column group per pivot value", () => {
+    const g = toGrid(runQuery(table, { groupBy: "fund", pivotBy: "currency", measures: [{ field: "mv" }, { field: "var" }] }), [mv, vr], { groupHeader: "Fund" });
+    const usd = g.columns[1];
+    expect(isColumnGroup(usd) && usd.header).toBe("USD");
+    expect(isColumnGroup(usd) && usd.children.map((c) => c.field)).toEqual(["p0_mv", "p0_var"]);
   });
 });

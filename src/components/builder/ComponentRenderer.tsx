@@ -54,7 +54,8 @@ import {
 } from "./SimulatedUI";
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
-import { panelContentHeight, panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
+import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
+import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
 import { useBoundData, useCanvasDataset } from "./useBoundData";
 import { CURRENCY_STATE } from "@/lib/reportData/binding";
@@ -1694,7 +1695,7 @@ function HighchartBlockRenderer({
      space its fixed height leaves; an unframed chart keeps its own title. */
   const framed = p.panel === true;
   const panelHeight = panelHeightOf(p);
-  const chart = (
+  const chart = (height: number | undefined) => (
     <SimulatedHighchart
       chartType={chartType}
       title={title}
@@ -1704,7 +1705,7 @@ function HighchartBlockRenderer({
       seriesData={parts}
       categories={categories}
       series={series}
-      height={framed ? panelContentHeight(panelHeight) : p.height != null ? panelHeightOf(p) : undefined}
+      height={height}
       hideTitle={framed}
       yAxisFormat={text(p.yAxisFormat)}
       yAxisTitle={text(p.yAxisTitle)}
@@ -1717,9 +1718,27 @@ function HighchartBlockRenderer({
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
     />
   );
-  if (!framed) return chart;
+  if (!framed) return chart(p.height != null ? panelHeightOf(p) : undefined);
+
+  /* The data behind the chart, shown as a table when the panel is expanded. */
+  const percent = typeof p.valueSuffix === "string" && p.valueSuffix.includes("%");
+  const table = boundSeries
+    ? seriesToGrid("", boundSeries.categories, boundSeries.series, percent ? "percent" : "number")
+    : boundParts
+      ? partsToGrid("", boundParts.seriesData, { field: "value", header: "Value", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency })
+      : null;
   return (
-    <PanelFrame system={system} title={title} subtitle={text(p.subtitle)} viewBy={viewByOf(p)} viewByState={blockId ? viewByStateKey(blockId) : undefined} height={panelHeight}>
+    <PanelFrame
+      system={system}
+      blockId={blockId}
+      title={title}
+      subtitle={text(p.subtitle)}
+      viewBy={viewByOf(p)}
+      viewByState={blockId ? viewByStateKey(blockId) : undefined}
+      height={panelHeight}
+      table={table}
+      tools={Boolean(bound)}
+    >
       {chart}
     </PanelFrame>
   );
@@ -1770,8 +1789,17 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   );
   if (p.panel === false) return grid(panelHeight);
   return (
-    <PanelFrame system={system} title={title} subtitle={subtitle} viewBy={viewByOf(p)} viewByState={blockId ? viewByStateKey(blockId) : undefined} height={panelHeight}>
-      {grid(panelContentHeight(panelHeight))}
+    <PanelFrame
+      system={system}
+      blockId={blockId}
+      title={title}
+      subtitle={subtitle}
+      viewBy={viewByOf(p)}
+      viewByState={blockId ? viewByStateKey(blockId) : undefined}
+      height={panelHeight}
+      tools={Boolean(boundGrid)}
+    >
+      {grid}
     </PanelFrame>
   );
 }
