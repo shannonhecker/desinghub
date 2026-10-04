@@ -193,9 +193,9 @@ export function buildChartOptions(
     o.plotOptions = { ...(o.plotOptions as any), pie };
     o.legend = {
       ...(o.legend as any),
-      /* Three rows at most, then the legend pages: a breakdown with a dozen
-         parts must not take the ring's space. */
-      maxHeight: PIE_LEGEND_MAX_HEIGHT,
+      /* Beyond a handful of parts the legend pages at three rows: a
+         breakdown with a dozen parts must not take the ring's space. */
+      ...(pieParts(o) > PIE_LEGEND_FREE_ITEMS ? { maxHeight: PIE_LEGEND_MAX_HEIGHT } : {}),
       navigation: { activeColor: v.fg, inactiveColor: v.fgTer, style: { color: v.fgSec }, arrowSize: 9 },
       labelFormatter(this: { name: string; percentage?: number }) {
         return this.percentage === undefined ? this.name : `${this.name} ${Math.round(this.percentage)}%`;
@@ -217,6 +217,13 @@ const CENTER_LABEL_MIN_FONT_SIZE = 9;
 /** Share of the ring's hole the centre label may span. */
 const CENTER_LABEL_FILL = 0.78;
 const PIE_LEGEND_MAX_HEIGHT = 56;
+/** Up to this many parts the legend is shown whole. */
+const PIE_LEGEND_FREE_ITEMS = 6;
+function pieParts(o: Highcharts.Options): number {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const data = (o.series as any[] | undefined)?.[0]?.data;
+  return Array.isArray(data) ? data.length : 0;
+}
 
 /** Highcharts `render` handler that keeps one text label centred on the pie.
  *  Runs on every redraw, so the label follows a resize. Its text and colour

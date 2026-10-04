@@ -64,6 +64,8 @@ const BLOCK_LAYOUT_SCHEMA: Schema = {
     align: str("Cross-axis alignment", ["start", "center", "end", "stretch"]),
     margin: { type: "number", description: "Margin in px, all sides" },
     gridCol: { type: "integer", description: "Grid column start line (1-12); grid-mode zones only" },
+    spanTablet: { type: "integer", description: "Columns (1-12) the block takes at tablet width in a grid zone; omit for the automatic fold" },
+    spanPhone: { type: "integer", description: "Columns (1-12) the block takes at phone width in a grid zone; 12 = full width" },
   },
   additionalProperties: false,
 };

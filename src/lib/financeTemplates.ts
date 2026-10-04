@@ -70,12 +70,21 @@ const CHROME_LAYOUTS = {
   footer: { mode: "row", gap: 8, wrap: false, align: "center", visible: false },
 } as const;
 
+/* How a block folds on a narrower frame (LayoutProps.spanTablet / spanPhone,
+   of 12 columns). Panels are never narrower than half a tablet or the full
+   width of a phone; the page title takes its own row. */
+type Narrow = { spanTablet: number; spanPhone: number };
+const FULL: Narrow = { spanTablet: 12, spanPhone: 12 };
+const HALF: Narrow = { spanTablet: 6, spanPhone: 12 };
+/** Four filters across on a tablet, two on a phone. */
+const FILTER_NARROW: Narrow = { spanTablet: 3, spanPhone: 6 };
+
 /** A context filter: a labelled dropdown whose value is report state. */
-const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string): Block => ({
+const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string, narrow: Narrow = FILTER_NARROW): Block => ({
   id,
   type: "SimulatedDropdown",
   props: { label, value, optionsCsv: options.join(", "), stateKey },
-  layout: { width: width as `${number}fr`, height: CONTEXT_ROW_HEIGHT, align: "center" },
+  layout: { width: width as `${number}fr`, height: CONTEXT_ROW_HEIGHT, align: "center", ...narrow },
 });
 
 const CURRENCIES = FX_RATES.map((r) => String(r.currency));
@@ -207,8 +216,8 @@ export const riskAnalytics: BuilderTemplate = {
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("risk", "Risk"),
   body: [
-    { id: "tpl-risk-title", type: "PageTitle", props: { text: "Risk" }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
-    filter("tpl-risk-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr"),
+    { id: "tpl-risk-title", type: "PageTitle", props: { text: "Risk" }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center", spanTablet: 8, spanPhone: 12 } },
+    filter("tpl-risk-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 4, spanPhone: 12 }),
 
     {
       id: RISK_SUMMARY, type: "DataGrid",
@@ -219,17 +228,17 @@ export const riskAnalytics: BuilderTemplate = {
     {
       id: RISK_MARKET_VALUE, type: "HighchartStackedBar",
       props: { chartType: "stacked-bar", panel: true, height: 380, title: "Market value", viewBy: ["Currency", "Region", "Sector"], binding: riskMarketValue, ...PERCENT_CHART },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...HALF },
     },
     {
       id: "tpl-risk-contribution", type: "HighchartColumn",
       props: { chartType: "stacked-column", panel: true, height: 380, title: "Contribution by risk type", subtitle: "(Stacked)", binding: riskContribution, ...PERCENT_CHART },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...HALF },
     },
     {
       id: "tpl-risk-issuers", type: "HighchartStackedBar",
       props: { chartType: "stacked-bar", panel: true, height: 380, title: "Top 10 issuers by exposure", subtitle: "(Stacked)", binding: riskIssuers, ...PERCENT_CHART },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...FULL },
     },
 
     {
@@ -397,7 +406,7 @@ export const performanceAnalytics: BuilderTemplate = {
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("perf", "Performance"),
   body: [
-    { id: "tpl-perf-title", type: "PageTitle", props: { text: "Performance" }, layout: { width: "4fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
+    { id: "tpl-perf-title", type: "PageTitle", props: { text: "Performance" }, layout: { width: "4fr", height: CONTEXT_ROW_HEIGHT, align: "center", ...FULL } },
     filter("tpl-perf-fee", "Fee type", FEE_STATE, "Net of fees", ["Net of fees", GROSS], "2fr"),
     filter("tpl-perf-currency", "Currency", "currency", "GBP", CURRENCIES, "2fr"),
     filter("tpl-perf-periodicity", "Periodicity", PERIODICITY_STATE, "Monthly", PERIODICITIES, "2fr"),
@@ -412,28 +421,28 @@ export const performanceAnalytics: BuilderTemplate = {
     {
       id: PERF_BREAKDOWN, type: "DataGrid",
       props: { title: "Breakdown", height: 360, viewBy: Object.keys(BREAKDOWN_DIMENSIONS), binding: perfBreakdown },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...HALF },
     },
     {
       id: "tpl-perf-returns", type: "HighchartColumn",
       props: { chartType: "column", panel: true, height: 360, title: "Returns", subtitle: "(Clustered)", binding: perfReturns, ...PERCENT_CHART },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...HALF },
     },
     {
       id: PERF_ALLOCATION, type: "HighchartDonut",
       props: { chartType: "donut", panel: true, height: 360, title: "Allocation", viewBy: Object.keys(ALLOCATION_DIMENSIONS), binding: perfAllocation },
-      layout: { width: "4fr" },
+      layout: { width: "4fr", ...HALF },
     },
 
     {
       id: PERF_HISTORY, type: "HighchartStackedArea",
       props: { chartType: "stacked-area", panel: true, height: 360, title: "Allocation history", viewBy: Object.keys(ALLOCATION_DIMENSIONS), binding: perfHistory, ...SHARE_CHART },
-      layout: { width: "6fr" },
+      layout: { width: "6fr", ...HALF },
     },
     {
       id: PERF_TREND, type: "HighchartCombination",
       props: { chartType: "combination", panel: true, height: 360, title: "Investment trend", viewBy: ["All", "Fund", "Benchmark"], binding: perfTrend, ...PERCENT_CHART },
-      layout: { width: "6fr" },
+      layout: { width: "6fr", ...FULL },
     },
   ],
   aiResponse:

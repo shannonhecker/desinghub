@@ -247,3 +247,37 @@ describe("Performance Analytics - interactions", () => {
     });
   });
 });
+
+/* Narrow frames: every body block says how it folds, so no panel is left at
+   an unusable half-width on a phone. */
+import { describe as describeNarrow, it as itNarrow, expect as expectNarrow } from "vitest";
+import { riskAnalytics as riskTpl, performanceAnalytics as perfTpl } from "../financeTemplates";
+import { computeItemStyle } from "../layoutResolver";
+
+describeNarrow("finance templates on tablet and phone", () => {
+  for (const tpl of [riskTpl, perfTpl]) {
+    itNarrow(`${tpl.label}: every block narrower than the full row declares its tablet and phone span`, () => {
+      for (const b of tpl.body) {
+        if (b.layout?.width === "12fr") continue;
+        expectNarrow(b.layout?.spanTablet, b.id).toBeGreaterThanOrEqual(3);
+        expectNarrow(b.layout?.spanPhone, b.id).toBeGreaterThanOrEqual(6);
+      }
+    });
+    itNarrow(`${tpl.label}: panels are full width on a phone and at least half on a tablet`, () => {
+      for (const b of tpl.body.filter((x) => x.type === "DataGrid" || x.type.startsWith("Highchart"))) {
+        if (b.layout?.width === "12fr") continue;
+        expectNarrow(b.layout?.spanPhone, b.id).toBe(12);
+        expectNarrow(b.layout?.spanTablet, b.id).toBeGreaterThanOrEqual(6);
+      }
+    });
+  }
+
+  itNarrow("the resolver publishes the spans as custom properties in a grid zone", () => {
+    const style = computeItemStyle({ id: "x", type: "DataGrid", props: {}, layout: { width: "4fr", spanTablet: 6, spanPhone: 12 } }, { mode: "grid", columns: 12 }) as Record<string, unknown>;
+    expectNarrow(style.gridColumn).toBe("span 4");
+    expectNarrow(style["--span-tablet"]).toBe(6);
+    expectNarrow(style["--span-phone"]).toBe(12);
+    const plain = computeItemStyle({ id: "y", type: "DataGrid", props: {}, layout: { width: "4fr", spanTablet: 40 } }, { mode: "grid", columns: 12 }) as Record<string, unknown>;
+    expectNarrow(plain["--span-tablet"]).toBeUndefined();
+  });
+});

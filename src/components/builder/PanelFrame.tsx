@@ -136,6 +136,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
           <button
             type="button"
             className={`dh-panel-tool${configOpen ? " is-active" : ""}`}
+            data-tool="configure"
             aria-label={`Configure ${title || "panel"}`}
             aria-pressed={configOpen}
             title="Configure"

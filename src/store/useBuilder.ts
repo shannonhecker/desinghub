@@ -120,6 +120,13 @@ export interface LayoutProps {
      holds its relative position across a DS / column-count switch with no
      stored re-clamp. A full-row (fill) block ignores it. */
   gridCol?: number;
+  /** Column span (of 12) in a grid zone at tablet width and at phone width.
+     A template uses them to say how its rows fold on a narrower frame:
+     without them, the generic ladder folds thirds and quarters to halves,
+     which leaves a wide panel at an unusable half-width on a phone.
+     Undefined = the generic ladder. Canvas-only, like the ladder. */
+  spanTablet?: number;
+  spanPhone?: number;
 }
 
 export interface ChatMessage {

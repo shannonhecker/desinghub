@@ -67,6 +67,9 @@
   --bc-chrome-mark-fg:      #ffffff;
   /* Tone swatch in the zone layout overlay. */
   --zlo-swatch:             12px;
+  --bc-gutter-narrow:       16px;
+  --dh-panel-viewby-min:    88px;
+  --bc-bar-gap-narrow:      16px;
   /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
   --dh-panel-tool-size:  28px;
   --dh-focus-ring:       2px;

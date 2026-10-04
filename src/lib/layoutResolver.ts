@@ -253,6 +253,17 @@ export function computeItemStyle(
       style.width = widthCss;
       style.justifySelf = "start";
     }
+    /* Narrow-frame spans, published as custom properties: the container
+       queries in builder.css read them at tablet and phone width. */
+    const responsive = style as Record<string, string | number>;
+    const narrowSpan = (v: unknown): number | null => {
+      const n = Math.round(Number(v));
+      return Number.isFinite(n) && n >= 1 && n <= 12 ? n : null;
+    };
+    const tablet = narrowSpan(layout.spanTablet);
+    const phone = narrowSpan(layout.spanPhone);
+    if (tablet !== null) responsive["--span-tablet"] = tablet;
+    if (phone !== null) responsive["--span-phone"] = phone;
     if (minCss) style.minWidth = minCss;
     else if (isTinyWidth(layout.width)) style.minWidth = `${SLIVER_MIN_PX}px`;
     if (maxCss) style.maxWidth = maxCss;

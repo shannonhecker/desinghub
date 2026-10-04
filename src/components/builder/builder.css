@@ -10423,6 +10423,13 @@
   border-left: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
 }
 
+/* On a phone-width frame the primary links and the account name give way
+   to the brand: a squeezed row of clipped links reads as broken. */
+.bp-header { container-type: inline-size; container-name: chrome-header; }
+@container chrome-header (max-width: 560px) {
+  .dh-topnav .dh-topnav-links, .dh-topnav .dh-topnav-divider, .dh-topnav .dh-topnav-account-name { display: none; }
+  .bp-header .dh-topnav, .bp-header .dh-tabstrip { padding-inline: var(--bc-gutter-narrow); gap: var(--bc-bar-gap-narrow); }
+}
 /* ── Page title (ChromeBars.tsx): one fixed size in every design system ── */
 .dh-page-title-wrap {
   font-family: var(--ds-font);
@@ -10661,10 +10668,10 @@
   color: var(--ds-fg-tertiary);
   white-space: nowrap;
 }
+/* In a narrow panel the select gives way before the title is cut. */
 .dh-panel-viewby {
-  flex: 0 1 var(--dh-panel-viewby-w);
-  width: var(--dh-panel-viewby-w);
-  min-width: 0;
+  flex: 0 100 var(--dh-panel-viewby-w);
+  min-width: min(var(--dh-panel-viewby-min), 40%);
 }
 /* The select must not stretch the fixed header: whatever height the active
    system gives it, it is centred in the row and clipped to it. */
@@ -10728,6 +10735,23 @@
 }
 @media (hover: none) {
   .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { opacity: 1; }
+}
+/* A narrow panel (a phone, a three-across row on a tablet) has no room to
+   hold the tools' space open: they take none until the panel is pointed at
+   or focused, the subtitle goes, and on touch only Expand stays (Configure
+   is in the expanded view). */
+.dh-panel { container-type: inline-size; container-name: dh-panel; }
+@container dh-panel (max-width: 340px) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-subtitle { display: none; }
+  .dh-panel:not(.dh-panel-expanded):not(:hover):not(:focus-within) .dh-panel-tools {
+    width: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+  @media (hover: none) {
+    .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { width: auto; overflow: visible; }
+    .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
+  }
 }
 
 /* Expanded: the panel is portalled into .bp-main, whose other content is
@@ -13860,6 +13884,15 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+}
+
+/* A block's own narrow-frame spans (LayoutProps.spanTablet / spanPhone, set
+   as custom properties by layoutResolver) win over the generic ladder. */
+@container zone-body-grid (max-width: 760px) {
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
+}
+@container zone-body-grid (max-width: 640px) {
+  .zone-drop-body.zone-grid > [style*="--span-phone"] { grid-column: span var(--span-phone) !important; }
 }
 
 /* Empty body zone state - visual dropzone. Now applies to
