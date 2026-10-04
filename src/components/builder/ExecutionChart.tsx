@@ -160,6 +160,15 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     if (next === built.frame.view) return;
     if (!applyFeedView(chart, built.frame, next, vars!, palette, countdown, !prefersReducedMotion())) setRebuilds((n) => n + 1);
   }, [built, samples, running, dataset, order, reportState, vars, palette]);
+  /* The grid can still be settling when the chart is created (the panels
+     beside it mount in the same pass), so the width it was built with may
+     be stale by the time it is in the page. Correct it in the same commit,
+     before the browser paints. */
+  useLayoutEffect(() => {
+    const chart = chartRef.current?.chart;
+    const width = plotRef.current?.clientWidth ?? 0;
+    if (chart && width > 0 && chart.chartWidth !== width) chart.setSize(width, undefined, false);
+  }, [built]);
   const options = built?.options ?? null;
   const tableView = showTable ? liveView(readOnly ? feed.samples : []) : null;
 

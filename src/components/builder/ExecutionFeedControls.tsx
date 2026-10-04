@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useSyncExternalStore } from "react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { RealComponentRenderer } from "@/components/ui-kit/RealComponentRenderer";
 import type { SystemId } from "@/lib/componentApiRegistry";
@@ -13,9 +13,12 @@ import { useFeedControls } from "./useExecutionFeed";
    header is the same height in every system.
    ══════════════════════════════════════════════════════════ */
 
-/* Each system's compact button that still gives a 24px target: Salt's
-   high density draws a 20px button, so Salt takes its medium (28px). */
+/* Each system's compact button that still gives a target of at least 24
+   CSS pixels: Salt's high density draws a 20 pixel button, so Salt takes
+   its medium size (28). */
 const COMPACT: Partial<Record<SystemId, "high" | "medium">> = { salt: "medium" };
+
+const noSubscription = () => () => {};
 
 export type FeedStatus = "live" | "paused" | "ended" | "edit";
 
@@ -30,8 +33,7 @@ export function ExecutionFeedControls({ system, status, canReset, presenting }: 
   const mode = useBuilder((s) => s.mode);
   const { pause, resume, reset } = useFeedControls();
   /* The design systems' style engines must not run during SSR / hydration. */
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  const mounted = useSyncExternalStore(noSubscription, () => true, () => false);
   const pausing = status === "live" || status === "edit";
   const button = (props: Record<string, unknown>) => (
     <RealComponentRenderer system={system as SystemId} type="SimulatedButton" mode={mode === "dark" ? "dark" : "light"} saltDensity={COMPACT[system as SystemId] ?? "high"} props={props} />
