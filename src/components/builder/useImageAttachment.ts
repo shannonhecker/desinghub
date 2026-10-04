@@ -30,12 +30,36 @@ export const ATTACH_COPY = {
   restored: "Your image is back in the box.",
 } as const;
 
-/** Paste takes over only a clipboard that carries files and no text.
+/* True when HTML carries no visible text: only images, comments, meta
+   and empty markup. "Copy image" in a browser puts exactly that next to the
+   bitmap. */
+function htmlIsOnlyImages(html: string): boolean {
+  const visible = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .trim();
+  return visible === "" && /<img\b/i.test(html);
+}
+
+export interface PasteClipboard {
+  types: readonly string[];
+  fileCount: number;
+  /* text/plain and text/html contents (empty when absent). */
+  text: string;
+  html: string;
+}
+
+/** Paste takes over only a clipboard whose content is the image itself.
  *  Excel, Word, Keynote, Numbers and some browsers put a rendered bitmap
- *  next to text/plain or text/html; that paste must stay text. */
-export function shouldInterceptPaste(types: readonly string[], fileCount: number): boolean {
+ *  next to real text; that paste must stay text. "Copy image" from a web
+ *  page carries an <img>-only HTML fragment and no text, so it attaches. */
+export function shouldInterceptPaste({ types, fileCount, text, html }: PasteClipboard): boolean {
   if (fileCount === 0) return false;
-  return !types.includes("text/plain") && !types.includes("text/html");
+  if (text.trim() !== "") return false;
+  if (types.includes("text/html") && html.trim() !== "" && !htmlIsOnlyImages(html)) return false;
+  return true;
 }
 
 export interface ComposerImage {
@@ -117,8 +141,16 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
   /* Paste: only clipboard FILES are taken over; pasted text is untouched. */
   const onPaste = useCallback(
     (e: React.ClipboardEvent) => {
-      const files = Array.from(e.clipboardData?.files ?? []);
-      if (!shouldInterceptPaste(Array.from(e.clipboardData?.types ?? []), files.length)) return;
+      const cd = e.clipboardData;
+      const files = Array.from(cd?.files ?? []);
+      const types = Array.from(cd?.types ?? []);
+      const clipboard: PasteClipboard = {
+        types,
+        fileCount: files.length,
+        text: types.includes("text/plain") ? cd?.getData("text/plain") ?? "" : "",
+        html: types.includes("text/html") ? cd?.getData("text/html") ?? "" : "",
+      };
+      if (!shouldInterceptPaste(clipboard)) return;
       e.preventDefault();
       attachFirst(files);
     },
@@ -184,10 +216,17 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
   }, [attachment, setError]);
 
   /* Put an image back (a send that never reached the model). */
+  /* Never over a newer attachment, or one being prepared: the user's latest
+     choice wins over a request that bounced. */
+  const latest = useRef<{ attachment: ComposerImage | null; busy: boolean }>({ attachment: null, busy: false });
+  useEffect(() => {
+    latest.current = { attachment, busy };
+  }, [attachment, busy]);
   const restore = useCallback((image: PreparedImage, name: string) => {
-    requestId.current += 1;
-    setBusy(false);
-    setAttachment({ image, name, previewUrl: `data:${image.mediaType};base64,${image.base64}` });
+    if (latest.current.busy || latest.current.attachment) return;
+    const restored = { image, name, previewUrl: `data:${image.mediaType};base64,${image.base64}` };
+    latest.current = { attachment: restored, busy: false };
+    setAttachment(restored);
     setNotice(ATTACH_COPY.restored);
   }, []);
 
