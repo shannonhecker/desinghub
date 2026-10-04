@@ -2029,8 +2029,6 @@
 }
 @media (max-width: 760px) {
   .templates-drawer-grid { grid-template-columns: 1fr; }
-  /* Wrapped under the filters, the workspace action lines up with them. */
-  .template-gallery-controls .template-workspace { align-items: flex-start; }
 }
 
 .templates-drawer-card {
@@ -3014,67 +3012,66 @@
    Rendered inside .messages-area as an AI 'templates' turn: a horizontal
    carousel of starting templates. The composer stays pinned below. Action
    buttons reuse .prompt-bubble so they inherit the unified calm hover. */
-.template-cards {
+.template-gallery-wrap {
+  /* One column, the composer's width: the workspace, the heading row, the
+     cards and the credit share its left and right edges. */
+  container: template-gallery / inline-size;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: var(--bc-gap-md);
+  width: 100%;
+  margin-top: var(--bc-gap-md);
+}
+/* The message that holds the gallery spans the column (a reply is 85%). */
+.chat-msg:has(> .template-gallery-wrap) { width: 100%; max-width: 100%; box-sizing: border-box; scroll-margin-top: var(--bc-gap-md); }
+/* Whole cards only: three to a view, two when the column is narrow, one on a
+   phone. Previous / next move a full view, so no card is ever sliced. */
+.template-cards {
+  --tpl-per-view: 3;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - (var(--tpl-per-view) - 1) * var(--bc-gap-md)) / var(--tpl-per-view));
+  gap: var(--bc-gap-md);
   overflow-x: auto;
-  padding: 6px 2px 10px;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
+  overscroll-behavior-x: contain;
 }
 .template-cards::-webkit-scrollbar { display: none; }
-
-/* ── In-chat template GALLERY: arrows + edge-fades over the scroll row
-   so every template is reachable and obviously-more (peek + arrows per
-   carousel best practice; the prior hidden-scrollbar version gave no
-   affordance, so cards read as "3 and done"). ── */
-.template-gallery { position: relative; margin-top: 8px; }
-.template-gallery::before,
-.template-gallery::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 10px;
-  width: 40px;
-  pointer-events: none;
-  z-index: 2;
-  transition: opacity 0.2s ease;
+@container template-gallery (max-width: 560px) { .template-cards { --tpl-per-view: 2; } }
+@container template-gallery (max-width: 380px) { .template-cards { --tpl-per-view: 1; } }
+/* One card to a view: the preview sits beside the text, so the card stays
+   short and the whole gallery fits a phone screen without scrolling. */
+@container template-gallery (max-width: 380px) {
+  .template-cards .template-card { display: grid; grid-template-columns: var(--bc-gallery-thumb) minmax(0, 1fr); grid-template-rows: auto 1fr auto; column-gap: var(--bc-gap-md); align-content: start; }
+  .template-cards .template-card-preview { grid-row: 1 / 3; align-self: start; }
+  .template-cards .template-card-actions { grid-column: 1 / -1; }
+  /* Label and previous / next share a line; the chips take the next. */
+  .template-gallery-wrap .template-gallery-chips { order: 3; flex-basis: 100%; }
 }
-.template-gallery::before { left: 0; background: linear-gradient(to right, var(--b-bg, #0b1120), transparent); }
-.template-gallery::after { right: 0; background: linear-gradient(to left, var(--b-bg, #0b1120), transparent); }
-.template-gallery.at-start::before { opacity: 0; }
-.template-gallery.at-end::after { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .template-cards { scroll-behavior: auto; } }
+
+.template-gallery-arrows { display: flex; gap: var(--bc-gap-xs); margin-left: auto; }
 .template-gallery-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  border: 1px solid var(--b-border, rgba(255, 255, 255, 0.12));
-  background: var(--b-surface, rgba(20, 20, 30, 0.92));
+  width: var(--bc-size-hit);
+  height: var(--bc-size-hit);
+  border-radius: 50%;
+  border: var(--bc-hairline) solid var(--b-border2);
+  background: transparent;
   color: var(--b-fg);
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-  transition: background 0.18s ease, border-color 0.18s ease, opacity 0.2s ease;
+  transition: background var(--bc-duration-fast), border-color var(--bc-duration-fast), opacity var(--bc-duration-fast);
 }
-.template-gallery-arrow-left { left: -6px; }
-.template-gallery-arrow-right { right: -6px; }
-.template-gallery-arrow:hover:not(:disabled) { border-color: var(--b-accent); }
-.template-gallery-arrow:disabled { opacity: 0; pointer-events: none; }
-.template-gallery-arrow:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
-.template-gallery-arrow .material-symbols-outlined { font-size: 20px; }
-@media (prefers-reduced-motion: reduce) {
-  .template-gallery-arrow, .template-gallery::before, .template-gallery::after { transition: none; }
-}
+.template-gallery-arrow:hover:not(:disabled) { border-color: var(--b-accent); background: color-mix(in srgb, var(--b-accent) 12%, transparent); }
+.template-gallery-arrow:disabled { opacity: 0.35; cursor: default; }
+.template-gallery-arrow:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
+.template-gallery-arrow .material-symbols-outlined { font-size: var(--bc-gallery-arrow-icon); }
 
 .template-card {
-  flex: 0 0 auto;
-  width: 190px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3105,20 +3102,16 @@
 }
 .template-card-head .material-symbols-outlined { font-size: 17px; color: var(--b-accent); }
 .template-card-label { font-size: 13px; font-weight: 600; }
-/* What the template contains: two lines, then cut, so every card in the
-   row is the same height. */
+/* What the template contains, in full. The row's cards share one height
+   (the tallest), and the actions sit on its bottom edge. */
 .template-card-desc {
   margin: 0;
-  min-height: calc(2 * 1.4em);
   font-size: var(--tpl-desc-size);
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--b-fg2);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  text-wrap: pretty;
 }
-.template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); margin-top: var(--tpl-chip-gap); }
+.template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); }
 .prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
 .prompt-bubble.template-gallery-chip.is-active {
   background: var(--b-accent);
@@ -5108,6 +5101,15 @@
   color: var(--bc-fg);
 }
 
+/* A phone: the bar fits 375px with Edit in reach. The wordmark and the
+   design-system compare grid go (neither helps on a phone), Share keeps
+   its icon and accessible name, and the design-system name stays on one line. */
+@media (max-width: 560px) {
+  .present-bar { gap: var(--bc-hairline); padding-inline: var(--bc-gap-xs); }
+  .present-bar .present-bar-brand, .present-bar .present-bar-brand + .present-bar-sep, .present-bar .present-bar-compare { display: none; }
+  .present-bar-btn-label { position: absolute; width: var(--bc-hairline); height: var(--bc-hairline); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .present-bar-ds-trigger { white-space: nowrap; }
+}
 .present-bar-brand {
   font-size: 11px;
   font-weight: 700;
@@ -5929,12 +5931,16 @@
   border-collapse: collapse;
   text-align: left;
 }
-[class*="-th"] {
+/* Header cells only. As a bare [class*="-th"] this also matched
+   "salt-theme" on the canvas root, so every Salt canvas inherited
+   white-space: nowrap (and a pointer cursor): card and paragraph copy ran
+   off its box in one clipped line. */
+th[class*="-th"] {
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
 }
-[class*="-th"] > span { vertical-align: middle; }
+th[class*="-th"] > span { vertical-align: middle; }
 [class*="-th-icon"] { vertical-align: middle; margin-left: 2px; }
 [class*="-tr"] { transition: background 120ms ease; }
 [class*="-td-name"] { font-weight: 600; }
@@ -11477,7 +11483,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 
 /* Source credit: a quiet footnote under the gallery, never inside a canvas.
    A project name never breaks across lines. */
-.template-source-note { margin: var(--bc-gap-md) 0 0; font-size: var(--bc-source-font); line-height: 1.6; color: var(--bc-fg-muted); text-wrap: pretty; }
+.template-source-note { margin: 0; font-size: var(--bc-source-font); line-height: 1.6; color: var(--bc-fg-muted); text-wrap: balance; }
 .template-source-note a { color: inherit; white-space: nowrap; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: var(--bc-source-underline); transition: color var(--bc-duration-fast), text-decoration-color var(--bc-duration-fast); }
 .template-source-note a:hover { color: var(--b-fg); text-decoration-color: currentColor; }
 .template-source-note a:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); border-radius: var(--bc-radius-xs); }
@@ -12993,6 +12999,30 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* Compact page menu: shown only where the sidebar is not (the phone frame,
+   or a screen narrower than a tablet). */
+.bp-page-menu { display: none; }
+.bp-dashboard[data-compact] > .bp-page-menu { display: block; }
+@media (max-width: 767px) { .bp-page-menu { display: block; } }
+.bp-page-menu {
+  padding: var(--bc-gap-sm) var(--bc-gutter);
+  background: var(--ds-surface);
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  font-family: var(--ds-font);
+  color: var(--ds-fg);
+}
+.bp-page-menu-field { position: relative; display: flex; align-items: center; gap: var(--bc-gap-sm); }
+.bp-page-menu-label { flex: none; font-size: var(--dh-panel-meta-size); color: var(--ds-fg-secondary); }
+.bp-page-menu-select {
+  appearance: none; flex: 1 1 auto; min-width: 0; min-height: var(--bc-page-menu-h);
+  padding: 0 calc(var(--bc-gap-sm) * 3) 0 var(--bc-gap-sm);
+  border: var(--bc-hairline) solid var(--ds-border); border-radius: var(--ds-radius);
+  background: transparent; color: inherit;
+  font: inherit; font-size: var(--bc-page-menu-font); font-weight: 600;
+}
+.bp-page-menu-select:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-accent, var(--b-accent)); outline-offset: var(--bc-hairline); }
+.bp-page-menu-caret { position: absolute; right: var(--bc-gap-sm); pointer-events: none; color: var(--ds-fg-secondary); }
 
 /* Working-width cap for the body column (Part 2 of #229 — the matting that
    was tokenised in chrome-tokens.css but never wired). data-interface (set on
@@ -14564,18 +14594,24 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 /* The sidebar is narrower than this toolbar: pinned to its top it covered
    the first nav item on ANY sidebar hover and took the click meant for it.
-   There it opens from the "Sidebar" frame label instead (hover or focus),
-   wraps to the rail's width, and starts where the label ends so the pointer
-   can move onto it. Hovering nav items leaves them uncovered. */
+   There it opens from the "Sidebar" frame label instead (hover or focus) as
+   ONE row just under the label, running past the rail's edge over the
+   canvas rather than wrapping down over the nav. Hovering nav items leaves
+   them uncovered. */
 .zone-drop-sidebar > .zone-layout-overlay {
   /* Above the nav's insertion slots it opens over (with the frame label). */
   z-index: var(--bc-z-guide);
-  top: calc(-1 * var(--dh-pad-zone, var(--dh-nav-pad)));
+  top: calc(var(--bc-hairline) - var(--dh-pad-zone, var(--dh-nav-pad)));
   left: var(--bc-gap-xs);
-  right: var(--bc-gap-xs);
-  flex-wrap: wrap;
+  right: auto;
+  width: max-content;
+  flex-wrap: nowrap;
 }
-.bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(-1 * var(--dh-nav-pad)); }
+.bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(var(--bc-hairline) - var(--dh-nav-pad)); }
+.bp-sidebar[data-side="right"] .zone-drop-sidebar > .zone-layout-overlay { left: auto; right: var(--bc-gap-xs); }
+/* Edit only: the rail lets that row run past its edge (it still clips its
+   own content vertically). */
+[data-builder-mode="edit"] .bp-sidebar { overflow-x: visible; overflow-y: clip; }
 .zone-drop-container.zone-drop-sidebar:hover > .zone-layout-overlay {
   opacity: 0;
   transform: translateY(calc(-1 * var(--bc-workspace-nudge)));
@@ -17706,21 +17742,34 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   padding: var(--bc-gap-md) var(--bc-panel-inset);
 }
 
-/* Filters left, the connected workspace right; they wrap onto two lines on
-   a narrow screen. */
-.template-gallery-controls { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--bc-gap-sm) var(--bc-gap-lg); margin: var(--tpl-chip-gap) 0 var(--bc-gap-md); }
-.template-gallery-controls .template-gallery-chips { margin: 0; min-height: var(--bc-size-hit); align-items: center; }
-.template-workspace { display: flex; flex-direction: column; align-items: flex-end; gap: var(--bc-workspace-hint-gap); min-width: 0; }
-.template-workspace-action {
-  display: inline-flex; align-items: center; gap: var(--bc-gap-xs);
-  min-height: var(--bc-size-hit); padding: 0; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: var(--bc-editor-font); font-weight: 600; color: var(--b-accent);
-  transition: color var(--bc-duration-fast);
+/* Heading row of the individual templates: label, chips, then previous /
+   next at the far end. Wraps under the label when the column is narrow. */
+.template-gallery-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bc-gap-sm) var(--bc-gap-md); margin-top: var(--bc-gap-xs); }
+.template-gallery-label { margin: 0; font-size: var(--bc-editor-font); font-weight: 600; color: var(--b-fg); }
+/* The connected workspace: the first choice, set apart as its own surface. */
+.template-workspace {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--bc-gap-md) var(--bc-gap-lg);
+  padding: var(--bc-gap-lg);
+  border: var(--bc-hairline) solid color-mix(in srgb, var(--b-accent) 38%, transparent);
+  border-radius: var(--bc-workspace-radius);
+  background: color-mix(in srgb, var(--b-accent) 9%, transparent);
 }
-.template-workspace-action:hover:not(:disabled) { color: var(--b-fg); }
-.template-workspace-action:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); border-radius: var(--bc-radius-sm); }
+.template-workspace-text { display: flex; flex-direction: column; gap: var(--bc-workspace-hint-gap); min-width: 0; flex: 1 1 var(--bc-workspace-text-min); }
+.template-workspace-title { margin: 0; font-size: var(--bc-workspace-title); font-weight: 600; line-height: 1.3; color: var(--b-fg); }
+.template-workspace-hint { margin: 0; font-size: var(--bc-workspace-hint); line-height: 1.45; color: var(--b-fg2); }
+.template-workspace-action {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--bc-gap-sm); flex: none;
+  min-height: var(--bc-workspace-action-h); padding: 0 var(--bc-gap-lg); border: 0; border-radius: var(--bc-workspace-action-h);
+  background: var(--b-accent); color: var(--tpl-chip-on-accent); cursor: pointer;
+  font: inherit; font-size: var(--bc-workspace-hint); font-weight: 600;
+  transition: filter var(--bc-duration-fast), transform var(--bc-duration-fast);
+}
+.template-workspace-action:hover:not(:disabled) { filter: brightness(1.08); }
+.template-workspace-action:active:not(:disabled) { transform: translateY(var(--bc-hairline)); }
+.template-workspace-action:focus-visible { outline: var(--dh-focus-ring) solid var(--b-fg); outline-offset: var(--dh-focus-ring); }
 .template-workspace-action:disabled { opacity: 0.5; cursor: default; }
 .template-workspace-arrow { width: var(--bc-workspace-arrow); height: var(--bc-workspace-arrow); transition: transform var(--bc-duration-fast); }
 .template-workspace-action:hover:not(:disabled) .template-workspace-arrow { transform: translateX(var(--bc-workspace-nudge)); }
-.template-workspace-hint { font-size: var(--bc-source-font); color: var(--bc-fg-muted); }
-.templates-drawer > .template-gallery-controls { padding-inline: var(--bc-bar-gap); }
+@media (prefers-reduced-motion: reduce) { .template-workspace-action, .template-workspace-arrow { transition: none; } }
+.templates-drawer > .template-workspace { margin: var(--bc-gap-lg) var(--bc-bar-gap) 0; }
+.templates-drawer > .template-gallery-controls { margin-top: var(--bc-gap-lg); padding-inline: var(--bc-bar-gap); }

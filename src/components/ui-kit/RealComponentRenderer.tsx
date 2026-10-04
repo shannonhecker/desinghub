@@ -531,7 +531,8 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
     inner = (
       <SaltFormField validationStatus={saltValidation(props.validationStatus as ValidationStatus)} disabled={disabled}>
         <SaltFormFieldLabel>{s(props.label, "Label")}</SaltFormFieldLabel>
-        <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly />
+        {/* No dash for an empty read-only field: the placeholder shows what goes there. */}
+        <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly emptyReadOnlyMarker="" />
       </SaltFormField>
     );
   } else if (type === "SimulatedCheckbox") {
@@ -595,7 +596,7 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
   } else if (type === "SimulatedDropdown") {
     inner = <SaltDropdownField model={dropdownModel(props)} onChange={changeHandler(props)} />;
   } else if (type === "SimulatedSearchbox") {
-    inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly />;
+    inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly emptyReadOnlyMarker="" />;
   } else if (type === "SimulatedSegmentedGroup") {
     const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
     const di = num(props.defaultIndex, 0);

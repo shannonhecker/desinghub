@@ -15,10 +15,20 @@
 :root {
   --bc-source-font: 12px;
   --bc-source-underline: 3px;
-  /* Template gallery: the connected-workspace action. */
+  /* Template gallery: the connected-workspace option and the row's arrows. */
   --bc-workspace-hint-gap: 2px;
   --bc-workspace-arrow: 14px;
   --bc-workspace-nudge: 2px;
+  --bc-workspace-radius: 14px;
+  --bc-workspace-title: 15px;
+  --bc-workspace-hint: 13px;
+  --bc-workspace-action-h: 36px;
+  --bc-workspace-text-min: 220px;
+  --bc-gallery-arrow-icon: 18px;
+  --bc-gallery-thumb: 112px;
+  /* Phone page menu: a 40px target, 16px text (no zoom on focus in iOS). */
+  --bc-page-menu-h: 40px;
+  --bc-page-menu-font: 16px;
   /* Analytics Home wave graphic: how far it bleeds above / below the hero. */
   --bc-hero-wave-rise: 40px;
   --bc-hero-wave-fall: 48px;
@@ -138,7 +148,7 @@
   --dh-hero-search-max:     540px;
   --dh-launcher-accent:     3px;
   /* Template gallery in the chat. */
-  --tpl-desc-size:          11px;
+  --tpl-desc-size:          12px;
   --tpl-chip-gap:           6px;
   --tpl-chip-pad:           4px 12px;
   --tpl-chip-on-accent:     #15102a;

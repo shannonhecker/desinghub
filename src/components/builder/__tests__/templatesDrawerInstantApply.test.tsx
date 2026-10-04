@@ -161,7 +161,7 @@ it('filters individual templates and offers the connected workspace separately',
   expect(container!.querySelector('[aria-label="Start from the Analytics Home template"]')).toBeNull();
   expect(container!.querySelector('[aria-label="Start from the Performance Analytics template"]')).not.toBeNull();
   expect(container!.querySelector('[aria-label="Start from the CRM Contacts template"]')).toBeNull();
-  clickNamedButton('Open connected analytics workspace');
+  clickNamedButton('Open workspace');
   expect(useBuilder.getState().activeTemplateId).toBe('analytics-home');
   expect(useBuilder.getState().pages).toHaveLength(4);
   expect(useBuilder.getState().templatesDrawerOpen).toBe(false);

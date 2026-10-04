@@ -683,7 +683,13 @@ export function ChatPanel() {
   const glowActive = focused || hasText;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    /* A template gallery is read from its top (the workspace, then the
+       cards): bring its start into view, not the end of the thread, or a
+       short screen opens on the gallery's last lines. */
+    const last = messages[messages.length - 1];
+    const gallery = last?.messageType === "templates" ? chatEndRef.current?.parentElement?.querySelector<HTMLElement>(`[data-message-id="${last.id}"]`) : null;
+    if (gallery) gallery.scrollIntoView({ behavior: "smooth", block: "start" });
+    else chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   /* ═══════════════════════════════════
@@ -1638,7 +1644,7 @@ export function ChatPanel() {
                 !shouldAnimate &&
                 hasMarkdown(msg.content);
               return (
-                <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
+                <div key={msg.id} data-message-id={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
                   {msg.role === "ai" ? (
                     shouldAnimate ? (
                       <MemoFadingWords text={msg.content} />

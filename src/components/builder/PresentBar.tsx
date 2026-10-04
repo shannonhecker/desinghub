@@ -243,7 +243,7 @@ export function PresentBar({
           Active state is non-colour: aria-pressed + the underline cue. */}
       <button
         type="button"
-        className={`present-bar-btn present-bar-btn-icon${compareMode ? " present-bar-btn-active" : ""}`}
+        className={`present-bar-btn present-bar-btn-icon present-bar-compare${compareMode ? " present-bar-btn-active" : ""}`}
         onClick={() => useBuilder.getState().toggleCompareMode()}
         aria-pressed={compareMode}
         title={compareMode ? "Exit compare" : "Compare all design systems"}
@@ -265,7 +265,7 @@ export function PresentBar({
         <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }}>
           {shareIcon}
         </span>
-        {shareLabel}
+        <span className="present-bar-btn-label">{shareLabel}</span>
       </button>
 
       <span className="present-bar-sep" aria-hidden="true" />

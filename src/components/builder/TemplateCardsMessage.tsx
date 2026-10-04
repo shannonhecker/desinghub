@@ -4,12 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILDER_TEMPLATES,
   INDIVIDUAL_TEMPLATE_ORDER,
+  WORKSPACE_TEMPLATE_ID,
   templateCategory,
   type TemplateCategory,
   type TemplateId,
 } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
-import { TemplateGalleryControls } from "./TemplateGalleryControls";
+import { TemplateGalleryControls, TemplateWorkspaceOption } from "./TemplateGalleryControls";
 import { TemplateSourceNote } from "./TemplateSourceNote";
 
 /* ══════════════════════════════════════════════════════════
@@ -62,24 +63,25 @@ export function TemplateCardsMessage({
     return () => ro.disconnect();
   }, [sync]);
 
-  const nudge = (dir: 1 | -1) =>
-    scrollRef.current?.scrollBy({ left: dir * 220, behavior: "smooth" });
+  /* Previous / next move one full view, so cards are never left half shown. */
+  const nudge = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (el) el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  };
 
   return (
     <div className="template-gallery-wrap">
-    <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => onUse('analytics-home')} disabled={disabled} />
-    <div className={`template-gallery${atStart ? " at-start" : ""}${atEnd ? " at-end" : ""}`}>
-      <button
-        type="button"
-        className="template-gallery-arrow template-gallery-arrow-left"
-        onClick={() => nudge(-1)}
-        disabled={atStart}
-        tabIndex={atStart ? -1 : 0}
-        aria-label="Scroll to previous templates"
-      >
-        <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-      </button>
-
+      <TemplateWorkspaceOption onWorkspace={() => onUse(WORKSPACE_TEMPLATE_ID)} disabled={disabled} />
+      <TemplateGalleryControls category={category} onCategory={setCategory}>
+        <div className="template-gallery-arrows">
+          <button type="button" className="template-gallery-arrow" onClick={() => nudge(-1)} disabled={atStart} aria-label="Scroll to previous templates">
+            <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+          </button>
+          <button type="button" className="template-gallery-arrow" onClick={() => nudge(1)} disabled={atEnd} aria-label="Scroll to more templates">
+            <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+          </button>
+        </div>
+      </TemplateGalleryControls>
       <div className="template-cards" ref={scrollRef} onScroll={sync} role="list" aria-label="Starting templates">
         {ids.map((id) => {
           const tpl = BUILDER_TEMPLATES[id];
@@ -119,20 +121,8 @@ export function TemplateCardsMessage({
           );
         })}
       </div>
-
-      <button
-        type="button"
-        className="template-gallery-arrow template-gallery-arrow-right"
-        onClick={() => nudge(1)}
-        disabled={atEnd}
-        tabIndex={atEnd ? -1 : 0}
-        aria-label="Scroll to more templates"
-      >
-        <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-      </button>
-    </div>
-    {/* Credit for the finance templates' sources: outside any template canvas. */}
-    {category !== "general" && <TemplateSourceNote />}
+      {/* Credit for the finance templates' sources: outside any template canvas. */}
+      <TemplateSourceNote />
     </div>
   );
 }

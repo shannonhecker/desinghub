@@ -12,12 +12,13 @@ const title = (id: string, text: string): Block => ({ id, type: 'PageTitle', pro
    so it survives a reload while other report state stays transient. */
 const field = (id: string, label: string, stateKey: string, value: string, options: string[]): Block => ({
   id, type: 'SimulatedDropdown', props: { label, stateKey, value, inline: true, optionsCsv: options.join(', '), persistValue: true },
-  layout: { width: '6fr', height: '32px', spanTablet: 6, spanPhone: 12 },
+  /* Four to a row: each control is as wide as its label and value need. */
+  layout: { width: '3fr', height: '32px', spanTablet: 6, spanPhone: 12 },
 });
-const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[]): Block => ({
+const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[], width: 5 | 7 | 12 = 12): Block => ({
   id, type: 'DataGrid', props: { title, subtitle: 'Sample data', height: gridPanelHeightFor(rows.length),
-    columns: columns.map(([field, header]) => ({ field, header, minWidth: field === 'report' || field === 'name' ? 240 : 120, flex: field === 'report' || field === 'name' ? 2 : 1 })), rows,
-  }, layout: full,
+    columns: columns.map(([field, header], i) => ({ field, header, minWidth: i === 0 ? (width === 12 ? 240 : 160) : 100, flex: i === 0 ? 2 : 1 })), rows,
+  }, layout: width === 12 ? full : { width: `${width}fr`, spanTablet: 12, spanPhone: 12 },
 });
 
 export const ANALYTICS_HOME_PAGES: Page[] = [
@@ -28,12 +29,26 @@ export const ANALYTICS_HOME_PAGES: Page[] = [
     field('tpl-home-config-benchmark', 'Default benchmark', 'benchmark', 'Primary', ['Primary', 'Secondary', 'Custom', 'None']),
     field('tpl-home-config-period', 'Periodicity', 'periodicity', 'Monthly', ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly']),
     field('tpl-home-config-fees', 'Fee type', 'feeType', 'Net of fees', ['Net of fees', 'Gross of fees']),
-    grid('tpl-home-config-sources', 'Data sources', [['name', 'Source'], ['covers', 'Covers'], ['refreshed', 'Last refreshed'], ['status', 'Status']], [
-      { name: 'Holdings and transactions', covers: 'Portfolios, positions', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
-      { name: 'Benchmarks', covers: 'Index levels, constituents', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
-      { name: 'Market prices', covers: 'Equities, bonds, FX', refreshed: 'Dec 02 2024, 05:30', status: 'Up to date' },
-      { name: 'ESG and climate research', covers: 'Scores, emissions, controversies', refreshed: 'Dec 01 2024, 22:00', status: 'Up to date' },
-      { name: 'Risk models', covers: 'Factor exposures, VaR', refreshed: 'Nov 29 2024, 18:00', status: 'Weekly' },
+    /* Two lists side by side under the settings, then the change log. */
+    grid('tpl-home-config-sources', 'Data sources', [['name', 'Source'], ['refreshed', 'Last refreshed'], ['status', 'Status']], [
+      { name: 'Holdings and transactions', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
+      { name: 'Benchmarks', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
+      { name: 'Market prices', refreshed: 'Dec 02 2024, 05:30', status: 'Up to date' },
+      { name: 'ESG and climate research', refreshed: 'Dec 01 2024, 22:00', status: 'Up to date' },
+      { name: 'Risk models', refreshed: 'Nov 29 2024, 18:00', status: 'Weekly' },
+    ], 7),
+    grid('tpl-home-config-delivery', 'Scheduled deliveries', [['name', 'Report'], ['when', 'Sent'], ['to', 'To']], [
+      { name: 'SI Portfolio Report', when: 'Monthly, 2nd', to: 'Investment team' },
+      { name: 'Performance attribution', when: 'Monthly, 3rd', to: 'Portfolio leads' },
+      { name: 'Risk pack', when: 'Weekly', to: 'Risk team' },
+      { name: 'Screening snapshot', when: 'Quarterly', to: 'Compliance' },
+      { name: 'Governance scorecard', when: 'Quarterly', to: 'Stewardship' },
+    ], 5),
+    grid('tpl-home-config-log', 'Recent changes', [['name', 'Setting'], ['from', 'From'], ['to', 'To'], ['by', 'Changed by'], ['when', 'When']], [
+      { name: 'Default benchmark', from: 'Secondary', to: 'Primary', by: 'A. Okafor', when: 'Nov 28 2024' },
+      { name: 'Periodicity', from: 'Quarterly', to: 'Monthly', by: 'L. Marchetti', when: 'Nov 14 2024' },
+      { name: 'Fee type', from: 'Gross of fees', to: 'Net of fees', by: 'A. Okafor', when: 'Oct 30 2024' },
+      { name: 'Base currency', from: 'USD', to: 'GBP', by: 'S. Haddad', when: 'Oct 02 2024' },
     ]),
   ] },
   { id: 'tpl-home-nav-2', name: 'Approvals', bodyLayout: BODY_LAYOUT, body: [

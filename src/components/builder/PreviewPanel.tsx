@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Layers,
   Filter,
+  ChevronDown,
 } from "lucide-react";
 import {
   DndContext,
@@ -921,6 +922,64 @@ export function navAbbreviation(label: string): string {
 }
 
 /* ══════════════════════════════════════════════════════════
+   Compact page menu - the sidebar's pages on a phone
+   The phone frame (and any screen narrower than a tablet) has no room for
+   the sidebar, which left its pages unreachable. The same items, grouped as
+   in the rail, become one native page picker under the header. Choosing a
+   page does what clicking it in the sidebar does.
+   ══════════════════════════════════════════════════════════ */
+function CompactPageMenu() {
+  const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const activePageId = useBuilder((s) => s.activePageId);
+  const openNavPage = useBuilder((s) => s.openNavPage);
+  const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
+  const designSystem = useBuilder((s) => s.designSystem);
+  const readOnly = usePreviewReadOnly();
+  const items = sidebarBlocks.filter((b) => b.type === "NavItem");
+  if (items.length < 2) return null;
+  const current = (activePageId && items.some((b) => b.id === activePageId) ? activePageId : null)
+    ?? items.find((b) => b.props.active === true)?.id ?? items[0].id;
+  /* Group headings in the rail become option groups. */
+  const groups: { label: string | null; items: Block[] }[] = [];
+  for (const b of sidebarBlocks) {
+    if (b.type === "NavGroup") groups.push({ label: String(b.props.label ?? ""), items: [] });
+    else if (b.type === "NavItem") {
+      if (groups.length === 0) groups.push({ label: null, items: [] });
+      groups[groups.length - 1].items.push(b);
+    }
+  }
+  const choose = (id: string) => {
+    const block = items.find((b) => b.id === id);
+    if (!block || id === current) return;
+    const templateId = navTemplateId(block.props.templateId);
+    if (templateId) {
+      if (readOnly) openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
+      return;
+    }
+    openNavPage(block.id, String(block.props.label ?? "Page"));
+    setSidebarBlocks(sidebarBlocks.map((b) => ({ ...b, props: { ...b.props, active: b.id === block.id } })));
+  };
+  const option = (b: Block) => (
+    /* In Edit a link to another report is not followed (it would replace
+       the canvas being edited), as in the sidebar. */
+    <option key={b.id} value={b.id} disabled={!readOnly && navTemplateId(b.props.templateId) !== null && b.id !== current}>
+      {String(b.props.label ?? "Page")}
+    </option>
+  );
+  return (
+    <nav className="bp-page-menu" aria-label="Pages">
+      <label className="bp-page-menu-field">
+        <span className="bp-page-menu-label">Page</span>
+        <select className="bp-page-menu-select" value={current} onChange={(e) => choose(e.target.value)}>
+          {groups.map((g, i) => (g.label ? <optgroup key={i} label={g.label}>{g.items.map(option)}</optgroup> : g.items.map(option)))}
+        </select>
+        <ChevronDown className="bp-page-menu-caret" size={16} strokeWidth={1.8} aria-hidden="true" />
+      </label>
+    </nav>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    Dashboard Sidebar - collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
    ══════════════════════════════════════════════════════════ */
@@ -1386,10 +1445,15 @@ export function BuilderCanvas({
       className={`bp-dashboard preview-${designSystem} density-${density}${officialScope.className ? ` ${officialScope.className}` : ""}`}
       key={previewKey}
       data-interface={interfaceType}
+      data-compact={compact ? "" : undefined}
       {...officialScope.attrs}
     >
       <ZoneAddBar />
       {headerVisible && <DashboardHeader compact={compact} />}
+
+      {/* The sidebar's pages, for when the sidebar is not shown: the phone
+          frame, or a screen narrower than a tablet (CSS decides). */}
+      {sidebarVisible && sidebarBlockCount > 0 && <CompactPageMenu />}
 
       <div className="bp-body" data-sidebar-side={sidebarSide}>
         {showSidebar && (

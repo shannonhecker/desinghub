@@ -470,8 +470,11 @@ export const analyticsHome: BuilderTemplate = {
       layout: { width: "12fr", height: "168px" },
     },
     { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured", level: 2 }, layout: { width: "12fr", height: "32px", align: "center" } },
-    launcher(0, "Sustainable Investment Portfolio Report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
-    launcher(1, "Sustainable Investment Issuer Report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
+    /* Card titles: the short forms the Reports page uses, so the two
+       Sustainable Investment reports tell apart on a card (the full names
+       are in the list below). */
+    launcher(0, "SI Portfolio Report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
+    launcher(1, "SI Issuer Report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
     launcher(2, "Performance", "Holdings", "performance-analytics", "Multi-period returns against benchmark, with allocation."),
     launcher(3, "Risk", "Holdings", "risk-analytics", "Value at risk, exposures and risk contribution."),
 

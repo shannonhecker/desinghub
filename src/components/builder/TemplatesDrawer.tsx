@@ -1,6 +1,6 @@
 "use client";
 
-import { TemplateGalleryControls } from "./TemplateGalleryControls";
+import { TemplateGalleryControls, TemplateWorkspaceOption } from "./TemplateGalleryControls";
 import { TemplateSourceNote } from "./TemplateSourceNote";
 
 import React, { useEffect, useState } from "react";
@@ -137,7 +137,8 @@ export function TemplatesDrawer() {
           </button>
         </header>
 
-        <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => handleSelect(BUILDER_TEMPLATES[WORKSPACE_TEMPLATE_ID])} disabled={isGenerating} />
+        <TemplateWorkspaceOption onWorkspace={() => handleSelect(BUILDER_TEMPLATES[WORKSPACE_TEMPLATE_ID])} disabled={isGenerating} />
+        <TemplateGalleryControls category={category} onCategory={setCategory} />
         <div className="templates-drawer-grid" role="group" aria-label="Individual templates">
           {templates.map((tpl) => (
             <button
@@ -160,7 +161,7 @@ export function TemplatesDrawer() {
             </button>
           ))}
         </div>
-        {category !== "general" && <TemplateSourceNote />}
+        <TemplateSourceNote />
       </aside>
     </div>
   );

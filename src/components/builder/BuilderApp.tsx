@@ -97,6 +97,15 @@ export function BuilderApp() {
      floating sticks and we never re-dock. A returning user whose saved project
      already carries content also boots straight into the docked rail. */
   const autoDockedChatRef = useRef(false);
+  /* On a phone the canvas opens in its phone frame: a desktop frame scaled
+     to a third of its size is unreadable and leaves the screen mostly empty.
+     Once, on load; the device buttons still switch it. */
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia?.("(max-width: 767px)").matches) return;
+    const s = useBuilder.getState();
+    if (s.deviceMode === "desktop") s.setDeviceMode("mobile");
+  }, []);
+
   useEffect(() => {
     if (autoDockedChatRef.current) return;
     if (userStarted && chatFloating) {

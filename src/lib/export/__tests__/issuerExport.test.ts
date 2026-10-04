@@ -696,7 +696,7 @@ describe("Governance Scorecard", () => {
 });
 
 describe("Analytics Home", () => {
-  const CARDS: [title: string, tag: string, tone: string][] = [["Sustainable Investment Portfolio Report", "Holdings", "accent"], ["Sustainable Investment Issuer Report", "Company", "mid"], ["Performance", "Holdings", "accent"], ["Risk", "Holdings", "accent"]];
+  const CARDS: [title: string, tag: string, tone: string][] = [["SI Portfolio Report", "Holdings", "accent"], ["SI Issuer Report", "Company", "mid"], ["Performance", "Holdings", "accent"], ["Risk", "Holdings", "accent"]];
 
   it("the hero: heading, subtitle and a search field with its button", () => {
     apply(analyticsHome);
