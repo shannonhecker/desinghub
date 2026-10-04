@@ -932,8 +932,6 @@ export default function LandingSouthleftPage() {
   const rootRef = useRef<HTMLElement>(null);
   const navGlass = useNavGlassStyle();
   useRevealOnScroll(rootRef);
-  /* a11y: gate the looping hero demo video (WCAG 2.2.2). */
-  const reduce = useReducedMotion();
 
   /* 3-tier parallax depth model (transform-only, MotionValue-driven).
      Tier A background lags (~0.92x feel, max +24px), Tier B content at 1x,
@@ -1067,19 +1065,19 @@ export default function LandingSouthleftPage() {
             {/* Tier C parallax: the frame leads scroll (-16px), floating the
                 product shot off the lagging aurora. Transform-only. */}
             <motion.div className="lsl-hero-demo-frame" style={{ y: demoY }}>
-              {/* a11y (WCAG 2.2.2): don't autoplay/loop the demo for
-                  reduced-motion users — show a static first frame instead. */}
+              {/* Playback is explicit for every visitor; the poster keeps the
+                  product visible without downloading the video. */}
               <video
                 className="lsl-hero-demo-video"
                 src="/uoaui-demo.mp4"
-                autoPlay={!reduce}
                 muted
-                loop={!reduce}
                 playsInline
-                preload="metadata"
-                aria-hidden="true"
+                preload="none"
+                poster="/showcase/salt.webp"
+                controls
+                aria-label="Builder walkthrough video"
               />
-              <div className="lsl-hero-demo-shield" aria-hidden="true" />
+
             </motion.div>
             <figcaption className="lsl-hero-demo-caption">
               Live capture · Workbench across Salt, Material 3, Fluent 2,

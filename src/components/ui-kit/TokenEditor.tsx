@@ -67,7 +67,7 @@ export function TokenEditor() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, color: t.fg }}>Token Editor</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, color: t.fg }}>Token reference</h1>
           <p style={{ fontSize: 14, color: t.fg2, marginTop: 4 }}>
             {sysInfo.name} — {totalTokens} color tokens
           </p>
@@ -88,7 +88,7 @@ export function TokenEditor() {
           <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: "middle", marginRight: 4 }} aria-hidden="true">
             {copied ? "check" : "download"}
           </span>
-          {copied ? "Copied!" : "Export All"}
+          {copied ? "Copied!" : "Copy JSON"}
         </button>
       </div>
 
@@ -153,6 +153,7 @@ export function TokenEditor() {
           >
             {catName} ({tokens.length})
           </h2>
+          <div className="token-table-scroll" role="region" aria-label={`${catName} token values`} tabIndex={0}>
           <table
             style={{
               width: "100%",
@@ -273,6 +274,7 @@ export function TokenEditor() {
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       ))}
 

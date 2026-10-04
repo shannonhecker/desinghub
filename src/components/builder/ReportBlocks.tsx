@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { REFERENCE_THUMBNAILS } from "@/lib/templateReferenceAssets";
 import {
   ArrowRight, Briefcase, Clapperboard, Fuel, HardHat, HeartPulse, Landmark, Leaf, Scale, Search, Shield, ShoppingBag, Users, type LucideIcon,
 } from "lucide-react";
@@ -228,7 +229,7 @@ export function LauncherCardBlock({ blockId }: Props) {
         <h3 className="dh-launcher-title">{str(p.title, "Report")}</h3>
         {p.tag ? <span className="dh-cell-tag" style={toneStyle(str(p.tagTone) === "mid" ? "mid" : "accent")}>{str(p.tag)}</span> : null}
       </header>
-      <div className="dh-launcher-thumb" aria-hidden="true">{templateId ? <TemplatePreview id={templateId} /> : null}</div>
+      <div className="dh-launcher-thumb" aria-hidden="true">{templateId && REFERENCE_THUMBNAILS[templateId] ? <img src={REFERENCE_THUMBNAILS[templateId]} alt="" /> : templateId ? <TemplatePreview id={templateId} /> : null}</div>
       <p className="dh-launcher-desc">{str(p.description)}</p>
       <button type="button" className="dh-launcher-open" onClick={open} disabled={!templateId}>
         {str(p.actionLabel, "Open report")}
@@ -242,7 +243,7 @@ export function LauncherCardBlock({ blockId }: Props) {
 export function HeroSearchBlock({ blockId }: Props) {
   const p = useBlock(blockId);
   return (
-    <div className="dh-hero" style={boxHeight(p)}>
+    <div className={`dh-hero${p.referenceGraphic === "analytics" ? " dh-hero-reference" : ""}`} style={boxHeight(p)}>
       <h1 className="dh-hero-title">{str(p.title, "Analytics")}</h1>
       {p.subtitle ? <p className="dh-hero-subtitle">{str(p.subtitle)}</p> : null}
       <div className="dh-hero-search" role="search">
