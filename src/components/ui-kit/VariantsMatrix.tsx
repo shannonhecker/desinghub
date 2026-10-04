@@ -54,7 +54,7 @@ interface VariantsMatrixProps {
 }
 
 /** The Simulated* registry block type RealComponentRenderer keys off. */
-const BLOCK_TYPE: Partial<Record<UiKitComponentId, string>> = {
+export const BLOCK_TYPE: Partial<Record<UiKitComponentId, string>> = {
   button: "SimulatedButton",
   textInput: "SimulatedTextInput",
   checkbox: "SimulatedCheckbox",
@@ -80,7 +80,7 @@ function slugify(v: string): string {
  * are CSS-only and render in the default state, which is honest for a static
  * grid). Returns null when this component isn't in the real core set.
  */
-function cellProps(
+export function cellProps(
   componentId: UiKitComponentId,
   variant: string,
   state: string,
@@ -144,10 +144,10 @@ export function VariantsMatrix({
   const canReal = mounted && blockType ? canRenderReal(system, blockType) : false;
 
   return (
-    <div className="dh-detail-card" style={{ borderColor: t.border, background: t.bg2 }}>
+    <div className="dh-detail-card" style={{ borderColor: "transparent", background: "transparent" }}>
       {/* Axis legend — names the two vocabularies the DS exposes for this
           component, so the reader knows what "Variant × State" means here. */}
-      <div className="dh-matrix-legend" style={{ color: t.fg3, borderBottomColor: t.borderSubtle }}>
+      <div className="dh-matrix-legend" style={{ color: t.fg2, borderBottomColor: t.borderSubtle }}>
         <span>
           <strong style={{ color: t.fg2 }}>{matrix.variantAxisLabel}</strong>
           {" "}down · {matrix.variants.length} value{matrix.variants.length === 1 ? "" : "s"}
@@ -166,7 +166,7 @@ export function VariantsMatrix({
               <th
                 scope="col"
                 className="dh-matrix-corner"
-                style={{ color: t.fg3, borderColor: t.borderSubtle }}
+                style={{ color: t.fg2, borderColor: t.borderSubtle }}
               >
                 <span className="dh-matrix-axis-x">{matrix.variantAxisLabel}</span>
               </th>

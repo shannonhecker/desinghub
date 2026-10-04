@@ -122,9 +122,9 @@
   gap: 6px;
   min-height: 40px;
   padding: 0 12px;
-  border: 1px solid var(--tool-border-subtle);
+  border: 0;
   border-radius: var(--tool-radius);
-  background: transparent;
+  background: color-mix(in srgb, var(--tool-fg) 6%, transparent);
   color: var(--tool-fg);
   font-size: 13px;
   text-decoration: none;
@@ -132,7 +132,7 @@
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
 }
-.tool-ghost:hover { background: color-mix(in srgb, var(--tool-fg) 6%, transparent); border-color: var(--tool-border); }
+.tool-ghost:hover { background: color-mix(in srgb, var(--tool-fg) 11%, transparent); }
 
 /* ── Page body ── */
 .tool-main {
@@ -170,23 +170,22 @@
   gap: 6px;
   min-height: 40px;
   padding: 0 14px;
-  border: 1px solid var(--tool-border);
+  border: 0;
   border-radius: var(--tool-radius);
-  background: transparent;
+  background: color-mix(in srgb, var(--tool-fg) 7%, transparent);
   color: var(--tool-fg);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background 120ms ease, filter 120ms ease;
 }
-.tool-btn:hover { background: color-mix(in srgb, var(--tool-fg) 6%, transparent); }
-.tool-btn.is-primary { border-color: transparent; background: var(--tool-accent); color: var(--tool-accent-fg); }
+.tool-btn:hover { background: color-mix(in srgb, var(--tool-fg) 12%, transparent); }
+.tool-btn.is-primary { background: var(--tool-accent); color: var(--tool-accent-fg); }
 .tool-btn.is-primary:hover { filter: brightness(1.08); }
 .tool-btn:disabled,
 .tool-btn[aria-disabled="true"] {
   cursor: not-allowed;
-  border-color: var(--tool-border-subtle);
-  background: color-mix(in srgb, var(--tool-fg) 6%, transparent);
+  background: color-mix(in srgb, var(--tool-fg) 5%, transparent);
   color: var(--tool-muted);
   filter: none;
 }
@@ -205,9 +204,9 @@
   width: 100%;
   min-height: 44px;
   padding: 0 14px 0 40px;
-  border: 1px solid var(--tool-border);
+  border: 0;
   border-radius: var(--tool-radius);
-  background: var(--tool-surface);
+  background: color-mix(in srgb, var(--tool-fg) 7%, transparent);
   color: var(--tool-fg);
   font-size: 15px;
 }
@@ -228,7 +227,6 @@
 
 /* ── Token table ── */
 .token-table-scroll {
-  border: 1px solid var(--tool-border-subtle);
   border-radius: var(--tool-radius);
   background: var(--tool-surface);
   overflow: hidden;
@@ -254,7 +252,7 @@
   width: 24px;
   height: 24px;
   border-radius: min(var(--tool-radius), 6px);
-  border: 1px solid var(--tool-border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tool-fg) 14%, transparent);
   /* Checker shows through translucent tokens instead of hiding them. */
   background-image:
     linear-gradient(var(--swatch), var(--swatch)),
@@ -286,7 +284,7 @@
 .token-copy:focus-visible .material-symbols-outlined { opacity: 0.8; }
 .token-ratio { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--tool-muted); white-space: nowrap; }
 .token-ratio b { font-weight: 600; color: var(--tool-fg); }
-.token-ratio em { font-style: normal; margin-left: 10px; padding: 1px 6px; border: 1px solid var(--tool-border-subtle); border-radius: 4px; font-size: 11.5px; }
+.token-ratio em { font-style: normal; margin-left: 10px; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--tool-fg) 7%, transparent); font-size: 11.5px; }
 
 @media (max-width: 640px) {
   /* Phones: each token becomes a two-line row rather than a squeezed table. */
@@ -314,8 +312,8 @@
   margin-top: 32px;
   padding: 48px 24px;
   text-align: center;
-  border: 1px dashed var(--tool-border);
   border-radius: var(--tool-radius);
+  background: color-mix(in srgb, var(--tool-fg) 4%, transparent);
   color: var(--tool-muted);
 }
 .tool-empty strong { display: block; margin-bottom: 4px; font-size: 15px; color: var(--tool-fg); overflow-wrap: anywhere; }
@@ -367,7 +365,6 @@
 .theme-import {
   margin-bottom: 24px;
   padding: 16px;
-  border: 1px solid var(--tool-border-subtle);
   border-radius: var(--tool-radius);
   background: var(--tool-surface);
 }
@@ -399,7 +396,9 @@
   border-radius: var(--tool-radius);
   background: var(--tool-surface);
 }
-.theme-token.is-changed { border-color: var(--tool-accent); }
+/* A changed token is marked by tone and weight, not an accent ring. */
+.theme-token.is-changed { background: var(--tool-accent-weak); }
+.theme-token.is-changed .theme-token-name { font-weight: 700; }
 .theme-token-swatch { position: relative; flex: none; width: 32px; height: 32px; }
 .theme-token-swatch .token-swatch { display: block; width: 32px; height: 32px; }
 .theme-token-swatch input[type="color"] {

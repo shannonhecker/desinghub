@@ -1,0 +1,141 @@
+"use client";
+
+import React from "react";
+import { useDesignHub, type SystemId } from "@/store/useDesignHub";
+import { getComponents, getFont, getTheme } from "@/data/registry";
+import { kitEntry } from "@/lib/kitCatalog";
+import { RealComponentRenderer, canRenderReal } from "./RealComponentRenderer";
+import { CONCEPTS, EQ_SYSTEMS, SYSTEM_LABEL, conceptOf, kitHref } from "./kitEquivalence";
+import { isDarkActive } from "./kitHandoff";
+
+/**
+ * Compare: one component, five design systems, side by side.
+ *
+ * Every panel is that system's REAL component (RealComponentRenderer: the
+ * official Salt, MUI, Fluent and Carbon packages and the uoaui classes) on
+ * that system's own surface and typeface, in the mode in view. Which entry is
+ * "the same component" in each system comes from kitEquivalence, the same
+ * map the system switcher uses.
+ */
+
+/* Concepts with a real cross-system renderer, and the builder block that
+   draws each. Anything else is listed honestly instead of faked. */
+export const COMPARE_BLOCK: Record<string, string> = {
+  button: "SimulatedButton",
+  "text-input": "SimulatedTextInput",
+  checkbox: "SimulatedCheckbox",
+  switch: "SimulatedSwitch",
+  card: "SimulatedCard",
+  tag: "SimulatedPill",
+  badge: "SimulatedBadge",
+  link: "SimulatedLink",
+  alert: "Alert",
+  progress: "SimulatedProgress",
+  avatar: "SimulatedAvatar",
+  dropdown: "SimulatedDropdown",
+  search: "SimulatedSearchbox",
+  segmented: "SimulatedSegmentedGroup",
+  accordion: "SimulatedAccordion",
+  "data-table": "SimulatedDataTable",
+};
+
+const MODE_THEME: Record<SystemId, { light: string; dark: string }> = {
+  salt: { light: "jpm-light", dark: "jpm-dark" },
+  m3: { light: "light", dark: "dark" },
+  fluent: { light: "light", dark: "dark" },
+  uoaui: { light: "light", dark: "dark" },
+  carbon: { light: "white", dark: "g100" },
+};
+const CANVAS_KEY: Record<SystemId, string> = { salt: "bg", m3: "surface", fluent: "bg1", uoaui: "bg", carbon: "bg" };
+const TEXT_KEY: Record<SystemId, string> = { salt: "fg", m3: "onSurface", fluent: "fg1", uoaui: "fg", carbon: "fg" };
+
+/** True when Compare can draw this concept live. */
+export function canCompare(concept: string | null): boolean {
+  return !!concept && concept in COMPARE_BLOCK;
+}
+
+export function ComparePanels({ concept, compact = false }: { concept: string; compact?: boolean }) {
+  const state = useDesignHub();
+  const dark = isDarkActive(state);
+  const mode = dark ? "dark" : "light";
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const type = COMPARE_BLOCK[concept];
+  const entry = type ? kitEntry(type) : null;
+  const def = CONCEPTS[concept];
+  if (!type || !def) return null;
+
+  return (
+    <ul className={`kit-compare${compact ? " is-compact" : ""}`} data-testid="compare-panels">
+      {EQ_SYSTEMS.map((sys) => {
+        const id = def.ids[sys];
+        const theme = getTheme(sys, MODE_THEME[sys][mode]);
+        const real = !!id && canRenderReal(sys, type);
+        const name = id ? getComponents(sys).find((c) => c.id === id)?.name : null;
+        const current = sys === state.activeSystem;
+        return (
+          <li key={sys} className="kit-compare-panel" data-system={sys} data-current={current || undefined}>
+            <div
+              className="kit-compare-stage"
+              style={{
+                backgroundColor: String(theme[CANVAS_KEY[sys]] ?? "transparent"),
+                backgroundImage: sys === "uoaui" && theme.gradient ? String(theme.gradient) : undefined,
+                color: String(theme[TEXT_KEY[sys]] ?? "inherit"),
+                fontFamily: getFont(sys),
+              }}
+            >
+              {real && mounted ? (
+                <RealComponentRenderer system={sys} type={type} mode={mode} saltDensity="medium" props={{ ...(entry?.defaults ?? {}), id: `cmp-${concept}-${sys}${compact ? "-band" : ""}` }} />
+              ) : real ? null : (
+                <p className="kit-compare-none">{SYSTEM_LABEL[sys]} has no {def.label.toLowerCase()}.</p>
+              )}
+            </div>
+            <div className="kit-compare-meta">
+              <strong>{SYSTEM_LABEL[sys]}</strong>
+              {id && name ? (
+                current
+                  ? <span>{name}, in view</span>
+                  : <a href={kitHref({ ds: sys, c: id })} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); state.setActiveSystem(sys); }}>{name}</a>
+              ) : <span>Not in this system</span>}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** The Compare tab of a detail page. */
+export function CompareView({ componentId }: { componentId: string }) {
+  const system = useDesignHub((s) => s.activeSystem);
+  const concept = conceptOf(system, componentId);
+  const def = concept ? CONCEPTS[concept] : null;
+  if (!concept || !def) return null;
+  const have = EQ_SYSTEMS.filter((s) => def.ids[s]);
+
+  return (
+    <section className="dh-section" aria-labelledby="dh-h-compare">
+      <h2 id="dh-h-compare" className="dh-section-h">{def.label} in five systems</h2>
+      <p className="dh-section-lede">
+        {canCompare(concept)
+          ? "Each panel is that system's own component on its own surface and typeface, in the mode you are viewing. Choose a system to open its page here."
+          : `A live side-by-side is not built for ${def.label.toLowerCase()} yet. These systems document it:`}
+      </p>
+      {canCompare(concept) ? <ComparePanels concept={concept} /> : (
+        <ul className="kit-compare-list">
+          {EQ_SYSTEMS.map((s) => (
+            <li key={s}>
+              <strong>{SYSTEM_LABEL[s]}</strong>
+              {def.ids[s]
+                ? <a href={kitHref({ ds: s, c: def.ids[s]!, tab: "compare" })} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); useDesignHub.getState().setActiveSystem(s); }}>{getComponents(s).find((c) => c.id === def.ids[s])?.name}</a>
+                : <span>Not in this system</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {have.length < EQ_SYSTEMS.length && canCompare(concept) && (
+        <p className="kit-note">{have.length} of 5 systems ship a {def.label.toLowerCase()}.</p>
+      )}
+    </section>
+  );
+}

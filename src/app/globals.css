@@ -601,6 +601,11 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0;
   line-height: 1.1;
 }
+/* System entries: "Aa" in the system's own face. Fixed line box so the rail
+   does not move as faces swap; the current system is a filled tone. */
+.uikit-rail-aa { display: block; height: 24px; font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.uikit-rail-ds[aria-current="true"] { background: var(--kit-surface-selected); }
+.uikit-rail-ds[aria-current="true"] .uikit-rail-label { font-weight: 700; }
 .uikit-rail-btn:hover {
   /* Inactive (transparent) buttons pick up a subtle fill; the active accent +
      the Builder gradient are inline so they win here and just brighten. */
@@ -674,56 +679,7 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
-/* Catalogue card (owner refinement): one soft surface with a hairline edge,
-   no hard outline, no lift and no shadow. Hover only deepens the edge and
-   the surface a step; keyboard focus draws a clear ring round the whole
-   card. Colours arrive as --kit-* custom properties from LandingGrid, taken
-   from the design system in view. The specimen inside is never restyled. */
-.uikit-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  border-radius: var(--kit-radius, 8px);
-  border: 1px solid color-mix(in srgb, var(--kit-border, currentColor) 30%, transparent);
-  background: var(--kit-card, transparent);
-  backdrop-filter: var(--kit-glass, none);
-  -webkit-backdrop-filter: var(--kit-glass, none);
-  transition:
-    border-color var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
-    background-color var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
-}
-.uikit-card:hover {
-  border-color: color-mix(in srgb, var(--kit-border, currentColor) 70%, transparent);
-  background-color: color-mix(in srgb, var(--kit-fg, currentColor) 3%, var(--kit-card, transparent));
-}
-/* The card's one control. Its hit area stretches over the whole card, so the
-   specimen never needs to be a nested button. */
-.uikit-card-hit {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-}
-.uikit-card-hit::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-.uikit-card-hit:focus-visible { outline: none; }
-.uikit-card:has(.uikit-card-hit:focus-visible) {
-  outline: 2px solid var(--kit-focus, currentColor);
-  outline-offset: 2px;
-  border-color: transparent;
-}
-@media (prefers-reduced-motion: reduce) {
-  .uikit-card { transition: none; }
-}
+/* Catalogue card rules live in components/ui-kit/kit-chrome.css. */
 
 /* Specimen zone. Centres the live registry preview and clips anything that
    overruns the frame, so a wide or tall specimen never breaks the grid. */

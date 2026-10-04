@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { resolveEquivalent } from '@/components/ui-kit/kitEquivalence';
 
 export type SystemId = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 
@@ -22,7 +23,9 @@ export type ActiveTab =
   | 'tokens' | 'charts' | 'audit'
   | 'usage' | 'style' | 'accessibility'
   /* M3 rich component-page tabs (accessibility shared above). */
-  | 'overview' | 'specs' | 'guidelines';
+  | 'overview' | 'specs' | 'guidelines'
+  /* The same component in all five systems, side by side. */
+  | 'compare';
 
 interface DesignHubState {
   activeSystem: SystemId;
@@ -44,7 +47,16 @@ interface DesignHubState {
      switcher. Flips true in every density setter. */
   densityTouched: boolean;
   selectedComponent: string | null;
+  /* Set when the visitor switched to a system that has no equivalent of the
+     entry they were on: the entry (an id of `from`) is remembered so the
+     page can say so, offer the closest matches, and lead back. */
+  missing: { from: SystemId; id: string } | null;
   searchQuery: string;
+  /* Overview section filter (all / foundations / components / patterns /
+     tools). In the store so it survives a system switch and a visit to a
+     detail page, and can be written to the URL. */
+  overviewFilter: string;
+  setOverviewFilter: (f: string) => void;
   activeTab: ActiveTab;
   sidebarOpen: boolean;
 
@@ -150,7 +162,10 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   globalDensity: 1, // level 1 == Salt/uoaui 'medium'
   densityTouched: false, // no explicit density choice yet — don't fold target DS defaults
   selectedComponent: null,
+  missing: null,
   searchQuery: '',
+  overviewFilter: 'all',
+  setOverviewFilter: (f) => set({ overviewFilter: f }),
   activeTab: 'preview',
   /* Collapsed by default (owner): the icon-rail is the always-visible primary
      nav; the secondary panel opens on demand (rail section button / hamburger).
@@ -170,8 +185,17 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
        target slice — it never WRITES globalDensity back, so the abstract
        level stays the single source of truth across round-trips (P1-b). */
     const carryDensity = st.densityTouched;
+    /* Keep the visitor's place (owner rule: switching system never jumps).
+       The open entry maps to its equivalent in the target system; the tab,
+       the search text and the overview filter are left exactly as they are.
+       Where the target has no equivalent the entry is remembered in
+       `missing` and the page shows a "not in this system" state. */
+    const source = st.missing ?? (st.selectedComponent ? { from: st.activeSystem, id: st.selectedComponent } : null);
+    const eq = source ? resolveEquivalent(source.from, source.id, s) : null;
     const next: Partial<DesignHubState> = {
-      activeSystem: s, selectedComponent: null, searchQuery: '', activeTab: 'preview',
+      activeSystem: s,
+      selectedComponent: eq?.id ?? null,
+      missing: source && eq && !eq.id ? source : null,
     };
     if (s === 'salt')   next.salt   = { ...st.salt,   themeKey: applyModeToSalt(st.salt.themeKey, m), ...(carryDensity && { density: SALT_DENSITY_BY_LEVEL[lvl] }) };
     if (s === 'uoaui')  next.uoaui  = { ...st.uoaui,  themeKey: m,                                    ...(carryDensity && { density: UOAUI_DENSITY_BY_LEVEL[lvl] }) };
@@ -209,7 +233,7 @@ export const useDesignHub = create<DesignHubState>()(persist((set) => ({
   /* Fold-aware (P1-b): picking 'compact' won't clobber an already-more-compact
      abstract level — globalDensity stays the single source of truth. */
   setCarbonDensity: (d) => set((st) => ({ carbon: { ...st.carbon, density: d }, globalDensity: carbonLevelFold(d, st.globalDensity), densityTouched: true })),
-  setSelectedComponent: (id) => set({ selectedComponent: id, activeTab: 'preview' }),
+  setSelectedComponent: (id) => set({ selectedComponent: id, missing: null, activeTab: 'preview' }),
   setSearchQuery: (q) => set({ searchQuery: q }),
   setActiveTab: (t) => set({ activeTab: t }),
   toggleSidebar: () => set((st) => ({ sidebarOpen: !st.sidebarOpen })),

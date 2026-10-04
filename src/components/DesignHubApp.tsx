@@ -15,6 +15,10 @@ import { ComponentList } from "./ui-kit/ComponentList";
 import { MainContent } from "./ui-kit/MainContent";
 import { getStageBg, getRailBg, getPanelBg } from "./ui-kit/stageTint";
 import { builderHrefFor, isDarkActive, toggleActiveMode } from "./ui-kit/kitHandoff";
+import { kitPrimitives } from "./ui-kit/kitChrome";
+import { kitHref, switchHref, type KitPlace } from "./ui-kit/kitEquivalence";
+import { getComponents, getFont } from "@/data/registry";
+import "./ui-kit/kit-chrome.css";
 
 /**
  * @deprecated Use `useTheme()` from `@/contexts/ThemeContext` instead.
@@ -70,6 +74,36 @@ export function DesignHubApp() {
      params reflect Builder's flat state shape (single mode/density/
      themeKey); we map them onto UI Kit's per-DS state slots. Run
      once on mount; URL is left alone after hydration. */
+  /* ── The URL is the place ──
+     ?ds=&c=&tab= (and &q=&show= on the overview, &from= on the "not in this
+     system" state) is written as the visitor moves, so a reload or a shared
+     link lands on the same entry and tab. Opening an entry or switching
+     system adds a history step (back and forward work); mode, density, tab,
+     search and filter replace the current one and never navigate. */
+  const [urlReady, setUrlReady] = React.useState(false);
+  const applyPlaceFromUrl = React.useCallback(() => {
+    const SYS = ["salt", "m3", "fluent", "carbon", "uoaui"];
+    const params = new URLSearchParams(window.location.search);
+    const st = useDesignHub.getState();
+    const urlDs = params.get("ds") as SystemId | null;
+    const ds = urlDs && SYS.includes(urlDs) ? urlDs : st.activeSystem;
+    if (ds !== st.activeSystem) st.setActiveSystem(ds);
+    const c = params.get("c");
+    const from = params.get("from") as SystemId | null;
+    const tab = params.get("tab");
+    const has = (sys: SystemId, id: string) => id === "builder-blocks" || getComponents(sys).some((x) => x.id === id);
+    if (c && from && from !== ds && SYS.includes(from) && has(from, c)) {
+      useDesignHub.setState({ selectedComponent: null, missing: { from, id: c } });
+    } else if (c && has(ds, c)) {
+      useDesignHub.setState({ selectedComponent: c, missing: null });
+    } else {
+      useDesignHub.setState({ selectedComponent: null, missing: null });
+    }
+    if (tab) useDesignHub.setState({ activeTab: tab as ReturnType<typeof useDesignHub.getState>["activeTab"] });
+    else if (c) useDesignHub.setState({ activeTab: "overview" });
+    useDesignHub.setState({ searchQuery: params.get("q") ?? "", overviewFilter: params.get("show") ?? "all" });
+  }, []);
+
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -104,8 +138,39 @@ export function DesignHubApp() {
       else if (targetDs === "uoaui") store.setUoauiDensity(density);
       /* M3 density is numeric (-3..0); skip non-numeric handoff. */
     }
+    applyPlaceFromUrl();
+    setUrlReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    const onPop = () => applyPlaceFromUrl();
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [applyPlaceFromUrl]);
+
+  const place: KitPlace = {
+    ds: activeSystem,
+    c: store.missing ? store.missing.id : store.selectedComponent,
+    from: store.missing ? store.missing.from : null,
+    tab: store.activeTab === "preview" ? "overview" : store.activeTab,
+    q: store.searchQuery,
+    show: store.overviewFilter,
+  };
+  const href = kitHref(place);
+  const lastNav = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!urlReady) return;
+    const navKey = `${place.ds}|${place.c ?? ""}`;
+    if (window.location.pathname + window.location.search === href) { lastNav.current = navKey; return; }
+    /* A new entry or system is a history step; everything else restyles or
+       refines in place. */
+    if (lastNav.current !== null && lastNav.current !== navKey) window.history.pushState(null, "", href);
+    else window.history.replaceState(null, "", href);
+    lastNav.current = navKey;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [href, urlReady]);
+
 
   const [isNarrow, setIsNarrow] = React.useState(false);
   React.useEffect(() => {
@@ -146,7 +211,44 @@ export function DesignHubApp() {
      card picked far down the overview opened its page already scrolled. */
   const scrollerRef = React.useRef<HTMLDivElement | null>(null);
   const selectedComponent = store.selectedComponent;
+  const lastTop = React.useRef(0);
+  const hold = React.useRef<{ top: number; until: number } | null>(null);
   React.useEffect(() => {
+    const sc = scrollerRef.current;
+    if (!sc || typeof ResizeObserver === "undefined") return;
+    const restore = () => {
+      const h = hold.current;
+      if (!h || Date.now() > h.until || useDesignHub.getState().selectedComponent === null) return;
+      const want = Math.min(h.top, sc.scrollHeight - sc.clientHeight);
+      if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want;
+    };
+    const ro = new ResizeObserver(restore);
+    if (sc.firstElementChild) ro.observe(sc.firstElementChild);
+    const mo = new MutationObserver(() => { ro.disconnect(); if (sc.firstElementChild) ro.observe(sc.firstElementChild); restore(); });
+    mo.observe(sc, { childList: true });
+    /* The visitor's own scrolling always wins. */
+    const release = () => { hold.current = null; };
+    sc.addEventListener("wheel", release, { passive: true });
+    sc.addEventListener("touchstart", release, { passive: true });
+    sc.addEventListener("keydown", release);
+    return () => { ro.disconnect(); mo.disconnect(); sc.removeEventListener("wheel", release); sc.removeEventListener("touchstart", release); sc.removeEventListener("keydown", release); };
+  }, []);
+  const prevPlace = React.useRef({ system: activeSystem, entry: selectedComponent });
+  React.useLayoutEffect(() => {
+    const before = prevPlace.current;
+    prevPlace.current = { system: activeSystem, entry: selectedComponent };
+    /* A system switch keeps the scroll position: the page is the same page
+       in another system (owner rule: no jumping). Only opening a different
+       entry, or going back to the overview, starts at the top. */
+    if (before.system !== activeSystem) {
+      /* Hold the position while the new system's page settles. Code and
+         demos arrive a moment later; until they do the page can be briefly
+         shorter, which would clamp the scroll and read as a jump. */
+      hold.current = { top: lastTop.current, until: Date.now() + 1500 };
+      return;
+    }
+    if (before.entry === selectedComponent) return;
+    hold.current = null;
     scrollerRef.current?.scrollTo?.({ top: 0 });
     /* On phones the panel is a sheet over the content: picking an entry
        from it should reveal that entry. */
@@ -154,6 +256,33 @@ export function DesignHubApp() {
       useDesignHub.getState().toggleSidebar();
     }
   }, [selectedComponent, activeSystem]);
+
+  /* Overview: a system switch keeps the section the visitor was reading.
+     The section at the top of the scroller is remembered while scrolling and
+     put back at the same offset once the new system's wall has rendered. */
+  const overviewAnchor = React.useRef<{ section: string; offset: number } | null>(null);
+  const onScroll = React.useCallback(() => {
+    const sc = scrollerRef.current;
+    if (!sc) return;
+    /* While a switch is settling, a clamp is not the visitor scrolling. */
+    if (!hold.current || Date.now() > hold.current.until) lastTop.current = sc.scrollTop;
+    if (useDesignHub.getState().selectedComponent) return;
+    const top = sc.getBoundingClientRect().top;
+    let found: { section: string; offset: number } | null = null;
+    sc.querySelectorAll<HTMLElement>("[data-section]").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top - top <= 80 && r.bottom - top > 80) found = { section: el.dataset.section!, offset: r.top - top };
+    });
+    overviewAnchor.current = found;
+  }, []);
+  React.useLayoutEffect(() => {
+    const sc = scrollerRef.current;
+    const a = overviewAnchor.current;
+    if (!sc || !a || selectedComponent) return;
+    const el = sc.querySelector<HTMLElement>(`[data-section="${a.section}"]`);
+    if (el) sc.scrollTop += el.getBoundingClientRect().top - sc.getBoundingClientRect().top - a.offset;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSystem]);
 
   /* Entering the phone layout closes the side panel so it does not cover
      the catalogue. Keyed on the breakpoint alone: it used to watch the open
@@ -191,7 +320,7 @@ export function DesignHubApp() {
   const builderHref = builderHrefFor(store);
 
   return (
-    <div className="uikit-shell" style={{ display: "flex", flexDirection: "column", height: "100dvh",
+    <div className="uikit-shell" data-system={activeSystem} style={{ ...kitPrimitives(t, isDarkTheme), display: "flex", flexDirection: "column", height: "100dvh",
       /* C2 PER-DS STAGE at the shell level. uoaui gets the signature
          aurora gradient as the app-level wash so the transparent stage +
          landing + hero slab read against it; Carbon stays seam-matched
@@ -265,28 +394,27 @@ export function DesignHubApp() {
                     const info = getSystemInfo(ds.id);
                     const isActive = activeSystem === ds.id;
                     return (
-                      <button
+/* A real link to the same place in that system, so
+                         middle-click, copy-link and screen readers get the
+                         true target. A plain click switches in place. */
+                      <a
                         key={ds.id}
-                        type="button"
-                        className="uikit-rail-btn"
+                        href={switchHref(place, ds.id)}
+                        className="uikit-rail-btn uikit-rail-ds"
                         aria-label={ds.label}
-                        aria-pressed={isActive}
+                        aria-current={isActive ? "true" : undefined}
                         title={ds.label}
-                        onClick={() => store.setActiveSystem(ds.id)}
-                        style={{
-                          borderRadius: railRadius,
-                          fontFamily: t.font,
-                          color: isActive ? (isCarbon ? (t.T.textOnColor ?? t.accentFg) : t.accentFg) : t.fg2,
-                          /* Borderless: active = accent fill; inactive = no inline
-                             bg so the CSS transparent + hover tint apply. Carbon
-                             fills with $button-primary: white on its g100 link
-                             blue is only 3.3:1. */
-                          background: isActive ? (isCarbon ? (t.T.buttonPrimary ?? t.accent) : t.accent) : undefined,
+                        onClick={(e) => {
+                          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                          e.preventDefault();
+                          store.setActiveSystem(ds.id);
                         }}
+                        style={{ borderRadius: railRadius, color: isActive ? t.fg : t.fg2, textDecoration: "none" }}
                       >
-                        <span className="uikit-rail-glyph" aria-hidden="true" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>
-                        <span className="uikit-rail-label">{ds.short}</span>
-                      </button>
+                        {/* "Aa" set in that system's own typeface and accent. */}
+                        <span className="uikit-rail-aa" aria-hidden="true" style={{ fontFamily: getFont(ds.id), color: isActive ? t.accentText : t.fg2 }}>Aa</span>
+                        <span className="uikit-rail-label" style={{ fontFamily: t.font }}>{ds.short}</span>
+                      </a>
                     );
                   })}
                 </div>
@@ -428,7 +556,7 @@ export function DesignHubApp() {
             rail section buttons + the panel-header close chevron). */}
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
-          <div ref={scrollerRef} style={{ flex: 1, overflowY: "auto" }}>
+          <div ref={scrollerRef} onScroll={onScroll} data-testid="kit-scroller" style={{ flex: 1, overflowY: "auto", overflowAnchor: "none" }}>
             <MainContent />
           </div>
         </main>
