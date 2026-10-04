@@ -44,14 +44,31 @@
 
   /* Framed panel (PanelFrame.tsx) type sizes. The panel's box sizes come
      from panelMetrics.ts; these two are its only fixed type sizes. */
-  --dh-panel-title-size: 14px;
+  --dh-panel-title-size: 15px;
   --dh-panel-meta-size:  12px;
   --bc-hairline:         1px;
   /* Navigation bars (ChromeBars.tsx) and the "dark" chrome tone: dark
      application chrome in light and dark mode alike. Sizes are the same in
      every design system so the body starts at the same point. */
-  --bc-topnav-h:            48px;
-  --bc-tabstrip-h:          40px;
+  --bc-topnav-h:            44px;
+  --bc-tabstrip-h:          36px;
+  /* Context bar (title + inline filters) and the report canvas: a dense
+     application page. One gutter for the bars, the canvas and its gaps. */
+  --bc-contextbar-h:        40px;
+  --bc-contextbar-title:    13px;
+  --bc-contextbar-filter-w: 172px;
+  --dh-report-gutter:       24px;
+  --dh-inline-control-h:    24px;
+  --dh-inline-font:         12px;
+  /* Dense text navigation. */
+  --dh-nav-row:             28px;
+  --dh-nav-row-rail:        36px;
+  --dh-nav-size:            13px;
+  --dh-nav-inset:           12px;
+  --dh-nav-pad:             8px;
+  --dh-nav-group-pad:       14px;
+  --dh-nav-bar:             3px;
+  --dh-panel-viewby-label:  26rem;
   --bc-bar-gap:             24px;
   --bc-bar-font:            13px;
   --bc-bar-mark:            24px;
@@ -77,7 +94,7 @@
   --dh-cell-bar-value-w:    44px;
   --dh-cell-chip-h:         20px;
   --dh-cell-chip-pad:       0 8px 0 6px;
-  --dh-cell-badge:          26px;
+  --dh-cell-badge:          22px;
   --dh-cell-small:          11px;
   --dh-cell-dot:            8px;
   --dh-record-size:         13px;

@@ -11,13 +11,19 @@
 
 /** Header row: title, subtitle, "View by". Tall enough for the tallest
  *  design system's compact select. */
-export const PANEL_HEADER_HEIGHT = 56;
+export const PANEL_HEADER_HEIGHT = 48;
 /** Padding around the panel body. */
-export const PANEL_PADDING = 16;
+export const PANEL_PADDING = 20;
 /** Default overall panel height when a block does not set one. */
 export const PANEL_DEFAULT_HEIGHT = 360;
 /** Width reserved for the "View by" select. */
-export const PANEL_VIEW_BY_WIDTH = 144;
+export const PANEL_VIEW_BY_WIDTH = 176;
+
+/** Below this width a panel with a "View by" select stacks its header: the
+ *  title on one line, the select and the tools on the next. */
+export const PANEL_STACK_WIDTH = 340;
+/** Height the second header line adds. */
+export const PANEL_STACK_ROW = 28;
 
 /** Height left for a panel's content once the header and the body padding
  *  (top is shared with the header, so one padding at the bottom) are taken. */

@@ -32,7 +32,7 @@ export interface RecordTableRow {
 }
 
 export type RecordSection =
-  | { type: "pairs"; items: RecordPair[] }
+  | { type: "pairs"; items: RecordPair[]; /** "rows": one pair per line, label left and value right. */ layout?: "rows" }
   | { type: "table"; title?: string; columns: string[]; kind?: GridColumnKind; decimals?: number; rows: RecordTableRow[] }
   | { type: "trend"; title?: string; field: string; categories?: string[]; seriesName?: string };
 
@@ -95,7 +95,7 @@ export interface ResolvedPair {
   tone?: GridTone;
 }
 export type ResolvedSection =
-  | { type: "pairs"; items: ResolvedPair[] }
+  | { type: "pairs"; items: ResolvedPair[]; layout?: "rows" }
   | { type: "table"; title?: string; columns: string[]; rows: { label: string; cells: string[]; change: DeltaView | null }[] }
   | { type: "trend"; title?: string; categories: string[]; points: number[]; seriesName: string };
 
@@ -124,6 +124,7 @@ export function resolveRecord(binding: RecordBinding, dataset: ReportDataset, st
     if (section.type === "pairs") {
       return {
         type: "pairs",
+        ...(section.layout === "rows" ? { layout: "rows" as const } : {}),
         items: section.items.map((item) => {
           const raw = row[item.field];
           const value = item.money && typeof raw === "number" ? raw * rate : raw;

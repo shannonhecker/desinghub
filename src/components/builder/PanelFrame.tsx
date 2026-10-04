@@ -12,7 +12,7 @@ import type { GridColumn, GridRow } from "@/lib/dataGridModel";
 import {
   PANEL_HEADER_HEIGHT,
   PANEL_PADDING,
-  PANEL_VIEW_BY_WIDTH,
+  PANEL_STACK_ROW, PANEL_STACK_WIDTH, PANEL_VIEW_BY_WIDTH,
   panelContentHeight,
 } from "@/lib/panelMetrics";
 
@@ -54,13 +54,15 @@ interface PanelFrameProps {
   table?: { columns: GridColumn[]; rows: GridRow[] } | null;
   /** True when the panel is data-bound and can be expanded / configured. */
   tools?: boolean;
+  /** A colour for the panel's leading edge (one of two things compared). */
+  accent?: string;
 }
 
 /** Share of the expanded panel a chart takes; its data table gets the rest. */
-const EXPANDED_CHART_SHARE = 0.56;
+const EXPANDED_CHART_SHARE = 0.46;
 const EXPANDED_GAP = 12;
 
-export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewByState, height, children, table, tools }: PanelFrameProps) {
+export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewByState, height, children, table, tools, accent }: PanelFrameProps) {
   const hasViewBy = Boolean(viewBy && viewBy.length > 0);
   /* While presenting, using the "View by" select or a panel tool must not
      also select the block for the amend composer. */
@@ -75,6 +77,18 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
   /* Expanded: the panel is portalled into the canvas body (.bp-main), whose
      other content is hidden by a class. */
   const anchorRef = useRef<HTMLElement>(null);
+  /* A narrow panel cannot hold its title, the select and the tools on one
+     line: the select and the tools drop to a second line, and the content
+     gives up that line's height (the panel's own height is pinned). */
+  const [stacked, setStacked] = useState(false);
+  const canStack = hasViewBy && showTools && !expanded;
+  useEffect(() => {
+    const el = anchorRef.current;
+    if (!el || !canStack || typeof ResizeObserver === "undefined") { setStacked(false); return; }
+    const ro = new ResizeObserver(([entry]) => setStacked(entry.contentRect.width > 0 && entry.contentRect.width < PANEL_STACK_WIDTH));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [canStack]);
   const [host, setHost] = useState<HTMLElement | null>(null);
   const [hostHeight, setHostHeight] = useState(0);
   useEffect(() => {
@@ -102,9 +116,16 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
   /* Escape collapses. */
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setExpandedPanel(null); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    /* Escape collapses the panel and nothing else: it is taken before the
+       builder's own Escape (which would leave Present). An open menu keeps
+       its Escape. */
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector('[aria-haspopup][aria-expanded="true"], [role="combobox"][aria-expanded="true"]')) return;
+      e.stopPropagation();
+      setExpandedPanel(null);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [expanded, setExpandedPanel]);
 
   const vars = (h: number | string) =>
@@ -113,6 +134,8 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
       "--dh-panel-header-h": `${PANEL_HEADER_HEIGHT}px`,
       "--dh-panel-pad": `${PANEL_PADDING}px`,
       "--dh-panel-viewby-w": `${PANEL_VIEW_BY_WIDTH}px`,
+      "--dh-panel-stack-row": `${PANEL_STACK_ROW}px`,
+      ...(accent ? { "--dh-panel-accent": accent } : {}),
     }) as React.CSSProperties;
 
   const header = (
@@ -127,7 +150,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
           <ComponentRenderer
             type="SimulatedDropdown"
             system={system}
-            {...{ value: viewBy![0], options: viewBy, placeholder: "View by", stateKey: viewByState, compact: true }}
+            {...{ label: "View by", value: viewBy![0], options: viewBy, placeholder: "View by", stateKey: viewByState, inline: true }}
           />
         </div>
       ) : null}
@@ -160,9 +183,9 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
 
   if (!expanded) {
     return (
-      <section ref={anchorRef} className="dh-panel" style={vars(height)} aria-label={title || undefined}>
+      <section ref={anchorRef} className={`dh-panel${stacked ? " is-stacked" : ""}${accent ? " has-accent" : ""}`} style={vars(height)} aria-label={title || undefined}>
         {header}
-        <div className="dh-panel-body">{children(panelContentHeight(height))}</div>
+        <div className="dh-panel-body">{children(panelContentHeight(height) - (stacked ? PANEL_STACK_ROW : 0))}</div>
       </section>
     );
   }

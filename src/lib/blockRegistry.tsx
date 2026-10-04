@@ -701,6 +701,10 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "account", label: "Account name", placeholder: "\"none\" hides the account" },
     { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
   ]},
+  { type: "ContextBar", label: "Context Bar", icon: "tune", defaults: { title: "Page", tone: "surface", filters: [{ label: "Period", stateKey: "period", value: "Monthly", options: ["Daily", "Monthly", "Yearly"] }] }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
   { type: "TabStrip", label: "Tab Strip", icon: "tab", defaults: { tabsCsv: "Overview, Reports, Settings", active: "Overview", tone: "dark", addButton: false }, fields: [
     { type: "text", propKey: "tabsCsv", label: "Tabs (comma separated)" },
     { type: "text", propKey: "active", label: "Active tab" },
@@ -863,6 +867,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   PageTitle: "content",
   TopNav: "navigation",
   TabStrip: "navigation",
+  ContextBar: "navigation",
   NavGroup: "navigation",
   SimulatedTabs: "navigation",
   SimulatedBreadcrumb: "navigation",

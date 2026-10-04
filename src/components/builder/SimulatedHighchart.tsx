@@ -31,6 +31,18 @@ export interface ThemeVars {
   positive: string;
   warning: string;
   negative: string;
+  /** The surface the chart is drawn on (its panel's card), which separates
+   *  adjacent marks. Falls back to `surface`. */
+  card?: string;
+}
+
+/** Width of the separator between adjacent data marks. */
+const MARK_SEPARATOR = 1;
+
+function cardColorOf(el: HTMLElement): string | undefined {
+  const panel = el.closest(".dh-panel");
+  const color = panel ? getComputedStyle(panel).backgroundColor : "";
+  return color && color !== "transparent" && !/, 0\)$/.test(color) ? color : undefined;
 }
 
 function readThemeVars(el: HTMLElement): ThemeVars {
@@ -47,6 +59,9 @@ function readThemeVars(el: HTMLElement): ThemeVars {
     positive: v("--ds-status-positive", "#36b37e"),
     warning: v("--ds-status-warning", "#ffab00"),
     negative: v("--ds-status-negative", "#de350b"),
+    /* The resolved colour of the panel the chart sits in: a custom property
+       would come back as an unresolved var() chain. */
+    card: cardColorOf(el),
   };
 }
 
@@ -79,7 +94,8 @@ function baseTheme(
       gridLineColor: v.border + "30",
       lineColor: "transparent",
       tickColor: "transparent",
-      labels: { style: { color: v.fgTer, fontSize: "10px" } },
+      /* A figure on the value axis is never cut to an ellipsis. */
+      labels: { style: { color: v.fgTer, fontSize: "10px", textOverflow: "none", whiteSpace: "nowrap" } },
       title: { style: { color: v.fgSec, fontSize: "10px" } },
     },
     tooltip: {
@@ -92,7 +108,20 @@ function baseTheme(
       itemStyle: { color: v.fgSec, fontSize: "10px", fontWeight: "500" },
       itemHoverStyle: { color: v.fg },
     },
-    plotOptions: { series: { borderWidth: 0, animation: { duration: prefersReducedMotion() ? 0 : 500 } } },
+    /* Data marks have square corners and a one-pixel separator in the colour of
+       the surface behind them: adjacent slices, stacked segments and
+       clustered bars are told apart by an edge, not by colour alone
+       (WCAG 1.4.1 use of colour, 1.4.11 non-text contrast). */
+    plotOptions: {
+      series: {
+        borderWidth: MARK_SEPARATOR,
+        borderColor: v.card ?? v.surface,
+        /* Not in the shared series typing, but read by every mark type
+           (column, bar, pie, waterfall). */
+        ...({ borderRadius: 0 } as object),
+        animation: { duration: prefersReducedMotion() ? 0 : 500 },
+      },
+    },
     credits: { enabled: false },
   };
 }
@@ -626,17 +655,21 @@ function chartOptions(
       const framed = Boolean(props.hideTitle);
       return {
         ...t,
-        chart: { ...tc, type: "solidgauge", height: 250 },
+        /* Framed: no outer spacing, so the dome has the whole tile. */
+        chart: { ...tc, type: "solidgauge", height: 250, ...(framed ? { spacing: [0, 0, 0, 0] } : {}) },
         title: { ...tt, text: props.title || "System Health" },
         tooltip: { enabled: false },
         pane: {
-          center: ["50%", framed ? "80%" : "70%"], size: framed ? "125%" : "100%", startAngle: -90, endAngle: 90,
+          /* The pane is sized from the smaller side of the plot, so the dome
+             always fits: a larger size was cut off at the sides of a narrow
+             tile. */
+          center: ["50%", framed ? "74%" : "70%"], size: "100%", startAngle: -90, endAngle: 90,
           background: [{
             /* A wash of the text colour: appending hex alpha to the primary
                only works when it is a hex string, and drew a black track
                when the token resolved to rgb(). */
             backgroundColor: Highcharts.color(v.fg).setOpacity(0.1).get("rgba") as string,
-            innerRadius: "60%", outerRadius: "100%",
+            innerRadius: framed ? "74%" : "60%", outerRadius: "100%",
             shape: "arc" as const, borderWidth: 0,
           }],
         },
@@ -649,9 +682,12 @@ function chartOptions(
           name: "Health", data: [val], type: "solidgauge" as any,
           dataLabels: {
             format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">${number}${suffix}</span>`,
-            borderWidth: 0, y: -20,
+            borderWidth: 0, y: framed ? -28 : -20,
+            style: { textOutline: "none" },
           },
-          innerRadius: "60%", radius: "100%",
+          /* One mark: nothing beside it to separate it from. */
+          borderWidth: 0,
+          innerRadius: framed ? "74%" : "60%", radius: "100%",
         }],
       };
     }
@@ -728,7 +764,6 @@ function chartOptions(
           lineWidth: 1,
           lineColor: v.border,
           dashStyle: "Dot",
-          borderWidth: 0,
           dataLabels: {
             enabled: true,
             inside: false,

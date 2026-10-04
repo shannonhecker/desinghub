@@ -51,12 +51,15 @@ ModuleRegistry.registerModules([AllCommunityModule]);
    the same size in every system.
    ══════════════════════════════════════════════════════════ */
 
-const ROW_HEIGHT = 32;
-const HEADER_HEIGHT = 36;
-const FONT_SIZE = 13;
-const HEADER_FONT_SIZE = 12;
+/* A dense report grid: compact rows under a compact header. */
+export const GRID_ROW_HEIGHT = 28;
+export const GRID_HEADER_HEIGHT = 30;
+const ROW_HEIGHT = GRID_ROW_HEIGHT;
+const HEADER_HEIGHT = GRID_HEADER_HEIGHT;
+const FONT_SIZE = 12;
+const HEADER_FONT_SIZE = 11;
 const INDENT_STEP = 16;
-const CELL_PADDING = 8;
+const CELL_PADDING = 6;
 
 const gridTheme = themeQuartz.withParams({
   /* Transparent, so the grid takes the surface it sits on (the panel). A
@@ -254,7 +257,7 @@ function toColDefs(columns: GridColumn[], rows: GridRow[]): (ColDef<GridRow> | C
     const cell = cellOf(c);
     if (cell?.type === "bar" && cell.scale === "columnMax") maxOf.set(c.field, columnMax(rows, c.field));
   }
-  const grouped = rows.some((r) => r._heading);
+  const grouped = rows.some((r) => r._heading || (typeof r._indent === "number" && r._indent > 0));
   const leafColDefOf = (leaf: GridLeafColumn, isFirst: boolean) => leafColDef(leaf, isFirst, maxOf.get(leaf.field) ?? 0, grouped);
   return columns.map((c) => {
     if (isColumnGroup(c)) {
@@ -288,6 +291,12 @@ interface SimulatedDataGridProps {
   onSelect?: (label: string) => void;
 }
 
+/** What a click on a row selects: the row itself, or the group a child row
+ *  belongs to. */
+function rowSelection(columns: GridColumn[], row: GridRow | undefined): string {
+  return typeof row?._select === "string" ? row._select : rowLabel(columns, row);
+}
+
 /** A row's label: the value of the grid's first leaf column. */
 function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
   /* The rank column ("#") counts rows; the label is the column after it. */
@@ -307,7 +316,8 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
   }, [selected]);
   const rowClassRules = useMemo(
     () => ({
-      "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && rowLabel(columns, params.data) === selectedRef.current,
+      /* The selected group's own row is marked, not the child rows under it. */
+      "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && params.data?._select === undefined && rowLabel(columns, params.data) === selectedRef.current,
       "dh-grid-row-group": (params: { data?: GridRow }) => Boolean(params.data?._heading),
     }),
     [columns],
@@ -334,7 +344,7 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
         onGridReady={(e) => { apiRef.current = e.api; }}
         onRowClicked={
           selectable
-            ? (e) => onSelect!(rowLabel(columns, e.data))
+            ? (e) => onSelect!(rowSelection(columns, e.data))
             : undefined
         }
         /* Keyboard: a selectable grid keeps cell focus so Enter / Space on a
@@ -346,7 +356,7 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
                 const key = (e.event as KeyboardEvent | undefined)?.key;
                 if (key === "Enter" || key === " ") {
                   (e.event as KeyboardEvent).preventDefault();
-                  onSelect!(rowLabel(columns, e.data));
+                  onSelect!(rowSelection(columns, e.data));
                 }
               }
             : undefined

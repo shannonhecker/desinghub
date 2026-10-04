@@ -12,8 +12,8 @@
 
 import type { Block } from "@/store/useBuilder";
 import type { BuilderTemplate } from "./builderTemplates";
-import { BODY_LAYOUT, CONTEXT_ROW_HEIGHT, FINANCE_BRAND, FULL, HALF, WORKSPACES, filter } from "./financeTemplates";
-import { SI_CHROME_LAYOUTS, SI_TITLE, siChrome } from "./sustainableTemplates";
+import { BODY_LAYOUT, FINANCE_BRAND, FULL, HALF, WORKSPACES, WORKSPACE_TEMPLATES, filter } from "./financeTemplates";
+import { SI_CHROME_LAYOUTS, siChrome } from "./sustainableTemplates";
 import type { GridCell, GridTone } from "./dataGridModel";
 import { viewByStateKey } from "./panelMetrics";
 import type { RecordBinding, RowLookup } from "./recordPanelModel";
@@ -42,16 +42,12 @@ const base = (id: BuilderTemplate["id"], label: string, desc: string, icon: stri
   selectedComponents: ["table", "inputs"],
 });
 
-const title = (prefix: string, width: `${number}fr`, narrow = { spanTablet: 12, spanPhone: 12 }): Block => ({
-  id: `tpl-${prefix}-title`, type: "PageTitle", props: { text: SI_TITLE }, layout: { width, height: CONTEXT_ROW_HEIGHT, align: "center", ...narrow },
-});
-const entityFilter = (prefix: string, width = "4fr"): Block =>
-  filter(`tpl-${prefix}-entity`, "Entity", ENTITY_STATE, DEFAULT_ENTITY, ISSUER_NAMES, width, { spanTablet: 12, spanPhone: 12 });
+const ENTITY_FILTER = filter("Entity", ENTITY_STATE, DEFAULT_ENTITY, ISSUER_NAMES);
 
 const header = (prefix: string, facts: [label: string, field: string][], extra: Record<string, unknown> = {}): Block => ({
   id: `tpl-${prefix}-header`, type: "EntityHeader",
   props: { binding: entityRow, height: 72, facts: facts.map(([label, field]) => ({ label, field })), ...extra },
-  layout: { width: "12fr", height: "72px" },
+  layout: { width: "12fr", height: `${typeof extra.height === "number" ? extra.height : 72}px` },
 });
 
 /** A chart over the long `issuerSeries` table: categories x series for one
@@ -101,7 +97,7 @@ const peers = (blockId: string, cohort: string): DataBinding => {
     groupHeader: "Entity",
     rank: true,
     measures: keys.map((field) => ({ field })),
-    display: labels.map((label, i) => ({ key: keys[i], label, kind: "number" as const, decimals: 0, width: 150 })),
+    display: labels.map((label, i) => ({ key: keys[i], label, kind: "number" as const, decimals: 0, width: 116 })),
     /* Show only the metric the "View by" names (the first while unset). */
     adjustments: labels.map((label, i) => ({ when: { state, in: i === 0 ? ["", label] : [label] }, omit: keys.filter((k) => k !== keys[i]) })),
     sort: { by: { state, options: PEER_METRICS, fallback: keys[0] }, dir: "asc" },
@@ -113,11 +109,9 @@ const peers = (blockId: string, cohort: string): DataBinding => {
 export const issuerClimate: BuilderTemplate = {
   ...base("issuer-climate", "Issuer Climate", "An issuer's emissions against a benchmark, its net-zero pathway, an alignment verdict and peer rankings", "thermostat"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
-  ...siChrome("ic", "issuer-climate"),
+  ...siChrome("ic", "issuer-climate", [ENTITY_FILTER]),
   body: [
-    title("ic", "8fr"),
-    entityFilter("ic"),
-    header("ic", [["GICS sector", "sector"], ["Region", "region"], ["ISIN", "isin"], ["As of", "asOf"]]),
+    header("ic", [["GICS sector", "sector"], ["Region", "region"], ["ISIN", "isin"], ["As of", "asOf"]], { card: true, height: 84 }),
 
     {
       id: IC_SUMMARY, type: "HighchartColumn",
@@ -181,7 +175,7 @@ const involvementDetail: DataBinding = {
     { field: "activity", label: "Involvement group / activity", minWidth: 200 },
     { field: "count", label: "Ties", kind: "number", decimals: 0, width: 64 },
     { field: "tie", label: "Any tie", width: 96, cell: TIE },
-    { field: "maxRevenue", label: "Max % revenue", kind: "percent", decimals: 2, width: 130 },
+    { field: "maxRevenue", label: "Max % revenue", kind: "percent", decimals: 2, width: 112 },
   ],
   groupRows: { by: "group", labelColumn: "activity", counts: [{ as: "count", field: "tie", equals: "Yes" }] },
   filters: [forEntity],
@@ -193,10 +187,8 @@ const RADAR_PEERS = ["GICS industry", "GICS sector", "Region", "Market cap"];
 export const issuerInvolvement: BuilderTemplate = {
   ...base("issuer-involvement", "Issuer Business Involvement", "Five involvement counts, a grouped detail grid and a peer radar for one issuer", "category"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
-  ...siChrome("ib", "issuer-involvement"),
+  ...siChrome("ib", "issuer-involvement", [ENTITY_FILTER]),
   body: [
-    title("ib", "8fr"),
-    entityFilter("ib"),
     header("ib", [["GICS industry", "industry"], ["Country of risk", "country"], ["Market cap", "marketCap"]]),
 
     tile("tpl-ib-health", "Health and wellness", "health", "involvementHealth", "2fr", { spanTablet: 4, spanPhone: 6 }),
@@ -244,10 +236,8 @@ const controversyDetail: DataBinding = {
 export const issuerControversies: BuilderTemplate = {
   ...base("issuer-controversies", "Issuer Controversies", "Three controversy score cards and a severity grid grouped by pillar for one issuer", "report"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
-  ...siChrome("ico", "issuer-controversies"),
+  ...siChrome("ico", "issuer-controversies", [ENTITY_FILTER]),
   body: [
-    title("ico", "8fr"),
-    entityFilter("ico"),
     header("ico", [["GICS industry", "industry"], ["Country of risk", "country"], ["Market cap", "marketCap"]]),
 
     tile("tpl-ico-env", "Environment", "environment", "controversyEnv", "3fr", { spanTablet: 6, spanPhone: 6 }),
@@ -262,7 +252,7 @@ export const issuerControversies: BuilderTemplate = {
 
     {
       id: "tpl-ico-grid", type: "DataGrid",
-      props: { title: "Controversies", subtitle: "by category and severity", height: 476, binding: controversyDetail },
+      props: { title: "Controversies", subtitle: "by category and severity", height: 412, binding: controversyDetail },
       layout: { width: "12fr" },
     },
   ],
@@ -274,14 +264,15 @@ export const issuerControversies: BuilderTemplate = {
    Entity Comparison
    ══════════════════════════════════════════════════════════════ */
 
-const summaryCard = (id: string, lookup: RowLookup & { state: string }): Block => ({
+const summaryCard = (id: string, lookup: RowLookup & { state: string }, accent: GridTone): Block => ({
   id, type: "RecordPanel",
   props: {
-    title: "Entity", height: 340, clearable: false,
+    title: "Entity", height: 340, clearable: false, accent,
     binding: {
       ...lookup,
       sections: [{
         type: "pairs",
+        layout: "rows",
         items: [
           { label: "ESG rating", field: "rating", as: "badge" },
           { label: "Ticker", field: "ticker" },
@@ -303,14 +294,11 @@ const pairChart = (chart: string): DataBinding => seriesChart(chart, [forPair, O
 export const entityComparison: BuilderTemplate = {
   ...base("entity-comparison", "Entity Comparison", "Two issuers side by side: summaries, involvement radar, ESG scores, rating trend, emissions and controversies", "compare"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
-  ...siChrome("ec", "issuer-comparison"),
+  ...siChrome("ec", "issuer-comparison", [ENTITY_FILTER, filter("Compare with", COMPARATOR_STATE, DEFAULT_COMPARATOR, ISSUER_NAMES)]),
   body: [
-    title("ec", "4fr"),
-    filter("tpl-ec-entity", "Entity", ENTITY_STATE, DEFAULT_ENTITY, ISSUER_NAMES, "4fr", { spanTablet: 6, spanPhone: 12 }),
-    filter("tpl-ec-comparator", "Compare with", COMPARATOR_STATE, DEFAULT_COMPARATOR, ISSUER_NAMES, "4fr", { spanTablet: 6, spanPhone: 12 }),
-
-    summaryCard("tpl-ec-subject", { ...entityRow, state: ENTITY_STATE }),
-    summaryCard("tpl-ec-comparator-card", { ...comparatorRow, state: COMPARATOR_STATE }),
+    header("ec", [], { eyebrow: "Comparing", suffixBinding: comparatorRow, height: 40 }),
+    summaryCard("tpl-ec-subject", { ...entityRow, state: ENTITY_STATE }, "good"),
+    summaryCard("tpl-ec-comparator-card", { ...comparatorRow, state: COMPARATOR_STATE }, "mid"),
     {
       id: "tpl-ec-radar", type: "HighchartRadar",
       props: { chartType: "radar", panel: true, height: 340, title: "Involvement", subtitle: "(Max % revenue)", yAxisFormat: "{value}%", valueDecimals: 2, valueSuffix: "%", binding: pairChart("involvement") },
@@ -396,17 +384,15 @@ const reference: DataBinding = {
   view: "records",
   measures: [],
   display: [],
-  records: [{ field: "indicator", label: "Indicator", minWidth: 150 }, { field: "value", label: "Value", minWidth: 150, flex: 2 }],
+  records: [{ field: "indicator", label: "Indicator", minWidth: 130 }, { field: "value", label: "Value", minWidth: 130, flex: 2 }],
   filters: [forEntity, { field: "group", state: viewByStateKey(SC_REFERENCE), ignore: ["All"] }],
 };
 
 export const governanceScorecard: BuilderTemplate = {
   ...base("governance-scorecard", "Governance Scorecard", "Four category cards that filter positive and negative indicator grids, with a reference grid for one issuer", "fact_check"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
-  ...siChrome("sc", "scorecard"),
+  ...siChrome("sc", "scorecard", [ENTITY_FILTER]),
   body: [
-    title("sc", "8fr"),
-    entityFilter("sc"),
     header("sc", [["GICS sector", "sector"], ["Ticker", "ticker"]], {
       badges: [{ field: "positiveFlags", tone: "good", label: "Positive flags" }, { field: "negativeFlags", tone: "bad", label: "Negative flags" }],
     }),
@@ -415,17 +401,17 @@ export const governanceScorecard: BuilderTemplate = {
 
     {
       id: SC_POSITIVE, type: "DataGrid",
-      props: { title: "Positive", height: 440, viewBy: POSITIVE_VIEWS.map(([l]) => l), binding: indicators(SC_POSITIVE, "Positive", POSITIVE_VIEWS) },
+      props: { title: "Positive", height: 464, viewBy: POSITIVE_VIEWS.map(([l]) => l), binding: indicators(SC_POSITIVE, "Positive", POSITIVE_VIEWS) },
       layout: { width: "4fr", ...FULL },
     },
     {
       id: SC_NEGATIVE, type: "DataGrid",
-      props: { title: "Negative", height: 440, viewBy: NEGATIVE_VIEWS.map(([l]) => l), binding: indicators(SC_NEGATIVE, "Negative", NEGATIVE_VIEWS) },
+      props: { title: "Negative", height: 464, viewBy: NEGATIVE_VIEWS.map(([l]) => l), binding: indicators(SC_NEGATIVE, "Negative", NEGATIVE_VIEWS) },
       layout: { width: "4fr", ...FULL },
     },
     {
       id: SC_REFERENCE, type: "DataGrid",
-      props: { title: "Reference", height: 440, viewBy: ["All", "Identifiers", "Classification"], binding: reference },
+      props: { title: "Reference", height: 464, viewBy: ["All", "Identifiers", "Classification"], binding: reference },
       layout: { width: "4fr", ...FULL },
     },
   ],
@@ -459,12 +445,19 @@ const dashboards: DataBinding = {
   filters: [{ field: "fusionClass", state: "homeClass", ignore: ["All"] }, { field: "theme", state: "homeTheme", ignore: ["All"] }],
 };
 
+const homeFilter = (id: string, label: string, stateKey: string, options: string[]): Block => ({
+  id: `tpl-home-filter-${id}`, type: "SimulatedDropdown",
+  props: { label, value: options[0], optionsCsv: options.join(", "), stateKey, inline: true },
+  layout: { width: "3fr", height: "32px", align: "center", spanTablet: 6, spanPhone: 12 },
+});
+
 export const analyticsHome: BuilderTemplate = {
   ...base("analytics-home", "Analytics Home", "A hero with search, four launcher cards that open the reports, and a filterable list of dashboards", "home"),
-  zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
+  /* A start page: no context bar, and its content sits straight on the page. */
+  zoneLayouts: { body: { ...BODY_LAYOUT, plain: true }, ...SI_CHROME_LAYOUTS },
   header: [
     { id: "tpl-home-topnav", type: "TopNav", props: { brand: FINANCE_BRAND, linksCsv: "Manager, Solutions, Apps, Resources", active: "Manager", chevrons: true, account: "", tone: "dark" } },
-    { id: "tpl-home-tabs", type: "TabStrip", props: { label: "Workspaces", tabsCsv: WORKSPACES, active: "Home", addButton: true, tone: "dark" } },
+    { id: "tpl-home-tabs", type: "TabStrip", props: { label: "Workspaces", tabsCsv: WORKSPACES, active: "Home", addButton: true, tone: "dark", templates: WORKSPACE_TEMPLATES } },
   ],
   sidebar: HOME_NAV.map(([label, icon], i) => ({ id: `tpl-home-nav-${i}`, type: "NavItem", props: { label, icon, active: i === 0 } })),
   footer: [],
@@ -474,18 +467,19 @@ export const analyticsHome: BuilderTemplate = {
       props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", buttonLabel: "Search", height: 168 },
       layout: { width: "12fr", height: "168px" },
     },
-    { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured" }, layout: { width: "12fr", height: "48px", align: "center" } },
+    { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured", level: 2 }, layout: { width: "12fr", height: "32px", align: "center" } },
     launcher(0, "Portfolio report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
     launcher(1, "Issuer report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
     launcher(2, "Performance", "Holdings", "performance-analytics", "Multi-period returns against benchmark, with allocation."),
     launcher(3, "Risk", "Holdings", "risk-analytics", "Value at risk, exposures and risk contribution."),
 
-    { id: "tpl-home-all", type: "PageTitle", props: { text: "All dashboards" }, layout: { width: "6fr", height: CONTEXT_ROW_HEIGHT, align: "center", spanTablet: 12, spanPhone: 12 } },
-    filter("tpl-home-class", "Class", "homeClass", "All", ["All", "Holdings", "Company"], "3fr", { spanTablet: 6, spanPhone: 6 }),
-    filter("tpl-home-theme", "Theme", "homeTheme", "All", ["All", "Sustainable Investment", "Performance", "Risk", "Screening", "Other"], "3fr", { spanTablet: 6, spanPhone: 6 }),
+    /* The list's title and its two filters share a line. */
+    { id: "tpl-home-all", type: "PageTitle", props: { text: "All dashboards", level: 2 }, layout: { width: "6fr", height: "32px", align: "center", spanTablet: 12, spanPhone: 12 } },
+    homeFilter("class", "Class", "homeClass", ["All", "Holdings", "Company"]),
+    homeFilter("theme", "Theme", "homeTheme", ["All", "Sustainable Investment", "Performance", "Risk", "Screening", "Other"]),
     {
       id: "tpl-home-grid", type: "DataGrid",
-      props: { title: "Dashboards", height: 320, binding: dashboards },
+      props: { title: "Dashboards", panel: false, height: 200, binding: dashboards },
       layout: { width: "12fr" },
     },
   ],

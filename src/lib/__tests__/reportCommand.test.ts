@@ -19,7 +19,7 @@ describe("parseTemplateCommand", () => {
 });
 
 describe("parseReportFilterCommand", () => {
-  const controls = collectReportControls(performanceAnalytics.body);
+  const controls = collectReportControls([...performanceAnalytics.header, ...performanceAnalytics.body]);
 
   it("finds the template's filters and View by controls", () => {
     expect(controls.filter((c) => c.kind === "filter").map((c) => c.key)).toEqual(["feeType", "currency", "periodicity", "benchmark"]);

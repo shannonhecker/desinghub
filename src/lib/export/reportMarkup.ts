@@ -113,7 +113,7 @@ const str = (v: unknown): string => (typeof v === "string" && v.trim() ? v : "")
 
 /* ── Block types this module draws ── */
 
-export const CHROME_BLOCK_TYPES = new Set<string>(["TopNav", "TabStrip", "NavGroup", "PageTitle"]);
+export const CHROME_BLOCK_TYPES = new Set<string>(["TopNav", "TabStrip", "NavGroup", "PageTitle", "ContextBar"]);
 
 /* ── Tones and zones ── */
 
@@ -616,14 +616,39 @@ export function navGroupLines(d: Dialect, props: Record<string, unknown>): strin
   return [`<p ${d.cls}="nav-group">${d.text(String(props.label ?? "Section"))}</p>`];
 }
 
-/** PageTitle: the page's <h1> and an optional caption. */
+/** PageTitle: the page's <h1> (or a section's <h2>) and an optional caption. */
 export function pageTitleLines(d: Dialect, props: Record<string, unknown>): string[] {
+  const tag = props.level === 2 ? "h2" : "h1";
   return [
     `<div ${d.cls}="page-title-wrap">`,
-    `  <h1 ${d.cls}="page-title">${d.text(String(props.text ?? "Page title"))}</h1>`,
+    `  <${tag} ${d.cls}="${tag === "h2" ? "section-title" : "page-title"}">${d.text(String(props.text ?? "Page title"))}</${tag}>`,
     ...(props.caption ? [`  <p ${d.cls}="page-caption">${d.text(String(props.caption))}</p>`] : []),
     "</div>",
   ];
+}
+
+/** ContextBar: the page's <h1> and its filters, each a label beside an
+ *  underlined select. Filters arrive with their current value (materialise.ts). */
+export function contextBarLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const filters = Array.isArray(p.filters) ? (p.filters as Record<string, unknown>[]).filter((f) => f && typeof f === "object") : [];
+  const out = [`<div ${d.cls}="contextbar">`, `  <h1 ${d.cls}="page-title">${d.text(String(p.title ?? "Page title"))}</h1>`];
+  if (filters.length) {
+    out.push(`  <div ${d.cls}="contextbar-filters">`);
+    filters.forEach((f, i) => {
+      const id = `${block.id}-filter-${i}`;
+      const options = Array.isArray(f.options) ? f.options.map(String) : [];
+      out.push(
+        `    <div ${d.cls}="inline-field">`,
+        `      <label ${d.labelFor}="${id}">${d.text(String(f.label ?? ""))}</label>`,
+        ...nest(nest(nest(selectLines(d, ` id="${id}" ${d.cls}="dropdown-inline"`, options, String(f.value ?? options[0] ?? ""))))),
+        "    </div>",
+      );
+    });
+    out.push("  </div>");
+  }
+  out.push("</div>");
+  return out;
 }
 
 /* ── Record panel: the detail of the record a grid has selected ──
@@ -658,7 +683,7 @@ function recordHeading(d: Dialect, title: string | undefined): string[] {
 function recordSectionLines(d: Dialect, section: ResolvedSection, trend: ((section: TrendSection) => string[]) | undefined): string[] {
   if (section.type === "pairs") {
     return [
-      `<dl ${d.cls}="record-pairs">`,
+      `<dl ${d.cls}="record-pairs${section.layout === "rows" ? " is-rows" : ""}">`,
       ...section.items.map((item) => {
         const flag = item.flag ? `<span aria-hidden="true">${item.flag} </span>` : "";
         const value = item.tone ? `<span ${d.cls}="cell-badge ${toneClass(item.tone)}">${d.text(item.text)}</span>` : d.text(item.text);
@@ -982,6 +1007,8 @@ export function reportBlockLines(d: Dialect, block: Block): string[] | null {
       return navGroupLines(d, p);
     case "PageTitle":
       return pageTitleLines(d, p);
+    case "ContextBar":
+      return contextBarLines(d, block);
     case "DataGrid":
       return dataGridLines(d, block);
     case RECORD_PANEL_BLOCK_TYPE:

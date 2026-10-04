@@ -34,7 +34,9 @@ export const AS_OF = "as of Dec 2024";
 /** Height of the context row (title + filters): fits the tallest system's
  *  labelled select. */
 export const CONTEXT_ROW_HEIGHT = "64px";
-export const BODY_LAYOUT = { mode: "grid", columns: 12, gap: 16 } as const;
+/** The report canvas: 12 columns, one gutter between panels (the same as
+ *  the canvas padding, see --dh-report-gutter). */
+export const BODY_LAYOUT = { mode: "grid", columns: 12, gap: 24 } as const;
 
 /* ── Report state keys ── */
 const FEE_STATE = "feeType";
@@ -49,7 +51,24 @@ const GROSS = "Gross of fees";
    header, so they can be edited, re-toned, reordered or removed. */
 export const WORKSPACES = "Home, Performance, Risk, Sustainable Investment";
 
-const chrome = (prefix: string, active: string) => ({
+/** One filter of a page's context bar: a labelled dropdown whose value is
+ *  report state. */
+export interface ContextFilter { label: string; stateKey: string; value: string; options: string[] }
+export const filter = (label: string, stateKey: string, value: string, options: readonly string[]): ContextFilter => ({ label, stateKey, value, options: [...options] });
+/** The context bar under the workspace tabs: the page's title and filters. */
+export const contextBar = (prefix: string, title: string, filters: ContextFilter[]): Block => ({
+  id: `tpl-${prefix}-context`, type: "ContextBar", props: { title, filters, tone: "surface" },
+});
+
+/** Which template each workspace tab opens while presenting. */
+export const WORKSPACE_TEMPLATES = {
+  Home: "analytics-home",
+  Performance: "performance-analytics",
+  Risk: "risk-analytics",
+  "Sustainable Investment": "esg-analytics",
+} as const;
+
+const chrome = (prefix: string, active: string, filters: ContextFilter[]) => ({
   header: [
     {
       id: `tpl-${prefix}-topnav`, type: "TopNav",
@@ -57,8 +76,9 @@ const chrome = (prefix: string, active: string) => ({
     },
     {
       id: `tpl-${prefix}-tabs`, type: "TabStrip",
-      props: { label: "Workspaces", tabsCsv: WORKSPACES, active, addButton: true, tone: "dark" },
+      props: { label: "Workspaces", tabsCsv: WORKSPACES, active, addButton: true, tone: "dark", templates: WORKSPACE_TEMPLATES },
     },
+    contextBar(prefix, active, filters),
   ] as Block[],
   sidebar: [] as Block[],
   footer: [] as Block[],
@@ -76,16 +96,6 @@ const CHROME_LAYOUTS = {
 export type Narrow = { spanTablet: number; spanPhone: number };
 export const FULL: Narrow = { spanTablet: 12, spanPhone: 12 };
 export const HALF: Narrow = { spanTablet: 6, spanPhone: 12 };
-/** Four filters across on a tablet, two on a phone. */
-export const FILTER_NARROW: Narrow = { spanTablet: 3, spanPhone: 6 };
-
-/** A context filter: a labelled dropdown whose value is report state. */
-export const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string, narrow: Narrow = FILTER_NARROW): Block => ({
-  id,
-  type: "SimulatedDropdown",
-  props: { label, value, optionsCsv: options.join(", "), stateKey },
-  layout: { width: width as `${number}fr`, height: CONTEXT_ROW_HEIGHT, align: "center", ...narrow },
-});
 
 export const CURRENCIES = FX_RATES.map((r) => String(r.currency));
 
@@ -150,6 +160,10 @@ const riskSummary: DataBinding = {
   columnGroups: RISK_MEASURES.map(([k, header]) => ({ header, keys: [k, `${k}Pct`] })),
   total: RISK_TOTAL,
   selectState: RISK_SELECT,
+  /* Total, then each group, then what it holds; expanded goes down to the
+     securities. */
+  hierarchy: ["assetClass", "security"],
+  dataLevel: 1,
 };
 
 const RISK_MARKET_VALUE = "tpl-risk-market-value";
@@ -214,14 +228,11 @@ export const riskAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("risk", "Risk"),
+  ...chrome("risk", "Risk", [filter("Currency", "currency", "GBP", CURRENCIES)]),
   body: [
-    { id: "tpl-risk-title", type: "PageTitle", props: { text: "Risk" }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center", spanTablet: 8, spanPhone: 12 } },
-    filter("tpl-risk-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 4, spanPhone: 12 }),
-
     {
       id: RISK_SUMMARY, type: "DataGrid",
-      props: { title: "Risk summary", subtitle: AS_OF, height: 344, viewBy: Object.keys(RISK_DIMENSIONS), binding: riskSummary },
+      props: { title: "Risk summary", subtitle: AS_OF, height: 572, viewBy: Object.keys(RISK_DIMENSIONS), binding: riskSummary },
       layout: { width: "12fr" },
     },
 
@@ -306,6 +317,10 @@ const perfResults: DataBinding = {
   groupMinWidth: 180,
   total: PERF_TOTAL,
   selectState: PERF_SELECT,
+  /* Total, then each group, then what it holds. Expanded (or "Data level"
+     in the panel's configuration) goes down to the securities. */
+  hierarchy: ["assetClass", "security"],
+  dataLevel: 1,
 };
 
 const PERF_BREAKDOWN = "tpl-perf-breakdown";
@@ -343,6 +358,28 @@ const perfReturns: DataBinding = {
       { name: "Excess", keys: excessKeys },
     ],
   },
+  /* Expanded: the same returns, account by account and asset class by
+     asset class. */
+  expanded: {
+    table: {
+      table: "holdings",
+      view: "grid",
+      groupBy: "fund",
+      groupHeader: "Account",
+      measures: returnMeasures,
+      adjustments: returnRules,
+      computed: excess,
+      display: PERIODS.flatMap(([s]) => [
+        pct(`port${s}`, "Port", { width: 84 }),
+        pct(`bmk${s}`, "Bmk", { width: 84 }),
+        pct(`excess${s}`, "Excess", { width: 84, signed: true }),
+      ]),
+      columnGroups: PERIODS.map(([s, header]) => ({ header, keys: [`port${s}`, `bmk${s}`, `excess${s}`] })),
+      total: PERF_TOTAL,
+      filters: [perfScope],
+      hierarchy: ["assetClass"],
+    },
+  },
 };
 
 const PERF_ALLOCATION = "tpl-perf-allocation";
@@ -356,6 +393,27 @@ const perfAllocation: DataBinding = {
   centerMeasure: "marketValue",
   sort: { by: "marketValue", dir: "desc" },
   filters: [perfScope],
+  /* Expanded: each slice, then the securities in it, with their returns. */
+  expanded: {
+    table: {
+      table: "holdings",
+      view: "grid",
+      groupBy: viewBy(PERF_ALLOCATION, ALLOCATION_DIMENSIONS),
+      groupHeader: viewByHeader(PERF_ALLOCATION, ALLOCATION_DIMENSIONS),
+      measures: [sum("marketValue"), weighted("port1m"), weighted("port3m"), weighted("portYtd"), weighted("port1y")],
+      adjustments: [returnRules[0]],
+      computed: [{ as: "pctTotal", op: "shareOfTotal", of: ["marketValue"] }],
+      display: [
+        money("marketValue", "Market value", { width: 120 }),
+        pct("pctTotal", "% of total", { width: 96 }),
+        ...PERIODS.map(([s, header]) => pct(`port${s}`, header, { width: 96, signed: true })),
+      ],
+      sort: { by: "marketValue", dir: "desc" },
+      total: PERF_TOTAL,
+      filters: [perfScope],
+      hierarchy: ["security"],
+    },
+  },
 };
 
 const PERF_HISTORY = "tpl-perf-history";
@@ -404,17 +462,16 @@ export const performanceAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("perf", "Performance"),
+  ...chrome("perf", "Performance", [
+    filter("Fee type", FEE_STATE, "Net of fees", ["Net of fees", GROSS]),
+    filter("Currency", "currency", "GBP", CURRENCIES),
+    filter("Periodicity", PERIODICITY_STATE, "Monthly", PERIODICITIES),
+    filter("Benchmark", BENCHMARK_STATE, "Primary", ["Primary", "Secondary", "Custom", "None"]),
+  ]),
   body: [
-    { id: "tpl-perf-title", type: "PageTitle", props: { text: "Performance" }, layout: { width: "4fr", height: CONTEXT_ROW_HEIGHT, align: "center", ...FULL } },
-    filter("tpl-perf-fee", "Fee type", FEE_STATE, "Net of fees", ["Net of fees", GROSS], "2fr"),
-    filter("tpl-perf-currency", "Currency", "currency", "GBP", CURRENCIES, "2fr"),
-    filter("tpl-perf-periodicity", "Periodicity", PERIODICITY_STATE, "Monthly", PERIODICITIES, "2fr"),
-    filter("tpl-perf-benchmark", "Benchmark", BENCHMARK_STATE, "Primary", ["Primary", "Secondary", "Custom", "None"], "2fr"),
-
     {
       id: PERF_RESULTS, type: "DataGrid",
-      props: { title: "Performance results", subtitle: AS_OF, height: 344, viewBy: Object.keys(PERF_DIMENSIONS), binding: perfResults },
+      props: { title: "Performance results", subtitle: AS_OF, height: 572, viewBy: Object.keys(PERF_DIMENSIONS), binding: perfResults },
       layout: { width: "12fr" },
     },
 

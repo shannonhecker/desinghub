@@ -10,7 +10,7 @@
  * columns.
  */
 
-import { dyn, type BoundMeasure, type DataBinding, type ReportState } from "./binding";
+import { dyn, type BoundMeasure, type DataBinding, type DataLevel, type ReportState } from "./binding";
 import type { Aggregation } from "./query";
 import { fieldOf, measuresOf, type DataField, type DataTable } from "./types";
 
@@ -148,6 +148,7 @@ export function applyPanelConfig(
     ...(config.limit && shown[0] ? { limit: config.limit, sort: { by: shown[0].field, dir: "desc" as const } } : {}),
     ...(config.view === "grid" ? { total: previous.total ?? "Total" } : {}),
     ...(config.view === "grid" && previous.selectState ? { selectState: previous.selectState } : {}),
+    ...(config.view === "grid" && previous.hierarchy ? { hierarchy: previous.hierarchy, dataLevel: previous.dataLevel, expanded: previous.expanded } : {}),
     ...(isParts && shown[0] && fieldOf(table, shown[0].field)?.format === "currency" ? { centerMeasure: shown[0].field } : {}),
   };
 
@@ -168,4 +169,49 @@ export function applyPanelConfig(
       : {};
   const type = config.view === "grid" ? "DataGrid" : PANEL_CHART_TYPES.find((c) => c.value === config.chartType)!.block;
   return { type, props: { ...rest, ...chartProps, binding } };
+}
+
+/* ── Data level ──
+   How far down its hierarchy a grid goes: the groups alone, each level under
+   them in turn, or the last level on its own. */
+
+export interface DataLevelOption {
+  level: DataLevel;
+  label: string;
+  /** The path of the rows, outermost first. */
+  path: string;
+}
+
+/** The data levels a grid binding offers; empty when it has no hierarchy. */
+export function dataLevelOptions(binding: DataBinding, table: DataTable, state: ReportState): DataLevelOption[] {
+  if (binding.view !== "grid" || !binding.hierarchy?.length) return [];
+  const groupBy = binding.groupBy !== undefined ? dyn(binding.groupBy, state) : null;
+  const label = (key: string) => fieldOf(table, key)?.label ?? key;
+  const levels = binding.hierarchy.filter((k) => k !== groupBy && fieldOf(table, k));
+  if (!groupBy || levels.length === 0) return [];
+  const group = binding.groupHeader !== undefined ? dyn(binding.groupHeader, state) : label(groupBy);
+  const path = (n: number) => [group, ...levels.slice(0, n).map(label)].join(" > ");
+  const options: DataLevelOption[] = [];
+  for (let n = levels.length; n >= 0; n--) {
+    options.push({ level: n, label: n === levels.length ? "Full hierarchy" : n === 0 ? `${group} only` : `${group} and ${label(levels[n - 1]).toLowerCase()}`, path: path(n) });
+  }
+  const last = label(levels[levels.length - 1]);
+  options.push({ level: "leaf", label: `${last} level`, path: last });
+  return options;
+}
+
+/** The option the configured panel shows. The configuration is edited with
+ *  the panel expanded, so this is the EXPANDED level: the one chosen by hand,
+ *  or the full hierarchy. */
+export function currentDataLevel(binding: DataBinding, options: DataLevelOption[]): DataLevelOption | undefined {
+  const max = options.reduce((m, o) => (typeof o.level === "number" ? Math.max(m, o.level) : m), 0);
+  const chosen = binding.expanded?.dataLevel ?? max;
+  const level = chosen === "leaf" ? "leaf" : Math.min(max, Math.max(0, chosen));
+  return options.find((o) => o.level === level);
+}
+
+/** Set the data level. A level chosen by hand also holds when the panel is
+ *  expanded (which otherwise opens the full hierarchy). */
+export function withDataLevel(binding: DataBinding, level: DataLevel): DataBinding {
+  return { ...binding, dataLevel: level, expanded: { ...binding.expanded, dataLevel: level } };
 }
