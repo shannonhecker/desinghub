@@ -95,7 +95,15 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     if (!el) return;
     setPlotWidth(el.clientWidth);
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setPlotWidth(el.clientWidth));
+    /* The stage can still be settling its frame when the chart mounts. A
+       resize is applied to the drawn chart at once, in the observer (after
+       layout, before paint), so no frame shows it at a stale width. */
+    const observer = new ResizeObserver(() => {
+      const width = el.clientWidth;
+      const chart = chartRef.current?.chart;
+      if (chart && width > 0 && chart.chartWidth !== width) chart.setSize(width, undefined, false);
+      setPlotWidth(width);
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, [hasView, showTable]);
@@ -125,7 +133,16 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
       counts: {},
     };
     const options = buildExecutionOptions(frame, vars, palette, { width: plotWidth, height: chartHeight }, (venue) => onVenueRef.current(venue));
-    options.chart = { ...options.chart, events: { render() { drawPills(this, frame, vars, palette, pillsRef); } } };
+    options.chart = {
+      ...options.chart,
+      events: {
+        render() {
+          drawPills(this, frame, vars, palette, pillsRef);
+          /* How many bars the drawn chart holds (tests read it). */
+          this.container?.closest(".dh-exec")?.setAttribute("data-chart-bars", String(frame.view.times.length));
+        },
+      },
+    };
     return { options, frame };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `feed.generation` and `rebuilds` start the chart afresh; one feed bar must not.
   }, [view, vars, palette, chartHeight, plotWidth, peek, feed.generation, rebuilds]);

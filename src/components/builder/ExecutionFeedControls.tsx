@@ -13,6 +13,10 @@ import { useFeedControls } from "./useExecutionFeed";
    header is the same height in every system.
    ══════════════════════════════════════════════════════════ */
 
+/* Each system's compact button that still gives a 24px target: Salt's
+   high density draws a 20px button, so Salt takes its medium (28px). */
+const COMPACT: Partial<Record<SystemId, "high" | "medium">> = { salt: "medium" };
+
 export type FeedStatus = "live" | "paused" | "ended" | "edit";
 
 const STATUS_TEXT: Record<FeedStatus, string> = {
@@ -30,7 +34,7 @@ export function ExecutionFeedControls({ system, status, canReset, presenting }: 
   useEffect(() => { setMounted(true); }, []);
   const pausing = status === "live" || status === "edit";
   const button = (props: Record<string, unknown>) => (
-    <RealComponentRenderer system={system as SystemId} type="SimulatedButton" mode={mode === "dark" ? "dark" : "light"} saltDensity="high" props={props} />
+    <RealComponentRenderer system={system as SystemId} type="SimulatedButton" mode={mode === "dark" ? "dark" : "light"} saltDensity={COMPACT[system as SystemId] ?? "high"} props={props} />
   );
 
   return (

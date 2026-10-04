@@ -58,6 +58,10 @@ async function openBuilder(page: Page) {
 }
 
 async function applyTemplate(page: Page, label: string) {
+  /* FX Execution's sample feed starts paused under reduced motion: its
+     figures hold still for the assertions, and parity is measured with the
+     feed paused (the feed changes numbers, never a block's size). */
+  if (label === "FX Execution") await page.emulateMedia({ reducedMotion: "reduce" });
   await openBuilder(page);
   await page.getByRole("button", { name: /Browse templates/ }).click();
   await page.getByRole("button", { name: `Use the ${label} template` }).click();

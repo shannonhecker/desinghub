@@ -46,6 +46,15 @@ export interface ChartFrame {
   countdown: string | null;
   /** How many points each series holds (to append the rest). */
   counts: Record<string, number>;
+  /** The time axis's right end, past the last bar (see axisEnd). */
+  axisMax?: number;
+}
+
+/** Empty bars kept to the right of the last one: the feed's bars walk into
+ *  them, and the axis steps out again only when they run out (the plot does
+ *  not squeeze on every bar). */
+export function axisEnd(bars: number): number {
+  return bars - 0.5 + Math.max(8, Math.round(bars * 0.08));
 }
 
 /** Minutes until the bar the latest one-minute bar belongs to closes
@@ -95,6 +104,7 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
   const shows = (overlay: ExecutionOverlay) => !view.hidden.includes(overlay);
   const data = executionSeriesData(view, v, palette);
   frame.counts = Object.fromEntries(Object.entries(data).map(([id, d]) => [id, d.length]));
+  frame.axisMax = axisEnd(n);
   const line = { type: "line" as const, step: "left" as const, yAxis: 1, marker: { enabled: false }, states: { hover: { lineWidthPlus: 0 } } };
   const plotShare = shows("Volume") ? 100 - VOLUME_SHARE : 100;
   const acrossDays = () => { const t = frame.view.times; return t[t.length - 1] - t[0] > 36 * 60 * 60 * 1000; };
@@ -133,7 +143,7 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
     credits: { enabled: false },
     accessibility: { description: `${view.pair} execution: market, limit price, fills and percent done for order ${view.order.id}.` },
     xAxis: {
-      min: -0.5, max: n - 0.5,
+      min: -0.5, max: frame.axisMax,
       lineColor: v.border, tickLength: 0,
       crosshair: { dashStyle: "Dash", color: v.fgTer, width: 1 },
       /* As many time labels as the plot has room for. */
@@ -250,7 +260,11 @@ export function applyFeedView(chart: Highcharts.Chart, frame: ChartFrame, next: 
   }
   frame.view = next;
   frame.countdown = countdown;
-  chart.xAxis[0]?.update({ max: next.times.length - 0.5 }, false);
+  const bars = next.times.length;
+  if (frame.axisMax === undefined || bars - 0.5 > frame.axisMax - 1) {
+    frame.axisMax = axisEnd(bars);
+    chart.xAxis[0]?.update({ max: frame.axisMax }, false);
+  }
   const price = chart.yAxis[1];
   if (price) {
     price.removePlotLine(LATEST_LINE);

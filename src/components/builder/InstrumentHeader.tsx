@@ -47,7 +47,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
   );
 
   return (
-    <div className="dh-instrument" aria-live="off" data-feed-bars={feed.samples.length} onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
+    <div className="dh-instrument" aria-live="off" data-feed-bars={readOnly ? feed.samples.length : 0} onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
       <div className="dh-instrument-main">
         <h1 className="dh-instrument-symbol">{view.pair}</h1>
         <span className="dh-instrument-meta">{view.description}</span>
