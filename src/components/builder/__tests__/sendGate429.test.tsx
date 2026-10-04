@@ -131,3 +131,37 @@ describe("C-429: countdown gates network sends only", () => {
     expect(hoisted.sendMessage).toHaveBeenCalledTimes(1);
   });
 });
+
+// Selected-block editing must remain scoped after allowing explicit additions.
+describe('selected block command routing', () => {
+  const original = { id: 'existing-chart', type: 'HighchartDonut', props: { title: 'Allocation', data: [35, 65] } };
+
+  function prepare(message: string, online: boolean) {
+    useBuilder.setState({
+      blocks: [original], selectedComponents: ['highchartDonut'],
+      selectedBlockId: original.id, selectedBlockIds: [original.id], selectedBlockZone: 'body',
+      inputText: message,
+      backendStatus: { anthropicConfigured: online, firebaseConfigured: false },
+    });
+    mountPanel();
+  }
+
+  it.each(['make this chart a pie', 'add a title to this chart'])(
+    'keeps an offline edit scoped without adding or changing blocks: %s', message => {
+      prepare(message, false);
+      act(() => sendBtn()!.click());
+      expect(useBuilder.getState().blocks).toEqual([original]);
+      expect(useBuilder.getState().selectedBlockId).toBe(original.id);
+      expect(useBuilder.getState().messages.at(-1)?.content).toMatch(/editing the selected block needs AI/i);
+      expect(hoisted.sendMessage).not.toHaveBeenCalled();
+    },
+  );
+
+  it('sends genuine selected edits to the model with selection intact', () => {
+    prepare('make this chart a pie', true);
+    act(() => sendBtn()!.click());
+    expect(hoisted.sendMessage).toHaveBeenCalledWith('make this chart a pie');
+    expect(useBuilder.getState().selectedBlockId).toBe(original.id);
+    expect(useBuilder.getState().blocks).toEqual([original]);
+  });
+});

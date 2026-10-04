@@ -67,6 +67,7 @@ let lastCaptured: CanvasSnapshot | null = null;
 let applyingCount = 0;
 let pendingRaf: number | null = null;
 let initialized = false;
+let activeGesture: { before: CanvasSnapshot; changed: boolean; finish: () => void } | null = null;
 /** Set by pushSnapshot() to mute exactly ONE upcoming subscription
  *  capture (or undo()'s flush-pending-RAF path). Without this, an
  *  explicit pushSnapshot would race the subscription's RAF and produce
@@ -130,6 +131,10 @@ function sameSnapshot(a: CanvasSnapshot, b: CanvasSnapshot): boolean {
 
 function scheduleCapture() {
   if (applyingCount > 0) return;
+  if (activeGesture) {
+    activeGesture.changed = true;
+    return;
+  }
   if (pendingRaf !== null) return;
   if (typeof window === "undefined") return;
   pendingRaf = requestAnimationFrame(() => {
@@ -276,6 +281,7 @@ export function initBuilderHistory(): () => void {
   return () => {
     unsubscribe();
     initialized = false;
+    activeGesture = null;
     past = [];
     future = [];
     lastCaptured = null;
@@ -296,7 +302,7 @@ export function canRedo(): boolean {
   return future.length > 0;
 }
 
-export function undo(): boolean {
+function flushPendingCapture() {
   // Flush any pending capture so the current live state becomes available
   // for redo before we pop.
   if (pendingRaf !== null) {
@@ -316,6 +322,31 @@ export function undo(): boolean {
       lastCaptured = current;
     }
   }
+}
+
+/** Coalesce live pointer updates until release into a single undo step.
+ * The idempotent finish callback also handles pointer cancellation/unmount. */
+export function beginHistoryTransaction(): () => void {
+  activeGesture?.finish();
+  flushPendingCapture();
+  const gesture = { before: snap(), changed: false, finish: () => {} };
+  gesture.finish = () => {
+    if (activeGesture !== gesture) return;
+    activeGesture = null;
+    if (!gesture.changed) return;
+    past.push(gesture.before);
+    if (past.length > MAX_HISTORY) past = past.slice(past.length - MAX_HISTORY);
+    future = [];
+    lastCaptured = snap();
+    suppressNextCapture = false;
+  };
+  activeGesture = gesture;
+  return gesture.finish;
+}
+
+export function undo(): boolean {
+  activeGesture?.finish();
+  flushPendingCapture();
   const prior = past.pop();
   if (!prior) return false;
   if (lastCaptured) future.push(lastCaptured);
@@ -324,6 +355,7 @@ export function undo(): boolean {
 }
 
 export function redo(): boolean {
+  activeGesture?.finish();
   const next = future.pop();
   if (!next) return false;
   if (lastCaptured) past.push(lastCaptured);

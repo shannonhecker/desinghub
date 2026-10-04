@@ -4,6 +4,7 @@
  *  Wizard IDs now point to INDIVIDUAL block types (not compound groups)
  *  so each block can be selected, swapped, or removed independently. */
 export const ID_TO_BLOCK: Record<string, string> = {
+  chart: "HighchartLine",
   /* Wizard IDs → individual Simulated blocks */
   buttons: "SimulatedButton",
   cards: "SimulatedCard",
@@ -81,6 +82,7 @@ export const ID_TO_MULTI_BLOCKS: Record<string, { type: string; props: Record<st
 
 /** Reverse: block type → canonical store ID */
 export const BLOCK_TO_ID: Record<string, string> = {
+  HighchartLine: "chart",
   /* Individual Simulated types */
   SimulatedButton: "buttons",
   SimulatedTitle: "typography",

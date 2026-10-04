@@ -11,6 +11,7 @@ import { computeSiblingSnap, type SiblingCandidate } from "@/lib/siblingSnap";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { ACCENT_KEY_BY_DS, ACCENT_VAR_BY_DS } from "@/data/_shared/accentPresets";
+import { beginHistoryTransaction } from "@/lib/builderHistory";
 import { ResizeHUD } from "./ResizeHUD";
 import { HoverInspector } from "./HoverInspector";
 
@@ -68,6 +69,13 @@ function ExperimentalResize({
 }: ExperimentalResizeProps) {
   void _zone;
   void _blockId;
+
+  const finishGestureRef = useRef<(() => void) | null>(null);
+  const finishGesture = useCallback(() => {
+    finishGestureRef.current?.();
+    finishGestureRef.current = null;
+  }, []);
+  useEffect(() => finishGesture, [finishGesture]);
 
   /* Active unit during interaction. Can flip mid-drag via the
      HUD's unit toggle or window-level P / % keys. */
@@ -252,6 +260,8 @@ function ExperimentalResize({
     (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      finishGestureRef.current?.();
+      finishGestureRef.current = beginHistoryTransaction();
 
       const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
       const wrapperEl = blockEl?.parentElement as HTMLElement | null;
@@ -366,6 +376,7 @@ function ExperimentalResize({
   );
 
   const handlePointerUp = useCallback(() => {
+    finishGesture();
     startRef.current = null;
     setDragState(null);
     /* Keep anchorRect briefly so HUD can fade — simpler to just
@@ -384,7 +395,7 @@ function ExperimentalResize({
     /* Reset keyboard baseline so the next keyboard interaction
        re-seeds from the now-committed currentWidth (P0-1). */
     keyboardWidthRef.current = null;
-  }, []);
+  }, [finishGesture]);
 
   /* ── P3 height drag (bottom handle) ── px-based vertical resize that
      reuses the same min/max clamp + HUD machinery as width. Snap is
@@ -403,6 +414,8 @@ function ExperimentalResize({
     (e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      finishGestureRef.current?.();
+      finishGestureRef.current = beginHistoryTransaction();
       const blockEl = (e.currentTarget as HTMLElement).closest(".canvas-block") as HTMLElement | null;
       const wrapperEl = blockEl?.parentElement as HTMLElement | null;
       const startHeight = wrapperEl?.getBoundingClientRect().height ?? 120;
@@ -430,12 +443,13 @@ function ExperimentalResize({
   );
 
   const handleHeightPointerUp = useCallback(() => {
+    finishGesture();
     heightStartRef.current = null;
     setHeightDrag(null);
     setAnchorRect(null);
     blockElRef.current = null;
     keyboardHeightRef.current = null;
-  }, []);
+  }, [finishGesture]);
 
   /* ── P3 corner drag (bottom-right) ── runs BOTH the width X-math (with snap)
      and the height Y-math at once, so dragging the corner resizes both axes
@@ -731,6 +745,7 @@ function ExperimentalResize({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onLostPointerCapture={handlePointerUp}
         onKeyDown={handleKeyDown}
         title="Drag or use arrow keys to resize"
       >
@@ -754,6 +769,7 @@ function ExperimentalResize({
           onPointerMove={handleHeightPointerMove}
           onPointerUp={handleHeightPointerUp}
           onPointerCancel={handleHeightPointerUp}
+          onLostPointerCapture={handleHeightPointerUp}
           onKeyDown={handleHeightKeyDown}
           title="Drag or use up/down arrow keys to resize height"
         >
@@ -774,6 +790,7 @@ function ExperimentalResize({
           onPointerMove={handleCornerPointerMove}
           onPointerUp={handleCornerPointerUp}
           onPointerCancel={handleCornerPointerUp}
+          onLostPointerCapture={handleCornerPointerUp}
           title="Drag to resize width and height"
         >
           <div className="block-resize-grip-corner" />
