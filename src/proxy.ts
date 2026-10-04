@@ -35,7 +35,7 @@ async function hashToken(password: string): Promise<string> {
  *     (every request redirected to /login). Previously this state silently
  *     bypassed auth, which was a security hole.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const expectedPassword = process.env.STAGING_PASSWORD;
 
   // No password configured → public mode, no auth required.
