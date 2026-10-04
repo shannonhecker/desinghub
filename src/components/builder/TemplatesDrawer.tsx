@@ -136,7 +136,6 @@ export function TemplatesDrawer() {
           </button>
         </header>
 
-        <TemplateSourceNote />
         <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => handleSelect(BUILDER_TEMPLATES["analytics-home"])} disabled={isGenerating} />
         <div className="templates-drawer-grid" role="group" aria-label="Individual templates">
           {templates.map((tpl) => (
@@ -160,6 +159,7 @@ export function TemplatesDrawer() {
             </button>
           ))}
         </div>
+        {category !== "general" && <TemplateSourceNote />}
       </aside>
     </div>
   );

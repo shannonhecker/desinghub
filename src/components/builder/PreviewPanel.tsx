@@ -1230,6 +1230,10 @@ function DashboardFooter() {
    (duration 0) instead of springing. */
 export function DeviceFrame({ children }: { children: React.ReactNode }) {
   const deviceMode = useBuilder((s) => s.deviceMode);
+  /* A canvas with several pages is an app the reader moves around: hold the
+     frame at its full height so a short page does not shrink and re-centre
+     it, which moved the sidebar out from under the pointer on every click. */
+  const multiPage = useBuilder((s) => s.pages.length > 1);
   const reduceMotion = useReducedMotion();
   const preset = PRESETS[deviceMode];
   const frameRef = useRef<HTMLDivElement>(null);
@@ -1258,7 +1262,7 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
       className="bp-device-frame"
       data-frame-zoom={fit.zoom}
       initial={false}
-      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom } as React.CSSProperties}
+      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom, ...(multiPage ? { minHeight: preset.height } : {}) } as React.CSSProperties}
       animate={{ width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >

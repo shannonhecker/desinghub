@@ -2029,6 +2029,8 @@
 }
 @media (max-width: 760px) {
   .templates-drawer-grid { grid-template-columns: 1fr; }
+  /* Wrapped under the filters, the workspace action lines up with them. */
+  .template-gallery-controls .template-workspace { align-items: flex-start; }
 }
 
 .templates-drawer-card {
@@ -11473,9 +11475,13 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .dh-verdict-stats dd { margin: 0; font-size: var(--dh-verdict-status-size); font-weight: 700; }
 .dh-verdict-stats dd.is-toned { color: color-mix(in srgb, var(--dh-tone) 75%, var(--ds-fg)); }
 
-.template-source-note { margin: 0 0 var(--bc-gap-lg); font-size: var(--bc-source-font); line-height: 1.6; color: var(--bc-fg-muted); }
-.template-source-note a { text-decoration: underline; text-underline-offset: var(--bc-source-underline); }
-.templates-drawer > .template-source-note { padding: 0 var(--bc-bar-gap); }
+/* Source credit: a quiet footnote under the gallery, never inside a canvas.
+   A project name never breaks across lines. */
+.template-source-note { margin: var(--bc-gap-md) 0 0; font-size: var(--bc-source-font); line-height: 1.6; color: var(--bc-fg-muted); text-wrap: pretty; }
+.template-source-note a { color: inherit; white-space: nowrap; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: var(--bc-source-underline); transition: color var(--bc-duration-fast), text-decoration-color var(--bc-duration-fast); }
+.template-source-note a:hover { color: var(--b-fg); text-decoration-color: currentColor; }
+.template-source-note a:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); border-radius: var(--bc-radius-xs); }
+.templates-drawer > .template-source-note { margin: 0; padding: var(--bc-gap-md) var(--bc-bar-gap); border-top: var(--bc-hairline) solid var(--b-border); }
 .dh-launcher {
   box-sizing: border-box;
   display: flex;
@@ -11500,7 +11506,27 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   overflow: hidden;
 }
 .dh-launcher-thumb > * { display: block; width: 100%; height: 100%; object-fit: contain; }
-.bp-main:has(.dh-hero-reference) { background-image: url("/template-references/analytics-waves.svg"); background-size: 100% auto; background-position: center top; background-repeat: no-repeat; }
+/* The source's wave graphic, drawn behind the hero on its own layer (the
+   canvas root paints an opaque surface, so a background on .bp-main never
+   showed). It bleeds above and below the hero like the original; dark mode
+   keeps the same strokes, quieter. The thumbnails are white wireframes:
+   inverted and screened in dark mode so they read as faint lines on the card. */
+.dh-hero-reference { position: relative; isolation: isolate; }
+.dh-hero-reference::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  top: calc(-1 * var(--bc-hero-wave-rise));
+  bottom: calc(-1 * var(--bc-hero-wave-fall));
+  background: url("/template-references/analytics-waves.svg") center top / 100% auto no-repeat;
+  pointer-events: none;
+}
+.bp-dashboard[data-mode="dark"] .dh-hero-reference::before { opacity: var(--bc-hero-wave-dark-opacity); }
+/* A multi-page canvas holds the frame at full height (DeviceFrame): the
+   app fills it rather than leaving the frame's own background below. */
+.bp-device-frame > .bp-dashboard { flex-grow: 1; }
+.bp-dashboard[data-mode="dark"] .dh-launcher-thumb > img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 .dh-launcher-desc { flex: 1 1 auto; margin: 0; font-size: var(--dh-panel-meta-size); line-height: 1.45; color: var(--ds-fg-secondary); }
 .dh-launcher-open {
   align-self: flex-start;
@@ -12692,6 +12718,16 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 [data-builder-mode="edit"] .bp-sidebar[data-collapsed="true"] .bp-sidebar-nav {
   padding-top: var(--dh-pad-zone, 8px);
 }
+/* A dense sidebar (every finance template) sets its own padding with a more
+   specific selector, which dropped the band above: the frame label then sat
+   on the first nav item and took clicks on its left half. Same reservation,
+   on the dense rail's own padding. */
+[data-builder-mode="edit"] .bp-sidebar[data-dense] .bp-sidebar-nav {
+  padding-top: calc(var(--dh-nav-pad) + var(--bc-frame-tab-clear));
+}
+[data-builder-mode="edit"] .bp-sidebar[data-dense][data-collapsed="true"] .bp-sidebar-nav {
+  padding-top: var(--dh-nav-pad);
+}
 
 .bp-nav-item {
   display: flex;
@@ -13843,9 +13879,11 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
     max-height: 42vh;
     min-height: 160px;
   }
+  /* No height cap here: with no preview open the chat is the whole screen.
+     A 52vh cap left the lower half empty and squeezed the template gallery
+     into a strip. The stacked chat + preview case keeps its 42vh cap above. */
   .chat-slide-open {
     width: 100% !important;
-    max-height: 52vh;
   }
 
   /* Preview pane: hidden when closed (intrinsic child heights steal flex space in column layout) */
@@ -14516,6 +14554,33 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .zone-drop-container.is-over > .zone-layout-overlay {
   opacity: 0;
   pointer-events: none;
+}
+/* The sidebar is narrower than this toolbar: pinned to its top it covered
+   the first nav item on ANY sidebar hover and took the click meant for it.
+   There it opens from the "Sidebar" frame label instead (hover or focus),
+   wraps to the rail's width, and starts where the label ends so the pointer
+   can move onto it. Hovering nav items leaves them uncovered. */
+.zone-drop-sidebar > .zone-layout-overlay {
+  /* Above the nav's insertion slots it opens over (with the frame label). */
+  z-index: var(--bc-z-guide);
+  top: calc(-1 * var(--dh-pad-zone, var(--dh-nav-pad)));
+  left: var(--bc-gap-xs);
+  right: var(--bc-gap-xs);
+  flex-wrap: wrap;
+}
+.bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(-1 * var(--dh-nav-pad)); }
+.zone-drop-container.zone-drop-sidebar:hover > .zone-layout-overlay {
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--bc-workspace-nudge)));
+  pointer-events: none;
+}
+.bp-sidebar:has(> .bp-frame-tab:hover) .zone-drop-sidebar > .zone-layout-overlay,
+.bp-sidebar:has(> .bp-frame-tab:focus-within) .zone-drop-sidebar > .zone-layout-overlay,
+.zone-drop-container.zone-drop-sidebar > .zone-layout-overlay:hover,
+.zone-drop-container.zone-drop-sidebar > .zone-layout-overlay:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 .zlo-group { display: flex; align-items: center; gap: 1px; }
 .zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--glass-border-subtle); }
@@ -17634,7 +17699,21 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   padding: var(--bc-gap-md) var(--bc-panel-inset);
 }
 
-.template-gallery-controls { display: grid; gap: var(--bc-gap-sm); margin-bottom: var(--bc-gap-lg); }
-.template-gallery-controls .template-gallery-chips { margin-bottom: 0; }
-.template-workspace-action { justify-self: start; text-align: left; }
+/* Filters left, the connected workspace right; they wrap onto two lines on
+   a narrow screen. */
+.template-gallery-controls { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--bc-gap-sm) var(--bc-gap-lg); margin: var(--tpl-chip-gap) 0 var(--bc-gap-md); }
+.template-gallery-controls .template-gallery-chips { margin: 0; min-height: var(--bc-size-hit); align-items: center; }
+.template-workspace { display: flex; flex-direction: column; align-items: flex-end; gap: var(--bc-workspace-hint-gap); min-width: 0; }
+.template-workspace-action {
+  display: inline-flex; align-items: center; gap: var(--bc-gap-xs);
+  min-height: var(--bc-size-hit); padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: var(--bc-editor-font); font-weight: 600; color: var(--b-accent);
+  transition: color var(--bc-duration-fast);
+}
+.template-workspace-action:hover:not(:disabled) { color: var(--b-fg); }
+.template-workspace-action:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); border-radius: var(--bc-radius-sm); }
+.template-workspace-action:disabled { opacity: 0.5; cursor: default; }
+.template-workspace-arrow { width: var(--bc-workspace-arrow); height: var(--bc-workspace-arrow); transition: transform var(--bc-duration-fast); }
+.template-workspace-action:hover:not(:disabled) .template-workspace-arrow { transform: translateX(var(--bc-workspace-nudge)); }
+.template-workspace-hint { font-size: var(--bc-source-font); color: var(--bc-fg-muted); }
 .templates-drawer > .template-gallery-controls { padding-inline: var(--bc-bar-gap); }

@@ -67,7 +67,6 @@ export function TemplateCardsMessage({
 
   return (
     <div className="template-gallery-wrap">
-    {category !== "general" && <TemplateSourceNote />}
     <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => onUse('analytics-home')} disabled={disabled} />
     <div className={`template-gallery${atStart ? " at-start" : ""}${atEnd ? " at-end" : ""}`}>
       <button
@@ -132,6 +131,8 @@ export function TemplateCardsMessage({
         <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
       </button>
     </div>
+    {/* Credit for the finance templates' sources: outside any template canvas. */}
+    {category !== "general" && <TemplateSourceNote />}
     </div>
   );
 }
