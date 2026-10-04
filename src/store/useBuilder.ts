@@ -144,6 +144,11 @@ export interface ChatMessage {
      (back-compat with persisted sessions). 'templates' renders the
      in-chat template carousel instead of a text bubble. */
   messageType?: 'templates';
+  /* Marker only: this user turn carried an image. The image itself is
+     never stored (it is sent with that one request and dropped), so the
+     transcript, local session, cloud save and share state hold this flag
+     and nothing else. */
+  attachment?: 'image';
 }
 
 /* Phase 3a (N4 Tool-Use Cards): block provenance tag. Tracks where
@@ -501,7 +506,12 @@ interface BuilderState {
 
   // Actions - Chat
   setInputText: (t: string) => void;
-  addMessage: (role: 'user' | 'ai', content: string, messageType?: ChatMessage['messageType']) => string;
+  addMessage: (
+    role: 'user' | 'ai',
+    content: string,
+    messageType?: ChatMessage['messageType'],
+    meta?: { attachment?: ChatMessage['attachment'] },
+  ) => string;
   toggleVoice: () => void;
   setGenerating: (v: boolean) => void;
   clearChat: () => void;
@@ -1011,10 +1021,15 @@ export const useBuilder = create<BuilderState>((set) => ({
 
   // Actions
   setInputText: (t) => set({ inputText: t }),
-  addMessage: (role, content, messageType) => {
+  addMessage: (role, content, messageType, meta) => {
     const id = uid();
     set((s) => ({
-      messages: [...s.messages, { id, role, content, timestamp: Date.now(), messageType }],
+      messages: [
+        ...s.messages,
+        meta?.attachment
+          ? { id, role, content, timestamp: Date.now(), messageType, attachment: meta.attachment }
+          : { id, role, content, timestamp: Date.now(), messageType },
+      ],
       inputText: role === 'user' ? '' : s.inputText,
     }));
     return id;
