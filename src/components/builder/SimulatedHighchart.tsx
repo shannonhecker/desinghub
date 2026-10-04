@@ -189,12 +189,12 @@ const DIMMED_POINT_OPACITY = 0.28;
 /** Per-point colours and selection for the first series: every point gets
  *  an explicit colour (from `pointColors`, else the palette / series colour),
  *  dimmed when another point is selected. */
-function applyPointStyling(o: Highcharts.Options, v: ThemeVars, props: ChartProps, colorByPoint: boolean): void {
+function applyPointStyling(o: Highcharts.Options, v: ThemeVars, props: ChartProps, colorByPoint: boolean, always = false): void {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const series = (o.series as any[] | undefined)?.[0];
   if (!series || !Array.isArray(series.data)) return;
   const byName = props.pointColorsByName ?? {};
-  if (!props.pointColors?.length && !props.selected && Object.keys(byName).length === 0) return;
+  if (!always && !props.pointColors?.length && !props.selected && Object.keys(byName).length === 0) return;
   const palette = ((o.colors as string[] | undefined) ?? []).filter(Boolean);
   const categories = ((o.xAxis as any)?.categories as string[] | undefined) ?? [];
   series.data = series.data.map((point: any, i: number) => {
@@ -262,7 +262,8 @@ export function buildChartOptions(
     const x = o.xAxis as any;
     x.labels = { ...x.labels, autoRotation: undefined, style: { ...x.labels?.style, textOverflow: "none" } };
   }
-  applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall");
+  /* A waterfall's steps are always told apart by colour, selected or not. */
+  applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall", chartType === "waterfall");
   if (props.onSelectPoint) {
     const onSelect = props.onSelectPoint;
     const series = { ...((o.plotOptions as any)?.series ?? {}) };

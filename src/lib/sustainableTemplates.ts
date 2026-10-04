@@ -500,11 +500,11 @@ const screeningFunnel: DataBinding = {
 
 const FLAG: GridCell = { type: "flag" };
 const universeColumns: RecordColumn[] = [
-  { field: "security", label: "Security name", minWidth: 190 },
-  { field: "country", label: "Country of risk", width: 124, cell: FLAG },
-  { field: "instrumentGroup", label: "Instrument group", width: 150 },
-  { field: "sector", label: "Sector", width: 180 },
-  { field: "entity", label: "Entity name", width: 150 },
+  /* The entity is in the detail panel; four columns fit beside it. */
+  { field: "security", label: "Security name", minWidth: 180 },
+  { field: "country", label: "Country of risk", width: 116, cell: FLAG },
+  { field: "instrumentGroup", label: "Instrument group", width: 136 },
+  { field: "sector", label: "Sector", width: 170 },
 ];
 const screeningUniverse: DataBinding = {
   table: "securities",
@@ -591,19 +591,19 @@ const chip = (upIsGood = true): GridCell => ({ type: "deltaChip", upIsGood });
 const changesColumns: RecordColumn[] = [
   /* Sized to fit the full-width panel without scrolling sideways, with room
      for the vertical scrollbar. */
-  { field: "security", label: "Security name", minWidth: 140 },
+  { field: "security", label: "Security name", minWidth: 170 },
   { field: "country", label: "Country", width: 72, cell: FLAG },
-  { field: "sector", label: "Sector", width: 116 },
+  { field: "sector", label: "Sector", width: 104 },
   { field: "posFlag", label: "Positive", kind: "number", decimals: 0, width: 66, cell: chip() },
   { field: "negFlag", label: "Negative", kind: "number", decimals: 0, width: 68, cell: chip() },
   { field: "controversy", label: "Controv.", kind: "number", decimals: 0, width: 68, cell: chip(false) },
-  { field: "scope1", label: "Value", kind: "number", decimals: 0, width: 62 },
-  { field: "scope1Pct", label: "Change", kind: "percent", decimals: 1, width: 124, cell: { type: "delta", upIsGood: false, sparkField: "scope1Trend" } },
+  { field: "scope1", label: "Value", kind: "number", decimals: 0, width: 58 },
+  { field: "scope1Pct", label: "Change", kind: "percent", decimals: 1, width: 116, cell: { type: "delta", upIsGood: false, sparkField: "scope1Trend" } },
   { field: "ratingStart", label: "Start", width: 48, cell: { type: "badge" } },
   { field: "rating", label: "End", width: 48, cell: { type: "badge" } },
-  { field: "ratingMove", label: "Movement", width: 94, cell: { type: "toneText", tones: { Upgraded: "good", Downgraded: "bad" } } },
+  { field: "ratingMove", label: "Movement", width: 88, cell: { type: "toneText", tones: { Upgraded: "good", Downgraded: "bad" } } },
   { field: "envScore", label: "Value", kind: "number", decimals: 2, width: 56, cell: HEAT },
-  { field: "eTrend", label: "Trend", width: 68, cell: { type: "sparkline", tone: "accent" } },
+  { field: "eTrend", label: "Trend", width: 64, cell: { type: "sparkline", tone: "accent" } },
 ];
 const screeningChanges: DataBinding = {
   table: "securities",

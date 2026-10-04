@@ -111,7 +111,13 @@ describe("slice 2 chart kinds and options", () => {
     }) as any;
     expect(o.chart.type).toBe("waterfall");
     expect(o.xAxis.categories).toEqual(["Universe", "House", "Target"]);
-    expect(o.series[0].data).toEqual([{ name: "Universe", y: 1500 }, { name: "House", y: -500 }, { name: "Target", isSum: true }]);
+    /* Every step carries its own colour, selected or not. */
+    expect(o.series[0].data.map((d: any) => ({ name: d.name, y: d.y, isSum: d.isSum }))).toEqual([
+      { name: "Universe", y: 1500, isSum: undefined },
+      { name: "House", y: -500, isSum: undefined },
+      { name: "Target", y: undefined, isSum: true },
+    ]);
+    expect(o.series[0].data.every((d: any) => typeof d.color === "string" && d.color)).toBe(true);
     expect(o.legend.enabled).toBe(false);
   });
 
