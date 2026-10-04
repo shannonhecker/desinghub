@@ -19,10 +19,11 @@ import type { Block } from "@/store/useBuilder";
 import { BUILDER_TEMPLATES, type BuilderTemplate } from "@/lib/builderTemplates";
 import { formatGridValue } from "@/lib/dataGridModel";
 import { viewByOf, viewByStateKey } from "@/lib/panelMetrics";
-import { isRecordBinding, resolveRecord, type ResolvedRecord } from "@/lib/recordPanelModel";
+import { GRID_TONES, type GridTone } from "@/lib/dataGridModel";
+import { fieldText, fieldTone, isRecordBinding, isRowLookup, lookupRow, resolveRecord, type ResolvedRecord, type RowLookup } from "@/lib/recordPanelModel";
 import { CURRENCY_STATE, centerColumn, resolveBinding, type BoundData, type DataBinding, type ReportState } from "@/lib/reportData/binding";
 import { sampleDataset } from "@/lib/reportData/registry";
-import type { ReportDataset } from "@/lib/reportData/types";
+import type { DataRow, ReportDataset } from "@/lib/reportData/types";
 import { RECORD_PANEL_BLOCK_TYPE } from "./reportMarkup";
 
 /** The part of the builder state the exporters read. */
@@ -78,6 +79,79 @@ function resolveRecordSafely(binding: unknown, dataset: ReportDataset | null, st
   }
 }
 
+/* ── Report blocks that show ONE row of a table (ReportBlocks.tsx) ──
+   An entity header, a metric tile and a verdict card name fields of a row
+   chosen by report state (the selected entity) or fixed (a tile per
+   category). The row is read here, exactly as the canvas reads it, and the
+   block leaves with the text it shows: no lookup, no field names, no state
+   keys. reportMarkup.ts draws these static props. */
+
+/** The row a block's lookup names, without ever throwing. Null when the block
+ *  has no lookup, the dataset is missing, or no row matches. */
+function lookupRowSafely(lookup: RowLookup | null, dataset: ReportDataset | null, state: ReportState): DataRow | null {
+  if (!lookup || !dataset) return null;
+  try {
+    return lookupRow(lookup, dataset, state);
+  } catch {
+    return null;
+  }
+}
+
+const text = (v: unknown, fallback = ""): string => (typeof v === "string" && v ? v : fallback);
+const toneOr = (v: unknown, fallback: GridTone): GridTone => (GRID_TONES.includes(v as GridTone) ? (v as GridTone) : fallback);
+/** The entries of a list prop that name a field of the row. */
+function fieldItems(v: unknown): (Record<string, unknown> & { field: string })[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((x): x is Record<string, unknown> & { field: string } => Boolean(x) && typeof x === "object" && typeof (x as { field: unknown }).field === "string");
+}
+const drop = (props: Record<string, unknown>, keys: readonly string[]): void => {
+  for (const key of keys) delete props[key];
+};
+
+/** EntityHeader: the entity's name, its facts and its count badges, as text. */
+function materialiseEntityHeader(props: Record<string, unknown>, source: Record<string, unknown>, row: DataRow | null, lookup: RowLookup | null): void {
+  props.title = row && lookup ? String(row[lookup.keyField] ?? "") : text(source.title, "Entity");
+  props.facts = fieldItems(source.facts).map((f) => ({ label: text(f.label), value: fieldText(row, f.field) || "-" }));
+  props.badges = fieldItems(source.badges).map((b) => ({ label: text(b.label), value: fieldText(row, b.field) || "0", tone: toneOr(b.tone, "neutral") }));
+}
+
+/** MetricTile: its figure, sub-figures and chips as text, and whether it is
+ *  the selected one of a set (a category card). */
+function materialiseMetricTile(props: Record<string, unknown>, source: Record<string, unknown>, row: DataRow | null, state: ReportState): void {
+  const field = text(source.field);
+  const value = field ? fieldText(row, field) || "-" : text(source.value);
+  drop(props, ["field", "value", "selected", "selectState", "selectValue", "selectDefault"]);
+  if (value) props.value = value;
+  props.subs = fieldItems(source.subs).map((s) => ({ label: text(s.label), value: fieldText(row, s.field) || "0", ...(text(s.icon) ? { icon: text(s.icon) } : {}) }));
+  props.chips = fieldItems(source.chips).map((c) => {
+    const count = fieldText(row, c.field) || "0";
+    /* A zero count is drawn neutral, whatever the chip's own tone. */
+    return { label: text(c.label), value: count, tone: count === "0" ? "neutral" : toneOr(c.tone, "neutral") };
+  });
+  const selectState = text(source.selectState);
+  if (selectState) props.selected = (state[selectState] ?? text(source.selectDefault)) === text(source.selectValue, text(source.label));
+}
+
+/** VerdictCard: the figure, status, caption, progress and stats as text, and
+ *  the tone the data gives the card. */
+function materialiseVerdictCard(props: Record<string, unknown>, source: Record<string, unknown>, row: DataRow | null): void {
+  drop(props, ["heroField", "statusField", "toneField", "captionField", "progress"]);
+  props.tone = fieldTone(row, text(source.toneField), "neutral");
+  props.hero = fieldText(row, text(source.heroField), { decimals: 1 }) || "-";
+  props.status = fieldText(row, text(source.statusField));
+  props.caption = source.captionField ? fieldText(row, text(source.captionField)) : "";
+  const progress = fieldItems([source.progress])[0];
+  if (progress) {
+    const pct = row ? Math.max(0, Math.min(100, Number(row[progress.field]) || 0)) : 0;
+    props.progress = { label: text(progress.label), pct, text: `${Math.round(pct)}${typeof progress.suffix === "string" ? progress.suffix : "%"}` };
+  }
+  props.stats = fieldItems(source.stats).map((s) => ({
+    label: text(s.label),
+    value: fieldText(row, s.field, { decimals: typeof s.decimals === "number" ? s.decimals : 0, suffix: typeof s.suffix === "string" ? s.suffix : undefined }) || "-",
+    ...(typeof s.toneField === "string" && s.toneField ? { tone: fieldTone(row, s.toneField) } : {}),
+  }));
+}
+
 /** Props that only mean something on the live canvas. */
 const LIVE_ONLY_PROPS = ["binding", "stateKey", "onValueChange"] as const;
 
@@ -127,6 +201,15 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
   if (block.type === RECORD_PANEL_BLOCK_TYPE) {
     const record = resolveRecordSafely(source.binding, dataset, reportState);
     if (record) props.record = record;
+  }
+
+  /* The blocks that show one row of a table: the row is read here. */
+  if (block.type === "EntityHeader" || block.type === "MetricTile" || block.type === "VerdictCard") {
+    const lookup = isRowLookup(source.binding) ? source.binding : null;
+    const row = lookupRowSafely(lookup, dataset, reportState);
+    if (block.type === "EntityHeader") materialiseEntityHeader(props, source, row, lookup);
+    else if (block.type === "MetricTile") materialiseMetricTile(props, source, row, reportState);
+    else materialiseVerdictCard(props, source, row);
   }
 
   const next: Block = { ...block, props };

@@ -71,12 +71,23 @@ export type GridCell =
   | { type: "badge"; tones?: Record<string, GridTone>; fallback?: GridTone }
   /** A word, coloured and weighted by its value. */
   | { type: "toneText"; tones: Record<string, GridTone> }
+  /** A small dot, then the value. Toned by the value (`tones`) or one tone;
+   *  `hollow` values draw a ring instead of a filled dot; blank at zero. */
+  | { type: "dot"; tone?: GridTone; tones?: Record<string, GridTone>; hollow?: string[]; hideZero?: boolean }
+  /** A chip holding the value: a tinted label or a small solid counter. */
+  | { type: "chip"; variant?: "tint" | "solid"; tones?: Record<string, GridTone>; fallback?: GridTone }
   /** A country flag from an ISO 3166 alpha-2 code, then the code. */
   | { type: "flag" }
   /** A rank number in a narrow, muted column. */
   | { type: "rank" };
 
-const CELL_TYPES = new Set(["heat", "bar", "deltaChip", "delta", "sparkline", "badge", "toneText", "flag", "rank"]);
+const CELL_TYPES = new Set(["heat", "bar", "deltaChip", "delta", "sparkline", "badge", "toneText", "flag", "rank", "dot", "chip"]);
+
+/** True when a dot cell shows nothing: a blank, or zero when zeros are hidden. */
+export function dotIsBlank(cell: Extract<GridCell, { type: "dot" }>, value: unknown): boolean {
+  if (value === null || value === undefined || value === "") return true;
+  return Boolean(cell.hideZero) && Number(value) === 0;
+}
 
 /** Default heat buckets: a 0-10 score. */
 export const SCORE_THRESHOLDS: HeatThreshold[] = [{ min: 7, tone: "good" }, { min: 4, tone: "mid" }, { tone: "bad" }];
@@ -201,7 +212,8 @@ export interface GridColumnGroup {
 export type GridColumn = GridLeafColumn | GridColumnGroup;
 
 /** A row: values by field. `_bold` marks a total / aggregate row; `_indent`
- *  (0, 1, 2...) indents the first column to show hierarchy. */
+ *  (0, 1, 2...) indents the first column to show hierarchy; `_heading` marks a
+ *  group heading row (drawn on a sunken band, above its indented leaves). */
 export type GridRow = Record<string, string | number | boolean | null | undefined>;
 
 export function isColumnGroup(c: GridColumn): c is GridColumnGroup {

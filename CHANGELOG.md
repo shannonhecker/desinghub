@@ -6,6 +6,44 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-05 finance templates, slice 3: issuer reports, scorecard, home (`feat/finance-templates-slice-3`, stacked on slice 2)
+
+Six more client reports as builder templates. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-3-design.md`.
+
+#### Added
+- **Issuer Climate, Issuer Business Involvement, Issuer Controversies, Entity
+  Comparison, Governance Scorecard, Analytics Home.** Bound to a new sample
+  dataset (`issuer`: five invented issuers). The issuer shown is report
+  state: an "Entity" filter sets it and every panel re-reads its rows.
+  Measured: every panel at the same position and size (0px difference) in all
+  five design systems, light and dark; Edit matches Present; nothing clipped
+  on tablet or phone.
+- **Blocks.** Entity header (name, facts, count badges); metric tile (icon,
+  figure, sub-figures, chips, and a selectable state that filters other
+  panels); verdict card (a judgement stated large, with a progress bar and
+  the figures behind it); launcher card (opens another template while
+  presenting); hero with a search field.
+- **Charts.** Radar; pathway corridor (a dashed ceiling, the path under it and
+  the band between); a value axis that prints labels (a rating trend).
+- **Grid.** Dot and chip cells; group heading rows with indented rows beneath,
+  carrying sums and counts; a "View by" that swaps one column for another.
+- **Bindings.** A filter can keep several values (an entity and the one it is
+  compared with, or an entity beside its benchmark); a sort can follow state.
+- The Sustainable Investment sidebar lists every page of the section, in four
+  groups.
+- Chat: the six templates by name. A template name inside a longer one
+  ("issuer climate template") is matched correctly.
+- **Export.** The new blocks, cells, heading rows and charts in React, HTML
+  and Vite exports.
+
+#### Different from the source reports (see the design note)
+- The issuer is chosen from an "Entity" dropdown, not from the page title.
+- Entity Comparison's second issuer is a filter; in the source it is fixed.
+- Left out: the duplicate "Business Involvement & Controversies" page, Home's
+  Configuration, Approvals and Reports Repository pages, the "Select data"
+  dialog, and controls that do nothing in the source.
+
 ### 2026-10-04 finance templates, slice 2: Sustainable Investment (`feat/finance-templates-slice-2`, stacked on slice 1)
 
 Four more client reports as builder templates. Design note:

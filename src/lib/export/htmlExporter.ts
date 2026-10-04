@@ -11,8 +11,8 @@ import { computeGroupStyle, normalizeColumns, normalizeColumnStart } from "@/lib
 import { spanOf, startOf } from "./gridSpan";
 import { isChartBlock } from "./chartExporter";
 import { materialiseCanvas } from "./materialise";
-import { HTML_DIALECT, chartDataLines, chartHasData, dropdownLines, indentLines, reportBlockLines, shellSidebarAttr, usesChromeShell, usesRichReport, zoneAttrs } from "./reportMarkup";
-import { REPORT_CSS, REPORT_RICH_CSS, buildTokenBlock } from "./stylesCss";
+import { HTML_DIALECT, chartDataLines, chartHasData, dropdownLines, indentLines, reportBlockLines, shellSidebarAttr, usesChromeShell, usesReportBlocks, usesRichReport, zoneAttrs } from "./reportMarkup";
+import { REPORT_CSS, buildTokenBlock, reportExtrasCss } from "./stylesCss";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
    (camelCase → kebab-case; bare numbers → px, matching how the canvas
@@ -215,8 +215,10 @@ export function exportHTML(): string {
   /* The report markup (panel, data table, application chrome, tones) is
      styled by the shared REPORT_CSS, which reads the token variables. */
   /* Rich cells, the record panel and a gauge's reading bring their own rules. */
-  const rich = usesRichReport([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
-  const reportCss = `${buildTokenBlock(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light")}\n${REPORT_CSS}${rich ? REPORT_RICH_CSS : ""}`
+  /* So do the report card blocks, dot / tag cells and heading rows. */
+  const all = [...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer];
+  const extras = reportExtrasCss({ rich: usesRichReport(all), blocks: usesReportBlocks(all) });
+  const reportCss = `${buildTokenBlock(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light")}\n${REPORT_CSS}${extras}`
     .split("\n")
     .map((line) => (line ? "    " + line : line))
     .join("\n");

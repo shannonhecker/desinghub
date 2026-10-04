@@ -100,6 +100,9 @@ Help users adjust, swap, reorder, or remove components.
 - HighchartCombination - columns and lines together, two axes (props: title)
 - HighchartStackedBar - stacked horizontal bars (props: title)
 - HighchartStackedArea - stacked area, e.g. allocation over time (props: title)
+- HighchartRadar - a spider chart, one spoke per category (props: title)
+- HighchartCorridor - a ceiling, a path under it and the band between
+  (props: title; series [ceiling, path])
 - HighchartWaterfall - steps up and down from a starting total to a closing sum
   (props: title, seriesData [{name, y}] with {name, isSum: true} for the sum bar)
 

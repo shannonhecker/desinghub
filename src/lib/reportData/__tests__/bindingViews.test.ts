@@ -121,3 +121,57 @@ describe("nextSelection", () => {
     expect(nextSelection({}, "")).toBeNull();
   });
 });
+
+/* Slice 3: comparisons, conditional columns and grouped rows. */
+describe("filters that keep more than one value", () => {
+  const binding: DataBinding = {
+    table: "securities", view: "series", groupBy: "name",
+    measures: [{ field: "value" }], display: [{ key: "value", label: "Value" }],
+    filters: [{ field: "name", state: "entity", fallback: "Alpha", alsoState: "comparator", alsoFallback: "Beta", extra: ["Gamma"] }],
+  };
+  it("keeps the state's value, the second state's value and the extras", () => {
+    const b = resolveBinding({ ...binding, filters: [{ field: "name", state: "entity", fallback: "Alpha", alsoState: "comparator", alsoFallback: "Beta" }] }, dataset, {});
+    expect(b?.view === "series" && [...b.categories].sort()).toEqual(["Alpha", "Beta"]);
+    const withExtra = resolveBinding(binding, dataset, { entity: "Beta", comparator: "Beta" });
+    expect(withExtra?.view === "series" && [...withExtra.categories].sort()).toEqual(["Beta", "Gamma"]);
+  });
+});
+
+describe("records: conditional columns, a sort that follows state, grouped rows", () => {
+  const base: DataBinding = {
+    table: "securities", view: "records", measures: [], display: [],
+    records: [
+      { field: "name", label: "Security" },
+      { field: "value", label: "Value", kind: "number", showWhen: { state: "show", in: ["", "Value"] } },
+      { field: "score", label: "Score", kind: "number", showWhen: { state: "show", in: ["Score"] } },
+    ],
+    sort: { by: { state: "show", options: { Value: "value", Score: "score" }, fallback: "value" }, dir: "desc" },
+  };
+  it("swaps a column and the sort with the state", () => {
+    const byValue = resolveBinding(base, dataset, {});
+    const byScore = resolveBinding(base, dataset, { show: "Score" });
+    if (byValue?.view !== "grid" || byScore?.view !== "grid") throw new Error("expected grids");
+    expect(byValue.columns.map((c) => ("field" in c ? c.field : ""))).toEqual(["name", "value"]);
+    expect(byValue.rows.map((r) => r.name)).toEqual(["Beta", "Gamma", "Alpha"]);
+    expect(byScore.columns.map((c) => ("field" in c ? c.field : ""))).toEqual(["name", "score"]);
+    expect(byScore.rows.map((r) => r.name)).toEqual(["Alpha", "Gamma", "Beta"]);
+  });
+
+  it("lays rows out under group headings that carry sums and counts", () => {
+    const grouped = resolveBinding({
+      ...base,
+      records: [{ field: "name", label: "Security" }, { field: "value", label: "Value", kind: "number" }, { field: "n", label: "In US", kind: "number" }],
+      sort: { by: "name", dir: "asc" },
+      groupRows: { by: "stage", labelColumn: "name", sums: ["value"], counts: [{ as: "n", field: "country", equals: "US" }] },
+    }, dataset, {});
+    if (grouped?.view !== "grid") throw new Error("expected a grid");
+    expect(grouped.rows.map((r) => [r.name, r.value, r._heading ? "group" : `indent ${r._indent}`])).toEqual([
+      ["House", 100, "group"],
+      ["Alpha", 100, "indent 1"],
+      ["Target", 500, "group"],
+      ["Beta", 300, "indent 1"],
+      ["Gamma", 200, "indent 1"],
+    ]);
+    expect(grouped.rows[2]).toMatchObject({ n: 1, _bold: true });
+  });
+});

@@ -168,3 +168,39 @@ describe("slice 2 chart kinds and options", () => {
   });
 });
 
+describe("slice 3 chart kinds", () => {
+  it("radar: a polar line chart on a polygon grid, lines closing on the spokes", () => {
+    const o = buildChartOptions("radar", theme as any, vars, {
+      categories: ["A", "B", "C"],
+      series: [{ name: "Entity", data: [1, 2, 3] }, { name: "Peers", data: [2, 2, 2], dashStyle: "ShortDash" }],
+    }) as any;
+    expect(o.chart.polar).toBe(true);
+    expect(o.yAxis.gridLineInterpolation).toBe("polygon");
+    expect(o.xAxis.categories).toEqual(["A", "B", "C"]);
+    expect(o.series.map((s: any) => [s.name, s.pointPlacement, s.dashStyle])).toEqual([["Entity", "on", undefined], ["Peers", "on", "ShortDash"]]);
+  });
+
+  it("corridor: a dashed ceiling, the band down to the path, and the path", () => {
+    const o = buildChartOptions("corridor", theme as any, vars, {
+      categories: ["2030", "2040", "2050"],
+      series: [{ name: "Budget", data: [40, 20, 0] }, { name: "Projected", data: [30, 15, 0] }],
+      bandName: "Undershoot",
+    }) as any;
+    expect(o.series.map((s: any) => [s.type, s.name])).toEqual([["line", "Budget"], ["arearange", "Undershoot"], ["area", "Projected"]]);
+    expect(o.series[0].dashStyle).toBe("Dash");
+    expect(o.series[1].data).toEqual([[30, 40], [15, 20], [0, 0]]);
+  });
+
+  it("yAxisCategories: positions on the value axis are shown as labels, in the tooltip too", () => {
+    const o = buildChartOptions("line", theme as any, vars, {
+      categories: ["Q1", "Q2"],
+      series: [{ name: "Entity", data: [4, 5] }],
+      yAxisCategories: ["CCC", "B", "BB", "BBB", "A", "AA", "AAA"],
+    }) as any;
+    expect(o.yAxis.categories).toHaveLength(7);
+    expect(o.yAxis.max).toBe(6);
+    const tip = o.tooltip.formatter.call({ x: "Q2", points: [{ y: 5, series: { name: "Entity" } }] });
+    expect(tip).toContain("Entity: <b>AA</b>");
+  });
+});
+

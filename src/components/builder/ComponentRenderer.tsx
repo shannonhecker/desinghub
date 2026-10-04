@@ -55,6 +55,7 @@ import {
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
 import { RecordPanelBlock } from "./RecordPanel";
+import { EntityHeaderBlock, HeroSearchBlock, LauncherCardBlock, MetricTileBlock, VerdictCardBlock } from "./ReportBlocks";
 import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock } from "./ChromeBars";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
@@ -1732,6 +1733,8 @@ function HighchartBlockRenderer({
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
       valueMax={typeof p.valueMax === "number" ? p.valueMax : undefined}
       labelWrap={p.labelWrap === true}
+      yAxisCategories={Array.isArray(p.yAxisCategories) ? (p.yAxisCategories as string[]) : undefined}
+      bandName={text(p.bandName)}
       pointColors={pointColors}
       pointColorsByName={p.pointColorsByName && typeof p.pointColorsByName === "object" ? (p.pointColorsByName as Record<string, string>) : undefined}
       selected={selection?.selected}
@@ -1963,6 +1966,11 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   DataGrid: DataGridBlockRenderer as React.FC<{ system: DesignSystem }>,
   RecordPanel: RecordPanelBlock as React.FC<{ system: DesignSystem }>,
+  EntityHeader: EntityHeaderBlock as React.FC<{ system: DesignSystem }>,
+  MetricTile: MetricTileBlock as React.FC<{ system: DesignSystem }>,
+  VerdictCard: VerdictCardBlock as React.FC<{ system: DesignSystem }>,
+  LauncherCard: LauncherCardBlock as React.FC<{ system: DesignSystem }>,
+  HeroSearch: HeroSearchBlock as React.FC<{ system: DesignSystem }>,
   TopNav: TopNavBlock as React.FC<{ system: DesignSystem }>,
   TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
   NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
@@ -1971,6 +1979,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartWaterfall: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartRadar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartCorridor: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
   /* Batch 6 */

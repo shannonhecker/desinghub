@@ -21,6 +21,12 @@ export const VALID_TEMPLATE_IDS = [
   "climate-analytics",
   "screening",
   "screening-changes",
+  "issuer-climate",
+  "issuer-involvement",
+  "issuer-controversies",
+  "entity-comparison",
+  "governance-scorecard",
+  "analytics-home",
 ] as const;
 
 export type TemplateId = (typeof VALID_TEMPLATE_IDS)[number];
@@ -42,6 +48,18 @@ export const TEMPLATE_SUMMARIES: Record<TemplateId, string> = {
     "Screening (finance, data-driven) - a screening waterfall whose bars filter the security universe grid, and a detail panel for the selected security",
   "screening-changes":
     "Screening Changes (finance, data-driven) - a period-change grid with flag chips, emissions sparklines, rating badges and score heat cells, and a detail panel for the selected security",
+  "issuer-climate":
+    "Issuer Climate (finance, data-driven) - one issuer's emissions against a benchmark, its net-zero pathway corridor, an alignment verdict card, scope emissions and two peer rankings; an Entity filter chooses the issuer",
+  "issuer-involvement":
+    "Issuer Business Involvement (finance, data-driven) - five involvement count tiles, a grouped detail grid and a peer radar for one issuer; Entity filter",
+  "issuer-controversies":
+    "Issuer Controversies (finance, data-driven) - three controversy score tiles and a severity grid grouped by pillar for one issuer; Entity filter",
+  "entity-comparison":
+    "Entity Comparison (finance, data-driven) - two issuers side by side: summary cards, an involvement radar, ESG scores, a rating trend, emissions and controversies; Entity and Compare with filters",
+  "governance-scorecard":
+    "Governance Scorecard (finance, data-driven) - four category cards that filter positive and negative indicator grids, and a reference grid, for one issuer; Entity filter",
+  "analytics-home":
+    "Analytics Home (finance) - a start page: a hero with search, four launcher cards that open the report templates, and a filterable list of dashboards",
   "performance-analytics":
     "Performance Analytics (finance, data-driven) - a results grid by account over 1M/3M/YTD/1Y against benchmark, a breakdown grid, returns chart, allocation donut, allocation history, investment trend; fee type, currency, periodicity and benchmark filters",
 };

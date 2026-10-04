@@ -34,6 +34,16 @@ const TEMPLATE_PHRASES: [phrase: string, id: TemplateId][] = (
     ["performance analytics", "performance-analytics"],
     ["performance report", "performance-analytics"],
     ["performance template", "performance-analytics"],
+    ["issuer business involvement", "issuer-involvement"],
+    ["business involvement", "issuer-involvement"],
+    ["issuer controversies", "issuer-controversies"],
+    ["controversies report", "issuer-controversies"],
+    ["issuer climate", "issuer-climate"],
+    ["entity comparison", "entity-comparison"],
+    ["governance scorecard", "governance-scorecard"],
+    ["scorecard", "governance-scorecard"],
+    ["analytics home", "analytics-home"],
+    ["home page", "analytics-home"],
     ["esg analytics", "esg-analytics"],
     ["esg report", "esg-analytics"],
     ["esg template", "esg-analytics"],
@@ -68,12 +78,16 @@ export interface TemplateCommand {
  *  ("what is in the risk analytics one?") is not a command. */
 export function parseTemplateCommand(message: string): TemplateCommand | null {
   const text = ` ${words(message).join(" ")} `;
-  const hit = TEMPLATE_PHRASES.find(([phrase]) => text.includes(` ${phrase} `));
-  if (!hit) return null;
-  const rest = words(text.replace(` ${hit[0]} `, " "));
   const asksToApply = /\b(template|use|apply|load|open|start|build|create|show|give|switch|try)\b/.test(text);
   if (!asksToApply) return null;
-  if (rest.some((w) => !FILLER.has(w) && !TEMPLATE_FILLER.has(w))) return null;
+  /* Several phrases can match ("climate template" inside "issuer climate
+     template"): take the first, longest first, that leaves nothing but
+     filler. */
+  const hit = TEMPLATE_PHRASES.find(([phrase]) => {
+    if (!text.includes(` ${phrase} `)) return false;
+    return !words(text.replace(` ${phrase} `, " ")).some((w) => !FILLER.has(w) && !TEMPLATE_FILLER.has(w));
+  });
+  if (!hit) return null;
   const theme = parseThemeCommand(message);
   return { templateId: hit[1], ...(theme.designSystem ? { designSystem: theme.designSystem } : {}), ...(theme.mode ? { mode: theme.mode } : {}) };
 }

@@ -38,6 +38,12 @@ const TEMPLATES = [
   { label: "Climate Analytics", blocks: 11, minPanel: 280 },
   { label: "Screening", blocks: 4, minPanel: 280 },
   { label: "Screening Changes", blocks: 3, minPanel: 280 },
+  { label: "Issuer Climate", blocks: 9, minPanel: 280 },
+  { label: "Issuer Business Involvement", blocks: 10, minPanel: 280 },
+  { label: "Issuer Controversies", blocks: 7, minPanel: 280 },
+  { label: "Entity Comparison", blocks: 11, minPanel: 280 },
+  { label: "Governance Scorecard", blocks: 10, minPanel: 280 },
+  { label: "Analytics Home", blocks: 10, minPanel: 280 },
 ] as const;
 
 function chatInput(page: Page) {
@@ -235,6 +241,32 @@ test.describe("Builder - finance templates", () => {
     await expect(detail).toContainText("ESG scores");
     /* Using the report must not open the amend composer. */
     await expect(page.locator(".present-amend-input")).toHaveCount(0);
+  });
+
+  test("Issuer reports: the Entity filter re-reads the page; a scorecard category filters its grids; a launcher opens a report", async ({ page }) => {
+    await applyTemplate(page, "Issuer Climate");
+    const stage = page.locator(".present-stage");
+    await expect(stage.locator(".dh-entity-title")).toHaveText("Avocado Inc");
+    await expect(stage.locator(".dh-verdict-status")).toHaveText("Aligned");
+    await stage.getByRole("combobox", { name: "Entity" }).first().click();
+    await page.getByRole("option", { name: "Helios Energy", exact: true }).click();
+    await expect(stage.locator(".dh-entity-title")).toHaveText("Helios Energy");
+    await expect(stage.locator(".dh-verdict-status")).toHaveText("Misaligned");
+    await expect(stage.locator('section[aria-label="Emissions summary"] .highcharts-legend-item').first()).toContainText("Helios Energy");
+
+    await applyTemplateFromChat(page, "use the governance scorecard template");
+    const positive = stage.locator('section[aria-label="Positive"] .ag-center-cols-container .ag-row');
+    await expect(positive).toHaveCount(6);
+    const productCard = stage.locator(".dh-tile-selectable", { hasText: "Product & Service Mix" });
+    await productCard.click();
+    await expect(positive).toHaveCount(9);
+    await expect(productCard).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".present-amend-input")).toHaveCount(0);
+
+    await applyTemplateFromChat(page, "use the analytics home template");
+    await expect(stage.locator(".dh-launcher")).toHaveCount(4);
+    await stage.locator(".dh-launcher", { hasText: "Risk" }).getByRole("button", { name: /Open report/ }).click();
+    await expect(stage.locator(".dh-page-title")).toHaveText("Risk");
   });
 
   test("Changes: chips, sparklines, badges and toned words are drawn", async ({ page }) => {

@@ -587,6 +587,177 @@ function ScreeningChangesPreview() {
   );
 }
 
+/* Slice 3 wireframes share the Sustainable Investment chrome; `active`
+   picks the sidebar item. The body starts at x=42, y=26. */
+const svgProps = (label: string) => ({ viewBox: "0 0 220 130", width: "100%", height: "100%", fill: "none", xmlns: "http://www.w3.org/2000/svg", role: "img", "aria-label": label }) as const;
+
+function WireTile({ x, y, w, h, accent }: { x: number; y: number; w: number; h: number; accent?: boolean }) {
+  return (
+    <>
+      <WireRect x={x} y={y} w={w} h={h} r={2} stroke accent={accent} />
+      <WireRect x={x + 3} y={y + 3} w={Math.min(18, w - 6)} h={1.6} />
+      <WireRect x={x + 3} y={y + h - 7} w={6} h={4} accent />
+    </>
+  );
+}
+function WireRadar({ cx, cy, r }: { cx: number; cy: number; r: number }) {
+  const pts = (k: number[]) => k.map((v, i) => { const a = (Math.PI * 2 * i) / k.length - Math.PI / 2; return `${(cx + Math.cos(a) * r * v).toFixed(1)},${(cy + Math.sin(a) * r * v).toFixed(1)}`; }).join(" ");
+  return (
+    <>
+      <polygon points={pts([1, 1, 1, 1, 1, 1])} stroke={MUTED} strokeWidth={0.8} fill="none" />
+      <polygon points={pts([0.6, 0.6, 0.6, 0.6, 0.6, 0.6])} stroke={MUTED} strokeWidth={0.6} fill="none" />
+      <polygon points={pts([0.9, 0.5, 0.7, 0.4, 0.8, 0.6])} stroke={ACCENT} strokeWidth={1.2} fill="none" />
+    </>
+  );
+}
+const EntityLine = () => (<><WireRect x={42} y={28} w={46} h={3.4} /><WireRect x={42} y={34} w={90} h={1.6} /></>);
+
+function IssuerClimatePreview() {
+  return (
+    <svg {...svgProps("Issuer climate preview: emissions against a benchmark, a net-zero pathway, an alignment verdict and peer rankings")}>
+      <SustainableChrome active={0} filters={1} />
+      <EntityLine />
+      <WireRect x={42} y={40} w={72} h={40} r={2} stroke />
+      {[14, 10, 18, 13, 9, 12].map((v, i) => <WireRect key={i} x={48 + i * 10 + (i % 2 ? -3 : 0)} y={76 - v} w={4} h={v} accent={i % 2 === 0} />)}
+      <WireRect x={118} y={40} w={56} h={40} r={2} stroke />
+      <path d="M 123 48 L 169 74" stroke={MUTED} strokeWidth={1} strokeDasharray="2 2" />
+      <path d="M 123 54 L 169 74 L 123 74 Z" fill={ACCENT} opacity={0.3} />
+      <WireRect x={178} y={40} w={38} h={40} r={2} stroke />
+      <WireRect x={182} y={48} w={16} h={7} accent />
+      <WireRect x={182} y={60} w={30} h={2} />
+      <WireRect x={182} y={60} w={18} h={2} accent />
+      <WireRect x={42} y={84} w={56} h={42} r={2} stroke />
+      {[20, 26].map((v, i) => <React.Fragment key={i}><WireRect x={56 + i * 20} y={122 - v} w={8} h={v * 0.5} accent /><WireRect x={56 + i * 20} y={122 - v * 0.5} w={8} h={v * 0.5} /></React.Fragment>)}
+      <WireGrid x={102} y={84} w={55} h={42} rows={6} />
+      <WireGrid x={161} y={84} w={55} h={42} rows={6} />
+    </svg>
+  );
+}
+
+function IssuerInvolvementPreview() {
+  return (
+    <svg {...svgProps("Issuer business involvement preview: five count tiles, a grouped detail grid and a peer radar")}>
+      <SustainableChrome active={1} filters={1} />
+      <EntityLine />
+      {[0, 1, 2, 3, 4].map((i) => <WireTile key={i} x={42 + i * 35.2} y={40} w={32} h={18} />)}
+      <WireGrid x={42} y={62} w={85} h={64} rows={9} />
+      <WireRect x={131} y={62} w={85} h={64} r={2} stroke />
+      <WireRadar cx={173.5} cy={97} r={22} />
+    </svg>
+  );
+}
+
+function IssuerControversiesPreview() {
+  return (
+    <svg {...svgProps("Issuer controversies preview: three score tiles and a severity grid grouped by pillar")}>
+      <SustainableChrome active={2} filters={1} />
+      <EntityLine />
+      <WireTile x={42} y={40} w={41} h={20} />
+      <WireTile x={87} y={40} w={84} h={20} />
+      {[0, 1, 2].map((i) => <WireRect key={i} x={112 + i * 19} y={48} w={12} h={6} />)}
+      <WireTile x={175} y={40} w={41} h={20} />
+      <WireRect x={42} y={64} w={174} h={62} r={2} stroke />
+      <WireRect x={46} y={67.5} w={30} h={2.5} accent />
+      {Array.from({ length: 8 }, (_, i) => {
+        const y = 76 + i * 6;
+        const group = i === 0 || i === 4;
+        return (
+          <React.Fragment key={i}>
+            <WireRect x={group ? 46 : 52} y={y} w={group ? 34 : 28} h={1.8} accent={group} />
+            <WireRect x={120} y={y} w={8} h={1.8} />
+            <circle cx={150} cy={y + 0.9} r={1.5} fill={MUTED} />
+            <circle cx={178} cy={y + 0.9} r={1.5} fill={i % 3 === 1 ? ACCENT : MUTED} />
+            <circle cx={204} cy={y + 0.9} r={1.5} fill={i % 4 === 2 ? ACCENT : "none"} stroke={MUTED} strokeWidth={0.5} />
+          </React.Fragment>
+        );
+      })}
+    </svg>
+  );
+}
+
+function EntityComparisonPreview() {
+  return (
+    <svg {...svgProps("Entity comparison preview: two summary cards, a radar, and score, rating and emissions comparisons")}>
+      <SustainableChrome active={3} filters={2} />
+      {[0, 1].map((c) => (
+        <React.Fragment key={c}>
+          <WireRect x={42 + c * 59.5} y={26} w={55.5} h={34} r={2} stroke />
+          <WireRect x={46 + c * 59.5} y={29.5} w={22} h={2.5} accent={c === 0} />
+          {[0, 1, 2, 3].map((i) => (
+            <React.Fragment key={i}>
+              <WireRect x={46 + c * 59.5} y={37 + i * 5.4} w={14} h={1.5} />
+              <WireRect x={78 + c * 59.5} y={37 + i * 5.4} w={15} h={1.5} />
+            </React.Fragment>
+          ))}
+        </React.Fragment>
+      ))}
+      <WireRect x={161} y={26} w={55} h={34} r={2} stroke />
+      <WireRadar cx={188.5} cy={45} r={12} />
+      <WireRect x={42} y={64} w={85} h={28} r={2} stroke />
+      {[30, 24, 34, 28].map((v, i) => <React.Fragment key={i}><WireRect x={48} y={69 + i * 5.4} w={v} h={1.8} accent /><WireRect x={48} y={71 + i * 5.4} w={v * 0.7} h={1.8} /></React.Fragment>)}
+      <WireRect x={131} y={64} w={85} h={28} r={2} stroke />
+      <path d="M 137 82 L 155 82 L 173 76 L 191 76 L 209 72" stroke={ACCENT} strokeWidth={1.2} fill="none" />
+      <path d="M 137 78 L 155 84 L 173 84 L 191 86 L 209 86" stroke={MUTED} strokeWidth={1} strokeDasharray="2 2" fill="none" />
+      {[0, 1, 2].map((c) => (
+        <React.Fragment key={c}>
+          <WireRect x={42 + c * 59.5} y={96} w={55.5} h={30} r={2} stroke />
+          {[12, 18, 9, 14].map((v, i) => <WireRect key={i} x={50 + c * 59.5 + i * 11} y={122 - v} w={5} h={v} accent={i % 2 === 0} />)}
+        </React.Fragment>
+      ))}
+    </svg>
+  );
+}
+
+function GovernanceScorecardPreview() {
+  return (
+    <svg {...svgProps("Governance scorecard preview: four category cards and three indicator grids")}>
+      <SustainableChrome active={0} filters={1} />
+      <EntityLine />
+      {[0, 1, 2, 3].map((i) => <WireTile key={i} x={42 + i * 44.5} y={40} w={40.5} h={16} accent={i === 0} />)}
+      {[0, 1, 2].map((c) => (
+        <React.Fragment key={c}>
+          <WireRect x={42 + c * 59.5} y={60} w={55.5} h={66} r={2} stroke />
+          <WireRect x={46 + c * 59.5} y={63.5} w={18} h={2.5} accent />
+          {Array.from({ length: 8 }, (_, i) => (
+            <React.Fragment key={i}>
+              <WireRect x={46 + c * 59.5} y={72 + i * 6.4} w={30} h={1.6} />
+              <WireRect x={86 + c * 59.5} y={71 + i * 6.4} w={7} h={3.4} r={1.2} accent={c < 2 && i % 3 !== 2} />
+            </React.Fragment>
+          ))}
+        </React.Fragment>
+      ))}
+    </svg>
+  );
+}
+
+function AnalyticsHomePreview() {
+  return (
+    <svg {...svgProps("Analytics home preview: a hero with search, four launcher cards and a list of dashboards")}>
+      <WireRect x={4} y={4} w={212} h={7} r={2} stroke />
+      <WireRect x={8} y={6.5} w={3} h={2.4} accent />
+      <WireRect x={13} y={6.8} w={20} h={1.8} />
+      <WireRect x={8} y={12.6} w={9} h={1.6} accent />
+      <WireRect x={21} y={12.6} w={13} h={1.6} />
+      <WireRect x={4} y={17} w={32} h={109} r={2} stroke />
+      {[0, 1, 2, 3].map((i) => <WireRect key={i} x={9} y={23 + i * 6} w={i === 0 ? 20 : 16} h={2} accent={i === 0} />)}
+      <WireRect x={104} y={22} w={50} h={4} />
+      <WireRect x={94} y={29} w={70} h={1.8} />
+      <WireRect x={90} y={34} w={78} h={8} r={2} stroke />
+      <WireRect x={152} y={35.5} w={14} h={5} accent />
+      {[0, 1, 2, 3].map((i) => (
+        <React.Fragment key={i}>
+          <WireRect x={42 + i * 44.5} y={50} w={40.5} h={40} r={2} stroke />
+          <WireRect x={42 + i * 44.5} y={50} w={40.5} h={1.6} accent />
+          <WireRect x={46 + i * 44.5} y={55} w={20} h={2} />
+          <WireRect x={46 + i * 44.5} y={60} w={32.5} h={18} r={1.5} />
+          <WireRect x={46 + i * 44.5} y={83} w={16} h={2} accent />
+        </React.Fragment>
+      ))}
+      <WireGrid x={42} y={96} w={174} h={30} rows={5} />
+    </svg>
+  );
+}
+
 /* ── Registry ── */
 const PREVIEWS: Record<TemplateId, React.FC> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
@@ -600,6 +771,12 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
   "climate-analytics":     ClimateAnalyticsPreview,
   "screening":             ScreeningPreview,
   "screening-changes":     ScreeningChangesPreview,
+  "issuer-climate":        IssuerClimatePreview,
+  "issuer-involvement":    IssuerInvolvementPreview,
+  "issuer-controversies":  IssuerControversiesPreview,
+  "entity-comparison":     EntityComparisonPreview,
+  "governance-scorecard":  GovernanceScorecardPreview,
+  "analytics-home":        AnalyticsHomePreview,
 };
 
 export function TemplatePreview({ id }: { id: TemplateId }) {

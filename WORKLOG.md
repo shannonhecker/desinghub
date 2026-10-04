@@ -10,6 +10,41 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-10-05 Session Log - finance templates, slice 3
+
+Branch `feat/finance-templates-slice-3`, stacked on slice 2. Issuer Climate,
+Business Involvement, Controversies, Entity Comparison, Governance Scorecard,
+Analytics Home. Detail in CHANGELOG.md.
+
+- `ReportBlocks.tsx`: entity header, metric tile, verdict card, launcher card, hero.
+- `recordPanelModel.ts`: `RowLookup` (one row of a table, chosen by state or fixed).
+- `SimulatedHighchart.tsx`: radar, corridor, `yAxisCategories`.
+- `dataGridModel.ts` / `SimulatedDataGrid.tsx`: dot and chip cells, heading rows.
+- `reportData/binding.ts`: `alsoState` / `extra` on filters, a sort that follows
+  state, `showWhen` on record columns, `groupRows`.
+- `reportData/issuerDataset.ts`: the sample dataset; one long table
+  (`issuerSeries`) feeds every "this issuer against something" chart.
+- `issuerTemplates.ts`: the six templates.
+- e2e: `builder-finance-templates.spec.ts` covers twelve templates (54 tests).
+
+Notes for the next session:
+- **The owner asked for a tighter density, like the source** (measured there: top
+  bar 44, tabs 34, a 33px title-and-filters row with the label beside a 20px
+  select, panel header 48, grid row 28 / header 30, 11px grid text). The
+  templates use 48 / 40 / 64 / 56 / 32 / 36 / 13px. A density pass over all twelve
+  templates is the next PR.
+- Export for this slice is covered by tests only: the exported TSX was not
+  type-checked and no exported project was rendered (the two earlier slices were).
+- A block that fills its grid cell needs its height in its props as well as in
+  its layout (`height: 112` and `layout.height: "112px"`): a percentage height
+  has nothing to resolve against inside the block wrapper. The template test
+  checks the two agree.
+- A grid's group heading rows are marked `_heading`; `_group` is the field of an
+  aggregated grid's first column and must not be reused.
+- Three decisions in the design note are marked **Review** for the owner.
+
+---
+
 ## 2026-10-04 Session Log - finance templates, slice 2
 
 Branch `feat/finance-templates-slice-2`, stacked on slice 1. ESG Analytics,

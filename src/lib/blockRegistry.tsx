@@ -546,6 +546,8 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "HighchartStackedArea", label: "Stacked Area", icon: "area_chart", defaults: { chartType: "stacked-area", title: "Allocation history" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartCombination", label: "Combination Chart", icon: "multiline_chart", defaults: { chartType: "combination", title: "Value at risk" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartWaterfall", label: "Waterfall", icon: "waterfall_chart", defaults: { chartType: "waterfall", title: "Bridge" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartRadar", label: "Radar", icon: "radar", defaults: { chartType: "radar", title: "Capability profile" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartCorridor", label: "Pathway Corridor", icon: "ssid_chart", defaults: { chartType: "corridor", title: "Pathway" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
@@ -633,6 +635,32 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "NavItem", label: "Nav Item", icon: "menu", defaults: { label: "New Item", icon: "chat", active: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "icon", label: "Icon", options: NAV_ICON_OPTIONS },
+  ]},
+  /* ── Report blocks: entity header, metric tile, verdict, launcher, hero ── */
+  { type: "EntityHeader", label: "Entity Header", icon: "badge", defaults: { title: "Entity" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "eyebrow", label: "Eyebrow" },
+  ]},
+  { type: "MetricTile", label: "Metric Tile", icon: "counter_1", defaults: { label: "Metric", value: "0" }, fields: [
+    { type: "text", propKey: "label", label: "Label" },
+    { type: "text", propKey: "value", label: "Value" },
+  ]},
+  { type: "VerdictCard", label: "Verdict Card", icon: "verified", defaults: { title: "Verdict" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "chip", label: "Chip" },
+    { type: "text", propKey: "footnote", label: "Footnote" },
+  ]},
+  { type: "LauncherCard", label: "Launcher Card", icon: "open_in_new", defaults: { title: "Report", description: "What this report shows.", actionLabel: "Open report" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "tag", label: "Tag" },
+    { type: "textarea", propKey: "description", label: "Description" },
+    { type: "text", propKey: "actionLabel", label: "Button" },
+  ]},
+  { type: "HeroSearch", label: "Hero with Search", icon: "search", defaults: { title: "Analytics", subtitle: "Search for a report.", placeholder: "Search", buttonLabel: "Search" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "subtitle", label: "Subtitle" },
+    { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "buttonLabel", label: "Button" },
   ]},
   /* ── Record panel: the detail of the row a grid has selected ── */
   { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
@@ -826,6 +854,8 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartTreemap: "charts",
   HighchartCombination: "charts",
   HighchartWaterfall: "charts",
+  HighchartRadar: "charts",
+  HighchartCorridor: "charts",
   HighchartStackedBar: "charts",
   HighchartStackedArea: "charts",
 
