@@ -276,13 +276,17 @@ function SaltDropdownField({ model, onChange }: { model: DropdownModel; onChange
 function MuiDropdownField({ model, onChange }: { model: DropdownModel; onChange: DropdownChange }) {
   const id = React.useId();
   const label = model.label || model.placeholder;
+  /* Compact (toolbar / panel header): the small size, and an accessible name
+     instead of the floating label, which needs the full field height. */
   return (
-    <MuiFormControl fullWidth>
-      <MuiInputLabel id={id}>{label}</MuiInputLabel>
+    <MuiFormControl fullWidth size={model.compact ? "small" : undefined}>
+      {model.compact ? null : <MuiInputLabel id={id}>{label}</MuiInputLabel>}
       <MuiSelect
         key={onChange ? undefined : model.value}
-        labelId={id}
-        label={label}
+        /* MUI's "small" select is still 40px with 16px text: too tall for a
+           panel header. Compact brings it to the 32px the other systems use. */
+        sx={model.compact ? { height: 32, fontSize: 13 } : undefined}
+        {...(model.compact ? { inputProps: { "aria-label": label } } : { labelId: id, label })}
         {...(onChange
           ? { value: model.value, onChange: (e: { target: { value: unknown } }) => onChange(String(e.target.value)) }
           : { defaultValue: model.value })}
@@ -308,7 +312,7 @@ function FluentDropdownField({ model, size, onChange }: { model: DropdownModel; 
           }
         : { defaultValue: model.value || undefined, defaultSelectedOptions: model.value ? [model.value] : [] })}
       aria-label={model.label ? undefined : model.placeholder}
-      size={size}
+      size={model.compact ? "small" : size}
       style={{ minWidth: 0, width: "100%" }}
     >
       {model.options.map((o) => (

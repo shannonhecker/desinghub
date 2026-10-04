@@ -349,11 +349,18 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
     const trigger = React.createElement(
       "div",
-      { className: "a-dropdown", style: { flex: 1, minWidth: 0, position: "relative" } },
+      { className: "a-dropdown", style: { flex: 1, minWidth: 0, width: "100%", position: "relative" } },
       React.createElement(
         "div",
-        { className: "a-dropdown-trigger", "aria-hidden": "true" },
-        React.createElement("span", m.value ? null : { style: { opacity: 0.6 } }, m.value || m.placeholder),
+        /* Compact (a panel header's "View by"): a shorter trigger, so it
+           sits inside the fixed header row like the other systems' small
+           selects. */
+        { className: "a-dropdown-trigger", "aria-hidden": "true", style: m.compact ? { height: 32, padding: "0 10px", fontSize: 12 } : undefined },
+        React.createElement(
+          "span",
+          { style: { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...(m.value ? {} : { opacity: 0.6 }) } },
+          m.value || m.placeholder,
+        ),
         React.createElement("span", { className: "material-symbols-outlined" }, "expand_more"),
       ),
       React.createElement(
@@ -370,9 +377,11 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       ),
     );
     if (!m.label) return trigger;
+    /* Label above the field, like the other systems' labelled fields: beside
+       it, a narrow filter left too little room and the value wrapped. */
     return React.createElement(
       "div",
-      { style: { display: "flex", alignItems: "center", gap: 8 } },
+      { style: { display: "flex", flexDirection: "column", gap: 4, minWidth: 0 } },
       React.createElement("span", { className: "a-label", style: { whiteSpace: "nowrap" } }, m.label),
       trigger,
     );
@@ -596,7 +605,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
     return React.createElement(CarbonDropdown, {
       key: onChange ? undefined : m.value,
       id: fieldId(p, "dropdown"),
-      size: carbonSize(densityOf(ctx)),
+      size: m.compact ? "sm" : carbonSize(densityOf(ctx)),
       titleText: m.label,
       hideLabel: !m.label,
       label: m.placeholder,

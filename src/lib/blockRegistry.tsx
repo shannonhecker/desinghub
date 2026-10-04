@@ -387,6 +387,11 @@ const PRESENCE_OPTIONS = [
   { value: "", label: "None" }, { value: "available", label: "Available" },
   { value: "busy", label: "Busy" }, { value: "away", label: "Away" }, { value: "offline", label: "Offline" },
 ];
+const TONE_OPTIONS = [
+  { value: "surface", label: "Surface" }, { value: "dark", label: "Dark" },
+  { value: "inverse", label: "Inverse" }, { value: "accent", label: "Accent" },
+  { value: "transparent", label: "Transparent" },
+];
 const NAV_ICON_OPTIONS = [
   { value: "chat", label: "Chat" }, { value: "database", label: "Database" },
   { value: "settings", label: "Settings" }, { value: "bar_chart", label: "Bar Chart" },
@@ -628,6 +633,53 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "NavItem", label: "Nav Item", icon: "menu", defaults: { label: "New Item", icon: "chat", active: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "icon", label: "Icon", options: NAV_ICON_OPTIONS },
   ]},
+  /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
+  { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {
+      title: "Holdings", height: 320,
+      columns: [
+        { field: "name", header: "Holding", flex: 2 },
+        { field: "class", header: "Asset class" },
+        { field: "value", header: "Market value", kind: "currency", compact: true },
+        { field: "weight", header: "Weight", kind: "percent" },
+        { field: "ret", header: "1M return", kind: "percent", signed: true },
+      ],
+      rows: [
+        { name: "Total", class: "", value: 48_600_000, weight: 100, ret: 1.84, _bold: true },
+        { name: "Halden Capital Ord", class: "Equity", value: 18_200_000, weight: 37.45, ret: 3.1 },
+        { name: "UK Gilt 3.75% 2038", class: "Government Bond", value: 14_900_000, weight: 30.66, ret: 0.9 },
+        { name: "Tidewater Energy 5.1% 2031", class: "Corporate Bond", value: 9_700_000, weight: 19.96, ret: 1.4 },
+        { name: "Sterling Liquidity Fund", class: "Cash", value: 5_800_000, weight: 11.93, ret: -0.1 },
+      ],
+    }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "subtitle", label: "Subtitle" },
+    { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Fund, Asset class" },
+    { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+  ]},
+
+  /* ── Application chrome ── */
+  { type: "TopNav", label: "Top Navigation", icon: "web_asset", defaults: { brand: "Brand", linksCsv: "Home, Products, Reports, Resources", active: "Home", tone: "dark", chevrons: false, account: "" }, fields: [
+    { type: "text", propKey: "brand", label: "Brand" },
+    { type: "select", propKey: "logo", label: "Logo", options: [{ value: "letter", label: "Letter mark" }, { value: "none", label: "None" }] },
+    { type: "text", propKey: "linksCsv", label: "Links (comma separated)" },
+    { type: "text", propKey: "active", label: "Active link" },
+    { type: "toggle", propKey: "chevrons", label: "Menu chevrons" },
+    { type: "text", propKey: "account", label: "Account name", placeholder: "\"none\" hides the account" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
+  { type: "TabStrip", label: "Tab Strip", icon: "tab", defaults: { tabsCsv: "Overview, Reports, Settings", active: "Overview", tone: "dark", addButton: false }, fields: [
+    { type: "text", propKey: "tabsCsv", label: "Tabs (comma separated)" },
+    { type: "text", propKey: "active", label: "Active tab" },
+    { type: "toggle", propKey: "addButton", label: "Add button" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
+  { type: "PageTitle", label: "Page Title", icon: "title", defaults: { text: "Page title" }, fields: [
+    { type: "text", propKey: "text", label: "Title" },
+    { type: "text", propKey: "caption", label: "Caption" },
+  ]},
+  { type: "NavGroup", label: "Nav Group Label", icon: "segment", defaults: { label: "Section" }, fields: [
+    { type: "text", propKey: "label", label: "Label" },
+  ]},
   { type: "FooterText", label: "Footer Text", icon: "short_text", defaults: { label: "Footer text", version: "v1.0" }, fields: [
     { type: "text", propKey: "label", label: "Text" }, { type: "text", propKey: "version", label: "Version" },
   ]},
@@ -741,6 +793,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
 
   /* Data display */
   SimulatedDataTable: "data-display",
+  DataGrid: "data-display",
   SimulatedStatCard: "data-display",
   SimulatedListBox: "data-display",
   SimulatedTree: "data-display",
@@ -770,6 +823,10 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartStackedArea: "charts",
 
   /* Navigation */
+  PageTitle: "content",
+  TopNav: "navigation",
+  TabStrip: "navigation",
+  NavGroup: "navigation",
   SimulatedTabs: "navigation",
   SimulatedBreadcrumb: "navigation",
   SimulatedNavDrawer: "navigation",

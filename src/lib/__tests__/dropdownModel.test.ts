@@ -8,6 +8,7 @@ describe("dropdownModel", () => {
       value: "GBP",
       placeholder: "Select an option",
       options: ["GBP", "USD", "EUR"],
+      compact: false,
     });
   });
 

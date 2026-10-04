@@ -47,6 +47,24 @@
   --dh-panel-title-size: 14px;
   --dh-panel-meta-size:  12px;
   --bc-hairline:         1px;
+  /* Navigation bars (ChromeBars.tsx) and the "dark" chrome tone: dark
+     application chrome in light and dark mode alike. Sizes are the same in
+     every design system so the body starts at the same point. */
+  --bc-topnav-h:            48px;
+  --bc-tabstrip-h:          40px;
+  --bc-bar-gap:             24px;
+  --bc-bar-font:            13px;
+  --bc-bar-mark:            24px;
+  --dh-navgroup-size:       11px;
+  --dh-page-title-size:     24px;
+  --bc-chrome-dark:         #15171d;
+  --bc-chrome-dark-raised:  #20232b;
+  --bc-chrome-dark-fg:      #eceef2;
+  --bc-chrome-dark-fg-dim:  #a9afbb;
+  --bc-chrome-dark-line:    rgba(255, 255, 255, 0.10);
+  /* Brand mark letter: white on the system accent. --ds-on-primary is not
+     safe here (Salt maps it to an accent TEXT colour, teal on teal). */
+  --bc-chrome-mark-fg:      #ffffff;
   /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
   --dh-panel-tool-size:  28px;
   --dh-focus-ring:       2px;

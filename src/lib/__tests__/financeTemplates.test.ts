@@ -34,6 +34,25 @@ describe("finance templates - registration", () => {
   });
 });
 
+describe("finance templates - application chrome", () => {
+  it("a flush, stacked, dark header of a top bar over a tab strip; no sidebar, no footer", () => {
+    for (const t of templates) {
+      expect(t.header.map((b) => b.type)).toEqual(["TopNav", "TabStrip"]);
+      expect(t.zoneLayouts?.header).toMatchObject({ mode: "stack", gap: 0, flush: true, tone: "dark" });
+      expect(t.zoneLayouts?.sidebar?.visible).toBe(false);
+      expect(t.zoneLayouts?.footer?.visible).toBe(false);
+      expect(t.sidebar).toEqual([]);
+      expect(t.footer).toEqual([]);
+    }
+  });
+
+  it("each report's tab strip marks its own workspace", () => {
+    expect(riskAnalytics.header[1].props.active).toBe("Risk");
+    expect(performanceAnalytics.header[1].props.active).toBe("Performance");
+    for (const t of templates) expect(String(t.header[1].props.tabsCsv).split(", ")).toContain(t.header[1].props.active);
+  });
+});
+
 describe("finance templates - layout rules for identical positions in every design system", () => {
   it("body is a 12-column grid and every row sums to 12", () => {
     for (const t of templates) {

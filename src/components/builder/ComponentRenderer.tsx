@@ -54,6 +54,7 @@ import {
 } from "./SimulatedUI";
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
+import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock } from "./ChromeBars";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
@@ -1940,6 +1941,10 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartHeatmap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   DataGrid: DataGridBlockRenderer as React.FC<{ system: DesignSystem }>,
+  TopNav: TopNavBlock as React.FC<{ system: DesignSystem }>,
+  TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
+  NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
+  PageTitle: PageTitleBlock as React.FC<{ system: DesignSystem }>,
   HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,

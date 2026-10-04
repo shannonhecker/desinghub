@@ -127,7 +127,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
           <ComponentRenderer
             type="SimulatedDropdown"
             system={system}
-            {...{ value: viewBy![0], options: viewBy, placeholder: "View by", stateKey: viewByState }}
+            {...{ value: viewBy![0], options: viewBy, placeholder: "View by", stateKey: viewByState, compact: true }}
           />
         </div>
       ) : null}

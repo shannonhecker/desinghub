@@ -199,7 +199,7 @@ export function buildChartOptions(
     };
   }
   if (props.centerLabel && chartType === "donut") {
-    o.chart = { ...(o.chart as any), events: { render: centerLabelRenderer(props.centerLabel, v) } };
+    o.chart = { ...(o.chart as any), dhCenter: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
   }
   /* The accessibility module describes the chart to assistive tech; give it
      the title even when the visible title is hidden. */
@@ -211,24 +211,23 @@ export function buildChartOptions(
 const CENTER_LABEL_FONT_SIZE = 15;
 
 /** Highcharts `render` handler that keeps one text label centred on the pie.
- *  Runs on every redraw, so the label follows a resize. */
-function centerLabelRenderer(text: string, v: ThemeVars) {
-  return function (this: Highcharts.Chart) {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const chart = this as any;
-    const series = chart.series?.[0];
-    if (!series?.center) return;
-    const [cx, cy] = series.center as number[];
-    if (!chart.dhCenterLabel) {
-      chart.dhCenterLabel = chart.renderer
-        .text(text, 0, 0)
-        .attr({ align: "center", zIndex: 5 })
-        .css({ color: v.fg, fontSize: `${CENTER_LABEL_FONT_SIZE}px`, fontWeight: "600" })
-        .add();
-    }
-    const box = chart.dhCenterLabel.getBBox();
-    chart.dhCenterLabel.attr({ text, x: chart.plotLeft + cx, y: chart.plotTop + cy + box.height / 4 });
-  };
+ *  Runs on every redraw, so the label follows a resize. Its text and colour
+ *  are read from the chart's CURRENT options each time (chart.dhCenter): the
+ *  handler is bound once, but the options change with the theme and data. */
+function renderCenterLabel(this: Highcharts.Chart) {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const chart = this as any;
+  const center = chart.options?.chart?.dhCenter as { text: string; color: string } | undefined;
+  const series = chart.series?.[0];
+  if (!center || !series?.center) return;
+  const [cx, cy] = series.center as number[];
+  if (!chart.dhCenterLabel) {
+    chart.dhCenterLabel = chart.renderer.text(center.text, 0, 0).attr({ align: "center", zIndex: 5 }).add();
+  }
+  chart.dhCenterLabel.css({ color: center.color, fontSize: `${CENTER_LABEL_FONT_SIZE}px`, fontWeight: "600" });
+  chart.dhCenterLabel.attr({ text: center.text });
+  const box = chart.dhCenterLabel.getBBox();
+  chart.dhCenterLabel.attr({ x: chart.plotLeft + cx, y: chart.plotTop + cy + box.height / 4 });
 }
 
 function chartOptions(

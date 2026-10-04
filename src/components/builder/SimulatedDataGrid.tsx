@@ -40,12 +40,15 @@ const HEADER_HEIGHT = 36;
 const FONT_SIZE = 13;
 const HEADER_FONT_SIZE = 12;
 const INDENT_STEP = 16;
-const CELL_PADDING = 12;
+const CELL_PADDING = 8;
 
 const gridTheme = themeQuartz.withParams({
-  backgroundColor: "var(--ds-surface)",
+  /* Transparent, so the grid takes the surface it sits on (the panel). A
+     second coat of a translucent surface token would lighten it: uoaui's
+     glass surfaces showed the grid as a paler slab inside its panel. */
+  backgroundColor: "transparent",
   foregroundColor: "var(--ds-fg)",
-  headerBackgroundColor: "var(--ds-surface)",
+  headerBackgroundColor: "transparent",
   headerTextColor: "var(--ds-fg-secondary)",
   /* Row rules use the system's secondary separator: its primary border
      reads as a heavy white line between every row in the dark themes. */

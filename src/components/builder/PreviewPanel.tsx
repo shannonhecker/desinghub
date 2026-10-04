@@ -753,6 +753,7 @@ function ZoneAddBar() {
    ══════════════════════════════════════════════════════════ */
 function DashboardHeader({ compact }: { compact: boolean }) {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const headerLayout = useBuilder((s) => s.zoneLayouts.header);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
@@ -761,7 +762,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
   const readOnly = usePreviewReadOnly();
 
   return (
-    <header className="bp-header">
+    <header className="bp-header" data-tone={headerLayout.tone} data-flush={headerLayout.flush ? "" : undefined}>
       <FrameTab zone="header" />
       <ZoneDropContainer zoneId="header" blocks={headerBlocks} direction="horizontal">
         {headerBlocks.map((block) => {
@@ -914,6 +915,7 @@ function DashboardSidebar({
   onWidthChange?: (w: number) => void;
 }) {
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const sidebarLayout = useBuilder((s) => s.zoneLayouts.sidebar);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
   const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
@@ -942,6 +944,8 @@ function DashboardSidebar({
   return (
     <motion.aside
       className="bp-sidebar"
+      data-tone={sidebarLayout.tone}
+      data-side={sidebarLayout.side}
       data-collapsed={collapsed ? "true" : undefined}
       animate={{ width: collapsed ? 48 : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
@@ -1095,6 +1099,7 @@ function DefaultChatArea({ messageKey }: { messageKey: number }) {
    ══════════════════════════════════════════════════════════ */
 function DashboardFooter() {
   const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const footerLayout = useBuilder((s) => s.zoneLayouts.footer);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
@@ -1103,7 +1108,7 @@ function DashboardFooter() {
   const readOnly = usePreviewReadOnly();
 
   return (
-    <footer className="bp-footer">
+    <footer className="bp-footer" data-tone={footerLayout.tone} data-flush={footerLayout.flush ? "" : undefined}>
       <FrameTab zone="footer" />
       <ZoneDropContainer zoneId="footer" blocks={footerBlocks} direction="horizontal">
         {footerBlocks.map((block) => {
@@ -1315,6 +1320,7 @@ export function BuilderCanvas({
   const headerVisible = useBuilder((s) => s.zoneLayouts.header.visible !== false);
   const sidebarVisible = useBuilder((s) => s.zoneLayouts.sidebar.visible !== false);
   const footerVisible = useBuilder((s) => s.zoneLayouts.footer.visible !== false);
+  const sidebarSide = useBuilder((s) => s.zoneLayouts.sidebar.side);
 
   /* Responsive shells compact the header + drop the sidebar on the
      mobile device; the standalone pop-out stays full desktop layout.
@@ -1334,7 +1340,7 @@ export function BuilderCanvas({
       <ZoneAddBar />
       {headerVisible && <DashboardHeader compact={compact} />}
 
-      <div className="bp-body">
+      <div className="bp-body" data-sidebar-side={sidebarSide}>
         {showSidebar && (
           <DashboardSidebar
             collapsed={sidebarCollapsed}

@@ -17,7 +17,7 @@ export const PANEL_PADDING = 16;
 /** Default overall panel height when a block does not set one. */
 export const PANEL_DEFAULT_HEIGHT = 360;
 /** Width reserved for the "View by" select. */
-export const PANEL_VIEW_BY_WIDTH = 124;
+export const PANEL_VIEW_BY_WIDTH = 144;
 
 /** Height left for a panel's content once the header and the body padding
  *  (top is shared with the header, so one padding at the bottom) are taken. */

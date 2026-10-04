@@ -42,31 +42,33 @@ const PERIODICITY_STATE = "periodicity";
 const BENCHMARK_STATE = "benchmark";
 const GROSS = "Gross of fees";
 
-/* ── Chrome ── */
-const navItems = (prefix: string, active: string): Block[] =>
-  [
-    ["Overview", "home"],
-    ["Performance", "trending_up"],
-    ["Risk", "shield"],
-    ["Holdings", "layers"],
-    ["Screening", "filter"],
-    ["Settings", "settings"],
-  ].map(([label, icon]) => ({
-    id: `tpl-${prefix}-nav-${label.toLowerCase()}`,
-    type: "NavItem",
-    props: { label, icon, active: label === active },
-  }));
+/* ── Chrome ──
+   The application shell of the original reports: a dark top bar (brand,
+   primary links, account) over a dark tab strip of workspaces, with no
+   sidebar and no footer. Both bars are ordinary blocks in a flush, stacked
+   header, so they can be edited, re-toned, reordered or removed. */
+const WORKSPACES = "Home, Performance, Risk, Sustainable Investment";
 
 const chrome = (prefix: string, active: string) => ({
   header: [
-    { id: `tpl-${prefix}-brand`, type: "AppBrand", props: { label: FINANCE_BRAND } },
-    { id: `tpl-${prefix}-status`, type: "StatusPill", props: { label: "Dec 2024" } },
+    {
+      id: `tpl-${prefix}-topnav`, type: "TopNav",
+      props: { brand: FINANCE_BRAND, linksCsv: "Manager, Solutions, Apps, Resources", active: "Manager", chevrons: true, account: "", tone: "dark" },
+    },
+    {
+      id: `tpl-${prefix}-tabs`, type: "TabStrip",
+      props: { label: "Workspaces", tabsCsv: WORKSPACES, active, addButton: true, tone: "dark" },
+    },
   ] as Block[],
-  sidebar: navItems(prefix, active),
-  footer: [
-    { id: `tpl-${prefix}-footer`, type: "FooterText", props: { label: "Illustrative data", version: "Dec 2024" } },
-  ] as Block[],
+  sidebar: [] as Block[],
+  footer: [] as Block[],
 });
+
+const CHROME_LAYOUTS = {
+  header: { mode: "stack", gap: 0, flush: true, tone: "dark" },
+  sidebar: { mode: "stack", gap: 2, align: "stretch", visible: false },
+  footer: { mode: "row", gap: 8, wrap: false, align: "center", visible: false },
+} as const;
 
 /** A context filter: a labelled dropdown whose value is report state. */
 const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string): Block => ({
@@ -202,10 +204,10 @@ export const riskAnalytics: BuilderTemplate = {
   datasetId: FINANCE_DATASET_ID,
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
-  zoneLayouts: { body: BODY_LAYOUT },
+  zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("risk", "Risk"),
   body: [
-    { id: "tpl-risk-title", type: "SimulatedTitle", props: { text: "Risk", level: "h2" }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
+    { id: "tpl-risk-title", type: "PageTitle", props: { text: "Risk" }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     filter("tpl-risk-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr"),
 
     {
@@ -280,18 +282,19 @@ const perfResults: DataBinding = {
   measures: [sum("marketValue"), ...returnMeasures],
   adjustments: returnRules,
   computed: [{ as: "pctTotal", op: "shareOfTotal", of: ["marketValue"] }, ...excess],
+  /* Sixteen columns, sized so all four periods fit the full-width panel
+     without scrolling sideways; the account column takes what is left. */
   display: [
-    money("marketValue", "Market value", { width: 118 }),
-    pct("pctTotal", "% of total", { width: 96 }),
+    money("marketValue", "Market value", { width: 96 }),
+    pct("pctTotal", "% of total", { width: 80 }),
     ...PERIODS.flatMap(([s]) => [
-      pct(`port${s}`, "Port", { width: 76 }),
-      pct(`bmk${s}`, "Bmk", { width: 76 }),
-      pct(`excess${s}`, "Excess", { width: 84, signed: true }),
+      pct(`port${s}`, "Port", { width: 66 }),
+      pct(`bmk${s}`, "Bmk", { width: 66 }),
+      pct(`excess${s}`, "Excess", { width: 66, signed: true }),
     ]),
   ],
   columnGroups: PERIODS.map(([s, header]) => ({ header, keys: [`port${s}`, `bmk${s}`, `excess${s}`] })),
-  /* Sixteen columns: wider than the panel, so the account column is pinned. */
-  groupWidth: 216,
+  groupMinWidth: 180,
   total: PERF_TOTAL,
   selectState: PERF_SELECT,
 };
@@ -308,9 +311,9 @@ const perfBreakdown: DataBinding = {
   display: [
     money("marketValue", "Market value", { width: 96 }),
     pct("port1m", "1M", { width: 64, signed: true }),
-    pct("portYtd", "YTD", { width: 68, signed: true }),
+    pct("portYtd", "YTD", { width: 70, signed: true }),
   ],
-  groupMinWidth: 86,
+  groupMinWidth: 120,
   total: PERF_TOTAL,
   filters: [perfScope],
 };
@@ -391,10 +394,10 @@ export const performanceAnalytics: BuilderTemplate = {
   datasetId: FINANCE_DATASET_ID,
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
-  zoneLayouts: { body: BODY_LAYOUT },
+  zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("perf", "Performance"),
   body: [
-    { id: "tpl-perf-title", type: "SimulatedTitle", props: { text: "Performance", level: "h2" }, layout: { width: "4fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
+    { id: "tpl-perf-title", type: "PageTitle", props: { text: "Performance" }, layout: { width: "4fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     filter("tpl-perf-fee", "Fee type", FEE_STATE, "Net of fees", ["Net of fees", GROSS], "2fr"),
     filter("tpl-perf-currency", "Currency", "currency", "GBP", CURRENCIES, "2fr"),
     filter("tpl-perf-periodicity", "Periodicity", PERIODICITY_STATE, "Monthly", PERIODICITIES, "2fr"),
@@ -408,7 +411,7 @@ export const performanceAnalytics: BuilderTemplate = {
 
     {
       id: PERF_BREAKDOWN, type: "DataGrid",
-      props: { title: "Dimension breakdown", height: 360, viewBy: Object.keys(BREAKDOWN_DIMENSIONS), binding: perfBreakdown },
+      props: { title: "Breakdown", height: 360, viewBy: Object.keys(BREAKDOWN_DIMENSIONS), binding: perfBreakdown },
       layout: { width: "4fr" },
     },
     {

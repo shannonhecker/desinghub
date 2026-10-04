@@ -10353,12 +10353,249 @@
   white-space: nowrap;
 }
 
+/* ── Chrome tones ──
+   A chrome zone (header / sidebar / footer, via data-tone) or a navigation
+   bar (.dh-tone-*) picks one of five surface treatments. Each sets the same
+   four custom properties, which the zone or bar then paints with. ── */
+[data-tone="surface"], .dh-tone-surface {
+  --dh-chrome-bg: var(--ds-surface);
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="transparent"], .dh-tone-transparent {
+  --dh-chrome-bg: transparent;
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="inverse"], .dh-tone-inverse {
+  --dh-chrome-bg: var(--ds-fg);
+  --dh-chrome-fg: var(--ds-bg);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-bg) 72%, var(--ds-fg));
+  --dh-chrome-line: color-mix(in srgb, var(--ds-bg) 18%, transparent);
+}
+[data-tone="dark"], .dh-tone-dark {
+  --dh-chrome-bg: var(--bc-chrome-dark);
+  --dh-chrome-fg: var(--bc-chrome-dark-fg);
+  --dh-chrome-fg-dim: var(--bc-chrome-dark-fg-dim);
+  --dh-chrome-line: var(--bc-chrome-dark-line);
+}
+[data-tone="accent"], .dh-tone-accent {
+  --dh-chrome-bg: var(--ds-primary);
+  --dh-chrome-fg: var(--ds-on-primary);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-on-primary) 78%, transparent);
+  --dh-chrome-line: color-mix(in srgb, var(--ds-on-primary) 22%, transparent);
+}
+.bp-header[data-tone],
+.bp-sidebar[data-tone],
+.bp-footer[data-tone] {
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  border-color: var(--dh-chrome-line);
+}
+/* Flush: bars stack edge to edge; each block spans the zone. */
+.bp-header[data-flush],
+.bp-footer[data-flush] {
+  padding: 0;
+  border-width: 0;
+  display: block;
+}
+.bp-header[data-flush] .zone-drop-container > *,
+.bp-footer[data-flush] .zone-drop-container > * {
+  width: 100%;
+}
+/* !important: .zone-block-compact pads header/footer blocks with it, which
+   pushed a flush bar two pixels past the frame edge. */
+.bp-header[data-flush] .canvas-block,
+.bp-footer[data-flush] .canvas-block {
+  box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0;
+  border-width: 0;
+}
+/* Sidebar on the right. */
+.bp-body[data-sidebar-side="right"] {
+  flex-direction: row-reverse;
+}
+.bp-body[data-sidebar-side="right"] .bp-sidebar {
+  border-right-width: 0;
+  border-left: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+
+/* ── Page title (ChromeBars.tsx): one fixed size in every design system ── */
+.dh-page-title-wrap {
+  font-family: var(--ds-font);
+  min-width: 0;
+}
+.dh-page-title {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-page-title-size);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ds-fg);
+  text-wrap: balance;
+}
+.dh-page-caption {
+  margin: calc(var(--bc-bar-gap) / 6) 0 0;
+  font-size: var(--bc-bar-font);
+  color: var(--ds-fg-secondary);
+}
+
+/* ── Navigation bars (ChromeBars.tsx) ── */
+.dh-tone {
+  box-sizing: border-box;
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  font-family: var(--ds-font);
+}
+.dh-topnav {
+  display: flex;
+  align-items: center;
+  height: var(--bc-topnav-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+}
+.dh-topnav-brand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 2);
+  font-size: var(--bc-bar-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.dh-topnav-mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: var(--ds-radius);
+  background: var(--ds-primary);
+  color: var(--bc-chrome-mark-fg);
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 700;
+}
+.dh-topnav-divider {
+  flex: none;
+  width: var(--bc-hairline);
+  height: calc(var(--bc-topnav-h) * 0.42);
+  background: var(--dh-chrome-line);
+}
+.dh-topnav-links {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow: hidden;
+}
+/* Scoped under .dh-tone so these win over the canvas's generic button
+   styling, which would recolour the links and stop them filling the bar. */
+.dh-tone .dh-topnav-link,
+.dh-tone .dh-tabstrip-tab {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  border-radius: 0;
+  gap: calc(var(--bc-bar-gap) / 4);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-tone .dh-topnav-link:hover,
+.dh-tone .dh-tabstrip-tab:hover {
+  color: var(--dh-chrome-fg);
+}
+.dh-tone .dh-topnav-link.is-active,
+.dh-tone .dh-tabstrip-tab.is-active {
+  color: var(--dh-chrome-fg);
+  font-weight: 600;
+}
+/* The active indicator: a bar in the system's primary colour along the
+   bottom edge. */
+.dh-topnav-link.is-active::after,
+.dh-tabstrip-tab.is-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--dh-focus-ring);
+  background: var(--ds-primary);
+}
+.dh-topnav-link:focus-visible,
+.dh-tabstrip-tab:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: calc(var(--dh-focus-ring) * -1);
+}
+.dh-topnav-spacer {
+  flex: 1 1 auto;
+}
+.dh-topnav-account {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 3);
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+}
+.dh-topnav-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: 50%;
+  border: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+.dh-tabstrip {
+  display: flex;
+  align-items: stretch;
+  height: var(--bc-tabstrip-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+/* A dark tab strip under a dark top bar reads as a second, lifted level. */
+.dh-tabstrip.dh-tone-dark {
+  background: var(--bc-chrome-dark-raised);
+}
+.dh-tabstrip-add {
+  display: inline-grid;
+  place-items: center;
+  color: var(--dh-chrome-fg-dim);
+}
+.dh-navgroup {
+  padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
+  font-family: var(--ds-font);
+  font-size: var(--dh-navgroup-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+
 /* ── Uniform structure ──
    Set on <html> by BuilderApp when the template on the canvas pins its
    structural spacing across design systems (BuilderTemplate.uniformStructure).
    The padding scale is pinned in JS; here the header takes one fixed height,
    so the body starts at the same y in every system. ── */
-[data-uniform-structure] .bp-header {
+[data-uniform-structure] .bp-header:not([data-flush]) {
   box-sizing: border-box;
   height: var(--bc-uniform-header-h);
 }

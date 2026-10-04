@@ -21,7 +21,10 @@ export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 const ZONE_BY_TYPE: Readonly<Record<string, ZoneId>> = {
   AppBrand: 'header',
   StatusPill: 'header',
+  TopNav: 'header',
+  TabStrip: 'header',
   NavItem: 'sidebar',
+  NavGroup: 'sidebar',
   FooterText: 'footer',
   /* Body-only primitive — a grouped column of blocks. */
   LayoutGroup: 'body',
@@ -246,7 +249,32 @@ export interface ZoneLayout {
      default. Persisted (zoneLayouts is a TRACKED_KEY) so a resize sticks
      across reload + sessions. */
   size?: number;
+  /** Surface treatment of a chrome zone (header / sidebar / footer) - see
+     ZoneTone. Undefined = "surface". */
+  tone?: ZoneTone;
+  /** Chrome zone runs edge to edge: no zone padding, so full-width bars
+     (TopNav, TabStrip) stack flush. */
+  flush?: boolean;
+  /** Sidebar only: which side it docks to. Undefined = "left". */
+  side?: "left" | "right";
 }
+
+/** Surface treatment for a chrome zone or a navigation bar:
+     surface      the system's raised surface (default)
+     transparent  the page background shows through
+     inverse      the opposite of the current mode
+     dark         dark application chrome in light AND dark mode
+     accent       the system's primary colour */
+export type ZoneTone = "surface" | "transparent" | "inverse" | "dark" | "accent";
+export const ZONE_TONES: readonly ZoneTone[] = ["surface", "transparent", "inverse", "dark", "accent"];
+
+/** A new canvas's zone layouts. Also what a template's omitted zones reset to. */
+export const DEFAULT_ZONE_LAYOUTS: Record<ZoneId, ZoneLayout> = {
+  body:    { mode: 'grid',  columns: 12, gap: 12, align: 'start' },
+  header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+  sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
+  footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+};
 
 /* Multi-page (2026-06-07): a page owns one BODY block set. Header/sidebar/footer
    are SHARED chrome across all pages. `s.blocks` is the live working copy of the

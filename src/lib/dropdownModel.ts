@@ -17,6 +17,9 @@ export interface DropdownModel {
   placeholder: string;
   /** Every choice, in order. Always contains `value` when one is set. */
   options: string[];
+  /** Draw the smallest form of the control, with no visible label: for a
+   *  dropdown inside a toolbar or a panel header. */
+  compact: boolean;
 }
 
 /** Choices for a bare dropdown dropped from the library with no content yet. */
@@ -38,5 +41,5 @@ export function dropdownModel(props: Record<string, unknown>): DropdownModel {
         .filter(Boolean);
   if (options.length === 0) options = value ? [value] : [...DEFAULT_DROPDOWN_OPTIONS];
   else if (value && !options.includes(value)) options = [value, ...options];
-  return { label, value, placeholder, options };
+  return { label, value, placeholder, options, compact: props.compact === true };
 }

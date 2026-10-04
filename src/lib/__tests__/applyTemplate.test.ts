@@ -26,6 +26,32 @@ describe("applyTemplateToCanvas", () => {
     expect(useBuilder.getState().sessionTitle).toBe("My risk review");
   });
 
+  /* A template can restyle or hide its chrome; the next template must not
+     inherit that. */
+  it("applies a template's chrome zone layouts and resets them for the next template", () => {
+    applyTemplateToCanvas(
+      { ...BUILDER_TEMPLATES["analytics-dashboard"], zoneLayouts: { body: { mode: "grid", columns: 12 }, header: { mode: "stack", gap: 0, flush: true, tone: "dark" }, sidebar: { mode: "stack", visible: false }, footer: { mode: "row", visible: false } } },
+      "salt",
+    );
+    let z = useBuilder.getState().zoneLayouts;
+    expect(z.header).toEqual({ mode: "stack", gap: 0, flush: true, tone: "dark" });
+    expect(z.sidebar.visible).toBe(false);
+    expect(z.footer.visible).toBe(false);
+
+    applyTemplateToCanvas(BUILDER_TEMPLATES["settings-page"], "salt");
+    z = useBuilder.getState().zoneLayouts;
+    expect(z.header).toEqual({ mode: "row", gap: 8, wrap: false, align: "center" });
+    expect(z.sidebar.visible).toBeUndefined();
+    expect(z.footer.visible).toBeUndefined();
+  });
+
+  it("keeps a sidebar width the user dragged", () => {
+    useBuilder.getState().setZoneLayout("sidebar", { size: 244 });
+    applyTemplateToCanvas(BUILDER_TEMPLATES["analytics-dashboard"], "salt");
+    expect(useBuilder.getState().zoneLayouts.sidebar.size).toBe(244);
+    useBuilder.getState().setZoneLayout("sidebar", { size: undefined });
+  });
+
   it("drops pages left over from a previous multi-page canvas", () => {
     useBuilder.setState({
       pages: [

@@ -94,7 +94,10 @@ describe("buildChartOptions - settings every type shares", () => {
   });
 
   it("a donut with a centre label installs a render handler; other types do not", () => {
-    expect(typeof build("donut", { centerLabel: "£1.2bn" }).chart.events.render).toBe("function");
+    const donut = build("donut", { centerLabel: "£1.2bn" });
+    expect(typeof donut.chart.events.render).toBe("function");
+    /* Text and colour travel in the options, so a theme change repaints it. */
+    expect(donut.chart.dhCenter).toEqual({ text: "£1.2bn", color: vars.fg });
     expect(build("pie", { centerLabel: "£1.2bn" }).chart.events).toBeUndefined();
     expect(build("donut", {}).chart.events).toBeUndefined();
   });
