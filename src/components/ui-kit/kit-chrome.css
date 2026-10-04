@@ -401,17 +401,18 @@
 @container kit (max-width: 1040px) {
   .kit-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .kit-wall > li { grid-column: span var(--s3, 1); }
-  .kit-compare { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* The band becomes a strip to scrub through: five panels never leave an
+     orphan row. */
+  .kit-compare.is-compact { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding-bottom: var(--kp-space-1); }
+  .kit-compare.is-compact > li { flex: 0 0 min(72%, 280px); scroll-snap-align: start; }
 }
 @container kit (max-width: 740px) {
   .kit-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kit-wall > li { grid-column: span var(--s2, 1); }
-  .kit-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container kit (max-width: 480px) {
   .kit-wall { grid-template-columns: minmax(0, 1fr); gap: var(--kp-space-3); }
   .kit-wall > li { grid-column: auto; }
-  .kit-compare { grid-template-columns: minmax(0, 1fr); }
   .kit-fp { justify-self: stretch; }
   .kit-fp-cell { flex: none; min-height: 0; }
   .kit-head { padding-bottom: var(--kp-space-3); }
@@ -421,9 +422,14 @@
 @media (max-width: 900px) {
   .kit-play { grid-template-columns: minmax(0, 1fr); }
   .kit-compare:not(.is-compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kit-compare:not(.is-compact) > li:last-child:nth-child(odd) { grid-column: span 2; }
 }
 @media (max-width: 520px) {
   .kit-compare:not(.is-compact) { grid-template-columns: minmax(0, 1fr); }
+  .kit-compare:not(.is-compact) > li:last-child:nth-child(odd) { grid-column: auto; }
+  /* Phones: the detail page uses the full width. */
+  .kit-detail.dh-detail { padding-left: var(--kp-space-4); padding-right: var(--kp-space-4); }
+  .kit-hero { padding: var(--kp-space-5) var(--kp-space-4); min-height: 220px; justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {
   .uikit-card, .kit-seg button, .kit-filters button, .kit-rail a, .kit-search input { transition: none; }
