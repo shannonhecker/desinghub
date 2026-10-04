@@ -6,6 +6,62 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-06 finance templates: density and fidelity pass (`feat/finance-templates-density`, stacked on slice 3)
+
+The twelve finance templates checked side by side against the reports they
+are modelled on, and brought to the same density, surfaces and controls.
+
+#### Changed
+- **Surfaces.** White cards on a grey canvas in light themes (a raised card
+  on the page colour in dark). The configuration drawer is a card too.
+- **Density.** Top bar 44px, tab strip 36px, panel header 48px, panel padding
+  20px, canvas gutters 24px, grid rows 28px under a 30px header.
+- **Context bar** (new block, header zone). The page title and the report's
+  filters on one compact line under the tab strip, replacing the title and
+  filter row in the body.
+- **Inline dropdown** (`inline: true`). The label beside an underlined select,
+  in every design system: Salt primary, Material standard, Fluent underline,
+  Carbon inline, uoaui. Used by the context bar, a panel's "View by" and the
+  configuration drawer.
+- **Left navigation.** Text items under section labels, expanded by default;
+  collapses to a rail of two-letter codes, and the choice is kept. Items and
+  workspace tabs open their report while presenting, keeping the collapsed
+  rail and any filter both reports share (the same entity, the same currency).
+- **Narrow panels** stack their header (title, then "View by" and the tools)
+  instead of hiding the tools until hover.
+- **Data marks** have square corners and a one-pixel separator in the card's
+  colour, so adjacent marks are told apart by more than colour.
+
+- **Score gauges** fit their tile: the dome is sized from the smaller side of
+  the plot (it was cut off at the sides of a narrow tile), with a thinner
+  ring and no text outline.
+- **Analytics Home** sits on a plain page as the original does: no context
+  bar, the Class and Theme filters beside "All dashboards", the list as a
+  bare table.
+- **Entity Comparison** has its "Comparing ... vs ..." heading, summary cards
+  with an accent edge, and one label / value pair per line.
+- **Issuer Climate**'s entity header is a card.
+- **Panel heights and column widths** re-fitted to the dense rows, so no grid
+  scrolls sideways and none carries a band of empty space it does not need.
+
+#### Added
+- **Data level.** A grid can show a hierarchy: each group, then what it
+  holds, indented. Performance results and the Risk summary show accounts
+  and their asset classes; expanded, they go down to the securities. The
+  panel's Configuration has a "Data level" setting (full hierarchy, each
+  shorter path, or the last level on its own).
+- **Expanded panels show more.** A top-N chart shows every row; Allocation
+  and Returns put a deeper table under the chart (each slice and its
+  securities; returns by account and asset class). Escape collapses the
+  panel without leaving Present.
+- **Export.** The context bar, section titles and hierarchical grids.
+
+#### Known gaps
+- Screening Changes has no "Period start / Period end" pickers: the sample
+  data holds one period.
+- Screening pages have no Currency filter (they show no money).
+
+
 ### 2026-10-05 finance templates, slice 3: issuer reports, scorecard, home (`feat/finance-templates-slice-3`, stacked on slice 2)
 
 Six more client reports as builder templates. Design note:

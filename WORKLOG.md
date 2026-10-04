@@ -10,6 +10,26 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-10-06 Session Log - finance templates, density and fidelity
+
+Branch `feat/finance-templates-density`, stacked on slice 3. Owner feedback
+against the original reports: tighter density, white cards, underlined inline
+dropdowns, an expanded and collapsible left nav, expand = more data, data
+level from the configuration, square marks with a separator. Detail in
+CHANGELOG.md.
+
+- `ChromeBars.tsx`: `ContextBarBlock`; tabs open templates.
+- `dropdownModel.ts`, `RealComponentRenderer.tsx`, `realBlockMap.ts`: `inline`.
+- `PreviewPanel.tsx`: dense text sidebar, rail of codes, `collapsed` in the
+  zone layout, nav items open templates.
+- `applyTemplate.ts`: `openTemplateLink` (keeps the rail and shared filters).
+- `reportData/binding.ts`: `hierarchy`, `dataLevel`, `expanded`,
+  `resolveBinding(..., { expanded })`.
+- `reportData/panelConfig.ts`: `dataLevelOptions`, `withDataLevel`.
+- `PanelFrame.tsx`: stacked header on narrow panels; Escape handling.
+- `SimulatedHighchart.tsx`: square marks, separator in the card colour.
+- Reference captures of the originals stay outside the repo.
+
 ## 2026-10-05 Session Log - finance templates, slice 3
 
 Branch `feat/finance-templates-slice-3`, stacked on slice 2. Issuer Climate,

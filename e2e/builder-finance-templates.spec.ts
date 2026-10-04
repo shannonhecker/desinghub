@@ -29,20 +29,21 @@ interface Measure {
 }
 
 const SYSTEMS = ["Salt DS", "Material 3", "Fluent 2", "uoaui", "Carbon"] as const;
-/* `minPanel`: the narrowest a panel may get on a phone. Score gauges sit two
-   across by design; every other panel takes the full width. */
+/* `minPanel`: the narrowest a panel may get on a phone (and, where it is
+   under 240, on a tablet). Score gauges are tiles by design: two across on a
+   phone, four across on a tablet; every other panel takes the full width. */
 const TEMPLATES = [
-  { label: "Risk Analytics", blocks: 7, minPanel: 280 },
-  { label: "Performance Analytics", blocks: 11, minPanel: 280 },
-  { label: "ESG Analytics", blocks: 13, minPanel: 140 },
-  { label: "Climate Analytics", blocks: 11, minPanel: 280 },
-  { label: "Screening", blocks: 4, minPanel: 280 },
-  { label: "Screening Changes", blocks: 3, minPanel: 280 },
-  { label: "Issuer Climate", blocks: 9, minPanel: 280 },
-  { label: "Issuer Business Involvement", blocks: 10, minPanel: 280 },
-  { label: "Issuer Controversies", blocks: 7, minPanel: 280 },
-  { label: "Entity Comparison", blocks: 11, minPanel: 280 },
-  { label: "Governance Scorecard", blocks: 10, minPanel: 280 },
+  { label: "Risk Analytics", blocks: 5, minPanel: 280 },
+  { label: "Performance Analytics", blocks: 6, minPanel: 280 },
+  { label: "ESG Analytics", blocks: 10, minPanel: 140 },
+  { label: "Climate Analytics", blocks: 9, minPanel: 280 },
+  { label: "Screening", blocks: 3, minPanel: 280 },
+  { label: "Screening Changes", blocks: 2, minPanel: 280 },
+  { label: "Issuer Climate", blocks: 7, minPanel: 280 },
+  { label: "Issuer Business Involvement", blocks: 8, minPanel: 280 },
+  { label: "Issuer Controversies", blocks: 5, minPanel: 280 },
+  { label: "Entity Comparison", blocks: 9, minPanel: 280 },
+  { label: "Governance Scorecard", blocks: 8, minPanel: 280 },
   { label: "Analytics Home", blocks: 10, minPanel: 280 },
 ] as const;
 
@@ -172,7 +173,8 @@ test.describe("Builder - finance templates", () => {
     await expect(totalCell).toHaveText("£3.55bn");
 
     /* Currency: the same book in dollars. */
-    await main.getByRole("combobox", { name: "Currency" }).first().click();
+    /* The filters sit in the context bar, under the tab strip. */
+    await page.locator(".present-stage .dh-contextbar").getByRole("combobox", { name: "Currency" }).first().click();
     await page.getByRole("option", { name: "USD", exact: true }).click();
     await expect(totalCell).toHaveText(/^US\$4\.\d\dbn$/);
 
@@ -184,6 +186,58 @@ test.describe("Builder - finance templates", () => {
     await expect(legend.first()).toContainText("Financials");
   });
 
+  test("Expand shows more data; Data level in Configuration sets the depth; Escape collapses and stays in Present", async ({ page }) => {
+    await applyTemplate(page, "Performance Analytics");
+    const stage = page.locator(".present-stage");
+    const rows = (scope: string) => stage.locator(`${scope} .ag-center-cols-container .ag-row`);
+    /* In place: accounts, each with its asset classes under it. */
+    const results = 'section[aria-label="Performance results"]';
+    await expect(stage.locator(`${results} .ag-row`, { hasText: "Global Multi-Asset Growth" }).first()).toBeVisible();
+    await expect(stage.locator(`${results} .ag-row`, { hasText: "Government Bond" }).first()).toBeVisible();
+    await expect(stage.locator(`${results} .ag-row`, { hasText: "Halden Capital Ord" })).toHaveCount(0);
+
+    /* Expanded: down to the securities. */
+    await stage.getByRole("button", { name: "Expand Performance results", exact: true }).click();
+    const expanded = ".dh-panel-expanded";
+    await expect(stage.locator(`${expanded} .ag-row`, { hasText: "Halden Capital Ord" }).first()).toBeVisible();
+
+    /* Configuration: the data level. */
+    await stage.getByRole("button", { name: "Configure Performance results", exact: true }).last().click();
+    const config = stage.locator(".dh-config");
+    await expect(config).toContainText("Account > Asset class > Security");
+    await config.getByRole("combobox", { name: "Data level" }).click();
+    await page.getByRole("option", { name: "Account only", exact: true }).click();
+    await expect(stage.locator(`${expanded} .ag-row`, { hasText: "Halden Capital Ord" })).toHaveCount(0);
+    await expect(rows(expanded)).toHaveCount(6);
+
+    /* Escape collapses the panel; the report is still being presented. */
+    await page.keyboard.press("Escape");
+    await expect(stage.locator(expanded)).toHaveCount(0);
+    await expect(stage.locator(".bp-main [data-block-id]").first()).toBeVisible();
+
+    /* A chart's expanded view carries a deeper table. */
+    await stage.getByRole("button", { name: "Expand Allocation", exact: true }).click();
+    await expect(stage.locator(`${expanded} .ag-row`, { hasText: "Total" }).first()).toBeVisible();
+    await expect(stage.locator(`${expanded} .ag-header-cell`, { hasText: "% of total" })).toBeVisible();
+  });
+
+  test("the left navigation collapses to a rail, opens reports, and stays collapsed", async ({ page }) => {
+    await applyTemplate(page, "ESG Analytics");
+    const side = page.locator(".present-stage .bp-sidebar");
+    await expect(side.getByText("Corporate governance", { exact: true })).toBeVisible();
+    /* Layout widths: the frame may be zoomed to fit. */
+    const width = () => side.evaluate((el) => (el as HTMLElement).offsetWidth);
+    expect(await width()).toBe(210);
+    await side.getByRole("button", { name: "Collapse sidebar" }).click();
+    await expect.poll(width).toBe(56);
+    await expect(side.getByText("ES", { exact: true })).toBeVisible();
+    /* A rail item opens its report; the rail stays. */
+    await side.getByText("CG", { exact: true }).click();
+    await expect(page.locator(".present-stage .dh-entity-title")).toHaveText("Avocado Inc");
+    await expect(side.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
+    await expect.poll(width).toBe(56);
+  });
+
   test("the chat applies a template, sets a filter and re-themes without a model", async ({ page }) => {
     await openBuilder(page);
     /* Typed before the page has hydrated, the text is lost: retry until the
@@ -193,7 +247,7 @@ test.describe("Builder - finance templates", () => {
       await chatInput(page).fill(ask);
       await expect(chatInput(page)).toHaveValue(ask);
       await chatInput(page).press("Enter");
-      await expect(page.locator(".present-stage .dh-page-title")).toHaveText("Risk", { timeout: 5_000 });
+      await expect(page.locator(".present-stage .dh-contextbar-title")).toHaveText("Risk", { timeout: 5_000 });
     }).toPass({ timeout: 60_000 });
     await expect(page.locator(".present-stage .bp-dashboard")).toHaveClass(/preview-carbon/);
 
@@ -266,7 +320,7 @@ test.describe("Builder - finance templates", () => {
     await applyTemplateFromChat(page, "use the analytics home template");
     await expect(stage.locator(".dh-launcher")).toHaveCount(4);
     await stage.locator(".dh-launcher", { hasText: "Risk" }).getByRole("button", { name: /Open report/ }).click();
-    await expect(stage.locator(".dh-page-title")).toHaveText("Risk");
+    await expect(stage.locator(".dh-contextbar-title")).toHaveText("Risk");
   });
 
   test("Changes: chips, sparklines, badges and toned words are drawn", async ({ page }) => {
@@ -310,7 +364,7 @@ test.describe("Builder - finance templates", () => {
         expect.soft(report.cut, `${tpl.label}: clipped text`).toEqual([]);
         expect.soft(report.outside, `${tpl.label}: blocks past the frame edge`).toEqual([]);
         /* A panel is never squeezed into a sliver. */
-        expect.soft(report.narrowest, `${tpl.label}: narrowest panel`).toBeGreaterThanOrEqual(device.name === "phone" ? tpl.minPanel : 240);
+        expect.soft(report.narrowest, `${tpl.label}: narrowest panel`).toBeGreaterThanOrEqual(device.name === "phone" ? tpl.minPanel : Math.min(240, tpl.minPanel));
       });
     }
   }
