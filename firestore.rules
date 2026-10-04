@@ -9,8 +9,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /projects/{projectId} {
-      // Read / modify / remove only docs you own.
-      allow read, update, delete: if request.auth != null
+      // Read only docs you own. A signed-in read of an id that does not
+      // exist yet is answered "not found" instead of refused: the first
+      // auto-save of a new session checks for an existing doc before it
+      // writes, and `resource` is null for a missing doc.
+      allow read: if request.auth != null
+        && (resource == null || resource.data.uid == request.auth.uid);
+
+      // Modify / remove only docs you own.
+      allow update, delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
 
       // Create only a doc stamped with your own uid.

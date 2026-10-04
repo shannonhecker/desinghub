@@ -1062,6 +1062,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleTemplatesDrawer: () => set((s) => ({ templatesDrawerOpen: !s.templatesDrawerOpen })),
 
   addBlockFromLibrary: (type, defaults, preferZone, index, source) => {
+    /* Adding a block is real work: make sure a session exists so auto-save
+       has somewhere to write it (no-op when one is already running). */
+    useBuilder.getState().ensureSessionStarted("Untitled session");
     const state = useBuilder.getState();
     const targetZone = resolveDestinationZone(type, preferZone, state.selectedBlockZone);
     const key = ZONE_KEYS[targetZone];

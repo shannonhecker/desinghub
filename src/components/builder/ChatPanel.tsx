@@ -21,6 +21,7 @@ import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { parseThemeCommand, describeThemeCommand } from "@/lib/themeCommand";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -972,7 +973,10 @@ export function ChatPanel() {
        button's label" for a layout/add-component command) and send
        straight to Claude with the selected_block context attached by
        useChatAPI. ── */
-    if (selectedBlockId) {
+    /* A message that is only a theme / design-system switch is about the
+       whole canvas, not the selected block, and needs no model: let it fall
+       through to the switch handling below instead of being scoped. */
+    if (selectedBlockId && !parseThemeCommand(msg).pure) {
       if (aiDisabled) {
         addMessage("ai", "Editing the selected block needs AI. Try \"add buttons\", \"add a nav bar\", or \"build a dashboard\" — those work without an API key.");
         setGenerating(false);
@@ -1027,20 +1031,25 @@ export function ChatPanel() {
       return;
     }
 
-    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll } =
-      processComponentCommand(msg, selectedComponents);
 
-    /* ── Theme changes ── */
+    /* ── Theme + design-system switches ──
+       Parsed by word, across all five systems (themeCommand.ts). Applied
+       here only when the message is nothing but a switch, or when there is
+       no model to hand it to: "add a chart with dark blue bars" must reach
+       the model, not flip the canvas to dark and stop. Mode first, so the
+       design system picks its theme for the new mode. */
+    const themeCmd = parseThemeCommand(msg);
+    const applyThemeLocally = themeCmd.pure || aiDisabled;
+
+    /* A message that is only a theme switch is not a component command:
+       "switch to Carbon" used to match the Toggles keyword "switch" and add
+       a toggle group to the canvas. */
+    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll }: ReturnType<typeof processComponentCommand> =
+      themeCmd.pure ? { response: "", newComponents: null } : processComponentCommand(msg, selectedComponents);
     let themeChanged = false;
-    if (l.includes("dark"))  { setMode("dark");  themeChanged = true; }
-    else if (l.includes("light")) { setMode("light"); themeChanged = true; }
-
-    /* ── Design system changes ── */
     let dsChanged = false;
-    if (l.includes("salt"))                               { setDesignSystem("salt");   dsChanged = true; }
-    else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3");     dsChanged = true; }
-    else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
-    else if (l.includes("uoaui"))                          { setDesignSystem("uoaui");  dsChanged = true; }
+    if (applyThemeLocally && themeCmd.mode) { setMode(themeCmd.mode); themeChanged = true; }
+    if (applyThemeLocally && themeCmd.designSystem) { setDesignSystem(themeCmd.designSystem); dsChanged = true; }
 
     /* ── Component command matched ──
        AI-first: when Claude is available, ADDITIVE intents ("add buttons")
@@ -1084,9 +1093,8 @@ export function ChatPanel() {
     // the build — the mode/DS are already applied above, so let it reach the
     // model to build the actual UI (build-first).
     if ((themeChanged || dsChanged) && !isFirstFreeform) {
-      const aiResponse = themeChanged
-        ? "Theme updated! The preview reflects the new mode."
-        : getFreeformResponse(msg);
+      /* Say exactly what changed (both, when both did). */
+      const aiResponse = describeThemeCommand(themeCmd) || getFreeformResponse(msg);
       setTimeout(() => {
         addMessage("ai", aiResponse);
         setGenerating(false);

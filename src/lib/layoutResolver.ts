@@ -378,7 +378,11 @@ export function computeContainerStyle(zoneLayout: ZoneLayout): React.CSSProperti
   if (zoneLayout.mode === "grid") {
     const cols = zoneLayout.columns ?? 3;
     base.display = "grid";
-    base.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    /* minmax(0, 1fr), not a bare 1fr: a bare 1fr track has an `auto` minimum,
+       so one wide child (a chart, a many-column table) grows its tracks and
+       pushes the whole row past the body - which is what made positions
+       depend on what each design system happened to render in the cell. */
+    base.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
     base.alignItems = zoneLayout.align ?? "start";
     /* Additive: only emit justify when the user sets one. Leaving it unset
        keeps the default justify-items behavior (stretch) so fill / span items

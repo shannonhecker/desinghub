@@ -436,11 +436,22 @@ describe("componentApiRegistry — StatCard across DSs (composed; Carbon -> Tile
     expect(jsx).toContain("<Title3>$42.8K</Title3>");
     expect(jsx).toContain("<ProgressBar value={0.6} />");
   });
-  it("Carbon StatCard -> Tile with type-scale classes + support token", () => {
+  /* `pct` is PROGRESS toward a goal (the other four systems draw it as a
+     bar). Carbon used to print it as a green "+60%", which reads as a change
+     and turned a 2.4% churn card with pct 24 into an apparent +24% gain. */
+  it("Carbon StatCard -> Tile with type-scale classes; pct is a progress bar, never a signed change", () => {
     const jsx = blockToRealJsx("carbon", b("SimulatedStatCard", { label: "Revenue", value: "$42.8K", pct: 60 }))!;
     expect(jsx).toContain("<Tile>");
     expect(jsx).toContain('<p className="cds--type-heading-04">$42.8K</p>');
-    expect(jsx).toContain("var(--cds-support-success)");
+    expect(jsx).toContain('<ProgressBar label="Revenue" hideLabel value={60} max={100} />');
+    expect(jsx).not.toContain("+60%");
+    expect(jsx).not.toContain("var(--cds-support-success)");
+  });
+  it("Carbon StatCard imports ProgressBar alongside Tile", () => {
+    const imports = resolveComponentApi("carbon", "SimulatedStatCard")?.imports;
+    const specs = typeof imports === "function" ? imports({}) : Array.isArray(imports) ? imports : imports ? [imports] : [];
+    const names = specs.flatMap((i) => i.names);
+    expect(names).toEqual(expect.arrayContaining(["Tile", "ProgressBar"]));
   });
 });
 

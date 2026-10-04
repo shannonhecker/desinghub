@@ -2,6 +2,7 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { BuilderTemplate } from "@/lib/builderTemplates";
 import { usePreviewMode } from "@/store/usePreviewMode";
+import { titleFromTemplate } from "@/lib/sessionTitle";
 
 /* ── Shared template-apply ───────────────────────────────────────
    Writes a template's full payload to the canvas (all four zones +
@@ -15,10 +16,20 @@ import { usePreviewMode } from "@/store/usePreviewMode";
    bug). Routing it through this helper makes the panel apply
    immediately, identically to the wizard.
 
-   The caller owns its own chat messaging, session naming, and
-   preview-open state, since those differ per surface. ── */
+   The caller owns its own chat messaging and preview-open state, since
+   those differ per surface.
+
+   The session is started HERE, not by each caller: auto-save only writes
+   once a session exists, and the chat's "Use this" path applied a template
+   without starting one - the canvas and every edit to it were never saved,
+   and a refresh lost them. ensureSessionStarted is a no-op when a session
+   is already running, so a caller that named one first keeps its title. ── */
 export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
   const s = useBuilder.getState();
+  s.ensureSessionStarted(titleFromTemplate(tpl.label));
+  /* A template is a single page: drop pages left over from a previous
+     multi-page canvas so they cannot resurface on the next page switch. */
+  useBuilder.setState({ pages: [], activePageId: null });
   s.setDesignSystem(ds);
   s.setInterfaceType(tpl.interfaceType);
   s.setSelectedComponents(tpl.selectedComponents);

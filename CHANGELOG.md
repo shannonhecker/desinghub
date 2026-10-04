@@ -6,6 +6,52 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-04 trust fixes: chatbot, saving, layout parity (`fix/trust-fixes-chat-parity`, open for review)
+
+From a walkthrough of the live builder on 2026-10-03 plus a second, independent
+audit. Unit tests, the e2e suite and browser screenshots cover every item
+except the first, which needs a model key to exercise end to end.
+
+#### Fixed
+- **The chatbot never added anything.** `/api/chat` made one model request and
+  never returned a `tool_result`, so the API ended each turn at the model's
+  first batch of calls: a build that opened with `clearCanvas` stopped there.
+  The route now acknowledges each call and continues the turn until the model
+  stops asking for tools (at most 8 requests). Unit-tested with a scripted
+  stream; **not yet verified against the real model** (no key locally or in
+  the Preview environment).
+- **Theme switches in chat.** Matched by substring: any message containing
+  "dark" or "light" was answered "Theme updated!" without reaching the model,
+  "switch to Carbon in light mode" changed only the mode, and offline the word
+  "switch" added a toggle group. Now parsed by word, across all five systems
+  (`src/lib/themeCommand.ts`).
+- **"Couldn't save - Missing or insufficient permissions."** The first save of
+  a new session read a doc that did not exist yet, which the rules refuse.
+  `firestore.rules` is updated too and needs deploying to take effect.
+- **Saves dropped mid-save.** A save that came due while another was in flight
+  was discarded; it is now queued (`src/lib/coalescedRunner.ts`).
+- **Work lost on refresh.** Applying a template from the chat never started a
+  session, so nothing was saved; a refresh always landed on the start screen;
+  an edit inside the save debounce was lost. Sessions now start in
+  `applyTemplateToCanvas`, the open session is reopened on load
+  (`src/lib/activeSession.ts`), and a pending save is written on page hide.
+- **Layout differed by design system.** The body overflowed its container by
+  two gutters in every system but Carbon (clipping the right-hand column), and
+  Carbon's narrower body re-wrapped its KPI row. Grid tracks are now
+  `minmax(0, 1fr)`.
+- **Edit did not match Present.** The frame took whatever width the stage had
+  left, so Edit (chat docked) re-flowed a desktop dashboard. The frame is now
+  laid out at one design width per device and scaled to the stage
+  (`src/lib/frameFit.ts`). Desktop design width is 1320.
+- **Carbon dark painted a white body** behind dark cards; **Carbon stat cards
+  showed progress as a green "+N%"** in the canvas and the React export.
+- **Start-screen tab order** walked through about 17 hidden canvas controls.
+
+#### Added
+- `e2e/builder-layout-parity.spec.ts`: no sideways clipping, identical columns
+  across the five systems in light and dark, and Edit == Present.
+
+
 ### 2026-06-15 cold-start + UI-Kit + responsive batch (5 PRs, open for review)
 
 Produced by a recon then build then adversarial-verify agent pipeline; each PR is

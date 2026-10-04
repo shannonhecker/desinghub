@@ -1213,9 +1213,12 @@ const CARBON: Record<string, ComponentApiEntry> = {
       `<DataTable rows={[{ id: "1", name: "Jane Doe", status: "Active" }] as never[]} headers={[{ key: "name", header: "Name" }, { key: "status", header: "Status" }]}>\n  {({ rows, headers, getHeaderProps, getRowProps }) => (\n    <Table>\n      <TableHead>\n        <TableRow>\n          {headers.map((h) => (\n            <TableHeader {...getHeaderProps({ header: h })} key={h.key}>{h.header}</TableHeader>\n          ))}\n        </TableRow>\n      </TableHead>\n      <TableBody>\n        {rows.map((row) => (\n          <TableRow {...getRowProps({ row })} key={row.id}>\n            {row.cells.map((c) => <TableCell key={c.id}>{c.value}</TableCell>)}\n          </TableRow>\n        ))}\n      </TableBody>\n    </Table>\n  )}\n</DataTable>`,
   },
   SimulatedStatCard: {
-    imports: { from: CARBON_PKG, names: ["Tile"] },
+    /* `pct` is progress toward a goal, drawn as a bar like the other four
+       systems - not a signed change. Printing it as a green "+N%" made a
+       churn card read as a gain. */
+    imports: { from: CARBON_PKG, names: ["Tile", "ProgressBar"] },
     toJsx: (p) =>
-      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${num(p.pct, 0)}%</span>\n</Tile>`,
+      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <ProgressBar label="${jsxAttr(p.label, "Metric")}" hideLabel value={${num(p.pct, 0)}} max={100} />\n</Tile>`,
   },
   /* SimulatedListBox — OMIT: Carbon ListBox is an internal select sub-primitive, not standalone. */
   SimulatedTree: {

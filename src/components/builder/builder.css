@@ -4875,9 +4875,10 @@
    Desktop caps at a presentation width so it reads as "presented",
    not just the app re-rendered full-bleed. */
 .present-stage .bp-device-frame {
-  flex: 0 1 auto;
-  width: 100%;
-  max-width: min(100%, var(--bc-stage-cap));
+  /* Width and scale come from DeviceFrame (design width, zoomed to fit the
+     stage). No shrink and no max-width here: either would re-flow the frame
+     narrower than its design width instead of scaling it. */
+  flex: 0 0 auto;
   /* Auto margins centre the frame in the stage when there's room, and
      collapse to 0 when the frame overflows — so an over-tall frame aligns
      to the top (header visible, scroll-reachable) instead of being clipped
@@ -10694,8 +10695,9 @@
   background: var(--b-bg);
 }
 .bp-viewport-wrapper .bp-device-frame {
-  flex: 0 1 auto;
-  max-width: min(100%, var(--bc-stage-cap));
+  /* Same as the present stage: DeviceFrame owns width + scale. */
+  flex: 0 0 auto;
+  max-width: none;
   margin: auto;
 }
 
@@ -11078,7 +11080,9 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-width: 100%;
+  /* No max-width: DeviceFrame lays the frame out at its design width and
+     scales it to the stage (frameFit.ts). */
+  box-sizing: border-box;
   flex: 1;
 }
 
@@ -11461,7 +11465,12 @@
    visual idiom) and grows on hover. Uses --bc-* chrome tokens so the
    handle stops borrowing per-DS brand color for chrome purposes. */
 .bp-sidebar-resize-handle {
-  width: 6px;
+  --bp-resize-handle-w: 6px;
+  width: var(--bp-resize-handle-w);
+  /* Straddle the sidebar edge instead of taking its own width from the row:
+     the handle exists only in Edit, so any width it takes shifts and narrows
+     the body against Present. */
+  margin-inline: calc(var(--bp-resize-handle-w) / -2);
   cursor: col-resize;
   flex-shrink: 0;
   display: flex;
@@ -11522,6 +11531,11 @@
   align-items: center;
 }
 .bp-main > * {
+  /* border-box so the gutter sits INSIDE the 100% width. Carbon's reset
+     already applies it; the other four systems did not, so their body ran
+     two gutters past .bp-main and clipped on the right, and the body was a
+     different width per design system. */
+  box-sizing: border-box;
   width: 100%;
   max-width: min(100%, var(--bc-content-cap-app));
   margin-inline: auto;
@@ -13303,10 +13317,9 @@
    Fix = a tiered ladder that re-spans BEFORE clipping, while still under
    the cap. Ordered widest-cutoff-first so the narrower query wins by
    source order at narrower widths:
-     • ≤1100px : quarter-row (span 3) → third-row (span 4)  → 4-up becomes 3-up
      • ≤760px  : quarter/third-row     → half-row (span 6)  → clean 2x2
      • ≤640px  : also collapses half-row (span 6) → full row (span 12)
-   Net ladder: 4-up → 3-up → 2x2 → stacked. Container query + !important
+   Net ladder: 4-up → 2x2 → stacked. Container query + !important
    because the resolver writes spans inline; canvas-only — exported code
    keeps each DS's native responsive grid (this block never reaches the
    generated React/CSS output). */
@@ -13314,10 +13327,11 @@
   container-type: inline-size;
   container-name: zone-body-grid;
 }
-@container zone-body-grid (max-width: 1100px) {
-  /* dense KPI rows go 4-up → 3-up before they can clip */
-  .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 4 !important; }
-}
+/* No tier above the 2x2 one. The desktop frame is laid out at one design
+   width and scaled to the stage (frameFit.ts), so its body is the same
+   width in Edit and Present; the old wider tier (4-up -> 3-up) fired on
+   every desktop canvas and broke a 4-up KPI row into 3 + 1. The ladder is
+   now only for the tablet and mobile presets. */
 @container zone-body-grid (max-width: 760px) {
   /* third/quarter-row items fold to a clean 2x2 (half-row) */
   .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 6 !important; }
