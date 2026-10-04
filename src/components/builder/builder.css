@@ -3844,6 +3844,226 @@
   opacity: 0.3;
 }
 
+/* ── Composer image attachment (Task 16) ──
+   Owner rule: tonal surfaces, at most a low-contrast hairline, soft hover,
+   a clear keyboard focus ring. Tokens live in chrome-tokens.css. */
+.toolbar-left { margin-right: auto; }
+.composer-attach-btn {
+  width: var(--bc-size-hit);
+  height: var(--bc-size-hit);
+  color: var(--bc-fg-muted);
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.composer-attach-btn .material-symbols-outlined { font-size: var(--bc-attach-icon); }
+.composer-attach-btn:hover:not(:disabled) {
+  background: var(--bc-attach-surface);
+  color: var(--bc-fg);
+}
+.builder-light .composer-attach-btn:hover:not(:disabled) { background: var(--bc-attach-surface); }
+.composer-attach-btn:disabled { opacity: 0.4; cursor: default; }
+.composer-attach-btn:focus-visible,
+.composer-attachment-remove:focus-visible,
+.composer-attach-dismiss:focus-visible,
+.send-btn:focus-visible,
+.builder-light .composer-attach-btn:focus-visible,
+.builder-light .composer-attachment-remove:focus-visible,
+.builder-light .composer-attach-dismiss:focus-visible,
+.builder-light .send-btn:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--bc-attach-focus);
+  outline-offset: var(--bc-hairline);
+}
+.composer-file-input {
+  position: absolute;
+  width: var(--bc-hairline);
+  height: var(--bc-hairline);
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Thumbnail chip: a raised tonal tile above the text, hairline only. */
+.composer-attachment {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-sm);
+  /* Left edge on the text column (the textarea's inline padding). */
+  max-width: min(100% - 2 * var(--bc-composer-text-inset), var(--bc-attach-chip-max));
+  margin: var(--bc-gap-md) var(--bc-composer-text-inset) 0;
+  padding: var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs);
+  border-radius: var(--bc-radius-md);
+  background: var(--bc-attach-surface);
+  box-shadow: inset 0 0 0 var(--bc-hairline) var(--bc-attach-hairline);
+  animation: chat-scope-appear var(--bc-duration-medium) var(--bc-ease);
+}
+.composer-attachment-thumb {
+  flex-shrink: 0;
+  width: var(--bc-attach-thumb-w);
+  height: var(--bc-attach-thumb);
+  border-radius: var(--bc-radius-sm);
+  /* The whole image, letterboxed on a tonal ground: a wide dashboard
+     should read as a dashboard, not a header strip. */
+  object-fit: contain;
+  padding: var(--bc-gap-xxs);
+  box-sizing: border-box;
+  background: var(--bc-attach-thumb-ground);
+}
+.composer-attachment-thumb-pending {
+  display: block;
+  animation: composer-attach-pulse 1.2s ease-in-out infinite;
+}
+@keyframes composer-attach-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.composer-attachment-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.35;
+}
+.composer-attachment-name {
+  font-size: var(--bc-attach-font);
+  font-weight: 500;
+  color: var(--bc-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.composer-attachment-dims {
+  font-size: var(--bc-attach-font-sm);
+  color: var(--bc-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.composer-attachment-remove {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--bc-attach-remove);
+  height: var(--bc-attach-remove);
+  padding: 0;
+  border: 0;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-fg-muted);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.composer-attachment-remove .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+.composer-attachment-remove:hover {
+  background: var(--bc-attach-surface-hover);
+  color: var(--bc-fg);
+}
+
+/* Drop state: a soft tinted fill over the whole composer, no dashed ring. */
+.input-box.is-drop-target { border-color: transparent; }
+.composer-drop-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bc-gap-sm);
+  border-radius: inherit;
+  /* Tint over a near-opaque composer base, so the chip and text beneath
+     don't show through and fight the label. */
+  background:
+    linear-gradient(var(--bc-attach-drop-fill), var(--bc-attach-drop-fill)),
+    var(--bc-attach-drop-base);
+  color: var(--bc-attach-drop-fg);
+  font-size: var(--bc-attach-font);
+  font-weight: 500;
+  backdrop-filter: blur(var(--bc-attach-blur));
+  pointer-events: none;
+  animation: composer-drop-in var(--bc-duration-fast) var(--bc-ease);
+}
+.composer-drop-veil .composer-drop-icon { font-size: var(--bc-attach-icon); }
+@keyframes composer-drop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Error line inside the composer, on the text column: tinted, not boxed. */
+.input-box { --bc-composer-text-inset: var(--bc-composer-inset); }
+.composer-attach-status { position: relative; z-index: 1; }
+.composer-attach-status.has-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bc-gap-xxs);
+  margin: var(--bc-gap-sm) var(--bc-composer-text-inset) 0;
+  padding: var(--bc-gap-xs) var(--bc-gap-xxs) var(--bc-gap-xs) var(--bc-gap-sm);
+  border-radius: var(--bc-radius-md);
+  background: var(--bc-attach-error-fill);
+}
+.composer-attach-live { flex: 1; min-width: 0; }
+.composer-attach-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bc-gap-xs);
+  margin: 0;
+  padding: var(--bc-gap-xxs) 0;
+  color: var(--bc-attach-error-fg);
+  font-size: var(--bc-attach-font-sm);
+  line-height: 1.45;
+}
+.composer-attach-error .material-symbols-outlined {
+  font-size: var(--bc-attach-icon-sm);
+  line-height: inherit;
+  flex-shrink: 0;
+}
+.composer-attach-dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--bc-attach-dismiss);
+  height: var(--bc-attach-dismiss);
+  padding: 0;
+  border: 0;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-attach-error-fg);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.composer-attach-dismiss:hover { background: var(--bc-attach-error-fill); }
+.composer-attach-dismiss .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+.composer-sr-only {
+  position: absolute;
+  width: var(--bc-hairline);
+  height: var(--bc-hairline);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* "Image attached" marker on the user bubble. */
+.chat-msg-attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  width: fit-content;
+  margin-bottom: var(--bc-gap-xs);
+  padding: var(--bc-gap-xxs) var(--bc-gap-sm) var(--bc-gap-xxs) var(--bc-gap-xs);
+  border-radius: var(--bc-radius-sm);
+  background: var(--bc-attach-surface);
+  color: var(--bc-fg-muted);
+  font-size: var(--bc-attach-font-sm);
+  line-height: 1.5;
+}
+.chat-msg-attachment .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-attachment,
+  .composer-drop-veil,
+  .composer-attachment-thumb-pending { animation: none; }
+}
+
 @keyframes ctaRotate {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -17681,7 +17901,10 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--bc-gap-sm);
 }
 .chat-slide .input-box,
-.chat-float-compact .input-box { border-radius: var(--bc-radius-md); }
+.chat-float-compact .input-box {
+  border-radius: var(--bc-radius-md);
+  --bc-composer-text-inset: var(--bc-gap-md);
+}
 .chat-slide .input-textarea,
 .chat-float-compact .input-textarea {
   padding: var(--bc-gap-md);
