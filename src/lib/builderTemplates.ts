@@ -30,6 +30,7 @@ import {
 } from "@/lib/sampleData";
 import { pickImage, getImageById } from "@/lib/sampleImages";
 import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
+import { analyticsDashboardBodies, crmBodies, loginBodies, navPages } from "@/lib/generalTemplatePages";
 import { esgAnalytics, climateAnalytics, screening, screeningChangesTemplate } from "@/lib/sustainableTemplates";
 import { issuerClimate, issuerInvolvement, issuerControversies, entityComparison, governanceScorecard, analyticsHome } from "@/lib/issuerTemplates";
 import { fxExecution } from "@/lib/executionTemplates";
@@ -168,10 +169,65 @@ const analyticsDashboard: BuilderTemplate = {
   aiResponse:
     "Built an **Analytics Dashboard** with a scope bar (date range + export), a KPI row (MRR, active users, net MRR churn, activation), a revenue-vs-previous trend, signups-by-channel and revenue-by-plan charts, a DAU + device-split row, and a recent-orders table with status pills. Ask me to regenerate the data, swap chart types, add a funnel, or try it in a different design system.",
 };
+/* Every sidebar item opens a page with content (generalTemplatePages). */
+analyticsDashboard.pages = navPages(analyticsDashboard.sidebar, analyticsDashboardBodies());
+
+/* Settings sections after Profile: each sidebar item opens its own page. */
+const settingsSections: Record<string, Block[]> = {
+  Notifications: [
+    /* NOTIFICATIONS - one setting per row (label left / switch right) */
+    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Notifications", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: settingsNotifications[0].label, defaultOn: settingsNotifications[0].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: settingsNotifications[1].label, defaultOn: settingsNotifications[1].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: settingsNotifications[2].label, defaultOn: settingsNotifications[2].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-4"), type: "SimulatedSwitch", props: { label: settingsNotifications[3].label, defaultOn: settingsNotifications[3].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-5"), type: "SimulatedSwitch", props: { label: settingsNotifications[4].label, defaultOn: settingsNotifications[4].defaultOn }, layout: { width: "12fr" } },
+    { id: tid("sp-sw-6"), type: "SimulatedSwitch", props: { label: settingsNotifications[5].label, defaultOn: settingsNotifications[5].defaultOn }, layout: { width: "12fr" } },
+  ],
+  Members: [
+    /* MEMBERS & ROLES */
+    { id: tid("sp-t-mem"), type: "SimulatedTitle", props: { text: "Members & roles", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-mem-search"), type: "SimulatedSearchbox", props: { placeholder: "Search members" }, layout: { width: "8fr" } },
+    { id: tid("sp-mem-invite"), type: "SimulatedButton", props: { label: "Invite people", variant: "primary" }, layout: { width: "4fr" } },
+    { id: tid("sp-mem-table"), type: "SimulatedDataTable", props: { columns: settingsMembers.columns, rows: settingsMembers.rows }, layout: { width: "12fr" } },
+    { id: tid("sp-mem-seats"), type: "SimulatedProgress", props: { label: `${settingsBilling.seatsUsed} of ${settingsBilling.seats} seats used`, value: 72 }, layout: { width: "12fr" } },
+  ],
+  Billing: [
+    /* BILLING & PLAN */
+    { id: tid("sp-t-bill"), type: "SimulatedTitle", props: { text: "Billing & plan", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-bill-card"), type: "SimulatedCard", props: { title: `${settingsBilling.plan} · ${settingsBilling.pricePerSeat}`, content: `${settingsBilling.seats} seats · Renews ${settingsBilling.renews} · ${settingsBilling.billedMonthly} billed monthly` }, layout: { width: "8fr" } },
+    { id: tid("sp-bill-upgrade"), type: "SimulatedButton", props: { label: "Upgrade", variant: "secondary" }, layout: { width: "4fr" } },
+    { id: tid("sp-bill-table"), type: "SimulatedDataTable", props: { columns: settingsInvoices.columns, rows: settingsInvoices.rows }, layout: { width: "12fr" } },
+  ],
+  Security: [
+    /* SECURITY */
+    { id: tid("sp-t-sec"), type: "SimulatedTitle", props: { text: "Security", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-sec-2fa"), type: "SimulatedSwitch", props: { label: "Two-factor authentication (Authenticator app)", defaultOn: true }, layout: { width: "12fr" } },
+    { id: tid("sp-sec-sso"), type: "Alert", props: { title: "Single sign-on", message: "SAML SSO is available on the Enterprise plan.", variant: "info" }, layout: { width: "12fr" } },
+  ],
+  Integrations: [
+    /* INTEGRATIONS */
+    { id: tid("sp-t-int"), type: "SimulatedTitle", props: { text: "Integrations", level: "h3" }, layout: { width: "12fr" } },
+    { id: tid("sp-int-1"), type: "SimulatedCard", props: { title: settingsIntegrations[0].name, content: settingsIntegrations[0].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-2"), type: "SimulatedCard", props: { title: settingsIntegrations[1].name, content: settingsIntegrations[1].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-3"), type: "SimulatedCard", props: { title: settingsIntegrations[2].name, content: settingsIntegrations[2].desc }, layout: { width: "4fr" } },
+    { id: tid("sp-int-key"), type: "SimulatedTextInput", props: { label: "API key", placeholder: "sk_live_****************" }, layout: { width: "8fr" } },
+    { id: tid("sp-int-regen"), type: "SimulatedButton", props: { label: "Regenerate", variant: "secondary" }, layout: { width: "4fr" } },
+  ],
+};
 
 /* ──────────────────────────────────────────────────────────────
    2. Settings Page (full SaaS settings IA)
    ────────────────────────────────────────────────────────────── */
+const SETTINGS_NAV: Block[] = [
+  { id: tid("sp-nav-1"), type: "NavItem", props: { label: "Profile", icon: "person", active: true } },
+  { id: tid("sp-nav-2"), type: "NavItem", props: { label: "Notifications", icon: "notifications", active: false } },
+  { id: tid("sp-nav-3"), type: "NavItem", props: { label: "Members", icon: "person", active: false } },
+  { id: tid("sp-nav-4"), type: "NavItem", props: { label: "Billing", icon: "home", active: false } },
+  { id: tid("sp-nav-5"), type: "NavItem", props: { label: "Security", icon: "settings", active: false } },
+  { id: tid("sp-nav-6"), type: "NavItem", props: { label: "Integrations", icon: "database", active: false } },
+];
+
 const settingsPage: BuilderTemplate = {
   id: "settings-page",
   label: "Settings Page",
@@ -186,14 +242,8 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-brand"), type: "AppBrand", props: { label: "Northwind" } },
     { id: tid("sp-status"), type: "StatusPill", props: { label: "All changes saved" } },
   ],
-  sidebar: [
-    { id: tid("sp-nav-1"), type: "NavItem", props: { label: "Profile", icon: "person", active: true } },
-    { id: tid("sp-nav-2"), type: "NavItem", props: { label: "Notifications", icon: "notifications", active: false } },
-    { id: tid("sp-nav-3"), type: "NavItem", props: { label: "Members", icon: "person", active: false } },
-    { id: tid("sp-nav-4"), type: "NavItem", props: { label: "Billing", icon: "home", active: false } },
-    { id: tid("sp-nav-5"), type: "NavItem", props: { label: "Security", icon: "settings", active: false } },
-    { id: tid("sp-nav-6"), type: "NavItem", props: { label: "Integrations", icon: "database", active: false } },
-  ],
+  sidebar: SETTINGS_NAV,
+  pages: navPages(SETTINGS_NAV, settingsSections),
   body: [
     /* PROFILE */
     { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h3" }, layout: { width: "12fr" } },
@@ -204,43 +254,10 @@ const settingsPage: BuilderTemplate = {
        Salt/MUI Input show value); `placeholder` mirrors it so the edit canvas
        (which reads placeholder) stays populated rather than blank. */
     { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
+    { id: tid("sp-display"), type: "SimulatedTextInput", props: { label: "Display name", value: settingsProfile.displayName, placeholder: settingsProfile.displayName }, layout: { width: "12fr" } },
     { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "12fr" } },
+    { id: tid("sp-title"), type: "SimulatedTextInput", props: { label: "Job title", value: settingsProfile.jobTitle, placeholder: settingsProfile.jobTitle }, layout: { width: "12fr" } },
     { id: tid("sp-tz"), type: "SimulatedDropdown", props: { value: settingsProfile.timezone, placeholder: settingsProfile.timezone }, layout: { width: "12fr" } },
-
-    /* NOTIFICATIONS - one setting per row (label left / switch right) */
-    { id: tid("sp-t2"), type: "SimulatedTitle", props: { text: "Notifications", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-1"), type: "SimulatedSwitch", props: { label: settingsNotifications[0].label, defaultOn: settingsNotifications[0].defaultOn }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-2"), type: "SimulatedSwitch", props: { label: settingsNotifications[1].label, defaultOn: settingsNotifications[1].defaultOn }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-3"), type: "SimulatedSwitch", props: { label: settingsNotifications[2].label, defaultOn: settingsNotifications[2].defaultOn }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-4"), type: "SimulatedSwitch", props: { label: settingsNotifications[3].label, defaultOn: settingsNotifications[3].defaultOn }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-5"), type: "SimulatedSwitch", props: { label: settingsNotifications[4].label, defaultOn: settingsNotifications[4].defaultOn }, layout: { width: "12fr" } },
-    { id: tid("sp-sw-6"), type: "SimulatedSwitch", props: { label: settingsNotifications[5].label, defaultOn: settingsNotifications[5].defaultOn }, layout: { width: "12fr" } },
-
-    /* MEMBERS & ROLES */
-    { id: tid("sp-t-mem"), type: "SimulatedTitle", props: { text: "Members & roles", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-mem-search"), type: "SimulatedSearchbox", props: { placeholder: "Search members" }, layout: { width: "8fr" } },
-    { id: tid("sp-mem-invite"), type: "SimulatedButton", props: { label: "Invite people", variant: "primary" }, layout: { width: "4fr" } },
-    { id: tid("sp-mem-table"), type: "SimulatedDataTable", props: { columns: settingsMembers.columns, rows: settingsMembers.rows }, layout: { width: "12fr" } },
-    { id: tid("sp-mem-seats"), type: "SimulatedProgress", props: { label: `${settingsBilling.seatsUsed} of ${settingsBilling.seats} seats used`, value: 72 }, layout: { width: "12fr" } },
-
-    /* BILLING & PLAN */
-    { id: tid("sp-t-bill"), type: "SimulatedTitle", props: { text: "Billing & plan", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-bill-card"), type: "SimulatedCard", props: { title: `${settingsBilling.plan} · ${settingsBilling.pricePerSeat}`, content: `${settingsBilling.seats} seats · Renews ${settingsBilling.renews} · ${settingsBilling.billedMonthly} billed monthly` }, layout: { width: "8fr" } },
-    { id: tid("sp-bill-upgrade"), type: "SimulatedButton", props: { label: "Upgrade", variant: "secondary" }, layout: { width: "4fr" } },
-    { id: tid("sp-bill-table"), type: "SimulatedDataTable", props: { columns: settingsInvoices.columns, rows: settingsInvoices.rows }, layout: { width: "12fr" } },
-
-    /* SECURITY */
-    { id: tid("sp-t-sec"), type: "SimulatedTitle", props: { text: "Security", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-sec-2fa"), type: "SimulatedSwitch", props: { label: "Two-factor authentication (Authenticator app)", defaultOn: true }, layout: { width: "12fr" } },
-    { id: tid("sp-sec-sso"), type: "Alert", props: { title: "Single sign-on", message: "SAML SSO is available on the Enterprise plan.", variant: "info" }, layout: { width: "12fr" } },
-
-    /* INTEGRATIONS */
-    { id: tid("sp-t-int"), type: "SimulatedTitle", props: { text: "Integrations", level: "h3" }, layout: { width: "12fr" } },
-    { id: tid("sp-int-1"), type: "SimulatedCard", props: { title: settingsIntegrations[0].name, content: settingsIntegrations[0].desc }, layout: { width: "4fr" } },
-    { id: tid("sp-int-2"), type: "SimulatedCard", props: { title: settingsIntegrations[1].name, content: settingsIntegrations[1].desc }, layout: { width: "4fr" } },
-    { id: tid("sp-int-3"), type: "SimulatedCard", props: { title: settingsIntegrations[2].name, content: settingsIntegrations[2].desc }, layout: { width: "4fr" } },
-    { id: tid("sp-int-key"), type: "SimulatedTextInput", props: { label: "API key", placeholder: "sk_live_****************" }, layout: { width: "8fr" } },
-    { id: tid("sp-int-regen"), type: "SimulatedButton", props: { label: "Regenerate", variant: "secondary" }, layout: { width: "4fr" } },
 
     /* DANGER ZONE - isolated last */
     { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
@@ -305,6 +322,8 @@ const crmContacts: BuilderTemplate = {
   aiResponse:
     "Built a **CRM Contacts** workspace - saved-view tabs, a KPI strip (total contacts, new this month, MQLs, active deals), a search + lifecycle-filter toolbar with active-filter chips, pipeline charts, and a spreadsheet-grade contacts table (name, company, title, stage, owner, phone, last activity). Ask me to add a detail drawer, change the columns, or switch design systems.",
 };
+/* Every sidebar item opens a page with content (generalTemplatePages). */
+crmContacts.pages = navPages(crmContacts.sidebar, crmBodies());
 
 /* ──────────────────────────────────────────────────────────────
    4. Login → Dashboard (auth flow)
@@ -352,6 +371,8 @@ const loginFlow: BuilderTemplate = {
   aiResponse:
     "Built a **Sign in** screen - SSO (Google, Microsoft), email + password, a keep-me-signed-in checkbox, and a forgot-password link, on a centered auth card. Say **'show the dashboard'** and I'll swap in the post-login landing for the full flow.",
 };
+/* Every sidebar item opens a page with content (generalTemplatePages). */
+loginFlow.pages = navPages(loginFlow.sidebar, loginBodies());
 
 /* ──────────────────────────────────────────────────────────────
    5. Landing Page (marketing — full-width, top nav)

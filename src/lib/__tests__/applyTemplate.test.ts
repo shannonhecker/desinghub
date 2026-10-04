@@ -60,10 +60,20 @@ describe("applyTemplateToCanvas", () => {
       ],
       activePageId: "p2",
     } as never);
-    applyTemplateToCanvas(BUILDER_TEMPLATES["analytics-dashboard"], "salt");
+    applyTemplateToCanvas(BUILDER_TEMPLATES["landing-page"], "salt");
     const s = useBuilder.getState();
     expect(s.pages).toEqual([]);
     expect(s.activePageId).toBeNull();
-    expect(s.blocks).toEqual(BUILDER_TEMPLATES["analytics-dashboard"].body);
+    expect(s.blocks).toEqual(BUILDER_TEMPLATES["landing-page"].body);
+  });
+
+  it("a template with its own pages carries only those pages", () => {
+    useBuilder.setState({ pages: [{ id: "p1", name: "Old one", body: [] }, { id: "p2", name: "Old two", body: [] }], activePageId: "p2" } as never);
+    const tpl = BUILDER_TEMPLATES["analytics-dashboard"];
+    applyTemplateToCanvas(tpl, "salt");
+    const s = useBuilder.getState();
+    expect(s.pages.map((p) => p.id)).toEqual([tpl.sidebar[0].id, ...tpl.pages!.map((p) => p.id)]);
+    expect(s.activePageId).toBe(tpl.sidebar[0].id);
+    expect(s.blocks).toEqual(tpl.body);
   });
 });
