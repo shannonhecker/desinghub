@@ -412,7 +412,7 @@ export function DesignHubApp() {
                         style={{ borderRadius: railRadius, color: isActive ? t.fg : t.fg2, textDecoration: "none" }}
                       >
                         {/* "Aa" set in that system's own typeface and accent. */}
-                        <span className="uikit-rail-aa" aria-hidden="true" style={{ fontFamily: getFont(ds.id), color: isActive ? t.accentText : t.fg2 }}>Aa</span>
+                        <span className="uikit-rail-aa" aria-hidden="true" style={{ fontFamily: getFont(ds.id), color: isActive ? t.fg : t.fg2, boxShadow: isActive ? `inset 0 -2px 0 ${t.accent}` : undefined }}>Aa</span>
                         <span className="uikit-rail-label" style={{ fontFamily: t.font }}>{ds.short}</span>
                       </a>
                     );

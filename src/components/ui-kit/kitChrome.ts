@@ -22,7 +22,7 @@ export function kitPrimitives(t: ActiveTheme, dark: boolean): CSSProperties {
     sys === "uoaui" ? ((t.T.cardBg as string) ?? t.bg2)
     : sys === "carbon" ? ((t.T.layer01 as string) ?? t.bg2)
     : sys === "m3" ? (dark ? ((t.T.surfaceContainerHigh as string) ?? t.bg3) : ((t.T.surfaceContainerLowest as string) ?? t.bg))
-    : dark ? `color-mix(in srgb, ${t.fg} 6%, ${t.bg})` : t.bg;
+    : dark ? `color-mix(in srgb, ${t.fg} 4%, ${t.bg})` : t.bg;
   const fill = sys === "carbon" ? ((t.T.buttonPrimary as string) ?? t.accent) : t.accent;
   const fillFg = sys === "carbon" ? ((t.T.textOnColor as string) ?? t.accentFg) : t.accentFg;
   return {
