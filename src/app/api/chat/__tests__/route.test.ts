@@ -1,3 +1,4 @@
+import { issueSessionToken } from "@/lib/sessionToken";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 /* The route imports the Anthropic SDK and rate limiter at the
@@ -20,7 +21,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 vi.mock("@/lib/rateLimit", () => ({
-  checkRateLimit: vi
+  checkModelRateLimit: vi
     .fn()
     .mockResolvedValue({ allowed: true, resetInSeconds: 0 }),
   getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
@@ -28,14 +29,15 @@ vi.mock("@/lib/rateLimit", () => ({
 
 beforeEach(() => {
   process.env.ANTHROPIC_API_KEY = "test-key";
+  process.env.STAGING_TOKEN_SECRET = "secret";
 });
 
-async function post(body: unknown): Promise<Response> {
+async function post(body: unknown, authenticated = true): Promise<Response> {
   const { POST } = await import("../route");
   return POST(
     new Request("http://localhost/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(authenticated ? { cookie: `uoaui_auth_token=${issueSessionToken("secret")}` } : {}) },
       body: JSON.stringify(body),
     }),
   );
@@ -46,7 +48,7 @@ describe("POST /api/chat: staging auth gate", () => {
     process.env.STAGING_PASSWORD = "pw";
     process.env.STAGING_TOKEN_SECRET = "secret";
     try {
-      const res = await post({ messages: [{ role: "user", content: "hi" }] });
+      const res = await post({ messages: [{ role: "user", content: "hi" }] }, false);
       expect(res.status).toBe(401);
     } finally {
       delete process.env.STAGING_PASSWORD;
@@ -54,10 +56,10 @@ describe("POST /api/chat: staging auth gate", () => {
     }
   });
 
-  it("public mode (no staging password) is unaffected", async () => {
+  it("public UI mode still requires authentication for model calls", async () => {
     delete process.env.STAGING_PASSWORD;
-    const res = await post({ messages: [{ role: "user", content: "hi" }] });
-    expect(res.status).not.toBe(401);
+    const res = await post({ messages: [{ role: "user", content: "hi" }] }, false);
+    expect(res.status).toBe(401);
   });
 });
 
@@ -105,5 +107,12 @@ describe("POST /api/chat: designSystem validation", () => {
       messages: [{ role: "user", content: "hi" }],
     });
     expect(res.status).not.toBe(400);
+  });
+});
+
+describe("POST /api/chat: bounded bodies", () => {
+  it("rejects null JSON as a client error", async () => expect((await post(null)).status).toBe(400));
+  it("caps the entire body, including extra fields", async () => {
+    expect((await post({ messages: [{ role: "user", content: "hi" }], extra: "x".repeat(600_000) })).status).toBe(413);
   });
 });

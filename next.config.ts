@@ -4,8 +4,8 @@ const isDev = process.env.NODE_ENV === "development";
 /* Keep static rendering: Next's bootstrap and the five CSS-in-JS systems
    require inline scripts/styles. This is a baseline CSP, not an XSS cure.
    Restrict executable/network origins; never allow the browser to call the
-   model API. External HTTPS images remain supported until the share-policy
-   change in QA item 3. See docs/security-headers.md. */
+   model API. External HTTPS images remain supported in the editor; shared previews
+   use a stricter image policy. See docs/security-headers.md. */
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live${isDev ? " 'unsafe-eval'" : ""}`,
@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
       ],
+    }, {
+      source: "/preview/share/:path*",
+      headers: [{ key: "Content-Security-Policy", value: csp.replace("img-src 'self' data: blob: https:", "img-src 'self' data:") }],
     }];
   },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],

@@ -1,31 +1,54 @@
 rules_version = '2';
 
-// Design Hub — Firestore security rules.
-// Access pattern (see src/lib/firebase.ts): a single `projects` collection,
-// every doc carries a `uid` field, written under anonymous auth and queried
-// with `where("uid","==",request.auth.uid)`. Each user may touch only their
-// own project docs.
+// Projects remain available to their signed-in (including anonymous) owner.
+// Exact schemas and types below complement Firestore's native 1 MiB document cap.
+// Do not truncate or arbitrarily cap the editor's growing message/block lists.
+// Per-user document-count quotas require a trusted backend; these rules do
+// not pretend to enforce a collection-wide count from an individual write.
 service cloud.firestore {
   match /databases/{database}/documents {
-
+    function optionalList(s, key) {
+      return !(key in s) || s[key] is list;
+    }
+    function validSnapshot(s) {
+      return s is map
+        && s.keys().hasAll(['messages', 'blocks', 'designSystem', 'mode', 'density', 'interfaceType', 'selectedComponents', 'colorOverrides'])
+        && s.keys().hasOnly(['messages', 'blocks', 'headerBlocks', 'sidebarBlocks', 'footerBlocks', 'zoneLayouts', 'designSystem', 'mode', 'density', 'interfaceType', 'selectedComponents', 'colorOverrides', 'activeTemplateId', 'pages', 'activePageId'])
+        && s.messages is list
+        && s.blocks is list
+        && optionalList(s, 'headerBlocks')
+        && optionalList(s, 'sidebarBlocks')
+        && optionalList(s, 'footerBlocks')
+        && optionalList(s, 'pages')
+        && s.designSystem in ['salt', 'm3', 'fluent', 'carbon', 'uoaui']
+        && s.mode in ['light', 'dark']
+        && s.density in ['high', 'medium', 'low', 'touch']
+        && s.interfaceType in ['dashboard', 'landing', 'form', 'ecommerce', 'blog', 'portfolio']
+        && s.selectedComponents is list
+        && s.colorOverrides is map
+        && (!('zoneLayouts' in s) || (s.zoneLayouts is map && s.zoneLayouts.keys().hasOnly(['body', 'header', 'sidebar', 'footer'])))
+        && (!('activeTemplateId' in s) || s.activeTemplateId == null || (s.activeTemplateId is string))
+        && (!('activePageId' in s) || s.activePageId == null || (s.activePageId is string));
+    }
+    function validProject(p) {
+      return p.keys().hasAll(['uid', 'name', 'createdAt', 'updatedAt', 'snapshot'])
+        && p.keys().hasOnly(['uid', 'name', 'createdAt', 'updatedAt', 'snapshot'])
+        && p.uid == request.auth.uid
+        && p.name is string && p.name.size() > 0
+        && p.createdAt is timestamp && p.updatedAt is timestamp
+        && validSnapshot(p.snapshot);
+    }
     match /projects/{projectId} {
-      // Read only docs you own. A signed-in read of an id that does not
-      // exist yet is answered "not found" instead of refused: the first
-      // auto-save of a new session checks for an existing doc before it
-      // writes, and `resource` is null for a missing doc.
       allow read: if request.auth != null
         && (resource == null || resource.data.uid == request.auth.uid);
-
-      // Modify / remove only docs you own.
-      allow update, delete: if request.auth != null
-        && resource.data.uid == request.auth.uid;
-
-      // Create only a doc stamped with your own uid.
-      allow create: if request.auth != null
-        && request.resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && validProject(request.resource.data);
+      allow update: if request.auth != null
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && validProject(request.resource.data);
+      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
-
-    // Everything else: denied by default.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -2,19 +2,20 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 /* Control the Upstash client per test: `behaviour` decides whether the
    pipeline resolves with a count or throws (simulated Redis outage). */
-const behaviour = { mode: "ok" as "ok" | "throw", count: 1 };
+const behaviour = { mode: "ok" as "ok" | "throw", count: 1, counts: {} as Record<string, number> };
 
 vi.mock("@upstash/redis", () => {
   class Redis {
     pipeline() {
+      let key = "";
       const p = {
         zremrangebyscore: () => p,
         zadd: () => p,
-        zcard: () => p,
+        zcard: (k: string) => { key = k; return p; },
         expire: () => p,
         exec: async () => {
           if (behaviour.mode === "throw") throw new Error("ECONNREFUSED");
-          return [0, 1, behaviour.count, 1];
+          return [0, 1, behaviour.counts[key] ?? behaviour.count, 1];
         },
       };
       return p;
@@ -25,12 +26,13 @@ vi.mock("@upstash/redis", () => {
   return { Redis };
 });
 
-import { checkRateLimit } from "../rateLimit";
+import { checkRateLimit, checkLoginRateLimit, checkModelRateLimit } from "../rateLimit";
 
 const saved = { url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN };
 beforeEach(() => {
   behaviour.mode = "ok";
   behaviour.count = 1;
+  behaviour.counts = {};
   delete process.env.UPSTASH_REDIS_REST_URL;
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
   delete process.env.KV_REST_API_URL;
@@ -45,6 +47,26 @@ afterEach(() => {
 });
 
 describe("checkRateLimit", () => {
+  it("denies login when Redis is not configured", async () => {
+    expect((await checkLoginRateLimit("1.2.3.4")).allowed).toBe(false);
+  });
+
+  it("enforces the global login budget across different IPs", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "t";
+    behaviour.counts["rl:staging-login-global:all"] = 201;
+    expect((await checkLoginRateLimit("1.2.3.4")).allowed).toBe(false);
+  });
+
+  it("denies model requests without Redis and applies a shared daily quota", async () => {
+    expect((await checkModelRateLimit("1.2.3.4", "chat")).allowed).toBe(false);
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "t";
+    behaviour.counts["rl:model-daily:all"] = 1001;
+    expect((await checkModelRateLimit("1.2.3.4", "chat")).allowed).toBe(false);
+    expect((await checkModelRateLimit("9.9.9.9", "generate-table")).allowed).toBe(false);
+  });
+
   it("unconfigured (no Upstash env): no-op allow, so local dev keeps working", async () => {
     const r = await checkRateLimit("1.2.3.4", "chat");
     expect(r.allowed).toBe(true);

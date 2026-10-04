@@ -1,3 +1,6 @@
+import { safeBlockLayout, safeZoneLayout, isSafeColor } from "./aiActionValidation";
+import { ID_TO_BLOCK, ID_TO_MULTI_BLOCKS } from "./componentMaps";
+import { getThemeKeys, getTheme } from "@/data/registry";
 /* ── Apply parsed AI actions to the Zustand store ── */
 
 import { useBuilder } from "@/store/useBuilder";
@@ -96,11 +99,11 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
         break;
 
       case "setComponents":
-        if (Array.isArray(action.value)) {
+        if (Array.isArray(action.value) && action.value.length <= 100 && action.value.every(id => typeof id === "string" && (Object.hasOwn(ID_TO_BLOCK, id) || Object.hasOwn(ID_TO_MULTI_BLOCKS, id)))) {
           store.setSelectedComponents(action.value);
           emitToolUse({ messageId, action: "setComponents", value: action.value });
           applied();
-        } else skip(action, "components must be a list");
+        } else skip(action, "components must contain known component IDs");
         break;
 
       case "setInterfaceType":
@@ -112,16 +115,18 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
         break;
 
       case "setThemeKey":
-        if (typeof action.value === "string") {
+        if (typeof action.value === "string" && (getThemeKeys(useBuilder.getState().designSystem).includes(action.value) || (useBuilder.getState().designSystem === "m3" && action.value === "custom"))) {
           store.setThemeKey(action.value);
           emitToolUse({ messageId, action: "setThemeKey", value: action.value });
           applied();
-        } else skip(action, "theme key must be a string");
+        } else skip(action, "unknown theme key for this design system");
         break;
 
       case "setColorOverride": {
         const v = action.value as { key?: string; color?: string } | null;
-        if (v && typeof v.key === "string" && typeof v.color === "string") {
+        const current = useBuilder.getState();
+        const theme = getTheme(current.designSystem, current.themeKey);
+        if (v && typeof v.key === "string" && Object.hasOwn(theme, v.key) && isSafeColor(v.color)) {
           store.setColorOverride(v.key, v.color);
           emitToolUse({ messageId, action: "setColorOverride", value: v });
           applied();
@@ -169,7 +174,7 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
           /* AI-provided layout wins; otherwise stamp the per-type default
              (e.g. checkbox/switch hug content instead of stretching). */
           ...(v.layout
-            ? { layout: v.layout as LayoutProps }
+            ? { layout: safeBlockLayout(v.layout) }
             : (() => { const d = defaultLayoutForType(v.type); return d ? { layout: d } : {}; })()),
         };
         store.addBlockToZone(zone, block, v.index);
@@ -319,7 +324,8 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
           break;
         }
         const blockId: string = v.blockId;
-        const patch: Partial<LayoutProps> = v.layout;
+        const patch = safeBlockLayout(v.layout);
+        if (!Object.keys(patch).length) { skip(action, "no valid layout fields", v.blockId); break; }
         const st = useBuilder.getState();
         let found = false;
         for (const zone of VALID_ZONES) {
@@ -360,7 +366,9 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
           skip(action, "setZoneLayout needs a layout object");
           break;
         }
-        store.setZoneLayout(v.zone, v.layout);
+        const layout = safeZoneLayout(v.layout);
+        if (!Object.keys(layout).length) { skip(action, "no valid zone layout fields"); break; }
+        store.setZoneLayout(v.zone, layout);
         emitToolUse({
           messageId,
           action: "setZoneLayout",
@@ -420,7 +428,7 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
      id/zone guards — is what makes this robust to multi-selection, group-child
      selections, and a [moveBlock, clearCanvas] batch that leaves selectedBlockZone
      stale. No-op when the selection is empty or fully intact. */
-  if (actions.length > 0) store.reconcileSelection();
+  if (report.applied > 0) store.reconcileSelection();
   return report;
 }
 

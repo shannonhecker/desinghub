@@ -1,3 +1,4 @@
+import { readJsonObject, RequestBodyError } from "@/lib/requestBody";
 /**
  * Mock-content generator for builder templates.
  * Given a list of canvas blocks, asks Claude to produce realistic and
@@ -15,7 +16,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { checkModelRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
 import { MODEL_ID } from "@/lib/chatSystem";
 import { VALID_TEMPLATE_IDS } from "@/lib/builderTemplates";
@@ -113,7 +114,7 @@ export async function POST(req: Request) {
 
   // Rate limiting - content regen is cheap but still hits Claude.
   const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "generate-content");
+  const limit = await checkModelRateLimit(ip, "generate-content");
   if (!limit.allowed) {
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),
@@ -129,11 +130,11 @@ export async function POST(req: Request) {
 
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonObject(req, 512 * 1024);
+  } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof RequestBodyError ? error.message : "Invalid request body" }),
+      { status: error instanceof RequestBodyError ? error.status : 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -209,7 +210,7 @@ export async function POST(req: Request) {
       parsed = JSON.parse(cleaned);
     } catch {
       return new Response(
-        JSON.stringify({ error: "Claude returned malformed JSON", raw: cleaned.slice(0, 500) }),
+        JSON.stringify({ error: "Generation returned an invalid response. Please try again." }),
         { status: 502, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -241,7 +242,8 @@ export async function POST(req: Request) {
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Claude API error";
+    console.error("[model] Generation failed", err);
+    const msg = "Generation is temporarily unavailable. Please try again.";
     return new Response(
       JSON.stringify({ error: msg }),
       { status: 502, headers: { "Content-Type": "application/json" } }

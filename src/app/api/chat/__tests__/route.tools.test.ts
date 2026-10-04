@@ -1,3 +1,4 @@
+import { issueSessionToken } from "@/lib/sessionToken";
 /* ════════════════════════════════════════════════════════════
    /api/chat streams the model's TOOL CALLS to the client as structured
    frames, alongside text deltas, and declares the canvas tools on the
@@ -14,7 +15,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 vi.mock("@/lib/rateLimit", () => ({
-  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, resetInSeconds: 0 }),
+  checkModelRateLimit: vi.fn().mockResolvedValue({ allowed: true, resetInSeconds: 0 }),
   getClientIp: vi.fn().mockReturnValue("127.0.0.1"),
 }));
 
@@ -35,11 +36,12 @@ async function readFrames(res: Response): Promise<Record<string, unknown>[]> {
 
 async function post(body: unknown): Promise<Response> {
   const { POST } = await import("../route");
-  return POST(new Request("http://localhost/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+  return POST(new Request("http://localhost/api/chat", { method: "POST", headers: { "Content-Type": "application/json", cookie: `uoaui_auth_token=${issueSessionToken("test-secret")}` }, body: JSON.stringify(body) }));
 }
 
 beforeEach(() => {
   process.env.ANTHROPIC_API_KEY = "test-key";
+  process.env.STAGING_TOKEN_SECRET = "test-secret";
   delete process.env.STAGING_PASSWORD;
   streamMock.mockReset();
 });
