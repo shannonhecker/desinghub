@@ -322,7 +322,9 @@ function FluentDropdownField({ model, size, onChange }: { model: DropdownModel; 
   );
   if (!model.label) return dropdown;
   return (
-    <FluentField label={model.label} orientation="horizontal" size={size}>
+    /* Label above the field: beside it, the label takes a fixed third of
+       the width and a narrow filter clips it ("Periodicit"). */
+    <FluentField label={model.label} orientation="vertical" size={size}>
       {dropdown}
     </FluentField>
   );
