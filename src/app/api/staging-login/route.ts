@@ -8,7 +8,7 @@ const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET ?? "";
    Real passwords are well under this; the cap is purely a DoS guard. */
 const MAX_PASSWORD_LENGTH = 256;
 
-export function hashToken(password: string): string {
+function hashToken(password: string): string {
   return createHmac("sha256", TOKEN_SECRET).update(password).digest("hex");
 }
 
