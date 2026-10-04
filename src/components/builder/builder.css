@@ -3058,7 +3058,9 @@
 @container template-gallery (max-width: 380px) {
   .template-cards .template-card { display: grid; grid-template-columns: var(--bc-gallery-thumb) minmax(0, 1fr); grid-template-rows: auto 1fr auto; column-gap: var(--bc-gap-md); align-content: start; }
   .template-cards .template-card-preview { grid-row: 1 / 3; align-self: start; }
-  .template-cards .template-card-actions { grid-column: 1 / -1; }
+  .template-cards .template-card-actions { grid-column: 1 / -1; margin-top: var(--bc-gap-sm); }
+  /* One card shows at a time, so no row to line up: no reserved lines. */
+  .template-cards .template-card-desc { min-height: 0; }
   /* Label and previous / next share a line; the chips take the next. */
   .template-gallery-wrap .template-gallery-chips { order: 3; flex-basis: 100%; }
 }
@@ -17787,7 +17789,8 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .chat-slide .input-box,
 .chat-float-compact .input-box { border-radius: var(--bc-radius-md); }
 /* Owner rule (no harsh outlines): under the tonal gallery the composer and
-   the quick prompts are tonal too. Only border, background and radius here;
+   the quick prompts (Add Chart, Add Data Table, Add Image) are tonal too;
+   selected, accent, "More" and assumption chips keep their own states. Only border, background and radius here;
    keyboard focus keeps a visible ring. */
 .chat-slide .input-box,
 .chat-float-compact .input-box {
@@ -17796,19 +17799,19 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .chat-slide .input-box.focused,
 .chat-float-compact .input-box.focused { border-color: color-mix(in srgb, var(--b-accent) 55%, transparent); }
-.chat-slide .chat-scroll .prompt-bubbles .prompt-bubble,
-.chat-float-compact .chat-scroll .prompt-bubbles .prompt-bubble {
+.chat-slide .chat-scroll .refine-primary > .prompt-bubble:not(.prompt-bubble-accent):not(.selected),
+.chat-float-compact .chat-scroll .refine-primary > .prompt-bubble:not(.prompt-bubble-accent):not(.selected) {
   border-color: transparent;
   background: var(--bc-gallery-tonal);
   box-shadow: none;
 }
-.chat-slide .chat-scroll .prompt-bubbles .prompt-bubble:hover,
-.chat-float-compact .chat-scroll .prompt-bubbles .prompt-bubble:hover {
+.chat-slide .chat-scroll .refine-primary > .prompt-bubble:not(.prompt-bubble-accent):not(.selected):hover,
+.chat-float-compact .chat-scroll .refine-primary > .prompt-bubble:not(.prompt-bubble-accent):not(.selected):hover {
   border-color: transparent;
   background: var(--bc-gallery-tonal-hover);
   box-shadow: none;
 }
-.chat-scroll .prompt-bubbles .prompt-bubble:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
+.chat-scroll .refine-primary > .prompt-bubble:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
 .chat-slide .input-textarea,
 .chat-float-compact .input-textarea {
   padding: var(--bc-gap-md);

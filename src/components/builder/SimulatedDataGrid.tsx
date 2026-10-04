@@ -330,16 +330,26 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
   const readOnly = usePreviewReadOnly();
   /* More to the right: horizontal overflow not yet scrolled to its end. */
   const [moreRight, setMoreRight] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  /* Read from the rows' own viewport, so it is right however the grid was
+     scrolled: the scrollbar, a wheel or trackpad, the keyboard. */
   const syncEdge = useCallback(() => {
-    const api = apiRef.current;
-    if (!edgeFade || !api) return;
-    const range = api.getHorizontalPixelRange();
-    const columnsWidth = api.getAllDisplayedColumns().reduce((sum, c) => sum + c.getActualWidth(), 0);
-    setMoreRight(range.right < columnsWidth - 1);
+    const viewport = rootRef.current?.querySelector<HTMLElement>(".ag-center-cols-viewport");
+    if (!edgeFade || !viewport) return;
+    setMoreRight(viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1);
   }, [edgeFade]);
+  /* Scroll events do not bubble: listen in the capture phase on the grid, so
+     the scrollbar's own viewport and the rows' viewport both count. */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!edgeFade || !root) return;
+    root.addEventListener("scroll", syncEdge, { capture: true, passive: true });
+    return () => root.removeEventListener("scroll", syncEdge, { capture: true });
+  }, [edgeFade, syncEdge]);
 
   return (
     <div
+      ref={rootRef}
       className={`dh-grid${selectable ? " dh-grid-selectable" : ""}${edgeFade && moreRight ? " dh-grid-more-right" : ""}`}
       style={{ height, width: "100%" }}
       role="region"

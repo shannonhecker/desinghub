@@ -108,6 +108,16 @@ for (const [name, width, height, perView] of [['desktop', 1440, 900, 3], ['phone
       const cards = [...el.querySelectorAll<HTMLElement>('.template-card')].map((c) => c.getBoundingClientRect()).filter((c) => c.right > r.left + 1 && c.left < r.right - 1);
       return cards.every((c) => c.left >= r.left - 1 && c.right <= r.right + 1) && el.scrollLeft > 0;
     })).toBe(true);
+    /* At rest the credit sits clear of the thread's bottom fade, fully
+       opaque: its bottom is above the masked band. */
+    const clear = await page.evaluate(() => {
+      const scroll = document.querySelector<HTMLElement>('.chat-scroll')!;
+      const mask = getComputedStyle(scroll).maskImage;
+      const fade = mask && mask !== 'none' ? parseFloat(getComputedStyle(scroll).paddingBottom) : 0;
+      const credit = document.querySelector<HTMLElement>('.template-source-note')!.getBoundingClientRect();
+      return credit.bottom <= scroll.getBoundingClientRect().bottom - fade + 0.5;
+    });
+    expect(clear).toBe(true);
     /* Both credit links can be reached. */
     for (const link of ['Analytics Dashboard', 'FX Execution Analytics']) {
       const a = page.locator('.template-source-note').getByRole('link', { name: link });
@@ -299,8 +309,29 @@ test('phone: workspace lists fade their right edge until scrolled to the end; te
   await pages.getByRole('option', { name: 'Approvals', exact: true }).click();
   const grid = page.locator('[data-block-id="tpl-home-approvals-grid"] .dh-grid');
   await expect(grid).toHaveClass(/dh-grid-more-right/);
-  /* Scroll sideways to the end, as a reader would (trackpad / wheel). */
-  await grid.locator('.ag-center-cols-viewport').hover();
+  /* The scrollbar (a desktop visitor drags it): to the end lifts the fade,
+     back to the start brings it back. */
+  const bar = grid.locator('.ag-body-horizontal-scroll-viewport');
+  /* The scrollbar, as a desktop visitor in the phone frame uses it. For a
+     moment after a page opens AG Grid does not yet sync its scrollbar to the
+     rows (also true on origin/main, without the fade); attempts a second
+     apart stand in for a person's drag, which lands later. */
+  const rows = grid.locator('.ag-center-cols-viewport');
+  const scrollBarTo = async (end: boolean) => {
+    await expect(async () => {
+      /* Each attempt moves the thumb (the same position again fires no event). */
+      await bar.evaluate((el, toEnd) => { el.scrollLeft = toEnd ? 0 : el.scrollWidth; }, end);
+      await page.waitForTimeout(100);
+      await bar.evaluate((el, toEnd) => { el.scrollLeft = toEnd ? el.scrollWidth : 0; }, end);
+      expect(await rows.evaluate((el, toEnd) => (toEnd ? el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 : el.scrollLeft === 0), end)).toBe(true);
+    }).toPass({ intervals: [1_000], timeout: 15_000 });
+  };
+  await scrollBarTo(true);
+  await expect(grid).not.toHaveClass(/dh-grid-more-right/);
+  await scrollBarTo(false);
+  await expect(grid).toHaveClass(/dh-grid-more-right/);
+  /* A wheel or trackpad over the rows, as a reader would. */
+  await rows.hover();
   for (let i = 0; i < 4; i++) await page.mouse.wheel(400, 0);
   await expect(grid).not.toHaveClass(/dh-grid-more-right/);
   /* A finance template on the same phone: its grids scroll, never fade. */

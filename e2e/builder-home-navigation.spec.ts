@@ -82,3 +82,37 @@ test('Edit mode: the first nav item is not covered by the sidebar frame label', 
   await toolbar.hover();
   await expect(toolbar).toHaveCSS('pointer-events', 'auto');
 });
+
+/* Choosing the page that is already open changes nothing, so it must not
+   leave a focus request behind for a later screen to act on. */
+test('rail: the already-open page leaves no stray focus request', async ({ page }) => {
+  await page.route('**/api/health', route => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto('/builder');
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
+  const nav = page.locator('.bp-sidebar-nav');
+  await nav.locator('.bp-nav-item[title="Dashboards"]').click();
+  const tabs = page.getByRole('navigation', { name: 'Workspaces' });
+  await tabs.getByRole('button', { name: 'Performance', exact: true }).click();
+  await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
+  await tabs.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.locator('[data-block-id="tpl-home-hero"]')).toBeVisible();
+  await expect(nav.locator('.bp-nav-item[title="Dashboards"]')).not.toBeFocused();
+});
+
+/* Under the tonal gallery restyle, a selected onboarding choice keeps its
+   own filled state: it never reads like the unselected ones. */
+test('onboarding: a selected choice stays visibly selected', async ({ page }) => {
+  await page.route('**/api/health', route => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto('/builder');
+  await page.getByRole('button', { name: /Set it up step by step/ }).click();
+  const group = page.locator('.onboarding-radiogroup').first();
+  await expect(group).toBeVisible();
+  const radios = group.getByRole('radio');
+  await radios.nth(1).click();
+  const checked = group.locator('[role="radio"][aria-checked="true"]').first();
+  await expect(checked).toBeVisible();
+  const unchecked = group.locator('[role="radio"][aria-checked="false"]').first();
+  const look = (l: typeof checked) => l.evaluate((el) => { const cs = getComputedStyle(el); return `${cs.backgroundColor}|${cs.borderColor}|${cs.fontWeight}`; });
+  expect(await look(checked)).not.toBe(await look(unchecked));
+});
