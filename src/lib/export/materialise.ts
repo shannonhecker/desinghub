@@ -25,7 +25,7 @@ import { CURRENCY_STATE, centerColumn, resolveBinding, type BoundData, type Data
 import { sampleDataset } from "@/lib/reportData/registry";
 import type { DataRow, ReportDataset } from "@/lib/reportData/types";
 import { RECORD_PANEL_BLOCK_TYPE } from "./reportMarkup";
-import { formatBarStamp, formatBarTime, formatPrice, resolveExecution, splitQuote, type ExecutionView } from "@/lib/executionModel";
+import { formatBarStamp, formatBarTime, formatChange, formatPrice, resolveExecution, splitQuote, type ExecutionView } from "@/lib/executionModel";
 
 /** The part of the builder state the exporters read. */
 export interface CanvasSource {
@@ -205,19 +205,25 @@ function materialiseExecutionChart(block: Block, view: ExecutionView | null): Bl
   };
 }
 
+/** The export's tone for the header's change: up is good, down is bad, and
+ *  a change that rounds to zero is neutral (as the app shows it). */
+export function exportChangeTone(tone: "up" | "down" | "flat"): "good" | "bad" | "neutral" {
+  return tone === "up" ? "good" : tone === "down" ? "bad" : "neutral";
+}
+
 /** The instrument header, as the text it shows. */
 function materialiseInstrumentHeader(block: Block, view: ExecutionView | null): Block {
   const note = text(block.props?.note, "Sample data");
   if (!view || !view.last) return { ...block, props: { symbol: text(block.props?.symbol, "Instrument"), note } };
   const { last, order } = view;
-  const up = last.changePips >= 0;
+  const change = formatChange(last.sessionChangePips, last.sessionChangePct);
   return {
     ...block,
     props: {
       symbol: view.pair, description: view.description, counter: `${order.fills}/${order.fillsTarget}`,
       figures: [["O", formatPrice(last.open)], ["H", formatPrice(last.high)], ["L", formatPrice(last.low)], ["C", formatPrice(last.close)]],
-      change: `${up ? "+" : ""}${last.changePips.toFixed(2)} (${up ? "+" : ""}${last.changePct.toFixed(2)}%)`,
-      changeTone: up ? "good" : "bad",
+      change: change.text,
+      changeTone: exportChangeTone(change.tone),
       quote: { base: view.pair.slice(0, 3), sell: splitQuote(last.bid), buy: splitQuote(last.ask) },
       status: `${view.interval} ${view.chartStyle} · ${order.algo} · ${order.pctDone}% done`,
       orders: view.orders.map((o) => ({ id: o.id, side: o.side, status: o.status, active: o.id === order.id })),

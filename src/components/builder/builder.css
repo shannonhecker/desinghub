@@ -10815,6 +10815,80 @@
 .dh-instrument-order-status { color: var(--ds-fg-tertiary); }
 .dh-instrument-dot { width: var(--dh-cell-dot); height: var(--dh-cell-dot); border-radius: 50%; background: currentColor; }
 
+/* The sample feed: a dot, what it is doing, the "Sample data" note, then
+   two quiet icon buttons. One fixed-height slot at the header's right edge,
+   so the header keeps one height whatever each system's button measures.
+   The state word reserves the width of the longest word (every word is
+   stacked in one grid cell, the others hidden), in the system's own font,
+   so the dot and the note never move between Live and Paused. */
+.dh-feed {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  height: var(--dh-feed-h);
+  white-space: nowrap;
+}
+.dh-feed-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  color: var(--ds-fg-secondary);
+}
+.dh-feed-state { display: inline-grid; color: var(--ds-fg-secondary); }
+.dh-feed-state > * { grid-area: 1 / 1; }
+.dh-feed-state-sizer { visibility: hidden; }
+.dh-feed-note { color: var(--ds-fg-tertiary); }
+.dh-feed-note::before { content: "·"; margin-inline-end: var(--dh-cell-gap); }
+.dh-feed-dot {
+  flex: none;
+  width: var(--dh-cell-dot);
+  height: var(--dh-cell-dot);
+  border-radius: 50%;
+  background: var(--ds-fg-tertiary);
+}
+.dh-feed-status.is-live .dh-feed-state,
+.dh-feed-status.is-edit .dh-feed-state { color: var(--ds-fg); }
+.dh-feed-status.is-live .dh-feed-dot,
+.dh-feed-status.is-edit .dh-feed-dot { background: var(--ds-status-positive); }
+.dh-feed-status.is-live .dh-feed-dot {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ds-status-positive) 45%, transparent);
+  animation: dh-feed-pulse 2s ease-out infinite;
+}
+@keyframes dh-feed-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ds-status-positive) 45%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 var(--dh-cell-gap) transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dh-feed-status.is-live .dh-feed-dot { animation: none; }
+}
+.dh-feed-btns { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 3); color: var(--ds-fg-secondary); }
+.dh-feed-btns > * { display: inline-flex; align-items: center; }
+/* A system's provider wrapper paints its theme's page colour; on the
+   header card it would show as a box behind each quiet button. */
+.dh-instrument .dh-feed .dh-feed-btns > * { background: transparent; }
+/* Carbon colours an icon-only ghost button's icon with its icon colour, not
+   the ghost's link colour; these line icons stroke in currentColor. */
+.dh-instrument .dh-feed-btns .cds--btn--ghost,
+.dh-instrument .dh-feed-btns .cds--btn--ghost:hover,
+.dh-instrument .dh-feed-btns .cds--btn--ghost:focus { color: var(--cds-icon-primary); }
+.dh-instrument .dh-feed-btns .cds--btn--ghost:disabled { color: var(--cds-icon-disabled); }
+
+/* A phone-width header, composed tightly: the pair and its quote on one
+   line, the last bar under it; the chart status and the feed on one line,
+   the order tabs under it. */
+@container chrome-header (max-width: 35rem) {
+  .dh-instrument { gap: calc(var(--dh-cell-gap) / 2); padding-inline: var(--bc-gutter-narrow); }
+  .dh-instrument-main, .dh-instrument-sub { gap: calc(var(--dh-cell-gap) / 2) var(--dh-nav-pad); }
+  .dh-instrument-main > .dh-instrument-meta:not(.dh-instrument-mono) { display: none; }
+  .dh-instrument-ohlc { order: 5; flex: 1 1 100%; gap: 0 var(--dh-nav-pad); }
+  .dh-instrument-quote .dh-instrument-handle { display: none; }
+  .dh-instrument-orders { order: 5; flex: 1 1 100%; }
+  .dh-instrument-order-status { display: none; }
+  /* The feed keeps to the right edge, under the quote, on its own line. */
+  .dh-feed { margin-inline-start: auto; }
+}
+
 /* ── Execution chart: a tool rail, the plot, the range presets ── */
 .dh-panel.dh-exec {
   flex-direction: row;

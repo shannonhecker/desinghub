@@ -25,6 +25,11 @@ const dataset = {
 
 beforeEach(() => {
   (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+  /* The FX header's feed buttons are the design system's own (Salt's
+     viewport provider observes its wrapper); jsdom has no ResizeObserver. */
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  }
   useBuilder.setState(initial);
   host = document.createElement('div');
   host.className = 'bp-main';

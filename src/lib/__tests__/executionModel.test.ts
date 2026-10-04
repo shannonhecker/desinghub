@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { executionDataset, EXECUTION_ORDERS, EXECUTION_VENUES, parseExecutionTime, executionTime } from "../reportData/executionDataset";
 import { sampleDataset } from "../reportData/registry";
 import { tableOf } from "../reportData/types";
-import { EXECUTION_KEYS, executionRows, formatPips, hiddenOverlays, resolveExecution, splitQuote, toggleOverlay } from "../executionModel";
+import { EXECUTION_KEYS, executionRows, formatChange, formatPips, hiddenOverlays, resolveExecution, splitQuote, toggleOverlay } from "../executionModel";
 
 const dataset = executionDataset();
 const view = (state: Record<string, string> = {}) => resolveExecution(dataset, state)!;
@@ -116,5 +116,16 @@ describe("resolveExecution", () => {
     expect(rows.filter((r) => r.fill !== null).length).toBeGreaterThan(5);
     expect(splitQuote(1.37627)).toEqual({ handle: "1.37", pips: "627" });
     expect([formatPips(0.426), formatPips(-1.2, "p")]).toEqual(["+0.43 pips", "-1.20p"]);
+  });
+
+  it("the header's change: since the first bar shown, in pips, never a signed zero", () => {
+    const v = view();
+    expect(v.last!.sessionChangePips).toBeCloseTo((v.mid[149] - v.candles[0][0]) * 10_000, 6);
+    expect(formatChange(1.26, 0.0092)).toEqual({ text: "+1.3 pips (+0.009%)", tone: "up" });
+    expect(formatChange(-4.04, -0.0294)).toEqual({ text: "-4.0 pips (-0.029%)", tone: "down" });
+    /* Rounds to nothing: no sign, no colour. */
+    for (const [p, c] of [[0, 0], [0.04, 0.0003], [-0.049, -0.0004]]) expect(formatChange(p, c)).toEqual({ text: "0.0 pips", tone: "flat" });
+    /* A move too small for the percentage drops it rather than show +0.000%. */
+    expect(formatChange(0.06, 0.0004)).toEqual({ text: "+0.1 pips", tone: "up" });
   });
 });

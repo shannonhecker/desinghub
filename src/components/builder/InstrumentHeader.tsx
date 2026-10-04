@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useBuilder } from "@/store/useBuilder";
-import { EXECUTION_KEYS, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
+import { useBuilder, type DesignSystem } from "@/store/useBuilder";
+import { EXECUTION_KEYS, formatChange, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
+import { feedSwitchedOn } from "@/lib/executionFeed";
+import { ExecutionFeedControls, type FeedStatus } from "./ExecutionFeedControls";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
+import { useExecutionFeed, useFeedDataset } from "./useExecutionFeed";
 
 /* ══════════════════════════════════════════════════════════
    InstrumentHeader - what is being traded, and the order worked.
@@ -12,21 +15,27 @@ import { useCanvasDataset } from "./useBoundData";
    Line one: the pair, its last bar (open, high, low, close and the
    change), and a two-sided quote. Line two: how the chart is being
    read, the orders as tabs (choosing one re-reads the whole page),
-   and a note that the figures are sample data.
+   the sample feed's controls, and a note that the figures are sample
+   data. While presenting, the figures follow the feed; they are not
+   announced on every tick (the header is aria-live="off").
    ══════════════════════════════════════════════════════════ */
 
 export function InstrumentHeaderBlock(p: Record<string, unknown>) {
-  const dataset = useCanvasDataset();
+  const canvas = useCanvasDataset();
   const reportState = useBuilder((s) => s.reportState);
   const setReportState = useBuilder((s) => s.setReportState);
   const readOnly = usePreviewReadOnly();
+  const switchedOn = feedSwitchedOn(reportState);
+  const feed = useExecutionFeed({ dataset: canvas, state: reportState, active: readOnly && switchedOn });
+  const dataset = useFeedDataset(canvas);
   const view = useMemo(() => (dataset ? resolveExecution(dataset, reportState) : null), [dataset, reportState]);
 
   if (!view || !view.last) {
     return <div className="dh-instrument"><div className="dh-instrument-main"><h1 className="dh-instrument-symbol">{String(p.symbol ?? "Instrument")}</h1></div></div>;
   }
   const { last, order } = view;
-  const up = last.changePips >= 0;
+  const status: FeedStatus = feed.running ? "live" : feed.ended ? "ended" : !readOnly && switchedOn ? "edit" : "paused";
+  const change = formatChange(last.sessionChangePips, last.sessionChangePct);
   const [base] = [view.pair.slice(0, 3)];
   const sell = splitQuote(last.bid);
   const buy = splitQuote(last.ask);
@@ -38,7 +47,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
   );
 
   return (
-    <div className="dh-instrument" onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
+    <div className="dh-instrument" aria-live="off" data-feed-bars={readOnly ? feed.samples.length : 0} onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
       <div className="dh-instrument-main">
         <h1 className="dh-instrument-symbol">{view.pair}</h1>
         <span className="dh-instrument-meta">{view.description}</span>
@@ -48,9 +57,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
           {figure("H", last.high, "up")}
           {figure("L", last.low, "down")}
           {figure("C", last.close)}
-          <span className={`dh-instrument-change ${up ? "is-up" : "is-down"}`}>
-            {up ? "+" : ""}{last.changePips.toFixed(2)} ({up ? "+" : ""}{last.changePct.toFixed(2)}%)
-          </span>
+          <span className={`dh-instrument-change${change.tone === "flat" ? "" : ` is-${change.tone}`}`} title="Change since the first bar shown">{change.text}</span>
         </span>
         <span className="dh-instrument-spacer" />
         <span className="dh-instrument-quote" role="group" aria-label="Quote">
@@ -80,7 +87,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
           ))}
         </div>
         <span className="dh-instrument-spacer" />
-        <span className="dh-instrument-note">{String(p.note ?? "Sample data")}</span>
+        <ExecutionFeedControls system={(p.system as DesignSystem) ?? "salt"} status={status} canReset={readOnly && feed.samples.length > 0} presenting={readOnly} note={String(p.note ?? "Sample data")} />
       </div>
     </div>
   );
