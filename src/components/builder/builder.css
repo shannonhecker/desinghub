@@ -11496,8 +11496,14 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   border-radius: var(--ds-radius);
   font-family: var(--ds-font);
 }
-.dh-launcher-head { display: flex; align-items: center; justify-content: space-between; gap: var(--dh-cell-gap); }
-.dh-launcher-title { margin: 0; font: inherit; font-size: var(--dh-panel-title-size); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dh-launcher-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--dh-cell-gap); }
+/* Up to two lines, and always two lines tall: long report names stay
+   readable and tell apart, and every card's thumbnail starts level. */
+.dh-launcher-title {
+  margin: 0; font: inherit; font-size: var(--dh-panel-title-size); font-weight: 600; line-height: var(--bc-launcher-title-leading);
+  min-width: 0; min-height: calc(2 * var(--bc-launcher-title-leading) * 1em);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance;
+}
 .dh-launcher-thumb {
   aspect-ratio: 349 / 239;
   min-height: 0;
@@ -11506,6 +11512,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   overflow: hidden;
 }
 .dh-launcher-thumb > * { display: block; width: 100%; height: 100%; object-fit: contain; }
+.dh-launcher-art { background: center / contain no-repeat; }
 /* The source's wave graphic, drawn behind the hero on its own layer (the
    canvas root paints an opaque surface, so a background on .bp-main never
    showed). It bleeds above and below the hero like the original; dark mode
@@ -11519,14 +11526,14 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   inset-inline: 0;
   top: calc(-1 * var(--bc-hero-wave-rise));
   bottom: calc(-1 * var(--bc-hero-wave-fall));
-  background: url("/template-references/analytics-waves.svg") center top / 100% auto no-repeat;
+  background: var(--dh-hero-waves) center top / 100% auto no-repeat;
   pointer-events: none;
 }
 .bp-dashboard[data-mode="dark"] .dh-hero-reference::before { opacity: var(--bc-hero-wave-dark-opacity); }
 /* A multi-page canvas holds the frame at full height (DeviceFrame): the
    app fills it rather than leaving the frame's own background below. */
 .bp-device-frame > .bp-dashboard { flex-grow: 1; }
-.bp-dashboard[data-mode="dark"] .dh-launcher-thumb > img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+.bp-dashboard[data-mode="dark"] .dh-launcher-art { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 .dh-launcher-desc { flex: 1 1 auto; margin: 0; font-size: var(--dh-panel-meta-size); line-height: 1.45; color: var(--ds-fg-secondary); }
 .dh-launcher-open {
   align-self: flex-start;

@@ -8,7 +8,8 @@ import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import {
   BUILDER_TEMPLATES,
-  TEMPLATE_ORDER,
+  INDIVIDUAL_TEMPLATE_ORDER,
+  WORKSPACE_TEMPLATE_ID,
   templateCategory,
   type TemplateCategory,
   type BuilderTemplate,
@@ -74,7 +75,7 @@ export function TemplatesDrawer() {
 
   if (!templatesDrawerOpen) return null;
 
-  const templates: BuilderTemplate[] = TEMPLATE_ORDER.filter(id => category === "all" || templateCategory(id) === category).map((id) => BUILDER_TEMPLATES[id]);
+  const templates: BuilderTemplate[] = INDIVIDUAL_TEMPLATE_ORDER.filter(id => category === "all" || templateCategory(id) === category).map((id) => BUILDER_TEMPLATES[id]);
 
   const handleSelect = (tpl: BuilderTemplate) => {
     if (isGenerating) return;
@@ -136,7 +137,7 @@ export function TemplatesDrawer() {
           </button>
         </header>
 
-        <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => handleSelect(BUILDER_TEMPLATES["analytics-home"])} disabled={isGenerating} />
+        <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => handleSelect(BUILDER_TEMPLATES[WORKSPACE_TEMPLATE_ID])} disabled={isGenerating} />
         <div className="templates-drawer-grid" role="group" aria-label="Individual templates">
           {templates.map((tpl) => (
             <button

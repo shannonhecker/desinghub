@@ -60,7 +60,9 @@ async function openBuilder(page: Page) {
 async function applyTemplate(page: Page, label: string) {
   await openBuilder(page);
   await page.getByRole("button", { name: /Browse templates/ }).click();
-  await page.getByRole("button", { name: `Use the ${label} template` }).click();
+  /* Analytics Home is the connected workspace: its own action, not a card. */
+  if (label === "Analytics Home") await page.getByRole("button", { name: "Open connected analytics workspace" }).click();
+  else await page.getByRole("button", { name: `Use the ${label} template` }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
   await settle(page);
 }

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILDER_TEMPLATES,
-  TEMPLATE_ORDER,
+  INDIVIDUAL_TEMPLATE_ORDER,
   templateCategory,
   type TemplateCategory,
   type TemplateId,
@@ -35,7 +35,7 @@ export function TemplateCardsMessage({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState<TemplateCategory | "all">("all");
-  const ids = TEMPLATE_ORDER.filter((id) => category === "all" || templateCategory(id) === category);
+  const ids = INDIVIDUAL_TEMPLATE_ORDER.filter((id) => category === "all" || templateCategory(id) === category);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
 

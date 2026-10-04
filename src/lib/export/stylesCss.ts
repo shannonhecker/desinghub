@@ -705,8 +705,8 @@ button.tile { appearance: none; cursor: pointer; }
 
 /* ── Launcher card: a way into another report ── */
 .launcher { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 16px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-top: 3px solid var(--tone); border-radius: var(--radius); }
-.launcher-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.launcher-title { margin: 0; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.launcher-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.launcher-title { margin: 0; min-width: 0; min-height: 2.6em; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance; }
 /* Where the canvas draws a thumbnail of the report: a neutral block. */
 .launcher-thumb { aspect-ratio: 349 / 239; min-height: 0; overflow: hidden; border-radius: var(--radius); background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .launcher-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }

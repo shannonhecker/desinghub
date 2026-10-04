@@ -5,8 +5,10 @@ test('Analytics Home destinations contain data, persist on reload and retain rep
   await page.goto('/builder');
   await page.getByRole('button', { name: /Browse templates/ }).click();
   await page.getByRole('group', { name: 'Template category' }).getByRole('button', { name: 'Finance', exact: true }).click();
-  await expect(page.getByRole('button', { name: /^Use the .* template$/ })).toHaveCount(13);
-  await page.getByRole('button', { name: 'Use the Analytics Home template' }).click();
+  /* Twelve individual finance reports. The linked app is its own action. */
+  await expect(page.getByRole('button', { name: /^Use the .* template$/ })).toHaveCount(12);
+  await expect(page.getByRole('button', { name: 'Use the Analytics Home template' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open connected analytics workspace' }).click();
   const nav = page.locator('.bp-sidebar-nav');
   await nav.getByRole('button', { name: 'Configuration', exact: true }).click();
   await expect(page.locator('.bp-main')).toContainText('Report defaults');
@@ -42,7 +44,7 @@ test('Edit mode: the first nav item is not covered by the sidebar frame label', 
   await page.route('**/api/health', route => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
   await page.goto('/builder');
   await page.getByRole('button', { name: /Browse templates/ }).click();
-  await page.getByRole('button', { name: 'Use the Analytics Home template' }).click();
+  await page.getByRole('button', { name: 'Open connected analytics workspace' }).click();
   await page.getByRole('button', { name: 'Edit canvas', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Edit mode', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const nav = page.locator('.bp-sidebar-nav');

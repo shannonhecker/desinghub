@@ -60,8 +60,10 @@ describe('Analytics Home configuration defaults', () => {
     openTemplateLink(BUILDER_TEMPLATES['performance-analytics'], 'salt');
     const s = useBuilder.getState();
     expect(s.activeTemplateId).toBe('performance-analytics');
-    /* The Currency dropdown shows report state first, then the filter's value. */
-    expect(s.reportState.currency ?? filterValue('currency')).toBe('USD');
+    /* The saved default is written into the report's own filter; report
+       state is left alone (nothing was chosen in this visit). */
+    expect(filterValue('currency')).toBe('USD');
+    expect(s.reportState).toEqual({});
   });
 
   it('an explicit current choice outranks the saved default', () => {
@@ -80,6 +82,29 @@ describe('Analytics Home configuration defaults', () => {
     openTemplateLink(BUILDER_TEMPLATES['analytics-home'], 'salt');
     useBuilder.getState().openNavPage('tpl-home-nav-1', 'Configuration');
     expect(useBuilder.getState().blocks.find(b => b.id === 'tpl-home-config-fees')?.props.value).toBe('Gross of fees');
+  });
+
+  /* Only Configuration saves. A filter changed on a report shows while the
+     reader moves around, and is gone after a reload: the saved default is
+     what comes back. (The context bar's filters have no block of their own
+     to write to.) */
+  it('a filter changed on a report is transient: the Configuration default returns after a reload', () => {
+    chooseOnConfiguration('tpl-home-config-currency', 'currency', 'USD');
+    openTemplateLink(BUILDER_TEMPLATES['performance-analytics'], 'salt');
+    setReportControlValue(undefined, { stateKey: 'currency', value: 'USD', persistValue: true }, 'currency', 'EUR');
+    expect(useBuilder.getState().reportState.currency).toBe('EUR');
+    expect(filterValue('currency')).toBe('USD');
+    /* Moving to another report that has the filter carries the choice. */
+    openTemplateLink(BUILDER_TEMPLATES['risk-analytics'], 'salt');
+    expect(useBuilder.getState().reportState.currency).toBe('EUR');
+    expect(filterValue('currency')).toBe('USD');
+    reload();
+    expect(useBuilder.getState().reportState).toEqual({});
+    expect(filterValue('currency')).toBe('USD');
+    openTemplateLink(BUILDER_TEMPLATES['analytics-home'], 'salt');
+    useBuilder.getState().openNavPage('tpl-home-nav-1', 'Configuration');
+    expect(useBuilder.getState().blocks.find(b => b.id === 'tpl-home-config-currency')?.props.value).toBe('USD');
+    expect(useBuilder.getState().reportState.currency).toBeUndefined();
   });
 
   it('a report control without the flag stays transient', () => {

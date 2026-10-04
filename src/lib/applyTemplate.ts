@@ -1,6 +1,6 @@
 import { useBuilder, DEFAULT_ZONE_LAYOUTS, flushActiveBody } from "@/store/useBuilder";
 import type { Block, DesignSystem } from "@/store/useBuilder";
-import type { BuilderTemplate } from "@/lib/builderTemplates";
+import { WORKSPACE_TEMPLATE_ID, type BuilderTemplate } from "@/lib/builderTemplates";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { titleFromTemplate } from "@/lib/sessionTitle";
 import { collectReportControls } from "@/lib/reportCommand";
@@ -25,7 +25,12 @@ import { collectReportControls } from "@/lib/reportCommand";
    without starting one - the canvas and every edit to it were never saved,
    and a refresh lost them. ensureSessionStarted is a no-op when a session
    is already running, so a caller that named one first keeps its title. ── */
-export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
+export function applyTemplateToCanvas(source: BuilderTemplate, ds: DesignSystem, opts: { linked?: boolean } = {}) {
+  /* An individual template is one report on its own. Links between
+     templates belong to the connected workspace: Home itself, and whatever
+     is opened from inside it (openTemplateLink). */
+  const linked = opts.linked ?? source.id === WORKSPACE_TEMPLATE_ID;
+  const tpl = linked ? source : standaloneTemplate(source);
   const s = useBuilder.getState();
   s.ensureSessionStarted(titleFromTemplate(tpl.label));
   /* A template is a single page: drop pages left over from a previous
@@ -75,6 +80,29 @@ export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
   usePreviewMode.getState().setMode("preview");
 }
 
+/** A template with every link to another template taken out, so nothing on
+ *  it leads away or to a missing page: the workspace tab strip keeps only
+ *  this report's tab, and a sidebar that lists sibling reports keeps only
+ *  this one (a group heading goes when its items do). The definition is not
+ *  touched; this returns a copy. */
+export function standaloneTemplate(tpl: BuilderTemplate): BuilderTemplate {
+  const header = tpl.header.map((b) => {
+    if (!b.props.templates) return b;
+    const { templates: _links, ...props } = b.props;
+    void _links;
+    return { ...b, props: { ...props, ...(typeof props.active === "string" ? { tabsCsv: props.active } : {}) } };
+  });
+  const kept = tpl.sidebar.flatMap((b) => {
+    if (b.type !== "NavItem" || typeof b.props.templateId !== "string") return [b];
+    if (b.props.templateId !== tpl.id || b.props.active !== true) return [];
+    const { templateId: _link, ...props } = b.props;
+    void _link;
+    return [{ ...b, props }];
+  });
+  const sidebar = kept.filter((b, i) => b.type !== "NavGroup" || kept[i + 1]?.type === "NavItem");
+  return { ...tpl, header, sidebar };
+}
+
 /* ── Following a link between reports ────────────────────────────
    A workspace tab or a sidebar item that names a template opens it. That is
    moving around ONE application, so what the reader set stays set: the
@@ -86,7 +114,7 @@ export function openTemplateLink(tpl: BuilderTemplate, ds: DesignSystem) {
   const collapsed = before.zoneLayouts.sidebar.collapsed;
   const held = before.reportState;
   const defaults = persistedReportDefaults(before);
-  applyTemplateToCanvas(tpl, ds);
+  applyTemplateToCanvas(tpl, ds, { linked: true });
   const s = useBuilder.getState();
   if (collapsed !== undefined && tpl.sidebar.length > 0) s.setZoneLayout("sidebar", { collapsed });
   carryReportDefaults(defaults);

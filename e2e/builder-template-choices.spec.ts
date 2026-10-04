@@ -14,9 +14,30 @@ test('gallery: an individual card opens that report alone', async ({ page }) => 
   await open(page);
   await page.getByRole('button', { name: /Browse templates/ }).click();
   await page.getByRole('group', { name: 'Template category' }).getByRole('button', { name: 'Finance', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Use the Analytics Home template' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Use the Performance Analytics template' }).click();
   await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
   await expect(homeNav(page)).toHaveCount(0);
+  /* No links to other templates: the tab strip holds this report only, and
+     choosing it keeps this report on the canvas. */
+  const tabs = page.getByRole('navigation', { name: 'Workspaces' }).getByRole('button');
+  await expect(tabs).toHaveText(['Performance']);
+  await tabs.first().click();
+  await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
+});
+
+test('gallery: a Sustainable Investment card is that one report, with no sibling links', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Use the ESG Analytics template' }).click();
+  await expect(page.locator('.bp-main [data-block-id]').first()).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Workspaces' }).getByRole('button')).toHaveText(['Sustainable Investment']);
+  const items = page.locator('.bp-sidebar-nav .bp-nav-item');
+  await expect(items).toHaveCount(1);
+  await expect(items.first()).toHaveAttribute('aria-current', 'page');
+  const first = await page.locator('.bp-main [data-block-id]').first().getAttribute('data-block-id');
+  await items.first().click();
+  await expect(page.locator(`.bp-main [data-block-id="${first}"]`)).toBeVisible();
 });
 
 test('gallery: the workspace action opens the linked app', async ({ page }) => {

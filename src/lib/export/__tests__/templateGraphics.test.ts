@@ -29,8 +29,15 @@ describe("reference graphics survive handoff", () => {
      mask, so they sit on any surface. */
   it("the waves carry no opaque backing and fade through a mask", () => {
     const svg = decodeURIComponent(ANALYTICS_WAVES.replace("data:image/svg+xml,", ""));
-    expect(svg).not.toContain('<rect width="1920" height="450" fill="white"/>\n<path');
-    expect(svg).toContain('<g mask="url(#fade_2045_298187)">');
-    expect(svg).not.toMatch(/<rect[^>]*fill="url\(#paint5[0-3]_linear/);
+    /* What is painted is everything outside <defs>: only gradient strokes. */
+    const painted = svg.replace(/<defs>[\s\S]*<\/defs>/, "");
+    expect(painted).not.toBe(svg);
+    expect(painted).not.toMatch(/<rect\b/);
+    expect(painted).not.toMatch(/fill="(?!none")/);
+    expect((painted.match(/<path\b[^>]*stroke="url\(#/g) ?? []).length).toBeGreaterThan(40);
+    /* The strokes sit in one group masked by the fades the source drew in white. */
+    expect(painted).toMatch(/<g mask="url\(#fade_[\w]+\)">/);
+    const mask = svg.match(/<mask id="fade_[\w]+"[\s\S]*?<\/mask>/)?.[0] ?? "";
+    expect((mask.match(/<rect\b/g) ?? []).length).toBe(5);
   });
 });

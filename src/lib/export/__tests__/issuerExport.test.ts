@@ -47,7 +47,9 @@ const ENTITY = "Avocado Inc";
 const OTHER = "Helios Energy";
 
 function apply(tpl: BuilderTemplate, ds: (typeof SYSTEMS)[number] = "salt") {
-  applyTemplateToCanvas(tpl, ds);
+  /* The canvas as it is inside the connected workspace: sibling reports in
+     the sidebar and the workspace tabs (a standalone card drops those links). */
+  applyTemplateToCanvas(tpl, ds, { linked: true });
   useBuilder.setState({ mode: "light" as never });
 }
 const setState = (key: string, value: string) => useBuilder.getState().setReportState(key, value);

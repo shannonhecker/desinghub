@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { applyTemplateToCanvas } from "../applyTemplate";
-import { BUILDER_TEMPLATES } from "../builderTemplates";
+import { applyTemplateToCanvas, openTemplateLink } from "../applyTemplate";
+import { BUILDER_TEMPLATES, INDIVIDUAL_TEMPLATE_ORDER, TEMPLATE_ORDER, WORKSPACE_TEMPLATE_ID, templateCategory } from "../builderTemplates";
 import { useBuilder } from "@/store/useBuilder";
 
 beforeEach(() => {
@@ -75,5 +75,60 @@ describe("applyTemplateToCanvas", () => {
     expect(s.pages.map((p) => p.id)).toEqual([tpl.sidebar[0].id, ...tpl.pages!.map((p) => p.id)]);
     expect(s.activePageId).toBe(tpl.sidebar[0].id);
     expect(s.blocks).toEqual(tpl.body);
+  });
+});
+
+/* An individual template is one standalone report. Only the connected
+   workspace (Analytics Home, and the reports opened from inside it) carries
+   links between templates. */
+describe("standalone templates and the connected workspace", () => {
+  const crossLinks = () => {
+    const s = useBuilder.getState();
+    const out: string[] = [];
+    for (const b of [...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks]) {
+      if (b.props.templates && Object.keys(b.props.templates as object).length > 0) out.push(`${b.type}.templates`);
+      if (typeof b.props.templateId === "string" && b.props.templateId !== s.activeTemplateId) out.push(`${b.type}:${b.props.templateId}`);
+    }
+    return out;
+  };
+
+  it("the individual list leaves the workspace out", () => {
+    expect(INDIVIDUAL_TEMPLATE_ORDER).not.toContain(WORKSPACE_TEMPLATE_ID);
+    expect(INDIVIDUAL_TEMPLATE_ORDER).toHaveLength(TEMPLATE_ORDER.length - 1);
+    expect(INDIVIDUAL_TEMPLATE_ORDER.filter((id) => templateCategory(id) === "finance")).toHaveLength(12);
+  });
+
+  for (const id of INDIVIDUAL_TEMPLATE_ORDER) {
+    it(`${id}: applied on its own, it links to no other template and every nav item has content`, () => {
+      applyTemplateToCanvas(BUILDER_TEMPLATES[id], "salt");
+      expect(crossLinks()).toEqual([]);
+      const s = useBuilder.getState();
+      const tabs = s.headerBlocks.find((b) => b.type === "TabStrip");
+      if (tabs) expect(String(tabs.props.tabsCsv)).toBe(String(tabs.props.active));
+      const pageIds = new Set(s.pages.map((p) => p.id));
+      for (const [i, nav] of s.sidebarBlocks.filter((b) => b.type === "NavItem").entries()) {
+        const current = nav.props.active === true || (i === 0 && !s.sidebarBlocks.some((b) => b.props.active === true));
+        expect(current || pageIds.has(nav.id), `${nav.props.label}`).toBe(true);
+      }
+      /* A group heading is kept only while it still has an item under it. */
+      s.sidebarBlocks.forEach((b, i) => {
+        if (b.type === "NavGroup") expect(s.sidebarBlocks[i + 1]?.type).toBe("NavItem");
+      });
+    });
+  }
+
+  it("the workspace keeps its links, and so does a report opened from inside it", () => {
+    applyTemplateToCanvas(BUILDER_TEMPLATES[WORKSPACE_TEMPLATE_ID], "salt");
+    expect(crossLinks().length).toBeGreaterThan(0);
+    openTemplateLink(BUILDER_TEMPLATES["esg-analytics"], "salt");
+    const s = useBuilder.getState();
+    expect((s.headerBlocks.find((b) => b.type === "TabStrip")!.props.templates as Record<string, string>).Home).toBe(WORKSPACE_TEMPLATE_ID);
+    expect(s.sidebarBlocks.filter((b) => b.type === "NavItem" && b.props.templateId).length).toBeGreaterThan(1);
+  });
+
+  it("the template definitions themselves are not changed by a standalone apply", () => {
+    const before = JSON.stringify(BUILDER_TEMPLATES["esg-analytics"]);
+    applyTemplateToCanvas(BUILDER_TEMPLATES["esg-analytics"], "salt");
+    expect(JSON.stringify(BUILDER_TEMPLATES["esg-analytics"])).toBe(before);
   });
 });

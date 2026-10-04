@@ -156,7 +156,9 @@ function clickNamedButton(name: string) {
 it('filters individual templates and offers the connected workspace separately', () => {
   mountDrawer();
   clickNamedButton('Finance');
-  expect(container!.querySelectorAll('.templates-drawer-card')).toHaveLength(13);
+  /* Twelve individual finance reports; the linked app is not one of the cards. */
+  expect(container!.querySelectorAll('.templates-drawer-card')).toHaveLength(12);
+  expect(container!.querySelector('[aria-label="Start from the Analytics Home template"]')).toBeNull();
   expect(container!.querySelector('[aria-label="Start from the Performance Analytics template"]')).not.toBeNull();
   expect(container!.querySelector('[aria-label="Start from the CRM Contacts template"]')).toBeNull();
   clickNamedButton('Open connected analytics workspace');

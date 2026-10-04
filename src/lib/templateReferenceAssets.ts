@@ -1,5 +1,7 @@
 /** Exact graphics from Shannon Hecker’s analytics reference, reused with owner authorization.
- * See docs/reviews/2026-10-04-site-quality.md for provenance. Data URIs keep exports self-contained.
+ * Source: the owner's Analytics Dashboard project, credited outside the canvas by
+ * src/components/builder/TemplateSourceNote.tsx. These data URIs are the only copy:
+ * the canvas and every export read them, so exports stay self-contained.
  * The waves drop the source's solid white backing rect, and its white edge fades become a mask,
  * so they sit on either mode's surface and look the same as before on white. */
 const svgData = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;

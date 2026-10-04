@@ -504,6 +504,12 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "fx-execution",
 ];
 
+/** The connected workspace: Home plus the reports it links to, as one app.
+ *  It is offered as its own action, never as an individual template card. */
+export const WORKSPACE_TEMPLATE_ID: TemplateId = "analytics-home";
+/** The templates offered one by one. Each applies as a standalone report. */
+export const INDIVIDUAL_TEMPLATE_ORDER: TemplateId[] = TEMPLATE_ORDER.filter((id) => id !== WORKSPACE_TEMPLATE_ID);
+
 /** True when the template on the canvas pins its structural spacing across
  *  design systems (see BuilderTemplate.uniformStructure). */
 export function hasUniformStructure(id: string | null | undefined): boolean {
