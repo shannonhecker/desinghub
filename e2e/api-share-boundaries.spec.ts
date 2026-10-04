@@ -25,7 +25,8 @@ test("shared previews load local images and remove remote sources", async ({ pag
   page.on("request", request => { if (request.url().includes("untrusted.invalid")) remote.push(request.url()); });
   const response = await page.goto(`/preview/share/${hash}`);
   expect(response?.headers()["content-security-policy"]).toContain("img-src 'self' data:;");
-  await expect(page.getByRole("img", { name: "Local preview asset" })).toBeVisible();
-  await expect(page.getByRole("img", { name: "Untrusted image" })).toHaveCount(0);
+  await expect(page.locator('img[alt="Local preview asset"]')).toBeVisible();
+  await expect(page.locator('img[alt="Untrusted image"]')).toHaveCount(0);
+  await expect.poll(() => page.locator('img[alt="Local preview asset"]').evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   expect(remote).toEqual([]);
 });

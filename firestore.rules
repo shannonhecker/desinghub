@@ -1,39 +1,40 @@
 rules_version = '2';
 
 // Projects remain available to their signed-in (including anonymous) owner.
-// Field/list limits below complement Firestore's built-in 1 MiB document cap.
+// Exact schemas and types below complement Firestore's native 1 MiB document cap.
+// Do not truncate or arbitrarily cap the editor's growing message/block lists.
 // Per-user document-count quotas require a trusted backend; these rules do
 // not pretend to enforce a collection-wide count from an individual write.
 service cloud.firestore {
   match /databases/{database}/documents {
-    function optionalList(s, key, limit) {
-      return !(key in s) || (s[key] is list && s[key].size() <= limit);
+    function optionalList(s, key) {
+      return !(key in s) || s[key] is list;
     }
     function validSnapshot(s) {
       return s is map
         && s.keys().hasAll(['messages', 'blocks', 'designSystem', 'mode', 'density', 'interfaceType', 'selectedComponents', 'colorOverrides'])
         && s.keys().hasOnly(['messages', 'blocks', 'headerBlocks', 'sidebarBlocks', 'footerBlocks', 'zoneLayouts', 'designSystem', 'mode', 'density', 'interfaceType', 'selectedComponents', 'colorOverrides', 'activeTemplateId', 'pages', 'activePageId'])
-        && s.messages is list && s.messages.size() <= 200
-        && s.blocks is list && s.blocks.size() <= 120
-        && optionalList(s, 'headerBlocks', 120)
-        && optionalList(s, 'sidebarBlocks', 120)
-        && optionalList(s, 'footerBlocks', 120)
-        && optionalList(s, 'pages', 50)
+        && s.messages is list
+        && s.blocks is list
+        && optionalList(s, 'headerBlocks')
+        && optionalList(s, 'sidebarBlocks')
+        && optionalList(s, 'footerBlocks')
+        && optionalList(s, 'pages')
         && s.designSystem in ['salt', 'm3', 'fluent', 'carbon', 'uoaui']
         && s.mode in ['light', 'dark']
         && s.density in ['high', 'medium', 'low', 'touch']
         && s.interfaceType in ['dashboard', 'landing', 'form', 'ecommerce', 'blog', 'portfolio']
-        && s.selectedComponents is list && s.selectedComponents.size() <= 100
-        && s.colorOverrides is map && s.colorOverrides.size() <= 100
+        && s.selectedComponents is list
+        && s.colorOverrides is map
         && (!('zoneLayouts' in s) || (s.zoneLayouts is map && s.zoneLayouts.keys().hasOnly(['body', 'header', 'sidebar', 'footer'])))
-        && (!('activeTemplateId' in s) || s.activeTemplateId == null || (s.activeTemplateId is string && s.activeTemplateId.size() <= 120))
-        && (!('activePageId' in s) || s.activePageId == null || (s.activePageId is string && s.activePageId.size() <= 120));
+        && (!('activeTemplateId' in s) || s.activeTemplateId == null || (s.activeTemplateId is string))
+        && (!('activePageId' in s) || s.activePageId == null || (s.activePageId is string));
     }
     function validProject(p) {
       return p.keys().hasAll(['uid', 'name', 'createdAt', 'updatedAt', 'snapshot'])
         && p.keys().hasOnly(['uid', 'name', 'createdAt', 'updatedAt', 'snapshot'])
         && p.uid == request.auth.uid
-        && p.name is string && p.name.size() > 0 && p.name.size() <= 120
+        && p.name is string && p.name.size() > 0
         && p.createdAt is timestamp && p.updatedAt is timestamp
         && validSnapshot(p.snapshot);
     }
