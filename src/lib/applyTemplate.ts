@@ -1,5 +1,5 @@
-import { useBuilder, DEFAULT_ZONE_LAYOUTS } from "@/store/useBuilder";
-import type { DesignSystem } from "@/store/useBuilder";
+import { useBuilder, DEFAULT_ZONE_LAYOUTS, flushActiveBody } from "@/store/useBuilder";
+import type { Block, DesignSystem } from "@/store/useBuilder";
 import type { BuilderTemplate } from "@/lib/builderTemplates";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { titleFromTemplate } from "@/lib/sessionTitle";
@@ -85,11 +85,95 @@ export function openTemplateLink(tpl: BuilderTemplate, ds: DesignSystem) {
   const before = useBuilder.getState();
   const collapsed = before.zoneLayouts.sidebar.collapsed;
   const held = before.reportState;
+  const defaults = persistedReportDefaults(before);
   applyTemplateToCanvas(tpl, ds);
   const s = useBuilder.getState();
   if (collapsed !== undefined && tpl.sidebar.length > 0) s.setZoneLayout("sidebar", { collapsed });
-  for (const control of collectReportControls([...tpl.header, ...tpl.body])) {
-    const value = held[control.key];
+  carryReportDefaults(defaults);
+  /* What the reader chose just now outranks a saved default. */
+  const carried = { ...defaults, ...held };
+  const after = useBuilder.getState();
+  for (const control of collectReportControls([...after.headerBlocks, ...after.blocks])) {
+    const value = carried[control.key];
     if (control.kind === "filter" && value !== undefined && value !== control.current && control.choices.includes(value)) s.setReportState(control.key, value);
   }
+}
+
+/* ── Saved report defaults ───────────────────────────────────────
+   Report state is transient on purpose: a reload clears it, so chart picks
+   and live values never outlive the visit. A few controls are SETTINGS (the
+   Configuration page's base currency, benchmark, periodicity and fee type):
+   they carry `persistValue`, so a change is also written into the control's
+   own `value`, which the page model and autosave already keep. A report
+   opened by a link starts from those saved values. No new saved fields. */
+
+const isPersisted = (props: Record<string, unknown> | undefined): boolean => props?.persistValue === true;
+
+/** Saved defaults by report-state key: the value of every control marked
+ *  `persistValue`, across every page (the active one flushed) and the header. */
+export function persistedReportDefaults(
+  s: Pick<ReturnType<typeof useBuilder.getState>, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts" | "headerBlocks">,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  const read = (key: unknown, value: unknown) => {
+    if (typeof key === "string" && key && typeof value === "string" && value) out[key] = value;
+  };
+  const blocks = [...s.headerBlocks, ...flushActiveBody(s).pages.flatMap((p) => p.body)];
+  for (const b of blocks) {
+    const props = (b.props ?? {}) as Record<string, unknown>;
+    if (isPersisted(props)) read(props.stateKey, props.value);
+    if (Array.isArray(props.filters)) {
+      for (const f of props.filters as Record<string, unknown>[]) if (f && isPersisted(f)) read(f.stateKey, f.value);
+    }
+  }
+  return out;
+}
+
+const optionsOf = (props: Record<string, unknown>): string[] =>
+  Array.isArray(props.options) ? props.options.map(String) : String(props.optionsCsv ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+
+/** Write saved defaults into the canvas just opened: its settings controls
+ *  take them, and a filter for the same key starts from them and keeps them
+ *  (marked, so they travel on to the next report and back). */
+function withDefaults(blocks: Block[], defaults: Record<string, string>): Block[] {
+  let changed = false;
+  const next = blocks.map((b) => {
+    const props = (b.props ?? {}) as Record<string, unknown>;
+    let out = b;
+    const key = props.stateKey;
+    if (isPersisted(props) && typeof key === "string" && defaults[key] !== undefined && defaults[key] !== props.value && optionsOf(props).includes(defaults[key])) {
+      out = { ...out, props: { ...out.props, value: defaults[key] } };
+    }
+    if (Array.isArray(props.filters)) {
+      const filters = (props.filters as Record<string, unknown>[]).map((f) => {
+        const k = f?.stateKey;
+        if (!f || typeof k !== "string" || defaults[k] === undefined || !optionsOf(f).includes(defaults[k])) return f;
+        return f.value === defaults[k] && isPersisted(f) ? f : { ...f, value: defaults[k], persistValue: true };
+      });
+      if (filters.some((f, i) => f !== (props.filters as unknown[])[i])) out = { ...out, props: { ...out.props, filters } };
+    }
+    if (out !== b) changed = true;
+    return out;
+  });
+  return changed ? next : blocks;
+}
+
+function carryReportDefaults(defaults: Record<string, string>) {
+  if (Object.keys(defaults).length === 0) return;
+  useBuilder.setState((st) => {
+    const blocks = withDefaults(st.blocks, defaults);
+    return {
+      headerBlocks: withDefaults(st.headerBlocks, defaults),
+      blocks,
+      pages: st.pages.map((p) => (p.id === st.activePageId ? { ...p, body: blocks } : { ...p, body: withDefaults(p.body, defaults) })),
+    };
+  });
+}
+
+/** A report control's change. Always the live report state; a settings
+ *  control (`persistValue`) also keeps the value on its block so it is saved. */
+export function setReportControlValue(blockId: string | undefined, props: Record<string, unknown>, stateKey: string, value: string) {
+  const s = useBuilder.getState();
+  s.setReportState(stateKey, value);
+  if (blockId && isPersisted(props) && value) s.updateBlockProps(blockId, { value });
 }

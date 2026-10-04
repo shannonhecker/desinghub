@@ -25,4 +25,13 @@ test('Analytics Home destinations contain data, persist on reload and retain rep
   await page.locator('[data-block-id="tpl-home-launcher-2"]').getByRole('button', { name: 'Open report' }).click();
   await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Currency', exact: true })).toContainText('USD');
+  /* The setting outlives a reload on the report and comes back to Configuration. */
+  await page.reload();
+  await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Preview mode', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Currency', exact: true })).toContainText('USD');
+  await page.getByRole('navigation', { name: 'Workspaces' }).getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.locator('[data-block-id="tpl-home-hero"]')).toBeVisible();
+  await nav.getByRole('button', { name: 'Configuration', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: 'Base currency', exact: true })).toContainText('USD');
 });

@@ -5,8 +5,10 @@ import { BODY_LAYOUT } from './financeTemplates';
 
 const full = { width: '12fr' } as const;
 const title = (id: string, text: string): Block => ({ id, type: 'PageTitle', props: { text, level: 2 }, layout: { ...full, height: '32px' } });
+/* A Configuration setting: `persistValue` saves a change on the block itself,
+   so it survives a reload while other report state stays transient. */
 const field = (id: string, label: string, stateKey: string, value: string, options: string[]): Block => ({
-  id, type: 'SimulatedDropdown', props: { label, stateKey, value, inline: true, optionsCsv: options.join(', ') },
+  id, type: 'SimulatedDropdown', props: { label, stateKey, value, inline: true, optionsCsv: options.join(', '), persistValue: true },
   layout: { width: '6fr', height: '32px', spanTablet: 6, spanPhone: 12 },
 });
 const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[]): Block => ({
