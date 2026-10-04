@@ -5,10 +5,23 @@ import { useBuilder } from "@/store/useBuilder";
 import { parseAIResponse } from "./parseAIResponse";
 import { applyAIActions, type ApplyReport, type SkippedAction } from "./applyAIActions";
 import { emitToolUse } from "./toolUseEvents";
-import { cleanHistoryForAPI } from "./cleanMessageHistory";
+import { cleanHistoryForAPI, type AnthropicMessage } from "./cleanMessageHistory";
 import { buildCanvasManifest } from "./canvasManifest";
 import { toolUseToAction } from "./chatTools";
 import type { AIAction } from "./parseAIResponse";
+import type { ImageMediaType } from "./image/imageBytes";
+
+/* An image for this one turn (from prepareImageAttachment). Held only in
+   memory: it goes into the request body and is never written to the store,
+   so it cannot reach history, the local session, cloud save or share state. */
+export interface ChatTurnImage {
+  mediaType: ImageMediaType;
+  base64: string;
+}
+
+export interface SendOptions {
+  image?: ChatTurnImage;
+}
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -117,6 +130,9 @@ export function useChatAPI() {
   /* Ref mirrors so the stable sendMessage callback never reads stale
      closures, and the interval can be cleared on unmount. */
   const failedSendRef = useRef<FailedSend | null>(null);
+  /* The image behind a retryable failure, so Retry resends it without the
+     user attaching it again. Memory only; cleared on the next send. */
+  const failedImageRef = useRef<ChatTurnImage | null>(null);
   const rateLimitedRef = useRef(false);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -154,13 +170,15 @@ export function useChatAPI() {
     }, 1000);
   }, []);
 
-  const sendMessage = useCallback(async (userText: string): Promise<void> => {
+  const sendMessage = useCallback(async (userText: string, opts?: SendOptions): Promise<void> => {
     /* An active 429 countdown blocks new sends until it hits zero.
        ChatPanel disables the send button too; this guard covers
        programmatic callers (chips, wizard, retries). */
     if (rateLimitedRef.current) return;
     /* A fresh attempt supersedes any prior retryable failure. */
     setFailedSend(null);
+    failedImageRef.current = null;
+    const image = opts?.image ?? null;
 
     const store = useBuilder.getState();
 
@@ -205,7 +223,13 @@ export function useChatAPI() {
        stripper removes it from prior turns; only this turn carries it. */
     const manifest = buildCanvasManifest(store);
     const context = `[Current state: design_system=${store.designSystem}, mode=${store.mode}, density=${store.density}, interface_type=${store.interfaceType}, selected_components=[${store.selectedComponents.join(",")}]${selectedSuffix}\ncanvas=\n${manifest}]`;
-    history.push({ role: "user", content: `${context}\n\n${userText}` });
+    /* The image rides on this (latest) user turn only, as base64. */
+    const currentTurn: AnthropicMessage & { image?: { mediaType: ImageMediaType; data: string } } = {
+      role: "user",
+      content: `${context}\n\n${userText}`,
+    };
+    if (image) currentTurn.image = { mediaType: image.mediaType, data: image.base64 };
+    const requestMessages: (AnthropicMessage & { image?: unknown })[] = [...history, currentTurn];
 
     store.setGenerating(true);
 
@@ -250,7 +274,7 @@ export function useChatAPI() {
            DS-aware system prompt. Route validates against an
            allowlist; arbitrary strings get rejected with 400. */
         body: JSON.stringify({
-          messages: history,
+          messages: requestMessages,
           designSystem: store.designSystem,
         }),
         signal: controller.signal,
@@ -438,6 +462,7 @@ export function useChatAPI() {
          Surface the retry affordance against this bubble so the user
          isn't stranded on a dead-end turn. */
       if (noTextNoActions && lastAi && lastAi.role === "ai") {
+        failedImageRef.current = image;
         setFailedSend({ messageId: lastAi.id, userText });
       }
     } catch (err: unknown) {
@@ -531,6 +556,7 @@ export function useChatAPI() {
       if (kind === "rate-limit") {
         startCountdown(bubbleId, waitSeconds);
       } else if (kind === "server" || kind === "network") {
+        failedImageRef.current = image;
         setFailedSend({ messageId: bubbleId, userText });
       }
     } finally {
@@ -552,8 +578,9 @@ export function useChatAPI() {
     useBuilder.setState({
       messages: msgs.filter((m) => m.id !== failed.messageId),
     });
+    const image = failedImageRef.current;
     setFailedSend(null);
-    await sendMessage(failed.userText);
+    await sendMessage(failed.userText, image ? { image } : undefined);
   }, [sendMessage, setFailedSend]);
 
   const abort = useCallback(() => {
