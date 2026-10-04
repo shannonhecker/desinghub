@@ -262,8 +262,8 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
   } else if (bound?.view === "parts") {
     props.seriesData = bound.seriesData;
     if (bound.selected) props.selectedPoint = bound.selected;
-    /* The donut's centre label is the total, in the selected currency. */
-    if (bound.centerValue !== null) {
+    /* A custom inspector label wins; otherwise show the selected-currency total. */
+    if (bound.centerValue !== null && !(typeof source.centerLabel === "string" && source.centerLabel.trim())) {
       props.centerLabel = formatGridValue(centerColumn(bound.centerMoney, reportState[CURRENCY_STATE] ?? dataset?.baseCurrency), bound.centerValue);
     }
   } else if (bound?.view === "grid") {

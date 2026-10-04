@@ -1699,10 +1699,11 @@ function HighchartBlockRenderer({
   const series = boundSeries ? (boundSeries.series as ChartSeries[]) : Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
   const parts = boundParts ? boundParts.seriesData : seriesData;
   const currency = useBuilder((s) => s.reportState[CURRENCY_STATE]);
-  const centerLabel =
+  const centerLabel = text(p.centerLabel) ?? (
     boundParts && boundParts.centerValue !== null
       ? formatGridValue(centerColumn(boundParts.centerMoney, currency ?? dataset?.baseCurrency), boundParts.centerValue)
-      : text(p.centerLabel);
+      : undefined
+  );
 
   /* A framed panel shows the title in its header and gives the chart the
      space its fixed height leaves; an unframed chart keeps its own title. */

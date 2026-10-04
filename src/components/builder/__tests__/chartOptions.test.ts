@@ -93,13 +93,13 @@ describe("buildChartOptions - settings every type shares", () => {
     expect(build("column", {}).legend.enabled).toBeUndefined();
   });
 
-  it("a donut with a centre label installs a render handler; other types do not", () => {
+  it("enables centre text only for a labelled donut", () => {
     const donut = build("donut", { centerLabel: "£1.2bn" });
     expect(typeof donut.chart.events.render).toBe("function");
     /* Text and colour travel in the options, so a theme change repaints it. */
     expect(donut.chart.dhCenter).toEqual({ text: "£1.2bn", color: vars.fg });
-    expect(build("pie", { centerLabel: "£1.2bn" }).chart.events).toBeUndefined();
-    expect(build("donut", {}).chart.events).toBeUndefined();
+    expect(build("pie", { centerLabel: "£1.2bn" }).chart.dhCenter).toBeNull();
+    expect(build("donut", {}).chart.dhCenter).toBeNull();
   });
 });
 
@@ -211,5 +211,35 @@ describe("chart point descriptions", () => {
     const describe = o.accessibility.point?.descriptionFormatter;
     expect(describe?.({ category: "<2C", y: 12, series: { name: "Alignment" } })).toBe("Less than 2C, 12%. Alignment.");
     expect(describe?.({ category: "Equity", y: 12, series: { name: "Allocation" } })).toBe(false);
+  });
+});
+
+describe('live chart-kind updates', () => {
+  it('clears the donut hole and center label when the same chart is updated to pie', async () => {
+    const Highcharts = (await import('highcharts')).default;
+    await import('highcharts/modules/accessibility');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const parts = [{ name: 'Equity', y: 35 }, { name: 'Bonds', y: 65 }];
+    const props = { seriesData: parts, centerLabel: 'Total', hideTitle: true };
+    const options = build('donut', props);
+    options.chart = { ...options.chart, width: 600, height: 300, animation: false };
+    const chart = Highcharts.chart(host, options);
+    try {
+      expect((chart.series[0].options as any).innerSize).toBe('68%');
+      expect(host.textContent).toContain('Total');
+      chart.update(build('pie', props), true, true, false);
+      expect(Number.parseFloat(String((chart.series[0].options as any).innerSize))).toBe(0);
+      expect(host.textContent).not.toContain('Total');
+      expect(chart.series[0].points.map(point => point.y)).toEqual([35, 65]);
+      chart.update(build('donut', props), true, true, false);
+      expect((chart.series[0].options as any).innerSize).toBe('68%');
+      expect(host.textContent).toContain('Total');
+      chart.update(build('donut', { ...props, centerLabel: '' }), true, true, false);
+      expect(host.textContent).not.toContain('Total');
+    } finally {
+      chart.destroy();
+      host.remove();
+    }
   });
 });

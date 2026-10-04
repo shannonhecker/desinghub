@@ -52,7 +52,9 @@ export function SaveIndicator() {
   const [hintDismissed, setHintDismissed] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(DISMISS_KEY) === "1") setHintDismissed(true);
+    try {
+      if (sessionStorage.getItem(DISMISS_KEY) === "1") setHintDismissed(true);
+    } catch { /* The optional hint must not interrupt the save status. */ }
   }, []);
   const dismissHint = () => {
     setHintDismissed(true);

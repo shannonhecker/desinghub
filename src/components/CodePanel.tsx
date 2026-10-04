@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getSystemInfo } from "@/data/registry";
 import { useActiveTheme } from "@/components/DesignHubApp";
@@ -175,26 +175,18 @@ export function CodePanel({ componentId }: { componentId: string }) {
   /* Dynamic code-snippet load. Cache check is synchronous when a system
      has been activated previously, so DS-switching after first load
      feels identical to the prior eager-import behavior. */
-  const [codeMap, setCodeMap] = useState<CodeSnippets | null>(
-    () => codeMapCache[activeSystem] ?? null,
-  );
-  const cancelledRef = useRef(false);
+  const [loaded, setLoaded] = useState<{ system: string; map: CodeSnippets } | null>(null);
+  const codeMap = codeMapCache[activeSystem]
+    ?? (loaded?.system === activeSystem ? loaded.map : null);
 
   useEffect(() => {
-    cancelledRef.current = false;
-    const cached = codeMapCache[activeSystem];
-    if (cached) {
-      setCodeMap(cached);
-      return;
-    }
-    setCodeMap(null);
+    if (codeMapCache[activeSystem]) return;
+    // Cancellation belongs to this request, not the next system's effect.
+    let cancelled = false;
     loadCodeMap(activeSystem).then((map) => {
-      if (cancelledRef.current) return;
-      setCodeMap(map);
+      if (!cancelled) setLoaded({ system: activeSystem, map });
     });
-    return () => {
-      cancelledRef.current = true;
-    };
+    return () => { cancelled = true; };
   }, [activeSystem]);
 
   const snippets = codeMap?.[componentId];
