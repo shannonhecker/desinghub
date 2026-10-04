@@ -1,5 +1,7 @@
 "use client";
 
+import { TemplateSourceNote } from "./TemplateSourceNote";
+
 import React, { useEffect } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
@@ -130,6 +132,7 @@ export function TemplatesDrawer() {
           </button>
         </header>
 
+        <TemplateSourceNote />
         <div className="templates-drawer-grid" role="list">
           {templates.map((tpl) => (
             <button

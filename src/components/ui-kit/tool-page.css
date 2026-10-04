@@ -1,0 +1,32 @@
+.tool-page {
+  height: 100dvh;
+  overflow: auto;
+  font-family: var(--font-inter), sans-serif;
+  line-height: 1.5;
+}
+.tool-page *, .tool-page *::before, .tool-page *::after { box-sizing: border-box; }
+.tool-page-nav {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 16px;
+  padding: 20px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--tool-border);
+  font-size: 14px;
+}
+.tool-page-nav a:first-child { font-weight: 750; font-size: 20px; margin-right: 12px; }
+.tool-page-nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.tool-page-settings { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+.tool-page-settings select, .tool-page-settings button {
+  background: var(--tool-surface); color: var(--tool-fg); border: 1px solid var(--tool-border);
+  border-radius: 6px; min-height: 40px; padding: 8px 12px; font: inherit;
+}
+.tool-page main { width: 100%; margin: 0 auto; padding: clamp(20px, 4vw, 48px) !important; font-family: inherit !important; }
+.tool-page main > div:first-child { flex-wrap: wrap; gap: 16px; }
+.tool-page :is(input, button, textarea, select) { font-family: inherit; }
+.tool-page :is(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--tool-focus, currentColor) !important; outline-offset: 3px;
+}
+.tool-page .token-table-scroll { overflow-x: auto; border: 1px solid var(--tool-border); border-radius: 6px; }
+.tool-page .token-table-scroll table { min-width: 600px; border: 0 !important; }
+.tool-page .token-table-scroll button { min-height: 32px; }
+@media (max-width: 700px) {
+  .tool-page-settings { margin-left: 0; width: 100%; }
+  .tool-page-nav { gap: 12px 16px; }
+}

@@ -243,16 +243,19 @@ describe("LCP", () => {
   });
 });
 
-/* ── 4. Hero do-not-touch: video gating untouched ────────────── */
+/* ── 4. User-controlled demo playback ────────────── */
 
 describe("video WCAG 2.2.2 gating", () => {
-  it("autoplays + loops when motion is allowed", () => {
+  it("keeps demo bytes deferred and playback under user control", () => {
     stubMatchMedia(false);
     const el = renderPage();
     const video = el.querySelector("video");
-    expect(video?.hasAttribute("autoplay")).toBe(true);
-    expect(video?.hasAttribute("loop")).toBe(true);
-    expect(video?.getAttribute("preload")).toBe("metadata");
+    expect(video?.hasAttribute("autoplay")).toBe(false);
+    expect(video?.hasAttribute("loop")).toBe(false);
+    expect(video?.getAttribute("preload")).toBe("none");
+    expect(video?.hasAttribute("controls")).toBe(true);
+    expect(video?.getAttribute("poster")).toBeTruthy();
+    expect(video?.getAttribute("aria-hidden")).not.toBe("true");
   });
 
   it("does not autoplay or loop under prefers-reduced-motion", async () => {

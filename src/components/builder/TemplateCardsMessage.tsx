@@ -10,6 +10,7 @@ import {
   type TemplateId,
 } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
+import { TemplateSourceNote } from "./TemplateSourceNote";
 
 /* ══════════════════════════════════════════════════════════
    TemplateCardsMessage - the template gallery INLINE in the chat
@@ -66,6 +67,7 @@ export function TemplateCardsMessage({
 
   return (
     <div className="template-gallery-wrap">
+    {category !== "general" && <TemplateSourceNote />}
     <div className="template-gallery-chips" role="group" aria-label="Template category">
       {[{ id: "all" as const, label: "All" }, ...TEMPLATE_CATEGORIES].map((c) => (
         <button
