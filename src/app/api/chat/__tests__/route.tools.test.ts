@@ -176,8 +176,30 @@ describe("POST /api/chat: canvas tools", () => {
       ]),
     );
     const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
-    expect(streamMock).toHaveBeenCalledTimes(8);
-    expect(frames.filter((f) => "tool_use" in f)).toHaveLength(8);
+    /* Cap raised 8 -> 20 (Task 16 hotfix): a one-call-per-step image build
+       used all 8 steps on production and stopped mid-layout. */
+    expect(streamMock).toHaveBeenCalledTimes(20);
+    expect(frames.filter((f) => "tool_use" in f)).toHaveLength(20);
+  });
+
+  it("says plainly when the step cap cut the build short, so the user can continue", async () => {
+    streamMock.mockImplementation(async () =>
+      scripted([
+        { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "tu_x", name: "clearCanvas", input: {} } },
+        { type: "content_block_stop", index: 0 },
+        { type: "message_delta", delta: { stop_reason: "tool_use" } },
+      ]),
+    );
+    const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+    const last = frames[frames.length - 1] as { text?: string };
+    expect(last.text).toMatch(/ran out of steps/i);
+    expect(last.text).toMatch(/continue/i);
+  });
+
+  it("adds no step-cap note when the model finishes on its own", async () => {
+    streamMock.mockImplementation(async () => scripted([{ type: "message_delta", delta: { stop_reason: "end_turn" } }]));
+    const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+    expect(frames.some((f) => typeof (f as { text?: string }).text === "string" && /ran out of steps/i.test((f as { text: string }).text))).toBe(false);
   });
 
   it("a tool block with no input deltas yields an empty object; unparseable input is reported, not dropped", async () => {

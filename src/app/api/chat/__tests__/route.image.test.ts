@@ -90,6 +90,9 @@ describe("POST /api/chat: image on the latest user message", () => {
     const text = (b.system[0] as { text: string }).text;
     expect(text).toContain("## Building from an image");
     expect(text).toMatch(/say(?:ing)? plainly what you could not match/i);
+    /* Build the whole layout in one response, top to bottom. */
+    expect(text).toMatch(/one response/i);
+    expect(text).toMatch(/top to bottom/i);
   });
 
   it("the image stays on its turn across tool continuations", async () => {

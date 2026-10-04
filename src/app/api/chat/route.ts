@@ -20,9 +20,14 @@ const MAX_MESSAGES = 40;
    user's text, so the limit leaves room for both. */
 const MAX_CONTENT_LENGTH = 16000;
 /* Ceiling on model requests per chat turn (the first response plus its
-   continuations). A full dashboard build takes 2-3; the cap only stops a
+   continuations). A build that batches its calls takes 2-3. Raised from 8:
+   on production an image build sent one call per response, used all 8
+   steps and stopped mid-layout (Task 16 hotfix). Still a hard stop for a
    model that never finishes asking for tools. */
-const MAX_TOOL_STEPS = 8;
+const MAX_TOOL_STEPS = 20;
+/* Said when the cap, not the model, ended the turn. */
+const STEP_CAP_NOTE =
+  "I ran out of steps before finishing this layout. Say \"continue\" and I'll build the rest.";
 /* What the model is told about each canvas call. The calls are applied in
    the browser when the stream ends, so the route can only say they are
    queued - it must not claim an outcome it has not seen. */
@@ -222,8 +227,11 @@ export async function POST(req: Request) {
       /* Text from a later step is set apart from an earlier step's text so
          the bubble does not read "On it.Added the chart." */
       let textSent = false;
+      /* True while the model still wants tools when the loop ends. */
+      let cutByCap = false;
       try {
         for (let step = 0; step < MAX_TOOL_STEPS; step++) {
+          cutByCap = false;
           const stream = await anthropic.messages.stream({
             model: MODEL_ID,
             max_tokens: 16000,
@@ -321,9 +329,14 @@ export async function POST(req: Request) {
           }
 
           if (stopReason !== "tool_use" || toolResults.length === 0) break;
+          cutByCap = true;
           if (stepText) assistantContent.push({ type: "text", text: stepText });
           conversation.push({ role: "assistant", content: assistantContent });
           conversation.push({ role: "user", content: toolResults });
+        }
+        if (cutByCap) {
+          console.log(`[api/chat] step cap reached: steps=${MAX_TOOL_STEPS}`);
+          send({ text: `${textSent ? "\n\n" : ""}${STEP_CAP_NOTE}` });
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
