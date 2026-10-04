@@ -11035,14 +11035,19 @@
 .preview-canvas-root .f-label { font-size: calc(var(--density-font-size, 13px) - 1px); }
 
 /* Canvas drop zone highlight */
+/* The drop edge is padding plus an outline, not a border: at a fractional
+   frame scale a border is snapped to whole device pixels, so the body was a
+   pixel or two wider in Edit than in Present. Padding is not snapped. */
 .canvas-drop-zone {
   min-height: 60px;
   border-radius: 8px;
-  border: 2px dashed transparent;
-  transition: border-color 0.2s, background 0.2s;
+  padding: var(--bc-drop-edge);
+  outline: var(--bc-drop-edge) dashed transparent;
+  outline-offset: calc(var(--bc-drop-edge) * -1);
+  transition: outline-color 0.2s, background 0.2s;
 }
 .canvas-drop-zone.is-over {
-  border-color: var(--ds-primary);
+  outline-color: var(--ds-primary);
   background: var(--ds-primary-hover);
 }
 
@@ -11732,14 +11737,18 @@
 }
 
 /* ── P2 Frames: add-back strip for removed frames ──────────────────── */
+/* Floats over the frame's bottom-left corner instead of taking a row at the
+   top: as a row it pushed the whole page down in Edit, so a canvas with a
+   removed frame no longer matched its Present view. */
+.bp-dashboard { position: relative; }
 .bp-zone-add-bar {
+  position: absolute;
+  left: var(--bc-gap-md);
+  bottom: var(--bc-gap-md);
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   gap: var(--bc-gap-sm);
-  padding: var(--bc-gap-sm) var(--bc-gap-md);
-  background: var(--bc-bg-hover);
-  border-bottom: 1px dashed var(--bc-border);
-  flex-shrink: 0;
 }
 .bp-zone-add-chip {
   display: inline-flex;

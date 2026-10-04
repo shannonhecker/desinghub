@@ -67,23 +67,45 @@ export function formatGridValue(column: GridLeafColumn, value: unknown): string 
   if (!isNumericKind(kind)) return String(value);
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return String(value);
+  /* Compact values are scaled here, not by Intl's compact notation: its
+     suffixes depend on the browser's locale data ("£3.55bn" in one browser,
+     "£3.55B" in another), and a report must read the same everywhere. */
+  const [scaled, suffix] = column.compact ? compactScale(n) : [n, ""];
   if (kind === "currency") {
     const decimals = column.decimals ?? (column.compact ? 2 : 0);
-    return new Intl.NumberFormat(LOCALE, {
-      style: "currency",
-      currency: column.currency ?? "GBP",
-      ...(column.compact ? { notation: "compact" as const } : {}),
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(n);
+    return (
+      new Intl.NumberFormat(LOCALE, {
+        style: "currency",
+        currency: column.currency ?? "GBP",
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(scaled) + suffix
+    );
   }
   const decimals = column.decimals ?? 2;
-  const text = new Intl.NumberFormat(LOCALE, {
-    ...(column.compact ? { notation: "compact" as const } : {}),
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(n);
+  const text =
+    new Intl.NumberFormat(LOCALE, {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(scaled) + suffix;
   return kind === "percent" ? `${text}%` : text;
+}
+
+const COMPACT_STEPS: [divisor: number, suffix: string][] = [
+  [1e12, "tn"],
+  [1e9, "bn"],
+  [1e6, "m"],
+  [1e3, "k"],
+];
+
+/** A value scaled to thousands / millions / billions / trillions, with the
+ *  suffix that names the scale. Values under a thousand are left alone. */
+export function compactScale(n: number): [scaled: number, suffix: string] {
+  const abs = Math.abs(n);
+  for (const [divisor, suffix] of COMPACT_STEPS) {
+    if (abs >= divisor) return [n / divisor, suffix];
+  }
+  return [n, ""];
 }
 
 /** True when the cell should be drawn in the negative colour. */

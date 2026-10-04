@@ -69,6 +69,8 @@
   --zlo-swatch:             12px;
   --bc-gutter-narrow:       16px;
   --dh-panel-viewby-min:    88px;
+  /* Body drop zone: the edge that lights up while dragging over it. */
+  --bc-drop-edge:           2px;
   /* Template gallery in the chat. */
   --tpl-desc-size:          11px;
   --tpl-chip-gap:           6px;

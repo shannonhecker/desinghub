@@ -2025,7 +2025,11 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
   }, [rendersRealInEdit, isSelectedBlock, setComponentLibraryOpen]);
   if (mountedReal && coversReal && (readOnly || editRendersReal)) {
     return (
-      <div>
+      /* A report control is live while presenting: using it must not also
+         select the block for the amend composer, which takes the focus and
+         closes the menu. (Its menu is a portal, but React events still
+         bubble through this element.) */
+      <div onClick={stateKey && readOnly ? (e) => e.stopPropagation() : undefined}>
         <BlockErrorBoundary blockType={type}>
           <RealComponentRenderer
             system={system as SystemId}

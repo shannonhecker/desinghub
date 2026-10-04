@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatGridValue, isNegativeCell, leafColumns, readGridColumns, readGridRows, isColumnGroup } from "../dataGridModel";
+import { formatGridValue, isNegativeCell, leafColumns, readGridColumns, readGridRows, isColumnGroup, compactScale } from "../dataGridModel";
 
 describe("dataGridModel - formatting", () => {
   it("formats numbers, percents and currency by column kind", () => {
@@ -8,6 +8,16 @@ describe("dataGridModel - formatting", () => {
     expect(formatGridValue({ field: "v", header: "V", kind: "percent" }, 12.345)).toBe("12.35%");
     expect(formatGridValue({ field: "v", header: "V", kind: "currency" }, 1250000)).toBe("£1,250,000");
     expect(formatGridValue({ field: "v", header: "V", kind: "currency", currency: "USD", decimals: 2 }, 9.5)).toBe("US$9.50");
+  });
+
+  it("compact suffixes are our own, so they read the same in every browser", () => {
+    expect(compactScale(3_550_000_000)).toEqual([3.55, "bn"]);
+    expect(compactScale(-472_000_000)).toEqual([-472, "m"]);
+    expect(compactScale(15_300)).toEqual([15.3, "k"]);
+    expect(compactScale(2_100_000_000_000)).toEqual([2.1, "tn"]);
+    expect(compactScale(640)).toEqual([640, ""]);
+    expect(formatGridValue({ field: "v", header: "V", kind: "currency", compact: true, currency: "USD" }, 4_510_000_000)).toBe("US$4.51bn");
+    expect(formatGridValue({ field: "v", header: "V", kind: "currency", compact: true }, -1_250_000)).toBe("-£1.25m");
   });
 
   it("compact abbreviates large values instead of truncating them", () => {
