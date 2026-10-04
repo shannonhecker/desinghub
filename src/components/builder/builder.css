@@ -11003,6 +11003,130 @@
 /* The chosen range is an inverted pill. */
 .dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
 
+/* ── Chart navigation (Present): zoom tools in the rail, the Go to chip,
+   "Back to live", the hold hint. Tonal surfaces, no outlines. ── */
+.dh-exec-rail-sep { flex: none; width: 50%; height: var(--bc-hairline); margin-block: calc(var(--dh-cell-gap) / 2); background: color-mix(in srgb, var(--ds-fg) 10%, transparent); }
+.dh-exec-rail-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--ds-primary) 16%, transparent); color: var(--ds-primary); }
+.dh-exec-rail-btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
+.dh-exec-rail-btn[aria-disabled="true"]:hover { background: transparent; color: var(--ds-fg-secondary); }
+.dh-exec-rail-live { margin-block-start: auto; color: var(--ds-primary); background: color-mix(in srgb, var(--ds-primary) 12%, transparent); }
+.dh-exec-rail-live:hover { background: color-mix(in srgb, var(--ds-primary) 20%, transparent); color: var(--ds-primary); }
+.dh-exec-range-goto { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 1.5); padding-inline: var(--dh-nav-pad); }
+.dh-exec-range-goto.is-active { padding-inline-end: var(--dh-nav-inset); }
+.dh-exec-plot { position: relative; }
+.dh-exec-plot.is-navigable { touch-action: pan-y; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.dh-exec-plot.is-navigable:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: calc(var(--dh-focus-ring) * -1); border-radius: var(--ds-radius); }
+.dh-exec-plot[data-nav-region="price"] { cursor: ns-resize; }
+.dh-exec-plot[data-nav-region="time"] { cursor: ew-resize; }
+.dh-exec-plot[data-nav-region="grab"] { cursor: grabbing; }
+/* While dragging (pan, box, an axis) the hover tooltip stays out of the way. */
+.dh-exec-plot[data-dragging] .highcharts-tooltip,
+.dh-exec-plot[data-dragging] .highcharts-crosshair { visibility: hidden; }
+.dh-exec-plot[data-nav-region="box"],
+.dh-exec-plot.is-boxing { cursor: crosshair; }
+.dh-exec-hint {
+  position: absolute;
+  inset-block-start: var(--dh-cell-gap);
+  inset-inline: var(--dh-nav-inset);
+  margin-inline: auto;
+  width: fit-content;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--dh-nav-pad);
+  max-width: calc(100% - var(--dh-nav-inset) * 2);
+  box-sizing: border-box;
+  padding: var(--dh-cell-gap) var(--dh-cell-gap) var(--dh-cell-gap) var(--dh-nav-inset);
+  border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--dh-card, var(--ds-surface)) 88%, var(--ds-fg));
+  color: var(--ds-fg);
+  font-size: var(--dh-cell-small);
+  box-shadow: var(--ds-shadow, none);
+}
+.dh-exec-hint p { margin: 0; line-height: 1.35; }
+.dh-exec-hint button {
+  appearance: none; flex: none; min-height: var(--dh-inline-control-h); padding: 0 var(--dh-nav-pad);
+  border: 0; border-radius: var(--ds-radius); background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: inherit; font: inherit; font-weight: 600; cursor: pointer;
+}
+.dh-exec-hint button:hover { background: color-mix(in srgb, var(--ds-fg) 14%, transparent); }
+.dh-exec-hint button:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-exec-sr { position: absolute; width: var(--bc-hairline); height: var(--bc-hairline); overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── A form in a design system's own dialog (RealFormDialog) ──
+   Ours: the rows' rhythm and the calendar grid. The dialog, fields,
+   choice and buttons are the system's. */
+.dh-form-dialog-scope { position: relative; z-index: 2147483000; }
+/* Salt's dialog sizes are page sizes; this is a small form. */
+.saltDialog.dh-form-dialog-salt { width: min(var(--dh-form-dialog-w), calc(100vw - var(--dh-report-gutter))); max-height: calc(100vh - var(--dh-report-gutter)); }
+.dh-form-dialog-uoaui { width: min(var(--dh-form-dialog-w), calc(100vw - var(--dh-report-gutter))); max-height: calc(100vh - var(--dh-report-gutter) * 2); overflow: auto; box-sizing: border-box; }
+.dh-form-dialog-backdrop { z-index: 2147483000; padding: var(--dh-nav-inset); }
+.dh-form-dialog .dh-form-dialog-title { margin: 0 0 var(--dh-nav-pad); font-size: var(--dh-page-title-size); font-weight: 600; line-height: 1.2; }
+.dh-form-dialog-note, .dh-form-dialog .dh-form-dialog-note { margin: 0 0 var(--dh-nav-inset); font-size: var(--dh-panel-meta-size); opacity: 0.8; }
+.dh-form-dialog-note-salt { color: var(--salt-content-secondary-foreground); opacity: 1; font-family: var(--salt-text-fontFamily); }
+.dh-form-dialog-choice, .dh-form-dialog .dh-form-dialog-choice { margin-block-end: var(--dh-nav-inset); }
+.dh-form-dialog-rows { display: flex; flex-direction: column; gap: var(--dh-nav-inset); }
+.dh-form-dialog-row { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--dh-nav-inset); align-items: start; }
+.dh-form-dialog-row[data-cols="1"] { --cols: 1; }
+.dh-form-dialog-cell { min-width: 0; }
+.dh-form-dialog-cell input { box-sizing: border-box; max-width: 100%; }
+.dh-form-dialog-error { display: block; margin-top: calc(var(--dh-cell-gap) / 2); font-size: var(--dh-panel-meta-size); color: var(--a-error, var(--ds-negative, currentColor)); }
+.dh-form-dialog-actions { display: flex; justify-content: flex-end; gap: var(--dh-nav-pad); margin-top: var(--dh-report-gutter); }
+.dh-form-dialog-carbon .cds--modal-content { padding-inline-end: var(--dh-nav-inset); }
+/* Carbon's close button wraps itself in a tooltip popover; drawn in a scope
+   its popover box shows as a shadowed panel. The button keeps its name. */
+.dh-form-dialog-carbon .cds--modal-close-button .cds--popover-container,
+.dh-form-dialog-carbon .cds--modal-close-button .cds--tooltip-trigger__wrapper { display: flex; justify-content: flex-end; width: auto; box-shadow: none; filter: none; }
+.dh-form-dialog-carbon .cds--modal-close-button .cds--popover { display: none; }
+.dh-form-dialog-scope .dh-form-dialog-actions { margin-top: var(--dh-report-gutter); }
+.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-cal { margin: 0 auto var(--dh-nav-inset); }
+
+.dh-cal, .dh-form-dialog .dh-cal { --cal-cell: var(--dh-cal-cell); width: max-content; max-width: 100%; margin: 0 auto var(--dh-nav-inset); color: var(--cal-fg); font-family: var(--cal-font, inherit); }
+.dh-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--dh-cell-gap) / 2); }
+.dh-cal-month { font-weight: 600; font-size: var(--bc-bar-font); }
+.dh-cal-nav {
+  appearance: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--dh-cal-nav); height: var(--dh-cal-nav); padding: 0; border: 0; border-radius: var(--cal-radius, var(--ds-radius));
+  background: transparent; color: var(--cal-fg); cursor: pointer;
+}
+.dh-cal-nav svg { width: 50%; height: 50%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dh-cal-nav:hover:not(:disabled) { background: var(--cal-hover); }
+.dh-cal-nav:disabled { opacity: 0.35; cursor: default; }
+.dh-cal-grid { border-collapse: separate; border-spacing: 0 calc(var(--dh-cell-gap) / 3); }
+.dh-cal-grid th { width: var(--cal-cell); padding: 0 0 calc(var(--dh-cell-gap) / 2); font-size: var(--dh-cell-small); font-weight: 600; color: var(--cal-muted); text-align: center; }
+.dh-cal-grid td { padding: 0; text-align: center; }
+.dh-cal-grid td.is-between { background: var(--cal-range, var(--cal-hover)); }
+.dh-cal-day {
+  appearance: none; width: var(--cal-cell); height: var(--cal-cell); padding: 0; border: 0;
+  border-radius: var(--cal-radius, var(--ds-radius)); background: transparent; color: var(--cal-fg);
+  font: inherit; font-size: var(--dh-panel-meta-size); font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.dh-cal-day:hover:not([aria-disabled="true"]) { background: var(--cal-hover); }
+.dh-cal-day[aria-disabled="true"] { color: var(--cal-off, var(--cal-muted)); opacity: 0.5; cursor: default; text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.dh-cal-grid td.is-picked .dh-cal-day { background: var(--cal-accent); color: var(--cal-accent-fg); font-weight: 600; }
+.dh-cal-day:focus-visible, .dh-cal-nav:focus-visible { outline: var(--dh-focus-ring) solid var(--cal-focus, var(--cal-accent)); outline-offset: calc(var(--dh-focus-ring) * -1 + var(--bc-hairline)); }
+.dh-cal-prompt { margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-panel-meta-size); color: var(--cal-muted); text-align: center; }
+.dh-cal-salt {
+  --cal-fg: var(--salt-content-primary-foreground); --cal-muted: var(--salt-content-secondary-foreground);
+  --cal-accent: var(--salt-actionable-accented-bold-background); --cal-accent-fg: var(--salt-actionable-accented-bold-foreground);
+  --cal-hover: var(--salt-actionable-subtle-background-hover); --cal-focus: var(--salt-focused-outlineColor);
+  --cal-font: var(--salt-text-fontFamily); --cal-radius: var(--salt-palette-corner-weak, 0);
+  --cal-range: color-mix(in srgb, var(--salt-actionable-accented-bold-background) 14%, transparent);
+}
+.dh-cal-fluent {
+  --cal-fg: var(--colorNeutralForeground1); --cal-muted: var(--colorNeutralForeground3); --cal-off: var(--colorNeutralForegroundDisabled);
+  --cal-accent: var(--colorBrandBackground); --cal-accent-fg: var(--colorNeutralForegroundOnBrand);
+  --cal-hover: var(--colorSubtleBackgroundHover); --cal-focus: var(--colorStrokeFocus2);
+  --cal-font: var(--fontFamilyBase); --cal-radius: var(--borderRadiusMedium); --cal-range: var(--colorBrandBackground2);
+}
+.dh-cal-carbon {
+  --cal-fg: var(--cds-text-primary); --cal-muted: var(--cds-text-secondary); --cal-off: var(--cds-text-disabled);
+  --cal-accent: var(--cds-button-primary); --cal-accent-fg: var(--cds-text-on-color);
+  --cal-hover: var(--cds-layer-hover-01, var(--cds-background-hover)); --cal-focus: var(--cds-focus);
+  --cal-radius: 0; --cal-range: var(--cds-highlight, var(--cds-layer-selected-01));
+}
+/* uoaui: colours come inline from its theme object (RealFormDialog). */
+
 .dh-navgroup {
   padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
   font-family: var(--ds-font);

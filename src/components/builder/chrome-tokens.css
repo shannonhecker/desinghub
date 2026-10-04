@@ -76,6 +76,11 @@
   --dh-exec-btn:            32px;
   --dh-exec-chip-h:         26px;
   --dh-exec-flyout-w:       200px;
+  /* FX chart navigation: the Go to dialog's calendar day cell, its month
+     buttons and its form's width. */
+  --dh-cal-cell:            36px;
+  --dh-cal-nav:             32px;
+  --dh-form-dialog-w:       400px;
   /* The sample feed's controls: one slot as tall as the tallest compact
      design-system button (Carbon sm), so the header is one height in all five. */
   --dh-feed-h:              32px;
