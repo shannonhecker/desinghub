@@ -14,6 +14,7 @@ import {
   MAX_IMAGE_BYTES,
   MAX_IMAGE_EDGE,
   type ChatImagePayload,
+  MAX_IMAGE_BASE64_LENGTH,
   base64DecodedLength,
   base64ToBytes,
   isAllowedImageType,
@@ -36,8 +37,10 @@ export function validateImagePayload(raw: unknown): ImageValidation {
   const { mediaType, data } = raw as Record<string, unknown>;
   if (typeof mediaType !== "string" || typeof data !== "string") return { ok: false, reason: "shape" };
   if (!isAllowedImageType(mediaType)) return { ok: false, reason: "media-type" };
+  /* Length first, before any scanning or decoding: a huge string costs one
+     comparison, and the route never depends on the platform's body cap. */
+  if (data.length > MAX_IMAGE_BASE64_LENGTH) return { ok: false, reason: "too-large" };
   if (!isStrictBase64(data)) return { ok: false, reason: "base64" };
-  /* Size check before decoding, so an oversize payload costs nothing. */
   if (base64DecodedLength(data) > MAX_IMAGE_BYTES) return { ok: false, reason: "too-large" };
 
   const bytes = base64ToBytes(data);

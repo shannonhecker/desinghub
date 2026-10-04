@@ -7,10 +7,12 @@ import {
   readImageSize,
   fitWithinEdge,
   bytesToBase64,
+  hasImageMetadata,
+  MAX_IMAGE_PIXELS,
   base64ToBytes,
   isStrictBase64,
 } from "../imageBytes";
-import { makePng, makeJpeg, makeGif, makeWebp, toBase64 } from "./fixtures";
+import { makePng, makeJpeg, makeGif, makeWebp, toBase64, makeJpegWithExif, makePngWithExif } from "./fixtures";
 
 describe("imageBytes: allowlist and caps", () => {
   it("allows exactly png, jpeg, webp and gif", () => {
@@ -83,5 +85,19 @@ describe("base64 helpers", () => {
     expect(isStrictBase64("aGVs bG8=")).toBe(false);
     expect(isStrictBase64("data:image/png;base64,aGVsbG8=")).toBe(false);
     expect(isStrictBase64("")).toBe(false);
+  });
+});
+
+describe("hasImageMetadata: EXIF must not leave the browser", () => {
+  it("finds an EXIF APP1 segment in a JPEG and an eXIf chunk in a PNG", () => {
+    expect(hasImageMetadata(makeJpegWithExif(10, 10), "image/jpeg")).toBe(true);
+    expect(hasImageMetadata(makePngWithExif(10, 10), "image/png")).toBe(true);
+  });
+  it("is false for clean files", () => {
+    expect(hasImageMetadata(makeJpeg(10, 10), "image/jpeg")).toBe(false);
+    expect(hasImageMetadata(makePng(10, 10), "image/png")).toBe(false);
+  });
+  it("caps decode work at about 50 megapixels", () => {
+    expect(MAX_IMAGE_PIXELS).toBe(50_000_000);
   });
 });

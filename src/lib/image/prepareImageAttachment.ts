@@ -4,8 +4,11 @@
 
    1. Reject files over the input cap before reading them.
    2. Sniff the type from the bytes (allowlist: png, jpeg, webp, gif).
-   3. Keep the original when it already fits (long edge <= 1568 and
-      <= 2 MB), so screenshots stay sharp and GIFs stay GIFs.
+   3. Refuse anything over about 50 megapixels from its header, before
+      decoding. Keep the original when it already fits (long edge <= 1568,
+      <= 2 MB) and carries no metadata, so screenshots stay sharp and GIFs
+      stay GIFs. A file with EXIF (GPS, camera) is always re-encoded, so
+      that metadata never leaves the browser.
    4. Otherwise decode, scale to the long-edge cap and re-encode:
       PNG first (crisp UI), then JPEG 0.88, then JPEG 0.75.
    5. Re-check the result with the same rules the server uses.
@@ -16,6 +19,8 @@
 import {
   MAX_IMAGE_BYTES,
   MAX_IMAGE_EDGE,
+  MAX_IMAGE_PIXELS,
+  hasImageMetadata,
   type ImageMediaType,
   bytesToBase64,
   fitWithinEdge,
@@ -63,6 +68,8 @@ export interface DecodedImage {
 export interface ImageCodec {
   decode(blob: Blob): Promise<DecodedImage>;
   encode(source: unknown, width: number, height: number, type: "image/png" | "image/jpeg", quality?: number): Promise<Uint8Array>;
+  /* Free the decoded image (ImageBitmap.close in the browser). */
+  release?(source: unknown): void;
 }
 
 /* Re-encode ladder: crisp PNG for UI screenshots, then JPEG for photos. */
@@ -94,7 +101,9 @@ export async function prepareImageAttachment(file: File, codec: ImageCodec = bro
   if (!mediaType) throw new ImageAttachmentError("unsupported");
 
   const size = readImageSize(original, mediaType);
-  if (size && fits(original, size.width, size.height)) {
+  if (!size || size.width < 1 || size.height < 1) throw new ImageAttachmentError("unreadable");
+  if (size.width * size.height > MAX_IMAGE_PIXELS) throw new ImageAttachmentError("too-large");
+  if (fits(original, size.width, size.height) && !hasImageMetadata(original, mediaType)) {
     return { mediaType, base64: bytesToBase64(original), width: size.width, height: size.height, bytes: original.length };
   }
 
@@ -104,24 +113,30 @@ export async function prepareImageAttachment(file: File, codec: ImageCodec = bro
   } catch {
     throw new ImageAttachmentError("unreadable");
   }
-  if (!(decoded.width > 0 && decoded.height > 0)) throw new ImageAttachmentError("unreadable");
-
-  const target = fitWithinEdge(decoded.width, decoded.height);
-  for (const step of ENCODE_LADDER) {
-    let out: Uint8Array;
-    try {
-      out = await codec.encode(decoded.source, target.width, target.height, step.type, step.quality);
-    } catch {
-      throw new ImageAttachmentError("unreadable");
+  try {
+    if (!(decoded.width > 0 && decoded.height > 0)) throw new ImageAttachmentError("unreadable");
+    if (decoded.width * decoded.height > MAX_IMAGE_PIXELS) throw new ImageAttachmentError("too-large");
+    const target = fitWithinEdge(decoded.width, decoded.height);
+    for (const step of ENCODE_LADDER) {
+      let out: Uint8Array;
+      try {
+        out = await codec.encode(decoded.source, target.width, target.height, step.type, step.quality);
+      } catch {
+        throw new ImageAttachmentError("unreadable");
+      }
+      const outType = sniffImageType(out);
+      const outSize = outType ? readImageSize(out, outType) : null;
+      if (!outType || !outSize) throw new ImageAttachmentError("unreadable");
+      /* Canvas output carries no EXIF; checked anyway so nothing slips. */
+      if (hasImageMetadata(out, outType)) continue;
+      if (fits(out, outSize.width, outSize.height)) {
+        return { mediaType: outType, base64: bytesToBase64(out), width: outSize.width, height: outSize.height, bytes: out.length };
+      }
     }
-    const outType = sniffImageType(out);
-    const outSize = outType ? readImageSize(out, outType) : null;
-    if (!outType || !outSize) throw new ImageAttachmentError("unreadable");
-    if (fits(out, outSize.width, outSize.height)) {
-      return { mediaType: outType, base64: bytesToBase64(out), width: outSize.width, height: outSize.height, bytes: out.length };
-    }
+    throw new ImageAttachmentError("too-large");
+  } finally {
+    codec.release?.(decoded.source);
   }
-  throw new ImageAttachmentError("too-large");
 }
 
 /* ── Browser codec: createImageBitmap + canvas ── */
@@ -148,5 +163,8 @@ export const browserImageCodec: ImageCodec = {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
     if (!blob) throw new Error("encode failed");
     return readBytes(blob);
+  },
+  release(source) {
+    (source as ImageBitmap | null)?.close?.();
   },
 };

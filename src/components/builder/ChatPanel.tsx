@@ -1261,14 +1261,24 @@ export function ChatPanel() {
       imageAttach.showError(`Rate limit active. Send again in ${retrySeconds}s; your image is still attached.`);
       return;
     }
-    const image = imageAttach.take();
-    if (!image) return;
+    const taken = imageAttach.take();
+    if (!taken) return;
+    const { image, name } = taken;
     if (builtViaWizard && messages.length > 0) setBuiltViaWizard(false);
     if (messages.length === 0) ensureSessionStarted(titleFromMessage(msg));
     const turnMsgId = addMessage("user", msg, undefined, { attachment: "image" });
     saveTurnSnapshot(turnMsgId);
     if (!previewOpen) setPreviewOpen(true);
-    sendToAPI(msg, { image: { mediaType: image.mediaType, base64: image.base64 } }).then(() => bumpPreview());
+    sendToAPI(msg, { image: { mediaType: image.mediaType, base64: image.base64 } }).then((outcome) => {
+      /* The request never reached the model: put the image (and the note)
+         back in the composer so nothing is lost. A rejected image would
+         fail the same way again, so it is not restored. */
+      if (outcome?.status === "rate-limited") {
+        imageAttach.restore(image, name);
+        if (msg !== IMAGE_ONLY_PROMPT && !useBuilder.getState().inputText.trim()) setInputText(msg);
+      }
+      bumpPreview();
+    });
   };
 
   /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
@@ -1848,12 +1858,24 @@ export function ChatPanel() {
                 inputRef.current?.focus();
               }}
             />
+            <ComposerAttachStatus
+              error={imageAttach.error}
+              errorSeq={imageAttach.errorSeq}
+              notice={imageAttach.notice}
+              onDismiss={() => {
+                imageAttach.clearError();
+                inputRef.current?.focus();
+              }}
+            />
             <textarea
               ref={inputRef}
               className="input-textarea"
               aria-label="Chat message input"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => {
+                setInputText(e.target.value);
+                if (imageAttach.error) imageAttach.clearError();
+              }}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={handleKeyDown}
@@ -1899,7 +1921,6 @@ export function ChatPanel() {
               </div>
             </div>
           </div>
-          <ComposerAttachStatus error={imageAttach.error} notice={imageAttach.notice} />
           {/* Local-command hint — only surfaced when AI is disabled.
               Reveals the vocabulary that routes through processComponent-
               Command without an API key, so users don't have to guess

@@ -8,7 +8,7 @@
    it, so it is never written to the builder store.
    ════════════════════════════════════════════════════════════ */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type React from "react";
 import {
   prepareImageAttachment,
@@ -26,7 +26,17 @@ export const ATTACH_COPY = {
   attached: (name: string) => `Image attached: ${name}.`,
   replaced: (name: string) => `Image replaced with ${name}.`,
   removed: "Image removed.",
+  preparing: "Preparing image…",
+  restored: "Your image is back in the box.",
 } as const;
+
+/** Paste takes over only a clipboard that carries files and no text.
+ *  Excel, Word, Keynote, Numbers and some browsers put a rendered bitmap
+ *  next to text/plain or text/html; that paste must stay text. */
+export function shouldInterceptPaste(types: readonly string[], fileCount: number): boolean {
+  if (fileCount === 0) return false;
+  return !types.includes("text/plain") && !types.includes("text/html");
+}
 
 export interface ComposerImage {
   image: PreparedImage;
@@ -34,12 +44,19 @@ export interface ComposerImage {
   previewUrl: string;
 }
 
-const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
+const hasFiles = (e: { dataTransfer?: DataTransfer | null }) =>
+  Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
 export function useImageAttachment({ enabled }: { enabled: boolean }) {
   const [attachment, setAttachment] = useState<ComposerImage | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  /* Bumped on every error so the live region re-announces a repeat. */
+  const [errorSeq, setErrorSeq] = useState(0);
+  const setError = useCallback((message: string | null) => {
+    setErrorState(message);
+    if (message) setErrorSeq((n) => n + 1);
+  }, []);
   /* Polite, screen-reader-only confirmation ("Image attached: x.png."). */
   const [notice, setNotice] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -58,6 +75,7 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
       const id = ++requestId.current;
       setBusy(true);
       setError(null);
+      setNotice(ATTACH_COPY.preparing);
       try {
         const image = await prepareImageAttachment(file);
         if (id !== requestId.current) return;
@@ -72,7 +90,7 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
         if (id === requestId.current) setBusy(false);
       }
     },
-    [enabled, attachment],
+    [enabled, attachment, setError],
   );
 
   const attachFirst = useCallback(
@@ -100,7 +118,7 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
   const onPaste = useCallback(
     (e: React.ClipboardEvent) => {
       const files = Array.from(e.clipboardData?.files ?? []);
-      if (files.length === 0) return;
+      if (!shouldInterceptPaste(Array.from(e.clipboardData?.types ?? []), files.length)) return;
       e.preventDefault();
       attachFirst(files);
     },
@@ -133,29 +151,54 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
     },
   };
 
+  /* While the builder is mounted, a file dropped anywhere other than the
+     composer must not navigate the tab away to open it. The composer's own
+     handlers run first; this only cancels the browser default. */
+  useEffect(() => {
+    const guard = (e: DragEvent) => {
+      if (hasFiles(e)) e.preventDefault();
+    };
+    window.addEventListener("dragover", guard);
+    window.addEventListener("drop", guard);
+    return () => {
+      window.removeEventListener("dragover", guard);
+      window.removeEventListener("drop", guard);
+    };
+  }, []);
+
   const remove = useCallback(() => {
     requestId.current += 1;
     setBusy(false);
     setAttachment(null);
     setError(null);
     setNotice(ATTACH_COPY.removed);
-  }, []);
+  }, [setError]);
 
   /* Hand the image to the send path and forget it. */
-  const take = useCallback((): PreparedImage | null => {
-    const image = attachment?.image ?? null;
+  const take = useCallback((): ComposerImage | null => {
+    const taken = attachment;
     setAttachment(null);
     setError(null);
     setNotice("");
-    return image;
-  }, [attachment]);
+    return taken;
+  }, [attachment, setError]);
 
-  const showError = useCallback((message: string | null) => setError(message), []);
+  /* Put an image back (a send that never reached the model). */
+  const restore = useCallback((image: PreparedImage, name: string) => {
+    requestId.current += 1;
+    setBusy(false);
+    setAttachment({ image, name, previewUrl: `data:${image.mediaType};base64,${image.base64}` });
+    setNotice(ATTACH_COPY.restored);
+  }, []);
+
+  const showError = useCallback((message: string | null) => setError(message), [setError]);
+  const clearError = useCallback(() => setErrorState(null), []);
 
   return {
     attachment,
     busy,
     error,
+    errorSeq,
     notice,
     dragActive,
     fileInputRef,
@@ -165,6 +208,8 @@ export function useImageAttachment({ enabled }: { enabled: boolean }) {
     dropHandlers,
     remove,
     take,
+    restore,
     showError,
+    clearError,
   };
 }

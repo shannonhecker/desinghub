@@ -7,7 +7,8 @@ import {
   type ImageCodec,
 } from "../prepareImageAttachment";
 import { MAX_IMAGE_BYTES } from "../imageBytes";
-import { makePng, makeJpeg, makeGif, makeWebp, fileFrom, toBase64 } from "./fixtures";
+import { makePng, makeJpeg, makeGif, makeWebp, fileFrom, toBase64, makeJpegWithExif, makePngWithExif, containsAscii, GPS_MARKER } from "./fixtures";
+import { base64ToBytes } from "../imageBytes";
 
 /* A codec double: decode reports the size it is told to, encode returns a
    real PNG/JPEG header at the requested size, padded to `encodedBytes`. */
@@ -16,14 +17,16 @@ function fakeCodec(opts: { decoded?: { width: number; height: number }; encodedB
     const pad = opts.encodedBytes?.(type, quality) ?? 1000;
     return type === "image/png" ? makePng(width, height, pad) : makeJpeg(width, height, pad);
   });
+  const release = vi.fn();
   const codec: ImageCodec = {
+    release,
     decode: vi.fn(async () => {
       if (opts.failDecode) throw new Error("decode failed");
       return { width: opts.decoded?.width ?? 0, height: opts.decoded?.height ?? 0, source: {} };
     }),
     encode,
   };
-  return { codec, encode };
+  return { codec, encode, release };
 }
 
 async function rejection(p: Promise<unknown>): Promise<ImageAttachmentError> {
@@ -126,5 +129,49 @@ describe("prepareImageAttachment: downscales to a long edge of 1568", () => {
     const out = await prepareImageAttachment(fileFrom(bytes, "noisy.png"), codec);
     expect(encode.mock.calls[0].slice(1, 3)).toEqual([1200, 900]);
     expect(out.bytes).toBeLessThanOrEqual(MAX_IMAGE_BYTES);
+  });
+});
+
+describe("prepareImageAttachment: decode guard and cleanup", () => {
+  it("rejects an image over about 50 megapixels from its header, before decoding", async () => {
+    const { codec } = fakeCodec({ decoded: { width: 10000, height: 6000 } });
+    const err = await rejection(prepareImageAttachment(fileFrom(makePng(10000, 6000), "huge.png"), codec));
+    expect(err.code).toBe("too-large");
+    expect(codec.decode).not.toHaveBeenCalled();
+  });
+
+  it("rejects a header it cannot read, without decoding", async () => {
+    const { codec } = fakeCodec({ decoded: { width: 10, height: 10 } });
+    const err = await rejection(prepareImageAttachment(fileFrom(makePng(10, 10).slice(0, 20), "cut.png"), codec));
+    expect(err.code).toBe("unreadable");
+    expect(codec.decode).not.toHaveBeenCalled();
+  });
+
+  it("releases the decoded bitmap after re-encoding, and after a failure", async () => {
+    const ok = fakeCodec({ decoded: { width: 3000, height: 2000 } });
+    await prepareImageAttachment(fileFrom(makePng(3000, 2000), "a.png"), ok.codec);
+    expect(ok.release).toHaveBeenCalledTimes(1);
+    const bad = fakeCodec({ decoded: { width: 3000, height: 2000 }, encodedBytes: () => MAX_IMAGE_BYTES + 1 });
+    await rejection(prepareImageAttachment(fileFrom(makePng(3000, 2000), "b.png"), bad.codec));
+    expect(bad.release).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("prepareImageAttachment: metadata never leaves the browser", () => {
+  it("re-encodes a small JPEG that carries EXIF (GPS), so the original bytes are not sent", async () => {
+    const bytes = makeJpegWithExif(800, 600);
+    expect(containsAscii(bytes, GPS_MARKER)).toBe(true);
+    const { codec, encode } = fakeCodec({ decoded: { width: 800, height: 600 } });
+    const out = await prepareImageAttachment(fileFrom(bytes, "phone.jpg"), codec);
+    expect(encode).toHaveBeenCalled();
+    expect(encode.mock.calls[0].slice(1, 3)).toEqual([800, 600]);
+    expect(containsAscii(base64ToBytes(out.base64), GPS_MARKER)).toBe(false);
+  });
+
+  it("re-encodes a PNG with an eXIf chunk", async () => {
+    const { codec, encode } = fakeCodec({ decoded: { width: 10, height: 10 } });
+    const out = await prepareImageAttachment(fileFrom(makePngWithExif(10, 10), "x.png"), codec);
+    expect(encode).toHaveBeenCalled();
+    expect(containsAscii(base64ToBytes(out.base64), GPS_MARKER)).toBe(false);
   });
 });

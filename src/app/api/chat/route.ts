@@ -146,7 +146,13 @@ export async function POST(req: Request) {
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
-    const check = validateImagePayload(msg.image);
+    /* Defensive: a validator throw must still be a 400, never a 500. */
+    let check: ReturnType<typeof validateImagePayload>;
+    try {
+      check = validateImagePayload(msg.image);
+    } catch {
+      check = { ok: false, reason: "shape" };
+    }
     if (!check.ok) {
       console.warn(`[api/chat] image rejected: reason=${check.reason}`);
       return new Response(

@@ -127,6 +127,15 @@ describe("POST /api/chat: image on the latest user message", () => {
     if (data) expect(allLogs()).not.toContain(data.slice(0, 40));
   });
 
+  it("rejects a huge base64 string with the generic 400, before any regex work", async () => {
+    const huge = "A".repeat(40 * 1024 * 1024);
+    const res = await post({ messages: [{ role: "user", content: "x", image: { mediaType: "image/png", data: huge } }] });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB.");
+    expect(allLogs()).toMatch(/reason=too-large/);
+    expect(streamMock).not.toHaveBeenCalled();
+  }, 30_000);
+
   it("rejects an image on a message that is not the latest", async () => {
     const res = await post({
       messages: [

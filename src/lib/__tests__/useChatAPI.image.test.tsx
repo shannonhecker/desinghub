@@ -16,7 +16,7 @@ vi.mock("../applyAIActions", () => ({
   applyAIActions: (actions: unknown[]) => ({ applied: actions.length, skipped: [] }),
 }));
 
-import { useChatAPI } from "../useChatAPI";
+import { useChatAPI, CHAT_ERROR_COPY } from "../useChatAPI";
 
 let api: ReturnType<typeof useChatAPI>;
 function Probe() {
@@ -134,5 +134,51 @@ describe("useChatAPI: image turns", () => {
     });
     const body = bodyOf(fetchMock, 1);
     expect(body.messages[body.messages.length - 1].image?.data).toBe(IMAGE.base64);
+  });
+
+  it("a server image reject says so plainly, not 'trouble connecting', and does not offer Retry", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      headers: new Headers(),
+      json: async () => ({ error: "That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB." }),
+    } as unknown as Response);
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await api.sendMessage("Build this screen from the image.", { image: IMAGE });
+    });
+    const msgs = useBuilder.getState().messages;
+    expect(msgs[msgs.length - 1].content).toBe(CHAT_ERROR_COPY.imageRejected);
+    expect(CHAT_ERROR_COPY.imageRejected).not.toMatch(/trouble connecting/);
+    expect(outcome).toEqual({ status: "image-rejected" });
+    expect(api.failedSend).toBeNull();
+  });
+
+  it("a 429 on an image turn hands the image back so it is not lost", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: new Headers({ "Retry-After": "5" }),
+    } as unknown as Response);
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await api.sendMessage("Build this screen from the image.", { image: IMAGE });
+    });
+    expect(outcome).toEqual({ status: "rate-limited", image: IMAGE });
+    expect(JSON.stringify(useBuilder.getState().messages)).not.toContain(NEEDLE);
+  });
+
+  it("a plain 400 on a text turn keeps the old generic copy", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      headers: new Headers(),
+      json: async () => ({ error: "messages must be an array of 1-40 items" }),
+    } as unknown as Response);
+    await act(async () => {
+      await api.sendMessage("hi");
+    });
+    const msgs = useBuilder.getState().messages;
+    expect(msgs[msgs.length - 1].content).toBe(CHAT_ERROR_COPY.generic);
   });
 });

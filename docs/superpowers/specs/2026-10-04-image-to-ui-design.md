@@ -43,7 +43,8 @@ as shortcuts, a thumbnail chip with remove, send stays the same button.
 7. **Reply**: the model says in one line what it sees, builds with the canvas tools, then says
    plainly what it could not match.
 
-Errors show as one polite line under the chip (`role="status"`), never as a modal:
+Errors show as one tinted line inside the composer on the text column (polite `role="status"`,
+re-announced when repeated, dismissible, cleared on typing or a new attach), never as a modal:
 "That file isn't an image we can read. Try a PNG, JPEG, WebP or GIF.",
 "That image is too large, even after shrinking. Try a smaller crop or a screenshot.",
 "Reading an image needs AI, which is off right now." Server rejects use one generic line.
@@ -61,6 +62,10 @@ Errors show as one polite line under the chip (`role="status"`), never as a moda
 | Base64 only, no URL images | The server never fetches a user-supplied URL. |
 | Server re-validates base64 shape, type, size and pixel dimensions | The client is not trusted. Rejects get a generic 400 and a log line with reason and byte count only, never image data. |
 | Image guidance lives in the static system prompt | The cached prefix (tools, system) stays byte-stable; the image block sits after the breakpoint in the latest user turn. |
+| A server image reject reads as an image problem; a rate limit hands the image back to the composer |  A connection message would mislead; a 429 never reached the model, so nothing should be lost. |
+| Metadata never leaves the browser | A file with EXIF (GPS), XMP or PNG text chunks is re-encoded even when it already fits. |
+| Decode guard at 50 megapixels | Read from the header before decoding, so a small file claiming a vast canvas cannot exhaust the tab. |
+| Paste takes over only an image-only clipboard | Office apps put a bitmap next to text; that paste stays text. |
 | Retry after a network or server failure resends the same image from memory | The user should not have to attach it again; it lives only in a ref until the next successful send. |
 
 ## Visual treatment
@@ -76,7 +81,8 @@ The image lives in component memory (composer state, then the request body). It 
 to the builder store, so it cannot reach chat history, the local session, cloud save or share
 state. The persisted user message carries only `attachment: "image"`. Tests assert the base64
 string is absent from the store, `buildLocalSessionSnapshot`, `buildProjectSnapshot` and the share
-payload after an image turn. Prior turns sent back to the model carry the marker as text, not the image.
+payload after an image turn. Prior turns go back to the model as their text only: neither the image
+nor the marker is sent, and the system prompt tells the model images are not kept.
 
 ## Interfaces (reused by the Figma link task)
 

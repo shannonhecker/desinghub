@@ -3863,7 +3863,12 @@
 .composer-attach-btn:disabled { opacity: 0.4; cursor: default; }
 .composer-attach-btn:focus-visible,
 .composer-attachment-remove:focus-visible,
-.send-btn:focus-visible {
+.composer-attach-dismiss:focus-visible,
+.send-btn:focus-visible,
+.builder-light .composer-attach-btn:focus-visible,
+.builder-light .composer-attachment-remove:focus-visible,
+.builder-light .composer-attach-dismiss:focus-visible,
+.builder-light .send-btn:focus-visible {
   outline: var(--dh-focus-ring) solid var(--bc-attach-focus);
   outline-offset: var(--bc-hairline);
 }
@@ -3884,8 +3889,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--bc-gap-sm);
-  max-width: min(100% - var(--bc-gap-lg), var(--bc-attach-chip-max));
-  margin: var(--bc-gap-sm) var(--bc-gap-sm) 0;
+  /* Left edge on the text column (the textarea's inline padding). */
+  max-width: min(100% - 2 * var(--bc-composer-text-inset), var(--bc-attach-chip-max));
+  margin: var(--bc-gap-md) var(--bc-composer-text-inset) 0;
   padding: var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs);
   border-radius: var(--bc-radius-md);
   background: var(--bc-attach-surface);
@@ -3894,11 +3900,15 @@
 }
 .composer-attachment-thumb {
   flex-shrink: 0;
-  width: var(--bc-attach-thumb);
+  width: var(--bc-attach-thumb-w);
   height: var(--bc-attach-thumb);
   border-radius: var(--bc-radius-sm);
-  object-fit: cover;
-  background: var(--bc-attach-surface);
+  /* The whole image, letterboxed on a tonal ground: a wide dashboard
+     should read as a dashboard, not a header strip. */
+  object-fit: contain;
+  padding: var(--bc-gap-xxs);
+  box-sizing: border-box;
+  background: var(--bc-attach-thumb-ground);
 }
 .composer-attachment-thumb-pending {
   display: block;
@@ -3978,16 +3988,25 @@
   to { opacity: 1; }
 }
 
-/* Error line under the composer: tinted, not boxed. */
-.composer-attach-status { width: 100%; }
+/* Error line inside the composer, on the text column: tinted, not boxed. */
+.input-box { --bc-composer-text-inset: var(--bc-composer-inset); }
+.composer-attach-status { position: relative; z-index: 1; }
+.composer-attach-status.has-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bc-gap-xxs);
+  margin: var(--bc-gap-sm) var(--bc-composer-text-inset) 0;
+  padding: var(--bc-gap-xs) var(--bc-gap-xxs) var(--bc-gap-xs) var(--bc-gap-sm);
+  border-radius: var(--bc-radius-md);
+  background: var(--bc-attach-error-fill);
+}
+.composer-attach-live { flex: 1; min-width: 0; }
 .composer-attach-error {
   display: flex;
   align-items: flex-start;
   gap: var(--bc-gap-xs);
-  margin: var(--bc-gap-sm) 0 0;
-  padding: var(--bc-gap-xs) var(--bc-gap-sm);
-  border-radius: var(--bc-radius-sm);
-  background: var(--bc-attach-error-fill);
+  margin: 0;
+  padding: var(--bc-gap-xxs) 0;
   color: var(--bc-attach-error-fg);
   font-size: var(--bc-attach-font-sm);
   line-height: 1.45;
@@ -3997,6 +4016,23 @@
   line-height: inherit;
   flex-shrink: 0;
 }
+.composer-attach-dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--bc-attach-dismiss);
+  height: var(--bc-attach-dismiss);
+  padding: 0;
+  border: 0;
+  border-radius: var(--bc-radius-sm);
+  background: transparent;
+  color: var(--bc-attach-error-fg);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.composer-attach-dismiss:hover { background: var(--bc-attach-error-fill); }
+.composer-attach-dismiss .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
 .composer-sr-only {
   position: absolute;
   width: var(--bc-hairline);
@@ -17791,7 +17827,10 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--bc-gap-sm);
 }
 .chat-slide .input-box,
-.chat-float-compact .input-box { border-radius: var(--bc-radius-md); }
+.chat-float-compact .input-box {
+  border-radius: var(--bc-radius-md);
+  --bc-composer-text-inset: var(--bc-gap-md);
+}
 .chat-slide .input-textarea,
 .chat-float-compact .input-textarea {
   padding: var(--bc-gap-md);

@@ -52,3 +52,32 @@ export function toBase64(bytes: Uint8Array): string {
 export function fileFrom(bytes: Uint8Array, name: string, type = ""): File {
   return new File([bytes as BlobPart], name, { type });
 }
+
+/* A JPEG carrying an EXIF APP1 segment with a GPS marker, as phones write. */
+export const GPS_MARKER = "GPSLatitude51.5074N";
+export function makeJpegWithExif(width: number, height: number, pad = 64): Uint8Array {
+  const exifBody = [...ascii("Exif"), 0, 0, ...ascii("MM"), 0, 42, ...ascii(GPS_MARKER)];
+  const len = exifBody.length + 2;
+  const base = makeJpeg(width, height, pad);
+  const app1 = [0xff, 0xe1, (len >> 8) & 255, len & 255, ...exifBody];
+  const out = new Uint8Array(base.length + app1.length);
+  out.set(base.subarray(0, 2));
+  out.set(app1, 2);
+  out.set(base.subarray(2), 2 + app1.length);
+  return out;
+}
+
+/* A PNG with an eXIf chunk after IHDR. */
+export function makePngWithExif(width: number, height: number): Uint8Array {
+  const base = makePng(width, height, 0);
+  const data = ascii(GPS_MARKER);
+  /* makePng stops after the IHDR data; add its CRC, then the eXIf chunk. */
+  const chunk = [0, 0, 0, 0, ...be32(data.length), ...ascii("eXIf"), ...data, 0, 0, 0, 0];
+  const out = new Uint8Array(base.length + chunk.length + 32);
+  out.set(base);
+  out.set(chunk, base.length);
+  return out;
+}
+
+export const containsAscii = (bytes: Uint8Array, text: string) =>
+  Buffer.from(bytes).toString("latin1").includes(text);

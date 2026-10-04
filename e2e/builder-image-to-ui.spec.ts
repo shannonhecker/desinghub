@@ -92,15 +92,19 @@ async function expectImageTurn(page: Page, chatRequests: Request[]) {
 }
 
 /* Paste and drop need a real File inside the page. */
-async function dispatchFileEvent(page: Page, kind: "paste" | "drop" | "dragenter") {
+async function dispatchFileEvent(page: Page, kind: "paste" | "drop" | "dragenter", withText?: string) {
   await page.evaluate(
-    ({ b64, kind }) => {
+    ({ b64, kind, withText }) => {
       const bin = atob(b64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const file = new File([bytes], "dashboard.png", { type: "image/png" });
       const dt = new DataTransfer();
       dt.items.add(file);
+      if (withText) {
+        dt.setData("text/plain", withText);
+        dt.setData("text/html", `<table><tr><td>${withText}</td></tr></table>`);
+      }
       if (kind === "paste") {
         const target = document.querySelector("textarea.input-textarea")!;
         target.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
@@ -109,7 +113,7 @@ async function dispatchFileEvent(page: Page, kind: "paste" | "drop" | "dragenter
         target.dispatchEvent(new DragEvent(kind, { dataTransfer: dt, bubbles: true, cancelable: true }));
       }
     },
-    { b64: PNG_B64, kind },
+    { b64: PNG_B64, kind, withText },
   );
 }
 
@@ -139,6 +143,39 @@ test.describe("Build the UI from an uploaded image", () => {
     await chatInput(page).press("Enter");
     await expectImageTurn(page, chatRequests);
     expect(bodyOf(chatRequests[0]).messages.at(-1)!.content).toMatch(/Make it a CRM dashboard$/);
+  });
+
+  test("an Office-style paste (text plus a rendered bitmap) stays text and attaches nothing", async ({ page }) => {
+    const chatRequests = await openBuilder(page);
+    await chatInput(page).focus();
+    await dispatchFileEvent(page, "paste", "Q3 revenue 4.2M");
+    await expect(page.locator(".composer-attachment")).toHaveCount(0);
+    /* The browser default ran: the text was inserted, not swallowed. A
+       synthetic paste does not insert text in Chromium, so the check is that
+       the event was not cancelled. */
+    const cancelled = await page.evaluate(() => {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array([137, 80, 78, 71])], "cells.png", { type: "image/png" }));
+      dt.setData("text/plain", "Q3 revenue 4.2M");
+      const ev = new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true });
+      document.querySelector("textarea.input-textarea")!.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    });
+    expect(cancelled).toBe(false);
+    expect(chatRequests).toHaveLength(0);
+  });
+
+  test("a file dropped outside the composer does not navigate away", async ({ page }) => {
+    await openBuilder(page);
+    const prevented = await page.evaluate(() => {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Uint8Array([1])], "x.png", { type: "image/png" }));
+      const ev = new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true });
+      document.body.dispatchEvent(ev);
+      return ev.defaultPrevented;
+    });
+    expect(prevented).toBe(true);
+    await expect(page).toHaveURL(/\/builder/);
   });
 
   test("drag and drop shows the drop state, then attaches", async ({ page }) => {
@@ -171,6 +208,22 @@ test.describe("Build the UI from an uploaded image", () => {
     await expect(page.locator(".composer-attachment")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Send" })).toBeDisabled();
     expect(chatRequests).toHaveLength(0);
+    /* Typing clears the error; dismiss also works. */
+    await chatInput(page).pressSequentially("a");
+    await expect(page.locator(".composer-attach-error")).toHaveCount(0);
+  });
+
+  test("a server image reject reads as an image problem, not a connection one", async ({ page }) => {
+    await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: true, firebaseConfigured: false } }));
+    await page.route("**/api/chat", (route) =>
+      route.fulfill({ status: 400, json: { error: "That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB." } }),
+    );
+    await page.goto("/builder");
+    await page.locator('[data-testid="composer-file-input"]').setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.locator(".composer-attachment")).toBeVisible();
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByText(/That image could not be used/).first()).toBeVisible();
+    await expect(page.getByText(/trouble connecting/)).toHaveCount(0);
   });
 
   test("an oversize file shows the error and sends nothing", async ({ page }) => {

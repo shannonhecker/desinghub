@@ -93,18 +93,37 @@ export function ComposerDropVeil({ active }: { active: boolean }) {
   );
 }
 
-/* Errors are visible; confirmations are for screen readers only. Both sit
-   in one polite live region so nothing interrupts typing. */
-export function ComposerAttachStatus({ error, notice }: { error: string | null; notice: string }) {
+/* Errors are visible; confirmations are for screen readers only. Both go
+   through one polite live region so nothing interrupts typing. The error
+   node is keyed by a sequence number, so a repeated error is re-inserted
+   and announced again. Dismiss sits outside the live region. */
+export function ComposerAttachStatus({
+  error,
+  errorSeq,
+  notice,
+  onDismiss,
+}: {
+  error: string | null;
+  errorSeq: number;
+  notice: string;
+  onDismiss: () => void;
+}) {
   return (
-    <div className="composer-attach-status" role="status" aria-live="polite">
-      {error ? (
-        <p className="composer-attach-error">
-          <span className="material-symbols-outlined" aria-hidden="true">error</span>
-          <span>{error}</span>
-        </p>
-      ) : (
-        <span className="composer-sr-only">{notice}</span>
+    <div className={`composer-attach-status${error ? " has-error" : ""}`}>
+      <div className="composer-attach-live" role="status" aria-live="polite">
+        {error ? (
+          <p key={errorSeq} className="composer-attach-error">
+            <span className="material-symbols-outlined" aria-hidden="true">error</span>
+            <span>{error}</span>
+          </p>
+        ) : (
+          <span className="composer-sr-only">{notice}</span>
+        )}
+      </div>
+      {error && (
+        <button type="button" className="composer-attach-dismiss" onClick={onDismiss} aria-label="Dismiss message" title="Dismiss">
+          <span className="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
       )}
     </div>
   );

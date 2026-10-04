@@ -17,6 +17,15 @@ export const MAX_IMAGE_EDGE = 1568;
    request stays under Vercel's 4.5 MB body limit. */
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
+/* Longest base64 string that can decode to MAX_IMAGE_BYTES. Checked first,
+   before any parsing, so a huge string costs one comparison. */
+export const MAX_IMAGE_BASE64_LENGTH = Math.ceil(MAX_IMAGE_BYTES / 3) * 4;
+
+/* Decode guard: refuse to decode anything over this many pixels, read from
+   the header, so a small file that claims a vast canvas cannot exhaust
+   the tab's memory. */
+export const MAX_IMAGE_PIXELS = 50_000_000;
+
 /* The image the API route accepts on the latest user message. */
 export interface ChatImagePayload {
   mediaType: ImageMediaType;
@@ -114,11 +123,21 @@ export function fitWithinEdge(width: number, height: number, edge = MAX_IMAGE_ED
   };
 }
 
-const BASE64_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const isBase64Char = (c: number) =>
+  (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c === 43 || c === 47;
 
-/** Strict, padded, standard-alphabet base64 with no prefix or whitespace. */
+/** Strict, padded, standard-alphabet base64 with no prefix or whitespace.
+ *  A linear scan, not a regex: a regex with a repeated group overflowed the
+ *  stack on very long input. Callers check MAX_IMAGE_BASE64_LENGTH first. */
 export function isStrictBase64(value: string): boolean {
-  return value.length > 0 && value.length % 4 === 0 && BASE64_RE.test(value);
+  const n = value.length;
+  if (n === 0 || n % 4 !== 0) return false;
+  let pad = 0;
+  if (value.charCodeAt(n - 1) === 61) pad = value.charCodeAt(n - 2) === 61 ? 2 : 1;
+  for (let i = 0; i < n - pad; i++) {
+    if (!isBase64Char(value.charCodeAt(i))) return false;
+  }
+  return true;
 }
 
 /** Decoded size of a base64 string, without decoding it. */
@@ -141,4 +160,54 @@ export function base64ToBytes(value: string): Uint8Array {
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
   return out;
+}
+
+/** True when the file carries metadata that could identify the user or
+ *  their location: an EXIF/XMP APP1 segment in a JPEG, an eXIf or text
+ *  chunk in a PNG, an EXIF or XMP chunk in a WebP. Such files are
+ *  re-encoded in the browser so the metadata never leaves it. */
+export function hasImageMetadata(bytes: Uint8Array, type: ImageMediaType): boolean {
+  switch (type) {
+    case "image/jpeg": {
+      let i = 2;
+      while (i + 3 < bytes.length) {
+        if (bytes[i] !== 0xff) return false;
+        const marker = bytes[i + 1];
+        if (marker === 0xff) { i += 1; continue; }
+        if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) { i += 2; continue; }
+        /* Start of scan: no more header segments. */
+        if (marker === 0xda) return false;
+        /* APP1 (EXIF, XMP), APP3-APP13, APP15 and comments. APP0 (JFIF),
+           APP2 (ICC colour) and APP14 (Adobe colour transform) are kept. */
+        if (marker === 0xe1 || (marker >= 0xe3 && marker <= 0xed) || marker === 0xef || marker === 0xfe) return true;
+        const len = be16(bytes, i + 2);
+        if (len < 2) return false;
+        i += 2 + len;
+      }
+      return false;
+    }
+    case "image/png": {
+      let i = 8;
+      while (i + 8 <= bytes.length) {
+        const len = be32(bytes, i);
+        const name = String.fromCharCode(bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]);
+        if (name === "eXIf" || name === "tEXt" || name === "iTXt" || name === "zTXt") return true;
+        if (name === "IDAT" || name === "IEND") return false;
+        i += 12 + len;
+      }
+      return false;
+    }
+    case "image/webp": {
+      let i = 12;
+      while (i + 8 <= bytes.length) {
+        const name = String.fromCharCode(bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]);
+        if (name === "EXIF" || name === "XMP ") return true;
+        const len = bytes[i + 4] | (bytes[i + 5] << 8) | (bytes[i + 6] << 16) | (bytes[i + 7] << 24);
+        i += 8 + len + (len % 2);
+      }
+      return false;
+    }
+    case "image/gif":
+      return false;
+  }
 }
