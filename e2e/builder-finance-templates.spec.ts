@@ -45,6 +45,7 @@ const TEMPLATES = [
   { label: "Entity Comparison", blocks: 9, minPanel: 280 },
   { label: "Governance Scorecard", blocks: 8, minPanel: 280 },
   { label: "Analytics Home", blocks: 10, minPanel: 280 },
+  { label: "FX Execution", blocks: 4, minPanel: 280 },
 ] as const;
 
 function chatInput(page: Page) {
@@ -219,6 +220,49 @@ test.describe("Builder - finance templates", () => {
     await stage.getByRole("button", { name: "Expand Allocation", exact: true }).click();
     await expect(stage.locator(`${expanded} .ag-row`, { hasText: "Total" }).first()).toBeVisible();
     await expect(stage.locator(`${expanded} .ag-header-cell`, { hasText: "% of total" })).toBeVisible();
+  });
+
+  test("FX Execution: the chart's rail, range chips, order tabs and venue selection re-read the page", async ({ page }) => {
+    await applyTemplate(page, "FX Execution");
+    const stage = page.locator(".present-stage");
+    const status = stage.locator(".dh-instrument-status");
+    await expect(status).toHaveText("1m Line · Percentile · 64% done");
+    await expect(stage.locator(".dh-instrument-symbol")).toHaveText("EURUSD");
+    const chart = stage.locator(".dh-exec");
+    await expect(chart.locator(".highcharts-legend-item", { hasText: /^Limit price$/ })).toBeVisible();
+    await expect(chart.locator(".highcharts-candlestick-series")).toHaveCount(0);
+
+    /* The rail: chart type and interval. */
+    await chart.getByRole("button", { name: "Chart type" }).click();
+    await page.getByRole("menuitemradio", { name: "Candlestick" }).click();
+    await expect(chart.locator(".highcharts-candlestick-series").first()).toBeVisible();
+    await chart.getByRole("button", { name: "Interval" }).click();
+    await page.getByRole("menuitemradio", { name: "5m", exact: true }).click();
+    await expect(status).toHaveText("5m Candlestick · Percentile · 64% done");
+
+    /* Range chips. */
+    await chart.getByRole("button", { name: "1W", exact: true }).click();
+    await expect(chart.getByRole("button", { name: "1W", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+    /* The other order: its statistics and its completion. */
+    const stats = stage.locator(".dh-panel", { has: page.locator(".dh-record") });
+    await expect(stats.locator(".dh-panel-title")).toHaveText("FO-0002LQD");
+    await stage.getByRole("tab", { name: /SELL/ }).click();
+    await expect(stats.locator(".dh-panel-title")).toHaveText("FO-0002LQE");
+    await expect(status).toContainText("100% done");
+
+    /* A fill picked on the chart selects its venue: the others' fills dim. */
+    const dimmed = () => chart.locator(".highcharts-scatter-series .highcharts-point").evaluateAll((points) => points.filter((p) => /0\.14\)/.test(p.getAttribute("fill") ?? "")).length);
+    expect(await dimmed()).toBe(0);
+    await chart.locator(".highcharts-scatter-series .highcharts-point").nth(3).click({ force: true });
+    await expect.poll(dimmed).toBeGreaterThan(0);
+
+    /* The table view lists the bars. */
+    await chart.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Table" }).click();
+    await expect(chart.locator(".ag-header-cell", { hasText: "Avg fill" })).toBeVisible();
+    /* Using the report must not open the amend composer. */
+    await expect(page.locator(".present-amend-input")).toHaveCount(0);
   });
 
   test("the left navigation collapses to a rail, opens reports, and stays collapsed", async ({ page }) => {

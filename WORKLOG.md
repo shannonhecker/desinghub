@@ -10,6 +10,22 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-10-06 Session Log - finance templates, slice 4 (FX execution)
+
+Branch `feat/finance-templates-slice-4`, stacked on the density pass. Detail
+in CHANGELOG.md.
+
+- `reportData/executionDataset.ts`: tables orders, market, orderBars, fills, states.
+- `executionModel.ts`: `resolveExecution` (bars by position, interval
+  buckets, range window, bands, pills, venue dimming); state keys `fxOrder`,
+  `fxInterval`, `fxChart`, `fxRange`, `fxHidden`, `fxView`, `select:venue`.
+- `ExecutionChart.tsx`, `InstrumentHeader.tsx`; `highchartsInit.ts` loads the
+  stock module (candlestick, OHLC).
+- `executionTemplates.ts`; a block's controls are listed as `filters` data so
+  chat and the canvas summary can see them.
+- `layoutResolver.ts` / `builder.css`: `rowSpan`.
+- `export/materialise.ts`: the chart leaves as a combination chart.
+
 ## 2026-10-06 Session Log - finance templates, density and fidelity
 
 Branch `feat/finance-templates-density`, stacked on slice 3. Owner feedback
