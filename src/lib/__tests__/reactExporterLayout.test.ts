@@ -177,7 +177,7 @@ describe("reactExporter — P4 justify/align projection reaches generated code",
   it("Salt row: space-between + center reach FlexLayout as NATIVE justify/align props", () => {
     setRowCanvas("salt", "space-between", "center");
     const code = exportReact();
-    expect(code).toContain('<FlexLayout gap={3} justify="space-between" align="center">');
+    expect(code).toContain('<FlexLayout gap={0.375} justify="space-between" align="center">');
   });
 
   it("Fluent row (CSS-div DS): space-between + center merge into the container div style", () => {
@@ -249,11 +249,11 @@ describe("reactExporter — P5 per-side padding + row/col gap reach generated co
     expect(code).toMatch(/<div style=\{\{ display: "grid",[^}]*paddingTop: "8px"[^}]*\}\}><GridLayout/);
   });
 
-  it("Salt row: per-axis gap {row:4,col:12} → native FlexLayout gap={12} (col) + rowGap/columnGap CSS override", () => {
+  it("Salt row: per-axis gap {row:4,col:12} → native FlexLayout gap={1.5} (12px col, in 8px units) + rowGap/columnGap CSS override", () => {
     setBody("salt", "row", { gap: { row: 4, col: 12 } });
     const code = exportReact();
     // DS-native spacing prop carries the col (main-axis) gap
-    expect(code).toContain("<FlexLayout gap={12}");
+    expect(code).toContain("<FlexLayout gap={1.5}");
     // the per-axis split rides a CSS wrapper since FlexLayout has one gap prop
     expect(code).toContain('rowGap: "4px"');
     expect(code).toContain('columnGap: "12px"');
@@ -280,7 +280,7 @@ describe("reactExporter — P5 per-side padding + row/col gap reach generated co
   it("Carbon stack: object padding + per-axis gap reach the Stack style; native gap carries col", () => {
     setBody("carbon", "stack", { gap: { row: 4, col: 12 }, padding: { t: 8, r: 16, b: 8, l: 16 } });
     const code = exportReact();
-    expect(code).toContain("<Stack gap={12}"); // native = col
+    expect(code).toContain("<Stack gap={4}"); // native = col (12px = step 4 of Carbon's scale)
     expect(code).toMatch(/style=\{\{[^}]*paddingTop: "8px"/);
     expect(code).toContain('rowGap: "4px"');
     expect(code).toContain('columnGap: "12px"');
@@ -305,7 +305,7 @@ describe("reactExporter — P5 per-side padding + row/col gap reach generated co
     // uniform number padding → compact padding via the row CSS wrapper
     expect(code).toContain('padding: "16px"');
     // single gap stays the DS-native prop; no per-axis CSS override
-    expect(code).toContain("<FlexLayout gap={3}");
+    expect(code).toContain("<FlexLayout gap={0.375}"); // 3px in Salt's 8px units
     expect(code).not.toContain("rowGap");
     expect(code).not.toContain("columnGap");
   });

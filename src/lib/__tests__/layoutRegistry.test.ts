@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveLayoutApi, layoutToJsx, collectLayoutImports } from "../layoutRegistry";
+import { resolveLayoutApi, layoutToJsx, collectLayoutImports, pxToNativeGap } from "../layoutRegistry";
 
 /* Phase 0 of the DS-owned layout registry. layoutToJsx turns an abstract
    layout primitive (grid/stack/row) + pre-rendered children into REAL per-DS
@@ -10,7 +10,7 @@ const child = (jsx: string, span?: number) => ({ jsx, span });
 
 describe("layoutRegistry — Salt @salt-ds/core", () => {
   it("grid -> GridLayout + GridItem colSpan", () => {
-    const jsx = layoutToJsx("salt", "grid", { columns: 12, gap: 3 }, [
+    const jsx = layoutToJsx("salt", "grid", { columns: 12, gap: 24 }, [
       child("<Card>A</Card>", 6),
       child("<Card>B</Card>", 6),
     ])!;
@@ -30,7 +30,7 @@ describe("layoutRegistry — Salt @salt-ds/core", () => {
 
 describe("layoutRegistry — M3 @mui/material (v9 unified Grid)", () => {
   it("grid -> Grid container + Grid size (12-col)", () => {
-    const jsx = layoutToJsx("m3", "grid", { gap: 2 }, [child("<Card>A</Card>", 6)])!;
+    const jsx = layoutToJsx("m3", "grid", { gap: 16 }, [child("<Card>A</Card>", 6)])!;
     expect(jsx).toContain("<Grid container spacing={2}>");
     expect(jsx).toContain("<Grid size={6}><Card>A</Card></Grid>");
   });
@@ -50,7 +50,7 @@ describe("layoutRegistry — Carbon @carbon/react (16-col grid)", () => {
     expect(jsx).toContain("<Column lg={8}><Tile>A</Tile></Column>"); // 6/12*16 = 8
   });
   it("stack -> Stack gap; row -> Stack orientation=horizontal", () => {
-    expect(layoutToJsx("carbon", "stack", { gap: 5 }, [child("<X/>")])!).toContain("<Stack gap={5}>");
+    expect(layoutToJsx("carbon", "stack", { gap: 16 }, [child("<X/>")])!).toContain("<Stack gap={5}>");
     expect(layoutToJsx("carbon", "row", {}, [child("<X/>")])!).toContain('orientation="horizontal"');
   });
   it("imports", () => {
@@ -101,3 +101,28 @@ describe("layoutRegistry — fallback", () => {
     expect(layoutToJsx("salt", "bogus" as never, {}, [child("<X/>")])).toBeNull();
   });
 });
+
+/* A zone's gap is stored in px; each design system's layout prop has its own
+   unit. Regression: px went straight through, so a 16px gap exported as
+   gap={16} - 128px between panels in Salt and Material. */
+describe("layoutRegistry - px gaps become the design system's own unit", () => {
+  it("Salt and Material use multiples of 8px", () => {
+    expect(pxToNativeGap(16, "x8")).toBe(2);
+    expect(pxToNativeGap(12, "x8")).toBe(1.5);
+    expect(pxToNativeGap(0, "x8")).toBe(0);
+    expect(layoutToJsx("salt", "grid", { columns: 12, gap: 16 }, [])!).toContain("gap={2}");
+    expect(layoutToJsx("m3", "grid", { gap: 12 }, [])!).toContain("spacing={1.5}");
+  });
+
+  it("Carbon uses the nearest step of its spacing scale", () => {
+    expect(pxToNativeGap(16, "carbonStep")).toBe(5);
+    expect(pxToNativeGap(12, "carbonStep")).toBe(4);
+    expect(pxToNativeGap(2, "carbonStep")).toBe(1);
+    expect(pxToNativeGap(500, "carbonStep")).toBe(13);
+  });
+
+  it("with no gap set, the design system's default is kept", () => {
+    expect(layoutToJsx("salt", "stack", {}, [])!).toContain("gap={3}");
+  });
+});
+

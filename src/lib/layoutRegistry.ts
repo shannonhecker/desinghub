@@ -172,9 +172,32 @@ const gapValueOf = (p: Record<string, unknown>): GapValue | undefined => {
    the COL (main-axis / between-columns) gap so a uniform native prop matches
    the canvas's dominant gap; the row/col split (if any) is reconciled by the
    CSS rowGap/columnGap override emitted in paddingGapCssBody. */
-const nativeGap = (p: Record<string, unknown>, fallback: number): number => {
+type GapUnit = "x8" | "carbonStep";
+
+/* Carbon's spacing scale in px; a Stack's `gap` is the 1-based step. */
+const CARBON_SPACING_PX = [2, 4, 8, 12, 16, 24, 32, 40, 48, 64, 80, 96, 160];
+
+/** A zone gap is stored in px. A design system's layout prop takes its own
+ *  unit: Salt's GridLayout / StackLayout / FlexLayout `gap` and MUI's
+ *  `spacing` are multiples of 8px; Carbon's Stack `gap` is a step on its
+ *  spacing scale. Passing px straight through made a 16px gap export as
+ *  `gap={16}`: 128px between panels in Salt and Material. */
+export function pxToNativeGap(px: number, unit: GapUnit): number {
+  if (unit === "carbonStep") {
+    let best = 0;
+    for (let i = 1; i < CARBON_SPACING_PX.length; i++) {
+      if (Math.abs(CARBON_SPACING_PX[i] - px) < Math.abs(CARBON_SPACING_PX[best] - px)) best = i;
+    }
+    return best + 1;
+  }
+  return Math.round((px / 8) * 1000) / 1000;
+}
+
+/** `fallback` is already in the design system's unit (used when the zone
+ *  sets no gap). */
+const nativeGap = (p: Record<string, unknown>, fallback: number, unit: GapUnit = "x8"): number => {
   const g = normalizeGap(gapValueOf(p));
-  return g ? g.col : fallback;
+  return g ? pxToNativeGap(g.col, unit) : fallback;
 };
 
 /* Build the body of a JSX style-object (no braces) for per-side padding + a
@@ -367,7 +390,7 @@ const CARBON_REG: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
          justifyContent/alignItems + P5 padding/gap via style. */
       const body = mergeBodies(flexJustifyAlignBody(p), paddingGapCssBody(p));
       const style = body ? ` style={{ ${body} }}` : "";
-      return `<Stack gap={${nativeGap(p, 5)}}${style}>${joinKids(children)}</Stack>`;
+      return `<Stack gap={${nativeGap(p, 5, "carbonStep")}}${style}>${joinKids(children)}</Stack>`;
     },
   },
   row: {
@@ -375,7 +398,7 @@ const CARBON_REG: Partial<Record<LayoutPrimitive, LayoutApiEntry>> = {
     toJsx: (p, children) => {
       const body = mergeBodies(flexJustifyAlignBody(p), paddingGapCssBody(p));
       const style = body ? ` style={{ ${body} }}` : "";
-      return `<Stack orientation="horizontal" gap={${nativeGap(p, 5)}}${style}>${joinKids(children)}</Stack>`;
+      return `<Stack orientation="horizontal" gap={${nativeGap(p, 5, "carbonStep")}}${style}>${joinKids(children)}</Stack>`;
     },
   },
 };
