@@ -7,7 +7,9 @@ export interface AIAction {
     | "setThemeKey" | "setColorOverride" | "clearCanvas" | "setInterfaceType"
     /* Layout system additions (sub-phase 9): width/min/max per block
        + zone-level flow mode. Handled in applyAIActions.ts. */
-    | "updateBlockLayout" | "setZoneLayout";
+    | "updateBlockLayout" | "setZoneLayout"
+    /* Templates and report controls (finance templates, slice 1). */
+    | "applyTemplate" | "setReportFilter";
   value: unknown;
 }
 
@@ -36,6 +38,8 @@ const KNOWN_ACTION_TYPES = new Set<AIAction["action"]>([
   "setInterfaceType",
   "updateBlockLayout",
   "setZoneLayout",
+  "applyTemplate",
+  "setReportFilter",
 ]);
 
 /**

@@ -57,22 +57,8 @@ import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
    - footerBlocks   → FooterText
    ══════════════════════════════════════════════════════════════ */
 
-/* Source-of-truth list of valid template ids. Both the type and the
-   runtime allow-list derive from this so a new template can be added
-   in one place without drift. The API route uses VALID_TEMPLATE_IDS
-   to reject anything else, defending against prompt-injection via the
-   templateId field. */
-export const VALID_TEMPLATE_IDS = [
-  "analytics-dashboard",
-  "settings-page",
-  "crm-contacts",
-  "login-flow",
-  "landing-page",
-  "risk-analytics",
-  "performance-analytics",
-] as const;
-
-export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
+export { VALID_TEMPLATE_IDS, type TemplateId } from "./templateIds";
+import { VALID_TEMPLATE_IDS, type TemplateId } from "./templateIds";
 
 /** Gallery groups, in display order. */
 export const TEMPLATE_CATEGORIES = [

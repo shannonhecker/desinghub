@@ -7,6 +7,9 @@ import { LIBRARY_BLUEPRINTS } from "./blockRegistry";
 import { defaultLayoutForType } from "./blockLayoutDefaults";
 import { pushSnapshot } from "./builderHistory";
 import { emitToolUse } from "./toolUseEvents";
+import { BUILDER_TEMPLATES, VALID_TEMPLATE_IDS, type TemplateId } from "./builderTemplates";
+import { applyTemplateToCanvas } from "./applyTemplate";
+import { collectReportControls } from "./reportCommand";
 
 const VALID_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "uoaui", "carbon"];
 const VALID_MODES = ["light", "dark"];
@@ -368,6 +371,44 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
         break;
       }
 
+      case "applyTemplate": {
+        const v = action.value as { templateId?: unknown } | null;
+        const id = v?.templateId;
+        if (typeof id !== "string" || !(VALID_TEMPLATE_IDS as readonly string[]).includes(id)) {
+          skip(action, `unknown template ${quote(id)}`);
+          break;
+        }
+        const tpl = BUILDER_TEMPLATES[id as TemplateId];
+        /* In the design system on the canvas now (re-read: an earlier
+           action in this batch may have switched it). */
+        applyTemplateToCanvas(tpl, useBuilder.getState().designSystem);
+        emitToolUse({ messageId, action: "applyTemplate", value: { templateId: id, label: tpl.label } });
+        applied();
+        break;
+      }
+
+      case "setReportFilter": {
+        const v = action.value as { key?: unknown; value?: unknown } | null;
+        if (!v || typeof v.key !== "string" || typeof v.value !== "string") {
+          skip(action, "setReportFilter needs a key and a value");
+          break;
+        }
+        const choices = reportFilterChoices(v.key);
+        if (!choices) {
+          skip(action, `no report control has the key ${quote(v.key)}`);
+          break;
+        }
+        const match = choices.find((c) => c.toLowerCase() === (v.value as string).trim().toLowerCase());
+        if (choices.length > 0 && !match) {
+          skip(action, `${quote(v.value)} is not a choice for ${v.key} (${choices.join(", ")})`);
+          break;
+        }
+        useBuilder.getState().setReportState(v.key, match ?? v.value);
+        emitToolUse({ messageId, action: "setReportFilter", value: { key: v.key, value: match ?? v.value } });
+        applied();
+        break;
+      }
+
       default:
         skip(action, `unknown action ${quote((action as { action: unknown }).action)}`);
     }
@@ -381,4 +422,12 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
      stale. No-op when the selection is empty or fully intact. */
   if (actions.length > 0) store.reconcileSelection();
   return report;
+}
+
+/** The choices of the report control with this key on the canvas (a filter
+ *  dropdown or a panel's "View by"). Null when no control has the key. */
+function reportFilterChoices(key: string): string[] | null {
+  const s = useBuilder.getState();
+  const controls = collectReportControls([...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks]);
+  return controls.find((c) => c.key === key)?.choices ?? null;
 }

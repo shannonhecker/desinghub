@@ -45,14 +45,14 @@ beforeEach(() => {
 });
 
 describe("POST /api/chat: canvas tools", () => {
-  it("declares the 14 canvas tools on every request, ahead of the cached system prompt", async () => {
+  it("declares the 16 canvas tools on every request, ahead of the cached system prompt", async () => {
     streamMock.mockImplementation(async () => scripted([]));
     await post({ messages: [{ role: "user", content: "hi" }], designSystem: "carbon" });
     expect(streamMock).toHaveBeenCalledTimes(1);
     const params = streamMock.mock.calls[0][0] as { tools: { name: string }[]; system: unknown[] };
     expect(params.tools.map((t) => t.name)).toEqual([
       "setDesignSystem", "setMode", "setDensity", "setThemeKey", "setInterfaceType", "setComponents", "setColorOverride",
-      "addBlock", "removeBlock", "moveBlock", "updateBlockProps", "updateBlockLayout", "setZoneLayout", "clearCanvas",
+      "addBlock", "removeBlock", "moveBlock", "updateBlockProps", "updateBlockLayout", "setZoneLayout", "applyTemplate", "setReportFilter", "clearCanvas",
     ]);
     expect(params.system).toHaveLength(1);
   });

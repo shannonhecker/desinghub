@@ -22,6 +22,7 @@ import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
 import { parseThemeCommand, describeThemeCommand } from "@/lib/themeCommand";
+import { parseTemplateCommand, parseReportFilterCommand, collectReportControls, describeReportFilterCommand } from "@/lib/reportCommand";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -919,7 +920,10 @@ export function ChatPanel() {
        matters when text was passed programmatically (applyPendingIntentWithDs)
        or a refine chip is clicked. The guided wizard passes skipFirstTurn
        because it has ALREADY chosen the DS - re-asking would be wrong. ── */
-    if (messages.length === 0 && !selectedBlockId && !opts?.skipFirstTurn) {
+    /* A request for a template by name names everything needed (and can
+       carry its own design system), so it skips the first-turn questions. */
+    const templateCmd = parseTemplateCommand(msg);
+    if (messages.length === 0 && !selectedBlockId && !opts?.skipFirstTurn && !templateCmd) {
       if (aiDisabled) {
         setPendingFirstMessage(msg);
         setPendingTemplateId(null);
@@ -973,6 +977,38 @@ export function ChatPanel() {
        button's label" for a layout/add-component command) and send
        straight to Claude with the selected_block context attached by
        useChatAPI. ── */
+    /* ── Templates and report controls, by name (reportCommand.ts) ──
+       "use the risk analytics template", "show it in USD", "view by sector":
+       each is one exact change the builder can make itself, so it is instant
+       and works without a model. Anything that asks for more goes on. */
+    if (templateCmd) {
+      const tpl = BUILDER_TEMPLATES[templateCmd.templateId];
+      if (templateCmd.mode) setMode(templateCmd.mode);
+      if (templateCmd.designSystem) setDesignSystem(templateCmd.designSystem);
+      applyTemplateToCanvas(tpl, templateCmd.designSystem ?? designSystem);
+      if (!previewOpen) setPreviewOpen(true);
+      const themed = describeThemeCommand({ ...templateCmd, pure: true }).replace(/^Switched to /, " in ").replace(/\.$/, "");
+      setTimeout(() => {
+        addMessage("ai", `${tpl.label} is on the canvas${themed}. Every panel is editable: click one to change it, or tell me what to amend.`);
+        setGenerating(false);
+        bumpPreview();
+      }, 400);
+      return;
+    }
+    {
+      const s = useBuilder.getState();
+      const filterCmd = parseReportFilterCommand(msg, collectReportControls([...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks], s.reportState));
+      if (filterCmd) {
+        for (const c of filterCmd.changes) s.setReportState(c.key, c.value);
+        setTimeout(() => {
+          addMessage("ai", describeReportFilterCommand(filterCmd));
+          setGenerating(false);
+          bumpPreview();
+        }, 300);
+        return;
+      }
+    }
+
     /* A message that is only a theme / design-system switch is about the
        whole canvas, not the selected block, and needs no model: let it fall
        through to the switch handling below instead of being scoped. */

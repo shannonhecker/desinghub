@@ -26,6 +26,7 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type { AIAction } from "./parseAIResponse";
+import { VALID_TEMPLATE_IDS } from "./templateIds";
 
 export const TOOL_ZONES = ["body", "header", "sidebar", "footer"] as const;
 export const TOOL_DESIGN_SYSTEMS = ["salt", "m3", "fluent", "carbon", "uoaui"] as const;
@@ -78,6 +79,13 @@ const ZONE_LAYOUT_SCHEMA: Schema = {
     wrap: { type: "boolean", description: "Row mode: wrap children onto new lines" },
     align: str("Cross-axis alignment", ["start", "center", "end", "stretch"]),
     justify: str("Main-axis distribution", ["start", "center", "end", "space-between", "space-around"]),
+    visible: { type: "boolean", description: "Show or hide the zone (header, sidebar, footer). Its blocks are kept while hidden." },
+    tone: str(
+      'Surface of a chrome zone: "surface" (default), "transparent", "inverse" (opposite of the current mode), "dark" (dark application chrome in light and dark mode), "accent" (the brand colour)',
+      ["surface", "transparent", "inverse", "dark", "accent"],
+    ),
+    flush: { type: "boolean", description: "Header/footer only: no zone padding, so full-width bars (TopNav, TabStrip) stack edge to edge" },
+    side: str("Sidebar only: which side it docks to", ["left", "right"]),
   },
   additionalProperties: false,
 };
@@ -170,8 +178,20 @@ export const CANVAS_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "setZoneLayout",
-    description: 'Change a zone\'s flow: stack / row / grid (with columns), gap, padding, alignment.',
+    description: 'Change a zone\'s flow (stack / row / grid with columns, gap, padding, alignment) or its chrome: show or hide it, its tone, flush bars, sidebar side.',
     input_schema: obj({ zone: ZONE, layout: ZONE_LAYOUT_SCHEMA }, ["zone", "layout"]),
+  },
+  {
+    name: "applyTemplate",
+    description:
+      "Replace the whole canvas with a ready-made template, in the current design system. Use when the user asks for one of the templates by name or describes exactly what one provides (e.g. a risk report, a performance report). Everything on the canvas is replaced, so do not combine it with addBlock for the same content.",
+    input_schema: obj({ templateId: str("Template id", VALID_TEMPLATE_IDS) }, ["templateId"]),
+  },
+  {
+    name: "setReportFilter",
+    description:
+      'Set a report control on a data-driven template: a filter (currency, fee type, ...) or a panel\'s "View by". `key` and the allowed values come from the `filter=<key>:<current> (<choices>)` entries in the canvas manifest. Charts and grids bound to the data update themselves.',
+    input_schema: obj({ key: str("Filter key copied from the manifest, e.g. currency or viewBy:<blockId>"), value: str("One of the choices listed for that filter") }, ["key", "value"]),
   },
   {
     name: "clearCanvas",

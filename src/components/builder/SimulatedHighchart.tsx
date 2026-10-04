@@ -193,6 +193,10 @@ export function buildChartOptions(
     o.plotOptions = { ...(o.plotOptions as any), pie };
     o.legend = {
       ...(o.legend as any),
+      /* Three rows at most, then the legend pages: a breakdown with a dozen
+         parts must not take the ring's space. */
+      maxHeight: PIE_LEGEND_MAX_HEIGHT,
+      navigation: { activeColor: v.fg, inactiveColor: v.fgTer, style: { color: v.fgSec }, arrowSize: 9 },
       labelFormatter(this: { name: string; percentage?: number }) {
         return this.percentage === undefined ? this.name : `${this.name} ${Math.round(this.percentage)}%`;
       },
@@ -209,6 +213,10 @@ export function buildChartOptions(
 }
 
 const CENTER_LABEL_FONT_SIZE = 15;
+const CENTER_LABEL_MIN_FONT_SIZE = 9;
+/** Share of the ring's hole the centre label may span. */
+const CENTER_LABEL_FILL = 0.78;
+const PIE_LEGEND_MAX_HEIGHT = 56;
 
 /** Highcharts `render` handler that keeps one text label centred on the pie.
  *  Runs on every redraw, so the label follows a resize. Its text and colour
@@ -225,8 +233,20 @@ function renderCenterLabel(this: Highcharts.Chart) {
     chart.dhCenterLabel = chart.renderer.text(center.text, 0, 0).attr({ align: "center", zIndex: 5 }).add();
   }
   chart.dhCenterLabel.css({ color: center.color, fontSize: `${CENTER_LABEL_FONT_SIZE}px`, fontWeight: "600" });
-  chart.dhCenterLabel.attr({ text: center.text });
-  const box = chart.dhCenterLabel.getBBox();
+  chart.dhCenterLabel.attr({ text: center.text, visibility: "inherit" });
+  /* Fit the hole: shrink the text when the ring is small, and drop it when
+     it would be too small to read rather than let it run over the ring. */
+  const hole = Number((series.center as number[])[3]) || 0;
+  let box = chart.dhCenterLabel.getBBox();
+  if (hole > 0 && box.width > hole * CENTER_LABEL_FILL) {
+    const size = Math.floor((CENTER_LABEL_FONT_SIZE * hole * CENTER_LABEL_FILL) / box.width);
+    if (size < CENTER_LABEL_MIN_FONT_SIZE) {
+      chart.dhCenterLabel.attr({ visibility: "hidden" });
+      return;
+    }
+    chart.dhCenterLabel.css({ fontSize: `${size}px` });
+    box = chart.dhCenterLabel.getBBox();
+  }
   chart.dhCenterLabel.attr({ x: chart.plotLeft + cx, y: chart.plotTop + cy + box.height / 4 });
 }
 

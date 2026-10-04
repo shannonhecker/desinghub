@@ -302,6 +302,8 @@ const TOOL_USE_TITLE: Record<string, string> = {
   setColorOverride: "Override color",
   clearCanvas: "Clear canvas",
   setZoneLayout: "Update zone layout",
+  applyTemplate: "Apply template",
+  setReportFilter: "Set report filter",
 };
 const TOOL_USE_ICON: Record<string, string> = {
   addBlock: "add_box",
@@ -318,6 +320,8 @@ const TOOL_USE_ICON: Record<string, string> = {
   setColorOverride: "colorize",
   clearCanvas: "delete_sweep",
   setZoneLayout: "view_module",
+  applyTemplate: "dashboard_customize",
+  setReportFilter: "filter_alt",
 };
 
 /* A change the client could not apply. Shows WHICH action and WHY (the
@@ -358,8 +362,15 @@ export function ToolUseEventCard({ event, staggerIndex = 0, onUndo }: VariantPro
     default: {
       const title = TOOL_USE_TITLE[event.action] ?? event.action;
       const icon = TOOL_USE_ICON[event.action] ?? "bolt";
+      const v = event.value as { label?: unknown; key?: unknown; value?: unknown } | null;
       const subtitle =
-        typeof event.value === "string" ? event.value : undefined;
+        typeof event.value === "string"
+          ? event.value
+          : event.action === "applyTemplate" && typeof v?.label === "string"
+            ? v.label
+            : event.action === "setReportFilter" && typeof v?.key === "string"
+              ? `${v.key.replace(/^viewBy:.*/, "View by")}: ${String(v.value ?? "")}`
+              : undefined;
       return (
         <ToolUseCard
           icon={icon}

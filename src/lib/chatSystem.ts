@@ -1,4 +1,9 @@
 /* ── Design Hub AI - System Prompt ── */
+import { TEMPLATE_SUMMARIES } from "./templateIds";
+
+const TEMPLATE_LIST = Object.entries(TEMPLATE_SUMMARIES)
+  .map(([id, summary]) => `- \`${id}\` - ${summary}`)
+  .join("\n");
 
 /* Single source of truth for the Anthropic model id used by every
    AI route. Bumping here updates /api/chat and
@@ -92,11 +97,36 @@ Help users adjust, swap, reorder, or remove components.
 - HighchartHeatmap - heatmap (props: title)
 - HighchartTreemap - treemap (props: title)
 
+- HighchartCombination - columns and lines together, two axes (props: title)
+- HighchartStackedBar - stacked horizontal bars (props: title)
+- HighchartStackedArea - stacked area, e.g. allocation over time (props: title)
+
+Chart props shared by every Highchart block: \`title\`, \`subtitle\`,
+\`height\` (px), \`legend\` (true/false), \`yAxisTitle\`, \`yAxisFormat\`
+("percent" | "currency" | "number"), \`centerLabel\` (donut). A chart can be
+swapped for another kind in place: removeBlock + addBlock at the same index
+with the same props, or tell the user to use the panel's Configure tool.
+
+### Data grid
+- DataGrid - a framed, sortable grid with grouped column headers, number
+  formats and pinned total rows (props: title, subtitle, height, columns,
+  rows). \`columns\` is a list of {field, header, kind: "text" | "number" |
+  "percent" | "currency", signed?} or groups {header, children: [...]};
+  \`rows\` is a list of objects keyed by field. Prefer it over
+  SimulatedDataTable for financial or numeric tables.
+
 ### Zone-specific
 - AppBrand - header brand/logo (props: label)
 - StatusPill - header status indicator (props: label)
 - NavItem - sidebar nav item (props: label, icon, active)
 - FooterText - footer text (props: label, version)
+- TopNav - full-width application bar: brand, primary links, account
+  (props: brand, linksCsv, active, tone, account, logo ["none" hides the
+  mark], chevrons). Header zone.
+- TabStrip - full-width row of workspace/section tabs (props: tabsCsv,
+  active, tone, addButton). Header zone, usually under a TopNav.
+- NavGroup - a section label that groups sidebar NavItems (props: label)
+- PageTitle - the page heading at the top of the body (props: text, caption)
 
 ## Making Changes (canvas tools)
 
@@ -111,6 +141,8 @@ setInterfaceType, setComponents, setColorOverride.
 
 Canvas block tools: addBlock, removeBlock, moveBlock, updateBlockProps,
 updateBlockLayout, setZoneLayout, clearCanvas.
+
+Template tools: applyTemplate, setReportFilter (see Templates below).
 
 - blockId arguments come from the canvas manifest (see Canvas Manifest).
 - addBlock: \`type\` is one of the Available Block Types; \`props\` carries the
@@ -140,6 +172,24 @@ Zone layout fields:
 - \`wrap\` - true | false (row mode only)
 - \`align\` - "start" | "center" | "end" | "stretch"
 
+Chrome (header, sidebar, footer) - the same setZoneLayout tool:
+- \`visible\` - false hides the zone (its blocks are kept), true shows it
+- \`tone\` - "surface" | "transparent" | "inverse" | "dark" | "accent"
+- \`flush\` - true makes header/footer bars run edge to edge and stack
+- \`side\` - "left" | "right" (sidebar)
+A bar block (TopNav, TabStrip) also has its own \`tone\` prop, so two
+stacked bars can differ; change it with updateBlockProps.
+
+Chrome patterns:
+- Two-bar application header: setZoneLayout header {mode: "stack", gap: 0,
+  flush: true, tone: "dark"}, then addBlock TopNav and TabStrip to "header".
+- "Make the header match the brand colour": tone "accent" on the header zone
+  and on each bar block in it.
+- "Light header": tone "surface" on the zone and its bars.
+- "Remove the sidebar" / "no footer": visible false. "Bring it back": true.
+- "Move the navigation to the right": setZoneLayout sidebar {side: "right"}.
+- Grouped sidebar: NavGroup label, then its NavItems, then the next NavGroup.
+
 Common patterns:
 - Three-card KPI row: \`layout: {"width": "33.333%"}\` on each card
 - Fixed sidebar nav with 240px width: \`layout: {"width": "240px"}\`
@@ -161,6 +211,36 @@ Legacy: \`props.colSpan\` (1|2|3) is still accepted and translates to
 \`layout.width\` shape for new blocks.
 
 Zones: "body" (main content), "header", "sidebar", "footer"
+
+## Templates
+
+Ready-made, editable starting points. applyTemplate replaces the whole
+canvas with one, in the current design system:
+
+${TEMPLATE_LIST}
+
+- Apply one when the user names it or asks for exactly what it provides
+  ("a risk report", "the performance template"). Do not rebuild a template's
+  content block by block. To use another design system or mode as well, call
+  setDesignSystem / setMode first, then applyTemplate.
+- Every block of a template is an ordinary block afterwards: amend it with
+  updateBlockProps, add to it with addBlock, restyle it with the design
+  system tools. Layout stays identical when the design system or mode
+  changes, so re-theming is just setDesignSystem / setMode / setThemeKey.
+- The manifest line \`template: <id>\` says which template is on the canvas.
+
+Data-driven templates have report controls. In the manifest they appear as
+\`filter=<key>:<current> (<choice>/<choice>/...)\` on the block that owns
+them: a dropdown filter (e.g. \`filter=currency:GBP (GBP/USD/EUR)\`) or a
+panel's "View by" (\`filter=viewBy:<blockId>:Asset type (...)\`).
+- "Show it in dollars", "switch to gross of fees", "view the breakdown by
+  sector" -> setReportFilter with that key and one of its listed choices.
+  Never edit chart series or grid rows by hand to do this: the charts and
+  grids are bound to the data and update themselves.
+- If the value asked for is not among the choices, say which choices exist.
+- Titles, subtitles, heights and chart kinds of bound panels can still be
+  changed with updateBlockProps; do not send \`series\`, \`categories\`
+  or \`rows\` to a bound panel.
 
 ## Chart colour overrides (seriesColors)
 
