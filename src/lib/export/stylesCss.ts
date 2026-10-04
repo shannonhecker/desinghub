@@ -710,7 +710,13 @@ button.tile { appearance: none; cursor: pointer; }
 /* Where the canvas draws a thumbnail of the report: a neutral block. */
 .launcher-thumb { aspect-ratio: 349 / 239; min-height: 0; overflow: hidden; border-radius: var(--radius); background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .launcher-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
-main:has(.hero-reference) { background-image: url("${ANALYTICS_WAVES}"); background-size: 100% auto; background-position: center top; background-repeat: no-repeat; }
+/* The source's wave graphic behind the hero, on its own layer, bleeding above
+   and below it as on the canvas. Dark mode: quieter waves, and the white
+   wireframe thumbnails inverted and screened into faint lines. */
+.hero-reference { position: relative; isolation: isolate; }
+.hero-reference::before { content: ""; position: absolute; z-index: -1; inset-inline: 0; top: -40px; bottom: -48px; background: url("${ANALYTICS_WAVES}") center top / 100% auto no-repeat; pointer-events: none; }
+.dashboard-layout[data-mode="dark"] .hero-reference::before { opacity: 0.85; }
+.dashboard-layout[data-mode="dark"] .launcher-thumb img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 .launcher-desc { flex: 1 1 auto; margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-muted); }
 .launcher-open { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; color: var(--accent); }
 .launcher-open:hover { text-decoration: underline; }

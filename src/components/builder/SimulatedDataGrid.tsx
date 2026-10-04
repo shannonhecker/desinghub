@@ -35,6 +35,7 @@ import {
   type GridTone,
 } from "@/lib/dataGridModel";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { GRID_HEADER_HEIGHT, GRID_ROW_HEIGHT } from "@/lib/panelMetrics";
 import { usePreviewReadOnly } from "./previewReadOnly";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -52,8 +53,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
    ══════════════════════════════════════════════════════════ */
 
 /* A dense report grid: compact rows under a compact header. */
-export const GRID_ROW_HEIGHT = 28;
-export const GRID_HEADER_HEIGHT = 30;
+export { GRID_ROW_HEIGHT, GRID_HEADER_HEIGHT };
 const ROW_HEIGHT = GRID_ROW_HEIGHT;
 const HEADER_HEIGHT = GRID_HEADER_HEIGHT;
 const FONT_SIZE = 12;
