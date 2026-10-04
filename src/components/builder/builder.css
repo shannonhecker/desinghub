@@ -10424,9 +10424,10 @@
 }
 
 /* On a phone-width frame the primary links and the account name give way
-   to the brand: a squeezed row of clipped links reads as broken. */
+   to the brand: a squeezed row of clipped links reads as broken. The
+   breakpoint is in rem: a container query cannot read a custom property. */
 .bp-header { container-type: inline-size; container-name: chrome-header; }
-@container chrome-header (max-width: 560px) {
+@container chrome-header (max-width: 35rem) {
   .dh-topnav .dh-topnav-links, .dh-topnav .dh-topnav-divider, .dh-topnav .dh-topnav-account-name { display: none; }
   .bp-header .dh-topnav, .bp-header .dh-tabstrip { padding-inline: var(--bc-gutter-narrow); gap: var(--bc-bar-gap-narrow); }
 }
@@ -10741,7 +10742,7 @@
    or focused, the subtitle goes, and on touch only Expand stays (Configure
    is in the expanded view). */
 .dh-panel { container-type: inline-size; container-name: dh-panel; }
-@container dh-panel (max-width: 340px) {
+@container dh-panel (max-width: 21.25rem) {
   .dh-panel:not(.dh-panel-expanded) .dh-panel-subtitle { display: none; }
   .dh-panel:not(.dh-panel-expanded):not(:hover):not(:focus-within) .dh-panel-tools {
     width: 0;
@@ -13874,6 +13875,7 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
 }
 @container zone-body-grid (max-width: 640px) {
   /* deepest tier: everything stacks to full / half rows */
@@ -13884,16 +13886,13 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
+  .zone-drop-body.zone-grid > [style*="--span-phone"] { grid-column: span var(--span-phone) !important; }
 }
 
 /* A block's own narrow-frame spans (LayoutProps.spanTablet / spanPhone, set
-   as custom properties by layoutResolver) win over the generic ladder. */
-@container zone-body-grid (max-width: 760px) {
-  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
-}
-@container zone-body-grid (max-width: 640px) {
-  .zone-drop-body.zone-grid > [style*="--span-phone"] { grid-column: span var(--span-phone) !important; }
-}
+   as custom properties by layoutResolver) win over the generic ladder.
+   The rules sit last inside the ladder's two tiers above. */
 
 /* Empty body zone state - visual dropzone. Now applies to
    zone-grid, zone-row, and zone-stack since the body zone's
