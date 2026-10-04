@@ -758,6 +758,34 @@ function AnalyticsHomePreview() {
   );
 }
 
+function FxExecutionPreview() {
+  return (
+    <svg {...svgProps("FX execution preview: an instrument header, a large chart with a tool rail and range chips, and a column of three panels")}>
+      <WireRect x={4} y={4} w={212} h={13} r={2} stroke />
+      <WireRect x={8} y={6.5} w={18} h={3} accent />
+      <WireRect x={30} y={7} w={46} h={1.8} />
+      <WireRect x={184} y={6} w={12} h={5} r={1.5} stroke />
+      <WireRect x={199} y={6} w={12} h={5} r={1.5} stroke />
+      <WireRect x={8} y={12.5} w={30} h={1.6} />
+      <WireRect x={42} y={12} w={22} h={2.6} r={1.3} accent />
+      <WireRect x={4} y={21} w={158} h={105} r={2} stroke />
+      {[0, 1, 2, 3].map((i) => <WireRect key={i} x={7.5} y={26 + i * 8} w={4} h={4} r={1} />)}
+      <path d="M18 92 L40 88 L58 96 L78 70 L98 76 L118 52 L138 58 L154 40" fill="none" stroke="currentColor" strokeWidth={1.2} opacity={0.75} />
+      <path d="M18 104 L60 100 L60 84 L104 84 L104 60 L154 60" fill="none" stroke="var(--ds-primary, currentColor)" strokeWidth={1} strokeDasharray="2 1.5" />
+      <WireRect x={44} y={26} w={12} h={88} />
+      <WireRect x={110} y={26} w={12} h={88} />
+      {[0, 1, 2, 3, 4].map((i) => <WireRect key={i} x={18 + i * 12} y={118} w={9} h={3.4} r={1.7} accent={i === 0} />)}
+      <WireRect x={166} y={21} w={50} h={34} r={2} stroke />
+      {[0, 1, 2, 3, 4].map((i) => <WireRect key={i} x={170} y={26 + i * 5.4} w={42} h={1.8} />)}
+      <WireRect x={166} y={59} w={50} h={27} r={2} stroke />
+      <WireGauge x={174} y={62} w={34} h={22} />
+      <WireRect x={166} y={90} w={50} h={36} r={2} stroke />
+      <circle cx={191} cy={108} r={11} fill="none" stroke="currentColor" strokeWidth={4} opacity={0.35} />
+      <path d="M191 97 A11 11 0 0 1 201 112" fill="none" stroke="var(--ds-primary, currentColor)" strokeWidth={4} />
+    </svg>
+  );
+}
+
 /* ── Registry ── */
 const PREVIEWS: Record<TemplateId, React.FC> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
@@ -777,6 +805,7 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
   "entity-comparison":     EntityComparisonPreview,
   "governance-scorecard":  GovernanceScorecardPreview,
   "analytics-home":        AnalyticsHomePreview,
+  "fx-execution":          FxExecutionPreview,
 };
 
 export function TemplatePreview({ id }: { id: TemplateId }) {

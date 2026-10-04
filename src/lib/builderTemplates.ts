@@ -32,6 +32,7 @@ import { pickImage, getImageById } from "@/lib/sampleImages";
 import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
 import { esgAnalytics, climateAnalytics, screening, screeningChangesTemplate } from "@/lib/sustainableTemplates";
 import { issuerClimate, issuerInvolvement, issuerControversies, entityComparison, governanceScorecard, analyticsHome } from "@/lib/issuerTemplates";
+import { fxExecution } from "@/lib/executionTemplates";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -451,6 +452,7 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "entity-comparison": entityComparison,
   "governance-scorecard": governanceScorecard,
   "analytics-home": analyticsHome,
+  "fx-execution": fxExecution,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
@@ -476,6 +478,7 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "entity-comparison",
   "governance-scorecard",
   "analytics-home",
+  "fx-execution",
 ];
 
 /** True when the template on the canvas pins its structural spacing across
