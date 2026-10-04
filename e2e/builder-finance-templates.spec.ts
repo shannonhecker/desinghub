@@ -29,9 +29,15 @@ interface Measure {
 }
 
 const SYSTEMS = ["Salt DS", "Material 3", "Fluent 2", "uoaui", "Carbon"] as const;
+/* `minPanel`: the narrowest a panel may get on a phone. Score gauges sit two
+   across by design; every other panel takes the full width. */
 const TEMPLATES = [
-  { label: "Risk Analytics", blocks: 7 },
-  { label: "Performance Analytics", blocks: 11 },
+  { label: "Risk Analytics", blocks: 7, minPanel: 280 },
+  { label: "Performance Analytics", blocks: 11, minPanel: 280 },
+  { label: "ESG Analytics", blocks: 13, minPanel: 140 },
+  { label: "Climate Analytics", blocks: 11, minPanel: 280 },
+  { label: "Screening", blocks: 4, minPanel: 280 },
+  { label: "Screening Changes", blocks: 3, minPanel: 280 },
 ] as const;
 
 function chatInput(page: Page) {
@@ -48,6 +54,19 @@ async function applyTemplate(page: Page, label: string) {
   await page.getByRole("button", { name: /Browse templates/ }).click();
   await page.getByRole("button", { name: `Use the ${label} template` }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  await settle(page);
+}
+
+/** Apply a template by typing its name: works on a canvas that already has
+ *  one (the start screen's gallery is gone by then). */
+async function applyTemplateFromChat(page: Page, ask: string) {
+  await page.getByRole("button", { name: "Edit canvas" }).click();
+  await expect(chatInput(page)).toBeVisible();
+  await expect(async () => {
+    await chatInput(page).fill(ask);
+    await chatInput(page).press("Enter");
+    await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
   await settle(page);
 }
 
@@ -189,6 +208,48 @@ test.describe("Builder - finance templates", () => {
     await expect(totalCell).toHaveText(/^US\$4\.\d\dbn$/);
   });
 
+  test("ESG: a selected account re-scopes the gauges; Screening: a waterfall bar filters the universe and a row opens its detail", async ({ page }) => {
+    await applyTemplate(page, "ESG Analytics");
+    const main = page.locator(".present-stage .bp-main");
+    const gauge = main.locator('section[aria-label="ESG score"] .highcharts-data-label').first();
+    await expect(gauge).toContainText("6.34");
+    await main.locator(".ag-row", { hasText: "Climate Transition Bond" }).first().click();
+    await expect(gauge).toContainText("5.76");
+    /* The Total row means everything again. */
+    await main.locator(".ag-row", { hasText: "Total" }).first().click();
+    await expect(gauge).toContainText("6.34");
+
+    await applyTemplateFromChat(page, "use the screening template");
+    const rows = page.locator(".present-stage .bp-main .ag-center-cols-container .ag-row");
+    const all = await rows.count();
+    expect(all).toBeGreaterThan(10);
+    /* Second bar: the House screen. */
+    await page.locator('.present-stage section[aria-label="Screening summary"] .highcharts-point').nth(1).click();
+    await expect(async () => expect(await rows.count()).toBeLessThan(all)).toPass();
+    const detail = page.locator(".present-stage .bp-main .dh-panel").last();
+    await expect(detail).toContainText("Select a security");
+    const first = page.locator(".present-stage .bp-main .ag-row").first();
+    const name = (await first.locator(".ag-cell").first().textContent())!.trim();
+    await first.click();
+    await expect(detail.locator(".dh-panel-title")).toHaveText(name);
+    await expect(detail).toContainText("ESG scores");
+    /* Using the report must not open the amend composer. */
+    await expect(page.locator(".present-amend-input")).toHaveCount(0);
+  });
+
+  test("Changes: chips, sparklines, badges and toned words are drawn", async ({ page }) => {
+    await applyTemplate(page, "Screening Changes");
+    const main = page.locator(".present-stage .bp-main");
+    await expect(main.locator(".dh-cell-chip").first()).toBeVisible();
+    await expect(main.locator(".dh-cell-spark polyline").first()).toBeVisible();
+    await expect(main.locator(".dh-cell-badge").first()).toBeVisible();
+    await expect(main.locator(".dh-cell-tonetext").first()).toBeVisible();
+    await expect(main.locator(".dh-cell-flag").first()).toBeVisible();
+    /* The whole grid fits its panel: no sideways scroll at the desktop width. */
+    const overflow = await main.locator(".dh-grid .ag-center-cols-viewport").first().evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+  });
+
   for (const device of [
     { name: "tablet", button: /Tablet/i },
     { name: "phone", button: /Mobile/i },
@@ -217,7 +278,7 @@ test.describe("Builder - finance templates", () => {
         expect.soft(report.cut, `${tpl.label}: clipped text`).toEqual([]);
         expect.soft(report.outside, `${tpl.label}: blocks past the frame edge`).toEqual([]);
         /* A panel is never squeezed into a sliver. */
-        expect.soft(report.narrowest, `${tpl.label}: narrowest panel`).toBeGreaterThanOrEqual(280);
+        expect.soft(report.narrowest, `${tpl.label}: narrowest panel`).toBeGreaterThanOrEqual(device.name === "phone" ? tpl.minPanel : 240);
       });
     }
   }

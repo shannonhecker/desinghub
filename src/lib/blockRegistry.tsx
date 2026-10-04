@@ -545,6 +545,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "HighchartStackedBar", label: "Stacked Bar", icon: "stacked_bar_chart", defaults: { chartType: "stacked-bar", title: "Exposure by currency" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartStackedArea", label: "Stacked Area", icon: "area_chart", defaults: { chartType: "stacked-area", title: "Allocation history" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartCombination", label: "Combination Chart", icon: "multiline_chart", defaults: { chartType: "combination", title: "Value at risk" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartWaterfall", label: "Waterfall", icon: "waterfall_chart", defaults: { chartType: "waterfall", title: "Bridge" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
@@ -632,6 +633,11 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "NavItem", label: "Nav Item", icon: "menu", defaults: { label: "New Item", icon: "chat", active: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "icon", label: "Icon", options: NAV_ICON_OPTIONS },
+  ]},
+  /* ── Record panel: the detail of the row a grid has selected ── */
+  { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "emptyText", label: "Empty text" },
   ]},
   /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
   { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {
@@ -819,6 +825,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartHeatmap: "charts",
   HighchartTreemap: "charts",
   HighchartCombination: "charts",
+  HighchartWaterfall: "charts",
   HighchartStackedBar: "charts",
   HighchartStackedArea: "charts",
 

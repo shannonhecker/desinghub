@@ -7,11 +7,11 @@
  * grid's selected row). Change a filter and every bound block re-derives.
  */
 
-import type { GridColumn, GridRow } from "../dataGridModel";
+import type { GridCell, GridColumn, GridColumnKind, GridLeafColumn, GridRow } from "../dataGridModel";
 import { applyComputed, type ComputedSpec } from "./computed";
 import { cellKey, runQuery, type FilterSpec, type MeasureSpec, type QueryResult } from "./query";
-import { GROUP_FIELD, gridField, toCategorySeries, toGrid, toParts, type MeasureDisplay } from "./shape";
-import { fieldOf, tableOf, type ReportDataset } from "./types";
+import { GROUP_FIELD, RANK_FIELD, gridField, toCategorySeries, toGrid, toParts, type MeasureDisplay } from "./shape";
+import { fieldOf, tableOf, type DataRow, type ReportDataset } from "./types";
 
 /** Canvas report state: filter values, "View by" choices, selections. */
 export type ReportState = Record<string, string>;
@@ -76,13 +76,32 @@ export interface BindingFilter {
   fallback?: string;
 }
 
+/** One column of a "records" grid: a field of the table, shown as it is. */
+export interface RecordColumn {
+  field: string;
+  label: string;
+  kind?: GridColumnKind;
+  decimals?: number;
+  compact?: boolean;
+  signed?: boolean;
+  /** A money amount: converted to the selected currency. */
+  money?: boolean;
+  width?: number;
+  minWidth?: number;
+  flex?: number;
+  pinned?: boolean;
+  cell?: GridCell;
+}
+
 export interface DataBinding {
   table: string;
   /** series: categories + series (column, bar, line, area, combination).
-   *  parts: named parts of a whole (pie, donut).
-   *  grid: columns + rows.
-   *  matrix: measures laid out as categories (periods) x series. */
-  view: "series" | "parts" | "grid" | "matrix";
+   *  parts: named parts of a whole (pie, donut, waterfall).
+   *  grid: columns + rows, aggregated by group.
+   *  matrix: measures laid out as categories (periods) x series.
+   *  records: the table's own rows, one per record, as a grid.
+   *  value: one figure over everything that passes the filters (a gauge). */
+  view: "series" | "parts" | "grid" | "matrix" | "records" | "value";
   groupBy?: Dyn<string>;
   pivotBy?: Dyn<string | null>;
   measures: MeasureSpec[];
@@ -105,18 +124,54 @@ export interface DataBinding {
   groupMinWidth?: number;
   /** Grid: wrap display measures under group headers (e.g. one per period). */
   columnGroups?: { header: string; keys: string[] }[];
-  /** Grid: clicking a row stores its label in this report state. */
+  /** Clicking a grid row or a chart point stores its label in this report
+   *  state; clicking it again (or one of `selectClears`) clears it. */
   selectState?: string;
+  /** Labels whose selection means "nothing selected" (a Total row, the first
+   *  step of a waterfall). */
+  selectClears?: string[];
+  /** Grid: number the rows in a narrow first column. */
+  rank?: boolean;
+  /** records: the columns, in order. The first one labels the row. */
+  records?: RecordColumn[];
+  /** parts: keep zero and negative parts (a waterfall's steps down). */
+  signedParts?: boolean;
+  /** parts: add a closing part that shows the running total. */
+  sumPart?: string;
   /** matrix: category labels, and for each series the measure key per category. */
   matrix?: { categories: string[]; series: { name: string; keys: string[]; style?: SeriesStyle }[] };
   /** parts: show the grand total of this measure in the middle of a donut. */
   centerMeasure?: string;
 }
 
+/** A selection a bound block can make: the state it writes, the current
+ *  value, and the labels that clear it. */
+export interface BoundSelection {
+  selectState?: string;
+  selected?: string;
+  selectClears?: string[];
+}
+
 export type BoundData =
-  | { view: "series"; categories: string[]; series: { name: string; data: (number | null)[]; type?: SeriesStyle["type"]; yAxis?: 0 | 1; dashStyle?: SeriesStyle["dashStyle"] }[] }
-  | { view: "parts"; seriesData: { name: string; y: number }[]; centerValue: number | null }
-  | { view: "grid"; columns: GridColumn[]; rows: GridRow[]; selectState?: string; selected?: string };
+  | ({ view: "series"; categories: string[]; series: { name: string; data: (number | null)[]; type?: SeriesStyle["type"]; yAxis?: 0 | 1; dashStyle?: SeriesStyle["dashStyle"] }[] } & BoundSelection)
+  | ({ view: "parts"; seriesData: { name: string; y: number; isSum?: boolean }[]; centerValue: number | null; /** The centre value is money (shown in the selected currency). */ centerMoney?: boolean } & BoundSelection)
+  | ({ view: "grid"; columns: GridColumn[]; rows: GridRow[] } & BoundSelection)
+  | { view: "value"; value: number | null };
+
+/** How a donut's centre total is written: money in the selected currency,
+ *  anything else as a compact number. */
+export function centerColumn(money: boolean | undefined, currency: string | undefined): GridLeafColumn {
+  return money
+    ? { field: "", header: "", kind: "currency", compact: true, currency }
+    : { field: "", header: "", kind: "number", compact: true, decimals: 2 };
+}
+
+/** What a click on `label` should store: null clears the selection (the
+ *  same label again, or a label that means "everything"). */
+export function nextSelection(bound: BoundSelection, label: string): string | null {
+  if (!label || label === bound.selected || bound.selectClears?.includes(label)) return null;
+  return label;
+}
 
 /** State key holding the selected currency code. */
 export const CURRENCY_STATE = "currency";
@@ -148,6 +203,14 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     const field = dyn(f.field, state);
     if (!fieldOf(table, field)) continue;
     filters.push({ field, in: [value] });
+  }
+
+  const selection: BoundSelection = binding.selectState
+    ? { selectState: binding.selectState, selected: state[binding.selectState], ...(binding.selectClears ? { selectClears: binding.selectClears } : {}) }
+    : {};
+
+  if (binding.view === "records") {
+    return { view: "grid", ...recordsGrid(binding, table.rows, filters, dataset, state), ...selection };
   }
 
   const adjustments = (binding.adjustments ?? []).filter((a) => active(a, state));
@@ -203,23 +266,32 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     };
   }
 
+  if (binding.view === "value") {
+    const key = shown[0]?.key ?? result.measures[0];
+    const v = (result.total ?? result.cells[0] ?? {})[cellKey(null, key)];
+    return { view: "value", value: v === null || v === undefined ? null : Number(v.toFixed(4)) };
+  }
+
   if (binding.view === "parts") {
     const key = shown[0]?.key ?? result.measures[0];
     const center = binding.centerMeasure ? (result.total?.[cellKey(null, binding.centerMeasure)] ?? null) : null;
-    return { view: "parts", seriesData: toParts(result, key), centerValue: center };
+    const parts: { name: string; y: number; isSum?: boolean }[] = binding.signedParts
+      ? result.groups.flatMap((name, i) => {
+          const v = result.cells[i][cellKey(null, key)];
+          return v === null || v === undefined ? [] : [{ name, y: Number(v.toFixed(4)) }];
+        })
+      : toParts(result, key);
+    if (binding.sumPart) parts.push({ name: binding.sumPart, y: 0, isSum: true });
+    const centerMoney = Boolean(binding.centerMeasure && shown.find((m) => m.key === binding.centerMeasure)?.money);
+    return { view: "parts", seriesData: parts, centerValue: center, ...(centerMoney ? { centerMoney: true } : {}), ...selection };
   }
 
   if (binding.view === "grid") {
     const header = binding.groupHeader !== undefined ? dyn(binding.groupHeader, state) : (groupBy ? (fieldOf(table, groupBy)?.label ?? groupBy) : "");
     const withTotal: QueryResult = binding.total ? result : { ...result, total: undefined };
-    const grid = toGrid(withTotal, shown, { groupHeader: header, totalLabel: binding.total, groupWidth: binding.groupWidth, groupMinWidth: binding.groupMinWidth });
+    const grid = toGrid(withTotal, shown, { groupHeader: header, totalLabel: binding.total, groupWidth: binding.groupWidth, groupMinWidth: binding.groupMinWidth, rank: binding.rank });
     const columns = binding.columnGroups && result.pivots.length === 0 ? groupColumns(grid.columns, binding.columnGroups) : grid.columns;
-    return {
-      view: "grid",
-      columns,
-      rows: grid.rows,
-      ...(binding.selectState ? { selectState: binding.selectState, selected: state[binding.selectState] } : {}),
-    };
+    return { view: "grid", columns, rows: grid.rows, ...selection };
   }
 
   /* series */
@@ -229,7 +301,63 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     view: "series",
     categories: cs.categories,
     series: cs.series.map((s) => ({ ...s, ...(result.pivots.length === 0 ? styleByName.get(s.name) : undefined) })),
+    ...selection,
   };
+}
+
+/** A "records" grid: the table's rows that pass the filters, sorted and cut,
+ *  one row per record, with the binding's columns. */
+function recordsGrid(
+  binding: DataBinding,
+  rows: DataRow[],
+  filters: FilterSpec[],
+  dataset: ReportDataset,
+  state: ReportState,
+): { columns: GridColumn[]; rows: GridRow[] } {
+  const cols = binding.records ?? [];
+  const currency = state[CURRENCY_STATE] ?? dataset.baseCurrency;
+  const rate = currencyRate(dataset, currency);
+  let kept = rows.filter((r) => filters.every((f) => f.in.length === 0 || f.in.includes(r[f.field] as never)));
+  if (binding.sort) {
+    const { by, dir } = binding.sort;
+    const sign = dir === "asc" ? 1 : -1;
+    kept = [...kept].sort((a, b) => {
+      const x = a[by];
+      const y = b[by];
+      if (typeof x === "number" && typeof y === "number") return (x - y) * sign;
+      return String(x ?? "").localeCompare(String(y ?? "")) * sign;
+    });
+  }
+  if (binding.limit) kept = kept.slice(0, binding.limit);
+
+  const leaves: GridLeafColumn[] = cols.map((c, i) => ({
+    field: c.field,
+    header: c.label,
+    ...(c.kind ? { kind: c.kind } : {}),
+    ...(c.decimals !== undefined ? { decimals: c.decimals } : {}),
+    ...(c.compact ? { compact: true } : {}),
+    ...(c.signed ? { signed: true } : {}),
+    ...(c.money ? { currency } : {}),
+    ...(c.width ? { width: c.width } : {}),
+    ...(c.minWidth ? { minWidth: c.minWidth } : {}),
+    ...(c.flex ? { flex: c.flex } : i === 0 && !c.width ? { flex: 2 } : {}),
+    ...(c.pinned ? { pinned: true } : {}),
+    ...(c.cell ? { cell: c.cell } : {}),
+  }));
+  /* Fields a cell reads besides its own (a delta's sparkline). */
+  const extra = cols.flatMap((c) => (c.cell?.type === "delta" && c.cell.sparkField ? [c.cell.sparkField] : []));
+  const gridRows: GridRow[] = kept.map((r, i) => {
+    const row: GridRow = binding.rank ? { [RANK_FIELD]: i + 1 } : {};
+    for (const c of cols) {
+      const v = r[c.field];
+      row[c.field] = c.money && typeof v === "number" ? Number((v * rate).toFixed(4)) : v;
+    }
+    for (const f of extra) row[f] = r[f];
+    return row;
+  });
+  const columns: GridColumn[] = binding.columnGroups ? groupColumns(leaves, binding.columnGroups) : leaves;
+  if (binding.rank) columns.unshift({ field: RANK_FIELD, header: "#", kind: "number", decimals: 0, width: 48, cell: { type: "rank" } });
+  return { columns, rows: gridRows };
 }
 
 /** Wrap flat measure columns under group headers; columns not named by any

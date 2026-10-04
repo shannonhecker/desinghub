@@ -433,6 +433,160 @@ function PerformanceAnalyticsPreview() {
   );
 }
 
+/* Shared chrome for the Sustainable Investment wireframes: the two-bar
+   header, the section's grouped sidebar, and the page title. The body starts
+   at x=42. */
+function SustainableChrome({ active, filters = 0 }: { active: number; filters?: number }) {
+  return (
+    <>
+      <WireRect x={4} y={4} w={212} h={7} r={2} stroke />
+      <WireRect x={8} y={6.5} w={3} h={2.4} accent />
+      <WireRect x={13} y={6.8} w={20} h={1.8} />
+      <WireRect x={8} y={12.6} w={9} h={1.6} />
+      <WireRect x={21} y={12.6} w={10} h={1.6} />
+      <WireRect x={35} y={12.6} w={18} h={1.6} accent />
+      {/* Sidebar: two groups of two pages. */}
+      <WireRect x={4} y={17} w={32} h={109} r={2} stroke />
+      {[0, 1, 2, 3].map((i) => {
+        const y = 26 + i * 6 + (i > 1 ? 9 : 0);
+        return <WireRect key={i} x={9} y={y} w={i === active ? 20 : 16} h={2} accent={i === active} />;
+      })}
+      <WireRect x={9} y={21} w={10} h={1.4} />
+      <WireRect x={9} y={42} w={12} h={1.4} />
+      {/* Context row. */}
+      <WireRect x={42} y={18} w={40} h={4} accent />
+      {Array.from({ length: filters }, (_, i) => (
+        <WireRect key={i} x={216 - (filters - i) * 30 + 4} y={17} w={26} h={6} r={1.5} stroke />
+      ))}
+    </>
+  );
+}
+
+/* A half-dome gauge in a small panel. */
+function WireGauge({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  const cx = x + w / 2;
+  const cy = y + h - 5;
+  const r = Math.min(w / 2 - 5, h - 10);
+  return (
+    <>
+      <WireRect x={x} y={y} w={w} h={h} r={2} stroke />
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={MUTED} strokeWidth={2.6} />
+      <path d={`M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r * 0.3} ${cy - r * 0.95}`} fill="none" stroke={ACCENT} strokeWidth={2.6} />
+    </>
+  );
+}
+
+/* ── 8. ESG Analytics ── summary grid, four gauges and a distribution, a
+   breakdown grid beside a trend, two rankings. */
+function EsgAnalyticsPreview() {
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ESG analytics preview: a summary grid, four score gauges, a rating distribution, a trend chart and two rankings">
+      <SustainableChrome active={0} filters={2} />
+      <WireGrid x={42} y={26} w={174} h={24} rows={4} />
+      {[0, 1, 2, 3].map((i) => <WireGauge key={i} x={42 + i * 29.5} y={53} w={27} h={22} />)}
+      <WireRect x={160} y={53} w={56} h={22} r={2} stroke />
+      {[4, 7, 12, 9, 5, 3].map((v, i) => <WireRect key={i} x={166 + i * 8} y={72 - v} w={4} h={v} accent={i < 3} />)}
+      <WireGrid x={42} y={78} w={85} h={22} rows={4} />
+      <WireRect x={131} y={78} w={85} h={22} r={2} stroke />
+      {[6, 8, 9, 11, 12].map((v, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={137 + i * 15} y={97 - v} w={3} h={v} accent />
+          <WireRect x={141 + i * 15} y={97 - v * 0.8} w={3} h={v * 0.8} />
+        </React.Fragment>
+      ))}
+      <WireGrid x={42} y={103} w={85} h={23} rows={4} />
+      <WireGrid x={131} y={103} w={85} h={23} rows={4} />
+    </svg>
+  );
+}
+
+/* ── 9. Climate Analytics ── summary grid, four charts across, a breakdown
+   grid beside a donut, a ranking beside a column chart. */
+function ClimateAnalyticsPreview() {
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Climate analytics preview: a summary grid, four emissions charts, a breakdown grid, a donut and a ranking">
+      <SustainableChrome active={1} filters={1} />
+      <WireGrid x={42} y={26} w={174} h={24} rows={4} />
+      {[0, 1, 2, 3].map((i) => <WireRect key={i} x={42 + i * 44.5} y={53} w={40.5} h={24} r={2} stroke />)}
+      {[16, 12, 9, 6].map((v, i) => <WireRect key={i} x={46} y={58 + i * 4.2} w={v} h={2.2} accent />)}
+      {[10, 14, 8, 5].map((v, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={92 + i * 8} y={74 - v} w={4} h={v * 0.5} accent />
+          <WireRect x={92 + i * 8} y={74 - v * 0.5} w={4} h={v * 0.5} />
+        </React.Fragment>
+      ))}
+      {[13, 9, 7, 4].map((v, i) => <WireRect key={i} x={137 + i * 8} y={74 - v} w={4} h={v} />)}
+      <circle cx={196} cy={65} r={7} fill="none" stroke={MUTED} strokeWidth={3} />
+      <path d="M 196 58 A 7 7 0 0 1 202.6 67.4" fill="none" stroke={ACCENT} strokeWidth={3} />
+      <WireGrid x={42} y={80} w={100} h={22} rows={4} />
+      <WireRect x={146} y={80} w={70} h={22} r={2} stroke />
+      <circle cx={181} cy={91} r={7} fill="none" stroke={MUTED} strokeWidth={3} />
+      <path d="M 181 84 A 7 7 0 1 1 174.6 93.4" fill="none" stroke={ACCENT} strokeWidth={3} />
+      <WireGrid x={42} y={105} w={85} h={21} rows={4} />
+      <WireRect x={131} y={105} w={85} h={21} r={2} stroke />
+      {[15, 12, 10, 8, 7, 5, 4, 3].map((v, i) => <WireRect key={i} x={137 + i * 9.4} y={123 - v} w={5} h={v} accent={i < 2} />)}
+    </svg>
+  );
+}
+
+/* ── 10. Screening ── a waterfall over a universe grid and a detail panel. */
+function ScreeningPreview() {
+  const steps: [top: number, height: number][] = [[34, 24], [34, 8], [42, 5], [47, 4], [51, 3], [54, 4]];
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Screening preview: a screening waterfall, the security universe grid and a security detail panel">
+      <SustainableChrome active={2} />
+      <WireRect x={42} y={26} w={174} h={38} r={2} stroke />
+      <WireRect x={46} y={29.5} w={34} h={2.5} accent />
+      {steps.map(([top, height], i) => <WireRect key={i} x={52 + i * 27} y={top} w={14} h={height} accent={i === 0 || i === steps.length - 1} />)}
+      <WireGrid x={42} y={68} w={114} h={58} rows={9} />
+      <WireRect x={160} y={68} w={56} h={58} r={2} stroke />
+      <WireRect x={164} y={71.5} w={28} h={2.5} accent />
+      {[0, 1, 2].map((i) => (
+        <React.Fragment key={i}>
+          <WireRect x={164} y={79 + i * 7} w={14} h={1.6} />
+          <WireRect x={190} y={79 + i * 7} w={18} h={1.6} />
+        </React.Fragment>
+      ))}
+      <path d="M 164 120 L 172 114 L 180 116 L 188 109 L 196 111 L 204 105 L 212 107" stroke={ACCENT} strokeWidth={1.2} fill="none" />
+    </svg>
+  );
+}
+
+/* ── 11. Screening Changes ── a wide change grid with chips and sparklines,
+   beside the detail panel. */
+function ScreeningChangesPreview() {
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Screening changes preview: a change grid with chips, sparklines and badges, and a security detail panel">
+      <SustainableChrome active={3} />
+      <WireRect x={42} y={26} w={114} h={100} r={2} stroke />
+      <WireRect x={46} y={29.5} w={26} h={2.5} accent />
+      <WireRect x={46} y={36} w={106} h={2.5} />
+      {Array.from({ length: 12 }, (_, i) => {
+        const y = 43 + i * 6.6;
+        return (
+          <React.Fragment key={i}>
+            <WireRect x={46} y={y} w={30} h={1.6} />
+            <WireRect x={82} y={y - 1} w={9} h={3.4} r={1.7} accent={i % 3 === 0} />
+            <WireRect x={95} y={y - 1} w={9} h={3.4} r={1.7} />
+            <path d={`M 110 ${y + 1.4} l 4 -1.6 l 4 1 l 4 -2 l 4 0.8`} stroke={i % 2 ? MUTED : ACCENT} strokeWidth={0.9} fill="none" />
+            <circle cx={136} cy={y + 0.8} r={2.2} fill="none" stroke={i % 4 === 1 ? ACCENT : MUTED} strokeWidth={0.9} />
+            <circle cx={144} cy={y + 0.8} r={2.2} fill="none" stroke={MUTED} strokeWidth={0.9} />
+          </React.Fragment>
+        );
+      })}
+      <WireRect x={160} y={26} w={56} h={100} r={2} stroke />
+      <WireRect x={164} y={29.5} w={28} h={2.5} accent />
+      {[0, 1, 2, 3, 4].map((i) => (
+        <React.Fragment key={i}>
+          <WireRect x={164} y={38 + i * 8} w={14} h={1.6} />
+          <WireRect x={190} y={38 + i * 8} w={18} h={1.6} />
+        </React.Fragment>
+      ))}
+      <path d="M 164 112 L 172 104 L 180 107 L 188 98 L 196 101 L 204 93 L 212 96" stroke={ACCENT} strokeWidth={1.2} fill="none" />
+    </svg>
+  );
+}
+
 /* ── Registry ── */
 const PREVIEWS: Record<TemplateId, React.FC> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
@@ -442,6 +596,10 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
   "landing-page":        LandingPagePreview,
   "risk-analytics":        RiskAnalyticsPreview,
   "performance-analytics": PerformanceAnalyticsPreview,
+  "esg-analytics":         EsgAnalyticsPreview,
+  "climate-analytics":     ClimateAnalyticsPreview,
+  "screening":             ScreeningPreview,
+  "screening-changes":     ScreeningChangesPreview,
 };
 
 export function TemplatePreview({ id }: { id: TemplateId }) {

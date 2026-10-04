@@ -22,9 +22,8 @@
  */
 
 import { useBuilder } from "@/store/useBuilder";
-import { exportReact } from "./reactExporter";
+import { exportReact, exportStylesCss, exportUsesCharts } from "./reactExporter";
 import { collectImports, type SystemId } from "@/lib/componentApiRegistry";
-import { buildStylesCss } from "./stylesCss";
 
 const PROJECT_NAME = "design-hub-app";
 
@@ -463,7 +462,8 @@ function hasChartBlocks(types: string[]): boolean {
 function buildProjectFiles(): ProjectFile[] {
   const state = useBuilder.getState();
   const allTypes = canvasBlockTypes();
-  const hasCharts = hasChartBlocks(allTypes);
+  /* A record panel's trend line needs Highcharts too. */
+  const hasCharts = hasChartBlocks(allTypes) || exportUsesCharts();
 
   const files: ProjectFile[] = [
     { path: "package.json",     contents: packageJson(state.designSystem, allTypes, hasCharts) },
@@ -474,7 +474,7 @@ function buildProjectFiles(): ProjectFile[] {
     { path: "src/main.tsx",     contents: MAIN_TSX },
     { path: "src/App.tsx",      contents: appTsxSource() },
     /* Per-DS token block (official values, builder mode) + fallback primitives. */
-    { path: "src/styles.css",   contents: buildStylesCss(state.designSystem as SystemId, state.mode === "dark" ? "dark" : "light") },
+    { path: "src/styles.css",   contents: exportStylesCss() },
   ];
 
   /* uoaui ships no JS package — reactExporter emits `import "./uoaui-theme.css"`,

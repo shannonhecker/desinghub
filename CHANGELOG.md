@@ -6,6 +6,54 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-04 finance templates, slice 2: Sustainable Investment (`feat/finance-templates-slice-2`, stacked on slice 1)
+
+Four more client reports as builder templates. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-2-design.md`.
+
+#### Added
+- **ESG Analytics, Climate Analytics, Screening, Screening Changes.** One
+  block list each, bound to a new sample dataset (`sustainable`: about 36
+  securities with scores, emissions, ratings and monthly trends). Measured:
+  every panel at the same position and size (0px difference) in all five
+  design systems, light and dark; Edit matches Present; nothing clipped on
+  tablet or phone. They share the finance header and add the section's
+  grouped sidebar.
+- **Selections that scope the page.** A row of the ESG or Climate summary
+  re-scopes the gauges, charts and rankings; a bar of the Screening waterfall
+  filters the universe grid; a row of a security grid opens its detail.
+- **Rich grid cells, described as data** (`GridCell`): heat tint by bucket,
+  bar, delta chip, arrow delta with a sparkline, sparkline, rating badge,
+  toned word, country flag, rank. Tones (good / mid / bad / neutral / accent)
+  resolve to each design system's status colours.
+- **Charts.** `waterfall`; a score gauge (its own scale and decimals, larger
+  in a panel); per-point colours by position or by name; selectable points
+  that dim the rest; wrapped category labels.
+- **Record Detail block.** The selected row of a grid as label/value pairs,
+  small tables with direction arrows and a trend line; a fixed panel, so the
+  page keeps its geometry whether or not something is selected.
+- **Bindings.** `records` (a table's own rows as a grid), `value` (one
+  figure, for a gauge), signed parts with a closing sum, ranked grids, and
+  selections made from a chart.
+- Chat: the four templates by name; gallery thumbnails.
+- **Export.** React, HTML and Vite exports carry the rich cells, the
+  waterfall, the score gauges, point colours, the record detail and the
+  sidebar. The HTML export lists a waterfall's steps with a running total and
+  writes a gauge as "6.34 of 10".
+
+#### Fixed
+- A gauge's track drew black when the primary colour was not a hex string.
+- A panel title beside a "View by" select lost a fraction of a pixel and was
+  ellipsised although it fitted.
+- A selectable chart or grid no longer selects its block while presenting.
+
+#### Different from the source reports (see the design note)
+- Data is real, not staged: a selection filters the same rows the grids show,
+  so figures do not match the source screens digit for digit.
+- The security detail is a fixed panel, not a rail that pushes in.
+- Screening's filter side panel and the controls that do nothing in the
+  source (period dropdowns, download, overflow menus) are left out.
+
 ### 2026-10-04 finance templates, slice 1: Risk and Performance (`feat/finance-templates-slice-1`, stacked on the trust fixes)
 
 Two analytics reports become builder templates, built from builder blocks only

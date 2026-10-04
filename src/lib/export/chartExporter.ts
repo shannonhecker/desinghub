@@ -22,6 +22,7 @@ import type { Block } from "@/store/useBuilder";
 import { CATEGORICAL_PALETTES } from "@/lib/categoricalPalettes";
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { panelHeightOf } from "@/lib/panelMetrics";
+import { GRID_TONES } from "@/lib/dataGridModel";
 import { JSX_DIALECT, framedChartHeight, panelLines, panelSpecOf } from "./reportMarkup";
 
 /* ── Chart block types (SimulatedChart + the 12 original Highchart* blocks) ── */
@@ -49,6 +50,7 @@ export const REPORT_CHART_BLOCK_TYPES = new Set<string>([
   "HighchartStackedBar",
   "HighchartStackedArea",
   "HighchartCombination",
+  "HighchartWaterfall",
 ]);
 
 export function isChartBlock(type: string): boolean {
@@ -86,7 +88,13 @@ function attr(value: unknown): string {
  * title and takes the height the frame leaves. The result is then several
  * lines (un-indented; the caller indents).
  */
-export function chartBlockJsx(block: Block, mode: "light" | "dark" = "light"): string {
+export function chartBlockJsx(
+  block: Block,
+  mode: "light" | "dark" = "light",
+  /* hideTitle: drop the in-chart title of an unframed chart (a chart drawn
+     inside another block's panel, e.g. a record panel's trend). */
+  opts: { hideTitle?: boolean } = {},
+): string {
   const p = block.props ?? {};
   const type = chartTypeOf(block);
   const title = p.title;
@@ -111,14 +119,23 @@ export function chartBlockJsx(block: Block, mode: "light" | "dark" = "light"): s
      such as "{value}%" holds braces. */
   const height = framed ? framedChartHeight(block) : p.height != null ? panelHeightOf(p) : undefined;
   if (height !== undefined) parts.push(`height={${height}}`);
-  if (framed) parts.push("hideTitle");
+  if (framed || opts.hideTitle) parts.push("hideTitle");
   for (const key of ["yAxisFormat", "yAxisTitle", "secondaryAxisFormat", "secondaryAxisTitle", "centerLabel", "valueSuffix"] as const) {
-    const text = cleanLabel(p[key]);
+    /* A suffix keeps its own spacing (" tCO2e"): it is appended to a number. */
+    const text = key === "valueSuffix" ? suffixLabel(p[key]) : cleanLabel(p[key]);
     if (text !== null) parts.push(`${key}={${jsLiteral(text)}}`);
   }
   if (p.legend === false) parts.push("legend={false}");
   if (isFiniteNumber(p.yAxisMax)) parts.push(`yAxisMax={${p.yAxisMax}}`);
   if (isFiniteNumber(p.valueDecimals)) parts.push(`valueDecimals={${Math.max(0, Math.min(10, Math.round(p.valueDecimals)))}}`);
+  /* Point-level settings (mirrors HighchartBlockRenderer): the gauge's scale,
+     wrapped category labels, per-point colours and the selected point. */
+  const points = chartPointSettingsOf(block);
+  if (points.valueMax !== undefined) parts.push(`valueMax={${points.valueMax}}`);
+  if (points.labelWrap) parts.push("labelWrap");
+  if (points.pointColors) parts.push(`pointColors={${jsLiteral(points.pointColors)}}`);
+  if (points.pointColorsByName) parts.push(`pointColorsByName={${jsLiteral(points.pointColorsByName)}}`);
+  if (points.selected !== undefined) parts.push(`selected={${jsLiteral(points.selected)}}`);
   const chart = `<ChartBlock ${parts.join(" ")} />`;
   if (!framed) return chart;
   return panelLines(JSX_DIALECT, panelSpecOf(block), [chart]).join("\n");
@@ -142,8 +159,22 @@ export interface ChartSeriesData {
 export interface ChartBlockData {
   categories?: string[];
   series?: ChartSeriesData[];
-  seriesData?: { name: string; y: number }[];
+  /* isSum: a waterfall step that shows the running total. */
+  seriesData?: { name: string; y: number; isSum?: true }[];
   colors?: string[];
+}
+
+/** The point-level settings a chart block can carry. */
+export interface ChartPointSettings {
+  /* Gauge: the top of its scale. */
+  valueMax?: number;
+  labelWrap?: boolean;
+  /* A tone name ("good" | "mid" | "bad" | "neutral" | "accent"), which the
+     exported helper resolves against its theme, or a CSS colour. */
+  pointColors?: string[];
+  pointColorsByName?: Record<string, string>;
+  /* Name of the selected point (from the chart's binding; materialise.ts). */
+  selected?: string;
 }
 
 const MAX_CHART_ITEMS = 200;
@@ -160,6 +191,55 @@ function cleanLabel(v: unknown): string | null {
   const t = v.trim();
   if (!t) return null;
   return t.slice(0, MAX_LABEL_LENGTH);
+}
+/** A value suffix: like cleanLabel, but its own spacing is kept. */
+function suffixLabel(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v.slice(0, MAX_LABEL_LENGTH) : null;
+}
+
+const CSS_COLOR_RE = /^(?:[a-zA-Z]{3,30}|(?:rgb|hsl)a?\([0-9\s.,%/-]{1,60}\))$/;
+/** A point colour: a tone name, a hex colour, a named colour or an rgb() /
+ *  hsl() value. Anything else is dropped (the point keeps its own colour). */
+function cleanPointColor(v: unknown): string {
+  if (typeof v !== "string") return "";
+  const t = v.trim();
+  return (GRID_TONES as readonly string[]).includes(t) || HEX_COLOR_RE.test(t) || CSS_COLOR_RE.test(t) ? t : "";
+}
+
+export function chartPointSettingsOf(block: Block): ChartPointSettings {
+  const props = block.props ?? {};
+  const out: ChartPointSettings = {};
+  if (isFiniteNumber(props.valueMax) && props.valueMax > 0) out.valueMax = props.valueMax;
+  if (props.labelWrap === true) out.labelWrap = true;
+  if (Array.isArray(props.pointColors)) {
+    /* Position-indexed: holes stay as "" so slot N still maps to point N. */
+    const colors = props.pointColors.slice(0, MAX_CHART_ITEMS).map(cleanPointColor);
+    if (colors.some(Boolean)) out.pointColors = colors;
+  }
+  if (props.pointColorsByName && typeof props.pointColorsByName === "object" && !Array.isArray(props.pointColorsByName)) {
+    const byName: Record<string, string> = {};
+    for (const [rawName, rawColor] of Object.entries(props.pointColorsByName as Record<string, unknown>).slice(0, MAX_CHART_ITEMS)) {
+      const name = cleanLabel(rawName);
+      const color = cleanPointColor(rawColor);
+      if (name !== null && color) byName[name] = color;
+    }
+    if (Object.keys(byName).length) out.pointColorsByName = byName;
+  }
+  const selected = cleanLabel(props.selectedPoint);
+  if (selected !== null) out.selected = selected;
+  return out;
+}
+
+/** True when a chart block needs the extended chart helper: the waterfall
+ *  type, the score / framed gauge, wrapped labels, per-point colours or a
+ *  selected point. A canvas with none of these gets the helper as it was. */
+export function usesExtendedChart(block: Block): boolean {
+  if (!isChartBlock(block.type)) return false;
+  const p = block.props ?? {};
+  const type = chartTypeOf(block);
+  if (type === "waterfall") return true;
+  if (type === "gauge" && (p.panel === true || isFiniteNumber(p.valueDecimals) || suffixLabel(p.valueSuffix) !== null)) return true;
+  return Object.keys(chartPointSettingsOf(block)).length > 0;
 }
 
 export function chartDataOf(block: Block): ChartBlockData {
@@ -191,13 +271,15 @@ export function chartDataOf(block: Block): ChartBlockData {
   }
 
   if (Array.isArray(props.seriesData)) {
-    const points: { name: string; y: number }[] = [];
+    const waterfall = chartTypeOf(block) === "waterfall";
+    const points: { name: string; y: number; isSum?: true }[] = [];
     for (const d of props.seriesData.slice(0, MAX_CHART_ITEMS)) {
       if (typeof d !== "object" || d === null) continue;
       const r = d as Record<string, unknown>;
       const name = cleanLabel(r.name);
       if (name === null || !isFiniteNumber(r.y)) continue;
-      points.push({ name, y: r.y });
+      /* Only a waterfall reads isSum (its closing bar). */
+      points.push(r.isSum === true && waterfall ? { name, y: r.y, isSum: true } : { name, y: r.y });
     }
     if (points.length) out.seriesData = points;
   }
@@ -240,16 +322,153 @@ export function chartImports(): string[] {
    Standalone ChartBlock component source (returned as a string)
    ═══════════════════════════════════════════════════════════ */
 
+/* ── Extended helper parts ──
+   Spliced into the helper only when the canvas uses them (usesExtendedChart),
+   so a canvas without a waterfall, a score gauge, per-point colours or a
+   selected point gets the helper exactly as it was. Ports of the same code in
+   SimulatedHighchart.tsx (chartOptions "waterfall" / "gauge", applyPointStyling,
+   themePointColor). No template literals inside: this is source text. */
+
+const EXT_PROPS = `  /* Gauge: the top of its scale (default 100, shown as a percentage). */
+  valueMax?: number;
+  /* Wrap long category labels instead of rotating them. */
+  labelWrap?: boolean;
+  /* One colour per point of the first series. A tone name - "good", "mid",
+     "bad", "neutral", "accent" - follows the theme; anything else is a CSS
+     colour. "" keeps the point's own colour. */
+  pointColors?: string[];
+  /* The same, by point name. */
+  pointColorsByName?: Record<string, string>;
+  /* Name of the selected point; the others are dimmed. */
+  selected?: string;
+`;
+
+const EXT_WATERFALL_CASE = `    /* Steps that add to or take from a running total, then a sum bar. A part
+       flagged isSum shows the running total at that point. */
+    case "waterfall": {
+      const steps: ChartPoint[] = props.seriesData && props.seriesData.length ? props.seriesData : [
+        { name: "Opening", y: 1200 },
+        { name: "New", y: 340 },
+        { name: "Churn", y: -180 },
+        { name: "Expansion", y: 120 },
+        { name: "Closing", y: 0, isSum: true },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, type: "waterfall" },
+        title: { ...tt, text: props.title || "Bridge" },
+        xAxis: { ...tx, type: "category", categories: steps.map((s) => s.name) },
+        legend: { enabled: false },
+        series: [{
+          name: props.title || "Value",
+          type: "waterfall",
+          data: steps.map((s) => (s.isSum ? { name: s.name, isSum: true } : { name: s.name, y: s.y })),
+          lineWidth: 1,
+          lineColor: v.border,
+          dashStyle: "Dot",
+          borderWidth: 0,
+          dataLabels: {
+            enabled: true,
+            inside: false,
+            style: { fontSize: "11px", fontWeight: "500", color: v.fgSec, textOutline: "none" },
+          },
+        }],
+      };
+    }
+`;
+
+const EXT_FUNCTIONS = `/* A point colour: a tone name resolved against the theme, or a CSS colour. */
+function themePointColor(color: string, v: ReturnType<typeof chartTheme>): string {
+  switch (color) {
+    case "good": return v.positive;
+    case "mid": return v.warning;
+    case "bad": return v.negative;
+    case "accent": return v.primary;
+    case "neutral": return v.fgTer;
+    default: return color;
+  }
+}
+
+/* Opacity of the points that are not the selected one. */
+const DIMMED_POINT_OPACITY = 0.28;
+
+/* Per-point colours and selection for the first series: every point gets an
+   explicit colour (from pointColors / pointColorsByName, else the palette or
+   series colour), dimmed when another point is selected. */
+function applyPointStyling(o: any, v: ReturnType<typeof chartTheme>, props: ChartProps, colorByPoint: boolean) {
+  const series = o.series && o.series[0];
+  if (!series || !Array.isArray(series.data)) return;
+  const byIndex = props.pointColors ?? [];
+  const byName = props.pointColorsByName ?? {};
+  if (!byIndex.some(Boolean) && !props.selected && Object.keys(byName).length === 0) return;
+  const palette: string[] = (o.colors ?? []).filter(Boolean);
+  const categories: string[] = (o.xAxis && !Array.isArray(o.xAxis) && o.xAxis.categories) || [];
+  series.data = series.data.map((point: any, i: number) => {
+    const obj = point !== null && typeof point === "object" && !Array.isArray(point) ? { ...point } : { y: point };
+    const name = String(obj.name ?? categories[i] ?? "");
+    const own = byIndex[i] || byName[name];
+    const base = own
+      ? themePointColor(own, v)
+      : obj.color ?? (colorByPoint ? palette[i % Math.max(1, palette.length)] : series.color ?? palette[0]) ?? v.primary;
+    const dimmed = Boolean(props.selected) && name !== props.selected;
+    return { ...obj, color: dimmed ? Highcharts.color(base).setOpacity(DIMMED_POINT_OPACITY).get("rgba") : base };
+  });
+}
+
+/* The gauge's scale and reading. A score gauge names its own scale
+   (valueMax: 10) and decimals; with neither it is the percentage dial. In a
+   framed panel the dome uses the room the title would have taken. */
+function applyGaugeSettings(o: any, v: ReturnType<typeof chartTheme>, props: ChartProps) {
+  const max = props.valueMax ?? 100;
+  const suffix = props.valueSuffix ?? (props.valueMax === undefined ? "%" : "");
+  const number = props.valueDecimals !== undefined ? "{y:." + props.valueDecimals + "f}" : "{y}";
+  const framed = Boolean(props.hideTitle);
+  o.tooltip = { enabled: false };
+  o.pane = {
+    ...o.pane,
+    center: ["50%", framed ? "80%" : "70%"],
+    size: framed ? "125%" : "100%",
+    /* The track: a wash of the text colour. */
+    background: [{ ...o.pane.background[0], backgroundColor: Highcharts.color(v.fg).setOpacity(0.1).get("rgba") }],
+  };
+  o.yAxis = { ...o.yAxis, max };
+  o.series = o.series.map((s: any) => ({
+    ...s,
+    dataLabels: {
+      ...s.dataLabels,
+      format: '<span style="font-size:22px;font-weight:600;color:' + v.fg + '">' + number + suffix + "</span>",
+    },
+  }));
+}
+
+`;
+
+const EXT_GAUGE_CALL = `  if (chartType === "gauge") applyGaugeSettings(o, v, props);
+`;
+
+const EXT_SETTINGS = `  if (props.labelWrap && o.xAxis && !Array.isArray(o.xAxis)) {
+    const x = { ...o.xAxis };
+    x.labels = { ...x.labels, autoRotation: undefined, style: { ...(x.labels && x.labels.style), textOverflow: "none" } };
+    o.xAxis = x;
+  }
+  applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall");
+`;
+
 /**
  * Paste-ready React component definition for the exported file.
  *
  * Bakes the active DS's 12-colour categorical palette and a neutral
  * light/dark theme. Faithful port of `buildChartOptions` covering all 15 chart
  * types + a default. Renders <HighchartsReact highcharts={Highcharts} ... />.
+ *
+ * `extended` adds what the newer chart features need (the waterfall type, the
+ * score / framed gauge, wrapped labels, per-point colours, the selected
+ * point). Without it the helper is exactly the one earlier exports shipped.
  */
-export function chartHelperSource(system: SystemId): string {
+export function chartHelperSource(system: SystemId, opts: { extended?: boolean } = {}): string {
   const palette = CATEGORICAL_PALETTES[system];
   const paletteLiteral = JSON.stringify(palette);
+  const x = opts.extended === true;
 
   return `/* ── ChartBlock: runnable Highcharts, baked ${system} palette + mode theme ──
    Highcharts modules register via side-effect imports at the top of the exported
@@ -332,7 +551,7 @@ type ChartSeries = {
   yAxis?: 0 | 1;
   dashStyle?: "Solid" | "Dash" | "ShortDash" | "Dot";
 };
-type ChartPoint = { name: string; y: number };
+type ChartPoint = { name: string; y: number${x ? "; isSum?: boolean" : ""} };
 type ChartProps = {
   title?: string;
   value?: number;
@@ -360,7 +579,7 @@ type ChartProps = {
   /* Tooltip number format: decimal places and a suffix such as "%". */
   valueDecimals?: number;
   valueSuffix?: string;
-};
+${x ? EXT_PROPS : ""}};
 
 function withType(series: ChartSeries[] | undefined, type: string, fallback: any[]): any[] {
   return series && series.length ? series.map((s) => ({ ...s, type })) : fallback;
@@ -609,7 +828,7 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         }],
       };
     }
-    case "heatmap":
+${x ? EXT_WATERFALL_CASE : ""}    case "heatmap":
       return {
         ...t,
         chart: { ...tc, type: "heatmap" },
@@ -691,12 +910,12 @@ function renderCenterLabel(this: any) {
 const PIE_LEGEND_FREE_ITEMS = 6;
 const PIE_LEGEND_MAX_HEIGHT = 56;
 
-/* Options for one chart: the per-type build, then the settings every type
+${x ? EXT_FUNCTIONS : ""}/* Options for one chart: the per-type build, then the settings every type
    shares (height, hidden title, legend, tooltip format, axis format, donut
    centre label). Each applies only when its prop is set. */
 function chartOptionsWithSettings(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: ChartProps): any {
   const o = chartOptionsFor(chartType, t, v, props);
-  if (props.height) o.chart = { ...o.chart, height: props.height };
+${x ? EXT_GAUGE_CALL : ""}  if (props.height) o.chart = { ...o.chart, height: props.height };
   if (props.hideTitle) o.title = { ...o.title, text: undefined };
   if (props.legend === false) o.legend = { ...o.legend, enabled: false };
   if (props.valueDecimals !== undefined || props.valueSuffix) {
@@ -731,7 +950,7 @@ function chartOptionsWithSettings(chartType: string, t: any, v: ReturnType<typeo
       },
     };
   }
-  if (props.centerLabel && chartType === "donut") {
+${x ? EXT_SETTINGS : ""}  if (props.centerLabel && chartType === "donut") {
     o.chart = { ...o.chart, centerLabel: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
   }
   return o;
@@ -739,12 +958,12 @@ function chartOptionsWithSettings(chartType: string, t: any, v: ReturnType<typeo
 
 function ChartBlock({
   type = "line", title, value, mode = "light", categories, series, seriesData, colors,
-  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,
+  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n  valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}
 }: ChartProps & { type?: string; mode?: "light" | "dark"; colors?: string[] }) {
   const v = chartTheme(mode);
   const options = chartOptionsWithSettings(type, chartBaseTheme(v, chartColors(colors)), v, {
     title, value, categories, series, seriesData,
-    height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,
+    height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n    valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}
   });
   return (
     <div style={{ width: "100%", minHeight: height ?? 250 }}>

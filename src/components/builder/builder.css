@@ -10689,6 +10689,13 @@
   color: var(--ds-fg-tertiary);
   white-space: nowrap;
 }
+/* Beside a "View by" select, the title keeps its full width until the select
+   is down to its minimum: sharing the squeeze by flex-shrink weights still
+   took a fraction of a pixel off the title, enough to ellipsise it. */
+.dh-panel-header:has(.dh-panel-viewby) .dh-panel-heading {
+  flex: 1 0 auto;
+  max-width: calc(100% - var(--dh-panel-viewby-min) - var(--dh-panel-pad));
+}
 /* In a narrow panel the select gives way before the title is cut. */
 .dh-panel-viewby {
   flex: 0 100 var(--dh-panel-viewby-w);
@@ -10868,6 +10875,178 @@
 }
 
 /* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
+/* ── Rich grid cells ──
+   Each takes its colour from --dh-tone, set per cell from the tone the data
+   asks for (good / mid / bad / neutral / accent), which resolves to the
+   active design system's status colours. ── */
+.dh-grid .dh-cell { display: flex; align-items: center; }
+.dh-grid .ag-right-aligned-cell.dh-cell { justify-content: flex-end; }
+.dh-cell-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  width: 100%;
+  min-width: 0;
+}
+.dh-cell-bar-track {
+  flex: 1 1 auto;
+  height: var(--dh-cell-bar-h);
+  border-radius: var(--dh-cell-bar-h);
+  background: color-mix(in srgb, var(--ds-fg) 10%, transparent);
+  overflow: hidden;
+}
+.dh-cell-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dh-tone);
+}
+.dh-cell-bar-value {
+  flex: 0 0 var(--dh-cell-bar-value-w);
+  text-align: right;
+  font-size: var(--dh-cell-small);
+  color: var(--ds-fg-secondary);
+}
+.dh-cell-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 3);
+  height: var(--dh-cell-chip-h);
+  padding: var(--dh-cell-chip-pad);
+  border-radius: var(--dh-cell-chip-h);
+  background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-delta-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+}
+.dh-cell-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 3);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg));
+}
+.dh-cell-delta.is-flat { font-weight: 400; color: var(--ds-fg-tertiary); }
+.dh-cell-spark { flex: none; color: var(--dh-tone); overflow: visible; }
+.dh-cell-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--dh-cell-badge);
+  height: var(--dh-cell-badge);
+  box-sizing: border-box;
+  padding-inline: calc(var(--dh-cell-gap) / 2);
+  border-radius: var(--dh-cell-badge);
+  border: var(--bc-hairline) solid color-mix(in srgb, var(--dh-tone) 45%, transparent);
+  background: color-mix(in srgb, var(--dh-tone) 14%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-tonetext { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-tonetext.is-neutral { font-weight: 400; color: var(--ds-fg-tertiary); }
+.dh-cell-flag { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
+.dh-cell-flag-code { font-size: var(--dh-cell-small); color: var(--ds-fg-secondary); }
+.dh-cell-rank { color: var(--ds-fg-tertiary); }
+/* ── Record panel (RecordPanel.tsx): the detail of a selected record ── */
+.dh-record {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-panel-pad);
+  overflow-y: auto;
+  font-size: var(--dh-record-size);
+  color: var(--ds-fg);
+}
+/* In a wide panel the sections sit side by side. */
+@container dh-panel (min-width: 45rem) {
+  .dh-record {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    align-items: start;
+    column-gap: calc(var(--dh-panel-pad) * 2);
+  }
+  .dh-record-clear, .dh-record-empty { grid-column: 1 / -1; }
+  .dh-record-clear { justify-self: start; }
+  .dh-record-empty { align-self: center; }
+}
+.dh-record-pairs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--dh-panel-pad) * 0.75) var(--dh-panel-pad);
+  margin: 0;
+}
+.dh-record-pair { min-width: 0; }
+.dh-record-pair dt,
+.dh-record-heading {
+  margin: 0 0 calc(var(--dh-cell-gap) / 2);
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ds-fg-tertiary);
+}
+.dh-record-pair dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-record-section { min-width: 0; }
+.dh-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.dh-record-table th,
+.dh-record-table td {
+  padding: var(--dh-cell-gap) 0;
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  text-align: right;
+  font-weight: 400;
+}
+.dh-record-table thead th {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  color: var(--ds-fg-secondary);
+}
+.dh-record-table th + th,
+.dh-record-table th + td,
+.dh-record-table td + td { padding-inline-start: calc(var(--dh-cell-gap) * 2); }
+.dh-record-table th[scope="row"],
+.dh-record-table thead th:first-child { text-align: left; }
+.dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-record-flat { color: var(--ds-fg-tertiary); }
+.dh-record-clear {
+  align-self: flex-start;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-cell-small);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: var(--dh-focus-ring);
+}
+.dh-record-clear:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
+.dh-record-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dh-cell-gap);
+  color: var(--ds-fg-tertiary);
+  text-align: center;
+}
+.dh-record-empty p { margin: 0; max-width: 24ch; white-space: normal; }
 .dh-grid-selectable .ag-row {
   cursor: pointer;
 }

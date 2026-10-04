@@ -15,19 +15,34 @@
 import type { Block, ZoneLayout, ZoneTone } from "@/store/useBuilder";
 import { ZONE_TONES } from "@/store/useBuilder";
 import {
+  GRID_TONES,
+  RATING_TONES,
+  barShare,
+  cellOf,
+  columnMax,
+  deltaView,
+  flagEmoji,
   formatGridValue,
+  heatTone,
   isColumnGroup,
   isNegativeCell,
   isNumericKind,
   leafColumns,
   readGridColumns,
   readGridRows,
+  sparkPoints,
+  sparkPolyline,
+  valueTone,
+  type GridCell,
   type GridColumn,
+  type GridLeafColumn,
   type GridRow,
+  type GridTone,
 } from "@/lib/dataGridModel";
 import { dropdownModel } from "@/lib/dropdownModel";
 import { panelContentHeight, panelHeightOf, viewByOf } from "@/lib/panelMetrics";
-import { partsToGrid, seriesToGrid } from "@/lib/reportData/shape";
+import type { ResolvedRecord, ResolvedSection } from "@/lib/recordPanelModel";
+import { GROUP_FIELD, partsToGrid, seriesToGrid } from "@/lib/reportData/shape";
 import { jsxText, jsxAttr, htmlText, htmlAttr } from "./escape";
 
 /* ── Dialects ── */
@@ -45,6 +60,8 @@ export interface Dialect {
   height: (px: number) => string;
   /** ` colSpan=...` attribute. */
   colSpan: (n: number) => string;
+  /** ` style=...` attribute fixing a width as a percentage (a bar cell's fill). */
+  widthPct: (pct: number) => string;
   /** ` tabIndex=...` attribute making an element keyboard-focusable. */
   focusable: string;
   /** Attribute(s) on a <select> naming its chosen value ("" in HTML, where
@@ -61,6 +78,7 @@ export const JSX_DIALECT: Dialect = {
   attr: jsxAttr,
   height: (px) => ` style={{ height: ${px} }}`,
   colSpan: (n) => ` colSpan={${n}}`,
+  widthPct: (pct) => ` style={{ width: "${pct}%" }}`,
   focusable: " tabIndex={0}",
   selectValue: (value) => ` defaultValue="${jsxAttr(value)}"`,
   optionSelected: "",
@@ -73,6 +91,7 @@ export const HTML_DIALECT: Dialect = {
   attr: htmlAttr,
   height: (px) => ` style="height: ${px}px"`,
   colSpan: (n) => ` colspan="${n}"`,
+  widthPct: (pct) => ` style="width: ${pct}%"`,
   focusable: ' tabindex="0"',
   selectValue: () => "",
   optionSelected: " selected",
@@ -184,6 +203,95 @@ export function panelLines(d: Dialect, spec: PanelSpec, body: string[]): string[
   ];
 }
 
+/* ── Rich cells (GridCell) ──
+   The canvas draws these with RichCell (SimulatedDataGrid.tsx); the export
+   writes the same picture as static markup. A tone is a class (tone-good,
+   tone-mid, tone-bad, tone-accent, tone-neutral) that sets --tone to the
+   exported status variable, so one rule per cell kind covers every tone. */
+
+const SPARK_WIDTH = 56;
+const SPARK_HEIGHT = 18;
+const GRID_ARROW_SIZE = 12;
+const RECORD_ARROW_SIZE = 13;
+
+/** The tone class. The tone becomes a class name, so only the known tones pass. */
+function toneClass(tone: unknown): string {
+  return `tone-${GRID_TONES.includes(tone as GridTone) ? (tone as GridTone) : "neutral"}`;
+}
+
+/** An arrow as inline SVG (no icon library in exported code). Decorative:
+ *  the direction is also written as text where it is not otherwise said. */
+function arrow(d: Dialect, direction: "up" | "down", size: number): string {
+  const path = direction === "up" ? "M12 19V5M5 12l7-7 7 7" : "M12 5v14M19 12l-7 7-7-7";
+  return `<svg ${d.cls}="cell-arrow" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="${path}" /></svg>`;
+}
+
+const srOnly = (d: Dialect, text: string): string => `<span ${d.cls}="visually-hidden">${text}</span>`;
+
+/** A sparkline as an inline SVG polyline; "" for fewer than two points. */
+function sparkSvg(d: Dialect, value: unknown, tone: unknown): string {
+  const points = sparkPolyline(sparkPoints(value), SPARK_WIDTH, SPARK_HEIGHT);
+  if (!points) return "";
+  return `<svg ${d.cls}="cell-spark ${toneClass(tone)}" width="${SPARK_WIDTH}" height="${SPARK_HEIGHT}" viewBox="0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}" fill="none" stroke="currentColor" aria-hidden="true"><polyline points="${points}" /></svg>`;
+}
+
+/** Rich cells whose content is left-aligned even in a numeric column. */
+function isLeftAlignedCell(cell: GridCell | null): boolean {
+  return cell !== null && (cell.type === "bar" || cell.type === "flag" || cell.type === "toneText");
+}
+
+/** What a rich cell draws inside its <td>. `text` is the column's formatted
+ *  value, already escaped. A heat cell is ordinary text (its tint is on the
+ *  <td>), so it is not handled here. */
+function richCellContent(d: Dialect, cell: GridCell, column: GridLeafColumn, row: GridRow, text: string, max: number): string {
+  const value = row[column.field];
+  switch (cell.type) {
+    case "bar": {
+      const pct = Math.round(barShare(cell, value, max) * 1000) / 10;
+      return (
+        `<span ${d.cls}="cell-bar ${toneClass(cell.tone ?? "accent")}">` +
+        `<span ${d.cls}="cell-bar-track" aria-hidden="true"><span ${d.cls}="cell-bar-fill"${d.widthPct(pct)}></span></span>` +
+        `<span ${d.cls}="cell-bar-value">${text}</span></span>`
+      );
+    }
+    case "deltaChip": {
+      const view = deltaView(value, cell.upIsGood ?? true);
+      if (!view || view.direction === "flat") return "";
+      const amount = formatGridValue({ ...column, kind: column.kind ?? "number", decimals: column.decimals ?? 0 }, view.magnitude);
+      return `<span ${d.cls}="cell-chip ${toneClass(view.tone)}">${arrow(d, view.direction, GRID_ARROW_SIZE)}${view.direction === "up" ? "+" : "-"}${d.text(amount)}</span>`;
+    }
+    case "delta": {
+      const view = deltaView(value, cell.upIsGood ?? true);
+      const spark = cell.sparkField ? sparkSvg(d, row[cell.sparkField], "neutral") : "";
+      if (!view) return spark;
+      const amount = d.text(formatGridValue(column, view.magnitude));
+      const delta =
+        view.direction === "flat"
+          ? `<span ${d.cls}="cell-delta is-flat">${amount}</span>`
+          : `<span ${d.cls}="cell-delta ${toneClass(view.tone)}">${arrow(d, view.direction, GRID_ARROW_SIZE)}${srOnly(d, view.direction === "up" ? "Up" : "Down")}${amount}</span>`;
+      return `<span ${d.cls}="cell-delta-wrap">${spark}${delta}</span>`;
+    }
+    case "sparkline":
+      return sparkSvg(d, value, cell.tone ?? "neutral");
+    case "badge": {
+      if (value === null || value === undefined || value === "") return "";
+      return `<span ${d.cls}="cell-badge ${toneClass(valueTone(cell.tones ?? RATING_TONES, value, cell.fallback ?? "bad"))}">${d.text(String(value))}</span>`;
+    }
+    case "toneText": {
+      const tone = valueTone(cell.tones, value);
+      return `<span ${d.cls}="cell-tonetext ${tone === "neutral" ? "is-neutral" : toneClass(tone)}">${d.text(String(value ?? ""))}</span>`;
+    }
+    case "flag": {
+      const flag = flagEmoji(value);
+      return `<span ${d.cls}="cell-flag">${flag ? `<span aria-hidden="true">${flag}</span>` : ""}<span ${d.cls}="cell-flag-code">${d.text(String(value ?? ""))}</span></span>`;
+    }
+    case "rank":
+      return text ? `<span ${d.cls}="cell-rank">${text}</span>` : "";
+    default:
+      return text;
+  }
+}
+
 /* ── Data table ── */
 
 /** Indent levels the stylesheet draws (data-indent="1".."3"). */
@@ -225,29 +333,48 @@ export function tableLines(
     flush();
     head.push(`<tr ${d.cls}="data-table-groups">${cells.join("")}</tr>`);
   }
+  /* Rich cells, per leaf. A numeric column whose cell is left-aligned on the
+     canvas (bar, flag, toned text) is not right-aligned here either. */
+  const cells = leaves.map(cellOf);
+  const rightAligned = leaves.map((c, i) => isNumericKind(c.kind) && !isLeftAlignedCell(cells[i]));
+  /* Bar cells scaled to the column need its largest value. */
+  const maxOf = leaves.map((c, i) => {
+    const cell = cells[i];
+    return cell?.type === "bar" && cell.scale === "columnMax" ? columnMax(rows, c.field) : 0;
+  });
+  /* The column that labels a row: the first one, after a rank column ("#")
+     when the grid counts its rows. */
+  const labelIndex = Math.max(0, cells.findIndex((cell) => cell?.type !== "rank"));
+
   head.push(
     `<tr>${leaves
-      .map((c) => `<th scope="col"${classAttr(d, isNumericKind(c.kind) ? ["num"] : [])}>${d.text(c.header)}</th>`)
+      .map((c, i) => `<th scope="col"${classAttr(d, rightAligned[i] ? ["num"] : [])}>${d.text(c.header)}</th>`)
       .join("")}</tr>`,
   );
 
   const body = rows.map((row) => {
     const rowClasses = [
       ...(row._bold ? ["is-total"] : []),
-      ...(opts.selected && String(row[leaves[0].field] ?? "") === opts.selected ? ["is-selected"] : []),
+      ...(opts.selected && String(row[leaves[labelIndex].field] ?? "") === opts.selected ? ["is-selected"] : []),
     ];
-    const cells = leaves.map((c, i) => {
+    const tds = leaves.map((c, i) => {
       const value = row[c.field];
-      const content = d.text(formatGridValue(c, value));
-      const numeric = isNumericKind(c.kind);
-      if (i === 0 && !numeric) {
+      const text = d.text(formatGridValue(c, value));
+      const cell = cells[i];
+      const content = cell && cell.type !== "heat" ? richCellContent(d, cell, c, row, text, maxOf[i]) : text;
+      if (i === labelIndex && !isNumericKind(c.kind)) {
         const level = typeof row._indent === "number" ? Math.min(MAX_INDENT, Math.max(0, Math.round(row._indent))) : 0;
         return `<th scope="row"${level > 0 ? ` data-indent="${level}"` : ""}>${content}</th>`;
       }
-      const classes = [...(numeric ? ["num"] : []), ...(isNegativeCell(c, value) ? ["is-negative"] : [])];
+      const tone = cell?.type === "heat" ? heatTone(cell, value) : null;
+      const classes = [
+        ...(rightAligned[i] ? ["num"] : []),
+        ...(isNegativeCell(c, value) ? ["is-negative"] : []),
+        ...(tone ? ["cell-heat", toneClass(tone)] : []),
+      ];
       return `<td${classAttr(d, classes)}>${content}</td>`;
     });
-    return `<tr${classAttr(d, rowClasses)}>${cells.join("")}</tr>`;
+    return `<tr${classAttr(d, rowClasses)}>${tds.join("")}</tr>`;
   });
 
   return [
@@ -294,12 +421,47 @@ function chartSeries(raw: unknown): ChartSeriesLike[] {
   return out;
 }
 
-function chartParts(raw: unknown): { name: string; y: number }[] {
+function chartParts(raw: unknown): { name: string; y: number; isSum?: boolean }[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(
-    (pt): pt is { name: string; y: number } =>
+    (pt): pt is { name: string; y: number; isSum?: boolean } =>
       Boolean(pt) && typeof pt === "object" && typeof (pt as { name: unknown }).name === "string" && Number.isFinite((pt as { y: unknown }).y as number),
   );
+}
+
+const chartTypeOf = (p: Record<string, unknown>): string => (typeof p.chartType === "string" ? p.chartType : "");
+const decimalsOf = (v: unknown): number | undefined =>
+  typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(10, Math.round(v))) : undefined;
+
+/** A waterfall's steps as a table: each step's change and the running total
+ *  after it; a sum step shows the total reached. */
+function waterfallGrid(parts: { name: string; y: number; isSum?: boolean }[], decimals: number | undefined): { columns: GridColumn[]; rows: GridRow[] } {
+  let running = 0;
+  const rows: GridRow[] = parts.map((step) => {
+    if (step.isSum) return { [GROUP_FIELD]: step.name, change: null, total: running, _bold: true };
+    running = Number((running + step.y).toFixed(4));
+    return { [GROUP_FIELD]: step.name, change: step.y, total: running };
+  });
+  const number = { kind: "number" as const, ...(decimals !== undefined ? { decimals } : {}) };
+  return {
+    columns: [
+      { field: GROUP_FIELD, header: "Step" },
+      { field: "change", header: "Change", signed: true, ...number },
+      { field: "total", header: "Running total", ...number },
+    ],
+    rows,
+  };
+}
+
+/** A gauge's reading as text, written the way the dial writes it: the value
+ *  with its decimals and suffix, "of <max>" when the gauge names its scale. */
+export function gaugeValueText(p: Record<string, unknown>): string {
+  const value = typeof p.value === "number" && Number.isFinite(p.value) ? p.value : 87;
+  const max = typeof p.valueMax === "number" && Number.isFinite(p.valueMax) ? p.valueMax : undefined;
+  const decimals = decimalsOf(p.valueDecimals);
+  const suffix = typeof p.valueSuffix === "string" && p.valueSuffix.trim() ? p.valueSuffix : max === undefined ? "%" : "";
+  const reading = `${decimals !== undefined ? value.toFixed(decimals) : String(value)}${suffix}`;
+  return max === undefined ? reading : `${reading} of ${max}`;
 }
 
 /** True when a chart block carries data of its own (categories + series, or parts). */
@@ -317,14 +479,23 @@ export function chartDataLines(d: Dialect, block: Block): string[] {
   const series = chartSeries(p.series);
   const parts = chartParts(p.seriesData);
   const percent = typeof p.valueSuffix === "string" && p.valueSuffix.includes("%");
+  /* The selected point (set only by a chart whose points select) marks its row. */
+  const selected = str(p.selectedPoint) || undefined;
+  const type = chartTypeOf(p);
   let table: string[];
-  if (series.length > 0) {
+  if (type === "gauge" && p.panel === true) {
+    /* A dial has no table behind it: its reading, as text. */
+    table = [`<p ${d.cls}="chart-value">${d.text(gaugeValueText(p))}</p>`];
+  } else if (type === "waterfall" && parts.length > 0) {
+    const grid = waterfallGrid(parts, decimalsOf(p.valueDecimals));
+    table = tableLines(d, grid.columns, grid.rows, { label, selected });
+  } else if (series.length > 0) {
     const categories = Array.isArray(p.categories) ? p.categories.map((c) => String(c)) : series[0].data.map((_, i) => String(i + 1));
     const grid = seriesToGrid("", categories, series, percent ? "percent" : "number");
-    table = tableLines(d, grid.columns, grid.rows, { label });
+    table = tableLines(d, grid.columns, grid.rows, { label, selected });
   } else if (parts.length > 0) {
     const grid = partsToGrid("", parts, { field: "value", header: "Value", kind: "number", compact: true });
-    table = tableLines(d, grid.columns, grid.rows, { label });
+    table = tableLines(d, grid.columns, grid.rows, { label, selected });
   } else {
     table = [`<p ${d.cls}="panel-empty">No data</p>`];
   }
@@ -404,7 +575,132 @@ export function pageTitleLines(d: Dialect, props: Record<string, unknown>): stri
   ];
 }
 
-/** Lines for a chrome or data-grid block, or null when the block is not one. */
+/* ── Record panel: the detail of the record a grid has selected ──
+   Blocks arrive with `record` resolved (materialise.ts), or without it when
+   nothing is selected. The canvas draws this with RecordPanel.tsx. */
+
+export const RECORD_PANEL_BLOCK_TYPE = "RecordPanel";
+/** Height of the trend chart, as on the canvas. */
+export const RECORD_TREND_HEIGHT = 150;
+
+type TrendSection = Extract<ResolvedSection, { type: "trend" }>;
+
+/** The resolved record of a materialised Record Panel block, or null. */
+export function recordOf(block: Block): ResolvedRecord | null {
+  const r = block.props?.record as ResolvedRecord | undefined;
+  return r && typeof r === "object" && typeof r.title === "string" && Array.isArray(r.sections) ? r : null;
+}
+
+/** A trend draws only with two points or more (as on the canvas). */
+const trendDraws = (section: ResolvedSection): section is TrendSection => section.type === "trend" && section.points.length >= 2;
+
+/** True when the block is a Record Panel whose selected record has a trend to
+ *  draw: the React export then needs the chart helper. */
+export function recordPanelHasTrend(block: Block): boolean {
+  return block.type === RECORD_PANEL_BLOCK_TYPE && (recordOf(block)?.sections.some(trendDraws) ?? false);
+}
+
+function recordHeading(d: Dialect, title: string | undefined): string[] {
+  return title ? [`<h3 ${d.cls}="record-heading">${d.text(title)}</h3>`] : [];
+}
+
+function recordSectionLines(d: Dialect, section: ResolvedSection, trend: ((section: TrendSection) => string[]) | undefined): string[] {
+  if (section.type === "pairs") {
+    return [
+      `<dl ${d.cls}="record-pairs">`,
+      ...section.items.map((item) => {
+        const flag = item.flag ? `<span aria-hidden="true">${item.flag} </span>` : "";
+        const value = item.tone ? `<span ${d.cls}="cell-badge ${toneClass(item.tone)}">${d.text(item.text)}</span>` : d.text(item.text);
+        return `  <div ${d.cls}="record-pair"><dt>${d.text(item.label)}</dt><dd>${flag}${value}</dd></div>`;
+      }),
+      "</dl>",
+    ];
+  }
+  if (section.type === "table") {
+    const hasChange = section.rows.some((r) => r.change);
+    const head = [
+      `<th scope="col">${srOnly(d, "Measure")}</th>`,
+      ...section.columns.map((c) => `<th scope="col">${d.text(c)}</th>`),
+      ...(hasChange ? ['<th scope="col">Change</th>'] : []),
+    ];
+    const rows = section.rows.map((r) => {
+      const change = !hasChange
+        ? ""
+        : r.change && r.change.direction !== "flat"
+          ? `<td><span ${d.cls}="record-change ${toneClass(r.change.tone)}">${arrow(d, r.change.direction, RECORD_ARROW_SIZE)}${srOnly(d, r.change.direction === "up" ? "Up" : "Down")}</span></td>`
+          : `<td><span ${d.cls}="record-flat"><span aria-hidden="true">-</span>${srOnly(d, "No change")}</span></td>`;
+      return `<tr><th scope="row">${d.text(r.label)}</th>${r.cells.map((c) => `<td>${d.text(c)}</td>`).join("")}${change}</tr>`;
+    });
+    return [
+      `<div ${d.cls}="record-section">`,
+      ...nest(recordHeading(d, section.title)),
+      `  <table ${d.cls}="record-table">`,
+      "    <thead>",
+      `      <tr>${head.join("")}</tr>`,
+      "    </thead>",
+      "    <tbody>",
+      ...rows.map((l) => "      " + l),
+      "    </tbody>",
+      "  </table>",
+      "</div>",
+    ];
+  }
+  if (!trendDraws(section)) return [];
+  /* The trend: a chart where the dialect has a chart runtime, else its points. */
+  const body = trend
+    ? trend(section)
+    : [
+        `<table ${d.cls}="record-table">`,
+        "  <thead>",
+        `    <tr><th scope="col">Period</th><th scope="col">${d.text(section.seriesName)}</th></tr>`,
+        "  </thead>",
+        "  <tbody>",
+        ...section.points.map((v, i) => `    <tr><th scope="row">${d.text(section.categories[i] ?? String(i + 1))}</th><td>${d.text(String(v))}</td></tr>`),
+        "  </tbody>",
+        "</table>",
+      ];
+  return [`<div ${d.cls}="record-section">`, ...nest(recordHeading(d, section.title)), ...nest(body), "</div>"];
+}
+
+/** A Record Panel block as a framed panel. With a record: its name as the
+ *  title (the block's title beside it), then pairs as a <dl>, tables, and
+ *  the trend - drawn by `trend` when given (the React chart), else listed as
+ *  a table of points. With nothing selected: the block's title and its
+ *  empty-state text. */
+export function recordPanelLines(d: Dialect, block: Block, trend?: (section: TrendSection) => string[]): string[] {
+  const p = block.props ?? {};
+  const record = recordOf(block);
+  const blockTitle = str(p.title) || "Detail";
+  const spec: PanelSpec = {
+    title: record ? record.title : blockTitle,
+    subtitle: record ? blockTitle : "",
+    height: panelHeightOf(p),
+    viewBy: [],
+    viewByValue: "",
+  };
+  const body = record
+    ? [`<div ${d.cls}="record">`, ...nest(record.sections.flatMap((section) => recordSectionLines(d, section, trend))), "</div>"]
+    : [
+        `<div ${d.cls}="record record-empty">`,
+        `  <p>${d.text(str(p.emptyText) || "Select a row to see its detail.")}</p>`,
+        "</div>",
+      ];
+  return panelLines(d, spec, body);
+}
+
+/** True when the canvas draws rich grid cells, a record panel or a framed
+ *  gauge: the stylesheet then carries their rules (REPORT_RICH_CSS). */
+export function usesRichReport(blocks: Block[]): boolean {
+  return blocks.some((b) => {
+    if (b.type === RECORD_PANEL_BLOCK_TYPE) return true;
+    /* A framed gauge exports its reading as text in the page export. */
+    if (b.props?.chartType === "gauge" && b.props?.panel === true) return true;
+    if (b.type === "DataGrid" && leafColumns(readGridColumns(b.props?.columns)).some((c) => cellOf(c) !== null)) return true;
+    return b.children?.length ? usesRichReport(b.children) : false;
+  });
+}
+
+/** Lines for a chrome, data-grid or record-panel block, or null when the block is not one. */
 export function reportBlockLines(d: Dialect, block: Block): string[] | null {
   const p = block.props ?? {};
   switch (block.type) {
@@ -418,6 +714,8 @@ export function reportBlockLines(d: Dialect, block: Block): string[] | null {
       return pageTitleLines(d, p);
     case "DataGrid":
       return dataGridLines(d, block);
+    case RECORD_PANEL_BLOCK_TYPE:
+      return recordPanelLines(d, block);
     default:
       return null;
   }

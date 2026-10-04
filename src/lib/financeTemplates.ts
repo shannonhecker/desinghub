@@ -29,12 +29,12 @@ import { FINANCE_DATASET_ID, FX_RATES, PERIODICITIES } from "./reportData/financ
 import type { MeasureSpec } from "./reportData/query";
 
 export const FINANCE_BRAND = "Meridian Analytics";
-const AS_OF = "as of Dec 2024";
+export const AS_OF = "as of Dec 2024";
 
 /** Height of the context row (title + filters): fits the tallest system's
  *  labelled select. */
-const CONTEXT_ROW_HEIGHT = "64px";
-const BODY_LAYOUT = { mode: "grid", columns: 12, gap: 16 } as const;
+export const CONTEXT_ROW_HEIGHT = "64px";
+export const BODY_LAYOUT = { mode: "grid", columns: 12, gap: 16 } as const;
 
 /* ── Report state keys ── */
 const FEE_STATE = "feeType";
@@ -47,7 +47,7 @@ const GROSS = "Gross of fees";
    primary links, account) over a dark tab strip of workspaces, with no
    sidebar and no footer. Both bars are ordinary blocks in a flush, stacked
    header, so they can be edited, re-toned, reordered or removed. */
-const WORKSPACES = "Home, Performance, Risk, Sustainable Investment";
+export const WORKSPACES = "Home, Performance, Risk, Sustainable Investment";
 
 const chrome = (prefix: string, active: string) => ({
   header: [
@@ -73,41 +73,41 @@ const CHROME_LAYOUTS = {
 /* How a block folds on a narrower frame (LayoutProps.spanTablet / spanPhone,
    of 12 columns). Panels are never narrower than half a tablet or the full
    width of a phone; the page title takes its own row. */
-type Narrow = { spanTablet: number; spanPhone: number };
-const FULL: Narrow = { spanTablet: 12, spanPhone: 12 };
-const HALF: Narrow = { spanTablet: 6, spanPhone: 12 };
+export type Narrow = { spanTablet: number; spanPhone: number };
+export const FULL: Narrow = { spanTablet: 12, spanPhone: 12 };
+export const HALF: Narrow = { spanTablet: 6, spanPhone: 12 };
 /** Four filters across on a tablet, two on a phone. */
-const FILTER_NARROW: Narrow = { spanTablet: 3, spanPhone: 6 };
+export const FILTER_NARROW: Narrow = { spanTablet: 3, spanPhone: 6 };
 
 /** A context filter: a labelled dropdown whose value is report state. */
-const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string, narrow: Narrow = FILTER_NARROW): Block => ({
+export const filter = (id: string, label: string, stateKey: string, value: string, options: readonly string[], width: string, narrow: Narrow = FILTER_NARROW): Block => ({
   id,
   type: "SimulatedDropdown",
   props: { label, value, optionsCsv: options.join(", "), stateKey },
   layout: { width: width as `${number}fr`, height: CONTEXT_ROW_HEIGHT, align: "center", ...narrow },
 });
 
-const CURRENCIES = FX_RATES.map((r) => String(r.currency));
+export const CURRENCIES = FX_RATES.map((r) => String(r.currency));
 
 /** A "View by" that follows a panel's select: label -> field. */
-const viewBy = (blockId: string, options: Record<string, string>): FromState<string> => ({
+export const viewBy = (blockId: string, options: Record<string, string>): FromState<string> => ({
   state: viewByStateKey(blockId),
   options,
   fallback: Object.values(options)[0],
 });
 /** The same choice, as the column header (label -> label). */
-const viewByHeader = (blockId: string, options: Record<string, string>): FromState<string> => ({
+export const viewByHeader = (blockId: string, options: Record<string, string>): FromState<string> => ({
   state: viewByStateKey(blockId),
   options: Object.fromEntries(Object.keys(options).map((k) => [k, k])),
   fallback: Object.keys(options)[0],
 });
 
-const sum = (field: string): MeasureSpec => ({ field });
-const weighted = (field: string): MeasureSpec => ({ field, agg: "wavg", weight: "marketValue" });
+export const sum = (field: string): MeasureSpec => ({ field });
+export const weighted = (field: string): MeasureSpec => ({ field, agg: "wavg", weight: "marketValue" });
 const pct = (key: string, label: string, extra: Partial<BoundMeasure> = {}): BoundMeasure => ({ key, label, kind: "percent", width: 82, ...extra });
 const money = (key: string, label: string, extra: Partial<BoundMeasure> = {}): BoundMeasure => ({ key, label, kind: "currency", compact: true, money: true, width: 104, ...extra });
 
-const PERCENT_CHART = { yAxisFormat: "{value}%", valueDecimals: 2, valueSuffix: "%" };
+export const PERCENT_CHART = { yAxisFormat: "{value}%", valueDecimals: 2, valueSuffix: "%" };
 /** Stacked shares of a whole: the axis stops at 100%. */
 const SHARE_CHART = { ...PERCENT_CHART, yAxisMax: 100 };
 

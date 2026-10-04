@@ -100,6 +100,8 @@ Help users adjust, swap, reorder, or remove components.
 - HighchartCombination - columns and lines together, two axes (props: title)
 - HighchartStackedBar - stacked horizontal bars (props: title)
 - HighchartStackedArea - stacked area, e.g. allocation over time (props: title)
+- HighchartWaterfall - steps up and down from a starting total to a closing sum
+  (props: title, seriesData [{name, y}] with {name, isSum: true} for the sum bar)
 
 Chart props shared by every Highchart block: \`title\`, \`subtitle\`,
 \`height\` (px), \`legend\` (true/false), \`yAxisTitle\`, \`yAxisFormat\`
@@ -108,6 +110,8 @@ swapped for another kind in place: removeBlock + addBlock at the same index
 with the same props, or tell the user to use the panel's Configure tool.
 
 ### Data grid
+- RecordPanel - the detail of the row selected in a grid (templates wire it;
+  props: title, emptyText)
 - DataGrid - a framed, sortable grid with grouped column headers, number
   formats and pinned total rows (props: title, subtitle, height, columns,
   rows). \`columns\` is a list of {field, header, kind: "text" | "number" |

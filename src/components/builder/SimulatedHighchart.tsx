@@ -112,7 +112,8 @@ export type HighchartType =
   | "line" | "area" | "column" | "pie" | "scatter"
   | "bar" | "donut" | "gauge" | "heatmap" | "treemap"
   | "spline" | "stacked-column"
-  | "combination" | "stacked-bar" | "stacked-area";
+  | "combination" | "stacked-bar" | "stacked-area"
+  | "waterfall";
 
 /** One data series. `type`, `yAxis` and `dashStyle` only matter to the
  *  combination chart, where each series picks its own mark and axis. */
@@ -152,6 +153,61 @@ export interface ChartProps {
   /** Tooltip number format: decimal places and a suffix such as "%". */
   valueDecimals?: number;
   valueSuffix?: string;
+  /** Gauge: the top of its scale (default 100, shown as a percentage). */
+  valueMax?: number;
+  /** Wrap long category labels instead of rotating them (a narrow chart
+   *  with a few long names). */
+  labelWrap?: boolean;
+  /** One colour per point of the first series (a column coloured by bucket,
+   *  a waterfall's steps). A tone name - "good", "mid", "bad", "neutral",
+   *  "accent" - follows the design system; anything else is a CSS colour. */
+  pointColors?: string[];
+  /** The same, by point name: for points whose order follows the data (a
+   *  rating distribution that may miss a bucket). */
+  pointColorsByName?: Record<string, string>;
+  /** Name of the selected point; the others are dimmed. */
+  selected?: string;
+  /** Makes points clickable: called with the clicked point's name. */
+  onSelectPoint?: (name: string) => void;
+}
+
+/** A point colour: a tone name resolved against the theme, or a CSS colour. */
+export function resolvePointColor(color: string, v: ThemeVars): string {
+  switch (color) {
+    case "good": return v.positive;
+    case "mid": return v.warning;
+    case "bad": return v.negative;
+    case "accent": return v.primary;
+    case "neutral": return v.fgTer;
+    default: return color;
+  }
+}
+
+/** Opacity of the points that are not the selected one. */
+const DIMMED_POINT_OPACITY = 0.28;
+
+/** Per-point colours and selection for the first series: every point gets
+ *  an explicit colour (from `pointColors`, else the palette / series colour),
+ *  dimmed when another point is selected. */
+function applyPointStyling(o: Highcharts.Options, v: ThemeVars, props: ChartProps, colorByPoint: boolean, always = false): void {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const series = (o.series as any[] | undefined)?.[0];
+  if (!series || !Array.isArray(series.data)) return;
+  const byName = props.pointColorsByName ?? {};
+  if (!always && !props.pointColors?.length && !props.selected && Object.keys(byName).length === 0) return;
+  const palette = ((o.colors as string[] | undefined) ?? []).filter(Boolean);
+  const categories = ((o.xAxis as any)?.categories as string[] | undefined) ?? [];
+  series.data = series.data.map((point: any, i: number) => {
+    const obj = point !== null && typeof point === "object" && !Array.isArray(point) ? { ...point } : { y: point };
+    const name = String(obj.name ?? categories[i] ?? "");
+    const own = props.pointColors?.[i] ?? byName[name];
+    const base = own
+      ? resolvePointColor(own, v)
+      : obj.color ?? (colorByPoint ? palette[i % Math.max(1, palette.length)] : series.color ?? palette[0]) ?? v.primary;
+    const dimmed = Boolean(props.selected) && name !== props.selected;
+    return { ...obj, color: dimmed ? (Highcharts.color(base).setOpacity(DIMMED_POINT_OPACITY).get("rgba") as string) : base };
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 /** Options for one chart: the per-type build, then the settings every type
@@ -202,6 +258,30 @@ export function buildChartOptions(
       },
     };
   }
+  if (props.labelWrap && o.xAxis && !Array.isArray(o.xAxis)) {
+    const x = o.xAxis as any;
+    x.labels = { ...x.labels, autoRotation: undefined, style: { ...x.labels?.style, textOverflow: "none" } };
+  }
+  /* A waterfall's steps are always told apart by colour, selected or not. */
+  applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall", chartType === "waterfall");
+  if (props.onSelectPoint) {
+    const onSelect = props.onSelectPoint;
+    const series = { ...((o.plotOptions as any)?.series ?? {}) };
+    o.plotOptions = {
+      ...(o.plotOptions as any),
+      series: {
+        ...series,
+        cursor: "pointer",
+        point: {
+          events: {
+            click(this: { name?: string; category?: string | number }) {
+              onSelect(String(this.name ?? this.category ?? ""));
+            },
+          },
+        },
+      },
+    };
+  }
   if (props.centerLabel && chartType === "donut") {
     o.chart = { ...(o.chart as any), dhCenter: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
   }
@@ -216,7 +296,7 @@ const CENTER_LABEL_FONT_SIZE = 15;
 const CENTER_LABEL_MIN_FONT_SIZE = 9;
 /** Share of the ring's hole the centre label may span. */
 const CENTER_LABEL_FILL = 0.78;
-const PIE_LEGEND_MAX_HEIGHT = 56;
+const PIE_LEGEND_MAX_HEIGHT = 72;
 /** Up to this many parts the legend is shown whole. */
 const PIE_LEGEND_FREE_ITEMS = 6;
 function pieParts(o: Highcharts.Options): number {
@@ -519,31 +599,75 @@ function chartOptions(
 
     case "gauge": {
       const val = props.value ?? 87;
+      /* A score gauge names its own scale (valueMax: 10) and decimals; with
+         neither, the gauge is the original percentage dial. */
+      const max = props.valueMax ?? 100;
+      const suffix = props.valueSuffix ?? (props.valueMax === undefined ? "%" : "");
+      const number = props.valueDecimals !== undefined ? `{y:.${props.valueDecimals}f}` : "{y}";
+      /* In a framed panel the dome uses the room the title would have taken. */
+      const framed = Boolean(props.hideTitle);
       return {
         ...t,
         chart: { ...tc, type: "solidgauge", height: 250 },
         title: { ...tt, text: props.title || "System Health" },
+        tooltip: { enabled: false },
         pane: {
-          center: ["50%", "70%"], size: "100%", startAngle: -90, endAngle: 90,
+          center: ["50%", framed ? "80%" : "70%"], size: framed ? "125%" : "100%", startAngle: -90, endAngle: 90,
           background: [{
-            backgroundColor: v.primary + "20",
+            /* A wash of the text colour: appending hex alpha to the primary
+               only works when it is a hex string, and drew a black track
+               when the token resolved to rgb(). */
+            backgroundColor: Highcharts.color(v.fg).setOpacity(0.1).get("rgba") as string,
             innerRadius: "60%", outerRadius: "100%",
             shape: "arc" as const, borderWidth: 0,
           }],
         },
         yAxis: {
-          min: 0, max: 100, lineWidth: 0, tickWidth: 0,
+          min: 0, max, lineWidth: 0, tickWidth: 0,
           minorTickInterval: null as any,
           labels: { enabled: false },
         },
         series: [{
           name: "Health", data: [val], type: "solidgauge" as any,
           dataLabels: {
-            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">{y}%</span>`,
+            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">${number}${suffix}</span>`,
             borderWidth: 0, y: -20,
           },
           innerRadius: "60%", radius: "100%",
         }],
+      };
+    }
+
+    case "waterfall": {
+      /* Steps that add to or take from a running total, then a sum bar. A
+         part flagged `isSum` shows the running total at that point. */
+      const steps = (props.seriesData as ({ name: string; y: number; isSum?: boolean })[] | undefined) ?? [
+        { name: "Opening", y: 1200 },
+        { name: "New", y: 340 },
+        { name: "Churn", y: -180 },
+        { name: "Expansion", y: 120 },
+        { name: "Closing", y: 0, isSum: true },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, type: "waterfall" },
+        title: { ...tt, text: props.title || "Bridge" },
+        xAxis: { ...tx, type: "category", categories: steps.map((s) => s.name) },
+        legend: { enabled: false },
+        series: [{
+          name: props.title || "Value",
+          type: "waterfall" as any,
+          data: steps.map((s) => (s.isSum ? { name: s.name, isSum: true } : { name: s.name, y: s.y })),
+          lineWidth: 1,
+          lineColor: v.border,
+          dashStyle: "Dot",
+          borderWidth: 0,
+          dataLabels: {
+            enabled: true,
+            inside: false,
+            style: { fontSize: "11px", fontWeight: "500", color: v.fgSec, textOutline: "none" },
+          },
+        }] as any,
       };
     }
 
@@ -628,6 +752,12 @@ interface SimulatedHighchartProps {
   yAxisMax?: number;
   valueDecimals?: number;
   valueSuffix?: string;
+  valueMax?: number;
+  labelWrap?: boolean;
+  pointColors?: string[];
+  pointColorsByName?: Record<string, string>;
+  selected?: string;
+  onSelectPoint?: (name: string) => void;
 }
 
 const DEFAULT_CHART_HEIGHT = 250;
@@ -635,7 +765,14 @@ const DEFAULT_CHART_HEIGHT = 250;
 export function SimulatedHighchart({
   chartType, title, value, system, seriesColors, seriesData, categories, series,
   height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
+  valueMax, labelWrap, pointColors, pointColorsByName, selected, onSelectPoint,
 }: SimulatedHighchartProps) {
+  /* The click handler is read through a ref so a new function identity each
+     render does not rebuild the chart. */
+  const onSelectRef = useRef(onSelectPoint);
+  useEffect(() => { onSelectRef.current = onSelectPoint; }, [onSelectPoint]);
+  const selectable = Boolean(onSelectPoint);
+  const pointColorsKey = `${pointColors ? pointColors.join("|") : ""}#${pointColorsByName ? JSON.stringify(pointColorsByName) : ""}`;
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
@@ -684,10 +821,14 @@ export function SimulatedHighchart({
       chartType,
       baseTheme(vars, palette, seriesColors),
       vars,
-      { title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax },
+      {
+        title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
+        valueMax, labelWrap, pointColors, pointColorsByName, selected,
+        ...(selectable ? { onSelectPoint: (name: string) => onSelectRef.current?.(name) } : {}),
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, pointColorsKey, selected, selectable]);
 
   const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (
