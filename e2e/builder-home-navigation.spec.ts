@@ -115,4 +115,22 @@ test('onboarding: a selected choice stays visibly selected', async ({ page }) =>
   const unchecked = group.locator('[role="radio"][aria-checked="false"]').first();
   const look = (l: typeof checked) => l.evaluate((el) => { const cs = getComputedStyle(el); return `${cs.backgroundColor}|${cs.borderColor}|${cs.fontWeight}`; });
   expect(await look(checked)).not.toBe(await look(unchecked));
+  /* A filled state: a visible background, and its text reads on it (AA). */
+  const fill = await checked.evaluate((el) => {
+    const rgba = (v: string) => (v.match(/[\d.]+/g) ?? []).map(Number);
+    const lum = (c: number[]) => { const l = c.slice(0, 3).map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }); return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2]; };
+    /* The ground under the chip: the nearest ancestor with a paint. */
+    let ground = [11, 17, 32, 1];
+    for (let a = el.parentElement; a; a = a.parentElement) { const c = rgba(getComputedStyle(a).backgroundColor); if ((c[3] ?? 1) > 0.5) { ground = c; break; } }
+    const bg = rgba(getComputedStyle(el).backgroundColor);
+    const alpha = bg[3] ?? 1;
+    const painted = [0, 1, 2].map((i) => bg[i] * alpha + ground[i] * (1 - alpha));
+    const fg = rgba(getComputedStyle(el).color);
+    const fa = fg[3] ?? 1;
+    const text = [0, 1, 2].map((i) => fg[i] * fa + painted[i] * (1 - fa));
+    const [hi, lo] = [lum(text), lum(painted)].sort((a, b) => b - a);
+    return { alpha, contrast: (hi + 0.05) / (lo + 0.05) };
+  });
+  expect(fill.alpha).toBeGreaterThan(0.1);
+  expect(fill.contrast).toBeGreaterThanOrEqual(4.5);
 });

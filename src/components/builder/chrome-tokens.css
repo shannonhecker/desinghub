@@ -37,7 +37,7 @@
   --bc-logo-light-opacity: 0.9;
   --bc-page-menu-label-w: 36px;
   --bc-page-menu-list-max: 360px;
-  --bc-chat-fade: 28px;
+  --bc-chat-fade: 16px;
   /* Opaque stop for mask gradients (only alpha matters). */
   --bc-mask-solid: black;
   /* Analytics Home wave graphic: how far it bleeds above / below the hero. */
