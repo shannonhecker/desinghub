@@ -25,6 +25,7 @@ import { CURRENCY_STATE, centerColumn, resolveBinding, type BoundData, type Data
 import { sampleDataset } from "@/lib/reportData/registry";
 import type { DataRow, ReportDataset } from "@/lib/reportData/types";
 import { RECORD_PANEL_BLOCK_TYPE } from "./reportMarkup";
+import { formatBarStamp, formatBarTime, formatPrice, resolveExecution, splitQuote, type ExecutionView } from "@/lib/executionModel";
 
 /** The part of the builder state the exporters read. */
 export interface CanvasSource {
@@ -166,7 +167,68 @@ const LIVE_ONLY_PROPS = ["binding", "stateKey", "onValueChange"] as const;
 /** Props this step derives from a binding (never read from the block). */
 const RESOLVED_PROPS = ["selectedPoint", "record"] as const;
 
+function executionOf(dataset: ReportDataset | null, reportState: ReportState): ExecutionView | null {
+  try {
+    return dataset ? resolveExecution(dataset, reportState) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The execution chart leaves as a combination chart of its lines: percent
+ *  done against the left axis, the prices against the right. (Its fills,
+ *  bands and price tags are drawn by the canvas block and have no static
+ *  equivalent in the chart helper; the venue panel carries the fills.) */
+function materialiseExecutionChart(block: Block, view: ExecutionView | null): Block {
+  const height = typeof block.props?.height === "number" ? block.props.height : 640;
+  if (!view) return { ...block, type: "HighchartCombination", props: { chartType: "combination", panel: true, height, title: "Execution", categories: [], series: [] } };
+  const across = view.times[view.times.length - 1] - view.times[0] > 36 * 60 * 60 * 1000;
+  const price = (name: string, data: (number | null)[], dashStyle?: "Dash" | "Dot") => ({ name, type: "line" as const, yAxis: 1 as const, data, ...(dashStyle ? { dashStyle } : {}) });
+  return {
+    ...block,
+    type: "HighchartCombination",
+    props: {
+      chartType: "combination", panel: true, height,
+      title: `${view.pair} execution`,
+      subtitle: `${view.interval} · ${view.range} · ${view.order.side} ${view.order.id}, ${view.order.pctDone}% done`,
+      categories: view.times.map((t) => (across ? formatBarStamp(t) : formatBarTime(t, false))),
+      series: [
+        { name: "Percent done", type: "line" as const, data: view.pct },
+        price("Bid", view.bid),
+        price("Ask", view.ask),
+        price("Limit price", view.limit, "Dash"),
+        price("Avg market fill", view.avgFill),
+      ],
+      yAxisFormat: "{value}%",
+      valueDecimals: 5,
+    },
+  };
+}
+
+/** The instrument header, as the text it shows. */
+function materialiseInstrumentHeader(block: Block, view: ExecutionView | null): Block {
+  const note = text(block.props?.note, "Sample data");
+  if (!view || !view.last) return { ...block, props: { symbol: text(block.props?.symbol, "Instrument"), note } };
+  const { last, order } = view;
+  const up = last.changePips >= 0;
+  return {
+    ...block,
+    props: {
+      symbol: view.pair, description: view.description, counter: `${order.fills}/${order.fillsTarget}`,
+      figures: [["O", formatPrice(last.open)], ["H", formatPrice(last.high)], ["L", formatPrice(last.low)], ["C", formatPrice(last.close)]],
+      change: `${up ? "+" : ""}${last.changePips.toFixed(2)} (${up ? "+" : ""}${last.changePct.toFixed(2)}%)`,
+      changeTone: up ? "good" : "bad",
+      quote: { base: view.pair.slice(0, 3), sell: splitQuote(last.bid), buy: splitQuote(last.ask) },
+      status: `${view.interval} ${view.chartStyle} · ${order.algo} · ${order.pctDone}% done`,
+      orders: view.orders.map((o) => ({ id: o.id, side: o.side, status: o.status, active: o.id === order.id })),
+      note,
+    },
+  };
+}
+
 export function materialiseBlock(block: Block, dataset: ReportDataset | null, reportState: ReportState): Block {
+  if (block.type === "ExecutionChart") return materialiseExecutionChart(block, executionOf(dataset, reportState));
+  if (block.type === "InstrumentHeader") return materialiseInstrumentHeader(block, executionOf(dataset, reportState));
   const source = block.props ?? {};
   const props: Record<string, unknown> = { ...source };
   for (const key of LIVE_ONLY_PROPS) delete props[key];

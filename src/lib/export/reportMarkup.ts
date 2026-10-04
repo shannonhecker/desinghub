@@ -113,7 +113,7 @@ const str = (v: unknown): string => (typeof v === "string" && v.trim() ? v : "")
 
 /* ── Block types this module draws ── */
 
-export const CHROME_BLOCK_TYPES = new Set<string>(["TopNav", "TabStrip", "NavGroup", "PageTitle", "ContextBar"]);
+export const CHROME_BLOCK_TYPES = new Set<string>(["TopNav", "TabStrip", "NavGroup", "PageTitle", "ContextBar", "InstrumentHeader"]);
 
 /* ── Tones and zones ── */
 
@@ -651,6 +651,42 @@ export function contextBarLines(d: Dialect, block: Block): string[] {
   return out;
 }
 
+/** InstrumentHeader: the pair, its last bar, a two-sided quote; then the
+ *  orders. Arrives as text (materialise.ts). */
+export function instrumentHeaderLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const figures = Array.isArray(p.figures) ? (p.figures as [string, string][]) : [];
+  const orders = Array.isArray(p.orders) ? (p.orders as { id: string; side: string; status: string; active: boolean }[]) : [];
+  const quote = p.quote as { base: string; sell: { handle: string; pips: string }; buy: { handle: string; pips: string } } | undefined;
+  const out = [`<div ${d.cls}="instrument">`, `  <div ${d.cls}="instrument-main">`, `    <h1 ${d.cls}="instrument-symbol">${d.text(String(p.symbol ?? "Instrument"))}</h1>`];
+  if (str(p.description)) out.push(`    <span ${d.cls}="instrument-meta">${d.text(str(p.description))}</span>`);
+  if (str(p.counter)) out.push(`    <span ${d.cls}="instrument-meta">${d.text(str(p.counter))}</span>`);
+  if (figures.length) {
+    out.push(`    <dl ${d.cls}="instrument-ohlc">`);
+    for (const [label, value] of figures) out.push(`      <div><dt>${d.text(label)}</dt><dd>${d.text(value)}</dd></div>`);
+    out.push("    </dl>");
+  }
+  if (str(p.change)) out.push(`    <span ${d.cls}="instrument-change ${toneClass(p.changeTone === "bad" ? "bad" : "good")}">${d.text(str(p.change))}</span>`);
+  if (quote) {
+    out.push(
+      `    <div ${d.cls}="instrument-quote">`,
+      `      <span ${d.cls}="instrument-side"><span>${d.text(`S ${quote.base}`)}</span><strong>${d.text(`${quote.sell.handle}${quote.sell.pips}`)}</strong></span>`,
+      `      <span ${d.cls}="instrument-side"><span>${d.text(`B ${quote.base}`)}</span><strong>${d.text(`${quote.buy.handle}${quote.buy.pips}`)}</strong></span>`,
+      "    </div>",
+    );
+  }
+  out.push("  </div>", `  <div ${d.cls}="instrument-sub">`);
+  if (str(p.status)) out.push(`    <span ${d.cls}="instrument-meta">${d.text(str(p.status))}</span>`);
+  if (orders.length) {
+    out.push(`    <ul ${d.cls}="instrument-orders">`);
+    for (const o of orders) out.push(`      <li${o.active ? ' aria-current="true"' : ""}><strong>${d.text(o.side)}</strong> ${d.text(o.id)} <span>${d.text(o.status)}</span></li>`);
+    out.push("    </ul>");
+  }
+  if (str(p.note)) out.push(`    <span ${d.cls}="instrument-meta">${d.text(str(p.note))}</span>`);
+  out.push("  </div>", "</div>");
+  return out;
+}
+
 /* ── Record panel: the detail of the record a grid has selected ──
    Blocks arrive with `record` resolved (materialise.ts), or without it when
    nothing is selected. The canvas draws this with RecordPanel.tsx. */
@@ -1009,6 +1045,8 @@ export function reportBlockLines(d: Dialect, block: Block): string[] | null {
       return pageTitleLines(d, p);
     case "ContextBar":
       return contextBarLines(d, block);
+    case "InstrumentHeader":
+      return instrumentHeaderLines(d, block);
     case "DataGrid":
       return dataGridLines(d, block);
     case RECORD_PANEL_BLOCK_TYPE:
