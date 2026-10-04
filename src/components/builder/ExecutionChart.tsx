@@ -20,6 +20,7 @@ import { SimulatedDataGrid } from "./SimulatedDataGrid";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
 import { liveDataset, useExecutionFeed } from "./useExecutionFeed";
+import { useOrderAmend, useSessionAmend } from "./useOrderAmend"; // FX D: sample orders
 
 /* ══════════════════════════════════════════════════════════
    ExecutionChart - one order worked through a session.
@@ -71,14 +72,15 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const fullHeight = panelHeightOf(block?.props ?? {});
   const height = phone ? Math.min(fullHeight, PHONE_HEIGHT) : fullHeight;
   const rail = phone ? RAIL_WIDTH_PHONE : RAIL_WIDTH;
-  const view = useMemo(() => (dataset ? resolveExecution(dataset, reportState) : null), [dataset, reportState]);
+  const amend = useSessionAmend(readOnly); // FX D: this session's limit amendments, laid over each view below
+  const view = useMemo(() => (dataset ? amend(resolveExecution(dataset, reportState)) : null), [dataset, reportState, amend]);
   const showTable = reportState[VIEW_KEY] === "Table";
   /* The sample feed: live while presenting with it switched on. Its bars
      are added to the drawn chart in place (below); Edit stays static. */
   const feed = useExecutionFeed({ dataset, state: reportState, active: readOnly && feedSwitchedOn(reportState) });
   const peek = readOnly ? feed.peek : NO_SAMPLES;
   const order = dataset ? executionOrderOf(dataset, reportState) : null;
-  const liveView = (samples: readonly FeedSample[]) => (dataset && order && samples.length ? resolveExecution(liveDataset(dataset, order, samples), reportState) : view);
+  const liveView = (samples: readonly FeedSample[]) => (dataset && order && samples.length ? amend(resolveExecution(liveDataset(dataset, order, samples), reportState)) : view);
 
   const rootRef = useRef<HTMLElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const [rebuilds, setRebuilds] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
   const palette = useMemo(() => getPalette(system), [system]);
+  const orders = useOrderAmend({ chartRef, plotRef, active: readOnly, dataset, vars, palette, system }); // FX D: limit drag, BID staging, price menus, dialogs, toast
 
   useEffect(() => { ensureHighchartsModules(); }, []);
   /* Colours and width are read before the first paint, so the chart is
@@ -157,7 +160,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     if (!view || !vars || !hasWidth) return null;
     const samples = peek();
     const frame: ChartFrame = {
-      view: dataset && order && samples.length ? resolveExecution(liveDataset(dataset, order, samples), reportState) ?? view : view,
+      view: dataset && order && samples.length ? amend(resolveExecution(liveDataset(dataset, order, samples), reportState)) ?? view : view,
       countdown: null,
       counts: {},
     };
@@ -167,6 +170,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
       events: {
         render() {
           drawPills(this, frame, vars, palette, pillsRef);
+          orders.onRender(this, frame); // FX D
           /* How many bars the drawn chart holds (tests read it). */
           this.container?.closest(".dh-exec")?.setAttribute("data-chart-bars", String(frame.view.times.length));
         },
@@ -183,11 +187,11 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   useEffect(() => {
     const chart = chartRef.current?.chart;
     if (!built || !chart || !samples || samples.length === 0 || !dataset || !order) return;
-    const next = resolveExecution(liveDataset(dataset, order, samples), reportState);
+    const next = amend(resolveExecution(liveDataset(dataset, order, samples), reportState));
     if (!next) return;
     const countdown = running ? barCountdown(next, samples[samples.length - 1].time) : null;
     if (!applyFeedView(chart, built.frame, next, vars!, palette, countdown, !prefersReducedMotion())) setRebuilds((n) => n + 1);
-  }, [built, samples, running, dataset, order, reportState, vars, palette]);
+  }, [built, samples, running, dataset, order, reportState, vars, palette, amend]);
   /* The grid can still be settling when the chart is created (the panels
      beside it mount in the same pass), so the width it was built with may
      be stale by the time it is in the page. Correct it in the same commit,
@@ -255,6 +259,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
                (applyFeedView), never rebuilt. */
             <HighchartsReact ref={chartRef} highcharts={Highcharts} options={options} immutable />
           ) : null}
+          {orders.overlay /* FX D */}
         </div>
         <div className="dh-exec-ranges" role="group" aria-label="Range">
           {EXECUTION_RANGES.map((r) => (

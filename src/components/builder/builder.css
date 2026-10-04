@@ -11003,6 +11003,131 @@
 /* The chosen range is an inverted pill. */
 .dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
 
+/* ── FX sample orders (PR D): the quote's sides and the header launchers,
+   the targets over the price tags, the toast. The dialogs and menus are
+   each design system's own (RealDialogKit); .dh-kit-* only lays out
+   their content, the same rhythm in every system. ── */
+button.dh-instrument-side {
+  appearance: none;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--bc-duration-fast) ease;
+}
+button.dh-instrument-side:hover { background: color-mix(in srgb, var(--ds-fg) 6%, transparent); }
+button.dh-instrument-side:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+/* In Edit the sides are drawn the same but are not controls: a press goes to the block. */
+button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: inherit; }
+.dh-order-launchers {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 2);
+  height: var(--dh-feed-h);
+}
+.dh-order-launchers > * { display: inline-flex; align-items: center; background: transparent; }
+@container chrome-header (max-width: 35rem) {
+  .dh-order-launchers { order: 6; }
+}
+
+.dh-exec-plot { position: relative; }
+.dh-order-layer { position: absolute; inset: 0; pointer-events: none; }
+.dh-order-tag {
+  position: absolute;
+  top: calc((var(--dh-order-tag-top) + var(--dh-order-tag-h) / 2) * var(--dh-order-px));
+  left: calc(var(--dh-order-tag-left) * var(--dh-order-px));
+  width: calc(var(--dh-order-tag-w) * var(--dh-order-px));
+  height: max(var(--dh-order-hit-min), calc(var(--dh-order-tag-h) * var(--dh-order-px)));
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dh-order-hit-min);
+  background: transparent;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: pointer;
+}
+.dh-order-tag[role="slider"] { cursor: ns-resize; }
+.dh-order-tag-bid[role="slider"] { cursor: grab; }
+.dh-order-tag-bid[role="slider"]:active { cursor: grabbing; }
+.dh-order-tag:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+
+/* One message at a time, over the top of the plot; it never moves the layout. */
+.dh-order-toast {
+  position: absolute;
+  top: var(--dh-order-toast-y);
+  left: 50%;
+  z-index: 12;
+  max-width: min(var(--dh-order-toast-max), calc(100% - 2 * var(--dh-order-toast-y)));
+  transform: translate(-50%, calc(-1 * var(--dh-order-toast-y)));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--bc-duration-medium) ease, transform var(--bc-duration-medium) ease;
+}
+.dh-order-toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+.dh-order-toast > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-nav-pad);
+  padding: var(--dh-nav-pad) var(--dh-nav-inset);
+  border-radius: var(--ds-radius);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline) solid color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  box-shadow: var(--ds-shadow, 0 0.5rem 1.5rem color-mix(in srgb, var(--ds-fg) 14%, transparent));
+  font-family: var(--ds-font);
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.dh-order-toast-dot { flex: none; width: var(--dh-cell-dot); height: var(--dh-cell-dot); border-radius: 50%; background: var(--ds-status-positive); }
+@media (prefers-reduced-motion: reduce) {
+  .dh-order-toast { transition: none; }
+}
+
+/* The kit's dialog content (portalled; no canvas variables here). */
+.dh-kit-body { display: flex; flex-direction: column; gap: var(--dh-kit-gap); min-width: 0; }
+.dh-kit-description { margin: 0 0 var(--dh-kit-gap); opacity: 0.8; }
+.dh-kit-rows { display: grid; gap: var(--dh-kit-gap); }
+.dh-kit-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--dh-kit-gap); align-items: start; }
+.dh-kit-row[data-cols="1"] { grid-template-columns: minmax(0, 1fr); }
+.dh-kit-cell { min-width: 0; }
+.dh-kit-cell > * { width: 100%; min-width: 0; }
+.dh-kit-choice > *, .dh-kit-tiles { display: flex; width: 100%; gap: var(--dh-kit-gap-tight); }
+.dh-kit-choice fieldset.dh-kit-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 0; margin: 0; padding: 0; }
+.dh-kit-choice button,
+.dh-kit-choice .cds--tile { flex: 1 1 0; min-width: 0; height: auto; min-height: var(--dh-kit-tile-h); }
+.dh-kit-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--dh-kit-gap-tight); line-height: 1; padding-block: var(--dh-kit-gap-tight); }
+.dh-kit-sr { position: absolute; width: var(--dh-order-px); height: var(--dh-order-px); margin: calc(-1 * var(--dh-order-px)); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dh-kit-tile-caption { font-size: var(--dh-kit-tile-caption); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+.dh-kit-tile-quote { display: inline-flex; align-items: baseline; font-size: var(--dh-kit-tile-quote); font-variant-numeric: tabular-nums; text-transform: none; }
+.dh-kit-tile-quote strong { font-size: var(--dh-kit-tile-pips); font-weight: 700; letter-spacing: -0.01em; }
+.dh-kit-body .dh-kit-up { color: var(--dh-kit-up); }
+.dh-kit-body .dh-kit-down { color: var(--dh-kit-down); }
+.dh-kit-table { overflow-x: auto; }
+.dh-kit-table td, .dh-kit-table th { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dh-kit-figure { margin: 0; }
+.dh-kit-figure-title { margin: 0 0 var(--dh-kit-gap-tight); font-size: var(--dh-navgroup-size); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.dh-kit-error { display: block; margin-top: var(--dh-kit-gap-tight); color: var(--dh-kit-down); font-size: var(--dh-cell-small); }
+/* uoaui: its .a-dialog, sized here; title and actions in its type. */
+.dh-kit-backdrop { z-index: 1400; padding: var(--bc-gutter-narrow); }
+.dh-kit-uoaui-medium { width: min(var(--dh-kit-uoaui-w), 100%); }
+.dh-kit-uoaui-small { width: min(var(--dh-kit-uoaui-w-small), 100%); }
+.dh-kit-dialog.a-dialog { box-sizing: border-box; max-height: calc(100dvh - 2 * var(--bc-gutter-narrow)); overflow: auto; min-width: 0; }
+.dh-kit-title { margin: 0 0 var(--dh-kit-gap-tight); font-size: var(--dh-kit-title); font-weight: 600; }
+.dh-kit-actions { display: flex; justify-content: flex-end; gap: var(--dh-nav-pad); margin-top: var(--dh-kit-gap); }
+.dh-kit-menu-uoaui { z-index: 1400; min-width: var(--dh-exec-flyout-w); margin: 0; padding: var(--dh-kit-gap-tight); list-style: none; }
+.dh-kit-menu-uoaui .a-dropdown-item { border-radius: var(--dh-kit-gap-tight); white-space: nowrap; }
+.dh-kit-menu-uoaui .a-dropdown-item[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+.dh-kit-menu-uoaui .a-dropdown-item:focus-visible { outline: var(--dh-focus-ring) solid currentColor; outline-offset: calc(-1 * var(--dh-focus-ring)); }
+.dh-kit-fluent-small { max-width: var(--dh-kit-uoaui-w-small); }
+@media (max-width: 30rem) {
+  .dh-kit-row { grid-template-columns: minmax(0, 1fr); }
+}
+
 .dh-navgroup {
   padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
   font-family: var(--ds-font);

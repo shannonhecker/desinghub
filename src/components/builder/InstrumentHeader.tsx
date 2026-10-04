@@ -5,6 +5,8 @@ import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { EXECUTION_KEYS, formatChange, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
 import { feedSwitchedOn } from "@/lib/executionFeed";
 import { ExecutionFeedControls, type FeedStatus } from "./ExecutionFeedControls";
+import { OrderLaunchers } from "./OrderLaunchers";
+import { orderActions } from "./useOrderSession";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
 import { useExecutionFeed, useFeedDataset } from "./useExecutionFeed";
@@ -15,9 +17,11 @@ import { useExecutionFeed, useFeedDataset } from "./useExecutionFeed";
    Line one: the pair, its last bar (open, high, low, close and the
    change), and a two-sided quote. Line two: how the chart is being
    read, the orders as tabs (choosing one re-reads the whole page),
-   the sample feed's controls, and a note that the figures are sample
-   data. While presenting, the figures follow the feed; they are not
-   announced on every tick (the header is aria-live="off").
+   Compare and Fill now, the sample feed's controls, and a note that the
+   figures are sample data. While presenting, the figures follow the
+   feed; they are not announced on every tick (the header is
+   aria-live="off"), and the quote's sides, Fill now and Compare open the
+   sample order workflow (FX D). In Edit they are drawn the same, still.
    ══════════════════════════════════════════════════════════ */
 
 export function InstrumentHeaderBlock(p: Record<string, unknown>) {
@@ -62,8 +66,13 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
         <span className="dh-instrument-spacer" />
         <span className="dh-instrument-quote" role="group" aria-label="Quote">
           <span className="dh-instrument-handle">{sell.handle}</span>
-          <span className="dh-instrument-side"><span className="dh-instrument-side-label">S {base}</span><span className="dh-instrument-pips">{sell.pips}</span></span>
-          <span className="dh-instrument-side"><span className="dh-instrument-side-label">B {base}</span><span className="dh-instrument-pips">{buy.pips}</span></span>
+          {/* FX D: a side opens the sample ticket while presenting; in Edit it is the same shape, inert. */}
+          <button type="button" className="dh-instrument-side" aria-disabled={readOnly ? undefined : true} tabIndex={readOnly ? undefined : -1} aria-label={`Sell ${base} at ${formatPrice(last.bid)}`} title={readOnly ? "Sell at the bid: opens the sample order ticket" : undefined} onClick={readOnly ? (e) => orderActions.openTicket({ side: "SELL", price: last.bid }, e.currentTarget) : undefined}>
+            <span className="dh-instrument-side-label">S {base}</span><span className="dh-instrument-pips">{sell.pips}</span>
+          </button>
+          <button type="button" className="dh-instrument-side" aria-disabled={readOnly ? undefined : true} tabIndex={readOnly ? undefined : -1} aria-label={`Buy ${base} at ${formatPrice(last.ask)}`} title={readOnly ? "Buy at the offer: opens the sample order ticket" : undefined} onClick={readOnly ? (e) => orderActions.openTicket({ side: "BUY", price: last.ask }, e.currentTarget) : undefined}>
+            <span className="dh-instrument-side-label">B {base}</span><span className="dh-instrument-pips">{buy.pips}</span>
+          </button>
           <span className="dh-instrument-handle">{buy.handle}</span>
         </span>
       </div>
@@ -86,6 +95,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
             </button>
           ))}
         </div>
+        <OrderLaunchers system={(p.system as DesignSystem) ?? "salt"} presenting={readOnly} ask={last.ask} />
         <span className="dh-instrument-spacer" />
         <ExecutionFeedControls system={(p.system as DesignSystem) ?? "salt"} status={status} canReset={readOnly && feed.samples.length > 0} presenting={readOnly} note={String(p.note ?? "Sample data")} />
       </div>

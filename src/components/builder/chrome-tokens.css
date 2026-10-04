@@ -79,6 +79,23 @@
   /* The sample feed's controls: one slot as tall as the tallest compact
      design-system button (Carbon sm), so the header is one height in all five. */
   --dh-feed-h:              32px;
+  /* FX sample orders: the kit's dialogs (fields, side tiles), the price
+     tags' hit areas and the toast. */
+  --dh-kit-gap:             16px;
+  --dh-kit-gap-tight:       4px;
+  --dh-kit-tile-h:          64px;
+  --dh-kit-tile-caption:    11px;
+  --dh-kit-tile-quote:      15px;
+  --dh-kit-tile-pips:       26px;
+  --dh-kit-title:           18px;
+  --dh-kit-uoaui-w:         560px;
+  --dh-kit-uoaui-w-small:   400px;
+  --dh-kit-chart-h:         180px;
+  --dh-order-hit-min:       24px;
+  --dh-order-toast-max:     360px;
+  --dh-order-toast-y:       12px;
+  /* One CSS pixel: the tag targets take their place from the chart as plain numbers. */
+  --dh-order-px:            1px;
   /* Dense text navigation. */
   --dh-nav-row:             28px;
   --dh-nav-row-rail:        36px;
