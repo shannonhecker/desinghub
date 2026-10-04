@@ -244,10 +244,8 @@ a { color: inherit; text-decoration: none; }
          clamps into named slots or (b) adding steps to absorb prior
          inline values. ─── */
   --lsl-text-display-xl:  clamp(56px, 11vw, 156px); /* Hero giant — landing Display XL */
-  --lsl-text-display-l:   clamp(28px, 9vw, 55px);   /* Landing hero: two lines; 34px at 375, 28px floor at 320 */
   --lsl-text-display-m:   clamp(40px, 6vw, 80px);   /* Section H2 — Display M */
   --lsl-text-display-s:   clamp(32px, 3.6vw, 48px); /* Card H3 — Display S */
-  --lsl-text-display-sm:  clamp(28px, 3vw, 40px);   /* Landing section H2, one clear step under the hero */
   --lsl-text-display-xs:  26px;                     /* Mid display step (absorbs prior 26 + 28) */
   --lsl-text-display-xxs: 20px;                     /* Smallest display step (nav brand) */
   --lsl-text-card-title:  18px;                     /* H2 — card heading (sans, 600 weight) */

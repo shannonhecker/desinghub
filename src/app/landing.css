@@ -8,8 +8,8 @@
  * --a-*, or any DS-scoped tokens. Type sizes come from the --lsl-text-* scale
  * in globals.css.
  *
- * The page has one loud element: the hero instrument, where a real report
- * changes design system. Everything else is quiet: a dark neutral canvas,
+ * The page has one loud element: the hero instrument, where a real screen is
+ * shown in two design systems with a divider you drag. Everything else is quiet: a dark neutral canvas,
  * one purple accent, and a two-column grid that every section shares.
  *
  * Scroll: the host globals.css gates page scroll behind `:has(.hero)`. The
@@ -61,19 +61,27 @@ html:has(.landing-southleft) body {
                    ui-monospace, "SF Mono", Menlo, Consolas, monospace);
 
   /* ── Layout rhythm: one grid, one section step, one control height ───── */
-  --lsl-section-y: 128px;
+  --lsl-section-y: 96px;
   --lsl-content-max: 1360px;
   --lsl-content-pad: 40px;
-  --lsl-col-gap: 56px;
-  --lsl-col-text: 540px;      /* the left column every section aligns to */
+  --lsl-col-gap: clamp(40px, 3.9vw, 56px);
+  /* The left column every section aligns to. It narrows with the viewport so
+     the hero keeps two columns down to 1024px. */
+  --lsl-col-text: clamp(404px, 39.5vw, 540px);
+  /* Landing display sizes. The hero is two unwrapped lines: 55px at full
+     width, 34px on a 375px phone, 28px floor at 320px. */
+  --lsl-text-display-l: clamp(28px, 9vw, 55px);
+  --lsl-text-display-sm: clamp(28px, 3vw, 40px);
   --lsl-nav-h: 72px;
   --lsl-control-h: 48px;
+  /* Owner rule: no harsh outlines. Surfaces separate by tone; where an edge is
+     needed it is this one low-contrast hairline (the 10% rule token), drawn
+     as a 1px ring so it never adds an outlined box. */
+  --lsl-edge-soft: 0 0 0 1px var(--lsl-rule);
   --lsl-radius-frame: 14px;
   --lsl-radius-control: 999px;
   --lsl-ease: cubic-bezier(0.2, 0, 0, 1);
-  --lsl-ease-wipe: cubic-bezier(0.65, 0, 0.35, 1);
   --lsl-dur-fast: 160ms;
-  --lsl-dur-wipe: 560ms;
   /* Left edge of the content column, for elements that bleed to the right. */
   --lsl-edge: max(
     var(--lsl-content-pad),
@@ -237,13 +245,13 @@ html:has(.landing-southleft) body {
   height: 40px;
   padding: 0 18px;
   font-size: var(--lsl-text-meta);
-  background: transparent;
+  background: var(--lsl-bg-elevated);
   color: var(--lsl-fg-strong);
-  border-color: var(--lsl-rule-strong);
+  border-color: transparent;
 }
 .landing-southleft .lsl-nav-cta:hover {
   background: var(--lsl-fg-strong);
-  border-color: var(--lsl-fg-strong);
+  border-color: transparent;
   color: var(--lsl-bg);
 }
 .landing-southleft .lsl-inline-link {
@@ -271,11 +279,11 @@ html:has(.landing-southleft) body {
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
 /* Copy on the content grid's left column, the instrument on the right,
-   bleeding toward the viewport edge. Sized so the headline, the prompt and
-   the whole report frame sit inside a 1512x738 viewport. */
+   running toward the viewport edge. Two columns from 1024px up, sized so the
+   headline, the prompt and the whole frame sit inside a 1512x738 viewport. */
 .landing-southleft .lsl-hero {
   padding-top: 16px;
-  padding-bottom: 56px;
+  padding-bottom: 40px;
 }
 .landing-southleft .lsl-hero-grid {
   max-width: none;
@@ -285,12 +293,13 @@ html:has(.landing-southleft) body {
   grid-template-columns: minmax(0, var(--lsl-col-text)) minmax(0, 1fr);
   gap: var(--lsl-col-gap);
   align-items: center;
-  min-height: min(calc(100svh - var(--lsl-nav-h) - 72px), 680px);
+  min-height: min(calc(100svh - var(--lsl-nav-h) - 56px), 700px);
 }
 .landing-southleft .lsl-hero-headline {
   font-family: var(--lsl-font-display);
   font-weight: 800;
-  font-size: var(--lsl-text-display-l);
+  /* The longer line is 9.6 times the font size wide: fit it to the column. */
+  font-size: min(55px, calc(var(--lsl-col-text) / 9.82));
   line-height: 1;
   letter-spacing: -0.035em;
   color: var(--lsl-fg-strong);
@@ -317,7 +326,7 @@ html:has(.landing-southleft) body {
   color: var(--lsl-fg-muted);
 }
 
-/* ── Hero prompt (land, type, build) ───────────────────────────────────── */
+/* ── Prompt (land, type, build) ────────────────────────────────────────── */
 .landing-southleft .lsl-hero-prompt {
   width: 100%;
   max-width: 520px;
@@ -341,7 +350,7 @@ html:has(.landing-southleft) body {
   height: 60px;
   padding: 0 6px 0 22px;
   background: var(--lsl-bg-elevated);
-  border: 1px solid var(--lsl-rule-strong);
+  border: 1px solid transparent;
   border-radius: var(--lsl-radius-control);
   transition: border-color var(--lsl-dur-fast) ease,
               box-shadow var(--lsl-dur-fast) ease;
@@ -387,12 +396,79 @@ html:has(.landing-southleft) body {
   background: var(--lsl-accent-hover);
   border-color: var(--lsl-accent-hover);
 }
+/* System chips (closing band): real radios, so the choice submits with the
+   form even without JavaScript. */
+.landing-southleft .lsl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.landing-southleft .lsl-chips-legend {
+  float: left;
+  padding: 0;
+  margin: 0 8px 0 22px;
+  font-size: var(--lsl-text-meta);
+  line-height: 44px;
+  color: var(--lsl-fg-muted);
+}
+.landing-southleft .lsl-chip {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+.landing-southleft .lsl-chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.landing-southleft .lsl-chip span {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  gap: 8px;
+  border-radius: var(--lsl-radius-control);
+  background: var(--lsl-bg-soft);
+  font-size: var(--lsl-text-meta);
+  font-weight: 500;
+  color: var(--lsl-fg-muted);
+  transition: color var(--lsl-dur-fast) ease,
+              background var(--lsl-dur-fast) ease;
+}
+.landing-southleft .lsl-chip:hover span { color: var(--lsl-fg-strong); }
+/* Selected: a filled tonal state, with the system's own colour as a dot. */
+.landing-southleft .lsl-chip input:checked + span {
+  color: var(--lsl-bg);
+  background: var(--lsl-fg-strong);
+  font-weight: 600;
+}
+.landing-southleft .lsl-chip input:checked + span::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lsl-bg);
+}
+.landing-southleft .lsl-chip input:focus-visible + span {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+}
 
-/* ── The instrument: one real report, reskinned in place ──────────────────
-   Present-mode captures of the SAME canvas, swapped by an ARIA tablist (one
-   tab per design system) and a light/dark control. The frame is fixed by
-   aspect-ratio so only the rendering changes. The active system's own colour
-   arrives through the inline --showcase-brand prop (no raw colour here). */
+/* ── The instrument: one real screen, two systems, one divider ────────────
+   Present-mode captures of the SAME canvas. The selected tab's system fills
+   the frame; the compare layer shows the other system to the right of the
+   divider. The frame is fixed by aspect-ratio so only the rendering changes.
+   --split-n (0 to 1) is written inline by the component; the systems' own
+   colours arrive through --showcase-brand and --compare-brand. */
 .landing-southleft .lsl-instrument {
   margin: 0;
   min-width: 0;
@@ -406,9 +482,11 @@ html:has(.landing-southleft) body {
   gap: 12px;
   margin: 0 0 12px;
 }
+/* Tabs wrap; they never scroll out of reach. */
 .landing-southleft .lsl-showcase-tabs {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 0 4px;
   min-width: 0;
 }
 .landing-southleft .lsl-showcase-tab {
@@ -431,16 +509,20 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-showcase-tab:hover {
   color: var(--lsl-fg-strong);
 }
+/* The system on the right of the divider is marked with a dotted rule. */
+.landing-southleft .lsl-showcase-tab[data-compare="true"] {
+  border-bottom: 2px dotted var(--compare-brand, var(--lsl-rule-strong));
+}
 .landing-southleft .lsl-showcase-tab[aria-selected="true"] {
   color: var(--lsl-fg-strong);
   font-weight: 600;
-  border-bottom-color: var(--showcase-brand, var(--lsl-accent));
+  border-bottom: 2px solid var(--showcase-brand, var(--lsl-accent));
 }
 .landing-southleft .lsl-mode {
   display: flex;
   flex: 0 0 auto;
   padding: 3px;
-  border: 1px solid var(--lsl-rule);
+  background: var(--lsl-bg-soft);
   border-radius: var(--lsl-radius-control);
 }
 .landing-southleft .lsl-mode-btn {
@@ -470,15 +552,17 @@ html:has(.landing-southleft) body {
   position: relative;
   width: 100%;
   aspect-ratio: 1760 / 1067;
-  border: 1px solid var(--lsl-rule-strong);
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
   background: var(--lsl-bg-soft);
-  box-shadow: 0 32px 80px -24px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--lsl-edge-soft), 0 32px 80px -24px rgba(0, 0, 0, 0.7);
+  /* Where the divider sits. The range input's thumb is 44px wide, so its
+     centre travels from 22px to (100% - 22px); the line and the clip use the
+     same expression and stay under the pointer. */
+  --split-x: calc(22px + (100% - 44px) * var(--split-n, 0.5));
 }
-.landing-southleft .lsl-showcase-ghost,
 .landing-southleft .lsl-showcase-panel,
-.landing-southleft .lsl-showcase-layer {
+.landing-southleft .lsl-compare-layer {
   position: absolute;
   inset: 0;
 }
@@ -492,82 +576,144 @@ html:has(.landing-southleft) body {
   outline-offset: -4px;
   border-radius: var(--lsl-radius-frame);
 }
-.landing-southleft .lsl-showcase-shot,
-.landing-southleft .lsl-showcase-ghost-shot {
+.landing-southleft .lsl-showcase-shot {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top center;
 }
-/* The wipe: the new skin crosses the old one left to right, led by a line in
-   the incoming system's colour. It only runs after the visitor's own action
-   (data-animate) and only once the new capture has decoded (data-ready), so
-   it never reveals an empty frame. First paint is never clipped. */
-.landing-southleft .lsl-showcase-layer[data-animate="true"] {
-  clip-path: inset(0 100% 0 0);
+/* The other system, shown to the right of the divider. */
+.landing-southleft .lsl-compare-layer {
+  clip-path: inset(0 0 0 var(--split-x));
 }
-.landing-southleft .lsl-showcase-layer[data-animate="true"][data-ready="true"] {
-  animation: lsl-showcase-wipe var(--lsl-dur-wipe) var(--lsl-ease-wipe) forwards;
-}
-@keyframes lsl-showcase-wipe {
-  from { clip-path: inset(0 100% 0 0); }
-  to   { clip-path: inset(0 0 0 0); }
-}
-.landing-southleft .lsl-showcase-edge {
+.landing-southleft .lsl-split-line {
   position: absolute;
-  inset: 0;
-  border-left: 2px solid var(--showcase-brand, var(--lsl-accent));
-  opacity: 0;
+  top: 0;
+  bottom: 0;
+  left: var(--split-x);
+  width: 2px;
+  margin-left: -1px;
+  background: var(--lsl-fg-strong);
+  box-shadow: 0 0 0 1px rgba(10, 14, 26, 0.35);
   pointer-events: none;
 }
-.landing-southleft .lsl-showcase-edge[data-ready="true"] {
-  animation: lsl-showcase-edge var(--lsl-dur-wipe) var(--lsl-ease-wipe) forwards;
+.landing-southleft .lsl-split-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  background: var(--lsl-fg-strong);
+  color: var(--lsl-bg);
+  box-shadow: 0 6px 20px rgba(10, 14, 26, 0.45), 0 0 0 1px rgba(10, 14, 26, 0.2);
+  transition: transform var(--lsl-dur-fast) ease;
 }
-@keyframes lsl-showcase-edge {
-  0%   { transform: translateX(0); opacity: 1; }
-  92%  { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
+/* The slider itself: a native range input laid over the whole frame, so the
+   divider answers a drag anywhere, touch included, and the arrow keys. It is
+   transparent; the line and grip above are its visible thumb. */
+.landing-southleft .lsl-split-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  background: transparent;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: pan-y;
+}
+.landing-southleft .lsl-split-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 44px;
+  height: 100vh;
+}
+.landing-southleft .lsl-split-range::-moz-range-thumb {
+  width: 44px;
+  height: 100vh;
+  border: 0;
+  background: transparent;
+}
+.landing-southleft .lsl-split-range:hover + .lsl-split-line .lsl-split-grip {
+  transform: scale(1.08);
+}
+.landing-southleft .lsl-split-range:focus-visible + .lsl-split-line .lsl-split-grip {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+}
+/* Which system is on which side, and what it brings. */
+.landing-southleft .lsl-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin: 14px 0 0;
+}
+.landing-southleft .lsl-legend-side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+.landing-southleft .lsl-legend-side[data-side="right"] {
+  align-items: flex-end;
+  text-align: right;
+}
+.landing-southleft .lsl-legend-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--lsl-text-meta);
+  font-weight: 600;
+  color: var(--lsl-fg-strong);
+}
+.landing-southleft .lsl-legend-name::before {
+  content: "";
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--showcase-brand, var(--lsl-accent));
+}
+.landing-southleft .lsl-legend-name[data-side="right"]::before {
+  border-top: 2px dotted var(--compare-brand, var(--lsl-rule-strong));
+}
+.landing-southleft .lsl-legend-traits {
+  font-size: var(--lsl-text-meta);
+  line-height: 1.45;
+  color: var(--lsl-fg-muted);
 }
 .landing-southleft .lsl-showcase-caption {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 6px 24px;
+  gap: 4px 24px;
   margin: 14px 0 0;
   font-size: var(--lsl-text-meta);
   line-height: 1.5;
   color: var(--lsl-fg-muted);
-}
-@media (prefers-reduced-motion: reduce) {
-  .landing-southleft .lsl-showcase-layer[data-animate="true"],
-  .landing-southleft .lsl-showcase-layer[data-animate="true"][data-ready="true"] {
-    animation: none;
-    clip-path: none;
-  }
-  .landing-southleft .lsl-showcase-edge,
-  .landing-southleft .lsl-showcase-edge[data-ready="true"] {
-    animation: none;
-    opacity: 0;
-  }
-  .landing-southleft .lsl-showcase-tab,
-  .landing-southleft .lsl-mode-btn {
-    transition: none;
-  }
 }
 
 /* ── Section shell: every section shares the hero's two columns ───────── */
 .landing-southleft .lsl-section {
   padding-top: var(--lsl-section-y);
   padding-bottom: var(--lsl-section-y);
-  border-top: 1px solid var(--lsl-rule);
+}
+/* One tinted band (workflow) breaks the page into three movements instead of
+   a rule above every section. */
+.landing-southleft .lsl-band {
+  background: var(--lsl-bg-soft);
 }
 .landing-southleft .lsl-section-head {
   display: grid;
   grid-template-columns: minmax(0, var(--lsl-col-text)) minmax(0, 1fr);
-  gap: 24px var(--lsl-col-gap);
+  gap: 20px var(--lsl-col-gap);
   align-items: end;
-  margin: 0 0 64px;
+  margin: 0 0 48px;
 }
 .landing-southleft .lsl-section-heading {
   font-family: var(--lsl-font-display);
@@ -580,7 +726,8 @@ html:has(.landing-southleft) body {
   text-wrap: balance;
 }
 /* Two lines, like the hero: each clause is its own line. */
-.landing-southleft .lsl-section-heading span {
+.landing-southleft .lsl-section-heading span,
+.landing-southleft .lsl-cta-heading span {
   display: block;
 }
 .landing-southleft .lsl-section-lede {
@@ -591,7 +738,7 @@ html:has(.landing-southleft) body {
   margin: 0;
 }
 
-/* ── Systems: the same report, five at once ───────────────────────────── */
+/* ── Systems: the same two parts, five at once ────────────────────────── */
 .landing-southleft .lsl-systems {
   list-style: none;
   margin: 0;
@@ -606,29 +753,23 @@ html:has(.landing-southleft) body {
   text-decoration: none;
   color: inherit;
 }
+/* A specimen sheet: the captures are light-mode crops cut at block edges, so
+   the sheet is white and nothing is sliced. */
 .landing-southleft .lsl-syscard-frame {
   display: block;
-  /* The lower part of each capture: the summary card and the gauges, where
-     corners, surfaces and accents differ most between systems. */
-  aspect-ratio: 752 / 880;
-  border: 1px solid var(--lsl-rule-strong);
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
-  background: var(--lsl-bg-soft);
+  background: var(--lsl-fg-strong);
   margin: 0 0 16px;
-  transition: border-color var(--lsl-dur-fast) ease,
-              transform 240ms var(--lsl-ease);
+  transition: transform 240ms var(--lsl-ease);
 }
 .landing-southleft .lsl-syscard-frame img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: bottom center;
+  height: auto;
 }
 .landing-southleft .lsl-syscard:hover .lsl-syscard-frame,
 .landing-southleft .lsl-syscard:focus-visible .lsl-syscard-frame {
-  border-color: var(--syscard-brand, var(--lsl-accent));
   transform: translateY(-4px);
 }
 .landing-southleft .lsl-syscard-name {
@@ -658,10 +799,10 @@ html:has(.landing-southleft) body {
   text-decoration-color: currentColor;
 }
 
-/* ── Workflow: walkthrough on the left, the three steps on the right ──── */
+/* ── Workflow: the recording, with its three chapters beside it ───────── */
 .landing-southleft .lsl-workflow-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
   gap: var(--lsl-col-gap);
   align-items: start;
 }
@@ -672,13 +813,17 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-demo-frame {
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
-  background: var(--lsl-bg-soft);
-  border: 1px solid var(--lsl-rule-strong);
+  background: var(--lsl-bg);
+  box-shadow: 0 32px 80px -32px rgba(0, 0, 0, 0.7);
 }
-.landing-southleft .lsl-demo-shot {
+.landing-southleft .lsl-demo-video {
   display: block;
   width: 100%;
   height: auto;
+  /* The recording is 1280x800. Reserved up front so nothing shifts. */
+  aspect-ratio: 1280 / 800;
+  object-fit: cover;
+  background: var(--lsl-bg);
 }
 .landing-southleft .lsl-demo-caption {
   margin: 14px 0 0;
@@ -687,77 +832,61 @@ html:has(.landing-southleft) body {
   color: var(--lsl-fg-muted);
   max-width: 64ch;
 }
-/* The concept animation: kept, user-controlled, and labelled for what it is.
-   Deliberately small so it never reads as product proof. */
-.landing-southleft .lsl-concept {
-  display: grid;
-  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
-  gap: 28px;
-  align-items: center;
-  margin: 64px 0 0;
-  padding-top: 32px;
-  border-top: 1px solid var(--lsl-rule);
-}
-.landing-southleft .lsl-concept-frame {
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--lsl-bg-soft);
-  border: 1px solid var(--lsl-rule-strong);
-}
-.landing-southleft .lsl-concept-video {
-  display: block;
-  width: 100%;
-  height: auto;
-  /* Native aspect = 2056x1236. Reserved up front so nothing shifts. */
-  aspect-ratio: 2056 / 1236;
-  object-fit: cover;
-  background: var(--lsl-bg-soft);
-}
-.landing-southleft .lsl-concept-caption {
-  font-size: var(--lsl-text-body);
-  line-height: 1.55;
-  color: var(--lsl-fg-muted);
-  max-width: 52ch;
-}
-.landing-southleft .lsl-concept-caption strong {
-  font-weight: 600;
-  color: var(--lsl-fg-strong);
-}
+/* Chapters: a timeline. The rail lights up for the chapter that is playing. */
 .landing-southleft .lsl-steps {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .landing-southleft .lsl-step {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  column-gap: 8px;
-  align-content: start;
-  padding: 24px 0;
-  border-top: 1px solid var(--lsl-rule);
+  padding: 4px 0 28px 24px;
+  border-left: 2px solid var(--lsl-rule);
+  transition: border-color var(--lsl-dur-fast) ease;
 }
-.landing-southleft .lsl-step:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-.landing-southleft .lsl-step:last-child { padding-bottom: 0; }
-.landing-southleft .lsl-step-num {
-  grid-row: 1 / span 2;
-  font-family: var(--lsl-font-display);
-  font-weight: 700;
-  font-size: var(--lsl-text-display-xxs);
-  line-height: 1.3;
-  color: var(--lsl-accent);
-  font-feature-settings: "tnum" 1;
+.landing-southleft .lsl-step:last-child { padding-bottom: 4px; }
+.landing-southleft .lsl-step[data-current="true"] {
+  border-left-color: var(--lsl-accent);
 }
 .landing-southleft .lsl-step-title {
+  margin: 0 0 6px;
+  font: inherit;
+}
+.landing-southleft .lsl-step-play {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
   font-family: var(--lsl-font-display);
   font-weight: 700;
   font-size: var(--lsl-text-display-xxs);
-  line-height: 1.3;
   letter-spacing: -0.015em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 6px;
+  text-align: left;
+  cursor: pointer;
+}
+.landing-southleft .lsl-step-time {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--lsl-radius-control);
+  background: var(--lsl-bg-elevated);
+  font-family: var(--lsl-font-mono);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--lsl-accent);
+  transition: background var(--lsl-dur-fast) ease,
+              color var(--lsl-dur-fast) ease;
+}
+.landing-southleft .lsl-step-play:hover .lsl-step-time,
+.landing-southleft .lsl-step[data-current="true"] .lsl-step-time {
+  background: var(--lsl-accent);
+  color: var(--lsl-bg);
 }
 .landing-southleft .lsl-step-body {
   font-size: var(--lsl-text-body);
@@ -766,7 +895,7 @@ html:has(.landing-southleft) body {
   margin: 0;
 }
 
-/* ── Export: formats on the left, real output on the right ────────────── */
+/* ── Export: the files themselves ─────────────────────────────────────── */
 .landing-southleft .lsl-export-grid {
   display: grid;
   grid-template-columns: minmax(0, var(--lsl-col-text)) minmax(0, 1fr);
@@ -774,76 +903,99 @@ html:has(.landing-southleft) body {
   align-items: start;
 }
 .landing-southleft .lsl-export-copy .lsl-section-lede {
-  margin: 24px 0 40px;
+  margin: 20px 0 0;
 }
-.landing-southleft .lsl-exports {
-  margin: 0;
-}
-.landing-southleft .lsl-export-row {
-  display: grid;
-  grid-template-columns: 132px minmax(0, 1fr);
-  gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid var(--lsl-rule);
+.landing-southleft .lsl-export-proof {
+  margin: 20px 0 0;
   font-size: var(--lsl-text-body);
-  line-height: 1.5;
-}
-.landing-southleft .lsl-export-row dt {
-  font-weight: 600;
-  color: var(--lsl-fg-strong);
-}
-.landing-southleft .lsl-export-row dd {
-  margin: 0;
-  color: var(--lsl-fg-muted);
+  line-height: 1.55;
+  color: var(--lsl-fg);
+  max-width: 44ch;
 }
 .landing-southleft .lsl-code {
   margin: 0;
   min-width: 0;
 }
-.landing-southleft .lsl-code-bar {
+.landing-southleft .lsl-code-tabs {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  height: var(--lsl-control-h);
-  padding: 0 20px;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  padding: 0 8px;
   background: var(--lsl-bg-elevated);
-  border: 1px solid var(--lsl-rule-strong);
-  border-bottom: 0;
   border-radius: var(--lsl-radius-frame) var(--lsl-radius-frame) 0 0;
-  font-size: var(--lsl-text-meta);
 }
-.landing-southleft .lsl-code-file {
+.landing-southleft .lsl-code-tab {
+  appearance: none;
+  height: var(--lsl-control-h);
+  padding: 0 12px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
   font-family: var(--lsl-font-mono);
-  color: var(--lsl-fg-strong);
+  font-size: 13px;
+  color: var(--lsl-fg-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--lsl-dur-fast) ease,
+              border-color var(--lsl-dur-fast) ease;
 }
-.landing-southleft .lsl-code-meta { color: var(--lsl-fg-muted); }
+.landing-southleft .lsl-code-tab:hover { color: var(--lsl-fg-strong); }
+.landing-southleft .lsl-code-tab[aria-selected="true"] {
+  color: var(--lsl-fg-strong);
+  border-bottom-color: var(--lsl-accent);
+}
+.landing-southleft .lsl-code-panel {
+  background: var(--lsl-bg-soft);
+  border-radius: 0 0 var(--lsl-radius-frame) var(--lsl-radius-frame);
+  overflow: hidden;
+}
 .landing-southleft .lsl-code-pre {
   margin: 0;
   padding: 20px;
+  /* Tall enough for the longest excerpt, so switching files never moves the
+     page. */
+  min-height: calc(22 * 1.7em + 40px);
   overflow-x: auto;
-  background: var(--lsl-bg-soft);
-  border: 1px solid var(--lsl-rule-strong);
-  border-radius: 0 0 var(--lsl-radius-frame) var(--lsl-radius-frame);
   font-family: var(--lsl-font-mono);
   font-size: 13px;
   line-height: 1.7;
   color: var(--lsl-fg);
   tab-size: 2;
 }
+.landing-southleft .lsl-code-pre:focus-visible {
+  outline-offset: -4px;
+}
 .landing-southleft .lsl-code-pre code {
   font-family: inherit;
 }
 .landing-southleft .lsl-code-str { color: var(--lsl-teal); }
 .landing-southleft .lsl-code-kw { color: var(--lsl-accent); }
+.landing-southleft .lsl-code-more {
+  margin: 0;
+  padding: 10px 20px 14px;
+  font-family: var(--lsl-font-mono);
+  font-size: var(--lsl-text-eyebrow);
+  color: var(--lsl-fg-muted);
+}
 .landing-southleft .lsl-code-caption {
   margin: 14px 0 0;
   font-size: var(--lsl-text-meta);
   line-height: 1.5;
   color: var(--lsl-fg-muted);
+  max-width: 72ch;
+}
+.landing-southleft .lsl-code-caption strong {
+  font-weight: 600;
+  color: var(--lsl-fg-strong);
 }
 
-/* ── Closing CTA ──────────────────────────────────────────────────────── */
+/* ── Closing band ─────────────────────────────────────────────────────── */
+.landing-southleft .lsl-cta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, var(--lsl-col-text)) minmax(0, 1fr);
+  gap: 32px var(--lsl-col-gap);
+  align-items: center;
+}
 .landing-southleft .lsl-cta-heading {
   font-family: var(--lsl-font-display);
   font-weight: 800;
@@ -851,11 +1003,10 @@ html:has(.landing-southleft) body {
   line-height: 1;
   letter-spacing: -0.035em;
   color: var(--lsl-fg-strong);
-  margin: 0 0 24px;
-  text-wrap: balance;
+  margin: 0 0 20px;
 }
-.landing-southleft .lsl-cta-band .lsl-section-lede {
-  margin-bottom: 32px;
+.landing-southleft .lsl-cta-panel .lsl-hero-prompt {
+  max-width: 620px;
 }
 .landing-southleft .lsl-cta-actions {
   display: flex;
@@ -893,7 +1044,7 @@ html:has(.landing-southleft) body {
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .landing-southleft .lsl-footer {
-  border-top: 1px solid var(--lsl-rule);
+  background: var(--lsl-bg-soft);
   padding-top: 72px;
   padding-bottom: 40px;
 }
@@ -962,8 +1113,9 @@ html:has(.landing-southleft) body {
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────
-   The system wipe is guarded next to its rules above. Everything else here
-   is a hover or focus transition, switched to an instant state change. */
+   The divider's sweep and its first-view pass are driven from page.tsx and
+   never start when prefers-reduced-motion is set. Everything here is a hover
+   or focus transition, switched to an instant state change. */
 @media (prefers-reduced-motion: reduce) {
   .landing-southleft .lsl-nav {
     animation: none;
@@ -974,76 +1126,118 @@ html:has(.landing-southleft) body {
   .landing-southleft .lsl-inline-link,
   .landing-southleft .lsl-hero-prompt-field,
   .landing-southleft .lsl-hero-prompt-submit,
+  .landing-southleft .lsl-chip span,
+  .landing-southleft .lsl-showcase-tab,
+  .landing-southleft .lsl-mode-btn,
+  .landing-southleft .lsl-split-grip,
   .landing-southleft .lsl-syscard-frame,
   .landing-southleft .lsl-syscard-go,
+  .landing-southleft .lsl-step,
+  .landing-southleft .lsl-step-time,
+  .landing-southleft .lsl-code-tab,
   .landing-southleft .lsl-cta-textlink,
   .landing-southleft .lsl-cta-textlink::after,
   .landing-southleft .lsl-footer-list a {
     transition: none;
   }
   .landing-southleft .lsl-syscard:hover .lsl-syscard-frame,
-  .landing-southleft .lsl-syscard:focus-visible .lsl-syscard-frame {
+  .landing-southleft .lsl-syscard:focus-visible .lsl-syscard-frame,
+  .landing-southleft .lsl-split-range:hover + .lsl-split-line .lsl-split-grip {
     transform: none;
   }
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
-/* Below 1240px the two columns stack: copy first, then the instrument. */
-@media (max-width: 1240px) {
+/* Below 1367px the light/dark control is a single icon toggle, so the five
+   tabs always fit beside it: only the mode you can switch TO is shown. */
+@media (max-width: 1366px) {
+  .landing-southleft .lsl-mode { padding: 0; border: 0; }
+  .landing-southleft .lsl-mode-btn {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    background: var(--lsl-bg-elevated);
+    color: var(--lsl-fg-strong);
+  }
+  .landing-southleft .lsl-mode { background: none; }
+  .landing-southleft .lsl-mode-btn[aria-pressed="true"] { display: none; }
+  .landing-southleft .lsl-mode-btn span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .landing-southleft .lsl-showcase-tab { padding: 0 9px; }
+  .landing-southleft .lsl-workflow-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  }
+}
+/* Below 1024px the two columns stack: copy first, then the instrument. */
+@media (max-width: 1023px) {
   .landing-southleft {
-    --lsl-section-y: 96px;
+    --lsl-section-y: 72px;
   }
   .landing-southleft .lsl-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
+    gap: 28px;
     min-height: 0;
     padding-left: var(--lsl-content-pad);
   }
-  .landing-southleft .lsl-hero { padding-top: 24px; }
+  .landing-southleft .lsl-hero { padding-top: 20px; }
+  .landing-southleft .lsl-hero-headline { font-size: var(--lsl-text-display-l); }
   .landing-southleft .lsl-instrument { max-width: none; }
+  /* A shorter crop when stacked, so the search field and the cards are in
+     the first viewport of a tablet. */
+  .landing-southleft .lsl-showcase-viewport { aspect-ratio: 16 / 8; }
   .landing-southleft .lsl-section-head,
   .landing-southleft .lsl-export-grid,
   .landing-southleft .lsl-workflow-grid,
+  .landing-southleft .lsl-cta-grid,
   .landing-southleft .lsl-footer-top {
     grid-template-columns: minmax(0, 1fr);
   }
-  .landing-southleft .lsl-section-head { margin-bottom: 48px; }
-  .landing-southleft .lsl-section-heading { max-width: 20ch; }
+  .landing-southleft .lsl-section-head { margin-bottom: 36px; }
   .landing-southleft .lsl-steps {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 32px;
+    gap: 24px;
   }
   .landing-southleft .lsl-step,
-  .landing-southleft .lsl-step:first-child,
   .landing-southleft .lsl-step:last-child {
-    padding: 20px 0 0;
-    border-top: 1px solid var(--lsl-rule);
+    padding: 16px 0 0;
+    border-left: 0;
+    border-top: 2px solid var(--lsl-rule);
   }
-  /* Five phone frames no longer fit side by side: a snap row instead. */
+  .landing-southleft .lsl-step[data-current="true"] {
+    border-top-color: var(--lsl-accent);
+  }
+  /* Five specimen sheets no longer fit side by side: a snap row instead. */
   .landing-southleft .lsl-systems {
-    grid-template-columns: repeat(5, minmax(220px, 1fr));
+    grid-template-columns: repeat(5, minmax(232px, 1fr));
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-padding-left: var(--lsl-content-pad);
     margin: 0 calc(var(--lsl-content-pad) * -1);
     padding: 8px var(--lsl-content-pad) 16px;
-    scrollbar-width: none;
   }
-  .landing-southleft .lsl-systems::-webkit-scrollbar { display: none; }
   .landing-southleft .lsl-systems-item { scroll-snap-align: start; }
 }
+/* Tablets keep one nav link, the UI Kit, so it stays reachable from the top. */
 @media (max-width: 860px) {
-  .landing-southleft .lsl-nav-links { display: none; }
+  .landing-southleft .lsl-nav-links li:not(:last-child) { display: none; }
+  .landing-southleft .lsl-nav-links { margin-left: auto; }
 }
 @media (max-width: 640px) {
   .landing-southleft {
-    --lsl-section-y: 72px;
+    --lsl-section-y: 56px;
     --lsl-content-pad: 20px;
     --lsl-nav-h: 60px;
   }
-  .landing-southleft .lsl-hero { padding-top: 20px; padding-bottom: 56px; }
-  .landing-southleft .lsl-hero-grid { gap: 28px; }
+  .landing-southleft .lsl-nav-links { display: none; }
+  .landing-southleft .lsl-hero { padding-top: 20px; padding-bottom: 32px; }
   .landing-southleft .lsl-hero-headline { margin-bottom: 14px; }
   .landing-southleft .lsl-hero-sub {
     font-size: var(--lsl-text-body-l);
@@ -1058,47 +1252,26 @@ html:has(.landing-southleft) body {
     padding: 0 18px;
   }
   .landing-southleft .lsl-hero-alt { margin-top: 12px; padding-left: 18px; }
-  /* The phone capture is taller than the desktop one: crop it to 4:5. */
+  /* The phone capture is taller than the desktop one: crop it to 4:5. Its
+     top holds the title, the search field and the first card. */
   .landing-southleft .lsl-showcase-viewport { aspect-ratio: 4 / 5; }
   .landing-southleft .lsl-instrument-bar { gap: 4px; margin-bottom: 8px; }
   .landing-southleft .lsl-showcase-tabs {
     flex: 1 1 auto;
     gap: 0;
     justify-content: space-between;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
-  .landing-southleft .lsl-showcase-tabs::-webkit-scrollbar { display: none; }
   .landing-southleft .lsl-showcase-tab {
-    padding: 0 5px;
+    padding: 0 4px;
     font-size: 13px;
   }
-  /* Keep the selected tab in view when the row has to scroll (320px). */
-  .landing-southleft .lsl-showcase-tab[aria-selected="true"] {
-    scroll-margin-inline: 24px;
-  }
-  /* One icon toggle on phones: only the mode you can switch TO is shown. */
-  .landing-southleft .lsl-mode { padding: 0; border: 0; }
-  .landing-southleft .lsl-mode-btn {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    justify-content: center;
-    border: 1px solid var(--lsl-rule-strong);
-  }
-  .landing-southleft .lsl-mode-btn[aria-pressed="true"] { display: none; }
-  .landing-southleft .lsl-mode-btn span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-  .landing-southleft .lsl-section-head { margin-bottom: 36px; }
+  .landing-southleft .lsl-mode-btn { width: 40px; }
+  .landing-southleft .lsl-legend { gap: 12px; }
+  .landing-southleft .lsl-legend-traits { font-size: 13px; }
+  .landing-southleft .lsl-section-head { margin-bottom: 28px; }
   .landing-southleft .lsl-section-lede { font-size: var(--lsl-text-body-l); }
   .landing-southleft .lsl-systems {
-    grid-template-columns: repeat(5, 64vw);
+    grid-template-columns: repeat(5, 68vw);
     gap: 14px;
   }
   .landing-southleft .lsl-steps {
@@ -1106,21 +1279,13 @@ html:has(.landing-southleft) body {
     gap: 0;
   }
   .landing-southleft .lsl-step,
-  .landing-southleft .lsl-step:first-child,
   .landing-southleft .lsl-step:last-child {
-    padding: 20px 0;
-  }
-  .landing-southleft .lsl-cta-actions { padding-left: 18px; }
-  .landing-southleft .lsl-export-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
+    padding: 12px 0 20px;
   }
   .landing-southleft .lsl-code-pre { padding: 16px; font-size: 12px; }
-  .landing-southleft .lsl-concept {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    margin-top: 40px;
-  }
+  .landing-southleft .lsl-code-tab { padding: 0 8px; font-size: 12px; }
+  .landing-southleft .lsl-chips-legend { margin-left: 0; flex-basis: 100%; line-height: 1.4; }
+  .landing-southleft .lsl-cta-actions { padding-left: 18px; }
   .landing-southleft .lsl-footer-top { margin-bottom: 48px; }
   .landing-southleft .lsl-footer-fine { flex-wrap: wrap; }
 }
@@ -1128,9 +1293,8 @@ html:has(.landing-southleft) body {
   .landing-southleft .lsl-nav-inner { gap: 12px; }
   .landing-southleft .lsl-nav-cta { padding: 0 14px; }
   .landing-southleft .lsl-logo { gap: 8px; }
-  /* The tab row scrolls here: fade its trailing edge so the cut reads as
-     "more", not as a clipped label. */
-  .landing-southleft .lsl-showcase-tabs {
-    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
-  }
+  /* Tabs wrap to two rows here rather than scroll out of reach. */
+  .landing-southleft .lsl-showcase-tabs { justify-content: flex-start; gap: 0 6px; }
+  .landing-southleft .lsl-hero-prompt-field { padding-left: 14px; gap: 4px; }
+  .landing-southleft .lsl-hero-prompt-submit { padding: 0 14px; }
 }
