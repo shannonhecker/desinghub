@@ -131,6 +131,10 @@ test('onboarding: a selected choice stays visibly selected', async ({ page }) =>
     const [hi, lo] = [lum(text), lum(painted)].sort((a, b) => b - a);
     return { alpha, contrast: (hi + 0.05) / (lo + 0.05) };
   });
-  expect(fill.alpha).toBeGreaterThan(0.1);
+  /* Filled: at least the selected chip's own 10% tint, and more fill than
+     an unselected choice. */
+  const unfilled = await unchecked.evaluate((el) => Number((getComputedStyle(el).backgroundColor.match(/[\d.]+/g) ?? [])[3] ?? 1));
+  expect(fill.alpha).toBeGreaterThanOrEqual(0.1);
+  expect(fill.alpha).toBeGreaterThan(unfilled);
   expect(fill.contrast).toBeGreaterThanOrEqual(4.5);
 });
