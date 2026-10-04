@@ -48,6 +48,10 @@ and identical in every design system. Design note:
   clipped at 768 or 375.
 - **Dropdowns** render and export their own label, value and options in all
   five systems (they showed "Option 1 / Option 2").
+- **Export.** React, HTML and Vite exports carry a finance template's data
+  (bound blocks are resolved against the active dataset and filters), its
+  panels, data tables, header bars, page title and zone tones; hidden zones
+  are left out. The HTML export shows a chart's data as a table.
 
 #### Fixed
 - Edit did not match Present on a canvas with a removed frame: the

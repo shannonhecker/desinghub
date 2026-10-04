@@ -48,6 +48,15 @@ Notes for the next session:
 - In Edit, the "Header" frame label sits over the brand mark of a flush header.
 - A results grid wider than its panel (tablet, phone) scrolls sideways inside the
   panel; the first column is not pinned.
+- Export limits: the HTML export shows a chart's data as a table (it has no chart
+  runtime); React/Vite exports do not carry `spanTablet` / `spanPhone`; filters and
+  "View by" are static in exported code; only the uoaui and Salt Vite exports were
+  rendered, the other three are covered by tests only.
+- **Exported gaps are wrong in Salt, Material and Carbon** (older bug, not from this
+  slice): a zone's gap is stored in px but passed straight to each system's layout
+  prop, which takes multiples of 8px (Salt, MUI) or a scale step (Carbon), so a 16px
+  gap exports as 128px. Four older tests pin the pass-through, so the fix is in its
+  own PR for a decision.
 - Later slices: Sustainable Investment (ESG, Climate, Screening, Changes); issuer
   reports, scorecard, home; the FX execution dashboard. Cell renderers (heat
   cells, sparklines, chips) and KPI cards with change semantics arrive with them.
