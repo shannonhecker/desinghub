@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildChartOptions, type ThemeVars } from "../SimulatedHighchart";
+import { buildChartOptions, resolvePointColor, type ThemeVars } from "../SimulatedHighchart";
 
 const vars: ThemeVars = {
   primary: "#1B7F9E", bg: "#fff", fg: "#111", fgSec: "#444", fgTer: "#777",
@@ -102,3 +102,63 @@ describe("buildChartOptions - settings every type shares", () => {
     expect(build("donut", {}).chart.events).toBeUndefined();
   });
 });
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+describe("slice 2 chart kinds and options", () => {
+  it("waterfall: steps in order, a sum bar, no legend", () => {
+    const o = buildChartOptions("waterfall", theme as any, vars, {
+      seriesData: [{ name: "Universe", y: 1500 }, { name: "House", y: -500 }, { name: "Target", y: 0, isSum: true } as any],
+    }) as any;
+    expect(o.chart.type).toBe("waterfall");
+    expect(o.xAxis.categories).toEqual(["Universe", "House", "Target"]);
+    expect(o.series[0].data).toEqual([{ name: "Universe", y: 1500 }, { name: "House", y: -500 }, { name: "Target", isSum: true }]);
+    expect(o.legend.enabled).toBe(false);
+  });
+
+  it("gauge: a percentage dial by default, a score dial with valueMax and decimals", () => {
+    const pct = buildChartOptions("gauge", theme as any, vars, { value: 87 }) as any;
+    expect(pct.yAxis.max).toBe(100);
+    expect(pct.series[0].dataLabels.format).toContain("{y}%");
+    const score = buildChartOptions("gauge", theme as any, vars, { value: 6.42, valueMax: 10, valueDecimals: 2 }) as any;
+    expect(score.yAxis.max).toBe(10);
+    expect(score.series[0].dataLabels.format).toContain("{y:.2f}<");
+    expect(score.series[0].dataLabels.format).not.toContain("%");
+  });
+
+  it("pointColors: tone names follow the theme, anything else is used as given", () => {
+    expect(resolvePointColor("good", vars)).toBe(vars.positive);
+    expect(resolvePointColor("bad", vars)).toBe(vars.negative);
+    expect(resolvePointColor("#123456", vars)).toBe("#123456");
+    const o = buildChartOptions("column", theme as any, vars, {
+      categories: ["CC", "BB", "AA"],
+      series: [{ name: "Distribution", data: [10, 30, 60] }],
+      pointColors: ["bad", "mid", "good"],
+    }) as any;
+    expect(o.series[0].data).toEqual([
+      { y: 10, color: vars.negative },
+      { y: 30, color: vars.warning },
+      { y: 60, color: vars.positive },
+    ]);
+  });
+
+  it("selected: the other points are dimmed, the selected one keeps its colour", () => {
+    const o = buildChartOptions("column", theme as any, vars, {
+      categories: ["A", "B"],
+      series: [{ name: "S", data: [1, 2] }],
+      pointColors: ["#ff0000", "#00ff00"],
+      selected: "B",
+    }) as any;
+    expect(o.series[0].data[0].color).toMatch(/^rgba\(255,0,0,0\.28\)$/);
+    expect(o.series[0].data[1].color).toBe("#00ff00");
+  });
+
+  it("onSelectPoint: points are clickable and report their name", () => {
+    const picked: string[] = [];
+    const o = buildChartOptions("waterfall", theme as any, vars, { onSelectPoint: (n) => picked.push(n) }) as any;
+    expect(o.plotOptions.series.cursor).toBe("pointer");
+    o.plotOptions.series.point.events.click.call({ name: "House" });
+    o.plotOptions.series.point.events.click.call({ category: "Rates" });
+    expect(picked).toEqual(["House", "Rates"]);
+  });
+});
+
