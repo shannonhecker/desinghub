@@ -3,12 +3,14 @@
  */
 
 import { financeDataset, FINANCE_DATASET_ID } from "./financeDataset";
+import { issuerDataset, ISSUER_DATASET_ID } from "./issuerDataset";
 import { sustainableDataset, SUSTAINABLE_DATASET_ID } from "./sustainableDataset";
 import type { ReportDataset } from "./types";
 
 const SAMPLE_DATASETS: Record<string, () => ReportDataset> = {
   [FINANCE_DATASET_ID]: financeDataset,
   [SUSTAINABLE_DATASET_ID]: sustainableDataset,
+  [ISSUER_DATASET_ID]: issuerDataset,
 };
 
 export function sampleDataset(id: string | null | undefined): ReportDataset | null {

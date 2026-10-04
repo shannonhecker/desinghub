@@ -81,6 +81,18 @@
   --dh-cell-small:          11px;
   --dh-cell-dot:            8px;
   --dh-record-size:         13px;
+  /* Panel padding outside a PanelFrame (which sets the same value inline). */
+  --dh-panel-pad:           16px;
+  /* Report blocks (ReportBlocks.tsx). */
+  --dh-entity-title-size:   22px;
+  --dh-tile-value-size:     22px;
+  --dh-tile-sub-value-size: 15px;
+  --dh-verdict-figure-size: 44px;
+  --dh-verdict-status-size: 18px;
+  --dh-hero-title-size:     28px;
+  --dh-hero-search-h:       44px;
+  --dh-hero-search-max:     540px;
+  --dh-launcher-accent:     3px;
   /* Template gallery in the chat. */
   --tpl-desc-size:          11px;
   --tpl-chip-gap:           6px;

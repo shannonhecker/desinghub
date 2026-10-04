@@ -36,13 +36,56 @@ export type RecordSection =
   | { type: "table"; title?: string; columns: string[]; kind?: GridColumnKind; decimals?: number; rows: RecordTableRow[] }
   | { type: "trend"; title?: string; field: string; categories?: string[]; seriesName?: string };
 
-export interface RecordBinding {
+/** Which row of a table a block shows: the one whose `keyField` equals the
+ *  value of a report state, a fixed `key`, or a `fallback` while the state is
+ *  unset. */
+export interface RowLookup {
   table: string;
-  /** Field that identifies a record (the grid's first column). */
   keyField: string;
+  /** Report state holding the key. */
+  state?: string;
+  /** A fixed key (a tile that always shows one category). */
+  key?: string;
+  /** Key used while the state is unset. */
+  fallback?: string;
+}
+
+export interface RecordBinding extends RowLookup {
   /** Report state holding the selected record's key. */
   state: string;
   sections: RecordSection[];
+}
+
+export function isRowLookup(v: unknown): v is RowLookup {
+  const b = v as RowLookup | null;
+  return typeof b === "object" && b !== null && typeof b.table === "string" && typeof b.keyField === "string";
+}
+
+/** The key a lookup resolves to right now ("" when there is none). */
+export function lookupKey(lookup: RowLookup, state: ReportState): string {
+  return lookup.key ?? (lookup.state ? state[lookup.state] : undefined) ?? lookup.fallback ?? "";
+}
+
+/** The row a lookup names, or null. */
+export function lookupRow(lookup: RowLookup, dataset: ReportDataset, state: ReportState): DataRow | null {
+  const key = lookupKey(lookup, state);
+  if (!key) return null;
+  return tableOf(dataset, lookup.table)?.rows.find((r) => String(r[lookup.keyField] ?? "") === key) ?? null;
+}
+
+/** A field of a row as display text. */
+export function fieldText(row: DataRow | null, field: string, format: { kind?: GridColumnKind; decimals?: number; compact?: boolean; suffix?: string } = {}): string {
+  if (!row) return "";
+  const v = row[field];
+  if (v === null || v === undefined || v === "") return "";
+  const text = typeof v === "number" ? formatGridValue({ field, header: "", kind: format.kind ?? "number", decimals: format.decimals ?? 0, compact: format.compact }, v) : String(v);
+  return format.suffix ? `${text}${format.suffix}` : text;
+}
+
+/** A tone stored in the data ("good", "bad"...), or the fallback. */
+export function fieldTone(row: DataRow | null, field: string | undefined, fallback: GridTone = "neutral"): GridTone {
+  const v = field && row ? String(row[field] ?? "") : "";
+  return (["good", "mid", "bad", "neutral", "accent"] as GridTone[]).includes(v as GridTone) ? (v as GridTone) : fallback;
 }
 
 export interface ResolvedPair {
@@ -71,9 +114,8 @@ const num = (v: unknown): number | null => (typeof v === "number" && Number.isFi
 /** The selected record, resolved for display. Null when nothing is selected,
  *  or the selection names no row of the table. */
 export function resolveRecord(binding: RecordBinding, dataset: ReportDataset, state: ReportState): ResolvedRecord | null {
-  const key = state[binding.state];
-  if (!key) return null;
-  const row: DataRow | undefined = tableOf(dataset, binding.table)?.rows.find((r) => String(r[binding.keyField] ?? "") === key);
+  const key = lookupKey(binding, state);
+  const row = lookupRow(binding, dataset, state);
   if (!row) return null;
   const currency = state[CURRENCY_STATE] ?? dataset.baseCurrency;
   const rate = currencyRate(dataset, currency);

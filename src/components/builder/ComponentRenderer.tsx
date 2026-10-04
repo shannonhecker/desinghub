@@ -55,6 +55,7 @@ import {
 import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
 import { RecordPanelBlock } from "./RecordPanel";
+import { EntityHeaderBlock, HeroSearchBlock, LauncherCardBlock, MetricTileBlock, VerdictCardBlock } from "./ReportBlocks";
 import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock } from "./ChromeBars";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
@@ -1965,6 +1966,11 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   DataGrid: DataGridBlockRenderer as React.FC<{ system: DesignSystem }>,
   RecordPanel: RecordPanelBlock as React.FC<{ system: DesignSystem }>,
+  EntityHeader: EntityHeaderBlock as React.FC<{ system: DesignSystem }>,
+  MetricTile: MetricTileBlock as React.FC<{ system: DesignSystem }>,
+  VerdictCard: VerdictCardBlock as React.FC<{ system: DesignSystem }>,
+  LauncherCard: LauncherCardBlock as React.FC<{ system: DesignSystem }>,
+  HeroSearch: HeroSearchBlock as React.FC<{ system: DesignSystem }>,
   TopNav: TopNavBlock as React.FC<{ system: DesignSystem }>,
   TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
   NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
