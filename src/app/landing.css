@@ -476,13 +476,25 @@ html:has(.landing-southleft) body {
   max-width: 960px;
 }
 .landing-southleft .lsl-instrument-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   margin: 0 0 12px;
 }
-/* Tabs wrap; they never scroll out of reach. */
+/* Two plain rows: which system is on the left, which is on the right. */
+.landing-southleft .lsl-sides {
+  display: grid;
+  gap: 0;
+}
+.landing-southleft .lsl-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.landing-southleft .lsl-side-label {
+  flex: 0 0 40px;
+  font-size: var(--lsl-text-meta);
+  color: var(--lsl-fg-muted);
+}
+/* Options wrap; they never scroll out of reach. */
 .landing-southleft .lsl-showcase-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -491,6 +503,9 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-showcase-tab {
   appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -509,21 +524,50 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-showcase-tab:hover {
   color: var(--lsl-fg-strong);
 }
-/* The system on the right of the divider is marked with a dotted rule. */
-.landing-southleft .lsl-showcase-tab[data-compare="true"] {
-  border-bottom: 2px dotted var(--compare-brand, var(--lsl-rule-strong));
-}
 .landing-southleft .lsl-showcase-tab[aria-selected="true"] {
   color: var(--lsl-fg-strong);
   font-weight: 600;
-  border-bottom: 2px solid var(--showcase-brand, var(--lsl-accent));
+  border-bottom-color: var(--showcase-brand, var(--lsl-accent));
+}
+/* The right-side options are real radios dressed like the tabs. */
+.landing-southleft .lsl-side-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.landing-southleft .lsl-side-option[data-checked="true"] {
+  color: var(--lsl-fg-strong);
+  font-weight: 600;
+  border-bottom-color: var(--compare-brand, var(--lsl-accent));
+}
+/* The system on the left cannot also be on the right. */
+.landing-southleft .lsl-side-option[data-disabled="true"] {
+  color: var(--lsl-fg-subtle);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.landing-southleft .lsl-side-option[data-disabled="true"] input {
+  cursor: not-allowed;
+}
+.landing-southleft .lsl-side-option:has(input:focus-visible) {
+  outline: 2px solid var(--lsl-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+/* The frame and the light/dark control that belongs to it. */
+.landing-southleft .lsl-stage {
+  position: relative;
 }
 .landing-southleft .lsl-mode {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 16px);
   display: flex;
-  flex: 0 0 auto;
-  padding: 3px;
-  background: var(--lsl-bg-soft);
-  border-radius: var(--lsl-radius-control);
+  gap: 2px;
 }
 .landing-southleft .lsl-mode-btn {
   appearance: none;
@@ -544,6 +588,7 @@ html:has(.landing-southleft) body {
               background var(--lsl-dur-fast) ease;
 }
 .landing-southleft .lsl-mode-btn:hover { color: var(--lsl-fg-strong); }
+/* Selected: a filled tonal state, no ring. */
 .landing-southleft .lsl-mode-btn[aria-pressed="true"] {
   background: var(--lsl-bg-elevated);
   color: var(--lsl-fg-strong);
@@ -551,7 +596,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-showcase-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1760 / 1067;
+  aspect-ratio: 1420 / 748;
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
   background: var(--lsl-bg-soft);
@@ -565,12 +610,6 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-compare-layer {
   position: absolute;
   inset: 0;
-}
-.landing-southleft .lsl-showcase-panel {
-  visibility: hidden;
-}
-.landing-southleft .lsl-showcase-panel[data-active="true"] {
-  visibility: visible;
 }
 .landing-southleft .lsl-showcase-panel:focus-visible {
   outline-offset: -4px;
@@ -647,6 +686,41 @@ html:has(.landing-southleft) body {
   outline: 2px solid var(--lsl-accent);
   outline-offset: 3px;
 }
+/* Each side is named inside the frame, next to the divider, and the names
+   travel with it. Tonal chips, no outline. */
+.landing-southleft .lsl-corner {
+  position: absolute;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--lsl-radius-control);
+  background: var(--lsl-bg);
+  color: var(--lsl-fg-strong);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(10, 14, 26, 0.45);
+}
+.landing-southleft .lsl-corner[data-side="left"] {
+  right: calc(100% - var(--split-x) + 14px);
+}
+.landing-southleft .lsl-corner[data-side="right"] {
+  left: calc(var(--split-x) + 14px);
+}
+/* A colour, shown rather than spelled out. */
+.landing-southleft .lsl-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: var(--lsl-edge-soft);
+  vertical-align: baseline;
+}
 /* Which system is on which side, and what it brings. */
 .landing-southleft .lsl-legend {
   display: grid;
@@ -679,8 +753,8 @@ html:has(.landing-southleft) body {
   height: 0;
   border-top: 2px solid var(--showcase-brand, var(--lsl-accent));
 }
-.landing-southleft .lsl-legend-name[data-side="right"]::before {
-  border-top: 2px dotted var(--compare-brand, var(--lsl-rule-strong));
+.landing-southleft .lsl-legend-side[data-side="right"] .lsl-legend-name::before {
+  border-top-color: var(--compare-brand, var(--lsl-accent));
 }
 .landing-southleft .lsl-legend-traits {
   font-size: var(--lsl-text-meta);
@@ -753,14 +827,15 @@ html:has(.landing-southleft) body {
   text-decoration: none;
   color: inherit;
 }
-/* A specimen sheet: the captures are light-mode crops cut at block edges, so
-   the sheet is white and nothing is sliced. */
+/* A specimen sheet: full-width strips of each system's own canvas, so the
+   ground is that system's real surface and nothing is boxed or sliced. */
 .landing-southleft .lsl-syscard-frame {
   display: block;
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
-  background: var(--lsl-fg-strong);
+  background: var(--sheet, var(--lsl-bg-soft));
   margin: 0 0 16px;
+  padding: 8px 0;
   transition: transform 240ms var(--lsl-ease);
 }
 .landing-southleft .lsl-syscard-frame img {
@@ -784,6 +859,12 @@ html:has(.landing-southleft) body {
   line-height: 1.45;
   color: var(--lsl-fg-muted);
   margin: 2px 0 10px;
+}
+.landing-southleft .lsl-systems-hint {
+  display: none;
+  margin: 4px 0 0;
+  font-size: var(--lsl-text-meta);
+  color: var(--lsl-fg-muted);
 }
 .landing-southleft .lsl-syscard-go {
   font-size: var(--lsl-text-meta);
@@ -1148,10 +1229,9 @@ html:has(.landing-southleft) body {
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
-/* Below 1367px the light/dark control is a single icon toggle, so the five
-   tabs always fit beside it: only the mode you can switch TO is shown. */
+/* Below 1367px the light/dark control is a single icon toggle: only the mode
+   you can switch TO is shown. */
 @media (max-width: 1366px) {
-  .landing-southleft .lsl-mode { padding: 0; border: 0; }
   .landing-southleft .lsl-mode-btn {
     width: 44px;
     height: 44px;
@@ -1160,7 +1240,7 @@ html:has(.landing-southleft) body {
     background: var(--lsl-bg-elevated);
     color: var(--lsl-fg-strong);
   }
-  .landing-southleft .lsl-mode { background: none; }
+  .landing-southleft .lsl-mode { bottom: calc(100% + 12px); }
   .landing-southleft .lsl-mode-btn[aria-pressed="true"] { display: none; }
   .landing-southleft .lsl-mode-btn span {
     position: absolute;
@@ -1189,9 +1269,6 @@ html:has(.landing-southleft) body {
   .landing-southleft .lsl-hero { padding-top: 20px; }
   .landing-southleft .lsl-hero-headline { font-size: var(--lsl-text-display-l); }
   .landing-southleft .lsl-instrument { max-width: none; }
-  /* A shorter crop when stacked, so the search field and the cards are in
-     the first viewport of a tablet. */
-  .landing-southleft .lsl-showcase-viewport { aspect-ratio: 16 / 8; }
   .landing-southleft .lsl-section-head,
   .landing-southleft .lsl-export-grid,
   .landing-southleft .lsl-workflow-grid,
@@ -1224,6 +1301,7 @@ html:has(.landing-southleft) body {
     padding: 8px var(--lsl-content-pad) 16px;
   }
   .landing-southleft .lsl-systems-item { scroll-snap-align: start; }
+  .landing-southleft .lsl-systems-hint { display: block; }
 }
 /* Tablets keep one nav link, the UI Kit, so it stays reachable from the top. */
 @media (max-width: 860px) {
@@ -1252,10 +1330,11 @@ html:has(.landing-southleft) body {
     padding: 0 18px;
   }
   .landing-southleft .lsl-hero-alt { margin-top: 12px; padding-left: 18px; }
-  /* The phone capture is taller than the desktop one: crop it to 4:5. Its
-     top holds the title, the search field and the first card. */
-  .landing-southleft .lsl-showcase-viewport { aspect-ratio: 4 / 5; }
-  .landing-southleft .lsl-instrument-bar { gap: 4px; margin-bottom: 8px; }
+  /* The phone capture is its own crop: the search field, then the first card. */
+  .landing-southleft .lsl-showcase-viewport { aspect-ratio: 734 / 756; }
+  .landing-southleft .lsl-instrument-bar { margin-bottom: 8px; }
+  .landing-southleft .lsl-side { gap: 4px; }
+  .landing-southleft .lsl-side-label { flex-basis: 34px; font-size: 13px; }
   .landing-southleft .lsl-showcase-tabs {
     flex: 1 1 auto;
     gap: 0;
@@ -1265,8 +1344,17 @@ html:has(.landing-southleft) body {
     padding: 0 4px;
     font-size: 13px;
   }
-  .landing-southleft .lsl-mode-btn { width: 40px; }
-  .landing-southleft .lsl-legend { gap: 12px; }
+  /* On a phone the mode toggle sits under the frame, between the two
+     legends, so it covers nothing. */
+  .landing-southleft .lsl-mode {
+    bottom: auto;
+    top: calc(100% + 10px);
+    right: auto;
+    left: 50%;
+    margin-left: -22px;
+  }
+  .landing-southleft .lsl-legend { column-gap: 60px; min-height: 54px; }
+  .landing-southleft .lsl-corner { bottom: 8px; height: 26px; padding: 0 10px; font-size: 12px; }
   .landing-southleft .lsl-legend-traits { font-size: 13px; }
   .landing-southleft .lsl-section-head { margin-bottom: 28px; }
   .landing-southleft .lsl-section-lede { font-size: var(--lsl-text-body-l); }
@@ -1293,8 +1381,10 @@ html:has(.landing-southleft) body {
   .landing-southleft .lsl-nav-inner { gap: 12px; }
   .landing-southleft .lsl-nav-cta { padding: 0 14px; }
   .landing-southleft .lsl-logo { gap: 8px; }
-  /* Tabs wrap to two rows here rather than scroll out of reach. */
+  /* Options wrap to two rows here rather than scroll out of reach. */
   .landing-southleft .lsl-showcase-tabs { justify-content: flex-start; gap: 0 6px; }
+  .landing-southleft .lsl-side { align-items: flex-start; }
+  .landing-southleft .lsl-side-label { line-height: 44px; }
   .landing-southleft .lsl-hero-prompt-field { padding-left: 14px; gap: 4px; }
   .landing-southleft .lsl-hero-prompt-submit { padding: 0 14px; }
 }

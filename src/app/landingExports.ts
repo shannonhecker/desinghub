@@ -47,36 +47,6 @@ export default function Dashboard() {
   <span className="topnav-divider" aria-hidden="true"></span>`,
   },
   {
-    id: "sh",
-    format: "Vite project",
-    file: "design-hub-project.sh",
-    shown: 22,
-    total: 743,
-    note: "One script. Run it in an empty folder and it writes a React and TypeScript project, installs it and starts the dev server.",
-    source: `#!/bin/sh
-# ─────────────────────────────────────────────────────────────────────
-# Design Hub - Vite project bootstrap
-# Generated: 2026-10-04T20:10:26.428Z
-# Design system: salt
-# Mode: dark
-# Total blocks: 16
-# ─────────────────────────────────────────────────────────────────────
-# Run this script in an empty directory:
-#   sh design-hub-project.sh
-# It will create a folder "design-hub-app/", populate it, and install deps.
-# ─────────────────────────────────────────────────────────────────────
-set -e
-
-PROJECT_DIR="design-hub-app"
-if [ -d "$PROJECT_DIR" ]; then
-  echo "Directory '$PROJECT_DIR' already exists. Remove it first or cd into a different folder."
-  exit 1
-fi
-
-mkdir -p "$PROJECT_DIR/src"
-cd "$PROJECT_DIR"`,
-  },
-  {
     id: "html",
     format: "HTML",
     file: "dashboard.html",
@@ -120,5 +90,35 @@ cd "$PROJECT_DIR"`,
         "com.designhub.cssVar": "--salt-container-primary-background"
       }
     },`,
+  },
+  {
+    id: "sh",
+    format: "Vite project",
+    file: "design-hub-project.sh",
+    shown: 22,
+    total: 743,
+    note: "One script. Run it in an empty folder and it writes a React and TypeScript project, installs it and starts the dev server.",
+    source: `#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────
+# Design Hub - Vite project bootstrap
+# Generated: 2026-10-04T20:10:26.428Z
+# Design system: salt
+# Mode: dark
+# Total blocks: 16
+# ─────────────────────────────────────────────────────────────────────
+# Run this script in an empty directory:
+#   sh design-hub-project.sh
+# It will create a folder "design-hub-app/", populate it, and install deps.
+# ─────────────────────────────────────────────────────────────────────
+set -e
+
+PROJECT_DIR="design-hub-app"
+if [ -d "$PROJECT_DIR" ]; then
+  echo "Directory '$PROJECT_DIR' already exists. Remove it first or cd into a different folder."
+  exit 1
+fi
+
+mkdir -p "$PROJECT_DIR/src"
+cd "$PROJECT_DIR"`,
   },
 ] as const;

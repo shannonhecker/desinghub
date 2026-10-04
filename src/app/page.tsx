@@ -37,6 +37,14 @@ import Link from "next/link";
 
 import { EXPORT_SAMPLES } from "./landingExports";
 import { canPrefetchBuilder, subscribePrefetch } from "./landingPrefetch";
+import {
+  SYSTEMS,
+  differences,
+  specOf,
+  type Accent,
+  type Mode,
+  type SystemId,
+} from "./landingSystems";
 import "./landing.css";
 
 /** uoaui mark (the "ao" with macron). Inline so we can recolor parts
@@ -115,63 +123,27 @@ const NAV_LINKS = [
   { href: "/ui-kit", label: "UI Kit" },
 ] as const;
 
-type SystemId = "salt" | "md3" | "fluent" | "carbon" | "uoaui";
-type Mode = "light" | "dark";
-
-interface SystemSpec {
-  id: SystemId;
-  name: string;
-  /** Tint for the active tab underline and the divider on the dark page. */
-  brand: string;
-  /* What this system brings to the screen. Measured from the builder's own
-     DOM in Present mode (getComputedStyle on the report body, the search
-     field and the primary button), light mode, 2026-10-04. */
-  font: string;
-  corners: string;
-  accent: string;
-}
-
-const SYSTEMS: readonly SystemSpec[] = [
-  { id: "salt", name: "Salt DS", brand: "#5B9BD1", font: "Open Sans", corners: "4px", accent: "#2670A9" },
-  { id: "md3", name: "Material 3", brand: "#D0BCFF", font: "Roboto", corners: "12px", accent: "#6750A4" },
-  { id: "fluent", name: "Fluent 2", brand: "#479EF5", font: "Segoe UI", corners: "4px", accent: "#0F6CBD" },
-  { id: "carbon", name: "Carbon", brand: "#78A9FF", font: "IBM Plex Sans", corners: "0px", accent: "#0F62FE" },
-  { id: "uoaui", name: "uoaui", brand: "#A78BFA", font: "Inter", corners: "12px", accent: "#6B5AA8" },
-] as const;
-
-const specOf = (id: SystemId): SystemSpec => SYSTEMS.find((s) => s.id === id) ?? SYSTEMS[0];
-
 const DEFAULT_SYSTEM: SystemId = "salt";
 const DEFAULT_COMPARE: SystemId = "md3";
-const DEFAULT_MODE: Mode = "light";
+const DEFAULT_MODE: Mode = "dark";
 const DEFAULT_SPLIT = 50;
 
-/** Present-mode captures of the Analytics Home template. Desktop frames are
-    1760x1067, phone frames 752x1280. See public/showcase. */
-const SHOT = { w: 1760, h: 1067, phoneW: 752, phoneH: 1280 } as const;
+/** Present-mode captures of the Analytics Home template: the main column
+    only (no app bar, no sidebar), from the search field down, at device pixel
+    ratio 2. Wide frames are 710x374 CSS px, so on a 1440 screen the controls
+    are shown at their real size; phone frames are 367x378. Each crop ends
+    under the card's thumbnail, so no line of text is sliced. See
+    public/showcase. This region was chosen by measured pixel difference
+    between systems (see the task report). */
+const SHOT = { w: 1420, h: 748, phoneW: 734, phoneH: 756 } as const;
 const PHONE_QUERY = "(max-width: 640px)";
 
 function shotSrc(id: SystemId, mode: Mode, phone = false): string {
-  return `/showcase/home-${id}-${mode}${phone ? "-phone" : ""}.webp`;
+  return `/showcase/cmp-${id}-${mode}${phone ? "-phone" : ""}.webp`;
 }
 
 function shotAlt(name: string, mode: Mode): string {
-  return `The Analytics Home screen rendered in ${name}, ${mode} mode: a search field with its button, four featured report cards with tags, and a filterable list of dashboards, captured from the builder's Present mode.`;
-}
-
-/** The facts as one plain phrase. */
-function traits(s: SystemSpec): string {
-  return `${s.font}, ${s.corners} corners, ${s.accent} accent`;
-}
-
-/** What actually differs between two systems, in words. Only real
-    differences are named: Salt and Fluent share 4px corners, so corners are
-    left out for that pair. */
-function differences(a: SystemSpec, b: SystemSpec): string {
-  const parts = [`${a.font} against ${b.font}`];
-  if (a.corners !== b.corners) parts.push(`${a.corners} corners against ${b.corners}`);
-  parts.push(`${a.accent} against ${b.accent}`);
-  return parts.join(", ");
+  return `The Analytics Dashboard screen rendered in ${name}, ${mode} mode: its search field and button and the first featured report cards with their tags, captured from the builder's Present mode.`;
 }
 
 /** The builder builds this exact screen from this message, with no model
@@ -184,7 +156,7 @@ const STEPS = [
   {
     at: 0,
     title: "Describe it",
-    body: "Type what the report is for, or start from one of 13 finance templates: risk, performance, ESG, climate, screening, FX execution and more.",
+    body: "Type what the screen is for, or start from one of 13 finance templates: risk, performance, ESG, climate, screening, FX execution and more.",
   },
   {
     at: 4.4,
@@ -289,7 +261,7 @@ function PromptForm({
         </fieldset>
       )}
       <label className="lsl-hero-prompt-label" htmlFor={id}>
-        Describe the report you want to build
+        Describe the screen you want to build
       </label>
       <div className="lsl-hero-prompt-field">
         <input
@@ -314,26 +286,31 @@ function PromptForm({
 
 /* ── The instrument ──────────────────────────────────────────────────── */
 
-/** One capture. Reports when it has settled (decoded, or failed) so a sweep
- *  never waits on a broken image and never reveals an empty frame. */
+/** One capture, as a stable element: its sources change, it never remounts,
+ *  so the old picture stays on screen until the new one has decoded. Reports
+ *  when the current source has settled (decoded, or failed). */
 function Shot({
   id,
   mode,
   alt,
+  priority,
   onSettled,
 }: {
   id: SystemId;
   mode: Mode;
   alt: string;
-  onSettled: () => void;
+  priority: "high" | "auto";
+  onSettled: (key: string) => void;
 }) {
   const ref = useRef<HTMLImageElement>(null);
+  const key = `${id}-${mode}`;
   useEffect(() => {
     const img = ref.current;
-    if (img && img.complete) onSettled();
-    // Mount-only: a keyed remount handles every later change.
+    if (img && img.complete) onSettled(key);
+    // Re-check whenever the source changes (a cached image fires no event
+    // we can rely on across browsers).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [key]);
   return (
     <picture>
       <source
@@ -352,12 +329,23 @@ function Shot({
         height={SHOT.h}
         alt={alt}
         loading="eager"
-        fetchPriority="high"
+        fetchPriority={priority}
         decoding="async"
-        onLoad={onSettled}
-        onError={onSettled}
+        onLoad={() => onSettled(key)}
+        onError={() => onSettled(key)}
       />
     </picture>
+  );
+}
+
+function Swatch({ accent }: { accent: Accent }) {
+  return (
+    <span
+      className="lsl-swatch"
+      style={{ "--swatch": accent.hex } as React.CSSProperties}
+      title={accent.hex}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -366,13 +354,15 @@ const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2,
 
 /** The hero instrument: one real screen, two design systems, one divider.
  *
- *  The selected tab's system is on the left of the divider and the system
- *  you came from is on the right. Drag the divider (pointer or touch), or
- *  focus it and use the arrow keys: it is a native range input. Choosing a
- *  tab sweeps the new system in from the left edge to where the divider was.
+ *  Two plain controls choose the sides: the "Left" tabs and the "Right"
+ *  options. Nothing changes a side the visitor did not pick, with one
+ *  exception that is announced: choosing the system that is already on the
+ *  other side swaps the two. Drag the divider (pointer or touch), or focus
+ *  it and use the arrow keys: it is a native range input. A change sweeps
+ *  the new capture in from its own edge once it has decoded.
  *
- *  ARIA: a tablist with roving tabindex + arrow keys + Home/End per the
- *  WAI-ARIA tabs pattern, a labelled slider, and a pressed-state pair for
+ *  ARIA: a tablist (roving tabindex, arrow keys, Home/End) with one stable
+ *  tabpanel, a radiogroup, a labelled slider, and a pressed-state pair for
  *  light/dark. Under reduced motion nothing sweeps: systems swap in place. */
 function Instrument({
   system,
@@ -387,35 +377,39 @@ function Instrument({
   onChange: (system: SystemId, compare: SystemId, mode: Mode) => void;
   prefetch: false | null;
 }) {
+  const figureRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const viewportRef = useRef<HTMLDivElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
-  /* Divider position, 0 to 100: how much of the frame the selected system
-     takes. `rest` is where the visitor (or the default) left it. */
-  const [split, setSplit] = useState(DEFAULT_SPLIT);
-  const rest = useRef(DEFAULT_SPLIT);
+  /* Where the divider rests, 0 to 100: how much of the frame the left system
+     takes. React owns this value. While a sweep runs, the moving position is
+     written straight to the --split-n custom property and React is left
+     alone, so the slider's value text is not rewritten sixty times a second. */
+  const [rest, setRest] = useState(DEFAULT_SPLIT);
+  const restRef = useRef(DEFAULT_SPLIT);
   const raf = useRef(0);
   const touched = useRef(false);
-  /* Captures that have settled, by "system-mode". A sweep waits for its
-     incoming capture; a system only becomes the right-hand side once it has
-     actually been seen. */
-  const [settled, setSettled] = useState<ReadonlySet<string>>(() => new Set());
-  const [sweepFor, setSweepFor] = useState<string | null>(null);
+  const inView = useRef(false);
+  const demoDone = useRef(false);
+  /* Captures that have settled, by "system-mode". */
+  const settled = useRef(new Set<string>());
+  /* A sweep waiting for its capture: which key, and from which edge. */
+  const pending = useRef<{ key: string; from: 0 | 100 } | null>(null);
 
-  const baseKey = `${system}-${mode}`;
-  const compareKey = `${compare}-${mode}`;
-  const settle = (key: string) =>
-    setSettled((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+  const leftKey = `${system}-${mode}`;
+  const rightKey = `${compare}-${mode}`;
 
   const motionOk = () =>
     typeof window.matchMedia === "function" &&
     !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const paint = (v: number) =>
+    figureRef.current?.style.setProperty("--split-n", String(v / 100));
   const stop = () => {
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = 0;
   };
-  /** Run the divider through a list of [target, duration] legs. */
+  /** Move the divider through a list of [target, duration] legs. */
   const run = (from: number, legs: readonly (readonly [number, number])[]) => {
     stop();
     let i = 0;
@@ -425,7 +419,7 @@ function Instrument({
       if (!start) start = now;
       const [to, ms] = legs[i];
       const t = Math.min(1, (now - start) / ms);
-      setSplit(origin + (to - origin) * easeInOut(t));
+      paint(origin + (to - origin) * easeInOut(t));
       if (t < 1) {
         raf.current = requestAnimationFrame(tick);
       } else if (++i < legs.length) {
@@ -440,76 +434,90 @@ function Instrument({
   };
   useEffect(() => stop, []);
 
-  const change = (nextSystem: SystemId, nextMode: Mode) => {
-    if (nextSystem === system && nextMode === mode) return;
-    touched.current = true;
-    if (nextSystem === system) {
-      onChange(system, compare, nextMode);
-      return;
-    }
-    /* The system you leave moves to the right, unless it never rendered
-       (a fast A, B, C): then the right-hand side stays as it was. */
-    const nextCompare =
-      settled.has(baseKey) || nextSystem === compare ? system : compare;
-    onChange(nextSystem, nextCompare, nextMode);
-    if (motionOk()) {
-      stop();
-      setSplit(0);
-      setSweepFor(`${nextSystem}-${nextMode}`);
-    }
+  /** One short demonstration, once: the divider travels right, left, and
+   *  home. It waits until the frame is in view AND both captures have
+   *  settled, and never runs under reduced motion or after a touch. */
+  const maybeDemo = () => {
+    if (demoDone.current || touched.current || !inView.current) return;
+    if (!settled.current.has(leftKey) || !settled.current.has(rightKey)) return;
+    if (!motionOk()) return;
+    demoDone.current = true;
+    run(restRef.current, [
+      [76, 620],
+      [26, 900],
+      [restRef.current, 620],
+    ]);
   };
 
-  /* Sweep the new system in once its capture has settled. */
-  useEffect(() => {
-    if (!sweepFor || sweepFor !== baseKey || !settled.has(baseKey)) return;
-    setSweepFor(null);
-    run(0, [[rest.current, SWEEP_MS]]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sweepFor, baseKey, settled]);
+  const onSettled = (key: string) => {
+    settled.current.add(key);
+    const p = pending.current;
+    if (p && p.key === key) {
+      pending.current = null;
+      run(p.from, [[restRef.current, SWEEP_MS]]);
+    }
+    maybeDemo();
+  };
 
-  /* One short demonstration, once, when the frame is first in view: the
-     divider travels right, left, and home. Skipped under reduced motion and
-     as soon as the visitor touches anything. */
   useEffect(() => {
     const node = viewportRef.current;
-    if (!node || typeof IntersectionObserver === "undefined" || !motionOk()) return;
-    let timer = 0;
+    if (!node || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
+        inView.current = true;
         io.disconnect();
-        timer = window.setTimeout(() => {
-          if (touched.current) return;
-          run(DEFAULT_SPLIT, [
-            [76, 620],
-            [26, 900],
-            [DEFAULT_SPLIT, 620],
-          ]);
-        }, 900);
+        maybeDemo();
       },
       { threshold: 0.6 },
     );
     io.observe(node);
-    return () => {
-      io.disconnect();
-      window.clearTimeout(timer);
-    };
+    return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Start a sweep for a side that just changed: park the divider on that
+   *  side's edge (the other capture covers the frame), then travel to rest
+   *  once the new capture has settled. */
+  const sweep = (key: string, from: 0 | 100) => {
+    if (!motionOk()) return;
+    stop();
+    paint(from);
+    if (settled.current.has(key)) run(from, [[restRef.current, SWEEP_MS]]);
+    else pending.current = { key, from };
+  };
+
+  const setLeft = (next: SystemId) => {
+    if (next === system) return;
+    touched.current = true;
+    // Picking the system that is on the right swaps the two sides.
+    const nextRight = next === compare ? system : compare;
+    onChange(next, nextRight, mode);
+    sweep(`${next}-${mode}`, 0);
+  };
+  const setRight = (next: SystemId) => {
+    if (next === compare || next === system) return;
+    touched.current = true;
+    onChange(system, next, mode);
+    sweep(`${next}-${mode}`, 100);
+  };
 
   const onSplitInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     touched.current = true;
     stop();
-    setSweepFor(null);
+    pending.current = null;
     const v = Number(e.target.value);
-    rest.current = v;
-    setSplit(v);
+    restRef.current = v;
+    setRest(v);
+    paint(v);
   };
 
-  /* On phones only the mode you can switch TO is shown (see landing.css), so
-     the pressed button disappears on click. Hand focus to its sibling. */
+  /* When only the icon toggle is shown (see landing.css) the pressed button
+     disappears on click. Hand focus to its sibling. */
   const changeMode = (next: Mode) => {
-    change(system, next);
+    if (next === mode) return;
+    touched.current = true;
+    onChange(system, compare, next);
     requestAnimationFrame(() => {
       const group = modeRef.current;
       const focused = document.activeElement as HTMLElement | null;
@@ -522,7 +530,7 @@ function Instrument({
 
   const selectAt = (i: number) => {
     const n = (i + SYSTEMS.length) % SYSTEMS.length;
-    change(SYSTEMS[n].id, mode);
+    setLeft(SYSTEMS[n].id);
     tabRefs.current[n]?.focus();
   };
 
@@ -585,47 +593,77 @@ function Instrument({
 
   const a = specOf(system);
   const b = specOf(compare);
-  const pct = Math.round(split);
 
   return (
     <figure
+      ref={figureRef}
       id="showcase"
       className="lsl-instrument"
       style={
         {
           "--showcase-brand": a.brand,
           "--compare-brand": b.brand,
-          "--split-n": split / 100,
+          "--split-n": rest / 100,
         } as React.CSSProperties
       }
     >
       <div className="lsl-instrument-bar">
-        <div
-          className="lsl-showcase-tabs"
-          role="tablist"
-          aria-label="Design system on the left of the divider"
-        >
-          {SYSTEMS.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              role="tab"
-              id={`lsl-showcase-tab-${s.id}`}
-              aria-selected={system === s.id}
-              aria-controls={`lsl-showcase-panel-${s.id}`}
-              tabIndex={system === s.id ? 0 : -1}
-              className="lsl-showcase-tab"
-              data-compare={compare === s.id ? "true" : undefined}
-              ref={(el) => {
-                tabRefs.current[i] = el;
-              }}
-              onClick={() => change(s.id, mode)}
-              onKeyDown={(e) => onTabKeyDown(e, i)}
-            >
-              {s.name}
-            </button>
-          ))}
+        <div className="lsl-sides">
+          <div className="lsl-side">
+            <span className="lsl-side-label" id="lsl-side-left">
+              Left
+            </span>
+            <div className="lsl-showcase-tabs" role="tablist" aria-labelledby="lsl-side-left">
+              {SYSTEMS.map((s, i) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  id={`lsl-showcase-tab-${s.id}`}
+                  aria-selected={system === s.id}
+                  aria-controls="lsl-showcase-panel"
+                  tabIndex={system === s.id ? 0 : -1}
+                  className="lsl-showcase-tab"
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
+                  onClick={() => setLeft(s.id)}
+                  onKeyDown={(e) => onTabKeyDown(e, i)}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="lsl-side">
+            <span className="lsl-side-label" id="lsl-side-right">
+              Right
+            </span>
+            <div className="lsl-showcase-tabs" role="radiogroup" aria-labelledby="lsl-side-right">
+              {SYSTEMS.map((s) => (
+                <label
+                  key={s.id}
+                  className="lsl-showcase-tab lsl-side-option"
+                  data-checked={compare === s.id ? "true" : undefined}
+                  data-disabled={system === s.id ? "true" : undefined}
+                >
+                  <input
+                    type="radio"
+                    name="lsl-right-side"
+                    value={s.id}
+                    checked={compare === s.id}
+                    disabled={system === s.id}
+                    onChange={() => setRight(s.id)}
+                  />
+                  <span>{s.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="lsl-stage">
         <div ref={modeRef} className="lsl-mode" role="group" aria-label="Colour mode of the screen">
           <button
             type="button"
@@ -646,42 +684,19 @@ function Instrument({
             <span>Dark</span>
           </button>
         </div>
-      </div>
-
       <div ref={viewportRef} className="lsl-showcase-viewport" data-mode={mode}>
-        {SYSTEMS.map((s) => {
-          const isActive = system === s.id;
-          return (
-            <div
-              key={s.id}
-              role="tabpanel"
-              id={`lsl-showcase-panel-${s.id}`}
-              aria-labelledby={`lsl-showcase-tab-${s.id}`}
-              className="lsl-showcase-panel"
-              data-active={isActive ? "true" : undefined}
-              aria-hidden={isActive ? undefined : true}
-              tabIndex={isActive ? 0 : undefined}
-            >
-              {isActive && (
-                <Shot
-                  key={baseKey}
-                  id={s.id}
-                  mode={mode}
-                  alt={shotAlt(s.name, mode)}
-                  onSettled={() => settle(baseKey)}
-                />
-              )}
-            </div>
-          );
-        })}
+        <div
+          role="tabpanel"
+          id="lsl-showcase-panel"
+          aria-labelledby={`lsl-showcase-tab-${system}`}
+          className="lsl-showcase-panel"
+          data-system={system}
+          tabIndex={0}
+        >
+          <Shot id={system} mode={mode} alt={shotAlt(a.name, mode)} priority="high" onSettled={onSettled} />
+        </div>
         <div className="lsl-compare-layer" data-system={compare}>
-          <Shot
-            key={compareKey}
-            id={compare}
-            mode={mode}
-            alt={shotAlt(b.name, mode)}
-            onSettled={() => settle(compareKey)}
-          />
+          <Shot id={compare} mode={mode} alt={shotAlt(b.name, mode)} priority="auto" onSettled={onSettled} />
         </div>
         <input
           className="lsl-split-range"
@@ -689,10 +704,10 @@ function Instrument({
           min={0}
           max={100}
           step={1}
-          value={pct}
+          value={rest}
           onChange={onSplitInput}
           aria-label={`Divider between ${a.name} and ${b.name}`}
-          aria-valuetext={`${a.name} ${pct} percent, ${b.name} ${100 - pct} percent`}
+          aria-valuetext={`${a.name} ${rest} percent, ${b.name} ${100 - rest} percent`}
         />
         <span className="lsl-split-line" aria-hidden="true">
           <span className="lsl-split-grip">
@@ -701,28 +716,45 @@ function Instrument({
             </svg>
           </span>
         </span>
+        {/* Which system is on which side, said inside the frame. The legend
+            below carries the same names for assistive technology. */}
+        <span className="lsl-corner" data-side="left" aria-hidden="true">
+          {a.name}
+        </span>
+        <span className="lsl-corner" data-side="right" aria-hidden="true">
+          {b.name}
+        </span>
+      </div>
       </div>
 
       <div className="lsl-legend">
-        <p className="lsl-legend-side">
-          <span className="lsl-legend-name" data-side="left">{a.name}</span>
-          <span className="lsl-legend-traits">{traits(a)}</span>
+        <p className="lsl-legend-side" data-side="left">
+          <span className="lsl-legend-name">{a.name}</span>
+          <span className="lsl-legend-traits">
+            {a.font}, {a.corners === "0px" ? "square corners" : `${a.corners} corners`},{" "}
+            <Swatch accent={a.accent[mode]} />
+            {a.accent[mode].name}
+          </span>
         </p>
         <p className="lsl-legend-side" data-side="right">
-          <span className="lsl-legend-name" data-side="right">{b.name}</span>
-          <span className="lsl-legend-traits">{traits(b)}</span>
+          <span className="lsl-legend-name">{b.name}</span>
+          <span className="lsl-legend-traits">
+            {b.font}, {b.corners === "0px" ? "square corners" : `${b.corners} corners`},{" "}
+            <Swatch accent={b.accent[mode]} />
+            {b.accent[mode].name}
+          </span>
         </p>
       </div>
-      {/* The same comparison as one sentence, announced after a switch. */}
+      {/* The same comparison as one sentence, announced after a change. */}
       <p className="lsl-diff sr-only" aria-live="polite">
         {a.name} on the left, {b.name} on the right. What differs:{" "}
-        {differences(a, b)}.
+        {differences(a, b, mode)}.
       </p>
 
       <figcaption className="lsl-showcase-caption">
         <span>
-          Analytics Home template, Present mode. Real builder output,
-          captured, not redrawn.
+          The Analytics Dashboard screen, from the builder&apos;s Analytics
+          Home template. Real builder output, captured, not redrawn.
         </span>
         <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
           Open this screen in the builder
@@ -780,7 +812,7 @@ function Workflow() {
           />
         </div>
         <figcaption className="lsl-demo-caption">
-          A 21 second screen recording of the builder: pick a template, edit a
+          A 22 second screen recording of the builder: pick a template, edit a
           card, present it in five systems. No sound. Nothing loads until you
           press play.
         </figcaption>
@@ -874,7 +906,8 @@ function ExportViewer() {
       </div>
       <figcaption className="lsl-code-caption">
         <strong>{sample.format}.</strong> {sample.note} Exported from the
-        screen above in Salt DS, dark, exactly as the builder wrote it.
+        Analytics Dashboard screen in Salt DS, dark, exactly as the builder
+        wrote it.
       </figcaption>
     </figure>
   );
@@ -889,18 +922,20 @@ export default function LandingPage() {
   const [compare, setCompare] = useState<SystemId>(DEFAULT_COMPARE);
   const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
 
-  /** From the closing band's chips: same rule as the tabs, no sweep. */
+  /** From the closing band's chips: sets the left side, like the tabs.
+   *  Picking the system that is on the right swaps the two. */
   const chooseSystem = (next: SystemId) => {
     if (next === system) return;
-    setCompare(system);
+    if (next === compare) setCompare(system);
     setSystem(next);
   };
 
   return (
     // `hero` class is required to enable page scroll (see globals.css :has(.hero)).
     <div className="landing-southleft hero">
-      <motion.header className="lsl-nav" style={navGlass}>
-        <nav className="lsl-container lsl-nav-inner" aria-label="Primary">
+      <header className="lsl-header">
+        <motion.nav className="lsl-nav" style={navGlass} aria-label="Primary">
+          <div className="lsl-container lsl-nav-inner">
             <Link prefetch={false} href="/" className="lsl-logo" aria-label="uoaui.ai home">
               <UoauiMark className="lsl-logo-mark-svg" />
               <span className="lsl-logo-word">uoaui.ai</span>
@@ -917,8 +952,9 @@ export default function LandingPage() {
             <Link prefetch={prefetch} href="/builder" className="lsl-cta lsl-nav-cta">
               Open the builder
             </Link>
-        </nav>
-      </motion.header>
+          </div>
+        </motion.nav>
+      </header>
 
       <main id="main-content">
         {/* ── Hero: headline, prompt and the instrument in one viewport ── */}
@@ -930,7 +966,7 @@ export default function LandingPage() {
                 <span>Five design systems.</span>
               </h1>
               <p className="lsl-hero-sub">
-                Describe the report. Switch the system. Export code that runs.
+                Describe the screen. Switch the system. Export code that runs.
               </p>
               <PromptForm id="lsl-hero-prompt-input" system={system} mode={mode} />
               <p className="lsl-hero-alt">
@@ -962,10 +998,10 @@ export default function LandingPage() {
                 <span>The layout holds.</span> <span>The system changes.</span>
               </h2>
               <p className="lsl-section-lede">
-                The same search field and the same report card, cut from the
-                real canvas in each system. The corners, the typeface and the
-                accent come from that system&apos;s own components and tokens.
-                The content stays where you put it.
+                The same search field and the same report card, whole, on each
+                system&apos;s own surface. The corners, the typeface and the
+                accent come from that system&apos;s components and tokens. The
+                content stays where you put it.
               </p>
             </div>
             <ul className="lsl-systems">
@@ -977,36 +1013,42 @@ export default function LandingPage() {
                     className="lsl-syscard"
                     style={{ "--syscard-brand": s.brand } as React.CSSProperties}
                   >
-                    <span className="lsl-syscard-frame">
+                    <span
+                      className="lsl-syscard-frame"
+                      style={{ "--sheet": s.surface } as React.CSSProperties}
+                    >
                       {/* Plain img: static captures with fixed dimensions. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/showcase/part-search-${s.id}.webp`}
-                        width={744}
-                        height={204}
+                        width={730}
+                        height={144}
                         loading="lazy"
                         decoding="async"
-                        alt={`The search field and its button in ${s.name}.`}
+                        alt={`The whole search field and its button in ${s.name}, dark mode.`}
                       />
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={`/showcase/part-card-${s.id}.webp`}
-                        width={786}
-                        height={948}
+                        width={730}
+                        height={656}
                         loading="lazy"
                         decoding="async"
-                        alt={`The Portfolio report card in ${s.name}.`}
+                        alt={`The whole Portfolio report card in ${s.name}, dark mode.`}
                       />
                     </span>
                     <span className="lsl-syscard-name">{s.name}</span>
                     <span className="lsl-syscard-trait">
-                      {s.font}. {s.corners} corners. Accent {s.accent}.
+                      {s.font}. {s.corners === "0px" ? "Square corners" : `${s.corners} corners`}.{" "}
+                      <Swatch accent={s.accent.dark} />
+                      <span className="lsl-syscard-accent">{s.accent.dark.name}</span>
                     </span>
                     <span className="lsl-syscard-go">Build in {s.name}</span>
                   </Link>
                 </li>
               ))}
             </ul>
+            <p className="lsl-systems-hint">Swipe sideways for all five.</p>
           </div>
         </section>
 
@@ -1015,7 +1057,7 @@ export default function LandingPage() {
           <div className="lsl-container">
             <div className="lsl-section-head">
               <h2 id="lsl-workflow-heading" className="lsl-section-heading">
-                <span>From one sentence</span> <span>to a finished report.</span>
+                <span>From one sentence</span> <span>to a finished screen.</span>
               </h2>
               <p className="lsl-section-lede">
                 The canvas is built from real components, so what you edit is
@@ -1056,7 +1098,7 @@ export default function LandingPage() {
                 <span>Start with</span> <span>one sentence.</span>
               </h2>
               <p className="lsl-section-lede">
-                Pick the system, describe the report, and the builder opens
+                Pick the system, describe the screen, and the builder opens
                 with both.
               </p>
             </div>

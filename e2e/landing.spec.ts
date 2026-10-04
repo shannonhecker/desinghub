@@ -18,7 +18,9 @@ const SYSTEMS = [
 const splitOf = (page: Page) =>
   page.locator("#showcase").evaluate((el) => Number((el as HTMLElement).style.getPropertyValue("--split-n")));
 const leftShot = (page: Page) =>
-  page.locator("#showcase [role=tabpanel][data-active=true] img.lsl-showcase-shot");
+  page.locator("#showcase [role=tabpanel] img.lsl-showcase-shot");
+const rightOption = (page: Page, name: string) =>
+  page.locator("#showcase").getByRole("radio", { name, exact: true });
 const rightShot = (page: Page) => page.locator("#showcase .lsl-compare-layer img.lsl-showcase-shot");
 
 const FOLDS = [
@@ -50,7 +52,7 @@ for (const fold of FOLDS) {
     }
 
     // Everything that matters is inside the fold.
-    for (const selector of [".lsl-hero-sub", ".lsl-hero .lsl-hero-prompt", ".lsl-showcase-tabs"]) {
+    for (const selector of [".lsl-hero-sub", ".lsl-hero .lsl-hero-prompt", '[role="tablist"]', '[role="radiogroup"]']) {
       const box = await page.locator(selector).first().boundingBox();
       expect(box, selector).not.toBeNull();
       expect(box!.y + box!.height, selector).toBeLessThanOrEqual(fold.height);
@@ -65,37 +67,59 @@ for (const fold of FOLDS) {
       expect(frame!.x).toBeGreaterThan(copy!.x + copy!.width);
     }
 
+    // The controls are shown at their real size or larger on a desktop: the
+    // wide capture is 710 CSS px across.
+    if (fold.width >= 1440) expect(frame!.width).toBeGreaterThanOrEqual(710);
+
     // Both captures actually loaded, two different systems, and nothing
     // scrolls sideways.
     const suffix = fold.phone ? "-phone.webp" : ".webp";
     for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), "md3"]] as const) {
       expect(await shot.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
       expect(await shot.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(
-        `/showcase/home-${id}-light${suffix}`,
+        `/showcase/cmp-${id}-dark${suffix}`,
       );
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   });
 }
 
-for (const width of [375, 700, 1024, 1440]) {
-  test(`every system tab is in view and clickable with a mouse at ${width}px`, async ({ page }) => {
+for (const width of [320, 375, 700, 1024, 1440]) {
+  test(`every Left tab and Right option is in view and clickable with a mouse at ${width}px`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
+    const inside = (box: { x: number; width: number } | null) => {
+      // Fully inside the viewport: not clipped, not behind a scroll container.
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    };
+    // Right side first: move it off Material 3 so every Left tab is a plain pick.
+    for (const [name, id] of [...SYSTEMS].reverse()) {
+      const label = page.locator("#showcase label.lsl-side-option", { hasText: name });
+      const box = await label.boundingBox();
+      inside(box);
+      if (id === "salt") {
+        await expect(rightOption(page, name)).toBeDisabled(); // Salt is on the left
+        continue;
+      }
+      await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await expect(rightOption(page, name)).toBeChecked();
+      await expect(rightShot(page)).toHaveAttribute("src", `/showcase/cmp-${id}-dark.webp`);
+    }
     for (const [name, id] of SYSTEMS) {
       const tab = page.getByRole("tab", { name });
       const box = await tab.boundingBox();
-      // Fully inside the viewport: not clipped, not behind a scroll container.
-      expect(box!.x).toBeGreaterThanOrEqual(0);
-      expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+      inside(box);
       await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
       await expect(tab).toHaveAttribute("aria-selected", "true");
-      await expect(leftShot(page)).toHaveAttribute("src", `/showcase/home-${id}-light.webp`);
+      await expect(leftShot(page)).toHaveAttribute("src", `/showcase/cmp-${id}-dark.webp`);
     }
-    // The light/dark control is reachable at this width too.
-    await page.locator(".lsl-mode-btn:visible").last().click();
-    await expect(leftShot(page)).toHaveAttribute("src", "/showcase/home-uoaui-dark.webp");
+    // The light/dark control is reachable at this width too, and covers no control.
+    const toggle = page.locator(".lsl-mode-btn:visible").first();
+    await toggle.click();
+    await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-light.webp");
   });
 }
 
@@ -134,6 +158,7 @@ test("dragging the divider compares two systems, by pointer and by keyboard", as
   // Keyboard: the slider is focusable, named, and the arrows move it.
   const slider = page.getByRole("slider", { name: "Divider between Salt DS and Material 3" });
   await slider.focus();
+  await expect(slider).toHaveAttribute("aria-valuetext", /^Salt DS \d+ percent, Material 3 \d+ percent$/);
   const before = await splitOf(page);
   for (let i = 0; i < 5; i++) await page.keyboard.press("ArrowRight");
   expect(await splitOf(page)).toBeCloseTo(before + 0.05, 5);
@@ -148,30 +173,100 @@ test("dragging the divider compares two systems, by pointer and by keyboard", as
   ).toBe("solid");
 });
 
-test("choosing a system sweeps it in and moves the old one to the right", async ({ page }) => {
+test("each side is chosen on its own, and a change sweeps in from that side", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   // Let the first-view pass finish.
   await expect.poll(() => splitOf(page), { timeout: 5000, intervals: [50] }).toBeLessThan(0.4);
   await expect.poll(() => splitOf(page), { timeout: 5000 }).toBe(0.5);
 
+  // Left: the new system comes in from the left edge; the right side stays.
   await page.getByRole("tab", { name: "Carbon" }).click();
-  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/home-carbon-light.webp");
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/home-salt-light.webp");
-  // The sweep starts at the left edge and returns to the resting position.
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-dark.webp");
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-dark.webp");
   await expect.poll(() => splitOf(page), { timeout: 3000, intervals: [20] }).toBeLessThan(0.4);
   await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
-  await expect(page.locator(".lsl-legend")).toContainText("IBM Plex Sans, 0px corners, #0F62FE accent");
-  await expect(page.locator(".lsl-legend")).toContainText("Open Sans, 4px corners, #2670A9 accent");
 
-  await page.locator(".lsl-mode-btn:visible").last().click();
-  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/home-carbon-dark.webp");
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/home-salt-dark.webp");
+  // Right: the new system comes in from the right edge; the left side stays.
+  await rightOption(page, "uoaui").check();
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-dark.webp");
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-dark.webp");
+  await expect.poll(() => splitOf(page), { timeout: 3000, intervals: [20] }).toBeGreaterThan(0.6);
+  await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
 
-  await page.getByRole("tab", { name: "Carbon" }).focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "uoaui" })).toBeFocused();
-  await expect(page.getByRole("tab", { name: "uoaui" })).toHaveAttribute("aria-selected", "true");
-  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/home-carbon-dark.webp");
+  // The frame and the legend both say which side is which.
+  await expect(page.locator('.lsl-corner[data-side="left"]')).toHaveText("Carbon");
+  await expect(page.locator('.lsl-corner[data-side="right"]')).toHaveText("uoaui");
+  await expect(page.locator(".lsl-legend")).toContainText("IBM Plex Sans, square corners, bright blue");
+  await expect(page.locator(".lsl-legend")).toContainText("Inter, 12px corners, violet");
+  // The labels sit on their own sides of the divider.
+  const line = (await page.locator(".lsl-split-line").boundingBox())!.x;
+  const l = (await page.locator('.lsl-corner[data-side="left"]').boundingBox())!;
+  const r = (await page.locator('.lsl-corner[data-side="right"]').boundingBox())!;
+  expect(l.x + l.width).toBeLessThan(line);
+  expect(r.x).toBeGreaterThan(line);
+
+  // Light and dark change both sides.
+  await page.locator(".lsl-mode-btn:visible").first().click();
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-light.webp");
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-light.webp");
+
+  // Picking the right-hand system on the left swaps the two.
+  await page.getByRole("tab", { name: "uoaui" }).click();
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-light.webp");
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-light.webp");
+  await expect(rightOption(page, "Carbon")).toBeChecked();
+
+  await page.getByRole("tab", { name: "uoaui" }).focus();
+  await page.keyboard.press("Home");
+  await expect(page.getByRole("tab", { name: "Salt DS" })).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Salt DS" })).toHaveAttribute("aria-selected", "true");
+});
+
+test("the two halves are visibly different systems, not the same picture twice", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/", { waitUntil: "networkidle" });
+  // Compare the frame's left third with the same region when the divider is
+  // pulled all the way left (so the right-hand system covers it): the pixels
+  // must change substantially. This is the claim the page is built on.
+  const frame = page.locator(".lsl-showcase-viewport");
+  const box = (await frame.boundingBox())!;
+  const clip = { x: box.x + 30, y: box.y + 10, width: Math.floor(box.width / 3), height: Math.floor(box.height - 60) };
+  const slider = page.getByRole("slider");
+  await slider.focus();
+  await page.keyboard.press("End"); // all Salt
+  await page.waitForTimeout(300);
+  const salt = await page.screenshot({ clip });
+  await page.keyboard.press("Home"); // all Material 3
+  await page.waitForTimeout(300);
+  const material = await page.screenshot({ clip });
+  const diff = await page.evaluate(
+    async ([a, b]) => {
+      const load = async (src: string) => {
+        const img = new Image();
+        img.src = "data:image/png;base64," + src;
+        await img.decode();
+        const c = document.createElement("canvas");
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        return ctx.getImageData(0, 0, c.width, c.height).data;
+      };
+      const [da, db] = [await load(a), await load(b)];
+      let sum = 0;
+      let changed = 0;
+      for (let i = 0; i < da.length; i += 4) {
+        const d = (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2])) / 3;
+        sum += d;
+        if (d > 8) changed++;
+      }
+      return { mean: sum / (da.length / 4), share: changed / (da.length / 4) };
+    },
+    [salt.toString("base64"), material.toString("base64")],
+  );
+  // Salt and Material 3 in dark mode differ across almost the whole surface.
+  expect(diff.share).toBeGreaterThan(0.8);
+  expect(diff.mean).toBeGreaterThan(15);
 });
 
 test("reduced motion: no first-view pass and no sweep, the systems swap in place", async ({ page }) => {
@@ -189,14 +284,14 @@ test("reduced motion: no first-view pass and no sweep, the systems swap in place
   await page.getByRole("tab", { name: "Carbon" }).click();
   await sample(1200);
   expect([...seen]).toEqual([0.5]);
-  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/home-carbon-light.webp");
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-carbon-dark.webp");
 });
 
 test("the prompt lands in the builder with the chosen system and mode", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/", { waitUntil: "networkidle" });
   await page.getByRole("tab", { name: "Carbon" }).click();
-  await page.locator(".lsl-mode-btn:visible").last().click();
+  await page.locator(".lsl-mode-btn:visible").first().click(); // dark is the default: switch to light
 
   // An empty prompt does not navigate.
   await page.locator(".lsl-hero .lsl-hero-prompt-submit").click();
@@ -210,7 +305,9 @@ test("the prompt lands in the builder with the chosen system and mode", async ({
   const params = new URL(request.url()).searchParams;
   expect(params.get("prompt")).toBe("Risk summary by fund");
   expect(params.getAll("ds")).toEqual(["carbon"]);
-  expect(params.get("mode")).toBe("dark");
+  expect(params.get("mode")).toBe("light");
+  // Nothing from the instrument's own controls leaks into the handoff.
+  expect([...params.keys()].sort()).toEqual(["ds", "mode", "prompt"]);
 
   // The builder applies the system and stages the prompt in the chat.
   await expect(page.getByRole("button", { name: /^Design system: Carbon/ })).toBeVisible({ timeout: 120_000 });
@@ -225,6 +322,7 @@ test("the closing band's system chips feed the prompt and the hero", async ({ pa
   await expect(band.getByRole("radio", { name: "Salt DS" })).toBeChecked();
   await band.getByRole("radio", { name: "Fluent 2" }).check();
   await expect(band.getByRole("radio", { name: "Fluent 2" })).toBeChecked();
+  await expect(leftShot(page)).toHaveAttribute("src", "/showcase/cmp-fluent-dark.webp");
   await expect(page.getByRole("tab", { name: "Fluent 2" })).toHaveAttribute("aria-selected", "true");
 
   await band.locator("#lsl-cta-prompt-input").fill("ESG scores for a bond fund");
@@ -265,7 +363,7 @@ test("the recording costs nothing until the visitor asks, then a chapter plays i
     .poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime >= 8), { timeout: 15_000 })
     .toBe(true);
   await expect(page.locator('.lsl-step[data-current="true"]')).toContainText("Present it");
-  // A real recording: 1280x800, about 21 seconds.
+  // A real recording: 1280x800, 22 seconds to the nearest second.
   expect(await video.evaluate((v: HTMLVideoElement) => [v.videoWidth, v.videoHeight, Math.round(v.duration)])).toEqual([1280, 800, 22]);
 });
 
@@ -277,9 +375,9 @@ test("the export viewer switches between real files without moving the page", as
   const h0 = await height();
   await expect(viewer.locator("pre")).toContainText('from "@salt-ds/core"');
   for (const [file, text] of [
-    ["design-hub-project.sh", "Design Hub - Vite project bootstrap"],
     ["dashboard.html", "<!DOCTYPE html>"],
     ["tokens.json", "--salt-container-primary-background"],
+    ["design-hub-project.sh", "Vite project bootstrap"],
   ] as const) {
     await viewer.getByRole("tab", { name: file }).click();
     await expect(viewer.locator("pre")).toContainText(text);
