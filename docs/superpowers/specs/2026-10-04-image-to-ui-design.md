@@ -31,8 +31,8 @@ as shortcuts, a thumbnail chip with remove, send stays the same button.
    toolbar opens a file picker limited to PNG, JPEG, WebP and GIF. Shown only when AI is on.
 2. **Paste**: pasting an image from the clipboard into the message box attaches it. Pasted text
    behaves as before.
-3. **Drop**: dragging a file over the composer shows a drop state (accent dashed outline and the
-   line "Drop an image to build from it"); dropping attaches it.
+3. **Drop**: dragging a file over the composer shows a drop state (a soft tinted fill over the
+   composer, no ring, and the line "Drop an image to build from it"); dropping attaches it.
 4. **Chip**: a thumbnail chip appears above the text with the file name, its size after
    preparation (e.g. "1568 x 980") and a remove button ("Remove image"). Attaching a second image
    replaces the first (one image per turn) and says so.
@@ -62,6 +62,13 @@ Errors show as one polite line under the chip (`role="status"`), never as a moda
 | Server re-validates base64 shape, type, size and pixel dimensions | The client is not trusted. Rejects get a generic 400 and a log line with reason and byte count only, never image data. |
 | Image guidance lives in the static system prompt | The cached prefix (tools, system) stays byte-stable; the image block sits after the breakpoint in the latest user turn. |
 | Retry after a network or server failure resends the same image from memory | The user should not have to attach it again; it lives only in a ref until the next successful send. |
+
+## Visual treatment
+
+Owner rule (4 Oct): no harsh outlines. The attach button is a ghost icon button with a soft tonal
+hover; the chip is a raised tonal tile with a low-contrast hairline; the drop state is a tinted fill;
+the error is a tinted line, not a box. Only keyboard focus draws a ring. All measurements and
+colours are `--bc-attach-*` tokens in chrome-tokens.css.
 
 ## Privacy
 
