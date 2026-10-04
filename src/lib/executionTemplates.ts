@@ -109,7 +109,7 @@ export const fxExecution: BuilderTemplate = {
       filters: [
         { label: "Order", stateKey: EXECUTION_KEYS.order, value: ORDER, options: [...EXECUTION_ORDERS] },
         /* The sample feed: live while presenting unless switched off. */
-        { label: "Live feed", stateKey: EXECUTION_KEYS.live, value: "On", options: ["On", "Off"] },
+        { label: "Live feed", stateKey: EXECUTION_KEYS.live, value: "On", options: ["On", "Off"], phrases: { Off: ["pause the feed", "stop the feed"], On: ["resume the feed", "play the feed"] } },
       ],
     },
   }] as Block[],

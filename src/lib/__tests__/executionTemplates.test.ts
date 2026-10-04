@@ -98,6 +98,10 @@ describe("FX Execution - from chat", () => {
     expect(parseReportFilterCommand("turn the live feed off", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "Off", label: "Live feed", kind: "filter" }]);
     const off = collectReportControls([...fxExecution.header, ...fxExecution.body], { [EXECUTION_KEYS.live]: "Off" });
     expect(parseReportFilterCommand("set the live feed to on", off)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "On", label: "Live feed", kind: "filter" }]);
+    /* In the design note's words. */
+    expect(parseReportFilterCommand("pause the feed", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "Off", label: "Live feed", kind: "filter" }]);
+    expect(parseReportFilterCommand("please resume the feed", off)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "On", label: "Live feed", kind: "filter" }]);
+    expect(parseReportFilterCommand("pause the feed and go to 5m", controls)).toBeNull();
   });
 });
 

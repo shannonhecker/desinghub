@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
-import { EXECUTION_KEYS, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
+import { EXECUTION_KEYS, formatChange, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
 import { feedSwitchedOn } from "@/lib/executionFeed";
 import { ExecutionFeedControls, type FeedStatus } from "./ExecutionFeedControls";
 import { usePreviewReadOnly } from "./previewReadOnly";
@@ -35,7 +35,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
   }
   const { last, order } = view;
   const status: FeedStatus = feed.running ? "live" : feed.ended ? "ended" : !readOnly && switchedOn ? "edit" : "paused";
-  const up = last.changePips >= 0;
+  const change = formatChange(last.sessionChangePips, last.sessionChangePct);
   const [base] = [view.pair.slice(0, 3)];
   const sell = splitQuote(last.bid);
   const buy = splitQuote(last.ask);
@@ -57,9 +57,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
           {figure("H", last.high, "up")}
           {figure("L", last.low, "down")}
           {figure("C", last.close)}
-          <span className={`dh-instrument-change ${up ? "is-up" : "is-down"}`}>
-            {up ? "+" : ""}{last.changePips.toFixed(2)} ({up ? "+" : ""}{last.changePct.toFixed(2)}%)
-          </span>
+          <span className={`dh-instrument-change${change.tone === "flat" ? "" : ` is-${change.tone}`}`} title="Change since the first bar shown">{change.text}</span>
         </span>
         <span className="dh-instrument-spacer" />
         <span className="dh-instrument-quote" role="group" aria-label="Quote">
@@ -89,8 +87,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
           ))}
         </div>
         <span className="dh-instrument-spacer" />
-        <ExecutionFeedControls system={(p.system as DesignSystem) ?? "salt"} status={status} canReset={readOnly && feed.samples.length > 0} presenting={readOnly} />
-        <span className="dh-instrument-note">{String(p.note ?? "Sample data")}</span>
+        <ExecutionFeedControls system={(p.system as DesignSystem) ?? "salt"} status={status} canReset={readOnly && feed.samples.length > 0} presenting={readOnly} note={String(p.note ?? "Sample data")} />
       </div>
     </div>
   );
