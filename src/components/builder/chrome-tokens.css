@@ -71,6 +71,14 @@
   --dh-panel-viewby-min:    88px;
   /* Body drop zone: the edge that lights up while dragging over it. */
   --bc-drop-edge:           2px;
+  /* Rich grid cells (SimulatedDataGrid). */
+  --dh-cell-gap:            6px;
+  --dh-cell-bar-h:          6px;
+  --dh-cell-bar-value-w:    44px;
+  --dh-cell-chip-h:         20px;
+  --dh-cell-chip-pad:       0 8px 0 6px;
+  --dh-cell-badge:          26px;
+  --dh-cell-small:          11px;
   /* Template gallery in the chat. */
   --tpl-desc-size:          11px;
   --tpl-chip-gap:           6px;

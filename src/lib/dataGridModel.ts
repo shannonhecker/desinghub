@@ -31,6 +31,166 @@ export interface GridLeafColumn {
   minWidth?: number;
   /** Colour negative values as negative. */
   signed?: boolean;
+  /** Draw the value as something richer than text (a heat tint, a bar, a
+   *  chip, a sparkline...). See GridCell. */
+  cell?: GridCell;
+  /** Take the header text from the panel's current "View by" choice (the
+   *  first column of a grid that regroups). */
+  headerFrom?: "viewBy";
+}
+
+/** What a tone means, not what colour it is: each design system resolves it
+ *  to its own status colour (toneColor). */
+export type GridTone = "good" | "mid" | "bad" | "neutral" | "accent";
+export const GRID_TONES: readonly GridTone[] = ["good", "mid", "bad", "neutral", "accent"];
+
+export interface HeatThreshold {
+  /** Values at or above `min` take the tone. Checked in order; the entry
+   *  with no `min` is the fallback. */
+  min?: number;
+  tone: GridTone;
+}
+
+/** A richer rendering of a cell. Data, not code: the same description draws
+ *  the cell on the canvas and in the export. */
+export type GridCell =
+  /** Background tint by bucket, e.g. a 0-10 score: good from 7, mid from 4. */
+  | { type: "heat"; thresholds?: HeatThreshold[] }
+  /** A thin bar with the value beside it. `scale: "fixed"` measures against
+   *  `max` (default 100); "columnMax" against the largest value shown. */
+  | { type: "bar"; scale?: "fixed" | "columnMax"; max?: number; tone?: GridTone }
+  /** A tinted pill with an arrow and a signed number; blank at zero. */
+  | { type: "deltaChip"; upIsGood?: boolean }
+  /** Arrow + absolute value, toned by direction. `upIsGood: false` for a
+   *  quantity whose rise is bad (emissions). `sparkField` puts a sparkline
+   *  from another field in front. */
+  | { type: "delta"; upIsGood?: boolean; sparkField?: string }
+  /** A small line. The value is a list of numbers ("3, 4, 2, 6"). */
+  | { type: "sparkline"; tone?: GridTone }
+  /** A round badge, toned by its text. */
+  | { type: "badge"; tones?: Record<string, GridTone>; fallback?: GridTone }
+  /** A word, coloured and weighted by its value. */
+  | { type: "toneText"; tones: Record<string, GridTone> }
+  /** A country flag from an ISO 3166 alpha-2 code, then the code. */
+  | { type: "flag" }
+  /** A rank number in a narrow, muted column. */
+  | { type: "rank" };
+
+const CELL_TYPES = new Set(["heat", "bar", "deltaChip", "delta", "sparkline", "badge", "toneText", "flag", "rank"]);
+
+/** Default heat buckets: a 0-10 score. */
+export const SCORE_THRESHOLDS: HeatThreshold[] = [{ min: 7, tone: "good" }, { min: 4, tone: "mid" }, { tone: "bad" }];
+/** Default badge tones: credit-style ratings. */
+export const RATING_TONES: Record<string, GridTone> = { AAA: "good", AA: "good", A: "good", BBB: "mid", BB: "mid" };
+
+/** The CSS colour a tone resolves to in the active design system. */
+export function toneColor(tone: GridTone): string {
+  switch (tone) {
+    case "good": return "var(--ds-status-positive)";
+    case "mid": return "var(--ds-status-warning)";
+    case "bad": return "var(--ds-status-negative)";
+    case "accent": return "var(--ds-primary)";
+    default: return "var(--ds-fg-tertiary)";
+  }
+}
+
+const asNumber = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** The tone of a heat cell, or null for a blank / non-numeric value. */
+export function heatTone(cell: Extract<GridCell, { type: "heat" }>, value: unknown): GridTone | null {
+  const n = asNumber(value);
+  if (n === null) return null;
+  const thresholds = cell.thresholds?.length ? cell.thresholds : SCORE_THRESHOLDS;
+  for (const t of thresholds) {
+    if (t.min === undefined || n >= t.min) return t.tone;
+  }
+  return null;
+}
+
+/** How full a bar cell is, 0 to 1. `columnMax` is the largest value in the
+ *  column (needed for scale "columnMax"). */
+export function barShare(cell: Extract<GridCell, { type: "bar" }>, value: unknown, columnMax = 0): number {
+  const n = asNumber(value);
+  if (n === null || n <= 0) return 0;
+  const max = cell.scale === "columnMax" ? columnMax : (cell.max ?? 100);
+  return max > 0 ? Math.min(1, n / max) : 0;
+}
+
+export interface DeltaView {
+  direction: "up" | "down" | "flat";
+  tone: GridTone;
+  /** Absolute value, unformatted. */
+  magnitude: number;
+}
+
+/** Direction and tone of a change. Null for a blank value. */
+export function deltaView(value: unknown, upIsGood = true): DeltaView | null {
+  const n = asNumber(value);
+  if (n === null) return null;
+  if (n === 0) return { direction: "flat", tone: "neutral", magnitude: 0 };
+  const up = n > 0;
+  return { direction: up ? "up" : "down", tone: up === upIsGood ? "good" : "bad", magnitude: Math.abs(n) };
+}
+
+/** The tone of a badge or a toned word. */
+export function valueTone(tones: Record<string, GridTone> | undefined, value: unknown, fallback: GridTone = "neutral"): GridTone {
+  const key = String(value ?? "").trim();
+  const tone = (tones ?? {})[key];
+  return GRID_TONES.includes(tone) ? tone : fallback;
+}
+
+/** A sparkline's points from its cell value: a list ("3, 4, 2") or an array. */
+export function sparkPoints(value: unknown): number[] {
+  const parts = Array.isArray(value) ? value : String(value ?? "").split(/[,;\s]+/);
+  return parts
+    .map((p) => String(p).trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((n) => Number.isFinite(n));
+}
+
+/** SVG polyline points for a sparkline drawn in a `width` x `height` box,
+ *  with `pad` kept clear at top and bottom. Empty for fewer than 2 points. */
+export function sparkPolyline(points: number[], width: number, height: number, pad = 1.5): string {
+  if (points.length < 2) return "";
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const step = width / (points.length - 1);
+  return points
+    .map((v, i) => `${round1(i * step)},${round1(height - pad - ((v - min) / span) * (height - pad * 2))}`)
+    .join(" ");
+}
+const round1 = (n: number): number => Math.round(n * 10) / 10;
+
+/** The flag emoji for an ISO 3166 alpha-2 code; "" when the code is not two
+ *  letters. */
+export function flagEmoji(code: unknown): string {
+  const c = String(code ?? "").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c)) return "";
+  return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+}
+
+/** A column's `cell`, when it is one this build understands. */
+export function cellOf(column: GridLeafColumn): GridCell | null {
+  const c = column.cell as { type?: unknown } | undefined;
+  return c && typeof c === "object" && typeof c.type === "string" && CELL_TYPES.has(c.type) ? (column.cell as GridCell) : null;
+}
+
+/** The largest numeric value of a field across rows (for bar cells scaled to
+ *  the column). Total rows are left out: a total would dwarf every part. */
+export function columnMax(rows: GridRow[], field: string): number {
+  let max = 0;
+  for (const r of rows) {
+    if (r._bold) continue;
+    const n = asNumber(r[field]);
+    if (n !== null && n > max) max = n;
+  }
+  return max;
 }
 
 export interface GridColumnGroup {

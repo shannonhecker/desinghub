@@ -11,14 +11,29 @@ import {
   type GridApi,
 } from "ag-grid-community";
 import {
+  RATING_TONES,
+  barShare,
+  cellOf,
+  columnMax,
+  deltaView,
+  flagEmoji,
   formatGridValue,
+  heatTone,
   isColumnGroup,
   isNegativeCell,
   isNumericKind,
+  leafColumns,
+  sparkPoints,
+  sparkPolyline,
+  toneColor,
+  valueTone,
+  type GridCell,
   type GridColumn,
   type GridLeafColumn,
   type GridRow,
+  type GridTone,
 } from "@/lib/dataGridModel";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { usePreviewReadOnly } from "./previewReadOnly";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -69,8 +84,103 @@ const gridTheme = themeQuartz.withParams({
   columnBorder: false,
 });
 
-function leafColDef(column: GridLeafColumn, isFirst: boolean): ColDef<GridRow> {
+/* ── Rich cells (GridCell): the same descriptions the export reads ── */
+
+const SPARK_WIDTH = 56;
+const SPARK_HEIGHT = 18;
+const ARROW_SIZE = 12;
+
+/** A tone as CSS custom properties on the element, so one class per cell
+ *  kind covers every tone in every design system. */
+const toneStyle = (tone: GridTone): React.CSSProperties => ({ "--dh-tone": toneColor(tone) }) as React.CSSProperties;
+
+function Sparkline({ value, tone = "neutral" }: { value: unknown; tone?: GridTone }) {
+  const points = sparkPolyline(sparkPoints(value), SPARK_WIDTH, SPARK_HEIGHT);
+  if (!points) return null;
+  return (
+    <svg className="dh-cell-spark" style={toneStyle(tone)} width={SPARK_WIDTH} height={SPARK_HEIGHT} viewBox={`0 0 ${SPARK_WIDTH} ${SPARK_HEIGHT}`} aria-hidden="true">
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+function Arrow({ direction }: { direction: "up" | "down" }) {
+  const Icon = direction === "up" ? ArrowUp : ArrowDown;
+  return <Icon size={ARROW_SIZE} strokeWidth={2.2} aria-hidden="true" />;
+}
+
+/** What a rich cell draws. `text` is the column's formatted value. */
+function RichCell({ cell, column, value, row, text, max }: { cell: GridCell; column: GridLeafColumn; value: unknown; row: GridRow | undefined; text: string; max: number }) {
+  switch (cell.type) {
+    case "bar": {
+      const share = barShare(cell, value, max);
+      return (
+        <span className="dh-cell-bar" style={toneStyle(cell.tone ?? "accent")}>
+          <span className="dh-cell-bar-track" aria-hidden="true">
+            <span className="dh-cell-bar-fill" style={{ width: `${Math.round(share * 1000) / 10}%` }} />
+          </span>
+          <span className="dh-cell-bar-value">{text}</span>
+        </span>
+      );
+    }
+    case "deltaChip": {
+      const d = deltaView(value, cell.upIsGood ?? true);
+      if (!d || d.direction === "flat") return null;
+      return (
+        <span className="dh-cell-chip" style={toneStyle(d.tone)}>
+          <Arrow direction={d.direction} />
+          {d.direction === "up" ? "+" : "-"}
+          {formatGridValue({ ...column, kind: column.kind ?? "number", decimals: column.decimals ?? 0 }, d.magnitude)}
+        </span>
+      );
+    }
+    case "delta": {
+      const d = deltaView(value, cell.upIsGood ?? true);
+      const spark = cell.sparkField ? <Sparkline value={row?.[cell.sparkField]} /> : null;
+      if (!d) return spark;
+      return (
+        <span className="dh-cell-delta-wrap">
+          {spark}
+          <span className={`dh-cell-delta${d.direction === "flat" ? " is-flat" : ""}`} style={toneStyle(d.tone)}>
+            {d.direction === "flat" ? null : <Arrow direction={d.direction} />}
+            {formatGridValue(column, d.magnitude)}
+          </span>
+        </span>
+      );
+    }
+    case "sparkline":
+      return <Sparkline value={value} tone={cell.tone} />;
+    case "badge": {
+      if (value === null || value === undefined || value === "") return null;
+      return <span className="dh-cell-badge" style={toneStyle(valueTone(cell.tones ?? RATING_TONES, value, cell.fallback ?? "bad"))}>{String(value)}</span>;
+    }
+    case "toneText": {
+      const tone = valueTone(cell.tones, value);
+      return <span className={`dh-cell-tonetext${tone === "neutral" ? " is-neutral" : ""}`} style={toneStyle(tone)}>{String(value ?? "")}</span>;
+    }
+    case "flag": {
+      const flag = flagEmoji(value);
+      return (
+        <span className="dh-cell-flag">
+          {flag ? <span aria-hidden="true">{flag}</span> : null}
+          <span className="dh-cell-flag-code">{String(value ?? "")}</span>
+        </span>
+      );
+    }
+    case "rank":
+      return <span className="dh-cell-rank">{text}</span>;
+    default:
+      return <>{text}</>;
+  }
+}
+
+function leafColDef(column: GridLeafColumn, isFirst: boolean, max: number): ColDef<GridRow> {
   const numeric = isNumericKind(column.kind);
+  const cell = cellOf(column);
+  /* A heat cell is ordinary text on a tinted background; every other rich
+     cell replaces the cell's content. */
+  const rendered = cell && cell.type !== "heat" ? cell : null;
+  const leftAligned = rendered && (rendered.type === "bar" || rendered.type === "flag" || rendered.type === "toneText");
   return {
     field: column.field,
     headerName: column.header,
@@ -79,21 +189,47 @@ function leafColDef(column: GridLeafColumn, isFirst: boolean): ColDef<GridRow> {
     sortable: true,
     resizable: false,
     suppressMovable: true,
-    type: numeric ? "rightAligned" : undefined,
+    type: numeric && !leftAligned ? "rightAligned" : undefined,
     valueFormatter: (params) => formatGridValue(column, params.value),
-    cellStyle: (params) => ({
-      fontVariantNumeric: "tabular-nums",
-      fontWeight: params.data?._bold ? 600 : 400,
-      ...(isNegativeCell(column, params.value) ? { color: "var(--ds-status-negative)" } : {}),
-      ...(isFirst && typeof params.data?._indent === "number"
-        ? { paddingLeft: `calc(var(--ag-cell-horizontal-padding) + ${params.data._indent * INDENT_STEP}px)` }
-        : {}),
-    }),
+    ...(rendered
+      ? {
+          cellRenderer: (params: { value: unknown; data?: GridRow; valueFormatted?: string | null }) => (
+            <RichCell cell={rendered} column={column} value={params.value} row={params.data} text={params.valueFormatted ?? formatGridValue(column, params.value)} max={max} />
+          ),
+        }
+      : {}),
+    cellClass: cell ? `dh-cell dh-cell-kind-${cell.type}` : undefined,
+    cellStyle: (params) => {
+      const tone = cell?.type === "heat" ? heatTone(cell, params.value) : null;
+      return {
+        fontVariantNumeric: "tabular-nums",
+        fontWeight: params.data?._bold ? 600 : 400,
+        ...(isNegativeCell(column, params.value) ? { color: "var(--ds-status-negative)" } : {}),
+        ...(tone
+          ? {
+              /* A fixed mix over the surface, so the tint stays legible in
+                 light and dark; the text leans towards the tone. */
+              backgroundColor: `color-mix(in srgb, ${toneColor(tone)} 16%, transparent)`,
+              color: `color-mix(in srgb, ${toneColor(tone)} 62%, var(--ds-fg))`,
+            }
+          : {}),
+        ...(isFirst && typeof params.data?._indent === "number"
+          ? { paddingLeft: `calc(var(--ag-cell-horizontal-padding) + ${params.data._indent * INDENT_STEP}px)` }
+          : {}),
+      };
+    },
   };
 }
 
-function toColDefs(columns: GridColumn[]): (ColDef<GridRow> | ColGroupDef<GridRow>)[] {
+function toColDefs(columns: GridColumn[], rows: GridRow[]): (ColDef<GridRow> | ColGroupDef<GridRow>)[] {
   let first = true;
+  /* Bar cells scaled to the column need its largest value. */
+  const maxOf = new Map<string, number>();
+  for (const c of leafColumns(columns)) {
+    const cell = cellOf(c);
+    if (cell?.type === "bar" && cell.scale === "columnMax") maxOf.set(c.field, columnMax(rows, c.field));
+  }
+  const leafColDefOf = (leaf: GridLeafColumn, isFirst: boolean) => leafColDef(leaf, isFirst, maxOf.get(leaf.field) ?? 0);
   return columns.map((c) => {
     if (isColumnGroup(c)) {
       return {
@@ -101,13 +237,13 @@ function toColDefs(columns: GridColumn[]): (ColDef<GridRow> | ColGroupDef<GridRo
         marryChildren: true,
         headerClass: "dh-grid-group-header",
         children: c.children.map((leaf) => {
-          const def = leafColDef(leaf, first);
+          const def = leafColDefOf(leaf, first);
           first = false;
           return def;
         }),
       };
     }
-    const def = leafColDef(c, first);
+    const def = leafColDefOf(c, first);
     first = false;
     return def;
   });
@@ -134,7 +270,7 @@ function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
 }
 
 export function SimulatedDataGrid({ columns, rows, height, label, selected, onSelect }: SimulatedDataGridProps) {
-  const columnDefs = useMemo(() => toColDefs(columns), [columns]);
+  const columnDefs = useMemo(() => toColDefs(columns, rows), [columns, rows]);
   const apiRef = useRef<GridApi<GridRow> | null>(null);
   /* Row styling reads the latest selection through a ref, so the grid's
      callbacks stay stable and only a redraw is needed when it changes. */
