@@ -81,5 +81,8 @@
     "typescript": "^5",
     "vercel": "^51.8.0",
     "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "tar@^7.0.0": "^7.5.22"
   }
 }
