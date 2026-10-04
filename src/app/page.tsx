@@ -128,14 +128,16 @@ const DEFAULT_COMPARE: SystemId = "md3";
 const DEFAULT_MODE: Mode = "dark";
 const DEFAULT_SPLIT = 50;
 
-/** Present-mode captures of the Analytics Home template: the main column
-    only (no app bar, no sidebar), from the search field down, at device pixel
-    ratio 2. Wide frames are 710x374 CSS px, so on a 1440 screen the controls
-    are shown at their real size; phone frames are 367x378. Each crop ends
-    under the card's thumbnail, so no line of text is sliced. See
-    public/showcase. This region was chosen by measured pixel difference
-    between systems (see the task report). */
-const SHOT = { w: 1420, h: 748, phoneW: 734, phoneH: 756 } as const;
+/** Present-mode captures of the Analytics Home template, at device pixel
+    ratio 2. Each frame is a board of whole controls cut from that one screen
+    and set on the system's own surface: the search field with its button,
+    the workspace tabs, the Class and Theme filters and the first rows of the
+    table. Nothing is redrawn or resized: on a 1440 screen every control is
+    shown at its real size. The parts were chosen so that each half of the
+    frame holds a primary control or an accent, plus a control whose shape
+    differs between systems (see the task report for the measurements).
+    Wide boards are 710x317 CSS px, phone boards 361x296. */
+const SHOT = { w: 1420, h: 634, phoneW: 722, phoneH: 592 } as const;
 const PHONE_QUERY = "(max-width: 640px)";
 
 function shotSrc(id: SystemId, mode: Mode, phone = false): string {
@@ -143,7 +145,7 @@ function shotSrc(id: SystemId, mode: Mode, phone = false): string {
 }
 
 function shotAlt(name: string, mode: Mode): string {
-  return `The Analytics Dashboard screen rendered in ${name}, ${mode} mode: its search field and button and the first featured report cards with their tags, captured from the builder's Present mode.`;
+  return `Parts of the Analytics Dashboard screen rendered in ${name}, ${mode} mode: the search field and its button, the workspace tabs, the Class and Theme filters and the first rows of the dashboards table, captured from the builder's Present mode.`;
 }
 
 /** The builder builds this exact screen from this message, with no model
@@ -231,16 +233,32 @@ function PromptForm({
   system,
   mode,
   onSystem,
+  skip,
 }: {
   id: string;
   system: SystemId;
   mode: Mode;
   onSystem?: (id: SystemId) => void;
+  /** The system on the hero's right side: arrow keys step over it, so the
+      keyboard never changes a side the visitor did not pick. */
+  skip?: SystemId;
 }) {
+  const chipsRef = useRef<HTMLFieldSetElement>(null);
+  const onChipKey = (e: React.KeyboardEvent<HTMLFieldSetElement>) => {
+    const step =
+      e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    if (!step || !onSystem) return;
+    e.preventDefault();
+    const at = SYSTEMS.findIndex((s) => s.id === system);
+    let n = (at + step + SYSTEMS.length) % SYSTEMS.length;
+    if (SYSTEMS[n].id === skip) n = (n + step + SYSTEMS.length) % SYSTEMS.length;
+    onSystem(SYSTEMS[n].id);
+    chipsRef.current?.querySelectorAll<HTMLInputElement>("input")[n]?.focus();
+  };
   return (
     <form className="lsl-hero-prompt" action="/builder" method="get">
       {onSystem && (
-        <fieldset className="lsl-chips">
+        <fieldset className="lsl-chips" ref={chipsRef} onKeyDown={onChipKey}>
           <legend className="lsl-chips-legend">Start in</legend>
           {SYSTEMS.map((s) => (
             <label
@@ -517,6 +535,13 @@ function Instrument({
   const changeMode = (next: Mode) => {
     if (next === mode) return;
     touched.current = true;
+    /* A sweep still waiting for its capture now waits for that system's
+       capture in the new mode, so the divider can never stay parked. */
+    const p = pending.current;
+    if (p) {
+      const waiting = p.from === 0 ? system : compare;
+      pending.current = { key: `${waiting}-${next}`, from: p.from };
+    }
     onChange(system, compare, next);
     requestAnimationFrame(() => {
       const group = modeRef.current;
@@ -528,8 +553,12 @@ function Instrument({
     });
   };
 
-  const selectAt = (i: number) => {
-    const n = (i + SYSTEMS.length) % SYSTEMS.length;
+  /* Arrow keys walk the Left row but step over the system that is on the
+     right: a side the visitor did not pick never changes from the keyboard.
+     (A click or Enter on that tab is an explicit choice, and swaps.) */
+  const selectAt = (i: number, step: 1 | -1) => {
+    let n = (i + SYSTEMS.length) % SYSTEMS.length;
+    if (SYSTEMS[n].id === compare) n = (n + step + SYSTEMS.length) % SYSTEMS.length;
     setLeft(SYSTEMS[n].id);
     tabRefs.current[n]?.focus();
   };
@@ -539,20 +568,20 @@ function Instrument({
       case "ArrowRight":
       case "ArrowDown":
         e.preventDefault();
-        selectAt(i + 1);
+        selectAt(i + 1, 1);
         break;
       case "ArrowLeft":
       case "ArrowUp":
         e.preventDefault();
-        selectAt(i - 1);
+        selectAt(i - 1, -1);
         break;
       case "Home":
         e.preventDefault();
-        selectAt(0);
+        selectAt(0, 1);
         break;
       case "End":
         e.preventDefault();
-        selectAt(SYSTEMS.length - 1);
+        selectAt(SYSTEMS.length - 1, -1);
         break;
     }
   };
@@ -711,7 +740,7 @@ function Instrument({
         />
         <span className="lsl-split-line" aria-hidden="true">
           <span className="lsl-split-grip">
-            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7.5 5.5 3.5 10l4 4.5M12.5 5.5l4 4.5-4 4.5" />
             </svg>
           </span>
@@ -753,8 +782,9 @@ function Instrument({
 
       <figcaption className="lsl-showcase-caption">
         <span>
-          The Analytics Dashboard screen, from the builder&apos;s Analytics
-          Home template. Real builder output, captured, not redrawn.
+          Controls from the Analytics Dashboard screen (the builder&apos;s
+          Analytics Home template), cut whole and set side by side. Real
+          builder output, captured, not redrawn.
         </span>
         <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
           Open this screen in the builder
@@ -901,7 +931,7 @@ function ExportViewer() {
           <CodeExcerpt source={sample.source} />
         </pre>
         <p className="lsl-code-more">
-          Lines 1 to {sample.shown} of {sample.total}
+          Lines {sample.from} to {sample.from + sample.shown - 1} of {sample.total}
         </p>
       </div>
       <figcaption className="lsl-code-caption">
@@ -1108,6 +1138,7 @@ export default function LandingPage() {
                 system={system}
                 mode={mode}
                 onSystem={chooseSystem}
+                skip={compare}
               />
               <div className="lsl-cta-actions">
                 <Link prefetch={prefetch} href="/builder" className="lsl-cta-textlink">

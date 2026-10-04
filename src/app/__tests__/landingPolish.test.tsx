@@ -229,9 +229,10 @@ describe("copy", () => {
     expect(tabs.map((t) => norm(t.textContent))).toEqual([
       "dashboard.tsx",
       "dashboard.html",
-      "tokens.json",
-      "design-hub-project.sh",
     ]);
+    // No file on the landing carries the exporter's old product name.
+    expect(norm(el.querySelector("#export")?.textContent)).not.toMatch(/design.?hub/i);
+    for (const sample of EXPORT_SAMPLES) expect(sample.file + sample.source).not.toMatch(/design.?hub/i);
     expect(tabs.filter((t) => t.getAttribute("aria-selected") === "true")).toHaveLength(1);
     // The lede names all six formats the Export Code dialog offers.
     const lede = norm(el.querySelector("#export .lsl-section-lede")?.textContent);
@@ -257,20 +258,21 @@ describe("copy", () => {
   it("every export sample states its true length and switches by click and arrow key", () => {
     for (const s of EXPORT_SAMPLES) {
       expect(s.source.split("\n")).toHaveLength(s.shown);
-      expect(s.total).toBeGreaterThan(s.shown);
+      expect(s.total).toBeGreaterThan(s.from + s.shown - 1);
       expect(s.source).not.toMatch(/[–—]/);
     }
     const el = renderPage();
     const tabs = Array.from(el.querySelectorAll<HTMLButtonElement>('#export [role="tab"]'));
     act(() => {
-      tabs[3].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      tabs[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-    expect(tabs[3].getAttribute("aria-selected")).toBe("true");
-    expect(el.querySelector("#export pre")?.textContent).toBe(EXPORT_SAMPLES[3].source);
-    expect(el.querySelector("#lsl-code-panel")?.getAttribute("aria-labelledby")).toBe(tabs[3].id);
-    tabs[3].focus();
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    expect(el.querySelector("#export pre")?.textContent).toBe(EXPORT_SAMPLES[1].source);
+    expect(el.querySelector("#lsl-code-panel")?.getAttribute("aria-labelledby")).toBe(tabs[1].id);
+    expect(norm(el.querySelector("#export .lsl-code-more")?.textContent)).toBe("Lines 1 to 9 of 545");
+    tabs[1].focus();
     act(() => {
-      tabs[3].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
+      tabs[1].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }));
     });
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs[0]);
@@ -947,10 +949,16 @@ describe("instrument", () => {
       ["left", "Salt DS"],
       ["right", "Carbon"],
     ]);
-    // They follow the divider: both are positioned from the same --split-x.
+    // They follow the divider (both move with --split-cq) and are clamped
+    // to the frame's corners, so they cannot be cut off at either edge.
     const css = readFileSync(CSS_PATH, "utf8");
-    expect(css).toMatch(/\.lsl-corner\[data-side="left"\]\s*\{[^}]*var\(--split-x\)/);
-    expect(css).toMatch(/\.lsl-corner\[data-side="right"\]\s*\{[^}]*var\(--split-x\)/);
+    expect(css).toMatch(/\.lsl-corner\[data-side="left"\]\s*\{[^}]*left:\s*var\(--lsl-float-gap\);[^}]*max\(0px, calc\(var\(--split-cq\)/);
+    expect(css).toMatch(/\.lsl-corner\[data-side="right"\]\s*\{[^}]*right:\s*var\(--lsl-float-gap\);[^}]*min\(0px, calc\(var\(--split-cq\)/);
+    // Their size and shadow come from tokens, not literals.
+    const corner = css.match(/\.landing-southleft \.lsl-corner \{([^}]*)\}/)![1];
+    expect(corner).toMatch(/box-shadow:\s*var\(--lsl-shadow-float\)/);
+    expect(corner).toMatch(/height:\s*var\(--lsl-float-h\)/);
+    expect(corner).not.toMatch(/rgba\(/);
   });
 
   it("the legend shows the accent as a swatch and a plain name, never as spoken hex", () => {
@@ -1045,11 +1053,13 @@ describe("instrument", () => {
       });
       return ev;
     };
-    // ArrowRight from Salt -> Material 3, both selected and focused.
+    // ArrowRight from Salt steps over Material 3 (it is on the right) to
+    // Fluent 2, selected and focused. The right side does not change.
     const ev1 = press(tabs[0], "ArrowRight");
     expect(ev1.defaultPrevented).toBe(true);
-    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
-    expect(document.activeElement).toBe(tabs[1]);
+    expect(tabs[2].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[2]);
+    expect(right(sec, "md3").checked).toBe(true);
     // ArrowLeft from Salt (index 0) wraps to uoaui (guards negative modulo).
     const ev2 = press(tabs[0], "ArrowLeft");
     expect(ev2.defaultPrevented).toBe(true);
@@ -1059,6 +1069,83 @@ describe("instrument", () => {
     press(tabs[4], "ArrowRight");
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  it("a full lap of arrow keys never changes the Right side", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const tabs = tabsOf(sec);
+    click(right(sec, "carbon")); // the visitor's own Right choice
+    const visited: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      const current = tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
+      tabs[current].focus();
+      act(() => {
+        tabs[current].dispatchEvent(
+          new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true }),
+        );
+      });
+      visited.push(norm(tabs.find((t) => t.getAttribute("aria-selected") === "true")!.textContent));
+      expect(rightOf(sec).filter((r) => r.checked).map((r) => r.value)).toEqual(["carbon"]);
+      expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-carbon-dark.webp");
+    }
+    // Every other system is reachable; Carbon is stepped over.
+    expect(visited).toEqual([
+      "Material 3", "Fluent 2", "uoaui", "Salt DS", "Material 3", "Fluent 2", "uoaui", "Salt DS",
+    ]);
+    // Home and End obey the same rule.
+    click(right(sec, "uoaui"));
+    tabs[1].focus();
+    act(() => {
+      tabs[1].dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true }));
+    });
+    expect(tab(sec, "Carbon").getAttribute("aria-selected")).toBe("true");
+    expect(right(sec, "uoaui").checked).toBe(true);
+  });
+
+  it("a mode change re-keys a waiting sweep, and the sweep runs once the capture settles", async () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(tab(sec, "Carbon")); // parked at the left edge, waiting for carbon-dark
+    expect(splitOf(sec)).toBe("0");
+    click(modeBtn(sec, "Light")); // now the frame needs carbon-light instead
+    expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-carbon-light.webp");
+    expect(splitOf(sec)).toBe("0");
+    // The capture that settles is the light one: the sweep must still run.
+    await act(async () => {
+      leftImg(sec)!.dispatchEvent(new Event("load"));
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    expect(splitOf(sec)).toBe("0.5");
+  });
+
+  it("a capture that fails to load still releases the sweep", async () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(right(sec, "uoaui")); // parked at the right edge, waiting for uoaui-dark
+    expect(splitOf(sec)).toBe("1");
+    await act(async () => {
+      rightImg(sec)!.dispatchEvent(new Event("error"));
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    expect(splitOf(sec)).toBe("0.5");
+  });
+
+  it("a settled capture sweeps at once on the next change", async () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(tab(sec, "Carbon"));
+    await act(async () => {
+      leftImg(sec)!.dispatchEvent(new Event("load"));
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    click(tab(sec, "Salt DS"));
+    click(tab(sec, "Carbon")); // carbon-dark is already settled: no waiting
+    expect(Number(splitOf(sec))).toBeLessThan(0.5);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    expect(splitOf(sec)).toBe("0.5");
   });
 
   it("Home/End jump to ends, Up/Down alias Left/Right, other keys pass through", () => {
@@ -1084,7 +1171,7 @@ describe("instrument", () => {
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs[0]);
     press(tabs[0], "ArrowDown");
-    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    expect(tabs[2].getAttribute("aria-selected")).toBe("true"); // over Material 3
     press(tabs[1], "ArrowUp");
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     // An unrelated key neither preventDefaults nor changes selection.
@@ -1254,6 +1341,33 @@ describe("builder handoff", () => {
     });
   });
 
+  it("arrow keys through the chips step over the hero's right-hand system", () => {
+    const el = renderPage();
+    const band = el.querySelector("#cta fieldset.lsl-chips")!;
+    const sec = el.querySelector("#showcase")!;
+    const rightChecked = () =>
+      sec.querySelector<HTMLInputElement>('[role="radiogroup"] input:checked')?.value;
+    const chosen = () => band.querySelector<HTMLInputElement>("input:checked")?.value;
+    expect(rightChecked()).toBe("md3");
+    const seen: (string | undefined)[] = [];
+    for (let i = 0; i < 5; i++) {
+      const current = band.querySelector<HTMLInputElement>("input:checked")!;
+      const ev = new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true });
+      act(() => {
+        current.dispatchEvent(ev);
+      });
+      expect(ev.defaultPrevented).toBe(true);
+      seen.push(chosen());
+      expect(rightChecked()).toBe("md3"); // never rewritten from the keyboard
+      expect(document.activeElement).toBe(band.querySelector("input:checked"));
+    }
+    expect(seen).toEqual(["fluent", "carbon", "uoaui", "salt", "fluent"]);
+    // A click on the right-hand system is an explicit choice: it swaps.
+    click(band.querySelector<HTMLInputElement>('input[value="md3"]')!);
+    expect(chosen()).toBe("md3");
+    expect(rightChecked()).toBe("fluent");
+  });
+
   it("the chips are a labelled group of real radios", () => {
     const el = renderPage();
     const set = el.querySelector("#cta fieldset.lsl-chips");
@@ -1327,7 +1441,7 @@ describe("instrument CSS contract", () => {
   });
 
   it("reserves the frame with an aspect-ratio so the swap cannot shift layout", () => {
-    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*aspect-ratio:\s*1420\s*\/\s*748/);
+    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*aspect-ratio:\s*1420\s*\/\s*634/);
   });
 
   it("the showcase rules use lsl tokens and leak no raw hex", () => {

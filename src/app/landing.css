@@ -78,6 +78,11 @@ html:has(.landing-southleft) body {
      needed it is this one low-contrast hairline (the 10% rule token), drawn
      as a 1px ring so it never adds an outlined box. */
   --lsl-edge-soft: 0 0 0 1px var(--lsl-rule);
+  /* Things that float over the frame: the divider grip and the side names. */
+  --lsl-shadow-float: 0 6px 20px rgba(10, 14, 26, 0.45);
+  --lsl-float-h: 28px;
+  --lsl-float-gap: 12px;
+  --lsl-grip: 28px;
   --lsl-radius-frame: 14px;
   --lsl-radius-control: 999px;
   --lsl-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -596,7 +601,8 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-showcase-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1420 / 748;
+  aspect-ratio: 1420 / 634;
+  container-type: inline-size;
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
   background: var(--lsl-bg-soft);
@@ -605,6 +611,12 @@ html:has(.landing-southleft) body {
      centre travels from 22px to (100% - 22px); the line and the clip use the
      same expression and stay under the pointer. */
   --split-x: calc(22px + (100% - 44px) * var(--split-n, 0.5));
+  /* The same position as a length (container width units), for transforms,
+     where a percentage would mean the element's own size. */
+  --split-cq: calc(22px + (100cqw - 44px) * var(--split-n, 0.5));
+  /* The grip rides in the empty band under the first row of controls, so it
+     never covers a label. */
+  --grip-y: 28.5%;
 }
 .landing-southleft .lsl-showcase-panel,
 .landing-southleft .lsl-compare-layer {
@@ -639,17 +651,17 @@ html:has(.landing-southleft) body {
 }
 .landing-southleft .lsl-split-grip {
   position: absolute;
-  top: 50%;
+  top: var(--grip-y);
   left: 50%;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin: -22px 0 0 -22px;
+  width: var(--lsl-grip);
+  height: var(--lsl-grip);
+  margin: calc(var(--lsl-grip) / -2) 0 0 calc(var(--lsl-grip) / -2);
   border-radius: 50%;
   background: var(--lsl-fg-strong);
   color: var(--lsl-bg);
-  box-shadow: 0 6px 20px rgba(10, 14, 26, 0.45), 0 0 0 1px rgba(10, 14, 26, 0.2);
+  box-shadow: var(--lsl-shadow-float);
   transition: transform var(--lsl-dur-fast) ease;
 }
 /* The slider itself: a native range input laid over the whole frame, so the
@@ -690,11 +702,11 @@ html:has(.landing-southleft) body {
    travel with it. Tonal chips, no outline. */
 .landing-southleft .lsl-corner {
   position: absolute;
-  bottom: 12px;
+  bottom: var(--lsl-float-gap);
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  padding: 0 12px;
+  height: var(--lsl-float-h);
+  padding: 0 var(--lsl-float-gap);
   border-radius: var(--lsl-radius-control);
   background: var(--lsl-bg);
   color: var(--lsl-fg-strong);
@@ -702,13 +714,21 @@ html:has(.landing-southleft) body {
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 6px 20px rgba(10, 14, 26, 0.45);
+  box-shadow: var(--lsl-shadow-float);
 }
+/* Each name hugs its side of the divider and stops at the frame's corner,
+   so it is never cut off, even with the divider at an edge. */
 .landing-southleft .lsl-corner[data-side="left"] {
-  right: calc(100% - var(--split-x) + 14px);
+  left: var(--lsl-float-gap);
+  transform: translateX(
+    max(0px, calc(var(--split-cq) - 14px - var(--lsl-float-gap) - 100%))
+  );
 }
 .landing-southleft .lsl-corner[data-side="right"] {
-  left: calc(var(--split-x) + 14px);
+  right: var(--lsl-float-gap);
+  transform: translateX(
+    min(0px, calc(var(--split-cq) + 14px + var(--lsl-float-gap) + 100% - 100cqw))
+  );
 }
 /* A colour, shown rather than spelled out. */
 .landing-southleft .lsl-swatch {
@@ -1331,7 +1351,12 @@ html:has(.landing-southleft) body {
   }
   .landing-southleft .lsl-hero-alt { margin-top: 12px; padding-left: 18px; }
   /* The phone capture is its own crop: the search field, then the first card. */
-  .landing-southleft .lsl-showcase-viewport { aspect-ratio: 734 / 756; }
+  .landing-southleft .lsl-showcase-viewport {
+    aspect-ratio: 722 / 592;
+    /* On the phone board the empty band is under the search field. */
+    --grip-y: 42%;
+  }
+  .landing-southleft { --lsl-float-h: 26px; }
   .landing-southleft .lsl-instrument-bar { margin-bottom: 8px; }
   .landing-southleft .lsl-side { gap: 4px; }
   .landing-southleft .lsl-side-label { flex-basis: 34px; font-size: 13px; }
@@ -1354,7 +1379,7 @@ html:has(.landing-southleft) body {
     margin-left: -22px;
   }
   .landing-southleft .lsl-legend { column-gap: 60px; min-height: 54px; }
-  .landing-southleft .lsl-corner { bottom: 8px; height: 26px; padding: 0 10px; font-size: 12px; }
+  .landing-southleft .lsl-corner { font-size: 12px; }
   .landing-southleft .lsl-legend-traits { font-size: 13px; }
   .landing-southleft .lsl-section-head { margin-bottom: 28px; }
   .landing-southleft .lsl-section-lede { font-size: var(--lsl-text-body-l); }

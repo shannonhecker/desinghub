@@ -222,25 +222,24 @@ test("each side is chosen on its own, and a change sweeps in from that side", as
   await expect(page.getByRole("tab", { name: "Salt DS" })).toHaveAttribute("aria-selected", "true");
 });
 
-test("the two halves are visibly different systems, not the same picture twice", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/", { waitUntil: "networkidle" });
-  // Compare the frame's left third with the same region when the divider is
-  // pulled all the way left (so the right-hand system covers it): the pixels
-  // must change substantially. This is the claim the page is built on.
-  const frame = page.locator(".lsl-showcase-viewport");
-  const box = (await frame.boundingBox())!;
-  const clip = { x: box.x + 30, y: box.y + 10, width: Math.floor(box.width / 3), height: Math.floor(box.height - 60) };
-  const slider = page.getByRole("slider");
-  await slider.focus();
-  await page.keyboard.press("End"); // all Salt
-  await page.waitForTimeout(300);
-  const salt = await page.screenshot({ clip });
-  await page.keyboard.press("Home"); // all Material 3
-  await page.waitForTimeout(300);
-  const material = await page.screenshot({ clip });
-  const diff = await page.evaluate(
-    async ([a, b]) => {
+const PAIRS = [
+  ["Salt DS", "Material 3"],
+  ["Salt DS", "Carbon"],
+  ["Fluent 2", "uoaui"],
+] as const;
+/* The primary button's fill, as measured from the builder (landingSystems.ts). */
+const ACCENT: Record<string, { light: string; dark: string }> = {
+  "Salt DS": { light: "#2670A9", dark: "#2670A9" },
+  "Material 3": { light: "#6750A4", dark: "#D0BCFF" },
+  "Fluent 2": { light: "#0F6CBD", dark: "#115EA3" },
+  Carbon: { light: "#0F62FE", dark: "#4589FF" },
+  uoaui: { light: "#6B5AA8", dark: "#8A58C9" },
+};
+
+/** Pixel statistics for PNG screenshots, computed in the page. */
+async function stats(page: Page, a: Buffer, b: Buffer | null, hex: string) {
+  return page.evaluate(
+    async ([sa, sb, hex]) => {
       const load = async (src: string) => {
         const img = new Image();
         img.src = "data:image/png;base64," + src;
@@ -252,22 +251,79 @@ test("the two halves are visibly different systems, not the same picture twice",
         ctx.drawImage(img, 0, 0);
         return ctx.getImageData(0, 0, c.width, c.height).data;
       };
-      const [da, db] = [await load(a), await load(b)];
+      const da = await load(sa as string);
+      const db = sb ? await load(sb as string) : null;
+      const [r, g, bl] = [1, 3, 5].map((i) => parseInt((hex as string).slice(i, i + 2), 16));
       let sum = 0;
       let changed = 0;
+      let accent = 0;
       for (let i = 0; i < da.length; i += 4) {
+        if (Math.abs(da[i] - r) <= 12 && Math.abs(da[i + 1] - g) <= 12 && Math.abs(da[i + 2] - bl) <= 12) accent++;
+        if (!db) continue;
         const d = (Math.abs(da[i] - db[i]) + Math.abs(da[i + 1] - db[i + 1]) + Math.abs(da[i + 2] - db[i + 2])) / 3;
         sum += d;
         if (d > 8) changed++;
       }
-      return { mean: sum / (da.length / 4), share: changed / (da.length / 4) };
+      const n = da.length / 4;
+      return { mean: sum / n, share: changed / n, accent };
     },
-    [salt.toString("base64"), material.toString("base64")],
+    [a.toString("base64"), b ? b.toString("base64") : null, hex],
   );
-  // Salt and Material 3 in dark mode differ across almost the whole surface.
-  expect(diff.share).toBeGreaterThan(0.8);
-  expect(diff.mean).toBeGreaterThan(15);
-});
+}
+
+for (const mode of ["dark", "light"] as const) {
+  for (const [left, right] of PAIRS) {
+    test(`${left} against ${right}, ${mode}: the halves differ, and each side shows its own accent`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.setViewportSize({ width: 1512, height: 738 });
+      await page.goto("/", { waitUntil: "networkidle" });
+      if (mode === "light") await page.locator(".lsl-mode-btn", { hasText: "Light" }).click();
+      // Set the pair with plain picks (Right first, so no swap is involved).
+      if (right !== "Material 3") await rightOption(page, right).check();
+      if (left !== "Salt DS") await page.getByRole("tab", { name: left }).click();
+      if (right === "Material 3" && left !== "Salt DS") await rightOption(page, right).check();
+      await expect(leftShot(page)).toHaveJSProperty("complete", true);
+      await expect(rightShot(page)).toHaveJSProperty("complete", true);
+
+      const frame = page.locator(".lsl-showcase-viewport");
+      const box = (await frame.boundingBox())!;
+      const half = Math.floor(box.width / 2);
+      const leftClip = { x: box.x + 2, y: box.y + 2, width: half - 30, height: box.height - 50 };
+      const rightClip = { x: box.x + half + 30, y: box.y + 2, width: half - 34, height: box.height - 50 };
+      const slider = page.getByRole("slider");
+
+      // 1. The same region rendered by one system, then by the other.
+      await slider.focus();
+      await page.keyboard.press("End"); // all left system
+      await page.waitForTimeout(250);
+      const allLeft = await page.screenshot({ clip: leftClip });
+      await page.keyboard.press("Home"); // all right system
+      await page.waitForTimeout(250);
+      const allRight = await page.screenshot({ clip: leftClip });
+      const diff = await stats(page, allLeft, allRight, "#000000");
+      if (mode === "dark") {
+        // Different surfaces: almost every pixel changes.
+        expect(diff.share).toBeGreaterThan(0.8);
+        expect(diff.mean).toBeGreaterThan(12);
+      } else {
+        // Light surfaces are all white, so the change is in the controls
+        // and the type: still thousands of pixels in this region.
+        expect(diff.share).toBeGreaterThan(0.03);
+        expect(diff.share * leftClip.width * leftClip.height).toBeGreaterThan(3000);
+      }
+
+      // 2. At the resting position each side shows its own accent: the left
+      //    system's filled primary button, the right system's selected tab.
+      for (let i = 0; i < 50; i++) await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(250);
+      expect(await splitOf(page)).toBe(0.5);
+      const l = await stats(page, await page.screenshot({ clip: leftClip }), null, ACCENT[left][mode]);
+      const r = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT[right][mode]);
+      expect(l.accent, `${left} primary button on the left`).toBeGreaterThan(1200);
+      expect(r.accent, `${right} accent on the right`).toBeGreaterThan(30);
+    });
+  }
+}
 
 test("reduced motion: no first-view pass and no sweep, the systems swap in place", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -374,10 +430,10 @@ test("the export viewer switches between real files without moving the page", as
   const height = async () => (await viewer.locator(".lsl-code-pre").boundingBox())!.height;
   const h0 = await height();
   await expect(viewer.locator("pre")).toContainText('from "@salt-ds/core"');
+  await expect(viewer.getByRole("tab")).toHaveText(["dashboard.tsx", "dashboard.html"]);
   for (const [file, text] of [
     ["dashboard.html", "<!DOCTYPE html>"],
-    ["tokens.json", "--salt-container-primary-background"],
-    ["design-hub-project.sh", "Vite project bootstrap"],
+    ["dashboard.tsx", "SaltProvider"],
   ] as const) {
     await viewer.getByRole("tab", { name: file }).click();
     await expect(viewer.locator("pre")).toContainText(text);
