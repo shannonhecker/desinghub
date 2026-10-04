@@ -36,6 +36,10 @@ Four more client reports as builder templates. Design note:
   figure, for a gauge), signed parts with a closing sum, ranked grids, and
   selections made from a chart.
 - Chat: the four templates by name; gallery thumbnails.
+- **Export.** React, HTML and Vite exports carry the rich cells, the
+  waterfall, the score gauges, point colours, the record detail and the
+  sidebar. The HTML export lists a waterfall's steps with a running total and
+  writes a gauge as "6.34 of 10".
 
 #### Fixed
 - A gauge's track drew black when the primary colour was not a hex string.

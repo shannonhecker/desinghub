@@ -37,6 +37,18 @@ Notes for the next session:
   a sliver.
 - Long issuer names are cut in the two ESG ranking grids at 6 of 12 columns
   ("Federal Republic o..."). The full name is in the expanded panel.
+- Export of the four templates: verified by 67 tests, by type-checking the exported
+  TSX (Salt, Material, Carbon, uoaui) and by bundling and rendering Salt, one
+  Material and one Carbon project headless. Not run: a real `npm install` +
+  `vite build` of an exported project. Known export problems, none from this slice:
+  - Salt export with a visible sidebar is wider than the viewport and has large
+    row gaps (the gap-unit bug in PR #407 is part of it; the rest is unexamined).
+  - In Salt exports `--accent` maps to a neutral grey token, so accent bars and
+    sparklines export grey.
+  - The Fluent export imports `@fluentui/react-nav-preview` for sidebar items,
+    which this repo does not install.
+  - The rich-cell CSS and the extended chart helper ship only when a canvas uses
+    them, to keep every older export byte-identical: two helper variants to maintain.
 - With a sidebar the tablet frame's body is narrow enough to use the phone
   fold (every panel full width). It reads well; a real tablet tier for
   sidebar layouts would need the sidebar to collapse.

@@ -8,12 +8,25 @@ import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
 import { computeGroupStyle } from "@/lib/layoutResolver";
-import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
+import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource, usesExtendedChart } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
 import { buildStylesCss } from "./stylesCss";
 import { materialiseCanvas } from "./materialise";
-import { JSX_DIALECT, dropdownLines, indentLines, reportBlockLines, shellSidebarAttr, usesChromeShell, zoneAttrs } from "./reportMarkup";
+import {
+  JSX_DIALECT,
+  RECORD_PANEL_BLOCK_TYPE,
+  RECORD_TREND_HEIGHT,
+  dropdownLines,
+  indentLines,
+  recordPanelHasTrend,
+  recordPanelLines,
+  reportBlockLines,
+  shellSidebarAttr,
+  usesChromeShell,
+  usesRichReport,
+  zoneAttrs,
+} from "./reportMarkup";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -146,6 +159,29 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   if (isChartBlock(block.type)) {
     /* A framed chart is several lines (its panel around it). */
     return indentLines(chartBlockJsx(block, mode).split("\n"), indent);
+  }
+  /* The record panel: its trend is a small line chart through the same
+     <ChartBlock> (the title sits above it, the single series needs no legend). */
+  if (block.type === RECORD_PANEL_BLOCK_TYPE) {
+    const lines = recordPanelLines(JSX_DIALECT, block, (trend) => [
+      chartBlockJsx(
+        {
+          id: `${block.id}-trend`,
+          type: "HighchartLine",
+          props: {
+            chartType: "line",
+            title: trend.title ?? trend.seriesName,
+            categories: trend.categories,
+            series: [{ name: trend.seriesName, data: trend.points }],
+            height: RECORD_TREND_HEIGHT,
+            legend: false,
+          },
+        },
+        mode,
+        { hideTitle: true },
+      ),
+    ]);
+    return indentLines(lines, indent);
   }
   /* Prefer real DS-component JSX from the ComponentAPIRegistry; fall back to
      the generic markup for blocks / DSs the registry doesn't cover yet. */
@@ -341,15 +377,28 @@ export interface ExportFile {
  * tabs and downloads them together; exportReact() alone is the .tsx.
  */
 export function exportReactFiles(): ExportFile[] {
-  const s = useBuilder.getState();
   return [
     { path: "dashboard.tsx", contents: exportReact(), mime: "text/typescript" },
-    {
-      path: "styles.css",
-      contents: buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light"),
-      mime: "text/css",
-    },
+    { path: "styles.css", contents: exportStylesCss(), mime: "text/css" },
   ];
+}
+
+/** The stylesheet that goes with the React component (styles.css, and
+ *  src/styles.css of the Vite project). It carries the rich-cell and record
+ *  panel rules only when the canvas draws them. */
+export function exportStylesCss(): string {
+  const s = useBuilder.getState();
+  const canvas = materialiseCanvas(s);
+  const rich = usesRichReport([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
+  return buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light", { rich });
+}
+
+/** True when the React export of the current canvas draws charts: a chart
+ *  block, or a record panel whose selected record has a trend. */
+export function exportUsesCharts(): boolean {
+  const canvas = materialiseCanvas(useBuilder.getState());
+  const all = flattenBlocks([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
+  return all.some((b) => isChartBlock(b.type) || recordPanelHasTrend(b));
 }
 
 export function exportReact(): string {
@@ -375,7 +424,8 @@ export function exportReact(): string {
   const allTypes = allBlocks.map((b) => b.type);
   const componentImports = collectImports(system, allBlocks);
   const real = componentImports.length > 0;
-  const charts = hasCharts(allTypes);
+  /* A record panel's trend is a chart too (only while a record is selected). */
+  const charts = hasCharts(allTypes) || allBlocks.some(recordPanelHasTrend);
 
   /* Zones: when emitting real DS code, the DS owns the layout — each zone's
      blocks are wrapped in its real grid/stack/row primitive (driven by the
@@ -465,7 +515,9 @@ export function exportReact(): string {
             ? ""
             : `\n    </${ds.provider}>`;
 
-  const helper = charts ? `\n${chartHelperSource(system)}` : "";
+  /* The extended helper (waterfall, score gauge, per-point colours, selected
+     point) only when a chart on the canvas needs it. */
+  const helper = charts ? `\n${chartHelperSource(system, { extended: allBlocks.some(usesExtendedChart) })}` : "";
 
   return `${imports.join("\n")}
 

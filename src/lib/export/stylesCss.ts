@@ -24,6 +24,9 @@
  *   3. REPORT_CSS (DS-agnostic). The report and application-chrome markup
  *      reportMarkup.ts emits: chrome tones, flush / right-docked zones, top
  *      nav, tab strip, nav group, page title, framed panel, data table.
+ *   4. REPORT_RICH_CSS (DS-agnostic, only when the canvas needs it). Rich
+ *      grid cells (heat, bar, chip, delta, sparkline, badge, toned text,
+ *      flag, rank), the record panel, the gauge reading.
  */
 
 import { getTheme } from "@/data/registry";
@@ -535,9 +538,70 @@ export const REPORT_CSS = `/* ── Chrome tones ──
 }
 `;
 
-/** The complete stylesheet for a runnable export. */
-export function buildStylesCss(system: SystemId, mode: ExportMode): string {
+/* ── Rich grid cells, the record panel and a gauge's reading (selectors MUST
+   match what reportMarkup.ts emits). Shipped only with a canvas that draws
+   them (usesRichReport), so other exports keep the stylesheet they had.
+
+   A tone is a meaning, not a colour: the tone-* class sets --tone to the
+   design system's status variable from the token block (positive / warning /
+   negative / accent), and each cell kind paints with --tone. The same mixes
+   as the canvas (builder.css, ".dh-cell-*" and ".dh-record-*"). ── */
+export const REPORT_RICH_CSS = `
+/* ── Tones ── */
+.tone-good { --tone: var(--success); }
+.tone-mid { --tone: var(--warn); }
+.tone-bad { --tone: var(--error); }
+.tone-accent { --tone: var(--accent); }
+.tone-neutral { --tone: var(--fg-muted); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── Rich cells ── */
+/* Heat: a tint of the tone behind ordinary text that leans towards it. */
+.data-table .cell-heat { background: color-mix(in srgb, var(--tone) 16%, transparent); color: color-mix(in srgb, var(--tone) 62%, var(--fg)); }
+.cell-arrow { flex: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.cell-bar { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 96px; }
+.cell-bar-track { flex: 1 1 auto; height: 6px; border-radius: 6px; background: color-mix(in srgb, var(--fg) 10%, transparent); overflow: hidden; }
+.cell-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--tone); }
+.cell-bar-value { flex: 0 0 44px; text-align: right; font-size: 11px; color: var(--fg-muted); }
+.cell-chip { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 8px 0 6px; border-radius: 20px; background: color-mix(in srgb, var(--tone) 16%, transparent); color: color-mix(in srgb, var(--tone) 62%, var(--fg)); font-size: 11px; font-weight: 600; line-height: 1; }
+.cell-delta-wrap { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.cell-delta { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; color: color-mix(in srgb, var(--tone) 70%, var(--fg)); }
+.cell-delta.is-flat { font-weight: 400; color: var(--fg-muted); }
+.cell-spark { flex: none; color: var(--tone); overflow: visible; vertical-align: middle; }
+.cell-spark polyline { stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.cell-badge { display: inline-grid; place-items: center; box-sizing: border-box; min-width: 26px; height: 26px; padding-inline: 3px; border-radius: 26px; border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent); background: color-mix(in srgb, var(--tone) 14%, transparent); color: color-mix(in srgb, var(--tone) 62%, var(--fg)); font-size: 11px; font-weight: 600; line-height: 1; }
+.cell-tonetext { font-weight: 600; color: color-mix(in srgb, var(--tone) 70%, var(--fg)); }
+.cell-tonetext.is-neutral { font-weight: 400; color: var(--fg-muted); }
+.cell-flag { display: inline-flex; align-items: center; gap: 6px; }
+.cell-flag-code { font-size: 11px; color: var(--fg-muted); }
+.cell-rank { color: var(--fg-muted); }
+
+/* ── Gauge reading (page export: the dial's value as text) ── */
+.chart-value { margin: 0; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--fg); }
+
+/* ── Record panel: the detail of the selected record. Sections stack in a
+   narrow panel and sit side by side in a wide one. ── */
+.record { box-sizing: border-box; height: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); align-content: start; align-items: start; gap: 16px 32px; overflow-y: auto; font-size: 13px; color: var(--fg); }
+.record-empty { place-content: center; place-items: center; color: var(--fg-muted); text-align: center; }
+.record-empty p { margin: 0; max-width: 24ch; }
+.record-pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin: 0; }
+.record-pair { min-width: 0; }
+.record-pair dt, .record-heading { margin: 0 0 3px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--fg-muted); }
+.record-pair dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-section { min-width: 0; }
+.record-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.record-table th, .record-table td { padding: 6px 0; border-bottom: 1px solid var(--border); text-align: right; font-weight: 400; }
+.record-table thead th { font-size: 11px; font-weight: 600; color: var(--fg-muted); }
+.record-table th + th, .record-table th + td, .record-table td + td { padding-inline-start: 12px; }
+.record-table th[scope="row"], .record-table thead th:first-child { text-align: left; }
+.record-change { display: inline-flex; color: color-mix(in srgb, var(--tone) 70%, var(--fg)); }
+.record-flat { color: var(--fg-muted); }
+`;
+
+/** The complete stylesheet for a runnable export. `rich` adds the rules for
+ *  rich grid cells, the record panel and the gauge reading. */
+export function buildStylesCss(system: SystemId, mode: ExportMode, opts: { rich?: boolean } = {}): string {
   return `${buildTokenBlock(system, mode)}
 ${PRIMITIVES_CSS}
-${REPORT_CSS}`;
+${REPORT_CSS}${opts.rich ? REPORT_RICH_CSS : ""}`;
 }
