@@ -589,10 +589,11 @@ export const screening: BuilderTemplate = {
 
 const chip = (upIsGood = true): GridCell => ({ type: "deltaChip", upIsGood });
 const changesColumns: RecordColumn[] = [
-  /* Sized to fit the full-width panel without scrolling sideways. */
-  { field: "security", label: "Security name", minWidth: 150 },
+  /* Sized to fit the full-width panel without scrolling sideways, with room
+     for the vertical scrollbar. */
+  { field: "security", label: "Security name", minWidth: 140 },
   { field: "country", label: "Country", width: 72, cell: FLAG },
-  { field: "sector", label: "Sector", width: 128 },
+  { field: "sector", label: "Sector", width: 116 },
   { field: "posFlag", label: "Positive", kind: "number", decimals: 0, width: 66, cell: chip() },
   { field: "negFlag", label: "Negative", kind: "number", decimals: 0, width: 68, cell: chip() },
   { field: "controversy", label: "Controv.", kind: "number", decimals: 0, width: 68, cell: chip(false) },
