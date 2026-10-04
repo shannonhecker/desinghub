@@ -71,7 +71,7 @@ export function PresentStage({
   const amendable = barVariant !== "recipient";
   const clearSelection = useBuilder((s) => s.clearSelection);
 
-  const stageRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
 
   /* Focus capture on enter / restore on exit. On mount we remember
      whatever was focused (usually the Edit/Preview toggle that fired
@@ -96,12 +96,12 @@ export function PresentStage({
   }, []);
 
   return (
-    <div
+    <main
+      id="main-content"
       ref={stageRef}
       className={`present-stage ${mode === "light" ? "builder-light" : ""}`}
       data-builder-mode="preview"
       data-canvas-spacing={canvasSpacing}
-      role="region"
       aria-label="Present mode preview"
       tabIndex={-1}
     >
@@ -133,6 +133,6 @@ export function PresentStage({
       </AmendableContext.Provider>
 
       <PresentBar variant={barVariant} sharedHash={sharedHash} />
-    </div>
+    </main>
   );
 }

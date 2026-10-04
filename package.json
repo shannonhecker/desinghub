@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -58,7 +58,7 @@
     "highcharts-react-official": "^3.2.3",
     "lucide-react": "^1.8.0",
     "lz-string": "^1.5.0",
-    "next": "16.2.3",
+    "next": "16.3.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
@@ -76,11 +76,14 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.3",
+    "eslint-config-next": "16.3.8",
     "jsdom": "^29.0.2",
     "postcss": "^8.4.31",
     "typescript": "^5",
     "vercel": "^51.8.0",
     "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "tar@^7.0.0": "^7.5.22"
   }
 }
