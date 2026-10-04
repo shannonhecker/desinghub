@@ -76,6 +76,9 @@
   --dh-exec-btn:            32px;
   --dh-exec-chip-h:         26px;
   --dh-exec-flyout-w:       200px;
+  /* The sample feed's controls: one slot as tall as the tallest compact
+     design-system button (Carbon sm), so the header is one height in all five. */
+  --dh-feed-h:              32px;
   /* Dense text navigation. */
   --dh-nav-row:             28px;
   --dh-nav-row-rail:        36px;

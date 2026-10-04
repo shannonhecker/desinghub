@@ -21,6 +21,8 @@ export const EXECUTION_KEYS = {
   range: "fxRange",
   hidden: "fxHidden",
   venue: "select:venue",
+  /** "Off" pauses the sample feed while presenting; anything else is live. */
+  live: "fxLive",
 } as const;
 
 export const EXECUTION_INTERVALS: Record<string, number> = { "1m": 1, "3m": 3, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120 };
@@ -81,7 +83,7 @@ export interface ExecutionView {
   selectedVenue: string | null;
   pills: ExecutionPill[];
   /** The latest bar, for the header. */
-  last: { open: number; high: number; low: number; close: number; bid: number; ask: number; changePips: number; changePct: number } | null;
+  last: { open: number; high: number; low: number; close: number; bid: number; ask: number; changePips: number; changePct: number; sessionChangePips: number; sessionChangePct: number } | null;
 }
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
@@ -234,7 +236,9 @@ export function resolveExecution(dataset: ReportDataset, state: ReportState): Ex
     interval, chartStyle, range, hidden,
     times, bid, ask, mid, candles, limit, avgFill, twap, pct,
     fills, bands, arrivalMid, riskTransfer, venues, selectedVenue, pills,
-    last: { open, high, low, close, bid: bid[n], ask: ask[n], changePips: (close - before) * 10_000, changePct: before ? ((close - before) / before) * 100 : 0 },
+    last: { open, high, low, close, bid: bid[n], ask: ask[n], changePips: (close - before) * 10_000, changePct: before ? ((close - before) / before) * 100 : 0,
+      /* Since the first bar shown: what the header leads with. */
+      sessionChangePips: (close - candles[0][0]) * 10_000, sessionChangePct: candles[0][0] ? ((close - candles[0][0]) / candles[0][0]) * 100 : 0 },
   };
 }
 
@@ -244,6 +248,17 @@ export function resolveExecution(dataset: ReportDataset, state: ReportState): Ex
 export const formatPrice = (v: number): string => v.toFixed(5);
 /** A signed pip figure ("+0.43 pips"). */
 export const formatPips = (v: number, unit = " pips"): string => `${v >= 0 ? "+" : ""}${v.toFixed(2)}${unit}`;
+
+/** A change for the header: pips to one decimal and the percentage to three.
+ *  A change that rounds to nothing is "0.0 pips", unsigned and untoned; a
+ *  percentage that rounds to nothing is left out. */
+export function formatChange(pips: number, pct: number): { text: string; tone: "up" | "down" | "flat" } {
+  const p = Math.round(pips * 10) / 10;
+  if (p === 0) return { text: "0.0 pips", tone: "flat" };
+  const sign = p > 0 ? "+" : "-";
+  const c = Math.round(Math.abs(pct) * 1000) / 1000;
+  return { text: `${sign}${Math.abs(p).toFixed(1)} pips${c === 0 ? "" : ` (${sign}${c.toFixed(3)}%)`}`, tone: p > 0 ? "up" : "down" };
+}
 
 /** A quote split the way a dealer reads it: the handle, then the pips. */
 export function splitQuote(price: number): { handle: string; pips: string } {

@@ -9,6 +9,7 @@ import { isRecordBinding, resolveRecord, type ResolvedSection } from "@/lib/reco
 import { PanelFrame } from "./PanelFrame";
 import { SimulatedHighchart } from "./SimulatedHighchart";
 import { useCanvasDataset } from "./useBoundData";
+import { useFeedDataset } from "./useExecutionFeed";
 
 /* ══════════════════════════════════════════════════════════
    RecordPanel - the detail of the record a grid has selected.
@@ -97,7 +98,8 @@ export function RecordPanelBlock({ system, blockId }: { system: DesignSystem; bl
   const block = useBuilder((s) => (blockId ? s.blocks.find((b) => b.id === blockId) : undefined));
   const reportState = useBuilder((s) => s.reportState);
   const setReportState = useBuilder((s) => s.setReportState);
-  const dataset = useCanvasDataset();
+  /* While presenting, the sample feed's bars (FX Execution) are laid over it. */
+  const dataset = useFeedDataset(useCanvasDataset());
   const p = (block?.props ?? {}) as Record<string, unknown>;
   const binding = isRecordBinding(p.binding) ? p.binding : null;
   const record = binding && dataset ? resolveRecord(binding, dataset, reportState) : null;
