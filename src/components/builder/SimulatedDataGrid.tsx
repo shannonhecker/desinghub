@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -289,6 +289,10 @@ interface SimulatedDataGridProps {
   selected?: string;
   /** Makes rows selectable: called with the clicked row's label. */
   onSelect?: (label: string) => void;
+  /** Fade the right edge while more columns lie to the right (a phone):
+   *  only grids that ask for it (the workspace's own lists), and only until
+   *  the reader has scrolled to the last column. */
+  edgeFade?: boolean;
 }
 
 /** What a click on a row selects: the row itself, or the group a child row
@@ -304,7 +308,7 @@ function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
   return field && row ? String(row[field] ?? "") : "";
 }
 
-export function SimulatedDataGrid({ columns, rows, height, label, selected, onSelect }: SimulatedDataGridProps) {
+export function SimulatedDataGrid({ columns, rows, height, label, selected, onSelect, edgeFade = false }: SimulatedDataGridProps) {
   const columnDefs = useMemo(() => toColDefs(columns, rows), [columns, rows]);
   const apiRef = useRef<GridApi<GridRow> | null>(null);
   /* Row styling reads the latest selection through a ref, so the grid's
@@ -324,10 +328,19 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
   );
   const selectable = Boolean(onSelect);
   const readOnly = usePreviewReadOnly();
+  /* More to the right: horizontal overflow not yet scrolled to its end. */
+  const [moreRight, setMoreRight] = useState(false);
+  const syncEdge = useCallback(() => {
+    const api = apiRef.current;
+    if (!edgeFade || !api) return;
+    const range = api.getHorizontalPixelRange();
+    const columnsWidth = api.getAllDisplayedColumns().reduce((sum, c) => sum + c.getActualWidth(), 0);
+    setMoreRight(range.right < columnsWidth - 1);
+  }, [edgeFade]);
 
   return (
     <div
-      className={`dh-grid${selectable ? " dh-grid-selectable" : ""}`}
+      className={`dh-grid${selectable ? " dh-grid-selectable" : ""}${edgeFade && moreRight ? " dh-grid-more-right" : ""}`}
       style={{ height, width: "100%" }}
       role="region"
       aria-label={label}
@@ -341,7 +354,10 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
         rowData={rows}
         columnDefs={columnDefs}
         rowClassRules={rowClassRules}
-        onGridReady={(e) => { apiRef.current = e.api; }}
+        onGridReady={(e) => { apiRef.current = e.api; syncEdge(); }}
+        onBodyScroll={edgeFade ? syncEdge : undefined}
+        onGridSizeChanged={edgeFade ? syncEdge : undefined}
+        onFirstDataRendered={edgeFade ? syncEdge : undefined}
         onRowClicked={
           selectable
             ? (e) => onSelect!(rowSelection(columns, e.data))

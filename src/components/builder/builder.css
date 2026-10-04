@@ -1331,6 +1331,11 @@
 .top-bar-btn.sidebar-toggle-btn:hover {
   color: #ffffff;
 }
+/* Light chrome: the white menu icon and the white logo artwork vanished on
+   the near-white bar. Both take the light foreground instead. */
+.builder-light .top-bar-btn.sidebar-toggle-btn,
+.builder-light .top-bar-btn.sidebar-toggle-btn:hover { color: var(--b-fg); }
+.builder-light .uoaui-logo-img { filter: brightness(0); opacity: var(--bc-logo-light-opacity); }
 /* Sidebar open - collapse button so logo slides into its place */
 .top-bar-btn.sidebar-toggle-btn.sb-hidden {
   opacity: 0;
@@ -1478,8 +1483,10 @@
   gap: 2px;
   padding: 3px;
   border-radius: 9999px;
-  background: var(--b-glass);
-  border: 1px solid var(--b-border);
+  /* A tonal ghost control (owner rule: no outlines), blurred so its icons
+     stay legible over scrolling content. */
+  background: var(--bc-gallery-tonal);
+  border: 0;
   /* UNPREFIXED only — lightningcss drops the standard prop if both are
      authored (see feedback_lightningcss_backdrop_filter + presentStage test). */
   backdrop-filter: blur(8px);
@@ -1493,16 +1500,16 @@
   border: none;
   border-radius: 9999px;
   background: transparent;
+  /* Full-strength icons: 3:1 or better against the control in both themes. */
   color: var(--b-fg);
-  opacity: 0.7;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-smooth),
               opacity var(--dur-fast) var(--ease-smooth);
 }
-.chat-controls-btn:hover { opacity: 1; background: var(--b-surface); }
+.chat-controls-btn:hover { background: var(--bc-gallery-tonal-hover); }
 .chat-controls-btn:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; opacity: 1; }
 .chat-controls-btn .material-symbols-outlined { font-size: 19px; }
-.chat-controls-btn[aria-pressed="true"] { color: var(--b-accent); opacity: 1; }
+.chat-controls-btn[aria-pressed="true"] { background: var(--bc-gallery-selected); color: var(--bc-gallery-selected-fg); }
 @media (prefers-reduced-motion: reduce) { .chat-controls-btn { transition: none; } }
 
 /* Give the thread a little top room so the first message clears the
@@ -1672,7 +1679,7 @@
 /* On a phone the thread fades out into the composer instead of slicing the
    last row of chips at its top edge. */
 @media (max-width: 767px) {
-  .chat-slide .chat-scroll { mask-image: linear-gradient(to bottom, #000 calc(100% - var(--bc-chat-fade)), transparent); padding-bottom: var(--bc-chat-fade); }
+  .chat-slide .chat-scroll { mask-image: linear-gradient(to bottom, var(--bc-mask-solid) calc(100% - var(--bc-chat-fade)), transparent); padding-bottom: var(--bc-chat-fade); }
 }
 
 .hero-greeting {
@@ -13029,11 +13036,12 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   overflow-x: hidden;
 }
 
-/* A grid wider than its panel (a phone) scrolls sideways inside the panel;
-   while it does, its right edge fades instead of slicing the last column.
-   AG Grid marks the horizontal scroller ag-invisible when nothing overflows. */
-.dh-grid:has(.ag-body-horizontal-scroll:not(.ag-invisible)) :is(.ag-center-cols-viewport, .ag-header-viewport) {
-  mask-image: linear-gradient(to right, #000 calc(100% - var(--bc-chat-fade)), transparent);
+/* A workspace list wider than its panel (a phone) scrolls sideways inside
+   the panel; while more columns lie to the right its edge fades instead of
+   slicing the last one, and the fade lifts at the end (SimulatedDataGrid
+   edgeFade). Template canvases' grids never get it. */
+.dh-grid.dh-grid-more-right :is(.ag-center-cols-viewport, .ag-header-viewport) {
+  mask-image: linear-gradient(to right, var(--bc-mask-solid) calc(100% - var(--bc-chat-fade)), transparent);
 }
 
 /* The phone frame: the tab strip's decorative "+" would be cut at the edge. */
@@ -13054,12 +13062,15 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .bp-page-menu-button {
   display: flex; align-items: center; justify-content: space-between; gap: var(--bc-gap-sm);
   flex: 1 1 auto; min-width: 0; min-height: var(--bc-page-menu-h);
-  padding: 0 var(--bc-gap-sm);
+  /* Height from padding and a line box that fits the type, so descenders
+     (Configuration, Approvals) are never clipped in any system's font. */
+  padding: var(--bc-gap-xs) var(--bc-gap-sm);
+  line-height: var(--bc-page-menu-leading);
   border: var(--bc-hairline) solid var(--ds-border); border-radius: var(--ds-radius);
   background: transparent; color: inherit; cursor: pointer;
   font: inherit; font-size: var(--bc-page-menu-font); font-weight: 600; text-align: left;
 }
-.bp-page-menu-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-page-menu-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: var(--bc-page-menu-leading); padding-block: var(--bc-hairline); }
 .bp-page-menu-button:focus-visible, .bp-page-menu-option:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-accent, var(--b-accent)); outline-offset: calc(-1 * var(--dh-focus-ring)); }
 .bp-page-menu-caret { flex: none; color: var(--ds-fg-secondary); }
 .bp-page-menu-button[aria-expanded="true"] .bp-page-menu-caret { transform: rotate(180deg); }
@@ -13073,7 +13084,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   box-shadow: var(--bc-shadow-lg);
 }
 .bp-page-menu-group-label { padding: var(--bc-gap-sm) var(--bc-gap-md) var(--bc-gap-xs); font-size: var(--dh-panel-meta-size); font-weight: 600; color: var(--ds-fg-secondary); }
-.bp-page-menu-option { display: flex; align-items: center; min-height: var(--bc-page-menu-h); padding: 0 var(--bc-gap-md); cursor: pointer; font-size: var(--bc-editor-font); }
+.bp-page-menu-option { display: flex; align-items: center; min-height: var(--bc-page-menu-h); padding: var(--bc-gap-xs) var(--bc-gap-md); line-height: var(--bc-page-menu-leading); cursor: pointer; font-size: var(--bc-editor-font); }
 .bp-page-menu-option:hover { background: color-mix(in srgb, var(--ds-fg) 6%, transparent); }
 .bp-page-menu-option[aria-selected="true"] { font-weight: 600; box-shadow: inset var(--dh-launcher-accent, 3px) 0 0 var(--ds-accent, var(--b-accent)); }
 .bp-page-menu-option[aria-disabled="true"] { opacity: 0.5; cursor: default; }
@@ -17775,6 +17786,29 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .chat-slide .input-box,
 .chat-float-compact .input-box { border-radius: var(--bc-radius-md); }
+/* Owner rule (no harsh outlines): under the tonal gallery the composer and
+   the quick prompts are tonal too. Only border, background and radius here;
+   keyboard focus keeps a visible ring. */
+.chat-slide .input-box,
+.chat-float-compact .input-box {
+  border-color: var(--bc-gallery-hairline);
+  background: var(--bc-gallery-surface);
+}
+.chat-slide .input-box.focused,
+.chat-float-compact .input-box.focused { border-color: color-mix(in srgb, var(--b-accent) 55%, transparent); }
+.chat-slide .chat-scroll .prompt-bubbles .prompt-bubble,
+.chat-float-compact .chat-scroll .prompt-bubbles .prompt-bubble {
+  border-color: transparent;
+  background: var(--bc-gallery-tonal);
+  box-shadow: none;
+}
+.chat-slide .chat-scroll .prompt-bubbles .prompt-bubble:hover,
+.chat-float-compact .chat-scroll .prompt-bubbles .prompt-bubble:hover {
+  border-color: transparent;
+  background: var(--bc-gallery-tonal-hover);
+  box-shadow: none;
+}
+.chat-scroll .prompt-bubbles .prompt-bubble:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
 .chat-slide .input-textarea,
 .chat-float-compact .input-textarea {
   padding: var(--bc-gap-md);

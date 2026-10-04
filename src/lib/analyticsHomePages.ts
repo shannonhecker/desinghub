@@ -19,11 +19,11 @@ const field = (id: string, label: string, stateKey: string, value: string, optio
    6.6px a character, plus the cell padding), so nothing ends in an
    ellipsis; spare width goes to the first column. When a phone is narrower
    than the columns, the grid scrolls sideways inside its panel, and its
-   right edge fades so the cut reads as "more this way" (builder.css). */
+   right edge fades while there is more to the right (`edgeFade`). */
 const CHAR_PX = 6.6;
 const CELL_PAD_PX = 26;
 const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[], width: 6 | 12 = 12): Block => ({
-  id, type: 'DataGrid', props: { title, subtitle: 'Sample data', height: gridPanelHeightFor(rows.length),
+  id, type: 'DataGrid', props: { title, subtitle: 'Sample data', height: gridPanelHeightFor(rows.length), edgeFade: true,
     columns: columns.map(([field, header], i) => ({
       field, header, flex: i === 0 ? 2 : 1,
       minWidth: Math.ceil(Math.max(header.length, ...rows.map((r) => String(r[field] ?? '').length)) * CHAR_PX + CELL_PAD_PX),

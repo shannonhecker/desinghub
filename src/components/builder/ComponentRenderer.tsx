@@ -1818,7 +1818,7 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   }, [grouping, selectState, setReportState]);
 
   const grid = (height: number) => (
-    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} />
+    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} edgeFade={p.edgeFade === true} />
   );
   if (p.panel === false) return grid(panelHeight);
   return (

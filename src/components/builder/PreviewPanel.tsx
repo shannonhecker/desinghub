@@ -1178,13 +1178,15 @@ function DashboardSidebar({
                              Edit it is just selected (opening it would
                              replace the canvas being edited). */
                           if (readOnly) {
-                            requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
+                            if (!active) requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
                             openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
                           }
                           else setSelectedBlock(block.id, "sidebar");
                           return;
                         }
-                        requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
+                        /* The page already open does not change or remount, so
+                           it must not leave a focus request behind. */
+                        if (!active) requestNavFocus({ to: "rail", label: String(block.props.label ?? "") });
                         openNavPage(block.id, String(block.props.label ?? "Page"));
                         handleSetActive(block.id);
                         if (!readOnly) setSelectedBlock(block.id, "sidebar");

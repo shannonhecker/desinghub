@@ -213,3 +213,99 @@ for (const width of [1440, 768]) {
     }
   });
 }
+
+/* The phone Page menu's label is never clipped (descenders included) in any
+   design system or mode, and the light top bar's menu icon and logo keep
+   contrast against the bar. */
+const SYSTEMS = ['Salt DS', 'Material 3', 'Fluent 2', 'Carbon', 'uoaui'];
+test('phone: the Page menu label fits its line box in every system, light and dark', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await open(page);
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
+  const pages = page.getByRole('navigation', { name: 'Pages' });
+  for (const system of SYSTEMS) {
+    await page.getByRole('button', { name: /^Design system:/ }).click();
+    await page.getByRole('listbox', { name: 'Design system' }).getByRole('option', { name: system, exact: true }).click();
+    await expect(page.getByRole('button', { name: /^Design system:/ })).toHaveAccessibleName(new RegExp(`^Design system: ${system}\\.`));
+    for (const mode of ['light', 'dark']) {
+      const toggle = page.getByRole('button', { name: `Switch to ${mode} mode` });
+      if (await toggle.count()) await toggle.click();
+      for (const label of ['Configuration', 'Approvals', 'Reports', 'Dashboards']) {
+        await pages.getByRole('button', { name: /^Page/ }).click();
+        const option = pages.getByRole('option', { name: label, exact: true });
+        const optionFits = await option.evaluate((el) => el.scrollHeight <= el.clientHeight);
+        await option.click();
+        const value = pages.locator('.bp-page-menu-value');
+        await expect(value).toHaveText(label);
+        const fits = await value.evaluate((el) => el.scrollHeight <= el.clientHeight);
+        expect(fits && optionFits, `${system} ${mode} ${label}`).toBe(true);
+      }
+    }
+  }
+});
+
+test('light builder chrome: the top bar menu icon and logo stand out from the bar', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await open(page);
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await page.getByRole('button', { name: 'Edit canvas', exact: true }).click();
+  await expect(page.locator('.builder-shell')).toHaveClass(/builder-light/);
+  const result = await page.evaluate(async () => {
+    const lum = (r: number, g: number, b: number) => {
+      const c = [r, g, b].map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const ratio = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    const rgba = (s: string) => (s.match(/[\d.]+/g) ?? []).map(Number);
+    /* The bar over the page ground, as painted. */
+    const ground = rgba(getComputedStyle(document.body).backgroundColor);
+    const barC = rgba(getComputedStyle(document.querySelector('.top-bar')!).backgroundColor);
+    const a = barC[3] ?? 1;
+    const bar = [0, 1, 2].map((i) => barC[i] * a + (ground[i] ?? 255) * (1 - a));
+    const barL = lum(bar[0], bar[1], bar[2]);
+    const icon = rgba(getComputedStyle(document.querySelector('.sidebar-toggle-btn')!).color);
+    const ia = icon[3] ?? 1;
+    const iconL = lum(...([0, 1, 2].map((i) => icon[i] * ia + bar[i] * (1 - ia)) as [number, number, number]));
+    /* The logo as drawn: its pixels through the element's own filter. */
+    const img = document.querySelector<HTMLImageElement>('.uoaui-logo-img')!;
+    const cs = getComputedStyle(img);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d')!;
+    ctx.filter = cs.filter === 'none' ? 'none' : cs.filter;
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let sum = 0, n = 0;
+    for (let i = 0; i < data.length; i += 4) if (data[i + 3] > 128) { sum += lum(data[i], data[i + 1], data[i + 2]); n++; }
+    return { icon: ratio(iconL, barL), logo: ratio(sum / n, barL) };
+  });
+  expect(result.icon).toBeGreaterThanOrEqual(3);
+  expect(result.logo).toBeGreaterThanOrEqual(3);
+});
+
+/* The sideways-scroll fade belongs to the workspace's own lists only, and it
+   lifts once the last column is in view. A template canvas's grids never
+   change. */
+test('phone: workspace lists fade their right edge until scrolled to the end; template grids never do', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await open(page);
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
+  const pages = page.getByRole('navigation', { name: 'Pages' });
+  await pages.getByRole('button', { name: /^Page/ }).click();
+  await pages.getByRole('option', { name: 'Approvals', exact: true }).click();
+  const grid = page.locator('[data-block-id="tpl-home-approvals-grid"] .dh-grid');
+  await expect(grid).toHaveClass(/dh-grid-more-right/);
+  /* Scroll sideways to the end, as a reader would (trackpad / wheel). */
+  await grid.locator('.ag-center-cols-viewport').hover();
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(400, 0);
+  await expect(grid).not.toHaveClass(/dh-grid-more-right/);
+  /* A finance template on the same phone: its grids scroll, never fade. */
+  await page.getByRole('navigation', { name: 'Workspaces' }).getByRole('button', { name: 'Performance', exact: true }).click();
+  await expect(page.locator('[data-block-id="tpl-perf-results"]')).toBeVisible();
+  await expect(page.locator('.bp-main .dh-grid')).not.toHaveCount(0);
+  await expect(page.locator('.bp-main .dh-grid.dh-grid-more-right')).toHaveCount(0);
+});

@@ -31,9 +31,15 @@
   /* Phone page menu: a 40px target, 16px text (no zoom on focus in iOS). */
   --bc-page-menu-h: 40px;
   --bc-page-menu-font: 16px;
+  --bc-page-menu-leading: 1.35;
+  /* The logo artwork is white; on light chrome it is drawn in the light
+     foreground's strength (b-fg is 90% ink). */
+  --bc-logo-light-opacity: 0.9;
   --bc-page-menu-label-w: 36px;
   --bc-page-menu-list-max: 360px;
   --bc-chat-fade: 28px;
+  /* Opaque stop for mask gradients (only alpha matters). */
+  --bc-mask-solid: black;
   /* Analytics Home wave graphic: how far it bleeds above / below the hero. */
   --bc-hero-wave-rise: 40px;
   --bc-hero-wave-fall: 48px;
