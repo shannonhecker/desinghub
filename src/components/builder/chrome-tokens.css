@@ -65,6 +65,8 @@
   /* Brand mark letter: white on the system accent. --ds-on-primary is not
      safe here (Salt maps it to an accent TEXT colour, teal on teal). */
   --bc-chrome-mark-fg:      #ffffff;
+  /* Tone swatch in the zone layout overlay. */
+  --zlo-swatch:             12px;
   /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
   --dh-panel-tool-size:  28px;
   --dh-focus-ring:       2px;

@@ -10401,8 +10401,8 @@
   border-width: 0;
   display: block;
 }
-.bp-header[data-flush] .zone-drop-container > *,
-.bp-footer[data-flush] .zone-drop-container > * {
+.bp-header[data-flush] .zone-drop-container > .canvas-block,
+.bp-footer[data-flush] .zone-drop-container > .canvas-block {
   width: 100%;
 }
 /* !important: .zone-block-compact pads header/footer blocks with it, which
@@ -13606,6 +13606,15 @@
 .zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-btn.active { background: var(--bc-accent); color: #fff; }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+/* Tone swatches: each paints with the tone's own background, so the control
+   previews what the zone will look like in the active design system. */
+.zlo-swatch {
+  width: var(--zlo-swatch);
+  height: var(--zlo-swatch);
+  border-radius: 50%;
+  background: var(--dh-chrome-bg);
+  box-shadow: 0 0 0 var(--bc-hairline) var(--glass-border-subtle);
+}
 /* Gap snap-handle: drag horizontally (or arrow keys) to magnetize the zone
    gap to a token stop. Token-snapped by construction, never an arbitrary px. */
 .zlo-gap {
