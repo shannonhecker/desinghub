@@ -196,6 +196,33 @@ describe("POST /api/chat: canvas tools", () => {
     expect(last.text).toMatch(/continue/i);
   });
 
+  it("stops before the function time limit and says so, rather than being cut off", async () => {
+    streamMock.mockImplementation(async () =>
+      scripted([
+        { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "tu_x", name: "clearCanvas", input: {} } },
+        { type: "content_block_stop", index: 0 },
+        { type: "message_delta", delta: { stop_reason: "tool_use" } },
+      ]),
+    );
+    /* Each look at the clock is 100 s later: the budget runs out after a
+       couple of steps, long before the step cap. */
+    let now = 1_000_000;
+    const spy = vi.spyOn(Date, "now").mockImplementation(() => (now += 100_000));
+    try {
+      const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+      expect(streamMock.mock.calls.length).toBeLessThan(20);
+      expect(streamMock.mock.calls.length).toBeGreaterThan(0);
+      expect((frames[frames.length - 1] as { text?: string }).text).toMatch(/ran out of (steps|time)/i);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("declares a 300 s function limit so a long build is not cut at the platform default", async () => {
+    const mod = (await import("../route")) as { maxDuration?: number };
+    expect(mod.maxDuration).toBe(300);
+  });
+
   it("adds no step-cap note when the model finishes on its own", async () => {
     streamMock.mockImplementation(async () => scripted([{ type: "message_delta", delta: { stop_reason: "end_turn" } }]));
     const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
