@@ -49,7 +49,7 @@ async function applyFx(page: Page, opts: { reducedMotion?: boolean } = {}) {
 const stage = (page: Page) => page.locator(".present-stage");
 const bars = async (page: Page) => Number(await stage(page).locator(".dh-instrument").getAttribute("data-feed-bars"));
 const chartBars = async (page: Page) => Number(await stage(page).locator(".dh-exec").getAttribute("data-feed-bars"));
-const feedStatus = (page: Page) => stage(page).locator(".dh-feed-state");
+const feedStatus = (page: Page) => stage(page).locator(".dh-feed-state-word");
 const pauseButton = (page: Page) => stage(page).getByRole("button", { name: "Pause the sample feed" });
 const resumeButton = (page: Page) => stage(page).getByRole("button", { name: "Resume the sample feed" });
 const resetButton = (page: Page) => stage(page).getByRole("button", { name: "Reset the sample feed" });
@@ -174,35 +174,48 @@ test.describe("Builder - FX Execution sample feed", () => {
     await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThan(held);
   });
 
-  test("Edit is static; Edit and Present show the same header controls", async ({ page }) => {
-    await applyFx(page);
-    await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
-    await pauseButton(page).click();
-    /* The feed group's box in its header, in design pixels: its inset from
-       the header's right edge, its width and its height. */
-    const box = (scope: string) => page.locator(`${scope} .dh-feed`).evaluate((el) => {
-      /* The scale the canvas is drawn at, from the header's own layout width
-         (Edit and Present fit the frame to the window differently). */
-      const header = el.closest<HTMLElement>(".dh-instrument")!;
-      const hr = header.getBoundingClientRect();
-      const zoom = hr.width / header.offsetWidth;
-      const r = el.getBoundingClientRect();
-      return [hr.right - r.right, r.width, r.height].map((n) => Math.round(n / zoom));
+  for (const system of SYSTEMS) {
+    test(`${system}: Live and Paused keep the dot still; Edit shows the same feed group as Present`, async ({ page }) => {
+      await applyFx(page);
+      if (system !== "Salt DS") {
+        await page.getByRole("button", { name: /^Design system:/ }).click();
+        await page.getByText(system, { exact: true }).last().click();
+      }
+      await expect(feedStatus(page)).toHaveText("Live");
+      await expect(pauseButton(page)).toBeVisible();
+      /* Positions in the header, in design pixels: measured from the
+         header's right edge, at the scale the canvas is drawn at (Edit and
+         Present fit the frame to the window differently). */
+      const measure = (scope: string) => page.locator(`${scope} .dh-feed`).evaluate((el) => {
+        const header = el.closest<HTMLElement>(".dh-instrument")!;
+        const hr = header.getBoundingClientRect();
+        const zoom = hr.width / header.offsetWidth;
+        const r = el.getBoundingClientRect();
+        const dot = el.querySelector(".dh-feed-dot")!.getBoundingClientRect();
+        const note = el.querySelector(".dh-feed-note")!.getBoundingClientRect();
+        return { dot: Math.round((hr.right - dot.x) / zoom), note: Math.round((hr.right - note.x) / zoom), group: [hr.right - r.right, r.width, r.height].map((n) => Math.round(n / zoom)) };
+      });
+      const live = await measure(".present-stage");
+      await pauseButton(page).click();
+      await expect(feedStatus(page)).toHaveText("Paused");
+      await expect(resumeButton(page)).toBeVisible();
+      const paused = await measure(".present-stage");
+      expect(Math.abs(paused.dot - live.dot), `${system}: dot moved ${live.dot} -> ${paused.dot}`).toBeLessThanOrEqual(1);
+      expect(Math.abs(paused.note - live.note), `${system}: note moved`).toBeLessThanOrEqual(1);
+
+      await page.getByRole("button", { name: "Edit canvas" }).click();
+      const edit = page.locator(".bp-viewport-wrapper");
+      await expect(edit.locator(".dh-instrument")).toBeVisible();
+      /* Edit shows the report as saved, without the feed's bars, paused. */
+      await expect(edit.locator(".dh-instrument")).toHaveAttribute("data-feed-bars", "0");
+      await expect(edit.locator(".dh-feed-state-word")).toHaveText("Paused");
+      await expect(edit.getByRole("button", { name: "Resume the sample feed" })).toBeVisible();
+      await expect(edit.locator(".dh-instrument-status")).toHaveText("1m Line · Percentile · 64% done");
+      const inEdit = await measure(".bp-viewport-wrapper");
+      inEdit.group.forEach((v, i) => expect(Math.abs(v - paused.group[i]), `${system}: feed group ${["inset", "width", "height"][i]}: edit ${inEdit.group} present ${paused.group}`).toBeLessThanOrEqual(1));
+      expect(Math.abs(inEdit.dot - paused.dot), `${system}: dot in Edit`).toBeLessThanOrEqual(1);
     });
-    await expect(feedStatus(page)).toHaveText("Paused");
-    await expect(resumeButton(page)).toBeVisible();
-    const present = await box(".present-stage");
-    await page.getByRole("button", { name: "Edit canvas" }).click();
-    const edit = page.locator(".bp-viewport-wrapper");
-    await expect(edit.locator(".dh-instrument")).toBeVisible();
-    /* Edit shows the report as saved, without the feed's bars. */
-    await expect(edit.locator(".dh-instrument")).toHaveAttribute("data-feed-bars", "0");
-    await expect(edit.locator(".dh-feed-state")).toHaveText("Paused");
-    await expect(edit.getByRole("button", { name: "Resume the sample feed" })).toBeVisible();
-    const inEdit = await box(".bp-viewport-wrapper");
-    inEdit.forEach((v, i) => expect(Math.abs(v - present[i]), `feed group ${["inset", "width", "height"][i]}: edit ${inEdit} present ${present}`).toBeLessThanOrEqual(1));
-    await expect(edit.locator(".dh-instrument-status")).toHaveText("1m Line · Percentile · 64% done");
-  });
+  }
 
   test("a resize resizes the drawn chart; it does not rebuild it", async ({ page }) => {
     await applyFx(page);

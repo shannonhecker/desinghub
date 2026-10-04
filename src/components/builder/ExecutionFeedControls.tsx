@@ -28,6 +28,8 @@ export type FeedStatus = "live" | "paused" | "ended" | "edit";
    reads as Live (the dot does not pulse) so Edit and Present match. */
 const STATUS_TEXT: Record<FeedStatus, string> = { live: "Live", paused: "Paused", ended: "Ended", edit: "Live" };
 /* Line icons: a system that fills its button icons (Carbon) must not fill these. */
+/* Every word the state can show: the widest one sets the slot's width. */
+const SIZERS = [...new Set(Object.values(STATUS_TEXT))];
 const ICON = { size: 16, strokeWidth: 2, "aria-hidden": true, style: { fill: "none" } } as const;
 
 /** The feed's status, the "Sample data" note and two quiet icon buttons,
@@ -46,7 +48,10 @@ export function ExecutionFeedControls({ system, status, canReset, presenting, no
     <span className="dh-feed" role="group" aria-label="Sample feed">
       <span className={`dh-feed-status is-${status}`} title={presenting ? undefined : "The feed runs while presenting"}>
         <span className="dh-feed-dot" aria-hidden="true" />
-        <span className="dh-feed-state">{STATUS_TEXT[status]}</span>
+        <span className="dh-feed-state">
+          {SIZERS.map((word) => <span key={word} className="dh-feed-state-sizer" aria-hidden="true">{word}</span>)}
+          <span className="dh-feed-state-word">{STATUS_TEXT[status]}</span>
+        </span>
         <span className="dh-feed-note">{note}</span>
       </span>
       <span className="dh-feed-btns">

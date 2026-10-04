@@ -205,6 +205,12 @@ function materialiseExecutionChart(block: Block, view: ExecutionView | null): Bl
   };
 }
 
+/** The export's tone for the header's change: up is good, down is bad, and
+ *  a change that rounds to zero is neutral (as the app shows it). */
+export function exportChangeTone(tone: "up" | "down" | "flat"): "good" | "bad" | "neutral" {
+  return tone === "up" ? "good" : tone === "down" ? "bad" : "neutral";
+}
+
 /** The instrument header, as the text it shows. */
 function materialiseInstrumentHeader(block: Block, view: ExecutionView | null): Block {
   const note = text(block.props?.note, "Sample data");
@@ -217,7 +223,7 @@ function materialiseInstrumentHeader(block: Block, view: ExecutionView | null): 
       symbol: view.pair, description: view.description, counter: `${order.fills}/${order.fillsTarget}`,
       figures: [["O", formatPrice(last.open)], ["H", formatPrice(last.high)], ["L", formatPrice(last.low)], ["C", formatPrice(last.close)]],
       change: change.text,
-      changeTone: change.tone === "down" ? "bad" : "good",
+      changeTone: exportChangeTone(change.tone),
       quote: { base: view.pair.slice(0, 3), sell: splitQuote(last.bid), buy: splitQuote(last.ask) },
       status: `${view.interval} ${view.chartStyle} · ${order.algo} · ${order.pctDone}% done`,
       orders: view.orders.map((o) => ({ id: o.id, side: o.side, status: o.status, active: o.id === order.id })),

@@ -10817,8 +10817,10 @@
 
 /* The sample feed: a dot, what it is doing, the "Sample data" note, then
    two quiet icon buttons. One fixed-height slot at the header's right edge,
-   so the header keeps one height whatever each system's button measures,
-   and the state word takes one width (Live, Paused) in Edit and Present. */
+   so the header keeps one height whatever each system's button measures.
+   The state word reserves the width of the longest word (every word is
+   stacked in one grid cell, the others hidden), in the system's own font,
+   so the dot and the note never move between Live and Paused. */
 .dh-feed {
   flex: none;
   display: inline-flex;
@@ -10833,7 +10835,9 @@
   gap: var(--dh-cell-gap);
   color: var(--ds-fg-secondary);
 }
-.dh-feed-state { color: var(--ds-fg-secondary); }
+.dh-feed-state { display: inline-grid; color: var(--ds-fg-secondary); }
+.dh-feed-state > * { grid-area: 1 / 1; }
+.dh-feed-state-sizer { visibility: hidden; }
 .dh-feed-note { color: var(--ds-fg-tertiary); }
 .dh-feed-note::before { content: "·"; margin-inline-end: var(--dh-cell-gap); }
 .dh-feed-dot {
@@ -10863,6 +10867,12 @@
 /* A system's provider wrapper paints its theme's page colour; on the
    header card it would show as a box behind each quiet button. */
 .dh-instrument .dh-feed .dh-feed-btns > * { background: transparent; }
+/* Carbon colours an icon-only ghost button's icon with its icon colour, not
+   the ghost's link colour; these line icons stroke in currentColor. */
+.dh-instrument .dh-feed-btns .cds--btn--ghost,
+.dh-instrument .dh-feed-btns .cds--btn--ghost:hover,
+.dh-instrument .dh-feed-btns .cds--btn--ghost:focus { color: var(--cds-icon-primary); }
+.dh-instrument .dh-feed-btns .cds--btn--ghost:disabled { color: var(--cds-icon-disabled); }
 
 /* A phone-width header, composed tightly: the pair and its quote on one
    line, the last bar under it; the chart status and the feed on one line,
