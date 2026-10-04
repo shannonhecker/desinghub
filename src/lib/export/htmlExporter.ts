@@ -6,7 +6,7 @@
 import { useBuilder } from "@/store/useBuilder";
 import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import type { SystemId } from "@/lib/componentApiRegistry";
-import { htmlText, htmlAttr } from "./escape";
+import { htmlText, htmlAttr, htmlComment } from "./escape";
 import { computeGroupStyle, normalizeColumns, normalizeColumnStart } from "@/lib/layoutResolver";
 import { spanOf, startOf } from "./gridSpan";
 import { isChartBlock } from "./chartExporter";
@@ -136,7 +136,7 @@ function blockToHTML(block: Block, indent: string): string {
       return `${indent}<div class="layout-group" style="${styleCss}">\n${inner}\n${indent}</div>`;
     }
     default:
-      return `${indent}<div class="${block.type.toLowerCase()}"><!-- ${block.type} --></div>`;
+      return `${indent}<div class="${htmlAttr(block.type.toLowerCase())}"><!-- ${htmlComment(block.type)} --></div>`;
   }
 }
 

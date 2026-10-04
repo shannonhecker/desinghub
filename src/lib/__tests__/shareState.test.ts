@@ -117,7 +117,7 @@ describe("shareState — gridCol forged-payload defense (P3-3)", () => {
   const decodedLayout = (gridCol: unknown): Record<string, unknown> => {
     const payload = {
       ...base,
-      blocks: [{ id: "b1", type: "Text", props: { text: "x" }, layout: { width: "6fr", gridCol } }],
+      blocks: [{ id: "b1", type: "PageTitle", props: { text: "x" }, layout: { width: "6fr", gridCol } }],
     } as unknown as SharedCanvas;
     const back = decodeShareState(encodeShareState(payload));
     return (back!.blocks[0].layout ?? {}) as Record<string, unknown>;
@@ -151,7 +151,7 @@ describe("shareState — URL-path-safe hash (no +/$ that 404 the share route)", 
     let payload: SharedCanvas | null = null;
     let raw = "";
     for (let i = 0; i < 300; i++) {
-      const p: SharedCanvas = { ...base, blocks: [{ id: "b" + i, type: "Text", props: { text: "sample content " + i } }] };
+      const p: SharedCanvas = { ...base, blocks: [{ id: "b" + i, type: "PageTitle", props: { text: "sample content " + i } }] };
       const r = LZString.compressToEncodedURIComponent(JSON.stringify(p));
       if (/[+$]/.test(r)) { payload = p; raw = r; break; }
     }
@@ -165,7 +165,7 @@ describe("shareState — URL-path-safe hash (no +/$ that 404 the share route)", 
 
   it("encodes only unreserved chars across many varied payloads", () => {
     for (let i = 0; i < 60; i++) {
-      const p: SharedCanvas = { ...base, blocks: [{ id: "k" + i, type: "StatCard", props: { v: "$" + i + ".00", t: "row " + i } }] };
+      const p: SharedCanvas = { ...base, blocks: [{ id: "k" + i, type: "SimulatedStatCard", props: { v: "$" + i + ".00", t: "row " + i } }] };
       expect(encodeShareState(p)).toMatch(/^[A-Za-z0-9_~-]+$/);
     }
   });

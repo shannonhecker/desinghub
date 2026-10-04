@@ -25,6 +25,8 @@ import type { Block, DesignSystem, BuilderMode, DeviceMode, Page } from "@/store
 import { isValidBlockSource, useBuilder, flushActiveBody, isMultiPage } from "@/store/useBuilder";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { migrateBlocks } from "./blockMigrations";
+import { SHARE_BLOCK_TYPES } from "./shareBlockTypes";
+import { DENSITY_LEVELS } from "./densitySize";
 
 export interface SharedCanvas {
   v: 1 | 2; // schema version - bumps allow older URLs to error cleanly
@@ -134,7 +136,7 @@ function validateAndSanitizeBlock(b: unknown, depth = 1): Block | null {
   if (typeof b !== "object" || b === null) return null;
   const blk = b as Record<string, unknown>;
   if (typeof blk.id !== "string" || blk.id.length === 0 || blk.id.length > 120) return null;
-  if (typeof blk.type !== "string" || blk.type.length === 0 || blk.type.length > 80) return null;
+  if (typeof blk.type !== "string" || !SHARE_BLOCK_TYPES.has(blk.type)) return null;
   if (typeof blk.props !== "object" || blk.props === null) return null;
 
   const cleanProps = sanitizeValue(blk.props) as Record<string, unknown>;
@@ -298,7 +300,7 @@ export function decodeShareState(hash: string): SharedCanvas | null {
   const version: 1 | 2 = obj.v === 2 ? 2 : 1;
   if (typeof obj.designSystem !== "string" || !DESIGN_SYSTEMS.has(obj.designSystem as DesignSystem)) return null;
   if (typeof obj.mode !== "string" || !MODES.has(obj.mode as BuilderMode)) return null;
-  if (typeof obj.density !== "string" || obj.density.length > 40) return null;
+  if (typeof obj.density !== "string" || !(DENSITY_LEVELS as readonly string[]).includes(obj.density)) return null;
 
   /* PR-C: deviceMode + themeKey. v1-compatible — a link that predates
      these fields (no deviceMode/themeKey) decodes with sane defaults
