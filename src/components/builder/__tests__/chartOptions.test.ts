@@ -41,7 +41,7 @@ describe("buildChartOptions - combination", () => {
 
   it("uses one axis when no series asks for the right-hand one", () => {
     const single = build("combination", { series: [{ name: "A", data: [1], type: "column" }, { name: "B", data: [2], type: "line" }] });
-    expect(Array.isArray(single.yAxis)).toBe(false);
+    expect(single.yAxis).toHaveLength(1);
     expect(single.series.every((s: any) => s.yAxis === 0)).toBe(true);
   });
 
@@ -77,15 +77,15 @@ describe("buildChartOptions - settings every type shares", () => {
   it("hideTitle drops the in-chart title and the default axis title", () => {
     const o = build("column", { title: "Contribution by Risk type", hideTitle: true });
     expect(o.title.text).toBeUndefined();
-    expect(o.yAxis.title.text).toBeUndefined();
+    expect(o.yAxis[0].title.text).toBeUndefined();
     /* The title still describes the chart to assistive tech. */
     expect(o.accessibility.description).toBe("Contribution by Risk type");
   });
 
   it("applies the value-axis format and title", () => {
     const o = build("stacked-bar", { yAxisFormat: "{value}%", yAxisTitle: "Share" });
-    expect(o.yAxis.labels.format).toBe("{value}%");
-    expect(o.yAxis.title.text).toBe("Share");
+    expect(o.yAxis[0].labels.format).toBe("{value}%");
+    expect(o.yAxis[0].title.text).toBe("Share");
   });
 
   it("legend: false hides the legend", () => {
@@ -93,13 +93,13 @@ describe("buildChartOptions - settings every type shares", () => {
     expect(build("column", {}).legend.enabled).toBeUndefined();
   });
 
-  it("a donut with a centre label installs a render handler; other types do not", () => {
+  it("enables centre text only for a labelled donut", () => {
     const donut = build("donut", { centerLabel: "£1.2bn" });
     expect(typeof donut.chart.events.render).toBe("function");
     /* Text and colour travel in the options, so a theme change repaints it. */
     expect(donut.chart.dhCenter).toEqual({ text: "£1.2bn", color: vars.fg });
-    expect(build("pie", { centerLabel: "£1.2bn" }).chart.events).toBeUndefined();
-    expect(build("donut", {}).chart.events).toBeUndefined();
+    expect(build("pie", { centerLabel: "£1.2bn" }).chart.dhCenter).toBeNull();
+    expect(build("donut", {}).chart.dhCenter).toBeNull();
   });
 });
 
@@ -123,10 +123,10 @@ describe("slice 2 chart kinds and options", () => {
 
   it("gauge: a percentage dial by default, a score dial with valueMax and decimals", () => {
     const pct = buildChartOptions("gauge", theme as any, vars, { value: 87 }) as any;
-    expect(pct.yAxis.max).toBe(100);
+    expect(pct.yAxis[0].max).toBe(100);
     expect(pct.series[0].dataLabels.format).toContain("{y}%");
     const score = buildChartOptions("gauge", theme as any, vars, { value: 6.42, valueMax: 10, valueDecimals: 2 }) as any;
-    expect(score.yAxis.max).toBe(10);
+    expect(score.yAxis[0].max).toBe(10);
     expect(score.series[0].dataLabels.format).toContain("{y:.2f}<");
     expect(score.series[0].dataLabels.format).not.toContain("%");
   });
@@ -175,7 +175,7 @@ describe("slice 3 chart kinds", () => {
       series: [{ name: "Entity", data: [1, 2, 3] }, { name: "Peers", data: [2, 2, 2], dashStyle: "ShortDash" }],
     }) as any;
     expect(o.chart.polar).toBe(true);
-    expect(o.yAxis.gridLineInterpolation).toBe("polygon");
+    expect(o.yAxis[0].gridLineInterpolation).toBe("polygon");
     expect(o.xAxis.categories).toEqual(["A", "B", "C"]);
     expect(o.series.map((s: any) => [s.name, s.pointPlacement, s.dashStyle])).toEqual([["Entity", "on", undefined], ["Peers", "on", "ShortDash"]]);
   });
@@ -197,8 +197,8 @@ describe("slice 3 chart kinds", () => {
       series: [{ name: "Entity", data: [4, 5] }],
       yAxisCategories: ["CCC", "B", "BB", "BBB", "A", "AA", "AAA"],
     }) as any;
-    expect(o.yAxis.categories).toHaveLength(7);
-    expect(o.yAxis.max).toBe(6);
+    expect(o.yAxis[0].categories).toHaveLength(7);
+    expect(o.yAxis[0].max).toBe(6);
     const tip = o.tooltip.formatter.call({ x: "Q2", points: [{ y: 5, series: { name: "Entity" } }] });
     expect(tip).toContain("Entity: <b>AA</b>");
   });
@@ -211,5 +211,35 @@ describe("chart point descriptions", () => {
     const describe = o.accessibility.point?.descriptionFormatter;
     expect(describe?.({ category: "<2C", y: 12, series: { name: "Alignment" } })).toBe("Less than 2C, 12%. Alignment.");
     expect(describe?.({ category: "Equity", y: 12, series: { name: "Allocation" } })).toBe(false);
+  });
+});
+
+describe('live chart-kind updates', () => {
+  it('clears the donut hole and center label when the same chart is updated to pie', async () => {
+    const Highcharts = (await import('highcharts')).default;
+    await import('highcharts/modules/accessibility');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const parts = [{ name: 'Equity', y: 35 }, { name: 'Bonds', y: 65 }];
+    const props = { seriesData: parts, centerLabel: 'Total', hideTitle: true };
+    const options = build('donut', props);
+    options.chart = { ...options.chart, width: 600, height: 300, animation: false };
+    const chart = Highcharts.chart(host, options);
+    try {
+      expect((chart.series[0].options as any).innerSize).toBe('68%');
+      expect(host.textContent).toContain('Total');
+      chart.update(build('pie', props), true, true, false);
+      expect(Number.parseFloat(String((chart.series[0].options as any).innerSize))).toBe(0);
+      expect(host.textContent).not.toContain('Total');
+      expect(chart.series[0].points.map(point => point.y)).toEqual([35, 65]);
+      chart.update(build('donut', props), true, true, false);
+      expect((chart.series[0].options as any).innerSize).toBe('68%');
+      expect(host.textContent).toContain('Total');
+      chart.update(build('donut', { ...props, centerLabel: '' }), true, true, false);
+      expect(host.textContent).not.toContain('Total');
+    } finally {
+      chart.destroy();
+      host.remove();
+    }
   });
 });

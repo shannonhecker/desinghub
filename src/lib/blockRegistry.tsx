@@ -308,7 +308,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             const val = Number(props[f.propKey] ?? f.min ?? 0);
             return (
               <InspectorField key={i} label={`${f.label} (${val}${f.suffix ?? ""})`}>
-                <input className="inspector-input" type="range" min={f.min ?? 0} max={f.max ?? 100} value={val}
+                <input className="inspector-input" type="range" aria-label={f.label} min={f.min ?? 0} max={f.max ?? 100} value={val}
                   onChange={(e) => set({ [f.propKey]: Number(e.target.value) })} style={{ width: "100%" }} />
               </InspectorField>
             );

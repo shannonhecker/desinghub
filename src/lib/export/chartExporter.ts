@@ -758,7 +758,7 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         chart: { ...tc, type: "pie" },
         title: { ...tt, text: props.title || "Market Share" },
         series: [{
-          name: "Share", type: "pie",
+          name: "Share", type: "pie", innerSize: 0,
           data: points(props.seriesData, [
             { name: "Product A", y: 45 },
             { name: "Product B", y: 26 },
@@ -1010,7 +1010,10 @@ function renderCenterLabel(this: any) {
   const chart = this;
   const center = chart.options && chart.options.chart && chart.options.chart.centerLabel;
   const series = chart.series && chart.series[0];
-  if (!center || !series || !series.center) return;
+  if (!center || !series || !series.center) {
+    chart.centerLabelText = chart.centerLabelText?.destroy();
+    return;
+  }
   if (!chart.centerLabelText) {
     chart.centerLabelText = chart.renderer.text(center.text, 0, 0).attr({ align: "center", zIndex: 5 }).add();
   }
@@ -1040,6 +1043,14 @@ ${x ? EXT_FUNCTIONS : ""}/* Options for one chart: the per-type build, then the 
    centre label). Each applies only when its prop is set. */
 function chartOptionsWithSettings(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: ChartProps): any {
   const o = chartOptionsFor(chartType, t, v, props);
+  const plots = { ...o.plotOptions };
+  for (const [type, stackedKind] of [["column", "stacked-column"], ["bar", "stacked-bar"], ["areaspline", "stacked-area"]]) {
+    plots[type] = { ...plots[type], stacking: chartType === stackedKind ? "normal" : undefined };
+  }
+  o.plotOptions = plots;
+  if (chartType !== "combination" && o.yAxis && !Array.isArray(o.yAxis)) {
+    o.series = o.series.map((series: any) => ({ ...series, yAxis: 0 }));
+  }
 ${x ? EXT_GAUGE_CALL : ""}  if (props.height) o.chart = { ...o.chart, height: props.height };
   if (props.hideTitle) o.title = { ...o.title, text: undefined };
   if (props.legend === false) o.legend = { ...o.legend, enabled: false };
@@ -1075,9 +1086,12 @@ ${x ? EXT_GAUGE_CALL : ""}  if (props.height) o.chart = { ...o.chart, height: pr
       },
     };
   }
-${sh ? SHAPE_SETTINGS : ""}${x ? EXT_SETTINGS : ""}  if (props.centerLabel && chartType === "donut") {
-    o.chart = { ...o.chart, centerLabel: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
-  }
+${sh ? SHAPE_SETTINGS : ""}${x ? EXT_SETTINGS : ""}  o.chart = {
+    ...o.chart,
+    centerLabel: props.centerLabel && chartType === "donut" ? { text: props.centerLabel, color: v.fg } : null,
+    events: { ...o.chart.events, render: renderCenterLabel },
+  };
+  if (o.yAxis && !Array.isArray(o.yAxis)) o.yAxis = [o.yAxis];
   return o;
 }
 

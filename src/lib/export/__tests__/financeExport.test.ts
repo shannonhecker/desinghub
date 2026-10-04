@@ -267,6 +267,25 @@ describe("chart export", () => {
     expect(tsxSyntaxErrors(`import React from "react";\n${helper}`)).toEqual([]);
   });
 
+  it("exports edited bound-chart kind, frame, height and custom center label", () => {
+    apply(performanceAnalytics);
+    useBuilder.getState().updateBlockProps('tpl-perf-allocation', {
+      chartType: 'pie', title: 'Portfolio composition', panel: false, height: 500, centerLabel: 'Portfolio',
+    });
+    const state = useBuilder.getState();
+    const block = state.blocks.find(block => block.id === 'tpl-perf-allocation')!;
+    const material = materialiseBlock(block, financeDataset(), state.reportState);
+    expect(material.props.centerLabel).toBe('Portfolio');
+    expect(material.props.seriesData).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Equity' })]));
+    const jsx = chartBlockJsx(material, 'light');
+    expect(jsx).toContain('type="pie"');
+    expect(jsx).toContain('height={500}');
+    expect(jsx).toContain('Portfolio composition');
+    expect(jsx).not.toContain('<section');
+    const cleared = materialiseBlock({ ...block, props: { ...block.props, centerLabel: '' } }, financeDataset(), state.reportState);
+    expect(cleared.props.centerLabel).toBe('£3.55bn');
+  });
+
   it("an unframed chart with none of the new props exports exactly as before", () => {
     const block = { id: "c", type: "HighchartLine", props: { chartType: "line", title: "Revenue" } } as Block;
     expect(chartBlockJsx(block, "light")).toBe('<ChartBlock type="line" title="Revenue" mode="light" />');

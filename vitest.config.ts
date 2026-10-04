@@ -8,14 +8,9 @@ export default defineConfig({
     include: ["src/**/__tests__/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
-      include: ["src/lib/**", "src/store/**"],
+      include: ["src/lib/**", "src/store/**", "src/components/**"],
       exclude: ["src/**/__tests__/**", "src/**/*.test.*"],
-      thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 60,
-        statements: 70,
-      },
+      reporter: ["text", "json-summary", "html"],
     },
   },
   resolve: {

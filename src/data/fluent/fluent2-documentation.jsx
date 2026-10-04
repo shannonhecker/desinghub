@@ -1267,7 +1267,7 @@ const COMPS = [
   { id: "tokens", name: "Tokens", cat: "Foundations", desc: "Token reference for all design tokens - colors, spacing, typography, and elevation with contrast ratios.", render: () => null },
   { id: "audit", name: "Design Audit", cat: "Foundations", desc: "Paste code to audit for raw hex values, wrong APIs, accessibility issues, and dark mode compliance.", render: () => null },
   // Patterns
-  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function(){
+  { id: "pat-dashboard", name: "Analytical Dashboard", cat: "Patterns", desc: "Stat cards, charts, and data tables composed into an analytics overview.", render: function FluentDashboardDemo(){
     const styles = useFluentShellStyles();
     return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
@@ -1282,7 +1282,7 @@ const COMPS = [
       <div style={{fontSize:10,color:T.fg3}}>Dashboard pattern: stat cards + charts + data tables.</div>
     </div></FluentProvider>;
   }},
-  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function(){
+  { id: "pat-form", name: "Forms", cat: "Patterns", desc: "Input fields, validation, and button bar composed into a data entry form.", render: function FluentFormDemo(){
     const styles = useFluentShellStyles();
     return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT,maxWidth:320}}>
       <div><label style={{fontSize:12,fontWeight:600,color:T.fg1}}>Full Name *</label><div className="f-input" style={{marginTop:4}}>Jane Doe</div></div>
@@ -1290,7 +1290,7 @@ const COMPS = [
       <div style={{display:"flex",gap:8,marginTop:4}}><button className="f-btn f-btn-primary">Submit</button><button className="f-btn f-btn-secondary">Cancel</button></div>
     </div></FluentProvider>;
   }},
-  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: function(){
+  { id: "pat-list-detail", name: "List-Detail", cat: "Patterns", desc: "Master list alongside detail pane for email, files, or settings.", render: function FluentListDetailDemo(){
     const styles = useFluentShellStyles();
     const [sel,setSel]=useState(0);
     const items=[{t:"Dashboard Report",d:"Q4 revenue analysis"},{t:"User Metrics",d:"Monthly active users"},{t:"System Alerts",d:"Health monitoring"}];
@@ -1304,7 +1304,7 @@ const COMPS = [
       </div>
     </FluentProvider>;
   }},
-  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: function(){
+  { id: "pat-app-shell", name: "App Shell", cat: "Patterns", desc: "Header, nav sidebar, content area, and footer in a Fluent application layout.", render: function FluentAppShellDemo(){
     const styles = useFluentShellStyles();
     /* Layout via Fluent's makeStyles (griffel) inside FluentProvider — the DS's
        real styling system. Colors from the active Fluent theme tokens (T). */
@@ -1324,7 +1324,7 @@ const COMPS = [
       </div>
     </FluentProvider>;
   }},
-  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function(){
+  { id: "pat-login", name: "Login / Auth", cat: "Patterns", desc: "Authentication form with brand header, inputs, and primary button.", render: function FluentLoginDemo(){
     const styles = useFluentShellStyles();
     return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div style={{maxWidth:260,margin:"0 auto",fontFamily:FONT}}>
       <div style={{textAlign:"center",marginBottom:12}}>
@@ -1339,7 +1339,7 @@ const COMPS = [
       </div>
     </div></FluentProvider>;
   }},
-  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: function(){
+  { id: "pat-settings", name: "Settings Page", cat: "Patterns", desc: "Navigation list with form sections for application preferences.", render: function FluentSettingsDemo(){
     const styles = useFluentShellStyles();
     const [tab,setTab]=useState(0);
     const tabs=["General","Security","Notifications"];
@@ -1357,7 +1357,7 @@ const COMPS = [
       </div>
     </FluentProvider>;
   }},
-  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: function(){
+  { id: "pat-search", name: "Search Results", cat: "Patterns", desc: "Searchbox with filterable result cards and pagination.", render: function FluentSearchDemo(){
     const styles = useFluentShellStyles();
     return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
       <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",border:`1px solid ${T.stroke2}`,borderRadius:4,background:T.bg1}}>
@@ -1375,7 +1375,7 @@ const COMPS = [
       )}
     </div></FluentProvider>;
   }},
-  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function(){
+  { id: "pat-wizard", name: "Wizard / Stepper", cat: "Patterns", desc: "Multi-step form with progress steps and validation.", render: function FluentWizardDemo(){
     const [step,setStep]=useState(1);
     const styles = useFluentShellStyles();
     return <FluentProvider theme={modeOf(T) === "dark" ? webDarkTheme : webLightTheme}><div className={styles.vstack} style={{fontFamily:FONT}}>
@@ -1398,7 +1398,7 @@ const COMPS = [
       </div>
     </div></FluentProvider>;
   }},
-  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function(){
+  { id: "pat-data-table", name: "Data Table Page", cat: "Patterns", desc: "Filter bar, sortable data grid, and pagination for tabular data views.", render: function FluentDataTableDemo(){
     const cols=["Name","Status","Amount","Date"];
     const rows=[["Jane Doe","Active","$1,200","Apr 12"],["John Smith","Pending","$890","Apr 11"],["Alice Chen","Active","$2,340","Apr 10"]];
     const styles = useFluentShellStyles();

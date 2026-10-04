@@ -256,6 +256,16 @@ export function buildChartOptions(
 ): Highcharts.Options {
   const o = chartOptions(chartType, t, v, props);
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  // Updates merge into the live chart, so omitted type-specific options
+  // would retain the previous kind's stacking and secondary-axis bindings.
+  const plots = { ...o.plotOptions } as any;
+  for (const [type, stackedKind] of [["column", "stacked-column"], ["bar", "stacked-bar"], ["areaspline", "stacked-area"]]) {
+    plots[type] = { ...plots[type], stacking: chartType === stackedKind ? "normal" : undefined };
+  }
+  o.plotOptions = plots;
+  if (chartType !== "combination" && o.yAxis && !Array.isArray(o.yAxis)) {
+    o.series = o.series?.map(series => ({ ...series, yAxis: 0 }) as Highcharts.SeriesOptionsType);
+  }
   if (props.height) o.chart = { ...(o.chart as any), height: props.height };
   if (props.hideTitle) o.title = { ...(o.title as any), text: undefined };
   if (props.legend === false) o.legend = { ...(o.legend as any), enabled: false };
@@ -331,9 +341,14 @@ export function buildChartOptions(
       },
     };
   }
-  if (props.centerLabel && chartType === "donut") {
-    o.chart = { ...(o.chart as any), dhCenter: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
-  }
+  // Highcharts merges updates into the existing chart. Explicitly clear
+  // the custom option, and retain the render handler so it removes the old
+  // SVG label when changing kind or clearing the label in the inspector.
+  o.chart = {
+    ...(o.chart as any),
+    dhCenter: props.centerLabel && chartType === "donut" ? { text: props.centerLabel, color: v.fg } : null,
+    events: { ...(o.chart as any)?.events, render: renderCenterLabel },
+  };
   /* The accessibility module describes the chart to assistive tech; give it
      the title even when the visible title is hidden. */
   o.accessibility = {
@@ -349,6 +364,9 @@ export function buildChartOptions(
       },
     },
   };
+  // Explicit collection length lets one-to-one updates remove a previous
+  // secondary axis even when the primary axis options are unchanged.
+  if (o.yAxis && !Array.isArray(o.yAxis)) o.yAxis = [o.yAxis];
   /* eslint-enable @typescript-eslint/no-explicit-any */
   return o;
 }
@@ -375,7 +393,10 @@ function renderCenterLabel(this: Highcharts.Chart) {
   const chart = this as any;
   const center = chart.options?.chart?.dhCenter as { text: string; color: string } | undefined;
   const series = chart.series?.[0];
-  if (!center || !series?.center) return;
+  if (!center || !series?.center) {
+    chart.dhCenterLabel = chart.dhCenterLabel?.destroy();
+    return;
+  }
   const [cx, cy] = series.center as number[];
   if (!chart.dhCenterLabel) {
     chart.dhCenterLabel = chart.renderer.text(center.text, 0, 0).attr({ align: "center", zIndex: 5 }).add();
@@ -469,7 +490,7 @@ function chartOptions(
         chart: { ...tc, type: "pie" },
         title: { ...tt, text: props.title || "Market Share" },
         series: [{
-          name: "Share", type: "pie" as const,
+          name: "Share", type: "pie" as const, innerSize: 0,
           data: props.seriesData?.length ? props.seriesData : [
             /* Realistic share split: a clear leader, a long tail, an "Other"
                bucket - shares that sum to 100 without being round numbers. */
