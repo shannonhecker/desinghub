@@ -1,15 +1,22 @@
 /* ════════════════════════════════════════════════════════════
-   Landing polish (motion pass + IA rename + CTA band) — structure,
-   copy, and reduced-motion contract tests.
+   Landing ("product studio" direction): structure, copy, instrument
+   and reduced-motion contract tests.
 
-   Covers the 2026-06 landing brief:
-   - IA fix: nav labels Workbench / Systems / Tokens / About, section
-     ids #projects → #systems and #voices → #tokens, new #cta band.
-   - Copy: locked brand lines verbatim + sharpened ledes + CTA copy.
-   - LCP: hero h1 must NOT carry data-reveal (paints at opacity 1).
+   Covers the 2026-10 landing brief (site-quality task 9):
+   - First viewport: two-line headline, one line of supporting copy,
+     the real prompt, and the instrument (real captures of one report
+     across five design systems, light and dark).
+   - IA: nav Systems / Workflow / Export / UI Kit, sections #systems,
+     #workflow, #export, #cta, footer #about.
+   - Truthful copy only: the three unverified claims are gone, the
+     captures are described as captures, the concept animation is
+     labelled as an illustration.
+   - Handoff: the prompt carries the chosen system and mode into the
+     builder; system links and the report link use real builder params.
+   - No content hidden behind JS reveals; hero h1 paints at opacity 1.
    - No em/en dashes anywhere in rendered display copy (STOP-class).
-   - Reduced motion: every new CSS animation/transition is guarded in
-     a prefers-reduced-motion block; video autoplay stays gated.
+   - Reduced motion: every CSS animation/transition is guarded; the
+     concept video never autoplays and only downloads on play.
 
    Uses react-dom/client + act() directly (no RTL in the repo),
    matching codePanel.test.tsx.
@@ -18,7 +25,7 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import LandingPage from "../page";
@@ -91,25 +98,37 @@ const norm = (s: string | null | undefined) =>
 
 /* ── 1. IA: nav labels + section ids ─────────────────────────── */
 
-describe("nav + anchor IA rename", () => {
-  it("nav links read Workbench / Systems / Tokens / About with matching anchors", () => {
+describe("nav + anchor IA", () => {
+  it("nav links read Systems / Workflow / Export / UI Kit with matching targets", () => {
     const el = renderPage();
     const links = Array.from(
       el.querySelectorAll<HTMLAnchorElement>(".lsl-nav-link"),
     ).map((a) => [norm(a.textContent), a.getAttribute("href")]);
     expect(links).toEqual([
-      ["Workbench", "#services"],
       ["Systems", "#systems"],
-      ["Tokens", "#tokens"],
-      ["About", "#about"],
+      ["Workflow", "#workflow"],
+      ["Export", "#export"],
+      ["UI Kit", "/ui-kit"],
     ]);
   });
 
-  it("section ids #systems, #tokens, #cta exist; #projects and #voices are gone", () => {
+  it("every in-page nav anchor resolves to a section on the page", () => {
+    const el = renderPage();
+    const anchors = Array.from(
+      el.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'),
+    ).map((a) => a.getAttribute("href")!);
+    expect(anchors.length).toBeGreaterThanOrEqual(3);
+    anchors.forEach((href) => expect(el.querySelector(href)).not.toBeNull());
+  });
+
+  it("section ids #systems, #workflow, #export, #cta exist; retired ids are gone", () => {
     const el = renderPage();
     expect(el.querySelector("#systems")).not.toBeNull();
-    expect(el.querySelector("#tokens")).not.toBeNull();
+    expect(el.querySelector("#workflow")).not.toBeNull();
+    expect(el.querySelector("#export")).not.toBeNull();
     expect(el.querySelector("#cta")).not.toBeNull();
+    expect(el.querySelector("#services")).toBeNull();
+    expect(el.querySelector("#tokens")).toBeNull();
     expect(el.querySelector("#projects")).toBeNull();
     expect(el.querySelector("#voices")).toBeNull();
   });
@@ -119,83 +138,125 @@ describe("nav + anchor IA rename", () => {
     expect(css).not.toMatch(/#projects\b/);
     expect(css).not.toMatch(/#voices\b/);
   });
+
+  it("the nav action and the footer reach the real product routes", () => {
+    const el = renderPage();
+    expect(
+      norm(el.querySelector<HTMLAnchorElement>('.lsl-nav a[href="/builder"]')?.textContent),
+    ).toBe("Open the builder");
+    const footerHrefs = Array.from(
+      el.querySelectorAll<HTMLAnchorElement>("#about .lsl-footer-list a"),
+    ).map((a) => a.getAttribute("href"));
+    expect(footerHrefs).toEqual(["/builder", "/ui-kit", "/theme-builder", "/token-editor"]);
+  });
 });
 
-/* ── 2. Copy: locked lines verbatim + sharpened rewrites ─────── */
+/* ── 2. Copy ─────────────────────────────────────────────────── */
 
 describe("copy", () => {
-  it("hero headline is the verbatim brand positioning line", () => {
+  it("hero headline is two lines, one sentence each", () => {
     const el = renderPage();
     const h1 = el.querySelector("#lsl-hero-headline");
-    expect(norm(h1?.textContent)).toBe(
-      "A visual web builder for designers who think in systems.",
+    const lines = Array.from(h1?.querySelectorAll("span") ?? []).map((s) =>
+      norm(s.textContent),
     );
-    expect(h1?.querySelector("em")).not.toBeNull();
+    expect(lines).toEqual(["One finance report.", "Five design systems."]);
+    expect(norm(h1?.textContent)).toBe("One finance report. Five design systems.");
+    // No single-word accent inside the headline.
+    expect(h1?.querySelector("em")).toBeNull();
   });
 
-  it("hero eyebrow leads with the differentiator", () => {
+  it("hero carries one line of concrete supporting copy", () => {
     const el = renderPage();
-    expect(norm(el.querySelector(".lsl-hero-eyebrow")?.textContent)).toBe(
-      "uoaui.ai / five systems, one canvas",
+    expect(norm(el.querySelector(".lsl-hero-sub")?.textContent)).toBe(
+      "Describe the report. Switch the system. Export code that runs.",
     );
   });
 
-  it("hero sub keeps sentence one verbatim and lands the product proof", () => {
+  it("has no decorative eyebrow or section labels", () => {
     const el = renderPage();
-    const sub = norm(el.querySelector(".lsl-hero-sub")?.textContent);
-    expect(sub).toContain(
-      "UI Kit plus private-preview Builder across Salt, Material 3, Fluent 2, Carbon, and the uoaui system.",
-    );
-    expect(sub).toContain(
-      "The canvas renders real components, and the export is code you can run.",
-    );
-    expect(sub).not.toContain("aurora accents");
+    expect(el.querySelector(".lsl-hero-eyebrow")).toBeNull();
+    expect(el.querySelector(".lsl-section-label")).toBeNull();
   });
 
-  it("services lede is the sharpened active-verb version", () => {
+  it("does not make the three claims the product cannot demonstrate", () => {
     const el = renderPage();
-    const lede = norm(el.querySelector("#services .lsl-section-lede")?.textContent);
-    expect(lede).toBe(
-      "Compare, audit, and hand off across systems without leaving the canvas. Four moves cover the day to day.",
-    );
+    const text = norm(el.textContent);
+    // Automatic three-layout generation, inline token diffs, and keyboard
+    // parity for EVERY drag were audited against the builder and removed.
+    expect(text).not.toMatch(/three layouts/i);
+    expect(text).not.toMatch(/token diff/i);
+    expect(text).not.toMatch(/every drag/i);
+    // No invented social proof.
+    expect(text).not.toMatch(/trusted by|customers|teams use/i);
   });
 
-  it("systems heading is kept and the lede lands reversibility", () => {
+  it("systems heading and lede say what the strip shows", () => {
     const el = renderPage();
     expect(norm(el.querySelector("#systems .lsl-section-heading")?.textContent)).toBe(
-      "The same card. Five renderings.",
+      "The layout holds. The system changes.",
     );
-    const lede = norm(el.querySelector("#systems .lsl-section-lede")?.textContent);
-    expect(lede).toBe(
-      "Pick a system to compose with. Swap later without rewriting the comp. Tokens carry the intent, the renderer is a choice you can unmake.",
+    expect(norm(el.querySelector("#systems .lsl-section-lede")?.textContent)).toBe(
+      "The same report at phone width in all five systems. Each one is rendered with that system's own components and tokens, so corners, type, colour and density change while the content stays where you put it.",
     );
   });
 
-  it("tokens heading is kept and the lede sharpens the not-a-style-guide line", () => {
+  it("workflow is a three-step sequence: describe, edit, present", () => {
     const el = renderPage();
-    expect(norm(el.querySelector("#tokens .lsl-section-heading")?.textContent)).toBe(
-      "Tokens you can read.",
+    expect(norm(el.querySelector("#workflow .lsl-section-heading")?.textContent)).toBe(
+      "From one sentence to a finished report.",
     );
-    const lede = norm(el.querySelector("#tokens .lsl-section-lede")?.textContent);
-    expect(lede).toBe(
-      "The unit of portability across five systems. Same primitives, different rendering. This is a slice of the actual canvas, not a style guide.",
+    const steps = Array.from(el.querySelectorAll("#workflow ol.lsl-steps > li"));
+    expect(
+      steps.map((s) => norm(s.querySelector(".lsl-step-title")?.textContent)),
+    ).toEqual(["Describe it", "Edit it", "Present it"]);
+    // The keyboard claim is the narrow, verified one (reorder + resize).
+    expect(norm(steps[1].textContent)).toContain(
+      "Reordering and resizing work from the keyboard too.",
     );
   });
 
-  it("CTA band carries the new label, heading, body and both CTAs", () => {
+  it("export section lists the six real export formats", () => {
+    const el = renderPage();
+    expect(norm(el.querySelector("#export .lsl-section-heading")?.textContent)).toBe(
+      "Leave with code, not a screenshot.",
+    );
+    const names = Array.from(el.querySelectorAll("#export dl dt")).map((d) =>
+      norm(d.textContent),
+    );
+    expect(names).toEqual([
+      "React (TSX)",
+      "Vite project",
+      "HTML",
+      "Tokens (JSON)",
+      "Figma (SVG)",
+      "SVG",
+    ]);
+    expect(el.querySelectorAll("#export dl dd")).toHaveLength(6);
+  });
+
+  it("export excerpt is real exporter output with the design system's own imports", () => {
+    const el = renderPage();
+    const code = el.querySelector("#export pre")?.textContent ?? "";
+    expect(code).toContain('import { SaltProvider } from "@salt-ds/core";');
+    expect(code).toContain('import "@salt-ds/theme/index.css";');
+    expect(code).toContain("export default function Dashboard() {");
+    // The syntax tint must not alter the text.
+    expect(code.split("\n")).toHaveLength(20);
+  });
+
+  it("CTA band closes on the prompt, with both secondary routes", () => {
     const el = renderPage();
     const band = el.querySelector("#cta");
-    expect(norm(band?.querySelector(".lsl-section-label")?.textContent)).toBe(
-      "builder / private preview",
-    );
-    expect(norm(band?.querySelector(".lsl-section-heading")?.textContent)).toBe(
-      "Stop choosing. Start composing.",
+    expect(norm(band?.querySelector(".lsl-cta-heading")?.textContent)).toBe(
+      "Start with one sentence.",
     );
     expect(norm(band?.querySelector(".lsl-section-lede")?.textContent)).toBe(
-      "Open the workbench, drop a block, and watch five systems render it. The export is real code, ready to run.",
+      "Describe a report and see it in five systems.",
     );
+    expect(band?.querySelector('form[action="/builder"] input[name="prompt"]')).not.toBeNull();
     const primary = band?.querySelector<HTMLAnchorElement>('a[href="/builder"]');
-    expect(norm(primary?.textContent)).toBe("Open the workbench");
+    expect(norm(primary?.textContent)).toBe("Open the builder");
     const secondary = band?.querySelector<HTMLAnchorElement>('a[href="/ui-kit"]');
     expect(norm(secondary?.textContent)).toBe("Browse the UI Kit");
   });
@@ -210,49 +271,56 @@ describe("copy", () => {
     expect(body).toContain("Built with restraint.");
   });
 
-  it("all 4 service headings and 16 bullets stay verbatim", () => {
-    const el = renderPage();
-    const headings = Array.from(
-      el.querySelectorAll("#services .lsl-service-heading"),
-    ).map((h) => norm(h.textContent));
-    expect(headings).toEqual([
-      "Five systems, side by side",
-      "Tokens travel with the block",
-      "Sketch in real components",
-      "Brief it, get variants back",
-    ]);
-    expect(el.querySelectorAll("#services .lsl-service-bullets li")).toHaveLength(16);
-  });
-
   it("rendered display copy contains no em or en dashes", () => {
     const el = renderPage();
     expect(el.textContent).not.toMatch(/[–—]/);
   });
 });
 
-/* ── 3. LCP fix: hero h1 paints at opacity 1 ─────────────────── */
+/* ── 3. First paint: nothing waits on JS ─────────────────────── */
 
-describe("LCP", () => {
-  it("hero h1 does NOT carry data-reveal; eyebrow / sub / actions / demo still do", () => {
+describe("first paint", () => {
+  it("no content is hidden behind a scroll reveal", () => {
     const el = renderPage();
-    expect(el.querySelector("#lsl-hero-headline")?.hasAttribute("data-reveal")).toBe(false);
-    expect(el.querySelector(".lsl-hero-eyebrow")?.hasAttribute("data-reveal")).toBe(true);
-    expect(el.querySelector(".lsl-hero-sub")?.hasAttribute("data-reveal")).toBe(true);
-    expect(el.querySelector(".lsl-hero-actions")?.hasAttribute("data-reveal")).toBe(true);
-    expect(el.querySelector(".lsl-hero-demo")?.hasAttribute("data-reveal")).toBe(true);
+    // The old page set opacity 0 on 34 [data-reveal] nodes until an
+    // IntersectionObserver fired; without JS the page stayed blank.
+    expect(el.querySelectorAll("[data-reveal]")).toHaveLength(0);
+    expect(readFileSync(CSS_PATH, "utf8")).not.toMatch(/data-reveal/);
+  });
+
+  it("the default capture loads eagerly at high priority and is never clipped", () => {
+    const el = renderPage();
+    const img = el.querySelector<HTMLImageElement>("#showcase img.lsl-showcase-shot");
+    expect(img?.getAttribute("loading")).toBe("eager");
+    expect(img?.getAttribute("fetchpriority")).toBe("high");
+    // The wipe only arms after the visitor's own action.
+    expect(
+      el.querySelector("#showcase .lsl-showcase-layer")?.hasAttribute("data-animate"),
+    ).toBe(false);
+  });
+
+  it("headline, prompt and instrument share the hero section", () => {
+    const el = renderPage();
+    const hero = el.querySelector("section.lsl-hero");
+    expect(hero?.querySelector("#lsl-hero-headline")).not.toBeNull();
+    expect(hero?.querySelector("form.lsl-hero-prompt")).not.toBeNull();
+    expect(hero?.querySelector("#showcase")).not.toBeNull();
   });
 });
 
-/* ── 4. Hero do-not-touch: video gating untouched ────────────── */
+/* ── 4. User-controlled concept animation ────────────────────── */
 
 describe("video WCAG 2.2.2 gating", () => {
-  it("autoplays + loops when motion is allowed", () => {
+  it("keeps demo bytes deferred and playback under user control", () => {
     stubMatchMedia(false);
     const el = renderPage();
     const video = el.querySelector("video");
-    expect(video?.hasAttribute("autoplay")).toBe(true);
-    expect(video?.hasAttribute("loop")).toBe(true);
-    expect(video?.getAttribute("preload")).toBe("metadata");
+    expect(video?.hasAttribute("autoplay")).toBe(false);
+    expect(video?.hasAttribute("loop")).toBe(false);
+    expect(video?.getAttribute("preload")).toBe("none");
+    expect(video?.hasAttribute("controls")).toBe(true);
+    expect(video?.getAttribute("poster")).toBeTruthy();
+    expect(video?.getAttribute("aria-hidden")).not.toBe("true");
   });
 
   it("does not autoplay or loop under prefers-reduced-motion", async () => {
@@ -276,6 +344,29 @@ describe("video WCAG 2.2.2 gating", () => {
       prefersReducedMotion.current = prevPref;
       hasReducedMotionListener.current = prevHas;
     }
+  });
+
+  it("labels the animation as an illustration, never as a recording of the product", () => {
+    const el = renderPage();
+    const fig = el.querySelector("#demo");
+    const caption = norm(fig?.querySelector("figcaption")?.textContent);
+    expect(caption).toMatch(/concept animation/i);
+    expect(caption).toMatch(/not a recording of the builder/i);
+    expect(norm(el.textContent)).not.toMatch(/live capture/i);
+    // Its poster is its own frame, not a product capture.
+    expect(fig?.querySelector("video")?.getAttribute("poster")).toBe(
+      "/showcase/concept-poster.webp",
+    );
+  });
+
+  it("shows the real builder as a still, with honest alt text", () => {
+    const el = renderPage();
+    const shot = el.querySelector<HTMLImageElement>("#workflow img.lsl-demo-shot");
+    expect(shot?.getAttribute("src")).toBe("/showcase/builder-edit.webp");
+    expect(shot?.getAttribute("width")).toBeTruthy();
+    expect(shot?.getAttribute("height")).toBeTruthy();
+    expect(shot?.getAttribute("loading")).toBe("lazy");
+    expect(shot?.getAttribute("alt")).toMatch(/Edit mode/);
   });
 });
 
@@ -308,18 +399,16 @@ describe("reduced-motion guards in landing.css", () => {
   });
 
   it.each([
-    ".lsl-nav", // entrance slide → opacity-only fade
+    ".lsl-nav", // entrance fade killed
     ".lsl-nav-link", // underline-grow appears instantly
-    ".lsl-hero-headline", // rise + spotlight sweep killed
-    ".lsl-hero-demo", // frame settle killed
-    ".lsl-rule", // divider draw killed
-    ".lsl-hero-secondary", // arrow nudge killed
-    ".lsl-syscard", // lift becomes instant ring-only
-    ".lsl-token-bar", // bars render final
-    ".lsl-token-swatch", // swatches render final
-    ".lsl-cta-textlink", // underline-grow appears instantly
-    ".lsl-mark-macron", // macron rendered complete
-    "[data-reveal]", // IO reveals fall back to static
+    ".lsl-cta", // hover fill applies instantly
+    ".lsl-hero-prompt-submit", // hover fill applies instantly
+    ".lsl-showcase-layer", // system wipe becomes an instant swap
+    ".lsl-showcase-edge", // wipe edge line never shows
+    ".lsl-showcase-tab", // tab colour/underline shift applies instantly
+    ".lsl-mode-btn", // mode control applies instantly
+    ".lsl-syscard", // lift killed
+    ".lsl-cta-textlink", // underline appears instantly
   ])("guards %s", (selector) => {
     expect(guarded).toContain(selector);
   });
@@ -334,40 +423,50 @@ describe("reduced-motion guards in landing.css", () => {
     const ruleRe = /\.landing-southleft\s+([^{}]+)\{[^{}]*animation:[^{}]*\}/g;
     let m: RegExpExecArray | null;
     const offenders: string[] = [];
+    let seen = 0;
     while ((m = ruleRe.exec(unguarded))) {
+      seen++;
       const selector = m[1].trim();
       const cls = selector.match(/\.[\w-]+/)?.[0];
       if (cls && !guarded.includes(cls.replace(/-\d+$/, "-"))) {
         offenders.push(selector);
       }
     }
+    expect(seen).toBeGreaterThanOrEqual(3); // nav fade, wipe, wipe edge
     expect(offenders).toEqual([]);
+  });
+
+  it("the wipe is fully disabled under reduced motion (no clip, no animation)", () => {
+    expect(guarded).toMatch(
+      /\.lsl-showcase-layer\[data-animate="true"\][^{]*\{[^}]*animation:\s*none;[^}]*clip-path:\s*none;/,
+    );
+  });
+
+  it("no looping animation anywhere on the page", () => {
+    expect(css).not.toMatch(/\binfinite\b/);
   });
 });
 
-/* ── 6. Structure: section order with CTA band inserted ──────── */
+/* ── 6. Structure ────────────────────────────────────────────── */
 
 describe("section structure", () => {
-  it("CTA band sits between tokens and footer", () => {
+  it("sections run hero, systems, workflow, export, cta, footer", () => {
     const el = renderPage();
     const main = el.querySelector("main");
-    const ids = Array.from(main?.children ?? [])
-      .map((c) => c.id)
-      .filter(Boolean);
-    expect(ids).toEqual(
-      expect.arrayContaining(["services", "systems", "tokens", "cta", "about"]),
-    );
-    const tokensIdx = ids.indexOf("tokens");
-    const ctaIdx = ids.indexOf("cta");
-    const aboutIdx = ids.indexOf("about");
-    expect(ctaIdx).toBeGreaterThan(tokensIdx);
-    expect(aboutIdx).toBeGreaterThan(ctaIdx);
+    const kids = Array.from(main?.children ?? []);
+    expect(kids[1]?.classList.contains("lsl-hero")).toBe(true);
+    const ids = kids.map((c) => c.id).filter(Boolean);
+    expect(ids).toEqual(["systems", "workflow", "export", "cta", "about"]);
   });
 
-  it("dividers carry data-reveal for the draw-in", () => {
+  it("every section is labelled by its own heading", () => {
     const el = renderPage();
-    const rules = el.querySelectorAll("hr.lsl-rule[data-reveal]");
-    expect(rules.length).toBeGreaterThanOrEqual(4);
+    el.querySelectorAll("main > section").forEach((sec) => {
+      const id = sec.getAttribute("aria-labelledby");
+      expect(id).toBeTruthy();
+      expect(sec.querySelector(`#${id}`)).not.toBeNull();
+    });
+    expect(el.querySelectorAll("h1")).toHaveLength(1);
   });
 
   it("page.tsx keeps the sanctioned dual backdrop-filter inline pattern only in useNavGlassStyle", () => {
@@ -377,19 +476,19 @@ describe("section structure", () => {
     const cssSrc = readFileSync(CSS_PATH, "utf8");
     expect(cssSrc).not.toMatch(/-webkit-backdrop-filter/);
   });
+
+  it("carries no decorative aurora or blob layers", () => {
+    const el = renderPage();
+    expect(el.querySelector(".lsl-hero-aurora, .lsl-cta-aurora")).toBeNull();
+    expect(readFileSync(CSS_PATH, "utf8")).not.toMatch(/radial-gradient/);
+  });
 });
 
-/* ── 7. CTA band label contrast: WCAG 1.4.3 worst-case proof ──── */
-/* The CTA band label sits over .lsl-cta-aurora, whose radials scale
-   and drift with scroll, so the label cannot rely on the clean
-   #0A0E1A band: the proof composites the band bg plus EVERY radial
-   peak stacked at one point (the maximum tint any animation position
-   can place under the label) using plain sRGB alpha-over math. The
-   gradients interpolate in oklab, but each 0% stop IS the authored
-   stop color, so the peak composite is interpolation-space
-   independent. All colors are parsed from landing.css (var fallbacks
-   resolved recursively), so a future tint or label tweak fails this
-   test loudly instead of shipping a silent AA regression. */
+/* ── 7. Text contrast: WCAG 1.4.3 on the page background ─────── */
+/* The page is one flat background now (the drifting aurora that the old
+   composite proof guarded is gone), so the proof is direct: every text
+   colour token, composited over --lsl-bg, must clear AA for body text.
+   Colours are parsed from landing.css so a token tweak fails loudly. */
 
 type RGBA = [number, number, number, number];
 
@@ -402,10 +501,8 @@ function cssVarFallback(css: string, name: string): string {
   return m[1].trim();
 }
 
-function parseColor(css: string, value: string): RGBA {
+function parseColor(value: string): RGBA {
   const v = value.trim();
-  const viaVar = v.match(/^var\((--[\w-]+)\)$/);
-  if (viaVar) return parseColor(css, cssVarFallback(css, viaVar[1]));
   const rgba = v.match(
     /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/,
   );
@@ -444,85 +541,67 @@ function toHex(c: RGBA): string {
   );
 }
 
-function ruleBody(css: string, selector: string): string {
-  const m = css.match(
-    new RegExp(selector.replace(/[.\\]/g, "\\$&") + "\\s*\\{([^}]+)\\}"),
-  );
-  if (!m) throw new Error(`Rule not found: ${selector}`);
-  return m[1];
-}
-
-/* Parsed lazily inside each test so a missing rule fails THESE tests
-   with a readable error instead of killing the whole suite at collect. */
-function readCtaContrastInputs() {
+describe("text contrast on the page background (WCAG 1.4.3, AA 4.5:1)", () => {
   const css = readFileSync(CSS_PATH, "utf8");
+  const token = (name: string) => parseColor(cssVarFallback(css, name));
+  const ratioOn = (fg: string, bg: string) => {
+    const base = token(bg);
+    return contrastRatio(toHex(over(base, token(fg))), toHex(base));
+  };
 
-  // Opaque band background behind the aurora.
-  const bandBg = parseColor(css, cssVarFallback(css, "--lsl-bg"));
-
-  // Every radial peak (the 0% stop) inside .lsl-cta-aurora. The zero-alpha
-  // end-stops sit at 70%/75% and never match this pattern.
-  const aurora = ruleBody(css, ".landing-southleft .lsl-cta-aurora");
-  const peaks = Array.from(
-    aurora.matchAll(/(var\(--[\w-]+\)|rgba\([^()]*\))\s+0%/g),
-  ).map((m) => parseColor(css, m[1]));
-
-  // The CTA-band-scoped label color override.
-  const labelDecl = ruleBody(
-    css,
-    ".landing-southleft .lsl-cta-band .lsl-section-label",
-  ).match(/color:\s*([^;]+);/);
-  if (!labelDecl) throw new Error("CTA band label color override missing");
-  const label = parseColor(css, labelDecl[1]);
-
-  return { bandBg, peaks, label };
-}
-
-describe("CTA band label contrast (WCAG 1.4.3, small mono text, AA 4.5:1)", () => {
-  it("parses exactly the three authored aurora radial peaks", () => {
-    const { peaks } = readCtaContrastInputs();
-    expect(peaks).toHaveLength(3);
+  it.each([
+    ["--lsl-fg", "--lsl-bg"],
+    ["--lsl-fg-muted", "--lsl-bg"], // ledes, captions, step bodies
+    ["--lsl-fg-subtle", "--lsl-bg-elevated"], // prompt placeholder
+    ["--lsl-accent", "--lsl-bg"], // step numbers, "Build in" links
+    ["--lsl-fg-muted", "--lsl-bg-soft"], // code panel meta
+    ["--lsl-teal", "--lsl-bg-soft"], // code strings
+    ["--lsl-accent", "--lsl-bg-soft"], // code keywords
+  ])("%s on %s clears AA", (fg, bg) => {
+    expect(ratioOn(fg, bg)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("label clears AA on the worst-case composite (band bg + all radial peaks stacked)", () => {
-    const { bandBg, peaks, label } = readCtaContrastInputs();
-    // CSS paints the FIRST listed gradient topmost, so composite bottom-up.
-    const worstBg = [...peaks]
-      .reverse()
-      .reduce((base, peak) => over(base, peak), bandBg);
-    const fg = over(worstBg, label);
-    const ratio = contrastRatio(toHex(fg), toHex(worstBg));
-    expect(ratio).toBeGreaterThanOrEqual(4.5); // WCAG 1.4.3 floor
-    expect(ratio).toBeGreaterThanOrEqual(4.7); // house margin so tint tweaks fail loudly
+  it("the prompt submit label clears AA on the accent fill", () => {
+    const ratio = contrastRatio(toHex(token("--lsl-bg")), toHex(token("--lsl-accent")));
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("label still clears AA with margin on the clean band background", () => {
-    const { bandBg, label } = readCtaContrastInputs();
-    const fg = over(bandBg, label);
-    const ratio = contrastRatio(toHex(fg), toHex(bandBg));
-    expect(ratio).toBeGreaterThanOrEqual(4.7);
+  it("uses no text colour below the audited tokens", () => {
+    // Every `color:` in the file resolves to an audited token (or inherit).
+    const colours = Array.from(css.matchAll(/[^-]color:\s*([^;]+);/g)).map((m) =>
+      m[1].trim(),
+    );
+    const allowed = /^(var\(--lsl-(fg|fg-strong|fg-muted|fg-subtle|accent|accent-hover|bg|teal)\)|inherit)$/;
+    expect(colours.filter((c) => !allowed.test(c))).toEqual([]);
   });
 });
 
-/* ── 8. Showcase reskin gallery ──────────────────────────────── */
+/* ── 8. The instrument (hero system switcher) ────────────────── */
 
-describe("showcase reskin gallery", () => {
+describe("instrument", () => {
   const sectionOf = (el: HTMLElement): HTMLElement => {
     const s = el.querySelector<HTMLElement>("#showcase");
-    if (!s) throw new Error("#showcase section not found");
+    if (!s) throw new Error("#showcase instrument not found");
     return s;
   };
+  const tabsOf = (sec: HTMLElement) =>
+    Array.from(sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+  const click = (node: Element) =>
+    act(() => {
+      node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  const activeImg = (sec: HTMLElement) =>
+    sec.querySelector<HTMLImageElement>(
+      '[role="tabpanel"][data-active="true"] img.lsl-showcase-shot',
+    );
+  const modeBtn = (sec: HTMLElement, label: string) =>
+    Array.from(sec.querySelectorAll<HTMLButtonElement>(".lsl-mode-btn")).find(
+      (b) => norm(b.textContent) === label,
+    )!;
 
-  it("sits immediately after the trust strip and before #services", () => {
+  it("lives in the hero, not below the fold", () => {
     const el = renderPage();
-    const main = el.querySelector("main")!;
-    const kids = Array.from(main.children);
-    const trustIdx = kids.findIndex((c) => c.classList.contains("lsl-trust"));
-    const showIdx = kids.findIndex((c) => c.id === "showcase");
-    const servIdx = kids.findIndex((c) => c.id === "services");
-    expect(trustIdx).toBeGreaterThanOrEqual(0);
-    expect(showIdx).toBe(trustIdx + 1);
-    expect(servIdx).toBeGreaterThan(showIdx);
+    expect(sectionOf(el).closest("section")?.classList.contains("lsl-hero")).toBe(true);
   });
 
   it("exposes a labelled tablist with exactly 5 tabs in canonical order", () => {
@@ -531,7 +610,7 @@ describe("showcase reskin gallery", () => {
     const tablist = sec.querySelector('[role="tablist"]');
     expect(tablist).not.toBeNull();
     expect(tablist?.getAttribute("aria-label")).toBeTruthy();
-    const tabs = Array.from(sec.querySelectorAll('[role="tab"]'));
+    const tabs = tabsOf(sec);
     expect(tabs).toHaveLength(5);
     expect(tabs.map((t) => norm(t.textContent))).toEqual([
       "Salt DS",
@@ -545,9 +624,7 @@ describe("showcase reskin gallery", () => {
   it("selects Salt by default with a roving tabindex", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const tabs = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    );
+    const tabs = tabsOf(sec);
     const selected = tabs.filter(
       (t) => t.getAttribute("aria-selected") === "true",
     );
@@ -562,8 +639,7 @@ describe("showcase reskin gallery", () => {
   it("wires each tab to its panel and shows exactly one panel", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const tabs = Array.from(sec.querySelectorAll('[role="tab"]'));
-    tabs.forEach((tab) => {
+    tabsOf(sec).forEach((tab) => {
       const panelId = tab.getAttribute("aria-controls")!;
       const panel = sec.querySelector(`#${panelId}`);
       expect(panel).not.toBeNull();
@@ -575,20 +651,47 @@ describe("showcase reskin gallery", () => {
     expect(visible).toHaveLength(1);
   });
 
-  it("maps every system to its own capture slug", () => {
+  it("maps every system and mode to its own capture, desktop and phone", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const srcs = Array.from(
-      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
-    ).map((img) => img.getAttribute("src"));
-    expect(new Set(srcs)).toEqual(
-      new Set([
-        "/showcase/salt.webp",
-        "/showcase/md3.webp",
-        "/showcase/fluent.webp",
-        "/showcase/carbon.webp",
-        "/showcase/uoaui.webp",
-      ]),
+    const seen = new Set<string>();
+    for (const mode of ["light", "dark"] as const) {
+      click(modeBtn(sec, mode === "light" ? "Light" : "Dark"));
+      for (const [label, id] of [
+        ["Salt DS", "salt"],
+        ["Material 3", "md3"],
+        ["Fluent 2", "fluent"],
+        ["Carbon", "carbon"],
+        ["uoaui", "uoaui"],
+      ] as const) {
+        click(tabsOf(sec).find((t) => norm(t.textContent) === label)!);
+        const img = activeImg(sec);
+        expect(img?.getAttribute("src")).toBe(`/showcase/esg-${id}-${mode}.webp`);
+        const phone = img?.parentElement?.querySelector("source");
+        expect(phone?.getAttribute("srcset")).toBe(
+          `/showcase/esg-${id}-${mode}-phone.webp`,
+        );
+        expect(phone?.getAttribute("media")).toBe("(max-width: 640px)");
+        seen.add(img!.getAttribute("src")!);
+      }
+    }
+    expect(seen.size).toBe(10);
+  });
+
+  it("every capture the page references exists in public/showcase", () => {
+    const src = readFileSync(PAGE_PATH, "utf8");
+    const files = new Set<string>(
+      Array.from(src.matchAll(/\/showcase\/([\w-]+\.webp)/g)).map((m) => m[1]),
+    );
+    for (const id of ["salt", "md3", "fluent", "carbon", "uoaui"]) {
+      for (const mode of ["light", "dark"]) {
+        files.add(`esg-${id}-${mode}.webp`);
+        files.add(`esg-${id}-${mode}-phone.webp`);
+      }
+    }
+    expect(files.size).toBe(22);
+    files.forEach((f) =>
+      expect(existsSync(resolve(process.cwd(), "public/showcase", f)), f).toBe(true),
     );
   });
 
@@ -598,37 +701,40 @@ describe("showcase reskin gallery", () => {
     const salt = sec.querySelector<HTMLImageElement>(
       "#lsl-showcase-panel-salt img",
     );
-    expect(salt?.getAttribute("src")).toBe("/showcase/salt.webp");
+    expect(salt?.getAttribute("src")).toBe("/showcase/esg-salt-light.webp");
     const alt = salt?.getAttribute("alt") ?? "";
     expect(alt).toMatch(/Salt DS/);
-    expect(alt).toMatch(/dashboard/i);
+    expect(alt).toMatch(/report/i);
+    expect(alt).toMatch(/light mode/);
     expect(alt).not.toMatch(/mock|placeholder|illustration/i);
     expect(alt.length).toBeGreaterThan(20);
   });
 
-  it("every capture reserves layout (width/height) and defers below-fold load", () => {
+  it("every capture reserves layout (width/height) so nothing shifts", () => {
     const el = renderPage();
-    const sec = sectionOf(el);
-    const imgs = Array.from(
-      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
-    );
-    expect(imgs).toHaveLength(5);
+    const imgs = Array.from(el.querySelectorAll<HTMLImageElement>("img"));
+    expect(imgs.length).toBeGreaterThanOrEqual(7);
     imgs.forEach((img) => {
       expect(img.getAttribute("width")).toBeTruthy();
       expect(img.getAttribute("height")).toBeTruthy();
-      // The section is below the fold, so every capture defers and never
-      // competes with the hero on initial load.
-      expect(img.getAttribute("loading")).toBe("lazy");
     });
+    // Below-the-fold captures defer and never compete with the hero.
+    const strip = Array.from(
+      el.querySelectorAll<HTMLImageElement>("#systems img"),
+    );
+    expect(strip).toHaveLength(5);
+    strip.forEach((img) => expect(img.getAttribute("loading")).toBe("lazy"));
   });
 
   it("every alt string is dash-free, descriptive display copy", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const alts = Array.from(
-      sec.querySelectorAll<HTMLImageElement>("img.lsl-showcase-shot"),
-    ).map((img) => img.getAttribute("alt") ?? "");
-    expect(alts).toHaveLength(5);
+    const alts: string[] = [];
+    tabsOf(sec).forEach((tab) => {
+      click(tab);
+      alts.push(activeImg(sec)?.getAttribute("alt") ?? "");
+    });
+    expect(new Set(alts).size).toBe(5);
     alts.forEach((alt) => {
       // STOP-class no-dash rule applies to alt copy too (read aloud by AT).
       expect(alt).not.toMatch(/[–—]/);
@@ -639,13 +745,9 @@ describe("showcase reskin gallery", () => {
   it("clicking a tab switches the selected tab and the visible panel", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const carbon = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    ).find((t) => norm(t.textContent) === "Carbon")!;
-    act(() =>
-      carbon.dispatchEvent(new MouseEvent("click", { bubbles: true })),
-    );
-    const selected = Array.from(sec.querySelectorAll('[role="tab"]')).filter(
+    const carbon = tabsOf(sec).find((t) => norm(t.textContent) === "Carbon")!;
+    click(carbon);
+    const selected = tabsOf(sec).filter(
       (t) => t.getAttribute("aria-selected") === "true",
     );
     expect(selected).toHaveLength(1);
@@ -657,18 +759,15 @@ describe("showcase reskin gallery", () => {
     expect(visible[0].id).toBe("lsl-showcase-panel-carbon");
     expect(
       visible[0].querySelector("img")?.getAttribute("src"),
-    ).toBe("/showcase/carbon.webp");
+    ).toBe("/showcase/esg-carbon-light.webp");
   });
 
   it("holds a single-selection invariant across every tab", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const tabs = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    );
-    tabs.forEach((tab) => {
-      act(() => tab.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-      const sel = Array.from(sec.querySelectorAll('[role="tab"]')).filter(
+    tabsOf(sec).forEach((tab) => {
+      click(tab);
+      const sel = tabsOf(sec).filter(
         (t) => t.getAttribute("aria-selected") === "true",
       );
       expect(sel).toHaveLength(1);
@@ -679,24 +778,20 @@ describe("showcase reskin gallery", () => {
     });
   });
 
-  it("gallery copy carries no em/en dashes and frames captures honestly", () => {
+  it("caption carries no em/en dashes and frames the captures honestly", () => {
     const el = renderPage();
     const sec = sectionOf(el);
     expect(sec.textContent).not.toMatch(/[–—]/);
-    const heading = norm(sec.querySelector(".lsl-section-heading")?.textContent);
-    const lede = norm(sec.querySelector(".lsl-section-lede")?.textContent);
     const caption = norm(sec.querySelector(".lsl-showcase-caption")?.textContent);
-    const copy = `${heading} ${lede} ${caption}`;
-    // The moat claim: ONE dashboard rendered by all five systems.
-    expect(copy).toMatch(/dashboard|app/i);
-    // Positive honesty: these are described as real builder output, not art.
-    expect(copy).toMatch(/real|capture|builder|present mode/i);
-    // The captures are explicitly disclaimed as NOT mockups (the word "mock"
-    // may appear, but only inside a negation, e.g. "not redrawn mockups").
-    expect(copy).toMatch(/not\b[^.]*\bmock|real builder output/i);
+    // Positive honesty: described as real builder output, captured.
+    expect(caption).toMatch(/ESG Analytics template/);
+    expect(caption).toMatch(/Present mode/);
+    expect(caption).toMatch(/real builder output/i);
+    // The word "redrawn" appears only inside a negation.
+    expect(caption).toMatch(/not redrawn/i);
   });
 
-  it("drives the visual crossfade via data-active on exactly the active panel", () => {
+  it("drives the visible panel via data-active on exactly the active panel", () => {
     const el = renderPage();
     const sec = sectionOf(el);
     let activePanels = sec.querySelectorAll(
@@ -706,10 +801,7 @@ describe("showcase reskin gallery", () => {
     expect(activePanels[0].id).toBe("lsl-showcase-panel-salt");
     expect((activePanels[0] as HTMLElement).getAttribute("tabindex")).toBe("0");
 
-    const carbon = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    ).find((t) => norm(t.textContent) === "Carbon")!;
-    act(() => carbon.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    click(tabsOf(sec).find((t) => norm(t.textContent) === "Carbon")!);
 
     activePanels = sec.querySelectorAll('[role="tabpanel"][data-active="true"]');
     expect(activePanels).toHaveLength(1);
@@ -720,12 +812,47 @@ describe("showcase reskin gallery", () => {
     expect(salt.getAttribute("tabindex")).toBeNull();
   });
 
+  it("a switch keeps the previous capture underneath and arms the wipe", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    expect(sec.querySelector(".lsl-showcase-ghost")).toBeNull();
+    click(tabsOf(sec).find((t) => norm(t.textContent) === "Material 3")!);
+    const ghost = sec.querySelector(".lsl-showcase-ghost");
+    expect(ghost?.getAttribute("aria-hidden")).toBe("true");
+    const ghostImg = ghost?.querySelector("img");
+    expect(ghostImg?.getAttribute("src")).toBe("/showcase/esg-salt-light.webp");
+    expect(ghostImg?.getAttribute("alt")).toBe(""); // decorative duplicate
+    expect(
+      sec.querySelector(".lsl-showcase-layer")?.getAttribute("data-animate"),
+    ).toBe("true");
+    // The wipe waits for the new capture to decode before it runs.
+    expect(sec.querySelector(".lsl-showcase-layer")?.hasAttribute("data-ready")).toBe(false);
+    act(() => {
+      activeImg(sec)!.dispatchEvent(new Event("load"));
+    });
+    expect(
+      sec.querySelector(".lsl-showcase-layer")?.getAttribute("data-ready"),
+    ).toBe("true");
+  });
+
+  it("light/dark control swaps the capture and reports its state", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const group = sec.querySelector('.lsl-mode[role="group"]');
+    expect(group?.getAttribute("aria-label")).toBeTruthy();
+    expect(modeBtn(sec, "Light").getAttribute("aria-pressed")).toBe("true");
+    expect(modeBtn(sec, "Dark").getAttribute("aria-pressed")).toBe("false");
+    click(modeBtn(sec, "Dark"));
+    expect(modeBtn(sec, "Dark").getAttribute("aria-pressed")).toBe("true");
+    expect(modeBtn(sec, "Light").getAttribute("aria-pressed")).toBe("false");
+    expect(activeImg(sec)?.getAttribute("src")).toBe("/showcase/esg-salt-dark.webp");
+    expect(activeImg(sec)?.getAttribute("alt")).toMatch(/dark mode/);
+  });
+
   it("arrow keys move selection AND focus, wrapping at both ends", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const tabs = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    );
+    const tabs = tabsOf(sec);
     const press = (tab: HTMLButtonElement, key: string) => {
       tab.focus();
       const ev = new KeyboardEvent("keydown", {
@@ -757,9 +884,7 @@ describe("showcase reskin gallery", () => {
   it("Home/End jump to ends, Up/Down alias Left/Right, other keys pass through", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    const tabs = Array.from(
-      sec.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    );
+    const tabs = tabsOf(sec);
     const press = (tab: HTMLButtonElement, key: string) => {
       tab.focus();
       const ev = new KeyboardEvent("keydown", {
@@ -789,11 +914,90 @@ describe("showcase reskin gallery", () => {
   });
 });
 
-describe("showcase gallery CSS contract", () => {
+/* ── 9. Handoff into the builder ─────────────────────────────── */
+
+describe("builder handoff", () => {
+  const click = (node: Element) =>
+    act(() => {
+      node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+  it("the prompt is a native GET form to /builder with a required, labelled field", () => {
+    const el = renderPage();
+    const form = el.querySelector<HTMLFormElement>(".lsl-hero form.lsl-hero-prompt");
+    expect(form?.getAttribute("action")).toBe("/builder");
+    expect(form?.getAttribute("method")).toBe("get");
+    const input = form?.querySelector<HTMLInputElement>('input[name="prompt"]');
+    expect(input?.required).toBe(true);
+    expect(form?.querySelector(`label[for="${input?.id}"]`)).not.toBeNull();
+    expect(norm(form?.querySelector('button[type="submit"]')?.textContent)).toBe("Build it");
+  });
+
+  it("the prompt carries the instrument's system and mode into the builder", () => {
+    const el = renderPage();
+    const hidden = (form: Element, name: string) =>
+      form.querySelector<HTMLInputElement>(`input[type="hidden"][name="${name}"]`)?.value;
+    const forms = Array.from(el.querySelectorAll("form.lsl-hero-prompt"));
+    expect(forms).toHaveLength(2); // hero + closing band
+    forms.forEach((f) => {
+      expect(hidden(f, "ds")).toBe("salt");
+      expect(hidden(f, "mode")).toBe("light");
+    });
+    const sec = el.querySelector("#showcase")!;
+    click(
+      Array.from(sec.querySelectorAll('[role="tab"]')).find(
+        (t) => norm(t.textContent) === "Material 3",
+      )!,
+    );
+    click(
+      Array.from(sec.querySelectorAll(".lsl-mode-btn")).find(
+        (b) => norm(b.textContent) === "Dark",
+      )!,
+    );
+    forms.forEach((f) => {
+      expect(hidden(f, "ds")).toBe("md3");
+      expect(hidden(f, "mode")).toBe("dark");
+    });
+  });
+
+  it("prompt ids are unique so each label names its own field", () => {
+    const el = renderPage();
+    const ids = Array.from(el.querySelectorAll('input[name="prompt"]')).map((i) => i.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("each system card opens the builder in that system", () => {
+    const el = renderPage();
+    const cards = Array.from(
+      el.querySelectorAll<HTMLAnchorElement>("#systems a.lsl-syscard"),
+    ).map((a) => [norm(a.querySelector(".lsl-syscard-name")?.textContent), a.getAttribute("href")]);
+    expect(cards).toEqual([
+      ["Salt DS", "/builder?ds=salt"],
+      ["Material 3", "/builder?ds=md3"],
+      ["Fluent 2", "/builder?ds=fluent"],
+      ["Carbon", "/builder?ds=carbon"],
+      ["uoaui", "/builder?ds=uoaui"],
+    ]);
+  });
+
+  it("the report link uses the template's own chat command", () => {
+    const el = renderPage();
+    const link = Array.from(el.querySelectorAll<HTMLAnchorElement>("#showcase a")).find(
+      (a) => norm(a.textContent) === "Open this report in the builder",
+    );
+    expect(link?.getAttribute("href")).toBe("/builder?prompt=Build+me+an+ESG+Analytics");
+  });
+});
+
+describe("instrument CSS contract", () => {
   const css = readFileSync(CSS_PATH, "utf8");
 
-  it("guards the crossfade under prefers-reduced-motion", () => {
-    expect(reduceBlocks(css)).toContain(".lsl-showcase-panel");
+  it("guards the wipe under prefers-reduced-motion", () => {
+    expect(reduceBlocks(css)).toContain(".lsl-showcase-layer");
+  });
+
+  it("reserves the frame with an aspect-ratio so the swap cannot shift layout", () => {
+    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*aspect-ratio:\s*1760\s*\/\s*1067/);
   });
 
   it("the showcase rules use lsl tokens and leak no raw hex", () => {
@@ -803,5 +1007,16 @@ describe("showcase gallery CSS contract", () => {
     expect(showcaseRules.length).toBeGreaterThan(0);
     expect(showcaseRules).toMatch(/var\(--lsl-/);
     expect(showcaseRules).not.toMatch(/#[0-9a-fA-F]{6}\b/);
+  });
+
+  it("raw hex appears only in the token definitions", () => {
+    const body = css.slice(css.indexOf("background: var(--lsl-bg);"));
+    expect(body).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  });
+
+  it("caps the hero display size for phones in the shared type scale", () => {
+    const globals = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(globals).toMatch(/--lsl-text-display-l:\s*clamp\(34px,/);
+    expect(css).toMatch(/\.lsl-hero-headline\s*\{[^}]*font-size:\s*var\(--lsl-text-display-l\)/);
   });
 });
