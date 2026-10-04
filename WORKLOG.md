@@ -10,6 +10,39 @@ A Next.js 16 app with two main pages:
 
 ---
 
+## 2026-10-04 Session Log - finance templates, slice 2
+
+Branch `feat/finance-templates-slice-2`, stacked on slice 1. ESG Analytics,
+Climate Analytics, Screening and Screening Changes. Detail in CHANGELOG.md.
+
+- `dataGridModel.ts`: `GridCell` and its pure rules; `SimulatedDataGrid.tsx` draws them.
+- `SimulatedHighchart.tsx`: waterfall, score gauge, point colours, selection.
+- `reportData/binding.ts`: views `records` and `value`, signed parts, rank, selections.
+- `recordPanelModel.ts` + `RecordPanel.tsx`: the detail of a selected record.
+- `reportData/sustainableDataset.ts`: the sample dataset (seeded, deterministic).
+- `sustainableTemplates.ts`: the four templates.
+- e2e: `builder-finance-templates.spec.ts` now covers six templates (29 tests).
+
+Notes for the next session:
+- The source inventory for every remaining report is in
+  `~/Documents/projects/desinghub-review/2026-10-04/inventory-slices-2-4.md`
+  (outside the repo: it names the client reports). Section 3 is slice 3
+  (issuer reports, scorecard, home), sections 4 and 6 the FX dashboard,
+  section 5 the building blocks still missing.
+- Three decisions in the design note are marked **Review** for the owner: real
+  data instead of the source's staged effects, the detail as a fixed panel,
+  and leaving out the filter side panel.
+- The bar cell in the two breakdown grids is scaled to the column's largest
+  value. The ESG source scales it to 100; at these weights that left every bar
+  a sliver.
+- Long issuer names are cut in the two ESG ranking grids at 6 of 12 columns
+  ("Federal Republic o..."). The full name is in the expanded panel.
+- With a sidebar the tablet frame's body is narrow enough to use the phone
+  fold (every panel full width). It reads well; a real tablet tier for
+  sidebar layouts would need the sidebar to collapse.
+
+---
+
 ## 2026-10-04 Session Log - finance templates, slice 1
 
 Branch `feat/finance-templates-slice-1`, stacked on `fix/trust-fixes-chat-parity`.
