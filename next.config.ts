@@ -1,6 +1,40 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+/* Keep static rendering: Next's bootstrap and the five CSS-in-JS systems
+   require inline scripts/styles. This is a baseline CSP, not an XSS cure.
+   Restrict executable/network origins; never allow the browser to call the
+   model API. External HTTPS images remain supported until the share-policy
+   change in QA item 3. See docs/security-headers.md. */
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
+  "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob:",
+  `connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebaseinstallations.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
+  "frame-src https://vercel.live",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "Content-Security-Policy", value: csp },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ],
+    }];
+  },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   /* Tree-shake large packages that expose everything as top-level named
      exports. Without this, a barrel import (`import * as CarbonIcons from
