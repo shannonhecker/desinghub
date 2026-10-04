@@ -377,7 +377,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
           {EXECUTION_RANGES.map((r) => {
             const on = r === view.range && !custom;
             return (
-              <button key={r} type="button" className={`dh-exec-range${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => { setCustomLabel(null); if (r === view.range) nav.reset(); else setReportState(EXECUTION_KEYS.range, r); }}>
+              <button key={r} type="button" className={`dh-exec-range${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => { setCustomLabel(null); if (r === view.range) nav.reset(); setReportState(EXECUTION_KEYS.range, r); }}>
                 {r === "Order" ? "Order" : r}
               </button>
             );

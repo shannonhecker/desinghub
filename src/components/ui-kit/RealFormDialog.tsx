@@ -294,7 +294,7 @@ function CarbonForm({ mode, model }: Omit<Props, "system">) {
             {model.calendar ? <MonthCalendar model={model.calendar} system="carbon" /> : null}
             <Rows model={model} render={(f) => (
               <CarbonTextInput id={f.id} labelText={f.label} type={f.type} value={f.value} placeholder={f.placeholder} size="md" min={f.min} max={f.max}
-                invalid={Boolean(f.error)} invalidText={f.error ?? undefined} onChange={(e) => f.onChange(e.target.value)} />
+                invalid={Boolean(f.error)} invalidText={f.error ?? undefined} aria-describedby={f.error ? `${f.id}-error-msg` : undefined} onChange={(e) => f.onChange(e.target.value)} />
             )} />
           </form>
         </CarbonModal>

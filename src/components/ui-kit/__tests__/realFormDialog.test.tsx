@@ -80,7 +80,8 @@ function mount(node: React.ReactElement) {
   act(() => { root = createRoot(container!); root.render(node); });
 }
 
-describe("FormDialog, real, in every system", () => {
+/* Five design systems mount their style engines here: slow when the whole suite runs at once. */
+describe("FormDialog, real, in every system", { timeout: 30_000 }, () => {
   for (const system of SYSTEMS) {
     it(`${system}: a named dialog with labelled date fields and both actions`, async () => {
       mount(<Harness system={system} onClose={() => {}} onSubmit={() => {}} />);

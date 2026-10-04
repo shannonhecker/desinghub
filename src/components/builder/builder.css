@@ -11043,7 +11043,8 @@
   font-size: var(--dh-cell-small);
   box-shadow: var(--ds-shadow, none);
 }
-.dh-exec-hint p { margin: 0; line-height: 1.35; }
+.dh-exec-hint p { flex: 1 1 auto; min-width: 0; margin: 0; line-height: 1.35; white-space: normal; }
+.dh-exec-hint > :not(p) { flex: none; }
 .dh-exec-hint button {
   appearance: none; flex: none; min-height: var(--dh-inline-control-h); padding: 0 var(--dh-nav-pad);
   border: 0; border-radius: var(--ds-radius); background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
@@ -11078,8 +11079,13 @@
 .dh-form-dialog-carbon .cds--modal-close-button .cds--popover-container,
 .dh-form-dialog-carbon .cds--modal-close-button .cds--tooltip-trigger__wrapper { display: flex; justify-content: flex-end; width: auto; box-shadow: none; filter: none; }
 .dh-form-dialog-carbon .cds--modal-close-button .cds--popover { display: none; }
-.dh-form-dialog-scope .dh-form-dialog-actions { margin-top: var(--dh-report-gutter); }
-.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-cal { margin: 0 auto var(--dh-nav-inset); }
+/* uoaui's resting tab colour is too faint on its glass dialog: its secondary text colour. */
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .a-tab:not(.active) { color: var(--cal-muted); }
+/* Its error red is under 4.5:1 on the light glass: the label stays the text colour (the underline and the message carry the error). */
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .a-input-error .a-input-label { color: var(--cal-fg); }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-actions { margin-top: var(--dh-report-gutter); }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-cal { margin: var(--dh-nav-inset) auto; }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-form-dialog-note { margin: 0 0 var(--dh-nav-inset); }
 
 .dh-cal, .dh-form-dialog .dh-cal { --cal-cell: var(--dh-cal-cell); width: max-content; max-width: 100%; margin: 0 auto var(--dh-nav-inset); color: var(--cal-fg); font-family: var(--cal-font, inherit); }
 .dh-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--dh-cell-gap) / 2); }
