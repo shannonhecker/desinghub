@@ -30,7 +30,20 @@
  * inert (readOnly / static state) to match the store-free gallery demo.
  */
 
-import { dropdownModel } from "@/lib/dropdownModel";
+import { dropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
+
+/** An inline dropdown: its label on the left, the control on the right, on
+ *  one line (see InlineField in RealComponentRenderer). */
+function inlineField(label: string, control: React.ReactNode): React.ReactElement {
+  return React.createElement(
+    "span",
+    { className: "dh-inline-field", style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0, width: "100%" } },
+    label
+      ? React.createElement("span", { className: "dh-inline-label", "aria-hidden": "true", style: { flex: "none", fontSize: INLINE_LABEL_FONT, lineHeight: 1, whiteSpace: "nowrap", color: "var(--ds-fg-secondary)" } }, label)
+      : null,
+    React.createElement("span", { className: "dh-inline-control", style: { flex: "1 1 0", minWidth: 0, display: "block" } }, control),
+  );
+}
 import React from "react";
 import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import {
@@ -355,13 +368,20 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
         /* Compact (a panel header's "View by"): a shorter trigger, so it
            sits inside the fixed header row like the other systems' small
            selects. */
-        { className: "a-dropdown-trigger", "aria-hidden": "true", style: m.compact ? { height: 32, padding: "0 10px", fontSize: 12 } : undefined },
+        {
+          className: "a-dropdown-trigger",
+          "aria-hidden": "true",
+          style: m.inline
+            /* Inline: an underline on a transparent ground, at toolbar height. */
+            ? { height: INLINE_DROPDOWN_HEIGHT, padding: 0, paddingLeft: 4, paddingRight: 2, fontSize: INLINE_DROPDOWN_FONT, background: "transparent", backdropFilter: "none", borderRadius: 0, borderBottomWidth: 1, gap: 4 }
+            : m.compact ? { height: 32, padding: "0 10px", fontSize: 12 } : undefined,
+        },
         React.createElement(
           "span",
           { style: { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...(m.value ? {} : { opacity: 0.6 }) } },
           m.value || m.placeholder,
         ),
-        React.createElement("span", { className: "material-symbols-outlined" }, "expand_more"),
+        React.createElement("span", { className: "material-symbols-outlined", style: m.inline ? { fontSize: 16 } : undefined }, "expand_more"),
       ),
       React.createElement(
         "select",
@@ -376,6 +396,7 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
         ...m.options.map((o) => React.createElement("option", { key: o, value: o }, o)),
       ),
     );
+    if (m.inline) return inlineField(m.label, trigger);
     if (!m.label) return trigger;
     /* Label above the field, like the other systems' labelled fields: beside
        it, a narrow filter left too little room and the value wrapped. */
@@ -602,12 +623,15 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedDropdown: (p, ctx) => {
     const m = dropdownModel(p);
     const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
-    return React.createElement(CarbonDropdown, {
+    const dropdown = React.createElement(CarbonDropdown, {
       key: onChange ? undefined : m.value,
       id: fieldId(p, "dropdown"),
-      size: m.compact ? "sm" : carbonSize(densityOf(ctx)),
+      size: m.compact || m.inline ? "sm" : carbonSize(densityOf(ctx)),
+      /* Inline: Carbon's own inline dropdown; the label beside it is ours,
+         so Carbon's title is kept for assistive tech only. */
+      ...(m.inline ? { type: "inline" as const, "aria-label": m.label || m.placeholder } : {}),
       titleText: m.label,
-      hideLabel: !m.label,
+      hideLabel: m.inline || !m.label,
       label: m.placeholder,
       items: m.options,
       /* Controlled when the caller wired a change handler (report state). */
@@ -616,6 +640,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
         : { initialSelectedItem: m.value || undefined }),
       itemToString: (item: unknown) => s(item),
     });
+    return m.inline ? inlineField(m.label, dropdown) : dropdown;
   },
 
   SimulatedSearchbox: (p, ctx) =>

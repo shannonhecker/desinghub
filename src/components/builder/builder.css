@@ -10451,6 +10451,7 @@
   .dh-topnav .dh-topnav-links, .dh-topnav .dh-topnav-divider, .dh-topnav .dh-topnav-account-name { display: none; }
   .bp-header .dh-topnav, .bp-header .dh-tabstrip { padding-inline: var(--bc-gutter-narrow); gap: var(--bc-bar-gap-narrow); }
 }
+.dh-page-title.dh-page-title-2 { font-size: var(--dh-panel-title-size); }
 /* ── Page title (ChromeBars.tsx): one fixed size in every design system ── */
 .dh-page-title-wrap {
   font-family: var(--ds-font);
@@ -10608,6 +10609,120 @@
   place-items: center;
   color: var(--dh-chrome-fg-dim);
 }
+/* ── Context bar (ChromeBars.tsx): the page's title and its filters ── */
+.dh-contextbar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bc-bar-gap);
+  min-height: var(--bc-contextbar-h);
+  padding-inline: var(--bc-gutter);
+  background: var(--dh-card, var(--dh-chrome-bg));
+  color: var(--dh-chrome-fg);
+  border-bottom: var(--bc-hairline) solid var(--dh-chrome-line);
+  font-family: var(--ds-font);
+}
+.dh-contextbar-title {
+  flex: none;
+  margin: 0;
+  font: inherit;
+  font-size: var(--bc-contextbar-title);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.dh-contextbar-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0 var(--bc-bar-gap);
+  min-width: 0;
+}
+.dh-contextbar-filter {
+  flex: 0 0 auto;
+  width: var(--bc-contextbar-filter-w);
+  height: var(--bc-contextbar-h);
+  display: flex;
+  align-items: center;
+}
+.dh-contextbar-filter > * { flex: 1 1 auto; min-width: 0; }
+/* On a narrow frame the title takes its own line and the filters wrap. */
+@container chrome-header (max-width: 35rem) {
+  .dh-contextbar { flex-direction: column; align-items: stretch; gap: 0; padding-inline: var(--bc-gutter-narrow); padding-block: calc(var(--bc-bar-gap-narrow) / 2) 0; }
+  .dh-contextbar-filters { justify-content: flex-start; gap: 0 var(--bc-bar-gap-narrow); }
+}
+
+/* ── Inline dropdown (dropdownModel `inline`): label beside an underlined
+   control. The control is clamped to one height in every design system. ── */
+.dh-inline-control { max-height: var(--dh-inline-control-h); }
+.dh-inline-control > * { max-height: var(--dh-inline-control-h); }
+/* Carbon's inline dropdown is a medium control by default; here it is the
+   same compact underlined select the other four systems draw. */
+.dh-inline-field .dh-inline-control .cds--dropdown.cds--list-box {
+  height: var(--dh-inline-control-h);
+  width: 100%;
+  min-height: 0;
+  max-height: var(--dh-inline-control-h);
+  background: transparent;
+  border-bottom: thin solid var(--ds-border-strong, var(--ds-border));
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__field {
+  height: var(--dh-inline-control-h);
+  padding-inline: 0 calc(var(--dh-inline-control-h) + 0.25rem);
+  width: 100%;
+}
+.dh-inline-field .dh-inline-control .cds--list-box__wrapper--inline {
+  display: block;
+  width: 100%;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__label {
+  font-size: var(--dh-inline-font);
+  line-height: 1;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-icon {
+  inset-inline-end: 0.25rem;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-item { height: var(--dh-inline-control-h); }
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-item__option {
+  height: var(--dh-inline-control-h);
+  font-size: var(--dh-inline-font);
+  line-height: var(--dh-inline-control-h);
+  padding-block: 0;
+}
+
+/* ── Report surfaces ──
+   A report page is cards on a canvas. In light mode the canvas is a grey a
+   step down from the system's background and the cards are that background
+   (white); in dark mode the cards are the system's raised surface on its
+   background. Only for templates that pin their structure. ── */
+[data-uniform-structure] .bp-dashboard {
+  --dh-canvas: var(--ds-bg);
+  --dh-card: var(--ds-surface);
+  --bc-gutter: var(--dh-report-gutter);
+}
+[data-uniform-structure] .builder-light .bp-dashboard,
+[data-uniform-structure] .builder-light.bp-dashboard {
+  --dh-canvas: color-mix(in srgb, var(--ds-fg) 6%, var(--ds-bg));
+  --dh-card: var(--ds-bg);
+}
+[data-uniform-structure] .bp-main,
+[data-uniform-structure] .bp-main > .preview-canvas-root {
+  background: var(--dh-canvas);
+}
+/* A plain canvas (a start page): the content sits on the card colour. */
+[data-uniform-structure] .builder-light .bp-main[data-plain],
+[data-uniform-structure] .builder-light .bp-main[data-plain] > .preview-canvas-root {
+  background: var(--dh-card);
+}
+/* The canvas has one gutter all round, and uses the frame's full width. */
+[data-uniform-structure] .bp-main > .preview-canvas-root {
+  max-width: 100%;
+  padding: var(--dh-report-gutter);
+}
+[data-uniform-structure] .bp-sidebar { background: var(--dh-card); }
+
 .dh-navgroup {
   padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
   font-family: var(--ds-font);
@@ -10639,7 +10754,7 @@
   height: var(--dh-panel-h);
   min-width: 0;
   overflow: hidden;
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg);
   /* The system's secondary separator: its primary border reads as a hard
      white line around every card in the dark themes. */
@@ -10752,35 +10867,55 @@
   outline: var(--dh-focus-ring) solid var(--ds-primary);
   outline-offset: var(--bc-hairline);
 }
-/* The tools stay out of the way until the panel is pointed at or focused. */
-.dh-panel:not(.dh-panel-expanded) .dh-panel-tools {
-  opacity: 0;
-  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+/* The tools are always shown: a control that only appears on hover is one
+   people do not find. In a panel too narrow for them (below) they give way. */
+/* A panel too narrow for "View by" beside its select keeps the select. */
+@container dh-panel (max-width: 28rem) {
+  .dh-panel-viewby .dh-inline-label { display: none; }
+  .dh-panel-header:has(.dh-panel-viewby) .dh-panel-subtitle { display: none; }
 }
-.dh-panel:hover .dh-panel-tools,
-.dh-panel:focus-within .dh-panel-tools {
-  opacity: 1;
-}
-@media (hover: none) {
-  .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { opacity: 1; }
-}
-/* A narrow panel (a phone, a three-across row on a tablet) has no room to
-   hold the tools' space open: they take none until the panel is pointed at
-   or focused, the subtitle goes, and on touch only Expand stays (Configure
-   is in the expanded view). */
+/* A narrow panel (a phone, a three-across row) drops the subtitle, and on
+   touch keeps only Expand (Configure is in the expanded view). The tools
+   stay visible: a control that only appears on hover is one people miss. */
 .dh-panel { container-type: inline-size; container-name: dh-panel; }
 @container dh-panel (max-width: 21.25rem) {
   .dh-panel:not(.dh-panel-expanded) .dh-panel-subtitle { display: none; }
-  .dh-panel:not(.dh-panel-expanded):not(:hover):not(:focus-within) .dh-panel-tools {
-    width: 0;
-    margin: 0;
-    overflow: hidden;
+  /* A long title takes a second line (the header has room for two) before
+     it is cut. */
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-title {
+    white-space: normal;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
   @media (hover: none) {
-    .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { width: auto; overflow: visible; }
     .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
   }
 }
+/* A tile-sized panel (a gauge) keeps its title whole: only Expand stays, and
+   Configure is in the expanded view. */
+@container dh-panel (max-width: 13.75rem) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
+}
+/* Stacked header (PanelFrame sets it on a narrow panel with a "View by"):
+   the title on the first line, the select and the tools on the second. */
+.dh-panel.is-stacked .dh-panel-header {
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 0;
+  flex-basis: calc(var(--dh-panel-header-h) + var(--dh-panel-stack-row));
+  height: calc(var(--dh-panel-header-h) + var(--dh-panel-stack-row));
+}
+.dh-panel.is-stacked .dh-panel-header .dh-panel-heading {
+  flex: 1 0 100%;
+  max-width: 100%;
+}
+.dh-panel.is-stacked .dh-panel-viewby {
+  flex: 1 1 auto;
+}
+.dh-panel.is-stacked .dh-panel-viewby .dh-inline-label { display: revert; }
 
 /* Expanded: the panel is portalled into .bp-main, whose other content is
    hidden. The slot fills the body's visible height. */
@@ -10814,7 +10949,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg);
   border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
   border-radius: var(--ds-radius);
@@ -10836,6 +10971,10 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--bc-expand-gap) * 0.75);
+}
+.dh-config-field .dh-inline-label {
+  min-width: 40%;
+  white-space: normal;
 }
 .dh-config-heading {
   margin: calc(var(--bc-expand-gap) / 2) 0 0;
@@ -10997,6 +11136,14 @@
   font-family: var(--ds-font);
   color: var(--ds-fg);
 }
+/* As a card: the report's own header panel. */
+.dh-entity.dh-entity-card {
+  box-sizing: border-box;
+  padding-inline: var(--dh-panel-pad);
+  background: var(--dh-card, var(--ds-surface));
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+}
 .dh-entity-main { display: flex; align-items: center; gap: calc(var(--dh-cell-gap) * 1.5); min-width: 0; }
 .dh-entity-eyebrow,
 .dh-entity-suffix { font-size: var(--dh-panel-meta-size); color: var(--ds-fg-tertiary); white-space: nowrap; }
@@ -11033,7 +11180,7 @@
   height: 100%;
   min-width: 0;
   padding: var(--dh-panel-pad);
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg);
   border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
   border-radius: var(--ds-radius);
@@ -11079,7 +11226,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   flex-direction: column;
   gap: calc(var(--dh-cell-gap) * 1.5);
   padding: var(--dh-panel-pad);
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg);
   border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
   border-radius: var(--ds-radius);
@@ -11126,7 +11273,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--dh-cell-gap);
   height: 100%;
   padding: var(--dh-panel-pad);
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg);
   border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
   border-top: var(--dh-launcher-accent) solid var(--dh-tone);
@@ -11185,7 +11332,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   margin-top: var(--dh-cell-gap);
   padding-left: var(--dh-panel-pad);
   padding-right: calc(var(--dh-cell-gap) / 2);
-  background: var(--ds-surface);
+  background: var(--dh-card, var(--ds-surface));
   color: var(--ds-fg-tertiary);
   border: var(--bc-hairline, thin) solid var(--ds-border);
   border-radius: var(--ds-radius);
@@ -11242,6 +11389,20 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   letter-spacing: 0.02em;
   color: var(--ds-fg-tertiary);
 }
+/* One pair per line: the label on the left, its value on the right. */
+.dh-record-pairs.is-rows {
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--dh-panel-pad) * 0.4);
+}
+.dh-record-pairs.is-rows .dh-record-pair {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dh-panel-pad);
+}
+.dh-record-pairs.is-rows .dh-record-pair dt { margin: 0; }
+.dh-record-pairs.is-rows .dh-record-pair dd { font-weight: 600; text-align: right; }
+.dh-panel.has-accent { border-inline-start: var(--dh-nav-bar) solid var(--dh-panel-accent); }
 .dh-record-pair dd {
   margin: 0;
   overflow: hidden;
@@ -12441,6 +12602,70 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .bp-sidebar-toggle:focus-visible {
   box-shadow: 0 0 0 2px var(--bc-accent-ring);
+}
+
+/* ── Dense text navigation (zoneLayouts.sidebar.dense) ──
+   Application chrome: short rows of text under section labels, an accent bar
+   on the active item, and a fold to a rail of two-letter codes. ── */
+.bp-sidebar[data-dense] .bp-sidebar-nav { gap: 0; padding: var(--dh-nav-pad) 0; }
+.bp-sidebar[data-dense] .canvas-block { padding: 0; margin: 0; }
+.bp-sidebar[data-dense] .bp-nav-item {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--dh-nav-row);
+  padding: 0 var(--dh-nav-inset);
+  gap: var(--dh-cell-gap);
+  border-radius: 0;
+  border-left: var(--dh-nav-bar) solid transparent;
+  font-family: var(--ds-font);
+  font-size: var(--dh-nav-size);
+  color: var(--ds-fg);
+}
+.bp-sidebar[data-dense] .bp-nav-item--active {
+  border-left-color: var(--ds-primary);
+  background: color-mix(in srgb, var(--ds-primary) 10%, transparent);
+  color: var(--ds-fg);
+  font-weight: 600;
+}
+.bp-sidebar[data-dense] .dh-navgroup {
+  padding: var(--dh-nav-group-pad) var(--dh-nav-inset) calc(var(--dh-nav-pad) / 2) calc(var(--dh-nav-inset) + var(--dh-nav-bar));
+}
+/* Folded: codes centred in a taller row; a section label becomes a rule. */
+.bp-sidebar[data-dense][data-collapsed] .bp-nav-item {
+  justify-content: center;
+  min-height: var(--dh-nav-row-rail);
+  padding: 0;
+}
+.bp-nav-abbr {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ds-fg-secondary);
+}
+.bp-nav-item--active .bp-nav-abbr { color: var(--ds-fg); }
+.bp-sidebar[data-collapsed] .dh-navgroup {
+  height: 0;
+  margin: calc(var(--dh-nav-pad) / 2) var(--dh-nav-inset);
+  padding: 0;
+  overflow: hidden;
+  border-top: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  font-size: 0;
+}
+.bp-sidebar[data-collapsed] .zone-drop-container > :first-child .dh-navgroup { border-top-width: 0; margin-block: 0; }
+/* The fold control: a plain icon at the foot of the nav, in the canvas's
+   own colours (it is part of the application, not of the builder). */
+.bp-sidebar[data-dense] .bp-sidebar-toggle {
+  align-self: flex-start;
+  margin: var(--dh-nav-pad) var(--dh-nav-inset);
+  border: 0;
+  background: none;
+  color: var(--ds-fg-secondary);
+}
+.bp-sidebar[data-dense][data-collapsed] .bp-sidebar-toggle { align-self: center; margin-inline: 0; }
+.bp-sidebar[data-dense] .bp-sidebar-toggle:hover,
+.bp-sidebar[data-dense] .bp-sidebar-toggle:focus-visible {
+  background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: var(--ds-fg);
 }
 
 /* ── Dashboard sidebar resize handle ──

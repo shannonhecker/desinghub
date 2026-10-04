@@ -63,6 +63,13 @@ export function summarizeBlock(b: Block, reportState: Record<string, string> = {
   if (b.type === "NavItem" && props.active) parts.push("active");
   /* Report controls: the key a setReportFilter call names, the current
      value and the choices, so "switch to USD" or "view by sector" resolves. */
+  if (Array.isArray(props.filters)) {
+    for (const f of props.filters as { stateKey?: unknown; value?: unknown; options?: unknown }[]) {
+      if (!f || typeof f.stateKey !== "string" || !f.stateKey) continue;
+      const options = Array.isArray(f.options) ? f.options.map((o) => String(o).trim()).filter(Boolean) : [];
+      parts.push(`filter=${f.stateKey}:${clip(reportState[f.stateKey] ?? String(f.value ?? ""))}${optionList(options)}`);
+    }
+  }
   if (typeof props.stateKey === "string" && props.stateKey) {
     const options = String(props.optionsCsv ?? "").split(",").map((o) => o.trim()).filter(Boolean);
     parts.push(`filter=${props.stateKey}:${clip(reportState[props.stateKey] ?? String(props.value ?? ""))}${optionList(options)}`);

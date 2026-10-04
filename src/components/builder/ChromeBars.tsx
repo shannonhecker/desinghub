@@ -4,6 +4,9 @@ import React from "react";
 import { ChevronDown, Plus, User } from "lucide-react";
 import { useBuilder, ZONE_TONES, type Block, type DesignSystem, type ZoneTone } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
+import { ComponentRenderer } from "./ComponentRenderer";
+import { BUILDER_TEMPLATES, VALID_TEMPLATE_IDS, type TemplateId } from "@/lib/builderTemplates";
+import { openTemplateLink } from "@/lib/applyTemplate";
 
 /* ══════════════════════════════════════════════════════════
    ChromeBars - application chrome as blocks.
@@ -106,6 +109,15 @@ export function TabStripBlock({ blockId, ...p }: BarProps) {
   const tabs = csv(p.tabsCsv, ["Overview", "Reports"]);
   const active = String(p.active ?? tabs[0]);
   const tone = toneOf(p.tone, "dark");
+  const designSystem = useBuilder((s) => s.designSystem);
+  /* A tab can name a template (`templates`: tab label -> template id): while
+     presenting, choosing it opens that report, so a set of templates behaves
+     as one application. In Edit a tab is only marked active. */
+  const templates = (p.templates && typeof p.templates === "object" ? p.templates : {}) as Record<string, unknown>;
+  const templateOf = (label: string): TemplateId | null => {
+    const id = templates[label];
+    return typeof id === "string" && (VALID_TEMPLATE_IDS as readonly string[]).includes(id) ? (id as TemplateId) : null;
+  };
   return (
     <nav className={`dh-tabstrip dh-tone dh-tone-${tone}`} aria-label={String(p.label ?? "Workspaces")}>
       {tabs.map((label) => (
@@ -114,7 +126,12 @@ export function TabStripBlock({ blockId, ...p }: BarProps) {
           type="button"
           className={`dh-tabstrip-tab${label === active ? " is-active" : ""}`}
           aria-current={label === active ? "page" : undefined}
-          onClick={(e) => { if (readOnly) e.stopPropagation(); update({ active: label }); }}
+          onClick={(e) => {
+            if (readOnly) e.stopPropagation();
+            const templateId = templateOf(label);
+            if (readOnly && templateId) { if (label !== active) openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem); return; }
+            update({ active: label });
+          }}
         >
           {label}
         </button>
@@ -123,6 +140,42 @@ export function TabStripBlock({ blockId, ...p }: BarProps) {
         <span className="dh-tabstrip-add" aria-hidden="true"><Plus size={15} strokeWidth={1.8} /></span>
       ) : null}
     </nav>
+  );
+}
+
+/* ── ContextBar: the page's title and its filters, on one line ──
+   The bar under the workspace tabs: what page this is on the left, the
+   controls that scope it on the right. Each filter is the active system's
+   own inline dropdown, wired to report state by its `stateKey`. */
+export interface ContextFilter {
+  label: string;
+  stateKey: string;
+  value: string;
+  options: string[];
+}
+export function contextFiltersOf(props: Record<string, unknown>): ContextFilter[] {
+  if (!Array.isArray(props.filters)) return [];
+  return props.filters.filter(
+    (f): f is ContextFilter => Boolean(f) && typeof f === "object" && typeof (f as ContextFilter).label === "string" && typeof (f as ContextFilter).stateKey === "string" && Array.isArray((f as ContextFilter).options),
+  );
+}
+
+export function ContextBarBlock({ system, ...p }: BarProps) {
+  const filters = contextFiltersOf(p);
+  const tone = toneOf(p.tone, "surface");
+  return (
+    <div className={`dh-contextbar dh-tone dh-tone-${tone}`}>
+      <h1 className="dh-contextbar-title">{String(p.title ?? "Page")}</h1>
+      {filters.length > 0 ? (
+        <div className="dh-contextbar-filters" role="group" aria-label="Filters">
+          {filters.map((f) => (
+            <div key={f.stateKey} className="dh-contextbar-filter">
+              <ComponentRenderer type="SimulatedDropdown" system={system} {...{ label: f.label, value: f.value, options: f.options, stateKey: f.stateKey, inline: true }} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -137,9 +190,11 @@ export function NavGroupBlock({ ...p }: BarProps) {
    context row cannot absorb. A page title is therefore one fixed size, in
    the active system's font and colour. */
 export function PageTitleBlock({ ...p }: BarProps) {
+  /* Level 2: a section heading inside a page whose title is in the context bar. */
+  const Tag = p.level === 2 ? "h2" : "h1";
   return (
     <div className="dh-page-title-wrap">
-      <h1 className="dh-page-title">{String(p.text ?? "Page title")}</h1>
+      <Tag className={`dh-page-title${p.level === 2 ? " dh-page-title-2" : ""}`}>{String(p.text ?? "Page title")}</Tag>
       {p.caption ? <p className="dh-page-caption">{String(p.caption)}</p> : null}
     </div>
   );

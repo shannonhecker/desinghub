@@ -25,7 +25,7 @@ const toneStyle = (tone: GridTone): React.CSSProperties => ({ "--dh-tone": toneC
 function Section({ section, system }: { section: ResolvedSection; system: DesignSystem }) {
   if (section.type === "pairs") {
     return (
-      <dl className="dh-record-pairs">
+      <dl className={`dh-record-pairs${section.layout === "rows" ? " is-rows" : ""}`}>
         {section.items.map((item) => (
           <div key={item.label} className="dh-record-pair">
             <dt>{item.label}</dt>
@@ -110,6 +110,7 @@ export function RecordPanelBlock({ system, blockId }: { system: DesignSystem; bl
       title={record ? record.title : fallbackTitle}
       subtitle={record && p.clearable !== false ? fallbackTitle : undefined}
       height={panelHeightOf(p)}
+      accent={typeof p.accent === "string" && p.accent ? toneColor(p.accent as GridTone) : undefined}
     >
       {(height) => (
         <div className="dh-record" style={{ height }}>

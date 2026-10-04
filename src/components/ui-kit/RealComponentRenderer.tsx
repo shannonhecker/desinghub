@@ -67,7 +67,7 @@ import {
   type DensityLevel,
 } from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
-import { dropdownModel, type DropdownModel } from "@/lib/dropdownModel";
+import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
 import {
   SaltProvider,
@@ -249,6 +249,22 @@ const COVERAGE: Record<SystemId, Set<string>> = {
    so a prop edit re-seeds the selection. ── */
 type DropdownChange = ((value: string) => void) | undefined;
 
+/** An inline dropdown: its label on the left, the control on the right, on
+ *  one line. The label is ours (the same in every system); the control is
+ *  the system's own underlined dropdown. */
+function InlineField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <span className="dh-inline-field" style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, width: "100%" }}>
+      {label ? (
+        <span className="dh-inline-label" aria-hidden="true" style={{ flex: "none", fontSize: INLINE_LABEL_FONT, lineHeight: 1, whiteSpace: "nowrap", color: "var(--ds-fg-secondary)" }}>
+          {label}
+        </span>
+      ) : null}
+      <span className="dh-inline-control" style={{ flex: "1 1 0", minWidth: 0, display: "block" }}>{children}</span>
+    </span>
+  );
+}
+
 function SaltDropdownField({ model, onChange }: { model: DropdownModel; onChange: DropdownChange }) {
   const dropdown = (
     <SaltDropdown
@@ -258,12 +274,25 @@ function SaltDropdownField({ model, onChange }: { model: DropdownModel; onChange
         ? { selected: model.value ? [model.value] : [], onSelectionChange: (_e: unknown, selected: string[]) => { if (selected[0]) onChange(selected[0]); } }
         : { defaultSelected: model.value ? [model.value] : [] })}
       aria-label={model.label || model.placeholder}
+      /* Inline: Salt's primary dropdown - an underline on the surface it
+         sits on (white on a white card), not the grey "secondary" fill. */
+      {...(model.inline ? { variant: "primary" as const, style: { width: "100%", minWidth: 0, background: "transparent" } } : {})}
     >
       {model.options.map((o) => (
         <SaltOption key={o} value={o}>{o}</SaltOption>
       ))}
     </SaltDropdown>
   );
+  if (model.inline) {
+    /* Salt's high density is the small control of a dense toolbar. */
+    return (
+      <InlineField label={model.label}>
+        <SaltProvider density="high" applyClassesTo="scope">
+          <span style={{ display: "block" }}>{dropdown}</span>
+        </SaltProvider>
+      </InlineField>
+    );
+  }
   if (!model.label) return dropdown;
   return (
     <SaltFormField labelPlacement="left">
@@ -276,6 +305,28 @@ function SaltDropdownField({ model, onChange }: { model: DropdownModel; onChange
 function MuiDropdownField({ model, onChange }: { model: DropdownModel; onChange: DropdownChange }) {
   const id = React.useId();
   const label = model.label || model.placeholder;
+  if (model.inline) {
+    /* Inline: MUI's "standard" (underlined) select, at toolbar height. */
+    return (
+      <InlineField label={model.label}>
+        <MuiFormControl fullWidth variant="standard" size="small">
+          <MuiSelect
+            variant="standard"
+            key={onChange ? undefined : model.value}
+            sx={{ height: INLINE_DROPDOWN_HEIGHT, fontSize: INLINE_DROPDOWN_FONT, "& .MuiSelect-select": { paddingTop: 0, paddingBottom: 0, paddingLeft: 0.5 } }}
+            inputProps={{ "aria-label": label }}
+            {...(onChange
+              ? { value: model.value, onChange: (e: { target: { value: unknown } }) => onChange(String(e.target.value)) }
+              : { defaultValue: model.value })}
+          >
+            {model.options.map((o) => (
+              <MuiMenuItem key={o} value={o} dense>{o}</MuiMenuItem>
+            ))}
+          </MuiSelect>
+        </MuiFormControl>
+      </InlineField>
+    );
+  }
   /* Compact (toolbar / panel header): the small size, and an accessible name
      instead of the floating label, which needs the full field height. */
   return (
@@ -311,8 +362,10 @@ function FluentDropdownField({ model, size, onChange }: { model: DropdownModel; 
             onOptionSelect: (_e: unknown, data: { optionValue?: string }) => { if (data.optionValue) onChange(data.optionValue); },
           }
         : { defaultValue: model.value || undefined, defaultSelectedOptions: model.value ? [model.value] : [] })}
-      aria-label={model.label ? undefined : model.placeholder}
-      size={model.compact ? "small" : size}
+      aria-label={model.inline ? model.label || model.placeholder : model.label ? undefined : model.placeholder}
+      size={model.compact || model.inline ? "small" : size}
+      /* Inline: Fluent's underlined dropdown. */
+      {...(model.inline ? { appearance: "underline" as const } : {})}
       style={{ minWidth: 0, width: "100%" }}
     >
       {model.options.map((o) => (
@@ -320,6 +373,7 @@ function FluentDropdownField({ model, size, onChange }: { model: DropdownModel; 
       ))}
     </FluentDropdown>
   );
+  if (model.inline) return <InlineField label={model.label}>{dropdown}</InlineField>;
   if (!model.label) return dropdown;
   return (
     /* Label above the field: beside it, the label takes a fixed third of

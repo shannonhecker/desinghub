@@ -20,7 +20,17 @@ export interface DropdownModel {
   /** Draw the smallest form of the control, with no visible label: for a
    *  dropdown inside a toolbar or a panel header. */
   compact: boolean;
+  /** Draw the dense, underlined form with its label BESIDE it, on one line
+   *  ("View by  Account v"): the filter of a toolbar, a context bar or a
+   *  panel header. Each design system uses its own underlined variant. */
+  inline: boolean;
 }
+
+/** Height of an inline dropdown's control, the same in every design system. */
+export const INLINE_DROPDOWN_HEIGHT = 24;
+/** Text size of an inline dropdown and of its label. */
+export const INLINE_DROPDOWN_FONT = 12;
+export const INLINE_LABEL_FONT = 11;
 
 /** Choices for a bare dropdown dropped from the library with no content yet. */
 export const DEFAULT_DROPDOWN_OPTIONS = ["Option 1", "Option 2", "Option 3"];
@@ -41,5 +51,5 @@ export function dropdownModel(props: Record<string, unknown>): DropdownModel {
         .filter(Boolean);
   if (options.length === 0) options = value ? [value] : [...DEFAULT_DROPDOWN_OPTIONS];
   else if (value && !options.includes(value)) options = [value, ...options];
-  return { label, value, placeholder, options, compact: props.compact === true };
+  return { label, value, placeholder, options, compact: props.compact === true, inline: props.inline === true };
 }

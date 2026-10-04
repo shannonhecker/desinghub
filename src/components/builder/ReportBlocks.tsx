@@ -59,8 +59,11 @@ export function EntityHeaderBlock({ blockId }: Props) {
   const title = row && isRowLookup(p.binding) ? String(row[(p.binding as RowLookup).keyField] ?? "") : str(p.title, "Entity");
   const facts = list<{ label: string; field: string }>(p.facts);
   const badges = list<{ field: string; tone: GridTone; label: string }>(p.badges);
+  /* What the entity is set against ("vs Helios Energy"): a second lookup. */
+  const other = useRow(p.suffixBinding);
+  const suffix = other && isRowLookup(p.suffixBinding) ? `${str(p.suffixPrefix, "vs")} ${String(other[(p.suffixBinding as RowLookup).keyField] ?? "")}` : str(p.suffix);
   return (
-    <div className="dh-entity" style={boxHeight(p)}>
+    <div className={`dh-entity${p.card === true ? " dh-entity-card" : ""}`} style={boxHeight(p)}>
       <div className="dh-entity-main">
         {p.eyebrow ? <span className="dh-entity-eyebrow">{str(p.eyebrow)}</span> : null}
         <h2 className="dh-entity-title">{title}</h2>
@@ -69,7 +72,7 @@ export function EntityHeaderBlock({ blockId }: Props) {
             {fieldText(row, b.field) || "0"}
           </span>
         ))}
-        {p.suffix ? <span className="dh-entity-suffix">{str(p.suffix)}</span> : null}
+        {suffix ? <span className="dh-entity-suffix">{suffix}</span> : null}
       </div>
       {facts.length > 0 ? (
         <dl className="dh-entity-facts">

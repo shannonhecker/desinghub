@@ -69,6 +69,8 @@ import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
 import { ReportDataButton } from "./ReportDataButton";
 import { usePreviewMode } from "@/store/usePreviewMode";
+import { BUILDER_TEMPLATES, VALID_TEMPLATE_IDS, type TemplateId } from "@/lib/builderTemplates";
+import { openTemplateLink } from "@/lib/applyTemplate";
 import { PreviewReadOnlyContext, usePreviewReadOnly } from "./previewReadOnly";
 
 /* ══════════════════════════════════════════════════════════
@@ -899,6 +901,25 @@ function DashboardSidebarResizeHandle({
   );
 }
 
+/** Width of a folded sidebar: an icon rail, or the wider rail of two-letter
+ *  codes a dense text navigation folds to. */
+const SIDEBAR_RAIL = 48;
+const SIDEBAR_RAIL_DENSE = 56;
+
+/** A nav item's or a tab's template, when it names one that exists. */
+function navTemplateId(v: unknown): TemplateId | null {
+  return typeof v === "string" && (VALID_TEMPLATE_IDS as readonly string[]).includes(v) ? (v as TemplateId) : null;
+}
+
+/** Two letters for a folded text nav item: the initials of a two-word
+ *  label ("Entity comparison" -> "EC"), else its first two letters. */
+export function navAbbreviation(label: string): string {
+  const words = label.trim().split(/[\s&/-]+/).filter(Boolean);
+  if (words.length === 0) return "";
+  const code = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2);
+  return code.toUpperCase();
+}
+
 /* ══════════════════════════════════════════════════════════
    Dashboard Sidebar - collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
@@ -925,6 +946,8 @@ function DashboardSidebar({
   const openNavPage = useBuilder((s) => s.openNavPage);
   const activePageId = useBuilder((s) => s.activePageId);
   const readOnly = usePreviewReadOnly();
+  const dense = sidebarLayout.dense === true;
+  const railWidth = dense ? SIDEBAR_RAIL_DENSE : SIDEBAR_RAIL;
 
   const handleSetActive = (id: string) => {
     setSidebarBlocks(
@@ -947,7 +970,8 @@ function DashboardSidebar({
       data-tone={sidebarLayout.tone}
       data-side={sidebarLayout.side}
       data-collapsed={collapsed ? "true" : undefined}
-      animate={{ width: collapsed ? 48 : width }}
+      data-dense={dense ? "" : undefined}
+      animate={{ width: collapsed ? railWidth : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       {!collapsed && <FrameTab zone="sidebar" />}
@@ -957,7 +981,10 @@ function DashboardSidebar({
             /* Native NavItem rendering */
             if (block.type === "NavItem") {
               const iconKey = block.props.icon as string;
+              /* icon "none": a text item; folded, it shows a two-letter code. */
+              const noIcon = iconKey === "none";
               const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
+              const templateId = navTemplateId(block.props.templateId);
               /* Once the canvas is split into pages, the active tab follows the
                  active page; before that it uses the cosmetic `active` prop. */
               const active = activePageId != null ? activePageId === block.id : (block.props.active as boolean);
@@ -982,12 +1009,25 @@ function DashboardSidebar({
                          active nav. */
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (templateId) {
+                          /* A nav item that names a template is a link to
+                             that report: while presenting it opens it; in
+                             Edit it is just selected (opening it would
+                             replace the canvas being edited). */
+                          if (readOnly) openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
+                          else setSelectedBlock(block.id, "sidebar");
+                          return;
+                        }
                         openNavPage(block.id, String(block.props.label ?? "Page"));
                         handleSetActive(block.id);
                         if (!readOnly) setSelectedBlock(block.id, "sidebar");
                       }}
                     >
-                      <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
+                      {noIcon ? (
+                        collapsed ? <span className="bp-nav-abbr" aria-hidden="true">{navAbbreviation(String(block.props.label ?? ""))}</span> : null
+                      ) : (
+                        <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
+                      )}
                       {/* Plain span — was previously a framer-motion
                          <motion.span> animating width 0→auto, but that
                          left the inline `style` attribute in an
@@ -1264,6 +1304,7 @@ export function BuilderCanvas({
   resizableSidebar = false,
   allowEmptyState = false,
 }: BuilderCanvasProps) {
+  const plainCanvas = useBuilder((st) => st.zoneLayouts.body.plain === true);
   const designSystem = useBuilder((s) => s.designSystem);
   const density = useBuilder((s) => s.density);
   const previewKey = useBuilder((s) => s.previewKey);
@@ -1300,14 +1341,19 @@ export function BuilderCanvas({
     blocks.length > 0 ||
     selectedBlockId !== null;
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  /* Folded or not is part of the canvas (zoneLayouts.sidebar.collapsed), so
+     it survives a reload, travels with a template and can be set from chat.
+     Until someone chooses, a sidebar is expanded - except on the tablet
+     frame, where it starts as a rail so the page keeps a usable width. */
+  const sidebarCollapsedChoice = useBuilder((s) => s.zoneLayouts.sidebar.collapsed);
+  const sidebarCollapsed = sidebarCollapsedChoice ?? (responsive && deviceMode === "tablet");
   /* PR3: the sidebar (left panel) width persists via zoneLayouts.sidebar.size
      (a TRACKED_KEY) instead of ephemeral local state, so a resize survives
      reload + sessions instead of snapping back to 180. */
   const dashSidebarWidth = useBuilder((s) => s.zoneLayouts.sidebar.size ?? 180);
   const setZoneLayoutFn = useBuilder((s) => s.setZoneLayout);
   const setDashSidebarWidth = useCallback((w: number) => setZoneLayoutFn("sidebar", { size: w }), [setZoneLayoutFn]);
-  const handleSidebarToggle = useCallback(() => setSidebarCollapsed((v) => !v), []);
+  const handleSidebarToggle = useCallback(() => setZoneLayoutFn("sidebar", { collapsed: !sidebarCollapsed }), [setZoneLayoutFn, sidebarCollapsed]);
   /* Full-width support: a template/layout with no sidebar blocks (landing,
      ecommerce, blog, portfolio — top-nav marketing pages) should render
      full-width, not show an empty rail. Dropping a sidebar block from the
@@ -1345,7 +1391,10 @@ export function BuilderCanvas({
           <DashboardSidebar
             collapsed={sidebarCollapsed}
             onToggle={handleSidebarToggle}
-            width={resizableSidebar ? dashSidebarWidth : undefined}
+            /* The same width in Edit and Present: a template's (or a
+               dragged) width must not snap back to the default when the
+               canvas is presented. */
+            width={dashSidebarWidth}
             onWidthChange={resizableSidebar ? setDashSidebarWidth : undefined}
           />
         )}
@@ -1360,7 +1409,7 @@ export function BuilderCanvas({
           />
         )}
 
-        <main className="bp-main">
+        <main className="bp-main" data-plain={plainCanvas ? "" : undefined}>
           {allowEmptyState && !hasContent ? (
             <DefaultChatArea messageKey={previewKey} />
           ) : (

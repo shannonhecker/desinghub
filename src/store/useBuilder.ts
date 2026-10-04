@@ -23,6 +23,7 @@ const ZONE_BY_TYPE: Readonly<Record<string, ZoneId>> = {
   StatusPill: 'header',
   TopNav: 'header',
   TabStrip: 'header',
+  ContextBar: 'header',
   NavItem: 'sidebar',
   NavGroup: 'sidebar',
   FooterText: 'footer',
@@ -264,6 +265,16 @@ export interface ZoneLayout {
   flush?: boolean;
   /** Sidebar only: which side it docks to. Undefined = "left". */
   side?: "left" | "right";
+  /** Sidebar only: folded to a narrow rail (icons, or two-letter codes for
+     items without an icon). Undefined = expanded, except on the tablet
+     frame, where a sidebar starts as a rail to leave the page room. */
+  collapsed?: boolean;
+  /** Sidebar only: a dense, text-led navigation list (short rows, section
+     labels, an accent bar on the active item) for application chrome. */
+  dense?: boolean;
+  /** Body only: the canvas is the card colour (a start page whose content
+     sits straight on the page), not the grey a report's cards sit on. */
+  plain?: boolean;
 }
 
 /** Surface treatment for a chrome zone or a navigation bar:

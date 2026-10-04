@@ -110,6 +110,14 @@ export function collectReportControls(blocks: Block[], reportState: Record<strin
   const out: ReportControl[] = [];
   for (const b of blocks) {
     const props = (b.props ?? {}) as Record<string, unknown>;
+    /* A context bar carries several filters. */
+    if (Array.isArray(props.filters)) {
+      for (const f of props.filters as { label?: unknown; stateKey?: unknown; value?: unknown; options?: unknown }[]) {
+        if (!f || typeof f.stateKey !== "string" || !f.stateKey) continue;
+        const choices = Array.isArray(f.options) ? f.options.map((o) => String(o).trim()).filter(Boolean) : [];
+        out.push({ key: f.stateKey, label: String(f.label ?? f.stateKey), kind: "filter", current: reportState[f.stateKey] ?? String(f.value ?? ""), choices });
+      }
+    }
     if (typeof props.stateKey === "string" && props.stateKey) {
       const choices = String(props.optionsCsv ?? "").split(",").map((o) => o.trim()).filter(Boolean);
       out.push({ key: props.stateKey, label: String(props.label ?? props.stateKey), kind: "filter", current: reportState[props.stateKey] ?? String(props.value ?? ""), choices });
