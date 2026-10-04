@@ -7,7 +7,11 @@ import { EXECUTION_KEYS } from "@/lib/executionModel";
 import { EXECUTION_ORDERS } from "@/lib/reportData/executionDataset";
 import { exportReact } from "../reactExporter";
 import { exportHTML } from "../htmlExporter";
-import { materialiseCanvas } from "../materialise";
+import { exportChangeTone, materialiseCanvas } from "../materialise";
+import { HTML_DIALECT, instrumentHeaderLines } from "../reportMarkup";
+import { createTicker, feedBaseView } from "@/lib/executionFeed";
+import { executionDataset } from "@/lib/reportData/executionDataset";
+import { useFeedStore } from "@/components/builder/useExecutionFeed";
 
 /* ════════════════════════════════════════════════════════════
    Code export of FX Execution: the instrument header as text, the
@@ -66,6 +70,35 @@ describe("FX Execution: materialise", () => {
     expect((canvas.body[0].props.categories as string[]).length).toBeLessThan(40);
     expect(String(canvas.body[0].props.subtitle)).toContain(`SELL ${EXECUTION_ORDERS[1]}`);
     expect((canvas.body[1].props.record as { title: string }).title).toBe(EXECUTION_ORDERS[1]);
+  });
+});
+
+describe("FX Execution: the header's change in an export", () => {
+  it("a change that rounds to zero is neutral, as in the app; up is good, down is bad", () => {
+    expect([exportChangeTone("up"), exportChangeTone("down"), exportChangeTone("flat")]).toEqual(["good", "bad", "neutral"]);
+    const line = (changeTone: string) => instrumentHeaderLines(HTML_DIALECT, { id: "h", type: "InstrumentHeader", props: { symbol: "EURUSD", change: "0.0 pips", changeTone } }).find((l) => l.includes("instrument-change"))!;
+    expect(line("neutral")).toContain("tone-neutral");
+    expect(line("good")).toContain("tone-good");
+    expect(line("bad")).toContain("tone-bad");
+  });
+});
+
+describe("FX Execution: the sample feed", () => {
+  it("an export is the frozen report: feed bars in this tab do not reach it, and it carries no timer", () => {
+    apply();
+    const before = { tsx: exportReact(), html: exportHTML(), canvas: JSON.stringify(materialiseCanvas()) };
+    const ticker = createTicker(feedBaseView(executionDataset(), {})!);
+    const samples = Array.from({ length: 60 }, () => ticker.next());
+    useFeedStore.setState({ key: "1:" + EXECUTION_ORDERS[0], samples });
+    try {
+      expect(exportReact()).toBe(before.tsx);
+      expect(exportHTML()).toBe(before.html);
+      expect(JSON.stringify(materialiseCanvas())).toBe(before.canvas);
+      expect(useBuilder.getState().reportData).toBeNull();
+      for (const out of [before.tsx, before.html]) expect(out).not.toMatch(/setInterval|setTimeout|requestAnimationFrame|fxLive|Live feed/);
+    } finally {
+      useFeedStore.setState({ key: null, samples: [] });
+    }
   });
 });
 
