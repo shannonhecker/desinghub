@@ -104,7 +104,14 @@ export const fxExecution: BuilderTemplate = {
      know what can be set. The blocks draw the controls themselves. */
   header: [{
     id: "tpl-fx-instrument", type: "InstrumentHeader",
-    props: { symbol: "EURUSD", note: "Sample data", filters: [{ label: "Order", stateKey: EXECUTION_KEYS.order, value: ORDER, options: [...EXECUTION_ORDERS] }] },
+    props: {
+      symbol: "EURUSD", note: "Sample data",
+      filters: [
+        { label: "Order", stateKey: EXECUTION_KEYS.order, value: ORDER, options: [...EXECUTION_ORDERS] },
+        /* The sample feed: live while presenting unless switched off. */
+        { label: "Live feed", stateKey: EXECUTION_KEYS.live, value: "On", options: ["On", "Off"], phrases: { Off: ["pause the feed", "stop the feed"], On: ["resume the feed", "play the feed"] } },
+      ],
+    },
   }] as Block[],
   sidebar: [],
   footer: [],
@@ -138,5 +145,5 @@ export const fxExecution: BuilderTemplate = {
     },
   ],
   aiResponse:
-    "Built **FX Execution**: one order worked through a session. The chart shows the market, the order's limit price, its fills by venue and percent done; its rail sets the **interval**, the **chart type** and the **overlays**, and the chips under it set the **range**. Pick the other **order** in the header, or a **venue** in the donut to highlight its fills. Ask me to change the interval, switch to candlesticks, or try another design system.",
+    "Built **FX Execution**: one order worked through a session. The chart shows the market, the order's limit price, its fills by venue and percent done; its rail sets the **interval**, the **chart type** and the **overlays**, and the chips under it set the **range**. Pick the other **order** in the header, or a **venue** in the donut to highlight its fills. While presenting, a **sample feed** adds a bar a second; pause or reset it in the header. Ask me to change the interval, switch to candlesticks, or try another design system.",
 };

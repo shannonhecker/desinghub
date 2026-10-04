@@ -667,7 +667,7 @@ export function instrumentHeaderLines(d: Dialect, block: Block): string[] {
     for (const [label, value] of figures) out.push(`      <div><dt>${d.text(label)}</dt><dd>${d.text(value)}</dd></div>`);
     out.push("    </dl>");
   }
-  if (str(p.change)) out.push(`    <span ${d.cls}="instrument-change ${toneClass(p.changeTone === "bad" ? "bad" : "good")}">${d.text(str(p.change))}</span>`);
+  if (str(p.change)) out.push(`    <span ${d.cls}="instrument-change ${toneClass(p.changeTone)}">${d.text(str(p.change))}</span>`);
   if (quote) {
     out.push(
       `    <div ${d.cls}="instrument-quote">`,

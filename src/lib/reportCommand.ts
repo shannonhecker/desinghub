@@ -105,6 +105,9 @@ export interface ReportControl {
   kind: "filter" | "viewBy";
   current: string;
   choices: string[];
+  /** Whole sentences that set a choice ("pause the feed" -> Off), besides
+   *  naming the choice itself. */
+  phrases?: Record<string, string[]>;
 }
 
 /** Every report control on the canvas: dropdowns with a `stateKey`, and
@@ -115,10 +118,11 @@ export function collectReportControls(blocks: Block[], reportState: Record<strin
     const props = (b.props ?? {}) as Record<string, unknown>;
     /* A context bar carries several filters. */
     if (Array.isArray(props.filters)) {
-      for (const f of props.filters as { label?: unknown; stateKey?: unknown; value?: unknown; options?: unknown }[]) {
+      for (const f of props.filters as { label?: unknown; stateKey?: unknown; value?: unknown; options?: unknown; phrases?: unknown }[]) {
         if (!f || typeof f.stateKey !== "string" || !f.stateKey) continue;
         const choices = Array.isArray(f.options) ? f.options.map((o) => String(o).trim()).filter(Boolean) : [];
-        out.push({ key: f.stateKey, label: String(f.label ?? f.stateKey), kind: "filter", current: reportState[f.stateKey] ?? String(f.value ?? ""), choices });
+        const phrases = f.phrases && typeof f.phrases === "object" ? (f.phrases as Record<string, string[]>) : undefined;
+        out.push({ key: f.stateKey, label: String(f.label ?? f.stateKey), kind: "filter", current: reportState[f.stateKey] ?? String(f.value ?? ""), choices, ...(phrases ? { phrases } : {}) });
       }
     }
     if (typeof props.stateKey === "string" && props.stateKey) {
@@ -146,6 +150,15 @@ export interface ReportFilterCommand {
 export function parseReportFilterCommand(message: string, controls: ReportControl[]): ReportFilterCommand | null {
   const text = ` ${words(message).join(" ")} `;
   const phrase = (s: string) => words(s).join(" ");
+  /* A control's own sentence, with nothing else asked. */
+  for (const control of controls) {
+    for (const [choice, sentences] of Object.entries(control.phrases ?? {})) {
+      const hit = sentences.map(phrase).find((p) => p && text.includes(` ${p} `));
+      if (!hit || !control.choices.includes(choice)) continue;
+      if (words(text.replace(` ${hit} `, " ")).some((w) => !FILLER.has(w))) continue;
+      return { changes: control.current === choice ? [] : [{ key: control.key, value: choice, label: control.label, kind: control.kind }] };
+    }
+  }
   type Hit = { control: ReportControl; choice: string; phrase: string };
   let hits: Hit[] = [];
   for (const control of controls) {

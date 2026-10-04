@@ -64,6 +64,14 @@ async function applyTemplate(page: Page, label: string) {
   if (label === "Analytics Home") await page.getByRole("button", { name: "Open workspace" }).click();
   else await page.getByRole("button", { name: `Use the ${label} template` }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  /* FX Execution: parity is measured with the sample feed switched off
+     (fxLive: Off), under the default motion setting. The feed changes
+     numbers, never a block's size; switched off, Edit and Present show the
+     same header controls. */
+  if (label === "FX Execution") {
+    await page.locator(".present-stage").getByRole("button", { name: "Pause the sample feed" }).click();
+    await expect(page.locator(".present-stage .dh-feed-status")).toHaveClass(/is-paused/);
+  }
   await settle(page);
 }
 
