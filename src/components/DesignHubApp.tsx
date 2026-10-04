@@ -276,10 +276,12 @@ export function DesignHubApp() {
                         style={{
                           borderRadius: railRadius,
                           fontFamily: t.font,
-                          color: isActive ? t.accentFg : t.fg2,
+                          color: isActive ? (isCarbon ? (t.T.textOnColor ?? t.accentFg) : t.accentFg) : t.fg2,
                           /* Borderless: active = accent fill; inactive = no inline
-                             bg so the CSS transparent + hover tint apply. */
-                          background: isActive ? t.accent : undefined,
+                             bg so the CSS transparent + hover tint apply. Carbon
+                             fills with $button-primary: white on its g100 link
+                             blue is only 3.3:1. */
+                          background: isActive ? (isCarbon ? (t.T.buttonPrimary ?? t.accent) : t.accent) : undefined,
                         }}
                       >
                         <span className="uikit-rail-glyph" aria-hidden="true" style={{ fontWeight: 700, fontSize: t.scale.navF + 1 }}>{info.icon}</span>

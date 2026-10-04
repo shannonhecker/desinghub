@@ -145,7 +145,7 @@ function Buttons(){
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:4,padding:"6px 8px",borderRadius:"var(--cr,4px)",border:`1px solid ${T.border}`,background:T.bg2}}>
       {[["solid","Filled background, contrast foreground. Primary CTA."],["bordered","Transparent with accent border. Secondary action."],["transparent","No background or border. Tertiary / inline action."]].map(([a,d])=>(
-        <div key={a} style={{display:"flex",gap:6,alignItems:"baseline"}}><code style={{fontSize:10,color:T.accent,fontFamily:"monospace",background:T.accentWeak,padding:"0 4px",borderRadius:2,flexShrink:0}}>{a}</code><span style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>{d}</span></div>
+        <div key={a} style={{display:"flex",gap:6,alignItems:"baseline"}}><code style={{fontSize:10,color:T.fg,fontFamily:"monospace",background:T.accentWeak,padding:"0 4px",borderRadius:2,flexShrink:0}}>{a}</code><span style={{fontSize:10,color:T.fg2,fontFamily:FONT}}>{d}</span></div>
       ))}
     </div>
     <div style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Sentiments (× appearance)</div>

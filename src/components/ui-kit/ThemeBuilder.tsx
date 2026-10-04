@@ -20,8 +20,8 @@ const PREVIEW_KEYS: Record<SystemId, Record<"bg" | "bg2" | "fg" | "fg2" | "accen
   salt:   { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accentText", border: "border" },
   m3:     { bg: "surface", bg2: "surfaceContainerLow", fg: "onSurface", fg2: "onSurfaceVariant", accent: "primary", accentFg: "onPrimary", accentText: "primary", border: "outlineVariant" },
   fluent: { bg: "bg1", bg2: "bg2", fg: "fg1", fg2: "fg2", accent: "brandBg", accentFg: "fgOnBrand", accentText: "brandFg1", border: "stroke2" },
-  carbon: { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accentText", border: "border" },
-  uoaui:  { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accent", border: "border" },
+  carbon: { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "buttonPrimary", accentFg: "textOnColor", accentText: "accentText", border: "border" },
+  uoaui:  { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accentHover", border: "border" },
 };
 
 /** Remount on system or mode change: overrides are edits to one base theme,

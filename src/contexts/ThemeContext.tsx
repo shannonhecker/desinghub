@@ -168,7 +168,9 @@ function computeTheme(
       : activeSystem === "m3" ? T.primary
       : activeSystem === "fluent" ? T.brandFg1
       : activeSystem === "carbon" ? T.accentText
-      : T.accent,
+      /* uoaui dark: the base violet is 3.9:1 as text on the dark canvas;
+         its hover step is the lighter violet and clears AA. */
+      : (uoauiThemeKey === "dark" ? (T.accentHover ?? T.accent) : T.accent),
     border: n("border", "outlineVariant", "stroke2", "border", "border"),
     borderStrong: n("borderStrong", "outline", "strokeAccessible", "borderStrong", "borderStrong"),
     /* Softer line for DECORATIVE dividers only (hero rule, card preview

@@ -156,7 +156,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
-          <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
+          <p style={{ fontSize: 15, color: t.fg2, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
         </div>
         <div role="tablist" aria-label="Component view" style={{
           display: "flex", borderBottom: `1px solid ${t.border}`, marginBottom: 32,
@@ -229,7 +229,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <div style={{ padding: `${pad}px ${pad + 8}px`, fontFamily: t.font, color: t.fg }}>
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: t.fg, marginBottom: 8 }}>{comp.name}</h1>
-          <p style={{ fontSize: 15, color: t.fg3, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
+          <p style={{ fontSize: 15, color: t.fg2, lineHeight: 1.6, marginBottom: 0 }}>{comp.desc}</p>
         </div>
         {componentId === "charts"
           ? <ChartsPage />
@@ -347,7 +347,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         return (
           <div style={{ marginTop: 44 }}>
             <h3 style={{ margin: "0 0 4px", color: t.fg, font: `600 18px/1.2 ${t.font}` }}>Variants</h3>
-            <p style={{ margin: "0 0 20px", color: t.fg3, font: `400 14px/1.5 ${t.font}` }}>
+            <p style={{ margin: "0 0 20px", color: t.fg2, font: `400 14px/1.5 ${t.font}` }}>
               {/* Chips are types with distinct jobs, badges signal status; neither is an emphasis ladder. */}
               {metaId === "chip"
                 ? `The ${["zero", "one", "two", "three", "four", "five", "six"][naming.length] ?? naming.length} chip types, each shaped for a different job.`
@@ -376,7 +376,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
                   </div>
                   <p style={{ margin: 0, color: t.fg2, font: `400 13px/1.5 ${t.font}` }}>{v.desc}</p>
                   <div style={{ marginTop: 2, paddingTop: 11, borderTop: `1px solid ${t.border}` }}>
-                    <span style={{ display: "block", color: t.fg3, font: `700 10px/1 ${t.font}`, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>Use when</span>
+                    <span style={{ display: "block", color: t.fg2, font: `700 10px/1 ${t.font}`, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>Use when</span>
                     <span style={{ color: t.fg2, font: `400 13px/1.55 ${t.font}` }}>{v.use}</span>
                   </div>
                 </div>
@@ -390,7 +390,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const variantsSection = variants ? (
     <section id="dh-sec-variants" className="dh-section" aria-labelledby="dh-h-variants">
       <h2 id="dh-h-variants" className="dh-section-h" style={{ color: t.fg }}>Variants</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The {comp.name.toLowerCase()} vocabulary this design system exposes, by{" "}
         {variants.variantAxisLabel.toLowerCase()} and {variants.stateAxisLabel.toLowerCase()}.
       </p>
@@ -419,7 +419,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const anatomySection = anatomy ? (
     <section id="dh-sec-anatomy" className="dh-section" aria-labelledby="dh-h-anatomy">
       <h2 id="dh-h-anatomy" className="dh-section-h" style={{ color: t.fg }}>Anatomy</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The parts of the {comp.name.toLowerCase()} and their key measurements.
       </p>
       <AnatomyDiagram anatomy={anatomy} t={t} componentId={metaId} />
@@ -428,7 +428,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const propsSection = propRows ? (
     <section id="dh-sec-props" className="dh-section" aria-labelledby="dh-h-props">
       <h2 id="dh-h-props" className="dh-section-h" style={{ color: t.fg }}>Props</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The real {comp.name.toLowerCase()} API for this design system. Prop names and
         defaults follow the official package, not a normalised abstraction.
       </p>
@@ -437,7 +437,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
           <thead>
             <tr style={{ borderBottomColor: t.borderSubtle }}>
               {["Prop", "Type", "Default", "Description"].map((h) => (
-                <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg3 }}>{h}</th>
+                <th key={h} scope="col" className="dh-props-h" style={{ color: t.fg2 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -446,7 +446,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
               <tr key={p.name} style={{ borderBottomColor: t.borderSubtle }}>
                 <td className="dh-props-cell dh-props-name" style={{ color: t.fg }}>{p.name}</td>
                 <td className="dh-props-cell dh-props-type" style={{ color: t.accentText }}>{p.type}</td>
-                <td className="dh-props-cell dh-props-default" style={{ color: t.fg3 }}>{p.default}</td>
+                <td className="dh-props-cell dh-props-default" style={{ color: t.fg2 }}>{p.default}</td>
                 <td className="dh-props-cell" style={{ color: t.fg2 }}>{p.description}</td>
               </tr>
             ))}
@@ -470,7 +470,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const tokensSection = (tokens && tokens.length > 0) ? (
     <section id="dh-sec-tokens" className="dh-section" aria-labelledby="dh-h-tokens">
       <h2 id="dh-h-tokens" className="dh-section-h" style={{ color: t.fg }}>Tokens</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         The design tokens that drive this {comp.name.toLowerCase()}. Values resolve live
         against the current theme, mode, and density.
       </p>
@@ -499,7 +499,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   const accessibilitySection = a11y ? (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
       <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         How the {comp.name.toLowerCase()} behaves with the keyboard and assistive
         technology in this design system.
       </p>
@@ -545,7 +545,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
   ) : (
     <section id="dh-sec-accessibility" className="dh-section" aria-labelledby="dh-h-accessibility">
       <h2 id="dh-h-accessibility" className="dh-section-h" style={{ color: t.fg }}>Accessibility</h2>
-      <p className="dh-section-lede" style={{ color: t.fg3 }}>
+      <p className="dh-section-lede" style={{ color: t.fg2 }}>
         {comp.name} follows WCAG 2.1 AA: it is keyboard operable, exposes a visible focus
         state, and is labelled for assistive technology. Full keyboard + screen-reader
         guidance lands in a later pass.
@@ -572,7 +572,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <div className="dh-detail" style={{ fontFamily: t.font, color: t.fg }}>
         <header className="dh-detail-header">
           <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
-          <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
+          <p className="dh-detail-desc" style={{ color: t.fg2 }}>{comp.desc}</p>
         </header>
         {/* M3 pill tab bar */}
         <div role="tablist" aria-label="Component view" style={{
@@ -604,7 +604,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         {m3Tab === "overview" && specimenSection}
         {m3Tab === "specs" && <>{variantsSection}{anatomySection}{propsSection}{tokensSection}{codeSection}</>}
         {m3Tab === "guidelines" && (guidanceSection ?? (
-          <p className="dh-section-lede" style={{ color: t.fg3 }}>
+          <p className="dh-section-lede" style={{ color: t.fg2 }}>
             Usage guidance for the {comp.name.toLowerCase()} lands in a later pass.
           </p>
         ))}
@@ -618,7 +618,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       {/* Header */}
       <header className="dh-detail-header">
         <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
-        <p className="dh-detail-desc" style={{ color: t.fg3 }}>{comp.desc}</p>
+        <p className="dh-detail-desc" style={{ color: t.fg2 }}>{comp.desc}</p>
       </header>
 
       {/* 1 ── Specimen: the live demo, in a generous framed stage. ── */}

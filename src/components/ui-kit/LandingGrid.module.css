@@ -124,7 +124,7 @@
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease;
 }
-.filters button span { font-size: 12px; font-variant-numeric: tabular-nums; opacity: 0.75; }
+.filters button span { font-size: 12px; font-variant-numeric: tabular-nums; }
 .filters button:hover:not(:disabled) { color: var(--kit-fg); background: color-mix(in srgb, var(--kit-fg) 7%, transparent); }
 .filters button[aria-pressed="true"] { color: var(--kit-fg); font-weight: 600; background: color-mix(in srgb, var(--kit-fg) 10%, transparent); }
 .filters button:disabled { opacity: 0.45; cursor: default; }

@@ -52,8 +52,10 @@ export function ToolPageShell({ children }: { children: ReactNode }) {
         "--tool-muted": t.fg2,
         "--tool-border": t.border,
         "--tool-border-subtle": t.borderSubtle,
-        "--tool-accent": t.accent,
-        "--tool-accent-fg": t.accentFg,
+        /* Carbon fills buttons with $button-primary, not its link blue:
+           white on the g100 link blue is only 3.3:1. */
+        "--tool-accent": system === "carbon" ? ((t.T.buttonPrimary as string) ?? t.accent) : t.accent,
+        "--tool-accent-fg": system === "carbon" ? ((t.T.textOnColor as string) ?? t.accentFg) : t.accentFg,
         "--tool-accent-text": t.accentText,
         "--tool-accent-weak": t.accentWeak,
         "--tool-focus": t.focusRing,

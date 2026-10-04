@@ -119,7 +119,7 @@ export function ContentTopBar() {
         ) : comp ? (
           <>
             <button onClick={() => setSelectedComponent(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: `${t.scale.gap - 2}px 0`, fontSize: t.scale.navF - 1, color: t.accent, fontFamily: t.font }}>
+              style={{ background: "none", border: "none", cursor: "pointer", padding: `${t.scale.gap - 2}px 0`, fontSize: t.scale.navF - 1, color: t.fg2, textDecoration: "underline", textUnderlineOffset: 3, fontFamily: t.font }}>
               {sysInfo.name}
             </button>
             <span style={{ color: t.fg3, fontSize: t.scale.labF }}>/</span>
