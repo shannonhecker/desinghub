@@ -21,6 +21,9 @@
  *          follow the live DS tokens, and outside it they still resolve.
  *   2. PRIMITIVES (DS-agnostic). Shell layout + the `.btn / .card / …` rules
  *      the generic-markup path emits. Unchanged.
+ *   3. REPORT_CSS (DS-agnostic). The report and application-chrome markup
+ *      reportMarkup.ts emits: chrome tones, flush / right-docked zones, top
+ *      nav, tab strip, nav group, page title, framed panel, data table.
  */
 
 import { getTheme } from "@/data/registry";
@@ -28,6 +31,7 @@ import { getCarbonOfficialTokens } from "@/lib/officialTokens";
 import { buildM3TokenCSS } from "@/lib/officialM3FluentTokens";
 import { webLightTheme, webDarkTheme } from "@fluentui/react-theme";
 import type { SystemId } from "@/lib/componentApiRegistry";
+import { PANEL_HEADER_HEIGHT, PANEL_PADDING, PANEL_VIEW_BY_WIDTH } from "@/lib/panelMetrics";
 
 export type ExportMode = "light" | "dark";
 
@@ -408,8 +412,132 @@ input:focus-visible,
 }
 `;
 
+/* ── Report + application-chrome styles (selectors MUST match what
+   reportMarkup.ts emits). Shared by the React / Vite stylesheet and the
+   HTML page export. Colours come from the token variables above; the panel
+   measurements are the canvas's own (panelMetrics.ts). ── */
+export const REPORT_CSS = `/* ── Chrome tones ──
+   A chrome zone (header / sidebar / footer) or a navigation bar picks one of
+   five surface treatments through data-tone. Each sets the same four custom
+   properties, which the zone or bar then paints with. Dark chrome is dark in
+   light AND dark mode, so it carries its own neutral values, defined once. */
+:root {
+  --chrome-dark: #15171d;
+  --chrome-dark-raised: #20232b;
+  --chrome-dark-fg: #eceef2;
+  --chrome-dark-fg-dim: #a9afbb;
+  --chrome-dark-line: rgba(255, 255, 255, 0.1);
+}
+[data-tone="surface"] { --chrome-bg: var(--surface); --chrome-fg: var(--fg); --chrome-fg-dim: var(--fg-muted); --chrome-line: var(--border); }
+[data-tone="transparent"] { --chrome-bg: transparent; --chrome-fg: var(--fg); --chrome-fg-dim: var(--fg-muted); --chrome-line: var(--border); }
+[data-tone="inverse"] { --chrome-bg: var(--fg); --chrome-fg: var(--bg); --chrome-fg-dim: color-mix(in srgb, var(--bg) 72%, var(--fg)); --chrome-line: color-mix(in srgb, var(--bg) 18%, transparent); }
+[data-tone="dark"] { --chrome-bg: var(--chrome-dark); --chrome-fg: var(--chrome-dark-fg); --chrome-fg-dim: var(--chrome-dark-fg-dim); --chrome-line: var(--chrome-dark-line); }
+[data-tone="accent"] { --chrome-bg: var(--accent); --chrome-fg: var(--accent-fg); --chrome-fg-dim: color-mix(in srgb, var(--accent-fg) 78%, transparent); --chrome-line: color-mix(in srgb, var(--accent-fg) 22%, transparent); }
+.zone-header[data-tone], .zone-sidebar[data-tone], .zone-footer[data-tone], .topnav, .tabstrip { background: var(--chrome-bg); color: var(--chrome-fg); border-color: var(--chrome-line); }
+
+/* ── Zones ──
+   data-layout="ds": the design system's own layout primitive lays the zone
+   out, so the landmark is a plain block around it.
+   data-flush: bars stack edge to edge, no zone padding or rule.
+   data-sidebar on the root: no sidebar (one column) or a right-hand one. */
+.zone-header[data-layout="ds"], .zone-sidebar[data-layout="ds"], .zone-body[data-layout="ds"], .zone-footer[data-layout="ds"] { display: block; }
+.zone-body { min-width: 0; }
+.zone-header[data-flush], .zone-footer[data-flush] { display: block; padding: 0; border-width: 0; }
+/* A design system's stack primitive may bring its own gap; flush bars touch. */
+.zone-header[data-flush] > *, .zone-footer[data-flush] > * { gap: 0 !important; }
+.dashboard-layout[data-sidebar="none"] { grid-template-columns: minmax(0, 1fr); }
+.dashboard-layout[data-sidebar="right"] { grid-template-columns: minmax(0, 1fr) 220px; }
+.zone-sidebar[data-side="right"] { border-right: 0; border-left: 1px solid var(--border); }
+.zone-sidebar[data-side="right"][data-tone] { border-left-color: var(--chrome-line); }
+
+/* ── Navigation bars ── */
+.topnav { display: flex; align-items: center; height: 48px; padding-inline: clamp(16px, 2.5vw, 32px); gap: 24px; min-width: 0; font-size: 13px; }
+.topnav-brand { flex: none; display: flex; align-items: center; gap: 12px; font-weight: 600; letter-spacing: 0.01em; }
+.topnav-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius); background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 700; }
+.topnav-divider { flex: none; width: 1px; height: 20px; background: var(--chrome-line); }
+.topnav-links { display: flex; align-items: stretch; align-self: stretch; gap: 24px; min-width: 0; overflow: hidden; }
+.topnav-link, .tabstrip-tab { display: inline-flex; align-items: center; gap: 6px; color: var(--chrome-fg-dim); font-size: 13px; text-decoration: none; white-space: nowrap; }
+.topnav-link:hover, .tabstrip-tab:hover { color: var(--chrome-fg); }
+/* The active link: full-strength text and a bar in the accent colour along
+   the bottom edge. */
+.topnav-link[aria-current="page"], .tabstrip-tab[aria-current="page"] { color: var(--chrome-fg); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+/* A small caret after a link or the account that opens a menu. */
+.topnav-link[data-chevron]::after, .topnav-account[data-chevron]::after { content: ""; margin-top: 4px; border: 4px solid transparent; border-top-color: currentColor; }
+.topnav-spacer { flex: 1 1 auto; }
+.topnav-account { flex: none; display: flex; align-items: center; gap: 8px; color: var(--chrome-fg-dim); }
+.topnav-avatar { display: inline-block; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--chrome-line); }
+.tabstrip { display: flex; align-items: stretch; height: 40px; padding-inline: clamp(16px, 2.5vw, 32px); gap: 24px; min-width: 0; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--chrome-line); }
+/* A dark tab strip under a dark top bar reads as a second, lifted level. */
+.tabstrip[data-tone="dark"] { background: var(--chrome-dark-raised); }
+.tabstrip-add { display: inline-grid; place-items: center; color: var(--chrome-fg-dim); }
+.nav-group { margin: 0; padding: 12px 12px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); }
+.topnav-link:focus-visible, .tabstrip-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* On a phone the primary links and the account name give way to the brand. */
+@media (max-width: 560px) {
+  .topnav-links, .topnav-divider, .topnav-account-name { display: none; }
+  .topnav, .tabstrip { padding-inline: 16px; gap: 16px; }
+}
+
+/* ── Page title: one fixed size, the active system's font and colour ── */
+.page-title-wrap { min-width: 0; }
+.page-title { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--fg); text-wrap: balance; }
+.page-caption { margin: 4px 0 0; font-size: 13px; color: var(--fg-muted); }
+
+/* ── Dropdown (plain select) ── */
+.dropdown, .panel-viewby { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: inherit; font-size: 14px; }
+.dropdown:focus-visible, .panel-viewby:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ── Framed panel: the card a chart or a data table sits in. Its height is
+   set inline by the block; the header and padding are fixed. ── */
+.panel { box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); }
+.panel-header { box-sizing: border-box; flex: 0 0 ${PANEL_HEADER_HEIGHT}px; height: ${PANEL_HEADER_HEIGHT}px; display: flex; align-items: center; justify-content: space-between; gap: ${PANEL_PADDING}px; padding-inline: ${PANEL_PADDING}px; min-width: 0; }
+.panel-heading { flex: 1 1 auto; display: flex; align-items: baseline; gap: ${PANEL_PADDING / 2}px; min-width: 0; }
+.panel-title { flex: 0 1 auto; min-width: 0; margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* When the header is tight the subtitle gives way first, then the title truncates. */
+.panel-subtitle { flex: 0 1000 auto; min-width: 0; overflow: hidden; font-size: 12px; line-height: 1.3; color: var(--fg-muted); white-space: nowrap; }
+.panel-viewby { flex: 0 100 ${PANEL_VIEW_BY_WIDTH}px; min-width: 0; padding: 4px 8px; font-size: 13px; }
+.panel-body { box-sizing: border-box; flex: 1 1 auto; min-height: 0; min-width: 0; padding: 0 ${PANEL_PADDING}px ${PANEL_PADDING}px; }
+.panel-empty { margin: 0; font-size: 13px; color: var(--fg-muted); }
+
+/* ── Data table: scrolls inside its region; grouped headers, right-aligned
+   numbers, negative values and total rows flagged. ── */
+.table-scroll { height: 100%; overflow: auto; }
+.table-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.data-table th, .data-table td { height: 32px; padding: 0 8px; border-bottom: 1px solid var(--border); font-weight: 400; text-align: left; white-space: nowrap; }
+.data-table thead th, .data-table thead td { height: 36px; font-size: 12px; font-weight: 600; color: var(--fg-muted); }
+.data-table-groups th { text-align: center; }
+.data-table .num { text-align: right; }
+.data-table .is-negative { color: var(--error); }
+.data-table .is-total th, .data-table .is-total td { font-weight: 600; }
+.data-table .is-selected { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+.data-table tbody tr:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.data-table [data-indent="1"] { padding-left: 24px; }
+.data-table [data-indent="2"] { padding-left: 40px; }
+.data-table [data-indent="3"] { padding-left: 56px; }
+.chart-data { margin: 0; height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.chart-data .table-scroll { flex: 1 1 auto; min-height: 0; height: auto; }
+.chart-data-total { font-size: 15px; font-weight: 600; padding-bottom: 8px; }
+
+/* ── Narrow frames ──
+   The shell's mobile rule sets one column; a right-hand sidebar track must
+   fold with it. A grid item that names its own tablet / phone span (of the
+   body grid's columns) takes it at that width instead of the generic collapse. */
+@media (max-width: 768px) {
+  .dashboard-layout[data-sidebar="right"] { grid-template-columns: minmax(0, 1fr); }
+  .zone-sidebar[data-side="right"] { border-left: 0; border-top: 1px solid var(--border); border-bottom: 0; }
+  .zone-body:has(> .grid-item[data-span-phone]) { grid-template-columns: repeat(var(--body-cols, 12), 1fr); }
+  .zone-body:has(> .grid-item[data-span-phone]) > .grid-item { grid-column: 1 / -1 !important; }
+  .zone-body:has(> .grid-item[data-span-phone]) > .grid-item[data-span-phone] { grid-column: span var(--span-phone) !important; }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .zone-body > .grid-item[data-span-tablet] { grid-column: span var(--span-tablet) !important; }
+}
+`;
+
 /** The complete stylesheet for a runnable export. */
 export function buildStylesCss(system: SystemId, mode: ExportMode): string {
   return `${buildTokenBlock(system, mode)}
-${PRIMITIVES_CSS}`;
+${PRIMITIVES_CSS}
+${REPORT_CSS}`;
 }
