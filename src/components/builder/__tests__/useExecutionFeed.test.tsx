@@ -1,4 +1,4 @@
-import React, { act } from "react";
+import React, { act, useLayoutEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { executionDataset, EXECUTION_ORDERS } from "@/lib/reportData/executionDataset";
@@ -13,7 +13,8 @@ let host: HTMLDivElement;
 let root: Root;
 let latest: ExecutionFeed | null = null;
 function Probe({ state, active }: { state: Record<string, string>; active: boolean }) {
-  latest = useExecutionFeed({ dataset, state, active });
+  const feed = useExecutionFeed({ dataset, state, active });
+  useLayoutEffect(() => { latest = feed; });
   return null;
 }
 const mount = (state: Record<string, string> = {}, active = true) => act(() => root.render(<Probe state={state} active={active} />));

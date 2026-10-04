@@ -144,6 +144,8 @@ export interface ExecutionFeed {
   running: boolean;
   /** True once the feed has added all the bars it will (Reset starts again). */
   ended: boolean;
+  /** The bars right now, without subscribing (for building a chart once). */
+  peek: () => readonly FeedSample[];
 }
 
 const NONE: readonly FeedSample[] = [];
@@ -176,7 +178,12 @@ export function useExecutionFeed({ dataset, state, active }: { dataset: ReportDa
   const samples = useFeedStore((s) => s.samples);
   const generation = useFeedStore((s) => s.generation);
   const running = useFeedStore((s) => s.running);
+  const peek = useMemo(() => () => {
+    const s = useFeedStore.getState();
+    return key !== null && s.key === key ? s.samples : NONE;
+  }, [key]);
   return {
+    peek,
     samples: mine ? samples : NONE,
     generation,
     running: mine && active && running,
@@ -196,7 +203,7 @@ export function useFeedDataset(dataset: ReportDataset | null): ReportDataset | n
   const samples = useFeedStore((s) => s.samples);
   return useMemo(() => {
     if (!readOnly || !dataset || samples.length === 0 || key === null) return dataset;
-    const state = order ? { [EXECUTION_KEYS.order]: order } : {};
+    const state: ReportState = order ? { [EXECUTION_KEYS.order]: order } : {};
     if (feedKey(dataset, state) !== key) return dataset;
     return withFeed(dataset, executionOrderOf(dataset, state)!, samples);
   }, [readOnly, dataset, order, key, samples]);

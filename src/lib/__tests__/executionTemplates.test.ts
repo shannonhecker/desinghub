@@ -86,10 +86,18 @@ describe("FX Execution - from chat", () => {
 
   it("the template is named, and its controls can be set in words", () => {
     expect(parseTemplateCommand("use the fx execution template")?.templateId).toBe("fx-execution");
-    expect(controls.map((c) => c.label)).toEqual(["Order", "Interval", "Chart type", "Range"]);
+    expect(controls.map((c) => c.label)).toEqual(["Order", "Live feed", "Interval", "Chart type", "Range"]);
     expect(parseReportFilterCommand("switch to candlestick", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.chart, value: "Candlestick", label: "Chart type", kind: "filter" }]);
     expect(parseReportFilterCommand("set the interval to 5m", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.interval, value: "5m", label: "Interval", kind: "filter" }]);
     expect(parseReportFilterCommand("show the 3M range", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.range, value: "3M", label: "Range", kind: "filter" }]);
+  });
+
+  it("the sample feed is report state the chat can switch off and on", () => {
+    const live = controls.find((c) => c.key === EXECUTION_KEYS.live)!;
+    expect(live).toMatchObject({ label: "Live feed", current: "On", choices: ["On", "Off"] });
+    expect(parseReportFilterCommand("turn the live feed off", controls)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "Off", label: "Live feed", kind: "filter" }]);
+    const off = collectReportControls([...fxExecution.header, ...fxExecution.body], { [EXECUTION_KEYS.live]: "Off" });
+    expect(parseReportFilterCommand("set the live feed to on", off)?.changes).toEqual([{ key: EXECUTION_KEYS.live, value: "On", label: "Live feed", kind: "filter" }]);
   });
 });
 

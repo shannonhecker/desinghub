@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { EXECUTION_KEYS, formatPrice, resolveExecution, splitQuote } from "@/lib/executionModel";
+import { feedSwitchedOn } from "@/lib/executionFeed";
+import { ExecutionFeedControls, type FeedStatus } from "./ExecutionFeedControls";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
+import { useExecutionFeed, useFeedDataset } from "./useExecutionFeed";
 
 /* ══════════════════════════════════════════════════════════
    InstrumentHeader - what is being traded, and the order worked.
@@ -12,20 +15,26 @@ import { useCanvasDataset } from "./useBoundData";
    Line one: the pair, its last bar (open, high, low, close and the
    change), and a two-sided quote. Line two: how the chart is being
    read, the orders as tabs (choosing one re-reads the whole page),
-   and a note that the figures are sample data.
+   the sample feed's controls, and a note that the figures are sample
+   data. While presenting, the figures follow the feed; they are not
+   announced on every tick (the header is aria-live="off").
    ══════════════════════════════════════════════════════════ */
 
 export function InstrumentHeaderBlock(p: Record<string, unknown>) {
-  const dataset = useCanvasDataset();
+  const canvas = useCanvasDataset();
   const reportState = useBuilder((s) => s.reportState);
   const setReportState = useBuilder((s) => s.setReportState);
   const readOnly = usePreviewReadOnly();
+  const switchedOn = feedSwitchedOn(reportState);
+  const feed = useExecutionFeed({ dataset: canvas, state: reportState, active: readOnly && switchedOn });
+  const dataset = useFeedDataset(canvas);
   const view = useMemo(() => (dataset ? resolveExecution(dataset, reportState) : null), [dataset, reportState]);
 
   if (!view || !view.last) {
     return <div className="dh-instrument"><div className="dh-instrument-main"><h1 className="dh-instrument-symbol">{String(p.symbol ?? "Instrument")}</h1></div></div>;
   }
   const { last, order } = view;
+  const status: FeedStatus = feed.running ? "live" : feed.ended ? "ended" : !readOnly && switchedOn ? "edit" : "paused";
   const up = last.changePips >= 0;
   const [base] = [view.pair.slice(0, 3)];
   const sell = splitQuote(last.bid);
@@ -38,7 +47,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
   );
 
   return (
-    <div className="dh-instrument" onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
+    <div className="dh-instrument" aria-live="off" data-feed-bars={feed.samples.length} onClick={readOnly ? (e) => e.stopPropagation() : undefined}>
       <div className="dh-instrument-main">
         <h1 className="dh-instrument-symbol">{view.pair}</h1>
         <span className="dh-instrument-meta">{view.description}</span>
@@ -80,6 +89,7 @@ export function InstrumentHeaderBlock(p: Record<string, unknown>) {
           ))}
         </div>
         <span className="dh-instrument-spacer" />
+        <ExecutionFeedControls system={(p.system as DesignSystem) ?? "salt"} status={status} canReset={readOnly && feed.samples.length > 0} presenting={readOnly} />
         <span className="dh-instrument-note">{String(p.note ?? "Sample data")}</span>
       </div>
     </div>

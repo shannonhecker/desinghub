@@ -10815,6 +10815,46 @@
 .dh-instrument-order-status { color: var(--ds-fg-tertiary); }
 .dh-instrument-dot { width: var(--dh-cell-dot); height: var(--dh-cell-dot); border-radius: 50%; background: currentColor; }
 
+/* The sample feed: what it is doing, Pause / Resume, Reset. A fixed slot,
+   so the header keeps one height whatever the system's button measures. */
+.dh-feed {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  height: var(--dh-feed-h);
+  white-space: nowrap;
+}
+.dh-feed-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  min-width: var(--dh-feed-status-w);
+  color: var(--ds-fg-secondary);
+  font-weight: 600;
+}
+.dh-feed-dot {
+  flex: none;
+  width: var(--dh-cell-dot);
+  height: var(--dh-cell-dot);
+  border-radius: 50%;
+  background: var(--ds-fg-tertiary);
+}
+.dh-feed-status.is-live { color: var(--ds-fg); }
+.dh-feed-status.is-live .dh-feed-dot {
+  background: var(--ds-status-positive);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ds-status-positive) 45%, transparent);
+  animation: dh-feed-pulse 2s ease-out infinite;
+}
+@keyframes dh-feed-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ds-status-positive) 45%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 var(--dh-cell-gap) transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dh-feed-status.is-live .dh-feed-dot { animation: none; }
+}
+.dh-feed-btn { display: inline-flex; align-items: center; }
+
 /* ── Execution chart: a tool rail, the plot, the range presets ── */
 .dh-panel.dh-exec {
   flex-direction: row;
