@@ -11201,14 +11201,17 @@
   cursor: pointer;
   white-space: nowrap;
 }
+/* The highlight follows the pointer and the arrow keys (is-active); focus
+   itself only moves with the keyboard. */
+.dh-exec-flyout-item:focus { outline: none; }
 .dh-exec-flyout-item:hover,
-.dh-exec-flyout-item:focus { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); outline: none; }
+.dh-exec-flyout-item.is-active { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
 /* The checked row keeps the system's selected fill (none where the system
    marks it with the check alone), with a lighter tint over it on hover or
    focus rather than a second full one. */
-.dh-exec-flyout-item.is-checked:not(:hover):not(:focus) { background: var(--dh-exec-menu-active-bg, transparent); }
+.dh-exec-flyout-item.is-checked:not(:hover):not(.is-active) { background: var(--dh-exec-menu-active-bg, transparent); }
 .dh-exec-flyout-item.is-checked:hover,
-.dh-exec-flyout-item.is-checked:focus { background: color-mix(in srgb, var(--ds-fg) 6%, var(--dh-exec-menu-active-bg, transparent)); }
+.dh-exec-flyout-item.is-checked.is-active { background: color-mix(in srgb, var(--ds-fg) 6%, var(--dh-exec-menu-active-bg, transparent)); }
 /* Inside the menu's edge, which scrolls (and so clips) when it is capped. */
 .dh-exec-flyout-item:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: calc(var(--dh-focus-ring) * -1); }
 .dh-exec-flyout-check { flex: none; display: inline-flex; width: var(--dh-nav-group-pad); color: var(--ds-primary); }

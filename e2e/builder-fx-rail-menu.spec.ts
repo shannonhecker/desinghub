@@ -16,10 +16,11 @@ import { test, expect, type Page, type Locator } from "@playwright/test";
 
 const SYSTEMS = ["Salt DS", "Material 3", "Fluent 2", "uoaui", "Carbon"] as const;
 const MENUS = ["Interval", "Chart type", "Overlays", "View"] as const;
-/* The outline must read as a hairline, not a ring: against the menu's own
-   surface its contrast stays under this (the old outline was about 3.5:1
-   in Salt dark), and above 1, so it is there at all. */
-const QUIET_OUTLINE = 2;
+/* The outline must read as a faint hairline, not a ring: against the menu's
+   own surface its contrast stays under this in every system and mode (the
+   first outline was about 3.5:1 in Salt dark, and Salt's quietest separator
+   is still 1.8:1), and above 1, so it is there at all. */
+const QUIET_OUTLINE = 1.35;
 
 function chatInput(page: Page) {
   return page.getByRole("textbox", { name: "Chat message input" });
@@ -58,8 +59,10 @@ async function look(menu: Locator): Promise<Look> {
       probe.fillStyle = c;
       const v = probe.fillStyle;
       if (v.startsWith("#")) return [parseInt(v.slice(1, 3), 16), parseInt(v.slice(3, 5), 16), parseInt(v.slice(5, 7), 16), 1];
-      const m = v.match(/[\d.]+/g)!.map(Number);
-      return [m[0], m[1], m[2], m[3] ?? 1];
+      const m = v.match(/-?[\d.]+(?:e-?\d+)?/g)!.map(Number);
+      /* color-mix() computes to color(srgb r g b / a), channels 0 to 1. */
+      const unit = v.startsWith("color(") ? 255 : 1;
+      return [m[0] * unit, m[1] * unit, m[2] * unit, m[3] ?? 1];
     };
     const over = (top: number[], under: number[]) => top.slice(0, 3).map((t, i) => t * top[3] + under[i] * (1 - top[3])).concat(1);
     const lum = (c: number[]) => {
@@ -171,6 +174,20 @@ test.describe("Builder - FX Execution rail menus", () => {
     await expect(menu).toHaveCount(0);
     await expect(button).toBeFocused();
     await expect(button).toHaveText("5m");
+
+    /* The pointer moves the highlight, never the focus. */
+    await button.click();
+    await expect(menu).toBeVisible();
+    const focused = () => page.evaluate(() => document.activeElement?.textContent?.trim());
+    const before = await focused();
+    await items.nth(4).hover();
+    await expect(items.nth(4)).toHaveClass(/is-active/);
+    expect(await focused()).toBe(before);
+    /* The arrow keys go on from the highlighted row. */
+    await page.keyboard.press("ArrowDown");
+    await expect(items.nth(5)).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
 
     /* A click outside closes it. */
     await button.click();

@@ -25,6 +25,8 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
   const railRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttons = useRef<Record<string, HTMLButtonElement | null>>({});
+  /* Opening and the keys move focus; the pointer only moves the highlight. */
+  const focusActive = useRef(false);
   const current = menus.find((m) => m.key === open) ?? null;
 
   const close = (refocus: boolean) => {
@@ -35,6 +37,7 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
   const show = (m: RailMenu, at?: "last") => {
     const checked = m.items.findIndex((i) => i.active);
     setActive(at === "last" ? m.items.length - 1 : Math.max(0, checked));
+    focusActive.current = true;
     setOpen(m.key);
   };
 
@@ -79,7 +82,8 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
 
   /* The active item holds focus (roving tabindex), from the moment the menu opens. */
   useEffect(() => {
-    if (!open) return;
+    if (!open || !focusActive.current) return;
+    focusActive.current = false;
     menuRef.current?.querySelectorAll<HTMLElement>("[role^=menuitem]")[active]?.focus();
   }, [open, active]);
 
@@ -92,7 +96,7 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
   };
   const onMenuKey = (m: RailMenu) => (e: React.KeyboardEvent) => {
     const last = m.items.length - 1;
-    const move = (i: number) => { e.preventDefault(); setActive(i); };
+    const move = (i: number) => { e.preventDefault(); focusActive.current = true; setActive(i); };
     if (e.key === "ArrowDown") move(active >= last ? 0 : active + 1);
     else if (e.key === "ArrowUp") move(active <= 0 ? last : active - 1);
     else if (e.key === "Home") move(0);
@@ -131,7 +135,7 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
                 <button
                   key={item.label}
                   type="button"
-                  className={`dh-exec-flyout-item${item.active ? " is-checked" : ""}`}
+                  className={`dh-exec-flyout-item${item.active ? " is-checked" : ""}${i === active ? " is-active" : ""}`}
                   role={m.multi ? "menuitemcheckbox" : "menuitemradio"}
                   aria-checked={item.active}
                   tabIndex={i === active ? 0 : -1}
