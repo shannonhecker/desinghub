@@ -59,7 +59,13 @@ async function openBuilder(page: Page) {
 
 async function applyTemplate(page: Page, label: string) {
   await openBuilder(page);
-  await page.getByRole("button", { name: /Browse templates/ }).click();
+  /* Clicked before the page has hydrated, the click is lost (the same reason
+     applyTemplateFromChat retries): click until the gallery opens. */
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
   /* Analytics Home is the connected workspace: its own action, not a card. */
   if (label === "Analytics Home") await page.getByRole("button", { name: "Open workspace" }).click();
   else await page.getByRole("button", { name: `Use the ${label} template` }).click();
