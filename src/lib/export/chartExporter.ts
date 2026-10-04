@@ -51,6 +51,8 @@ export const REPORT_CHART_BLOCK_TYPES = new Set<string>([
   "HighchartStackedArea",
   "HighchartCombination",
   "HighchartWaterfall",
+  "HighchartRadar",
+  "HighchartCorridor",
 ]);
 
 export function isChartBlock(type: string): boolean {

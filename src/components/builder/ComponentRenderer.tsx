@@ -1732,6 +1732,8 @@ function HighchartBlockRenderer({
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
       valueMax={typeof p.valueMax === "number" ? p.valueMax : undefined}
       labelWrap={p.labelWrap === true}
+      yAxisCategories={Array.isArray(p.yAxisCategories) ? (p.yAxisCategories as string[]) : undefined}
+      bandName={text(p.bandName)}
       pointColors={pointColors}
       pointColorsByName={p.pointColorsByName && typeof p.pointColorsByName === "object" ? (p.pointColorsByName as Record<string, string>) : undefined}
       selected={selection?.selected}
@@ -1971,6 +1973,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartWaterfall: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartRadar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartCorridor: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
   /* Batch 6 */

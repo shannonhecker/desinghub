@@ -113,7 +113,7 @@ export type HighchartType =
   | "bar" | "donut" | "gauge" | "heatmap" | "treemap"
   | "spline" | "stacked-column"
   | "combination" | "stacked-bar" | "stacked-area"
-  | "waterfall";
+  | "waterfall" | "radar" | "corridor";
 
 /** One data series. `type`, `yAxis` and `dashStyle` only matter to the
  *  combination chart, where each series picks its own mark and axis. */
@@ -155,6 +155,11 @@ export interface ChartProps {
   valueSuffix?: string;
   /** Gauge: the top of its scale (default 100, shown as a percentage). */
   valueMax?: number;
+  /** Labels for a value axis whose values are positions on a scale (a rating
+   *  trend: 0 = "CCC" ... 6 = "AAA"). */
+  yAxisCategories?: string[];
+  /** corridor: the name of the band between its two lines. */
+  bandName?: string;
   /** Wrap long category labels instead of rotating them (a narrow chart
    *  with a few long names). */
   labelWrap?: boolean;
@@ -255,6 +260,19 @@ export function buildChartOptions(
       navigation: { activeColor: v.fg, inactiveColor: v.fgTer, style: { color: v.fgSec }, arrowSize: 9 },
       labelFormatter(this: { name: string; percentage?: number }) {
         return this.percentage === undefined ? this.name : `${this.name} ${Math.round(this.percentage)}%`;
+      },
+    };
+  }
+  if (props.yAxisCategories?.length && o.yAxis && !Array.isArray(o.yAxis)) {
+    const labels = props.yAxisCategories;
+    const y = o.yAxis as any;
+    o.yAxis = { ...y, categories: labels, min: 0, max: labels.length - 1, tickInterval: 1, title: { ...y.title, text: undefined } };
+    o.tooltip = {
+      ...(o.tooltip as any),
+      shared: true,
+      formatter(this: any) {
+        const points = this.points ?? [this];
+        return `<b>${this.x ?? this.key ?? ""}</b><br/>` + points.map((p: any) => `${p.series.name}: <b>${labels[Math.round(p.y)] ?? p.y}</b>`).join("<br/>");
       },
     };
   }
@@ -638,6 +656,55 @@ function chartOptions(
       };
     }
 
+    case "radar": {
+      /* A spider chart: one spoke per category, a polygon grid, lines that
+         close on themselves. */
+      const series = props.series ?? [
+        { name: "This year", data: [62, 48, 71, 55, 66, 59] },
+        { name: "Last year", data: [54, 52, 60, 49, 58, 63], dashStyle: "ShortDash" as const },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, polar: true, type: "line" },
+        title: { ...tt, text: props.title || "Capability profile" },
+        pane: { size: "78%" },
+        xAxis: {
+          ...tx,
+          categories: props.categories ?? ["Quality", "Speed", "Cost", "Coverage", "Support", "Reach"],
+          tickmarkPlacement: "on",
+          lineWidth: 0,
+          gridLineColor: v.border,
+        },
+        yAxis: { ...ty, gridLineInterpolation: "polygon", lineWidth: 0, min: 0, gridLineColor: v.border },
+        tooltip: { ...(t.tooltip as any), shared: true },
+        series: series.map((s) => ({ ...s, type: "line" as const, pointPlacement: "on", marker: { enabled: true, radius: 3 } })) as any,
+      };
+    }
+
+    case "corridor": {
+      /* A ceiling (dashed), a path under it, and the room between them as a
+         band. Series: [ceiling, path]. */
+      const [ceiling, path] = props.series ?? [
+        { name: "Budget", data: [40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0] },
+        { name: "Projected", data: [34, 30, 27, 23, 20, 16, 13, 10, 6, 3, 0] },
+      ];
+      const band = (ceiling?.data ?? []).map((upper, i) => [path?.data?.[i] ?? null, upper]);
+      const [c0, c1] = (t.colors as string[] | undefined) ?? [v.primary, v.positive];
+      return {
+        ...t,
+        chart: { ...tc, type: "line" },
+        title: { ...tt, text: props.title || "Pathway" },
+        xAxis: { ...tx, categories: props.categories ?? ["2030", "2032", "2034", "2036", "2038", "2040", "2042", "2044", "2046", "2048", "2050"] },
+        yAxis: { ...ty, min: 0 },
+        tooltip: { ...(t.tooltip as any), shared: true },
+        series: [
+          { type: "line", name: ceiling?.name ?? "Ceiling", data: ceiling?.data ?? [], dashStyle: "Dash", color: c0, marker: { enabled: false } },
+          { type: "arearange", name: props.bandName || "Headroom", data: band, color: c0, fillOpacity: 0.16, lineWidth: 0, marker: { enabled: false }, enableMouseTracking: false },
+          { type: "area", name: path?.name ?? "Path", data: path?.data ?? [], color: c1 ?? v.positive, fillOpacity: 0.14, marker: { enabled: false } },
+        ] as any,
+      };
+    }
+
     case "waterfall": {
       /* Steps that add to or take from a running total, then a sum bar. A
          part flagged `isSum` shows the running total at that point. */
@@ -754,6 +821,8 @@ interface SimulatedHighchartProps {
   valueSuffix?: string;
   valueMax?: number;
   labelWrap?: boolean;
+  yAxisCategories?: string[];
+  bandName?: string;
   pointColors?: string[];
   pointColorsByName?: Record<string, string>;
   selected?: string;
@@ -765,7 +834,7 @@ const DEFAULT_CHART_HEIGHT = 250;
 export function SimulatedHighchart({
   chartType, title, value, system, seriesColors, seriesData, categories, series,
   height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
-  valueMax, labelWrap, pointColors, pointColorsByName, selected, onSelectPoint,
+  valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, onSelectPoint,
 }: SimulatedHighchartProps) {
   /* The click handler is read through a ref so a new function identity each
      render does not rebuild the chart. */
@@ -823,12 +892,12 @@ export function SimulatedHighchart({
       vars,
       {
         title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
-        valueMax, labelWrap, pointColors, pointColorsByName, selected,
+        valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected,
         ...(selectable ? { onSelectPoint: (name: string) => onSelectRef.current?.(name) } : {}),
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, pointColorsKey, selected, selectable]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, yAxisCategories?.join("|"), bandName, pointColorsKey, selected, selectable]);
 
   const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (
