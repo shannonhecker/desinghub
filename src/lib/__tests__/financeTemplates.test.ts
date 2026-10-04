@@ -35,9 +35,9 @@ describe("finance templates - registration", () => {
 });
 
 describe("finance templates - application chrome", () => {
-  it("a flush, stacked, dark header of a top bar over a tab strip; no sidebar, no footer", () => {
+  it("a flush, stacked, dark header of a top bar, a tab strip and the context bar; no sidebar, no footer", () => {
     for (const t of templates) {
-      expect(t.header.map((b) => b.type)).toEqual(["TopNav", "TabStrip"]);
+      expect(t.header.map((b) => b.type)).toEqual(["TopNav", "TabStrip", "ContextBar"]);
       expect(t.zoneLayouts?.header).toMatchObject({ mode: "stack", gap: 0, flush: true, tone: "dark" });
       expect(t.zoneLayouts?.sidebar?.visible).toBe(false);
       expect(t.zoneLayouts?.footer?.visible).toBe(false);
@@ -113,7 +113,12 @@ describe("Risk Analytics - interactions", () => {
 
   it("summary: an Aggregate row then one row per fund, with grouped VaR columns", () => {
     const d = summary();
-    expect(d.rows.map((r) => r[GROUP_FIELD])).toEqual(["Aggregate", ...FUNDS]);
+    /* Each fund, then the asset classes it holds, indented under it. */
+    expect(d.rows.filter((r) => !r._indent).map((r) => r[GROUP_FIELD])).toEqual(["Aggregate", ...FUNDS]);
+    const children = d.rows.filter((r) => r._indent === 1);
+    expect(children.length).toBeGreaterThan(FUNDS.length);
+    expect(new Set(children.map((r) => r._select))).toEqual(new Set(FUNDS));
+    expect(d.rows.every((r) => Number(r._indent ?? 0) <= 1)).toBe(true);
     expect(d.rows[0]).toMatchObject({ _bold: true, pvPct: 100 });
     expect(d.columns.filter(isColumnGroup).map((g) => g.header)).toEqual(["VaR 95% (20D)", "IVaR 95% (20D)", "MVaR 95% (20D)", "CVaR 95% (20D)"]);
   });
@@ -176,7 +181,8 @@ describe("Performance Analytics - interactions", () => {
 
   it("results: a Total row then one row per account, grouped by period", () => {
     const d = results();
-    expect(d.rows.map((r) => r[GROUP_FIELD])).toEqual(["Total", ...FUNDS]);
+    expect(d.rows.filter((r) => !r._indent).map((r) => r[GROUP_FIELD])).toEqual(["Total", ...FUNDS]);
+    expect(d.rows.filter((r) => r._indent === 1).length).toBeGreaterThan(FUNDS.length);
     expect(d.columns.filter(isColumnGroup).map((g) => g.header)).toEqual(["1 Month", "3 Month", "YTD", "1 Year"]);
     expect(total().excess1m).toBeCloseTo((total().port1m as number) - (total().bmk1m as number), 2);
   });

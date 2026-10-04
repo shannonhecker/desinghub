@@ -31,7 +31,7 @@ describe("applyTemplate", () => {
     expect(state().activeTemplateId).toBe("risk-analytics");
     expect(state().designSystem).toBe("carbon");
     expect(state().blocks.length).toBeGreaterThan(4);
-    expect(state().headerBlocks.map((b) => b.type)).toEqual(["TopNav", "TabStrip"]);
+    expect(state().headerBlocks.map((b) => b.type)).toEqual(["TopNav", "TabStrip", "ContextBar"]);
   });
 
   it("follows a design system switch earlier in the same turn", () => {
@@ -93,5 +93,23 @@ describe("setZoneLayout on chrome zones", () => {
     expect(state().zoneLayouts.footer.visible).toBe(false);
     expect(state().zoneLayouts.header).toMatchObject({ tone: "accent", flush: true, mode: "row" });
     expect(state().zoneLayouts.sidebar.side).toBe("right");
+  });
+});
+
+describe("openTemplateLink", () => {
+  it("keeps the collapsed sidebar and a shared filter's value across reports", async () => {
+    const { openTemplateLink, applyTemplateToCanvas } = await import("../applyTemplate");
+    const { BUILDER_TEMPLATES } = await import("../builderTemplates");
+    applyTemplateToCanvas(BUILDER_TEMPLATES["issuer-climate"], "salt");
+    const s = useBuilder.getState();
+    s.setZoneLayout("sidebar", { collapsed: true });
+    s.setReportState("entity", "Helios Energy");
+    openTemplateLink(BUILDER_TEMPLATES["issuer-controversies"], "salt");
+    expect(useBuilder.getState().activeTemplateId).toBe("issuer-controversies");
+    expect(useBuilder.getState().zoneLayouts.sidebar.collapsed).toBe(true);
+    expect(useBuilder.getState().reportState.entity).toBe("Helios Energy");
+    /* A report without that filter starts clean. */
+    openTemplateLink(BUILDER_TEMPLATES["performance-analytics"], "salt");
+    expect(useBuilder.getState().reportState.entity).toBeUndefined();
   });
 });

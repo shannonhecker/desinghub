@@ -17,18 +17,20 @@ import type { BuilderTemplate } from "./builderTemplates";
 import {
   AS_OF,
   BODY_LAYOUT,
-  CONTEXT_ROW_HEIGHT,
   CURRENCIES,
   FINANCE_BRAND,
   FULL,
   HALF,
   PERCENT_CHART,
   WORKSPACES,
+  WORKSPACE_TEMPLATES,
   filter,
   sum,
   viewBy,
   viewByHeader,
   weighted,
+  contextBar,
+  type ContextFilter,
 } from "./financeTemplates";
 import type { GridCell } from "./dataGridModel";
 import type { RecordBinding } from "./recordPanelModel";
@@ -40,29 +42,31 @@ const PERIODICITY_STATE = "periodicity";
 
 /* ── Chrome: the finance header, plus the section's sidebar ── */
 export type SiPage = "esg" | "climate" | "screening" | "changes" | "issuer-climate" | "issuer-involvement" | "issuer-controversies" | "issuer-comparison" | "scorecard";
-const PAGES: [key: SiPage, group: string, label: string, icon: string][] = [
-  ["esg", "Portfolio", "ESG", "shield"],
-  ["climate", "Portfolio", "Climate", "trending_up"],
-  ["screening", "Screening", "Screening", "filter"],
-  ["changes", "Screening", "Changes", "layers"],
-  ["issuer-climate", "Issuer report", "Climate", "trending_up"],
-  ["issuer-involvement", "Issuer report", "Involvement", "database"],
-  ["issuer-controversies", "Issuer report", "Controversies", "notifications"],
-  ["issuer-comparison", "Issuer report", "Comparison", "person"],
-  ["scorecard", "Scorecard", "Governance", "bar_chart"],
+/* The section's pages, in the order and groups of its navigation. Each
+   item opens its template while presenting. */
+const PAGES: [key: SiPage, group: string, label: string, templateId: BuilderTemplate["id"]][] = [
+  ["esg", "Portfolio", "ESG", "esg-analytics"],
+  ["climate", "Portfolio", "Climate", "climate-analytics"],
+  ["issuer-climate", "Issuer report", "Climate", "issuer-climate"],
+  ["issuer-involvement", "Issuer report", "Business involvement", "issuer-involvement"],
+  ["issuer-controversies", "Issuer report", "Controversies", "issuer-controversies"],
+  ["issuer-comparison", "Issuer report", "Entity comparison", "entity-comparison"],
+  ["screening", "Screening", "Screening", "screening"],
+  ["changes", "Screening", "Changes", "screening-changes"],
+  ["scorecard", "Scorecard", "Corporate governance", "governance-scorecard"],
 ];
 
 /** The Sustainable Investment shell: the finance header and the section's
  *  sidebar, with one page marked active. */
-export const siChrome = (prefix: string, activePage: SiPage) => {
+export const siChrome = (prefix: string, activePage: SiPage, filters: ContextFilter[] = []) => {
   const sidebar: Block[] = [];
   let group = "";
-  PAGES.forEach(([key, g, label, icon], i) => {
+  PAGES.forEach(([key, g, label, templateId], i) => {
     if (g !== group) {
       group = g;
       sidebar.push({ id: `tpl-${prefix}-group-${g.toLowerCase().replace(/\s+/g, "-")}`, type: "NavGroup", props: { label: g } });
     }
-    sidebar.push({ id: `tpl-${prefix}-nav-${i}`, type: "NavItem", props: { label, icon, active: key === activePage } });
+    sidebar.push({ id: `tpl-${prefix}-nav-${i}`, type: "NavItem", props: { label, icon: "none", active: key === activePage, templateId } });
   });
   return {
     header: [
@@ -72,8 +76,9 @@ export const siChrome = (prefix: string, activePage: SiPage) => {
       },
       {
         id: `tpl-${prefix}-tabs`, type: "TabStrip",
-        props: { label: "Workspaces", tabsCsv: WORKSPACES, active: TITLE, addButton: true, tone: "dark" },
+        props: { label: "Workspaces", tabsCsv: WORKSPACES, active: TITLE, addButton: true, tone: "dark", templates: WORKSPACE_TEMPLATES },
       },
+      contextBar(prefix, TITLE, filters),
     ] as Block[],
     sidebar,
     footer: [] as Block[],
@@ -84,7 +89,7 @@ const chrome = siChrome;
 
 export const SI_CHROME_LAYOUTS = {
   header: { mode: "stack", gap: 0, flush: true, tone: "dark" },
-  sidebar: { mode: "stack", gap: 2, align: "stretch" },
+  sidebar: { mode: "stack", gap: 0, align: "stretch", dense: true, size: 210 },
   footer: { mode: "row", gap: 8, wrap: false, align: "center", visible: false },
 } as const;
 const CHROME_LAYOUTS = SI_CHROME_LAYOUTS;
@@ -231,15 +236,11 @@ export const esgAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("esg", "esg"),
+  ...chrome("esg", "esg", [filter("Currency", "currency", "GBP", CURRENCIES), filter("Periodicity", PERIODICITY_STATE, "Monthly", SI_PERIODICITIES)]),
   body: [
-    { id: "tpl-esg-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "6fr", height: CONTEXT_ROW_HEIGHT, align: "center", ...FULL } },
-    filter("tpl-esg-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 6, spanPhone: 6 }),
-    filter("tpl-esg-periodicity", "Periodicity", PERIODICITY_STATE, "Monthly", SI_PERIODICITIES, "3fr", { spanTablet: 6, spanPhone: 6 }),
-
     {
       id: ESG_SUMMARY, type: "DataGrid",
-      props: { title: "Summary", subtitle: AS_OF, height: 300, viewBy: Object.keys(ESG_DIMENSIONS), binding: esgSummary },
+      props: { title: "Summary", subtitle: AS_OF, height: 248, viewBy: Object.keys(ESG_DIMENSIONS), binding: esgSummary },
       layout: { width: "12fr" },
     },
 
@@ -255,19 +256,19 @@ export const esgAnalytics: BuilderTemplate = {
 
     {
       id: ESG_BREAKDOWN, type: "DataGrid",
-      props: { title: "Dimension breakdown", height: 400, viewBy: Object.keys(ESG_BREAKDOWN_DIMENSIONS), binding: esgBreakdown },
+      props: { title: "Dimension breakdown", height: 364, viewBy: Object.keys(ESG_BREAKDOWN_DIMENSIONS), binding: esgBreakdown },
       layout: { width: "6fr", ...FULL },
     },
     {
       id: "tpl-esg-trend", type: "HighchartCombination",
-      props: { chartType: "combination", panel: true, height: 400, title: "ESG trend", subtitle: "(Clustered)", binding: esgTrend, ...SCORE_CHART },
+      props: { chartType: "combination", panel: true, height: 364, title: "ESG trend", subtitle: "(Clustered)", binding: esgTrend, ...SCORE_CHART },
       layout: { width: "6fr", ...FULL },
     },
 
     {
       id: "tpl-esg-top", type: "DataGrid",
       props: {
-        title: "Top relative contributors", subtitle: "by issuer", height: 432,
+        title: "Top relative contributors", subtitle: "by issuer", height: 392,
         binding: contributors("issuer", "desc", [WEIGHT, score("keyIssue", "Key issue", { cell: undefined, width: 72 }), score("envScore", "E"), score("socScore", "S"), score("govScore", "G")]),
       },
       layout: { width: "6fr", ...FULL },
@@ -275,7 +276,7 @@ export const esgAnalytics: BuilderTemplate = {
     {
       id: "tpl-esg-bottom", type: "DataGrid",
       props: {
-        title: "Bottom relative contributors", subtitle: "by sector, vs portfolio", height: 432,
+        title: "Bottom relative contributors", subtitle: "by sector, vs portfolio", height: 392,
         binding: contributors("sector", "asc", [WEIGHT, { ...rel("relKeyIssue", "Key issue"), width: 72 }, rel("relEnv", "E"), rel("relSoc", "S"), rel("relGov", "G")]),
       },
       layout: { width: "6fr", ...FULL },
@@ -401,7 +402,7 @@ const climateTop: DataBinding = {
   groupHeader: viewByHeader(CLIMATE_TOP, CLIMATE_TOP_DIMENSIONS),
   rank: true,
   measures: [sum("weight"), weighted("intensityEvic")],
-  display: [WEIGHT, { key: "intensityEvic", label: "Carbon intensity (scope 1 & 2)", kind: "number", decimals: 1, width: 210 }],
+  display: [WEIGHT, { key: "intensityEvic", label: "Carbon intensity (scope 1 & 2)", kind: "number", decimals: 1, width: 190 }],
   sort: { by: "intensityEvic", dir: "desc" },
   limit: 10,
   groupMinWidth: 150,
@@ -431,14 +432,11 @@ export const climateAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("climate", "climate"),
+  ...chrome("climate", "climate", [filter("Currency", "currency", "GBP", CURRENCIES)]),
   body: [
-    { id: "tpl-climate-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center", spanTablet: 8, spanPhone: 12 } },
-    filter("tpl-climate-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 4, spanPhone: 12 }),
-
     {
       id: CLIMATE_SUMMARY, type: "DataGrid",
-      props: { title: "Summary", subtitle: AS_OF, height: 300, viewBy: Object.keys(CLIMATE_DIMENSIONS), binding: climateSummary },
+      props: { title: "Summary", subtitle: AS_OF, height: 248, viewBy: Object.keys(CLIMATE_DIMENSIONS), binding: climateSummary },
       layout: { width: "12fr" },
     },
 
@@ -582,7 +580,6 @@ export const screening: BuilderTemplate = {
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("screening", "screening"),
   body: [
-    { id: "tpl-screening-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "12fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     {
       id: "tpl-screening-funnel", type: "HighchartWaterfall",
       props: { chartType: "waterfall", panel: true, height: 360, title: "Screening summary", subtitle: "(Waterfall)", binding: screeningFunnel, valueDecimals: 0 },
@@ -610,7 +607,7 @@ const changesColumns: RecordColumn[] = [
   { field: "negFlag", label: "Negative", kind: "number", decimals: 0, width: 68, cell: chip() },
   { field: "controversy", label: "Controv.", kind: "number", decimals: 0, width: 68, cell: chip(false) },
   { field: "scope1", label: "Value", kind: "number", decimals: 0, width: 58 },
-  { field: "scope1Pct", label: "Change", kind: "percent", decimals: 1, width: 116, cell: { type: "delta", upIsGood: false, sparkField: "scope1Trend" } },
+  { field: "scope1Pct", label: "Change", kind: "percent", decimals: 1, width: 102, cell: { type: "delta", upIsGood: false, sparkField: "scope1Trend" } },
   { field: "ratingStart", label: "Start", width: 48, cell: { type: "badge" } },
   { field: "rating", label: "End", width: 48, cell: { type: "badge" } },
   { field: "ratingMove", label: "Movement", width: 88, cell: { type: "toneText", tones: { Upgraded: "good", Downgraded: "bad" } } },
@@ -646,7 +643,6 @@ export const screeningChangesTemplate: BuilderTemplate = {
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
   ...chrome("changes", "changes"),
   body: [
-    { id: "tpl-changes-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "12fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     {
       id: "tpl-changes-grid", type: "DataGrid",
       props: { title: "Changes", subtitle: "January to September", height: 480, binding: screeningChanges },
