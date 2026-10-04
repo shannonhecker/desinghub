@@ -633,6 +633,11 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "NavItem", label: "Nav Item", icon: "menu", defaults: { label: "New Item", icon: "chat", active: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "icon", label: "Icon", options: NAV_ICON_OPTIONS },
   ]},
+  /* ── Record panel: the detail of the row a grid has selected ── */
+  { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "emptyText", label: "Empty text" },
+  ]},
   /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
   { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {
       title: "Holdings", height: 320,

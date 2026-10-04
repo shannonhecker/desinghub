@@ -10947,6 +10947,84 @@
 .dh-cell-flag { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
 .dh-cell-flag-code { font-size: var(--dh-cell-small); color: var(--ds-fg-secondary); }
 .dh-cell-rank { color: var(--ds-fg-tertiary); }
+/* ── Record panel (RecordPanel.tsx): the detail of a selected record ── */
+.dh-record {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-panel-pad);
+  overflow-y: auto;
+  font-size: var(--dh-record-size);
+  color: var(--ds-fg);
+}
+.dh-record-pairs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--dh-panel-pad) * 0.75) var(--dh-panel-pad);
+  margin: 0;
+}
+.dh-record-pair { min-width: 0; }
+.dh-record-pair dt,
+.dh-record-heading {
+  margin: 0 0 calc(var(--dh-cell-gap) / 2);
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ds-fg-tertiary);
+}
+.dh-record-pair dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-record-section { min-width: 0; }
+.dh-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.dh-record-table th,
+.dh-record-table td {
+  padding: var(--dh-cell-gap) 0;
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  text-align: right;
+  font-weight: 400;
+}
+.dh-record-table thead th {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  color: var(--ds-fg-secondary);
+}
+.dh-record-table th[scope="row"],
+.dh-record-table thead th:first-child { text-align: left; }
+.dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-record-flat { color: var(--ds-fg-tertiary); }
+.dh-record-clear {
+  align-self: flex-start;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-cell-small);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: var(--dh-focus-ring);
+}
+.dh-record-clear:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
+.dh-record-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dh-cell-gap);
+  color: var(--ds-fg-tertiary);
+  text-align: center;
+}
+.dh-record-empty p { margin: 0; max-width: 24ch; }
 .dh-grid-selectable .ag-row {
   cursor: pointer;
 }
