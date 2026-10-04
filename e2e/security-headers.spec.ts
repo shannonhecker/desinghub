@@ -7,7 +7,7 @@ const share = compressToEncodedURIComponent(JSON.stringify({
   canvasSpacing: "tight", deviceMode: "desktop", themeKey: null,
   headerBlocks: [], sidebarBlocks: [], footerBlocks: [],
   blocks: [{ id: "security-smoke-heading", type: "PageTitle", props: { text: "Shared policy check", level: 1 } }],
-}));
+})).replace(/\+/g, "_").replace(/\$/g, "~");
 
 for (const route of ["/", "/login", "/builder", "/ui-kit", "/token-editor", "/theme-builder", `/preview/share/${share}`]) {
   test(`security headers and CSP-compatible rendering: ${route.split('/').slice(0,3).join('/')}`, async ({ page }) => {
