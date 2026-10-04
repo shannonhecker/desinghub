@@ -10924,30 +10924,44 @@
 .dh-exec-rail-btn:hover,
 .dh-exec-rail-btn.is-open { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); color: var(--ds-fg); }
 .dh-exec-rail-btn:focus-visible,
-.dh-exec-range:focus-visible,
-.dh-exec-flyout-item:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-exec-range:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
 .dh-exec-rail-text { font-size: var(--dh-cell-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* The rail's menus: an overlay over the chart, in the design system's own
+   menu look (--dh-exec-menu-* in chrome-tokens.css). Beside its button,
+   clear of the rail's edge; ExecutionRail moves it up (--dh-exec-menu-shift)
+   or caps it (--dh-exec-menu-max-h) to keep it inside the panel. */
 .dh-exec-flyout {
   position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: calc(100% + var(--dh-cell-gap));
+  inset-block-start: var(--dh-exec-menu-shift, 0);
+  inset-inline-start: calc(100% + (var(--dh-exec-rail) - var(--dh-exec-btn)) / 2 + var(--dh-exec-menu-gap));
   z-index: 20;
   box-sizing: border-box;
   min-width: var(--dh-exec-flyout-w);
-  padding: var(--dh-cell-gap);
-  background: var(--dh-card, var(--ds-surface));
+  max-height: var(--dh-exec-menu-max-h, none);
+  overflow-y: auto;
+  padding: var(--dh-exec-menu-pad, var(--dh-cell-gap));
+  background-color: var(--dh-exec-menu-bg, var(--dh-card, var(--ds-surface)));
+  background-image: var(--dh-exec-menu-image, none);
+  backdrop-filter: var(--dh-exec-menu-backdrop, none);
   color: var(--ds-fg);
-  border: var(--bc-hairline) solid var(--ds-border);
-  border-radius: var(--ds-radius);
-  box-shadow: var(--ds-shadow, none);
+  border: var(--bc-hairline) solid var(--dh-exec-menu-border, var(--ds-border-subtle, var(--ds-border)));
+  border-radius: var(--dh-exec-menu-radius, var(--ds-radius));
+  box-shadow: var(--dh-exec-menu-shadow, var(--dh-shadow-md));
+  animation: dh-exec-menu-in var(--dh-motion-dur-hover) var(--dh-motion-ease) both;
+}
+@keyframes dh-exec-menu-in {
+  from { opacity: 0; transform: translateX(var(--dh-exec-menu-enter)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dh-exec-flyout { animation: none; }
 }
 .dh-exec-flyout-title {
   margin: 0;
-  padding: calc(var(--dh-cell-gap) / 2) var(--dh-nav-pad) var(--dh-cell-gap);
+  padding: calc(var(--dh-cell-gap) / 2) var(--dh-exec-menu-item-pad, var(--dh-nav-pad)) var(--dh-cell-gap);
   font-size: var(--dh-navgroup-size);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: var(--dh-exec-menu-title-track, 0.06em);
+  text-transform: var(--dh-exec-menu-title-case, uppercase);
   color: var(--ds-fg-tertiary);
 }
 .dh-exec-flyout-item {
@@ -10956,10 +10970,10 @@
   align-items: center;
   gap: var(--dh-cell-gap);
   width: 100%;
-  height: var(--dh-nav-row);
-  padding: 0 var(--dh-nav-pad);
+  height: var(--dh-exec-menu-item-h, var(--dh-nav-row));
+  padding: 0 var(--dh-exec-menu-item-pad, var(--dh-nav-pad));
   border: 0;
-  border-radius: var(--ds-radius);
+  border-radius: var(--dh-exec-menu-item-radius, var(--ds-radius));
   background: transparent;
   color: inherit;
   font: inherit;
@@ -10967,7 +10981,16 @@
   cursor: pointer;
   white-space: nowrap;
 }
-.dh-exec-flyout-item:hover { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
+.dh-exec-flyout-item:hover,
+.dh-exec-flyout-item:focus { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); outline: none; }
+/* The checked row keeps the system's selected fill (none where the system
+   marks it with the check alone), with a lighter tint over it on hover or
+   focus rather than a second full one. */
+.dh-exec-flyout-item.is-checked:not(:hover):not(:focus) { background: var(--dh-exec-menu-active-bg, transparent); }
+.dh-exec-flyout-item.is-checked:hover,
+.dh-exec-flyout-item.is-checked:focus { background: color-mix(in srgb, var(--ds-fg) 6%, var(--dh-exec-menu-active-bg, transparent)); }
+/* Inside the menu's edge, which scrolls (and so clips) when it is capped. */
+.dh-exec-flyout-item:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: calc(var(--dh-focus-ring) * -1); }
 .dh-exec-flyout-check { flex: none; display: inline-flex; width: var(--dh-nav-group-pad); color: var(--ds-primary); }
 .dh-exec-main {
   flex: 1 1 auto;
