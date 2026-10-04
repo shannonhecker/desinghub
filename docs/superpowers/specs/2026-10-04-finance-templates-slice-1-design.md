@@ -106,3 +106,30 @@ semantics (issuer slice), multi-page templates, the FX chart.
   tallest system.
 - The chat loop that makes "apply template" usable is unit-tested only until it
   runs with a model key.
+
+## Additions agreed during the build (2026-10-04)
+
+The owner extended the slice while it was being built. These replace the
+earlier lines they contradict ("View by shows its options but does not
+re-query"; "Templates carry sample data").
+
+- **Interactive, like the originals.** Filters, "View by" and the master
+  grid's selected row drive the panels. This needed a data layer
+  (`src/lib/reportData/`): tables, a query engine, computed measures and
+  bindings from blocks to data, with the choices held as report state.
+- **Real data for demos.** Download the data template as Excel, upload a
+  filled-in copy. Uploaded data stays in the browser and is excluded from the
+  cloud snapshot.
+- **Per-panel configuration and pivoting**, built in-house on AG Grid
+  Community (no Enterprise licence).
+- **Chrome that matches the original and can be restyled.** Header bars as
+  blocks, zone tone / flush / side / visible. The templates open with a dark
+  two-bar header and no sidebar or footer.
+- **Softer borders.** Panels use each system's secondary border.
+- **Chat.** Besides `applyTemplate`: `setReportFilter`, chrome fields on
+  `setZoneLayout`, and local (no-model) template and filter commands.
+- **Narrow frames.** `layout.spanTablet` / `layout.spanPhone`.
+
+The data grid export is a semantic `<table>`, not `ag-grid-react`: exported
+code should not carry a grid dependency for a static table.
+
