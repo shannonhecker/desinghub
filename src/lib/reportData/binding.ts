@@ -116,6 +116,23 @@ export interface GroupRows {
   counts?: { as: string; field: string; equals: string }[];
 }
 
+export type DataLevel = number | "leaf";
+
+/** The levels a grid binding shows under each group, for a grouping. */
+export function levelsOf(binding: Pick<DataBinding, "hierarchy" | "dataLevel">, groupBy: string | null): string[] {
+  const all = (binding.hierarchy ?? []).filter((k) => k !== groupBy);
+  return typeof binding.dataLevel === "number" ? all.slice(0, Math.max(0, binding.dataLevel)) : [];
+}
+
+export interface ExpandedView {
+  /** Keep a limit when expanded (default: none). */
+  limit?: number;
+  /** grid: the data level when expanded (default: the full hierarchy). */
+  dataLevel?: DataLevel;
+  /** chart: a grid shown under the chart instead of the chart's own values. */
+  table?: DataBinding;
+}
+
 export interface DataBinding {
   table: string;
   /** series: categories + series (column, bar, line, area, combination).
@@ -138,6 +155,18 @@ export interface DataBinding {
   share?: "total" | "group";
   /** records: group headings with indented rows. */
   groupRows?: GroupRows;
+  /** grid: the levels available UNDER each group, outermost first (an
+   *  account, then its asset classes, then its securities). */
+  hierarchy?: string[];
+  /** grid: how much of the hierarchy is shown. A number is how many levels
+   *  sit under each group (0 = the groups alone); "leaf" lists the last
+   *  level on its own, flat. Parent rows are bold, children indented. */
+  dataLevel?: DataLevel;
+  /** What the panel shows when it is EXPANDED to the full canvas: more of
+   *  the same data. Any `limit` is lifted by default (the top ten becomes
+   *  all of them); a grid can go a level deeper; a chart can put a fuller
+   *  breakdown under itself. */
+  expanded?: ExpandedView;
   /** Label of the total row (grid). Omitted = no total row. */
   total?: string;
   /** Header of the grid's first column. Default: the group field's label. */
@@ -169,6 +198,14 @@ export interface DataBinding {
   centerMeasure?: string;
 }
 
+/** The fuller breakdown an expanded chart shows under itself. */
+export interface BoundDetail { columns: GridColumn[]; rows: GridRow[] }
+
+export interface ResolveOptions {
+  /** The panel is expanded to the full canvas. */
+  expanded?: boolean;
+}
+
 /** A selection a bound block can make: the state it writes, the current
  *  value, and the labels that clear it. */
 export interface BoundSelection {
@@ -178,8 +215,8 @@ export interface BoundSelection {
 }
 
 export type BoundData =
-  | ({ view: "series"; categories: string[]; series: { name: string; data: (number | null)[]; type?: SeriesStyle["type"]; yAxis?: 0 | 1; dashStyle?: SeriesStyle["dashStyle"] }[] } & BoundSelection)
-  | ({ view: "parts"; seriesData: { name: string; y: number; isSum?: boolean }[]; centerValue: number | null; /** The centre value is money (shown in the selected currency). */ centerMoney?: boolean } & BoundSelection)
+  | ({ view: "series"; categories: string[]; series: { name: string; data: (number | null)[]; type?: SeriesStyle["type"]; yAxis?: 0 | 1; dashStyle?: SeriesStyle["dashStyle"] }[]; detail?: BoundDetail } & BoundSelection)
+  | ({ view: "parts"; seriesData: { name: string; y: number; isSum?: boolean }[]; centerValue: number | null; /** The centre value is money (shown in the selected currency). */ centerMoney?: boolean; detail?: BoundDetail } & BoundSelection)
   | ({ view: "grid"; columns: GridColumn[]; rows: GridRow[] } & BoundSelection)
   | { view: "value"; value: number | null };
 
@@ -214,11 +251,29 @@ const active = (a: Adjustment, state: ReportState): boolean => a.when.in.include
 
 /** Derive a bound block's data. Returns null when the table is missing, so
  *  the caller can fall back to the block's own static props. */
-export function resolveBinding(binding: DataBinding, dataset: ReportDataset, state: ReportState): BoundData | null {
-  const table = tableOf(dataset, binding.table);
+export function resolveBinding(source: DataBinding, dataset: ReportDataset, state: ReportState, options: ResolveOptions = {}): BoundData | null {
+  const table = tableOf(dataset, source.table);
   if (!table) return null;
+  /* Expanded: the same binding with its limit lifted and, for a grid, its
+     deeper level. */
+  const expanded = options.expanded === true;
+  const binding: DataBinding = expanded
+    ? {
+        ...source,
+        limit: source.expanded?.limit,
+        ...(source.hierarchy ? { dataLevel: source.expanded?.dataLevel ?? source.hierarchy.length } : {}),
+      }
+    : source;
+  const detail = (): { detail?: BoundDetail } => {
+    if (!expanded || !source.expanded?.table) return {};
+    const bound = resolveBinding(source.expanded.table, dataset, state, { expanded: true });
+    return bound?.view === "grid" ? { detail: { columns: bound.columns, rows: bound.rows } } : {};
+  };
 
-  const groupBy = binding.groupBy !== undefined ? dyn(binding.groupBy, state) : undefined;
+  /* "leaf": the last level of the hierarchy on its own, as a flat list. Its
+     rows are not groups of the master grid, so they select nothing. */
+  const leaf = binding.view === "grid" && binding.dataLevel === "leaf" ? binding.hierarchy?.at(-1) : undefined;
+  const groupBy = leaf ?? (binding.groupBy !== undefined ? dyn(binding.groupBy, state) : undefined);
   const pivotBy = binding.pivotBy !== undefined ? (dyn(binding.pivotBy, state) ?? undefined) : undefined;
 
   const filters: FilterSpec[] = [];
@@ -231,7 +286,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     filters.push({ field, in: [value, ...(also ? [also] : []), ...(f.extra ?? [])] });
   }
 
-  const selection: BoundSelection = binding.selectState
+  const selection: BoundSelection = binding.selectState && !leaf
     ? { selectState: binding.selectState, selected: state[binding.selectState], ...(binding.selectClears ? { selectClears: binding.selectClears } : {}) }
     : {};
 
@@ -289,6 +344,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
           }),
           ...s.style,
         })),
+      ...detail(),
     };
   }
 
@@ -309,14 +365,41 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
       : toParts(result, key);
     if (binding.sumPart) parts.push({ name: binding.sumPart, y: 0, isSum: true });
     const centerMoney = Boolean(binding.centerMeasure && shown.find((m) => m.key === binding.centerMeasure)?.money);
-    return { view: "parts", seriesData: parts, centerValue: center, ...(centerMoney ? { centerMoney: true } : {}), ...selection };
+    return { view: "parts", seriesData: parts, centerValue: center, ...(centerMoney ? { centerMoney: true } : {}), ...selection, ...detail() };
   }
 
   if (binding.view === "grid") {
-    const header = binding.groupHeader !== undefined ? dyn(binding.groupHeader, state) : (groupBy ? (fieldOf(table, groupBy)?.label ?? groupBy) : "");
+    const header = binding.groupHeader !== undefined && !leaf ? dyn(binding.groupHeader, state) : (groupBy ? (fieldOf(table, groupBy)?.label ?? groupBy) : "");
     const withTotal: QueryResult = binding.total ? result : { ...result, total: undefined };
     const grid = toGrid(withTotal, shown, { groupHeader: header, totalLabel: binding.total, groupWidth: binding.groupWidth, groupMinWidth: binding.groupMinWidth, rank: binding.rank });
     const columns = binding.columnGroups && result.pivots.length === 0 ? groupColumns(grid.columns, binding.columnGroups) : grid.columns;
+    /* Deeper levels: under each group, the same measures by the next
+       dimension of the hierarchy, and so on down. Shares stay shares of the
+       grand total. */
+    const levels = groupBy && result.pivots.length === 0 ? levelsOf(binding, groupBy).filter((k) => fieldOf(table, k)) : [];
+    if (levels.length > 0 && groupBy) {
+      const sort = binding.sort ? { by: dyn(binding.sort.by, state), dir: binding.sort.dir } : undefined;
+      const under = (scope: FilterSpec[], parent: string, top: string, depth: number): GridRow[] => {
+        const dim = levels[depth - 1];
+        const sub = applyComputed(runQuery(table, { groupBy: dim, measures: binding.measures, filters: scope, sort }), computed, result.total);
+        const children = toGrid(sub, shown, { groupHeader: header }).rows;
+        /* A level that only repeats its parent adds nothing. */
+        if (children.length === 1 && children[0][GROUP_FIELD] === parent) return [];
+        return children.flatMap((c, i) => {
+          const deeper = depth < levels.length ? under([...scope, { field: dim, in: [sub.groups[i]] }], sub.groups[i], top, depth + 1) : [];
+          /* A child row belongs to its group: selecting it selects the group. */
+          return [{ ...c, _indent: depth, _select: top, ...(deeper.length ? { _bold: true } : {}) }, ...deeper];
+        });
+      };
+      const head = binding.total ? [grid.rows[0]] : [];
+      const groups = binding.total ? grid.rows.slice(1) : grid.rows;
+      const rows: GridRow[] = [...head];
+      result.groups.forEach((g, i) => {
+        const children = under([...filters, { field: groupBy, in: [g] }], g, g, 1);
+        rows.push(children.length ? { ...groups[i], _bold: true } : groups[i], ...children);
+      });
+      return { view: "grid", columns, rows, ...selection };
+    }
     return { view: "grid", columns, rows: grid.rows, ...selection };
   }
 
@@ -328,6 +411,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     categories: cs.categories,
     series: cs.series.map((s) => ({ ...s, ...(result.pivots.length === 0 ? styleByName.get(s.name) : undefined) })),
     ...selection,
+    ...detail(),
   };
 }
 

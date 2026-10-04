@@ -56,11 +56,11 @@ import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
 import { PanelFrame } from "./PanelFrame";
 import { RecordPanelBlock } from "./RecordPanel";
 import { EntityHeaderBlock, HeroSearchBlock, LauncherCardBlock, MetricTileBlock, VerdictCardBlock } from "./ReportBlocks";
-import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock } from "./ChromeBars";
+import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock, ContextBarBlock } from "./ChromeBars";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
-import { useBoundData, useCanvasDataset } from "./useBoundData";
+import { useBoundData, useCanvasDataset, usePanelExpanded } from "./useBoundData";
 import { CURRENCY_STATE, centerColumn, nextSelection } from "@/lib/reportData/binding";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
@@ -1682,7 +1682,7 @@ function HighchartBlockRenderer({
   const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
   /* A data-bound chart derives its categories / series / parts from the
      canvas dataset and report state; otherwise it draws its own props. */
-  const bound = useBoundData(p);
+  const bound = useBoundData(p, usePanelExpanded(blockId));
   const boundSeries = bound?.view === "series" ? bound : null;
   const boundParts = bound?.view === "parts" ? bound : null;
   /* A gauge bound to one figure. */
@@ -1746,7 +1746,9 @@ function HighchartBlockRenderer({
 
   /* The data behind the chart, shown as a table when the panel is expanded. */
   const percent = typeof p.valueSuffix === "string" && p.valueSuffix.includes("%");
-  const table = boundSeries
+  const table = (boundSeries ?? boundParts)?.detail
+    ? (boundSeries ?? boundParts)!.detail!
+    : boundSeries
     ? seriesToGrid("", boundSeries.categories, boundSeries.series, percent ? "percent" : "number")
     : boundParts
       ? partsToGrid("", boundParts.seriesData, { field: "value", header: "Value", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency })
@@ -1777,7 +1779,7 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   const p = block?.props ?? {};
   /* Data-bound: columns and rows derive from the canvas dataset and report
      state. Otherwise the block's own columns and rows. */
-  const bound = useBoundData(p);
+  const bound = useBoundData(p, usePanelExpanded(blockId));
   const boundGrid = bound?.view === "grid" ? bound : null;
   const staticColumns = useMemo(() => readGridColumns(p.columns), [p.columns]);
   const staticRows = useMemo(() => readGridRows(p.rows), [p.rows]);
@@ -1974,6 +1976,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   TopNav: TopNavBlock as React.FC<{ system: DesignSystem }>,
   TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
   NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
+  ContextBar: ContextBarBlock as React.FC<{ system: DesignSystem }>,
   PageTitle: PageTitleBlock as React.FC<{ system: DesignSystem }>,
   HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,

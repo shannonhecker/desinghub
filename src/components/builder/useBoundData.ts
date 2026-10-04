@@ -26,12 +26,17 @@ function isBinding(v: unknown): v is DataBinding {
 /** Derive a block's data from its `binding` prop, the canvas dataset and the
  *  report state. null when the block has no binding (or nothing to bind to):
  *  the block then renders its own static props. */
-export function useBoundData(props: Record<string, unknown>): BoundData | null {
+export function useBoundData(props: Record<string, unknown>, expanded = false): BoundData | null {
   const binding = props.binding;
   const dataset = useCanvasDataset();
   const reportState = useBuilder((s) => s.reportState);
   return useMemo(
-    () => (isBinding(binding) && dataset ? resolveBinding(binding, dataset, reportState) : null),
-    [binding, dataset, reportState],
+    () => (isBinding(binding) && dataset ? resolveBinding(binding, dataset, reportState, { expanded }) : null),
+    [binding, dataset, reportState, expanded],
   );
+}
+
+/** True while this block's panel is expanded to the full canvas. */
+export function usePanelExpanded(blockId: string | undefined): boolean {
+  return useBuilder((s) => Boolean(blockId) && s.expandedPanel?.id === blockId);
 }

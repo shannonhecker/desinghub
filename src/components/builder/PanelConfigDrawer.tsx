@@ -11,6 +11,9 @@ import {
   AGGREGATIONS,
   PANEL_CHART_TYPES,
   applyPanelConfig,
+  currentDataLevel,
+  dataLevelOptions,
+  withDataLevel,
   isHandBuilt,
   readPanelConfig,
   type PanelConfig,
@@ -36,7 +39,7 @@ const LIMITS = ["All", "5", "10", "20"];
 function Field({ system, label, value, options, onChange }: { system: DesignSystem; label: string; value: string; options: string[]; onChange: (v: string) => void }) {
   return (
     <div className="dh-config-field">
-      <ComponentRenderer type="SimulatedDropdown" system={system} {...{ label, value, options, onValueChange: onChange }} />
+      <ComponentRenderer type="SimulatedDropdown" system={system} {...{ label, value, options, onValueChange: onChange, inline: true }} />
     </div>
   );
 }
@@ -55,6 +58,9 @@ export function PanelConfigDrawer({ system, blockId }: { system: DesignSystem; b
 
   const config = readPanelConfig(block, table, reportState);
   const commit = (next: PanelConfig) => replaceBlock(blockId, applyPanelConfig(block, next, table));
+
+  const levels = dataLevelOptions(binding, table, reportState);
+  const level = currentDataLevel(binding, levels);
 
   const dimensions = dimensionsOf(table);
   const measures = measuresOf(table);
@@ -115,6 +121,23 @@ export function PanelConfigDrawer({ system, blockId }: { system: DesignSystem; b
           onChange={(v) => commit({ ...config, share: (Object.keys(SHARE_LABELS) as PanelConfig["share"][]).find((k) => SHARE_LABELS[k] === v) ?? "none" })}
         />
         <Field system={system} label="Keep top" value={config.limit ? String(config.limit) : "All"} options={LIMITS} onChange={(v) => commit({ ...config, limit: v === "All" ? null : Number(v) })} />
+
+        {levels.length > 0 ? (
+          <>
+            <h4 className="dh-config-heading">Data</h4>
+            <Field
+              system={system}
+              label="Data level"
+              value={level?.label ?? levels[0].label}
+              options={levels.map((o) => o.label)}
+              onChange={(v) => {
+                const next = levels.find((o) => o.label === v);
+                if (next) replaceBlock(blockId, { type: block.type, props: { ...block.props, binding: withDataLevel(binding, next.level) } });
+              }}
+            />
+            {level ? <p className="dh-config-note">{level.path}</p> : null}
+          </>
+        ) : null}
 
         <h4 className="dh-config-heading">Values</h4>
         {measures.map((m) => (
