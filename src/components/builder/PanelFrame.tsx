@@ -77,6 +77,9 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
   /* Expanded: the panel is portalled into the canvas body (.bp-main), whose
      other content is hidden by a class. */
   const anchorRef = useRef<HTMLElement>(null);
+  const expandedRef = useRef<HTMLDivElement>(null);
+  const restoreTool = useRef<"configure" | "expand">("expand");
+  const wasExpanded = useRef(false);
   /* A narrow panel cannot hold its title, the select and the tools on one
      line: the select and the tools drop to a second line, and the content
      gives up that line's height (the panel's own height is pinned). */
@@ -113,19 +116,69 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
     };
   }, [expanded]);
 
+  // The opener is re-rendered on collapse, so restore by tool identity rather
+  // than retaining a detached DOM node. Focus the expanded region after its
+  // portal exists; Tab then enters its controls normally.
+  useEffect(() => {
+    if (expanded && host) expandedRef.current?.focus();
+    if (!expanded && wasExpanded.current) {
+      anchorRef.current?.querySelector<HTMLElement>(`[data-tool="${restoreTool.current}"]`)?.focus();
+    }
+    wasExpanded.current = expanded;
+  }, [expanded, host]);
+
   /* Escape collapses. */
   useEffect(() => {
     if (!expanded) return;
     /* Escape collapses the panel and nothing else: it is taken before the
        builder's own Escape (which would leave Present). An open menu keeps
        its Escape. */
+    let backwards = false;
+    const menuOpen = () => Boolean(document.querySelector('[aria-haspopup][aria-expanded="true"], [role="combobox"][aria-expanded="true"]'));
+    const focusableItems = () => [...(expandedRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"], .ag-cell') ?? [])]
+      .filter(el => {
+        if (!el.getClientRects().length || el.getAttribute("aria-hidden") === "true" || el.classList.contains("ag-tab-guard")) return false;
+        const grid = el.closest(".dh-grid");
+        if (!grid) return true;
+        if (!el.classList.contains("ag-cell")) return false;
+        return el === (grid.querySelector(".ag-cell:focus") ?? grid.querySelector(".ag-cell"));
+      });
+    const focusBoundary = (last: boolean) => {
+      const items = focusableItems();
+      (last ? items.at(-1) : items[0])?.focus();
+    };
+    const onFocus = (e: FocusEvent) => {
+      if (expandedRef.current?.contains(e.target as Node) || menuOpen()) return;
+      focusBoundary(backwards);
+    };
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab" && expandedRef.current) {
+        backwards = e.shiftKey;
+        if (menuOpen()) return;
+        const items = focusableItems();
+        const active = document.activeElement;
+        // Let Highcharts and AG Grid navigate their own internal modules.
+        // Only wrap at the dialog boundary; focusin catches widget exits.
+        if (!items.length || active === expandedRef.current ||
+            (e.shiftKey && active === items[0]) || (!e.shiftKey && active === items.at(-1))) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (items.length) focusBoundary(e.shiftKey);
+          else expandedRef.current.focus();
+        }
+        return;
+      }
       if (e.key !== "Escape" || document.querySelector('[aria-haspopup][aria-expanded="true"], [role="combobox"][aria-expanded="true"]')) return;
+      e.preventDefault();
       e.stopPropagation();
       setExpandedPanel(null);
     };
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    document.addEventListener("focusin", onFocus);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      document.removeEventListener("focusin", onFocus);
+    };
   }, [expanded, setExpandedPanel]);
 
   const vars = (h: number | string) =>
@@ -163,7 +216,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
             aria-label={`Configure ${title || "panel"}`}
             aria-pressed={configOpen}
             title="Configure"
-            onClick={() => setExpandedPanel(configOpen ? { id: blockId!, config: false } : { id: blockId!, config: true })}
+            onClick={() => { if (!expanded) restoreTool.current = "configure"; setExpandedPanel(configOpen ? { id: blockId!, config: false } : { id: blockId!, config: true }); }}
           >
             <SlidersHorizontal size={15} strokeWidth={1.8} aria-hidden="true" />
           </button>
@@ -171,8 +224,9 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
             type="button"
             className="dh-panel-tool"
             aria-label={expanded ? `Collapse ${title || "panel"}` : `Expand ${title || "panel"}`}
+            data-tool="expand"
             title={expanded ? "Collapse (Esc)" : "Expand"}
-            onClick={() => setExpandedPanel(expanded ? null : { id: blockId!, config: false })}
+            onClick={() => { if (!expanded) restoreTool.current = "expand"; setExpandedPanel(expanded ? null : { id: blockId!, config: false }); }}
           >
             {expanded ? <Minimize2 size={15} strokeWidth={1.8} aria-hidden="true" /> : <Maximize2 size={15} strokeWidth={1.8} aria-hidden="true" />}
           </button>
@@ -203,7 +257,8 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
           /* A portal still bubbles React events to the block that owns it.
              Everything in the expanded view is the panel's own interaction,
              so no click here may select (or pin) that block. */
-          <div className="dh-expand-inner" onClick={(e) => e.stopPropagation()}>
+          <div ref={expandedRef} className="dh-expand-inner" role="dialog" aria-modal="true" aria-label={`${title || "Panel"} expanded`} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
+
             <section className="dh-panel dh-panel-expanded" style={vars("100%")} aria-label={title || undefined}>
               {header}
               <div className="dh-panel-body">

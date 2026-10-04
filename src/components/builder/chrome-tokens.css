@@ -13,6 +13,13 @@
    ════════════════════════════════════════════════════════════ */
 
 :root {
+  --bc-panel-inset: 16px;
+  --bc-editor-font: 14px;
+  --bc-composer-min: 72px;
+  --dh-negative-dark: #ff8a80;
+  --dh-negative-light: #b42318;
+  --dh-positive-light: #176b36;
+  --dh-positive-dark: #6bd694;
   /* Surfaces */
   --bc-bg:          rgba(22, 24, 28, 0.96);
   --bc-bg-raised:   rgba(30, 33, 38, 0.98);

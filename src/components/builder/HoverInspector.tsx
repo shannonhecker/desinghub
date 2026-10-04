@@ -68,6 +68,7 @@ interface HoverInspectorProps {
      remains a real dnd-kit activator. */
   dragHandleRef?: (el: HTMLElement | null) => void;
   dragListeners?: Record<string, unknown>;
+  dragAttributes?: React.HTMLAttributes<HTMLElement>;
   isNewlyMounted?: boolean;
   onSwapClick?: () => void;
   onRemove?: () => void;
@@ -78,6 +79,7 @@ export function HoverInspector({
   zone,
   dragHandleRef,
   dragListeners,
+  dragAttributes,
   isNewlyMounted,
   onSwapClick,
   onRemove,
@@ -185,6 +187,7 @@ export function HoverInspector({
         <div
           ref={dragHandleRef}
           className={`canvas-block-handle${isNewlyMounted ? " is-newly-mounted" : ""}`}
+          {...dragAttributes}
           {...(dragListeners ?? {})}
           title="Drag to reorder"
           role="button"

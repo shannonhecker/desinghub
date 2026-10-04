@@ -204,3 +204,12 @@ describe("slice 3 chart kinds", () => {
   });
 });
 
+
+describe("chart point descriptions", () => {
+  it("speaks comparison categories without Highcharts stripping them as HTML", () => {
+    const o = build("bar", { title: "Alignment", categories: ["<2C", ">2C"], valueSuffix: "%" });
+    const describe = o.accessibility.point?.descriptionFormatter;
+    expect(describe?.({ category: "<2C", y: 12, series: { name: "Alignment" } })).toBe("Less than 2C, 12%. Alignment.");
+    expect(describe?.({ category: "Equity", y: 12, series: { name: "Allocation" } })).toBe(false);
+  });
+});

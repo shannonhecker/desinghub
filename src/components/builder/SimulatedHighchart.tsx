@@ -336,7 +336,19 @@ export function buildChartOptions(
   }
   /* The accessibility module describes the chart to assistive tech; give it
      the title even when the visible title is hidden. */
-  o.accessibility = { ...(o.accessibility as any), description: props.title || undefined };
+  o.accessibility = {
+    ...(o.accessibility as any), description: props.title || undefined,
+    point: {
+      descriptionFormatter(point: Highcharts.Point) {
+        const category = String(point.name ?? point.category ?? "");
+        // Highcharts strips '<2C, ...' as an unterminated HTML tag. Speak
+        // comparisons explicitly; retain its richer default for other points.
+        if (!/^[<>]/.test(category)) return false;
+        const label = category.replace(/</g, "Less than ").replace(/>/g, "Greater than ");
+        return `${label}, ${point.y ?? "No data"}${props.valueSuffix ?? ""}. ${point.series.name}.`;
+      },
+    },
+  };
   /* eslint-enable @typescript-eslint/no-explicit-any */
   return o;
 }
