@@ -31,6 +31,7 @@ import {
 import { pickImage, getImageById } from "@/lib/sampleImages";
 import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
 import { esgAnalytics, climateAnalytics, screening, screeningChangesTemplate } from "@/lib/sustainableTemplates";
+import { issuerClimate, issuerInvolvement, issuerControversies, entityComparison, governanceScorecard, analyticsHome } from "@/lib/issuerTemplates";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -444,6 +445,12 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "climate-analytics": climateAnalytics,
   screening,
   "screening-changes": screeningChangesTemplate,
+  "issuer-climate": issuerClimate,
+  "issuer-involvement": issuerInvolvement,
+  "issuer-controversies": issuerControversies,
+  "entity-comparison": entityComparison,
+  "governance-scorecard": governanceScorecard,
+  "analytics-home": analyticsHome,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
@@ -463,6 +470,12 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "climate-analytics",
   "screening",
   "screening-changes",
+  "issuer-climate",
+  "issuer-involvement",
+  "issuer-controversies",
+  "entity-comparison",
+  "governance-scorecard",
+  "analytics-home",
 ];
 
 /** True when the template on the canvas pins its structural spacing across

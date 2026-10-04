@@ -53,7 +53,7 @@ describe("sustainable templates - structure", () => {
 
     it(`${tpl.label}: the two-bar header, the grouped sidebar with its page active, no footer`, () => {
       expect(tpl.header.map((b) => b.type)).toEqual(["TopNav", "TabStrip"]);
-      expect(tpl.sidebar.filter((b) => b.type === "NavGroup").map((b) => b.props.label)).toEqual(["Portfolio", "Screening"]);
+      expect(tpl.sidebar.filter((b) => b.type === "NavGroup").map((b) => b.props.label)).toEqual(["Portfolio", "Screening", "Issuer report", "Scorecard"]);
       expect(tpl.sidebar.filter((b) => b.type === "NavItem" && b.props.active)).toHaveLength(1);
       expect(tpl.zoneLayouts?.footer?.visible).toBe(false);
       expect(tpl.zoneLayouts?.sidebar?.visible).not.toBe(false);

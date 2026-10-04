@@ -254,7 +254,7 @@ function toColDefs(columns: GridColumn[], rows: GridRow[]): (ColDef<GridRow> | C
     const cell = cellOf(c);
     if (cell?.type === "bar" && cell.scale === "columnMax") maxOf.set(c.field, columnMax(rows, c.field));
   }
-  const grouped = rows.some((r) => r._group);
+  const grouped = rows.some((r) => r._heading);
   const leafColDefOf = (leaf: GridLeafColumn, isFirst: boolean) => leafColDef(leaf, isFirst, maxOf.get(leaf.field) ?? 0, grouped);
   return columns.map((c) => {
     if (isColumnGroup(c)) {
@@ -308,7 +308,7 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
   const rowClassRules = useMemo(
     () => ({
       "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && rowLabel(columns, params.data) === selectedRef.current,
-      "dh-grid-row-group": (params: { data?: GridRow }) => Boolean(params.data?._group),
+      "dh-grid-row-group": (params: { data?: GridRow }) => Boolean(params.data?._heading),
     }),
     [columns],
   );

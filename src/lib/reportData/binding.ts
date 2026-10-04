@@ -400,7 +400,7 @@ function groupedRows(spec: GroupRows, source: DataRow[], rows: GridRow[]): GridR
   const out: GridRow[] = [];
   for (const key of order) {
     const idx = members.get(key)!;
-    const heading: GridRow = { [spec.labelColumn]: key, _bold: true, _group: true };
+    const heading: GridRow = { [spec.labelColumn]: key, _bold: true, _heading: true };
     for (const f of spec.sums ?? []) {
       heading[f] = idx.reduce((a, i) => a + (typeof source[i][f] === "number" ? (source[i][f] as number) : 0), 0);
     }

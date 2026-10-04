@@ -108,7 +108,7 @@ export function RecordPanelBlock({ system, blockId }: { system: DesignSystem; bl
       system={system}
       blockId={blockId}
       title={record ? record.title : fallbackTitle}
-      subtitle={record ? fallbackTitle : undefined}
+      subtitle={record && p.clearable !== false ? fallbackTitle : undefined}
       height={panelHeightOf(p)}
     >
       {(height) => (
@@ -116,9 +116,13 @@ export function RecordPanelBlock({ system, blockId }: { system: DesignSystem; bl
           {record ? (
             <>
               {record.sections.map((section, i) => <Section key={i} section={section} system={system} />)}
-              <button type="button" className="dh-record-clear" onClick={(e) => { e.stopPropagation(); setReportState(binding!.state, null); }}>
-                Clear selection
-              </button>
+              {/* A panel that always shows a record (the chosen entity) has
+                  nothing to clear. */}
+              {p.clearable === false ? null : (
+                <button type="button" className="dh-record-clear" onClick={(e) => { e.stopPropagation(); setReportState(binding!.state, null); }}>
+                  Clear selection
+                </button>
+              )}
             </>
           ) : (
             <div className="dh-record-empty">

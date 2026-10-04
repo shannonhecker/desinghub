@@ -212,7 +212,7 @@ export interface GridColumnGroup {
 export type GridColumn = GridLeafColumn | GridColumnGroup;
 
 /** A row: values by field. `_bold` marks a total / aggregate row; `_indent`
- *  (0, 1, 2...) indents the first column to show hierarchy; `_group` marks a
+ *  (0, 1, 2...) indents the first column to show hierarchy; `_heading` marks a
  *  group heading row (drawn on a sunken band, above its indented leaves). */
 export type GridRow = Record<string, string | number | boolean | null | undefined>;
 

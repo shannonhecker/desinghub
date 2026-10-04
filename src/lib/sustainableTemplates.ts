@@ -39,22 +39,30 @@ const TITLE = "Sustainable Investment";
 const PERIODICITY_STATE = "periodicity";
 
 /* ── Chrome: the finance header, plus the section's sidebar ── */
-const PAGES: [group: string, label: string, icon: string][] = [
-  ["Portfolio", "ESG", "shield"],
-  ["Portfolio", "Climate", "trending_up"],
-  ["Screening", "Screening", "filter"],
-  ["Screening", "Changes", "layers"],
+export type SiPage = "esg" | "climate" | "screening" | "changes" | "issuer-climate" | "issuer-involvement" | "issuer-controversies" | "issuer-comparison" | "scorecard";
+const PAGES: [key: SiPage, group: string, label: string, icon: string][] = [
+  ["esg", "Portfolio", "ESG", "shield"],
+  ["climate", "Portfolio", "Climate", "trending_up"],
+  ["screening", "Screening", "Screening", "filter"],
+  ["changes", "Screening", "Changes", "layers"],
+  ["issuer-climate", "Issuer report", "Climate", "trending_up"],
+  ["issuer-involvement", "Issuer report", "Involvement", "database"],
+  ["issuer-controversies", "Issuer report", "Controversies", "notifications"],
+  ["issuer-comparison", "Issuer report", "Comparison", "person"],
+  ["scorecard", "Scorecard", "Governance", "bar_chart"],
 ];
 
-const chrome = (prefix: string, activePage: string) => {
+/** The Sustainable Investment shell: the finance header and the section's
+ *  sidebar, with one page marked active. */
+export const siChrome = (prefix: string, activePage: SiPage) => {
   const sidebar: Block[] = [];
   let group = "";
-  PAGES.forEach(([g, label, icon], i) => {
+  PAGES.forEach(([key, g, label, icon], i) => {
     if (g !== group) {
       group = g;
-      sidebar.push({ id: `tpl-${prefix}-group-${g.toLowerCase()}`, type: "NavGroup", props: { label: g } });
+      sidebar.push({ id: `tpl-${prefix}-group-${g.toLowerCase().replace(/\s+/g, "-")}`, type: "NavGroup", props: { label: g } });
     }
-    sidebar.push({ id: `tpl-${prefix}-nav-${i}`, type: "NavItem", props: { label, icon, active: label === activePage } });
+    sidebar.push({ id: `tpl-${prefix}-nav-${i}`, type: "NavItem", props: { label, icon, active: key === activePage } });
   });
   return {
     header: [
@@ -72,11 +80,15 @@ const chrome = (prefix: string, activePage: string) => {
   };
 };
 
-const CHROME_LAYOUTS = {
+const chrome = siChrome;
+
+export const SI_CHROME_LAYOUTS = {
   header: { mode: "stack", gap: 0, flush: true, tone: "dark" },
   sidebar: { mode: "stack", gap: 2, align: "stretch" },
   footer: { mode: "row", gap: 8, wrap: false, align: "center", visible: false },
 } as const;
+const CHROME_LAYOUTS = SI_CHROME_LAYOUTS;
+export const SI_TITLE = "Sustainable Investment";
 
 /* ── Cells and measures ── */
 const HEAT: GridCell = { type: "heat" };
@@ -219,7 +231,7 @@ export const esgAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("esg", "ESG"),
+  ...chrome("esg", "esg"),
   body: [
     { id: "tpl-esg-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "6fr", height: CONTEXT_ROW_HEIGHT, align: "center", ...FULL } },
     filter("tpl-esg-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 6, spanPhone: 6 }),
@@ -419,7 +431,7 @@ export const climateAnalytics: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table", "inputs"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("climate", "Climate"),
+  ...chrome("climate", "climate"),
   body: [
     { id: "tpl-climate-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "9fr", height: CONTEXT_ROW_HEIGHT, align: "center", spanTablet: 8, spanPhone: 12 } },
     filter("tpl-climate-currency", "Currency", "currency", "GBP", CURRENCIES, "3fr", { spanTablet: 4, spanPhone: 12 }),
@@ -568,7 +580,7 @@ export const screening: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("screening", "Screening"),
+  ...chrome("screening", "screening"),
   body: [
     { id: "tpl-screening-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "12fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     {
@@ -632,7 +644,7 @@ export const screeningChangesTemplate: BuilderTemplate = {
   interfaceType: "dashboard",
   selectedComponents: ["table"],
   zoneLayouts: { body: BODY_LAYOUT, ...CHROME_LAYOUTS },
-  ...chrome("changes", "Changes"),
+  ...chrome("changes", "changes"),
   body: [
     { id: "tpl-changes-title", type: "PageTitle", props: { text: TITLE }, layout: { width: "12fr", height: CONTEXT_ROW_HEIGHT, align: "center" } },
     {

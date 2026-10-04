@@ -36,7 +36,7 @@ interface Issuer {
 const ISSUERS: Issuer[] = [
   {
     name: "Avocado Inc", legalName: "Avocado Technologies Inc", sector: "Information Technology", industry: "Technology Hardware", region: "North America", country: "US",
-    isin: "US0378331005", ticker: "AVCD", marketCap: "Mega", marketCapValue: 2_840_000_000_000, rating: "AA", k: 0.7, inv: 0.2,
+    isin: "US0378331005", ticker: "AVCD", marketCap: "Mega", marketCapValue: 2_840_000_000_000, rating: "AA", k: 0.7, inv: 0.6,
     esg: [78, 74, 71, 86], controversy: { environment: [1, 0, 1, 0], social: [2, 1, 3, 1], governance: 1 }, temperature: 1.6, ratingPath: [4, 4, 5, 5, 5],
   },
   {
@@ -176,6 +176,10 @@ function buildSeries(): DataRow[] {
     (["ESG", "E", "S", "G"] as const).forEach((label, s) => push(i.name, "esgScores", "Entity", label, i.name, i.esg[s], s + 1));
     SUMMARY_METRICS.forEach(([metric, base], m) => push(i.name, "intensity", "Entity", metric, i.name, base * i.k, m + 1));
     ISSUER_QUARTERS.forEach((quarter, q) => push(i.name, "ratingTrend", "Entity", quarter, i.name, i.ratingPath[q], q + 1));
+    const sumOf = (xs: number[]): number => xs.reduce((a, b) => a + b, 0);
+    push(i.name, "controversyCounts", "Entity", "Environment", i.name, sumOf(i.controversy.environment), 1);
+    push(i.name, "controversyCounts", "Entity", "Social", i.name, sumOf(i.controversy.social), 2);
+    push(i.name, "controversyCounts", "Entity", "Governance", i.name, i.controversy.governance, 3);
   }
   return rows;
 }

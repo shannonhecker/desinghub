@@ -47,6 +47,9 @@ function useRow(lookup: unknown): DataRow | null {
 }
 
 const str = (v: unknown, fallback = ""): string => (typeof v === "string" && v ? v : fallback);
+/** A block's fixed height: its cell in the grid is that tall, and the block
+ *  fills it (a percentage height has nothing to resolve against there). */
+const boxHeight = (p: Record<string, unknown>): React.CSSProperties | undefined => (typeof p.height === "number" ? { height: p.height } : undefined);
 const list = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 /* ── EntityHeader: the name of the selected entity and a line of facts ── */
@@ -57,7 +60,7 @@ export function EntityHeaderBlock({ blockId }: Props) {
   const facts = list<{ label: string; field: string }>(p.facts);
   const badges = list<{ field: string; tone: GridTone; label: string }>(p.badges);
   return (
-    <div className="dh-entity">
+    <div className="dh-entity" style={boxHeight(p)}>
       <div className="dh-entity-main">
         {p.eyebrow ? <span className="dh-entity-eyebrow">{str(p.eyebrow)}</span> : null}
         <h2 className="dh-entity-title">{title}</h2>
@@ -138,12 +141,13 @@ export function MetricTileBlock({ blockId }: Props) {
     </>
   );
 
-  if (!selectState) return <div className="dh-tile">{body}</div>;
+  if (!selectState) return <div className="dh-tile" style={boxHeight(p)}>{body}</div>;
   return (
     <button
       type="button"
       className={`dh-tile dh-tile-selectable${selected ? " is-selected" : ""}`}
       aria-pressed={selected}
+      style={boxHeight(p)}
       /* While presenting, a click selects the CATEGORY, not the block. */
       onClick={(e) => { if (readOnly) e.stopPropagation(); setReportState(selectState, selectValue); }}
     >
@@ -216,7 +220,7 @@ export function LauncherCardBlock({ blockId }: Props) {
     applyTemplateToCanvas(BUILDER_TEMPLATES[templateId], designSystem);
   };
   return (
-    <article className="dh-launcher" style={toneStyle(str(p.accent) === "mid" ? "mid" : "accent")}>
+    <article className="dh-launcher" style={{ ...toneStyle(str(p.accent) === "mid" ? "mid" : "accent"), ...boxHeight(p) }}>
       <header className="dh-launcher-head">
         <h3 className="dh-launcher-title">{str(p.title, "Report")}</h3>
         {p.tag ? <span className="dh-cell-tag" style={toneStyle(str(p.tagTone) === "mid" ? "mid" : "accent")}>{str(p.tag)}</span> : null}
@@ -235,7 +239,7 @@ export function LauncherCardBlock({ blockId }: Props) {
 export function HeroSearchBlock({ blockId }: Props) {
   const p = useBlock(blockId);
   return (
-    <div className="dh-hero">
+    <div className="dh-hero" style={boxHeight(p)}>
       <h1 className="dh-hero-title">{str(p.title, "Analytics")}</h1>
       {p.subtitle ? <p className="dh-hero-subtitle">{str(p.subtitle)}</p> : null}
       <div className="dh-hero-search" role="search">

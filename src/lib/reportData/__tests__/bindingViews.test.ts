@@ -165,7 +165,7 @@ describe("records: conditional columns, a sort that follows state, grouped rows"
       groupRows: { by: "stage", labelColumn: "name", sums: ["value"], counts: [{ as: "n", field: "country", equals: "US" }] },
     }, dataset, {});
     if (grouped?.view !== "grid") throw new Error("expected a grid");
-    expect(grouped.rows.map((r) => [r.name, r.value, r._group ? "group" : `indent ${r._indent}`])).toEqual([
+    expect(grouped.rows.map((r) => [r.name, r.value, r._heading ? "group" : `indent ${r._indent}`])).toEqual([
       ["House", 100, "group"],
       ["Alpha", 100, "indent 1"],
       ["Target", 500, "group"],

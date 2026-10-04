@@ -10986,6 +10986,7 @@
 /* A group heading row: a sunken band above its indented rows. */
 .dh-grid .ag-row.dh-grid-row-group { background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
 /* ── Report blocks (ReportBlocks.tsx) ── */
+.dh-entity, .dh-tile, .dh-launcher, .dh-hero { white-space: normal; }
 .dh-entity {
   display: flex;
   flex-direction: column;
@@ -11072,6 +11073,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .dh-tile-sub-value { font-size: var(--dh-tile-sub-value-size); font-weight: 700; color: var(--ds-fg); }
 
 .dh-verdict {
+  white-space: normal;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
