@@ -21,6 +21,8 @@ export const EXECUTION_KEYS = {
   range: "fxRange",
   hidden: "fxHidden",
   venue: "select:venue",
+  /** "Off" pauses the sample feed while presenting; anything else is live. */
+  live: "fxLive",
 } as const;
 
 export const EXECUTION_INTERVALS: Record<string, number> = { "1m": 1, "3m": 3, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120 };

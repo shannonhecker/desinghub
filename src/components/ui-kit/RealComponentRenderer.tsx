@@ -56,7 +56,7 @@ import React from "react";
 import { getFullCSS, getTheme } from "@/data/registry";
 import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
-import { getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
+import { buttonActionProps, getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
 import {
   coerceDensity,
   muiSize,
@@ -526,7 +526,7 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { sentiment, appearance } = saltButtonProps(props);
-    inner = <SaltButton sentiment={sentiment} appearance={appearance} disabled={disabled}>{s(props.label, "Button")}</SaltButton>;
+    inner = <SaltButton sentiment={sentiment} appearance={appearance} disabled={disabled} {...buttonActionProps(props)}>{s(props.label, "Button")}</SaltButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
       <SaltFormField validationStatus={saltValidation(props.validationStatus as ValidationStatus)} disabled={disabled}>
@@ -683,7 +683,7 @@ function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererPr
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { variant, color } = muiButtonProps(s(props.variant, "primary"));
-    inner = <MuiButton variant={variant} color={color} disabled={disabled}>{s(props.label, "Button")}</MuiButton>;
+    inner = <MuiButton variant={variant} color={color} disabled={disabled} {...buttonActionProps(props)}>{s(props.label, "Button")}</MuiButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
       <MuiTextField
@@ -821,7 +821,7 @@ function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRender
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
     const { appearance, style } = fluentButtonProps(s(props.variant, "primary"));
-    inner = <FluentButton appearance={appearance} style={style} disabled={disabled} size={size}>{s(props.label, "Button")}</FluentButton>;
+    inner = <FluentButton appearance={appearance} style={style} disabled={disabled} size={size} {...buttonActionProps(props)}>{s(props.label, "Button")}</FluentButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
       <FluentField label={s(props.label, "Label")} validationState={fluentValidation} size={size}>

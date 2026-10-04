@@ -126,6 +126,17 @@ function carbonStatusType(label: string): CarbonTagType {
 /** Per-render context the real renderer threads in alongside the block props:
     the builder's shared density level, which Carbon maps onto its per-component
     `size` ladder (uoaui sizes from CSS, so its renderers ignore it). */
+/** What a button block can pass to the real button besides its label: a
+ *  click handler (a block that acts, e.g. the FX feed's Pause and Reset), an
+ *  accessible name and a title. Only the keys that are set. */
+export function buttonActionProps(p: Record<string, unknown>): { onClick?: () => void; "aria-label"?: string; title?: string } {
+  const out: { onClick?: () => void; "aria-label"?: string; title?: string } = {};
+  if (typeof p.onClick === "function") out.onClick = p.onClick as () => void;
+  if (typeof p.ariaLabel === "string" && p.ariaLabel) out["aria-label"] = p.ariaLabel;
+  if (typeof p.title === "string" && p.title) out.title = p.title;
+  return out;
+}
+
 export interface RealBlockContext {
   density: DensityLevel;
 }
@@ -161,6 +172,7 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
         type: "button",
         className: `a-btn ${uoauiButtonClass(s(p.variant, "primary"))}`,
         disabled: Boolean(p.disabled),
+        ...buttonActionProps(p),
       },
       s(p.label, "Button"),
     ),
@@ -509,7 +521,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedButton: (p, ctx) =>
     React.createElement(
       CarbonButton,
-      { kind: carbonButtonKind(s(p.variant, "primary")), disabled: Boolean(p.disabled), size: carbonSize(densityOf(ctx)) },
+      { kind: carbonButtonKind(s(p.variant, "primary")), disabled: Boolean(p.disabled), size: carbonSize(densityOf(ctx)), ...buttonActionProps(p) },
       s(p.label, "Button"),
     ),
 

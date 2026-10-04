@@ -83,6 +83,16 @@ export function feedBaseView(dataset: ReportDataset, state: ReportState): Execut
   return resolveExecution(dataset, { ...state, [EXECUTION_KEYS.interval]: "1m", [EXECUTION_KEYS.range]: "1D" });
 }
 
+/** The order the page shows (the state's, else the first), as resolveExecution picks it. */
+export function executionOrderOf(dataset: ReportDataset, state: ReportState): string | null {
+  const rows = tableOf(dataset, "orders")?.rows ?? [];
+  const row = rows.find((r) => r.order === state[EXECUTION_KEYS.order]) ?? rows[0];
+  return row && typeof row.order === "string" ? row.order : null;
+}
+
+/** True unless the report has the feed switched off. */
+export const feedSwitchedOn = (state: ReportState): boolean => state[EXECUTION_KEYS.live] !== "Off";
+
 const lastOf = (values: (number | null)[]): number | null => {
   for (let i = values.length - 1; i >= 0; i--) if (values[i] !== null) return values[i];
   return null;
