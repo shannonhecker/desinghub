@@ -1,92 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/sessionToken";
 
-const COOKIE = "uoaui_auth_token";
-const TOKEN_SECRET = process.env.STAGING_TOKEN_SECRET;
-
-async function hashToken(password: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw", enc.encode(TOKEN_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(password));
-  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-/**
- * Two-tier staging auth middleware:
- *
- * 1. Admin (IP whitelist) - auto-access, no password needed.
- *    Set ADMIN_IPS env var with comma-separated IPs.
- *
- * 2. Visitor - must log in with STAGING_PASSWORD via /login.
- *
- * Protected routes: /builder (and any sub-paths)
- * Public routes:    /, /login, /landing, /landing-*, /ui-kit, /preview/share/*,
- *                   /api/*, /_next/*, static assets
- *
- * /preview/share/<hash> is public by design: it is a stateless, read-only
- * render of a canvas encoded entirely in the URL (no server storage, no
- * session data), with the hash hard-sanitized on decode. Shared links must
- * resolve for external recipients who don't have the staging password.
- *
- * Configuration:
- *   - STAGING_PASSWORD absent  → auth disabled (public mode)
- *   - STAGING_PASSWORD present + STAGING_TOKEN_SECRET absent → fail-closed
- *     (every request redirected to /login). Previously this state silently
- *     bypassed auth, which was a security hole.
- */
+/** UI-only staging gate. Model APIs enforce signed sessions separately. */
 export async function proxy(request: NextRequest) {
-  const expectedPassword = process.env.STAGING_PASSWORD;
-
-  // No password configured → public mode, no auth required.
-  if (!expectedPassword) {
-    return NextResponse.next();
-  }
-
-  // Misconfiguration: password set but secret missing → fail closed.
-  // Redirect every protected request to /login. The login route will
-  // also short-circuit and render the form (which can't actually
-  // authenticate without TOKEN_SECRET — operator must set both).
-  if (!TOKEN_SECRET) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.search = "";
-    return NextResponse.redirect(loginUrl);
-  }
-
+  if (!process.env.STAGING_PASSWORD) return NextResponse.next();
   const { pathname } = request.nextUrl;
-
-  // Public routes - always allow through
-  if (
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/landing" ||
-    pathname.startsWith("/landing-") ||
-    pathname === "/ui-kit" ||
-    // Shared canvas links must open for recipients without the staging
-    // password. Scoped to /preview/share only — /builder etc. stay gated.
-    pathname.startsWith("/preview/share")
-  ) {
+  if (pathname === "/" || pathname === "/login" || pathname === "/landing" ||
+      pathname.startsWith("/landing-") || pathname === "/ui-kit" || pathname.startsWith("/preview/share/")) {
     return NextResponse.next();
   }
-
-  // --- Tier 1: Admin IP whitelist ---
-  const adminIps = (process.env.ADMIN_IPS ?? "").split(",").map((ip) => ip.trim()).filter(Boolean);
-  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "";
-
-  if (adminIps.length > 0 && adminIps.includes(clientIp)) {
-    return NextResponse.next();
-  }
-
-  // --- Tier 2: Cookie-based visitor auth ---
-  const token = request.cookies.get(COOKIE)?.value;
-  const expectedToken = await hashToken(expectedPassword);
-
-  if (token && token === expectedToken) {
-    return NextResponse.next();
-  }
-
-  // No valid token → redirect to login
+  const secret = process.env.STAGING_TOKEN_SECRET;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (secret && token && verifySessionToken(token, secret)) return NextResponse.next();
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
   loginUrl.search = "";

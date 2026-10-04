@@ -1,3 +1,4 @@
+import { readJsonObject, RequestBodyError } from "@/lib/requestBody";
 /**
  * AI table-data generator for the SimulatedDataTable block.
  *
@@ -16,7 +17,7 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { checkModelRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
 import { MODEL_ID } from "@/lib/chatSystem";
 import { sanitizeGeneratedTable, MAX_TABLE_COLUMNS, MAX_TABLE_ROWS } from "@/lib/tableData";
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
 
   // Rate limiting — each call hits Claude.
   const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "generate-table");
+  const limit = await checkModelRateLimit(ip, "generate-table");
   if (!limit.allowed) {
     return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
       status: 429,
@@ -84,9 +85,9 @@ export async function POST(req: Request) {
 
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, 400);
+    body = await readJsonObject(req, 512 * 1024);
+  } catch (error) {
+    return json({ error: error instanceof RequestBodyError ? error.message : "Invalid request body" }, error instanceof RequestBodyError ? error.status : 400);
   }
 
   const { description } = body as Record<string, unknown>;
@@ -133,7 +134,8 @@ export async function POST(req: Request) {
 
     return json(table, 200);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Claude API error";
+    console.error("[model] Generation failed", err);
+    const msg = "Generation is temporarily unavailable. Please try again.";
     return json({ error: msg }, 502);
   }
 }

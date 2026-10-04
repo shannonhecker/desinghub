@@ -1,7 +1,7 @@
 /**
  * Sliding-window rate limiter backed by Upstash Redis.
- * Falls back to no-op when env vars are absent (local dev). When Redis IS
- * configured but unreachable it fails closed (denies) - see the catch.
+ * Login and model helpers fail closed when Redis is missing or unavailable.
+ * The low-level helper retains an explicit optional no-op for other callers.
  *
  * Required env vars (auto-set by Vercel Marketplace Redis integration):
  *   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
@@ -53,16 +53,21 @@ function getRedisClient(): Redis | null {
 export async function checkRateLimit(
   ip: string,
   bucket: string = "default",
+  options: { requireConfigured?: boolean; maxRequests?: number; windowMs?: number } = {},
 ): Promise<RateLimitResult> {
+  const maxRequests = options.maxRequests ?? MAX_REQUESTS;
+  const windowMs = options.windowMs ?? WINDOW_MS;
   const redis = getRedisClient();
   if (!redis) {
-    return { allowed: true, remaining: MAX_REQUESTS, resetInSeconds: 0 };
+    return options.requireConfigured
+      ? { allowed: false, remaining: 0, resetInSeconds: FAIL_CLOSED_RETRY_SECONDS }
+      : { allowed: true, remaining: maxRequests, resetInSeconds: 0 };
   }
 
   try {
     const key = `rl:${bucket}:${ip}`;
     const now = Date.now();
-    const windowStart = now - WINDOW_MS;
+    const windowStart = now - windowMs;
 
     // Use a sorted set: score = timestamp, member = unique request ID
     const requestId = `${now}-${Math.random().toString(36).slice(2, 8)}`;
@@ -72,28 +77,29 @@ export async function checkRateLimit(
     pipeline.zremrangebyscore(key, 0, windowStart);
     pipeline.zadd(key, { score: now, member: requestId });
     pipeline.zcard(key);
-    pipeline.expire(key, Math.ceil(WINDOW_MS / 1000));
+    pipeline.expire(key, Math.ceil(windowMs / 1000));
 
     const results = await pipeline.exec();
-    const count = (results?.[2] as number) ?? 0;
+    const count = results?.[2];
+    if (typeof count !== "number" || !Number.isSafeInteger(count) || count < 1) throw new Error("Invalid rate-limit result");
 
-    if (count > MAX_REQUESTS) {
+    if (count > maxRequests) {
       // Over limit - remove the request we just added
       await redis.zrem(key, requestId);
       // Find the oldest entry to calculate reset time
       const oldest = await redis.zrange(key, 0, 0, { withScores: true });
-      const oldestScore = (oldest as unknown as { score: number }[])?.[0]?.score;
-      const resetInSeconds = oldestScore
-        ? Math.ceil((oldestScore + WINDOW_MS - now) / 1000)
-        : Math.ceil(WINDOW_MS / 1000);
+      const oldestScore = Number(oldest?.[1]);
+      const resetInSeconds = Number.isFinite(oldestScore) && oldestScore > 0
+        ? Math.max(1, Math.ceil((oldestScore + windowMs - now) / 1000))
+        : Math.ceil(windowMs / 1000);
 
       return { allowed: false, remaining: 0, resetInSeconds };
     }
 
     return {
       allowed: true,
-      remaining: MAX_REQUESTS - count,
-      resetInSeconds: Math.ceil(WINDOW_MS / 1000),
+      remaining: maxRequests - count,
+      resetInSeconds: Math.ceil(windowMs / 1000),
     };
   } catch (err) {
     /* Redis is CONFIGURED but unreachable. Fail CLOSED: an outage of the
@@ -104,4 +110,21 @@ export async function checkRateLimit(
     console.error("[rateLimit] Redis unavailable; denying request (fail closed)", err);
     return { allowed: false, remaining: 0, resetInSeconds: FAIL_CLOSED_RETRY_SECONDS };
   }
+}
+
+/** Both budgets count failed attempts too. Global cap bounds distributed guessing. */
+export async function checkLoginRateLimit(ip: string): Promise<RateLimitResult> {
+  const global = await checkRateLimit("all", "staging-login-global", { requireConfigured: true, maxRequests: 200 });
+  if (!global.allowed) return global;
+  return checkRateLimit(ip, "staging-login", { requireConfigured: true });
+}
+
+/** Shared daily request budget across all paid model routes. This limits request
+ * count, not dollars; provider-side spend limits remain the billing backstop. */
+export async function checkModelRateLimit(ip: string, bucket: string): Promise<RateLimitResult> {
+  const perIp = await checkRateLimit(ip, bucket, { requireConfigured: true });
+  if (!perIp.allowed) return perIp;
+  const configured = Number(process.env.MODEL_DAILY_REQUEST_LIMIT ?? 1000);
+  const maxRequests = Number.isSafeInteger(configured) && configured > 0 ? Math.min(configured, 100_000) : 1000;
+  return checkRateLimit("all", "model-daily", { requireConfigured: true, maxRequests, windowMs: 86_400_000 });
 }

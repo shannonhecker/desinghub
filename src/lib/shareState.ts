@@ -1,3 +1,4 @@
+import { safeSharedImageSource } from "./sharedImageSource";
 /**
  * Encode / decode a Builder canvas snapshot into a URL-safe string
  * so it can be linked into /preview/share/<hash>.
@@ -113,7 +114,7 @@ function sanitizeValue(v: unknown, depth = 0): unknown {
     for (const [k, val] of Object.entries(v)) {
       if (count >= MAX_PROP_KEYS) break;
       if (typeof k !== "string" || k.length > 80) continue;
-      out[k] = sanitizeValue(val, depth + 1);
+      out[k] = k === "src" ? safeSharedImageSource(val) : sanitizeValue(val, depth + 1);
       count++;
     }
     return out;

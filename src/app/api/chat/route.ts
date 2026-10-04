@@ -1,10 +1,11 @@
+import { readJsonObject, RequestBodyError } from "@/lib/requestBody";
 import Anthropic from "@anthropic-ai/sdk";
 import { MODEL_ID } from "@/lib/chatSystem";
 import {
   buildSystemPrompt,
   VALID_DESIGN_SYSTEMS,
 } from "@/lib/buildSystemPrompt";
-import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { checkModelRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
 import { CANVAS_TOOLS } from "@/lib/chatTools";
 
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
   // Rate limiting — per-route bucket so chat traffic doesn't lock out
   // staging-login or builder/generate-content for the same IP.
   const ip = getClientIp(req);
-  const limit = await checkRateLimit(ip, "chat");
+  const limit = await checkModelRateLimit(ip, "chat");
   if (!limit.allowed) {
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),
@@ -80,11 +81,11 @@ export async function POST(req: Request) {
 
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
+    body = await readJsonObject(req, 512 * 1024);
+  } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof RequestBodyError ? error.message : "Invalid request body" }),
+      { status: error instanceof RequestBodyError ? error.status : 400, headers: { "Content-Type": "application/json" } }
     );
   }
 
@@ -274,7 +275,8 @@ export async function POST(req: Request) {
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Stream error";
+        console.error("[chat] Generation failed", err);
+        const errorMsg = "Generation is temporarily unavailable. Please try again.";
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`)
         );

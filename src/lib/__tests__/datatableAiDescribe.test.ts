@@ -22,7 +22,7 @@ const realMap = read("src", "components", "ui-kit", "realBlockMap.ts");
 
 describe("generate-table route is hardened and uses the pure sanitizer", () => {
   it("rate-limits, validates the description, and bounds via sanitizeGeneratedTable", () => {
-    expect(route).toMatch(/checkRateLimit\(/);
+    expect(route).toMatch(/checkModelRateLimit\(/);
     expect(route).toMatch(/description/);
     expect(route).toMatch(/import\s*\{[^}]*sanitizeGeneratedTable[^}]*\}\s*from\s*["']@\/lib\/tableData["']/);
     expect(route).toMatch(/sanitizeGeneratedTable\(/);
