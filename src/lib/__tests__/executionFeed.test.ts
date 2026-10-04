@@ -36,18 +36,20 @@ describe("createTicker", () => {
     const base = feedBaseView(dataset, BUY)!;
     const samples = run(BUY, 600);
     let before = base.pct[base.pct.length - 1]!;
-    for (const s of samples) {
+    /* Up to the bar that completes it (after that its series stop, see below). */
+    const doneAt = samples.findIndex((s) => s.pct === 100);
+    for (const s of samples.slice(0, doneAt + 1)) {
       expect(s.pct).not.toBeNull();
       expect(s.pct!).toBeGreaterThanOrEqual(before);
       expect(s.pct!).toBeLessThanOrEqual(100);
       before = s.pct!;
     }
-    expect(samples[samples.length - 1].pct!).toBeGreaterThan(base.pct[base.pct.length - 1]!);
+    expect(samples[doneAt].pct!).toBeGreaterThan(base.pct[base.pct.length - 1]!);
     const fills = samples.filter((s) => s.fill);
     expect(fills.length).toBeGreaterThan(3);
     /* Once done, no more fills. */
-    const doneAt = samples.findIndex((s) => s.pct === 100);
-    if (doneAt >= 0) expect(samples.slice(doneAt + 1).some((s) => s.fill)).toBe(false);
+    expect(doneAt).toBeGreaterThan(0);
+    expect(samples.slice(doneAt + 1).some((s) => s.fill)).toBe(false);
   });
 
   it("a filled order's own series freeze while the market keeps moving", () => {
@@ -64,6 +66,66 @@ describe("createTicker", () => {
   });
 });
 
+describe("a working order the feed completes", () => {
+  const N = 900;
+  const samples = run(BUY, N);
+  const doneAt = samples.findIndex((s) => s.pct === 100);
+  const statsAt = (i: number) => tableOf(withFeed(dataset, EXECUTION_ORDERS[0], samples.slice(0, i + 1)), "orders")!.rows[0];
+
+  it("completes within the run, and on that bar its last clip fills", () => {
+    expect(doneAt).toBeGreaterThan(0);
+    expect(samples[doneAt].fill).not.toBeNull();
+  });
+
+  it("after it is filled, its own series stop: no limit, average fill or percent done", () => {
+    for (const s of samples.slice(doneAt + 1)) {
+      expect(s.limit).toBeNull();
+      expect(s.avgFill).toBeNull();
+      expect(s.pct).toBeNull();
+      expect(s.fill).toBeNull();
+    }
+  });
+
+  it("its statistics freeze at completion: Filled, Duration, slippage and fill vs TWAP stop changing", () => {
+    const done = statsAt(doneAt);
+    expect(done.status).toBe("Filled");
+    expect(done.pctDone).toBe(100);
+    for (const i of [doneAt + 1, doneAt + 30, N - 1]) expect(statsAt(i)).toEqual(done);
+  });
+});
+
+describe("statistics change only when a fill happens", () => {
+  const samples = run(BUY, 200);
+  const base = tableOf(dataset, "orders")!.rows[0];
+  const MONEY = ["amountDone", "fills", "passivePct", "aggressivePct", "slippageArrival", "fillVsTwap", "topVenue"] as const;
+  const pick = (r: Record<string, unknown>) => Object.fromEntries(MONEY.map((k) => [k, r[k]]));
+
+  it("bars with no fill leave the order's figures exactly as they were", () => {
+    const firstFill = samples.findIndex((s) => s.fill);
+    expect(firstFill).toBeGreaterThan(0);
+    for (let i = 0; i < firstFill; i++) {
+      expect(pick(tableOf(withFeed(dataset, EXECUTION_ORDERS[0], samples.slice(0, i + 1)), "orders")!.rows[0])).toEqual(pick(base));
+    }
+  });
+
+  it("the average fill moves only on a fill", () => {
+    let before = samples[0].avgFill;
+    for (const s of samples) {
+      if (!s.fill) expect(s.avgFill).toBe(before);
+      before = s.avgFill;
+    }
+  });
+
+  it("between two fills the figures hold; a fill moves them", () => {
+    const fills = samples.map((s, i) => (s.fill ? i : -1)).filter((i) => i >= 0);
+    const [a, b] = fills;
+    const at = (i: number) => pick(tableOf(withFeed(dataset, EXECUTION_ORDERS[0], samples.slice(0, i + 1)), "orders")!.rows[0]);
+    for (let i = a; i < b; i++) expect(at(i)).toEqual(at(a));
+    expect(at(a)).not.toEqual(pick(base));
+    expect(at(a).fills).toBe(Number(base.fills) + 1);
+  });
+});
+
 describe("withFeed", () => {
   const snapshot = JSON.stringify(dataset);
 
@@ -77,11 +139,13 @@ describe("withFeed", () => {
   });
 
   it("the working order's chart, header figures and statistics follow the feed", () => {
-    const samples = run(BUY, 300);
+    /* While it is still working. */
+    const samples = run(BUY, 150);
+    expect(samples.every((s) => s.pct !== null && s.pct < 100)).toBe(true);
     const live = withFeed(dataset, EXECUTION_ORDERS[0], samples);
     const before = resolveExecution(dataset, BUY)!;
     const after = resolveExecution(live, BUY)!;
-    expect(after.times.length).toBe(before.times.length + 300);
+    expect(after.times.length).toBe(before.times.length + 150);
     const last = samples[samples.length - 1];
     expect(after.bid[after.bid.length - 1]).toBeCloseTo(last.bid, 5);
     expect(after.pct[after.pct.length - 1]).toBeCloseTo(last.pct!, 2);

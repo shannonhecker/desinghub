@@ -118,9 +118,14 @@ export function createTicker(view: ExecutionView, seed: number = FEED_SEED): Tic
   let twapCount = view.times.length;
   let twapSum = (lastOf(view.twap) ?? mid) * twapCount;
   let pct = lastOf(view.pct) ?? 0;
+  /* The average fill is the volume-weighted price of the order's fills: it
+     moves only when a fill happens. */
   let avgFill = lastOf(view.avgFill) ?? mid;
+  let filledVolume = view.fills.reduce((a, f) => a + f.volume, 0);
   const limit = lastOf(view.limit);
-  const working = view.order.status !== "Filled" && pct < 100;
+  /* Becomes false on the bar that completes the order: from then on only
+     the market moves. */
+  let working = view.order.status !== "Filled" && pct < 100;
   const sign = view.order.side === "SELL" ? -1 : 1;
   const venues = view.venues.length ? view.venues : ["Venue"];
   let worked = 0;
@@ -141,19 +146,24 @@ export function createTicker(view: ExecutionView, seed: number = FEED_SEED): Tic
       };
       if (!working) return sample;
 
-      avgFill += (m - avgFill) * 0.04 + (rnd() - 0.5) * 0.00001;
-      const progress = pct < 100 ? STEP_MIN + rnd() * STEP_SPAN : 0;
+      const progress = STEP_MIN + rnd() * STEP_SPAN;
       pct = Math.min(100, pct + progress);
       worked += progress;
-      if (pct < 100 && worked > CLIP_MIN + rnd() * CLIP_SPAN) {
-        const price = round(avgFill + (rnd() - 0.5) * 0.00004);
+      const completes = pct >= 100;
+      /* A clip now and then; the bar that completes the order fills its last clip. */
+      if (completes || worked > CLIP_MIN + rnd() * CLIP_SPAN) {
+        const price = round(m + (rnd() - 0.5) * 0.00004);
+        const volume = round(4 + rnd() * 9, 2);
         const slippage = round((m - price) * PIP * sign, 2);
-        sample.fill = { price, volume: round(4 + rnd() * 9, 2), venue: pickVenue(venues, rnd()), passive: rnd() < 0.65, slippage, markout: slippage };
+        sample.fill = { price, volume, venue: pickVenue(venues, rnd()), passive: rnd() < 0.65, slippage, markout: slippage };
+        avgFill = (avgFill * filledVolume + price * volume) / (filledVolume + volume);
+        filledVolume += volume;
         worked = 0;
       }
       sample.limit = limit;
       sample.avgFill = round(avgFill);
       sample.pct = round(pct, 2);
+      if (completes) working = false;
       return sample;
     },
   };
@@ -184,38 +194,48 @@ export function withFeed(dataset: ReportDataset, order: string, samples: readonl
     if (t.id === "orderBars" && barRows.length) return { ...t, rows: [...t.rows, ...barRows] };
     if (t.id === "fills" && fillRows.length) return { ...t, rows: [...t.rows, ...fillRows] };
     if (t.id === "orders" && worked.length) {
-      const allFills = [...(tableOf(dataset, "fills")?.rows ?? []).filter((r) => r.order === order), ...fillRows];
-      return { ...t, rows: t.rows.map((r) => (r.order === order ? orderFollowingFeed(r, allFills, worked, samples[samples.length - 1]) : r)) };
+      const datasetFills = (tableOf(dataset, "fills")?.rows ?? []).filter((r) => r.order === order);
+      return { ...t, rows: t.rows.map((r) => (r.order === order ? orderFollowingFeed(r, datasetFills, fillRows, worked) : r)) };
     }
     return t;
   });
   return { ...dataset, tables };
 }
 
-/** An order's statistics after the feed has worked it further. */
-function orderFollowingFeed(row: DataRow, fills: DataRow[], worked: FeedSample[], last: FeedSample): DataRow {
+/** An order's statistics after the feed has worked it further. The money
+ *  figures move only with the feed's own fills (no fill, no change); the
+ *  duration counts the bars worked, up to the one that completed it. */
+function orderFollowingFeed(row: DataRow, datasetFills: DataRow[], feedFills: DataRow[], worked: FeedSample[]): DataRow {
   const lastWorked = worked[worked.length - 1];
-  const sign = row.side === "SELL" ? -1 : 1;
-  const volume = fills.reduce((a, f) => a + (Number(f.volume) || 0), 0);
-  const passive = fills.filter((f) => f.liquidity === "Passive").reduce((a, f) => a + (Number(f.volume) || 0), 0);
-  const passivePct = volume ? round((passive / volume) * 100, 2) : 0;
-  const byVenue = new Map<string, number>();
-  for (const f of fills) byVenue.set(String(f.venue), (byVenue.get(String(f.venue)) ?? 0) + (Number(f.volume) || 0));
-  const topVenue = [...byVenue.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? row.topVenue;
-  const avg = lastWorked.avgFill ?? 0;
-  const arrival = Number(row.arrivalMid);
   const minutes = durationMinutes(row.duration);
-  return {
+  const out: DataRow = {
     ...row,
     status: lastWorked.pct === 100 ? "Filled" : row.status,
     duration: minutes === null ? row.duration : formatDuration(minutes + worked.length),
-    amountDone: Math.round((volume * 1_000_000) / 12_500) * 12_500,
-    fills: fills.length,
     pctDone: round(lastWorked.pct ?? 0, 0),
+  };
+  if (feedFills.length === 0) return out;
+
+  const sign = row.side === "SELL" ? -1 : 1;
+  const volumeOf = (rows: DataRow[], passive?: boolean) => rows.filter((f) => passive === undefined || (f.liquidity === "Passive") === passive).reduce((a, f) => a + (Number(f.volume) || 0), 0);
+  const baseVolume = volumeOf(datasetFills);
+  const basePassive = (Number(row.passivePct) / 100) * baseVolume;
+  const newVolume = volumeOf(feedFills);
+  const passivePct = round(((basePassive + volumeOf(feedFills, true)) / (baseVolume + newVolume)) * 100, 2);
+  const byVenue = new Map<string, number>();
+  for (const f of [...datasetFills, ...feedFills]) byVenue.set(String(f.venue), (byVenue.get(String(f.venue)) ?? 0) + (Number(f.volume) || 0));
+  /* The bar of the latest fill: the average fill and the TWAP it is compared with. */
+  const lastFill = [...worked].reverse().find((s) => s.fill)!;
+  const avg = lastFill.avgFill ?? 0;
+  const arrival = Number(row.arrivalMid);
+  return {
+    ...out,
+    amountDone: Number(row.amountDone) + Math.round((newVolume * 1_000_000) / 12_500) * 12_500,
+    fills: Number(row.fills) + feedFills.length,
     passivePct,
     aggressivePct: round(100 - passivePct, 2),
     slippageArrival: Number.isFinite(arrival) ? round((arrival - avg) * PIP * sign, 2) : row.slippageArrival,
-    fillVsTwap: round((last.twap - avg) * PIP * sign, 2),
-    topVenue,
+    fillVsTwap: round((lastFill.twap - avg) * PIP * sign, 2),
+    topVenue: [...byVenue.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? row.topVenue,
   };
 }
