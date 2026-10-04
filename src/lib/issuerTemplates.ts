@@ -212,7 +212,7 @@ export const issuerInvolvement: BuilderTemplate = {
     },
     {
       id: IB_RADAR, type: "HighchartRadar",
-      props: { chartType: "radar", panel: true, height: 460, title: "Peer comparison, max % revenue", subtitle: "(Spider)", viewBy: RADAR_PEERS, yAxisFormat: "{value}%", valueDecimals: 2, valueSuffix: "%", binding: seriesChart("involvement", [forEntity, againstBenchmark(IB_RADAR, "GICS industry")]) },
+      props: { chartType: "radar", panel: true, height: 460, title: "Peer comparison", subtitle: "(Max % revenue)", viewBy: RADAR_PEERS, yAxisFormat: "{value}%", valueDecimals: 2, valueSuffix: "%", binding: seriesChart("involvement", [forEntity, againstBenchmark(IB_RADAR, "GICS industry")]) },
       layout: { width: "6fr", ...FULL },
     },
   ],
