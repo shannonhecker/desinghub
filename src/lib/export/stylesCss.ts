@@ -488,6 +488,15 @@ export const REPORT_CSS = `/* ── Chrome tones ──
 .page-title-wrap { min-width: 0; }
 .page-title { margin: 0; font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--fg); text-wrap: balance; }
 .page-caption { margin: 4px 0 0; font-size: 13px; color: var(--fg-muted); }
+.section-title { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--fg); }
+/* ── Context bar: the page title and its filters on one compact line ── */
+.contextbar { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 40px; padding: 6px clamp(16px, 2.5vw, 24px); min-width: 0; background: var(--bg); color: var(--fg); border-bottom: 1px solid var(--border); }
+.contextbar .page-title { flex: none; font-size: 13px; letter-spacing: 0; }
+.contextbar-filters { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 24px; min-width: 0; }
+.inline-field { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.inline-field label { flex: none; font-size: 11px; color: var(--fg-muted); white-space: nowrap; }
+.dropdown-inline { height: 24px; min-width: 96px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--border-strong, var(--border)); border-radius: 0; background: transparent; color: var(--fg); font-family: inherit; font-size: 12px; }
+.dropdown-inline:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ── Dropdown (plain select) ── */
 .dropdown, .panel-viewby { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); font-family: inherit; font-size: 14px; }
@@ -588,6 +597,8 @@ export const REPORT_RICH_CSS = `
 .record-empty { place-content: center; place-items: center; color: var(--fg-muted); text-align: center; }
 .record-empty p { margin: 0; max-width: 24ch; }
 .record-pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin: 0; }
+.record-pairs.is-rows { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.record-pairs.is-rows > div { display: flex; justify-content: space-between; gap: 16px; }
 .record-pair { min-width: 0; }
 .record-pair dt, .record-heading { margin: 0 0 3px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; color: var(--fg-muted); }
 .record-pair dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

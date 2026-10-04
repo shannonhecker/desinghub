@@ -81,7 +81,7 @@ beforeEach(() => {
 
 describe.each(TEMPLATES)("%s: export carries the canvas", (_name, tpl) => {
   const panelTitles = tpl.body.filter((b) => b.type === "DataGrid" || b.props.panel === true).map((b) => String(b.props.title));
-  const pageTitle = String(tpl.body.find((b) => b.type === "PageTitle")!.props.text);
+  const pageTitle = String(tpl.header.find((b) => b.type === "ContextBar")!.props.title);
 
   it("React: brand, nav links, page title, panel titles, names and formatted figures", () => {
     apply(tpl);
@@ -157,7 +157,7 @@ describe.each(TEMPLATES)("%s: export carries the canvas", (_name, tpl) => {
     expect(tsx).toMatch(/<tr className="is-total"><th scope="row">[^<]+<\/th><td className="num">US\$\d+\.\d\dbn<\/td>/);
     expect(html).toMatch(/<tr class="is-total"><th scope="row">[^<]+<\/th><td class="num">US\$\d+\.\d\dbn<\/td>/);
     /* The filter itself shows the chosen currency. */
-    expect(tsx).toContain('defaultSelected={["USD"]}');
+    expect(tsx).toMatch(/<select id="tpl-\w+-context-filter-\d" className="dropdown-inline" defaultValue="USD">/);
     expect(html).toContain('<option value="USD" selected>USD</option>');
     expect(html).not.toContain('<option value="GBP" selected>');
   });
@@ -207,7 +207,7 @@ describe("data grid export", () => {
     apply(riskAnalytics);
     const tsx = reactMarkup(exportReact());
     expect(tsx).toMatch(
-      /<section className="panel" aria-label="Risk summary" style=\{\{ height: 344 \}\}>\s*<header className="panel-header">\s*<div className="panel-heading">\s*<h2 className="panel-title">Risk summary<\/h2>\s*<span className="panel-subtitle">as of Dec 2024<\/span>/,
+      /<section className="panel" aria-label="Risk summary" style=\{\{ height: 572 \}\}>\s*<header className="panel-header">\s*<div className="panel-heading">\s*<h2 className="panel-title">Risk summary<\/h2>\s*<span className="panel-subtitle">as of Dec 2024<\/span>/,
     );
   });
 
@@ -245,7 +245,7 @@ describe("chart export", () => {
     const tsx = exportReact();
     const [series] = chartSeries(tsx, "combination");
     expect(series.map((s) => [s.type, s.yAxis])).toEqual([["column", 1], ["line", undefined], ["line", undefined]]);
-    expect(tsx).toMatch(/<ChartBlock type="combination"[^\n]* height=\{328\} hideTitle yAxisFormat=\{"\{value\}%"\} secondaryAxisFormat=\{"\{value\}%"\}/);
+    expect(tsx).toMatch(/<ChartBlock type="combination"[^\n]* height=\{332\} hideTitle yAxisFormat=\{"\{value\}%"\} secondaryAxisFormat=\{"\{value\}%"\}/);
     const bars = chartSeries(tsx, "stacked-bar");
     expect(bars).toHaveLength(2);
     /* A null (no holding in that category) is kept so later values stay aligned. */
@@ -360,7 +360,9 @@ describe("materialise", () => {
     const firstFund = holdings.rows[0].fund;
     holdings.rows = holdings.rows.filter((r) => r.fund === firstFund);
     useBuilder.getState().setReportData(uploaded);
-    expect(rowsOf()).toBe(2);
+    const groups = (materialiseCanvas().body.find((b) => b.id === "tpl-risk-summary")!.props.rows as { _indent?: number }[]).filter((r) => !r._indent);
+    expect(groups).toHaveLength(2);
+    expect(rowsOf()).toBeLessThan(sampleRows);
     expect(reactMarkup(exportReact())).not.toContain("Sterling Corporate Bond");
   });
 
@@ -386,7 +388,7 @@ describe("injection safety", () => {
     const s = useBuilder.getState();
     s.updateZoneBlockProps("header", "tpl-risk-topnav", { brand: PAYLOAD, linksCsv: "{a}, <b>" });
     s.updateZoneBlockProps("header", "tpl-risk-tabs", { tabsCsv: 'Home, R"}isk', label: 'W"<x>' });
-    s.updateZoneBlockProps("body", "tpl-risk-title", { text: "{title}", caption: PAYLOAD });
+    s.updateZoneBlockProps("header", "tpl-risk-context", { title: "{title}" });
     s.updateZoneBlockProps("body", "tpl-risk-summary", { title: PAYLOAD, subtitle: "{sub}" });
     s.updateZoneBlockProps("body", "tpl-risk-var", { title: `"{${PAYLOAD}}`, subtitle: "</section>" });
   }
@@ -521,7 +523,7 @@ describe("responsive spans (HTML)", () => {
   it("a block's tablet / phone spans go out as custom properties the breakpoints read", () => {
     apply(performanceAnalytics);
     const html = exportHTML();
-    expect(htmlBody(html)).toContain('<div class="grid-item" data-span-tablet data-span-phone style="grid-column: span 2; --span-tablet: 3; --span-phone: 6">');
+    expect(htmlBody(html)).toContain('<div class="grid-item" data-span-tablet data-span-phone style="grid-column: span 4; --span-tablet: 6; --span-phone: 12">');
     /* A block with no narrow spans is unchanged. */
     expect(htmlBody(html)).toContain('<div class="grid-item" style="grid-column: span 12">');
     expect(html).toMatch(/\.grid-item\[data-span-tablet\] \{ grid-column: span var\(--span-tablet\) !important; \}/);

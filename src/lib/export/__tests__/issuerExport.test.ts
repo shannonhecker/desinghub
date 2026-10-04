@@ -33,16 +33,16 @@ import { REPORT_BLOCKS_CSS, REPORT_RICH_CSS, buildStylesCss } from "../stylesCss
 
 const SI_TEMPLATES: [name: string, tpl: BuilderTemplate, activePage: string][] = [
   ["Issuer Climate", issuerClimate, "Climate"],
-  ["Issuer Business Involvement", issuerInvolvement, "Involvement"],
+  ["Issuer Business Involvement", issuerInvolvement, "Business involvement"],
   ["Issuer Controversies", issuerControversies, "Controversies"],
-  ["Entity Comparison", entityComparison, "Comparison"],
-  ["Governance Scorecard", governanceScorecard, "Governance"],
+  ["Entity Comparison", entityComparison, "Entity comparison"],
+  ["Governance Scorecard", governanceScorecard, "Corporate governance"],
 ];
 const ALL_TEMPLATES: [name: string, tpl: BuilderTemplate][] = [...SI_TEMPLATES.map(([n, t]) => [n, t] as [string, BuilderTemplate]), ["Analytics Home", analyticsHome]];
 const SYSTEMS = ["salt", "m3", "fluent", "carbon", "uoaui"] as const;
-const GROUPS = ["Portfolio", "Screening", "Issuer report", "Scorecard"];
+const GROUPS = ["Portfolio", "Issuer report", "Screening", "Scorecard"];
 /* The section's nine pages, in order (two are named "Climate"). */
-const PAGES = ["ESG", "Climate", "Screening", "Changes", "Climate", "Involvement", "Controversies", "Comparison", "Governance"];
+const PAGES = ["ESG", "Climate", "Climate", "Business involvement", "Controversies", "Entity comparison", "Screening", "Changes", "Corporate governance"];
 const ENTITY = "Avocado Inc";
 const OTHER = "Helios Energy";
 
@@ -92,6 +92,8 @@ function between(markup: string, open: string, close: string, from = 0): string 
   if (start === -1) throw new Error(`${open} not found`);
   return markup.slice(start, markup.indexOf(close, start) + close.length);
 }
+/** Home's bare table (no panel around it). */
+const dashboardsTable = (markup: string): string => between(markup, 'aria-label="Dashboards"', "</table>");
 const bodyRows = (panelMarkup: string): string[] => panelMarkup.slice(panelMarkup.indexOf("<tbody>")).split("\n").filter((l) => /<tr[ >]/.test(l));
 /** The JSON literal of a `name={...}` prop on a <ChartBlock> line. */
 function chartProp<T>(line: string, name: string): T {
@@ -179,7 +181,9 @@ describe("Analytics Home: export carries the canvas", () => {
     for (const [i, item] of ["Dashboards", "Configuration", "Approvals", "Reports"].entries()) {
       expect(tsx).toContain(`<NavigationItem href="#"${i === 0 ? " active" : ""} orientation="vertical">${item}</NavigationItem>`);
     }
-    expect(tsx).toContain('<h2 className="panel-title">Dashboards</h2>');
+    /* The list sits straight on the page: a table, no panel around it. */
+    expect(tsx).not.toContain('<h2 className="panel-title">Dashboards</h2>');
+    expect(tsx).toContain('<div className="table-scroll" role="region" aria-label="Dashboards"');
     expect(tsx).toContain("Sustainable Investment Portfolio Report");
     /* No chart on the page: no chart runtime. */
     expect(tsx).not.toContain("highcharts");
@@ -187,7 +191,7 @@ describe("Analytics Home: export carries the canvas", () => {
     const body = htmlBody(exportHTML());
     expect(body).toContain(FINANCE_BRAND);
     expect([...body.matchAll(/<button class="nav-item( active)?">([^<]+)<\/button>/g)].map((m) => `${m[2]}${m[1] ?? ""}`)).toEqual(["Dashboards active", "Configuration", "Approvals", "Reports"]);
-    expect(body).toContain('<h2 class="panel-title">Dashboards</h2>');
+    expect(body).toContain('<div class="table-scroll" role="region" aria-label="Dashboards"');
   });
 });
 
@@ -203,9 +207,8 @@ describe.each(ALL_TEMPLATES)("%s: every dialect, every design system", (_name, t
     expect(tsxSyntaxErrors(app)).toEqual([]);
     const css = fileFromBootstrap(script, "src/styles.css");
     expect(css).toContain(REPORT_RICH_CSS.trim());
-    /* Entity Comparison draws record panels and charts only: none of the card
-       blocks, dot or chip cells, so it does not carry their rules. */
-    expect(css.includes(REPORT_BLOCKS_CSS.trim())).toBe(tpl !== entityComparison);
+    /* Every issuer page draws a card block (at the least its entity header). */
+    expect(css.includes(REPORT_BLOCKS_CSS.trim())).toBe(true);
     /* Highcharts is a dependency exactly when the page draws a chart. */
     const deps = JSON.parse(fileFromBootstrap(script, "package.json")).dependencies;
     expect("highcharts" in deps).toBe(app.includes("<ChartBlock"));
@@ -262,7 +265,7 @@ describe.each(ALL_TEMPLATES)("%s: every dialect, every design system", (_name, t
     for (const c of used) expect(css, c).toContain(`.${c}`);
     expect(REPORT_BLOCKS_CSS.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g)).toBeNull();
     /* The HTML page carries the same rules. */
-    expect(exportHTML().includes(REPORT_BLOCKS_CSS.trim().split("\n")[1])).toBe(tpl !== entityComparison);
+    expect(exportHTML().includes(REPORT_BLOCKS_CSS.trim().split("\n")[1])).toBe(true);
   });
 });
 
@@ -273,13 +276,13 @@ describe("Issuer Climate", () => {
   it("the header: the entity's name as a heading and its facts as a <dl>", () => {
     apply(issuerClimate);
     const tsx = between(reactMarkup(exportReact()), '<div className="entity"', "</dl>");
-    expect(tsx).toContain('<div className="entity" style={{ height: 72 }}>');
+    expect(tsx).toContain('<div className="entity" style={{ height: 84 }}>');
     expect(tsx).toContain(`<h2 className="entity-title">${ENTITY}</h2>`);
     expect(tsx).toContain('<dl className="entity-facts">');
     expect([...tsx.matchAll(/<div><dt>([^<]+)<\/dt><dd>([^<]+)<\/dd><\/div>/g)].map((m) => [m[1], m[2]])).toEqual(FACTS);
     expect(tsx).not.toContain("cell-tag");
     const html = between(htmlBody(exportHTML()), '<div class="entity"', "</dl>");
-    expect(html).toContain('<div class="entity" style="height: 72px">');
+    expect(html).toContain('<div class="entity" style="height: 84px">');
     expect(html).toContain(`<h2 class="entity-title">${ENTITY}</h2>`);
     expect([...html.matchAll(/<div><dt>([^<]+)<\/dt><dd>([^<]+)<\/dd><\/div>/g)].map((m) => [m[1], m[2]])).toEqual(FACTS);
   });
@@ -517,7 +520,7 @@ describe("Entity Comparison", () => {
         expect(card).toContain(`<h2 ${cls}="panel-title">${name}</h2>`);
         /* clearable: false: the record is the only title. */
         expect(card).not.toContain("panel-subtitle");
-        expect(card).toContain(`<dl ${cls}="record-pairs">`);
+        expect(card).toContain(`<dl ${cls}="record-pairs is-rows">`);
         expect(card).toContain(`<dt>ESG rating</dt><dd><span ${cls}="cell-badge tone-${tone}">${rating}</span></dd>`);
         expect(card).toContain(`<dt>Ticker</dt><dd>${ticker}</dd>`);
         expect(card).toContain(`<dt>GICS sector</dt><dd>${sector}</dd>`);
@@ -732,7 +735,7 @@ describe("Analytics Home", () => {
   it("the dashboards table, and the Class filter leaves two rows", () => {
     apply(analyticsHome);
     for (const [out, cls] of [[reactMarkup(exportReact()), "className"], [htmlBody(exportHTML()), "class"]] as const) {
-      const grid = panel(out, "Dashboards");
+      const grid = dashboardsTable(out);
       expect(grid).toContain('<tr><th scope="col">Name</th><th scope="col">Class</th><th scope="col">Theme</th><th scope="col">Description</th></tr>');
       expect(bodyRows(grid)).toHaveLength(6);
       expect(grid).toContain('<tr><th scope="row">Sustainable Investment Portfolio Report</th><td>Holdings</td><td>Sustainable Investment</td><td>ESG, climate and screening views of a portfolio.</td></tr>');
@@ -740,13 +743,13 @@ describe("Analytics Home", () => {
     }
     setState("homeClass", "Company");
     for (const out of [reactMarkup(exportReact()), htmlBody(exportHTML())]) {
-      const rows = bodyRows(panel(out, "Dashboards"));
+      const rows = bodyRows(dashboardsTable(out));
       expect(rows.map((r) => r.match(/<th scope="row">([^<]+)<\/th>/)![1])).toEqual(["Sustainable Investment Issuer Report", "Governance Scorecard"]);
     }
     /* The filter shows the choice. */
     expect(htmlBody(exportHTML())).toContain('<option value="Company" selected>Company</option>');
     setState("homeTheme", "Other");
-    expect(bodyRows(panel(htmlBody(exportHTML()), "Dashboards"))).toHaveLength(1);
+    expect(bodyRows(dashboardsTable(htmlBody(exportHTML())))).toHaveLength(1);
   });
 });
 
@@ -756,7 +759,7 @@ describe("materialise: the blocks leave with what they show", () => {
   it("the row lookup is resolved to static props, and the live props are gone", () => {
     apply(issuerClimate);
     expect(props(issuerClimate, "tpl-ic-header")).toEqual({
-      height: 72, title: ENTITY, badges: [],
+      height: 84, card: true, title: ENTITY, badges: [],
       facts: [{ label: "GICS sector", value: "Information Technology" }, { label: "Region", value: "North America" }, { label: "ISIN", value: "US0378331005" }, { label: "As of", value: "Dec 2024" }],
     });
     const verdict = props(issuerClimate, "tpl-ic-verdict");

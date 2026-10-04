@@ -114,6 +114,14 @@ function materialiseEntityHeader(props: Record<string, unknown>, source: Record<
   props.facts = fieldItems(source.facts).map((f) => ({ label: text(f.label), value: fieldText(row, f.field) || "-" }));
   props.badges = fieldItems(source.badges).map((b) => ({ label: text(b.label), value: fieldText(row, b.field) || "0", tone: toneOr(b.tone, "neutral") }));
 }
+/** What the entity is set against, as text ("vs Helios Energy"). */
+function materialiseEntitySuffix(props: Record<string, unknown>, source: Record<string, unknown>, dataset: ReportDataset | null, reportState: ReportState): void {
+  const lookup = isRowLookup(source.suffixBinding) ? source.suffixBinding : null;
+  const other = lookupRowSafely(lookup, dataset, reportState);
+  if (other && lookup) props.suffix = `${text(source.suffixPrefix, "vs")} ${String(other[lookup.keyField] ?? "")}`;
+  delete props.suffixBinding;
+  delete props.suffixPrefix;
+}
 
 /** MetricTile: its figure, sub-figures and chips as text, and whether it is
  *  the selected one of a set (a category card). */
@@ -170,6 +178,15 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
   const stateKey = typeof source.stateKey === "string" && source.stateKey ? source.stateKey : null;
   if (stateKey && reportState[stateKey] !== undefined) props.value = reportState[stateKey];
 
+  /* A context bar's filters: each shows the value held in report state. */
+  if (block.type === "ContextBar" && Array.isArray(source.filters)) {
+    props.filters = (source.filters as Record<string, unknown>[]).map((f) => {
+      const { stateKey: key, ...rest } = f;
+      const held = typeof key === "string" ? reportState[key] : undefined;
+      return held !== undefined ? { ...rest, value: held } : rest;
+    });
+  }
+
   /* A panel's "View by" select shows the current choice, else the first. */
   const viewBy = viewByOf(source);
   if (viewBy.length > 0) props.viewByValue = reportState[viewByStateKey(block.id)] ?? viewBy[0];
@@ -207,7 +224,7 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
   if (block.type === "EntityHeader" || block.type === "MetricTile" || block.type === "VerdictCard") {
     const lookup = isRowLookup(source.binding) ? source.binding : null;
     const row = lookupRowSafely(lookup, dataset, reportState);
-    if (block.type === "EntityHeader") materialiseEntityHeader(props, source, row, lookup);
+    if (block.type === "EntityHeader") { materialiseEntityHeader(props, source, row, lookup); materialiseEntitySuffix(props, source, dataset, reportState); }
     else if (block.type === "MetricTile") materialiseMetricTile(props, source, row, reportState);
     else materialiseVerdictCard(props, source, row);
   }
