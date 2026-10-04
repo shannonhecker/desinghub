@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
@@ -52,11 +52,25 @@ import {
   SimulatedAvatarGroup,
   SimIcon,
 } from "./SimulatedUI";
-import type { HighchartType } from "./SimulatedHighchart";
+import type { HighchartType, ChartSeries } from "./SimulatedHighchart";
+import { PanelFrame } from "./PanelFrame";
+import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock } from "./ChromeBars";
+import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
+import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
+import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
+import { useBoundData, useCanvasDataset } from "./useBoundData";
+import { CURRENCY_STATE } from "@/lib/reportData/binding";
+import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
    the builder's critical-path bundle / first paint. The `type` import above is
    erased at build time, so it does not pull the module eagerly. */
+/* AG Grid is as heavy as Highcharts and only needed when a Data Grid block is
+   on the canvas: same lazy, client-only treatment. */
+const SimulatedDataGrid = dynamic(
+  () => import("./SimulatedDataGrid").then((m) => m.SimulatedDataGrid),
+  { ssr: false },
+);
 const SimulatedHighchart = dynamic(
   () => import("./SimulatedHighchart").then((m) => m.SimulatedHighchart),
   {
@@ -1298,13 +1312,25 @@ function SimulatedDropdownBlock({
 }) {
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
-  const placeholder = (block?.props.placeholder as string) ?? "Select an option";
-  /* A `value` means the field is meant to look CHOSEN (renders in primary ink);
-     an empty/absent `value` keeps `placeholder` showing in the muted tier. */
-  const value = (block?.props.value as string) || undefined;
-
+  /* Label, chosen value and options from the block (dropdownModel) - the same
+     model the real renderers and the export use. A bare block keeps the
+     simulated component's own demo items. */
+  const m = dropdownModel(block?.props ?? {});
+  const authored = Boolean(block?.props.optionsCsv || block?.props.value);
+  const dropdown = (
+    <SimulatedDropdown
+      system={system}
+      placeholder={m.placeholder}
+      value={m.value || undefined}
+      items={authored ? m.options.map((o) => ({ label: o, value: o })) : undefined}
+    />
+  );
+  if (!m.label) return dropdown;
   return (
-    <SimulatedDropdown system={system} placeholder={placeholder} value={value} />
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--density-gap, 8px)" }}>
+      <span style={{ color: "var(--ds-fg-secondary)", fontSize: "var(--density-font-size, 13px)", whiteSpace: "nowrap" }}>{m.label}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>{dropdown}</div>
+    </div>
   );
 }
 
@@ -1636,37 +1662,146 @@ function HighchartBlockRenderer({
       ?? footerBlocks.find((b) => b.id === blockId))
     : null;
   const chartType = (block?.props.chartType as HighchartType) ?? "line";
-  const title = (block?.props.title as string) ?? "";
-  const value = block?.props.value != null ? Number(block.props.value) : undefined;
+  const p = block?.props ?? {};
+  const dataset = useCanvasDataset();
+  const title = (p.title as string) ?? "";
+  const value = p.value != null ? Number(p.value) : undefined;
   /* Per-chart colour override (P1.2) - position-indexed palette
      slots. Only pass when non-empty to preserve the palette default. */
-  const raw = block?.props.seriesColors;
+  const raw = p.seriesColors;
   const seriesColors = Array.isArray(raw)
     ? (raw.filter((c) => typeof c === "string") as string[])
     : undefined;
   /* Domain chart data the template / model can supply so charts aren't
      generic finance placeholders (e.g. donut "Revenue by plan"). */
-  const seriesData = Array.isArray(block?.props.seriesData)
-    ? (block.props.seriesData as { name: string; y: number }[])
+  const seriesData = Array.isArray(p.seriesData)
+    ? (p.seriesData as { name: string; y: number }[])
     : undefined;
-  const categories = Array.isArray(block?.props.categories)
-    ? (block.props.categories as string[])
-    : undefined;
-  const series = Array.isArray(block?.props.series)
-    ? (block.props.series as { name: string; data: number[] }[])
-    : undefined;
+  const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+  /* A data-bound chart derives its categories / series / parts from the
+     canvas dataset and report state; otherwise it draws its own props. */
+  const bound = useBoundData(p);
+  const boundSeries = bound?.view === "series" ? bound : null;
+  const boundParts = bound?.view === "parts" ? bound : null;
+  const categories = boundSeries ? boundSeries.categories : Array.isArray(p.categories) ? (p.categories as string[]) : undefined;
+  const series = boundSeries ? (boundSeries.series as ChartSeries[]) : Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
+  const parts = boundParts ? boundParts.seriesData : seriesData;
+  const currency = useBuilder((s) => s.reportState[CURRENCY_STATE]);
+  const centerLabel =
+    boundParts && boundParts.centerValue !== null
+      ? formatGridValue({ field: "", header: "", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency }, boundParts.centerValue)
+      : text(p.centerLabel);
 
-  return (
+  /* A framed panel shows the title in its header and gives the chart the
+     space its fixed height leaves; an unframed chart keeps its own title. */
+  const framed = p.panel === true;
+  const panelHeight = panelHeightOf(p);
+  const chart = (height: number | undefined) => (
     <SimulatedHighchart
       chartType={chartType}
       title={title}
       value={value}
       system={system}
       seriesColors={seriesColors}
-      seriesData={seriesData}
+      seriesData={parts}
       categories={categories}
       series={series}
+      height={height}
+      hideTitle={framed}
+      yAxisFormat={text(p.yAxisFormat)}
+      yAxisTitle={text(p.yAxisTitle)}
+      secondaryAxisFormat={text(p.secondaryAxisFormat)}
+      secondaryAxisTitle={text(p.secondaryAxisTitle)}
+      centerLabel={centerLabel}
+      legend={p.legend === false ? false : undefined}
+      valueDecimals={typeof p.valueDecimals === "number" ? p.valueDecimals : undefined}
+      valueSuffix={text(p.valueSuffix)}
+      yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
     />
+  );
+  if (!framed) return chart(p.height != null ? panelHeightOf(p) : undefined);
+
+  /* The data behind the chart, shown as a table when the panel is expanded. */
+  const percent = typeof p.valueSuffix === "string" && p.valueSuffix.includes("%");
+  const table = boundSeries
+    ? seriesToGrid("", boundSeries.categories, boundSeries.series, percent ? "percent" : "number")
+    : boundParts
+      ? partsToGrid("", boundParts.seriesData, { field: "value", header: "Value", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency })
+      : null;
+  return (
+    <PanelFrame
+      system={system}
+      blockId={blockId}
+      title={title}
+      subtitle={text(p.subtitle)}
+      viewBy={viewByOf(p)}
+      viewByState={blockId ? viewByStateKey(blockId) : undefined}
+      height={panelHeight}
+      table={table}
+      tools={Boolean(bound)}
+    >
+      {chart}
+    </PanelFrame>
+  );
+}
+
+/* ── Data Grid block renderer ──
+   Columns and rows come from the block (dataGridModel). Framed by default: a
+   grid needs the card around it; `panel: false` draws the bare grid. */
+function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; blockId?: string }) {
+  const blocks = useBuilder((s) => s.blocks);
+  const block = blockId ? blocks.find((b) => b.id === blockId) : null;
+  const p = block?.props ?? {};
+  /* Data-bound: columns and rows derive from the canvas dataset and report
+     state. Otherwise the block's own columns and rows. */
+  const bound = useBoundData(p);
+  const boundGrid = bound?.view === "grid" ? bound : null;
+  const staticColumns = useMemo(() => readGridColumns(p.columns), [p.columns]);
+  const staticRows = useMemo(() => readGridRows(p.rows), [p.rows]);
+  const columns = boundGrid ? boundGrid.columns : staticColumns;
+  const rows = boundGrid ? boundGrid.rows : staticRows;
+  const title = typeof p.title === "string" ? p.title : "";
+  const subtitle = typeof p.subtitle === "string" && p.subtitle.trim() ? p.subtitle : undefined;
+  const panelHeight = panelHeightOf(p);
+
+  /* Master grid: a row click stores the row's label in report state, and
+     blocks filtered by that state re-derive. Clicking the selected row again
+     clears it. */
+  const setReportState = useBuilder((s) => s.setReportState);
+  const selectState = boundGrid?.selectState;
+  const selected = boundGrid?.selected;
+  const onSelect = useMemo(
+    () => (selectState ? (label: string) => setReportState(selectState, label === selected ? null : label) : undefined),
+    [selectState, selected, setReportState],
+  );
+  /* The selection names a row of the CURRENT grouping; when "View by"
+     re-groups the grid it no longer names anything, so drop it. */
+  const grouping = boundGrid && boundGrid.columns[0] && !("children" in boundGrid.columns[0]) ? boundGrid.columns[0].header : "";
+  const lastGrouping = useRef(grouping);
+  useEffect(() => {
+    if (lastGrouping.current !== grouping) {
+      lastGrouping.current = grouping;
+      if (selectState) setReportState(selectState, null);
+    }
+  }, [grouping, selectState, setReportState]);
+
+  const grid = (height: number) => (
+    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} />
+  );
+  if (p.panel === false) return grid(panelHeight);
+  return (
+    <PanelFrame
+      system={system}
+      blockId={blockId}
+      title={title}
+      subtitle={subtitle}
+      viewBy={viewByOf(p)}
+      viewByState={blockId ? viewByStateKey(blockId) : undefined}
+      height={panelHeight}
+      tools={Boolean(boundGrid)}
+    >
+      {grid}
+    </PanelFrame>
   );
 }
 
@@ -1805,6 +1940,14 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartGauge: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartHeatmap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartTreemap: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  DataGrid: DataGridBlockRenderer as React.FC<{ system: DesignSystem }>,
+  TopNav: TopNavBlock as React.FC<{ system: DesignSystem }>,
+  TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
+  NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
+  PageTitle: PageTitleBlock as React.FC<{ system: DesignSystem }>,
+  HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
   /* Batch 6 */
@@ -1864,6 +2007,16 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
      hand-off the inline editors did via autoOpenComponentPanel. */
   const editRendersReal = useBuilder((s) => s.editRendersReal);
   const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
+  /* A block with a `stateKey` is a report control: its value lives in the
+     canvas's report state (so bound charts and grids re-derive when it
+     changes), seeded by the block's own `value`. */
+  const rawProps = props as Record<string, unknown>;
+  const stateKey = typeof rawProps.stateKey === "string" && rawProps.stateKey ? rawProps.stateKey : null;
+  const stateValue = useBuilder((s) => (stateKey ? s.reportState[stateKey] : undefined));
+  const setReportState = useBuilder((s) => s.setReportState);
+  const liveProps: Record<string, unknown> = stateKey
+    ? { ...rawProps, value: stateValue ?? rawProps.value, onValueChange: (v: string) => setReportState(stateKey, v) }
+    : rawProps;
   const coversReal = canRenderReal(system as SystemId, type);
   const rendersRealInEdit = !readOnly && editRendersReal && coversReal;
   const isSelectedBlock = useBuilder((s) => blockId != null && s.selectedBlockId === blockId);
@@ -1872,14 +2025,18 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
   }, [rendersRealInEdit, isSelectedBlock, setComponentLibraryOpen]);
   if (mountedReal && coversReal && (readOnly || editRendersReal)) {
     return (
-      <div>
+      /* A report control is live while presenting: using it must not also
+         select the block for the amend composer, which takes the focus and
+         closes the menu. (Its menu is a portal, but React events still
+         bubble through this element.) */
+      <div onClick={stateKey && readOnly ? (e) => e.stopPropagation() : undefined}>
         <BlockErrorBoundary blockType={type}>
           <RealComponentRenderer
             system={system as SystemId}
             type={type}
             mode={builderMode === "dark" ? "dark" : "light"}
             saltDensity={coerceDensity(density)}
-            props={props as Record<string, unknown>}
+            props={liveProps}
           />
         </BlockErrorBoundary>
       </div>
@@ -1901,7 +2058,7 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
           degrades to the placeholder card instead of unmounting the
           whole /builder tree. */}
       <BlockErrorBoundary blockType={type}>
-        <Renderer system={system} blockId={blockId} {...(props as Record<string, unknown>)} />
+        <Renderer system={system} blockId={blockId} {...liveProps} />
       </BlockErrorBoundary>
     </div>
   );

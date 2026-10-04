@@ -4,10 +4,15 @@
  */
 
 import { useBuilder } from "@/store/useBuilder";
-import type { Block, ZoneId } from "@/store/useBuilder";
+import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
+import type { SystemId } from "@/lib/componentApiRegistry";
 import { htmlText, htmlAttr } from "./escape";
 import { computeGroupStyle, normalizeColumns, normalizeColumnStart } from "@/lib/layoutResolver";
 import { spanOf, startOf } from "./gridSpan";
+import { isChartBlock } from "./chartExporter";
+import { materialiseCanvas } from "./materialise";
+import { HTML_DIALECT, chartDataLines, chartHasData, dropdownLines, indentLines, reportBlockLines, shellSidebarAttr, usesChromeShell, zoneAttrs } from "./reportMarkup";
+import { REPORT_CSS, buildTokenBlock } from "./stylesCss";
 
 /* Serialize a React.CSSProperties object to an inline CSS string
    (camelCase → kebab-case; bare numbers → px, matching how the canvas
@@ -44,8 +49,21 @@ function fieldId(blockId: string): string {
 }
 
 function blockToHTML(block: Block, indent: string): string {
+  /* Report blocks: the application chrome (TopNav, TabStrip, NavGroup,
+     PageTitle) and the data grid, as semantic markup. */
+  const report = reportBlockLines(HTML_DIALECT, block);
+  if (report) return indentLines(report, indent);
+  /* A page export has no chart runtime. A chart that is framed, or carries
+     data of its own, exports that data as a table (inside its panel) rather
+     than an empty placeholder; a bare chart with no data is left as it was. */
+  if (isChartBlock(block.type) && (block.props?.panel === true || chartHasData(block))) {
+    return indentLines(chartDataLines(HTML_DIALECT, block), indent);
+  }
   const p = block.props;
   switch (block.type) {
+    case "SimulatedDropdown":
+      /* Label, options and chosen value from the block (dropdownModel). */
+      return indentLines(dropdownLines(HTML_DIALECT, block, fieldId(block.id)), indent);
     case "SimulatedTitle": {
       const lvl = level(p.level);
       return `${indent}<${lvl}>${htmlText(p.text, "Heading")}</${lvl}>`;
@@ -134,7 +152,16 @@ const ZONE_TAG: Record<string, { open: string; tag: string }> = {
   footer: { open: "<footer", tag: "footer" },
 };
 
-function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12): string {
+/* A block's narrow-frame spans (LayoutProps.spanTablet / spanPhone, of 12
+   columns), mapped to the body grid's resolution. They go out as custom
+   properties plus a data attribute each; the breakpoints in REPORT_CSS read
+   them. null = the block sets none (it follows the generic collapse). */
+function narrowSpan(v: unknown, cols: number): number | null {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) && n >= 1 && n <= 12 ? normalizeColumns(n, cols) : null;
+}
+
+function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12, layout?: ZoneLayout): string {
   if (blocks.length === 0) return "";
   /* The body is an N-col grid (N = the zone's column count, matching the canvas
      + react/vite exporters). Each block is wrapped in a grid-item carrying its
@@ -153,11 +180,15 @@ function renderZone(blocks: Block[], zoneName: string, indent: string, cols = 12
       const s = startOf(b);
       const start = s !== undefined ? normalizeColumnStart(s, cols, span) : undefined;
       const gridColumn = start !== undefined ? `${start} / span ${span}` : `span ${span}`;
-      return `${indent}    <div class="grid-item" style="grid-column: ${gridColumn}">\n${html}\n${indent}    </div>`;
+      const tablet = narrowSpan(b.layout?.spanTablet, cols);
+      const phone = narrowSpan(b.layout?.spanPhone, cols);
+      const narrowStyle = `${tablet !== null ? `; --span-tablet: ${tablet}` : ""}${phone !== null ? `; --span-phone: ${phone}` : ""}`;
+      const narrowAttrs = `${tablet !== null ? " data-span-tablet" : ""}${phone !== null ? " data-span-phone" : ""}`;
+      return `${indent}    <div class="grid-item"${narrowAttrs} style="grid-column: ${gridColumn}${narrowStyle}">\n${html}\n${indent}    </div>`;
     })
     .join("\n");
   const z = ZONE_TAG[zoneName.toLowerCase()] ?? { open: "<div", tag: "div" };
-  return `${indent}  <!-- ${zoneName} -->\n${indent}  ${z.open} class="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  </${z.tag}>`;
+  return `${indent}  <!-- ${zoneName} -->\n${indent}  ${z.open} class="zone-${zoneName.toLowerCase()}"${zoneAttrs(layout)}>\n${inner}\n${indent}  </${z.tag}>`;
 }
 
 export function exportHTML(): string {
@@ -167,12 +198,26 @@ export function exportHTML(): string {
      defaults to shown (back-compat with pre-flag saved projects). */
   const zoneVisible = (zone: ZoneId): boolean => s.zoneLayouts?.[zone]?.visible !== false;
   const bodyCols = s.zoneLayouts?.body?.columns ?? 12;
-  const zones = [
-    zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ") : "",
-    zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ") : "",
-    renderZone(s.blocks, "Body", "    ", bodyCols),
-    zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ") : "",
-  ].filter(Boolean).join("\n\n");
+  /* Data-bound blocks are made static first (bindings resolved against the
+     canvas dataset + report state), so the markup below sees plain props. */
+  const canvas = materialiseCanvas(s);
+  const zl = s.zoneLayouts ?? {};
+  const headerHtml = zoneVisible("header") ? renderZone(canvas.header, "Header", "    ", 12, zl.header) : "";
+  const sidebarHtml = zoneVisible("sidebar") ? renderZone(canvas.sidebar, "Sidebar", "    ", 12, zl.sidebar) : "";
+  const bodyHtml = renderZone(canvas.body, "Body", "    ", bodyCols, zl.body);
+  const footerHtml = zoneVisible("footer") ? renderZone(canvas.footer, "Footer", "    ", 12, zl.footer) : "";
+  /* A right-docked sidebar follows the body in source (and reading) order. */
+  const sidebarRight = zl.sidebar?.side === "right";
+  const zones = (sidebarRight ? [headerHtml, bodyHtml, sidebarHtml, footerHtml] : [headerHtml, sidebarHtml, bodyHtml, footerHtml])
+    .filter(Boolean).join("\n\n");
+  const chromeShell = usesChromeShell([canvas.header, canvas.sidebar, canvas.body, canvas.footer], zl);
+  const sidebarAttr = shellSidebarAttr(Boolean(sidebarHtml), sidebarRight, chromeShell);
+  /* The report markup (panel, data table, application chrome, tones) is
+     styled by the shared REPORT_CSS, which reads the token variables. */
+  const reportCss = `${buildTokenBlock(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light")}\n${REPORT_CSS}`
+    .split("\n")
+    .map((line) => (line ? "    " + line : line))
+    .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -231,11 +276,12 @@ export function exportHTML(): string {
     /* Keyboard focus rings — .btn sets border:none, so the ring is an outline. */
     .btn:focus-visible, .tab:focus-visible, .nav-item:focus-visible, a:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 2px; }
     input:focus-visible, .checkbox input:focus-visible, .switch input:focus-visible { outline: 2px solid ${s.designSystem === "salt" ? "#1B7F9E" : s.designSystem === "m3" ? "#6750A4" : s.designSystem === "uoaui" ? "#8A58C9" : s.designSystem === "carbon" ? "#0f62fe" : "#0F6CBD"}; outline-offset: 1px; }
+${reportCss}${bodyCols !== 12 ? `\n    .zone-body { --body-cols: ${bodyCols}; }` : ""}
   </style>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <div class="dashboard-layout" data-mode="${s.mode}" data-ds="${s.designSystem}">
+  <div class="dashboard-layout" data-mode="${s.mode}" data-ds="${s.designSystem}"${sidebarAttr}>
 ${zones}
   </div>
 </body>

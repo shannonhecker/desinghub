@@ -296,6 +296,143 @@ function LandingPagePreview() {
   );
 }
 
+/* Shared chrome for the finance report wireframes: the two-bar header and the
+   context row (title + filters). */
+function FinanceChrome({ filters }: { filters: number }) {
+  const width = 26;
+  const gap = 4;
+  return (
+    <>
+      {/* Two-bar application header: brand + links, then workspace tabs. */}
+      <WireRect x={4} y={4} w={212} h={7} r={2} stroke />
+      <WireRect x={8} y={6.5} w={3} h={2.4} accent />
+      <WireRect x={13} y={6.8} w={20} h={1.8} />
+      <WireRect x={40} y={6.8} w={10} h={1.8} />
+      <WireRect x={54} y={6.8} w={10} h={1.8} />
+      <WireRect x={68} y={6.8} w={10} h={1.8} />
+      <WireRect x={8} y={12.6} w={9} h={1.6} />
+      <WireRect x={21} y={12.6} w={13} h={1.6} accent />
+      <WireRect x={38} y={12.6} w={8} h={1.6} />
+      {/* Context row: page title + filters. */}
+      <WireRect x={21} y={18} w={28} h={4} accent />
+      {Array.from({ length: filters }, (_, i) => (
+        <WireRect key={i} x={199 - (filters - i) * (width + gap) + gap} y={17} w={width} h={6} r={1.5} stroke />
+      ))}
+    </>
+  );
+}
+
+/** The page body of the finance thumbnails, centred under the header. */
+const FINANCE_BODY_SHIFT = "translate(-17 0)";
+
+/* A grid panel: header band, grouped header row, then rows. */
+function WireGrid({ x, y, w, h, rows }: { x: number; y: number; w: number; h: number; rows: number }) {
+  const step = (h - 12) / rows;
+  return (
+    <>
+      <WireRect x={x} y={y} w={w} h={h} r={2} stroke />
+      <WireRect x={x + 4} y={y + 3.5} w={Math.min(34, w * 0.4)} h={2.5} accent />
+      <WireRect x={x + 4} y={y + 9} w={w - 8} h={2.5} />
+      {Array.from({ length: rows - 1 }, (_, i) => (
+        <WireRect key={i} x={x + 4} y={y + 9 + step * (i + 1)} w={(w - 8) * (i % 2 ? 0.86 : 0.94)} h={1.6} />
+      ))}
+    </>
+  );
+}
+
+/* ── 6. Risk Analytics ──
+   Mirrors the template: context row, the risk summary grid, three
+   chart panels (stacked bar, clustered column, stacked bar) and the
+   full-width value-at-risk combination chart. */
+function RiskAnalyticsPreview() {
+  const bars = [30, 24, 18, 14, 10, 7];
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Risk analytics preview: a risk summary grid, three chart panels and a value-at-risk trend chart">
+      <FinanceChrome filters={1} />
+      <g transform={FINANCE_BODY_SHIFT}>
+      <WireGrid x={38} y={26} w={178} h={26} rows={4} />
+
+      {/* Stacked bar (horizontal) */}
+      <WireRect x={38} y={56} w={56} h={32} r={2} stroke />
+      {bars.map((b, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={43} y={61 + i * 4.2} w={b * 0.6} h={2.4} accent />
+          <WireRect x={43 + b * 0.6} y={61 + i * 4.2} w={b * 0.5} h={2.4} />
+        </React.Fragment>
+      ))}
+      {/* Clustered column */}
+      <WireRect x={99} y={56} w={56} h={32} r={2} stroke />
+      {[16, 6, 14, 5, 8, 3].map((v, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={104 + i * 8} y={84 - v} w={2.6} h={v} accent />
+          <WireRect x={107.4 + i * 8} y={84 - v * 0.6} w={2.6} h={v * 0.6} />
+        </React.Fragment>
+      ))}
+      {/* Stacked bar (horizontal) */}
+      <WireRect x={160} y={56} w={56} h={32} r={2} stroke />
+      {bars.map((b, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={165} y={61 + i * 4.2} w={b * 0.9} h={2.4} accent />
+          <WireRect x={165 + b * 0.9} y={61 + i * 4.2} w={b * 0.25} h={2.4} />
+        </React.Fragment>
+      ))}
+
+      {/* Combination: columns + two lines */}
+      <WireRect x={38} y={92} w={178} h={34} r={2} stroke />
+      {Array.from({ length: 24 }, (_, i) => {
+        const v = 6 + ((i * 7) % 9);
+        return <WireRect key={i} x={44 + i * 7} y={121 - v} w={3.4} h={v} />;
+      })}
+      <path d="M 45 118 L 66 116 L 87 108 L 108 101 L 129 99 L 150 106 L 171 114 L 192 117 L 210 119" stroke={ACCENT} strokeWidth={1.2} fill="none" />
+      <path d="M 45 119 L 66 117 L 87 110 L 108 103 L 129 101 L 150 107 L 171 115 L 192 118 L 210 120" stroke={MUTED} strokeWidth={1} strokeDasharray="2 2" fill="none" />
+      </g>
+    </svg>
+  );
+}
+
+/* ── 7. Performance Analytics ──
+   Mirrors the template: context row with four filters, the results
+   grid, a row of grid + clustered column + donut, then stacked area
+   + combination. */
+function PerformanceAnalyticsPreview() {
+  return (
+    <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Performance analytics preview: a results grid, a breakdown grid, returns and allocation charts, and two trend charts">
+      <FinanceChrome filters={4} />
+      <g transform={FINANCE_BODY_SHIFT}>
+      <WireGrid x={38} y={26} w={178} h={32} rows={6} />
+
+      <WireGrid x={38} y={62} w={56} h={30} rows={5} />
+      {/* Clustered column */}
+      <WireRect x={99} y={62} w={56} h={30} r={2} stroke />
+      {[5, 8, 15, 18].map((v, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={105 + i * 12} y={88 - v} w={3} h={v} accent />
+          <WireRect x={109 + i * 12} y={88 - v * 0.9} w={3} h={v * 0.9} />
+        </React.Fragment>
+      ))}
+      {/* Donut */}
+      <WireRect x={160} y={62} w={56} h={30} r={2} stroke />
+      <circle cx={188} cy={78} r={9} fill="none" stroke={MUTED} strokeWidth={4} />
+      <path d="M 188 69 A 9 9 0 0 1 195.8 82.5" fill="none" stroke={ACCENT} strokeWidth={4} />
+
+      {/* Stacked area */}
+      <WireRect x={38} y={96} w={86} h={30} r={2} stroke />
+      <path d="M 43 116 L 60 114 L 77 113 L 94 110 L 111 109 L 119 108 L 119 122 L 43 122 Z" fill={ACCENT} opacity={0.35} />
+      <path d="M 43 108 L 60 107 L 77 105 L 94 104 L 111 102 L 119 102 L 119 108 L 111 109 L 94 110 L 77 113 L 60 114 L 43 116 Z" fill={FG} opacity={0.18} />
+      {/* Combination */}
+      <WireRect x={130} y={96} w={86} h={30} r={2} stroke />
+      {[4, 3, 12, 15, 3, 6].map((v, i) => (
+        <React.Fragment key={i}>
+          <WireRect x={136 + i * 13} y={122 - v} w={3.4} h={v} accent />
+          <WireRect x={140.4 + i * 13} y={122 - v * 0.8} w={3.4} h={v * 0.8} />
+        </React.Fragment>
+      ))}
+      <path d="M 139 110 L 152 111 L 165 106 L 178 105 L 191 112 L 204 113" stroke={FG} strokeOpacity={0.55} strokeWidth={1} fill="none" />
+      </g>
+    </svg>
+  );
+}
+
 /* ── Registry ── */
 const PREVIEWS: Record<TemplateId, React.FC> = {
   "analytics-dashboard": AnalyticsDashboardPreview,
@@ -303,6 +440,8 @@ const PREVIEWS: Record<TemplateId, React.FC> = {
   "crm-contacts":        CrmContactsPreview,
   "login-flow":          LoginFlowPreview,
   "landing-page":        LandingPagePreview,
+  "risk-analytics":        RiskAnalyticsPreview,
+  "performance-analytics": PerformanceAnalyticsPreview,
 };
 
 export function TemplatePreview({ id }: { id: TemplateId }) {

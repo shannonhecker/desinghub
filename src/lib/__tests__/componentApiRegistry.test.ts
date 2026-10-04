@@ -378,19 +378,72 @@ describe("componentApiRegistry — Slider across DSs", () => {
 });
 
 describe("componentApiRegistry — Dropdown across DSs", () => {
+  /* A bare dropdown (no content yet) exports the default choices. */
   it("Salt Dropdown + Option children", () => {
     const jsx = blockToRealJsx("salt", b("SimulatedDropdown", { placeholder: "Pick one" }))!;
     expect(jsx).toContain('<Dropdown placeholder="Pick one">');
-    expect(jsx).toContain('<Option value="option-1">Option 1</Option>');
+    expect(jsx).toContain('<Option value="Option 1">Option 1</Option>');
   });
   it("M3 FormControl/InputLabel/Select/MenuItem", () => {
     const jsx = blockToRealJsx("m3", b("SimulatedDropdown", { placeholder: "Pick one" }))!;
-    expect(jsx).toContain('<InputLabel id="sel-label">Pick one</InputLabel>');
-    expect(jsx).toContain("<MenuItem value=\"opt1\">Option 1</MenuItem>");
+    expect(jsx).toContain('<InputLabel id="select-pick-one-label">Pick one</InputLabel>');
+    expect(jsx).toContain('<MenuItem value="Option 1">Option 1</MenuItem>');
   });
   it("Carbon Dropdown with label/items/itemToString (label is the trigger text)", () => {
     expect(blockToRealJsx("carbon", b("SimulatedDropdown", { placeholder: "Pick one" })))
-      .toBe('<Dropdown id="dropdown" titleText="" label="Pick one" items={["Option 1", "Option 2", "Option 3"]} itemToString={(item) => item ?? ""} />');
+      .toBe('<Dropdown id="dropdown-pick-one" titleText="" hideLabel label="Pick one" items={["Option 1","Option 2","Option 3"]} itemToString={(item) => item ?? ""} />');
+  });
+
+  /* The export carries what is on the canvas: the block's own label, chosen
+     value and options - not a generic "Option 1 / Option 2". */
+  const currency = { label: "Currency", value: "GBP", optionsCsv: "GBP, USD, EUR" };
+  it("Salt: labelled field, real options, the chosen value selected", () => {
+    const jsx = blockToRealJsx("salt", b("SimulatedDropdown", currency))!;
+    expect(jsx).toContain('<FormField labelPlacement="left">');
+    expect(jsx).toContain("<FormFieldLabel>Currency</FormFieldLabel>");
+    expect(jsx).toContain('defaultSelected={["GBP"]}');
+    for (const o of ["GBP", "USD", "EUR"]) expect(jsx).toContain(`<Option value="${o}">${o}</Option>`);
+    expect(jsx).not.toContain("Option 1");
+    const imports = collectImports("salt", [b("SimulatedDropdown", currency)]).join("\n");
+    for (const name of ["Dropdown", "Option", "FormField", "FormFieldLabel"]) expect(imports).toContain(name);
+  });
+  it("M3: label, real options, the chosen value as defaultValue", () => {
+    const jsx = blockToRealJsx("m3", b("SimulatedDropdown", currency))!;
+    expect(jsx).toContain('<InputLabel id="select-currency-label">Currency</InputLabel>');
+    expect(jsx).toContain('labelId="select-currency-label" label="Currency" defaultValue="GBP"');
+    expect(jsx).toContain('<MenuItem value="EUR">EUR</MenuItem>');
+    expect(jsx).not.toContain("Option 1");
+  });
+  it("Fluent: labelled Field, real options, the chosen value selected", () => {
+    const jsx = blockToRealJsx("fluent", b("SimulatedDropdown", currency))!;
+    expect(jsx).toContain('<Field label="Currency" orientation="horizontal">');
+    expect(jsx).toContain('defaultValue="GBP" defaultSelectedOptions={["GBP"]}');
+    expect(jsx).toContain("<Option>USD</Option>");
+    expect(jsx).not.toContain("Option 1");
+  });
+  it("Carbon: titleText, real items, the chosen value as initialSelectedItem", () => {
+    expect(blockToRealJsx("carbon", b("SimulatedDropdown", currency)))
+      .toBe('<Dropdown id="dropdown-currency" titleText="Currency" label="Select an option" items={["GBP","USD","EUR"]} initialSelectedItem="GBP" itemToString={(item) => item ?? ""} />');
+  });
+  it("uoaui: label, chosen value on the trigger, real options in the list", () => {
+    const jsx = blockToRealJsx("uoaui", b("SimulatedDropdown", currency))!;
+    expect(jsx).toContain('<span className="a-label">Currency</span>');
+    expect(jsx).toContain("<span>GBP</span>");
+    expect(jsx).toContain('role="option" aria-selected={true}>GBP</li>');
+    expect(jsx).toContain('role="option" aria-selected={false}>USD</li>');
+    expect(jsx).not.toContain("Option A");
+  });
+  it("two dropdowns get different ids", () => {
+    const a = blockToRealJsx("m3", b("SimulatedDropdown", { label: "Currency", value: "GBP" }))!;
+    const c = blockToRealJsx("m3", b("SimulatedDropdown", { label: "Benchmark", value: "Primary" }))!;
+    expect(a).toContain("select-currency-label");
+    expect(c).toContain("select-benchmark-label");
+  });
+  it("escapes option text", () => {
+    const jsx = blockToRealJsx("salt", b("SimulatedDropdown", { value: "A & B <x>", optionsCsv: "A & B <x>" }))!;
+    /* Unsafe characters travel as a JS string expression, never as raw JSX. */
+    expect(jsx).toContain('{"A & B <x>"}');
+    expect(jsx).not.toContain(">A & B <x><");
   });
 });
 

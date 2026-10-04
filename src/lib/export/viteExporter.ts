@@ -299,6 +299,35 @@ const UOAUI_THEME_CSS = `/* uoaui DS - glassmorphism theme tokens + a-* componen
   font-size: 11px; line-height: 1;
 }
 .a-checkbox.checked .a-cb-box { background: var(--a-accent); color: var(--a-accent-fg); border-color: transparent; }
+
+/* Layout primitives: the layout registry lays a zone out with these
+   (className="a-grid" / "a-stack" / "a-row"; grid items carry their span
+   inline). Without them every block of a grid zone stacked full width. */
+.a-stack { display: flex; flex-direction: column; gap: 12px; }
+.a-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.a-row { display: flex; gap: 12px; }
+
+/* Dropdown: registry emits a labelled trigger button + a hidden listbox. */
+.a-label { font-size: 12px; font-weight: 500; color: var(--a-fg-muted); }
+.a-dropdown { display: inline-block; min-width: 0; }
+.a-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius);
+  background: var(--a-surface);
+  color: var(--a-fg);
+  font-family: var(--a-font);
+  font-size: 13px;
+  cursor: pointer;
+}
+.a-dropdown-trigger:focus-visible { outline: 2px solid var(--a-accent); outline-offset: 1px; }
+.a-dropdown-menu { margin: 4px 0 0; padding: 4px; list-style: none; border: 1px solid var(--a-border); border-radius: var(--a-radius); background: var(--a-surface-strong); }
+.a-dropdown-item { padding: 7px 10px; font-size: 12px; }
 `;
 
 /* Human label + the npm packages installed for each DS, so the README can be

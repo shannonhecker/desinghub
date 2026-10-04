@@ -3103,7 +3103,27 @@
 }
 .template-card-head .material-symbols-outlined { font-size: 17px; color: var(--b-accent); }
 .template-card-label { font-size: 13px; font-weight: 600; }
-.template-card-actions { display: flex; gap: 6px; margin-top: 2px; }
+/* What the template contains: two lines, then cut, so every card in the
+   row is the same height. */
+.template-card-desc {
+  margin: 0;
+  min-height: calc(2 * 1.4em);
+  font-size: var(--tpl-desc-size);
+  line-height: 1.4;
+  color: var(--b-fg2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); margin-top: var(--tpl-chip-gap); }
+.prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
+.prompt-bubble.template-gallery-chip.is-active {
+  background: var(--b-accent);
+  border-color: var(--b-accent);
+  color: var(--tpl-chip-on-accent);
+}
+.template-card-actions { display: flex; gap: 6px; margin-top: auto; }
 .prompt-bubble.template-card-btn {
   flex: 1;
   padding: 6px 10px;
@@ -7549,6 +7569,8 @@
   --ds-surface: var(--salt-container-secondary-background, #1C2830);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #4F5B66));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-font: 'Open Sans', sans-serif;
   --ds-radius: var(--salt-curve-100, 4px);
@@ -7570,6 +7592,8 @@
   --ds-surface: var(--salt-container-secondary-background, #F4F6F8);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #C4C8CC));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
 }
 
@@ -7595,6 +7619,8 @@
   --ds-surface: var(--mui-palette-background-paper, #2B2930);
   --ds-surface-hover: var(--mui-palette-action-hover, #36343C);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #36343C);
   --ds-font: 'Roboto', sans-serif;
   --ds-radius: 12px;
@@ -7616,6 +7642,8 @@
   --ds-surface: var(--mui-palette-background-paper, #F3EDF7);
   --ds-surface-hover: var(--mui-palette-action-hover, #E6E0EC);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #E6E0EC);
 }
 
@@ -7639,6 +7667,8 @@
   --ds-fg-tertiary: var(--colorNeutralForeground3, #FFFFFFB0);
   --ds-surface: var(--colorNeutralBackground2, #1F1F1F);
   --ds-border: var(--colorNeutralStroke1, #8A8A8A);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-surface-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-font: var(--fontFamilyBase, 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif);
@@ -7661,6 +7691,8 @@
   --ds-surface: var(--colorNeutralBackground2, #F5F5F5);
   --ds-surface-hover: var(--colorNeutralBackground3, #EBEBEB);
   --ds-border: var(--colorNeutralStroke1, #D1D1D1);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-hover: var(--colorNeutralBackground3, #EBEBEB);
 }
 
@@ -7686,6 +7718,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-font: var(--font-ibm-plex-sans), 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   /* Carbon is flat - 0 radius everywhere except tag/avatar. */
@@ -7706,6 +7740,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
 }
 
@@ -7734,6 +7770,8 @@
   --ds-surface: rgba(255,255,255,0.04);
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.08);
   --ds-font: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --ds-radius: 12px;
@@ -7753,6 +7791,8 @@
   --ds-surface: rgba(255,255,255,0.72);
   --ds-surface-hover: rgba(255,255,255,0.85);
   --ds-border: rgba(100,60,180,0.06);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.85);
   --ds-primary: #6B5AA8;
   --ds-on-primary: #FFFFFF;
@@ -10333,6 +10373,509 @@
   white-space: nowrap;
 }
 
+/* ── Chrome tones ──
+   A chrome zone (header / sidebar / footer, via data-tone) or a navigation
+   bar (.dh-tone-*) picks one of five surface treatments. Each sets the same
+   four custom properties, which the zone or bar then paints with. ── */
+[data-tone="surface"], .dh-tone-surface {
+  --dh-chrome-bg: var(--ds-surface);
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="transparent"], .dh-tone-transparent {
+  --dh-chrome-bg: transparent;
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="inverse"], .dh-tone-inverse {
+  --dh-chrome-bg: var(--ds-fg);
+  --dh-chrome-fg: var(--ds-bg);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-bg) 72%, var(--ds-fg));
+  --dh-chrome-line: color-mix(in srgb, var(--ds-bg) 18%, transparent);
+}
+[data-tone="dark"], .dh-tone-dark {
+  --dh-chrome-bg: var(--bc-chrome-dark);
+  --dh-chrome-fg: var(--bc-chrome-dark-fg);
+  --dh-chrome-fg-dim: var(--bc-chrome-dark-fg-dim);
+  --dh-chrome-line: var(--bc-chrome-dark-line);
+}
+[data-tone="accent"], .dh-tone-accent {
+  --dh-chrome-bg: var(--ds-primary);
+  --dh-chrome-fg: var(--ds-on-primary);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-on-primary) 78%, transparent);
+  --dh-chrome-line: color-mix(in srgb, var(--ds-on-primary) 22%, transparent);
+}
+.bp-header[data-tone],
+.bp-sidebar[data-tone],
+.bp-footer[data-tone] {
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  border-color: var(--dh-chrome-line);
+}
+/* Flush: bars stack edge to edge; each block spans the zone. */
+.bp-header[data-flush],
+.bp-footer[data-flush] {
+  padding: 0;
+  border-width: 0;
+  display: block;
+}
+.bp-header[data-flush] .zone-drop-container > .canvas-block,
+.bp-footer[data-flush] .zone-drop-container > .canvas-block {
+  width: 100%;
+}
+/* !important: .zone-block-compact pads header/footer blocks with it, which
+   pushed a flush bar two pixels past the frame edge. */
+.bp-header[data-flush] .canvas-block,
+.bp-footer[data-flush] .canvas-block {
+  box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0;
+  border-width: 0;
+}
+/* Sidebar on the right. */
+.bp-body[data-sidebar-side="right"] {
+  flex-direction: row-reverse;
+}
+.bp-body[data-sidebar-side="right"] .bp-sidebar {
+  border-right-width: 0;
+  border-left: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+
+/* On a phone-width frame the primary links and the account name give way
+   to the brand: a squeezed row of clipped links reads as broken. The
+   breakpoint is in rem: a container query cannot read a custom property. */
+.bp-header { container-type: inline-size; container-name: chrome-header; }
+@container chrome-header (max-width: 35rem) {
+  .dh-topnav .dh-topnav-links, .dh-topnav .dh-topnav-divider, .dh-topnav .dh-topnav-account-name { display: none; }
+  .bp-header .dh-topnav, .bp-header .dh-tabstrip { padding-inline: var(--bc-gutter-narrow); gap: var(--bc-bar-gap-narrow); }
+}
+/* ── Page title (ChromeBars.tsx): one fixed size in every design system ── */
+.dh-page-title-wrap {
+  font-family: var(--ds-font);
+  min-width: 0;
+}
+.dh-page-title {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-page-title-size);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ds-fg);
+  text-wrap: balance;
+}
+.dh-page-caption {
+  margin: calc(var(--bc-bar-gap) / 6) 0 0;
+  font-size: var(--bc-bar-font);
+  color: var(--ds-fg-secondary);
+}
+
+/* ── Navigation bars (ChromeBars.tsx) ── */
+.dh-tone {
+  box-sizing: border-box;
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  font-family: var(--ds-font);
+}
+.dh-topnav {
+  display: flex;
+  align-items: center;
+  height: var(--bc-topnav-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+}
+.dh-topnav-brand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 2);
+  font-size: var(--bc-bar-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.dh-topnav-mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: var(--ds-radius);
+  background: var(--ds-primary);
+  color: var(--bc-chrome-mark-fg);
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 700;
+}
+.dh-topnav-divider {
+  flex: none;
+  width: var(--bc-hairline);
+  height: calc(var(--bc-topnav-h) * 0.42);
+  background: var(--dh-chrome-line);
+}
+.dh-topnav-links {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow: hidden;
+}
+/* Scoped under .dh-tone so these win over the canvas's generic button
+   styling, which would recolour the links and stop them filling the bar. */
+.dh-tone .dh-topnav-link,
+.dh-tone .dh-tabstrip-tab {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  border-radius: 0;
+  gap: calc(var(--bc-bar-gap) / 4);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-tone .dh-topnav-link:hover,
+.dh-tone .dh-tabstrip-tab:hover {
+  color: var(--dh-chrome-fg);
+}
+.dh-tone .dh-topnav-link.is-active,
+.dh-tone .dh-tabstrip-tab.is-active {
+  color: var(--dh-chrome-fg);
+  font-weight: 600;
+}
+/* The active indicator: a bar in the system's primary colour along the
+   bottom edge. */
+.dh-topnav-link.is-active::after,
+.dh-tabstrip-tab.is-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--dh-focus-ring);
+  background: var(--ds-primary);
+}
+.dh-topnav-link:focus-visible,
+.dh-tabstrip-tab:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: calc(var(--dh-focus-ring) * -1);
+}
+.dh-topnav-spacer {
+  flex: 1 1 auto;
+}
+.dh-topnav-account {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 3);
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+}
+.dh-topnav-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: 50%;
+  border: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+.dh-tabstrip {
+  display: flex;
+  align-items: stretch;
+  height: var(--bc-tabstrip-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+/* A dark tab strip under a dark top bar reads as a second, lifted level. */
+.dh-tabstrip.dh-tone-dark {
+  background: var(--bc-chrome-dark-raised);
+}
+.dh-tabstrip-add {
+  display: inline-grid;
+  place-items: center;
+  color: var(--dh-chrome-fg-dim);
+}
+.dh-navgroup {
+  padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
+  font-family: var(--ds-font);
+  font-size: var(--dh-navgroup-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+
+/* ── Uniform structure ──
+   Set on <html> by BuilderApp when the template on the canvas pins its
+   structural spacing across design systems (BuilderTemplate.uniformStructure).
+   The padding scale is pinned in JS; here the header takes one fixed height,
+   so the body starts at the same y in every system. ── */
+[data-uniform-structure] .bp-header:not([data-flush]) {
+  box-sizing: border-box;
+  height: var(--bc-uniform-header-h);
+}
+
+/* ── Framed panel (PanelFrame.tsx): the card a chart or data grid sits in.
+   Sizes arrive as custom properties from panelMetrics.ts and are the same in
+   every design system; colour, type and radius come from the active system's
+   --ds-* tokens. ── */
+.dh-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: var(--dh-panel-h);
+  min-width: 0;
+  overflow: hidden;
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  /* The system's secondary separator: its primary border reads as a hard
+     white line around every card in the dark themes. */
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-panel-header {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-panel-header-h);
+  height: var(--dh-panel-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dh-panel-pad);
+  padding-inline: var(--dh-panel-pad);
+  min-width: 0;
+}
+.dh-panel-heading {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--dh-panel-pad) / 2);
+  min-width: 0;
+}
+.dh-panel-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-panel-title-size);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ds-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* When the header is tight (a narrow panel with a "View by" select) the
+   subtitle gives way first, then the title truncates. */
+.dh-panel-subtitle {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.3;
+  color: var(--ds-fg-tertiary);
+  white-space: nowrap;
+}
+/* In a narrow panel the select gives way before the title is cut. */
+.dh-panel-viewby {
+  flex: 0 100 var(--dh-panel-viewby-w);
+  min-width: min(var(--dh-panel-viewby-min), 40%);
+}
+/* The select must not stretch the fixed header: whatever height the active
+   system gives it, it is centred in the row and clipped to it. */
+.dh-panel-viewby > * {
+  max-height: var(--dh-panel-header-h);
+}
+.dh-panel-body {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 var(--dh-panel-pad) var(--dh-panel-pad);
+}
+
+/* Leading glyph of a labelled toolbar button (e.g. the report data button). */
+.preview-bar-btn-glyph {
+  font-size: var(--bc-toolbar-glyph);
+  margin-right: calc(var(--bc-toolbar-glyph) / 4);
+}
+
+/* ── Panel tools, expanded panel and configuration drawer ── */
+.dh-panel-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--dh-panel-pad) / 8);
+  margin-right: calc(var(--dh-panel-pad) / -4);
+}
+.dh-panel-tool {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dh-panel-tool-size);
+  height: var(--dh-panel-tool-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-tertiary);
+  cursor: pointer;
+  transition: background-color var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-panel-tool:hover,
+.dh-panel-tool.is-active {
+  background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: var(--ds-fg);
+}
+.dh-panel-tool:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+/* The tools stay out of the way until the panel is pointed at or focused. */
+.dh-panel:not(.dh-panel-expanded) .dh-panel-tools {
+  opacity: 0;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-panel:hover .dh-panel-tools,
+.dh-panel:focus-within .dh-panel-tools {
+  opacity: 1;
+}
+@media (hover: none) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { opacity: 1; }
+}
+/* A narrow panel (a phone, a three-across row on a tablet) has no room to
+   hold the tools' space open: they take none until the panel is pointed at
+   or focused, the subtitle goes, and on touch only Expand stays (Configure
+   is in the expanded view). */
+.dh-panel { container-type: inline-size; container-name: dh-panel; }
+@container dh-panel (max-width: 21.25rem) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-subtitle { display: none; }
+  .dh-panel:not(.dh-panel-expanded):not(:hover):not(:focus-within) .dh-panel-tools {
+    width: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+  @media (hover: none) {
+    .dh-panel:not(.dh-panel-expanded) .dh-panel-tools { width: auto; overflow: visible; }
+    .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
+  }
+}
+
+/* Expanded: the panel is portalled into .bp-main, whose other content is
+   hidden. The slot fills the body's visible height. */
+.bp-main.dh-expanded {
+  overflow: hidden;
+}
+.bp-main.dh-expanded > :not(.dh-expand) {
+  display: none;
+}
+.dh-expand {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding-block: var(--dh-pad-canvas, var(--bc-gutter));
+}
+.dh-expand-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: var(--bc-expand-gap);
+}
+.dh-panel-expanded {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+.dh-config {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-config-w);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-config-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--dh-config-header-h);
+  padding-inline: var(--bc-expand-gap);
+}
+.dh-config-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--bc-expand-gap) var(--bc-expand-gap);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--bc-expand-gap) * 0.75);
+}
+.dh-config-heading {
+  margin: calc(var(--bc-expand-gap) / 2) 0 0;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-config-note {
+  margin: 0;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.5;
+  color: var(--ds-fg-secondary);
+}
+.dh-config-footer {
+  flex: none;
+  padding: calc(var(--bc-expand-gap) * 0.75) var(--bc-expand-gap);
+  border-top: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-config-reset {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.dh-config-reset:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+
+/* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
+.dh-grid-selectable .ag-row {
+  cursor: pointer;
+}
+.dh-grid .ag-row.dh-grid-row-selected {
+  background: color-mix(in srgb, var(--ds-primary) 14%, transparent);
+  box-shadow: inset var(--dh-grid-select-bar) 0 0 var(--ds-primary);
+}
+
 /* Preview canvas root - uses only design system tokens */
 .preview-canvas-root {
   background: var(--ds-bg);
@@ -10492,14 +11035,19 @@
 .preview-canvas-root .f-label { font-size: calc(var(--density-font-size, 13px) - 1px); }
 
 /* Canvas drop zone highlight */
+/* The drop edge is padding plus an outline, not a border: at a fractional
+   frame scale a border is snapped to whole device pixels, so the body was a
+   pixel or two wider in Edit than in Present. Padding is not snapped. */
 .canvas-drop-zone {
   min-height: 60px;
   border-radius: 8px;
-  border: 2px dashed transparent;
-  transition: border-color 0.2s, background 0.2s;
+  padding: var(--bc-drop-edge);
+  outline: var(--bc-drop-edge) dashed transparent;
+  outline-offset: calc(var(--bc-drop-edge) * -1);
+  transition: outline-color 0.2s, background 0.2s;
 }
 .canvas-drop-zone.is-over {
-  border-color: var(--ds-primary);
+  outline-color: var(--ds-primary);
   background: var(--ds-primary-hover);
 }
 
@@ -11107,7 +11655,7 @@
      visual rhythm at the new medium-default values. */
   padding: var(--dh-pad-zone, 10px) calc(var(--dh-pad-zone, 10px) * 1.6);
   background: var(--ds-surface);
-  border-bottom: 1px solid var(--ds-border);
+  border-bottom: 1px solid var(--ds-border-subtle, var(--ds-border));
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -11189,14 +11737,18 @@
 }
 
 /* ── P2 Frames: add-back strip for removed frames ──────────────────── */
+/* Floats over the frame's bottom-left corner instead of taking a row at the
+   top: as a row it pushed the whole page down in Edit, so a canvas with a
+   removed frame no longer matched its Present view. */
+.bp-dashboard { position: relative; }
 .bp-zone-add-bar {
+  position: absolute;
+  left: var(--bc-gap-md);
+  bottom: var(--bc-gap-md);
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   gap: var(--bc-gap-sm);
-  padding: var(--bc-gap-sm) var(--bc-gap-md);
-  background: var(--bc-bg-hover);
-  border-bottom: 1px dashed var(--bc-border);
-  flex-shrink: 0;
 }
 .bp-zone-add-chip {
   display: inline-flex;
@@ -11292,11 +11844,14 @@
 
 /* ── Sidebar ── */
 .bp-sidebar {
+  /* border-box so the divider is inside the sidebar width in every system
+     (Carbon's reset already did this; the others were one pixel wider). */
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background: var(--ds-surface);
-  border-right: 1px solid var(--ds-border);
+  border-right: 1px solid var(--ds-border-subtle, var(--ds-border));
   overflow: hidden;
   flex-shrink: 0;
   /* P2 Frames: positioning context for the absolute frame label tab. */
@@ -11667,7 +12222,7 @@
   position: relative;
   /* Was `8px 16px`. Same ratio as header. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
-  border-top: 1px solid var(--ds-border);
+  border-top: 1px solid var(--ds-border-subtle, var(--ds-border));
   background: var(--ds-surface);
   font-size: 10px;
   font-family: var(--ds-font);
@@ -13105,6 +13660,15 @@
 .zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-btn.active { background: var(--bc-accent); color: #fff; }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+/* Tone swatches: each paints with the tone's own background, so the control
+   previews what the zone will look like in the active design system. */
+.zlo-swatch {
+  width: var(--zlo-swatch);
+  height: var(--zlo-swatch);
+  border-radius: 50%;
+  background: var(--dh-chrome-bg);
+  box-shadow: 0 0 0 var(--bc-hairline) var(--glass-border-subtle);
+}
 /* Gap snap-handle: drag horizontally (or arrow keys) to magnetize the zone
    gap to a token stop. Token-snapped by construction, never an arbitrary px. */
 .zlo-gap {
@@ -13340,6 +13904,7 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
 }
 @container zone-body-grid (max-width: 640px) {
   /* deepest tier: everything stacks to full / half rows */
@@ -13350,7 +13915,13 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
+  .zone-drop-body.zone-grid > [style*="--span-phone"] { grid-column: span var(--span-phone) !important; }
 }
+
+/* A block's own narrow-frame spans (LayoutProps.spanTablet / spanPhone, set
+   as custom properties by layoutResolver) win over the generic ladder.
+   The rules sit last inside the ladder's two tiers above. */
 
 /* Empty body zone state - visual dropzone. Now applies to
    zone-grid, zone-row, and zone-stack since the body zone's

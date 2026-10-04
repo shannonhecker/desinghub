@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { defaultLayoutForType } from '@/lib/blockLayoutDefaults';
 
+import type { ReportDataset } from "@/lib/reportData/types";
 export type DesignSystem = 'salt' | 'm3' | 'fluent' | 'uoaui' | 'carbon';
 export type InterfaceType = 'dashboard' | 'landing' | 'form' | 'ecommerce' | 'blog' | 'portfolio';
 export type BuilderMode = 'light' | 'dark';
@@ -20,7 +21,10 @@ export type ZoneId = 'body' | 'header' | 'sidebar' | 'footer';
 const ZONE_BY_TYPE: Readonly<Record<string, ZoneId>> = {
   AppBrand: 'header',
   StatusPill: 'header',
+  TopNav: 'header',
+  TabStrip: 'header',
   NavItem: 'sidebar',
+  NavGroup: 'sidebar',
   FooterText: 'footer',
   /* Body-only primitive — a grouped column of blocks. */
   LayoutGroup: 'body',
@@ -116,6 +120,13 @@ export interface LayoutProps {
      holds its relative position across a DS / column-count switch with no
      stored re-clamp. A full-row (fill) block ignores it. */
   gridCol?: number;
+  /** Column span (of 12) in a grid zone at tablet width and at phone width.
+     A template uses them to say how its rows fold on a narrower frame:
+     without them, the generic ladder folds thirds and quarters to halves,
+     which leaves a wide panel at an unusable half-width on a phone.
+     Undefined = the generic ladder. Canvas-only, like the ladder. */
+  spanTablet?: number;
+  spanPhone?: number;
 }
 
 export interface ChatMessage {
@@ -245,7 +256,32 @@ export interface ZoneLayout {
      default. Persisted (zoneLayouts is a TRACKED_KEY) so a resize sticks
      across reload + sessions. */
   size?: number;
+  /** Surface treatment of a chrome zone (header / sidebar / footer) - see
+     ZoneTone. Undefined = "surface". */
+  tone?: ZoneTone;
+  /** Chrome zone runs edge to edge: no zone padding, so full-width bars
+     (TopNav, TabStrip) stack flush. */
+  flush?: boolean;
+  /** Sidebar only: which side it docks to. Undefined = "left". */
+  side?: "left" | "right";
 }
+
+/** Surface treatment for a chrome zone or a navigation bar:
+     surface      the system's raised surface (default)
+     transparent  the page background shows through
+     inverse      the opposite of the current mode
+     dark         dark application chrome in light AND dark mode
+     accent       the system's primary colour */
+export type ZoneTone = "surface" | "transparent" | "inverse" | "dark" | "accent";
+export const ZONE_TONES: readonly ZoneTone[] = ["surface", "transparent", "inverse", "dark", "accent"];
+
+/** A new canvas's zone layouts. Also what a template's omitted zones reset to. */
+export const DEFAULT_ZONE_LAYOUTS: Record<ZoneId, ZoneLayout> = {
+  body:    { mode: 'grid',  columns: 12, gap: 12, align: 'start' },
+  header:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+  sidebar: { mode: 'stack', gap: 2,                align: 'stretch' },
+  footer:  { mode: 'row',   gap: 8,  wrap: false, align: 'center' },
+};
 
 /* Multi-page (2026-06-07): a page owns one BODY block set. Header/sidebar/footer
    are SHARED chrome across all pages. `s.blocks` is the live working copy of the
@@ -310,6 +346,18 @@ interface BuilderState {
   activeTemplateId: string | null;
   // Regenerate-content status - true while /api/builder/generate-content is pending
   isRegeneratingContent: boolean;
+
+  // ── Report data (data-bound templates) ──
+  /** Live values of the canvas's report controls: context filters, each
+     panel's "View by", the master grid's selected row. Blocks with a data
+     binding re-derive from it. Transient: it resets with the template. */
+  reportState: Record<string, string>;
+  /** An uploaded dataset that replaces the template's sample data. null =
+     use the sample dataset of the template on the canvas. */
+  reportData: ReportDataset | null;
+  /** The panel currently maximised over the canvas body, and whether its
+     configuration drawer is open. Transient. */
+  expandedPanel: { id: string; config: boolean } | null;
 
   // ── Conversational onboarding ("pending" flow) ──
   // When the user picks a template OR sends their first freeform message,
@@ -467,6 +515,12 @@ interface BuilderState {
 
   // Actions - Templates / regeneration
   setActiveTemplateId: (id: string | null) => void;
+  /** Set one report-state value; null (or "") clears it. */
+  setReportState: (key: string, value: string | null) => void;
+  setReportData: (data: ReportDataset | null) => void;
+  setExpandedPanel: (panel: { id: string; config: boolean } | null) => void;
+  /** Replace one top-level body block's type and props (panel reconfiguration). */
+  replaceBlock: (id: string, next: { type: string; props: Record<string, unknown> }) => void;
   setIsRegeneratingContent: (v: boolean) => void;
 
   // Actions - Pending (conversational onboarding)
@@ -839,6 +893,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   // Template / regeneration state
   activeTemplateId: null,
   isRegeneratingContent: false,
+  reportState: {},
+  reportData: null,
+  expandedPanel: null,
 
   // Conversational onboarding state
   pendingTemplateId: null,
@@ -1050,7 +1107,24 @@ export const useBuilder = create<BuilderState>((set) => ({
         : [...s.pendingComponents, label],
     })),
 
-  setActiveTemplateId: (id) => set({ activeTemplateId: id }),
+  /* A different template means different controls: start its report state
+     clean. Uploaded data belongs to the canvas it was uploaded to. */
+  setActiveTemplateId: (id) =>
+    set((s) => (s.activeTemplateId === id ? {} : { activeTemplateId: id, reportState: {}, reportData: null, expandedPanel: null })),
+  setReportState: (key, value) =>
+    set((s) => {
+      if (value === null || value === "") {
+        if (!(key in s.reportState)) return {};
+        const next = { ...s.reportState };
+        delete next[key];
+        return { reportState: next };
+      }
+      return s.reportState[key] === value ? {} : { reportState: { ...s.reportState, [key]: value } };
+    }),
+  setReportData: (data) => set({ reportData: data }),
+  setExpandedPanel: (panel) => set({ expandedPanel: panel }),
+  replaceBlock: (id, next) =>
+    set((s) => ({ blocks: s.blocks.map((b) => (b.id === id ? { ...b, type: next.type, props: next.props } : b)) })),
   setIsRegeneratingContent: (v) => set({ isRegeneratingContent: v }),
 
   setPendingTemplateId: (id) => set({ pendingTemplateId: id }),
@@ -1130,6 +1204,9 @@ export const useBuilder = create<BuilderState>((set) => ({
   }),
 
   startNewSession: () => set({
+    reportState: {},
+    reportData: null,
+    expandedPanel: null,
     /* Reset canvas + conversation state, but KEEP user-level preferences
      *  like designSystem, density, mode - they're part of the user's
      *  workspace setup, not part of the session. */

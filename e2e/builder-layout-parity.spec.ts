@@ -44,8 +44,9 @@ async function applyAnalyticsTemplate(page: Page) {
   await page.goto("/builder", { waitUntil: "domcontentloaded" });
   await expect(chatInput(page)).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: /Browse templates/ }).click();
+  /* "Use this" applies the template at once, in the current design system
+     (Salt on a fresh canvas), and opens it in Present. */
   await page.getByRole("button", { name: "Use the Analytics Dashboard template" }).click();
-  await page.getByRole("button", { name: "Salt DS", exact: true }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
   await settle(page);
 }

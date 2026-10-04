@@ -6,6 +6,78 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-04 finance templates, slice 1: Risk and Performance (`feat/finance-templates-slice-1`, stacked on the trust fixes)
+
+Two analytics reports become builder templates, built from builder blocks only
+and identical in every design system. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-1-design.md`.
+
+#### Added
+- **Risk Analytics and Performance Analytics templates.** One block list each,
+  no per-system forks. Measured: every panel sits at the same position and
+  size (0px difference) in Salt, Material 3, Fluent 2, uoaui and Carbon, in
+  light and dark, and Edit matches Present. Neutral names and a made-up brand
+  ("Meridian Analytics").
+- **They are live.** Context filters (currency, fee type, periodicity,
+  benchmark), each panel's "View by", and the selected row of the master grid
+  re-derive the charts and grids. Data lives in a small report-data layer
+  (`src/lib/reportData/`): plain tables, a query engine (group, pivot,
+  aggregate, filter, share, total), computed measures and block bindings.
+- **Bring your own data.** Download the data template as Excel, fill it in,
+  upload it: the report redraws from it. Uploaded data stays in the browser
+  (it is left out of the cloud snapshot).
+- **Panel tools.** Expand a panel to the full canvas; a configuration drawer
+  swaps chart and grid, chart type, rows, columns, values and aggregation
+  (a pivot tool built on AG Grid Community; no Enterprise licence).
+- **Blocks.** `DataGrid` (grouped headers, number formats, pinned totals, row
+  selection); chart kinds `combination`, `stacked-bar`, `stacked-area`; framed
+  panels with title, subtitle and "View by"; `TopNav`, `TabStrip`, `NavGroup`,
+  `PageTitle`.
+- **Header, sidebar and footer are restylable.** A zone has a tone (surface,
+  transparent, inverse, dark, accent), can run edge to edge so bars stack,
+  can be hidden, and the sidebar can dock right. Controls are in the zone
+  overlay in Edit and in the chatbot's `setZoneLayout`.
+- **Chatbot.** New tools `applyTemplate` and `setReportFilter`; the canvas
+  manifest lists the template, zone tones and every report control with its
+  choices. Without a model, "use the risk analytics template in Carbon,
+  light", "show it in USD" and "view by sector" are applied directly.
+- **Template gallery.** Category chips (All / General / Finance), a
+  description on each card, and "Use this" applies in one step.
+- **Tablet and phone.** Blocks can declare how they fold
+  (`layout.spanTablet`, `layout.spanPhone`); the two templates do. Nothing is
+  clipped at 768 or 375.
+- **Dropdowns** render and export their own label, value and options in all
+  five systems (they showed "Option 1 / Option 2").
+- **Export.** React, HTML and Vite exports carry a finance template's data
+  (bound blocks are resolved against the active dataset and filters), its
+  panels, data tables, header bars, page title and zone tones; hidden zones
+  are left out. The HTML export shows a chart's data as a table.
+
+#### Fixed
+- Edit did not match Present on a canvas with a removed frame: the
+  "+ Sidebar / + Footer" bar took a row and pushed the page down. It floats
+  over the frame's corner now.
+- The body was up to 2px wider in Edit than in Present (a transparent border
+  snapped to device pixels at a fractional scale).
+- Compact money read "£3.55bn" in one browser and "£3.55B" in another; the
+  formatter now scales and suffixes values itself.
+- In Present, using a live filter also selected its block for the amend
+  composer and closed the menu.
+- Card outlines and dividers use each system's secondary border; the primary
+  one read as a hard line around every panel in dark themes.
+
+#### Tests
+- `e2e/builder-finance-templates.spec.ts`: four-sided 1px parity across five
+  systems in light and dark, Edit = Present, filters and View by, chat
+  commands, tablet and phone clipping.
+- Unit tests for the query engine, bindings, workbook import/export, the
+  templates, panel configuration, chrome blocks, chat tools and manifest.
+
+#### Not verified
+- The model-driven chat path (`applyTemplate`, `setReportFilter` called by the
+  model) is unit-tested only: there is no model key locally or in the Preview
+  environment. The no-model commands are verified in the browser.
+
 ### 2026-10-04 trust fixes: chatbot, saving, layout parity (`fix/trust-fixes-chat-parity`, open for review)
 
 From a walkthrough of the live builder on 2026-10-03 plus a second, independent

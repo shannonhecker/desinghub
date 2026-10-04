@@ -108,6 +108,10 @@ export function buildProjectSnapshot(s: ReturnType<typeof useBuilder.getState>):
     colorOverrides: s.colorOverrides,
     activeTemplateId: s.activeTemplateId,
   };
+  /* Uploaded report data is deliberately NOT part of the cloud snapshot: it
+     may be a client's real figures, so it stays in the browser (the local
+     session keeps it). A session opened from the cloud on another device
+     shows the template's sample data. */
   const flushed = flushActiveBody(s);
   if (isMultiPage(flushed.pages)) {
     snapshot.pages = flushed.pages;
@@ -326,6 +330,8 @@ export function useCloudStorage() {
         selectedComponents: snapshot.selectedComponents ?? [],
         colorOverrides,
         activeTemplateId: snapshot.activeTemplateId ?? null,
+        reportData: null,
+        reportState: {},
         hasOverrides: Object.keys(colorOverrides).length > 0,
         onboardingStep: "ready",
         /* Reattach the loaded project as the current session so subsequent

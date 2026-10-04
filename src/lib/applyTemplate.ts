@@ -1,4 +1,4 @@
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, DEFAULT_ZONE_LAYOUTS } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { BuilderTemplate } from "@/lib/builderTemplates";
 import { usePreviewMode } from "@/store/usePreviewMode";
@@ -40,6 +40,23 @@ export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
   /* Apply the template's body layout (e.g. the dashboard's 12-col grid);
      fall back to the default row layout so a prior grid does not leak. */
   s.setZoneLayout("body", tpl.zoneLayouts?.body ?? { mode: "row", gap: 12, wrap: true, align: "stretch" });
+  /* Chrome zones: a template may restyle or hide its header, sidebar and
+     footer (a two-bar header, no sidebar, a dark tone). Each is REPLACED -
+     the template's layout, else the default - so a previous template's
+     chrome (a hidden footer, a dark header) does not leak into this one.
+     A sidebar width the user dragged is theirs to keep. */
+  const current = useBuilder.getState().zoneLayouts;
+  useBuilder.setState({
+    zoneLayouts: {
+      ...current,
+      header: { ...(tpl.zoneLayouts?.header ?? DEFAULT_ZONE_LAYOUTS.header) },
+      sidebar: {
+        ...(tpl.zoneLayouts?.sidebar ?? DEFAULT_ZONE_LAYOUTS.sidebar),
+        ...(current.sidebar.size !== undefined && tpl.zoneLayouts?.sidebar?.size === undefined ? { size: current.sidebar.size } : {}),
+      },
+      footer: { ...(tpl.zoneLayouts?.footer ?? DEFAULT_ZONE_LAYOUTS.footer) },
+    },
+  });
   s.setActiveTemplateId(tpl.id);
   s.bumpPreview();
   /* #16 (owner): once a template populates the canvas, show it in PREVIEW first

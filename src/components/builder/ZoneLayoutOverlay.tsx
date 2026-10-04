@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useBuilder, normalizeGap, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify } from "@/store/useBuilder";
+import { useBuilder, normalizeGap, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify, type ZoneTone, type Block } from "@/store/useBuilder";
 
 /* ══════════════════════════════════════════════════════════
    ZoneLayoutOverlay — Placement P2 (align/justify handles).
@@ -203,6 +203,80 @@ export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps
       </div>
       <span className="zlo-sep" aria-hidden="true" />
       <GapScrubber zoneId={zoneId} zoneLayout={zoneLayout} />
+      {zoneId !== "body" ? <ChromeControls zoneId={zoneId} zoneLayout={zoneLayout} /> : null}
     </div>
+  );
+}
+
+/* ── Chrome controls (header / sidebar / footer) ──
+   The surface of the zone, and how it sits in the frame. One click on a tone
+   restyles the whole zone: the bars in it (TopNav, TabStrip) carry their own
+   tone, so they are set to match. ── */
+export const CHROME_TONE_OPTIONS: { v: ZoneTone; label: string }[] = [
+  { v: "surface", label: "Surface" },
+  { v: "dark", label: "Dark" },
+  { v: "inverse", label: "Inverse" },
+  { v: "accent", label: "Accent" },
+];
+const BAR_TYPES = new Set(["TopNav", "TabStrip"]);
+const ZONE_BLOCKS_KEY = { header: "headerBlocks", sidebar: "sidebarBlocks", footer: "footerBlocks", body: "blocks" } as const;
+
+/** Set a chrome zone's tone, and the tone of every bar block in it. */
+export function setChromeTone(zoneId: ZoneId, tone: ZoneTone): void {
+  const s = useBuilder.getState();
+  s.setZoneLayout(zoneId, { tone });
+  for (const b of s[ZONE_BLOCKS_KEY[zoneId]] as Block[]) {
+    if (BAR_TYPES.has(b.type)) s.updateZoneBlockProps(zoneId, b.id, { tone });
+  }
+}
+
+function ChromeControls({ zoneId, zoneLayout }: { zoneId: ZoneId; zoneLayout: ZoneLayout }) {
+  const setZoneLayout = useBuilder((s) => s.setZoneLayout);
+  const activeTone = zoneLayout.tone ?? "surface";
+  const right = zoneLayout.side === "right";
+  return (
+    <>
+      <span className="zlo-sep" aria-hidden="true" />
+      <div className="zlo-group" role="radiogroup" aria-label="Tone">
+        {CHROME_TONE_OPTIONS.map((o) => (
+          <button
+            key={o.v}
+            type="button"
+            role="radio"
+            aria-checked={activeTone === o.v}
+            aria-label={`${o.label} tone`}
+            title={`${o.label} tone`}
+            className={`zlo-btn${activeTone === o.v ? " active" : ""}`}
+            onClick={() => setChromeTone(zoneId, o.v)}
+          >
+            <span className="zlo-swatch" data-tone={o.v} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      <span className="zlo-sep" aria-hidden="true" />
+      {zoneId === "sidebar" ? (
+        <button
+          type="button"
+          aria-pressed={right}
+          aria-label={right ? "Dock sidebar on the left" : "Dock sidebar on the right"}
+          title={right ? "Dock on the left" : "Dock on the right"}
+          className={`zlo-btn${right ? " active" : ""}`}
+          onClick={() => setZoneLayout(zoneId, { side: right ? undefined : "right" })}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">{right ? "dock_to_left" : "dock_to_right"}</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          aria-pressed={Boolean(zoneLayout.flush)}
+          aria-label="Edge to edge"
+          title="Edge to edge: bars span the zone and stack"
+          className={`zlo-btn${zoneLayout.flush ? " active" : ""}`}
+          onClick={() => setZoneLayout(zoneId, zoneLayout.flush ? { flush: undefined } : { flush: true, mode: "stack", gap: 0 })}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">width_full</span>
+        </button>
+      )}
+    </>
   );
 }

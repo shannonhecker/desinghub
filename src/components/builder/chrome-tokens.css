@@ -42,6 +42,54 @@
   --bc-content-cap-marketing: 1120px; /* landing / ecommerce / portfolio */
   --bc-gutter:                clamp(16px, 2.5vw, 32px); /* fluid page gutter */
 
+  /* Framed panel (PanelFrame.tsx) type sizes. The panel's box sizes come
+     from panelMetrics.ts; these two are its only fixed type sizes. */
+  --dh-panel-title-size: 14px;
+  --dh-panel-meta-size:  12px;
+  --bc-hairline:         1px;
+  /* Navigation bars (ChromeBars.tsx) and the "dark" chrome tone: dark
+     application chrome in light and dark mode alike. Sizes are the same in
+     every design system so the body starts at the same point. */
+  --bc-topnav-h:            48px;
+  --bc-tabstrip-h:          40px;
+  --bc-bar-gap:             24px;
+  --bc-bar-font:            13px;
+  --bc-bar-mark:            24px;
+  --dh-navgroup-size:       11px;
+  --dh-page-title-size:     24px;
+  --bc-chrome-dark:         #15171d;
+  --bc-chrome-dark-raised:  #20232b;
+  --bc-chrome-dark-fg:      #eceef2;
+  --bc-chrome-dark-fg-dim:  #a9afbb;
+  --bc-chrome-dark-line:    rgba(255, 255, 255, 0.10);
+  /* Brand mark letter: white on the system accent. --ds-on-primary is not
+     safe here (Salt maps it to an accent TEXT colour, teal on teal). */
+  --bc-chrome-mark-fg:      #ffffff;
+  /* Tone swatch in the zone layout overlay. */
+  --zlo-swatch:             12px;
+  --bc-gutter-narrow:       16px;
+  --dh-panel-viewby-min:    88px;
+  /* Body drop zone: the edge that lights up while dragging over it. */
+  --bc-drop-edge:           2px;
+  /* Template gallery in the chat. */
+  --tpl-desc-size:          11px;
+  --tpl-chip-gap:           6px;
+  --tpl-chip-pad:           4px 12px;
+  --tpl-chip-on-accent:     #15102a;
+  --bc-bar-gap-narrow:      16px;
+  /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
+  --dh-panel-tool-size:  28px;
+  --dh-focus-ring:       2px;
+  --bc-expand-gap:       16px;
+  --dh-config-w:         320px;
+  --dh-config-header-h:  56px;
+  /* Leading glyph size in a labelled canvas-toolbar button. */
+  --bc-toolbar-glyph: 16px;
+  /* Width of the accent bar on a selected master-grid row. */
+  --dh-grid-select-bar: 3px;
+  /* Header height when a canvas pins its structure across design systems. */
+  --bc-uniform-header-h: 64px;
+
   /* Text */
   --bc-fg:          rgba(245, 247, 250, 0.96);
   --bc-fg-muted:    rgba(245, 247, 250, 0.62);
