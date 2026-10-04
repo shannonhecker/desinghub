@@ -9,7 +9,11 @@ async function editPerformance(page: Page) {
   await expect(page.locator('.bp-main [data-block-id]')).toHaveCount(6);
 }
 
-for (const command of ['add a chart', 'add a data table', 'add an image']) {
+for (const [command, rendered] of [
+  ['add a chart', '.highcharts-root'],
+  ['add a data table', 'table'],
+  ['add an image', 'figure [role="img"]'],
+] as const) {
   test(`${command} works on a selected template and supports duplicates and undo`, async ({ page }) => {
     await editPerformance(page);
     const blocks = page.locator('.bp-main [data-block-id]');
@@ -20,6 +24,8 @@ for (const command of ['add a chart', 'add a data table', 'add an image']) {
     await input.fill(command);
     await input.press('Enter');
     await expect(blocks).toHaveCount(7);
+    const addedId = await blocks.evaluateAll((els, previous) => els.map(el => el.getAttribute('data-block-id')).find(id => !previous.includes(id)), ids);
+    await expect(page.locator(`[data-block-id="${addedId}"]`).locator(rendered).first()).toBeVisible();
     await expect(page.getByText('Editing the selected block needs AI.', { exact: false })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Stop generating' })).toHaveCount(0);
     await input.fill(command);

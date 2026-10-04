@@ -1056,7 +1056,11 @@ export function ChatPanel() {
        through to the switch handling below instead of being scoped. */
     // "Add a title to this chart" edits the selection; "add a chart" adds
     // another block. A selected-target phrase must retain the edit scope.
-    const targetsSelectedBlock = /\b(?:to|on|in|of|for)\s+(?:this|that|(?:the\s+)?(?:selected|current|existing))\s+(?:block|chart|table|image|panel|component)\b/i.test(msg);
+    const existingTarget = msg.match(/\b(?:to|into|on|onto|in|of|for)\s+(?:(?:this|that|the|my|our)\s+(?:(?:selected|current|existing)\s+)?|(?:selected|current|existing)\s+)([\w-]+)/i)?.[1];
+    // Canvas/zone destinations still describe new blocks. Other existing
+    // targets (cards, forms, charts, etc.) keep the selected-edit scope.
+    const targetsSelectedBlock = existingTarget !== undefined
+      && !/^(?:canvas|page|dashboard|header|sidebar|footer|body)$/i.test(existingTarget);
     const explicitAdd = /^(?:please\s+)?(?:add|insert|include|put|give me)\b/i.test(msg.trim())
       && !targetsSelectedBlock
       && processComponentCommand(msg, selectedComponents).newComponents !== null;
