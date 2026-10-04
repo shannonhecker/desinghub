@@ -7,6 +7,12 @@ import {
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { requireBuilderAuth } from "@/lib/apiAuth";
 import { CANVAS_TOOLS } from "@/lib/chatTools";
+import {
+  IMAGE_REJECTED_ERROR,
+  imageContentBlock,
+  validateImagePayload,
+} from "@/lib/image/validateImagePayload";
+import type { ChatImagePayload } from "@/lib/image/imageBytes";
 
 const MAX_MESSAGES = 40;
 /* Per-message ceiling. The current turn carries the [Current state: ...]
@@ -120,7 +126,54 @@ export async function POST(req: Request) {
     );
   }
 
-  const validatedMessages = messages as { role: "user" | "assistant"; content: string }[];
+  /* Image (one per turn, latest user message only). Any other message
+     carrying an image is a malformed request. The payload is re-validated
+     here (type by bytes, size, dimensions, base64 only); a reject gets one
+     generic line, and the log carries the reason code, never the data. */
+  const lastIndex = messages.length - 1;
+  const hasImage = (m: unknown) => {
+    const image = (m as Record<string, unknown>).image;
+    return image !== undefined && image !== null;
+  };
+  let turnImage: ChatImagePayload | null = null;
+  for (let i = 0; i < messages.length; i++) {
+    if (!hasImage(messages[i])) continue;
+    const msg = messages[i] as unknown as { role: string; image: unknown };
+    if (i !== lastIndex || msg.role !== "user") {
+      console.warn("[api/chat] image rejected: reason=not-latest-user-message");
+      return new Response(
+        JSON.stringify({ error: IMAGE_REJECTED_ERROR }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    /* Defensive: a validator throw must still be a 400, never a 500. */
+    let check: ReturnType<typeof validateImagePayload>;
+    try {
+      check = validateImagePayload(msg.image);
+    } catch {
+      check = { ok: false, reason: "shape" };
+    }
+    if (!check.ok) {
+      console.warn(`[api/chat] image rejected: reason=${check.reason}`);
+      return new Response(
+        JSON.stringify({ error: IMAGE_REJECTED_ERROR }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    console.log(`[api/chat] image accepted: type=${check.image.mediaType} bytes=${check.bytes} size=${check.width}x${check.height}`);
+    turnImage = check.image;
+  }
+
+  /* Only role + content go to the API: the image key is stripped from the
+     message and, when present, re-attached as an image block ahead of the
+     text on the latest turn. Text-only requests are unchanged. */
+  const validatedMessages: Anthropic.MessageParam[] = (
+    messages as { role: "user" | "assistant"; content: string }[]
+  ).map((m, i) =>
+    turnImage && i === lastIndex
+      ? { role: m.role, content: [imageContentBlock(turnImage), { type: "text" as const, text: m.content }] }
+      : { role: m.role, content: m.content },
+  );
   const anthropic = getClient(apiKey);
 
   /* Prompt caching: the ~18KB DS-aware SYSTEM_PROMPT is byte-stable per design
