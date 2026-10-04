@@ -1,71 +1,58 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { useDesignHub } from "@/store/useDesignHub";
+import React, { useState, useMemo, useRef } from "react";
+import { useDesignHub, type SystemId } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getSystemInfo } from "@/data/registry";
-import { categorizeTokens, checkContrast, mergeTheme, exportThemeJSON, importThemeJSON } from "@/lib/themeBuilder";
+import { categorizeTokens, checkContrast, contrastPartner, mergeTheme, exportThemeJSON, importThemeJSON } from "@/lib/themeBuilder";
 import { isValidHex } from "@/lib/sanitizeCSS";
-import { relativeLuminance } from "@/lib/contrastUtils";
 import { showToast } from "@/lib/toast";
 
-type HistoryEntry = { key: string; prev: string | undefined; next: string };
-
-/* Pick the AA-strength success / error text token for the active theme's
-   surface. The badge sits on a theme-driven background that swaps light/dark
-   with the active DS, so we choose the on-dark vs on-light --dh-* status
-   token from the surface luminance. (relativeLuminance only parses hex;
-   theme bg values are hex, but default to dark on anything else.) */
-function statusFgVars(bg: string): { ok: string; bad: string } {
-  let isLight = false;
-  if (typeof bg === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(bg)) {
-    isLight = relativeLuminance(bg) > 0.4;
-  }
-  return isLight
-    ? { ok: "var(--dh-success-fg-on-light)", bad: "var(--dh-error-fg-on-light)" }
-    : { ok: "var(--dh-success-fg-on-dark)", bad: "var(--dh-error-fg-on-dark)" };
-}
+type HistoryEntry = { key: string; prev: string | undefined };
 
 const HISTORY_CAP = 5;
+const isHex = (v: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
 
+/* Which token each system uses for the roles the preview draws. Same
+   mapping the UI kit shell uses, so an edit shows up where that token is
+   really applied. */
+const PREVIEW_KEYS: Record<SystemId, Record<"bg" | "bg2" | "fg" | "fg2" | "accent" | "accentFg" | "accentText" | "border", string>> = {
+  salt:   { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accentText", border: "border" },
+  m3:     { bg: "surface", bg2: "surfaceContainerLow", fg: "onSurface", fg2: "onSurfaceVariant", accent: "primary", accentFg: "onPrimary", accentText: "primary", border: "outlineVariant" },
+  fluent: { bg: "bg1", bg2: "bg2", fg: "fg1", fg2: "fg2", accent: "brandBg", accentFg: "fgOnBrand", accentText: "brandFg1", border: "stroke2" },
+  carbon: { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accentText", border: "border" },
+  uoaui:  { bg: "bg", bg2: "bg2", fg: "fg", fg2: "fg2", accent: "accent", accentFg: "accentFg", accentText: "accent", border: "border" },
+};
+
+/** Remount on system or mode change: overrides are edits to one base theme,
+    so carrying them into another would show colours that theme never had. */
 export function ThemeBuilder() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
   const t = useTheme();
+  return <ThemeBuilderInner key={`${activeSystem}:${t.bg}:${t.fg}`} />;
+}
+
+function ThemeBuilderInner() {
+  const activeSystem = useDesignHub((s) => s.activeSystem);
+  const t = useTheme();
   const sysInfo = getSystemInfo(activeSystem);
+  const baseName = (t.T.name as string) || sysInfo.name;
   const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState("");
   const [showImport, setShowImport] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  /* Undo ring — caps at 5 entries. Each entry records the token key,
-     the prior value (undefined if the token wasn't overridden yet),
-     and the new value, so undoing either restores the override or
-     removes it. */
+  /* Undo ring, capped at five steps. Each entry keeps the token and the
+     value it had before the change (undefined when it was not overridden). */
   const history = useRef<HistoryEntry[]>([]);
   const [historyLen, setHistoryLen] = useState(0);
 
-  /* Transient "Saved" chip — a gentle confirmation that lives for 1.2s
-     after any change, then fades. Replaces the implicit "mystery save"
-     that made overrides feel risky. */
-  const [savedFlash, setSavedFlash] = useState(false);
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const flashSaved = useCallback(() => {
-    setSavedFlash(true);
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-    savedTimer.current = setTimeout(() => setSavedFlash(false), 1200);
-  }, []);
-
-  useEffect(() => () => {
-    if (savedTimer.current) clearTimeout(savedTimer.current);
-  }, []);
-
   const mergedTheme = useMemo(() => mergeTheme(t.T, overrides), [t.T, overrides]);
   const categories = useMemo(() => categorizeTokens(mergedTheme), [mergedTheme]);
-
-  /* AA-strength success / error text tokens for the contrast badge, chosen
-     for the active theme's surface (light vs dark). */
-  const statusFg = useMemo(() => statusFgVars(t.bg), [t.bg]);
+  const pk = PREVIEW_KEYS[activeSystem];
+  const pageBg = String(mergedTheme[pk.bg] ?? t.bg);
 
   const pushHistory = (entry: HistoryEntry) => {
     const next = [...history.current, entry];
@@ -74,331 +61,275 @@ export function ThemeBuilder() {
     setHistoryLen(next.length);
   };
 
-  const handleColorChange = (key: string, value: string) => {
-    setOverrides((prev) => {
-      if (prev[key] === value) return prev;
-      pushHistory({ key, prev: prev[key], next: value });
-      flashSaved();
-      return { ...prev, [key]: value };
-    });
+  const applyValue = (key: string, value: string) => {
+    if (overrides[key] === value || (!(key in overrides) && t.T[key] === value)) return;
+    pushHistory({ key, prev: overrides[key] });
+    setOverrides({ ...overrides, [key]: value });
   };
 
+  /* The text field keeps a draft while it is being typed: a half-typed hex
+     is not a colour yet, so it is held back until it is valid. */
   const handleHexInput = (key: string, value: string) => {
-    if (!isValidHex(value)) return;
-    setOverrides((prev) => {
-      if (prev[key] === value) return prev;
-      pushHistory({ key, prev: prev[key], next: value });
-      flashSaved();
-      return { ...prev, [key]: value };
-    });
+    setDrafts((d) => ({ ...d, [key]: value }));
+    if (isValidHex(value) && isHex(value)) applyValue(key, value);
   };
+  const clearDraft = (key: string) => setDrafts((d) => {
+    if (!(key in d)) return d;
+    const next = { ...d };
+    delete next[key];
+    return next;
+  });
 
   const resetToken = (key: string) => {
-    setOverrides((prev) => {
-      if (!(key in prev)) return prev;
-      pushHistory({ key, prev: prev[key], next: "" });
-      flashSaved();
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
+    if (!(key in overrides)) return;
+    pushHistory({ key, prev: overrides[key] });
+    const next = { ...overrides };
+    delete next[key];
+    setOverrides(next);
+    clearDraft(key);
   };
 
   const undoLast = () => {
     const last = history.current[history.current.length - 1];
     if (!last) return;
-    setOverrides((prev) => {
-      const next = { ...prev };
-      if (last.prev === undefined) {
-        delete next[last.key];
-      } else {
-        next[last.key] = last.prev;
-      }
-      return next;
-    });
+    const next = { ...overrides };
+    if (last.prev === undefined) delete next[last.key];
+    else next[last.key] = last.prev;
+    setOverrides(next);
+    clearDraft(last.key);
     history.current = history.current.slice(0, -1);
     setHistoryLen(history.current.length);
   };
 
   const resetAll = () => {
     if (Object.keys(overrides).length === 0) return;
-    /* Snapshot the current state into history so resetAll is itself
-       undoable — pushes one entry per overridden token (capped by
-       HISTORY_CAP). */
-    const snapshot = Object.entries(overrides).slice(-HISTORY_CAP);
-    history.current = snapshot.map(([key, prev]) => ({ key, prev, next: "" }));
-    setHistoryLen(history.current.length);
+    history.current = [];
+    setHistoryLen(0);
     setOverrides({});
-    flashSaved();
+    setDrafts({});
+    showToast("All colours reset to the base theme", { icon: "restart_alt" });
   };
 
   const handleExport = async () => {
-    const json = exportThemeJSON(overrides, { ds: activeSystem, baseName: t.T.name || sysInfo.name });
+    const json = exportThemeJSON(overrides, { ds: activeSystem, baseName });
     try {
       await navigator.clipboard.writeText(json);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      showToast("Theme JSON copied to clipboard", { icon: "content_copy" });
+      showToast("Theme JSON copied", { icon: "content_copy" });
     } catch {
-      showToast("Clipboard unavailable — select and copy manually", { icon: "warning" });
+      showToast("Clipboard unavailable. Select and copy manually.", { icon: "warning" });
     }
   };
 
   const handleImport = () => {
     const result = importThemeJSON(importText);
-    if (result) {
-      setOverrides(result.overrides);
-      history.current = [];
-      setHistoryLen(0);
-      setShowImport(false);
-      setImportText("");
-      flashSaved();
+    if (!result) {
+      setImportError("This is not theme JSON. Paste the text copied with Copy JSON: an object with an \"overrides\" list of token names and colours.");
+      return;
     }
+    if (result.meta?.ds && result.meta.ds !== activeSystem) {
+      const from = (() => { try { return getSystemInfo(result.meta!.ds as SystemId).name; } catch { return result.meta!.ds; } })();
+      setImportError(`This theme was made for ${from}. Switch to that system above, then apply it.`);
+      return;
+    }
+    const usable: Record<string, string> = {};
+    for (const [key, value] of Object.entries(result.overrides)) {
+      if (typeof value === "string" && typeof t.T[key] === "string" && isValidHex(value)) usable[key] = value;
+    }
+    const count = Object.keys(usable).length;
+    if (count === 0) {
+      setImportError(`None of these tokens exist in ${baseName}. Check the theme was copied from the same system and mode.`);
+      return;
+    }
+    setOverrides(usable);
+    setDrafts({});
+    history.current = [];
+    setHistoryLen(0);
+    setShowImport(false);
+    setImportText("");
+    setImportError("");
+    showToast(`${count} ${count === 1 ? "colour" : "colours"} applied`, { icon: "check" });
   };
 
   const overrideCount = Object.keys(overrides).length;
   const canUndo = historyLen > 0;
+  const pv = (role: keyof typeof pk) => String(mergedTheme[pk[role]] ?? "");
 
   return (
-    <main id="main-content" style={{ padding: 32, fontFamily: t.font, color: t.fg, maxWidth: 900 }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 12 }}>
+    <main id="main-content" className="tool-main">
+      <div className="tool-head">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, color: t.fg }}>Theme Builder</h1>
-            {/* Saved chip — transient, non-blocking */}
-            <span
-              role="status"
-              aria-live="polite"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "3px 10px",
-                borderRadius: "var(--dh-curve-pill)",
-                background: `${t.accent}14`,
-                color: t.accent,
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: 0.2,
-                opacity: savedFlash ? 1 : 0,
-                transform: savedFlash ? "translateY(0)" : "translateY(-2px)",
-                transition: "opacity 160ms ease, transform 160ms ease",
-                pointerEvents: "none",
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }} aria-hidden="true">
-                check
-              </span>
-              Saved
-            </span>
-          </div>
-          <p style={{ fontSize: 14, color: t.fg2, marginTop: 4 }}>
-            {sysInfo.name} — {overrideCount > 0 ? `${overrideCount} custom override${overrideCount === 1 ? "" : "s"}` : "Base theme"}
+          <h1>Theme builder</h1>
+          <p className="tool-lede">
+            Change any hex colour in {baseName} and check it in the preview. Changes stay on this page until you copy them as JSON.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="tool-actions">
           {canUndo && (
-            <button
-              onClick={undoLast}
-              title={`Undo last change (${historyLen} step${historyLen === 1 ? "" : "s"} available)`}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "var(--dh-curve-sm)",
-                border: `1px solid ${t.border}`,
-                background: "transparent",
-                color: t.fg2,
-                cursor: "pointer",
-                fontSize: 13,
-                fontFamily: t.font,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">undo</span>
+            <button type="button" className="tool-btn" onClick={undoLast}>
+              <span className="material-symbols-outlined" aria-hidden="true">undo</span>
               Undo
             </button>
           )}
-          <button
-            onClick={() => setShowImport((v) => !v)}
-            aria-expanded={showImport}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "var(--dh-curve-sm)",
-              border: `1px solid ${t.border}`,
-              background: "transparent",
-              color: t.fg2,
-              cursor: "pointer",
-              fontSize: 13,
-              fontFamily: t.font,
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: "middle", marginRight: 4 }} aria-hidden="true">upload</span>
+          {overrideCount > 0 && (
+            <button type="button" className="tool-btn" onClick={resetAll}>Reset all</button>
+          )}
+          <button type="button" className="tool-btn" onClick={() => { setShowImport((v) => !v); setImportError(""); }} aria-expanded={showImport} aria-controls="theme-import-panel">
+            <span className="material-symbols-outlined" aria-hidden="true">upload</span>
             Import
           </button>
           <button
+            type="button"
+            className="tool-btn is-primary"
             onClick={handleExport}
             disabled={overrideCount === 0}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "var(--dh-curve-sm)",
-              border: "none",
-              background: overrideCount > 0 ? t.accent : t.border,
-              color: overrideCount > 0 ? t.accentFg : t.fg3,
-              cursor: overrideCount > 0 ? "pointer" : "not-allowed",
-              fontSize: 13,
-              fontFamily: t.font,
-            }}
+            aria-describedby="theme-status"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: "middle", marginRight: 4 }} aria-hidden="true">
-              {copied ? "check" : "content_copy"}
-            </span>
-            {copied ? "Copied!" : "Export JSON"}
+            <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+            {copied ? "Copied" : "Copy JSON"}
           </button>
-          {overrideCount > 0 && (
-            <button
-              onClick={resetAll}
-              style={{
-                padding: "8px 14px",
-                borderRadius: "var(--dh-curve-sm)",
-                border: `1px solid ${t.border}`,
-                background: "transparent",
-                color: t.fg2,
-                cursor: "pointer",
-                fontSize: 13,
-                fontFamily: t.font,
-              }}
-            >
-              Reset All
-            </button>
-          )}
         </div>
       </div>
+      <p id="theme-status" className="tool-count" role="status" aria-live="polite">
+        {overrideCount > 0
+          ? `${overrideCount} ${overrideCount === 1 ? "colour" : "colours"} changed from ${baseName}.`
+          : "No changes yet. Copy JSON becomes available after the first change."}
+      </p>
 
-      {/* Import panel */}
       {showImport && (
-        <div style={{ marginBottom: 24, padding: 16, background: t.bg2, borderRadius: "var(--dh-curve-md)", border: `1px solid ${t.border}` }}>
-          <label htmlFor="theme-import" className="sr-only">Theme JSON to import</label>
+        <div className="theme-import" id="theme-import-panel">
+          <label htmlFor="theme-import">Theme JSON</label>
           <textarea
             id="theme-import"
             value={importText}
-            onChange={(e) => setImportText(e.target.value)}
-            placeholder="Paste theme JSON here..."
-            rows={4}
-            style={{ width: "100%", padding: 8, borderRadius: "var(--dh-curve-sm)", border: `1px solid ${t.border}`, background: t.bg, color: t.fg, fontFamily: "monospace", fontSize: 12, resize: "vertical" }}
+            onChange={(e) => { setImportText(e.target.value); if (importError) setImportError(""); }}
+            placeholder={'{ "overrides": { "accent": "#0A66C2" } }'}
+            aria-invalid={importError ? true : undefined}
+            aria-describedby={importError ? "theme-import-error" : undefined}
+            spellCheck={false}
           />
-          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button onClick={handleImport} style={{ padding: "6px 12px", borderRadius: "var(--dh-curve-sm)", border: "none", background: t.accent, color: t.accentFg, cursor: "pointer", fontSize: 12 }}>
-              Apply
-            </button>
-            <button onClick={() => setShowImport(false)} style={{ padding: "6px 12px", borderRadius: "var(--dh-curve-sm)", border: `1px solid ${t.border}`, background: "transparent", color: t.fg2, cursor: "pointer", fontSize: 12 }}>
-              Cancel
-            </button>
+          {importError && (
+            <p id="theme-import-error" className="theme-import-error" role="alert">
+              <span className="material-symbols-outlined" aria-hidden="true">error</span>
+              {importError}
+            </p>
+          )}
+          <div className="tool-actions">
+            <button type="button" className="tool-btn is-primary" onClick={handleImport} disabled={!importText.trim()}>Apply</button>
+            <button type="button" className="tool-btn" onClick={() => { setShowImport(false); setImportError(""); }}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Token categories */}
-      {Object.entries(categories).map(([catName, tokens]) => (
-        <div key={catName} style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 11, fontWeight: 600, color: t.fg2, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>{catName}</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
-            {tokens.map(({ key, value }) => {
-              const isOverridden = key in overrides;
-              const bgForContrast = mergedTheme.bg || mergedTheme.surface || "#ffffff";
-              const contrast = value.startsWith("#") && bgForContrast.startsWith("#") ? checkContrast(value, bgForContrast) : null;
-
-              return (
-                <div
-                  key={key}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 10px",
-                    borderRadius: "var(--dh-curve-sm)",
-                    border: `1px solid ${isOverridden ? t.accent : t.border}`,
-                    background: isOverridden ? `${t.accent}08` : "transparent",
-                  }}
-                >
-                  {/* Color swatch + picker */}
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "var(--dh-curve-sm)",
-                        border: `1px solid ${t.border}`,
-                        background: value.startsWith("linear-gradient") ? value : value,
-                      }}
-                      aria-hidden="true"
-                    />
-                    {value.startsWith("#") && (
-                      <input
-                        type="color"
-                        value={value.slice(0, 7)}
-                        onChange={(e) => handleColorChange(key, e.target.value)}
-                        aria-label={`Pick a color for ${key}`}
-                        style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: 28, height: 28 }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Token info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: t.fg, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{key}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
-                      <label htmlFor={`hex-${key}`} className="sr-only">{`Hex value for ${key}`}</label>
-                      <input
-                        id={`hex-${key}`}
-                        type="text"
-                        value={value}
-                        onChange={(e) => handleHexInput(key, e.target.value)}
-                        style={{ fontSize: 10, color: t.fg3, fontFamily: "monospace", background: "transparent", border: "none", padding: 0, width: 70, outline: "none" }}
-                      />
-                      {contrast && (
-                        <span
-                          style={{
-                            fontSize: 9,
-                            fontWeight: 600,
-                            padding: "1px 4px",
-                            borderRadius: "var(--dh-curve-sm)",
-                            background: contrast.passAA ? "rgba(0,180,0,0.15)" : "rgba(255,0,0,0.15)",
-                            color: contrast.passAA ? statusFg.ok : statusFg.bad,
-                          }}
-                          aria-label={`Contrast ratio ${contrast.ratio.toFixed(1)} to 1, ${contrast.passAA ? "passes" : "fails"} WCAG AA`}
-                        >
-                          {contrast.ratio.toFixed(1)}:1
-                        </span>
+      <div className="theme-layout">
+        <div>
+          {Object.entries(categories).map(([catName, tokens], idx) => (
+            <section key={catName} className="tool-section" style={idx === 0 ? { marginTop: 0 } : undefined} aria-labelledby={`theme-cat-${catName}`}>
+              <h2 id={`theme-cat-${catName}`}>{catName} <span>{tokens.length}</span></h2>
+              <div className="theme-grid">
+                {tokens.map(({ key, value }) => {
+                  const isOverridden = key in overrides;
+                  const editable = isHex(value);
+                  const draft = drafts[key];
+                  const invalid = draft !== undefined && !(isValidHex(draft) && isHex(draft));
+                  /* Measured against the surface the token is meant for
+                     (onPrimary on primary), else the page background. Both
+                     sides follow the edits, so the ratio stays live. */
+                  const partner = contrastPartner(key, mergedTheme);
+                  const against = partner ? String(mergedTheme[partner]) : pageBg;
+                  const onWhat = partner ?? "the page background";
+                  const contrast = catName !== "Background" && editable && isHex(against) ? checkContrast(value, against) : null;
+                  return (
+                    <div key={key} className={`theme-token${isOverridden ? " is-changed" : ""}`}>
+                      <div className="theme-token-swatch">
+                        <span className="token-swatch" style={{ "--swatch": value } as React.CSSProperties} aria-hidden="true" />
+                        {editable && (
+                          <input
+                            type="color"
+                            value={value.length === 4 ? `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}` : value}
+                            onChange={(e) => { clearDraft(key); applyValue(key, e.target.value); }}
+                            aria-label={`Pick a colour for ${key}`}
+                          />
+                        )}
+                      </div>
+                      <div className="theme-token-body">
+                        <div className="theme-token-name">{key}</div>
+                        <div className="theme-token-meta">
+                          {editable ? (
+                            <>
+                              <label htmlFor={`hex-${key}`} className="sr-only">{`Hex value for ${key}`}</label>
+                              <input
+                                id={`hex-${key}`}
+                                type="text"
+                                value={draft ?? value}
+                                onChange={(e) => handleHexInput(key, e.target.value.trim())}
+                                onBlur={() => clearDraft(key)}
+                                aria-invalid={invalid ? true : undefined}
+                                spellCheck={false}
+                                autoComplete="off"
+                                maxLength={7}
+                              />
+                            </>
+                          ) : (
+                            <code title={`${value} (not a hex colour, so it cannot be edited here)`}>{value}</code>
+                          )}
+                          {contrast && (
+                            <span
+                              className="theme-ratio"
+                              data-pass={contrast.passAA}
+                              title={`${contrast.passAA ? "Meets" : "Below"} WCAG AA for text on ${onWhat}`}
+                            >
+                              <span aria-hidden="true">{contrast.ratio.toFixed(1)}:1</span>
+                              <span className="sr-only">{`Contrast ${contrast.ratio.toFixed(1)} to 1 on ${onWhat}, ${contrast.passAA ? "meets" : "below"} AA for text`}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isOverridden && (
+                        <button type="button" className="theme-reset" onClick={() => resetToken(key)} title="Reset to the base colour" aria-label={`Reset ${key} to the base colour`}>
+                          <span className="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                        </button>
                       )}
                     </div>
-                  </div>
-
-                  {/* Reset button */}
-                  {isOverridden && (
-                    <button
-                      onClick={() => resetToken(key)}
-                      title="Reset to default"
-                      aria-label={`Reset ${key} to default`}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 2,
-                        color: t.fg3,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden="true">undo</span>
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
-      ))}
+
+        <aside className="theme-preview-wrap" aria-labelledby="theme-preview-title">
+          <h2 id="theme-preview-title">Preview</h2>
+          <div
+            className="theme-preview"
+            data-testid="theme-preview"
+            style={{
+              "--pv-bg": pv("bg"), "--pv-bg2": pv("bg2"), "--pv-fg": pv("fg"), "--pv-fg2": pv("fg2"),
+              "--pv-accent": pv("accent"), "--pv-accent-fg": pv("accentFg"), "--pv-accent-text": pv("accentText"),
+              "--pv-border": pv("border"),
+            } as React.CSSProperties}
+          >
+            <h3>Portfolio summary</h3>
+            <p>Quarter to date, all desks</p>
+            <div className="theme-preview-card">
+              <dl>
+                <dt>Net exposure</dt><dd>42.8m</dd>
+                <dt>Open positions</dt><dd>1,204</dd>
+                <dt>Limit used</dt><dd>61%</dd>
+              </dl>
+            </div>
+            <div className="theme-preview-row">
+              <span className="pv-primary">Approve</span>
+              <span className="pv-secondary">Review</span>
+              <span className="pv-link">View report</span>
+            </div>
+          </div>
+          <p className="tool-note">
+            Drawn with {pk.bg}, {pk.bg2}, {pk.fg}, {pk.fg2}, {pk.accent}, {pk.accentFg} and {pk.border}.
+          </p>
+        </aside>
+      </div>
     </main>
   );
 }

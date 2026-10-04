@@ -4,9 +4,16 @@ import React, { useState, useMemo } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getSystemInfo } from "@/data/registry";
-import { categorizeTokens, exportThemeJSON } from "@/lib/themeBuilder";
+import { categorizeTokens, checkContrast, contrastPartner, exportThemeJSON } from "@/lib/themeBuilder";
 import { showToast } from "@/lib/toast";
 
+const isHex = (v: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
+
+/**
+ * Token reference: every colour token of the system and mode in view, in one
+ * searchable table. Read-only by design. Values are copied one at a time or
+ * all together as JSON; editing lives in the theme builder.
+ */
 export function TokenEditor() {
   const activeSystem = useDesignHub((s) => s.activeSystem);
   const t = useTheme();
@@ -17,8 +24,8 @@ export function TokenEditor() {
   const categories = useMemo(() => categorizeTokens(t.T), [t.T]);
 
   const filteredCategories = useMemo(() => {
-    if (!search) return categories;
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
+    if (!q) return categories;
     const result: Record<string, { key: string; value: string }[]> = {};
     for (const [cat, tokens] of Object.entries(categories)) {
       const filtered = tokens.filter(
@@ -31,14 +38,15 @@ export function TokenEditor() {
 
   const totalTokens = Object.values(categories).reduce((sum, arr) => sum + arr.length, 0);
   const filteredCount = Object.values(filteredCategories).reduce((sum, arr) => sum + arr.length, 0);
-  const hasResults = Object.keys(filteredCategories).length > 0;
+  const hasResults = filteredCount > 0;
+  const modeName = (t.T.name as string) || sysInfo.name;
 
-  const handleExportAll = async () => {
+  const handleCopyAll = async () => {
     const allTokens: Record<string, string> = {};
     for (const tokens of Object.values(categories)) {
       for (const { key, value } of tokens) allTokens[key] = value;
     }
-    const json = exportThemeJSON(allTokens, { ds: activeSystem, baseName: t.T.name || sysInfo.name });
+    const json = exportThemeJSON(allTokens, { ds: activeSystem, baseName: modeName });
     try {
       await navigator.clipboard.writeText(json);
       setCopied(true);
@@ -49,10 +57,6 @@ export function TokenEditor() {
     }
   };
 
-  /* Per-token click-to-copy (keyboard-accessible <button>). The value / --var
-     cells were overflow:hidden + ellipsis with no copy affordance, so the
-     highest-frequency token-owner action — grab a value or a CSS var — was
-     impossible. The button's title also surfaces the full (untruncated) text. */
   const copyText = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -62,233 +66,106 @@ export function TokenEditor() {
     }
   };
 
+  const statusText = search.trim()
+    ? `${filteredCount} of ${totalTokens} tokens match`
+    : `${totalTokens} colour tokens in ${Object.keys(categories).length} groups`;
+
   return (
-    <main id="main-content" style={{ padding: 32, fontFamily: t.font, color: t.fg, maxWidth: 1000 }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+    <main id="main-content" className="tool-main">
+      <div className="tool-head">
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0, color: t.fg }}>Token reference</h1>
-          <p style={{ fontSize: 14, color: t.fg2, marginTop: 4 }}>
-            {sysInfo.name} — {totalTokens} color tokens
+          <h1>Token reference</h1>
+          <p className="tool-lede">
+            Every colour token in {modeName}. Select a value to copy it, or copy the whole set as JSON.
           </p>
         </div>
-        <button
-          onClick={handleExportAll}
-          style={{
-            padding: "8px 14px",
-            borderRadius: "var(--dh-curve-sm)",
-            border: "none",
-            background: t.accent,
-            color: t.accentFg,
-            cursor: "pointer",
-            fontSize: 13,
-            fontFamily: t.font,
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: "middle", marginRight: 4 }} aria-hidden="true">
-            {copied ? "check" : "download"}
-          </span>
-          {copied ? "Copied!" : "Copy JSON"}
-        </button>
+        <div className="tool-actions">
+          <button type="button" className="tool-btn is-primary" onClick={handleCopyAll}>
+            <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+            {copied ? "Copied" : "Copy JSON"}
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
-      <div style={{ position: "relative", marginBottom: 24 }}>
-        <span
-          className="material-symbols-outlined"
-          style={{
-            position: "absolute",
-            left: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 18,
-            color: t.fg3,
-            pointerEvents: "none",
-          }}
-          aria-hidden="true"
-        >
-          search
-        </span>
+      <div className="tool-search">
+        <span className="material-symbols-outlined" aria-hidden="true">search</span>
         <label htmlFor="token-search" className="sr-only">Search tokens</label>
         <input
           id="token-search"
-          type="text"
-          placeholder="Search tokens..."
+          type="search"
+          placeholder="Search by token name or value"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-describedby="token-search-status"
-          style={{
-            width: "100%",
-            padding: "10px 12px 10px 36px",
-            borderRadius: "var(--dh-curve-sm)",
-            border: `1px solid ${t.border}`,
-            background: t.bg2,
-            color: t.fg,
-            fontSize: 14,
-            fontFamily: t.font,
-            outline: "none",
-          }}
+          autoComplete="off"
+          spellCheck={false}
         />
-        {/* Live search count announcement for assistive tech */}
-        <div id="token-search-status" role="status" aria-live="polite" className="sr-only">
-          {search
-            ? `${filteredCount} ${filteredCount === 1 ? "token" : "tokens"} match "${search}"`
-            : `${totalTokens} tokens`}
-        </div>
       </div>
+      <p id="token-search-status" className="tool-count" role="status" aria-live="polite">{statusText}</p>
 
-      {/* Token table by category */}
-      {Object.entries(filteredCategories).map(([catName, tokens]) => (
-        <section key={catName} style={{ marginBottom: 28 }} aria-labelledby={`token-cat-${catName}`}>
-          <h2
-            id={`token-cat-${catName}`}
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: t.fg2,
-              marginBottom: 10,
-              textTransform: "uppercase",
-              letterSpacing: 1,
-            }}
-          >
-            {catName} ({tokens.length})
-          </h2>
-          <div className="token-table-scroll" role="region" aria-label={`${catName} token values`} tabIndex={0}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              border: `1px solid ${t.border}`,
-              borderRadius: "var(--dh-curve-sm)",
-              overflow: "hidden",
-              tableLayout: "fixed",
-            }}
-          >
-            <caption className="sr-only">{catName} tokens</caption>
-            <thead>
-              <tr style={{ background: t.bg2 }}>
-                <th
-                  scope="col"
-                  style={{
-                    width: 36,
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.fg3,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                  aria-label="Color swatch"
-                />
-                <th
-                  scope="col"
-                  style={{
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.fg3,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Token
-                </th>
-                <th
-                  scope="col"
-                  style={{
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.fg3,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Value
-                </th>
-                <th
-                  scope="col"
-                  style={{
-                    width: 120,
-                    padding: "8px 12px",
-                    textAlign: "left",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: t.fg3,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  CSS Var
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tokens.map(({ key, value }, i) => (
-                <tr
-                  key={key}
-                  style={{
-                    borderTop: i > 0 ? `1px solid ${t.border}` : "none",
-                    fontSize: 13,
-                  }}
-                >
-                  <td style={{ padding: "8px 12px", verticalAlign: "middle" }}>
-                    <div
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: "var(--dh-curve-sm)",
-                        border: `1px solid ${t.border}`,
-                        background: value,
-                      }}
-                      aria-hidden="true"
-                    />
-                  </td>
-                  <th scope="row" style={{ padding: "8px 12px", fontWeight: 500, color: t.fg, textAlign: "left" }}>
-                    {key}
-                  </th>
-                  <td style={{ padding: "8px 12px", maxWidth: 180 }}>
-                    <button
-                      type="button"
-                      onClick={() => copyText(value, "value")}
-                      title={`Copy ${value}`}
-                      style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", fontSize: 11, color: t.fg2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                    >
-                      {value}
-                    </button>
-                  </td>
-                  <td style={{ padding: "8px 12px", maxWidth: 200 }}>
-                    <button
-                      type="button"
-                      onClick={() => copyText(`--${key}`, `--${key}`)}
-                      title={`Copy --${key}`}
-                      style={{ display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "monospace", fontSize: 10, color: t.fg3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                    >
-                      --{key}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        </section>
-      ))}
+      {Object.entries(filteredCategories).map(([catName, tokens]) => {
+        /* A ratio only means something for a colour drawn on top of
+           another, so background tokens are left blank. */
+        const showContrast = catName !== "Background";
+        return (
+          <section key={catName} className="tool-section" aria-labelledby={`token-cat-${catName}`}>
+            <h2 id={`token-cat-${catName}`}>{catName} <span>{tokens.length}</span></h2>
+            <div className="token-table-scroll">
+              <table className="token-table">
+                <caption className="sr-only">{catName} tokens</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" className="col-token">Token</th>
+                    <th scope="col">Value</th>
+                    <th scope="col" className="col-contrast">Contrast</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tokens.map(({ key, value }) => {
+                    /* Measured against the surface the token is meant for
+                       (onPrimary on primary), else the page background. */
+                    const partner = contrastPartner(key, t.T);
+                    const against = partner ? String(t.T[partner]) : t.bg;
+                    const contrast = showContrast && isHex(value) && isHex(against) ? checkContrast(value, against) : null;
+                    return (
+                      <tr key={key}>
+                        <th scope="row">
+                          <span className="token-name">
+                            <span className="token-swatch" style={{ "--swatch": value } as React.CSSProperties} aria-hidden="true" />
+                            <span>{key}</span>
+                          </span>
+                        </th>
+                        <td className="cell-value">
+                          <button type="button" className="token-copy" onClick={() => copyText(value, value)} aria-label={`Copy ${key} value ${value}`}>
+                            <span>{value}</span>
+                            <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                          </button>
+                        </td>
+                        <td className="cell-contrast">
+                          {contrast ? (
+                            <span className="token-ratio">
+                              <b>{contrast.ratio.toFixed(1)}:1</b> on {partner ?? "page"}
+                              <em>{contrast.passAA ? "AA text" : contrast.ratio >= 3 ? "AA large text" : "below AA"}</em>
+                            </span>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      })}
 
       {!hasResults && (
-        <div style={{ textAlign: "center", padding: 48, color: t.fg3 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 36, marginBottom: 8, opacity: 0.5 }} aria-hidden="true">
-            search_off
-          </span>
-          <p style={{ margin: "0 0 4px", fontSize: 14, color: t.fg2, fontWeight: 500 }}>
-            No tokens match &ldquo;{search}&rdquo;
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: t.fg3 }}>
-            Try <em>color</em>, <em>spacing</em>, or a hex value.
-          </p>
+        <div className="tool-empty">
+          <strong>No tokens match &ldquo;{search.trim()}&rdquo;</strong>
+          Search by part of a token name, such as accent or border, or by a hex value.
+          <div>
+            <button type="button" className="tool-btn" onClick={() => setSearch("")}>Clear search</button>
+          </div>
         </div>
       )}
     </main>

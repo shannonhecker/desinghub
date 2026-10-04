@@ -39,7 +39,12 @@ export function categorizeTokens(theme: ThemeTokens): Record<string, { key: stri
     if (!v.startsWith("#") && !v.startsWith("rgb") && !v.startsWith("rgba") && !v.startsWith("linear-gradient")) continue;
 
     const kl = key.toLowerCase();
-    if (kl.includes("bg") || kl.includes("surface") || kl.includes("background")) {
+    /* "on" roles (onSurface, onPrimaryContainer, inverseOnSurface) are text
+       colours. Test them first: their names contain "surface" / "primary",
+       which used to file them under Background and Accent. */
+    if (/^(on|inverseOn)[A-Z]/.test(key)) {
+      cats.Foreground.push({ key, value: v });
+    } else if (kl.includes("bg") || kl.includes("surface") || kl.includes("background")) {
       cats.Background.push({ key, value: v });
     } else if (kl.includes("fg") || kl.includes("text") || kl.includes("onsurface") || kl.includes("onprimary")) {
       cats.Foreground.push({ key, value: v });
@@ -73,6 +78,39 @@ export function checkContrast(fg: string, bg: string): { ratio: number; passAA: 
   } catch {
     return null;
   }
+}
+
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
+/**
+ * The surface a token is meant to sit on, so its contrast is measured
+ * against the right colour. A Material "on" role belongs to its container
+ * (onPrimary on primary), an accent foreground to the accent, an inverse
+ * foreground to the inverse background. Anything without a known partner is
+ * measured against the page background.
+ *
+ * Returns the partner's token key, or null for "the page background".
+ */
+export function contrastPartner(key: string, theme: ThemeTokens): string | null {
+  const has = (k: string) => typeof theme[k] === "string" && /^#[0-9a-fA-F]{3,6}$/.test(theme[k]);
+  const candidates: string[] = [];
+  const on = key.match(/^on([A-Z]\w*)$/);
+  if (on) candidates.push(lowerFirst(on[1]));
+  const inverseOn = key.match(/^inverseOn([A-Z]\w*)$/);
+  if (inverseOn) candidates.push(`inverse${inverseOn[1]}`);
+  if (key === "accentFg") candidates.push("accent");
+  if (key === "fgOnBrand") candidates.push("brandBg");
+  if (key === "fgInv") candidates.push("bgInv");
+  if (key === "fgInverted") candidates.push("bgInverted");
+  if (key === "textInverse") candidates.push("backgroundInverse");
+  if (key === "textOnColor") candidates.push("accent", "backgroundBrand");
+  /* Status text sits on its own tint: positiveFg on positiveWeak (Salt),
+     dangerFg1 on dangerBg1 (Fluent), successFg on successBg (uoaui). */
+  const statusFg = key.match(/^(positive|negative|caution|info)Fg$/);
+  if (statusFg) candidates.push(`${statusFg[1]}Weak`);
+  const numbered = key.match(/^(danger|success|warning)Fg(\d?)$/);
+  if (numbered) candidates.push(`${numbered[1]}Bg${numbered[2]}`);
+  return candidates.find(has) ?? null;
 }
 
 /** Serialize theme overrides to JSON */

@@ -14,6 +14,7 @@ import { ContentTopBar } from "./ui-kit/ContentTopBar";
 import { ComponentList } from "./ui-kit/ComponentList";
 import { MainContent } from "./ui-kit/MainContent";
 import { getStageBg, getRailBg, getPanelBg } from "./ui-kit/stageTint";
+import { builderHrefFor, isDarkActive, toggleActiveMode } from "./ui-kit/kitHandoff";
 
 /**
  * @deprecated Use `useTheme()` from `@/contexts/ThemeContext` instead.
@@ -140,31 +141,37 @@ export function DesignHubApp() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [store]);
-  const didAutoCloseRef = React.useRef(false);
+  /* Opening an entry (or going back to the overview) starts at the top.
+     The catalogue and the detail page share one scroller, so without this a
+     card picked far down the overview opened its page already scrolled. */
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
+  const selectedComponent = store.selectedComponent;
   React.useEffect(() => {
-    if (isNarrow && sidebarOpen && !didAutoCloseRef.current) {
-      didAutoCloseRef.current = true;
-      store.toggleSidebar();
+    scrollerRef.current?.scrollTo?.({ top: 0 });
+    /* On phones the panel is a sheet over the content: picking an entry
+       from it should reveal that entry. */
+    if (window.matchMedia?.("(max-width: 768px)").matches && useDesignHub.getState().sidebarOpen) {
+      useDesignHub.getState().toggleSidebar();
     }
-    if (!isNarrow) didAutoCloseRef.current = false;
-  }, [isNarrow, sidebarOpen, store]);
+  }, [selectedComponent, activeSystem]);
+
+  /* Entering the phone layout closes the side panel so it does not cover
+     the catalogue. Keyed on the breakpoint alone: it used to watch the open
+     flag too, which swallowed the first tap on Components / Search / Theme. */
+  React.useEffect(() => {
+    if (isNarrow && useDesignHub.getState().sidebarOpen) useDesignHub.getState().toggleSidebar();
+  }, [isNarrow]);
 
   // Detect dark theme for logo color - logo is black SVG, invert to white in dark mode
-  const isDarkTheme = activeSystem === "salt"
-    ? store.salt.themeKey.includes("dark")
-    : activeSystem === "m3"
-    ? store.m3.themeKey.startsWith("dark")
-    : activeSystem === "uoaui"
-    ? store.uoaui.themeKey === "dark"
-    : activeSystem === "carbon"
-    ? store.carbon.themeKey === "g90" || store.carbon.themeKey === "g100"
-    : store.fluent.themeKey === "dark";
+  const isDarkTheme = isDarkActive(store);
   const logoFilter = isDarkTheme ? "brightness(0) invert(1)" : "brightness(0)";
 
   /* Carbon keeps its flat IBM aesthetic in the rail (radius 0). The brand
      logo stays black on light surfaces and inverts to white on dark/Carbon. */
   const isCarbon = activeSystem === "carbon";
-  const resolvedLogoFilter = isCarbon ? "brightness(0) invert(1)" : logoFilter;
+  /* The mark follows the mode on every system. Carbon used to force the
+     white mark, which vanished on its light rail (white and g10 themes). */
+  const resolvedLogoFilter = logoFilter;
 
   /* C2 PER-DS STAGE: the component stage background changes per selected DS
      (neutral grey for Salt/Fluent, seam-matched canvas for Carbon, tonal
@@ -180,44 +187,11 @@ export function DesignHubApp() {
      readable. toggleMode flips the active DS between its light/dark theme key;
      builderHref carries the current ds/mode/density/themeKey so the Builder
      opens on the same configuration the user is exploring in UI Kit. */
-  const toggleMode = () => {
-    if (activeSystem === "salt") {
-      const key = store.salt.themeKey;
-      const isDk = key.includes("dark");
-      store.setSaltTheme(isDk ? key.replace("dark", "light") : key.replace("light", "dark"));
-    } else if (activeSystem === "m3") {
-      store.setM3Theme(store.m3.themeKey.startsWith("dark") ? "light" : "dark");
-    } else if (activeSystem === "uoaui") {
-      store.setUoauiTheme(store.uoaui.themeKey === "dark" ? "light" : "dark");
-    } else if (activeSystem === "carbon") {
-      /* Carbon toggles white ↔ g100 (canonical light/dark); users pick
-         g10/g90 explicitly via ThemeControls. */
-      const k = store.carbon.themeKey;
-      store.setCarbonTheme(k === "g100" || k === "g90" ? "white" : "g100");
-    } else {
-      store.setFluentTheme(store.fluent.themeKey === "dark" ? "light" : "dark");
-    }
-  };
-  const builderHref = (() => {
-    const ds = activeSystem;
-    const mode = isDarkTheme ? "dark" : "light";
-    const themeKey =
-      ds === "salt" ? store.salt.themeKey :
-      ds === "m3" ? store.m3.themeKey :
-      ds === "fluent" ? store.fluent.themeKey :
-      ds === "carbon" ? store.carbon.themeKey :
-      store.uoaui.themeKey;
-    const density =
-      ds === "salt" ? store.salt.density :
-      ds === "fluent" ? store.fluent.size :
-      ds === "carbon" ? store.carbon.density :
-      ds === "uoaui" ? store.uoaui.density :
-      String(store.m3.density);
-    return `/builder?ds=${ds}&mode=${mode}&density=${encodeURIComponent(density)}&themeKey=${encodeURIComponent(themeKey)}`;
-  })();
+  const toggleMode = toggleActiveMode;
+  const builderHref = builderHrefFor(store);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh",
+    <div className="uikit-shell" style={{ display: "flex", flexDirection: "column", height: "100dvh",
       /* C2 PER-DS STAGE at the shell level. uoaui gets the signature
          aurora gradient as the app-level wash so the transparent stage +
          landing + hero slab read against it; Carbon stays seam-matched
@@ -231,7 +205,7 @@ export function DesignHubApp() {
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      <div className="uikit-shell-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* ICON-RAIL — the SOLE primary nav (owner: the old top header nav was
             redundant with the rail, so it's merged in here). Brand mark at top;
             then the 5 DS as LABELLED buttons (glyph + name, so the active DS is
@@ -248,22 +222,15 @@ export function DesignHubApp() {
             ["--dh-focus-ring" as string]: t.focusRing,
             /* Subtle hover fill for the now-borderless rail buttons. */
             ["--dh-rail-hover" as string]: t.bg2,
+            /* Read by the phone layout, where the rail splits into a top
+               and a bottom bar that each need the fill and the edge. */
+            ["--dh-rail-bg" as string]: railBg === "transparent" ? t.bg : railBg,
+            ["--dh-rail-edge" as string]: t.borderSubtle,
             borderRight: `1px solid ${t.borderSubtle}`,
             background: railBg,
             transition: "background 200ms",
           }}
         >
-          {/* Brand mark — returns to the UI Kit overview / landing. */}
-          <button
-            type="button"
-            className="uikit-rail-logo"
-            aria-label="UI Kit overview"
-            title="UI Kit overview"
-            onClick={() => store.setSelectedComponent(null)}
-          >
-            <img src="/aologo.svg" alt="" aria-hidden="true" style={{ height: 20, width: "auto", filter: resolvedLogoFilter }} />
-          </button>
-
           {(() => {
             const DS_LIST: { id: SystemId; label: string; short: string }[] = [
               { id: "salt", label: "Salt DS", short: "Salt" },
@@ -281,6 +248,18 @@ export function DesignHubApp() {
             const sectionBtn = { color: t.fg2 };
             return (
               <>
+                <div className="uikit-rail-top">
+          {/* Brand mark — returns to the UI Kit overview / landing. */}
+          <button
+            type="button"
+            className="uikit-rail-logo"
+            aria-label="UI Kit overview"
+            title="UI Kit overview"
+            onClick={() => store.setSelectedComponent(null)}
+          >
+            <img src="/aologo.svg" alt="" aria-hidden="true" style={{ height: 20, width: "auto", filter: resolvedLogoFilter }} />
+          </button>
+
                 <div className="uikit-rail-group" role="group" aria-label="Switch design system">
                   {DS_LIST.map(ds => {
                     const info = getSystemInfo(ds.id);
@@ -310,7 +289,9 @@ export function DesignHubApp() {
                   })}
                 </div>
 
+                </div>
                 <div className="uikit-rail-divider" style={{ background: t.borderSubtle }} aria-hidden="true" />
+                <div className="uikit-rail-rest">
 
                 {/* Overview button removed (owner) — the brand mark at the rail
                     head already returns to the overview/landing. */}
@@ -381,6 +362,7 @@ export function DesignHubApp() {
                     <span className="uikit-rail-label">Builder</span>
                   </Link>
                 </div>
+                </div>
               </>
             );
           })()}
@@ -397,6 +379,7 @@ export function DesignHubApp() {
             aria-label="Component navigation panel"
             style={{
               width: t.scale.panelW,
+              ["--dh-panel-solid" as string]: t.bg,
               borderRight: `1px solid ${t.borderSubtle}`,
               background: panelBg,
               display: "flex", flexDirection: "column", overflow: "hidden", flexShrink: 0,
@@ -443,7 +426,7 @@ export function DesignHubApp() {
             rail section buttons + the panel-header close chevron). */}
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
-          <div style={{ flex: 1, overflowY: "auto" }}>
+          <div ref={scrollerRef} style={{ flex: 1, overflowY: "auto" }}>
             <MainContent />
           </div>
         </main>

@@ -1,490 +1,301 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getComponents, getCategories, getSystemInfo, getPreviews } from "@/data/registry";
-import { publicAssetUrl } from "@/lib/sampleImages";
+import { getComponents, getSystemInfo, getPreviews } from "@/data/registry";
+import { COMPONENT_SUBCATS, SUBCAT_ORDER } from "@/data/componentCategories";
 import { getUiKitGroup, BUILDER_BLOCKS } from "./uiKitGroups";
-import { getStageBg } from "./stageTint";
-import styles from "./LandingHero.module.css";
+import { isDarkActive } from "./kitHandoff";
+import styles from "./LandingGrid.module.css";
 
-const HERO_IMAGE_BY_SYSTEM: Record<string, string> = {
-  salt: "/media/dummy/enterprise-analytics.png",
-  m3: "/media/dummy/material-mobile-collage.png",
-  fluent: "/media/dummy/saas-collaboration.png",
-  uoaui: "/media/dummy/glass-creative-studio.png",
-  carbon: "/media/dummy/enterprise-analytics.png",
+/* One plain sentence per system. Only things the kit itself shows: the
+   density ladder, theme count and token model each have a Foundations page. */
+const SYSTEM_LEDE: Record<SystemId, string> = {
+  salt: "J.P. Morgan's system for dense financial interfaces: four densities on a three-layer token model.",
+  m3: "Google's system built on dynamic colour, tonal surfaces and expressive shape.",
+  fluent: "Microsoft's system for app surfaces, with brand theming and three control sizes.",
+  uoaui: "The house system: frosted glass layers over aurora gradients, in four densities.",
+  carbon: "IBM's open-source system on a 2px grid, with four themes.",
 };
 
-const HERO_CLASS_BY_SYSTEM: Record<string, string> = {
-  salt: styles.systemSalt,
-  m3: styles.systemM3,
-  fluent: styles.systemFluent,
-  uoaui: styles.systemUoaui,
-  carbon: styles.systemCarbon,
-};
+type Section = "foundations" | "components" | "patterns" | "tools";
+type Filter = "all" | Section;
 
-type HeroArt = {
-  signal: string;
-  signature: string;
-  subtitle: string;
-  mark: string;
-  palette: string[];
-  metricValue: string;
-  chips: string[];
-  bars: number[];
-  lanes: string[];
-};
+interface Entry { id: string; name: string; desc: string; }
+interface ToolEntry extends Entry { icon: string; href?: string; }
 
-const HERO_ART_BY_SYSTEM: Record<SystemId, HeroArt> = {
-  salt: {
-    signal: "J.P. Morgan",
-    signature: "Salt DS",
-    subtitle: "Density and data",
-    mark: "S",
-    palette: ["#0b7fab", "#16a6c9", "#4cc9f0", "#ed3124", "#f5a623", "#7a5aa6", "#9b7a55"],
-    metricValue: "3 layers",
-    chips: ["Compact", "Medium", "Touch"],
-    bars: [44, 72, 58, 84, 62, 48, 76],
-    lanes: ["Action", "Containment", "Market data"],
-  },
-  m3: {
-    signal: "Google",
-    signature: "Material 3",
-    subtitle: "Dynamic color",
-    mark: "M3",
-    palette: ["#6750a4", "#d0bcff", "#eaddff", "#ffd8e4", "#b3261e", "#fef7ff", "#625b71"],
-    metricValue: "13",
-    chips: ["Filled", "Tonal", "Outlined"],
-    bars: [56, 80, 66, 92, 74, 60, 86],
-    lanes: ["Surface", "Primary", "Container"],
-  },
-  fluent: {
-    signal: "Microsoft",
-    signature: "Fluent 2",
-    subtitle: "App surfaces",
-    mark: "F2",
-    palette: ["#0078d4", "#2899f5", "#60cdff", "#8a8886", "#c8c6c4", "#f3f2f1", "#2b88d8"],
-    metricValue: "3 sizes",
-    chips: ["Command", "Pane", "Focus"],
-    bars: [38, 62, 88, 70, 46, 78, 54],
-    lanes: ["Navigation", "Toolbar", "Content"],
-  },
-  uoaui: {
-    signal: "uoaui",
-    signature: "uoaui DS",
-    subtitle: "Aurora glass",
-    mark: "UA",
-    palette: ["#8A58C9", "#9D71D2", "#9575F0", "#f46a9b", "#27aeef", "#1a1035", "#E8EAED"],
-    metricValue: "4 layers",
-    chips: ["Frosted", "Aurora", "Glow"],
-    bars: [50, 74, 96, 68, 82, 58, 88],
-    lanes: ["Glass", "Gradient", "Ambient"],
-  },
-  carbon: {
-    signal: "IBM",
-    signature: "Carbon DS",
-    subtitle: "2px grid",
-    mark: "01",
-    palette: ["#0f62fe", "#78a9ff", "#33b1ff", "#42be65", "#fa4d56", "#f4f4f4", "#393939"],
-    metricValue: "2px",
-    chips: ["Data", "Tiles", "Plex"],
-    bars: [64, 40, 82, 58, 92, 46, 74],
-    lanes: ["Column", "Row", "Tile"],
-  },
-};
+const TOOL_ICON: Record<string, string> = { tokens: "palette", audit: "fact_check", "builder-blocks": "widgets" };
 
-function HeroSignaturePanel({ art }: { art: HeroArt }) {
-  return (
-    <div className={`${styles.showcasePanel} ${styles.signaturePanel}`} style={{ "--delay": "0s" } as React.CSSProperties}>
-      <div className={styles.panelTop}>
-        <span>{art.signal}</span>
-        <span>{art.subtitle}</span>
-      </div>
-      <div className={styles.signatureBody}>
-        <div>
-          <div className={styles.signatureMark}>{art.mark}</div>
-          <div className={styles.signatureName}>{art.signature}</div>
-        </div>
-        <div className={styles.swatchCluster}>
-          {art.palette.map((color, i) => (
-            <span
-              key={`${color}-${i}`}
-              className={styles.swatchTile}
-              style={{ "--swatch": color } as React.CSSProperties}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+/* The two full-page tools. They keep the system and mode chosen here. */
+const PAGE_TOOLS: ToolEntry[] = [
+  { id: "page-token-reference", name: "Token reference", icon: "table_rows", href: "/token-editor",
+    desc: "Every colour token for the system in view in one searchable table. Copy single values or the whole set as JSON." },
+  { id: "page-theme-builder", name: "Theme builder", icon: "format_paint", href: "/theme-builder",
+    desc: "Change a system's colours, check contrast against a live preview, then copy the changes as JSON." },
+];
 
-function HeroSystemScene({ system, art }: { system: SystemId; art: HeroArt }) {
-  if (system === "salt") {
-    return (
-      <div className={styles.saltScene}>
-        <div className={styles.marketTape}>
-          <span>FX</span>
-          <strong>42.08</strong>
-          <em>+1.2%</em>
-        </div>
-        <div className={styles.depthBars}>
-          {art.bars.map((bar, i) => <span key={i} style={{ height: `${bar}%` }} />)}
-        </div>
-        <div className={styles.laneList}>
-          {art.lanes.map((lane) => <span key={lane}>{lane}</span>)}
-        </div>
-      </div>
-    );
-  }
+const matches = (q: string, ...fields: (string | undefined)[]) =>
+  !q || fields.some((f) => f && f.toLowerCase().includes(q));
 
-  if (system === "m3") {
-    return (
-      <div className={styles.materialScene}>
-        <div className={styles.materialPhone}>
-          <span className={styles.materialHandle} />
-          <div className={styles.materialTileLarge} />
-          <div className={styles.materialTileSmall} />
-          <div className={styles.materialFab}>+</div>
-        </div>
-        <div className={styles.tonalStack}>
-          {art.chips.map((chip, i) => <span key={chip} style={{ "--tone": art.palette[i] } as React.CSSProperties}>{chip}</span>)}
-        </div>
-      </div>
-    );
-  }
-
-  if (system === "fluent") {
-    return (
-      <div className={styles.fluentScene}>
-        <div className={styles.windowBar}>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={styles.commandStrip}>
-          <span className="material-symbols-outlined">search</span>
-          <span className="material-symbols-outlined">tune</span>
-          <span className="material-symbols-outlined">open_in_new</span>
-        </div>
-        <div className={styles.fluentPaneGrid}>
-          {art.lanes.map((lane) => <span key={lane}>{lane}</span>)}
-        </div>
-      </div>
-    );
-  }
-
-  if (system === "uoaui") {
-    return (
-      <div className={styles.auroraScene}>
-        <div className={styles.glassPlate}>
-          <span>{art.signature}</span>
-          <strong>{art.metricValue}</strong>
-        </div>
-        <div className={styles.glassTiles}>
-          {art.chips.map((chip) => <span key={chip}>{chip}</span>)}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.carbonScene}>
-      <div className={styles.carbonMatrix}>
-        {art.bars.map((bar, i) => <span key={i} style={{ "--height": `${bar}%` } as React.CSSProperties} />)}
-      </div>
-      <div className={styles.carbonRows}>
-        {art.lanes.map((lane) => <span key={lane}>{lane}</span>)}
-      </div>
-    </div>
-  );
-}
-
-function HeroDetailPanel({ system, art }: { system: SystemId; art: HeroArt }) {
-  if (system === "salt") {
-    return (
-      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.saltDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-        <div className={styles.quoteGrid}>
-          {["Bid", "Ask", "Vol", "PnL"].map((label, i) => (
-            <span key={label}>
-              <em>{label}</em>
-              <strong>{["41.92", "42.08", "1.2M", "+18"][i]}</strong>
-            </span>
-          ))}
-        </div>
-        <div className={styles.marketLadder}>
-          {art.bars.map((bar, i) => <span key={i} style={{ width: `${bar}%` }} />)}
-        </div>
-      </div>
-    );
-  }
-
-  if (system === "m3") {
-    return (
-      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.materialDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-        <div className={styles.blobField}>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={styles.materialTokenGrid}>
-          {art.chips.map((chip, i) => <span key={chip} style={{ "--tone": art.palette[i + 1] } as React.CSSProperties}>{chip}</span>)}
-        </div>
-      </div>
-    );
-  }
-
-  if (system === "fluent") {
-    return (
-      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.fluentDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-        <div className={styles.ribbonRow}>
-          {["add", "edit", "send"].map((icon) => <span key={icon} className="material-symbols-outlined">{icon}</span>)}
-        </div>
-        <div className={styles.fluentStatusCards}>
-          {art.lanes.map((lane, i) => (
-            <span key={lane}>
-              <em>{lane}</em>
-              <strong>{["Ready", "Synced", "Live"][i]}</strong>
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (system === "uoaui") {
-    return (
-      <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.auroraDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-        <div className={styles.orbitControls}>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={styles.waveform}>
-          {art.bars.map((bar, i) => <span key={i} style={{ height: `${bar}%` }} />)}
-        </div>
-        <div className={styles.glowChips}>
-          {art.chips.map((chip) => <span key={chip}>{chip}</span>)}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${styles.showcasePanel} ${styles.detailPanel} ${styles.carbonDetailPanel}`} style={{ "--delay": "0.84s" } as React.CSSProperties}>
-      <div className={styles.carbonTileSet}>
-        {art.bars.slice(0, 6).map((bar, i) => <span key={i} style={{ "--height": `${bar}%` } as React.CSSProperties} />)}
-      </div>
-      <div className={styles.carbonDataRows}>
-        {art.chips.map((chip) => <span key={chip}>{chip}</span>)}
-      </div>
-    </div>
-  );
+function densityLabel(system: SystemId, value: string | number): string {
+  if (system === "m3") return value === 0 ? "Default" : `${value}`;
+  const s = String(value);
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export const LandingGrid = React.memo(function LandingGrid() {
-  const activeSystem = useDesignHub((s) => s.activeSystem);
-  const setSelectedComponent = useDesignHub((s) => s.setSelectedComponent);
+  const state = useDesignHub();
+  const { activeSystem, setSelectedComponent, searchQuery, setSearchQuery } = state;
   const t = useTheme();
   const components = getComponents(activeSystem);
-  const categories = getCategories(activeSystem);
   const sysInfo = getSystemInfo(activeSystem);
   const previews = getPreviews(activeSystem);
+  const [filter, setFilter] = React.useState<Filter>("all");
+  const searchRef = React.useRef<HTMLInputElement | null>(null);
 
-  const h2Size = 22;
-  const bodySize = 16;
-  const captionSize = 13;
-  const outerPad = 48;
+  /* "/" jumps to search from anywhere on the overview (unless typing). */
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const thumbHeight = 120;
-  const cardGap = 20;
+  const q = searchQuery.trim().toLowerCase();
 
-  const featurePills = activeSystem === "salt"
-    ? [{ icon: "layers", label: "3-Layer Tokens" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
-    : activeSystem === "m3"
-    ? [{ icon: "palette", label: "Dynamic Color" }, { icon: "accessibility_new", label: "WCAG AA" }]
-    : activeSystem === "uoaui"
-    ? [{ icon: "blur_on", label: "Glassmorphism" }, { icon: "gradient", label: "Aurora Themes" }, { icon: "density_small", label: "4 Densities" }, { icon: "accessibility_new", label: "WCAG AA" }]
-    : activeSystem === "carbon"
-    ? [{ icon: "grid_view", label: "2px Grid" }, { icon: "palette", label: "4 Themes" }, { icon: "density_small", label: "7 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }]
-    : [{ icon: "palette", label: "Brand Theming" }, { icon: "straighten", label: "3 Sizes" }, { icon: "accessibility_new", label: "WCAG AA" }];
+  /* Grouping reads the same source of truth as the side panel. */
+  const foundations: Entry[] = components.filter((c) => getUiKitGroup(c.id, c.cat) === "Foundations" && matches(q, c.name, c.desc));
+  const componentItems = components.filter((c) => c.cat === "Components & Patterns" && getUiKitGroup(c.id, c.cat) === "Components");
+  const componentGroups = [...SUBCAT_ORDER, "More"]
+    .map((sub) => ({
+      sub,
+      items: componentItems
+        .filter((c) => (COMPONENT_SUBCATS[c.id] ?? "More") === sub && matches(q, c.name, c.desc, sub))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    .filter((g) => g.items.length > 0);
+  const componentCount = componentGroups.reduce((n, g) => n + g.items.length, 0);
+  const patterns: Entry[] = components
+    .filter((c) => c.cat === "Patterns" && getUiKitGroup(c.id, c.cat) === "Components" && matches(q, c.name, c.desc))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const tools: ToolEntry[] = [
+    ...components
+      .filter((c) => getUiKitGroup(c.id, c.cat) === "Tools")
+      .map((c) => ({ id: c.id, name: c.name, desc: c.desc, icon: TOOL_ICON[c.id] ?? "build" })),
+    { id: BUILDER_BLOCKS.id, name: BUILDER_BLOCKS.name, desc: BUILDER_BLOCKS.desc, icon: TOOL_ICON[BUILDER_BLOCKS.id] },
+    ...PAGE_TOOLS,
+  ].filter((c) => matches(q, c.name, c.desc));
 
-  const orgLabel = activeSystem === "m3" ? `Google · ${sysInfo.org}` : sysInfo.org;
-  const heroWeight = activeSystem === "salt" ? 700 : activeSystem === "m3" ? 400 : activeSystem === "carbon" ? 300 : 300;
-  const descSuffix = activeSystem === "salt"
-    ? " accessible, density-aware, token-driven design system."
-    : activeSystem === "m3"
-    ? " expressive, adaptive, and accessible design system."
-    : activeSystem === "uoaui"
-    ? " glassmorphism-first, accessible, and token-driven design system."
-    : activeSystem === "carbon"
-    ? " IBM's open-source design system for products and digital experiences."
-    : " expressive, adaptive, and cross-platform design system.";
+  const counts: Record<Section, number> = {
+    foundations: foundations.length,
+    components: componentCount,
+    patterns: patterns.length,
+    tools: tools.length,
+  };
+  const total = counts.foundations + counts.components + counts.patterns + counts.tools;
+  const visibleTotal = filter === "all" ? total : counts[filter];
+  const show = (s: Section) => (filter === "all" || filter === s) && counts[s] > 0;
 
-  const cardClass = activeSystem === "salt" ? "s-card" : activeSystem === "m3" ? "m3-card m3-card-outlined" : activeSystem === "uoaui" ? undefined : activeSystem === "carbon" ? "cb-tile" : "f-card";
-  const cardRadius = activeSystem === "m3" ? 12 : activeSystem === "uoaui" ? 14 : activeSystem === "carbon" ? 0 : 8;
-  const pillRadius = activeSystem === "salt" ? 4 : activeSystem === "carbon" ? 16 : 20;
-  const pillWeight = activeSystem === "salt" ? 600 : activeSystem === "carbon" ? 400 : 500;
-  const catWeight = activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 400 : 600;
-  const heroImage = HERO_IMAGE_BY_SYSTEM[activeSystem] ?? HERO_IMAGE_BY_SYSTEM.salt;
-  const heroArt = HERO_ART_BY_SYSTEM[activeSystem];
-  const heroAccent2 = activeSystem === "m3"
-    ? "#FFB4AB"
-    : activeSystem === "fluent"
-    ? "#4CC2FF"
-    : activeSystem === "carbon"
-    ? "#78A9FF"
-    : activeSystem === "uoaui"
-    ? "#f46a9b"
-    : "#8DDAFF";
-  const heroStyle = {
-    "--hero-bg": t.bg,
-    "--hero-surface": t.bg2,
-    "--hero-surface-strong": t.T.layerAccent01 || t.bg2,
-    "--hero-border": t.border,
-    "--hero-fg": t.fg,
-    "--hero-fg-muted": t.fg2,
-    "--hero-accent": t.accent,
-    "--hero-accent-2": heroAccent2,
-    "--hero-panel": activeSystem === "uoaui" ? "rgba(18, 22, 34, 0.56)" : activeSystem === "carbon" ? (t.T.layer01 || t.bg2) : t.bg2,
-    "--hero-title-weight": heroWeight,
-    "--hero-label-size": `${t.scale.labF}px`,
-    "--hero-pill-radius": `${pillRadius}px`,
-    "--hero-pill-weight": pillWeight,
-    "--hero-pill-size": `${t.scale.navF - 1}px`,
+  const filters: { id: Filter; label: string; count: number }[] = [
+    { id: "all", label: "All", count: total },
+    { id: "foundations", label: "Foundations", count: counts.foundations },
+    { id: "components", label: "Components", count: counts.components },
+    { id: "patterns", label: "Patterns", count: counts.patterns },
+    { id: "tools", label: "Tools", count: counts.tools },
+  ];
+
+  const dark = isDarkActive(state);
+  const density =
+    activeSystem === "salt" ? state.salt.density :
+    activeSystem === "m3" ? state.m3.density :
+    activeSystem === "fluent" ? state.fluent.size :
+    activeSystem === "carbon" ? state.carbon.density :
+    state.uoaui.density;
+
+  /* Chrome only. Card shape follows the system (Carbon square, Material
+     round); the specimen inside is the system's own component, untouched. */
+  const radius = activeSystem === "m3" ? 16 : activeSystem === "uoaui" ? 14 : activeSystem === "carbon" ? 0 : 8;
+  const cardBg =
+    activeSystem === "uoaui" ? (t.T.cardBg as string)
+    : activeSystem === "carbon" ? ((t.T.layer01 as string) ?? t.bg2)
+    : activeSystem === "m3" ? t.bg
+    : t.bg;
+  const vars = {
+    "--kit-bg": t.bg,
+    "--kit-card": cardBg,
+    "--kit-fg": t.fg,
+    "--kit-muted": t.fg2,
+    "--kit-border": t.border,
+    "--kit-accent": t.accent,
+    "--kit-accent-fg": t.accentFg,
+    "--kit-accent-text": t.accentText,
+    "--kit-focus": t.focusRing,
+    "--kit-radius": `${radius}px`,
+    "--kit-title-weight": activeSystem === "salt" ? 700 : activeSystem === "carbon" ? 300 : 500,
+    "--kit-glass": activeSystem === "uoaui" ? (t.T.glass as string) : "none",
+    fontFamily: t.font,
   } as React.CSSProperties;
 
-  const stageBg = getStageBg(t);
+  const card = (c: Entry, Heading: "h3" | "h4") => {
+    const Preview = previews[c.id];
+    return (
+      <li key={c.id} className={`uikit-card ${styles.card}`}>
+        {/* The specimen is the system's real component. It is shown, not
+            operated, here: inert keeps its controls out of the tab order and
+            the whole card opens the detail page. */}
+        <div className={`uikit-card-thumb ${styles.stage}`} aria-hidden="true" inert>
+          {Preview
+            ? <div className="uikit-card-specimen"><Preview /></div>
+            : <span className={`material-symbols-outlined ${styles.stageIcon}`}>widgets</span>}
+        </div>
+        <div className={styles.caption}>
+          <Heading className={styles.cardName}>
+            <button type="button" className="uikit-card-hit" onClick={() => setSelectedComponent(c.id)}>{c.name}</button>
+          </Heading>
+          {c.desc && <p className={styles.cardDesc}>{c.desc}</p>}
+        </div>
+      </li>
+    );
+  };
 
   return (
-    <div style={{ padding: `${outerPad}px ${outerPad + 8}px`, fontFamily: t.font, background: stageBg, minHeight: "100%" }}>
-      <div className={`${styles.heroShell} ${HERO_CLASS_BY_SYSTEM[activeSystem] ?? ""}`} style={heroStyle}>
-        <div className={styles.heroCopy}>
-          <div className={styles.orgLabel}>{orgLabel}</div>
-          <h1 className={styles.heroTitle}>{sysInfo.name}</h1>
-          <p className={styles.heroLead}>
-            Preview, compare, and copy tokens across five design systems.
-          </p>
-          <p className={styles.heroBody}>
-            {components.length} components across {categories.length} categories:{descSuffix}
-          </p>
-          <div className={styles.featurePills}>
-            {featurePills.map((s) => (
-              <div key={s.label} className={styles.featurePill}>
-                <span className={`material-symbols-outlined ${styles.featureIcon}`} style={{ fontSize: t.scale.navF }}>{s.icon}</span>
-                {s.label}
-              </div>
-            ))}
-          </div>
+    <div className={styles.page} style={vars} data-system={activeSystem}>
+      <header className={styles.head}>
+        <div>
+          <h1 className={styles.title}>{sysInfo.name}</h1>
+          <p className={styles.lede}>{SYSTEM_LEDE[activeSystem]}</p>
         </div>
+        <dl className={styles.facts} aria-label="Current view">
+          <div><dt>Maintainer</dt><dd>{sysInfo.org}</dd></div>
+          <div><dt>Mode</dt><dd>{dark ? "Dark" : "Light"}</dd></div>
+          <div><dt>{activeSystem === "fluent" ? "Size" : "Density"}</dt><dd>{densityLabel(activeSystem, density)}</dd></div>
+        </dl>
+      </header>
 
-        <div className={styles.heroVisual} aria-hidden="true">
-          <div className={styles.signalRail} />
-          <div className={styles.mediaFrame}>
-            <img src={publicAssetUrl(heroImage)} alt="" />
-          </div>
-          <div className={styles.motionBand} />
-          <div className={styles.showcaseStack}>
-            <HeroSignaturePanel art={heroArt} />
-            <div className={`${styles.showcasePanel} ${styles.systemPanel}`} style={{ "--delay": "0.42s" } as React.CSSProperties}>
-              <HeroSystemScene system={activeSystem} art={heroArt} />
-            </div>
-            <HeroDetailPanel system={activeSystem} art={heroArt} />
-          </div>
+      <div className={styles.toolbar}>
+        <div className={styles.search}>
+          <span className="material-symbols-outlined" aria-hidden="true">search</span>
+          <label htmlFor="kit-search" className="sr-only">Search {sysInfo.name}</label>
+          <input
+            id="kit-search"
+            ref={searchRef}
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Escape" && searchQuery) { e.preventDefault(); setSearchQuery(""); } }}
+            placeholder={`Search ${sysInfo.name}`}
+            aria-describedby="kit-search-status"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <kbd aria-hidden="true">/</kbd>
         </div>
+        <div className={styles.filters} role="group" aria-label="Show">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={filter === f.id}
+              disabled={f.count === 0 && filter !== f.id}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label} <span>{f.count}</span>
+            </button>
+          ))}
+        </div>
+        <p id="kit-search-status" className="sr-only" role="status" aria-live="polite">
+          {q ? `${visibleTotal} ${visibleTotal === 1 ? "entry matches" : "entries match"}` : `${visibleTotal} entries`}
+        </p>
       </div>
 
-      {(() => {
-        const toolItems: { id: string; name: string; desc: string }[] = [
-          ...components.filter((c) => getUiKitGroup(c.id, c.cat) === "Tools"),
-          { id: BUILDER_BLOCKS.id, name: BUILDER_BLOCKS.name, desc: BUILDER_BLOCKS.desc },
-        ];
-        if (toolItems.length === 0) return null;
-        return (
-          <div style={{ marginBottom: outerPad }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>
-              <h2 style={{ fontSize: h2Size, fontWeight: catWeight, color: t.fg, margin: 0 }}>Tools</h2>
-              <span style={{ fontSize: captionSize, color: t.fg3 }}>{toolItems.length}</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
-              {toolItems.map((c) => (
-                <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
-                  onClick={() => setSelectedComponent(c.id)}
-                  style={{
-                    width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
-                    borderRadius: cardRadius,
-                    border: activeSystem === "uoaui" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
-                    background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
-                    backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                    WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                  }}
-                >
-                  <div className="uikit-card-thumb" style={{
-                    background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
-                    height: thumbHeight,
-                    borderBottom: `1px solid ${t.borderSubtle}`,
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 40, color: t.accent, opacity: 0.85 }}>
-                      {c.id === "tokens" ? "palette" : c.id === "audit" ? "fact_check" : "widgets"}
-                    </span>
-                  </div>
-                  <div style={{ padding: "14px 16px 16px" }}>
-                    <div style={{ fontSize: bodySize, fontWeight: 600, color: t.fg, lineHeight: 1.3, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                    <div style={{ fontSize: t.scale.labF + 1, color: t.fg2, marginTop: 4, lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || "Tool"}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+      {show("foundations") && (
+        <section className={styles.section} aria-labelledby="kit-foundations">
+          <div className={styles.sectionHead}>
+            <h2 id="kit-foundations">Foundations</h2>
+            <span>{counts.foundations}</span>
+            <p>Colour, type, spacing and the rules the components are built on.</p>
           </div>
-        );
-      })()}
+          <ul className={styles.grid}>{foundations.map((c) => card(c, "h3"))}</ul>
+        </section>
+      )}
 
-      {categories.map((cat) => {
-        const catItems = components.filter((c) => c.cat === cat && getUiKitGroup(c.id, c.cat) !== "Tools");
-        if (catItems.length === 0) return null;
-        return (
-          <div key={cat} style={{ marginBottom: outerPad }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: t.scale.gap + 2, marginBottom: t.scale.gap * 3 }}>
-              <h2 style={{ fontSize: h2Size, fontWeight: catWeight, color: t.fg, margin: 0 }}>{cat}</h2>
-              <span style={{ fontSize: captionSize, color: t.fg3 }}>{catItems.length}</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: cardGap }}>
-              {catItems.map((c) => {
-                const Preview = previews[c.id];
-                return (
-                  <button key={c.id} className={`uikit-card${cardClass ? ` ${cardClass}` : ""}`}
-                    onClick={() => setSelectedComponent(c.id)}
-                    style={{
-                      width: "100%", textAlign: "left", padding: 0, fontFamily: t.font, overflow: "hidden", cursor: "pointer",
-                      borderRadius: cardRadius,
-                      border: activeSystem === "uoaui" ? `1px solid ${t.border}` : activeSystem === "carbon" ? `1px solid transparent` : undefined,
-                      background: activeSystem === "uoaui" ? t.T.cardBg : activeSystem === "carbon" ? t.T.layer01 : undefined,
-                      backdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                      WebkitBackdropFilter: activeSystem === "uoaui" ? t.T.glass : undefined,
-                    }}
-                  >
-                    <div className="uikit-card-thumb" style={{
-                      background: activeSystem === "uoaui" && t.T.gradient ? t.T.gradient : activeSystem === "m3" ? t.bg2 : activeSystem === "carbon" ? t.T.layerAccent01 : undefined,
-                      height: thumbHeight,
-                      borderBottom: `1px solid ${t.borderSubtle}`,
-                    }}>
-                      {Preview
-                        ? <div className="uikit-card-specimen" style={{ pointerEvents: "none" }}><Preview /></div>
-                        : <span className="material-symbols-outlined" style={{ fontSize: 40, color: t.fg3, opacity: 0.4 }}>widgets</span>}
-                    </div>
-                    <div style={{ padding: "14px 16px 16px" }}>
-                      <div style={{ fontSize: bodySize, fontWeight: 600, color: t.fg, lineHeight: 1.3, letterSpacing: activeSystem === "m3" ? "0.1px" : undefined }}>{c.name}</div>
-                      <div style={{ fontSize: t.scale.labF + 1, color: t.fg2, marginTop: 4, lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{c.desc || cat}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+      {show("components") && (
+        <section className={styles.section} aria-labelledby="kit-components">
+          <div className={styles.sectionHead}>
+            <h2 id="kit-components">Components</h2>
+            <span>{counts.components}</span>
+            <p>Live specimens. Open one for variants, properties, tokens and code.</p>
           </div>
-        );
-      })}
+          {componentGroups.map((g) => (
+            <div key={g.sub} className={styles.subgroup}>
+              <h3>{g.sub}</h3>
+              <ul className={styles.grid}>{g.items.map((c) => card(c, "h4"))}</ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {show("patterns") && (
+        <section className={styles.section} aria-labelledby="kit-patterns">
+          <div className={styles.sectionHead}>
+            <h2 id="kit-patterns">Patterns</h2>
+            <span>{counts.patterns}</span>
+            <p>Page layouts and flows assembled from several components.</p>
+          </div>
+          <ul className={styles.grid}>{patterns.map((c) => card(c, "h3"))}</ul>
+        </section>
+      )}
+
+      {show("tools") && (
+        <section className={styles.section} aria-labelledby="kit-tools">
+          <div className={styles.sectionHead}>
+            <h2 id="kit-tools">Tools</h2>
+            <span>{counts.tools}</span>
+            <p>Inspect tokens, audit pasted code and edit a theme.</p>
+          </div>
+          <ul className={styles.toolGrid}>
+            {tools.map((c) => (
+              <li key={c.id} className={`uikit-card ${styles.tool}`}>
+                <span className={`material-symbols-outlined ${styles.toolIcon}`} aria-hidden="true">{c.icon}</span>
+                <div className={styles.toolBody}>
+                  <h3 className={styles.cardName}>
+                    {c.href
+                      ? <Link href={c.href} className="uikit-card-hit">{c.name}</Link>
+                      : <button type="button" className="uikit-card-hit" onClick={() => setSelectedComponent(c.id)}>{c.name}</button>}
+                  </h3>
+                  <p className={styles.toolDesc}>{c.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {visibleTotal === 0 && (
+        <div className={styles.empty}>
+          <strong>
+            {q ? <>Nothing in {sysInfo.name} matches &ldquo;{searchQuery.trim()}&rdquo;</> : <>No {filter} in {sysInfo.name}</>}
+          </strong>
+          <p>
+            {q && filter !== "all" && total > 0
+              ? `There ${total === 1 ? "is 1 match" : `are ${total} matches`} in other sections.`
+              : q
+              ? "Try a shorter word, or a component name such as button or table."
+              : "Choose another section."}
+          </p>
+          <div className={styles.emptyActions}>
+            {q && <button type="button" onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}>Clear search</button>}
+            {filter !== "all" && <button type="button" onClick={() => setFilter("all")}>Show all sections</button>}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
