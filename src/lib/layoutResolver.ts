@@ -264,6 +264,9 @@ export function computeItemStyle(
     const phone = narrowSpan(layout.spanPhone);
     if (tablet !== null) responsive["--span-tablet"] = tablet;
     if (phone !== null) responsive["--span-phone"] = phone;
+    /* Rows spanned on the desktop frame (builder.css applies it there only). */
+    const rows = Math.round(Number(layout.rowSpan));
+    if (Number.isFinite(rows) && rows >= 2 && rows <= 12) responsive["--row-span"] = rows;
     if (minCss) style.minWidth = minCss;
     else if (isTinyWidth(layout.width)) style.minWidth = `${SLIVER_MIN_PX}px`;
     if (maxCss) style.maxWidth = maxCss;

@@ -45,7 +45,7 @@ function cardColorOf(el: HTMLElement): string | undefined {
   return color && color !== "transparent" && !/, 0\)$/.test(color) ? color : undefined;
 }
 
-function readThemeVars(el: HTMLElement): ThemeVars {
+export function readThemeVars(el: HTMLElement): ThemeVars {
   const cs = getComputedStyle(el);
   const v = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
   return {
@@ -157,6 +157,8 @@ export interface ChartSeries {
 
 /** Everything a chart block can say about itself. */
 export interface ChartProps {
+  gaugeSweep?: number;
+  gaugeCaption?: string;
   title?: string;
   value?: number;
   /** Domain data the template/model can pass so charts aren't generic. */
@@ -653,6 +655,11 @@ function chartOptions(
       const number = props.valueDecimals !== undefined ? `{y:.${props.valueDecimals}f}` : "{y}";
       /* In a framed panel the dome uses the room the title would have taken. */
       const framed = Boolean(props.hideTitle);
+      /* A wider sweep (220 degrees) is a thin ring with its caption inside. */
+      const sweep = props.gaugeSweep && props.gaugeSweep > 180 ? Math.min(300, props.gaugeSweep) : 180;
+      const wide = sweep > 180;
+      const ring = wide ? "86%" : framed ? "74%" : "60%";
+      const caption = props.gaugeCaption ? `<br/><span style="font-size:${TIP_SIZE};font-weight:400;color:${v.fgTer}">${props.gaugeCaption}</span>` : "";
       return {
         ...t,
         /* Framed: no outer spacing, so the dome has the whole tile. */
@@ -663,13 +670,13 @@ function chartOptions(
           /* The pane is sized from the smaller side of the plot, so the dome
              always fits: a larger size was cut off at the sides of a narrow
              tile. */
-          center: ["50%", framed ? "74%" : "70%"], size: "100%", startAngle: -90, endAngle: 90,
+          center: ["50%", wide ? "58%" : framed ? "74%" : "70%"], size: "100%", startAngle: -sweep / 2, endAngle: sweep / 2,
           background: [{
             /* A wash of the text colour: appending hex alpha to the primary
                only works when it is a hex string, and drew a black track
                when the token resolved to rgb(). */
             backgroundColor: Highcharts.color(v.fg).setOpacity(0.1).get("rgba") as string,
-            innerRadius: framed ? "74%" : "60%", outerRadius: "100%",
+            innerRadius: ring, outerRadius: "100%",
             shape: "arc" as const, borderWidth: 0,
           }],
         },
@@ -681,13 +688,13 @@ function chartOptions(
         series: [{
           name: "Health", data: [val], type: "solidgauge" as any,
           dataLabels: {
-            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">${number}${suffix}</span>`,
-            borderWidth: 0, y: framed ? -28 : -20,
+            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">${number}${suffix}</span>${caption}`,
+            borderWidth: 0, y: wide ? -24 : framed ? -28 : -20,
             style: { textOutline: "none" },
           },
           /* One mark: nothing beside it to separate it from. */
           borderWidth: 0,
-          innerRadius: framed ? "74%" : "60%", radius: "100%",
+          innerRadius: ring, radius: "100%",
         }],
       };
     }
@@ -862,14 +869,19 @@ interface SimulatedHighchartProps {
   pointColorsByName?: Record<string, string>;
   selected?: string;
   onSelectPoint?: (name: string) => void;
+  /** Gauge: degrees the arc sweeps (180 by default; 220 draws a thin ring). */
+  gaugeSweep?: number;
+  /** Gauge: a caption under the value ("% passive"). */
+  gaugeCaption?: string;
 }
 
 const DEFAULT_CHART_HEIGHT = 250;
+const TIP_SIZE = `${11}px`;
 
 export function SimulatedHighchart({
   chartType, title, value, system, seriesColors, seriesData, categories, series,
   height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
-  valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, onSelectPoint,
+  valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, onSelectPoint, gaugeSweep, gaugeCaption,
 }: SimulatedHighchartProps) {
   /* The click handler is read through a ref so a new function identity each
      render does not rebuild the chart. */
@@ -927,12 +939,12 @@ export function SimulatedHighchart({
       vars,
       {
         title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
-        valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected,
+        valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, gaugeSweep, gaugeCaption,
         ...(selectable ? { onSelectPoint: (name: string) => onSelectRef.current?.(name) } : {}),
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, yAxisCategories?.join("|"), bandName, pointColorsKey, selected, selectable]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, yAxisCategories?.join("|"), bandName, pointColorsKey, selected, selectable, gaugeSweep, gaugeCaption]);
 
   const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (

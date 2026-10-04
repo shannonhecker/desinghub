@@ -57,6 +57,8 @@ import { PanelFrame } from "./PanelFrame";
 import { RecordPanelBlock } from "./RecordPanel";
 import { EntityHeaderBlock, HeroSearchBlock, LauncherCardBlock, MetricTileBlock, VerdictCardBlock } from "./ReportBlocks";
 import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock, ContextBarBlock } from "./ChromeBars";
+import { ExecutionChartBlock } from "./ExecutionChart";
+import { InstrumentHeaderBlock } from "./InstrumentHeader";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
@@ -1739,6 +1741,8 @@ function HighchartBlockRenderer({
       pointColorsByName={p.pointColorsByName && typeof p.pointColorsByName === "object" ? (p.pointColorsByName as Record<string, string>) : undefined}
       selected={selection?.selected}
       onSelectPoint={onSelectPoint}
+      gaugeSweep={typeof p.gaugeSweep === "number" ? p.gaugeSweep : undefined}
+      gaugeCaption={text(p.gaugeCaption)}
     />
     </div>
   );
@@ -1977,6 +1981,8 @@ const RENDERERS: Record<string, React.FC<any>> = {
   TabStrip: TabStripBlock as React.FC<{ system: DesignSystem }>,
   NavGroup: NavGroupBlock as React.FC<{ system: DesignSystem }>,
   ContextBar: ContextBarBlock as React.FC<{ system: DesignSystem }>,
+  ExecutionChart: ExecutionChartBlock as React.FC<{ system: DesignSystem }>,
+  InstrumentHeader: InstrumentHeaderBlock as React.FC<{ system: DesignSystem }>,
   PageTitle: PageTitleBlock as React.FC<{ system: DesignSystem }>,
   HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,

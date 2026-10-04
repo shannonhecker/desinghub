@@ -19,8 +19,12 @@ export interface RecordPair {
   compact?: boolean;
   /** A money amount: converted to the selected currency. */
   money?: boolean;
-  /** "flag": a country code with its flag. "badge": a toned badge (ratings). */
-  as?: "flag" | "badge";
+  /** "flag": a country code with its flag. "badge": a toned badge (ratings).
+   *  "signed": a figure with its sign, good when positive and bad when not. */
+  as?: "flag" | "badge" | "signed";
+  /** Text before and after the figure ("EUR ", " pips"). */
+  prefix?: string;
+  suffix?: string;
 }
 
 export interface RecordTableRow {
@@ -32,7 +36,7 @@ export interface RecordTableRow {
 }
 
 export type RecordSection =
-  | { type: "pairs"; items: RecordPair[]; /** "rows": one pair per line, label left and value right. */ layout?: "rows" }
+  | { type: "pairs"; items: RecordPair[]; /** "rows": one pair per line, label left and value right. */ layout?: "rows"; /** Band alternate rows. */ zebra?: boolean }
   | { type: "table"; title?: string; columns: string[]; kind?: GridColumnKind; decimals?: number; rows: RecordTableRow[] }
   | { type: "trend"; title?: string; field: string; categories?: string[]; seriesName?: string };
 
@@ -93,9 +97,11 @@ export interface ResolvedPair {
   text: string;
   flag?: string;
   tone?: GridTone;
+  /** A signed figure: the tone its text takes. */
+  signed?: GridTone;
 }
 export type ResolvedSection =
-  | { type: "pairs"; items: ResolvedPair[]; layout?: "rows" }
+  | { type: "pairs"; items: ResolvedPair[]; layout?: "rows"; zebra?: boolean }
   | { type: "table"; title?: string; columns: string[]; rows: { label: string; cells: string[]; change: DeltaView | null }[] }
   | { type: "trend"; title?: string; categories: string[]; points: number[]; seriesName: string };
 
@@ -125,13 +131,16 @@ export function resolveRecord(binding: RecordBinding, dataset: ReportDataset, st
       return {
         type: "pairs",
         ...(section.layout === "rows" ? { layout: "rows" as const } : {}),
+        ...(section.zebra ? { zebra: true } : {}),
         items: section.items.map((item) => {
           const raw = row[item.field];
           const value = item.money && typeof raw === "number" ? raw * rate : raw;
           const text = formatGridValue({ field: item.field, header: item.label, kind: item.kind, decimals: item.decimals, compact: item.compact, ...(item.money ? { currency } : {}) }, value);
+          const signed = item.as === "signed" && typeof raw === "number";
           return {
             label: item.label,
-            text,
+            text: `${item.prefix ?? ""}${signed && raw >= 0 ? "+" : ""}${text}${item.suffix ?? ""}`,
+            ...(signed ? { signed: (raw >= 0 ? "good" : "bad") as GridTone } : {}),
             ...(item.as === "flag" && flagEmoji(raw) ? { flag: flagEmoji(raw) } : {}),
             ...(item.as === "badge" ? { tone: valueTone(RATING_TONES, raw, "bad") } : {}),
           };
