@@ -79,7 +79,6 @@
   /* The sample feed's controls: one slot as tall as the tallest compact
      design-system button (Carbon sm), so the header is one height in all five. */
   --dh-feed-h:              32px;
-  --dh-feed-status-w:       60px;
   /* Dense text navigation. */
   --dh-nav-row:             28px;
   --dh-nav-row-rail:        36px;

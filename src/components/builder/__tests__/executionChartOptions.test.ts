@@ -4,7 +4,7 @@ import { executionDataset, EXECUTION_ORDERS, MINUTE, parseExecutionTime } from "
 import { EXECUTION_KEYS, resolveExecution } from "@/lib/executionModel";
 import { createTicker, feedBaseView, withFeed } from "@/lib/executionFeed";
 import type { ThemeVars } from "../SimulatedHighchart";
-import { applyFeedView, axisEnd, barCountdown, buildExecutionOptions, executionSeriesData, type ChartFrame } from "../executionChartOptions";
+import { applyFeedView, axisEnd, barCountdown, buildExecutionOptions, contrastRatio, executionSeriesData, layoutTags, pillColors, type ChartFrame } from "../executionChartOptions";
 
 const vars: ThemeVars = { primary: "teal", bg: "white", fg: "black", fgSec: "gray", fgTer: "silver", surface: "white", border: "silver", positive: "green", warning: "orange", negative: "red" };
 const palette = ["navy", "olive", "purple", "maroon", "fuchsia", "lime", "aqua"];
@@ -77,7 +77,9 @@ describe("executionChartOptions", () => {
     const frame: ChartFrame = { view: before, countdown: null, counts: {} };
     const o = buildExecutionOptions(frame, vars, palette, { width: 900, height: 600 }, () => {});
     expect((o.xAxis as { max: number }).max).toBe(axisEnd(before.times.length));
-    expect(axisEnd(150) - (150 - 0.5)).toBe(12);
+    /* About a twentieth of the plot, at least two bars, on any interval. */
+    expect(axisEnd(150) - (150 - 0.5)).toBe(8);
+    expect(axisEnd(30) - (30 - 0.5)).toBe(2);
     const { chart, axisUpdate } = fakeChart(frame);
     const samples = feedOf(14);
     let steps = 0;
@@ -121,5 +123,33 @@ describe("executionChartOptions", () => {
     const d = executionSeriesData(view, vars, palette);
     expect(d.bid).toHaveLength(view.times.length);
     expect(d.trades).toHaveLength(view.fills.length);
+  });
+
+  it("price tags never overlap one another and stay inside the plot", () => {
+    const H = 20;
+    const check = (ys: number[], top: number, bottom: number) => {
+      const out = layoutTags(ys, top, bottom, H, 2);
+      const sorted = [...out].sort((a, b) => a - b);
+      for (let i = 1; i < sorted.length; i++) expect(sorted[i] - sorted[i - 1]).toBeGreaterThanOrEqual(H + 2 - 1e-9);
+      for (const y of out) { expect(y).toBeGreaterThanOrEqual(top + H / 2); expect(y).toBeLessThanOrEqual(bottom - H / 2); }
+      return out;
+    };
+    /* Three at the same price near the bottom: pushed up, not off the plot. */
+    check([395, 396, 397], 0, 400);
+    check([5, 5, 6, 200], 0, 400);
+    /* Apart already: untouched. */
+    expect(check([50, 150, 250], 0, 400)).toEqual([50, 150, 250]);
+  });
+
+  it("every tag's text reads at 4.5:1 or better on its fill, light and dark", () => {
+    const themes: ThemeVars[] = [
+      { ...vars, card: "rgb(255,255,255)", fg: "rgb(20,20,20)", positive: "rgb(46,125,50)" },
+      { ...vars, card: "rgb(32,34,38)", fg: "rgb(235,235,235)", positive: "rgb(102,187,106)" },
+    ];
+    const palettes = [[0, 0, 0, 0, 0, "rgb(120,90,200)", 0].map(String), [0, 0, 0, 0, 0, "rgb(200,170,255)", 0].map(String), [0, 0, 0, 0, 0, "rgb(150,130,230)", 0].map(String)];
+    for (const v of themes) for (const p of palettes) for (const key of ["bid", "limit", "avg", "arrival", "riskTransfer"] as const) {
+      const c = pillColors(key, v, p);
+      expect(contrastRatio(c.text, c.fill), `${key} ${c.text} on ${c.fill}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

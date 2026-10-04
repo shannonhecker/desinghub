@@ -49,7 +49,7 @@ async function applyFx(page: Page, opts: { reducedMotion?: boolean } = {}) {
 const stage = (page: Page) => page.locator(".present-stage");
 const bars = async (page: Page) => Number(await stage(page).locator(".dh-instrument").getAttribute("data-feed-bars"));
 const chartBars = async (page: Page) => Number(await stage(page).locator(".dh-exec").getAttribute("data-feed-bars"));
-const feedStatus = (page: Page) => stage(page).locator(".dh-feed-status");
+const feedStatus = (page: Page) => stage(page).locator(".dh-feed-state");
 const pauseButton = (page: Page) => stage(page).getByRole("button", { name: "Pause the sample feed" });
 const resumeButton = (page: Page) => stage(page).getByRole("button", { name: "Resume the sample feed" });
 const resetButton = (page: Page) => stage(page).getByRole("button", { name: "Reset the sample feed" });
@@ -61,7 +61,7 @@ test.describe("Builder - FX Execution sample feed", () => {
   test("advances a bar a second; chart, header and statistics move together; Pause holds it; Resume goes on", async ({ page }) => {
     await applyFx(page);
     await expect(feedStatus(page)).toHaveText("Live");
-    await expect(stage(page).locator(".dh-instrument-note")).toHaveText("Sample data");
+    await expect(stage(page).locator(".dh-feed-note")).toHaveText("Sample data");
     await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(3);
     /* The chart holds the same bars as the header. */
     await expect.poll(async () => (await chartBars(page)) === (await bars(page))).toBe(true);
@@ -110,9 +110,11 @@ test.describe("Builder - FX Execution sample feed", () => {
       await resetButton(page).click();
       expect(await bars(page)).toBeLessThanOrEqual(1);
     }
-    /* Paused straight after a reset: the session as seeded. */
+    /* Paused, then reset: the session as seeded. */
+    await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
     await pauseButton(page).click();
-    if (await resetButton(page).isEnabled()) await resetButton(page).click();
+    await expect(resetButton(page)).toBeEnabled();
+    await resetButton(page).click();
     await expect.poll(() => bars(page)).toBe(0);
     await expect(fills).toHaveText("13");
     await expect(stage(page).locator(".dh-instrument-status")).toHaveText("1m Line · Percentile · 64% done");
@@ -172,17 +174,49 @@ test.describe("Builder - FX Execution sample feed", () => {
     await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThan(held);
   });
 
-  test("Edit is static; a paused feed stays switched off (fxLive Off)", async ({ page }) => {
+  test("Edit is static; Edit and Present show the same header controls", async ({ page }) => {
     await applyFx(page);
     await expect.poll(() => bars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
     await pauseButton(page).click();
+    /* The feed group's box in its header, in design pixels: its inset from
+       the header's right edge, its width and its height. */
+    const box = (scope: string) => page.locator(`${scope} .dh-feed`).evaluate((el) => {
+      /* The scale the canvas is drawn at, from the header's own layout width
+         (Edit and Present fit the frame to the window differently). */
+      const header = el.closest<HTMLElement>(".dh-instrument")!;
+      const hr = header.getBoundingClientRect();
+      const zoom = hr.width / header.offsetWidth;
+      const r = el.getBoundingClientRect();
+      return [hr.right - r.right, r.width, r.height].map((n) => Math.round(n / zoom));
+    });
+    await expect(feedStatus(page)).toHaveText("Paused");
+    await expect(resumeButton(page)).toBeVisible();
+    const present = await box(".present-stage");
     await page.getByRole("button", { name: "Edit canvas" }).click();
     const edit = page.locator(".bp-viewport-wrapper");
     await expect(edit.locator(".dh-instrument")).toBeVisible();
     /* Edit shows the report as saved, without the feed's bars. */
     await expect(edit.locator(".dh-instrument")).toHaveAttribute("data-feed-bars", "0");
-    await expect(edit.locator(".dh-feed-status")).toHaveText("Paused");
+    await expect(edit.locator(".dh-feed-state")).toHaveText("Paused");
+    await expect(edit.getByRole("button", { name: "Resume the sample feed" })).toBeVisible();
+    const inEdit = await box(".bp-viewport-wrapper");
+    inEdit.forEach((v, i) => expect(Math.abs(v - present[i]), `feed group ${["inset", "width", "height"][i]}: edit ${inEdit} present ${present}`).toBeLessThanOrEqual(1));
     await expect(edit.locator(".dh-instrument-status")).toHaveText("1m Line · Percentile · 64% done");
+  });
+
+  test("a resize resizes the drawn chart; it does not rebuild it", async ({ page }) => {
+    await applyFx(page);
+    await pauseButton(page).click();
+    const svg = stage(page).locator(".dh-exec .highcharts-root");
+    await svg.evaluate((el) => { (el as unknown as { __fxMark: boolean }).__fxMark = true; });
+    const width = () => svg.evaluate((el) => Number(el.getAttribute("width")));
+    const before = await width();
+    await page.setViewportSize({ width: 1180, height: 900 });
+    await expect.poll(width).not.toBe(before);
+    /* The same drawn chart, at its container's new width. */
+    expect(await svg.evaluate((el) => Boolean((el as unknown as { __fxMark?: boolean }).__fxMark))).toBe(true);
+    const plot = await stage(page).locator(".dh-exec-plot").evaluate((el) => (el as HTMLElement).clientWidth);
+    expect(Math.abs((await width()) - plot)).toBeLessThanOrEqual(1);
   });
 
   test("the chart is drawn at its container's width from its first paint", async ({ page }) => {
@@ -197,7 +231,7 @@ test.describe("Builder - FX Execution sample feed", () => {
     const header = stage(page).locator(".dh-instrument");
     const heights: number[] = [];
     const real: Record<(typeof SYSTEMS)[number], RegExp> = {
-      "Salt DS": /saltButton/, "Material 3": /MuiButton-root/, "Fluent 2": /fui-Button/, uoaui: /a-btn/, Carbon: /cds--btn/,
+      "Salt DS": /saltButton/, "Material 3": /MuiIconButton-root/, "Fluent 2": /fui-Button/, uoaui: /a-btn/, Carbon: /cds--btn/,
     };
     for (const system of SYSTEMS) {
       if (system !== "Salt DS") {
@@ -206,6 +240,13 @@ test.describe("Builder - FX Execution sample feed", () => {
       }
       await expect(resumeButton(page)).toHaveClass(real[system]);
       await expect(resetButton(page)).toHaveClass(real[system]);
+      /* A target of at least 24px in every system. */
+      const zoom = Number(await page.locator(".present-stage .bp-device-frame").getAttribute("data-frame-zoom")) || 1;
+      for (const button of [resumeButton(page), resetButton(page)]) {
+        const box = (await button.boundingBox())!;
+        expect(box.height / zoom, `${system} button height`).toBeGreaterThanOrEqual(24);
+        expect(box.width / zoom, `${system} button width`).toBeGreaterThanOrEqual(24);
+      }
       for (const mode of ["light", "dark"] as const) {
         await page.getByRole("button", { name: `Switch to ${mode} mode` }).click().catch(() => {});
         heights.push(await header.evaluate((el) => (el as HTMLElement).offsetHeight));

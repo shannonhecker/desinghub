@@ -21,13 +21,19 @@ const mount = (state: Record<string, string> = {}, active = true) => act(() => r
 const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
 let reducedMotion = false;
+let motionListeners: (() => void)[] = [];
 let hidden = false;
 beforeEach(() => {
   (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
   vi.useFakeTimers();
   reducedMotion = false;
   hidden = false;
-  window.matchMedia = ((q: string) => ({ matches: q.includes("reduce") && reducedMotion, media: q, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+  motionListeners = [];
+  window.matchMedia = ((q: string) => ({
+    get matches() { return q.includes("reduce") && reducedMotion; }, media: q,
+    addEventListener(_: string, fn: () => void) { motionListeners.push(fn); },
+    removeEventListener(_: string, fn: () => void) { motionListeners = motionListeners.filter((f) => f !== fn); },
+  })) as unknown as typeof window.matchMedia;
   Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (hidden ? "hidden" : "visible") });
   __resetFeedForTests();
   host = document.createElement("div");
@@ -66,6 +72,20 @@ describe("useExecutionFeed", () => {
     act(() => resumeFeed());
     advance(2000);
     expect(latest!.samples).toHaveLength(2);
+  });
+
+  it("follows the reduced-motion setting when it changes during the session", () => {
+    mount();
+    advance(2000);
+    reducedMotion = true;
+    act(() => motionListeners.forEach((f) => f()));
+    advance(3000);
+    expect(latest!.samples).toHaveLength(2);
+    expect(latest!.running).toBe(false);
+    reducedMotion = false;
+    act(() => motionListeners.forEach((f) => f()));
+    advance(1000);
+    expect(latest!.samples).toHaveLength(3);
   });
 
   it("pauses while the tab is hidden and goes on when it is shown again", () => {

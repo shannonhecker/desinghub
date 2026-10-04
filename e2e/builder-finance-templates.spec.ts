@@ -58,14 +58,18 @@ async function openBuilder(page: Page) {
 }
 
 async function applyTemplate(page: Page, label: string) {
-  /* FX Execution's sample feed starts paused under reduced motion: its
-     figures hold still for the assertions, and parity is measured with the
-     feed paused (the feed changes numbers, never a block's size). */
-  if (label === "FX Execution") await page.emulateMedia({ reducedMotion: "reduce" });
   await openBuilder(page);
   await page.getByRole("button", { name: /Browse templates/ }).click();
   await page.getByRole("button", { name: `Use the ${label} template` }).click();
   await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  /* FX Execution: parity is measured with the sample feed switched off
+     (fxLive: Off), under the default motion setting. The feed changes
+     numbers, never a block's size; switched off, Edit and Present show the
+     same header controls. */
+  if (label === "FX Execution") {
+    await page.locator(".present-stage").getByRole("button", { name: "Pause the sample feed" }).click();
+    await expect(page.locator(".present-stage .dh-feed-status")).toHaveClass(/is-paused/);
+  }
   await settle(page);
 }
 

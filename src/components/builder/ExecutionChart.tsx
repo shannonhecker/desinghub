@@ -12,14 +12,14 @@ import {
   EXECUTION_CHART_STYLES, EXECUTION_INTERVALS, EXECUTION_KEYS, EXECUTION_OVERLAYS, EXECUTION_RANGES,
   executionRows, resolveExecution, toggleOverlay,
 } from "@/lib/executionModel";
-import { executionOrderOf, feedSwitchedOn, withFeed, type FeedSample } from "@/lib/executionFeed";
+import { executionOrderOf, feedSwitchedOn, type FeedSample } from "@/lib/executionFeed";
 import type { GridColumn } from "@/lib/dataGridModel";
 import { readThemeVars, type ThemeVars } from "./SimulatedHighchart";
-import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, type ChartFrame } from "./executionChartOptions";
+import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, type ChartFrame } from "./executionChartOptions";
 import { SimulatedDataGrid } from "./SimulatedDataGrid";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
-import { useExecutionFeed } from "./useExecutionFeed";
+import { liveDataset, useExecutionFeed } from "./useExecutionFeed";
 
 /* ══════════════════════════════════════════════════════════
    ExecutionChart - one order worked through a session.
@@ -37,6 +37,11 @@ import { useExecutionFeed } from "./useExecutionFeed";
 /** Report-state key: "Table" swaps the chart for its bars as a grid. */
 const VIEW_KEY = "fxView";
 const RAIL_WIDTH = 44;
+/* On a phone (the panel narrower than PHONE_PANEL): a slimmer rail and a
+   chart that fits a phone screen rather than the desktop column's height. */
+const RAIL_WIDTH_PHONE = 36;
+const PHONE_PANEL = 480;
+const PHONE_HEIGHT = 520;
 const RANGE_ROW = 44;
 const PAD = 12;
 
@@ -62,7 +67,10 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const mode = useBuilder((s) => s.mode);
   const dataset = useCanvasDataset();
   const readOnly = usePreviewReadOnly();
-  const height = panelHeightOf(block?.props ?? {});
+  const [phone, setPhone] = useState(false);
+  const fullHeight = panelHeightOf(block?.props ?? {});
+  const height = phone ? Math.min(fullHeight, PHONE_HEIGHT) : fullHeight;
+  const rail = phone ? RAIL_WIDTH_PHONE : RAIL_WIDTH;
   const view = useMemo(() => (dataset ? resolveExecution(dataset, reportState) : null), [dataset, reportState]);
   const showTable = reportState[VIEW_KEY] === "Table";
   /* The sample feed: live while presenting with it switched on. Its bars
@@ -70,14 +78,19 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const feed = useExecutionFeed({ dataset, state: reportState, active: readOnly && feedSwitchedOn(reportState) });
   const peek = readOnly ? feed.peek : NO_SAMPLES;
   const order = dataset ? executionOrderOf(dataset, reportState) : null;
-  const liveView = (samples: readonly FeedSample[]) => (dataset && order && samples.length ? resolveExecution(withFeed(dataset, order, samples), reportState) : view);
+  const liveView = (samples: readonly FeedSample[]) => (dataset && order && samples.length ? resolveExecution(liveDataset(dataset, order, samples), reportState) : view);
 
   const rootRef = useRef<HTMLElement>(null);
   const plotRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
   const pillsRef = useRef<Highcharts.SVGElement[]>([]);
   const [vars, setVars] = useState<ThemeVars | null>(null);
-  const [plotWidth, setPlotWidth] = useState(0);
+  /* The plot's width lives outside the options: a resize is applied to the
+     drawn chart (setSize), never a rebuild, so later zoom and pan survive it.
+     Only crossing the phone width rebuilds (the price gutter changes). */
+  const widthRef = useRef(0);
+  const [hasWidth, setHasWidth] = useState(false);
+  const [narrow, setNarrow] = useState(false);
   const [rebuilds, setRebuilds] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
   const palette = useMemo(() => getPalette(system), [system]);
@@ -91,18 +104,34 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   }, [system, mode]);
   const hasView = view !== null;
   useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const measure = () => setPhone(el.clientWidth > 0 && el.clientWidth < PHONE_PANEL);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasView]);
+  useLayoutEffect(() => {
     const el = plotRef.current;
     if (!el) return;
-    setPlotWidth(el.clientWidth);
+    const measure = () => {
+      const width = el.clientWidth;
+      widthRef.current = width;
+      setHasWidth(width > 0);
+      setNarrow(width > 0 && width < NARROW_CHART);
+      return width;
+    };
+    measure();
     if (typeof ResizeObserver === "undefined") return;
     /* The stage can still be settling its frame when the chart mounts. A
        resize is applied to the drawn chart at once, in the observer (after
        layout, before paint), so no frame shows it at a stale width. */
     const observer = new ResizeObserver(() => {
-      const width = el.clientWidth;
+      const width = measure();
       const chart = chartRef.current?.chart;
       if (chart && width > 0 && chart.chartWidth !== width) chart.setSize(width, undefined, false);
-      setPlotWidth(width);
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -125,14 +154,14 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   /* Built when the report, the theme, the size or the feed's session
      changes; a feed bar does not rebuild it. */
   const built = useMemo(() => {
-    if (!view || !vars || plotWidth <= 0) return null;
+    if (!view || !vars || !hasWidth) return null;
     const samples = peek();
     const frame: ChartFrame = {
-      view: dataset && order && samples.length ? resolveExecution(withFeed(dataset, order, samples), reportState) ?? view : view,
+      view: dataset && order && samples.length ? resolveExecution(liveDataset(dataset, order, samples), reportState) ?? view : view,
       countdown: null,
       counts: {},
     };
-    const options = buildExecutionOptions(frame, vars, palette, { width: plotWidth, height: chartHeight }, (venue) => onVenueRef.current(venue));
+    const options = buildExecutionOptions(frame, vars, palette, { width: widthRef.current, height: chartHeight, narrow }, (venue) => onVenueRef.current(venue));
     options.chart = {
       ...options.chart,
       events: {
@@ -145,7 +174,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     };
     return { options, frame };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `feed.generation` and `rebuilds` start the chart afresh; one feed bar must not.
-  }, [view, vars, palette, chartHeight, plotWidth, peek, feed.generation, rebuilds]);
+  }, [view, vars, palette, chartHeight, hasWidth, narrow, peek, feed.generation, rebuilds]);
 
   /* Each feed bar: the new points go onto the drawn series, with the
      header and the side panels in the same render. */
@@ -154,10 +183,9 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   useEffect(() => {
     const chart = chartRef.current?.chart;
     if (!built || !chart || !samples || samples.length === 0 || !dataset || !order) return;
-    const next = resolveExecution(withFeed(dataset, order, samples), reportState);
+    const next = resolveExecution(liveDataset(dataset, order, samples), reportState);
     if (!next) return;
     const countdown = running ? barCountdown(next, samples[samples.length - 1].time) : null;
-    if (next === built.frame.view) return;
     if (!applyFeedView(chart, built.frame, next, vars!, palette, countdown, !prefersReducedMotion())) setRebuilds((n) => n + 1);
   }, [built, samples, running, dataset, order, reportState, vars, palette]);
   /* The grid can still be settling when the chart is created (the panels
@@ -188,7 +216,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     <section
       ref={rootRef}
       className="dh-panel dh-exec"
-      style={{ "--dh-panel-h": `${height}px`, "--dh-exec-rail": `${RAIL_WIDTH}px`, "--dh-exec-range": `${RANGE_ROW}px`, "--dh-exec-pad": `${PAD}px` } as React.CSSProperties}
+      style={{ "--dh-panel-h": `${height}px`, "--dh-exec-rail": `${rail}px`, "--dh-exec-range": `${RANGE_ROW}px`, "--dh-exec-pad": `${PAD}px` } as React.CSSProperties}
       aria-label={`${view.pair} execution`}
       data-feed-bars={readOnly ? feed.samples.length : 0}
       /* While presenting, the chart's controls are its own: using one must

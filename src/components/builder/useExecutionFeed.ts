@@ -83,7 +83,14 @@ function hold(id: symbol): void {
   if (!stopListening && typeof document !== "undefined") {
     const onVisibility = () => { useFeedStore.setState({ hidden: isHidden() }); sync(); };
     document.addEventListener("visibilitychange", onVisibility);
-    stopListening = () => document.removeEventListener("visibilitychange", onVisibility);
+    /* The reader can change the motion setting while the page is open. */
+    const motion = typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+    const onMotion = () => { useFeedStore.setState({ motionHold: Boolean(motion?.matches) }); sync(); };
+    motion?.addEventListener?.("change", onMotion);
+    stopListening = () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      motion?.removeEventListener?.("change", onMotion);
+    };
     useFeedStore.setState({ hidden: isHidden() });
   }
   sync();
@@ -120,6 +127,16 @@ export function __resetFeedForTests(): void {
   stopListening?.();
   stopListening = null;
   useFeedStore.setState({ ...INITIAL });
+}
+
+/* The dataset with the bars laid over it, once per set of bars however many
+   blocks ask (each tick is a new samples array). */
+let lastOverlay: { dataset: ReportDataset; order: string; samples: readonly FeedSample[]; out: ReportDataset } | null = null;
+export function liveDataset(dataset: ReportDataset, order: string, samples: readonly FeedSample[]): ReportDataset {
+  if (lastOverlay && lastOverlay.dataset === dataset && lastOverlay.order === order && lastOverlay.samples === samples) return lastOverlay.out;
+  const out = withFeed(dataset, order, samples);
+  lastOverlay = { dataset, order, samples, out };
+  return out;
 }
 
 /* A dataset's identity for the key: an uploaded workbook starts its own feed. */
@@ -205,7 +222,7 @@ export function useFeedDataset(dataset: ReportDataset | null): ReportDataset | n
     if (!readOnly || !dataset || samples.length === 0 || key === null) return dataset;
     const state: ReportState = order ? { [EXECUTION_KEYS.order]: order } : {};
     if (feedKey(dataset, state) !== key) return dataset;
-    return withFeed(dataset, executionOrderOf(dataset, state)!, samples);
+    return liveDataset(dataset, executionOrderOf(dataset, state)!, samples);
   }, [readOnly, dataset, order, key, samples]);
 }
 

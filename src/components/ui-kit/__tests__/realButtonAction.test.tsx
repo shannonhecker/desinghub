@@ -46,4 +46,22 @@ describe("SimulatedButton, real, with an action", () => {
       expect(onClick).toHaveBeenCalledTimes(1);
     });
   }
+
+  for (const system of ["salt", "m3", "fluent", "uoaui", "carbon"] as const) {
+    it(`${system}: an icon-only quiet button shows the icon, no text, and is named`, () => {
+      const onClick = vi.fn();
+      container = document.createElement("div");
+      document.body.appendChild(container);
+      act(() => {
+        root = createRoot(container!);
+        root.render(<RealComponentRenderer system={system} type="SimulatedButton" mode="dark" saltDensity="medium" props={{ label: "Pause", variant: "ghost", icon: <svg data-probe="icon" />, onClick, ariaLabel: "Pause the sample feed" }} />);
+      });
+      const button = container.querySelector("button")!;
+      expect(button.querySelector('[data-probe="icon"]')).not.toBeNull();
+      expect(button.textContent?.trim()).toBe("");
+      expect(button.getAttribute("aria-label")).toBe("Pause the sample feed");
+      act(() => button.click());
+      expect(onClick).toHaveBeenCalledTimes(1);
+    });
+  }
 });

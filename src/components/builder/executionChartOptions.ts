@@ -2,7 +2,10 @@
  * executionChartOptions - the FX Execution chart's Highcharts options, and
  * how a feed bar is added to a drawn chart in place.
  *
- * Pure (no React): the view and the theme in, options out. The formatters
+ * No React. `buildExecutionOptions` returns options and also fills in the
+ * `ChartFrame` it is given (point counts, axis end): the frame is the
+ * contract between the options and the in-place updates, for this PR and
+ * the navigation and drawing PRs after it. The formatters
  * and the price tags read the view through a `ChartFrame` the chart block
  * keeps, so when the feed adds a bar the chart is patched, not rebuilt:
  * `applyFeedView` appends the new points to every series, moves the last
@@ -25,7 +28,10 @@ const VOLUME_SHARE = 18;
 /** Width a time label needs on the axis. */
 const TICK_ROOM = 84;
 /** Below this chart width, the phone treatment. */
-const NARROW_CHART = 420;
+export const NARROW_CHART = 420;
+/** The price gutter on a phone: the tags set in a smaller size. */
+export const PRICE_GUTTER_NARROW = 76;
+const TAG_NARROW = `${9}px`;
 /* Type sizes inside the chart (Highcharts takes them as CSS lengths). */
 const SMALL = `${10}px`;
 const TIP = `${11}px`;
@@ -48,13 +54,15 @@ export interface ChartFrame {
   counts: Record<string, number>;
   /** The time axis's right end, past the last bar (see axisEnd). */
   axisMax?: number;
+  /** Drawn at phone width: a narrower price gutter and smaller tags. */
+  narrow?: boolean;
 }
 
-/** Empty bars kept to the right of the last one: the feed's bars walk into
- *  them, and the axis steps out again only when they run out (the plot does
- *  not squeeze on every bar). */
+/** Empty bars kept to the right of the last one, about a twentieth of the
+ *  plot on any interval: the feed's bars walk into them, and the axis steps
+ *  out again only when they run out (the plot does not squeeze every bar). */
 export function axisEnd(bars: number): number {
-  return bars - 0.5 + Math.max(8, Math.round(bars * 0.08));
+  return bars - 0.5 + Math.max(2, Math.ceil(bars * 0.05));
 }
 
 /** Minutes until the bar the latest one-minute bar belongs to closes
@@ -98,13 +106,14 @@ export function executionSeriesData(view: ExecutionView, v: ThemeVars, palette: 
 /** Series whose last point can change as a bar fills (a bucket of several minutes). */
 const APPEND_ONLY = new Set(["trades", "volume"]);
 
-export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: string[], size: { width: number; height: number }, onVenue: (venue: string) => void): Highcharts.Options {
+export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: string[], size: { width: number; height: number; narrow?: boolean }, onVenue: (venue: string) => void): Highcharts.Options {
   const view = frame.view;
   const n = view.times.length;
   const shows = (overlay: ExecutionOverlay) => !view.hidden.includes(overlay);
   const data = executionSeriesData(view, v, palette);
   frame.counts = Object.fromEntries(Object.entries(data).map(([id, d]) => [id, d.length]));
   frame.axisMax = axisEnd(n);
+  frame.narrow = Boolean(size.narrow);
   const line = { type: "line" as const, step: "left" as const, yAxis: 1, marker: { enabled: false }, states: { hover: { lineWidthPlus: 0 } } };
   const plotShare = shows("Volume") ? 100 - VOLUME_SHARE : 100;
   const acrossDays = () => { const t = frame.view.times; return t[t.length - 1] - t[0] > 36 * 60 * 60 * 1000; };
@@ -135,7 +144,7 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
   return {
     chart: {
       backgroundColor: "transparent", style: { fontFamily: "inherit" }, width: size.width, height: size.height,
-      spacing: [8, 0, 0, 0], marginRight: PRICE_GUTTER, animation: false,
+      spacing: [8, 0, 0, 0], marginRight: size.narrow ? PRICE_GUTTER_NARROW : PRICE_GUTTER, animation: false,
       /* Each axis keeps its own scale (percent done is 0 to 100 whatever the price range is). */
       alignTicks: false,
     },
@@ -274,8 +283,62 @@ export function applyFeedView(chart: Highcharts.Chart, frame: ChartFrame, next: 
   return true;
 }
 
-/** Draw the price tags against the right-hand axis, pushed apart where they
- *  would overlap; under the BID tag, the bar countdown when there is one. */
+/* ── Price tags ── */
+
+/** Where each tag goes (centres, in the order given): inside the plot, at
+ *  least `h + gap` apart, as near its price as that allows. */
+export function layoutTags(ys: number[], top: number, bottom: number, h: number, gap: number): number[] {
+  const min = top + h / 2;
+  const max = bottom - h / 2;
+  const step = h + gap;
+  const order = ys.map((y, i) => ({ y: Math.min(max, Math.max(min, y)), i })).sort((a, b) => a.y - b.y);
+  for (let k = 1; k < order.length; k++) if (order[k].y - order[k - 1].y < step) order[k].y = order[k - 1].y + step;
+  /* Pushed past the bottom: walk them back up. */
+  if (order.length && order[order.length - 1].y > max) {
+    order[order.length - 1].y = max;
+    for (let k = order.length - 2; k >= 0; k--) if (order[k + 1].y - order[k].y < step) order[k].y = order[k + 1].y - step;
+  }
+  const out = new Array<number>(ys.length);
+  for (const o of order) out[o.i] = o.y;
+  return out;
+}
+
+/** A colour as [r, g, b] (0 to 255): hex, rgb() / rgba(), white or black. */
+function rgbOf(color: string): [number, number, number] {
+  if (color === "white") return [255, 255, 255];
+  if (color === "black") return [0, 0, 0];
+  const [r, g, b] = Highcharts.color(color).rgba;
+  return [r ?? 0, g ?? 0, b ?? 0];
+}
+function luminance(color: string): number {
+  const lin = (c: number) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const [r, g, b] = rgbOf(color);
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+/** WCAG contrast between two colours (1 to 21). */
+export function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+const AA = 4.5;
+
+/** A tag's colours. BID and LMT are solid (the system's positive colour, the
+ *  limit line's colour); the others are outlined on the card. Text is white
+ *  or black, whichever reads better, and a solid fill is deepened or
+ *  lightened until the text reaches 4.5:1. */
+export function pillColors(key: ExecutionPill["key"], v: ThemeVars, palette: string[]): { fill: string; stroke: string; text: string } {
+  const card = v.card ?? v.surface;
+  const solid = key === "bid" ? v.positive : key === "limit" ? palette[LIMIT_COLOR % palette.length] : null;
+  if (!solid) return { fill: card, stroke: v.fgTer, text: v.fg };
+  const text = contrastRatio("white", solid) >= contrastRatio("black", solid) ? "white" : "black";
+  let fill = Highcharts.color(solid).get("rgb") as string;
+  for (let i = 0; i < 20 && contrastRatio(text, fill) < AA; i++) fill = Highcharts.color(fill).brighten(text === "white" ? -0.06 : 0.06).get("rgb") as string;
+  return { fill, stroke: fill, text };
+}
+
+/** Draw the price tags against the right-hand axis, kept apart; under the
+ *  BID tag, the bar countdown when there is one. A price-axis label a tag
+ *  would cover is hidden while the tag is there. */
 export function drawPills(chart: Highcharts.Chart, frame: ChartFrame, v: ThemeVars, palette: string[], store: { current: Highcharts.SVGElement[] }): void {
   store.current.forEach((el) => el.destroy());
   store.current = [];
@@ -283,25 +346,24 @@ export function drawPills(chart: Highcharts.Chart, frame: ChartFrame, v: ThemeVa
   if (!axis) return;
   const top = chart.plotTop;
   const bottom = chart.plotTop + axis.len;
-  const pills: ExecutionPill[] = frame.view.pills;
-  const placed = pills
+  const pills = frame.view.pills
     .map((p) => ({ p, y: axis.toPixels(p.value, false) }))
-    .filter(({ y }) => Number.isFinite(y))
-    .map(({ p, y }) => ({ p, y: Math.min(bottom - PILL_HEIGHT / 2, Math.max(top + PILL_HEIGHT / 2, y)) }))
-    .sort((a, b) => a.y - b.y);
-  for (let i = 1; i < placed.length; i++) if (placed[i].y - placed[i - 1].y < PILL_HEIGHT + 2) placed[i].y = placed[i - 1].y + PILL_HEIGHT + 2;
-  const fill: Partial<Record<ExecutionPill["key"], string>> = { bid: v.positive, limit: palette[LIMIT_COLOR % palette.length] };
-  const card = v.card ?? v.surface;
+    .filter(({ y }) => Number.isFinite(y));
+  const ys = layoutTags(pills.map((t) => t.y), top, bottom, PILL_HEIGHT, 2);
   const x = chart.plotLeft + chart.plotWidth + 4;
-  for (const { p, y } of placed) {
-    const solid = fill[p.key];
+  /* The bands the tags (and the countdown) take on the axis. */
+  const taken: [number, number][] = [];
+  pills.forEach(({ p }, i) => {
+    const y = ys[i];
+    const c = pillColors(p.key, v, palette);
     const label = chart.renderer
       .label(`${p.label} ${formatPrice(p.value)}`, x, y - PILL_HEIGHT / 2)
-      .attr({ fill: solid ?? card, stroke: solid ?? v.fgTer, "stroke-width": 1, r: PILL_HEIGHT / 2, padding: 4, zIndex: 9 })
-      .css({ color: solid ? card : v.fg, fontSize: SMALL, fontWeight: "600" })
+      .attr({ fill: c.fill, stroke: c.stroke, "stroke-width": 1, r: PILL_HEIGHT / 2, padding: 4, zIndex: 9 })
+      .css({ color: c.text, fontSize: frame.narrow ? TAG_NARROW : SMALL, fontWeight: "600" })
       .addClass(`dh-exec-pill dh-exec-pill-${p.key}`)
       .add();
     store.current.push(label);
+    taken.push([y - PILL_HEIGHT / 2, y + PILL_HEIGHT / 2]);
     if (p.key === "bid" && frame.countdown) {
       const note = chart.renderer
         .text(`closes in ${frame.countdown}`, x + 4, y + PILL_HEIGHT / 2 + 12)
@@ -309,6 +371,16 @@ export function drawPills(chart: Highcharts.Chart, frame: ChartFrame, v: ThemeVa
         .attr({ zIndex: 9, class: "dh-exec-countdown" })
         .add();
       store.current.push(note);
+      taken.push([y + PILL_HEIGHT / 2, y + PILL_HEIGHT / 2 + 16]);
     }
+  });
+  /* A label is about one line tall around its tick. */
+  const half = PILL_HEIGHT / 2;
+  for (const tick of Object.values(axis.ticks)) {
+    const el = tick.label;
+    if (!el) continue;
+    const ty = axis.toPixels(Number(tick.pos), false);
+    const covered = !Number.isFinite(ty) || ty < top + half / 2 || taken.some(([a, b]) => ty + half > a && ty - half < b);
+    el.attr({ opacity: covered ? 0 : 1 });
   }
 }
