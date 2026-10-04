@@ -489,6 +489,9 @@ export function BuilderApp() {
       return;
     }
 
+    // Shared-canvas settings apply only after replacement is confirmed.
+    if (params.has("shared")) return;
+
     /* Handoff from UI Kit. Apply ds first so its themeMap doesn't
        overwrite a more specific themeKey we received. */
     if (ds) setDesignSystem(ds);
@@ -510,9 +513,12 @@ export function BuilderApp() {
        AFTER so StandalonePreview mounts populated, not empty. Captured now,
        before the URL cleanup below clears the query. */
     const isPopout = params.get("preview") === "1";
+    let cancelled = false;
     (async () => {
       try {
         const { decodeShareState } = await import("@/lib/shareState");
+        const { applySharedCanvas } = await import("@/lib/applySharedCanvas");
+        if (cancelled) return;
         const state = decodeShareState(hash);
         if (!state) {
           /* Bad hash in a pop-out: still go standalone (empty) rather than
@@ -520,49 +526,30 @@ export function BuilderApp() {
           if (isPopout) setIsStandalone(true);
           return;
         }
-        const store = useBuilder.getState();
-        store.setDesignSystem(state.designSystem);
-        store.setMode(state.mode);
-        store.setDensity(state.density);
-        store.setCanvasSpacing(state.canvasSpacing);
-        store.setHeaderBlocks(state.headerBlocks);
-        store.setSidebarBlocks(state.sidebarBlocks);
-        store.setBlocks(state.blocks);
-        store.setFooterBlocks(state.footerBlocks);
-        if (state.activeTemplateId) store.setActiveTemplateId(state.activeTemplateId);
-        /* deviceMode + themeKey (PR-C schema). themeKey is applied LAST,
-           after setMode above, because setMode derives a dialect-specific
-           default themeKey that the explicit one must override — do not
-           reorder. Only override when a themeKey was actually shared
-           (legacy links decode themeKey as null → keep setMode's default). */
-        store.setDeviceMode(state.deviceMode);
-        if (state.themeKey) store.setThemeKey(state.themeKey);
-        /* v:2 multi-page: hydrate the page set + active page so the pop-out /
-           forked editor can navigate tabs. state.blocks already holds the
-           active page body (setBlocks above); also seed zoneLayouts.body from
-           the active page's bodyLayout so first paint uses the author's per-page
-           layout, not the default grid. v:1 links omit these. */
-        if (state.pages && state.activePageId) {
-          const activePage = state.pages.find((p) => p.id === state.activePageId);
-          useBuilder.setState({
-            pages: state.pages,
-            activePageId: state.activePageId,
-            ...(activePage?.bodyLayout
-              ? { zoneLayouts: { ...useBuilder.getState().zoneLayouts, body: activePage.bodyLayout } }
-              : {}),
-          });
+        /* A full navigation normally skips session resume for shared links.
+           Restore the previous session first so that an existing canvas gets
+           the same protection as one already in memory. A read-only pop-out
+           is a fresh view and must not resume the editor's saved session. */
+        if (!isPopout) {
+          const { resumeActiveSession } = await import("@/lib/activeSession");
+          if (cancelled) return;
+          resumeActiveSession("");
         }
-        store.setPreviewOpen(true);
+        applySharedCanvas(state, () => window.confirm(
+          "Replace your current canvas with this shared canvas? Your current changes can be restored with Undo.",
+        ));
         /* Pop-out: now that the canvas is populated, flip to standalone. */
         if (isPopout) setIsStandalone(true);
         // Clean the URL so reload doesn't trigger another apply
         const newUrl = window.location.pathname + window.location.hash;
         window.history.replaceState({}, "", newUrl);
       } catch {
+        if (cancelled) return;
         /* Decoding or import failed - silently ignore; user lands on an empty builder */
         if (isPopout) setIsStandalone(true);
       }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   /* handleSaveProject + handleLoadProject removed - SessionsDrawer

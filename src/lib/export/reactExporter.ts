@@ -9,7 +9,7 @@ import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentAp
 import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
 import { computeGroupStyle } from "@/lib/layoutResolver";
 import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource, usesExtendedChart, usesShapeChart } from "./chartExporter";
-import { jsxText, jsxAttr } from "./escape";
+import { jsxText, jsxAttr, jsxComment } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
 import { buildStylesCss } from "./stylesCss";
 import { materialiseCanvas } from "./materialise";
@@ -287,7 +287,7 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
       return `${indent}<div className="layout-group" style={{ ${groupStyle} }}>\n${inner}\n${indent}</div>`;
     }
     default:
-      return `${indent}<div className="${block.type.toLowerCase()}">{/* ${block.type} */}</div>`;
+      return `${indent}<div className="${jsxAttr(block.type.toLowerCase())}">{/* ${jsxComment(block.type)} */}</div>`;
   }
 }
 
@@ -526,7 +526,7 @@ export function exportReact(): string {
 
 export default function Dashboard() {
   return (
-    ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}"${sidebarAttr}>
+    ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${jsxAttr(s.density)}"${sidebarAttr}>
       <a className="skip-link" href="#main-content">Skip to main content</a>
 ${zones}
     </div>${close}

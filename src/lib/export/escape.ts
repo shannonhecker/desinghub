@@ -73,3 +73,13 @@ export function htmlAttr(v: unknown, fallback = ""): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** Comments have different delimiters from text/attributes. Break them before
+ * interpolating an unknown block type into generated source. */
+export function htmlComment(v: unknown): string {
+  return htmlText(v).replace(/-/g, "&#45;");
+}
+
+export function jsxComment(v: unknown): string {
+  return String(v ?? "").replace(/\*\//g, "* /");
+}

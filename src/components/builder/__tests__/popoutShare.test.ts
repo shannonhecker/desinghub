@@ -44,23 +44,7 @@ describe("PR-D: pop-out routes through the share encoder (fixes empty pop-out)",
   });
 });
 
-describe("PR-D: shared-fork hydrates deviceMode + themeKey (themeKey last)", () => {
-  it("applies setDeviceMode + setThemeKey", () => {
-    expect(builderAppSrc).toMatch(/store\.setDeviceMode\(state\.deviceMode\)/);
-    expect(builderAppSrc).toMatch(/store\.setThemeKey\(state\.themeKey\)/);
-  });
-
-  it("applies themeKey AFTER setMode so it overrides setMode's derived default", () => {
-    const mIdx = builderAppSrc.indexOf("store.setMode(state.mode)");
-    const tIdx = builderAppSrc.indexOf("store.setThemeKey(state.themeKey)");
-    expect(mIdx).toBeGreaterThan(-1);
-    expect(tIdx).toBeGreaterThan(mIdx);
-  });
-
-  it("only overrides themeKey when one was shared (legacy null keeps setMode's default)", () => {
-    expect(builderAppSrc).toMatch(/if \(state\.themeKey\) store\.setThemeKey/);
-  });
-});
+// Device/theme hydration is exercised behaviorally in applySharedCanvas.test.ts.
 
 describe("PR-D: pop-out flips to standalone AFTER hydration (no empty flash)", () => {
   it("fork effect captures isPopout and flips standalone after populating", () => {
