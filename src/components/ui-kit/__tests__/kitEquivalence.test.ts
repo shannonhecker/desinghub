@@ -38,6 +38,7 @@ describe("kitEquivalence", () => {
       if (eq.id) {
         expect(idsOf(to).has(eq.id), `${from}:${id} -> ${to}:${eq.id}`).toBe(true);
         expect(eq.closest).toEqual([]);
+        expect(eq.systemOnly).toBe(false);
       } else {
         expect(eq.closest.length, `${from}:${id} -> ${to} offers matches`).toBeGreaterThan(0);
         for (const c of eq.closest) expect(idsOf(to).has(c.id), `${from}:${id} -> ${to} closest ${c.id}`).toBe(true);
@@ -63,9 +64,11 @@ describe("kitEquivalence", () => {
   });
 
   it("never redirects: a missing equivalent is null with the closest matches", () => {
-    expect(resolveEquivalent("m3", "fabs", "carbon")).toEqual({ id: null, label: "FAB", closest: [{ id: "buttons", label: "Button" }] });
-    expect(resolveEquivalent("salt", "table", "m3")).toEqual({ id: null, label: "Data table", closest: [{ id: "ag-grid", label: "AG Grid" }, { id: "buttons", label: "Button" }] });
+    expect(resolveEquivalent("m3", "fabs", "carbon")).toEqual({ id: null, label: "FAB", systemOnly: true, closest: [{ id: "buttons", label: "Button" }] });
+    /* Material has data tables; this library has no page for it yet. */
+    expect(resolveEquivalent("salt", "table", "m3")).toEqual({ id: null, label: "Data table", systemOnly: false, closest: [{ id: "ag-grid", label: "AG Grid" }, { id: "buttons", label: "Button" }] });
     expect(resolveEquivalent("m3", "pat-feed", "salt").closest[0]).toEqual({ id: "pat-list-detail", label: "List and detail" });
+    expect(resolveEquivalent("m3", "pat-feed", "salt").systemOnly).toBe(false);
     /* Closest matches stay inside the entry's own group. */
     for (const c of resolveEquivalent("carbon", "dl-motion", "salt").closest) expect(conceptOf("salt", c.id)!.startsWith("f-")).toBe(true);
   });
@@ -86,6 +89,8 @@ describe("kitEquivalence", () => {
   it("a missing equivalent keeps the place and finds its way back", () => {
     /* Material FAB -> Carbon: same entry, marked as Material's. */
     const missing = switchPlace({ ds: "m3", c: "fabs", tab: "code" }, "carbon");
+    /* Only a handful of concepts are truly one system's own. */
+    expect(Object.entries(CONCEPTS).filter(([, c]) => c.systemOnly).map(([k]) => k)).toEqual(["fab", "header", "f-state-layers"]);
     expect(missing).toEqual({ ds: "carbon", c: "fabs", from: "m3", tab: "code" });
     expect(kitHref(missing)).toBe("/ui-kit?ds=carbon&c=fabs&from=m3&tab=code");
     /* From that state, on to Salt (also none), then back to Material. */

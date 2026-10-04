@@ -104,7 +104,10 @@ export function DesignHubApp() {
     useDesignHub.setState({ searchQuery: params.get("q") ?? "", overviewFilter: params.get("show") ?? "all" });
   }, []);
 
-  React.useEffect(() => {
+  /* Layout effect: the place from the URL is applied before the first
+     paint, and the main column is held empty until then, so a deep link
+     never flashes the overview. */
+  React.useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const ds = params.get("ds") as SystemId | null;
@@ -213,26 +216,35 @@ export function DesignHubApp() {
   const selectedComponent = store.selectedComponent;
   const lastTop = React.useRef(0);
   const hold = React.useRef<{ top: number; until: number } | null>(null);
+  /* While a system switch settles, keep putting the scroller back where it
+     was: the new page's demos, panels and code mount over a few frames, and
+     each one can briefly make the page shorter (which clamps the scroll) or
+     taller. A frame loop is simpler and surer than observing every element.
+     The visitor's own scrolling always wins. */
   React.useEffect(() => {
     const sc = scrollerRef.current;
-    if (!sc || typeof ResizeObserver === "undefined") return;
-    const restore = () => {
+    if (!sc) return;
+    let raf = 0;
+    const tick = () => {
       const h = hold.current;
-      if (!h || Date.now() > h.until || useDesignHub.getState().selectedComponent === null) return;
-      const want = Math.min(h.top, sc.scrollHeight - sc.clientHeight);
-      if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want;
+      if (!h) return;
+      if (Date.now() > h.until) { hold.current = null; return; }
+      const st = useDesignHub.getState();
+      if (st.selectedComponent !== null || st.missing) {
+        const want = Math.min(h.top, Math.max(0, sc.scrollHeight - sc.clientHeight));
+        if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want;
+      }
+      raf = requestAnimationFrame(tick);
     };
-    const ro = new ResizeObserver(restore);
-    if (sc.firstElementChild) ro.observe(sc.firstElementChild);
-    const mo = new MutationObserver(() => { ro.disconnect(); if (sc.firstElementChild) ro.observe(sc.firstElementChild); restore(); });
-    mo.observe(sc, { childList: true });
-    /* The visitor's own scrolling always wins. */
+    const start = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); };
+    holdStart.current = start;
     const release = () => { hold.current = null; };
     sc.addEventListener("wheel", release, { passive: true });
     sc.addEventListener("touchstart", release, { passive: true });
     sc.addEventListener("keydown", release);
-    return () => { ro.disconnect(); mo.disconnect(); sc.removeEventListener("wheel", release); sc.removeEventListener("touchstart", release); sc.removeEventListener("keydown", release); };
+    return () => { cancelAnimationFrame(raf); sc.removeEventListener("wheel", release); sc.removeEventListener("touchstart", release); sc.removeEventListener("keydown", release); };
   }, []);
+  const holdStart = React.useRef<() => void>(() => {});
   const prevPlace = React.useRef({ system: activeSystem, entry: selectedComponent });
   React.useLayoutEffect(() => {
     const before = prevPlace.current;
@@ -243,8 +255,11 @@ export function DesignHubApp() {
     if (before.system !== activeSystem) {
       /* Hold the position while the new system's page settles. Code and
          demos arrive a moment later; until they do the page can be briefly
-         shorter, which would clamp the scroll and read as a jump. */
-      hold.current = { top: lastTop.current, until: Date.now() + 1500 };
+         shorter, which would clamp the scroll and read as a jump. The
+         overview keeps its place by section instead (below). */
+      const st = useDesignHub.getState();
+      hold.current = st.selectedComponent || st.missing ? { top: lastTop.current, until: Date.now() + 1500 } : null;
+      if (hold.current) holdStart.current();
       return;
     }
     if (before.entry === selectedComponent) return;
@@ -265,7 +280,10 @@ export function DesignHubApp() {
     const sc = scrollerRef.current;
     if (!sc) return;
     /* While a switch is settling, a clamp is not the visitor scrolling. */
-    if (!hold.current || Date.now() > hold.current.until) lastTop.current = sc.scrollTop;
+    /* A page that fits the viewport carries no position (it cannot scroll),
+       so passing through one, such as the not-here state, does not forget
+       where the visitor was on the pages that do. */
+    if ((!hold.current || Date.now() > hold.current.until) && sc.scrollHeight > sc.clientHeight + 4) lastTop.current = sc.scrollTop;
     if (useDesignHub.getState().selectedComponent) return;
     const top = sc.getBoundingClientRect().top;
     let found: { section: string; offset: number } | null = null;
@@ -429,14 +447,14 @@ export function DesignHubApp() {
                   <button
                     type="button"
                     className="uikit-rail-btn"
-                    aria-label="Components"
+                    aria-label="Browse components"
                     aria-pressed={sidebarOpen && panelSection === "components"}
-                    title="Components"
+                    title="Browse components"
                     onClick={() => openPanel("components")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
                     <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
-                    <span className="uikit-rail-label">Components</span>
+                    <span className="uikit-rail-label">Browse</span>
                   </button>
                   <button
                     type="button"
@@ -557,7 +575,7 @@ export function DesignHubApp() {
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
           <div ref={scrollerRef} onScroll={onScroll} data-testid="kit-scroller" style={{ flex: 1, overflowY: "auto", overflowAnchor: "none" }}>
-            <MainContent />
+            {urlReady ? <MainContent /> : null}
           </div>
         </main>
       </div>

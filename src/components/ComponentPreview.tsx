@@ -201,7 +201,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         </div>
       </div>
       <div className="kit-chips">
-        {[comp.cat === "Components & Patterns" ? (COMPONENT_SUBCATS[componentId] ?? "Component") : comp.cat, "Keyboard operable"].map((chip) => (
+        {[comp.cat === "Components & Patterns" ? (COMPONENT_SUBCATS[componentId] ?? "Component") : comp.cat].map((chip) => (
           <span key={chip}>{chip}</span>
         ))}
       </div>

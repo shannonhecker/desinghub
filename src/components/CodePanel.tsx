@@ -106,7 +106,6 @@ export function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: 
     (match) => `<span class="syn-token-copyable" data-token="${match.replace(/"/g, "&quot;")}">${match}</span>`
   );
 
-  const btnCls = t.activeSystem === "salt" ? "s-btn s-btn-bordered" : t.activeSystem === "m3" ? "m3-btn m3-btn-outlined" : t.activeSystem === "uoaui" ? "a-btn a-btn-secondary" : "f-btn f-btn-secondary";
 
   // Detect light theme - if bg luminance is high, use light syntax colors
   const isLight = (() => {
@@ -122,7 +121,7 @@ export function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: 
   })();
 
   return (
-    <div className={`${cardClass}${isLight ? " syn-light" : ""}`} style={{
+    <div className={`${cardClass} kit-code${isLight ? " syn-light" : ""}`} style={{
       position: "relative", overflow: "hidden", cursor: "default",
       /* The code container reuses the active DS's card class for its themed
          border/bg/radius, but some DS cards carry an intrinsic demo width
@@ -131,13 +130,10 @@ export function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: 
          here so no donor card class can leak its sizing into the code box. */
       width: "100%", boxSizing: "border-box",
     }}>
-      <button className={btnCls} onClick={copy} aria-label="Copy code" style={{
-        position: "absolute", top: 8, right: 8, padding: "4px 10px",
-        fontSize: 11, minWidth: "auto", minHeight: 24, zIndex: 2,
-        background: isLight ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.5)",
-        backdropFilter: "blur(4px)",
-      }}>
-        <span aria-live="polite">{copied ? "Copied!" : "Copy"}</span>
+      {/* Library chrome, not a specimen: a tonal pill, no outline. */}
+      <button type="button" className="kit-copy" data-copied={copied || undefined} onClick={copy} aria-label="Copy code" style={{ fontFamily: t.font }}>
+        <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+        <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
       </button>
       <pre aria-label="Code example" style={{
         padding: 16, margin: 0, overflow: "auto", fontSize: 12, lineHeight: 1.6,

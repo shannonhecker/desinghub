@@ -102,7 +102,21 @@ function Fingerprint() {
   const dark = isDarkActive(state);
   /* The first real family in the stack (a var(--font-…) entry is a loader
      alias for the family named after it). */
-  const fontName = t.font.split(",").map((f) => f.replace(/['"]/g, "").trim()).find((f) => f && !f.startsWith("var(")) ?? "System";
+  /* Named as the stack resolves here: the first family the browser can
+     actually draw (Segoe UI is first in Fluent's stack but only on Windows). */
+  const families = t.font.split(",").map((f) => f.replace(/['"]/g, "").trim()).filter((f) => f && !f.startsWith("var("));
+  const [fontName, setFontName] = React.useState(families[0] ?? "System");
+  React.useEffect(() => {
+    let name = families[0] ?? "System";
+    try {
+      const generic = new Set(["sans-serif", "serif", "monospace", "system-ui"]);
+      const found = families.find((f) => !generic.has(f) && document.fonts.check(`12px "${f}"`));
+      name = found ?? families.find((f) => generic.has(f)) ?? name;
+      if (name === "system-ui" || name === "sans-serif") name = "System sans";
+    } catch { /* keep the first family */ }
+    setFontName(name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t.font]);
   const palette = [t.accent, t.accentWeak, t.successStrong, t.warningStrong, t.dangerStrong, t.infoStrong, t.fg, t.fg2, t.bg3]
     .filter((c): c is string => typeof c === "string" && c.length > 0)
     .filter((c, i, a) => a.indexOf(c) === i)

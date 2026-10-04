@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useDesignHub } from "@/store/useDesignHub";
-import { getDemoComponent } from "@/data/registry";
+import { getDemoComponent, getComponents } from "@/data/registry";
+import { FoundationThumb } from "./FoundationThumb";
 
 /**
  * The real demo of one registry entry, rendered live through the active
@@ -30,14 +31,15 @@ export function LiveSpecimen({ id, eager = false }: { id: string; eager?: boolea
     return () => io.disconnect();
   }, [near]);
 
-  const Demo = near ? getDemoComponent(system, id) : null;
+  const isFoundation = getComponents(system).find((c) => c.id === id)?.cat === "Foundations";
+  const Demo = near && !isFoundation ? getDemoComponent(system, id) : null;
   /* The system's own scope classes, so its CSS resolves exactly as on the
      detail page. The specimen itself is never restyled. */
   const scope = system === "uoaui" ? "preview-uoaui a-app" : system === "carbon" ? `cds--${carbonTheme}` : undefined;
 
   return (
-    <div ref={ref} className="kit-specimen" data-specimen={id} data-live={Demo ? "true" : "false"}>
-      {Demo ? <div className={scope}><Demo /></div> : null}
+    <div ref={ref} className={`kit-specimen${isFoundation ? " is-graphic" : ""}`} data-specimen={id} data-live={Demo || (near && isFoundation) ? "true" : "false"}>
+      {isFoundation ? (near ? <FoundationThumb id={id} /> : null) : Demo ? <div className={scope}><Demo /></div> : null}
     </div>
   );
 }

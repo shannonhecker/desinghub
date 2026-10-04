@@ -7,6 +7,7 @@ import { kitEntry } from "@/lib/kitCatalog";
 import { RealComponentRenderer, canRenderReal } from "./RealComponentRenderer";
 import { CONCEPTS, EQ_SYSTEMS, SYSTEM_LABEL, conceptOf, kitHref } from "./kitEquivalence";
 import { isDarkActive } from "./kitHandoff";
+import { useTheme } from "@/contexts/ThemeContext";
 
 /**
  * Compare: one component, five design systems, side by side.
@@ -56,6 +57,7 @@ export function canCompare(concept: string | null): boolean {
 
 export function ComparePanels({ concept, compact = false }: { concept: string; compact?: boolean }) {
   const state = useDesignHub();
+  const active = useTheme();
   const dark = isDarkActive(state);
   const mode = dark ? "dark" : "light";
   const [mounted, setMounted] = React.useState(false);
@@ -69,10 +71,12 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
     <ul className={`kit-compare${compact ? " is-compact" : ""}`} data-testid="compare-panels">
       {EQ_SYSTEMS.map((sys) => {
         const id = def.ids[sys];
-        const theme = getTheme(sys, MODE_THEME[sys][mode]);
+        const current = sys === state.activeSystem;
+        /* The system in view uses the very theme its page draws from (custom
+           accents and Material custom colours included). */
+        const theme = current ? active.T : getTheme(sys, MODE_THEME[sys][mode]);
         const real = !!id && canRenderReal(sys, type);
         const name = id ? getComponents(sys).find((c) => c.id === id)?.name : null;
-        const current = sys === state.activeSystem;
         return (
           <li key={sys} className="kit-compare-panel" data-system={sys} data-current={current || undefined}>
             <div
@@ -85,9 +89,9 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
               }}
             >
               {real && mounted ? (
-                <RealComponentRenderer system={sys} type={type} mode={mode} saltDensity="medium" props={{ ...(entry?.defaults ?? {}), id: `cmp-${concept}-${sys}${compact ? "-band" : ""}` }} />
+                <RealComponentRenderer system={sys} type={type} mode={mode} saltDensity="medium" kit={theme} props={{ ...(entry?.defaults ?? {}), id: `cmp-${concept}-${sys}${compact ? "-band" : ""}` }} />
               ) : real ? null : (
-                <p className="kit-compare-none">{SYSTEM_LABEL[sys]} has no {def.label.toLowerCase()}.</p>
+                <p className="kit-compare-none">{def.systemOnly ? `${SYSTEM_LABEL[sys]} has no ${def.label.toLowerCase()}.` : `No ${def.label.toLowerCase()} page for ${SYSTEM_LABEL[sys]} in this library yet.`}</p>
               )}
             </div>
             <div className="kit-compare-meta">
@@ -96,7 +100,7 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
                 current
                   ? <span>{name}, in view</span>
                   : <a href={kitHref({ ds: sys, c: id })} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); state.setActiveSystem(sys); }}>{name}</a>
-              ) : <span>Not in this system</span>}
+              ) : <span>{def.systemOnly ? "Not in this system" : "No page here yet"}</span>}
             </div>
           </li>
         );
@@ -128,13 +132,13 @@ export function CompareView({ componentId }: { componentId: string }) {
               <strong>{SYSTEM_LABEL[s]}</strong>
               {def.ids[s]
                 ? <a href={kitHref({ ds: s, c: def.ids[s]!, tab: "compare" })} onClick={(e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; e.preventDefault(); useDesignHub.getState().setActiveSystem(s); }}>{getComponents(s).find((c) => c.id === def.ids[s])?.name}</a>
-                : <span>Not in this system</span>}
+                : <span>{def.systemOnly ? "Not in this system" : "No page here yet"}</span>}
             </li>
           ))}
         </ul>
       )}
       {have.length < EQ_SYSTEMS.length && canCompare(concept) && (
-        <p className="kit-note">{have.length} of 5 systems ship a {def.label.toLowerCase()}.</p>
+        <p className="kit-note">{def.systemOnly ? `${have.length} of 5 systems ship a ${def.label.toLowerCase()}.` : `This library documents the ${def.label.toLowerCase()} for ${have.length} of the 5 systems so far.`}</p>
       )}
     </section>
   );

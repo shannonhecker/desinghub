@@ -5,6 +5,7 @@ import type { ComponentVariantMatrix, UiKitComponentId } from "@/data/ui-kit-met
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { RealComponentRenderer, canRenderReal } from "./RealComponentRenderer";
 import { BLOCK_TYPE, cellProps } from "./VariantsMatrix";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const pretty = (v: string) => { const s = v.replace(/[-_]/g, " "); return s.charAt(0).toUpperCase() + s.slice(1); };
 
@@ -26,6 +27,7 @@ export function Playground({ componentId, matrix, system, mode, saltDensity }: {
 }) {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+  const t = useTheme();
   const [, force] = React.useReducer((n: number) => n + 1, 0);
   const type = BLOCK_TYPE[componentId];
   if (!type || !canRenderReal(system, type)) return null;
@@ -43,7 +45,7 @@ export function Playground({ componentId, matrix, system, mode, saltDensity }: {
       <p className="dh-section-lede">The real component with its own props. Settings stay as you switch system.</p>
       <div className="kit-panel kit-play" data-testid="playground">
         <div className="kit-play-stage">
-          {mounted ? <RealComponentRenderer system={system} type={type} mode={mode} saltDensity={saltDensity} props={props} /> : null}
+          {mounted ? <RealComponentRenderer system={system} type={type} mode={mode} saltDensity={saltDensity} props={props} kit={t.T} /> : null}
         </div>
         <div className="kit-play-controls">
           <fieldset>

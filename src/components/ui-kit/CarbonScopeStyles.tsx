@@ -33,9 +33,18 @@ const MARKER = "data-carbon-scope";
 /* Module-level guard so repeated mounts don't re-query the DOM every time. */
 let injected = false;
 
-/** Remove every @font-face block (they contain no nested braces). */
+/**
+ * Remove every @font-face block (they contain no nested braces) and point
+ * Carbon's own font-family declarations at the app's self-hosted IBM Plex
+ * first. The family names Carbon asks for stay in the list, so the rule is
+ * the same rule with a reachable face in front of it; sans stays sans and
+ * mono stays mono.
+ */
 export function stripFontFaces(css: string): string {
-  return css.replace(/@font-face\s*\{[^}]*\}/g, "");
+  return css
+    .replace(/@font-face\s*\{[^}]*\}/g, "")
+    .replace(/font-family:\s*'IBM Plex Sans'/g, "font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans'")
+    .replace(/font-family:\s*'IBM Plex Mono'/g, "font-family: var(--font-ibm-plex-mono), 'IBM Plex Mono'");
 }
 
 function injectOnce(): void {

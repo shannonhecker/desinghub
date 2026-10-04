@@ -62,6 +62,8 @@ export const BLOCK_TYPE: Partial<Record<UiKitComponentId, string>> = {
   card: "SimulatedCard",
 };
 
+const PSEUDO_STATES = new Set(["hover", "hovered", "focus", "focused", "focus-visible", "active", "pressed", "rest"]);
+
 /** Sentence-case a vocabulary token for display ("filled-darker" -> "Filled darker"). */
 function pretty(label: string): string {
   const spaced = label.replace(/[-_]/g, " ");
@@ -142,6 +144,10 @@ export function VariantsMatrix({
 
   const blockType = BLOCK_TYPE[componentId];
   const canReal = mounted && blockType ? canRenderReal(system, blockType) : false;
+  /* Hover, focus and pressed cannot be set as props, so a static grid can
+     only show them as copies of Default. Those columns are left out; the
+     live component on the Overview stage answers the pointer and keyboard. */
+  const states = matrix.states.filter((st) => !PSEUDO_STATES.has(st.toLowerCase()));
 
   return (
     <div className="dh-detail-card" style={{ borderColor: "transparent", background: "transparent" }}>
@@ -155,7 +161,7 @@ export function VariantsMatrix({
         <span aria-hidden="true" style={{ opacity: 0.4 }}>×</span>
         <span>
           <strong style={{ color: t.fg2 }}>{matrix.stateAxisLabel}</strong>
-          {" "}across · {matrix.states.length} value{matrix.states.length === 1 ? "" : "s"}
+          {" "}across · {states.length} value{states.length === 1 ? "" : "s"}
         </span>
       </div>
 
@@ -170,7 +176,7 @@ export function VariantsMatrix({
               >
                 <span className="dh-matrix-axis-x">{matrix.variantAxisLabel}</span>
               </th>
-              {matrix.states.map((state) => (
+              {states.map((state) => (
                 <th
                   key={state}
                   scope="col"
@@ -192,7 +198,7 @@ export function VariantsMatrix({
                 >
                   {pretty(variant)}
                 </th>
-                {matrix.states.map((state) => {
+                {states.map((state) => {
                   const real = canReal ? cellProps(componentId, variant, state) : null;
                   return (
                     <td
@@ -207,6 +213,7 @@ export function VariantsMatrix({
                             mode={mode}
                             saltDensity={saltDensity}
                             props={real}
+                            kit={t.T}
                           />
                         ) : Demo ? (
                           <Demo />

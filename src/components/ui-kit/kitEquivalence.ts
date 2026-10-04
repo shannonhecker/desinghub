@@ -28,6 +28,10 @@ interface Concept {
   ids: Partial<Record<SystemId, string>>;
   /** Concepts to try, in order, where a system lacks this one. */
   fallback?: string[];
+  /** True when the real design system has no such thing (Material's FAB).
+      Everything else that is missing is a gap in this library, not in the
+      system, and the copy must say so. */
+  systemOnly?: true;
 }
 
 const all = (id: string): Record<SystemId, string> => ({ salt: id, m3: id, fluent: id, uoaui: id, carbon: id });
@@ -36,7 +40,7 @@ export const CONCEPTS: Record<string, Concept> = {
   /* ── Components ── */
   button: { label: "Button", group: "component", ids: all("buttons") },
   "icon-button": { label: "Icon button", group: "component", ids: { m3: "icon-buttons", carbon: "icon-button" }, fallback: ["button"] },
-  fab: { label: "FAB", group: "component", ids: { m3: "fabs" }, fallback: ["button"] },
+  fab: { label: "FAB", group: "component", ids: { m3: "fabs" }, fallback: ["button"], systemOnly: true },
   "toggle-button": { label: "Toggle button", group: "component", ids: { salt: "toggle-btn" }, fallback: ["segmented", "switch"] },
   segmented: { label: "Segmented control", group: "component", ids: { salt: "segmented-btn", m3: "segmented-buttons", carbon: "content-switcher" }, fallback: ["tabs"] },
   link: { label: "Link", group: "component", ids: { salt: "link", fluent: "links", carbon: "link" }, fallback: ["button"] },
@@ -74,7 +78,7 @@ export const CONCEPTS: Record<string, Concept> = {
   "side-nav": { label: "Side navigation", group: "component", ids: { salt: "vert-nav", carbon: "sidenav" }, fallback: ["nav-bar", "tabs"] },
   "nav-bar": { label: "Navigation bar", group: "component", ids: { m3: "nav-bar", carbon: "bottom-nav" }, fallback: ["side-nav", "tabs"] },
   "nav-item": { label: "Navigation item", group: "component", ids: { salt: "nav-item" }, fallback: ["side-nav", "nav-bar", "tabs"] },
-  header: { label: "Header", group: "component", ids: { carbon: "header" }, fallback: ["side-nav", "nav-bar", "tabs"] },
+  header: { label: "UI shell header", group: "component", ids: { carbon: "header" }, fallback: ["side-nav", "nav-bar", "tabs"], systemOnly: true },
   tag: { label: "Tag", group: "component", ids: { salt: "pills", m3: "chips", carbon: "tags" }, fallback: ["badge"] },
   "static-tag": { label: "Static tag", group: "component", ids: { salt: "tag" }, fallback: ["tag", "badge"] },
   badge: { label: "Badge", group: "component", ids: { salt: "badges", m3: "badges", fluent: "badges", uoaui: "badges", carbon: "badge" } },
@@ -110,7 +114,7 @@ export const CONCEPTS: Record<string, Concept> = {
   /* ── Foundations ── */
   "f-color": { label: "Colour", group: "foundation", ids: { salt: "dl-color", m3: "guide-color-roles", fluent: "dl-color", uoaui: "dl-color", carbon: "dl-color" } },
   "f-palette": { label: "Full palette", group: "foundation", ids: { m3: "guide-palette" }, fallback: ["f-color"] },
-  "f-state-layers": { label: "State layers", group: "foundation", ids: { m3: "guide-state-layers" }, fallback: ["f-color"] },
+  "f-state-layers": { label: "State layers", group: "foundation", ids: { m3: "guide-state-layers" }, fallback: ["f-color"], systemOnly: true },
   "f-icons": { label: "Iconography", group: "foundation", ids: all("dl-icons") },
   "f-type": { label: "Typography", group: "foundation", ids: { salt: "dl-typography", fluent: "dl-typography", uoaui: "dl-typography", carbon: "dl-typography" }, fallback: ["f-color"] },
   "f-elevation": { label: "Elevation", group: "foundation", ids: { salt: "dl-elevation", m3: "guide-surfaces", fluent: "dl-elevation", uoaui: "dl-elevation", carbon: "dl-elevation" } },
@@ -148,6 +152,9 @@ export function conceptOf(system: SystemId, id: string): string | null {
 export interface Equivalent {
   /** Registry id in the target system, or null when it has no equivalent. */
   id: string | null;
+  /** True when the system itself has no such thing; false when only this
+      library lacks the page. */
+  systemOnly: boolean;
   /** Name of the thing being looked for ("FAB"). */
   label: string;
   /** Closest matches in the target system, same category first. Offered as
@@ -164,18 +171,18 @@ export interface Equivalent {
 export function resolveEquivalent(from: SystemId, id: string, to: SystemId): Equivalent {
   const key = conceptOf(from, id);
   const concept = key ? CONCEPTS[key] : null;
-  if (from === to) return { id, label: concept?.label ?? id, closest: [] };
+  if (from === to) return { id, label: concept?.label ?? id, systemOnly: false, closest: [] };
   if (!concept) {
-    return { id: null, label: id, closest: [{ id: CONCEPTS.button.ids[to]!, label: CONCEPTS.button.label }] };
+    return { id: null, label: id, systemOnly: false, closest: [{ id: CONCEPTS.button.ids[to]!, label: CONCEPTS.button.label }] };
   }
   const same = concept.ids[to];
-  if (same) return { id: same, label: concept.label, closest: [] };
+  if (same) return { id: same, label: concept.label, systemOnly: false, closest: [] };
   const closest: { id: string; label: string }[] = [];
   for (const alt of [...(concept.fallback ?? []), GROUP_ANCHOR[concept.group]]) {
     const target = CONCEPTS[alt]?.ids[to];
     if (target && !closest.some((c) => c.id === target)) closest.push({ id: target, label: CONCEPTS[alt].label });
   }
-  return { id: null, label: concept.label, closest: closest.slice(0, 3) };
+  return { id: null, label: concept.label, systemOnly: concept.systemOnly === true, closest: closest.slice(0, 3) };
 }
 
 /** The id of this concept in each system that has it (for Compare). */

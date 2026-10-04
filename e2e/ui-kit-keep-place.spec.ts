@@ -51,6 +51,8 @@ for (const entry of SAME) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(entry.heading);
       await expect(selectedTab(page)).toHaveText("Code");
       await expect(page.getByTestId("not-in-system")).toHaveCount(0);
+      /* Focus stays on the control that was pressed. */
+      await expect(link).toBeFocused();
       /* No scroll reset: within a few pixels of where it was, unless the
          new page is simply shorter than the old scroll position. */
       await expect.poll(async () => {
@@ -76,17 +78,35 @@ test("Data table maps to each system's table, or says the system has none", asyn
   await expect(page).toHaveURL(/ds=uoaui&c=data-table&tab=compare$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Data Table");
 
-  /* Material and Fluent document AG Grid, not a native data table. */
+  await scroller(page).evaluate((el) => { el.scrollTop = 160; });
+  const before = await scrollTop(page);
+
+  /* This library has no Material or Fluent data-table page yet (both
+     systems have one); the state says exactly that and does not blame the
+     system. The place, the tab and the scroll position are kept. */
   await railLink(page, "Material 3").click();
   await expect(page).toHaveURL(/ds=m3&c=data-table&from=uoaui&tab=compare$/);
-  await expect(page.getByTestId("not-in-system")).toContainText("Material 3 has no Data table.");
-  await expect(page.getByTestId("not-in-system").getByRole("link", { name: "AG Grid" })).toHaveAttribute("href", "/ui-kit?ds=m3&c=ag-grid");
+  const nis = page.getByTestId("not-in-system");
+  await expect(nis.getByRole("heading", { level: 1 })).toHaveText("This library has no Data table page for Material 3 yet.");
+  await expect(nis).not.toContainText("has no Data table.");
+  await expect(nis.getByRole("link", { name: "AG Grid" })).toHaveAttribute("href", "/ui-kit?ds=m3&c=ag-grid");
+  /* The not-here page is a short page: it fits the viewport, so there is
+     no position to keep. Nothing scrolls off. */
+  expect(await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(4);
+  expect(await scrollTop(page)).toBe(0);
 
-  /* And back to a system that has it: same entry, same tab. */
+  await railLink(page, "Fluent 2").click();
+  await expect(page).toHaveURL(/ds=fluent&c=data-table&from=uoaui&tab=compare$/);
+  await expect(page.getByTestId("not-in-system").getByRole("heading", { level: 1 })).toHaveText("This library has no Data table page for Fluent 2 yet.");
+
+  /* And back to a system that has it: same entry, same tab, same scroll,
+     and keyboard focus still on the switcher entry that was pressed. */
   await railLink(page, "Salt DS").click();
   await expect(page).toHaveURL(/ds=salt&c=table&tab=compare$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Table");
   await expect(selectedTab(page)).toHaveText("Compare");
+  await expect(railLink(page, "Salt DS")).toBeFocused();
+  await expect.poll(async () => Math.abs((await scrollTop(page)) - Math.min(before, await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight)))).toBeLessThanOrEqual(4);
 });
 
 test("missing equivalent: says so, offers the closest matches, never redirects", async ({ page }) => {

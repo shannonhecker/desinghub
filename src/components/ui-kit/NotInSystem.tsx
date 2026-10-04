@@ -27,11 +27,18 @@ export function NotInSystem() {
   return (
     <div className="kit-nis" data-testid="not-in-system">
       <div className="kit-nis-card">
-        <h1>{SYSTEM_LABEL[system]} has no {eq.label}.</h1>
-        <p>
-          {sourceName} is part of {getSystemInfo(missing.from).name}. Nothing in {getSystemInfo(system).name} does the same job, so there is no page to show here.
-        </p>
-        <h2>Closest in {SYSTEM_LABEL[system]}</h2>
+        {eq.systemOnly ? (
+          <>
+            <h1>{SYSTEM_LABEL[system]} has no {eq.label}.</h1>
+            <p>{sourceName} is {getSystemInfo(missing.from).name}&rsquo;s own. Nothing in {getSystemInfo(system).name} does the same job, so there is no page to show here.</p>
+          </>
+        ) : (
+          <>
+            <h1>This library has no {eq.label} page for {SYSTEM_LABEL[system]} yet.</h1>
+            <p>{getSystemInfo(system).name} does have one; it is not written up here. The closest pages that are:</p>
+          </>
+        )}
+        <h2>{eq.systemOnly ? `Closest in ${SYSTEM_LABEL[system]}` : `Here for ${SYSTEM_LABEL[system]}`}</h2>
         <ul>
           {eq.closest.map((c) => (
             <li key={c.id}>

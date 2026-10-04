@@ -522,7 +522,12 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
+  /* Fixed outer width whatever box model a system's global sheet sets, so
+     the main column never moves on a system switch (owner: no jumping). */
+  box-sizing: border-box;
   width: 92px;
+  min-width: 92px;
+  max-width: 92px;
   padding: var(--dh-space-12, 12px) var(--dh-space-8, 8px);
   gap: var(--dh-space-12, 12px);
   overflow-y: auto;
@@ -563,6 +568,7 @@ a { color: inherit; text-decoration: none; }
    DS / section reads at a glance (material.io rail pattern). Colour + radius
    come inline from the active DS tokens. */
 .uikit-rail-btn {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
