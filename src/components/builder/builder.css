@@ -10689,6 +10689,13 @@
   color: var(--ds-fg-tertiary);
   white-space: nowrap;
 }
+/* Beside a "View by" select, the title keeps its full width until the select
+   is down to its minimum: sharing the squeeze by flex-shrink weights still
+   took a fraction of a pixel off the title, enough to ellipsise it. */
+.dh-panel-header:has(.dh-panel-viewby) .dh-panel-heading {
+  flex: 1 0 auto;
+  max-width: calc(100% - var(--dh-panel-viewby-min) - var(--dh-panel-pad));
+}
 /* In a narrow panel the select gives way before the title is cut. */
 .dh-panel-viewby {
   flex: 0 100 var(--dh-panel-viewby-w);
