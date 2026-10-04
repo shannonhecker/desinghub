@@ -313,3 +313,37 @@
     --bc-duration-medium: 0ms;
   }
 }
+
+/* Composer image attachment (Task 16): attach button, thumbnail chip, drop
+   state and error line. Tonal surfaces with at most a low-contrast hairline;
+   the drop state is a soft tinted fill, not a ring. */
+:root {
+  --bc-attach-thumb:      40px;
+  --bc-attach-chip-max:   320px;
+  --bc-attach-remove:     28px;
+  --bc-attach-icon:       20px;
+  --bc-attach-icon-sm:    16px;
+  --bc-attach-blur:       6px;
+  --bc-attach-font:       13px;
+  --bc-attach-font-sm:    12px;
+  --bc-attach-surface:    rgba(255, 255, 255, 0.07);
+  --bc-attach-surface-hover: rgba(255, 255, 255, 0.11);
+  --bc-attach-hairline:   rgba(255, 255, 255, 0.06);
+  --bc-attach-drop-fill:  rgba(124, 196, 255, 0.12);
+  --bc-attach-drop-base:  rgba(20, 22, 30, 0.94);
+  --bc-attach-drop-fg:    #b9defc;
+  --bc-attach-error-fg:   #ff9b9b;
+  --bc-attach-error-fill: rgba(255, 122, 122, 0.10);
+  --bc-attach-focus:      #7cc4ff;
+}
+.builder-light {
+  --bc-attach-surface:    rgba(15, 17, 22, 0.045);
+  --bc-attach-surface-hover: rgba(15, 17, 22, 0.08);
+  --bc-attach-hairline:   rgba(15, 17, 22, 0.06);
+  --bc-attach-drop-fill:  rgba(11, 105, 217, 0.08);
+  --bc-attach-drop-base:  rgba(250, 251, 253, 0.95);
+  --bc-attach-drop-fg:    #0a58b8;
+  --bc-attach-error-fg:   #b42318;
+  --bc-attach-error-fill: rgba(180, 35, 24, 0.07);
+  --bc-attach-focus:      #0b69d9;
+}
