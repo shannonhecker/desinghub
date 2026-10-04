@@ -988,18 +988,18 @@ html:has(.landing-southleft) body {
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
-/* Below 1100px the two columns stack: copy first, then the instrument. */
-@media (max-width: 1100px) {
+/* Below 1240px the two columns stack: copy first, then the instrument. */
+@media (max-width: 1240px) {
   .landing-southleft {
     --lsl-section-y: 96px;
   }
   .landing-southleft .lsl-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 40px;
+    gap: 32px;
     min-height: 0;
     padding-left: var(--lsl-content-pad);
   }
-  .landing-southleft .lsl-hero { padding-top: 32px; }
+  .landing-southleft .lsl-hero { padding-top: 24px; }
   .landing-southleft .lsl-instrument { max-width: none; }
   .landing-southleft .lsl-section-head,
   .landing-southleft .lsl-export-grid,
@@ -1073,6 +1073,10 @@ html:has(.landing-southleft) body {
     padding: 0 5px;
     font-size: 13px;
   }
+  /* Keep the selected tab in view when the row has to scroll (320px). */
+  .landing-southleft .lsl-showcase-tab[aria-selected="true"] {
+    scroll-margin-inline: 24px;
+  }
   /* One icon toggle on phones: only the mode you can switch TO is shown. */
   .landing-southleft .lsl-mode { padding: 0; border: 0; }
   .landing-southleft .lsl-mode-btn {
@@ -1119,4 +1123,14 @@ html:has(.landing-southleft) body {
   }
   .landing-southleft .lsl-footer-top { margin-bottom: 48px; }
   .landing-southleft .lsl-footer-fine { flex-wrap: wrap; }
+}
+@media (max-width: 360px) {
+  .landing-southleft .lsl-nav-inner { gap: 12px; }
+  .landing-southleft .lsl-nav-cta { padding: 0 14px; }
+  .landing-southleft .lsl-logo { gap: 8px; }
+  /* The tab row scrolls here: fade its trailing edge so the cut reads as
+     "more", not as a clipped label. */
+  .landing-southleft .lsl-showcase-tabs {
+    mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+  }
 }

@@ -23,7 +23,7 @@
  * copy. Colons, commas, periods only.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   motion,
   useScroll,
@@ -206,19 +206,39 @@ const CODE_TOKEN = /("[^"]*")|\b(import|from|export|default|function|return)\b/g
 function CodeExcerpt({ source }: { source: string }) {
   const parts: React.ReactNode[] = [];
   let last = 0;
-  let m: RegExpExecArray | null;
-  CODE_TOKEN.lastIndex = 0;
-  while ((m = CODE_TOKEN.exec(source))) {
-    if (m.index > last) parts.push(source.slice(last, m.index));
+  for (const m of source.matchAll(CODE_TOKEN)) {
+    const at = m.index ?? 0;
+    if (at > last) parts.push(source.slice(last, at));
     parts.push(
-      <span key={m.index} className={m[1] ? "lsl-code-str" : "lsl-code-kw"}>
+      <span key={at} className={m[1] ? "lsl-code-str" : "lsl-code-kw"}>
         {m[0]}
       </span>,
     );
-    last = m.index + m[0].length;
+    last = at + m[0].length;
   }
   parts.push(source.slice(last));
   return <code>{parts}</code>;
+}
+
+/** Next prefetches every Link in view, and the builder route is about 2 MB
+ *  of script. That is a good trade on a desktop (the handoff is instant) and
+ *  a poor one on a phone, so prefetch is opt-in: wide, fine-pointer screens
+ *  that have not asked to save data. Everyone else loads the builder on tap. */
+const PREFETCH_QUERY = "(min-width: 1241px) and (pointer: fine)";
+function subscribePrefetch(onChange: () => void): () => void {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const mq = window.matchMedia(PREFETCH_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+function canPrefetch(): boolean {
+  if (typeof window.matchMedia !== "function") return false;
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  return !conn?.saveData && window.matchMedia(PREFETCH_QUERY).matches;
+}
+function useBuilderPrefetch(): false | null {
+  const ok = useSyncExternalStore(subscribePrefetch, canPrefetch, () => false);
+  return ok ? null : false;
 }
 
 /* ── Hero prompt ─────────────────────────────────────────────────────── */
@@ -305,6 +325,8 @@ function Shot({
         width={SHOT.phoneW}
         height={SHOT.phoneH}
       />
+      {/* Plain img inside <picture>: the phone source is art direction (a
+          different capture), which next/image does not express. */}
       <img
         ref={ref}
         className={alt ? "lsl-showcase-shot" : "lsl-showcase-ghost-shot"}
@@ -331,10 +353,12 @@ function Instrument({
   system,
   mode,
   onChange,
+  prefetch,
 }: {
   system: SystemId;
   mode: Mode;
   onChange: (system: SystemId, mode: Mode) => void;
+  prefetch: false | null;
 }) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   /* What was on screen before the last change; it stays underneath while the
@@ -534,7 +558,7 @@ function Instrument({
           The ESG Analytics template in Present mode. Real builder output,
           captured, not redrawn.
         </span>
-        <Link className="lsl-inline-link" href={REPORT_HANDOFF}>
+        <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
           Open this report in the builder
         </Link>
       </figcaption>
@@ -546,6 +570,7 @@ function Instrument({
 
 export default function LandingPage() {
   const navGlass = useNavGlassStyle();
+  const prefetch = useBuilderPrefetch();
   const [system, setSystem] = useState<SystemId>(DEFAULT_SYSTEM);
   const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
 
@@ -568,7 +593,7 @@ export default function LandingPage() {
               </li>
             ))}
           </ul>
-          <Link href="/builder" className="lsl-cta lsl-nav-cta">
+          <Link prefetch={prefetch} href="/builder" className="lsl-cta lsl-nav-cta">
             Open the builder
           </Link>
         </div>
@@ -588,7 +613,7 @@ export default function LandingPage() {
             <PromptForm id="lsl-hero-prompt-input" system={system} mode={mode} />
             <p className="lsl-hero-alt">
               No brief yet?{" "}
-              <Link className="lsl-inline-link" href="/builder">
+              <Link prefetch={prefetch} className="lsl-inline-link" href="/builder">
                 Start from a template
               </Link>
             </p>
@@ -596,6 +621,7 @@ export default function LandingPage() {
           <Instrument
             system={system}
             mode={mode}
+            prefetch={prefetch}
             onChange={(s, m) => {
               setSystem(s);
               setMode(m);
@@ -621,12 +647,14 @@ export default function LandingPage() {
           <ul className="lsl-systems">
             {SYSTEMS.map((s) => (
               <li key={s.id} className="lsl-systems-item">
-                <Link
+                <Link prefetch={prefetch}
                   href={`/builder?ds=${s.id}`}
                   className="lsl-syscard"
                   style={{ "--syscard-brand": s.brand } as React.CSSProperties}
                 >
                   <span className="lsl-syscard-frame">
+                    {/* Plain img: a static capture with fixed dimensions. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={shotSrc(s.id, "dark", true)}
                       width={SHOT.phoneW}
@@ -662,6 +690,7 @@ export default function LandingPage() {
           <div className="lsl-workflow-grid">
           <figure className="lsl-demo">
             <div className="lsl-demo-frame">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 className="lsl-demo-shot"
                 src="/showcase/builder-edit.webp"
@@ -742,7 +771,7 @@ export default function LandingPage() {
               <span className="lsl-code-file">dashboard.tsx</span>
               <span className="lsl-code-meta">Salt DS, dark</span>
             </div>
-            <pre className="lsl-code-pre" tabIndex={0} aria-label="Excerpt of the exported dashboard.tsx">
+            <pre className="lsl-code-pre" role="region" tabIndex={0} aria-label="Excerpt of the exported dashboard.tsx">
               <CodeExcerpt source={EXPORT_EXCERPT} />
             </pre>
             <figcaption className="lsl-code-caption">
@@ -764,10 +793,10 @@ export default function LandingPage() {
           </p>
           <PromptForm id="lsl-cta-prompt-input" system={system} mode={mode} />
           <div className="lsl-cta-actions">
-            <Link href="/builder" className="lsl-cta-textlink">
+            <Link prefetch={prefetch} href="/builder" className="lsl-cta-textlink">
               Open the builder
             </Link>
-            <Link href="/ui-kit" className="lsl-cta-textlink">
+            <Link prefetch={prefetch} href="/ui-kit" className="lsl-cta-textlink">
               Browse the UI Kit
             </Link>
           </div>
@@ -792,10 +821,10 @@ export default function LandingPage() {
               </p>
             </div>
             <ul className="lsl-footer-list" aria-label="Product">
-              <li><Link href="/builder">Builder</Link></li>
-              <li><Link href="/ui-kit">UI Kit</Link></li>
-              <li><Link href="/theme-builder">Theme builder</Link></li>
-              <li><Link href="/token-editor">Token editor</Link></li>
+              <li><Link prefetch={prefetch} href="/builder">Builder</Link></li>
+              <li><Link prefetch={prefetch} href="/ui-kit">UI Kit</Link></li>
+              <li><Link prefetch={prefetch} href="/theme-builder">Theme builder</Link></li>
+              <li><Link prefetch={prefetch} href="/token-editor">Token editor</Link></li>
             </ul>
           </div>
           <div className="lsl-footer-fine">

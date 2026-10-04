@@ -1016,7 +1016,9 @@ describe("instrument CSS contract", () => {
 
   it("caps the hero display size for phones in the shared type scale", () => {
     const globals = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
-    expect(globals).toMatch(/--lsl-text-display-l:\s*clamp\(34px,/);
+    // 9vw is 34px on a 375px phone; the 28px floor keeps "Five design
+    // systems." on one line down to 320px.
+    expect(globals).toMatch(/--lsl-text-display-l:\s*clamp\(28px,\s*9vw,\s*55px\)/);
     expect(css).toMatch(/\.lsl-hero-headline\s*\{[^}]*font-size:\s*var\(--lsl-text-display-l\)/);
   });
 });
