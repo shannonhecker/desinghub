@@ -13,8 +13,9 @@ const incoming: SharedCanvas = {
 };
 
 beforeEach(() => useBuilder.setState({
+  ...useBuilder.getInitialState(),
   blocks: [], headerBlocks: [], sidebarBlocks: [], footerBlocks: [], pages: [], activePageId: null, currentSessionId: null,
-  designSystem: "salt", mode: "dark", density: "medium", activeTemplateId: "risk-analytics",
+  designSystem: "salt", mode: "dark", density: "medium", deviceMode: "desktop", canvasSpacing: "comfortable", activeTemplateId: "risk-analytics",
 }));
 
 describe("shared canvas replacement", () => {
@@ -61,6 +62,23 @@ describe("shared canvas replacement", () => {
     expect(useBuilder.getState()).toMatchObject({ blocks: incoming.blocks, pages: [], activePageId: null, activeTemplateId: null, selectedBlockId: null });
   });
 
+  it("clears saved layout, dataset, filters and color overrides on acceptance, preserving them for Undo", () => {
+    const initial = useBuilder.getInitialState();
+    const reportData = { id: "private", label: "Uploaded figures", baseCurrency: "GBP", tables: [] };
+    useBuilder.setState({ blocks: [oldBlock], reportData, reportState: { account: "private" },
+      colorOverrides: { accent: "#ff0000" }, hasOverrides: true,
+      zoneLayouts: { ...initial.zoneLayouts, header: { ...initial.zoneLayouts.header, visible: false }, body: { mode: "stack", gap: 80 } },
+    });
+    const before = useBuilder.getState();
+    const dispose = initBuilderHistory();
+    try {
+      applySharedCanvas(incoming, () => true);
+      expect(useBuilder.getState()).toMatchObject({ zoneLayouts: initial.zoneLayouts, reportData: null, reportState: {}, colorOverrides: {}, hasOverrides: false });
+      expect(undo()).toBe(true);
+      expect(useBuilder.getState()).toMatchObject({ zoneLayouts: before.zoneLayouts, reportData, reportState: before.reportState, colorOverrides: before.colorOverrides, hasOverrides: true });
+    } finally { dispose(); }
+  });
+
   it("restores the previous canvas, pages and theme with Undo after acceptance", () => {
     useBuilder.setState({ blocks: [oldBlock], pages: [{ id: "old", name: "Old", body: [oldBlock] }], activePageId: "old" });
     const before = useBuilder.getState();
@@ -71,6 +89,7 @@ describe("shared canvas replacement", () => {
       expect(useBuilder.getState()).toMatchObject({
         blocks: before.blocks, pages: before.pages, activePageId: before.activePageId,
         designSystem: before.designSystem, mode: before.mode, density: before.density, themeKey: before.themeKey,
+        deviceMode: before.deviceMode, canvasSpacing: before.canvasSpacing,
       });
     } finally { dispose(); }
   });

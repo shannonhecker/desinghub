@@ -15,7 +15,8 @@
  * - Bounded ring buffer (MAX_HISTORY = 50) caps memory.
  */
 
-import { useBuilder, type Block, type DesignSystem, type BuilderMode, type ZoneId, type ZoneLayout, type Page } from "@/store/useBuilder";
+import type { ReportDataset } from "@/lib/reportData/types";
+import { useBuilder, type Block, type DeviceMode, type DesignSystem, type BuilderMode, type ZoneId, type ZoneLayout, type Page } from "@/store/useBuilder";
 
 const MAX_HISTORY = 50;
 
@@ -35,6 +36,10 @@ export interface CanvasSnapshot {
   designSystem: DesignSystem;
   mode: BuilderMode;
   density: string;
+  deviceMode: DeviceMode;
+  canvasSpacing: "tight" | "comfortable";
+  reportData: ReportDataset | null;
+  reportState: Record<string, string>;
   themeKey: string;
   colorOverrides: Record<string, string>;
   /* Per-zone layout config (row/grid/stack + columns/gap/padding/…).
@@ -80,6 +85,10 @@ function snap(): CanvasSnapshot {
     designSystem: s.designSystem,
     mode: s.mode,
     density: s.density,
+    deviceMode: s.deviceMode,
+    canvasSpacing: s.canvasSpacing,
+    reportData: s.reportData,
+    reportState: s.reportState,
     themeKey: s.themeKey,
     colorOverrides: { ...s.colorOverrides },
     /* Captured by reference (not copied): setZoneLayout always produces a
@@ -107,6 +116,10 @@ function sameSnapshot(a: CanvasSnapshot, b: CanvasSnapshot): boolean {
     a.designSystem === b.designSystem &&
     a.mode === b.mode &&
     a.density === b.density &&
+    a.deviceMode === b.deviceMode &&
+    a.canvasSpacing === b.canvasSpacing &&
+    a.reportData === b.reportData &&
+    a.reportState === b.reportState &&
     a.themeKey === b.themeKey &&
     a.colorOverrides === b.colorOverrides &&
     a.zoneLayouts === b.zoneLayouts &&
@@ -164,6 +177,10 @@ function apply(snapshot: CanvasSnapshot) {
     designSystem: snapshot.designSystem,
     mode: snapshot.mode,
     density: snapshot.density,
+    deviceMode: snapshot.deviceMode,
+    canvasSpacing: snapshot.canvasSpacing,
+    reportData: snapshot.reportData,
+    reportState: snapshot.reportState,
     themeKey: snapshot.themeKey,
     colorOverrides: snapshot.colorOverrides,
     zoneLayouts: snapshot.zoneLayouts,
@@ -241,6 +258,10 @@ export function initBuilderHistory(): () => void {
       state.designSystem === prev.designSystem &&
       state.mode === prev.mode &&
       state.density === prev.density &&
+      state.deviceMode === prev.deviceMode &&
+      state.canvasSpacing === prev.canvasSpacing &&
+      state.reportData === prev.reportData &&
+      state.reportState === prev.reportState &&
       state.themeKey === prev.themeKey &&
       state.colorOverrides === prev.colorOverrides &&
       state.zoneLayouts === prev.zoneLayouts &&
