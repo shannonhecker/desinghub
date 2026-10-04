@@ -782,10 +782,17 @@ export function ChatPanel() {
     if (isGenerating) return;
     const tpl = BUILDER_TEMPLATES[id];
     if (!tpl) return;
+    /* One step: the template goes on the canvas now, in the current design
+       system. It stays staged so the design-system chips under the reply
+       re-apply it in another system (the layout carries over). Asking
+       first made every template a two-step action. */
+    applyTemplateToCanvas(tpl, designSystem);
+    if (!previewOpen) setPreviewOpen(true);
     setPendingTemplateId(id);
     setPendingFirstMessage(null);
     addMessage("user", `Build me ${articleFor(tpl.label)} ${tpl.label}`);
-    addMessage("ai", "Great choice. Which design system should I use?");
+    addMessage("ai", `${tpl.label} is on the canvas in ${DS_LABEL[designSystem]}. Want it in another design system? Tap one below - the layout carries over.`);
+    bumpPreview();
   };
 
   /* "Customize" seeds the composer so the user describes tweaks in free

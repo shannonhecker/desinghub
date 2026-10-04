@@ -3103,7 +3103,27 @@
 }
 .template-card-head .material-symbols-outlined { font-size: 17px; color: var(--b-accent); }
 .template-card-label { font-size: 13px; font-weight: 600; }
-.template-card-actions { display: flex; gap: 6px; margin-top: 2px; }
+/* What the template contains: two lines, then cut, so every card in the
+   row is the same height. */
+.template-card-desc {
+  margin: 0;
+  min-height: calc(2 * 1.4em);
+  font-size: var(--tpl-desc-size);
+  line-height: 1.4;
+  color: var(--b-fg2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); margin-top: var(--tpl-chip-gap); }
+.prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
+.prompt-bubble.template-gallery-chip.is-active {
+  background: var(--b-accent);
+  border-color: var(--b-accent);
+  color: var(--tpl-chip-on-accent);
+}
+.template-card-actions { display: flex; gap: 6px; margin-top: auto; }
 .prompt-bubble.template-card-btn {
   flex: 1;
   padding: 6px 10px;

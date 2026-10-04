@@ -4,6 +4,9 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILDER_TEMPLATES,
   TEMPLATE_ORDER,
+  TEMPLATE_CATEGORIES,
+  templateCategory,
+  type TemplateCategory,
   type TemplateId,
 } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
@@ -15,8 +18,10 @@ import { TemplatePreview } from "./TemplatePreviews";
    so every template is reachable and obviously-more (NN/g: cut-off
    adjacent items + arrows aid discovery; the prior version hid the
    scrollbar with no affordance, so it read as "3 cards, done").
-   Each card: wireframe preview + label + two actions ("Use this" /
-   "Customize"). Buttons reuse .prompt-bubble for the unified hover.
+   Each card: wireframe preview + label + what it contains + two actions
+   ("Use this" / "Customize"). Category chips above narrow the row, so the
+   gallery still reads at a glance as templates are added. Buttons reuse
+   .prompt-bubble for the unified hover.
    ══════════════════════════════════════════════════════════ */
 export function TemplateCardsMessage({
   onUse,
@@ -28,6 +33,8 @@ export function TemplateCardsMessage({
   disabled?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [category, setCategory] = useState<TemplateCategory | "all">("all");
+  const ids = TEMPLATE_ORDER.filter((id) => category === "all" || templateCategory(id) === category);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
 
@@ -38,6 +45,12 @@ export function TemplateCardsMessage({
     setAtStart(el.scrollLeft <= 4);
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
   }, []);
+
+  /* A new category is a new row: back to its start. */
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ left: 0 });
+    sync();
+  }, [category, sync]);
 
   useEffect(() => {
     sync();
@@ -52,6 +65,20 @@ export function TemplateCardsMessage({
     scrollRef.current?.scrollBy({ left: dir * 220, behavior: "smooth" });
 
   return (
+    <div className="template-gallery-wrap">
+    <div className="template-gallery-chips" role="group" aria-label="Template category">
+      {[{ id: "all" as const, label: "All" }, ...TEMPLATE_CATEGORIES].map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          className={`prompt-bubble template-gallery-chip${category === c.id ? " is-active" : ""}`}
+          aria-pressed={category === c.id}
+          onClick={() => setCategory(c.id)}
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
     <div className={`template-gallery${atStart ? " at-start" : ""}${atEnd ? " at-end" : ""}`}>
       <button
         type="button"
@@ -65,7 +92,7 @@ export function TemplateCardsMessage({
       </button>
 
       <div className="template-cards" ref={scrollRef} onScroll={sync} role="list" aria-label="Starting templates">
-        {TEMPLATE_ORDER.map((id) => {
+        {ids.map((id) => {
           const tpl = BUILDER_TEMPLATES[id];
           return (
             <div key={id} className="template-card" role="listitem">
@@ -78,6 +105,7 @@ export function TemplateCardsMessage({
                 </span>
                 <span className="template-card-label">{tpl.label}</span>
               </div>
+              <p className="template-card-desc">{tpl.desc}</p>
               <div className="template-card-actions">
                 <button
                   type="button"
@@ -113,6 +141,7 @@ export function TemplateCardsMessage({
       >
         <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
       </button>
+    </div>
     </div>
   );
 }

@@ -69,6 +69,11 @@
   --zlo-swatch:             12px;
   --bc-gutter-narrow:       16px;
   --dh-panel-viewby-min:    88px;
+  /* Template gallery in the chat. */
+  --tpl-desc-size:          11px;
+  --tpl-chip-gap:           6px;
+  --tpl-chip-pad:           4px 12px;
+  --tpl-chip-on-accent:     #15102a;
   --bc-bar-gap-narrow:      16px;
   /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
   --dh-panel-tool-size:  28px;

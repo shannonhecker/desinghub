@@ -296,27 +296,34 @@ function LandingPagePreview() {
   );
 }
 
-/* Shared chrome for the finance report wireframes: sidebar, header, the
+/* Shared chrome for the finance report wireframes: the two-bar header and the
    context row (title + filters). */
 function FinanceChrome({ filters }: { filters: number }) {
   const width = 26;
   const gap = 4;
   return (
     <>
-      <WireRect x={4} y={4} w={30} h={122} r={3} stroke />
-      <WireRect x={10} y={12} w={18} h={3} />
-      <WireRect x={10} y={20} w={16} h={2} accent />
-      <WireRect x={10} y={25} w={14} h={2} />
-      <WireRect x={10} y={30} w={15} h={2} />
-      <WireRect x={10} y={35} w={12} h={2} />
-      <WireRect x={38} y={4} w={178} h={8} r={2} />
-      <WireRect x={38} y={17} w={28} h={4} accent />
+      {/* Two-bar application header: brand + links, then workspace tabs. */}
+      <WireRect x={4} y={4} w={212} h={7} r={2} stroke />
+      <WireRect x={8} y={6.5} w={3} h={2.4} accent />
+      <WireRect x={13} y={6.8} w={20} h={1.8} />
+      <WireRect x={40} y={6.8} w={10} h={1.8} />
+      <WireRect x={54} y={6.8} w={10} h={1.8} />
+      <WireRect x={68} y={6.8} w={10} h={1.8} />
+      <WireRect x={8} y={12.6} w={9} h={1.6} />
+      <WireRect x={21} y={12.6} w={13} h={1.6} accent />
+      <WireRect x={38} y={12.6} w={8} h={1.6} />
+      {/* Context row: page title + filters. */}
+      <WireRect x={21} y={18} w={28} h={4} accent />
       {Array.from({ length: filters }, (_, i) => (
-        <WireRect key={i} x={216 - (filters - i) * (width + gap) + gap} y={16} w={width} h={6} r={1.5} stroke />
+        <WireRect key={i} x={199 - (filters - i) * (width + gap) + gap} y={17} w={width} h={6} r={1.5} stroke />
       ))}
     </>
   );
 }
+
+/** The page body of the finance thumbnails, centred under the header. */
+const FINANCE_BODY_SHIFT = "translate(-17 0)";
 
 /* A grid panel: header band, grouped header row, then rows. */
 function WireGrid({ x, y, w, h, rows }: { x: number; y: number; w: number; h: number; rows: number }) {
@@ -342,6 +349,7 @@ function RiskAnalyticsPreview() {
   return (
     <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Risk analytics preview: a risk summary grid, three chart panels and a value-at-risk trend chart">
       <FinanceChrome filters={1} />
+      <g transform={FINANCE_BODY_SHIFT}>
       <WireGrid x={38} y={26} w={178} h={26} rows={4} />
 
       {/* Stacked bar (horizontal) */}
@@ -377,6 +385,7 @@ function RiskAnalyticsPreview() {
       })}
       <path d="M 45 118 L 66 116 L 87 108 L 108 101 L 129 99 L 150 106 L 171 114 L 192 117 L 210 119" stroke={ACCENT} strokeWidth={1.2} fill="none" />
       <path d="M 45 119 L 66 117 L 87 110 L 108 103 L 129 101 L 150 107 L 171 115 L 192 118 L 210 120" stroke={MUTED} strokeWidth={1} strokeDasharray="2 2" fill="none" />
+      </g>
     </svg>
   );
 }
@@ -389,6 +398,7 @@ function PerformanceAnalyticsPreview() {
   return (
     <svg viewBox="0 0 220 130" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Performance analytics preview: a results grid, a breakdown grid, returns and allocation charts, and two trend charts">
       <FinanceChrome filters={4} />
+      <g transform={FINANCE_BODY_SHIFT}>
       <WireGrid x={38} y={26} w={178} h={32} rows={6} />
 
       <WireGrid x={38} y={62} w={56} h={30} rows={5} />
@@ -418,6 +428,7 @@ function PerformanceAnalyticsPreview() {
         </React.Fragment>
       ))}
       <path d="M 139 110 L 152 111 L 165 106 L 178 105 L 191 112 L 204 113" stroke={FG} strokeOpacity={0.55} strokeWidth={1} fill="none" />
+      </g>
     </svg>
   );
 }
