@@ -14743,6 +14743,9 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   right: auto;
   width: max-content;
   flex-wrap: nowrap;
+  /* 28px tall in a 30px band: it ends clear of the first nav item even when
+     the frame is scaled to a fractional zoom. */
+  padding: calc(2 * var(--bc-hairline));
 }
 .bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(-1 * (var(--dh-nav-pad) + var(--bc-frame-tab-clear))); }
 .bp-sidebar[data-side="right"] .zone-drop-sidebar > .zone-layout-overlay { left: auto; right: var(--bc-gap-xs); }
