@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useBuilder } from "@/store/useBuilder";
-import { pushSnapshot, undo, redo, canUndo, canRedo, initBuilderHistory } from "../builderHistory";
+import { beginHistoryTransaction, pushSnapshot, undo, redo, canUndo, canRedo, initBuilderHistory } from "../builderHistory";
 
 let teardown: (() => void) | null = null;
 
@@ -275,5 +275,44 @@ describe("builderHistory", () => {
     expect(s.zoneLayouts.body.mode).toBe("grid");
     const activePage = s.pages.find((p) => p.id === s.activePageId);
     expect(activePage?.bodyLayout?.mode).toBe("grid"); // reconciled, not stale/undefined
+  });
+});
+
+
+describe('gesture history', () => {
+  beforeEach(resetAll);
+  const frame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+  it('records a multi-frame gesture as one undo step, and redoes the final state', async () => {
+    const finish = beginHistoryTransaction();
+    useBuilder.setState({ density: 'high' });
+    await frame();
+    useBuilder.setState({ density: 'low' });
+    await frame();
+    finish();
+    finish(); // pointer-up plus lost-capture/unmount is harmless
+    expect(undo()).toBe(true);
+    expect(useBuilder.getState().density).toBe('medium');
+    expect(canUndo()).toBe(false);
+    expect(redo()).toBe(true);
+    expect(useBuilder.getState().density).toBe('low');
+  });
+
+  it('does not add an undo step when the pointer never moved', () => {
+    const finish = beginHistoryTransaction();
+    finish();
+    expect(canUndo()).toBe(false);
+  });
+
+  it('keeps an earlier pending change separate from the gesture', async () => {
+    useBuilder.setState({ density: 'high' });
+    const finish = beginHistoryTransaction();
+    useBuilder.setState({ density: 'low' });
+    await frame();
+    finish();
+    undo();
+    expect(useBuilder.getState().density).toBe('high');
+    undo();
+    expect(useBuilder.getState().density).toBe('medium');
   });
 });

@@ -160,4 +160,153 @@ describe("applyChatComponentDelta", () => {
     expect(blocks).toHaveLength(1);
     expect(blocks[0].source).toBe("chat");
   });
+
+  /* Any-zone chat adds: `zone` threads the target zone through adds,
+     removals, and clears so "add a card to the sidebar" lands in the
+     sidebar array instead of silently defaulting to body. */
+  describe("zone option", () => {
+    it("zone='header' adds the mapped block to headerBlocks, body untouched", () => {
+      applyChatComponentDelta([], ["cards"], { zone: "header" });
+      expect(useBuilder.getState().blocks).toHaveLength(0);
+      expect(useBuilder.getState().headerBlocks).toHaveLength(1);
+      expect(useBuilder.getState().headerBlocks[0].type).toBe("SimulatedCard");
+    });
+
+    it("zone='sidebar' removal scans sidebarBlocks and leaves body alone", () => {
+      resetStore({
+        blocks: [{ id: "body-btn", type: "SimulatedButton", props: {} }] as Block[],
+        sidebarBlocks: [
+          { id: "sb-1", type: "SimulatedButton", props: {} },
+          { id: "sb-2", type: "SimulatedButton", props: {} },
+        ] as Block[],
+      });
+      applyChatComponentDelta([], [], { alsoRemoveIds: ["buttons"], zone: "sidebar" });
+      expect(useBuilder.getState().sidebarBlocks).toHaveLength(0);
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+    });
+
+    it("zone='header' clear wipes headerBlocks only", () => {
+      resetStore({
+        blocks: [{ id: "body-1", type: "SimulatedCard", props: {} }] as Block[],
+        headerBlocks: [
+          { id: "hdr-1", type: "SimulatedButton", props: {} },
+          { id: "hdr-2", type: "SimulatedBadge", props: {} },
+        ] as Block[],
+      });
+      applyChatComponentDelta([], [], { clearBody: true, zone: "header" });
+      expect(useBuilder.getState().headerBlocks).toHaveLength(0);
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+    });
+
+    it("omitted zone keeps the body default", () => {
+      applyChatComponentDelta([], ["cards"], {});
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+      expect(useBuilder.getState().headerBlocks).toHaveLength(0);
+    });
+  });
+
+  /* Removal honesty: the caller needs to know whether an explicit
+     removal actually touched the canvas, so a miss (type lives in a
+     different zone) can be reported honestly instead of as success. */
+  describe("removedCount result", () => {
+    it("reports 0 when the mentioned type is not in the target zone", () => {
+      resetStore({
+        sidebarBlocks: [{ id: "t1", type: "SimulatedDataTable", props: {} }] as Block[],
+      });
+      const res = applyChatComponentDelta(["table"], [], {});
+      expect(res.removedCount).toBe(0);
+      expect(useBuilder.getState().sidebarBlocks).toHaveLength(1);
+    });
+
+    it("reports the number of blocks actually removed", () => {
+      resetStore({
+        blocks: [
+          { id: "a", type: "SimulatedButton", props: {} },
+          { id: "b", type: "SimulatedButton", props: {} },
+        ] as Block[],
+      });
+      const res = applyChatComponentDelta(["buttons"], []);
+      expect(res.removedCount).toBe(2);
+    });
+
+    it("counts blocks wiped by a clear", () => {
+      resetStore({
+        blocks: [
+          { id: "a", type: "SimulatedButton", props: {} },
+          { id: "b", type: "SimulatedCard", props: {} },
+        ] as Block[],
+      });
+      const res = applyChatComponentDelta([], [], { clearBody: true });
+      expect(res.removedCount).toBe(2);
+    });
+
+    it("reports 0 on the empty-delta early return", () => {
+      const res = applyChatComponentDelta(["buttons"], ["buttons"]);
+      expect(res.removedCount).toBe(0);
+    });
+  });
+
+  /* Chat adds must not hijack the chat scope: addBlockFromLibrary
+     auto-selects the block it adds (inspector jump for palette clicks),
+     but a selected block routes the NEXT chat message to the
+     selected-block path — offline it then bails with "Editing the
+     selected block needs AI", breaking repeated adds. */
+  it("chat adds do not steal the selection scope", () => {
+    applyChatComponentDelta([], ["table"]);
+    expect(useBuilder.getState().blocks).toHaveLength(1);
+    expect(useBuilder.getState().selectedBlockId).toBeNull();
+  });
+
+  it("a pre-existing selection survives a chat add", () => {
+    resetStore({
+      blocks: [{ id: "keep-me", type: "SimulatedCard", props: {} }] as Block[],
+      selectedBlockId: "keep-me",
+      selectedBlockZone: "body",
+    });
+    applyChatComponentDelta([], ["buttons"]);
+    expect(useBuilder.getState().selectedBlockId).toBe("keep-me");
+    expect(useBuilder.getState().selectedBlockZone).toBe("body");
+  });
+
+  /* Duplicate adds: alsoAddIds forces an add even when the id is already
+     in the wizard state (and thus invisible to the oldIds -> newIds
+     delta). Kills the false-success bug where "add a data table" with one
+     present reported Added but changed nothing. */
+  describe("alsoAddIds option", () => {
+    it("adds a duplicate even when the id is present in both old and new ids", () => {
+      resetStore({
+        blocks: [{ id: "t1", type: "SimulatedDataTable", props: {} }] as Block[],
+      });
+      applyChatComponentDelta(["table"], ["table"], { alsoAddIds: ["table"] });
+      const blocks = useBuilder.getState().blocks;
+      expect(blocks).toHaveLength(2);
+      expect(blocks.every((b) => b.type === "SimulatedDataTable")).toBe(true);
+    });
+
+    it("bypasses the empty-delta early return", () => {
+      applyChatComponentDelta(["buttons"], ["buttons"], { alsoAddIds: ["buttons"] });
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+      expect(useBuilder.getState().blocks[0].type).toBe("SimulatedButton");
+    });
+
+    it("combines with zone so the duplicate lands in the target zone", () => {
+      resetStore({
+        blocks: [{ id: "t1", type: "SimulatedDataTable", props: {} }] as Block[],
+      });
+      applyChatComponentDelta(["table"], ["table"], { alsoAddIds: ["table"], zone: "sidebar" });
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+      expect(useBuilder.getState().sidebarBlocks).toHaveLength(1);
+      expect(useBuilder.getState().sidebarBlocks[0].type).toBe("SimulatedDataTable");
+    });
+
+    it("stamps alsoAddIds blocks with source='chat'", () => {
+      applyChatComponentDelta(["table"], ["table"], { alsoAddIds: ["table"] });
+      expect(useBuilder.getState().blocks[0].source).toBe("chat");
+    });
+
+    it("does not double-add an id that is in both the delta and alsoAddIds", () => {
+      applyChatComponentDelta([], ["table"], { alsoAddIds: ["table"] });
+      expect(useBuilder.getState().blocks).toHaveLength(1);
+    });
+  });
 });

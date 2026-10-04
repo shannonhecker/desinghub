@@ -29,7 +29,8 @@ const hoisted = vi.hoisted(() => ({
   state: { retrySeconds: null as number | null },
 }));
 
-vi.mock("@/lib/useChatAPI", () => ({
+vi.mock("@/lib/useChatAPI", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/useChatAPI")>(),
   useChatAPI: () => ({
     sendMessage: hoisted.sendMessage,
     abort: vi.fn(),
@@ -129,5 +130,59 @@ describe("C-429: countdown gates network sends only", () => {
     mountPanel();
     act(() => { sendBtn()!.click(); });
     expect(hoisted.sendMessage).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Selected-block editing must remain scoped after allowing explicit additions.
+describe('selected block command routing', () => {
+  const original = { id: 'existing-chart', type: 'HighchartDonut', props: { title: 'Allocation', data: [35, 65] } };
+
+  function prepare(message: string, online: boolean) {
+    useBuilder.setState({
+      blocks: [original], selectedComponents: ['highchartDonut'],
+      selectedBlockId: original.id, selectedBlockIds: [original.id], selectedBlockZone: 'body',
+      inputText: message,
+      backendStatus: { anthropicConfigured: online, firebaseConfigured: false },
+    });
+    mountPanel();
+  }
+
+  it.each(['make this chart a pie', 'add a title to this chart', 'add a subtitle to this card', 'add a title to the chart', 'add a field to my form'])(
+    'keeps an offline edit scoped without adding or changing blocks: %s', message => {
+      prepare(message, false);
+      act(() => sendBtn()!.click());
+      expect(useBuilder.getState().blocks).toEqual([original]);
+      expect(useBuilder.getState().selectedBlockId).toBe(original.id);
+      expect(useBuilder.getState().messages.at(-1)?.content).toMatch(/editing the selected block needs AI/i);
+      expect(hoisted.sendMessage).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['add a chart to the header', 'add a chart to this canvas'])(
+    'keeps explicit canvas/zone additions available with a selection: %s', message => {
+      vi.useFakeTimers();
+      try {
+        prepare(message, false);
+        act(() => sendBtn()!.click());
+        const s = useBuilder.getState();
+        expect(s.blocks.find(block => block.id === original.id)).toEqual(original);
+        const added = [...s.blocks, ...s.headerBlocks].filter(block => block.id !== original.id);
+        expect(added).toHaveLength(1);
+        expect(added[0].type).toBe('HighchartLine');
+        expect(s.selectedBlockId).toBe(original.id);
+        expect(hoisted.sendMessage).not.toHaveBeenCalled();
+        act(() => vi.runAllTimers());
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it('sends genuine selected edits to the model with selection intact', () => {
+    prepare('make this chart a pie', true);
+    act(() => sendBtn()!.click());
+    expect(hoisted.sendMessage).toHaveBeenCalledWith('make this chart a pie');
+    expect(useBuilder.getState().selectedBlockId).toBe(original.id);
+    expect(useBuilder.getState().blocks).toEqual([original]);
   });
 });
