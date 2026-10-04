@@ -17,6 +17,10 @@ export const VALID_TEMPLATE_IDS = [
   "landing-page",
   "risk-analytics",
   "performance-analytics",
+  "esg-analytics",
+  "climate-analytics",
+  "screening",
+  "screening-changes",
 ] as const;
 
 export type TemplateId = (typeof VALID_TEMPLATE_IDS)[number];
@@ -30,6 +34,14 @@ export const TEMPLATE_SUMMARIES: Record<TemplateId, string> = {
   "landing-page": "Landing Page - hero, stats, features, testimonials, pricing, FAQ and a closing call to action",
   "risk-analytics":
     "Risk Analytics (finance, data-driven) - a risk summary grid by fund, market value and risk contribution charts, top issuers, value at risk over time; currency filter; selecting a fund in the grid filters the charts",
+  "esg-analytics":
+    "ESG Analytics (finance, data-driven) - an ESG summary grid by account that drives four score gauges, a rating distribution, a dimension breakdown, an E/S/G trend and top / bottom contributor rankings; currency and periodicity filters; has a left sidebar",
+  "climate-analytics":
+    "Climate Analytics (finance, data-driven) - an emissions summary grid with grouped headers that drives alignment, emissions, intensity and contribution charts, a dimension breakdown and carbon rankings; currency filter",
+  screening:
+    "Screening (finance, data-driven) - a screening waterfall whose bars filter the security universe grid, and a detail panel for the selected security",
+  "screening-changes":
+    "Screening Changes (finance, data-driven) - a period-change grid with flag chips, emissions sparklines, rating badges and score heat cells, and a detail panel for the selected security",
   "performance-analytics":
     "Performance Analytics (finance, data-driven) - a results grid by account over 1M/3M/YTD/1Y against benchmark, a breakdown grid, returns chart, allocation donut, allocation history, investment trend; fee type, currency, periodicity and benchmark filters",
 };

@@ -30,6 +30,7 @@ import {
 } from "@/lib/sampleData";
 import { pickImage, getImageById } from "@/lib/sampleImages";
 import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
+import { esgAnalytics, climateAnalytics, screening, screeningChangesTemplate } from "@/lib/sustainableTemplates";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -439,6 +440,10 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "landing-page": landingPage,
   "risk-analytics": riskAnalytics,
   "performance-analytics": performanceAnalytics,
+  "esg-analytics": esgAnalytics,
+  "climate-analytics": climateAnalytics,
+  screening,
+  "screening-changes": screeningChangesTemplate,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
@@ -454,6 +459,10 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "landing-page",
   "risk-analytics",
   "performance-analytics",
+  "esg-analytics",
+  "climate-analytics",
+  "screening",
+  "screening-changes",
 ];
 
 /** True when the template on the canvas pins its structural spacing across

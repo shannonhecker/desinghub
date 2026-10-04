@@ -198,7 +198,9 @@ function leafColDef(column: GridLeafColumn, isFirst: boolean, max: number): ColD
           ),
         }
       : {}),
-    cellClass: cell ? `dh-cell dh-cell-kind-${cell.type}` : undefined,
+    /* Setting cellClass replaces the one the "rightAligned" type adds, so a
+       numeric rich cell names it again. */
+    cellClass: cell ? `dh-cell dh-cell-kind-${cell.type}${numeric && !leftAligned ? " ag-right-aligned-cell" : ""}` : undefined,
     cellStyle: (params) => {
       const tone = cell?.type === "heat" ? heatTone(cell, params.value) : null;
       return {

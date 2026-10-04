@@ -60,7 +60,7 @@ import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
 import { useBoundData, useCanvasDataset } from "./useBoundData";
-import { CURRENCY_STATE, nextSelection } from "@/lib/reportData/binding";
+import { CURRENCY_STATE, centerColumn, nextSelection } from "@/lib/reportData/binding";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
@@ -1698,14 +1698,18 @@ function HighchartBlockRenderer({
   const currency = useBuilder((s) => s.reportState[CURRENCY_STATE]);
   const centerLabel =
     boundParts && boundParts.centerValue !== null
-      ? formatGridValue({ field: "", header: "", kind: "currency", compact: true, currency: currency ?? dataset?.baseCurrency }, boundParts.centerValue)
+      ? formatGridValue(centerColumn(boundParts.centerMoney, currency ?? dataset?.baseCurrency), boundParts.centerValue)
       : text(p.centerLabel);
 
   /* A framed panel shows the title in its header and gives the chart the
      space its fixed height leaves; an unframed chart keeps its own title. */
   const framed = p.panel === true;
   const panelHeight = panelHeightOf(p);
+  const readOnly = usePreviewReadOnly();
   const chart = (height: number | undefined) => (
+    /* While presenting, a click on a selectable chart picks a POINT; it must
+       not also select the block for the amend composer. */
+    <div onClick={onSelectPoint && readOnly ? (e) => e.stopPropagation() : undefined}>
     <SimulatedHighchart
       chartType={chartType}
       title={title}
@@ -1727,10 +1731,13 @@ function HighchartBlockRenderer({
       valueSuffix={text(p.valueSuffix)}
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
       valueMax={typeof p.valueMax === "number" ? p.valueMax : undefined}
+      labelWrap={p.labelWrap === true}
       pointColors={pointColors}
+      pointColorsByName={p.pointColorsByName && typeof p.pointColorsByName === "object" ? (p.pointColorsByName as Record<string, string>) : undefined}
       selected={selection?.selected}
       onSelectPoint={onSelectPoint}
     />
+    </div>
   );
   if (!framed) return chart(p.height != null ? panelHeightOf(p) : undefined);
 
@@ -1963,6 +1970,7 @@ const RENDERERS: Record<string, React.FC<any>> = {
   HighchartCombination: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedBar: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   HighchartStackedArea: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
+  HighchartWaterfall: HighchartBlockRenderer as React.FC<{ system: DesignSystem }>,
   SimulatedAlert: AlertBlock,
   SimulatedStatCard: SimulatedStatCardBlock as React.FC<{ system: DesignSystem }>,
   /* Batch 6 */

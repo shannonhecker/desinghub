@@ -10957,6 +10957,18 @@
   font-size: var(--dh-record-size);
   color: var(--ds-fg);
 }
+/* In a wide panel the sections sit side by side. */
+@container dh-panel (min-width: 45rem) {
+  .dh-record {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    align-items: start;
+    column-gap: calc(var(--dh-panel-pad) * 2);
+  }
+  .dh-record-clear, .dh-record-empty { grid-column: 1 / -1; }
+  .dh-record-clear { justify-self: start; }
+  .dh-record-empty { align-self: center; }
+}
 .dh-record-pairs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -10996,6 +11008,9 @@
   font-weight: 600;
   color: var(--ds-fg-secondary);
 }
+.dh-record-table th + th,
+.dh-record-table th + td,
+.dh-record-table td + td { padding-inline-start: calc(var(--dh-cell-gap) * 2); }
 .dh-record-table th[scope="row"],
 .dh-record-table thead th:first-child { text-align: left; }
 .dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
@@ -11024,7 +11039,7 @@
   color: var(--ds-fg-tertiary);
   text-align: center;
 }
-.dh-record-empty p { margin: 0; max-width: 24ch; }
+.dh-record-empty p { margin: 0; max-width: 24ch; white-space: normal; }
 .dh-grid-selectable .ag-row {
   cursor: pointer;
 }

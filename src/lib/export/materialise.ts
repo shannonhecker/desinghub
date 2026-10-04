@@ -19,7 +19,7 @@ import type { Block } from "@/store/useBuilder";
 import { BUILDER_TEMPLATES, type BuilderTemplate } from "@/lib/builderTemplates";
 import { formatGridValue } from "@/lib/dataGridModel";
 import { viewByOf, viewByStateKey } from "@/lib/panelMetrics";
-import { CURRENCY_STATE, resolveBinding, type BoundData, type DataBinding, type ReportState } from "@/lib/reportData/binding";
+import { CURRENCY_STATE, centerColumn, resolveBinding, type BoundData, type DataBinding, type ReportState } from "@/lib/reportData/binding";
 import { sampleDataset } from "@/lib/reportData/registry";
 import type { ReportDataset } from "@/lib/reportData/types";
 
@@ -89,10 +89,7 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
     props.seriesData = bound.seriesData;
     /* The donut's centre label is the total, in the selected currency. */
     if (bound.centerValue !== null) {
-      props.centerLabel = formatGridValue(
-        { field: "", header: "", kind: "currency", compact: true, currency: reportState[CURRENCY_STATE] ?? dataset?.baseCurrency },
-        bound.centerValue,
-      );
+      props.centerLabel = formatGridValue(centerColumn(bound.centerMoney, reportState[CURRENCY_STATE] ?? dataset?.baseCurrency), bound.centerValue);
     }
   } else if (bound?.view === "grid") {
     props.columns = bound.columns;

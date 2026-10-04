@@ -545,6 +545,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "HighchartStackedBar", label: "Stacked Bar", icon: "stacked_bar_chart", defaults: { chartType: "stacked-bar", title: "Exposure by currency" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartStackedArea", label: "Stacked Area", icon: "area_chart", defaults: { chartType: "stacked-area", title: "Allocation history" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartCombination", label: "Combination Chart", icon: "multiline_chart", defaults: { chartType: "combination", title: "Value at risk" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartWaterfall", label: "Waterfall", icon: "waterfall_chart", defaults: { chartType: "waterfall", title: "Bridge" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
@@ -824,6 +825,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartHeatmap: "charts",
   HighchartTreemap: "charts",
   HighchartCombination: "charts",
+  HighchartWaterfall: "charts",
   HighchartStackedBar: "charts",
   HighchartStackedArea: "charts",
 

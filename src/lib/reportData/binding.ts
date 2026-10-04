@@ -154,9 +154,17 @@ export interface BoundSelection {
 
 export type BoundData =
   | ({ view: "series"; categories: string[]; series: { name: string; data: (number | null)[]; type?: SeriesStyle["type"]; yAxis?: 0 | 1; dashStyle?: SeriesStyle["dashStyle"] }[] } & BoundSelection)
-  | ({ view: "parts"; seriesData: { name: string; y: number; isSum?: boolean }[]; centerValue: number | null } & BoundSelection)
+  | ({ view: "parts"; seriesData: { name: string; y: number; isSum?: boolean }[]; centerValue: number | null; /** The centre value is money (shown in the selected currency). */ centerMoney?: boolean } & BoundSelection)
   | ({ view: "grid"; columns: GridColumn[]; rows: GridRow[] } & BoundSelection)
   | { view: "value"; value: number | null };
+
+/** How a donut's centre total is written: money in the selected currency,
+ *  anything else as a compact number. */
+export function centerColumn(money: boolean | undefined, currency: string | undefined): GridLeafColumn {
+  return money
+    ? { field: "", header: "", kind: "currency", compact: true, currency }
+    : { field: "", header: "", kind: "number", compact: true, decimals: 2 };
+}
 
 /** What a click on `label` should store: null clears the selection (the
  *  same label again, or a label that means "everything"). */
@@ -274,7 +282,8 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
         })
       : toParts(result, key);
     if (binding.sumPart) parts.push({ name: binding.sumPart, y: 0, isSum: true });
-    return { view: "parts", seriesData: parts, centerValue: center, ...selection };
+    const centerMoney = Boolean(binding.centerMeasure && shown.find((m) => m.key === binding.centerMeasure)?.money);
+    return { view: "parts", seriesData: parts, centerValue: center, ...(centerMoney ? { centerMoney: true } : {}), ...selection };
   }
 
   if (binding.view === "grid") {

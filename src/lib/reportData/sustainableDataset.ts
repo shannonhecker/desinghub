@@ -196,6 +196,8 @@ function buildSecurities(): DataRow[] {
       ratingStart,
       ratingMove: move > 0 ? "Upgraded" : move < 0 ? "Downgraded" : "Unchanged",
 
+      ratingRank: ratingRank(rating) + 1,
+      alignmentRank: SI_ALIGNMENTS.indexOf(alignmentOf(temperature, sovereign, coverage > 0.86)) + 1,
       marketValue,
       coveredMv: Math.round(marketValue * coverage),
       nav: Math.round(marketValue * 1.012),
@@ -264,6 +266,8 @@ const SECURITIES_TABLE = (rows: DataRow[]): DataTable => ({
     { key: "rating", label: "ESG rating (period end)", role: "dimension" },
     { key: "ratingStart", label: "ESG rating (period start)", role: "dimension" },
     { key: "ratingMove", label: "Rating movement", role: "dimension", help: "Upgraded, Downgraded or Unchanged" },
+    { key: "ratingRank", label: "Rating rank", role: "measure", help: "1 for AAA to 7 for CCC; orders the rating distribution" },
+    { key: "alignmentRank", label: "Alignment rank", role: "measure", help: "1 for 1.5C to 5 for Not Rated; orders the alignment chart" },
     { key: "marketValue", label: "Market value", role: "measure", format: "currency" },
     { key: "coveredMv", label: "Covered market value", role: "measure", format: "currency" },
     { key: "nav", label: "NAV", role: "measure", format: "currency" },
