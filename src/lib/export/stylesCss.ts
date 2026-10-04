@@ -27,6 +27,9 @@
  *   4. REPORT_RICH_CSS (DS-agnostic, only when the canvas needs it). Rich
  *      grid cells (heat, bar, chip, delta, sparkline, badge, toned text,
  *      flag, rank), the record panel, the gauge reading.
+ *   5. REPORT_BLOCKS_CSS (DS-agnostic, only when the canvas needs it). The
+ *      report card blocks (entity header, metric tile, verdict card, launcher
+ *      card, hero), dot and tag cells, group heading rows.
  */
 
 import { getTheme } from "@/data/registry";
@@ -598,10 +601,111 @@ export const REPORT_RICH_CSS = `
 .record-flat { color: var(--fg-muted); }
 `;
 
+/* ── Report card blocks, dot and tag cells, group heading rows (selectors
+   MUST match what reportMarkup.ts emits). Shipped only with a canvas that
+   draws them (usesReportBlocks), after REPORT_RICH_CSS, whose tones, bar
+   track and visually-hidden rule they use. The same sizes and mixes as the
+   canvas (builder.css, ".dh-cell-dot", ".dh-cell-tag", ".dh-entity",
+   ".dh-tile", ".dh-verdict", ".dh-launcher", ".dh-hero"). ── */
+export const REPORT_BLOCKS_CSS = `
+/* ── Dot and tag cells ── */
+.cell-dot { display: inline-flex; align-items: center; gap: 6px; }
+.cell-dot.is-strong { font-weight: 600; color: color-mix(in srgb, var(--tone) 70%, var(--fg)); }
+.cell-dot-mark { flex: none; box-sizing: border-box; width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+.cell-dot.is-hollow .cell-dot-mark { background: none; border: 2px solid var(--tone); }
+.cell-tag { display: inline-flex; align-items: center; height: 20px; padding-inline: 6px; border-radius: var(--radius); background: color-mix(in srgb, var(--tone) 16%, transparent); color: color-mix(in srgb, var(--tone) 62%, var(--fg)); font-size: 11px; font-weight: 600; line-height: 1; }
+.cell-tag.is-solid { min-width: 20px; justify-content: center; background: var(--tone); color: var(--bg); }
+
+/* ── Group heading row: a sunken band above its indented rows ── */
+.data-table .is-heading { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.data-table .is-heading th, .data-table .is-heading td { font-weight: 600; }
+
+/* ── Icons: inline SVG, stroked in the text colour around them ── */
+.tile-icon, .tile-sub-icon, .hero-icon, .launcher-arrow { flex: none; stroke-linecap: round; stroke-linejoin: round; }
+.tile-icon { stroke-width: 1.3; color: var(--fg-muted); }
+.tile-sub-icon { stroke-width: 1.4; }
+.hero-icon { stroke-width: 1.8; }
+.launcher-arrow { stroke-width: 2; }
+
+/* ── Entity header: the name of the entity and a line of facts ── */
+.entity { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; color: var(--fg); }
+.entity-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.entity-eyebrow, .entity-suffix { font-size: 12px; color: var(--fg-muted); white-space: nowrap; }
+.entity-eyebrow { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.entity-title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.2; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entity-facts { display: flex; flex-wrap: wrap; gap: 3px 16px; margin: 0; font-size: 12px; }
+.entity-facts > div { display: flex; gap: 6px; min-width: 0; }
+.entity-facts dt { color: var(--fg-muted); }
+.entity-facts dt::after { content: ":"; }
+.entity-facts dd { margin: 0; color: var(--fg); }
+
+/* ── Metric tile: a label, an icon and a figure; chips; sub-figures ── */
+.tile { box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; width: 100%; min-width: 0; padding: 16px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: inherit; text-align: left; }
+button.tile { appearance: none; cursor: pointer; }
+.tile-selectable:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.tile-selectable.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tile-selectable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tile-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); }
+.tile-row { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.tile-main { display: flex; align-items: center; gap: 9px; }
+.tile-value { font-size: 22px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile-value.is-muted { color: var(--fg-muted); }
+.tile-subs { flex: 1 1 auto; display: flex; gap: 16px; min-width: 0; padding-left: 16px; border-left: 1px solid var(--border); }
+.tile-sub { flex: 1 1 0; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tile-sub-label { font-size: 11px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile-sub-main { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); }
+.tile-sub-value { font-size: 15px; font-weight: 700; color: var(--fg); }
+
+/* ── Verdict card: one judgement, stated large, with what backs it ── */
+.verdict { box-sizing: border-box; display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 16px; overflow: hidden; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); }
+.verdict-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; }
+.verdict-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 20px; padding-inline: 6px; border-radius: 20px; background: color-mix(in srgb, var(--tone) 14%, transparent); font-size: 11px; font-weight: 600; }
+.verdict-hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; margin: 0; }
+.verdict-figure { font-size: 44px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.verdict-unit { align-self: flex-start; font-size: 18px; font-weight: 600; }
+.verdict-status { font-size: 18px; font-weight: 600; color: color-mix(in srgb, var(--tone) 75%, var(--fg)); }
+.verdict-caption, .verdict-footnote { margin: 0; font-size: 12px; color: var(--fg-muted); }
+.verdict-progress { display: flex; flex-direction: column; gap: 3px; }
+.verdict-progress .cell-bar-track { flex: none; }
+.verdict-progress-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--fg-muted); }
+.verdict-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: auto 0 0; padding-top: 16px; border-top: 1px solid var(--border); }
+.verdict-stats dt { font-size: 11px; color: var(--fg-muted); }
+.verdict-stats dd { margin: 0; font-size: 18px; font-weight: 700; }
+.verdict-stats dd.is-toned { color: color-mix(in srgb, var(--tone) 75%, var(--fg)); }
+
+/* ── Launcher card: a way into another report ── */
+.launcher { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 16px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-top: 3px solid var(--tone); border-radius: var(--radius); }
+.launcher-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.launcher-title { margin: 0; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Where the canvas draws a thumbnail of the report: a neutral block. */
+.launcher-thumb { aspect-ratio: 220 / 130; border-radius: var(--radius); background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.launcher-desc { flex: 1 1 auto; margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-muted); }
+.launcher-open { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; color: var(--accent); }
+.launcher-open:hover { text-decoration: underline; }
+.launcher-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Hero: a page's opening line and a search field ── */
+.hero { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; color: var(--fg); }
+.hero-title { margin: 0; font-size: 28px; font-weight: 700; line-height: 1.2; }
+.hero-subtitle { margin: 0; color: var(--fg-muted); }
+.hero-search { box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: min(100%, 540px); height: 44px; margin-top: 6px; padding-left: 16px; padding-right: 3px; background: var(--surface); color: var(--fg-muted); border: 1px solid var(--border); border-radius: var(--radius); }
+.hero-search:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hero-input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; color: var(--fg); }
+.hero-button { display: inline-flex; align-items: center; height: 35px; padding-inline: 16px; border: 0; border-radius: var(--radius); background: var(--accent); color: var(--accent-fg); font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
+.hero-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+`;
+
 /** The complete stylesheet for a runnable export. `rich` adds the rules for
- *  rich grid cells, the record panel and the gauge reading. */
-export function buildStylesCss(system: SystemId, mode: ExportMode, opts: { rich?: boolean } = {}): string {
+ *  rich grid cells, the record panel and the gauge reading; `blocks` adds the
+ *  report card blocks, dot / tag cells and heading rows (and brings the rich
+ *  rules, which they build on). */
+export function buildStylesCss(system: SystemId, mode: ExportMode, opts: { rich?: boolean; blocks?: boolean } = {}): string {
   return `${buildTokenBlock(system, mode)}
 ${PRIMITIVES_CSS}
-${REPORT_CSS}${opts.rich ? REPORT_RICH_CSS : ""}`;
+${REPORT_CSS}${reportExtrasCss(opts)}`;
+}
+
+/** The optional report rules a canvas needs, in order. */
+export function reportExtrasCss(opts: { rich?: boolean; blocks?: boolean }): string {
+  return `${opts.rich || opts.blocks ? REPORT_RICH_CSS : ""}${opts.blocks ? REPORT_BLOCKS_CSS : ""}`;
 }

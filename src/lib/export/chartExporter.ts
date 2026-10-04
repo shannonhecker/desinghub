@@ -138,6 +138,10 @@ export function chartBlockJsx(
   if (points.pointColors) parts.push(`pointColors={${jsLiteral(points.pointColors)}}`);
   if (points.pointColorsByName) parts.push(`pointColorsByName={${jsLiteral(points.pointColorsByName)}}`);
   if (points.selected !== undefined) parts.push(`selected={${jsLiteral(points.selected)}}`);
+  /* A labelled value axis (a rating trend) and the corridor's band name. */
+  const shapes = chartShapeSettingsOf(block);
+  if (shapes.yAxisCategories) parts.push(`yAxisCategories={${jsLiteral(shapes.yAxisCategories)}}`);
+  if (shapes.bandName !== undefined) parts.push(`bandName={${jsLiteral(shapes.bandName)}}`);
   const chart = `<ChartBlock ${parts.join(" ")} />`;
   if (!framed) return chart;
   return panelLines(JSX_DIALECT, panelSpecOf(block), [chart]).join("\n");
@@ -242,6 +246,36 @@ export function usesExtendedChart(block: Block): boolean {
   if (type === "waterfall") return true;
   if (type === "gauge" && (p.panel === true || isFiniteNumber(p.valueDecimals) || suffixLabel(p.valueSuffix) !== null)) return true;
   return Object.keys(chartPointSettingsOf(block)).length > 0;
+}
+
+/** What the radar / corridor types and a labelled value axis add to a chart block. */
+export interface ChartShapeSettings {
+  /* Labels for a value axis whose values are positions on a scale. Position-
+     indexed: an unusable entry stays as "" so label N still names value N. */
+  yAxisCategories?: string[];
+  /* corridor: the name of the band between its two lines. */
+  bandName?: string;
+}
+
+export function chartShapeSettingsOf(block: Block): ChartShapeSettings {
+  const props = block.props ?? {};
+  const out: ChartShapeSettings = {};
+  if (Array.isArray(props.yAxisCategories)) {
+    const labels = props.yAxisCategories.slice(0, MAX_CHART_ITEMS).map((l) => cleanLabel(typeof l === "number" && Number.isFinite(l) ? String(l) : l) ?? "");
+    if (labels.some(Boolean)) out.yAxisCategories = labels;
+  }
+  const band = chartTypeOf(block) === "corridor" ? cleanLabel(props.bandName) : null;
+  if (band !== null) out.bandName = band;
+  return out;
+}
+
+/** True when a chart block needs the radar / corridor part of the chart
+ *  helper: one of the two types, or a labelled value axis. A canvas with none
+ *  of these gets the helper as it was. */
+export function usesShapeChart(block: Block): boolean {
+  if (!isChartBlock(block.type)) return false;
+  const type = chartTypeOf(block);
+  return type === "radar" || type === "corridor" || chartShapeSettingsOf(block).yAxisCategories !== undefined;
 }
 
 export function chartDataOf(block: Block): ChartBlockData {
@@ -456,6 +490,91 @@ const EXT_SETTINGS = `  if (props.labelWrap && o.xAxis && !Array.isArray(o.xAxis
   applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall");
 `;
 
+/* ── Radar, corridor and the labelled value axis ──
+   Spliced into the helper only when the canvas uses them (usesShapeChart).
+   Ports of the same code in SimulatedHighchart.tsx (chartOptions "radar" /
+   "corridor", and the yAxisCategories step of buildChartOptions). Polar charts
+   and the arearange band need highcharts/highcharts-more, which chartImports()
+   always loads. No template literals inside: this is source text. */
+
+const SHAPE_PROPS = `  /* Labels for a value axis whose values are positions on a scale (a rating
+     trend: 0 = "CCC" ... 6 = "AAA"). */
+  yAxisCategories?: string[];
+  /* corridor: the name of the band between its two lines. */
+  bandName?: string;
+`;
+
+const SHAPE_CASES = `    /* A spider chart: one spoke per category, a polygon grid, lines that
+       close on themselves. */
+    case "radar": {
+      const series: ChartSeries[] = props.series && props.series.length ? props.series : [
+        { name: "This year", data: [62, 48, 71, 55, 66, 59] },
+        { name: "Last year", data: [54, 52, 60, 49, 58, 63], dashStyle: "ShortDash" },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, polar: true, type: "line" },
+        title: { ...tt, text: props.title || "Capability profile" },
+        pane: { size: "78%" },
+        xAxis: {
+          ...tx,
+          categories: cats(["Quality", "Speed", "Cost", "Coverage", "Support", "Reach"]),
+          tickmarkPlacement: "on",
+          lineWidth: 0,
+          gridLineColor: v.border,
+        },
+        yAxis: { ...ty, gridLineInterpolation: "polygon", lineWidth: 0, min: 0, gridLineColor: v.border },
+        tooltip: { ...t.tooltip, shared: true },
+        series: series.map((s) => ({ ...s, type: "line", pointPlacement: "on", marker: { enabled: true, radius: 3 } })),
+      };
+    }
+    /* A ceiling (dashed), a path under it, and the room between them as a
+       band. Series: [ceiling, path]. */
+    case "corridor": {
+      const pair: ChartSeries[] = props.series && props.series.length ? props.series : [
+        { name: "Budget", data: [40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0] },
+        { name: "Projected", data: [34, 30, 27, 23, 20, 16, 13, 10, 6, 3, 0] },
+      ];
+      const ceiling: ChartSeries | undefined = pair[0];
+      const path: ChartSeries | undefined = pair[1];
+      const upper = ceiling ? ceiling.data : [];
+      const lower = path ? path.data : [];
+      const band = upper.map((u, i) => [lower[i] ?? null, u]);
+      const c0: string = t.colors[0] || v.primary;
+      const c1: string = t.colors[1] || v.positive;
+      return {
+        ...t,
+        chart: { ...tc, type: "line" },
+        title: { ...tt, text: props.title || "Pathway" },
+        xAxis: { ...tx, categories: cats(["2030", "2032", "2034", "2036", "2038", "2040", "2042", "2044", "2046", "2048", "2050"]) },
+        yAxis: { ...ty, min: 0 },
+        tooltip: { ...t.tooltip, shared: true },
+        series: [
+          { type: "line", name: ceiling ? ceiling.name : "Ceiling", data: upper, dashStyle: "Dash", color: c0, marker: { enabled: false } },
+          { type: "arearange", name: props.bandName || "Headroom", data: band, color: c0, fillOpacity: 0.16, lineWidth: 0, marker: { enabled: false }, enableMouseTracking: false },
+          { type: "area", name: path ? path.name : "Path", data: lower, color: c1, fillOpacity: 0.14, marker: { enabled: false } },
+        ],
+      };
+    }
+`;
+
+const SHAPE_SETTINGS = `  /* A value axis on a scale: its positions are shown as labels, on the axis
+     and in the tooltip. */
+  if (props.yAxisCategories && props.yAxisCategories.length && o.yAxis && !Array.isArray(o.yAxis)) {
+    const labels = props.yAxisCategories;
+    o.yAxis = { ...o.yAxis, categories: labels, min: 0, max: labels.length - 1, tickInterval: 1, title: { ...o.yAxis.title, text: undefined } };
+    o.tooltip = {
+      ...o.tooltip,
+      shared: true,
+      formatter: function (this: any) {
+        const shown: any[] = this.points ?? [this];
+        return "<b>" + (this.x ?? this.key ?? "") + "</b><br/>" +
+          shown.map((p: any) => p.series.name + ": <b>" + (labels[Math.round(p.y)] ?? p.y) + "</b>").join("<br/>");
+      },
+    };
+  }
+`;
+
 /**
  * Paste-ready React component definition for the exported file.
  *
@@ -466,11 +585,15 @@ const EXT_SETTINGS = `  if (props.labelWrap && o.xAxis && !Array.isArray(o.xAxis
  * `extended` adds what the newer chart features need (the waterfall type, the
  * score / framed gauge, wrapped labels, per-point colours, the selected
  * point). Without it the helper is exactly the one earlier exports shipped.
+ *
+ * `shapes` adds the radar and corridor types, the corridor's band name and the
+ * labelled value axis, the same way: without it nothing changes.
  */
-export function chartHelperSource(system: SystemId, opts: { extended?: boolean } = {}): string {
+export function chartHelperSource(system: SystemId, opts: { extended?: boolean; shapes?: boolean } = {}): string {
   const palette = CATEGORICAL_PALETTES[system];
   const paletteLiteral = JSON.stringify(palette);
   const x = opts.extended === true;
+  const sh = opts.shapes === true;
 
   return `/* ── ChartBlock: runnable Highcharts, baked ${system} palette + mode theme ──
    Highcharts modules register via side-effect imports at the top of the exported
@@ -581,7 +704,7 @@ type ChartProps = {
   /* Tooltip number format: decimal places and a suffix such as "%". */
   valueDecimals?: number;
   valueSuffix?: string;
-${x ? EXT_PROPS : ""}};
+${x ? EXT_PROPS : ""}${sh ? SHAPE_PROPS : ""}};
 
 function withType(series: ChartSeries[] | undefined, type: string, fallback: any[]): any[] {
   return series && series.length ? series.map((s) => ({ ...s, type })) : fallback;
@@ -830,7 +953,7 @@ function chartOptionsFor(chartType: string, t: any, v: ReturnType<typeof chartTh
         }],
       };
     }
-${x ? EXT_WATERFALL_CASE : ""}    case "heatmap":
+${x ? EXT_WATERFALL_CASE : ""}${sh ? SHAPE_CASES : ""}    case "heatmap":
       return {
         ...t,
         chart: { ...tc, type: "heatmap" },
@@ -952,7 +1075,7 @@ ${x ? EXT_GAUGE_CALL : ""}  if (props.height) o.chart = { ...o.chart, height: pr
       },
     };
   }
-${x ? EXT_SETTINGS : ""}  if (props.centerLabel && chartType === "donut") {
+${sh ? SHAPE_SETTINGS : ""}${x ? EXT_SETTINGS : ""}  if (props.centerLabel && chartType === "donut") {
     o.chart = { ...o.chart, centerLabel: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
   }
   return o;
@@ -960,12 +1083,12 @@ ${x ? EXT_SETTINGS : ""}  if (props.centerLabel && chartType === "donut") {
 
 function ChartBlock({
   type = "line", title, value, mode = "light", categories, series, seriesData, colors,
-  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n  valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}
+  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n  valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}${sh ? "\n  yAxisCategories, bandName," : ""}
 }: ChartProps & { type?: string; mode?: "light" | "dark"; colors?: string[] }) {
   const v = chartTheme(mode);
   const options = chartOptionsWithSettings(type, chartBaseTheme(v, chartColors(colors)), v, {
     title, value, categories, series, seriesData,
-    height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n    valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}
+    height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, yAxisMax, valueDecimals, valueSuffix,${x ? "\n    valueMax, labelWrap, pointColors, pointColorsByName, selected," : ""}${sh ? "\n    yAxisCategories, bandName," : ""}
   });
   return (
     <div style={{ width: "100%", minHeight: height ?? 250 }}>

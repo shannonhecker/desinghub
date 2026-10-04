@@ -21,6 +21,7 @@ import {
   cellOf,
   columnMax,
   deltaView,
+  dotIsBlank,
   flagEmoji,
   formatGridValue,
   heatTone,
@@ -287,6 +288,16 @@ function richCellContent(d: Dialect, cell: GridCell, column: GridLeafColumn, row
     }
     case "rank":
       return text ? `<span ${d.cls}="cell-rank">${text}</span>` : "";
+    case "dot": {
+      if (dotIsBlank(cell, value)) return "";
+      const tone = cell.tones ? valueTone(cell.tones, value, cell.tone ?? "neutral") : (cell.tone ?? "neutral");
+      const classes = ["cell-dot", ...(cell.hollow?.includes(String(value)) ? ["is-hollow"] : []), ...(tone !== "neutral" && cell.tones ? ["is-strong"] : []), toneClass(tone)];
+      return `<span ${d.cls}="${classes.join(" ")}"><span ${d.cls}="cell-dot-mark" aria-hidden="true"></span>${text}</span>`;
+    }
+    case "chip": {
+      if (value === null || value === undefined || value === "") return "";
+      return `<span ${d.cls}="cell-tag${cell.variant === "solid" ? " is-solid" : ""} ${toneClass(valueTone(cell.tones, value, cell.fallback ?? "neutral"))}">${text}</span>`;
+    }
     default:
       return text;
   }
@@ -354,7 +365,8 @@ export function tableLines(
 
   const body = rows.map((row) => {
     const rowClasses = [
-      ...(row._bold ? ["is-total"] : []),
+      /* A group heading row (bold, on a sunken band) is not a total. */
+      ...(row._heading === true ? ["is-heading"] : row._bold ? ["is-total"] : []),
       ...(opts.selected && String(row[leaves[labelIndex].field] ?? "") === opts.selected ? ["is-selected"] : []),
     ];
     const tds = leaves.map((c, i) => {
@@ -453,6 +465,42 @@ function waterfallGrid(parts: { name: string; y: number; isSum?: boolean }[], de
   };
 }
 
+/** Labels of a value axis whose values are positions on a scale (a rating
+ *  trend: 0 = "CCC" ... 6 = "AAA"), or null when the chart has none. */
+function scaleLabels(raw: unknown): string[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  return raw.map((l) => (typeof l === "string" || typeof l === "number" ? String(l) : ""));
+}
+
+/** A chart on such a scale as a table: each value written as its label (the
+ *  word the axis and the tooltip show), not its position. */
+function scaleGrid(categories: string[], series: ChartSeriesLike[], labels: string[]): { columns: GridColumn[]; rows: GridRow[] } {
+  return {
+    columns: [{ field: GROUP_FIELD, header: "" }, ...series.map((s, i) => ({ field: `s${i}`, header: s.name }))],
+    rows: categories.map((category, r) => {
+      const row: GridRow = { [GROUP_FIELD]: category };
+      series.forEach((s, i) => {
+        const v = s.data[r] ?? null;
+        row[`s${i}`] = v === null ? null : (labels[Math.round(v)] || String(v));
+      });
+      return row;
+    }),
+  };
+}
+
+/** A corridor's two series (the ceiling, then the path under it) with the
+ *  band between them as a third column: the room left under the ceiling at
+ *  each category, negative where the path runs over it. */
+function withBand(series: ChartSeriesLike[], bandName: string): ChartSeriesLike[] {
+  const [ceiling, path] = series;
+  if (!ceiling || !path) return series;
+  const band = ceiling.data.map((upper, i) => {
+    const lower = path.data[i] ?? null;
+    return upper === null || lower === null ? null : Number((upper - lower).toFixed(4));
+  });
+  return [ceiling, path, { name: bandName || "Headroom", data: band }, ...series.slice(2)];
+}
+
 /** A gauge's reading as text, written the way the dial writes it: the value
  *  with its decimals and suffix, "of <max>" when the gauge names its scale. */
 export function gaugeValueText(p: Record<string, unknown>): string {
@@ -491,7 +539,10 @@ export function chartDataLines(d: Dialect, block: Block): string[] {
     table = tableLines(d, grid.columns, grid.rows, { label, selected });
   } else if (series.length > 0) {
     const categories = Array.isArray(p.categories) ? p.categories.map((c) => String(c)) : series[0].data.map((_, i) => String(i + 1));
-    const grid = seriesToGrid("", categories, series, percent ? "percent" : "number");
+    const scale = scaleLabels(p.yAxisCategories);
+    const grid = scale
+      ? scaleGrid(categories, series, scale)
+      : seriesToGrid("", categories, type === "corridor" ? withBand(series, str(p.bandName)) : series, percent ? "percent" : "number");
     table = tableLines(d, grid.columns, grid.rows, { label, selected });
   } else if (parts.length > 0) {
     const grid = partsToGrid("", parts, { field: "value", header: "Value", kind: "number", compact: true });
@@ -673,7 +724,9 @@ export function recordPanelLines(d: Dialect, block: Block, trend?: (section: Tre
   const blockTitle = str(p.title) || "Detail";
   const spec: PanelSpec = {
     title: record ? record.title : blockTitle,
-    subtitle: record ? blockTitle : "",
+    /* A panel that always shows a record (clearable: false) has no selection
+       to name: the record is its only title. */
+    subtitle: record && p.clearable !== false ? blockTitle : "",
     height: panelHeightOf(p),
     viewBy: [],
     viewByValue: "",
@@ -688,6 +741,223 @@ export function recordPanelLines(d: Dialect, block: Block, trend?: (section: Tre
   return panelLines(d, spec, body);
 }
 
+/* ── Report card blocks: entity header, metric tile, verdict card, launcher
+   card, hero ──
+   The canvas draws these with ReportBlocks.tsx. Blocks arrive materialised
+   (materialise.ts): the row a block shows is already read, so its props are
+   the text it displays. Static markup: a tile that selects on the canvas is a
+   <button> with its pressed state, with no behaviour attached. */
+
+export const REPORT_CARD_BLOCK_TYPES = new Set<string>(["EntityHeader", "MetricTile", "VerdictCard", "LauncherCard", "HeroSearch"]);
+
+const TILE_ICON_SIZE = 34;
+const TILE_SUB_ICON_SIZE = 22;
+const SEARCH_ICON_SIZE = 16;
+const LINK_ARROW_SIZE = 14;
+
+type IconNode = [tag: "path" | "circle" | "rect", attrs: Record<string, string>];
+const iconPaths = (...ds: string[]): IconNode[] => ds.map((d) => ["path", { d }]);
+
+/* The icons a tile can name (TILE_ICONS in ReportBlocks.tsx), as inline SVG:
+   exported code imports no icon library. Shapes from Lucide (ISC licence). */
+export const TILE_ICON_NODES: Record<string, IconNode[]> = {
+  environment: iconPaths("M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z", "M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"),
+  social: [...iconPaths("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M16 3.128a4 4 0 0 1 0 7.744", "M22 21v-2a4 4 0 0 0-3-3.87"), ["circle", { cx: "9", cy: "7", r: "4" }]],
+  governance: iconPaths("M10 18v-7", "M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z", "M14 18v-7", "M18 18v-7", "M3 22h18", "M6 18v-7"),
+  rights: iconPaths("M12 3v18", "m19 8 3 8a5 5 0 0 1-6 0zV7", "M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1", "m5 8 3 8a5 5 0 0 1-6 0zV7", "M7 21h10"),
+  labour: [...iconPaths("M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5", "M14 6a6 6 0 0 1 6 6v3", "M4 15v-3a6 6 0 0 1 6-6"), ["rect", { x: "2", y: "15", width: "20", height: "4", rx: "1" }]],
+  customers: iconPaths("M16 10a4 4 0 0 1-8 0", "M3.103 6.034h17.794", "M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"),
+  health: iconPaths("M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5", "M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"),
+  entertainment: iconPaths("m12.296 3.464 3.02 3.956", "M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z", "M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "m6.18 5.276 3.1 3.899"),
+  weapons: iconPaths("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"),
+  energy: iconPaths("M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5", "M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16", "M2 21h13", "M3 9h11"),
+  practices: [...iconPaths("M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"), ["rect", { width: "20", height: "14", x: "2", y: "6", rx: "2" }]],
+};
+const SEARCH_ICON: IconNode[] = [...iconPaths("m21 21-4.34-4.34"), ["circle", { cx: "11", cy: "11", r: "8" }]];
+const ARROW_RIGHT_ICON: IconNode[] = iconPaths("M5 12h14", "m12 5 7 7-7 7");
+
+/** An icon as inline SVG. Decorative: what it stands for is always written
+ *  beside it. The stroke is set by the icon's class (stylesCss.ts). Shapes are
+ *  fixed data, never block content. */
+function iconSvg(d: Dialect, nodes: IconNode[], cls: string, size: number): string {
+  const shapes = nodes.map(([tag, attrs]) => `<${tag} ${Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(" ")} />`).join("");
+  return `<svg ${d.cls}="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${shapes}</svg>`;
+}
+
+/** The icon a tile names, or "" for a name this build does not draw. */
+function tileIcon(d: Dialect, name: unknown, cls: string, size: number): string {
+  return typeof name === "string" && Object.hasOwn(TILE_ICON_NODES, name) ? iconSvg(d, TILE_ICON_NODES[name], cls, size) : "";
+}
+
+/** A list prop's entries that are objects. */
+function entries(v: unknown): Record<string, unknown>[] {
+  return Array.isArray(v) ? v.filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === "object" && !Array.isArray(x)) : [];
+}
+/** A prop as display text ("" for anything that is not text or a number). */
+const shown = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" && Number.isFinite(v) ? String(v) : "");
+/** ` style=...` fixing the block's height, when it sets one (its grid cell is that tall). */
+const boxHeight = (d: Dialect, p: Record<string, unknown>): string =>
+  typeof p.height === "number" && Number.isFinite(p.height) && p.height > 0 ? d.height(Math.round(p.height)) : "";
+
+/** A small solid counter (a header badge, a tile chip): the count, with what
+ *  it counts written for assistive technology. */
+function countTag(d: Dialect, item: Record<string, unknown>): string {
+  const label = shown(item.label);
+  return `<span ${d.cls}="cell-tag is-solid ${toneClass(item.tone)}">${label ? srOnly(d, d.text(`${label}: `)) : ""}${d.text(shown(item.value) || "0")}</span>`;
+}
+
+/** EntityHeader: the entity's name as a heading, its count badges, and its
+ *  facts as a description list. */
+export function entityHeaderLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const facts = entries(p.facts);
+  return [
+    `<div ${d.cls}="entity"${boxHeight(d, p)}>`,
+    `  <div ${d.cls}="entity-main">`,
+    ...(shown(p.eyebrow) ? [`    <span ${d.cls}="entity-eyebrow">${d.text(shown(p.eyebrow))}</span>`] : []),
+    `    <h2 ${d.cls}="entity-title">${d.text(shown(p.title) || "Entity")}</h2>`,
+    ...entries(p.badges).map((b) => `    ${countTag(d, b)}`),
+    ...(shown(p.suffix) ? [`    <span ${d.cls}="entity-suffix">${d.text(shown(p.suffix))}</span>`] : []),
+    "  </div>",
+    ...(facts.length
+      ? [
+          `  <dl ${d.cls}="entity-facts">`,
+          ...facts.map((f) => `    <div><dt>${d.text(shown(f.label))}</dt><dd>${d.text(shown(f.value) || "-")}</dd></div>`),
+          "  </dl>",
+        ]
+      : []),
+    "</div>",
+  ];
+}
+
+/** MetricTile: a label, an icon and a figure; optional count chips and
+ *  sub-figures. One of a selectable set (`selected` is set) is a <button>
+ *  carrying its pressed state. */
+export function metricTileLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const value = shown(p.value);
+  const subs = entries(p.subs);
+  const main = [
+    tileIcon(d, p.icon, "tile-icon", TILE_ICON_SIZE),
+    value ? `<span ${d.cls}="tile-value${value === "0" ? " is-muted" : ""}">${d.text(value)}</span>` : "",
+    ...entries(p.chips).map((c) => countTag(d, c)),
+  ].filter(Boolean);
+  const body = [
+    `  <span ${d.cls}="tile-label">${d.text(shown(p.label) || "Metric")}</span>`,
+    `  <span ${d.cls}="tile-row">`,
+    `    <span ${d.cls}="tile-main">`,
+    ...main.map((l) => "      " + l),
+    "    </span>",
+    ...(subs.length
+      ? [
+          `    <span ${d.cls}="tile-subs">`,
+          ...subs.map(
+            (s) =>
+              `      <span ${d.cls}="tile-sub"><span ${d.cls}="tile-sub-label">${d.text(shown(s.label))}</span><span ${d.cls}="tile-sub-main">${tileIcon(d, s.icon, "tile-sub-icon", TILE_SUB_ICON_SIZE)}<span ${d.cls}="tile-sub-value">${d.text(shown(s.value) || "0")}</span></span></span>`,
+          ),
+          "    </span>",
+        ]
+      : []),
+    "  </span>",
+  ];
+  if (typeof p.selected !== "boolean") return [`<div ${d.cls}="tile"${boxHeight(d, p)}>`, ...body, "</div>"];
+  return [
+    `<button type="button" ${d.cls}="tile tile-selectable${p.selected ? " is-selected" : ""}" aria-pressed="${p.selected ? "true" : "false"}"${boxHeight(d, p)}>`,
+    ...body,
+    "</button>",
+  ];
+}
+
+/** VerdictCard: one judgement stated large (figure, unit, status), with what
+ *  backs it: a caption, a labelled bar, stats, a footnote. Toned by the data. */
+export function verdictCardLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const title = shown(p.title);
+  const progress = entries([p.progress])[0];
+  const stats = entries(p.stats);
+  const out = [`<section ${d.cls}="verdict ${toneClass(p.tone)}"${title ? ` aria-label="${d.attr(title)}"` : ""}${boxHeight(d, p)}>`];
+  if (title) out.push(`  <h2 ${d.cls}="verdict-title">${d.text(title)}</h2>`);
+  if (shown(p.chip)) out.push(`  <span ${d.cls}="verdict-chip"><span ${d.cls}="cell-dot-mark" aria-hidden="true"></span>${d.text(shown(p.chip))}</span>`);
+  /* One line, so the parts stay separate words where the dialect drops line breaks. */
+  out.push(
+    `  <p ${d.cls}="verdict-hero"><span ${d.cls}="verdict-figure">${d.text(shown(p.hero) || "-")}</span>${shown(p.heroUnit) ? `<span ${d.cls}="verdict-unit">${d.text(shown(p.heroUnit))}</span>` : ""}${shown(p.status) ? ` <span ${d.cls}="verdict-status">${d.text(shown(p.status))}</span>` : ""}</p>`,
+  );
+  if (shown(p.caption)) out.push(`  <p ${d.cls}="verdict-caption">${d.text(shown(p.caption))}</p>`);
+  if (progress) {
+    const raw = Number(progress.pct);
+    const pct = Number.isFinite(raw) ? Math.round(Math.max(0, Math.min(100, raw)) * 10) / 10 : 0;
+    const label = shown(progress.label);
+    const reading = shown(progress.text) || `${Math.round(pct)}%`;
+    out.push(
+      `  <div ${d.cls}="verdict-progress">`,
+      `    <div ${d.cls}="verdict-progress-head"><span>${d.text(label)}</span> <span>${d.text(reading)}</span></div>`,
+      `    <div ${d.cls}="cell-bar-track" role="img" aria-label="${d.attr(label ? `${label}: ${reading}` : reading)}"><span ${d.cls}="cell-bar-fill"${d.widthPct(pct)}></span></div>`,
+      "  </div>",
+    );
+  }
+  if (stats.length) {
+    out.push(
+      `  <dl ${d.cls}="verdict-stats">`,
+      ...stats.map((s) => `    <div><dt>${d.text(shown(s.label))}</dt><dd${s.tone !== undefined ? ` ${d.cls}="is-toned ${toneClass(s.tone)}"` : ""}>${d.text(shown(s.value) || "-")}</dd></div>`),
+      "  </dl>",
+    );
+  }
+  if (shown(p.footnote)) out.push(`  <p ${d.cls}="verdict-footnote">${d.text(shown(p.footnote))}</p>`);
+  out.push("</section>");
+  return out;
+}
+
+/** LauncherCard: a way into another report: title, tag, a neutral block where
+ *  the canvas draws a thumbnail, description, and the action as a link. */
+export function launcherCardLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const title = shown(p.title) || "Report";
+  const action = shown(p.actionLabel) || "Open report";
+  return [
+    `<article ${d.cls}="launcher ${toneClass(p.accent === "mid" ? "mid" : "accent")}"${boxHeight(d, p)}>`,
+    `  <header ${d.cls}="launcher-head">`,
+    `    <h2 ${d.cls}="launcher-title">${d.text(title)}</h2>`,
+    ...(shown(p.tag) ? [`    <span ${d.cls}="cell-tag ${toneClass(p.tagTone === "mid" ? "mid" : "accent")}">${d.text(shown(p.tag))}</span>`] : []),
+    "  </header>",
+    `  <div ${d.cls}="launcher-thumb" aria-hidden="true"></div>`,
+    `  <p ${d.cls}="launcher-desc">${d.text(shown(p.description))}</p>`,
+    /* Several cards share one action label: the link's name says which report. */
+    `  <a ${d.cls}="launcher-open" href="#" aria-label="${d.attr(`${action}: ${title}`)}">${d.text(action)}${iconSvg(d, ARROW_RIGHT_ICON, "launcher-arrow", LINK_ARROW_SIZE)}</a>`,
+    "</article>",
+  ];
+}
+
+/** HeroSearch: a page's opening line and a search field with its button. */
+export function heroSearchLines(d: Dialect, block: Block): string[] {
+  const p = block.props ?? {};
+  const placeholder = shown(p.placeholder) || "Search";
+  return [
+    `<div ${d.cls}="hero"${boxHeight(d, p)}>`,
+    `  <h1 ${d.cls}="hero-title">${d.text(shown(p.title) || "Analytics")}</h1>`,
+    ...(shown(p.subtitle) ? [`  <p ${d.cls}="hero-subtitle">${d.text(shown(p.subtitle))}</p>`] : []),
+    `  <div ${d.cls}="hero-search" role="search">`,
+    `    ${iconSvg(d, SEARCH_ICON, "hero-icon", SEARCH_ICON_SIZE)}`,
+    `    <input type="search" ${d.cls}="hero-input" placeholder="${d.attr(placeholder)}" aria-label="${d.attr(placeholder)}" />`,
+    `    <button type="button" ${d.cls}="hero-button">${d.text(shown(p.buttonLabel) || "Search")}</button>`,
+    "  </div>",
+    "</div>",
+  ];
+}
+
+/** True when the canvas draws a report card block, a dot or chip cell, or a
+ *  group heading row: the stylesheet then carries their rules
+ *  (REPORT_BLOCKS_CSS, on top of REPORT_RICH_CSS, whose tones they use). */
+export function usesReportBlocks(blocks: Block[]): boolean {
+  return blocks.some((b) => {
+    if (REPORT_CARD_BLOCK_TYPES.has(b.type)) return true;
+    if (b.type === "DataGrid") {
+      if (leafColumns(readGridColumns(b.props?.columns)).some((c) => { const type = cellOf(c)?.type; return type === "dot" || type === "chip"; })) return true;
+      if (readGridRows(b.props?.rows).some((r) => r._heading === true)) return true;
+    }
+    return b.children?.length ? usesReportBlocks(b.children) : false;
+  });
+}
+
 /** True when the canvas draws rich grid cells, a record panel or a framed
  *  gauge: the stylesheet then carries their rules (REPORT_RICH_CSS). */
 export function usesRichReport(blocks: Block[]): boolean {
@@ -700,7 +970,7 @@ export function usesRichReport(blocks: Block[]): boolean {
   });
 }
 
-/** Lines for a chrome, data-grid or record-panel block, or null when the block is not one. */
+/** Lines for a chrome, data-grid, record-panel or report card block, or null when the block is not one. */
 export function reportBlockLines(d: Dialect, block: Block): string[] | null {
   const p = block.props ?? {};
   switch (block.type) {
@@ -716,6 +986,16 @@ export function reportBlockLines(d: Dialect, block: Block): string[] | null {
       return dataGridLines(d, block);
     case RECORD_PANEL_BLOCK_TYPE:
       return recordPanelLines(d, block);
+    case "EntityHeader":
+      return entityHeaderLines(d, block);
+    case "MetricTile":
+      return metricTileLines(d, block);
+    case "VerdictCard":
+      return verdictCardLines(d, block);
+    case "LauncherCard":
+      return launcherCardLines(d, block);
+    case "HeroSearch":
+      return heroSearchLines(d, block);
     default:
       return null;
   }

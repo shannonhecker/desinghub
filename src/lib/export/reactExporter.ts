@@ -8,7 +8,7 @@ import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
 import { computeGroupStyle } from "@/lib/layoutResolver";
-import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource, usesExtendedChart } from "./chartExporter";
+import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource, usesExtendedChart, usesShapeChart } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
 import { buildStylesCss } from "./stylesCss";
@@ -24,6 +24,7 @@ import {
   reportBlockLines,
   shellSidebarAttr,
   usesChromeShell,
+  usesReportBlocks,
   usesRichReport,
   zoneAttrs,
 } from "./reportMarkup";
@@ -385,12 +386,13 @@ export function exportReactFiles(): ExportFile[] {
 
 /** The stylesheet that goes with the React component (styles.css, and
  *  src/styles.css of the Vite project). It carries the rich-cell and record
- *  panel rules only when the canvas draws them. */
+ *  panel rules, and the report card block rules, only when the canvas draws
+ *  them. */
 export function exportStylesCss(): string {
   const s = useBuilder.getState();
   const canvas = materialiseCanvas(s);
-  const rich = usesRichReport([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
-  return buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light", { rich });
+  const all = [...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer];
+  return buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light", { rich: usesRichReport(all), blocks: usesReportBlocks(all) });
 }
 
 /** True when the React export of the current canvas draws charts: a chart
@@ -516,8 +518,9 @@ export function exportReact(): string {
             : `\n    </${ds.provider}>`;
 
   /* The extended helper (waterfall, score gauge, per-point colours, selected
-     point) only when a chart on the canvas needs it. */
-  const helper = charts ? `\n${chartHelperSource(system, { extended: allBlocks.some(usesExtendedChart) })}` : "";
+     point) only when a chart on the canvas needs it; likewise the radar and
+     corridor types and the labelled value axis. */
+  const helper = charts ? `\n${chartHelperSource(system, { extended: allBlocks.some(usesExtendedChart), shapes: allBlocks.some(usesShapeChart) })}` : "";
 
   return `${imports.join("\n")}
 
