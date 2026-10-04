@@ -3,7 +3,7 @@
  */
 
 import { cellKey, type CellMap, type QueryResult } from "./query";
-import type { GridColumn, GridColumnKind, GridLeafColumn, GridRow } from "../dataGridModel";
+import type { GridCell, GridColumn, GridColumnKind, GridLeafColumn, GridRow } from "../dataGridModel";
 
 export interface MeasureDisplay {
   /** Measure key in the query result. */
@@ -15,6 +15,9 @@ export interface MeasureDisplay {
   signed?: boolean;
   currency?: string;
   width?: number;
+  minWidth?: number;
+  /** Draw the value as a rich cell (heat, bar, chip...). */
+  cell?: GridCell;
 }
 
 export interface CategorySeries {
@@ -68,7 +71,12 @@ const leaf = (field: string, header: string, m: MeasureDisplay): GridLeafColumn 
   ...(m.signed ? { signed: true } : {}),
   ...(m.currency ? { currency: m.currency } : {}),
   ...(m.width ? { width: m.width } : {}),
+  ...(m.minWidth ? { minWidth: m.minWidth } : {}),
+  ...(m.cell ? { cell: m.cell } : {}),
 });
+
+/** Field of the rank column a ranked grid starts with. */
+export const RANK_FIELD = "_rank";
 
 /** Grid field for a (pivot, measure) cell. Field names avoid dots, which AG
  *  Grid would read as a nested path. */
@@ -80,7 +88,7 @@ export const gridField = (pivotIndex: number | null, measureKey: string): string
 export function toGrid(
   result: QueryResult,
   measures: MeasureDisplay[],
-  opts: { groupHeader: string; totalLabel?: string; groupWidth?: number; groupMinWidth?: number },
+  opts: { groupHeader: string; totalLabel?: string; groupWidth?: number; groupMinWidth?: number; rank?: boolean },
 ): { columns: GridColumn[]; rows: GridRow[] } {
   /* A fixed-width group column is pinned (the grid is expected to scroll
      sideways); otherwise it flexes to fill the width the measures leave.
@@ -92,6 +100,8 @@ export function toGrid(
     ...(opts.groupMinWidth ? { minWidth: opts.groupMinWidth } : {}),
   };
   const columns: GridColumn[] = [groupColumn];
+  /* A ranked grid counts its rows in a narrow first column ("#"). */
+  if (opts.rank) columns.unshift({ field: RANK_FIELD, header: "#", kind: "number", decimals: 0, width: 48, cell: { type: "rank" } });
   if (result.pivots.length === 0) {
     for (const m of measures) columns.push(leaf(gridField(null, m.key), m.label, m));
   } else if (measures.length === 1) {
@@ -119,7 +129,7 @@ export function toGrid(
     return row;
   };
 
-  const rows = result.groups.map((g, i) => toRow(g, result.cells[i]));
+  const rows = result.groups.map((g, i) => toRow(g, result.cells[i], opts.rank ? { [RANK_FIELD]: i + 1 } : {}));
   if (result.total) rows.unshift(toRow(opts.totalLabel ?? "Total", result.total, { _bold: true }));
   return { columns, rows };
 }

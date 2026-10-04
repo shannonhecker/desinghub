@@ -59,7 +59,7 @@ import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
 import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridModel";
 import { useBoundData, useCanvasDataset } from "./useBoundData";
-import { CURRENCY_STATE } from "@/lib/reportData/binding";
+import { CURRENCY_STATE, nextSelection } from "@/lib/reportData/binding";
 import { dropdownModel } from "@/lib/dropdownModel";
 /* Highcharts core + react wrapper are heavy and only needed when a chart block
    is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
@@ -1665,7 +1665,7 @@ function HighchartBlockRenderer({
   const p = block?.props ?? {};
   const dataset = useCanvasDataset();
   const title = (p.title as string) ?? "";
-  const value = p.value != null ? Number(p.value) : undefined;
+  const setReportState = useBuilder((s) => s.setReportState);
   /* Per-chart colour override (P1.2) - position-indexed palette
      slots. Only pass when non-empty to preserve the palette default. */
   const raw = p.seriesColors;
@@ -1683,6 +1683,14 @@ function HighchartBlockRenderer({
   const bound = useBoundData(p);
   const boundSeries = bound?.view === "series" ? bound : null;
   const boundParts = bound?.view === "parts" ? bound : null;
+  /* A gauge bound to one figure. */
+  const value = bound?.view === "value" ? (bound.value ?? undefined) : p.value != null ? Number(p.value) : undefined;
+  /* A chart whose points can be selected writes the choice to report state,
+     which the panels filtered by it read. */
+  const selection = boundParts ?? boundSeries;
+  const selectState = selection?.selectState;
+  const onSelectPoint = selectState ? (name: string) => setReportState(selectState, nextSelection(selection!, name)) : undefined;
+  const pointColors = Array.isArray(p.pointColors) ? (p.pointColors.filter((c) => typeof c === "string") as string[]) : undefined;
   const categories = boundSeries ? boundSeries.categories : Array.isArray(p.categories) ? (p.categories as string[]) : undefined;
   const series = boundSeries ? (boundSeries.series as ChartSeries[]) : Array.isArray(p.series) ? (p.series as ChartSeries[]) : undefined;
   const parts = boundParts ? boundParts.seriesData : seriesData;
@@ -1717,6 +1725,10 @@ function HighchartBlockRenderer({
       valueDecimals={typeof p.valueDecimals === "number" ? p.valueDecimals : undefined}
       valueSuffix={text(p.valueSuffix)}
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
+      valueMax={typeof p.valueMax === "number" ? p.valueMax : undefined}
+      pointColors={pointColors}
+      selected={selection?.selected}
+      onSelectPoint={onSelectPoint}
     />
   );
   if (!framed) return chart(p.height != null ? panelHeightOf(p) : undefined);
@@ -1771,8 +1783,9 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   const selectState = boundGrid?.selectState;
   const selected = boundGrid?.selected;
   const onSelect = useMemo(
-    () => (selectState ? (label: string) => setReportState(selectState, label === selected ? null : label) : undefined),
-    [selectState, selected, setReportState],
+    () => (selectState ? (label: string) => setReportState(selectState, nextSelection({ selected, selectClears: boundGrid?.selectClears }, label)) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectState, selected, setReportState, boundGrid?.selectClears?.join("|")],
   );
   /* The selection names a row of the CURRENT grouping; when "View by"
      re-groups the grid it no longer names anything, so drop it. */

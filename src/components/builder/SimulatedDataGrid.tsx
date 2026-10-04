@@ -264,8 +264,8 @@ interface SimulatedDataGridProps {
 
 /** A row's label: the value of the grid's first leaf column. */
 function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
-  const first = columns[0];
-  const field = first ? (isColumnGroup(first) ? first.children[0]?.field : first.field) : undefined;
+  /* The rank column ("#") counts rows; the label is the column after it. */
+  const field = leafColumns(columns).find((c) => cellOf(c)?.type !== "rank")?.field;
   return field && row ? String(row[field] ?? "") : "";
 }
 

@@ -98,6 +98,9 @@ export function materialiseBlock(block: Block, dataset: ReportDataset | null, re
     props.columns = bound.columns;
     props.rows = bound.rows;
     if (bound.selected) props.selectedRow = bound.selected;
+  } else if (bound?.view === "value") {
+    /* A gauge bound to one figure. */
+    if (bound.value !== null) props.value = bound.value;
   }
 
   const next: Block = { ...block, props };
