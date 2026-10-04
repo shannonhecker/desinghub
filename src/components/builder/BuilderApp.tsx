@@ -269,6 +269,8 @@ export function BuilderApp() {
         return;
       }
       if (e.key === "Escape") {
+        /* A dialog or menu that owns its Escape (it closes itself) is left alone. */
+        if (t instanceof Element && t.closest("[data-dh-escape-owner]")) return;
         const s = usePreviewMode.getState();
         if (s.mode === "preview") {
           e.preventDefault();

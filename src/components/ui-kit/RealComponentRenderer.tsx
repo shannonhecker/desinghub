@@ -67,6 +67,7 @@ import {
   type DensityLevel,
 } from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
+import { RealKitDialog, RealKitMenu, type KitDialogModel, type KitMenuModel } from "@/components/ui-kit/RealDialogKit";
 import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
 import {
@@ -1086,6 +1087,9 @@ export function RealComponentRenderer({
   saltDensity,
   props,
 }: RealComponentRendererProps): React.ReactElement | null {
+  /* Not canvas blocks: a dialog and an anchored menu (props.model), in each system's own components (RealDialogKit). */
+  if (type === "KitDialog") return props.model ? <RealKitDialog system={system} mode={mode} density={saltDensity} model={props.model as KitDialogModel} /> : null;
+  if (type === "KitMenu") return props.model ? <RealKitMenu system={system} mode={mode} model={props.model as KitMenuModel} /> : null;
   if (!canRenderReal(system, type)) return null;
 
   if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
