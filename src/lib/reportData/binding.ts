@@ -74,6 +74,13 @@ export interface BindingFilter {
   ignore?: string[];
   /** Value to filter by while the state is unset (e.g. the default periodicity). */
   fallback?: string;
+  /** A second state whose value is kept as well (the entity AND the one it
+   *  is compared with), with its own fallback. */
+  alsoState?: string;
+  alsoFallback?: string;
+  /** Values that are always kept alongside (the entity's own rows next to
+   *  the chosen benchmark's). */
+  extra?: string[];
 }
 
 /** One column of a "records" grid: a field of the table, shown as it is. */
@@ -91,6 +98,22 @@ export interface RecordColumn {
   flex?: number;
   pinned?: boolean;
   cell?: GridCell;
+  /** Show the column only while a state has one of these values ("" = the
+   *  state is unset): a "View by" that swaps one column for another. */
+  showWhen?: { state: string; in: string[] };
+}
+
+/** Lay a records grid out as group headings with their rows indented beneath. */
+export interface GroupRows {
+  /** Field the rows are grouped by; its value is the heading. */
+  by: string;
+  /** Column (a record column's field) that shows the heading and, on the
+   *  rows beneath, the row's own label. */
+  labelColumn: string;
+  /** Fields summed onto the heading row. */
+  sums?: string[];
+  /** Counts shown on the heading row: rows whose `field` equals `equals`. */
+  counts?: { as: string; field: string; equals: string }[];
 }
 
 export interface DataBinding {
@@ -110,9 +133,11 @@ export interface DataBinding {
   display: BoundMeasure[];
   filters?: BindingFilter[];
   adjustments?: Adjustment[];
-  sort?: { by: string; dir?: "asc" | "desc" };
+  sort?: { by: Dyn<string>; dir?: "asc" | "desc" };
   limit?: number;
   share?: "total" | "group";
+  /** records: group headings with indented rows. */
+  groupRows?: GroupRows;
   /** Label of the total row (grid). Omitted = no total row. */
   total?: string;
   /** Header of the grid's first column. Default: the group field's label. */
@@ -202,7 +227,8 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     if (value === undefined || value === "" || f.ignore?.includes(value)) continue;
     const field = dyn(f.field, state);
     if (!fieldOf(table, field)) continue;
-    filters.push({ field, in: [value] });
+    const also = f.alsoState ? (state[f.alsoState] ?? f.alsoFallback) : undefined;
+    filters.push({ field, in: [value, ...(also ? [also] : []), ...(f.extra ?? [])] });
   }
 
   const selection: BoundSelection = binding.selectState
@@ -238,7 +264,7 @@ export function resolveBinding(binding: DataBinding, dataset: ReportDataset, sta
     pivotBy,
     measures: binding.measures,
     filters,
-    sort: binding.sort,
+    sort: binding.sort ? { by: dyn(binding.sort.by, state), dir: binding.sort.dir } : undefined,
     limit: binding.limit,
     share: binding.share,
     total: true,
@@ -314,13 +340,13 @@ function recordsGrid(
   dataset: ReportDataset,
   state: ReportState,
 ): { columns: GridColumn[]; rows: GridRow[] } {
-  const cols = binding.records ?? [];
+  const cols = (binding.records ?? []).filter((c) => !c.showWhen || c.showWhen.in.includes(state[c.showWhen.state] ?? ""));
   const currency = state[CURRENCY_STATE] ?? dataset.baseCurrency;
   const rate = currencyRate(dataset, currency);
   let kept = rows.filter((r) => filters.every((f) => f.in.length === 0 || f.in.includes(r[f.field] as never)));
   if (binding.sort) {
-    const { by, dir } = binding.sort;
-    const sign = dir === "asc" ? 1 : -1;
+    const by = dyn(binding.sort.by, state);
+    const sign = binding.sort.dir === "asc" ? 1 : -1;
     kept = [...kept].sort((a, b) => {
       const x = a[by];
       const y = b[by];
@@ -357,7 +383,37 @@ function recordsGrid(
   });
   const columns: GridColumn[] = binding.columnGroups ? groupColumns(leaves, binding.columnGroups) : leaves;
   if (binding.rank) columns.unshift({ field: RANK_FIELD, header: "#", kind: "number", decimals: 0, width: 48, cell: { type: "rank" } });
+  if (binding.groupRows) return { columns, rows: groupedRows(binding.groupRows, kept, gridRows) };
   return { columns, rows: gridRows };
+}
+
+/** Group headings (in order of first appearance), each followed by its rows,
+ *  indented. A heading carries the sums and counts of its rows. */
+function groupedRows(spec: GroupRows, source: DataRow[], rows: GridRow[]): GridRow[] {
+  const order: string[] = [];
+  const members = new Map<string, number[]>();
+  source.forEach((r, i) => {
+    const key = String(r[spec.by] ?? "");
+    if (!members.has(key)) { members.set(key, []); order.push(key); }
+    members.get(key)!.push(i);
+  });
+  const out: GridRow[] = [];
+  for (const key of order) {
+    const idx = members.get(key)!;
+    const heading: GridRow = { [spec.labelColumn]: key, _bold: true, _group: true };
+    for (const f of spec.sums ?? []) {
+      heading[f] = idx.reduce((a, i) => a + (typeof source[i][f] === "number" ? (source[i][f] as number) : 0), 0);
+    }
+    for (const c of spec.counts ?? []) heading[c.as] = idx.filter((i) => String(source[i][c.field] ?? "") === c.equals).length;
+    out.push(heading);
+    for (const i of idx) {
+      /* A group with no rows of its own is a heading only (its single source
+         row has no label). */
+      if (rows[i][spec.labelColumn] === null || rows[i][spec.labelColumn] === undefined || rows[i][spec.labelColumn] === "") continue;
+      out.push({ ...rows[i], _indent: 1 });
+    }
+  }
+  return out;
 }
 
 /** Wrap flat measure columns under group headers; columns not named by any

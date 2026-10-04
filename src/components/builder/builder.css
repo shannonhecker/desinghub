@@ -10954,6 +10954,37 @@
 .dh-cell-flag { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
 .dh-cell-flag-code { font-size: var(--dh-cell-small); color: var(--ds-fg-secondary); }
 .dh-cell-rank { color: var(--ds-fg-tertiary); }
+.dh-cell-dot { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
+.dh-cell-dot.is-strong { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-dot-mark {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--dh-cell-dot);
+  height: var(--dh-cell-dot);
+  border-radius: 50%;
+  background: var(--dh-tone);
+}
+.dh-cell-dot.is-hollow .dh-cell-dot-mark { background: none; border: var(--dh-focus-ring) solid var(--dh-tone); }
+.dh-cell-tag {
+  display: inline-flex;
+  align-items: center;
+  height: var(--dh-cell-chip-h);
+  padding-inline: var(--dh-cell-gap);
+  border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-tag.is-solid {
+  min-width: var(--dh-cell-chip-h);
+  justify-content: center;
+  background: var(--dh-tone);
+  color: var(--ds-bg);
+}
+/* A group heading row: a sunken band above its indented rows. */
+.dh-grid .ag-row.dh-grid-row-group { background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
 /* ── Record panel (RecordPanel.tsx): the detail of a selected record ── */
 .dh-record {
   box-sizing: border-box;

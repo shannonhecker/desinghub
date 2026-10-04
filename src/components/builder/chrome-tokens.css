@@ -79,6 +79,7 @@
   --dh-cell-chip-pad:       0 8px 0 6px;
   --dh-cell-badge:          26px;
   --dh-cell-small:          11px;
+  --dh-cell-dot:            8px;
   --dh-record-size:         13px;
   /* Template gallery in the chat. */
   --tpl-desc-size:          11px;

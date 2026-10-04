@@ -16,6 +16,7 @@ import {
   cellOf,
   columnMax,
   deltaView,
+  dotIsBlank,
   flagEmoji,
   formatGridValue,
   heatTone,
@@ -169,24 +170,46 @@ function RichCell({ cell, column, value, row, text, max }: { cell: GridCell; col
     }
     case "rank":
       return <span className="dh-cell-rank">{text}</span>;
+    case "dot": {
+      if (dotIsBlank(cell, value)) return null;
+      const tone = cell.tones ? valueTone(cell.tones, value, cell.tone ?? "neutral") : (cell.tone ?? "neutral");
+      const hollow = cell.hollow?.includes(String(value));
+      return (
+        <span className={`dh-cell-dot${hollow ? " is-hollow" : ""}${tone !== "neutral" && cell.tones ? " is-strong" : ""}`} style={toneStyle(tone)}>
+          <span className="dh-cell-dot-mark" aria-hidden="true" />
+          {text}
+        </span>
+      );
+    }
+    case "chip": {
+      if (value === null || value === undefined || value === "") return null;
+      return (
+        <span className={`dh-cell-tag${cell.variant === "solid" ? " is-solid" : ""}`} style={toneStyle(valueTone(cell.tones, value, cell.fallback ?? "neutral"))}>
+          {text}
+        </span>
+      );
+    }
     default:
       return <>{text}</>;
   }
 }
 
-function leafColDef(column: GridLeafColumn, isFirst: boolean, max: number): ColDef<GridRow> {
+function leafColDef(column: GridLeafColumn, isFirst: boolean, max: number, grouped: boolean): ColDef<GridRow> {
   const numeric = isNumericKind(column.kind);
   const cell = cellOf(column);
   /* A heat cell is ordinary text on a tinted background; every other rich
      cell replaces the cell's content. */
   const rendered = cell && cell.type !== "heat" ? cell : null;
   const leftAligned = rendered && (rendered.type === "bar" || rendered.type === "flag" || rendered.type === "toneText");
+  /* A grid laid out as group headings keeps its order: sorting would
+     scatter the rows away from their headings. */
+  const sortable = !grouped;
   return {
     field: column.field,
     headerName: column.header,
     ...(column.width ? { width: column.width } : { flex: column.flex ?? 1, minWidth: column.minWidth ?? (numeric ? 88 : 120) }),
     pinned: column.pinned ? "left" : undefined,
-    sortable: true,
+    sortable,
     resizable: false,
     suppressMovable: true,
     type: numeric && !leftAligned ? "rightAligned" : undefined,
@@ -231,7 +254,8 @@ function toColDefs(columns: GridColumn[], rows: GridRow[]): (ColDef<GridRow> | C
     const cell = cellOf(c);
     if (cell?.type === "bar" && cell.scale === "columnMax") maxOf.set(c.field, columnMax(rows, c.field));
   }
-  const leafColDefOf = (leaf: GridLeafColumn, isFirst: boolean) => leafColDef(leaf, isFirst, maxOf.get(leaf.field) ?? 0);
+  const grouped = rows.some((r) => r._group);
+  const leafColDefOf = (leaf: GridLeafColumn, isFirst: boolean) => leafColDef(leaf, isFirst, maxOf.get(leaf.field) ?? 0, grouped);
   return columns.map((c) => {
     if (isColumnGroup(c)) {
       return {
@@ -282,7 +306,10 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
     apiRef.current?.redrawRows();
   }, [selected]);
   const rowClassRules = useMemo(
-    () => ({ "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && rowLabel(columns, params.data) === selectedRef.current }),
+    () => ({
+      "dh-grid-row-selected": (params: { data?: GridRow }) => Boolean(selectedRef.current) && rowLabel(columns, params.data) === selectedRef.current,
+      "dh-grid-row-group": (params: { data?: GridRow }) => Boolean(params.data?._group),
+    }),
     [columns],
   );
   const selectable = Boolean(onSelect);

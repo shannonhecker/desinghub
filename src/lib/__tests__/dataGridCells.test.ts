@@ -7,6 +7,7 @@ import {
   cellOf,
   columnMax,
   deltaView,
+  dotIsBlank,
   flagEmoji,
   heatTone,
   sparkPoints,
@@ -102,5 +103,19 @@ describe("flag, tones and unknown cells", () => {
     expect(cellOf({ field: "a", header: "A", cell: { type: "hologram" } as never })).toBeNull();
     expect(cellOf({ field: "a", header: "A" })).toBeNull();
     expect(cellOf({ field: "a", header: "A", cell: { type: "heat" } })).toEqual({ type: "heat" });
+  });
+});
+
+describe("dot and chip cells", () => {
+  it("a dot is blank for nothing, and for zero when zeros are hidden", () => {
+    expect(dotIsBlank({ type: "dot", hideZero: true }, 0)).toBe(true);
+    expect(dotIsBlank({ type: "dot" }, 0)).toBe(false);
+    expect(dotIsBlank({ type: "dot" }, "")).toBe(true);
+    expect(dotIsBlank({ type: "dot", hideZero: true }, 3)).toBe(false);
+  });
+  it("are understood as cells", () => {
+    expect(cellOf({ field: "a", header: "A", cell: { type: "dot", tone: "bad" } })?.type).toBe("dot");
+    expect(cellOf({ field: "a", header: "A", cell: { type: "chip", variant: "solid", tones: { 1: "good" } } })?.type).toBe("chip");
+    expect(valueTone({ Met: "good", "Not Met": "bad" }, "Not Met")).toBe("bad");
   });
 });
