@@ -1,0 +1,110 @@
+import { test, expect, type Page } from "@playwright/test";
+
+async function performance(page: Page) {
+  await page.goto("/builder");
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+  await page.getByRole("button", { name: /Browse templates/ }).click();
+  await page.getByRole("button", { name: "Use the Performance Analytics template" }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible();
+}
+
+test("Present block wrappers do not nest buttons around report controls", async ({ page }) => {
+  await performance(page);
+  await expect(page.locator('.present-stage [data-block-id][role="button"]')).toHaveCount(0);
+  await expect(page.locator('.present-stage [data-block-id][tabindex="0"]')).toHaveCount(0);
+});
+
+test("expanded panel receives keyboard focus and restores its opener", async ({ page }) => {
+  await performance(page);
+  const opener = page.getByRole("button", { name: "Expand Performance results", exact: true });
+  await opener.focus();
+  await page.keyboard.press("Enter");
+  const expanded = page.locator(".dh-expand-inner");
+  await expect(expanded).toBeVisible();
+  await expect.poll(() => expanded.evaluate(el => el.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press("Shift+Tab");
+  await expect(expanded.locator(".ag-cell:focus")).toHaveCount(1);
+  await page.keyboard.press("Tab");
+  await expect(expanded.getByRole("combobox", { name: "View by" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(expanded).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});
+
+test("Fluent edit canvas remains still with both panels open", async ({ page }) => {
+  await performance(page);
+  await page.getByRole("button", { name: /^Design system:/ }).click();
+  await page.getByText("Fluent 2", { exact: true }).last().click();
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  const showLibrary = page.getByRole("button", { name: "Show component library" });
+  if (await showLibrary.isVisible()) await showLibrary.click();
+  await page.locator('.bp-main [data-block-id]').first().click({ position: { x: 5, y: 5 } });
+  await page.mouse.move(0, 0);
+  for (const width of [1440, 1512, 1920, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (width >= 1440) {
+      const tool = page.getByRole("button", { name: "Expand Performance results", exact: true });
+      await expect.poll(async () => (await tool.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(23.9);
+    }
+    // Allow the deliberate device transition to settle before measuring idle frames.
+    await page.waitForTimeout(1200);
+    const ranges = await page.locator(".bp-device-frame").evaluate(async el => {
+      const samples: number[][] = [];
+      for (let i = 0; i < 120; i++) {
+        await new Promise(requestAnimationFrame);
+        samples.push([el, ...el.querySelectorAll(".dh-panel, .highcharts-container")].flatMap(node => {
+          const r = node.getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height];
+        }));
+      }
+      if (samples.some(s => s.length !== samples[0].length)) return [Infinity];
+      return samples[0].map((_, i) => Math.max(...samples.map(s => s[i])) - Math.min(...samples.map(s => s[i])));
+    });
+    expect(Math.max(...ranges), `idle geometry at ${width}px`).toBeLessThanOrEqual(1);
+  }
+});
+
+test("report grid uses arrow navigation and Tab exits the cells", async ({ page }) => {
+  await performance(page);
+  const grid = page.locator('.dh-grid').first();
+  const first = grid.locator('.ag-row[row-index="0"] .ag-cell').first();
+  await first.click();
+  await page.keyboard.press("ArrowRight");
+  await expect(grid.locator('.ag-cell:focus')).toHaveAttribute('col-id', 'marketValue');
+  await page.keyboard.press("Tab");
+  await expect.poll(() => grid.evaluate(el => el.contains(document.activeElement))).toBe(false);
+});
+
+test("device frame starts with concrete dimensions", async ({ page }) => {
+  const warnings: string[] = [];
+  page.on("console", msg => { if (/not an animatable value/.test(msg.text())) warnings.push(msg.text()); });
+  await performance(page);
+  expect(warnings).toEqual([]);
+});
+
+test("grid headers remain reachable for keyboard sorting", async ({ page }) => {
+  await performance(page);
+  const grid = page.locator('.dh-grid').nth(1);
+  await grid.locator('.ag-row[row-index="0"] .ag-cell').first().click();
+  await page.keyboard.press("ArrowUp");
+  const header = grid.locator('.ag-header-cell').first();
+  await expect(header).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(header).toHaveAttribute('aria-sort', 'ascending');
+  await page.keyboard.press("Tab");
+  await expect.poll(() => grid.evaluate(el => el.contains(document.activeElement))).toBe(false);
+});
+
+test("expanded chart keyboard navigation reaches its data table", async ({ page }) => {
+  await performance(page);
+  await page.getByRole('button', { name: 'Expand Returns', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Returns expanded', exact: true });
+  await expect(dialog).toBeFocused();
+  let reachedTable = false;
+  for (let i = 0; i < 20; i++) {
+    await page.keyboard.press('Tab');
+    reachedTable = await dialog.locator('.dh-panel-table').evaluate(el => el.contains(document.activeElement));
+    if (reachedTable) break;
+  }
+  expect(reachedTable).toBe(true);
+});

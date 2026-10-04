@@ -1257,7 +1257,8 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
       ref={frameRef}
       className="bp-device-frame"
       data-frame-zoom={fit.zoom}
-      style={{ zoom: fit.zoom }}
+      initial={false}
+      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom } as React.CSSProperties}
       animate={{ width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
@@ -1409,13 +1410,13 @@ export function BuilderCanvas({
           />
         )}
 
-        <main className="bp-main" data-plain={plainCanvas ? "" : undefined}>
+        <div role="region" aria-label="Canvas content" className="bp-main" data-plain={plainCanvas ? "" : undefined}>
           {allowEmptyState && !hasContent ? (
             <DefaultChatArea messageKey={previewKey} />
           ) : (
             <PreviewCanvas />
           )}
-        </main>
+        </div>
       </div>
 
       {footerVisible && <DashboardFooter />}

@@ -1087,7 +1087,18 @@ export function SortableBlock({
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onContextMenu={handleContextMenu}
-      {...attributes}
+      role={readOnly ? undefined : "group"}
+      tabIndex={readOnly ? undefined : 0}
+      aria-label={readOnly ? undefined : "Canvas block"}
+      onKeyDown={(e) => {
+        if (readOnly || !zone || e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.shiftKey) toggleBlockSelection(id, zone);
+          else { setSelectedBlock(id, zone); pinInspector(id); }
+        }
+      }}
     >
       {/* Drop-between indicator line */}
       {isSorting && !isDragging && (
@@ -1105,6 +1116,7 @@ export function SortableBlock({
         zone={zone}
         dragHandleRef={setActivatorNodeRef}
         dragListeners={listeners as Record<string, unknown> | undefined}
+        dragAttributes={attributes}
         isNewlyMounted={isNewlyMounted}
         onRemove={onRemove}
         onSwapClick={!compact ? onSwapClick : undefined}

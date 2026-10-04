@@ -7615,7 +7615,7 @@
   --ds-bg: var(--mui-palette-background-default, #141218);
   --ds-fg: var(--mui-palette-text-primary, #E6E0E9);
   --ds-fg-secondary: var(--mui-palette-text-secondary, #E6E0E9CC);
-  --ds-fg-tertiary: var(--mui-palette-text-disabled, #E6E0E9B0);
+  --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: var(--mui-palette-background-paper, #2B2930);
   --ds-surface-hover: var(--mui-palette-action-hover, #36343C);
   --ds-border: var(--mui-palette-divider, #79747E);
@@ -7638,7 +7638,7 @@
   --ds-bg: var(--mui-palette-background-default, #FFFBFE);
   --ds-fg: var(--mui-palette-text-primary, #1D1B20);
   --ds-fg-secondary: var(--mui-palette-text-secondary, #1D1B20CC);
-  --ds-fg-tertiary: var(--mui-palette-text-disabled, #1D1B20B0);
+  --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: var(--mui-palette-background-paper, #F3EDF7);
   --ds-surface-hover: var(--mui-palette-action-hover, #E6E0EC);
   --ds-border: var(--mui-palette-divider, #79747E);
@@ -7766,7 +7766,7 @@
   --ds-bg: #0b1120;
   --ds-fg: #E8EAED;
   --ds-fg-secondary: #9CA3AF;
-  --ds-fg-tertiary: #6B7280;
+  --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: rgba(255,255,255,0.04);
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
@@ -7787,7 +7787,7 @@
   --ds-bg: #FFFFFF;
   --ds-fg: #2D1B4E;
   --ds-fg-secondary: #5C4A78;
-  --ds-fg-tertiary: #9688AD;
+  --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: rgba(255,255,255,0.72);
   --ds-surface-hover: rgba(255,255,255,0.85);
   --ds-border: rgba(100,60,180,0.06);
@@ -11054,8 +11054,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--dh-panel-tool-size);
-  height: var(--dh-panel-tool-size);
+  width: max(var(--dh-panel-tool-size), calc(var(--dh-inline-control-h) / var(--dh-frame-zoom, 1)));
+  height: max(var(--dh-panel-tool-size), calc(var(--dh-inline-control-h) / var(--dh-frame-zoom, 1)));
+  flex-shrink: 0;
   padding: 0;
   border: 0;
   border-radius: var(--ds-radius);
@@ -11260,7 +11261,7 @@
   padding: var(--dh-cell-chip-pad);
   border-radius: var(--dh-cell-chip-h);
   background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
-  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg));
   font-size: var(--dh-cell-small);
   font-weight: 600;
   line-height: 1;
@@ -11275,7 +11276,7 @@
   align-items: center;
   gap: calc(var(--dh-cell-gap) / 3);
   font-weight: 600;
-  color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg));
+  color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg));
 }
 .dh-cell-delta.is-flat { font-weight: 400; color: var(--ds-fg-tertiary); }
 .dh-cell-spark { flex: none; color: var(--dh-tone); overflow: visible; }
@@ -11289,18 +11290,18 @@
   border-radius: var(--dh-cell-badge);
   border: var(--bc-hairline) solid color-mix(in srgb, var(--dh-tone) 45%, transparent);
   background: color-mix(in srgb, var(--dh-tone) 14%, transparent);
-  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg));
   font-size: var(--dh-cell-small);
   font-weight: 600;
   line-height: 1;
 }
-.dh-cell-tonetext { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-tonetext { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg)); }
 .dh-cell-tonetext.is-neutral { font-weight: 400; color: var(--ds-fg-tertiary); }
 .dh-cell-flag { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
 .dh-cell-flag-code { font-size: var(--dh-cell-small); color: var(--ds-fg-secondary); }
 .dh-cell-rank { color: var(--ds-fg-tertiary); }
 .dh-cell-dot { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
-.dh-cell-dot.is-strong { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-dot.is-strong { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg)); }
 .dh-cell-dot-mark {
   flex: none;
   box-sizing: border-box;
@@ -11317,7 +11318,7 @@
   padding-inline: var(--dh-cell-gap);
   border-radius: var(--ds-radius);
   background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
-  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg));
   font-size: var(--dh-cell-small);
   font-weight: 600;
   line-height: 1;
@@ -11513,6 +11514,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   color: var(--ds-primary);
   cursor: pointer;
 }
+.dh-launcher-open { color: color-mix(in srgb, var(--ds-primary) 50%, var(--ds-fg)); }
 .dh-launcher-open:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
 
 .dh-hero {
@@ -11645,7 +11647,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .dh-record-table td + td { padding-inline-start: calc(var(--dh-cell-gap) * 2); }
 .dh-record-table th[scope="row"],
 .dh-record-table thead th:first-child { text-align: left; }
-.dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 40%, var(--ds-fg)); }
 .dh-record-flat { color: var(--ds-fg-tertiary); }
 .dh-record-clear {
   align-self: flex-start;
@@ -17565,4 +17567,64 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   .tool-use-card__chevron {
     transition: none;
   }
+}
+
+/* Report text uses foreground status tokens, with enough contrast on rows
+   and tinted badges. Indicator fills continue using each system's palette. */
+.preview-salt { --ds-status-negative: var(--dh-negative-dark); --ds-status-positive: var(--dh-positive-dark); }
+.builder-light .preview-salt { --ds-status-negative: var(--dh-negative-light); --ds-status-positive: var(--dh-positive-light); }
+.builder-light .preview-carbon { --ds-status-positive: var(--dh-positive-light); --ds-fg-tertiary: var(--ds-fg-secondary); }
+
+/* Keep the dense underline and text centred in the reference's visual band,
+   while the interactive element itself covers at least the full 24px slot. */
+.dh-inline-control .saltDropdown,
+.dh-inline-control .MuiSelect-select,
+.dh-inline-control .fui-Dropdown__button {
+  min-height: var(--dh-inline-control-h);
+  box-sizing: border-box;
+}
+.dh-inline-control .MuiSelect-select { display: flex; align-items: center; }
+.dh-inline-control .saltDropdown { background: transparent; }
+.dh-grid .ag-cell:focus-visible,
+.canvas-block[role="group"]:focus-visible,
+.dh-expand-inner:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: calc(-1 * var(--dh-focus-ring));
+}
+
+/* Shared editor spacing: one outer inset, a smaller control gap, and a
+   composer that stays anchored without consuming the message viewport. */
+.chat-slide .chat-scroll,
+.chat-float-compact .chat-scroll {
+  padding-inline: var(--bc-panel-inset);
+  padding-bottom: var(--bc-gap-md);
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.chat-slide .chat-input-bar,
+.chat-float-compact .chat-input-bar {
+  padding: var(--bc-gap-md) var(--bc-panel-inset);
+  gap: var(--bc-gap-sm);
+}
+.chat-slide .input-box,
+.chat-float-compact .input-box { border-radius: var(--bc-radius-md); }
+.chat-slide .input-textarea,
+.chat-float-compact .input-textarea {
+  padding: var(--bc-gap-md);
+  font-size: var(--bc-editor-font);
+  min-height: var(--bc-composer-min);
+  field-sizing: content;
+}
+.chat-slide .input-toolbar,
+.chat-float-compact .input-toolbar { justify-content: flex-end; }
+.lib-body {
+  padding: var(--bc-panel-inset);
+  gap: var(--bc-gap-md);
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+.lib-search-sticky {
+  top: calc(-1 * var(--bc-panel-inset));
+  margin: calc(-1 * var(--bc-panel-inset)) calc(-1 * var(--bc-panel-inset)) var(--bc-gap-md);
+  padding: var(--bc-gap-md) var(--bc-panel-inset);
 }

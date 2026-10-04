@@ -594,7 +594,7 @@ export function BuilderApp() {
               title="Open sessions"
               aria-label="Open sessions drawer"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">menu</span>
             </button>
             <Link
               href="/"
@@ -614,7 +614,7 @@ export function BuilderApp() {
               title="Start a new session"
               aria-label="Start a new session"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit_square</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">edit_square</span>
             </button>
             <SaveIndicator />
           </div>

@@ -238,7 +238,7 @@ function leafColDef(column: GridLeafColumn, isFirst: boolean, max: number, group
               /* A fixed mix over the surface, so the tint stays legible in
                  light and dark; the text leans towards the tone. */
               backgroundColor: `color-mix(in srgb, ${toneColor(tone)} 16%, transparent)`,
-              color: `color-mix(in srgb, ${toneColor(tone)} 62%, var(--ds-fg))`,
+              color: `color-mix(in srgb, ${toneColor(tone)} 40%, var(--ds-fg))`,
             }
           : {}),
         ...(isFirst && typeof params.data?._indent === "number"
@@ -334,7 +334,7 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
       /* While presenting, a click in a selectable grid selects a ROW; it must
          not also select the block for the amend composer. (In Edit a click
          still selects the block, as everywhere else.) */
-      onClick={selectable && readOnly ? (e) => e.stopPropagation() : undefined}
+      onClick={readOnly ? (e) => e.stopPropagation() : undefined}
     >
       <AgGridReact<GridRow>
         theme={gridTheme}
@@ -349,7 +349,10 @@ export function SimulatedDataGrid({ columns, rows, height, label, selected, onSe
         }
         /* Keyboard: a selectable grid keeps cell focus so Enter / Space on a
            focused row selects it. */
-        suppressCellFocus={!selectable}
+        // Arrow keys move within the grid; Tab leaves it instead of visiting
+        // every cell. This also lets readers explore non-selectable reports.
+        tabToNextCell={() => false}
+        tabToNextHeader={() => false}
         onCellKeyDown={
           selectable
             ? (e) => {
