@@ -10723,6 +10723,212 @@
 }
 [data-uniform-structure] .bp-sidebar { background: var(--dh-card); }
 
+/* ── Instrument header: a pair, its last bar, a quote; then the orders ── */
+.dh-instrument {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-cell-gap);
+  padding: var(--dh-nav-inset) var(--bc-gutter);
+  background: var(--dh-card, var(--dh-chrome-bg));
+  color: var(--ds-fg);
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  font-family: var(--ds-font);
+  font-size: var(--dh-panel-meta-size);
+}
+.dh-instrument-main,
+.dh-instrument-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--dh-cell-gap) var(--dh-nav-group-pad);
+  min-width: 0;
+  /* Fixed rows and a fixed line: the header is the same height in every
+     design system's font. */
+  line-height: 1.2;
+}
+.dh-instrument-main { min-height: var(--dh-instrument-row); }
+.dh-instrument-sub { min-height: var(--dh-instrument-sub); }
+.dh-instrument-main > *,
+.dh-instrument-sub > * { line-height: 1.2; }
+.dh-instrument-symbol {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-instrument-symbol);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.dh-instrument-meta,
+.dh-instrument-status,
+.dh-instrument-note { color: var(--ds-fg-secondary); white-space: nowrap; }
+.dh-instrument-mono,
+.dh-instrument-ohlc,
+.dh-instrument-handle { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.dh-instrument-ohlc { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--dh-cell-gap) var(--dh-nav-pad); }
+.dh-instrument-figure { display: inline-flex; gap: calc(var(--dh-cell-gap) / 3); font-weight: 600; white-space: nowrap; }
+.dh-instrument-figure-label { color: var(--ds-fg-tertiary); font-weight: 400; }
+.dh-instrument-figure-label::after { content: ":"; }
+.dh-instrument .is-up { color: var(--ds-status-positive); }
+.dh-instrument .is-down { color: var(--ds-status-negative); }
+.dh-instrument-change { font-weight: 600; white-space: nowrap; }
+.dh-instrument-spacer { flex: 1 1 auto; }
+.dh-instrument-quote { display: flex; align-items: center; gap: var(--dh-nav-pad); }
+.dh-instrument-handle { color: var(--ds-fg-tertiary); }
+.dh-instrument-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: var(--dh-instrument-side-w);
+  height: var(--dh-instrument-row);
+  padding: 0 var(--dh-nav-pad);
+  line-height: 1;
+  border: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+}
+.dh-instrument-side-label { font-size: var(--dh-navgroup-size); line-height: 1.2; color: var(--ds-fg-tertiary); letter-spacing: 0.04em; }
+.dh-instrument-pips { font-size: var(--dh-instrument-pips); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.dh-instrument-orders { display: flex; flex-wrap: wrap; gap: var(--dh-cell-gap); }
+.dh-instrument-order {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  height: var(--dh-exec-chip-h);
+  padding: 0 var(--dh-nav-pad);
+  border: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dh-instrument-order.is-active {
+  border-color: var(--ds-primary);
+  color: var(--ds-fg);
+  background: color-mix(in srgb, var(--ds-primary) 10%, transparent);
+}
+.dh-instrument-order:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-instrument-order-side { font-weight: 700; }
+.dh-instrument-order-status { color: var(--ds-fg-tertiary); }
+.dh-instrument-dot { width: var(--dh-cell-dot); height: var(--dh-cell-dot); border-radius: 50%; background: currentColor; }
+
+/* ── Execution chart: a tool rail, the plot, the range presets ── */
+.dh-panel.dh-exec {
+  flex-direction: row;
+  overflow: visible;
+  font-size: var(--dh-panel-meta-size);
+}
+.dh-exec-empty { margin: auto; color: var(--ds-fg-tertiary); }
+.dh-exec-rail {
+  flex: 0 0 var(--dh-exec-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 2);
+  padding-block: var(--dh-exec-pad);
+  border-inline-end: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-exec-rail-group { position: relative; }
+.dh-exec-rail-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dh-exec-btn);
+  height: var(--dh-exec-btn);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.dh-exec-rail-btn:hover,
+.dh-exec-rail-btn.is-open { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); color: var(--ds-fg); }
+.dh-exec-rail-btn:focus-visible,
+.dh-exec-range:focus-visible,
+.dh-exec-flyout-item:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-exec-rail-text { font-size: var(--dh-cell-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dh-exec-flyout {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(100% + var(--dh-cell-gap));
+  z-index: 20;
+  box-sizing: border-box;
+  min-width: var(--dh-exec-flyout-w);
+  padding: var(--dh-cell-gap);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline) solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  box-shadow: var(--ds-shadow, none);
+}
+.dh-exec-flyout-title {
+  margin: 0;
+  padding: calc(var(--dh-cell-gap) / 2) var(--dh-nav-pad) var(--dh-cell-gap);
+  font-size: var(--dh-navgroup-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-exec-flyout-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  width: 100%;
+  height: var(--dh-nav-row);
+  padding: 0 var(--dh-nav-pad);
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dh-exec-flyout-item:hover { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
+.dh-exec-flyout-check { flex: none; display: inline-flex; width: var(--dh-nav-group-pad); color: var(--ds-primary); }
+.dh-exec-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--dh-exec-pad) var(--dh-exec-pad) 0;
+}
+.dh-exec-plot { min-width: 0; overflow: hidden; }
+.dh-exec-ranges {
+  flex: 0 0 var(--dh-exec-range);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dh-exec-range {
+  appearance: none;
+  flex: none;
+  height: var(--dh-exec-chip-h);
+  padding: 0 var(--dh-nav-inset);
+  border: 0;
+  border-radius: var(--dh-exec-chip-h);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dh-exec-range:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
+/* The chosen range is an inverted pill. */
+.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
+
 .dh-navgroup {
   padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
   font-family: var(--ds-font);
@@ -11402,6 +11608,13 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .dh-record-pairs.is-rows .dh-record-pair dt { margin: 0; }
 .dh-record-pairs.is-rows .dh-record-pair dd { font-weight: 600; text-align: right; }
+/* Banded rows: each pair is a full-width row with its own padding. */
+.dh-record-pairs.is-rows.is-zebra { gap: 0; }
+.dh-record-pairs.is-zebra .dh-record-pair {
+  padding: calc(var(--dh-cell-gap) * 0.7) var(--dh-nav-pad);
+  border-radius: var(--ds-radius);
+}
+.dh-record-pairs.is-zebra .dh-record-pair:nth-child(odd) { background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
 .dh-panel.has-accent { border-inline-start: var(--dh-nav-bar) solid var(--dh-panel-accent); }
 .dh-record-pair dd {
   margin: 0;
@@ -14551,6 +14764,11 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
    width in Edit and Present; the old wider tier (4-up -> 3-up) fired on
    every desktop canvas and broke a 4-up KPI row into 3 + 1. The ladder is
    now only for the tablet and mobile presets. */
+/* A block that spans rows (a chart beside a column of panels): on the
+   desktop frame only; narrower, every block is its own row. */
+@container zone-body-grid (min-width: 47.5625rem) {
+  .zone-drop-body.zone-grid > [style*="--row-span"] { grid-row: span var(--row-span); }
+}
 @container zone-body-grid (max-width: 760px) {
   /* third/quarter-row items fold to a clean 2x2 (half-row) */
   .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 6 !important; }

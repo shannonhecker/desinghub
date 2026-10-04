@@ -701,6 +701,12 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "account", label: "Account name", placeholder: "\"none\" hides the account" },
     { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
   ]},
+  { type: "InstrumentHeader", label: "Instrument Header", icon: "candlestick_chart", defaults: { symbol: "Instrument", note: "Sample data" }, fields: [
+    { type: "text", propKey: "note", label: "Data note" },
+  ]},
+  { type: "ExecutionChart", label: "Execution Chart", icon: "show_chart", defaults: { height: 640 }, fields: [
+    { type: "range", propKey: "height", label: "Height", min: 480, max: 960, suffix: "px" },
+  ]},
   { type: "ContextBar", label: "Context Bar", icon: "tune", defaults: { title: "Page", tone: "surface", filters: [{ label: "Period", stateKey: "period", value: "Monthly", options: ["Daily", "Monthly", "Yearly"] }] }, fields: [
     { type: "text", propKey: "title", label: "Title" },
     { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
@@ -868,6 +874,8 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   TopNav: "navigation",
   TabStrip: "navigation",
   ContextBar: "navigation",
+  InstrumentHeader: "navigation",
+  ExecutionChart: "charts",
   NavGroup: "navigation",
   SimulatedTabs: "navigation",
   SimulatedBreadcrumb: "navigation",

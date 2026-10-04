@@ -6,6 +6,43 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-06 finance templates, slice 4: FX execution (`feat/finance-templates-slice-4`, stacked on the density pass)
+
+The last report: one algo order worked through a session. Design note:
+`docs/superpowers/specs/2026-10-06-finance-templates-slice-4-design.md`.
+
+#### Added
+- **FX Execution** template. An instrument header (pair, last bar, a
+  two-sided quote, the orders as tabs), one large chart, and beside it the
+  order's statistics, a passive / aggressive gauge and a venue donut. Bound
+  to a new sample dataset (`execution`: a session of one-minute bars, an
+  hourly history, two orders, their fills by venue and their execution
+  states; seeded, so it is the same on every load). Measured: every block at
+  the same position and size (0px) in all five design systems, light and
+  dark; Edit matches Present; nothing clipped on tablet or phone.
+- **Execution chart** block. Bid, ask and mid (or candlesticks, or OHLC), the
+  limit price, average fill, session TWAP, percent done, fills sized by
+  volume and coloured by venue, the periods the order was held back, the
+  benchmarks, a volume strip, and price tags against the right axis. Its
+  rail sets the interval, chart type, overlays and chart / table; the chips
+  under it set the range. Every choice is report state, so the chat sets
+  them too ("switch to candlestick", "set the interval to 5m").
+- **Instrument header** block (header zone).
+- **Cross-filter.** A venue picked in the donut or on the chart dims the
+  other venues' fills. Choosing the other order re-reads every block.
+- **Gauge** `gaugeSweep` (a 220 degree thin ring) and `gaugeCaption`.
+  **Record pairs**: signed figures with a tone, a prefix / suffix, banded rows.
+- **Grid layout** `rowSpan`: a block can span rows on the desktop frame, so a
+  tall chart sits beside a column of panels.
+- **Export.** The header as text; the chart as a combination chart of its
+  lines; the panels as elsewhere.
+
+#### Left out (see the design note)
+The trading behaviour of the original: the live ticking feed, the order
+ticket, drag-to-amend, drawing tools, alerts, context menus, wheel zoom, the
+Go to and Compare dialogs. Venue names and order ids are invented.
+
+
 ### 2026-10-06 finance templates: density and fidelity pass (`feat/finance-templates-density`, stacked on slice 3)
 
 The twelve finance templates checked side by side against the reports they

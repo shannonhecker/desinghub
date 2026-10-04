@@ -27,6 +27,7 @@ export const VALID_TEMPLATE_IDS = [
   "entity-comparison",
   "governance-scorecard",
   "analytics-home",
+  "fx-execution",
 ] as const;
 
 export type TemplateId = (typeof VALID_TEMPLATE_IDS)[number];
@@ -58,6 +59,8 @@ export const TEMPLATE_SUMMARIES: Record<TemplateId, string> = {
     "Entity Comparison (finance, data-driven) - two issuers side by side: summary cards, an involvement radar, ESG scores, a rating trend, emissions and controversies; Entity and Compare with filters",
   "governance-scorecard":
     "Governance Scorecard (finance, data-driven) - four category cards that filter positive and negative indicator grids, and a reference grid, for one issuer; Entity filter",
+  "fx-execution":
+    "FX Execution (finance, data-driven) - one algo order worked through a session: a chart of market, limit price, fills by venue and percent done with its own interval, chart type, overlay and range controls; an order statistics list, a passive / aggressive gauge and a venue donut; two orders to switch between",
   "analytics-home":
     "Analytics Home (finance) - a start page: a hero with search, four launcher cards that open the report templates, and a filterable list of dashboards",
   "performance-analytics":

@@ -24,6 +24,7 @@ const ZONE_BY_TYPE: Readonly<Record<string, ZoneId>> = {
   TopNav: 'header',
   TabStrip: 'header',
   ContextBar: 'header',
+  InstrumentHeader: 'header',
   NavItem: 'sidebar',
   NavGroup: 'sidebar',
   FooterText: 'footer',
@@ -128,6 +129,10 @@ export interface LayoutProps {
      Undefined = the generic ladder. Canvas-only, like the ladder. */
   spanTablet?: number;
   spanPhone?: number;
+  /** Rows a block spans in a grid zone on the desktop frame, so a tall block
+     can sit beside a column of shorter ones. Its height should be the sum of
+     that column's heights and the gaps between them. Canvas-only. */
+  rowSpan?: number;
 }
 
 export interface ChatMessage {

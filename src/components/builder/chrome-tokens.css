@@ -60,6 +60,15 @@
   --dh-report-gutter:       24px;
   --dh-inline-control-h:    24px;
   --dh-inline-font:         12px;
+  /* FX execution: the instrument header and the chart's rail and range chips. */
+  --dh-instrument-symbol:   20px;
+  --dh-instrument-pips:     22px;
+  --dh-instrument-side-w:   64px;
+  --dh-instrument-row:      44px;
+  --dh-instrument-sub:      28px;
+  --dh-exec-btn:            32px;
+  --dh-exec-chip-h:         26px;
+  --dh-exec-flyout-w:       200px;
   /* Dense text navigation. */
   --dh-nav-row:             28px;
   --dh-nav-row-rail:        36px;

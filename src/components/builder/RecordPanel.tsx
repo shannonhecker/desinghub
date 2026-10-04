@@ -25,13 +25,13 @@ const toneStyle = (tone: GridTone): React.CSSProperties => ({ "--dh-tone": toneC
 function Section({ section, system }: { section: ResolvedSection; system: DesignSystem }) {
   if (section.type === "pairs") {
     return (
-      <dl className={`dh-record-pairs${section.layout === "rows" ? " is-rows" : ""}`}>
+      <dl className={`dh-record-pairs${section.layout === "rows" ? " is-rows" : ""}${section.zebra ? " is-zebra" : ""}`}>
         {section.items.map((item) => (
           <div key={item.label} className="dh-record-pair">
             <dt>{item.label}</dt>
             <dd>
               {item.flag ? <span aria-hidden="true">{item.flag} </span> : null}
-              {item.tone ? <span className="dh-cell-badge" style={toneStyle(item.tone)}>{item.text}</span> : item.text}
+              {item.tone ? <span className="dh-cell-badge" style={toneStyle(item.tone)}>{item.text}</span> : item.signed ? <span style={{ color: toneColor(item.signed) }}>{item.text}</span> : item.text}
             </dd>
           </div>
         ))}

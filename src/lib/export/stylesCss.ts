@@ -496,6 +496,24 @@ export const REPORT_CSS = `/* ── Chrome tones ──
 .inline-field { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .inline-field label { flex: none; font-size: 11px; color: var(--fg-muted); white-space: nowrap; }
 .dropdown-inline { height: 24px; min-width: 96px; padding: 0 4px; border: 0; border-bottom: 1px solid var(--border-strong, var(--border)); border-radius: 0; background: transparent; color: var(--fg); font-family: inherit; font-size: 12px; }
+/* ── Instrument header ── */
+.instrument { display: flex; flex-direction: column; gap: 6px; padding: 12px clamp(16px, 2.5vw, 24px); background: var(--bg); color: var(--fg); border-bottom: 1px solid var(--border); font-size: 12px; }
+.instrument-main, .instrument-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-width: 0; }
+.instrument-symbol { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
+.instrument-meta { color: var(--fg-muted); }
+.instrument-ohlc { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; font-variant-numeric: tabular-nums; }
+.instrument-ohlc > div { display: flex; gap: 2px; }
+.instrument-ohlc dt { color: var(--fg-muted); }
+.instrument-ohlc dt::after { content: ":"; }
+.instrument-ohlc dd { margin: 0; font-weight: 600; }
+.instrument-change { font-weight: 600; color: var(--tone); }
+.instrument-quote { display: flex; gap: 8px; margin-left: auto; }
+.instrument-side { display: flex; flex-direction: column; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius); }
+.instrument-side strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.instrument-orders { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.instrument-orders li { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+.instrument-orders li[aria-current] { border-color: var(--accent); }
+.instrument-orders li span { color: var(--fg-muted); }
 .dropdown-inline:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ── Dropdown (plain select) ── */
