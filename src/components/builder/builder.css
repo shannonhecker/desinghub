@@ -1668,6 +1668,12 @@
   flex: 1;
   min-height: 24px;
 }
+.chat-scroll-gallery > .chat-scroll-spacer { flex: 0 0 auto; }
+/* On a phone the thread fades out into the composer instead of slicing the
+   last row of chips at its top edge. */
+@media (max-width: 767px) {
+  .chat-slide .chat-scroll { mask-image: linear-gradient(to bottom, #000 calc(100% - var(--bc-chat-fade)), transparent); padding-bottom: var(--bc-chat-fade); }
+}
 
 .hero-greeting {
   text-align: left;
@@ -3059,13 +3065,13 @@
   width: var(--bc-size-hit);
   height: var(--bc-size-hit);
   border-radius: 50%;
-  border: var(--bc-hairline) solid var(--b-border2);
-  background: transparent;
+  border: 0;
+  background: var(--bc-gallery-tonal);
   color: var(--b-fg);
   cursor: pointer;
-  transition: background var(--bc-duration-fast), border-color var(--bc-duration-fast), opacity var(--bc-duration-fast);
+  transition: background var(--bc-duration-fast), opacity var(--bc-duration-fast);
 }
-.template-gallery-arrow:hover:not(:disabled) { border-color: var(--b-accent); background: color-mix(in srgb, var(--b-accent) 12%, transparent); }
+.template-gallery-arrow:hover:not(:disabled) { background: var(--bc-gallery-tonal-hover); }
 .template-gallery-arrow:disabled { opacity: 0.35; cursor: default; }
 .template-gallery-arrow:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
 .template-gallery-arrow .material-symbols-outlined { font-size: var(--bc-gallery-arrow-icon); }
@@ -3074,25 +3080,25 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  gap: var(--bc-gap-sm);
+  padding: var(--bc-gap-md);
+  border-radius: var(--bc-gallery-card-radius);
+  /* A tonal surface with a quiet hairline, never an outlined box. */
+  border: var(--bc-hairline) solid var(--bc-gallery-hairline);
+  background: var(--bc-gallery-surface);
   scroll-snap-align: start;
+  transition: background var(--bc-duration-fast);
 }
-.builder-light .template-card {
-  border-color: rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.6);
-}
+.template-card:hover { background: var(--bc-gallery-hover); }
+.builder-light .template-card { box-shadow: var(--bc-shadow-sm); }
+/* The preview sits in a recessed well, not a second outlined box. */
 .template-card-preview {
   width: 100%;
   aspect-ratio: 220 / 130;
-  border-radius: 9px;
+  border-radius: var(--bc-gallery-well-radius);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bc-gallery-surface-2);
 }
-.builder-light .template-card-preview { border-color: rgba(0, 0, 0, 0.06); }
 .template-card-preview > * { width: 100%; height: 100%; display: block; }
 .template-card-head {
   display: flex;
@@ -3106,23 +3112,46 @@
    (the tallest), and the actions sit on its bottom edge. */
 .template-card-desc {
   margin: 0;
+  /* Every description is written to fit three lines: a consistent block, so
+     the row's cards differ by little and the actions line up. */
+  min-height: calc(3 * 1.45em);
   font-size: var(--tpl-desc-size);
   line-height: 1.45;
   color: var(--b-fg2);
   text-wrap: pretty;
 }
 .template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); }
-.prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
-.prompt-bubble.template-gallery-chip.is-active {
-  background: var(--b-accent);
-  border-color: var(--b-accent);
-  color: var(--tpl-chip-on-accent);
+/* Chips and the card's secondary action: tonal fills, no outline. Selected
+   is a filled tonal state; focus keeps its ring. */
+.template-gallery-wrap .prompt-bubble.template-gallery-chip,
+.template-gallery-wrap .prompt-bubble.template-card-btn:not(.template-card-btn-primary),
+.templates-drawer .prompt-bubble.template-gallery-chip {
+  border-color: transparent;
+  background: var(--bc-gallery-tonal);
+  box-shadow: none;
 }
-.template-card-actions { display: flex; gap: 6px; margin-top: auto; }
+.template-gallery-wrap .prompt-bubble.template-gallery-chip:hover:not(.is-active),
+.template-gallery-wrap .prompt-bubble.template-card-btn:not(.template-card-btn-primary):hover,
+.templates-drawer .prompt-bubble.template-gallery-chip:hover:not(.is-active) {
+  border-color: transparent;
+  background: var(--bc-gallery-tonal-hover);
+  box-shadow: none;
+}
+.prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
+.prompt-bubble.template-gallery-chip.is-active,
+.prompt-bubble.template-gallery-chip.is-active:hover {
+  border-color: transparent;
+  background: var(--bc-gallery-selected);
+  color: var(--bc-gallery-selected-fg);
+  font-weight: 600;
+}
+.prompt-bubble.template-gallery-chip:focus-visible,
+.prompt-bubble.template-card-btn:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
+.template-card-actions { display: flex; gap: var(--bc-gap-xs); margin-top: auto; }
 .prompt-bubble.template-card-btn {
   flex: 1;
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: var(--bc-gap-xs) var(--bc-gap-sm);
+  font-size: var(--tpl-desc-size);
   justify-content: center;
 }
 .prompt-bubble.template-card-btn-primary {
@@ -5108,7 +5137,6 @@
   .present-bar { gap: var(--bc-hairline); padding-inline: var(--bc-gap-xs); }
   .present-bar .present-bar-brand, .present-bar .present-bar-brand + .present-bar-sep, .present-bar .present-bar-compare { display: none; }
   .present-bar-btn-label { position: absolute; width: var(--bc-hairline); height: var(--bc-hairline); overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .present-bar-ds-trigger { white-space: nowrap; }
 }
 .present-bar-brand {
   font-size: 11px;
@@ -5188,6 +5216,7 @@
   display: inline-flex;
 }
 .present-bar-ds-trigger {
+  white-space: nowrap;
   gap: 1px;
   padding: 0 4px 0 10px;
   font-size: 12px;
@@ -13000,12 +13029,20 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   overflow-x: hidden;
 }
 
-/* Compact page menu: shown only where the sidebar is not (the phone frame,
-   or a screen narrower than a tablet). */
-.bp-page-menu { display: none; }
-.bp-dashboard[data-compact] > .bp-page-menu { display: block; }
-@media (max-width: 767px) { .bp-page-menu { display: block; } }
+/* A grid wider than its panel (a phone) scrolls sideways inside the panel;
+   while it does, its right edge fades instead of slicing the last column.
+   AG Grid marks the horizontal scroller ag-invisible when nothing overflows. */
+.dh-grid:has(.ag-body-horizontal-scroll:not(.ag-invisible)) :is(.ag-center-cols-viewport, .ag-header-viewport) {
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--bc-chat-fade)), transparent);
+}
+
+/* The phone frame: the tab strip's decorative "+" would be cut at the edge. */
+.bp-dashboard[data-compact] .dh-tabstrip-add { display: none; }
+
+/* Compact page menu: rendered only where the sidebar is not (PreviewPanel). */
 .bp-page-menu {
+  position: relative;
+  z-index: var(--bc-z-slot);
   padding: var(--bc-gap-sm) var(--bc-gutter);
   background: var(--ds-surface);
   border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
@@ -13014,15 +13051,32 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .bp-page-menu-field { position: relative; display: flex; align-items: center; gap: var(--bc-gap-sm); }
 .bp-page-menu-label { flex: none; font-size: var(--dh-panel-meta-size); color: var(--ds-fg-secondary); }
-.bp-page-menu-select {
-  appearance: none; flex: 1 1 auto; min-width: 0; min-height: var(--bc-page-menu-h);
-  padding: 0 calc(var(--bc-gap-sm) * 3) 0 var(--bc-gap-sm);
+.bp-page-menu-button {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--bc-gap-sm);
+  flex: 1 1 auto; min-width: 0; min-height: var(--bc-page-menu-h);
+  padding: 0 var(--bc-gap-sm);
   border: var(--bc-hairline) solid var(--ds-border); border-radius: var(--ds-radius);
-  background: transparent; color: inherit;
-  font: inherit; font-size: var(--bc-page-menu-font); font-weight: 600;
+  background: transparent; color: inherit; cursor: pointer;
+  font: inherit; font-size: var(--bc-page-menu-font); font-weight: 600; text-align: left;
 }
-.bp-page-menu-select:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-accent, var(--b-accent)); outline-offset: var(--bc-hairline); }
-.bp-page-menu-caret { position: absolute; right: var(--bc-gap-sm); pointer-events: none; color: var(--ds-fg-secondary); }
+.bp-page-menu-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-page-menu-button:focus-visible, .bp-page-menu-option:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-accent, var(--b-accent)); outline-offset: calc(-1 * var(--dh-focus-ring)); }
+.bp-page-menu-caret { flex: none; color: var(--ds-fg-secondary); }
+.bp-page-menu-button[aria-expanded="true"] .bp-page-menu-caret { transform: rotate(180deg); }
+.bp-page-menu-list, .bp-page-menu-group { list-style: none; margin: 0; padding: 0; }
+.bp-page-menu-list {
+  position: absolute; top: calc(100% + var(--bc-gap-xs)); right: 0;
+  left: calc(var(--bc-gap-sm) + var(--bc-page-menu-label-w));
+  max-height: var(--bc-page-menu-list-max); overflow-y: auto;
+  padding: var(--bc-gap-xs) 0;
+  background: var(--ds-surface); border: var(--bc-hairline) solid var(--ds-border); border-radius: var(--ds-radius);
+  box-shadow: var(--bc-shadow-lg);
+}
+.bp-page-menu-group-label { padding: var(--bc-gap-sm) var(--bc-gap-md) var(--bc-gap-xs); font-size: var(--dh-panel-meta-size); font-weight: 600; color: var(--ds-fg-secondary); }
+.bp-page-menu-option { display: flex; align-items: center; min-height: var(--bc-page-menu-h); padding: 0 var(--bc-gap-md); cursor: pointer; font-size: var(--bc-editor-font); }
+.bp-page-menu-option:hover { background: color-mix(in srgb, var(--ds-fg) 6%, transparent); }
+.bp-page-menu-option[aria-selected="true"] { font-weight: 600; box-shadow: inset var(--dh-launcher-accent, 3px) 0 0 var(--ds-accent, var(--b-accent)); }
+.bp-page-menu-option[aria-disabled="true"] { opacity: 0.5; cursor: default; }
 
 /* Working-width cap for the body column (Part 2 of #229 — the matting that
    was tokenised in chrome-tokens.css but never wired). data-interface (set on
@@ -14003,8 +14057,8 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
     overflow-x: hidden;
   }
 
-  /* Hide dashboard sidebar on mobile viewport (too narrow) */
-  .bp-sidebar { display: none !important; }
+  /* The dashboard sidebar is not hidden here: the frame scales to fit
+     (frameFit), and the phone frame swaps the sidebar for the page menu. */
 
   /* Canvas root: ensure vertical scrolling works */
   .preview-canvas-root {
@@ -14595,19 +14649,19 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 /* The sidebar is narrower than this toolbar: pinned to its top it covered
    the first nav item on ANY sidebar hover and took the click meant for it.
    There it opens from the "Sidebar" frame label instead (hover or focus) as
-   ONE row just under the label, running past the rail's edge over the
-   canvas rather than wrapping down over the nav. Hovering nav items leaves
-   them uncovered. */
+   ONE row in the label's band, starting where the label ends and running
+   past the rail's edge over the canvas, so every nav item stays in view. */
 .zone-drop-sidebar > .zone-layout-overlay {
   /* Above the nav's insertion slots it opens over (with the frame label). */
   z-index: var(--bc-z-guide);
-  top: calc(var(--bc-hairline) - var(--dh-pad-zone, var(--dh-nav-pad)));
-  left: var(--bc-gap-xs);
+  /* From the container's top back to the sidebar's top edge. */
+  top: calc(-1 * (var(--dh-pad-zone, var(--dh-nav-pad)) + var(--bc-frame-tab-clear)));
+  left: calc(var(--bc-gap-xs) + var(--bc-frame-tab-w, 0px) - var(--bc-hairline));
   right: auto;
   width: max-content;
   flex-wrap: nowrap;
 }
-.bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(var(--bc-hairline) - var(--dh-nav-pad)); }
+.bp-sidebar[data-dense] .zone-drop-sidebar > .zone-layout-overlay { top: calc(-1 * (var(--dh-nav-pad) + var(--bc-frame-tab-clear))); }
 .bp-sidebar[data-side="right"] .zone-drop-sidebar > .zone-layout-overlay { left: auto; right: var(--bc-gap-xs); }
 /* Edit only: the rail lets that row run past its edge (it still clips its
    own content vertically). */
@@ -17750,9 +17804,10 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .template-workspace {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--bc-gap-md) var(--bc-gap-lg);
   padding: var(--bc-gap-lg);
-  border: var(--bc-hairline) solid color-mix(in srgb, var(--b-accent) 38%, transparent);
+  /* Set apart by tone and position, not an accent ring. */
+  border: var(--bc-hairline) solid var(--bc-gallery-hairline);
   border-radius: var(--bc-workspace-radius);
-  background: color-mix(in srgb, var(--b-accent) 9%, transparent);
+  background: var(--bc-gallery-feature);
 }
 .template-workspace-text { display: flex; flex-direction: column; gap: var(--bc-workspace-hint-gap); min-width: 0; flex: 1 1 var(--bc-workspace-text-min); }
 .template-workspace-title { margin: 0; font-size: var(--bc-workspace-title); font-weight: 600; line-height: 1.3; color: var(--b-fg); }

@@ -17,7 +17,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
-import { useBuilder, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
+import { useBuilder, effectiveDeviceMode, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { copyShareLink, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
 
@@ -155,7 +155,7 @@ export function PresentBar({
   variant?: "author" | "recipient";
   sharedHash?: string;
 } = {}) {
-  const deviceMode = useBuilder((s) => s.deviceMode);
+  const deviceMode = useBuilder(effectiveDeviceMode);
   const setDeviceMode = useBuilder((s) => s.setDeviceMode);
   const designSystem = useBuilder((s) => s.designSystem);
   const mode = useBuilder((s) => s.mode);

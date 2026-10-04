@@ -108,7 +108,7 @@ const peers = (blockId: string, cohort: string): DataBinding => {
 };
 
 export const issuerClimate: BuilderTemplate = {
-  ...base("issuer-climate", "Issuer Climate", "An issuer's emissions against a benchmark, its net-zero pathway, an alignment verdict and peer rankings", "thermostat"),
+  ...base("issuer-climate", "Issuer Climate", "An issuer's emissions, net-zero pathway, alignment verdict and peer rankings", "thermostat"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ic", "issuer-climate", [ENTITY_FILTER]),
   body: [
@@ -235,7 +235,7 @@ const controversyDetail: DataBinding = {
 };
 
 export const issuerControversies: BuilderTemplate = {
-  ...base("issuer-controversies", "Issuer Controversies", "Three controversy score cards and a severity grid grouped by pillar for one issuer", "report"),
+  ...base("issuer-controversies", "Issuer Controversies", "Controversy scores and a severity grid by pillar for one issuer", "report"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ico", "issuer-controversies", [ENTITY_FILTER]),
   body: [
@@ -293,7 +293,7 @@ const summaryCard = (id: string, lookup: RowLookup & { state: string }, accent: 
 const pairChart = (chart: string): DataBinding => seriesChart(chart, [forPair, OWN]);
 
 export const entityComparison: BuilderTemplate = {
-  ...base("entity-comparison", "Entity Comparison", "Two issuers side by side: summaries, involvement radar, ESG scores, rating trend, emissions and controversies", "compare"),
+  ...base("entity-comparison", "Entity Comparison", "Two issuers side by side: involvement, ESG scores, ratings and emissions", "compare"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ec", "issuer-comparison", [ENTITY_FILTER, filter("Compare with", COMPARATOR_STATE, DEFAULT_COMPARATOR, ISSUER_NAMES)]),
   body: [
@@ -390,7 +390,7 @@ const reference: DataBinding = {
 };
 
 export const governanceScorecard: BuilderTemplate = {
-  ...base("governance-scorecard", "Governance Scorecard", "Four category cards that filter positive and negative indicator grids, with a reference grid for one issuer", "fact_check"),
+  ...base("governance-scorecard", "Governance Scorecard", "Category cards that filter positive and negative indicators for one issuer", "fact_check"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("sc", "scorecard", [ENTITY_FILTER]),
   body: [
@@ -466,7 +466,7 @@ export const analyticsHome: BuilderTemplate = {
   body: [
     {
       id: "tpl-home-hero", type: "HeroSearch",
-      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", buttonLabel: "Search", referenceGraphic: "analytics", height: 168 },
+      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", placeholderShort: "Entity, sector or ticker", buttonLabel: "Search", referenceGraphic: "analytics", height: 168 },
       layout: { width: "12fr", height: "168px" },
     },
     { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured", level: 2 }, layout: { width: "12fr", height: "32px", align: "center" } },

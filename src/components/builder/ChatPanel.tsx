@@ -1539,7 +1539,9 @@ export function ChatPanel() {
       </div>
 
       {/* Scrollable content area */}
-      <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
+      {/* A thread that ends on the template gallery reads from the top (the
+          gallery is a page of choices, not a reply at the composer). */}
+      <div className={`chat-scroll${messages[messages.length - 1]?.messageType === "templates" ? " chat-scroll-gallery" : ""}`} role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer - pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 

@@ -228,7 +228,7 @@ const rel = (key: string, label: string): BoundMeasure => ({ key, label, kind: "
 export const esgAnalytics: BuilderTemplate = {
   id: "esg-analytics",
   label: "ESG Analytics",
-  desc: "ESG summary grid that drives score gauges, a rating distribution, a pillar trend and contributor rankings",
+  desc: "ESG summary driving score gauges, rating spread and contributor rankings",
   icon: "eco",
   category: "finance",
   uniformStructure: true,
@@ -424,7 +424,7 @@ const QUARTER = { width: "3fr" as const, ...HALF };
 export const climateAnalytics: BuilderTemplate = {
   id: "climate-analytics",
   label: "Climate Analytics",
-  desc: "Emissions summary grid that drives alignment, emissions, intensity and contribution charts, with carbon rankings",
+  desc: "Emissions summary driving alignment, intensity and contribution charts",
   icon: "thermostat",
   category: "finance",
   uniformStructure: true,
@@ -570,7 +570,7 @@ const detailPanel = (id: string, height: number, width: `${number}fr` = "4fr"): 
 export const screening: BuilderTemplate = {
   id: "screening",
   label: "Screening",
-  desc: "Screening waterfall that filters the security universe, with a detail panel for the selected security",
+  desc: "A screening waterfall over the universe, with a security detail panel",
   icon: "filter_alt",
   category: "finance",
   uniformStructure: true,
@@ -633,7 +633,7 @@ const screeningChanges: DataBinding = {
 export const screeningChangesTemplate: BuilderTemplate = {
   id: "screening-changes",
   label: "Screening Changes",
-  desc: "Period-change grid with flag chips, emissions sparklines and rating badges, with a security detail panel",
+  desc: "Period changes with flags, emissions sparklines and a security detail panel",
   icon: "compare_arrows",
   category: "finance",
   uniformStructure: true,

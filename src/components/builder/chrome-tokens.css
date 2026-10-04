@@ -20,6 +20,8 @@
   --bc-workspace-arrow: 14px;
   --bc-workspace-nudge: 2px;
   --bc-workspace-radius: 14px;
+  --bc-gallery-card-radius: 14px;
+  --bc-gallery-well-radius: 10px;
   --bc-workspace-title: 15px;
   --bc-workspace-hint: 13px;
   --bc-workspace-action-h: 36px;
@@ -29,6 +31,9 @@
   /* Phone page menu: a 40px target, 16px text (no zoom on focus in iOS). */
   --bc-page-menu-h: 40px;
   --bc-page-menu-font: 16px;
+  --bc-page-menu-label-w: 36px;
+  --bc-page-menu-list-max: 360px;
+  --bc-chat-fade: 28px;
   /* Analytics Home wave graphic: how far it bleeds above / below the hero. */
   --bc-hero-wave-rise: 40px;
   --bc-hero-wave-fall: 48px;
@@ -46,6 +51,18 @@
   --bc-bg-raised:   rgba(30, 33, 38, 0.98);
   --bc-bg-hover:    rgba(255, 255, 255, 0.06);
   --bc-bg-active:   rgba(255, 255, 255, 0.10);
+  /* Template gallery (owner rule: tone, not outlines). A surface one step up
+     from the chat ground, a second step for the card's preview well, a
+     low-contrast hairline, and tonal fills for chips and secondary actions. */
+  --bc-gallery-surface:   rgba(255, 255, 255, 0.045);
+  --bc-gallery-surface-2: rgba(255, 255, 255, 0.035);
+  --bc-gallery-hover:     rgba(255, 255, 255, 0.075);
+  --bc-gallery-hairline:  rgba(255, 255, 255, 0.07);
+  --bc-gallery-tonal:     rgba(255, 255, 255, 0.07);
+  --bc-gallery-tonal-hover: rgba(255, 255, 255, 0.12);
+  --bc-gallery-selected:  rgba(167, 139, 250, 0.22);
+  --bc-gallery-selected-fg: #e4dcff;
+  --bc-gallery-feature:   rgba(167, 139, 250, 0.10);
   /* Present-mode stage backdrop — a step deeper than --bc-bg so the
      framed device canvas lifts off it like art on a gallery wall.
      Neutral cool near-black: must not bias any of the 5 design
@@ -293,6 +310,15 @@
   --bc-bg:          rgba(253, 253, 254, 0.98);
   --bc-bg-raised:   rgba(255, 255, 255, 1);
   --bc-bg-hover:    rgba(15, 17, 22, 0.05);
+  --bc-gallery-surface:   rgba(255, 255, 255, 0.85);
+  --bc-gallery-surface-2: rgba(15, 17, 22, 0.035);
+  --bc-gallery-hover:     rgba(255, 255, 255, 1);
+  --bc-gallery-hairline:  rgba(15, 17, 22, 0.06);
+  --bc-gallery-tonal:     rgba(15, 17, 22, 0.05);
+  --bc-gallery-tonal-hover: rgba(15, 17, 22, 0.09);
+  --bc-gallery-selected:  rgba(108, 82, 196, 0.14);
+  --bc-gallery-selected-fg: #3f2f8f;
+  --bc-gallery-feature:   rgba(108, 82, 196, 0.08);
   --bc-bg-active:   rgba(15, 17, 22, 0.08);
   /* Present-mode stage backdrop (light): a soft grey, a touch darker
      than the near-white --bc-bg, so the near-white device frame still

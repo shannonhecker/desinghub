@@ -331,7 +331,7 @@ crmContacts.pages = navPages(crmContacts.sidebar, crmBodies());
 const loginFlow: BuilderTemplate = {
   id: "login-flow",
   label: "Login → Dashboard",
-  desc: "Centered auth card with SSO, email/password, paired with the post-login dashboard",
+  desc: "Sign-in card with SSO and email, plus account and help pages",
   icon: "login",
   interfaceType: "form",
   selectedComponents: ["inputs", "buttons", "sim-title"],

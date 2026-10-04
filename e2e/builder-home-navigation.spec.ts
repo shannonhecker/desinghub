@@ -55,6 +55,13 @@ test('Edit mode: the first nav item is not covered by the sidebar frame label', 
   expect(tab.y + tab.height).toBeLessThanOrEqual(box.y);
   await nav.locator('.bp-nav-item[title="Configuration"]').click({ position: { x: 12, y: box.height / 2 } });
   await expect(page.locator('.bp-main')).toContainText('Report defaults');
+  /* Keyboard on the rail: Enter changes the page and focus stays on the item. */
+  await page.getByRole('button', { name: 'Preview mode', exact: true }).click();
+  await nav.locator('.bp-nav-item[title="Approvals"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.bp-main')).toContainText('A. Okafor');
+  await expect(nav.locator('.bp-nav-item[title="Approvals"]')).toBeFocused();
+  await page.getByRole('button', { name: 'Edit canvas', exact: true }).click();
   /* Hovering the nav does not lay the sidebar's layout toolbar over it. */
   const toolbar = page.locator('.zone-layout-overlay[data-zone="sidebar"]');
   await nav.locator('.bp-nav-item[title="Approvals"]').hover();
@@ -64,10 +71,14 @@ test('Edit mode: the first nav item is not covered by the sidebar frame label', 
   /* The toolbar opens from the frame label and can be reached from it. */
   await page.locator('.bp-frame-tab-sidebar').hover();
   await expect(toolbar).toHaveCSS('opacity', '1');
-  /* One row, opening under the label, never down over the nav. */
+  /* One row in the label's band, beside the label: it ends above the first
+     nav item, which stays visible and clickable while it is open. */
   const bar = (await toolbar.boundingBox())!;
+  const label = (await page.locator('.bp-frame-tab-sidebar').boundingBox())!;
   expect(bar.height).toBeLessThanOrEqual(40);
-  expect(bar.y + bar.height).toBeLessThanOrEqual(box.y + box.height + 12);
+  expect(bar.y + bar.height).toBeLessThanOrEqual(box.y + 1);
+  expect(bar.x).toBeGreaterThanOrEqual(label.x + label.width - 2);
+  expect(await first.evaluate((el) => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.left + 12, r.top + r.height / 2)); })).toBe(true);
   await toolbar.hover();
   await expect(toolbar).toHaveCSS('pointer-events', 'auto');
 });

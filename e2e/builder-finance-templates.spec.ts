@@ -268,7 +268,11 @@ test.describe("Builder - finance templates", () => {
   });
 
   test("the left navigation collapses to a rail, opens reports, and stays collapsed", async ({ page }) => {
-    await applyTemplate(page, "ESG Analytics");
+    /* Sibling reports in the rail belong to the connected workspace (a card
+       on its own is one standalone report): open ESG from inside it. */
+    await applyTemplate(page, "Analytics Home");
+    await page.locator(".present-stage").getByRole("navigation", { name: "Workspaces" }).getByRole("button", { name: "Sustainable Investment", exact: true }).click();
+    await settle(page);
     const side = page.locator(".present-stage .bp-sidebar");
     await expect(side.getByText("Corporate governance", { exact: true })).toBeVisible();
     /* Layout widths: the frame may be zoomed to fit. */

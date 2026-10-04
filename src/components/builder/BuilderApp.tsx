@@ -103,7 +103,9 @@ export function BuilderApp() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia?.("(max-width: 767px)").matches) return;
     const s = useBuilder.getState();
-    if (s.deviceMode === "desktop") s.setDeviceMode("mobile");
+    /* Session-only: not the author's choice, so it is never saved, shared
+       or undone (autoDeviceMode). */
+    if (s.deviceMode === "desktop") s.setAutoDeviceMode("mobile");
   }, []);
 
   useEffect(() => {
@@ -277,6 +279,8 @@ export function BuilderApp() {
         usePreviewMode.getState().toggle();
         return;
       }
+      /* A menu or popover that handled Escape itself (closing) keeps it. */
+      if (e.key === "Escape" && e.defaultPrevented) return;
       if (e.key === "Escape") {
         const s = usePreviewMode.getState();
         if (s.mode === "preview") {

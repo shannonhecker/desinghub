@@ -15,9 +15,19 @@ const field = (id: string, label: string, stateKey: string, value: string, optio
   /* Four to a row: each control is as wide as its label and value need. */
   layout: { width: '3fr', height: '32px', spanTablet: 6, spanPhone: 12 },
 });
-const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[], width: 5 | 7 | 12 = 12): Block => ({
+/* Each column is at least as wide as its longest value (12px text, about
+   6.6px a character, plus the cell padding), so nothing ends in an
+   ellipsis; spare width goes to the first column. When a phone is narrower
+   than the columns, the grid scrolls sideways inside its panel, and its
+   right edge fades so the cut reads as "more this way" (builder.css). */
+const CHAR_PX = 6.6;
+const CELL_PAD_PX = 26;
+const grid = (id: string, title: string, columns: [string, string][], rows: Record<string, string>[], width: 6 | 12 = 12): Block => ({
   id, type: 'DataGrid', props: { title, subtitle: 'Sample data', height: gridPanelHeightFor(rows.length),
-    columns: columns.map(([field, header], i) => ({ field, header, minWidth: i === 0 ? (width === 12 ? 240 : 160) : 100, flex: i === 0 ? 2 : 1 })), rows,
+    columns: columns.map(([field, header], i) => ({
+      field, header, flex: i === 0 ? 2 : 1,
+      minWidth: Math.ceil(Math.max(header.length, ...rows.map((r) => String(r[field] ?? '').length)) * CHAR_PX + CELL_PAD_PX),
+    })), rows,
   }, layout: width === 12 ? full : { width: `${width}fr`, spanTablet: 12, spanPhone: 12 },
 });
 
@@ -31,19 +41,19 @@ export const ANALYTICS_HOME_PAGES: Page[] = [
     field('tpl-home-config-fees', 'Fee type', 'feeType', 'Net of fees', ['Net of fees', 'Gross of fees']),
     /* Two lists side by side under the settings, then the change log. */
     grid('tpl-home-config-sources', 'Data sources', [['name', 'Source'], ['refreshed', 'Last refreshed'], ['status', 'Status']], [
-      { name: 'Holdings and transactions', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
-      { name: 'Benchmarks', refreshed: 'Dec 02 2024, 06:00', status: 'Up to date' },
-      { name: 'Market prices', refreshed: 'Dec 02 2024, 05:30', status: 'Up to date' },
-      { name: 'ESG and climate research', refreshed: 'Dec 01 2024, 22:00', status: 'Up to date' },
-      { name: 'Risk models', refreshed: 'Nov 29 2024, 18:00', status: 'Weekly' },
-    ], 7),
+      { name: 'Holdings and transactions', refreshed: 'Dec 02, 06:00', status: 'Up to date' },
+      { name: 'Benchmarks', refreshed: 'Dec 02, 06:00', status: 'Up to date' },
+      { name: 'Market prices', refreshed: 'Dec 02, 05:30', status: 'Up to date' },
+      { name: 'ESG and climate research', refreshed: 'Dec 01, 22:00', status: 'Up to date' },
+      { name: 'Risk models', refreshed: 'Nov 29, 18:00', status: 'Weekly' },
+    ], 6),
     grid('tpl-home-config-delivery', 'Scheduled deliveries', [['name', 'Report'], ['when', 'Sent'], ['to', 'To']], [
       { name: 'SI Portfolio Report', when: 'Monthly, 2nd', to: 'Investment team' },
       { name: 'Performance attribution', when: 'Monthly, 3rd', to: 'Portfolio leads' },
       { name: 'Risk pack', when: 'Weekly', to: 'Risk team' },
       { name: 'Screening snapshot', when: 'Quarterly', to: 'Compliance' },
       { name: 'Governance scorecard', when: 'Quarterly', to: 'Stewardship' },
-    ], 5),
+    ], 6),
     grid('tpl-home-config-log', 'Recent changes', [['name', 'Setting'], ['from', 'From'], ['to', 'To'], ['by', 'Changed by'], ['when', 'When']], [
       { name: 'Default benchmark', from: 'Secondary', to: 'Primary', by: 'A. Okafor', when: 'Nov 28 2024' },
       { name: 'Periodicity', from: 'Quarterly', to: 'Monthly', by: 'L. Marchetti', when: 'Nov 14 2024' },

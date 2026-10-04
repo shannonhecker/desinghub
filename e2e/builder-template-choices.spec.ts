@@ -162,14 +162,54 @@ test('phone: page menu reaches every workspace page and the Present bar fits', a
   await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
   await expect(page.locator('[data-block-id="tpl-home-hero"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mobile viewport' })).toHaveAttribute('aria-pressed', 'true');
-  const menu = page.getByRole('navigation', { name: 'Pages' }).getByRole('combobox');
-  await expect(menu).toBeVisible();
+  const pages = page.getByRole('navigation', { name: 'Pages' });
+  const button = pages.getByRole('button', { name: /^Page/ });
+  await expect(button).toBeVisible();
+  /* The pages appear once: no rail beside the menu. */
+  await expect(page.locator('.bp-sidebar')).toHaveCount(0);
   for (const [label, text] of [['Configuration', 'Report defaults'], ['Approvals', 'A. Okafor'], ['Reports', 'SI Portfolio Report, December'], ['Dashboards', 'Analytics Dashboard']] as const) {
-    await menu.selectOption({ label });
+    await button.click();
+    await pages.getByRole('option', { name: label, exact: true }).click();
     await expect(page.locator('.bp-main')).toContainText(text);
+    await expect(button).toHaveAccessibleName(`Page ${label}`);
   }
+  /* Keyboard: arrows only move; the page changes on Enter, focus comes back
+     to the menu, and Escape closes without changing anything. */
+  await button.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(pages.getByRole('listbox')).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('.bp-main')).toContainText('Analytics Dashboard');
+  await page.keyboard.press('Escape');
+  await expect(pages.getByRole('listbox')).toHaveCount(0);
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAccessibleName('Page Dashboards');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.bp-main')).toContainText('Report defaults');
+  await expect(pages.getByRole('button', { name: /^Page/ })).toBeFocused();
   const bar = (await page.getByRole('toolbar', { name: 'Present mode controls' }).boundingBox())!;
   expect(bar.x).toBeGreaterThanOrEqual(0);
   expect(bar.x + bar.width).toBeLessThanOrEqual(375);
   await expect(page.getByRole('button', { name: 'Edit canvas', exact: true })).toBeInViewport({ ratio: 1 });
 });
+
+/* Every value on the workspace's own pages shows in full at 1440 and on a
+   tablet: no cell ends in an ellipsis. */
+for (const width of [1440, 768]) {
+  test(`workspace pages: no grid cell is truncated at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await open(page);
+    await page.getByRole('button', { name: /Browse templates/ }).click();
+    await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
+    await expect(page.locator('[data-block-id="tpl-home-hero"]')).toBeVisible();
+    for (const label of ['Configuration', 'Approvals', 'Reports']) {
+      await page.locator('.bp-sidebar-nav').getByRole('button', { name: label, exact: true }).click();
+      const cells = page.locator('.bp-main .dh-grid .ag-cell, .bp-main .dh-grid .ag-header-cell-text');
+      await expect(cells.first()).toBeVisible();
+      const cut = await cells.evaluateAll((els) => els.filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent));
+      expect(cut, `${label} at ${width}px`).toEqual([]);
+    }
+  });
+}
