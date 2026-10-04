@@ -11473,6 +11473,9 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .dh-verdict-stats dd { margin: 0; font-size: var(--dh-verdict-status-size); font-weight: 700; }
 .dh-verdict-stats dd.is-toned { color: color-mix(in srgb, var(--dh-tone) 75%, var(--ds-fg)); }
 
+.template-source-note { margin: 0 0 var(--bc-gap-lg); font-size: var(--bc-source-font); line-height: 1.6; color: var(--bc-fg-muted); }
+.template-source-note a { text-decoration: underline; text-underline-offset: var(--bc-source-underline); }
+.templates-drawer > .template-source-note { padding: 0 var(--bc-bar-gap); }
 .dh-launcher {
   box-sizing: border-box;
   display: flex;
@@ -11490,12 +11493,14 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .dh-launcher-head { display: flex; align-items: center; justify-content: space-between; gap: var(--dh-cell-gap); }
 .dh-launcher-title { margin: 0; font: inherit; font-size: var(--dh-panel-title-size); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dh-launcher-thumb {
-  aspect-ratio: 220 / 130;
+  aspect-ratio: 349 / 239;
+  min-height: 0;
   border-radius: var(--ds-radius);
   background: color-mix(in srgb, var(--ds-fg) 4%, transparent);
   overflow: hidden;
 }
-.dh-launcher-thumb > * { display: block; width: 100%; height: 100%; }
+.dh-launcher-thumb > * { display: block; width: 100%; height: 100%; object-fit: contain; }
+.bp-main:has(.dh-hero-reference) { background-image: url("/template-references/analytics-waves.svg"); background-size: 100% auto; background-position: center top; background-repeat: no-repeat; }
 .dh-launcher-desc { flex: 1 1 auto; margin: 0; font-size: var(--dh-panel-meta-size); line-height: 1.45; color: var(--ds-fg-secondary); }
 .dh-launcher-open {
   align-self: flex-start;
@@ -17628,3 +17633,8 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   margin: calc(-1 * var(--bc-panel-inset)) calc(-1 * var(--bc-panel-inset)) var(--bc-gap-md);
   padding: var(--bc-gap-md) var(--bc-panel-inset);
 }
+
+.template-gallery-controls { display: grid; gap: var(--bc-gap-sm); margin-bottom: var(--bc-gap-lg); }
+.template-gallery-controls .template-gallery-chips { margin-bottom: 0; }
+.template-workspace-action { justify-self: start; text-align: left; }
+.templates-drawer > .template-gallery-controls { padding-inline: var(--bc-bar-gap); }

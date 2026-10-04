@@ -62,6 +62,11 @@ export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
       footer: { ...(tpl.zoneLayouts?.footer ?? DEFAULT_ZONE_LAYOUTS.footer) },
     },
   });
+  if (tpl.pages?.length) {
+    // Seed the current dashboard first; subsequent switches flush live edits
+    // through the existing page model. Clone authored pages for each apply.
+    for (const page of structuredClone(tpl.pages)) s.addPage(page);
+  }
   s.setActiveTemplateId(tpl.id);
   s.bumpPreview();
   /* #16 (owner): once a template populates the canvas, show it in PREVIEW first

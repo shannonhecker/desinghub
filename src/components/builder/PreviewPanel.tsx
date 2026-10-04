@@ -1043,7 +1043,7 @@ function DashboardSidebar({
                             className="bp-zone-editable"
                             contentEditable={!readOnly}
                             suppressContentEditableWarning
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={readOnly ? undefined : (e) => e.stopPropagation()}
                             onBlur={(e) =>
                               updateSidebarBlockProps(block.id, {
                                 label: e.currentTarget.textContent ?? "",

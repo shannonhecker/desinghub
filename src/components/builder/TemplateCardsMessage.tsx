@@ -4,12 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILDER_TEMPLATES,
   TEMPLATE_ORDER,
-  TEMPLATE_CATEGORIES,
   templateCategory,
   type TemplateCategory,
   type TemplateId,
 } from "@/lib/builderTemplates";
 import { TemplatePreview } from "./TemplatePreviews";
+import { TemplateGalleryControls } from "./TemplateGalleryControls";
+import { TemplateSourceNote } from "./TemplateSourceNote";
 
 /* ══════════════════════════════════════════════════════════
    TemplateCardsMessage - the template gallery INLINE in the chat
@@ -66,19 +67,8 @@ export function TemplateCardsMessage({
 
   return (
     <div className="template-gallery-wrap">
-    <div className="template-gallery-chips" role="group" aria-label="Template category">
-      {[{ id: "all" as const, label: "All" }, ...TEMPLATE_CATEGORIES].map((c) => (
-        <button
-          key={c.id}
-          type="button"
-          className={`prompt-bubble template-gallery-chip${category === c.id ? " is-active" : ""}`}
-          aria-pressed={category === c.id}
-          onClick={() => setCategory(c.id)}
-        >
-          {c.label}
-        </button>
-      ))}
-    </div>
+    {category !== "general" && <TemplateSourceNote />}
+    <TemplateGalleryControls category={category} onCategory={setCategory} onWorkspace={() => onUse('analytics-home')} disabled={disabled} />
     <div className={`template-gallery${atStart ? " at-start" : ""}${atEnd ? " at-end" : ""}`}>
       <button
         type="button"

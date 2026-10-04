@@ -10,6 +10,7 @@
  * filter sets it, and every panel reads its rows.
  */
 
+import { ANALYTICS_HOME_PAGES } from "./analyticsHomePages";
 import type { Block } from "@/store/useBuilder";
 import type { BuilderTemplate } from "./builderTemplates";
 import { BODY_LAYOUT, FINANCE_BRAND, FULL, HALF, WORKSPACES, WORKSPACE_TEMPLATES, filter } from "./financeTemplates";
@@ -452,6 +453,7 @@ const homeFilter = (id: string, label: string, stateKey: string, options: string
 });
 
 export const analyticsHome: BuilderTemplate = {
+  pages: ANALYTICS_HOME_PAGES,
   ...base("analytics-home", "Analytics Home", "A hero with search, four launcher cards that open the reports, and a filterable list of dashboards", "home"),
   /* A start page: no context bar, and its content sits straight on the page. */
   zoneLayouts: { body: { ...BODY_LAYOUT, plain: true }, ...SI_CHROME_LAYOUTS },
@@ -464,12 +466,12 @@ export const analyticsHome: BuilderTemplate = {
   body: [
     {
       id: "tpl-home-hero", type: "HeroSearch",
-      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", buttonLabel: "Search", height: 168 },
+      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", buttonLabel: "Search", referenceGraphic: "analytics", height: 168 },
       layout: { width: "12fr", height: "168px" },
     },
     { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured", level: 2 }, layout: { width: "12fr", height: "32px", align: "center" } },
-    launcher(0, "Portfolio report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
-    launcher(1, "Issuer report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
+    launcher(0, "Sustainable Investment Portfolio Report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
+    launcher(1, "Sustainable Investment Issuer Report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
     launcher(2, "Performance", "Holdings", "performance-analytics", "Multi-period returns against benchmark, with allocation."),
     launcher(3, "Risk", "Holdings", "risk-analytics", "Value at risk, exposures and risk contribution."),
 

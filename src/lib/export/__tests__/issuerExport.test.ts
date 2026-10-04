@@ -694,25 +694,25 @@ describe("Governance Scorecard", () => {
 });
 
 describe("Analytics Home", () => {
-  const CARDS: [title: string, tag: string, tone: string][] = [["Portfolio report", "Holdings", "accent"], ["Issuer report", "Company", "mid"], ["Performance", "Holdings", "accent"], ["Risk", "Holdings", "accent"]];
+  const CARDS: [title: string, tag: string, tone: string][] = [["Sustainable Investment Portfolio Report", "Holdings", "accent"], ["Sustainable Investment Issuer Report", "Company", "mid"], ["Performance", "Holdings", "accent"], ["Risk", "Holdings", "accent"]];
 
   it("the hero: heading, subtitle and a search field with its button", () => {
     apply(analyticsHome);
-    const tsx = between(reactMarkup(exportReact()), '<div className="hero"', "</button>");
-    expect(tsx).toContain('<div className="hero" style={{ height: 168 }}>');
+    const tsx = between(reactMarkup(exportReact()), '<div className="hero hero-reference"', "</button>");
+    expect(tsx).toContain('<div className="hero hero-reference" style={{ height: 168 }}>');
     expect(tsx).toContain('<h1 className="hero-title">Analytics Dashboard</h1>');
     expect(tsx).toContain('<p className="hero-subtitle">Search for a comprehensive range of reports and performance.</p>');
     expect(tsx).toContain('<div className="hero-search" role="search">');
     expect(tsx).toContain('<input type="search" className="hero-input" placeholder="Search by entity, sector or ticker" aria-label="Search by entity, sector or ticker" />');
     expect(tsx).toContain('<button type="button" className="hero-button">Search</button>');
     expect(tsx).toMatch(/<svg className="hero-icon" width="16" height="16"[^>]*aria-hidden="true">/);
-    const html = between(htmlBody(exportHTML()), '<div class="hero"', "</button>");
+    const html = between(htmlBody(exportHTML()), '<div class="hero hero-reference"', "</button>");
     expect(html).toContain('<h1 class="hero-title">Analytics Dashboard</h1>');
     expect(html).toContain('<input type="search" class="hero-input" placeholder="Search by entity, sector or ticker" aria-label="Search by entity, sector or ticker" />');
     expect(html).toContain('<button type="button" class="hero-button">Search</button>');
   });
 
-  it("four launcher cards: title, tag, a neutral thumbnail, description and the action as a link", () => {
+  it("four launcher cards: title, tag, the reference thumbnail, description and the action as a link", () => {
     apply(analyticsHome);
     for (const [out, cls] of [[reactMarkup(exportReact()), "className"], [htmlBody(exportHTML()), "class"]] as const) {
       const cards = [...out.matchAll(new RegExp(`<article ${cls}="launcher tone-(\\w+)"[^>]*>([\\s\\S]*?)</article>`, "g"))];
@@ -723,8 +723,8 @@ describe("Analytics Home", () => {
         expect(m[1]).toBe(tone);
         expect(m[2]).toContain(`<h2 ${cls}="launcher-title">${title}</h2>`);
         expect(m[2]).toContain(`<span ${cls}="cell-tag tone-${tone}">${tag}</span>`);
-        /* The thumbnail is an empty, decorative block: no wireframe drawing. */
-        expect(m[2]).toContain(`<div ${cls}="launcher-thumb" aria-hidden="true"></div>`);
+        /* The original thumbnail travels with the export as an embedded image. */
+        expect(m[2]).toContain(`<div ${cls}="launcher-thumb" aria-hidden="true"><img src="data:image/svg+xml,`);
         expect(m[2]).toContain(`<p ${cls}="launcher-desc">${description}</p>`);
         expect(m[2]).toMatch(new RegExp(`<a ${cls}="launcher-open" href="#" aria-label="Open report: ${title}">Open report<svg ${cls}="launcher-arrow"[^>]*aria-hidden="true">.*?</svg></a>`));
         expect((m[2].match(/<svg/g) ?? [])).toHaveLength(1);

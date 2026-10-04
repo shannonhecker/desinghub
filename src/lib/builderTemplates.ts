@@ -1,4 +1,4 @@
-import type { Block, InterfaceType, ZoneLayout, ZoneId } from "@/store/useBuilder";
+import type { Block, InterfaceType, ZoneLayout, ZoneId, Page } from "@/store/useBuilder";
 import {
   analyticsKpis,
   analyticsRevenueTrend,
@@ -97,6 +97,8 @@ export interface BuilderTemplate {
   sidebar: Block[];
   body: Block[];
   footer: Block[];
+  /** Additional populated destinations keyed by their sidebar NavItem ids. */
+  pages?: Page[];
   /** Optional per-zone layout overrides applied on template apply (e.g. a
    *  12-col grid body so patterns render as clean canonical rows instead of
    *  a single wrapping flex row). Zones omitted here reset to the defaults. */

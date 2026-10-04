@@ -13,6 +13,8 @@
    ════════════════════════════════════════════════════════════ */
 
 :root {
+  --bc-source-font: 12px;
+  --bc-source-underline: 3px;
   --bc-panel-inset: 16px;
   --bc-editor-font: 14px;
   --bc-composer-min: 72px;
