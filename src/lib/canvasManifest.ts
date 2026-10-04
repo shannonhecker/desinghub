@@ -23,6 +23,7 @@
  */
 
 import type { Block, Page, ZoneId, ZoneLayout } from "@/store/useBuilder";
+import { viewByOf, viewByStateKey } from "./panelMetrics";
 
 export interface ManifestSource {
   blocks: Block[];
@@ -32,16 +33,21 @@ export interface ManifestSource {
   zoneLayouts: Record<ZoneId, ZoneLayout>;
   pages?: Page[];
   activePageId?: string | null;
+  /** Current values of the report controls (filters, "View by"). */
+  reportState?: Record<string, string>;
+  /** Template the canvas was built from, if any. */
+  activeTemplateId?: string | null;
 }
 
 export const MANIFEST_MAX_BLOCKS = 80;
 export const MANIFEST_MAX_CHARS = 4000;
 const SUMMARY_MAX = 28;
 const ZONE_ORDER: ZoneId[] = ["header", "sidebar", "body", "footer"];
-const SUMMARY_KEYS = ["label", "title", "text", "name", "placeholder", "message", "initials"] as const;
+const SUMMARY_KEYS = ["label", "title", "text", "name", "brand", "placeholder", "message", "initials"] as const;
+const OPTIONS_MAX = 8;
 
 /** One printable line fragment for a block; never contains newlines. */
-export function summarizeBlock(b: Block): string {
+export function summarizeBlock(b: Block, reportState: Record<string, string> = {}): string {
   const parts: string[] = [b.id, b.type];
   const props = b.props ?? {};
   for (const key of SUMMARY_KEYS) {
@@ -55,6 +61,25 @@ export function summarizeBlock(b: Block): string {
     parts.push(`${props.rows.length} rows`);
   }
   if (b.type === "NavItem" && props.active) parts.push("active");
+  /* Report controls: the key a setReportFilter call names, the current
+     value and the choices, so "switch to USD" or "view by sector" resolves. */
+  if (Array.isArray(props.filters)) {
+    for (const f of props.filters as { stateKey?: unknown; value?: unknown; options?: unknown }[]) {
+      if (!f || typeof f.stateKey !== "string" || !f.stateKey) continue;
+      const options = Array.isArray(f.options) ? f.options.map((o) => String(o).trim()).filter(Boolean) : [];
+      parts.push(`filter=${f.stateKey}:${clip(reportState[f.stateKey] ?? String(f.value ?? ""))}${optionList(options)}`);
+    }
+  }
+  if (typeof props.stateKey === "string" && props.stateKey) {
+    const options = String(props.optionsCsv ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+    parts.push(`filter=${props.stateKey}:${clip(reportState[props.stateKey] ?? String(props.value ?? ""))}${optionList(options)}`);
+  }
+  const viewBy = viewByOf(props as Record<string, unknown>);
+  if (viewBy.length > 0) {
+    const key = viewByStateKey(b.id);
+    parts.push(`filter=${key}:${clip(reportState[key] ?? viewBy[0])}${optionList(viewBy)}`);
+  }
+  if ((b.type === "TopNav" || b.type === "TabStrip") && typeof props.tone === "string") parts.push(`tone=${props.tone}`);
   const w = b.layout?.width;
   if (w !== undefined && w !== null) parts.push(`w=${String(w)}`);
   if (b.type === "LayoutGroup" && Array.isArray(b.children) && b.children.length) {
@@ -68,9 +93,18 @@ function clip(s: string): string {
   return one.length > SUMMARY_MAX ? `${one.slice(0, SUMMARY_MAX - 1)}…` : one;
 }
 
+function optionList(options: string[]): string {
+  if (options.length === 0) return "";
+  const shown = options.slice(0, OPTIONS_MAX).map((o) => clip(o)).join("/");
+  return ` (${shown}${options.length > OPTIONS_MAX ? "/…" : ""})`;
+}
+
 function zoneMode(z: ZoneLayout | undefined): string {
   if (!z) return "stack";
-  return z.mode === "grid" && z.columns ? `grid/${z.columns}` : z.mode;
+  if (z.visible === false) return "hidden";
+  const mode = z.mode === "grid" && z.columns ? `grid/${z.columns}` : z.mode;
+  const extras = [z.tone && z.tone !== "surface" ? z.tone : "", z.flush ? "flush" : "", z.side === "right" ? "right" : ""].filter(Boolean);
+  return extras.length ? `${mode}(${extras.join(",")})` : mode;
 }
 
 /** Build the manifest text. Pure; safe to call from tests and the client. */
@@ -90,6 +124,7 @@ export function buildCanvasManifest(
   const lines: string[] = [];
   const zonesLine = ZONE_ORDER.map((z) => `${z}=${zoneMode(s.zoneLayouts?.[z])}`).join(" ");
   lines.push(`zones: ${zonesLine}`);
+  if (s.activeTemplateId) lines.push(`template: ${s.activeTemplateId}`);
 
   if (s.pages && s.pages.length > 1) {
     lines.push(
@@ -111,7 +146,7 @@ export function buildCanvasManifest(
         omitted++;
         continue;
       }
-      entries.push(summarizeBlock(b));
+      entries.push(summarizeBlock(b, s.reportState));
       emitted++;
     }
     lines.push(`${zone}: ${entries.join(" | ")}`);

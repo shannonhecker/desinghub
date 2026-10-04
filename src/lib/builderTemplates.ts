@@ -29,6 +29,10 @@ import {
   authContent,
 } from "@/lib/sampleData";
 import { pickImage, getImageById } from "@/lib/sampleImages";
+import { riskAnalytics, performanceAnalytics } from "@/lib/financeTemplates";
+import { esgAnalytics, climateAnalytics, screening, screeningChangesTemplate } from "@/lib/sustainableTemplates";
+import { issuerClimate, issuerInvolvement, issuerControversies, entityComparison, governanceScorecard, analyticsHome } from "@/lib/issuerTemplates";
+import { fxExecution } from "@/lib/executionTemplates";
 
 /* ══════════════════════════════════════════════════════════════
    Builder Templates - realistic full-layout starting points.
@@ -48,27 +52,23 @@ import { pickImage, getImageById } from "@/lib/sampleImages";
 
    Zone contracts (enforced by UI):
    - headerBlocks   → AppBrand | StatusPill | (landing: SimulatedLink / SimulatedButton)
-   - sidebarBlocks  → NavItem (icon: chat|database|settings|bar_chart|home|person|search|notifications)
+   - sidebarBlocks  → NavItem (icon: chat|database|settings|bar_chart|home|person|search|notifications|
+                      shield|trending_up|layers|filter)
    - blocks (body)  → any simulated component type; layout.width
                       accepts "fill" / "auto" / "{N}px" / "{N}%" /
                       "{N}fr".
    - footerBlocks   → FooterText
    ══════════════════════════════════════════════════════════════ */
 
-/* Source-of-truth list of valid template ids. Both the type and the
-   runtime allow-list derive from this so a new template can be added
-   in one place without drift. The API route uses VALID_TEMPLATE_IDS
-   to reject anything else, defending against prompt-injection via the
-   templateId field. */
-export const VALID_TEMPLATE_IDS = [
-  "analytics-dashboard",
-  "settings-page",
-  "crm-contacts",
-  "login-flow",
-  "landing-page",
-] as const;
+export { VALID_TEMPLATE_IDS, type TemplateId } from "./templateIds";
+import { VALID_TEMPLATE_IDS, type TemplateId } from "./templateIds";
 
-export type TemplateId = typeof VALID_TEMPLATE_IDS[number];
+/** Gallery groups, in display order. */
+export const TEMPLATE_CATEGORIES = [
+  { id: "general", label: "General" },
+  { id: "finance", label: "Finance" },
+] as const;
+export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number]["id"];
 
 export interface BuilderTemplate {
   id: TemplateId;
@@ -77,6 +77,17 @@ export interface BuilderTemplate {
   desc: string;
   /** Material Symbol name for the pattern card icon. */
   icon: string;
+  /** Keep the canvas's structural spacing (header height, canvas and zone
+   *  padding, sidebar width) the same in every design system, so the body
+   *  starts at the same point whichever system is active. Templates that
+   *  promise identical panel positions across systems set this; without it
+   *  each system uses its own native structure scale. */
+  uniformStructure?: boolean;
+  /** Sample dataset (reportData/registry) that the template's data-bound
+   *  blocks read. */
+  datasetId?: string;
+  /** Gallery grouping. Omitted = "general". */
+  category?: TemplateCategory;
   /** Stored in useBuilder.interfaceType so existing machinery keeps working. */
   interfaceType: InterfaceType;
   /** Component IDs, kept in sync with blocks for the library/chip UI. */
@@ -429,6 +440,19 @@ export const BUILDER_TEMPLATES: Record<TemplateId, BuilderTemplate> = {
   "crm-contacts": crmContacts,
   "login-flow": loginFlow,
   "landing-page": landingPage,
+  "risk-analytics": riskAnalytics,
+  "performance-analytics": performanceAnalytics,
+  "esg-analytics": esgAnalytics,
+  "climate-analytics": climateAnalytics,
+  screening,
+  "screening-changes": screeningChangesTemplate,
+  "issuer-climate": issuerClimate,
+  "issuer-involvement": issuerInvolvement,
+  "issuer-controversies": issuerControversies,
+  "entity-comparison": entityComparison,
+  "governance-scorecard": governanceScorecard,
+  "analytics-home": analyticsHome,
+  "fx-execution": fxExecution,
 };
 
 export function getTemplate(id: TemplateId): BuilderTemplate {
@@ -442,7 +466,32 @@ export const TEMPLATE_ORDER: TemplateId[] = [
   "crm-contacts",
   "login-flow",
   "landing-page",
+  "risk-analytics",
+  "performance-analytics",
+  "esg-analytics",
+  "climate-analytics",
+  "screening",
+  "screening-changes",
+  "issuer-climate",
+  "issuer-involvement",
+  "issuer-controversies",
+  "entity-comparison",
+  "governance-scorecard",
+  "analytics-home",
+  "fx-execution",
 ];
+
+/** True when the template on the canvas pins its structural spacing across
+ *  design systems (see BuilderTemplate.uniformStructure). */
+export function hasUniformStructure(id: string | null | undefined): boolean {
+  if (!id) return false;
+  return (BUILDER_TEMPLATES as Record<string, BuilderTemplate | undefined>)[id]?.uniformStructure === true;
+}
+
+/** A template's gallery group. */
+export function templateCategory(id: TemplateId): TemplateCategory {
+  return BUILDER_TEMPLATES[id].category ?? "general";
+}
 
 /** Used when the Login→Dashboard flow is progressed via chat. Mirrors the
  *  enriched analytics dashboard so the post-login surface is real-product grade

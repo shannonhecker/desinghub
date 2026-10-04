@@ -36,6 +36,9 @@ export const TRACKED_KEYS = [
   "pages",
   "activePageId",
   "sessionTitle",
+  /* Uploaded report data (data-bound templates): saved with the session so a
+     reload keeps the user's figures. */
+  "reportData",
 ] as const;
 
 export type TrackedKey = (typeof TRACKED_KEYS)[number];

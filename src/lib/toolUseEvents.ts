@@ -38,7 +38,9 @@ export type ToolUseAction =
   | "updateBlockProps"
   | "updateBlockLayout"
   | "clearCanvas"
-  | "setZoneLayout";
+  | "setZoneLayout"
+  | "applyTemplate"
+  | "setReportFilter";
 
 export interface ToolUseEvent {
   /* The assistant message id this action belongs to. ChatPanel groups

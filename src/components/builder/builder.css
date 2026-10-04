@@ -3103,7 +3103,27 @@
 }
 .template-card-head .material-symbols-outlined { font-size: 17px; color: var(--b-accent); }
 .template-card-label { font-size: 13px; font-weight: 600; }
-.template-card-actions { display: flex; gap: 6px; margin-top: 2px; }
+/* What the template contains: two lines, then cut, so every card in the
+   row is the same height. */
+.template-card-desc {
+  margin: 0;
+  min-height: calc(2 * 1.4em);
+  font-size: var(--tpl-desc-size);
+  line-height: 1.4;
+  color: var(--b-fg2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.template-gallery-chips { display: flex; gap: var(--tpl-chip-gap); margin-top: var(--tpl-chip-gap); }
+.prompt-bubble.template-gallery-chip { padding: var(--tpl-chip-pad); font-size: var(--tpl-desc-size); }
+.prompt-bubble.template-gallery-chip.is-active {
+  background: var(--b-accent);
+  border-color: var(--b-accent);
+  color: var(--tpl-chip-on-accent);
+}
+.template-card-actions { display: flex; gap: 6px; margin-top: auto; }
 .prompt-bubble.template-card-btn {
   flex: 1;
   padding: 6px 10px;
@@ -4875,9 +4895,10 @@
    Desktop caps at a presentation width so it reads as "presented",
    not just the app re-rendered full-bleed. */
 .present-stage .bp-device-frame {
-  flex: 0 1 auto;
-  width: 100%;
-  max-width: min(100%, var(--bc-stage-cap));
+  /* Width and scale come from DeviceFrame (design width, zoomed to fit the
+     stage). No shrink and no max-width here: either would re-flow the frame
+     narrower than its design width instead of scaling it. */
+  flex: 0 0 auto;
   /* Auto margins centre the frame in the stage when there's room, and
      collapse to 0 when the frame overflows — so an over-tall frame aligns
      to the top (header visible, scroll-reachable) instead of being clipped
@@ -7548,6 +7569,8 @@
   --ds-surface: var(--salt-container-secondary-background, #1C2830);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #4F5B66));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #243440);
   --ds-font: 'Open Sans', sans-serif;
   --ds-radius: var(--salt-curve-100, 4px);
@@ -7569,6 +7592,8 @@
   --ds-surface: var(--salt-container-secondary-background, #F4F6F8);
   --ds-surface-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
   --ds-border: var(--salt-separable-primary-borderColor, var(--salt-editable-borderColor, #C4C8CC));
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--salt-separable-tertiary-borderColor, var(--ds-border)) 55%, transparent);
   --ds-hover: var(--salt-actionable-subtle-background-hover, #E8ECF0);
 }
 
@@ -7594,6 +7619,8 @@
   --ds-surface: var(--mui-palette-background-paper, #2B2930);
   --ds-surface-hover: var(--mui-palette-action-hover, #36343C);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #36343C);
   --ds-font: 'Roboto', sans-serif;
   --ds-radius: 12px;
@@ -7615,6 +7642,8 @@
   --ds-surface: var(--mui-palette-background-paper, #F3EDF7);
   --ds-surface-hover: var(--mui-palette-action-hover, #E6E0EC);
   --ds-border: var(--mui-palette-divider, #79747E);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: color-mix(in srgb, var(--ds-border) 55%, transparent);
   --ds-hover: var(--mui-palette-action-hover, #E6E0EC);
 }
 
@@ -7638,6 +7667,8 @@
   --ds-fg-tertiary: var(--colorNeutralForeground3, #FFFFFFB0);
   --ds-surface: var(--colorNeutralBackground2, #1F1F1F);
   --ds-border: var(--colorNeutralStroke1, #8A8A8A);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-surface-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-hover: var(--colorNeutralBackground3, #3A3A3A);
   --ds-font: var(--fontFamilyBase, 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif);
@@ -7660,6 +7691,8 @@
   --ds-surface: var(--colorNeutralBackground2, #F5F5F5);
   --ds-surface-hover: var(--colorNeutralBackground3, #EBEBEB);
   --ds-border: var(--colorNeutralStroke1, #D1D1D1);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--colorNeutralStroke3, color-mix(in srgb, var(--ds-border) 55%, transparent));
   --ds-hover: var(--colorNeutralBackground3, #EBEBEB);
 }
 
@@ -7685,6 +7718,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-font: var(--font-ibm-plex-sans), 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   /* Carbon is flat - 0 radius everywhere except tag/avatar. */
@@ -7705,6 +7740,8 @@
   --ds-surface: var(--cds-layer-01, #f4f4f4);
   --ds-surface-hover: var(--cds-layer-hover-01, #e8e8e8);
   --ds-border: var(--cds-border-subtle-01, #c6c6c6);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--cds-border-subtle-00, var(--ds-border));
   --ds-hover: var(--cds-layer-hover-01, #e8e8e8);
 }
 
@@ -7733,6 +7770,8 @@
   --ds-surface: rgba(255,255,255,0.04);
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.08);
   --ds-font: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --ds-radius: 12px;
@@ -7752,6 +7791,8 @@
   --ds-surface: rgba(255,255,255,0.72);
   --ds-surface-hover: rgba(255,255,255,0.85);
   --ds-border: rgba(100,60,180,0.06);
+  /* Quieter separator for card outlines and row rules. */
+  --ds-border-subtle: var(--ds-border);
   --ds-hover: rgba(255,255,255,0.85);
   --ds-primary: #6B5AA8;
   --ds-on-primary: #FFFFFF;
@@ -10332,6 +10373,1313 @@
   white-space: nowrap;
 }
 
+/* ── Chrome tones ──
+   A chrome zone (header / sidebar / footer, via data-tone) or a navigation
+   bar (.dh-tone-*) picks one of five surface treatments. Each sets the same
+   four custom properties, which the zone or bar then paints with. ── */
+[data-tone="surface"], .dh-tone-surface {
+  --dh-chrome-bg: var(--ds-surface);
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="transparent"], .dh-tone-transparent {
+  --dh-chrome-bg: transparent;
+  --dh-chrome-fg: var(--ds-fg);
+  --dh-chrome-fg-dim: var(--ds-fg-secondary);
+  --dh-chrome-line: var(--ds-border-subtle, var(--ds-border));
+}
+[data-tone="inverse"], .dh-tone-inverse {
+  --dh-chrome-bg: var(--ds-fg);
+  --dh-chrome-fg: var(--ds-bg);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-bg) 72%, var(--ds-fg));
+  --dh-chrome-line: color-mix(in srgb, var(--ds-bg) 18%, transparent);
+}
+[data-tone="dark"], .dh-tone-dark {
+  --dh-chrome-bg: var(--bc-chrome-dark);
+  --dh-chrome-fg: var(--bc-chrome-dark-fg);
+  --dh-chrome-fg-dim: var(--bc-chrome-dark-fg-dim);
+  --dh-chrome-line: var(--bc-chrome-dark-line);
+}
+[data-tone="accent"], .dh-tone-accent {
+  --dh-chrome-bg: var(--ds-primary);
+  --dh-chrome-fg: var(--ds-on-primary);
+  --dh-chrome-fg-dim: color-mix(in srgb, var(--ds-on-primary) 78%, transparent);
+  --dh-chrome-line: color-mix(in srgb, var(--ds-on-primary) 22%, transparent);
+}
+.bp-header[data-tone],
+.bp-sidebar[data-tone],
+.bp-footer[data-tone] {
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  border-color: var(--dh-chrome-line);
+}
+/* Flush: bars stack edge to edge; each block spans the zone. */
+.bp-header[data-flush],
+.bp-footer[data-flush] {
+  padding: 0;
+  border-width: 0;
+  display: block;
+}
+.bp-header[data-flush] .zone-drop-container > .canvas-block,
+.bp-footer[data-flush] .zone-drop-container > .canvas-block {
+  width: 100%;
+}
+/* !important: .zone-block-compact pads header/footer blocks with it, which
+   pushed a flush bar two pixels past the frame edge. */
+.bp-header[data-flush] .canvas-block,
+.bp-footer[data-flush] .canvas-block {
+  box-sizing: border-box;
+  padding: 0 !important;
+  margin: 0;
+  border-width: 0;
+}
+/* Sidebar on the right. */
+.bp-body[data-sidebar-side="right"] {
+  flex-direction: row-reverse;
+}
+.bp-body[data-sidebar-side="right"] .bp-sidebar {
+  border-right-width: 0;
+  border-left: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+
+/* On a phone-width frame the primary links and the account name give way
+   to the brand: a squeezed row of clipped links reads as broken. The
+   breakpoint is in rem: a container query cannot read a custom property. */
+.bp-header { container-type: inline-size; container-name: chrome-header; }
+@container chrome-header (max-width: 35rem) {
+  .dh-topnav .dh-topnav-links, .dh-topnav .dh-topnav-divider, .dh-topnav .dh-topnav-account-name { display: none; }
+  .bp-header .dh-topnav, .bp-header .dh-tabstrip { padding-inline: var(--bc-gutter-narrow); gap: var(--bc-bar-gap-narrow); }
+}
+.dh-page-title.dh-page-title-2 { font-size: var(--dh-panel-title-size); }
+/* ── Page title (ChromeBars.tsx): one fixed size in every design system ── */
+.dh-page-title-wrap {
+  font-family: var(--ds-font);
+  min-width: 0;
+}
+.dh-page-title {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-page-title-size);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ds-fg);
+  text-wrap: balance;
+}
+.dh-page-caption {
+  margin: calc(var(--bc-bar-gap) / 6) 0 0;
+  font-size: var(--bc-bar-font);
+  color: var(--ds-fg-secondary);
+}
+
+/* ── Navigation bars (ChromeBars.tsx) ── */
+.dh-tone {
+  box-sizing: border-box;
+  background: var(--dh-chrome-bg);
+  color: var(--dh-chrome-fg);
+  font-family: var(--ds-font);
+}
+.dh-topnav {
+  display: flex;
+  align-items: center;
+  height: var(--bc-topnav-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+}
+.dh-topnav-brand {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 2);
+  font-size: var(--bc-bar-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.dh-topnav-mark {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: var(--ds-radius);
+  background: var(--ds-primary);
+  color: var(--bc-chrome-mark-fg);
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 700;
+}
+.dh-topnav-divider {
+  flex: none;
+  width: var(--bc-hairline);
+  height: calc(var(--bc-topnav-h) * 0.42);
+  background: var(--dh-chrome-line);
+}
+.dh-topnav-links {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow: hidden;
+}
+/* Scoped under .dh-tone so these win over the canvas's generic button
+   styling, which would recolour the links and stop them filling the bar. */
+.dh-tone .dh-topnav-link,
+.dh-tone .dh-tabstrip-tab {
+  appearance: none;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  height: auto;
+  min-height: 0;
+  border-radius: 0;
+  gap: calc(var(--bc-bar-gap) / 4);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-tone .dh-topnav-link:hover,
+.dh-tone .dh-tabstrip-tab:hover {
+  color: var(--dh-chrome-fg);
+}
+.dh-tone .dh-topnav-link.is-active,
+.dh-tone .dh-tabstrip-tab.is-active {
+  color: var(--dh-chrome-fg);
+  font-weight: 600;
+}
+/* The active indicator: a bar in the system's primary colour along the
+   bottom edge. */
+.dh-topnav-link.is-active::after,
+.dh-tabstrip-tab.is-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--dh-focus-ring);
+  background: var(--ds-primary);
+}
+.dh-topnav-link:focus-visible,
+.dh-tabstrip-tab:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: calc(var(--dh-focus-ring) * -1);
+}
+.dh-topnav-spacer {
+  flex: 1 1 auto;
+}
+.dh-topnav-account {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--bc-bar-gap) / 3);
+  font-size: var(--bc-bar-font);
+  color: var(--dh-chrome-fg-dim);
+}
+.dh-topnav-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: var(--bc-bar-mark);
+  height: var(--bc-bar-mark);
+  border-radius: 50%;
+  border: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+.dh-tabstrip {
+  display: flex;
+  align-items: stretch;
+  height: var(--bc-tabstrip-h);
+  padding-inline: var(--bc-gutter);
+  gap: var(--bc-bar-gap);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--bc-hairline) solid var(--dh-chrome-line);
+}
+/* A dark tab strip under a dark top bar reads as a second, lifted level. */
+.dh-tabstrip.dh-tone-dark {
+  background: var(--bc-chrome-dark-raised);
+}
+.dh-tabstrip-add {
+  display: inline-grid;
+  place-items: center;
+  color: var(--dh-chrome-fg-dim);
+}
+/* ── Context bar (ChromeBars.tsx): the page's title and its filters ── */
+.dh-contextbar {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bc-bar-gap);
+  min-height: var(--bc-contextbar-h);
+  padding-inline: var(--bc-gutter);
+  background: var(--dh-card, var(--dh-chrome-bg));
+  color: var(--dh-chrome-fg);
+  border-bottom: var(--bc-hairline) solid var(--dh-chrome-line);
+  font-family: var(--ds-font);
+}
+.dh-contextbar-title {
+  flex: none;
+  margin: 0;
+  font: inherit;
+  font-size: var(--bc-contextbar-title);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.dh-contextbar-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0 var(--bc-bar-gap);
+  min-width: 0;
+}
+.dh-contextbar-filter {
+  flex: 0 0 auto;
+  width: var(--bc-contextbar-filter-w);
+  height: var(--bc-contextbar-h);
+  display: flex;
+  align-items: center;
+}
+.dh-contextbar-filter > * { flex: 1 1 auto; min-width: 0; }
+/* On a narrow frame the title takes its own line and the filters wrap. */
+@container chrome-header (max-width: 35rem) {
+  .dh-contextbar { flex-direction: column; align-items: stretch; gap: 0; padding-inline: var(--bc-gutter-narrow); padding-block: calc(var(--bc-bar-gap-narrow) / 2) 0; }
+  .dh-contextbar-filters { justify-content: flex-start; gap: 0 var(--bc-bar-gap-narrow); }
+}
+
+/* ── Inline dropdown (dropdownModel `inline`): label beside an underlined
+   control. The control is clamped to one height in every design system. ── */
+.dh-inline-control { max-height: var(--dh-inline-control-h); }
+.dh-inline-control > * { max-height: var(--dh-inline-control-h); }
+/* Carbon's inline dropdown is a medium control by default; here it is the
+   same compact underlined select the other four systems draw. */
+.dh-inline-field .dh-inline-control .cds--dropdown.cds--list-box {
+  height: var(--dh-inline-control-h);
+  width: 100%;
+  min-height: 0;
+  max-height: var(--dh-inline-control-h);
+  background: transparent;
+  border-bottom: thin solid var(--ds-border-strong, var(--ds-border));
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__field {
+  height: var(--dh-inline-control-h);
+  padding-inline: 0 calc(var(--dh-inline-control-h) + 0.25rem);
+  width: 100%;
+}
+.dh-inline-field .dh-inline-control .cds--list-box__wrapper--inline {
+  display: block;
+  width: 100%;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__label {
+  font-size: var(--dh-inline-font);
+  line-height: 1;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-icon {
+  inset-inline-end: 0.25rem;
+}
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-item { height: var(--dh-inline-control-h); }
+.dh-inline-field .dh-inline-control .cds--list-box .cds--list-box__menu-item__option {
+  height: var(--dh-inline-control-h);
+  font-size: var(--dh-inline-font);
+  line-height: var(--dh-inline-control-h);
+  padding-block: 0;
+}
+
+/* ── Report surfaces ──
+   A report page is cards on a canvas. In light mode the canvas is a grey a
+   step down from the system's background and the cards are that background
+   (white); in dark mode the cards are the system's raised surface on its
+   background. Only for templates that pin their structure. ── */
+[data-uniform-structure] .bp-dashboard {
+  --dh-canvas: var(--ds-bg);
+  --dh-card: var(--ds-surface);
+  --bc-gutter: var(--dh-report-gutter);
+}
+[data-uniform-structure] .builder-light .bp-dashboard,
+[data-uniform-structure] .builder-light.bp-dashboard {
+  --dh-canvas: color-mix(in srgb, var(--ds-fg) 6%, var(--ds-bg));
+  --dh-card: var(--ds-bg);
+}
+[data-uniform-structure] .bp-main,
+[data-uniform-structure] .bp-main > .preview-canvas-root {
+  background: var(--dh-canvas);
+}
+/* A plain canvas (a start page): the content sits on the card colour. */
+[data-uniform-structure] .builder-light .bp-main[data-plain],
+[data-uniform-structure] .builder-light .bp-main[data-plain] > .preview-canvas-root {
+  background: var(--dh-card);
+}
+/* The canvas has one gutter all round, and uses the frame's full width. */
+[data-uniform-structure] .bp-main > .preview-canvas-root {
+  max-width: 100%;
+  padding: var(--dh-report-gutter);
+}
+[data-uniform-structure] .bp-sidebar { background: var(--dh-card); }
+
+/* ── Instrument header: a pair, its last bar, a quote; then the orders ── */
+.dh-instrument {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-cell-gap);
+  padding: var(--dh-nav-inset) var(--bc-gutter);
+  background: var(--dh-card, var(--dh-chrome-bg));
+  color: var(--ds-fg);
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  font-family: var(--ds-font);
+  font-size: var(--dh-panel-meta-size);
+}
+.dh-instrument-main,
+.dh-instrument-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--dh-cell-gap) var(--dh-nav-group-pad);
+  min-width: 0;
+  /* Fixed rows and a fixed line: the header is the same height in every
+     design system's font. */
+  line-height: 1.2;
+}
+.dh-instrument-main { min-height: var(--dh-instrument-row); }
+.dh-instrument-sub { min-height: var(--dh-instrument-sub); }
+.dh-instrument-main > *,
+.dh-instrument-sub > * { line-height: 1.2; }
+.dh-instrument-symbol {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-instrument-symbol);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.dh-instrument-meta,
+.dh-instrument-status,
+.dh-instrument-note { color: var(--ds-fg-secondary); white-space: nowrap; }
+.dh-instrument-mono,
+.dh-instrument-ohlc,
+.dh-instrument-handle { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.dh-instrument-ohlc { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--dh-cell-gap) var(--dh-nav-pad); }
+.dh-instrument-figure { display: inline-flex; gap: calc(var(--dh-cell-gap) / 3); font-weight: 600; white-space: nowrap; }
+.dh-instrument-figure-label { color: var(--ds-fg-tertiary); font-weight: 400; }
+.dh-instrument-figure-label::after { content: ":"; }
+.dh-instrument .is-up { color: var(--ds-status-positive); }
+.dh-instrument .is-down { color: var(--ds-status-negative); }
+.dh-instrument-change { font-weight: 600; white-space: nowrap; }
+.dh-instrument-spacer { flex: 1 1 auto; }
+.dh-instrument-quote { display: flex; align-items: center; gap: var(--dh-nav-pad); }
+.dh-instrument-handle { color: var(--ds-fg-tertiary); }
+.dh-instrument-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: var(--dh-instrument-side-w);
+  height: var(--dh-instrument-row);
+  padding: 0 var(--dh-nav-pad);
+  line-height: 1;
+  border: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+}
+.dh-instrument-side-label { font-size: var(--dh-navgroup-size); line-height: 1.2; color: var(--ds-fg-tertiary); letter-spacing: 0.04em; }
+.dh-instrument-pips { font-size: var(--dh-instrument-pips); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.dh-instrument-orders { display: flex; flex-wrap: wrap; gap: var(--dh-cell-gap); }
+.dh-instrument-order {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  height: var(--dh-exec-chip-h);
+  padding: 0 var(--dh-nav-pad);
+  border: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dh-instrument-order.is-active {
+  border-color: var(--ds-primary);
+  color: var(--ds-fg);
+  background: color-mix(in srgb, var(--ds-primary) 10%, transparent);
+}
+.dh-instrument-order:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-instrument-order-side { font-weight: 700; }
+.dh-instrument-order-status { color: var(--ds-fg-tertiary); }
+.dh-instrument-dot { width: var(--dh-cell-dot); height: var(--dh-cell-dot); border-radius: 50%; background: currentColor; }
+
+/* ── Execution chart: a tool rail, the plot, the range presets ── */
+.dh-panel.dh-exec {
+  flex-direction: row;
+  overflow: visible;
+  font-size: var(--dh-panel-meta-size);
+}
+.dh-exec-empty { margin: auto; color: var(--ds-fg-tertiary); }
+.dh-exec-rail {
+  flex: 0 0 var(--dh-exec-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 2);
+  padding-block: var(--dh-exec-pad);
+  border-inline-end: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-exec-rail-group { position: relative; }
+.dh-exec-rail-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dh-exec-btn);
+  height: var(--dh-exec-btn);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.dh-exec-rail-btn:hover,
+.dh-exec-rail-btn.is-open { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); color: var(--ds-fg); }
+.dh-exec-rail-btn:focus-visible,
+.dh-exec-range:focus-visible,
+.dh-exec-flyout-item:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
+.dh-exec-rail-text { font-size: var(--dh-cell-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dh-exec-flyout {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: calc(100% + var(--dh-cell-gap));
+  z-index: 20;
+  box-sizing: border-box;
+  min-width: var(--dh-exec-flyout-w);
+  padding: var(--dh-cell-gap);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline) solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  box-shadow: var(--ds-shadow, none);
+}
+.dh-exec-flyout-title {
+  margin: 0;
+  padding: calc(var(--dh-cell-gap) / 2) var(--dh-nav-pad) var(--dh-cell-gap);
+  font-size: var(--dh-navgroup-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-exec-flyout-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  width: 100%;
+  height: var(--dh-nav-row);
+  padding: 0 var(--dh-nav-pad);
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dh-exec-flyout-item:hover { background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
+.dh-exec-flyout-check { flex: none; display: inline-flex; width: var(--dh-nav-group-pad); color: var(--ds-primary); }
+.dh-exec-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--dh-exec-pad) var(--dh-exec-pad) 0;
+}
+.dh-exec-plot { min-width: 0; overflow: hidden; }
+.dh-exec-ranges {
+  flex: 0 0 var(--dh-exec-range);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dh-exec-range {
+  appearance: none;
+  flex: none;
+  height: var(--dh-exec-chip-h);
+  padding: 0 var(--dh-nav-inset);
+  border: 0;
+  border-radius: var(--dh-exec-chip-h);
+  background: transparent;
+  color: var(--ds-fg-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dh-exec-range:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
+/* The chosen range is an inverted pill. */
+.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
+
+.dh-navgroup {
+  padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);
+  font-family: var(--ds-font);
+  font-size: var(--dh-navgroup-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+
+/* ── Uniform structure ──
+   Set on <html> by BuilderApp when the template on the canvas pins its
+   structural spacing across design systems (BuilderTemplate.uniformStructure).
+   The padding scale is pinned in JS; here the header takes one fixed height,
+   so the body starts at the same y in every system. ── */
+[data-uniform-structure] .bp-header:not([data-flush]) {
+  box-sizing: border-box;
+  height: var(--bc-uniform-header-h);
+}
+
+/* ── Framed panel (PanelFrame.tsx): the card a chart or data grid sits in.
+   Sizes arrive as custom properties from panelMetrics.ts and are the same in
+   every design system; colour, type and radius come from the active system's
+   --ds-* tokens. ── */
+.dh-panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: var(--dh-panel-h);
+  min-width: 0;
+  overflow: hidden;
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  /* The system's secondary separator: its primary border reads as a hard
+     white line around every card in the dark themes. */
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-panel-header {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-panel-header-h);
+  height: var(--dh-panel-header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dh-panel-pad);
+  padding-inline: var(--dh-panel-pad);
+  min-width: 0;
+}
+.dh-panel-heading {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--dh-panel-pad) / 2);
+  min-width: 0;
+}
+.dh-panel-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-panel-title-size);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ds-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* When the header is tight (a narrow panel with a "View by" select) the
+   subtitle gives way first, then the title truncates. */
+.dh-panel-subtitle {
+  flex: 0 1000 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.3;
+  color: var(--ds-fg-tertiary);
+  white-space: nowrap;
+}
+/* Beside a "View by" select, the title keeps its full width until the select
+   is down to its minimum: sharing the squeeze by flex-shrink weights still
+   took a fraction of a pixel off the title, enough to ellipsise it. */
+.dh-panel-header:has(.dh-panel-viewby) .dh-panel-heading {
+  flex: 1 0 auto;
+  max-width: calc(100% - var(--dh-panel-viewby-min) - var(--dh-panel-pad));
+}
+/* In a narrow panel the select gives way before the title is cut. */
+.dh-panel-viewby {
+  flex: 0 100 var(--dh-panel-viewby-w);
+  min-width: min(var(--dh-panel-viewby-min), 40%);
+}
+/* The select must not stretch the fixed header: whatever height the active
+   system gives it, it is centred in the row and clipped to it. */
+.dh-panel-viewby > * {
+  max-height: var(--dh-panel-header-h);
+}
+.dh-panel-body {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 var(--dh-panel-pad) var(--dh-panel-pad);
+}
+
+/* Leading glyph of a labelled toolbar button (e.g. the report data button). */
+.preview-bar-btn-glyph {
+  font-size: var(--bc-toolbar-glyph);
+  margin-right: calc(var(--bc-toolbar-glyph) / 4);
+}
+
+/* ── Panel tools, expanded panel and configuration drawer ── */
+.dh-panel-tools {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--dh-panel-pad) / 8);
+  margin-right: calc(var(--dh-panel-pad) / -4);
+}
+.dh-panel-tool {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--dh-panel-tool-size);
+  height: var(--dh-panel-tool-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ds-radius);
+  background: transparent;
+  color: var(--ds-fg-tertiary);
+  cursor: pointer;
+  transition: background-color var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.dh-panel-tool:hover,
+.dh-panel-tool.is-active {
+  background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: var(--ds-fg);
+}
+.dh-panel-tool:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+/* The tools are always shown: a control that only appears on hover is one
+   people do not find. In a panel too narrow for them (below) they give way. */
+/* A panel too narrow for "View by" beside its select keeps the select. */
+@container dh-panel (max-width: 28rem) {
+  .dh-panel-viewby .dh-inline-label { display: none; }
+  .dh-panel-header:has(.dh-panel-viewby) .dh-panel-subtitle { display: none; }
+}
+/* A narrow panel (a phone, a three-across row) drops the subtitle, and on
+   touch keeps only Expand (Configure is in the expanded view). The tools
+   stay visible: a control that only appears on hover is one people miss. */
+.dh-panel { container-type: inline-size; container-name: dh-panel; }
+@container dh-panel (max-width: 21.25rem) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-subtitle { display: none; }
+  /* A long title takes a second line (the header has room for two) before
+     it is cut. */
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-title {
+    white-space: normal;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  @media (hover: none) {
+    .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
+  }
+}
+/* A tile-sized panel (a gauge) keeps its title whole: only Expand stays, and
+   Configure is in the expanded view. */
+@container dh-panel (max-width: 13.75rem) {
+  .dh-panel:not(.dh-panel-expanded) .dh-panel-tool[data-tool="configure"] { display: none; }
+}
+/* Stacked header (PanelFrame sets it on a narrow panel with a "View by"):
+   the title on the first line, the select and the tools on the second. */
+.dh-panel.is-stacked .dh-panel-header {
+  flex-wrap: wrap;
+  align-content: center;
+  row-gap: 0;
+  flex-basis: calc(var(--dh-panel-header-h) + var(--dh-panel-stack-row));
+  height: calc(var(--dh-panel-header-h) + var(--dh-panel-stack-row));
+}
+.dh-panel.is-stacked .dh-panel-header .dh-panel-heading {
+  flex: 1 0 100%;
+  max-width: 100%;
+}
+.dh-panel.is-stacked .dh-panel-viewby {
+  flex: 1 1 auto;
+}
+.dh-panel.is-stacked .dh-panel-viewby .dh-inline-label { display: revert; }
+
+/* Expanded: the panel is portalled into .bp-main, whose other content is
+   hidden. The slot fills the body's visible height. */
+.bp-main.dh-expanded {
+  overflow: hidden;
+}
+.bp-main.dh-expanded > :not(.dh-expand) {
+  display: none;
+}
+.dh-expand {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding-block: var(--dh-pad-canvas, var(--bc-gutter));
+}
+.dh-expand-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: var(--bc-expand-gap);
+}
+.dh-panel-expanded {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+.dh-config {
+  box-sizing: border-box;
+  flex: 0 0 var(--dh-config-w);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-config-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--dh-config-header-h);
+  padding-inline: var(--bc-expand-gap);
+}
+.dh-config-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--bc-expand-gap) var(--bc-expand-gap);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--bc-expand-gap) * 0.75);
+}
+.dh-config-field .dh-inline-label {
+  min-width: 40%;
+  white-space: normal;
+}
+.dh-config-heading {
+  margin: calc(var(--bc-expand-gap) / 2) 0 0;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-config-note {
+  margin: 0;
+  font-size: var(--dh-panel-meta-size);
+  line-height: 1.5;
+  color: var(--ds-fg-secondary);
+}
+.dh-config-footer {
+  flex: none;
+  padding: calc(var(--bc-expand-gap) * 0.75) var(--bc-expand-gap);
+  border-top: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-config-reset {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.dh-config-reset:focus-visible {
+  outline: var(--dh-focus-ring) solid var(--ds-primary);
+  outline-offset: var(--bc-hairline);
+}
+
+/* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */
+/* ── Rich grid cells ──
+   Each takes its colour from --dh-tone, set per cell from the tone the data
+   asks for (good / mid / bad / neutral / accent), which resolves to the
+   active design system's status colours. ── */
+.dh-grid .dh-cell { display: flex; align-items: center; }
+.dh-grid .ag-right-aligned-cell.dh-cell { justify-content: flex-end; }
+.dh-cell-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  width: 100%;
+  min-width: 0;
+}
+.dh-cell-bar-track {
+  flex: 1 1 auto;
+  height: var(--dh-cell-bar-h);
+  border-radius: var(--dh-cell-bar-h);
+  background: color-mix(in srgb, var(--ds-fg) 10%, transparent);
+  overflow: hidden;
+}
+.dh-cell-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--dh-tone);
+}
+.dh-cell-bar-value {
+  flex: 0 0 var(--dh-cell-bar-value-w);
+  text-align: right;
+  font-size: var(--dh-cell-small);
+  color: var(--ds-fg-secondary);
+}
+.dh-cell-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 3);
+  height: var(--dh-cell-chip-h);
+  padding: var(--dh-cell-chip-pad);
+  border-radius: var(--dh-cell-chip-h);
+  background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-delta-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+}
+.dh-cell-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--dh-cell-gap) / 3);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg));
+}
+.dh-cell-delta.is-flat { font-weight: 400; color: var(--ds-fg-tertiary); }
+.dh-cell-spark { flex: none; color: var(--dh-tone); overflow: visible; }
+.dh-cell-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--dh-cell-badge);
+  height: var(--dh-cell-badge);
+  box-sizing: border-box;
+  padding-inline: calc(var(--dh-cell-gap) / 2);
+  border-radius: var(--dh-cell-badge);
+  border: var(--bc-hairline) solid color-mix(in srgb, var(--dh-tone) 45%, transparent);
+  background: color-mix(in srgb, var(--dh-tone) 14%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-tonetext { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-tonetext.is-neutral { font-weight: 400; color: var(--ds-fg-tertiary); }
+.dh-cell-flag { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
+.dh-cell-flag-code { font-size: var(--dh-cell-small); color: var(--ds-fg-secondary); }
+.dh-cell-rank { color: var(--ds-fg-tertiary); }
+.dh-cell-dot { display: inline-flex; align-items: center; gap: var(--dh-cell-gap); }
+.dh-cell-dot.is-strong { font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-cell-dot-mark {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--dh-cell-dot);
+  height: var(--dh-cell-dot);
+  border-radius: 50%;
+  background: var(--dh-tone);
+}
+.dh-cell-dot.is-hollow .dh-cell-dot-mark { background: none; border: var(--dh-focus-ring) solid var(--dh-tone); }
+.dh-cell-tag {
+  display: inline-flex;
+  align-items: center;
+  height: var(--dh-cell-chip-h);
+  padding-inline: var(--dh-cell-gap);
+  border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--dh-tone) 16%, transparent);
+  color: color-mix(in srgb, var(--dh-tone) 62%, var(--ds-fg));
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  line-height: 1;
+}
+.dh-cell-tag.is-solid {
+  min-width: var(--dh-cell-chip-h);
+  justify-content: center;
+  background: var(--dh-tone);
+  color: var(--ds-bg);
+}
+/* A group heading row: a sunken band above its indented rows. */
+.dh-grid .ag-row.dh-grid-row-group { background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
+/* ── Report blocks (ReportBlocks.tsx) ── */
+.dh-entity, .dh-tile, .dh-launcher, .dh-hero { white-space: normal; }
+.dh-entity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--dh-cell-gap);
+  height: 100%;
+  min-width: 0;
+  font-family: var(--ds-font);
+  color: var(--ds-fg);
+}
+/* As a card: the report's own header panel. */
+.dh-entity.dh-entity-card {
+  box-sizing: border-box;
+  padding-inline: var(--dh-panel-pad);
+  background: var(--dh-card, var(--ds-surface));
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+}
+.dh-entity-main { display: flex; align-items: center; gap: calc(var(--dh-cell-gap) * 1.5); min-width: 0; }
+.dh-entity-eyebrow,
+.dh-entity-suffix { font-size: var(--dh-panel-meta-size); color: var(--ds-fg-tertiary); white-space: nowrap; }
+.dh-entity-eyebrow { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.dh-entity-title {
+  margin: 0;
+  font: inherit;
+  font-size: var(--dh-entity-title-size);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dh-entity-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--dh-cell-gap) / 2) var(--dh-panel-pad);
+  margin: 0;
+  font-size: var(--dh-panel-meta-size);
+}
+.dh-entity-facts > div { display: flex; gap: var(--dh-cell-gap); min-width: 0; }
+.dh-entity-facts dt { color: var(--ds-fg-tertiary); }
+.dh-entity-facts dt::after { content: ":"; }
+.dh-entity-facts dd { margin: 0; color: var(--ds-fg-secondary); }
+
+.dh-tile {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--dh-cell-gap);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: var(--dh-panel-pad);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+  text-align: left;
+}
+button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); cursor: pointer; }
+.dh-tile-selectable:hover { border-color: color-mix(in srgb, var(--ds-primary) 50%, var(--ds-border)); }
+.dh-tile-selectable.is-selected {
+  border-color: var(--ds-primary);
+  box-shadow: 0 0 0 var(--bc-hairline) var(--ds-primary);
+}
+.dh-tile-selectable:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
+.dh-tile-label {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ds-fg-tertiary);
+}
+.dh-tile-row { display: flex; align-items: center; gap: var(--dh-panel-pad); min-width: 0; }
+.dh-tile-main { display: flex; align-items: center; gap: calc(var(--dh-cell-gap) * 1.5); }
+.dh-tile-icon { flex: none; color: var(--ds-fg-tertiary); }
+.dh-tile-value { font-size: var(--dh-tile-value-size); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.dh-tile-value.is-muted { color: var(--ds-fg-tertiary); }
+.dh-tile-subs {
+  flex: 1 1 auto;
+  display: flex;
+  gap: var(--dh-panel-pad);
+  min-width: 0;
+  padding-left: var(--dh-panel-pad);
+  border-left: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-tile-sub { flex: 1 1 0; display: flex; flex-direction: column; gap: calc(var(--dh-cell-gap) / 2); min-width: 0; }
+.dh-tile-sub-label { font-size: var(--dh-cell-small); color: var(--ds-fg-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dh-tile-sub-main { display: flex; align-items: center; gap: var(--dh-cell-gap); color: var(--ds-fg-tertiary); }
+.dh-tile-sub-value { font-size: var(--dh-tile-sub-value-size); font-weight: 700; color: var(--ds-fg); }
+
+.dh-verdict {
+  white-space: normal;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--dh-cell-gap) * 1.5);
+  padding: var(--dh-panel-pad);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+  overflow: hidden;
+}
+.dh-verdict-title { margin: 0; font: inherit; font-size: var(--dh-panel-title-size); font-weight: 600; }
+.dh-verdict-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  height: var(--dh-cell-chip-h);
+  padding-inline: var(--dh-cell-gap);
+  border-radius: var(--dh-cell-chip-h);
+  background: color-mix(in srgb, var(--dh-tone) 14%, transparent);
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+}
+.dh-verdict-hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--dh-cell-gap); margin: 0; }
+.dh-verdict-figure { font-size: var(--dh-verdict-figure-size); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.dh-verdict-unit { align-self: flex-start; font-size: var(--dh-verdict-status-size); font-weight: 600; }
+.dh-verdict-status { font-size: var(--dh-verdict-status-size); font-weight: 600; color: color-mix(in srgb, var(--dh-tone) 75%, var(--ds-fg)); }
+.dh-verdict-caption,
+.dh-verdict-footnote { margin: 0; font-size: var(--dh-panel-meta-size); color: var(--ds-fg-tertiary); }
+.dh-verdict-progress { display: flex; flex-direction: column; gap: calc(var(--dh-cell-gap) / 2); }
+.dh-verdict-progress-head { display: flex; justify-content: space-between; font-size: var(--dh-panel-meta-size); color: var(--ds-fg-secondary); }
+.dh-verdict-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--dh-panel-pad);
+  margin: auto 0 0;
+  padding-top: var(--dh-panel-pad);
+  border-top: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+}
+.dh-verdict-stats dt { font-size: var(--dh-cell-small); color: var(--ds-fg-tertiary); }
+.dh-verdict-stats dd { margin: 0; font-size: var(--dh-verdict-status-size); font-weight: 700; }
+.dh-verdict-stats dd.is-toned { color: color-mix(in srgb, var(--dh-tone) 75%, var(--ds-fg)); }
+
+.dh-launcher {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-cell-gap);
+  height: 100%;
+  padding: var(--dh-panel-pad);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg);
+  border: var(--bc-hairline, thin) solid var(--ds-border-subtle, var(--ds-border));
+  border-top: var(--dh-launcher-accent) solid var(--dh-tone);
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font);
+}
+.dh-launcher-head { display: flex; align-items: center; justify-content: space-between; gap: var(--dh-cell-gap); }
+.dh-launcher-title { margin: 0; font: inherit; font-size: var(--dh-panel-title-size); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dh-launcher-thumb {
+  aspect-ratio: 220 / 130;
+  border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--ds-fg) 4%, transparent);
+  overflow: hidden;
+}
+.dh-launcher-thumb > * { display: block; width: 100%; height: 100%; }
+.dh-launcher-desc { flex: 1 1 auto; margin: 0; font-size: var(--dh-panel-meta-size); line-height: 1.45; color: var(--ds-fg-secondary); }
+.dh-launcher-open {
+  align-self: flex-start;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-primary);
+  cursor: pointer;
+}
+.dh-launcher-open:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
+
+.dh-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dh-cell-gap);
+  height: 100%;
+  text-align: center;
+  font-family: var(--ds-font);
+  color: var(--ds-fg);
+}
+.dh-hero-title { margin: 0; font: inherit; font-size: var(--dh-hero-title-size); font-weight: 700; line-height: 1.2; }
+.dh-hero-subtitle { margin: 0; color: var(--ds-fg-secondary); }
+.dh-hero-search {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--dh-cell-gap);
+  width: min(100%, var(--dh-hero-search-max));
+  height: var(--dh-hero-search-h);
+  margin-top: var(--dh-cell-gap);
+  padding-left: var(--dh-panel-pad);
+  padding-right: calc(var(--dh-cell-gap) / 2);
+  background: var(--dh-card, var(--ds-surface));
+  color: var(--ds-fg-tertiary);
+  border: var(--bc-hairline, thin) solid var(--ds-border);
+  border-radius: var(--ds-radius);
+}
+.dh-hero-input { flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: none; font: inherit; color: var(--ds-fg); }
+.dh-hero-button {
+  display: inline-flex;
+  align-items: center;
+  height: calc(var(--dh-hero-search-h) - var(--dh-cell-gap) * 1.5);
+  padding-inline: var(--dh-panel-pad);
+  border-radius: var(--ds-radius);
+  background: var(--ds-primary);
+  color: var(--bc-chrome-mark-fg);
+  font-size: var(--dh-panel-meta-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Record panel (RecordPanel.tsx): the detail of a selected record ── */
+.dh-record {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dh-panel-pad);
+  overflow-y: auto;
+  font-size: var(--dh-record-size);
+  color: var(--ds-fg);
+}
+/* In a wide panel the sections sit side by side. */
+@container dh-panel (min-width: 45rem) {
+  .dh-record {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    align-items: start;
+    column-gap: calc(var(--dh-panel-pad) * 2);
+  }
+  .dh-record-clear, .dh-record-empty { grid-column: 1 / -1; }
+  .dh-record-clear { justify-self: start; }
+  .dh-record-empty { align-self: center; }
+}
+.dh-record-pairs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--dh-panel-pad) * 0.75) var(--dh-panel-pad);
+  margin: 0;
+}
+.dh-record-pair { min-width: 0; }
+.dh-record-pair dt,
+.dh-record-heading {
+  margin: 0 0 calc(var(--dh-cell-gap) / 2);
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ds-fg-tertiary);
+}
+/* One pair per line: the label on the left, its value on the right. */
+.dh-record-pairs.is-rows {
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--dh-panel-pad) * 0.4);
+}
+.dh-record-pairs.is-rows .dh-record-pair {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dh-panel-pad);
+}
+.dh-record-pairs.is-rows .dh-record-pair dt { margin: 0; }
+.dh-record-pairs.is-rows .dh-record-pair dd { font-weight: 600; text-align: right; }
+/* Banded rows: each pair is a full-width row with its own padding. */
+.dh-record-pairs.is-rows.is-zebra { gap: 0; }
+.dh-record-pairs.is-zebra .dh-record-pair {
+  padding: calc(var(--dh-cell-gap) * 0.7) var(--dh-nav-pad);
+  border-radius: var(--ds-radius);
+}
+.dh-record-pairs.is-zebra .dh-record-pair:nth-child(odd) { background: color-mix(in srgb, var(--ds-fg) 5%, transparent); }
+.dh-panel.has-accent { border-inline-start: var(--dh-nav-bar) solid var(--dh-panel-accent); }
+.dh-record-pair dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dh-record-section { min-width: 0; }
+.dh-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.dh-record-table th,
+.dh-record-table td {
+  padding: var(--dh-cell-gap) 0;
+  border-bottom: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  text-align: right;
+  font-weight: 400;
+}
+.dh-record-table thead th {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  color: var(--ds-fg-secondary);
+}
+.dh-record-table th + th,
+.dh-record-table th + td,
+.dh-record-table td + td { padding-inline-start: calc(var(--dh-cell-gap) * 2); }
+.dh-record-table th[scope="row"],
+.dh-record-table thead th:first-child { text-align: left; }
+.dh-record-change { display: inline-flex; color: color-mix(in srgb, var(--dh-tone) 70%, var(--ds-fg)); }
+.dh-record-flat { color: var(--ds-fg-tertiary); }
+.dh-record-clear {
+  align-self: flex-start;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--dh-cell-small);
+  color: var(--ds-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: var(--dh-focus-ring);
+}
+.dh-record-clear:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--dh-focus-ring); }
+.dh-record-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dh-cell-gap);
+  color: var(--ds-fg-tertiary);
+  text-align: center;
+}
+.dh-record-empty p { margin: 0; max-width: 24ch; white-space: normal; }
+.dh-grid-selectable .ag-row {
+  cursor: pointer;
+}
+.dh-grid .ag-row.dh-grid-row-selected {
+  background: color-mix(in srgb, var(--ds-primary) 14%, transparent);
+  box-shadow: inset var(--dh-grid-select-bar) 0 0 var(--ds-primary);
+}
+
 /* Preview canvas root - uses only design system tokens */
 .preview-canvas-root {
   background: var(--ds-bg);
@@ -10491,14 +11839,19 @@
 .preview-canvas-root .f-label { font-size: calc(var(--density-font-size, 13px) - 1px); }
 
 /* Canvas drop zone highlight */
+/* The drop edge is padding plus an outline, not a border: at a fractional
+   frame scale a border is snapped to whole device pixels, so the body was a
+   pixel or two wider in Edit than in Present. Padding is not snapped. */
 .canvas-drop-zone {
   min-height: 60px;
   border-radius: 8px;
-  border: 2px dashed transparent;
-  transition: border-color 0.2s, background 0.2s;
+  padding: var(--bc-drop-edge);
+  outline: var(--bc-drop-edge) dashed transparent;
+  outline-offset: calc(var(--bc-drop-edge) * -1);
+  transition: outline-color 0.2s, background 0.2s;
 }
 .canvas-drop-zone.is-over {
-  border-color: var(--ds-primary);
+  outline-color: var(--ds-primary);
   background: var(--ds-primary-hover);
 }
 
@@ -10694,8 +12047,9 @@
   background: var(--b-bg);
 }
 .bp-viewport-wrapper .bp-device-frame {
-  flex: 0 1 auto;
-  max-width: min(100%, var(--bc-stage-cap));
+  /* Same as the present stage: DeviceFrame owns width + scale. */
+  flex: 0 0 auto;
+  max-width: none;
   margin: auto;
 }
 
@@ -11078,7 +12432,9 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-width: 100%;
+  /* No max-width: DeviceFrame lays the frame out at its design width and
+     scales it to the stage (frameFit.ts). */
+  box-sizing: border-box;
   flex: 1;
 }
 
@@ -11103,7 +12459,7 @@
      visual rhythm at the new medium-default values. */
   padding: var(--dh-pad-zone, 10px) calc(var(--dh-pad-zone, 10px) * 1.6);
   background: var(--ds-surface);
-  border-bottom: 1px solid var(--ds-border);
+  border-bottom: 1px solid var(--ds-border-subtle, var(--ds-border));
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -11185,14 +12541,18 @@
 }
 
 /* ── P2 Frames: add-back strip for removed frames ──────────────────── */
+/* Floats over the frame's bottom-left corner instead of taking a row at the
+   top: as a row it pushed the whole page down in Edit, so a canvas with a
+   removed frame no longer matched its Present view. */
+.bp-dashboard { position: relative; }
 .bp-zone-add-bar {
+  position: absolute;
+  left: var(--bc-gap-md);
+  bottom: var(--bc-gap-md);
+  z-index: 6;
   display: flex;
   flex-wrap: wrap;
   gap: var(--bc-gap-sm);
-  padding: var(--bc-gap-sm) var(--bc-gap-md);
-  background: var(--bc-bg-hover);
-  border-bottom: 1px dashed var(--bc-border);
-  flex-shrink: 0;
 }
 .bp-zone-add-chip {
   display: inline-flex;
@@ -11288,11 +12648,14 @@
 
 /* ── Sidebar ── */
 .bp-sidebar {
+  /* border-box so the divider is inside the sidebar width in every system
+     (Carbon's reset already did this; the others were one pixel wider). */
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background: var(--ds-surface);
-  border-right: 1px solid var(--ds-border);
+  border-right: 1px solid var(--ds-border-subtle, var(--ds-border));
   overflow: hidden;
   flex-shrink: 0;
   /* P2 Frames: positioning context for the absolute frame label tab. */
@@ -11454,6 +12817,70 @@
   box-shadow: 0 0 0 2px var(--bc-accent-ring);
 }
 
+/* ── Dense text navigation (zoneLayouts.sidebar.dense) ──
+   Application chrome: short rows of text under section labels, an accent bar
+   on the active item, and a fold to a rail of two-letter codes. ── */
+.bp-sidebar[data-dense] .bp-sidebar-nav { gap: 0; padding: var(--dh-nav-pad) 0; }
+.bp-sidebar[data-dense] .canvas-block { padding: 0; margin: 0; }
+.bp-sidebar[data-dense] .bp-nav-item {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--dh-nav-row);
+  padding: 0 var(--dh-nav-inset);
+  gap: var(--dh-cell-gap);
+  border-radius: 0;
+  border-left: var(--dh-nav-bar) solid transparent;
+  font-family: var(--ds-font);
+  font-size: var(--dh-nav-size);
+  color: var(--ds-fg);
+}
+.bp-sidebar[data-dense] .bp-nav-item--active {
+  border-left-color: var(--ds-primary);
+  background: color-mix(in srgb, var(--ds-primary) 10%, transparent);
+  color: var(--ds-fg);
+  font-weight: 600;
+}
+.bp-sidebar[data-dense] .dh-navgroup {
+  padding: var(--dh-nav-group-pad) var(--dh-nav-inset) calc(var(--dh-nav-pad) / 2) calc(var(--dh-nav-inset) + var(--dh-nav-bar));
+}
+/* Folded: codes centred in a taller row; a section label becomes a rule. */
+.bp-sidebar[data-dense][data-collapsed] .bp-nav-item {
+  justify-content: center;
+  min-height: var(--dh-nav-row-rail);
+  padding: 0;
+}
+.bp-nav-abbr {
+  font-size: var(--dh-cell-small);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ds-fg-secondary);
+}
+.bp-nav-item--active .bp-nav-abbr { color: var(--ds-fg); }
+.bp-sidebar[data-collapsed] .dh-navgroup {
+  height: 0;
+  margin: calc(var(--dh-nav-pad) / 2) var(--dh-nav-inset);
+  padding: 0;
+  overflow: hidden;
+  border-top: var(--bc-hairline) solid var(--ds-border-subtle, var(--ds-border));
+  font-size: 0;
+}
+.bp-sidebar[data-collapsed] .zone-drop-container > :first-child .dh-navgroup { border-top-width: 0; margin-block: 0; }
+/* The fold control: a plain icon at the foot of the nav, in the canvas's
+   own colours (it is part of the application, not of the builder). */
+.bp-sidebar[data-dense] .bp-sidebar-toggle {
+  align-self: flex-start;
+  margin: var(--dh-nav-pad) var(--dh-nav-inset);
+  border: 0;
+  background: none;
+  color: var(--ds-fg-secondary);
+}
+.bp-sidebar[data-dense][data-collapsed] .bp-sidebar-toggle { align-self: center; margin-inline: 0; }
+.bp-sidebar[data-dense] .bp-sidebar-toggle:hover,
+.bp-sidebar[data-dense] .bp-sidebar-toggle:focus-visible {
+  background: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  color: var(--ds-fg);
+}
+
 /* ── Dashboard sidebar resize handle ──
    S5 (2026-05-29 audit): idle state previously was a 24px-tall bar in
    --ds-border color, undiscoverable. Rebuilt with a two-dot idle hint
@@ -11461,7 +12888,12 @@
    visual idiom) and grows on hover. Uses --bc-* chrome tokens so the
    handle stops borrowing per-DS brand color for chrome purposes. */
 .bp-sidebar-resize-handle {
-  width: 6px;
+  --bp-resize-handle-w: 6px;
+  width: var(--bp-resize-handle-w);
+  /* Straddle the sidebar edge instead of taking its own width from the row:
+     the handle exists only in Edit, so any width it takes shifts and narrows
+     the body against Present. */
+  margin-inline: calc(var(--bp-resize-handle-w) / -2);
   cursor: col-resize;
   flex-shrink: 0;
   display: flex;
@@ -11522,6 +12954,11 @@
   align-items: center;
 }
 .bp-main > * {
+  /* border-box so the gutter sits INSIDE the 100% width. Carbon's reset
+     already applies it; the other four systems did not, so their body ran
+     two gutters past .bp-main and clipped on the right, and the body was a
+     different width per design system. */
+  box-sizing: border-box;
   width: 100%;
   max-width: min(100%, var(--bc-content-cap-app));
   margin-inline: auto;
@@ -11653,7 +13090,7 @@
   position: relative;
   /* Was `8px 16px`. Same ratio as header. */
   padding: var(--dh-pad-zone, 8px) calc(var(--dh-pad-zone, 8px) * 2);
-  border-top: 1px solid var(--ds-border);
+  border-top: 1px solid var(--ds-border-subtle, var(--ds-border));
   background: var(--ds-surface);
   font-size: 10px;
   font-family: var(--ds-font);
@@ -13091,6 +14528,15 @@
 .zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-btn.active { background: var(--bc-accent); color: #fff; }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
+/* Tone swatches: each paints with the tone's own background, so the control
+   previews what the zone will look like in the active design system. */
+.zlo-swatch {
+  width: var(--zlo-swatch);
+  height: var(--zlo-swatch);
+  border-radius: 50%;
+  background: var(--dh-chrome-bg);
+  box-shadow: 0 0 0 var(--bc-hairline) var(--glass-border-subtle);
+}
 /* Gap snap-handle: drag horizontally (or arrow keys) to magnetize the zone
    gap to a token stop. Token-snapped by construction, never an arbitrary px. */
 .zlo-gap {
@@ -13303,10 +14749,9 @@
    Fix = a tiered ladder that re-spans BEFORE clipping, while still under
    the cap. Ordered widest-cutoff-first so the narrower query wins by
    source order at narrower widths:
-     • ≤1100px : quarter-row (span 3) → third-row (span 4)  → 4-up becomes 3-up
      • ≤760px  : quarter/third-row     → half-row (span 6)  → clean 2x2
      • ≤640px  : also collapses half-row (span 6) → full row (span 12)
-   Net ladder: 4-up → 3-up → 2x2 → stacked. Container query + !important
+   Net ladder: 4-up → 2x2 → stacked. Container query + !important
    because the resolver writes spans inline; canvas-only — exported code
    keeps each DS's native responsive grid (this block never reaches the
    generated React/CSS output). */
@@ -13314,9 +14759,15 @@
   container-type: inline-size;
   container-name: zone-body-grid;
 }
-@container zone-body-grid (max-width: 1100px) {
-  /* dense KPI rows go 4-up → 3-up before they can clip */
-  .zone-drop-body.zone-grid > [style*="grid-column: span 3;"] { grid-column: span 4 !important; }
+/* No tier above the 2x2 one. The desktop frame is laid out at one design
+   width and scaled to the stage (frameFit.ts), so its body is the same
+   width in Edit and Present; the old wider tier (4-up -> 3-up) fired on
+   every desktop canvas and broke a 4-up KPI row into 3 + 1. The ladder is
+   now only for the tablet and mobile presets. */
+/* A block that spans rows (a chart beside a column of panels): on the
+   desktop frame only; narrower, every block is its own row. */
+@container zone-body-grid (min-width: 47.5625rem) {
+  .zone-drop-body.zone-grid > [style*="--row-span"] { grid-row: span var(--row-span); }
 }
 @container zone-body-grid (max-width: 760px) {
   /* third/quarter-row items fold to a clean 2x2 (half-row) */
@@ -13326,6 +14777,7 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
 }
 @container zone-body-grid (max-width: 640px) {
   /* deepest tier: everything stacks to full / half rows */
@@ -13336,7 +14788,13 @@
   .zone-drop-body.zone-grid > [style*="grid-column: span 7;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 8;"],
   .zone-drop-body.zone-grid > [style*="grid-column: span 9;"] { grid-column: span 12 !important; }
+  .zone-drop-body.zone-grid > [style*="--span-tablet"] { grid-column: span var(--span-tablet) !important; }
+  .zone-drop-body.zone-grid > [style*="--span-phone"] { grid-column: span var(--span-phone) !important; }
 }
+
+/* A block's own narrow-frame spans (LayoutProps.spanTablet / spanPhone, set
+   as custom properties by layoutResolver) win over the generic ladder.
+   The rules sit last inside the ladder's two tiers above. */
 
 /* Empty body zone state - visual dropzone. Now applies to
    zone-grid, zone-row, and zone-stack since the body zone's

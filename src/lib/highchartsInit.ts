@@ -12,6 +12,11 @@ export function ensureHighchartsModules() {
     require("highcharts/modules/solid-gauge"),
     require("highcharts/modules/heatmap"),
     require("highcharts/modules/treemap"),
+    /* Candlestick and OHLC series (the FX execution chart). */
+    require("highcharts/modules/stock"),
+    /* Screen-reader region, keyboard navigation of points, and no "consider
+       including the accessibility module" console warning per chart. */
+    require("highcharts/modules/accessibility"),
   ].forEach((m) => {
     const init = typeof m === "function" ? m : m?.default;
     if (typeof init === "function") init(Highcharts);

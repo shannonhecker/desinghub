@@ -41,6 +41,7 @@ export function buildLocalSessionSnapshot(s: BuilderStateSnapshot): LocalSession
     colorOverrides: s.colorOverrides,
     activeTemplateId: s.activeTemplateId,
   };
+  if (s.reportData) snapshot.reportData = s.reportData;
   /* flushActiveBody syncs the live `blocks` mirror into the active page so
      an in-progress page edit is never lost to a stale copy. */
   const flushed = flushActiveBody(s);
@@ -95,6 +96,8 @@ export function restoreLocalSession(session: RestorableLocalSession): boolean {
       selectedComponents: snap.selectedComponents ?? [],
       colorOverrides,
       activeTemplateId: snap.activeTemplateId ?? null,
+      reportData: snap.reportData ?? null,
+      reportState: {},
       hasOverrides: Object.keys(colorOverrides).length > 0,
       onboardingStep: "ready",
       currentSessionId: session.id,

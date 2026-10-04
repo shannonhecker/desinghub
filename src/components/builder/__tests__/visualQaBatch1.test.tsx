@@ -144,14 +144,13 @@ describe("bug 3: insertion slots must not consume grid tracks", () => {
   });
 
   it("narrow grid bodies re-span canonical widths via a tiered container-query ladder", () => {
-    /* Ladder: 4-up → 3-up (≤1100) → 2x2 (≤760) → stacked (≤640). The
-       1100px tier is what stops dense KPI rows clipping between ~640px and
-       the 1320px stage cap, where the old single 640px query never fired. */
-    expect(css).toMatch(/@container zone-body-grid \(max-width: 1100px\)/);
+    /* Ladder: 4-up → 2x2 (≤760) → stacked (≤640). There is deliberately no
+       wider tier: the desktop frame is laid out at one design width and
+       scaled to the stage (frameFit.ts), so a tier above the tablet width
+       would re-span every desktop canvas (a 4-up KPI row became 3 + 1). */
+    expect(css).not.toMatch(/@container zone-body-grid \(max-width: 1100px\)/);
     expect(css).toMatch(/@container zone-body-grid \(max-width: 760px\)/);
     expect(css).toMatch(/@container zone-body-grid \(max-width: 640px\)/);
-    /* ≤1100: quarter-row (span 3) folds to third-row (span 4) → 3-up */
-    expect(css).toMatch(/grid-column: span 3;"\] \{ grid-column: span 4 !important; \}/);
     /* ≤760 / ≤640: quarter-row → half-row (2x2) */
     expect(css).toMatch(/grid-column: span 3;"\] \{ grid-column: span 6 !important; \}/);
     /* ≤640: half-row → full row (stacked) */

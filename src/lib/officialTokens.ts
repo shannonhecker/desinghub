@@ -318,7 +318,15 @@ export function buildCarbonTokenCSS(): string {
     for (const [key, value] of Object.entries(tokens)) {
       if (isCssTokenValue(value)) decls.push(`${cdsVarName(key)}:${value};`);
     }
-    blocks.push(`.preview-carbon[data-cds-theme="${themeKey}"]{${decls.join("")}}`);
+    /* The second selector covers a `.preview-carbon` NESTED inside a themed
+       one and carrying no theme of its own (the canvas root sits inside the
+       themed dashboard). Without it that inner element matched only the bare
+       white default above and re-declared the white tokens - a dark Carbon
+       canvas painted a white body behind dark cards. :where() keeps the
+       ancestor out of the specificity, so an inner element with its OWN
+       data-cds-theme still wins. */
+    const themed = `.preview-carbon[data-cds-theme="${themeKey}"]`;
+    blocks.push(`${themed},:where(${themed}) .preview-carbon:not([data-cds-theme]){${decls.join("")}}`);
   }
   return blocks.join("\n");
 }

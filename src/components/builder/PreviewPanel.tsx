@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { fitFrame, FRAME_PRESETS } from "@/lib/frameFit";
 import {
   Monitor,
   Tablet,
@@ -19,6 +20,10 @@ import {
   User,
   Bell,
   Search,
+  Shield,
+  TrendingUp,
+  Layers,
+  Filter,
 } from "lucide-react";
 import {
   DndContext,
@@ -62,7 +67,10 @@ import { insertionIndexForDrop, layoutForFreeDrop, regridExistingBlock, type Rec
 import { SortableBlock } from "./SortableBlock";
 import { ZoneDropContainer } from "./ZoneDropContainer";
 import { PreviewToggle } from "./PreviewToggle";
+import { ReportDataButton } from "./ReportDataButton";
 import { usePreviewMode } from "@/store/usePreviewMode";
+import { BUILDER_TEMPLATES, VALID_TEMPLATE_IDS, type TemplateId } from "@/lib/builderTemplates";
+import { openTemplateLink } from "@/lib/applyTemplate";
 import { PreviewReadOnlyContext, usePreviewReadOnly } from "./previewReadOnly";
 
 /* ══════════════════════════════════════════════════════════
@@ -106,12 +114,11 @@ export function DSPreviewStyles() {
   return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }
 
-/* ── Viewport presets ── */
-const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = {
-  desktop: { width: 1200, height: 800, label: "1200 \u00d7 800" },
-  tablet: { width: 768, height: 1024, label: "768 \u00d7 1024" },
-  mobile: { width: 375, height: 812, label: "375 \u00d7 812" },
-};
+/* ── Viewport presets ──
+   One design size per device (frameFit.ts). The frame is always laid out
+   at that width and scaled to the stage, so Edit and Present share one
+   layout. */
+const PRESETS: Record<DeviceMode, { width: number; height: number; label: string }> = FRAME_PRESETS;
 
 /* ── Icon map for sidebar nav items ──
    Covers every icon key the builder templates use, plus a small set of
@@ -133,6 +140,11 @@ const NAV_ICON_MAP: Record<string, typeof MessageSquare> = {
   person: User,
   notifications: Bell,
   search: Search,
+  /* Report navigation (finance templates). */
+  shield: Shield,
+  trending_up: TrendingUp,
+  layers: Layers,
+  filter: Filter,
 };
 
 /* ── Sample chat messages for the empty state ── */
@@ -434,6 +446,10 @@ function PreviewBar() {
       {/* Density + Code + Compare live in the ⋯ overflow menu — power-user
          toggles that don't need primary bar weight. Keeps the canvas row
          focused on device / DS / mode. */}
+
+      {/* Report data: download the data template / upload real data. Renders
+         only when the template on the canvas is data-bound. */}
+      <ReportDataButton />
 
       {/* Reopen component library — only visible when the panel is
          closed. When open, the in-panel × button handles close. */}
@@ -739,6 +755,7 @@ function ZoneAddBar() {
    ══════════════════════════════════════════════════════════ */
 function DashboardHeader({ compact }: { compact: boolean }) {
   const headerBlocks = useBuilder((s) => s.headerBlocks);
+  const headerLayout = useBuilder((s) => s.zoneLayouts.header);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateHeaderBlockProps = useBuilder((s) => s.updateHeaderBlockProps);
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
@@ -747,7 +764,7 @@ function DashboardHeader({ compact }: { compact: boolean }) {
   const readOnly = usePreviewReadOnly();
 
   return (
-    <header className="bp-header">
+    <header className="bp-header" data-tone={headerLayout.tone} data-flush={headerLayout.flush ? "" : undefined}>
       <FrameTab zone="header" />
       <ZoneDropContainer zoneId="header" blocks={headerBlocks} direction="horizontal">
         {headerBlocks.map((block) => {
@@ -884,6 +901,25 @@ function DashboardSidebarResizeHandle({
   );
 }
 
+/** Width of a folded sidebar: an icon rail, or the wider rail of two-letter
+ *  codes a dense text navigation folds to. */
+const SIDEBAR_RAIL = 48;
+const SIDEBAR_RAIL_DENSE = 56;
+
+/** A nav item's or a tab's template, when it names one that exists. */
+function navTemplateId(v: unknown): TemplateId | null {
+  return typeof v === "string" && (VALID_TEMPLATE_IDS as readonly string[]).includes(v) ? (v as TemplateId) : null;
+}
+
+/** Two letters for a folded text nav item: the initials of a two-word
+ *  label ("Entity comparison" -> "EC"), else its first two letters. */
+export function navAbbreviation(label: string): string {
+  const words = label.trim().split(/[\s&/-]+/).filter(Boolean);
+  if (words.length === 0) return "";
+  const code = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2);
+  return code.toUpperCase();
+}
+
 /* ══════════════════════════════════════════════════════════
    Dashboard Sidebar - collapsible nav
    Driven by sidebarBlocks; labels are inline-editable; items can be added/removed
@@ -900,6 +936,7 @@ function DashboardSidebar({
   onWidthChange?: (w: number) => void;
 }) {
   const sidebarBlocks = useBuilder((s) => s.sidebarBlocks);
+  const sidebarLayout = useBuilder((s) => s.zoneLayouts.sidebar);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateSidebarBlockProps = useBuilder((s) => s.updateSidebarBlockProps);
   const setSidebarBlocks = useBuilder((s) => s.setSidebarBlocks);
@@ -909,6 +946,8 @@ function DashboardSidebar({
   const openNavPage = useBuilder((s) => s.openNavPage);
   const activePageId = useBuilder((s) => s.activePageId);
   const readOnly = usePreviewReadOnly();
+  const dense = sidebarLayout.dense === true;
+  const railWidth = dense ? SIDEBAR_RAIL_DENSE : SIDEBAR_RAIL;
 
   const handleSetActive = (id: string) => {
     setSidebarBlocks(
@@ -928,8 +967,11 @@ function DashboardSidebar({
   return (
     <motion.aside
       className="bp-sidebar"
+      data-tone={sidebarLayout.tone}
+      data-side={sidebarLayout.side}
       data-collapsed={collapsed ? "true" : undefined}
-      animate={{ width: collapsed ? 48 : width }}
+      data-dense={dense ? "" : undefined}
+      animate={{ width: collapsed ? railWidth : width }}
       transition={{ type: "spring", stiffness: 340, damping: 32 }}
     >
       {!collapsed && <FrameTab zone="sidebar" />}
@@ -939,7 +981,10 @@ function DashboardSidebar({
             /* Native NavItem rendering */
             if (block.type === "NavItem") {
               const iconKey = block.props.icon as string;
+              /* icon "none": a text item; folded, it shows a two-letter code. */
+              const noIcon = iconKey === "none";
               const Icon = NAV_ICON_MAP[iconKey] ?? MessageSquare;
+              const templateId = navTemplateId(block.props.templateId);
               /* Once the canvas is split into pages, the active tab follows the
                  active page; before that it uses the cosmetic `active` prop. */
               const active = activePageId != null ? activePageId === block.id : (block.props.active as boolean);
@@ -964,12 +1009,25 @@ function DashboardSidebar({
                          active nav. */
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (templateId) {
+                          /* A nav item that names a template is a link to
+                             that report: while presenting it opens it; in
+                             Edit it is just selected (opening it would
+                             replace the canvas being edited). */
+                          if (readOnly) openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
+                          else setSelectedBlock(block.id, "sidebar");
+                          return;
+                        }
                         openNavPage(block.id, String(block.props.label ?? "Page"));
                         handleSetActive(block.id);
                         if (!readOnly) setSelectedBlock(block.id, "sidebar");
                       }}
                     >
-                      <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
+                      {noIcon ? (
+                        collapsed ? <span className="bp-nav-abbr" aria-hidden="true">{navAbbreviation(String(block.props.label ?? ""))}</span> : null
+                      ) : (
+                        <Icon size={18} strokeWidth={active ? 2.2 : 1.5} />
+                      )}
                       {/* Plain span — was previously a framer-motion
                          <motion.span> animating width 0→auto, but that
                          left the inline `style` attribute in an
@@ -1081,6 +1139,7 @@ function DefaultChatArea({ messageKey }: { messageKey: number }) {
    ══════════════════════════════════════════════════════════ */
 function DashboardFooter() {
   const footerBlocks = useBuilder((s) => s.footerBlocks);
+  const footerLayout = useBuilder((s) => s.zoneLayouts.footer);
   const designSystem = useBuilder((s) => s.designSystem);
   const updateFooterBlockProps = useBuilder((s) => s.updateFooterBlockProps);
   const removeBlockFromZone = useBuilder((s) => s.removeBlockFromZone);
@@ -1089,7 +1148,7 @@ function DashboardFooter() {
   const readOnly = usePreviewReadOnly();
 
   return (
-    <footer className="bp-footer">
+    <footer className="bp-footer" data-tone={footerLayout.tone} data-flush={footerLayout.flush ? "" : undefined}>
       <FrameTab zone="footer" />
       <ZoneDropContainer zoneId="footer" blocks={footerBlocks} direction="horizontal">
         {footerBlocks.map((block) => {
@@ -1156,22 +1215,50 @@ function DashboardFooter() {
    ══════════════════════════════════════════════════════════
    Extracted from PreviewSidePanel's inline motion.div so the
    exact same frame can be reused by the full-stage Present mode
-   (PresentStage). Width/height come from the active device
-   preset; desktop is fluid (100%), tablet/mobile are fixed.
+   (PresentStage).
 
-   The spring is now wrapped in useReducedMotion — when a user
-   prefers reduced motion the width/height changes apply
-   instantly (duration 0) instead of springing. No guard existed
-   on the inline version; this is an additive a11y improvement. */
+   Every device preset has a fixed design width. The frame is laid
+   out at that width and, when the stage is narrower, scaled down to
+   fit (frameFit.ts) rather than re-flowed - so the layout in Edit
+   (chat + inspector docked, narrow stage) is the layout in Present.
+   CSS `zoom` rather than a transform: it scales layout too, so the
+   frame occupies its scaled size and pointer coordinates, drag and
+   chart hit-testing keep working without compensation.
+
+   The spring is wrapped in useReducedMotion — when a user prefers
+   reduced motion the width/height changes apply instantly
+   (duration 0) instead of springing. */
 export function DeviceFrame({ children }: { children: React.ReactNode }) {
   const deviceMode = useBuilder((s) => s.deviceMode);
   const reduceMotion = useReducedMotion();
   const preset = PRESETS[deviceMode];
-  const frameWidth = deviceMode === "desktop" ? "100%" : preset.width;
+  const frameRef = useRef<HTMLDivElement>(null);
+  /* Room the stage offers the frame (its parent's content box). */
+  const [avail, setAvail] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const stage = frameRef.current?.parentElement;
+    if (!stage || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const cs = getComputedStyle(stage);
+      const width = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const height = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      setAvail((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(stage);
+    return () => ro.disconnect();
+  }, []);
+
+  const fit = fitFrame(preset.width, preset.height, avail.width, avail.height);
   return (
     <motion.div
+      ref={frameRef}
       className="bp-device-frame"
-      animate={{ width: frameWidth, maxHeight: preset.height }}
+      data-frame-zoom={fit.zoom}
+      style={{ zoom: fit.zoom }}
+      animate={{ width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
       {children}
@@ -1217,6 +1304,7 @@ export function BuilderCanvas({
   resizableSidebar = false,
   allowEmptyState = false,
 }: BuilderCanvasProps) {
+  const plainCanvas = useBuilder((st) => st.zoneLayouts.body.plain === true);
   const designSystem = useBuilder((s) => s.designSystem);
   const density = useBuilder((s) => s.density);
   const previewKey = useBuilder((s) => s.previewKey);
@@ -1253,14 +1341,19 @@ export function BuilderCanvas({
     blocks.length > 0 ||
     selectedBlockId !== null;
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  /* Folded or not is part of the canvas (zoneLayouts.sidebar.collapsed), so
+     it survives a reload, travels with a template and can be set from chat.
+     Until someone chooses, a sidebar is expanded - except on the tablet
+     frame, where it starts as a rail so the page keeps a usable width. */
+  const sidebarCollapsedChoice = useBuilder((s) => s.zoneLayouts.sidebar.collapsed);
+  const sidebarCollapsed = sidebarCollapsedChoice ?? (responsive && deviceMode === "tablet");
   /* PR3: the sidebar (left panel) width persists via zoneLayouts.sidebar.size
      (a TRACKED_KEY) instead of ephemeral local state, so a resize survives
      reload + sessions instead of snapping back to 180. */
   const dashSidebarWidth = useBuilder((s) => s.zoneLayouts.sidebar.size ?? 180);
   const setZoneLayoutFn = useBuilder((s) => s.setZoneLayout);
   const setDashSidebarWidth = useCallback((w: number) => setZoneLayoutFn("sidebar", { size: w }), [setZoneLayoutFn]);
-  const handleSidebarToggle = useCallback(() => setSidebarCollapsed((v) => !v), []);
+  const handleSidebarToggle = useCallback(() => setZoneLayoutFn("sidebar", { collapsed: !sidebarCollapsed }), [setZoneLayoutFn, sidebarCollapsed]);
   /* Full-width support: a template/layout with no sidebar blocks (landing,
      ecommerce, blog, portfolio — top-nav marketing pages) should render
      full-width, not show an empty rail. Dropping a sidebar block from the
@@ -1273,6 +1366,7 @@ export function BuilderCanvas({
   const headerVisible = useBuilder((s) => s.zoneLayouts.header.visible !== false);
   const sidebarVisible = useBuilder((s) => s.zoneLayouts.sidebar.visible !== false);
   const footerVisible = useBuilder((s) => s.zoneLayouts.footer.visible !== false);
+  const sidebarSide = useBuilder((s) => s.zoneLayouts.sidebar.side);
 
   /* Responsive shells compact the header + drop the sidebar on the
      mobile device; the standalone pop-out stays full desktop layout.
@@ -1292,12 +1386,15 @@ export function BuilderCanvas({
       <ZoneAddBar />
       {headerVisible && <DashboardHeader compact={compact} />}
 
-      <div className="bp-body">
+      <div className="bp-body" data-sidebar-side={sidebarSide}>
         {showSidebar && (
           <DashboardSidebar
             collapsed={sidebarCollapsed}
             onToggle={handleSidebarToggle}
-            width={resizableSidebar ? dashSidebarWidth : undefined}
+            /* The same width in Edit and Present: a template's (or a
+               dragged) width must not snap back to the default when the
+               canvas is presented. */
+            width={dashSidebarWidth}
             onWidthChange={resizableSidebar ? setDashSidebarWidth : undefined}
           />
         )}
@@ -1312,7 +1409,7 @@ export function BuilderCanvas({
           />
         )}
 
-        <main className="bp-main">
+        <main className="bp-main" data-plain={plainCanvas ? "" : undefined}>
           {allowEmptyState && !hasContent ? (
             <DefaultChatArea messageKey={previewKey} />
           ) : (
@@ -2007,7 +2104,11 @@ export function PreviewSidePanel() {
   };
 
   return (
-    <div className={`preview-side ${previewOpen ? "open" : ""}`}>
+    /* `inert` while closed: the panel stays mounted and is only slid out of
+       view, so without it every canvas control was still in the tab order
+       and exposed to screen readers - on the start screen Tab walked through
+       ~17 invisible buttons before reaching the prompt. */
+    <div className={`preview-side ${previewOpen ? "open" : ""}`} inert={!previewOpen}>
       {/* Inject DS-specific CSS (Carbon tokens + .cb-* component rules). */}
       <DSPreviewStyles />
       {/* Single consolidated preview toolbar (Phase F.2) */}

@@ -42,6 +42,102 @@
   --bc-content-cap-marketing: 1120px; /* landing / ecommerce / portfolio */
   --bc-gutter:                clamp(16px, 2.5vw, 32px); /* fluid page gutter */
 
+  /* Framed panel (PanelFrame.tsx) type sizes. The panel's box sizes come
+     from panelMetrics.ts; these two are its only fixed type sizes. */
+  --dh-panel-title-size: 15px;
+  --dh-panel-meta-size:  12px;
+  --bc-hairline:         1px;
+  /* Navigation bars (ChromeBars.tsx) and the "dark" chrome tone: dark
+     application chrome in light and dark mode alike. Sizes are the same in
+     every design system so the body starts at the same point. */
+  --bc-topnav-h:            44px;
+  --bc-tabstrip-h:          36px;
+  /* Context bar (title + inline filters) and the report canvas: a dense
+     application page. One gutter for the bars, the canvas and its gaps. */
+  --bc-contextbar-h:        40px;
+  --bc-contextbar-title:    13px;
+  --bc-contextbar-filter-w: 172px;
+  --dh-report-gutter:       24px;
+  --dh-inline-control-h:    24px;
+  --dh-inline-font:         12px;
+  /* FX execution: the instrument header and the chart's rail and range chips. */
+  --dh-instrument-symbol:   20px;
+  --dh-instrument-pips:     22px;
+  --dh-instrument-side-w:   64px;
+  --dh-instrument-row:      44px;
+  --dh-instrument-sub:      28px;
+  --dh-exec-btn:            32px;
+  --dh-exec-chip-h:         26px;
+  --dh-exec-flyout-w:       200px;
+  /* Dense text navigation. */
+  --dh-nav-row:             28px;
+  --dh-nav-row-rail:        36px;
+  --dh-nav-size:            13px;
+  --dh-nav-inset:           12px;
+  --dh-nav-pad:             8px;
+  --dh-nav-group-pad:       14px;
+  --dh-nav-bar:             3px;
+  --dh-panel-viewby-label:  26rem;
+  --bc-bar-gap:             24px;
+  --bc-bar-font:            13px;
+  --bc-bar-mark:            24px;
+  --dh-navgroup-size:       11px;
+  --dh-page-title-size:     24px;
+  --bc-chrome-dark:         #15171d;
+  --bc-chrome-dark-raised:  #20232b;
+  --bc-chrome-dark-fg:      #eceef2;
+  --bc-chrome-dark-fg-dim:  #a9afbb;
+  --bc-chrome-dark-line:    rgba(255, 255, 255, 0.10);
+  /* Brand mark letter: white on the system accent. --ds-on-primary is not
+     safe here (Salt maps it to an accent TEXT colour, teal on teal). */
+  --bc-chrome-mark-fg:      #ffffff;
+  /* Tone swatch in the zone layout overlay. */
+  --zlo-swatch:             12px;
+  --bc-gutter-narrow:       16px;
+  --dh-panel-viewby-min:    88px;
+  /* Body drop zone: the edge that lights up while dragging over it. */
+  --bc-drop-edge:           2px;
+  /* Rich grid cells (SimulatedDataGrid). */
+  --dh-cell-gap:            6px;
+  --dh-cell-bar-h:          6px;
+  --dh-cell-bar-value-w:    44px;
+  --dh-cell-chip-h:         20px;
+  --dh-cell-chip-pad:       0 8px 0 6px;
+  --dh-cell-badge:          22px;
+  --dh-cell-small:          11px;
+  --dh-cell-dot:            8px;
+  --dh-record-size:         13px;
+  /* Panel padding outside a PanelFrame (which sets the same value inline). */
+  --dh-panel-pad:           16px;
+  /* Report blocks (ReportBlocks.tsx). */
+  --dh-entity-title-size:   22px;
+  --dh-tile-value-size:     22px;
+  --dh-tile-sub-value-size: 15px;
+  --dh-verdict-figure-size: 44px;
+  --dh-verdict-status-size: 18px;
+  --dh-hero-title-size:     28px;
+  --dh-hero-search-h:       44px;
+  --dh-hero-search-max:     540px;
+  --dh-launcher-accent:     3px;
+  /* Template gallery in the chat. */
+  --tpl-desc-size:          11px;
+  --tpl-chip-gap:           6px;
+  --tpl-chip-pad:           4px 12px;
+  --tpl-chip-on-accent:     #15102a;
+  --bc-bar-gap-narrow:      16px;
+  /* Panel tools, expanded panel and configuration drawer (PanelFrame.tsx). */
+  --dh-panel-tool-size:  28px;
+  --dh-focus-ring:       2px;
+  --bc-expand-gap:       16px;
+  --dh-config-w:         320px;
+  --dh-config-header-h:  56px;
+  /* Leading glyph size in a labelled canvas-toolbar button. */
+  --bc-toolbar-glyph: 16px;
+  /* Width of the accent bar on a selected master-grid row. */
+  --dh-grid-select-bar: 3px;
+  /* Header height when a canvas pins its structure across design systems. */
+  --bc-uniform-header-h: 64px;
+
   /* Text */
   --bc-fg:          rgba(245, 247, 250, 0.96);
   --bc-fg-muted:    rgba(245, 247, 250, 0.62);

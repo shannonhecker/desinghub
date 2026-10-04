@@ -6,6 +6,303 @@ Dates are YYYY-MM-DD.
 
 ## [Unreleased]
 
+### 2026-10-06 finance templates, slice 4: FX execution (`feat/finance-templates-slice-4`, stacked on the density pass)
+
+The last report: one algo order worked through a session. Design note:
+`docs/superpowers/specs/2026-10-06-finance-templates-slice-4-design.md`.
+
+#### Added
+- **FX Execution** template. An instrument header (pair, last bar, a
+  two-sided quote, the orders as tabs), one large chart, and beside it the
+  order's statistics, a passive / aggressive gauge and a venue donut. Bound
+  to a new sample dataset (`execution`: a session of one-minute bars, an
+  hourly history, two orders, their fills by venue and their execution
+  states; seeded, so it is the same on every load). Measured: every block at
+  the same position and size (0px) in all five design systems, light and
+  dark; Edit matches Present; nothing clipped on tablet or phone.
+- **Execution chart** block. Bid, ask and mid (or candlesticks, or OHLC), the
+  limit price, average fill, session TWAP, percent done, fills sized by
+  volume and coloured by venue, the periods the order was held back, the
+  benchmarks, a volume strip, and price tags against the right axis. Its
+  rail sets the interval, chart type, overlays and chart / table; the chips
+  under it set the range. Every choice is report state, so the chat sets
+  them too ("switch to candlestick", "set the interval to 5m").
+- **Instrument header** block (header zone).
+- **Cross-filter.** A venue picked in the donut or on the chart dims the
+  other venues' fills. Choosing the other order re-reads every block.
+- **Gauge** `gaugeSweep` (a 220 degree thin ring) and `gaugeCaption`.
+  **Record pairs**: signed figures with a tone, a prefix / suffix, banded rows.
+- **Grid layout** `rowSpan`: a block can span rows on the desktop frame, so a
+  tall chart sits beside a column of panels.
+- **Export.** The header as text; the chart as a combination chart of its
+  lines; the panels as elsewhere.
+
+#### Left out (see the design note)
+The trading behaviour of the original: the live ticking feed, the order
+ticket, drag-to-amend, drawing tools, alerts, context menus, wheel zoom, the
+Go to and Compare dialogs. Venue names and order ids are invented.
+
+
+### 2026-10-06 finance templates: density and fidelity pass (`feat/finance-templates-density`, stacked on slice 3)
+
+The twelve finance templates checked side by side against the reports they
+are modelled on, and brought to the same density, surfaces and controls.
+
+#### Changed
+- **Surfaces.** White cards on a grey canvas in light themes (a raised card
+  on the page colour in dark). The configuration drawer is a card too.
+- **Density.** Top bar 44px, tab strip 36px, panel header 48px, panel padding
+  20px, canvas gutters 24px, grid rows 28px under a 30px header.
+- **Context bar** (new block, header zone). The page title and the report's
+  filters on one compact line under the tab strip, replacing the title and
+  filter row in the body.
+- **Inline dropdown** (`inline: true`). The label beside an underlined select,
+  in every design system: Salt primary, Material standard, Fluent underline,
+  Carbon inline, uoaui. Used by the context bar, a panel's "View by" and the
+  configuration drawer.
+- **Left navigation.** Text items under section labels, expanded by default;
+  collapses to a rail of two-letter codes, and the choice is kept. Items and
+  workspace tabs open their report while presenting, keeping the collapsed
+  rail and any filter both reports share (the same entity, the same currency).
+- **Narrow panels** stack their header (title, then "View by" and the tools)
+  instead of hiding the tools until hover.
+- **Data marks** have square corners and a one-pixel separator in the card's
+  colour, so adjacent marks are told apart by more than colour.
+
+- **Score gauges** fit their tile: the dome is sized from the smaller side of
+  the plot (it was cut off at the sides of a narrow tile), with a thinner
+  ring and no text outline.
+- **Analytics Home** sits on a plain page as the original does: no context
+  bar, the Class and Theme filters beside "All dashboards", the list as a
+  bare table.
+- **Entity Comparison** has its "Comparing ... vs ..." heading, summary cards
+  with an accent edge, and one label / value pair per line.
+- **Issuer Climate**'s entity header is a card.
+- **Panel heights and column widths** re-fitted to the dense rows, so no grid
+  scrolls sideways and none carries a band of empty space it does not need.
+
+#### Added
+- **Data level.** A grid can show a hierarchy: each group, then what it
+  holds, indented. Performance results and the Risk summary show accounts
+  and their asset classes; expanded, they go down to the securities. The
+  panel's Configuration has a "Data level" setting (full hierarchy, each
+  shorter path, or the last level on its own).
+- **Expanded panels show more.** A top-N chart shows every row; Allocation
+  and Returns put a deeper table under the chart (each slice and its
+  securities; returns by account and asset class). Escape collapses the
+  panel without leaving Present.
+- **Export.** The context bar, section titles and hierarchical grids.
+
+#### Known gaps
+- Screening Changes has no "Period start / Period end" pickers: the sample
+  data holds one period.
+- Screening pages have no Currency filter (they show no money).
+
+
+### 2026-10-05 finance templates, slice 3: issuer reports, scorecard, home (`feat/finance-templates-slice-3`, stacked on slice 2)
+
+Six more client reports as builder templates. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-3-design.md`.
+
+#### Added
+- **Issuer Climate, Issuer Business Involvement, Issuer Controversies, Entity
+  Comparison, Governance Scorecard, Analytics Home.** Bound to a new sample
+  dataset (`issuer`: five invented issuers). The issuer shown is report
+  state: an "Entity" filter sets it and every panel re-reads its rows.
+  Measured: every panel at the same position and size (0px difference) in all
+  five design systems, light and dark; Edit matches Present; nothing clipped
+  on tablet or phone.
+- **Blocks.** Entity header (name, facts, count badges); metric tile (icon,
+  figure, sub-figures, chips, and a selectable state that filters other
+  panels); verdict card (a judgement stated large, with a progress bar and
+  the figures behind it); launcher card (opens another template while
+  presenting); hero with a search field.
+- **Charts.** Radar; pathway corridor (a dashed ceiling, the path under it and
+  the band between); a value axis that prints labels (a rating trend).
+- **Grid.** Dot and chip cells; group heading rows with indented rows beneath,
+  carrying sums and counts; a "View by" that swaps one column for another.
+- **Bindings.** A filter can keep several values (an entity and the one it is
+  compared with, or an entity beside its benchmark); a sort can follow state.
+- The Sustainable Investment sidebar lists every page of the section, in four
+  groups.
+- Chat: the six templates by name. A template name inside a longer one
+  ("issuer climate template") is matched correctly.
+- **Export.** The new blocks, cells, heading rows and charts in React, HTML
+  and Vite exports.
+
+#### Different from the source reports (see the design note)
+- The issuer is chosen from an "Entity" dropdown, not from the page title.
+- Entity Comparison's second issuer is a filter; in the source it is fixed.
+- Left out: the duplicate "Business Involvement & Controversies" page, Home's
+  Configuration, Approvals and Reports Repository pages, the "Select data"
+  dialog, and controls that do nothing in the source.
+
+### 2026-10-04 finance templates, slice 2: Sustainable Investment (`feat/finance-templates-slice-2`, stacked on slice 1)
+
+Four more client reports as builder templates. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-2-design.md`.
+
+#### Added
+- **ESG Analytics, Climate Analytics, Screening, Screening Changes.** One
+  block list each, bound to a new sample dataset (`sustainable`: about 36
+  securities with scores, emissions, ratings and monthly trends). Measured:
+  every panel at the same position and size (0px difference) in all five
+  design systems, light and dark; Edit matches Present; nothing clipped on
+  tablet or phone. They share the finance header and add the section's
+  grouped sidebar.
+- **Selections that scope the page.** A row of the ESG or Climate summary
+  re-scopes the gauges, charts and rankings; a bar of the Screening waterfall
+  filters the universe grid; a row of a security grid opens its detail.
+- **Rich grid cells, described as data** (`GridCell`): heat tint by bucket,
+  bar, delta chip, arrow delta with a sparkline, sparkline, rating badge,
+  toned word, country flag, rank. Tones (good / mid / bad / neutral / accent)
+  resolve to each design system's status colours.
+- **Charts.** `waterfall`; a score gauge (its own scale and decimals, larger
+  in a panel); per-point colours by position or by name; selectable points
+  that dim the rest; wrapped category labels.
+- **Record Detail block.** The selected row of a grid as label/value pairs,
+  small tables with direction arrows and a trend line; a fixed panel, so the
+  page keeps its geometry whether or not something is selected.
+- **Bindings.** `records` (a table's own rows as a grid), `value` (one
+  figure, for a gauge), signed parts with a closing sum, ranked grids, and
+  selections made from a chart.
+- Chat: the four templates by name; gallery thumbnails.
+- **Export.** React, HTML and Vite exports carry the rich cells, the
+  waterfall, the score gauges, point colours, the record detail and the
+  sidebar. The HTML export lists a waterfall's steps with a running total and
+  writes a gauge as "6.34 of 10".
+
+#### Fixed
+- A gauge's track drew black when the primary colour was not a hex string.
+- A panel title beside a "View by" select lost a fraction of a pixel and was
+  ellipsised although it fitted.
+- A selectable chart or grid no longer selects its block while presenting.
+
+#### Different from the source reports (see the design note)
+- Data is real, not staged: a selection filters the same rows the grids show,
+  so figures do not match the source screens digit for digit.
+- The security detail is a fixed panel, not a rail that pushes in.
+- Screening's filter side panel and the controls that do nothing in the
+  source (period dropdowns, download, overflow menus) are left out.
+
+### 2026-10-04 finance templates, slice 1: Risk and Performance (`feat/finance-templates-slice-1`, stacked on the trust fixes)
+
+Two analytics reports become builder templates, built from builder blocks only
+and identical in every design system. Design note:
+`docs/superpowers/specs/2026-10-04-finance-templates-slice-1-design.md`.
+
+#### Added
+- **Risk Analytics and Performance Analytics templates.** One block list each,
+  no per-system forks. Measured: every panel sits at the same position and
+  size (0px difference) in Salt, Material 3, Fluent 2, uoaui and Carbon, in
+  light and dark, and Edit matches Present. Neutral names and a made-up brand
+  ("Meridian Analytics").
+- **They are live.** Context filters (currency, fee type, periodicity,
+  benchmark), each panel's "View by", and the selected row of the master grid
+  re-derive the charts and grids. Data lives in a small report-data layer
+  (`src/lib/reportData/`): plain tables, a query engine (group, pivot,
+  aggregate, filter, share, total), computed measures and block bindings.
+- **Bring your own data.** Download the data template as Excel, fill it in,
+  upload it: the report redraws from it. Uploaded data stays in the browser
+  (it is left out of the cloud snapshot).
+- **Panel tools.** Expand a panel to the full canvas; a configuration drawer
+  swaps chart and grid, chart type, rows, columns, values and aggregation
+  (a pivot tool built on AG Grid Community; no Enterprise licence).
+- **Blocks.** `DataGrid` (grouped headers, number formats, pinned totals, row
+  selection); chart kinds `combination`, `stacked-bar`, `stacked-area`; framed
+  panels with title, subtitle and "View by"; `TopNav`, `TabStrip`, `NavGroup`,
+  `PageTitle`.
+- **Header, sidebar and footer are restylable.** A zone has a tone (surface,
+  transparent, inverse, dark, accent), can run edge to edge so bars stack,
+  can be hidden, and the sidebar can dock right. Controls are in the zone
+  overlay in Edit and in the chatbot's `setZoneLayout`.
+- **Chatbot.** New tools `applyTemplate` and `setReportFilter`; the canvas
+  manifest lists the template, zone tones and every report control with its
+  choices. Without a model, "use the risk analytics template in Carbon,
+  light", "show it in USD" and "view by sector" are applied directly.
+- **Template gallery.** Category chips (All / General / Finance), a
+  description on each card, and "Use this" applies in one step.
+- **Tablet and phone.** Blocks can declare how they fold
+  (`layout.spanTablet`, `layout.spanPhone`); the two templates do. Nothing is
+  clipped at 768 or 375.
+- **Dropdowns** render and export their own label, value and options in all
+  five systems (they showed "Option 1 / Option 2").
+- **Export.** React, HTML and Vite exports carry a finance template's data
+  (bound blocks are resolved against the active dataset and filters), its
+  panels, data tables, header bars, page title and zone tones; hidden zones
+  are left out. The HTML export shows a chart's data as a table.
+
+#### Fixed
+- Edit did not match Present on a canvas with a removed frame: the
+  "+ Sidebar / + Footer" bar took a row and pushed the page down. It floats
+  over the frame's corner now.
+- The body was up to 2px wider in Edit than in Present (a transparent border
+  snapped to device pixels at a fractional scale).
+- Compact money read "£3.55bn" in one browser and "£3.55B" in another; the
+  formatter now scales and suffixes values itself.
+- In Present, using a live filter also selected its block for the amend
+  composer and closed the menu.
+- Card outlines and dividers use each system's secondary border; the primary
+  one read as a hard line around every panel in dark themes.
+
+#### Tests
+- `e2e/builder-finance-templates.spec.ts`: four-sided 1px parity across five
+  systems in light and dark, Edit = Present, filters and View by, chat
+  commands, tablet and phone clipping.
+- Unit tests for the query engine, bindings, workbook import/export, the
+  templates, panel configuration, chrome blocks, chat tools and manifest.
+
+#### Not verified
+- The model-driven chat path (`applyTemplate`, `setReportFilter` called by the
+  model) is unit-tested only: there is no model key locally or in the Preview
+  environment. The no-model commands are verified in the browser.
+
+### 2026-10-04 trust fixes: chatbot, saving, layout parity (`fix/trust-fixes-chat-parity`, open for review)
+
+From a walkthrough of the live builder on 2026-10-03 plus a second, independent
+audit. Unit tests, the e2e suite and browser screenshots cover every item
+except the first, which needs a model key to exercise end to end.
+
+#### Fixed
+- **The chatbot never added anything.** `/api/chat` made one model request and
+  never returned a `tool_result`, so the API ended each turn at the model's
+  first batch of calls: a build that opened with `clearCanvas` stopped there.
+  The route now acknowledges each call and continues the turn until the model
+  stops asking for tools (at most 8 requests). Unit-tested with a scripted
+  stream; **not yet verified against the real model** (no key locally or in
+  the Preview environment).
+- **Theme switches in chat.** Matched by substring: any message containing
+  "dark" or "light" was answered "Theme updated!" without reaching the model,
+  "switch to Carbon in light mode" changed only the mode, and offline the word
+  "switch" added a toggle group. Now parsed by word, across all five systems
+  (`src/lib/themeCommand.ts`).
+- **"Couldn't save - Missing or insufficient permissions."** The first save of
+  a new session read a doc that did not exist yet, which the rules refuse.
+  `firestore.rules` is updated too and needs deploying to take effect.
+- **Saves dropped mid-save.** A save that came due while another was in flight
+  was discarded; it is now queued (`src/lib/coalescedRunner.ts`).
+- **Work lost on refresh.** Applying a template from the chat never started a
+  session, so nothing was saved; a refresh always landed on the start screen;
+  an edit inside the save debounce was lost. Sessions now start in
+  `applyTemplateToCanvas`, the open session is reopened on load
+  (`src/lib/activeSession.ts`), and a pending save is written on page hide.
+- **Layout differed by design system.** The body overflowed its container by
+  two gutters in every system but Carbon (clipping the right-hand column), and
+  Carbon's narrower body re-wrapped its KPI row. Grid tracks are now
+  `minmax(0, 1fr)`.
+- **Edit did not match Present.** The frame took whatever width the stage had
+  left, so Edit (chat docked) re-flowed a desktop dashboard. The frame is now
+  laid out at one design width per device and scaled to the stage
+  (`src/lib/frameFit.ts`). Desktop design width is 1320.
+- **Carbon dark painted a white body** behind dark cards; **Carbon stat cards
+  showed progress as a green "+N%"** in the canvas and the React export.
+- **Start-screen tab order** walked through about 17 hidden canvas controls.
+
+#### Added
+- `e2e/builder-layout-parity.spec.ts`: no sideways clipping, identical columns
+  across the five systems in light and dark, and Edit == Present.
+
+
 ### 2026-06-15 cold-start + UI-Kit + responsive batch (5 PRs, open for review)
 
 Produced by a recon then build then adversarial-verify agent pipeline; each PR is

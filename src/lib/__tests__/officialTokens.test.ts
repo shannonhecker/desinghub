@@ -105,12 +105,24 @@ describe("officialTokens — Carbon CSS is scoped + official", () => {
     expect(css).not.toMatch(/(^|[\s,}])(:root|html|body|\*)\s*\{/);
   });
 
+  /* The canvas root is a .preview-carbon nested inside the themed dashboard
+     and has no data-cds-theme itself. It must take the dashboard's theme, not
+     fall back to the bare white default (a dark Carbon canvas used to paint a
+     white body behind dark cards). */
+  it("a nested, un-themed .preview-carbon takes its themed ancestor's tokens", () => {
+    for (const key of ["white", "g10", "g90", "g100"]) {
+      expect(css).toContain(
+        `.preview-carbon[data-cds-theme="${key}"],:where(.preview-carbon[data-cds-theme="${key}"]) .preview-carbon:not([data-cds-theme]){`,
+      );
+    }
+  });
+
   it("emits ONLY --cds-* custom properties (no resets / component rules)", () => {
-    // Strip the .preview-carbon selectors (bare default block + the
-    // [data-cds-theme] per-theme blocks), then every declaration left must be
-    // a --cds-* custom property.
+    // Strip every selector (the bare default block + the per-theme blocks,
+    // each of which also lists the nested un-themed form), then every
+    // declaration left must be a --cds-* custom property.
     const decls = css
-      .replace(/\.preview-carbon(\[[^\]]*\])?\{/g, "")
+      .replace(/(^|\})[^{}]*\{/g, "$1")
       .replace(/\}/g, ";");
     const props = decls.split(";").map(s => s.trim()).filter(Boolean);
     expect(props.length).toBeGreaterThan(50);

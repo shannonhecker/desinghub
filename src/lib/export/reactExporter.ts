@@ -8,10 +8,26 @@ import type { Block, ZoneId, ZoneLayout } from "@/store/useBuilder";
 import { blockToRealJsx, collectImports, type SystemId } from "@/lib/componentApiRegistry";
 import { layoutToJsx, collectLayoutImports, type LayoutChild, type LayoutPrimitive } from "@/lib/layoutRegistry";
 import { computeGroupStyle } from "@/lib/layoutResolver";
-import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource } from "./chartExporter";
+import { isChartBlock, hasCharts, chartBlockJsx, chartImports, chartHelperSource, usesExtendedChart, usesShapeChart } from "./chartExporter";
 import { jsxText, jsxAttr } from "./escape";
 import { spanOf, startOf } from "./gridSpan";
 import { buildStylesCss } from "./stylesCss";
+import { materialiseCanvas } from "./materialise";
+import {
+  JSX_DIALECT,
+  RECORD_PANEL_BLOCK_TYPE,
+  RECORD_TREND_HEIGHT,
+  dropdownLines,
+  indentLines,
+  recordPanelHasTrend,
+  recordPanelLines,
+  reportBlockLines,
+  shellSidebarAttr,
+  usesChromeShell,
+  usesReportBlocks,
+  usesRichReport,
+  zoneAttrs,
+} from "./reportMarkup";
 
 /* Generic-fallback variant/status are concatenated into a className string, so
    they must be a known, slug-safe token (never free text). Validate against the
@@ -142,12 +158,40 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
   /* Charts emit a runnable <ChartBlock> (real Highcharts) — handled before the
      registry-first path since the ComponentAPIRegistry doesn't cover charts. */
   if (isChartBlock(block.type)) {
-    return indent + chartBlockJsx(block, mode);
+    /* A framed chart is several lines (its panel around it). */
+    return indentLines(chartBlockJsx(block, mode).split("\n"), indent);
+  }
+  /* The record panel: its trend is a small line chart through the same
+     <ChartBlock> (the title sits above it, the single series needs no legend). */
+  if (block.type === RECORD_PANEL_BLOCK_TYPE) {
+    const lines = recordPanelLines(JSX_DIALECT, block, (trend) => [
+      chartBlockJsx(
+        {
+          id: `${block.id}-trend`,
+          type: "HighchartLine",
+          props: {
+            chartType: "line",
+            title: trend.title ?? trend.seriesName,
+            categories: trend.categories,
+            series: [{ name: trend.seriesName, data: trend.points }],
+            height: RECORD_TREND_HEIGHT,
+            legend: false,
+          },
+        },
+        mode,
+        { hideTitle: true },
+      ),
+    ]);
+    return indentLines(lines, indent);
   }
   /* Prefer real DS-component JSX from the ComponentAPIRegistry; fall back to
      the generic markup for blocks / DSs the registry doesn't cover yet. */
   const real = blockToRealJsx(system, block);
   if (real) return real.split("\n").map((line) => indent + line).join("\n");
+  /* Report blocks no design system covers: the application chrome (TopNav,
+     TabStrip, NavGroup, PageTitle) and the data grid, as semantic markup. */
+  const report = reportBlockLines(JSX_DIALECT, block);
+  if (report) return indentLines(report, indent);
   const p = block.props;
   switch (block.type) {
     case "Spacer": {
@@ -215,7 +259,9 @@ function blockToJSX(block: Block, indent: string, system: SystemId, mode: "light
     case "SimulatedDialog":
       return `${indent}<dialog className="dialog">\n${indent}  <h3>${jsxText(p.title, "Dialog")}</h3>\n${indent}  <p>${jsxText(p.message)}</p>\n${indent}  <button>Close</button>\n${indent}</dialog>`;
     case "SimulatedDropdown":
-      return `${indent}<select className="dropdown">\n${indent}  <option value="">${jsxText(p.placeholder, "Select...")}</option>\n${indent}</select>`;
+      /* The block's own label, options and chosen value (dropdownModel) -
+         the same reading the canvas and the registry emitters use. */
+      return indentLines(dropdownLines(JSX_DIALECT, block, fieldId(block.id)), indent);
     case "AppBrand":
       return `${indent}<div className="app-brand">${jsxText(p.label, "App")}</div>`;
     case "StatusPill":
@@ -254,8 +300,15 @@ function renderZone(
   layout: ZoneLayout | undefined,
   useDsLayout: boolean,
   usedPrimitives: Set<LayoutPrimitive>,
+  /* Application-chrome canvas: wrap the zone in its landmark even when the
+     DS primitive lays it out, so tone / flush / the shell grid apply. */
+  chromeShell = false,
 ): string {
   if (blocks.length === 0) return "";
+  const tag = zoneTag(zoneName);
+  /* Tone, flush and side of a chrome zone, as data attributes the stylesheet
+     reads. Empty for a zone that sets none (the common case). */
+  const attrs = zoneAttrs(layout);
   /* When we're emitting real DS code, let the DS own the layout: wrap the
      zone's blocks in the DS's real grid/stack/row primitive (carrying each
      block's canonical 12-fr span), instead of a custom `zone-*` div. */
@@ -293,6 +346,9 @@ function renderZone(
     );
     if (wrapped) {
       usedPrimitives.add(prim);
+      if (chromeShell) {
+        return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}" data-layout="ds"${attrs}>\n${indent}    ${wrapped}\n${indent}  ${tag.close}`;
+      }
       return `${indent}  {/* ${zoneName} */}\n${indent}  ${wrapped}`;
     }
   }
@@ -306,8 +362,7 @@ function renderZone(
       return `${indent}    <div style={{ ${hs} }}>\n${blockToJSX(b, indent + "      ", system, mode)}\n${indent}    </div>`;
     })
     .join("\n");
-  const tag = zoneTag(zoneName);
-  return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}">\n${inner}\n${indent}  ${tag.close}`;
+  return `${indent}  {/* ${zoneName} */}\n${indent}  ${tag.open} className="zone-${zoneName.toLowerCase()}"${attrs}>\n${inner}\n${indent}  ${tag.close}`;
 }
 
 /** One file of a multi-file export. */
@@ -323,15 +378,29 @@ export interface ExportFile {
  * tabs and downloads them together; exportReact() alone is the .tsx.
  */
 export function exportReactFiles(): ExportFile[] {
-  const s = useBuilder.getState();
   return [
     { path: "dashboard.tsx", contents: exportReact(), mime: "text/typescript" },
-    {
-      path: "styles.css",
-      contents: buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light"),
-      mime: "text/css",
-    },
+    { path: "styles.css", contents: exportStylesCss(), mime: "text/css" },
   ];
+}
+
+/** The stylesheet that goes with the React component (styles.css, and
+ *  src/styles.css of the Vite project). It carries the rich-cell and record
+ *  panel rules, and the report card block rules, only when the canvas draws
+ *  them. */
+export function exportStylesCss(): string {
+  const s = useBuilder.getState();
+  const canvas = materialiseCanvas(s);
+  const all = [...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer];
+  return buildStylesCss(s.designSystem as SystemId, s.mode === "dark" ? "dark" : "light", { rich: usesRichReport(all), blocks: usesReportBlocks(all) });
+}
+
+/** True when the React export of the current canvas draws charts: a chart
+ *  block, or a record panel whose selected record has a trend. */
+export function exportUsesCharts(): boolean {
+  const canvas = materialiseCanvas(useBuilder.getState());
+  const all = flattenBlocks([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
+  return all.some((b) => isChartBlock(b.type) || recordPanelHasTrend(b));
 }
 
 export function exportReact(): string {
@@ -350,11 +419,15 @@ export function exportReact(): string {
      import specs (e.g. Fluent/Carbon NavItem, whose icon import is chosen from
      `props.icon`) must see real props, or every block resolves to the default
      icon's import — leaving the JSX referencing un-imported names (TS2304). */
-  const allBlocks = flattenBlocks([...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks]);
+  /* Data-bound blocks are made static first (bindings resolved against the
+     canvas dataset + report state), so everything below sees plain props. */
+  const canvas = materialiseCanvas(s);
+  const allBlocks = flattenBlocks([...canvas.header, ...canvas.sidebar, ...canvas.body, ...canvas.footer]);
   const allTypes = allBlocks.map((b) => b.type);
   const componentImports = collectImports(system, allBlocks);
   const real = componentImports.length > 0;
-  const charts = hasCharts(allTypes);
+  /* A record panel's trend is a chart too (only while a record is selected). */
+  const charts = hasCharts(allTypes) || allBlocks.some(recordPanelHasTrend);
 
   /* Zones: when emitting real DS code, the DS owns the layout — each zone's
      blocks are wrapped in its real grid/stack/row primitive (driven by the
@@ -368,12 +441,19 @@ export function exportReact(): string {
      is always emitted. visible === undefined defaults to shown (back-compat with
      saved projects that predate the flag). */
   const zoneVisible = (zone: ZoneId): boolean => zl[zone]?.visible !== false;
-  const zones = [
-    zoneVisible("header") ? renderZone(s.headerBlocks, "Header", "    ", system, mode, zl.header, real, usedPrimitives) : "",
-    zoneVisible("sidebar") ? renderZone(s.sidebarBlocks, "Sidebar", "    ", system, mode, zl.sidebar, real, usedPrimitives) : "",
-    renderZone(s.blocks, "Body", "    ", system, mode, zl.body, real, usedPrimitives),
-    zoneVisible("footer") ? renderZone(s.footerBlocks, "Footer", "    ", system, mode, zl.footer, real, usedPrimitives) : "",
-  ].filter(Boolean).join("\n\n");
+  const chromeShell = usesChromeShell([canvas.header, canvas.sidebar, canvas.body, canvas.footer], zl);
+  const headerJsx = zoneVisible("header") ? renderZone(canvas.header, "Header", "    ", system, mode, zl.header, real, usedPrimitives, chromeShell) : "";
+  const sidebarJsx = zoneVisible("sidebar") ? renderZone(canvas.sidebar, "Sidebar", "    ", system, mode, zl.sidebar, real, usedPrimitives, chromeShell) : "";
+  const bodyJsx = renderZone(canvas.body, "Body", "    ", system, mode, zl.body, real, usedPrimitives, chromeShell);
+  const footerJsx = zoneVisible("footer") ? renderZone(canvas.footer, "Footer", "    ", system, mode, zl.footer, real, usedPrimitives, chromeShell) : "";
+  /* A right-docked sidebar follows the body in source order (and so in
+     reading order); the stylesheet gives it the right-hand track. */
+  const sidebarRight = zl.sidebar?.side === "right";
+  const zones = (sidebarRight ? [headerJsx, bodyJsx, sidebarJsx, footerJsx] : [headerJsx, sidebarJsx, bodyJsx, footerJsx])
+    .filter(Boolean).join("\n\n");
+  /* The shell reserves a sidebar track; say so when there is no sidebar to
+     fill it (hidden or empty) or when it docks right. */
+  const sidebarAttr = shellSidebarAttr(Boolean(sidebarJsx), sidebarRight, chromeShell);
   const layoutImports = collectLayoutImports(system, [...usedPrimitives]);
 
   const imports = ['import React from "react";'];
@@ -437,13 +517,16 @@ export function exportReact(): string {
             ? ""
             : `\n    </${ds.provider}>`;
 
-  const helper = charts ? `\n${chartHelperSource(system)}` : "";
+  /* The extended helper (waterfall, score gauge, per-point colours, selected
+     point) only when a chart on the canvas needs it; likewise the radar and
+     corridor types and the labelled value axis. */
+  const helper = charts ? `\n${chartHelperSource(system, { extended: allBlocks.some(usesExtendedChart), shapes: allBlocks.some(usesShapeChart) })}` : "";
 
   return `${imports.join("\n")}
 
 export default function Dashboard() {
   return (
-    ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}">
+    ${open}<div className="dashboard-layout" data-mode="${s.mode}" data-density="${s.density}"${sidebarAttr}>
       <a className="skip-link" href="#main-content">Skip to main content</a>
 ${zones}
     </div>${close}

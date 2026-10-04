@@ -80,3 +80,39 @@ describe("canvasManifest", () => {
     expect(cleaned.content).toBe("move the table up");
   });
 });
+
+describe("canvasManifest - templates, report controls and chrome", () => {
+  const source = {
+    zoneLayouts: {
+      ...zoneLayouts,
+      header: { mode: "stack" as const, tone: "dark" as const, flush: true },
+      sidebar: { mode: "stack" as const, visible: false },
+    },
+    headerBlocks: [b("nav", "TopNav", { brand: "Meridian Analytics", tone: "dark" })],
+    sidebarBlocks: [],
+    blocks: [
+      b("f1", "SimulatedDropdown", { label: "Currency", value: "GBP", optionsCsv: "GBP, USD, EUR", stateKey: "currency" }),
+      b("p1", "HighchartDonut", { title: "Allocation", viewBy: ["Asset type", "Sector"] }),
+    ],
+    footerBlocks: [],
+  };
+
+  it("shows a zone's tone, flush and hidden state, and the template", () => {
+    const lines = buildCanvasManifest({ ...source, activeTemplateId: "performance-analytics" }).split("\n");
+    expect(lines[0]).toBe("zones: header=stack(dark,flush) sidebar=hidden body=grid/4 footer=row");
+    expect(lines[1]).toBe("template: performance-analytics");
+    expect(lines).toContain('header: nav TopNav "Meridian Analytics" tone=dark');
+  });
+
+  it("lists each report control with its key, current value and choices", () => {
+    expect(summarizeBlock(source.blocks[0])).toBe('f1 SimulatedDropdown "Currency" filter=currency:GBP (GBP/USD/EUR)');
+    expect(summarizeBlock(source.blocks[1])).toBe('p1 HighchartDonut "Allocation" filter=viewBy:p1:Asset type (Asset type/Sector)');
+  });
+
+  it("the current value comes from the report state once the control has been used", () => {
+    const m = buildCanvasManifest({ ...source, reportState: { currency: "USD", "viewBy:p1": "Sector" } });
+    expect(m).toContain("filter=currency:USD (GBP/USD/EUR)");
+    expect(m).toContain("filter=viewBy:p1:Sector (Asset type/Sector)");
+  });
+});
+

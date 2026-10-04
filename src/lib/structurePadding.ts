@@ -29,3 +29,10 @@ export function resolveStructurePadding(
 ): StructurePaddingValue {
   return TABLE[ds][size];
 }
+
+/** The one structure scale used when a canvas pins its structural spacing
+ *  across design systems (a template with `uniformStructure`). Salt's scale:
+ *  the mid-point of the five. */
+export function uniformStructurePadding(size: StructurePaddingSize): StructurePaddingValue {
+  return SALT_STRUCTURE_PADDING[size];
+}

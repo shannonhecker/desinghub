@@ -21,6 +21,8 @@ import { ConversationalOnboarding } from "./ConversationalOnboarding";
 import { TemplateCardsMessage } from "./TemplateCardsMessage";
 import { interfaceTypeToTemplateId, interfaceTypeToBuildPrompt, type WizardBuildArgs } from "@/lib/wizardFlow";
 import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { parseThemeCommand, describeThemeCommand } from "@/lib/themeCommand";
+import { parseTemplateCommand, parseReportFilterCommand, collectReportControls, describeReportFilterCommand } from "@/lib/reportCommand";
 import ReactMarkdown from "react-markdown";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
@@ -780,10 +782,17 @@ export function ChatPanel() {
     if (isGenerating) return;
     const tpl = BUILDER_TEMPLATES[id];
     if (!tpl) return;
+    /* One step: the template goes on the canvas now, in the current design
+       system. It stays staged so the design-system chips under the reply
+       re-apply it in another system (the layout carries over). Asking
+       first made every template a two-step action. */
+    applyTemplateToCanvas(tpl, designSystem);
+    if (!previewOpen) setPreviewOpen(true);
     setPendingTemplateId(id);
     setPendingFirstMessage(null);
     addMessage("user", `Build me ${articleFor(tpl.label)} ${tpl.label}`);
-    addMessage("ai", "Great choice. Which design system should I use?");
+    addMessage("ai", `${tpl.label} is on the canvas in ${DS_LABEL[designSystem]}. Want it in another design system? Tap one below - the layout carries over.`);
+    bumpPreview();
   };
 
   /* "Customize" seeds the composer so the user describes tweaks in free
@@ -918,7 +927,10 @@ export function ChatPanel() {
        matters when text was passed programmatically (applyPendingIntentWithDs)
        or a refine chip is clicked. The guided wizard passes skipFirstTurn
        because it has ALREADY chosen the DS - re-asking would be wrong. ── */
-    if (messages.length === 0 && !selectedBlockId && !opts?.skipFirstTurn) {
+    /* A request for a template by name names everything needed (and can
+       carry its own design system), so it skips the first-turn questions. */
+    const templateCmd = parseTemplateCommand(msg);
+    if (messages.length === 0 && !selectedBlockId && !opts?.skipFirstTurn && !templateCmd) {
       if (aiDisabled) {
         setPendingFirstMessage(msg);
         setPendingTemplateId(null);
@@ -972,7 +984,42 @@ export function ChatPanel() {
        button's label" for a layout/add-component command) and send
        straight to Claude with the selected_block context attached by
        useChatAPI. ── */
-    if (selectedBlockId) {
+    /* ── Templates and report controls, by name (reportCommand.ts) ──
+       "use the risk analytics template", "show it in USD", "view by sector":
+       each is one exact change the builder can make itself, so it is instant
+       and works without a model. Anything that asks for more goes on. */
+    if (templateCmd) {
+      const tpl = BUILDER_TEMPLATES[templateCmd.templateId];
+      if (templateCmd.mode) setMode(templateCmd.mode);
+      if (templateCmd.designSystem) setDesignSystem(templateCmd.designSystem);
+      applyTemplateToCanvas(tpl, templateCmd.designSystem ?? designSystem);
+      if (!previewOpen) setPreviewOpen(true);
+      const themed = describeThemeCommand({ ...templateCmd, pure: true }).replace(/^Switched to /, " in ").replace(/\.$/, "");
+      setTimeout(() => {
+        addMessage("ai", `${tpl.label} is on the canvas${themed}. Every panel is editable: click one to change it, or tell me what to amend.`);
+        setGenerating(false);
+        bumpPreview();
+      }, 400);
+      return;
+    }
+    {
+      const s = useBuilder.getState();
+      const filterCmd = parseReportFilterCommand(msg, collectReportControls([...s.headerBlocks, ...s.sidebarBlocks, ...s.blocks, ...s.footerBlocks], s.reportState));
+      if (filterCmd) {
+        for (const c of filterCmd.changes) s.setReportState(c.key, c.value);
+        setTimeout(() => {
+          addMessage("ai", describeReportFilterCommand(filterCmd));
+          setGenerating(false);
+          bumpPreview();
+        }, 300);
+        return;
+      }
+    }
+
+    /* A message that is only a theme / design-system switch is about the
+       whole canvas, not the selected block, and needs no model: let it fall
+       through to the switch handling below instead of being scoped. */
+    if (selectedBlockId && !parseThemeCommand(msg).pure) {
       if (aiDisabled) {
         addMessage("ai", "Editing the selected block needs AI. Try \"add buttons\", \"add a nav bar\", or \"build a dashboard\" — those work without an API key.");
         setGenerating(false);
@@ -1027,20 +1074,25 @@ export function ChatPanel() {
       return;
     }
 
-    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll } =
-      processComponentCommand(msg, selectedComponents);
 
-    /* ── Theme changes ── */
+    /* ── Theme + design-system switches ──
+       Parsed by word, across all five systems (themeCommand.ts). Applied
+       here only when the message is nothing but a switch, or when there is
+       no model to hand it to: "add a chart with dark blue bars" must reach
+       the model, not flip the canvas to dark and stop. Mode first, so the
+       design system picks its theme for the new mode. */
+    const themeCmd = parseThemeCommand(msg);
+    const applyThemeLocally = themeCmd.pure || aiDisabled;
+
+    /* A message that is only a theme switch is not a component command:
+       "switch to Carbon" used to match the Toggles keyword "switch" and add
+       a toggle group to the canvas. */
+    const { response: compResponse, newComponents, alsoRemoveIds, clearBody, clearAll }: ReturnType<typeof processComponentCommand> =
+      themeCmd.pure ? { response: "", newComponents: null } : processComponentCommand(msg, selectedComponents);
     let themeChanged = false;
-    if (l.includes("dark"))  { setMode("dark");  themeChanged = true; }
-    else if (l.includes("light")) { setMode("light"); themeChanged = true; }
-
-    /* ── Design system changes ── */
     let dsChanged = false;
-    if (l.includes("salt"))                               { setDesignSystem("salt");   dsChanged = true; }
-    else if (l.includes("material") || l.includes("m3")) { setDesignSystem("m3");     dsChanged = true; }
-    else if (l.includes("fluent"))                         { setDesignSystem("fluent"); dsChanged = true; }
-    else if (l.includes("uoaui"))                          { setDesignSystem("uoaui");  dsChanged = true; }
+    if (applyThemeLocally && themeCmd.mode) { setMode(themeCmd.mode); themeChanged = true; }
+    if (applyThemeLocally && themeCmd.designSystem) { setDesignSystem(themeCmd.designSystem); dsChanged = true; }
 
     /* ── Component command matched ──
        AI-first: when Claude is available, ADDITIVE intents ("add buttons")
@@ -1084,9 +1136,8 @@ export function ChatPanel() {
     // the build — the mode/DS are already applied above, so let it reach the
     // model to build the actual UI (build-first).
     if ((themeChanged || dsChanged) && !isFirstFreeform) {
-      const aiResponse = themeChanged
-        ? "Theme updated! The preview reflects the new mode."
-        : getFreeformResponse(msg);
+      /* Say exactly what changed (both, when both did). */
+      const aiResponse = describeThemeCommand(themeCmd) || getFreeformResponse(msg);
       setTimeout(() => {
         addMessage("ai", aiResponse);
         setGenerating(false);

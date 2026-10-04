@@ -40,3 +40,33 @@ describe("ZoneLayoutOverlay — orientation-adaptive options", () => {
     }
   });
 });
+
+/* Chrome zones: one tone click restyles the zone and the bars in it. */
+import { beforeEach } from "vitest";
+import { useBuilder, DEFAULT_ZONE_LAYOUTS, ZONE_TONES } from "@/store/useBuilder";
+import { setChromeTone, CHROME_TONE_OPTIONS } from "../ZoneLayoutOverlay";
+
+describe("ZoneLayoutOverlay - chrome tone", () => {
+  beforeEach(() => {
+    useBuilder.setState({
+      zoneLayouts: { ...DEFAULT_ZONE_LAYOUTS },
+      headerBlocks: [
+        { id: "nav", type: "TopNav", props: { brand: "A", tone: "dark" } },
+        { id: "tabs", type: "TabStrip", props: { tabsCsv: "A, B", tone: "dark" } },
+        { id: "pill", type: "StatusPill", props: { label: "Live" } },
+      ],
+    } as never);
+  });
+
+  it("offers only tones the store knows", () => {
+    for (const o of CHROME_TONE_OPTIONS) expect(ZONE_TONES).toContain(o.v);
+  });
+
+  it("sets the zone's tone and the tone of each bar in it, and leaves other blocks alone", () => {
+    setChromeTone("header", "accent");
+    const s = useBuilder.getState();
+    expect(s.zoneLayouts.header.tone).toBe("accent");
+    expect(s.headerBlocks.map((b) => b.props.tone)).toEqual(["accent", "accent", undefined]);
+    expect(s.zoneLayouts.footer.tone).toBeUndefined();
+  });
+});

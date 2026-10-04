@@ -30,6 +30,20 @@
  * inert (readOnly / static state) to match the store-free gallery demo.
  */
 
+import { dropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
+
+/** An inline dropdown: its label on the left, the control on the right, on
+ *  one line (see InlineField in RealComponentRenderer). */
+function inlineField(label: string, control: React.ReactNode): React.ReactElement {
+  return React.createElement(
+    "span",
+    { className: "dh-inline-field", style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0, width: "100%" } },
+    label
+      ? React.createElement("span", { className: "dh-inline-label", "aria-hidden": "true", style: { flex: "none", fontSize: INLINE_LABEL_FONT, lineHeight: 1, whiteSpace: "nowrap", color: "var(--ds-fg-secondary)" } }, label)
+      : null,
+    React.createElement("span", { className: "dh-inline-control", style: { flex: "1 1 0", minWidth: 0, display: "block" } }, control),
+  );
+}
 import React from "react";
 import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 import {
@@ -339,17 +353,60 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     );
   },
 
-  SimulatedDropdown: (p) =>
-    React.createElement(
+  /* Label, chosen value and options from the block (dropdownModel). The
+     trigger is the DS's own `.a-dropdown`; a native <select> laid invisibly
+     over it supplies the menu, keyboard handling and screen-reader semantics,
+     so the control really changes value. */
+  SimulatedDropdown: (p) => {
+    const m = dropdownModel(p);
+    const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
+    const trigger = React.createElement(
       "div",
-      { className: "a-dropdown" },
+      { className: "a-dropdown", style: { flex: 1, minWidth: 0, width: "100%", position: "relative" } },
       React.createElement(
-        "button",
-        { type: "button", className: "a-dropdown-trigger", "aria-haspopup": "listbox" },
-        React.createElement("span", null, s(p.placeholder, "Select an option")),
-        React.createElement("span", { className: "material-symbols-outlined", "aria-hidden": "true" }, "expand_more"),
+        "div",
+        /* Compact (a panel header's "View by"): a shorter trigger, so it
+           sits inside the fixed header row like the other systems' small
+           selects. */
+        {
+          className: "a-dropdown-trigger",
+          "aria-hidden": "true",
+          style: m.inline
+            /* Inline: an underline on a transparent ground, at toolbar height. */
+            ? { height: INLINE_DROPDOWN_HEIGHT, padding: 0, paddingLeft: 4, paddingRight: 2, fontSize: INLINE_DROPDOWN_FONT, background: "transparent", backdropFilter: "none", borderRadius: 0, borderBottomWidth: 1, gap: 4 }
+            : m.compact ? { height: 32, padding: "0 10px", fontSize: 12 } : undefined,
+        },
+        React.createElement(
+          "span",
+          { style: { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...(m.value ? {} : { opacity: 0.6 }) } },
+          m.value || m.placeholder,
+        ),
+        React.createElement("span", { className: "material-symbols-outlined", style: m.inline ? { fontSize: 16 } : undefined }, "expand_more"),
       ),
-    ),
+      React.createElement(
+        "select",
+        {
+          "aria-label": m.label || m.placeholder,
+          style: { position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" },
+          ...(onChange
+            ? { value: m.value, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value) }
+            : { defaultValue: m.value, key: m.value }),
+        },
+        ...(m.value ? [] : [React.createElement("option", { key: "", value: "" }, m.placeholder)]),
+        ...m.options.map((o) => React.createElement("option", { key: o, value: o }, o)),
+      ),
+    );
+    if (m.inline) return inlineField(m.label, trigger);
+    if (!m.label) return trigger;
+    /* Label above the field, like the other systems' labelled fields: beside
+       it, a narrow filter left too little room and the value wrapped. */
+    return React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 4, minWidth: 0 } },
+      React.createElement("span", { className: "a-label", style: { whiteSpace: "nowrap" } }, m.label),
+      trigger,
+    );
+  },
 
   SimulatedSearchbox: (p) =>
     React.createElement(
@@ -561,15 +618,30 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
     );
   },
 
-  SimulatedDropdown: (p, ctx) =>
-    React.createElement(CarbonDropdown, {
+  /* Label, chosen value and options from the block (dropdownModel). Keyed on
+     the value so a prop edit re-seeds the initial selection. */
+  SimulatedDropdown: (p, ctx) => {
+    const m = dropdownModel(p);
+    const onChange = typeof p.onValueChange === "function" ? (p.onValueChange as (v: string) => void) : undefined;
+    const dropdown = React.createElement(CarbonDropdown, {
+      key: onChange ? undefined : m.value,
       id: fieldId(p, "dropdown"),
-      size: carbonSize(densityOf(ctx)),
-      titleText: "",
-      label: s(p.placeholder, "Select an option"),
-      items: ["Option 1", "Option 2", "Option 3"],
+      size: m.compact || m.inline ? "sm" : carbonSize(densityOf(ctx)),
+      /* Inline: Carbon's own inline dropdown; the label beside it is ours,
+         so Carbon's title is kept for assistive tech only. */
+      ...(m.inline ? { type: "inline" as const, "aria-label": m.label || m.placeholder } : {}),
+      titleText: m.label,
+      hideLabel: m.inline || !m.label,
+      label: m.placeholder,
+      items: m.options,
+      /* Controlled when the caller wired a change handler (report state). */
+      ...(onChange
+        ? { selectedItem: m.value || null, onChange: (e: { selectedItem?: unknown }) => { if (e.selectedItem != null) onChange(s(e.selectedItem)); } }
+        : { initialSelectedItem: m.value || undefined }),
       itemToString: (item: unknown) => s(item),
-    }),
+    });
+    return m.inline ? inlineField(m.label, dropdown) : dropdown;
+  },
 
   SimulatedSearchbox: (p, ctx) =>
     React.createElement(CarbonSearch, {
@@ -585,7 +657,9 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       null,
       React.createElement("p", { className: "cds--type-label-01" }, s(p.label, "Metric")),
       React.createElement("p", { className: "cds--type-heading-04" }, s(p.value, "0")),
-      React.createElement("span", { style: { color: "var(--cds-support-success)" } }, `+${num(p.pct, 0)}%`),
+      /* `pct` is progress toward a goal (a bar in the other four systems),
+         not a signed change - see the matching export entry. */
+      React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
     ),
 
   SimulatedAccordion: (p) =>

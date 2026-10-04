@@ -110,6 +110,42 @@ type FieldDef =
      the block's location in the store and mutates accordingly. */
   | { type: "action"; label: string; action: "ungroup" };
 
+/* ── Chart fields ──
+   A chart's kind is its `chartType` prop, so swapping it in place is one
+   select. The two families take different data (series over categories vs.
+   named parts of a whole), so each offers only the kinds its data can draw. */
+const PANEL_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "subtitle", label: "Subtitle", placeholder: "e.g. (Stacked)" },
+  { type: "toggle", propKey: "panel", label: "Framed panel" },
+  { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Asset type, Region" },
+  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+];
+const CATEGORY_CHART_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "title", label: "Title" },
+  { type: "select", propKey: "chartType", label: "Chart type", options: [
+    { value: "column", label: "Column" },
+    { value: "stacked-column", label: "Stacked column" },
+    { value: "bar", label: "Bar" },
+    { value: "stacked-bar", label: "Stacked bar" },
+    { value: "line", label: "Line" },
+    { value: "spline", label: "Spline" },
+    { value: "area", label: "Area" },
+    { value: "stacked-area", label: "Stacked area" },
+    { value: "combination", label: "Combination" },
+  ]},
+  ...PANEL_FIELDS,
+];
+const PART_CHART_FIELDS: FieldDef[] = [
+  { type: "text", propKey: "title", label: "Title" },
+  { type: "select", propKey: "chartType", label: "Chart type", options: [
+    { value: "donut", label: "Donut" },
+    { value: "pie", label: "Pie" },
+  ]},
+  { type: "text", propKey: "centerLabel", label: "Centre label (donut)", placeholder: "e.g. a total" },
+  ...PANEL_FIELDS,
+];
+
+
 /* ── Stock-image picker ──
    Categorized grid of HTTP-200-verified stock photos (from
    src/lib/sampleImages.ts) plus a paste-your-own-URL input. Clicking a
@@ -351,11 +387,18 @@ const PRESENCE_OPTIONS = [
   { value: "", label: "None" }, { value: "available", label: "Available" },
   { value: "busy", label: "Busy" }, { value: "away", label: "Away" }, { value: "offline", label: "Offline" },
 ];
+const TONE_OPTIONS = [
+  { value: "surface", label: "Surface" }, { value: "dark", label: "Dark" },
+  { value: "inverse", label: "Inverse" }, { value: "accent", label: "Accent" },
+  { value: "transparent", label: "Transparent" },
+];
 const NAV_ICON_OPTIONS = [
   { value: "chat", label: "Chat" }, { value: "database", label: "Database" },
   { value: "settings", label: "Settings" }, { value: "bar_chart", label: "Bar Chart" },
   { value: "home", label: "Home" }, { value: "person", label: "Person" },
   { value: "search", label: "Search" }, { value: "notifications", label: "Notifications" },
+  { value: "shield", label: "Shield" }, { value: "trending_up", label: "Trend" },
+  { value: "layers", label: "Layers" }, { value: "filter", label: "Filter" },
 ];
 
 interface BlockDef {
@@ -447,7 +490,9 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "label", label: "Label" }, { type: "toggle", propKey: "defaultOn", label: "Default On" },
   ]},
   { type: "SimulatedDropdown", label: "Dropdown", icon: "arrow_drop_down_circle", defaults: { placeholder: "Select an option" }, fields: [
+    { type: "text", propKey: "label", label: "Label", placeholder: "e.g. Currency" },
     { type: "text", propKey: "value", label: "Selected value" },
+    { type: "text", propKey: "optionsCsv", label: "Options (comma separated)", placeholder: "GBP, USD, EUR" },
     { type: "text", propKey: "placeholder", label: "Placeholder" },
   ]},
 
@@ -488,15 +533,21 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
 
   /* ── Highcharts ── */
-  { type: "HighchartLine", label: "Line Chart", icon: "show_chart", defaults: { chartType: "line", title: "Monthly Revenue" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartArea", label: "Area Chart", icon: "area_chart", defaults: { chartType: "area", title: "User Growth" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartColumn", label: "Column Chart", icon: "insert_chart", defaults: { chartType: "column", title: "Sales by Region" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartPie", label: "Pie Chart", icon: "pie_chart", defaults: { chartType: "pie", title: "Market Share" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
+  { type: "HighchartLine", label: "Line Chart", icon: "show_chart", defaults: { chartType: "line", title: "Monthly Revenue" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartArea", label: "Area Chart", icon: "area_chart", defaults: { chartType: "area", title: "User Growth" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartColumn", label: "Column Chart", icon: "insert_chart", defaults: { chartType: "column", title: "Sales by Region" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartPie", label: "Pie Chart", icon: "pie_chart", defaults: { chartType: "pie", title: "Market Share" }, fields: PART_CHART_FIELDS },
   { type: "HighchartScatter", label: "Scatter Plot", icon: "scatter_plot", defaults: { chartType: "scatter", title: "Risk vs Return" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartBar", label: "Bar Chart", icon: "align_horizontal_left", defaults: { chartType: "bar", title: "Top Performers" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartDonut", label: "Donut Chart", icon: "donut_large", defaults: { chartType: "donut", title: "Portfolio Allocation" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartSpline", label: "Spline Chart", icon: "timeline", defaults: { chartType: "spline", title: "Temperature Trend" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
-  { type: "HighchartStackedColumn", label: "Stacked Column", icon: "stacked_bar_chart", defaults: { chartType: "stacked-column", title: "Revenue Breakdown" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
+  { type: "HighchartBar", label: "Bar Chart", icon: "align_horizontal_left", defaults: { chartType: "bar", title: "Top Performers" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartDonut", label: "Donut Chart", icon: "donut_large", defaults: { chartType: "donut", title: "Portfolio Allocation" }, fields: PART_CHART_FIELDS },
+  { type: "HighchartSpline", label: "Spline Chart", icon: "timeline", defaults: { chartType: "spline", title: "Temperature Trend" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedColumn", label: "Stacked Column", icon: "stacked_bar_chart", defaults: { chartType: "stacked-column", title: "Revenue Breakdown" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedBar", label: "Stacked Bar", icon: "stacked_bar_chart", defaults: { chartType: "stacked-bar", title: "Exposure by currency" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartStackedArea", label: "Stacked Area", icon: "area_chart", defaults: { chartType: "stacked-area", title: "Allocation history" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartCombination", label: "Combination Chart", icon: "multiline_chart", defaults: { chartType: "combination", title: "Value at risk" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartWaterfall", label: "Waterfall", icon: "waterfall_chart", defaults: { chartType: "waterfall", title: "Bridge" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartRadar", label: "Radar", icon: "radar", defaults: { chartType: "radar", title: "Capability profile" }, fields: CATEGORY_CHART_FIELDS },
+  { type: "HighchartCorridor", label: "Pathway Corridor", icon: "ssid_chart", defaults: { chartType: "corridor", title: "Pathway" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
   ]},
@@ -584,6 +635,94 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "NavItem", label: "Nav Item", icon: "menu", defaults: { label: "New Item", icon: "chat", active: false }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "select", propKey: "icon", label: "Icon", options: NAV_ICON_OPTIONS },
+  ]},
+  /* ── Report blocks: entity header, metric tile, verdict, launcher, hero ── */
+  { type: "EntityHeader", label: "Entity Header", icon: "badge", defaults: { title: "Entity" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "eyebrow", label: "Eyebrow" },
+  ]},
+  { type: "MetricTile", label: "Metric Tile", icon: "counter_1", defaults: { label: "Metric", value: "0" }, fields: [
+    { type: "text", propKey: "label", label: "Label" },
+    { type: "text", propKey: "value", label: "Value" },
+  ]},
+  { type: "VerdictCard", label: "Verdict Card", icon: "verified", defaults: { title: "Verdict" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "chip", label: "Chip" },
+    { type: "text", propKey: "footnote", label: "Footnote" },
+  ]},
+  { type: "LauncherCard", label: "Launcher Card", icon: "open_in_new", defaults: { title: "Report", description: "What this report shows.", actionLabel: "Open report" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "tag", label: "Tag" },
+    { type: "textarea", propKey: "description", label: "Description" },
+    { type: "text", propKey: "actionLabel", label: "Button" },
+  ]},
+  { type: "HeroSearch", label: "Hero with Search", icon: "search", defaults: { title: "Analytics", subtitle: "Search for a report.", placeholder: "Search", buttonLabel: "Search" }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "subtitle", label: "Subtitle" },
+    { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "buttonLabel", label: "Button" },
+  ]},
+  /* ── Record panel: the detail of the row a grid has selected ── */
+  { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "emptyText", label: "Empty text" },
+  ]},
+  /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
+  { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {
+      title: "Holdings", height: 320,
+      columns: [
+        { field: "name", header: "Holding", flex: 2 },
+        { field: "class", header: "Asset class" },
+        { field: "value", header: "Market value", kind: "currency", compact: true },
+        { field: "weight", header: "Weight", kind: "percent" },
+        { field: "ret", header: "1M return", kind: "percent", signed: true },
+      ],
+      rows: [
+        { name: "Total", class: "", value: 48_600_000, weight: 100, ret: 1.84, _bold: true },
+        { name: "Halden Capital Ord", class: "Equity", value: 18_200_000, weight: 37.45, ret: 3.1 },
+        { name: "UK Gilt 3.75% 2038", class: "Government Bond", value: 14_900_000, weight: 30.66, ret: 0.9 },
+        { name: "Tidewater Energy 5.1% 2031", class: "Corporate Bond", value: 9_700_000, weight: 19.96, ret: 1.4 },
+        { name: "Sterling Liquidity Fund", class: "Cash", value: 5_800_000, weight: 11.93, ret: -0.1 },
+      ],
+    }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "text", propKey: "subtitle", label: "Subtitle" },
+    { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Fund, Asset class" },
+    { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+  ]},
+
+  /* ── Application chrome ── */
+  { type: "TopNav", label: "Top Navigation", icon: "web_asset", defaults: { brand: "Brand", linksCsv: "Home, Products, Reports, Resources", active: "Home", tone: "dark", chevrons: false, account: "" }, fields: [
+    { type: "text", propKey: "brand", label: "Brand" },
+    { type: "select", propKey: "logo", label: "Logo", options: [{ value: "letter", label: "Letter mark" }, { value: "none", label: "None" }] },
+    { type: "text", propKey: "linksCsv", label: "Links (comma separated)" },
+    { type: "text", propKey: "active", label: "Active link" },
+    { type: "toggle", propKey: "chevrons", label: "Menu chevrons" },
+    { type: "text", propKey: "account", label: "Account name", placeholder: "\"none\" hides the account" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
+  { type: "InstrumentHeader", label: "Instrument Header", icon: "candlestick_chart", defaults: { symbol: "Instrument", note: "Sample data" }, fields: [
+    { type: "text", propKey: "note", label: "Data note" },
+  ]},
+  { type: "ExecutionChart", label: "Execution Chart", icon: "show_chart", defaults: { height: 640 }, fields: [
+    { type: "range", propKey: "height", label: "Height", min: 480, max: 960, suffix: "px" },
+  ]},
+  { type: "ContextBar", label: "Context Bar", icon: "tune", defaults: { title: "Page", tone: "surface", filters: [{ label: "Period", stateKey: "period", value: "Monthly", options: ["Daily", "Monthly", "Yearly"] }] }, fields: [
+    { type: "text", propKey: "title", label: "Title" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
+  { type: "TabStrip", label: "Tab Strip", icon: "tab", defaults: { tabsCsv: "Overview, Reports, Settings", active: "Overview", tone: "dark", addButton: false }, fields: [
+    { type: "text", propKey: "tabsCsv", label: "Tabs (comma separated)" },
+    { type: "text", propKey: "active", label: "Active tab" },
+    { type: "toggle", propKey: "addButton", label: "Add button" },
+    { type: "select", propKey: "tone", label: "Tone", options: TONE_OPTIONS },
+  ]},
+  { type: "PageTitle", label: "Page Title", icon: "title", defaults: { text: "Page title" }, fields: [
+    { type: "text", propKey: "text", label: "Title" },
+    { type: "text", propKey: "caption", label: "Caption" },
+  ]},
+  { type: "NavGroup", label: "Nav Group Label", icon: "segment", defaults: { label: "Section" }, fields: [
+    { type: "text", propKey: "label", label: "Label" },
   ]},
   { type: "FooterText", label: "Footer Text", icon: "short_text", defaults: { label: "Footer text", version: "v1.0" }, fields: [
     { type: "text", propKey: "label", label: "Text" }, { type: "text", propKey: "version", label: "Version" },
@@ -698,6 +837,7 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
 
   /* Data display */
   SimulatedDataTable: "data-display",
+  DataGrid: "data-display",
   SimulatedStatCard: "data-display",
   SimulatedListBox: "data-display",
   SimulatedTree: "data-display",
@@ -722,8 +862,21 @@ export const BLOCK_CATEGORY: Record<string, LibraryCategory> = {
   HighchartGauge: "charts",
   HighchartHeatmap: "charts",
   HighchartTreemap: "charts",
+  HighchartCombination: "charts",
+  HighchartWaterfall: "charts",
+  HighchartRadar: "charts",
+  HighchartCorridor: "charts",
+  HighchartStackedBar: "charts",
+  HighchartStackedArea: "charts",
 
   /* Navigation */
+  PageTitle: "content",
+  TopNav: "navigation",
+  TabStrip: "navigation",
+  ContextBar: "navigation",
+  InstrumentHeader: "navigation",
+  ExecutionChart: "charts",
+  NavGroup: "navigation",
   SimulatedTabs: "navigation",
   SimulatedBreadcrumb: "navigation",
   SimulatedNavDrawer: "navigation",

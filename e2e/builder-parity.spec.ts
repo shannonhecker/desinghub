@@ -137,16 +137,23 @@ async function measureBoxStyles(page: Page): Promise<BoxStyles[]> {
   return page.$$eval(".canvas-block", (els) =>
     els.map((el) => {
       const cs = getComputedStyle(el);
+      /* The frame is scaled to the stage (DeviceFrame / frameFit.ts), by a
+         different factor in Edit (panels docked) and Present. A border is
+         snapped to whole device pixels, so under a scale of 0.856 a 1px
+         border computes as 1.168px (= 1 device px). Compare borders in the
+         device pixels they actually paint. */
+      const zoom = parseFloat(el.closest(".bp-device-frame")?.getAttribute("data-frame-zoom") ?? "1") || 1;
+      const border = (v: string) => `${Math.round(parseFloat(v) * zoom)}px`;
       return {
         paddingTop: cs.paddingTop,
         paddingRight: cs.paddingRight,
         paddingBottom: cs.paddingBottom,
         paddingLeft: cs.paddingLeft,
         marginBottom: cs.marginBottom,
-        borderTopWidth: cs.borderTopWidth,
-        borderRightWidth: cs.borderRightWidth,
-        borderBottomWidth: cs.borderBottomWidth,
-        borderLeftWidth: cs.borderLeftWidth,
+        borderTopWidth: border(cs.borderTopWidth),
+        borderRightWidth: border(cs.borderRightWidth),
+        borderBottomWidth: border(cs.borderBottomWidth),
+        borderLeftWidth: border(cs.borderLeftWidth),
       };
     }),
   );

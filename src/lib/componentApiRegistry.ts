@@ -25,6 +25,7 @@
  */
 
 import { jsxText, jsxAttr } from "./export/escape";
+import { dropdownModel } from "./dropdownModel";
 
 export type SystemId = "salt" | "m3" | "fluent" | "carbon" | "uoaui";
 
@@ -230,10 +231,20 @@ const SALT: Record<string, ComponentApiEntry> = {
       return `<FormField>\n  <FormFieldLabel>${jsxText(p.label, "Label")}</FormFieldLabel>\n  <RadioButtonGroup defaultValue="${dv}">\n${buttons}\n  </RadioButtonGroup>\n</FormField>`;
     },
   },
+  /* Label, chosen value and options come from the block (dropdownModel), the
+     same model the canvas renders - not a generic "Option 1 / Option 2". */
   SimulatedDropdown: {
-    imports: { from: SALT_CORE, names: ["Dropdown", "Option"] },
-    toJsx: (p) =>
-      `<Dropdown placeholder="${jsxAttr(p.placeholder, "Select an option")}">\n  <Option value="option-1">Option 1</Option>\n  <Option value="option-2">Option 2</Option>\n</Dropdown>`,
+    imports: (p) => [{ from: SALT_CORE, names: dropdownModel(p).label ? ["Dropdown", "Option", "FormField", "FormFieldLabel"] : ["Dropdown", "Option"] }],
+    toJsx: (p) => {
+      const m = dropdownModel(p);
+      const selected = m.value ? ` defaultSelected={${JSON.stringify([m.value])}}` : "";
+      const pad = m.label ? "  " : "";
+      const options = m.options.map((o) => `${pad}  <Option value="${jsxAttr(o)}">${jsxText(o)}</Option>`).join("\n");
+      const dropdown = `${pad}<Dropdown placeholder="${jsxAttr(m.placeholder)}"${selected}>\n${options}\n${pad}</Dropdown>`;
+      return m.label
+        ? `<FormField labelPlacement="left">\n  <FormFieldLabel>${jsxText(m.label)}</FormFieldLabel>\n${dropdown}\n</FormField>`
+        : dropdown;
+    },
   },
   SimulatedComboBox: {
     imports: { from: SALT_CORE, names: ["ComboBox", "Option"] },
@@ -535,8 +546,13 @@ const M3: Record<string, ComponentApiEntry> = {
   },
   SimulatedDropdown: {
     imports: { from: MUI, names: ["FormControl", "InputLabel", "Select", "MenuItem"] },
-    toJsx: (p) =>
-      `<FormControl fullWidth>\n  <InputLabel id="sel-label">${jsxText(p.placeholder, "Select an option")}</InputLabel>\n  <Select labelId="sel-label" label="${jsxAttr(p.placeholder, "Select an option")}" defaultValue="">\n    <MenuItem value="opt1">Option 1</MenuItem>\n    <MenuItem value="opt2">Option 2</MenuItem>\n  </Select>\n</FormControl>`,
+    toJsx: (p) => {
+      const m = dropdownModel(p);
+      const label = m.label || m.placeholder;
+      const id = `select-${slug(label, "field")}-label`;
+      const options = m.options.map((o) => `    <MenuItem value="${jsxAttr(o)}">${jsxText(o)}</MenuItem>`).join("\n");
+      return `<FormControl fullWidth>\n  <InputLabel id="${id}">${jsxText(label)}</InputLabel>\n  <Select labelId="${id}" label="${jsxAttr(label)}" defaultValue="${jsxAttr(m.value)}">\n${options}\n  </Select>\n</FormControl>`;
+    },
   },
   SimulatedComboBox: {
     imports: { from: MUI, names: ["Autocomplete", "TextField"] },
@@ -763,6 +779,8 @@ function fluentIconName(icon: string): string {
     chat: "Chat24Regular", database: "Database24Regular", settings: "Settings24Regular",
     bar_chart: "DataBarVertical24Regular", home: "Home24Regular", person: "Person24Regular",
     search: "Search24Regular", notifications: "Alert24Regular",
+    shield: "Shield24Regular", trending_up: "ArrowTrending24Regular",
+    layers: "Layer24Regular", filter: "Filter24Regular",
   };
   return map[icon] ?? "Home24Regular";
 }
@@ -849,9 +867,17 @@ const FLUENT: Record<string, ComponentApiEntry> = {
     },
   },
   SimulatedDropdown: {
-    imports: { from: FLUENT_CORE, names: ["Dropdown", "Option"] },
-    toJsx: (p) =>
-      `<Dropdown placeholder="${jsxAttr(p.placeholder, "Select an option")}">\n  <Option>Option 1</Option>\n  <Option>Option 2</Option>\n  <Option>Option 3</Option>\n</Dropdown>`,
+    imports: (p) => [{ from: FLUENT_CORE, names: dropdownModel(p).label ? ["Dropdown", "Option", "Field"] : ["Dropdown", "Option"] }],
+    toJsx: (p) => {
+      const m = dropdownModel(p);
+      const selected = m.value ? ` defaultValue="${jsxAttr(m.value)}" defaultSelectedOptions={${JSON.stringify([m.value])}}` : "";
+      const pad = m.label ? "  " : "";
+      const options = m.options.map((o) => `${pad}  <Option>${jsxText(o)}</Option>`).join("\n");
+      const dropdown = `${pad}<Dropdown placeholder="${jsxAttr(m.placeholder)}"${selected}>\n${options}\n${pad}</Dropdown>`;
+      return m.label
+        ? `<Field label="${jsxAttr(m.label)}" orientation="horizontal">\n${dropdown}\n</Field>`
+        : dropdown;
+    },
   },
   SimulatedComboBox: {
     imports: { from: FLUENT_CORE, names: ["Combobox", "Option"] },
@@ -1086,6 +1112,7 @@ function carbonIconName(icon: string): string {
   const map: Record<string, string> = {
     chat: "Chat", database: "DataBase", settings: "Settings", bar_chart: "ChartColumn",
     home: "Home", person: "User", search: "Search", notifications: "Notification",
+    shield: "Security", trending_up: "Growth", layers: "Layers", filter: "Filter",
   };
   return map[icon] ?? "Home";
 }
@@ -1168,8 +1195,13 @@ const CARBON: Record<string, ComponentApiEntry> = {
   },
   SimulatedDropdown: {
     imports: { from: CARBON_PKG, names: ["Dropdown"] },
-    toJsx: (p) =>
-      `<Dropdown id="dropdown" titleText="" label="${jsxAttr(p.placeholder, "Select an option")}" items={["Option 1", "Option 2", "Option 3"]} itemToString={(item) => item ?? ""} />`,
+    toJsx: (p) => {
+      const m = dropdownModel(p);
+      const id = `dropdown-${slug(m.label || m.placeholder, "field")}`;
+      const title = m.label ? `titleText="${jsxAttr(m.label)}"` : `titleText="" hideLabel`;
+      const selected = m.value ? ` initialSelectedItem="${jsxAttr(m.value)}"` : "";
+      return `<Dropdown id="${id}" ${title} label="${jsxAttr(m.placeholder)}" items={${JSON.stringify(m.options)}}${selected} itemToString={(item) => item ?? ""} />`;
+    },
   },
   SimulatedComboBox: {
     imports: { from: CARBON_PKG, names: ["ComboBox"] },
@@ -1213,9 +1245,12 @@ const CARBON: Record<string, ComponentApiEntry> = {
       `<DataTable rows={[{ id: "1", name: "Jane Doe", status: "Active" }] as never[]} headers={[{ key: "name", header: "Name" }, { key: "status", header: "Status" }]}>\n  {({ rows, headers, getHeaderProps, getRowProps }) => (\n    <Table>\n      <TableHead>\n        <TableRow>\n          {headers.map((h) => (\n            <TableHeader {...getHeaderProps({ header: h })} key={h.key}>{h.header}</TableHeader>\n          ))}\n        </TableRow>\n      </TableHead>\n      <TableBody>\n        {rows.map((row) => (\n          <TableRow {...getRowProps({ row })} key={row.id}>\n            {row.cells.map((c) => <TableCell key={c.id}>{c.value}</TableCell>)}\n          </TableRow>\n        ))}\n      </TableBody>\n    </Table>\n  )}\n</DataTable>`,
   },
   SimulatedStatCard: {
-    imports: { from: CARBON_PKG, names: ["Tile"] },
+    /* `pct` is progress toward a goal, drawn as a bar like the other four
+       systems - not a signed change. Printing it as a green "+N%" made a
+       churn card read as a gain. */
+    imports: { from: CARBON_PKG, names: ["Tile", "ProgressBar"] },
     toJsx: (p) =>
-      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <span style={{ color: "var(--cds-support-success)" }}>+${num(p.pct, 0)}%</span>\n</Tile>`,
+      `<Tile>\n  <p className="cds--type-label-01">${jsxText(p.label, "Metric")}</p>\n  <p className="cds--type-heading-04">${jsxText(p.value, "0")}</p>\n  <ProgressBar label="${jsxAttr(p.label, "Metric")}" hideLabel value={${num(p.pct, 0)}} max={100} />\n</Tile>`,
   },
   /* SimulatedListBox — OMIT: Carbon ListBox is an internal select sub-primitive, not standalone. */
   SimulatedTree: {
@@ -1479,8 +1514,17 @@ const UOAUI: Record<string, ComponentApiEntry> = {
   },
   SimulatedDropdown: {
     imports: uoauiImport,
-    toJsx: (p) =>
-      `<div className="a-dropdown">\n  <button type="button" className="a-dropdown-trigger" aria-haspopup="listbox" aria-expanded={false}>\n    <span>${jsxText(p.placeholder, "Select an option")}</span>\n    <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>\n  </button>\n  <ul className="a-dropdown-menu" role="listbox" aria-label="${jsxAttr(p.placeholder, "Select an option")}" hidden>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option A</li>\n    <li className="a-dropdown-item" role="option" aria-selected={false}>Option B</li>\n  </ul>\n</div>`,
+    toJsx: (p) => {
+      const m = dropdownModel(p);
+      const pad = m.label ? "  " : "";
+      const items = m.options
+        .map((o) => `${pad}    <li className="a-dropdown-item" role="option" aria-selected={${o === m.value}}>${jsxText(o)}</li>`)
+        .join("\n");
+      const dropdown = `${pad}<div className="a-dropdown">\n${pad}  <button type="button" className="a-dropdown-trigger" aria-haspopup="listbox" aria-expanded={false}>\n${pad}    <span>${jsxText(m.value || m.placeholder)}</span>\n${pad}    <span className="material-symbols-outlined" aria-hidden="true">expand_more</span>\n${pad}  </button>\n${pad}  <ul className="a-dropdown-menu" role="listbox" aria-label="${jsxAttr(m.label || m.placeholder)}" hidden>\n${items}\n${pad}  </ul>\n${pad}</div>`;
+      return m.label
+        ? `<div style={{ display: "flex", alignItems: "center", gap: 8 }}>\n  <span className="a-label">${jsxText(m.label)}</span>\n${dropdown}\n</div>`
+        : dropdown;
+    },
   },
   SimulatedComboBox: {
     imports: uoauiImport,

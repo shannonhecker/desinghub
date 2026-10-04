@@ -6,7 +6,7 @@ import HighchartsReact from "highcharts-react-official";
 import { useBuilder } from "@/store/useBuilder";
 
 /* ═══════════════════════════════════════════════════════════
-   SimulatedHighchart - renders any of the 12 Highcharts
+   SimulatedHighchart - renders any of the 15 Highcharts
    chart types inside the builder canvas, themed via
    --ds-* CSS variables inherited from the preview wrapper.
 
@@ -20,7 +20,7 @@ import { getPalette } from "@/lib/categoricalPalettes";
 import type { DesignSystem } from "@/store/useBuilder";
 
 /* ── Read --ds-* CSS variables from a DOM element ── */
-interface ThemeVars {
+export interface ThemeVars {
   primary: string;
   bg: string;
   fg: string;
@@ -31,9 +31,21 @@ interface ThemeVars {
   positive: string;
   warning: string;
   negative: string;
+  /** The surface the chart is drawn on (its panel's card), which separates
+   *  adjacent marks. Falls back to `surface`. */
+  card?: string;
 }
 
-function readThemeVars(el: HTMLElement): ThemeVars {
+/** Width of the separator between adjacent data marks. */
+const MARK_SEPARATOR = 1;
+
+function cardColorOf(el: HTMLElement): string | undefined {
+  const panel = el.closest(".dh-panel");
+  const color = panel ? getComputedStyle(panel).backgroundColor : "";
+  return color && color !== "transparent" && !/, 0\)$/.test(color) ? color : undefined;
+}
+
+export function readThemeVars(el: HTMLElement): ThemeVars {
   const cs = getComputedStyle(el);
   const v = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
   return {
@@ -47,6 +59,9 @@ function readThemeVars(el: HTMLElement): ThemeVars {
     positive: v("--ds-status-positive", "#36b37e"),
     warning: v("--ds-status-warning", "#ffab00"),
     negative: v("--ds-status-negative", "#de350b"),
+    /* The resolved colour of the panel the chart sits in: a custom property
+       would come back as an unresolved var() chain. */
+    card: cardColorOf(el),
   };
 }
 
@@ -79,7 +94,8 @@ function baseTheme(
       gridLineColor: v.border + "30",
       lineColor: "transparent",
       tickColor: "transparent",
-      labels: { style: { color: v.fgTer, fontSize: "10px" } },
+      /* A figure on the value axis is never cut to an ellipsis. */
+      labels: { style: { color: v.fgTer, fontSize: "10px", textOverflow: "none", whiteSpace: "nowrap" } },
       title: { style: { color: v.fgSec, fontSize: "10px" } },
     },
     tooltip: {
@@ -92,7 +108,20 @@ function baseTheme(
       itemStyle: { color: v.fgSec, fontSize: "10px", fontWeight: "500" },
       itemHoverStyle: { color: v.fg },
     },
-    plotOptions: { series: { borderWidth: 0, animation: { duration: prefersReducedMotion() ? 0 : 500 } } },
+    /* Data marks have square corners and a one-pixel separator in the colour of
+       the surface behind them: adjacent slices, stacked segments and
+       clustered bars are told apart by an edge, not by colour alone
+       (WCAG 1.4.1 use of colour, 1.4.11 non-text contrast). */
+    plotOptions: {
+      series: {
+        borderWidth: MARK_SEPARATOR,
+        borderColor: v.card ?? v.surface,
+        /* Not in the shared series typing, but read by every mark type
+           (column, bar, pie, waterfall). */
+        ...({ borderRadius: 0 } as object),
+        animation: { duration: prefersReducedMotion() ? 0 : 500 },
+      },
+    },
     credits: { enabled: false },
   };
 }
@@ -111,20 +140,257 @@ function prefersReducedMotion(): boolean {
 export type HighchartType =
   | "line" | "area" | "column" | "pie" | "scatter"
   | "bar" | "donut" | "gauge" | "heatmap" | "treemap"
-  | "spline" | "stacked-column";
+  | "spline" | "stacked-column"
+  | "combination" | "stacked-bar" | "stacked-area"
+  | "waterfall" | "radar" | "corridor";
+
+/** One data series. `type`, `yAxis` and `dashStyle` only matter to the
+ *  combination chart, where each series picks its own mark and axis. */
+export interface ChartSeries {
+  name: string;
+  data: (number | null)[];
+  type?: "column" | "line" | "spline" | "area";
+  /** 0 = left axis (default), 1 = right axis. */
+  yAxis?: 0 | 1;
+  dashStyle?: "Solid" | "Dash" | "ShortDash" | "Dot";
+}
+
+/** Everything a chart block can say about itself. */
+export interface ChartProps {
+  gaugeSweep?: number;
+  gaugeCaption?: string;
+  title?: string;
+  value?: number;
+  /** Domain data the template/model can pass so charts aren't generic. */
+  seriesData?: { name: string; y: number }[];
+  categories?: string[];
+  series?: ChartSeries[];
+  /** Chart height in px (default 250). */
+  height?: number;
+  /** Drop the in-chart title (a framed panel shows it in its header). */
+  hideTitle?: boolean;
+  /** Highcharts label format for the value axis, e.g. "{value}%". */
+  yAxisFormat?: string;
+  yAxisTitle?: string;
+  /** Right-hand axis of a combination chart. */
+  secondaryAxisFormat?: string;
+  secondaryAxisTitle?: string;
+  /** Text drawn in the middle of a donut (e.g. a total). */
+  centerLabel?: string;
+  /** false hides the legend. */
+  legend?: boolean;
+  /** Upper bound of the value axis (e.g. 100 for shares of a whole). */
+  yAxisMax?: number;
+  /** Tooltip number format: decimal places and a suffix such as "%". */
+  valueDecimals?: number;
+  valueSuffix?: string;
+  /** Gauge: the top of its scale (default 100, shown as a percentage). */
+  valueMax?: number;
+  /** Labels for a value axis whose values are positions on a scale (a rating
+   *  trend: 0 = "CCC" ... 6 = "AAA"). */
+  yAxisCategories?: string[];
+  /** corridor: the name of the band between its two lines. */
+  bandName?: string;
+  /** Wrap long category labels instead of rotating them (a narrow chart
+   *  with a few long names). */
+  labelWrap?: boolean;
+  /** One colour per point of the first series (a column coloured by bucket,
+   *  a waterfall's steps). A tone name - "good", "mid", "bad", "neutral",
+   *  "accent" - follows the design system; anything else is a CSS colour. */
+  pointColors?: string[];
+  /** The same, by point name: for points whose order follows the data (a
+   *  rating distribution that may miss a bucket). */
+  pointColorsByName?: Record<string, string>;
+  /** Name of the selected point; the others are dimmed. */
+  selected?: string;
+  /** Makes points clickable: called with the clicked point's name. */
+  onSelectPoint?: (name: string) => void;
+}
+
+/** A point colour: a tone name resolved against the theme, or a CSS colour. */
+export function resolvePointColor(color: string, v: ThemeVars): string {
+  switch (color) {
+    case "good": return v.positive;
+    case "mid": return v.warning;
+    case "bad": return v.negative;
+    case "accent": return v.primary;
+    case "neutral": return v.fgTer;
+    default: return color;
+  }
+}
+
+/** Opacity of the points that are not the selected one. */
+const DIMMED_POINT_OPACITY = 0.28;
+
+/** Per-point colours and selection for the first series: every point gets
+ *  an explicit colour (from `pointColors`, else the palette / series colour),
+ *  dimmed when another point is selected. */
+function applyPointStyling(o: Highcharts.Options, v: ThemeVars, props: ChartProps, colorByPoint: boolean, always = false): void {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const series = (o.series as any[] | undefined)?.[0];
+  if (!series || !Array.isArray(series.data)) return;
+  const byName = props.pointColorsByName ?? {};
+  if (!always && !props.pointColors?.length && !props.selected && Object.keys(byName).length === 0) return;
+  const palette = ((o.colors as string[] | undefined) ?? []).filter(Boolean);
+  const categories = ((o.xAxis as any)?.categories as string[] | undefined) ?? [];
+  series.data = series.data.map((point: any, i: number) => {
+    const obj = point !== null && typeof point === "object" && !Array.isArray(point) ? { ...point } : { y: point };
+    const name = String(obj.name ?? categories[i] ?? "");
+    const own = props.pointColors?.[i] ?? byName[name];
+    const base = own
+      ? resolvePointColor(own, v)
+      : obj.color ?? (colorByPoint ? palette[i % Math.max(1, palette.length)] : series.color ?? palette[0]) ?? v.primary;
+    const dimmed = Boolean(props.selected) && name !== props.selected;
+    return { ...obj, color: dimmed ? (Highcharts.color(base).setOpacity(DIMMED_POINT_OPACITY).get("rgba") as string) : base };
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+/** Options for one chart: the per-type build, then the settings every type
+ *  shares (height, title, axis format, legend, donut centre label). */
+export function buildChartOptions(
+  chartType: HighchartType,
+  t: Partial<Highcharts.Options>,
+  v: ThemeVars,
+  props: ChartProps,
+): Highcharts.Options {
+  const o = chartOptions(chartType, t, v, props);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  if (props.height) o.chart = { ...(o.chart as any), height: props.height };
+  if (props.hideTitle) o.title = { ...(o.title as any), text: undefined };
+  if (props.legend === false) o.legend = { ...(o.legend as any), enabled: false };
+  if (props.valueDecimals !== undefined || props.valueSuffix) {
+    o.tooltip = {
+      ...(o.tooltip as any),
+      ...(props.valueDecimals !== undefined ? { valueDecimals: props.valueDecimals } : {}),
+      ...(props.valueSuffix ? { valueSuffix: props.valueSuffix } : {}),
+    };
+  }
+  /* Value-axis format + title apply to the single-axis types; the
+     combination chart builds its own pair of axes. */
+  if (o.yAxis && !Array.isArray(o.yAxis) && chartType !== "gauge" && chartType !== "heatmap") {
+    const y = o.yAxis as any;
+    if (props.yAxisFormat) y.labels = { ...y.labels, format: props.yAxisFormat };
+    if (props.yAxisMax !== undefined) y.max = props.yAxisMax;
+    if (props.yAxisTitle !== undefined || props.hideTitle) {
+      y.title = { ...y.title, text: props.yAxisTitle || undefined };
+    }
+  }
+  /* A framed pie / donut names its parts in the legend, with their share,
+     instead of leader-line labels: in a compact panel the labels squeeze the
+     ring to a fraction of the space and collide with a centre label. */
+  if (props.hideTitle && (chartType === "donut" || chartType === "pie")) {
+    const pie = { ...((o.plotOptions as any)?.pie ?? {}), dataLabels: { enabled: false }, showInLegend: true };
+    if (chartType === "donut") o.series = (o.series as any[]).map((s) => ({ ...s, innerSize: "68%" }));
+    o.plotOptions = { ...(o.plotOptions as any), pie };
+    o.legend = {
+      ...(o.legend as any),
+      /* Beyond a handful of parts the legend pages at three rows: a
+         breakdown with a dozen parts must not take the ring's space. */
+      ...(pieParts(o) > PIE_LEGEND_FREE_ITEMS ? { maxHeight: PIE_LEGEND_MAX_HEIGHT } : {}),
+      navigation: { activeColor: v.fg, inactiveColor: v.fgTer, style: { color: v.fgSec }, arrowSize: 9 },
+      labelFormatter(this: { name: string; percentage?: number }) {
+        return this.percentage === undefined ? this.name : `${this.name} ${Math.round(this.percentage)}%`;
+      },
+    };
+  }
+  if (props.yAxisCategories?.length && o.yAxis && !Array.isArray(o.yAxis)) {
+    const labels = props.yAxisCategories;
+    const y = o.yAxis as any;
+    o.yAxis = { ...y, categories: labels, min: 0, max: labels.length - 1, tickInterval: 1, title: { ...y.title, text: undefined } };
+    o.tooltip = {
+      ...(o.tooltip as any),
+      shared: true,
+      formatter(this: any) {
+        const points = this.points ?? [this];
+        return `<b>${this.x ?? this.key ?? ""}</b><br/>` + points.map((p: any) => `${p.series.name}: <b>${labels[Math.round(p.y)] ?? p.y}</b>`).join("<br/>");
+      },
+    };
+  }
+  if (props.labelWrap && o.xAxis && !Array.isArray(o.xAxis)) {
+    const x = o.xAxis as any;
+    x.labels = { ...x.labels, autoRotation: undefined, style: { ...x.labels?.style, textOverflow: "none" } };
+  }
+  /* A waterfall's steps are always told apart by colour, selected or not. */
+  applyPointStyling(o, v, props, chartType === "pie" || chartType === "donut" || chartType === "waterfall", chartType === "waterfall");
+  if (props.onSelectPoint) {
+    const onSelect = props.onSelectPoint;
+    const series = { ...((o.plotOptions as any)?.series ?? {}) };
+    o.plotOptions = {
+      ...(o.plotOptions as any),
+      series: {
+        ...series,
+        cursor: "pointer",
+        point: {
+          events: {
+            click(this: { name?: string; category?: string | number }) {
+              onSelect(String(this.name ?? this.category ?? ""));
+            },
+          },
+        },
+      },
+    };
+  }
+  if (props.centerLabel && chartType === "donut") {
+    o.chart = { ...(o.chart as any), dhCenter: { text: props.centerLabel, color: v.fg }, events: { render: renderCenterLabel } };
+  }
+  /* The accessibility module describes the chart to assistive tech; give it
+     the title even when the visible title is hidden. */
+  o.accessibility = { ...(o.accessibility as any), description: props.title || undefined };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  return o;
+}
+
+const CENTER_LABEL_FONT_SIZE = 15;
+const CENTER_LABEL_MIN_FONT_SIZE = 9;
+/** Share of the ring's hole the centre label may span. */
+const CENTER_LABEL_FILL = 0.78;
+const PIE_LEGEND_MAX_HEIGHT = 72;
+/** Up to this many parts the legend is shown whole. */
+const PIE_LEGEND_FREE_ITEMS = 6;
+function pieParts(o: Highcharts.Options): number {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const data = (o.series as any[] | undefined)?.[0]?.data;
+  return Array.isArray(data) ? data.length : 0;
+}
+
+/** Highcharts `render` handler that keeps one text label centred on the pie.
+ *  Runs on every redraw, so the label follows a resize. Its text and colour
+ *  are read from the chart's CURRENT options each time (chart.dhCenter): the
+ *  handler is bound once, but the options change with the theme and data. */
+function renderCenterLabel(this: Highcharts.Chart) {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const chart = this as any;
+  const center = chart.options?.chart?.dhCenter as { text: string; color: string } | undefined;
+  const series = chart.series?.[0];
+  if (!center || !series?.center) return;
+  const [cx, cy] = series.center as number[];
+  if (!chart.dhCenterLabel) {
+    chart.dhCenterLabel = chart.renderer.text(center.text, 0, 0).attr({ align: "center", zIndex: 5 }).add();
+  }
+  chart.dhCenterLabel.css({ color: center.color, fontSize: `${CENTER_LABEL_FONT_SIZE}px`, fontWeight: "600" });
+  chart.dhCenterLabel.attr({ text: center.text, visibility: "inherit" });
+  /* Fit the hole: shrink the text when the ring is small, and drop it when
+     it would be too small to read rather than let it run over the ring. */
+  const hole = Number((series.center as number[])[3]) || 0;
+  let box = chart.dhCenterLabel.getBBox();
+  if (hole > 0 && box.width > hole * CENTER_LABEL_FILL) {
+    const size = Math.floor((CENTER_LABEL_FONT_SIZE * hole * CENTER_LABEL_FILL) / box.width);
+    if (size < CENTER_LABEL_MIN_FONT_SIZE) {
+      chart.dhCenterLabel.attr({ visibility: "hidden" });
+      return;
+    }
+    chart.dhCenterLabel.css({ fontSize: `${size}px` });
+    box = chart.dhCenterLabel.getBBox();
+  }
+  chart.dhCenterLabel.attr({ x: chart.plotLeft + cx, y: chart.plotTop + cy + box.height / 4 });
+}
 
 function chartOptions(
   chartType: HighchartType,
   t: Partial<Highcharts.Options>,
   v: ThemeVars,
-  props: {
-    title?: string;
-    value?: number;
-    /** Domain data the template/model can pass so charts aren't generic. */
-    seriesData?: { name: string; y: number }[];
-    categories?: string[];
-    series?: { name: string; data: number[] }[];
-  },
+  props: ChartProps,
 ): Highcharts.Options {
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const tc = t.chart as any;
@@ -296,35 +562,221 @@ function chartOptions(
             ],
       };
 
+    case "stacked-bar":
+      return {
+        ...t,
+        chart: { ...tc, type: "bar" },
+        title: { ...tt, text: props.title || "Exposure by currency" },
+        xAxis: { ...tx, categories: props.categories ?? ["USD", "EUR", "GBP", "JPY"] },
+        /* reversedStacks off so the segments run in legend order, left to
+           right, instead of the first series landing at the far end. */
+        yAxis: { ...ty, reversedStacks: false },
+        plotOptions: { ...t.plotOptions, bar: { stacking: "normal" } },
+        series: props.series
+          ? props.series.map((s) => ({ name: s.name, data: s.data, type: "bar" as const }))
+          : [
+              { name: "Bonds", data: [22, 14, 9, 4], type: "bar" as const },
+              { name: "Equity", data: [31, 12, 11, 6], type: "bar" as const },
+            ],
+      };
+
+    case "stacked-area":
+      return {
+        ...t,
+        chart: { ...tc, type: "areaspline" },
+        title: { ...tt, text: props.title || "Allocation history" },
+        xAxis: { ...tx, categories: props.categories ?? ["Q1", "Q2", "Q3", "Q4"] },
+        plotOptions: {
+          ...t.plotOptions,
+          areaspline: { stacking: "normal", fillOpacity: 0.5, lineWidth: 1, marker: { enabled: false } },
+        },
+        series: props.series
+          ? props.series.map((s) => ({ name: s.name, data: s.data, type: "areaspline" as const }))
+          : [
+              { name: "Bonds", data: [38, 36, 37, 35], type: "areaspline" as const },
+              { name: "Equity", data: [44, 47, 45, 48], type: "areaspline" as const },
+              { name: "Private assets", data: [18, 17, 18, 17], type: "areaspline" as const },
+            ],
+      };
+
+    /* Columns and lines on shared categories; each series chooses its mark
+       and, optionally, the right-hand axis. */
+    case "combination": {
+      const series: ChartSeries[] = props.series ?? [
+        { name: "Active", data: [4.1, 4.4, 3.9, 4.8, 5.2, 4.9], type: "column", yAxis: 1 },
+        { name: "Portfolio", data: [11.2, 11.9, 11.4, 12.6, 13.1, 12.8], type: "line" },
+        { name: "Benchmark", data: [10.4, 10.8, 10.9, 11.7, 12.0, 11.9], type: "line", dashStyle: "ShortDash" },
+      ];
+      const hasSecondary = series.some((s) => s.yAxis === 1);
+      const primaryAxis = {
+        ...ty,
+        title: { ...ty.title, text: props.yAxisTitle || undefined },
+        labels: { ...ty.labels, ...(props.yAxisFormat ? { format: props.yAxisFormat } : {}) },
+      };
+      const secondaryAxis = {
+        ...ty,
+        opposite: true,
+        gridLineWidth: 0,
+        title: { ...ty.title, text: props.secondaryAxisTitle || undefined },
+        labels: { ...ty.labels, ...(props.secondaryAxisFormat ? { format: props.secondaryAxisFormat } : {}) },
+      };
+      return {
+        ...t,
+        chart: { ...tc },
+        title: { ...tt, text: props.title || "Value at risk" },
+        xAxis: { ...tx, categories: props.categories ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+        yAxis: hasSecondary ? [primaryAxis, secondaryAxis] : primaryAxis,
+        tooltip: { ...t.tooltip, shared: true },
+        plotOptions: {
+          ...t.plotOptions,
+          line: { marker: { enabled: false } },
+          spline: { marker: { enabled: false } },
+        },
+        series: series.map((s) => ({
+          name: s.name,
+          data: s.data,
+          type: (s.type ?? "column") as any,
+          yAxis: hasSecondary ? (s.yAxis ?? 0) : 0,
+          ...(s.dashStyle ? { dashStyle: s.dashStyle } : {}),
+          /* Columns sit behind the lines. */
+          zIndex: (s.type ?? "column") === "column" ? 1 : 2,
+        })),
+      };
+    }
+
     /* ── Advanced charts ── */
 
     case "gauge": {
       const val = props.value ?? 87;
+      /* A score gauge names its own scale (valueMax: 10) and decimals; with
+         neither, the gauge is the original percentage dial. */
+      const max = props.valueMax ?? 100;
+      const suffix = props.valueSuffix ?? (props.valueMax === undefined ? "%" : "");
+      const number = props.valueDecimals !== undefined ? `{y:.${props.valueDecimals}f}` : "{y}";
+      /* In a framed panel the dome uses the room the title would have taken. */
+      const framed = Boolean(props.hideTitle);
+      /* A wider sweep (220 degrees) is a thin ring with its caption inside. */
+      const sweep = props.gaugeSweep && props.gaugeSweep > 180 ? Math.min(300, props.gaugeSweep) : 180;
+      const wide = sweep > 180;
+      const ring = wide ? "86%" : framed ? "74%" : "60%";
+      const caption = props.gaugeCaption ? `<br/><span style="font-size:${TIP_SIZE};font-weight:400;color:${v.fgTer}">${props.gaugeCaption}</span>` : "";
       return {
         ...t,
-        chart: { ...tc, type: "solidgauge", height: 250 },
+        /* Framed: no outer spacing, so the dome has the whole tile. */
+        chart: { ...tc, type: "solidgauge", height: 250, ...(framed ? { spacing: [0, 0, 0, 0] } : {}) },
         title: { ...tt, text: props.title || "System Health" },
+        tooltip: { enabled: false },
         pane: {
-          center: ["50%", "70%"], size: "100%", startAngle: -90, endAngle: 90,
+          /* The pane is sized from the smaller side of the plot, so the dome
+             always fits: a larger size was cut off at the sides of a narrow
+             tile. */
+          center: ["50%", wide ? "58%" : framed ? "74%" : "70%"], size: "100%", startAngle: -sweep / 2, endAngle: sweep / 2,
           background: [{
-            backgroundColor: v.primary + "20",
-            innerRadius: "60%", outerRadius: "100%",
+            /* A wash of the text colour: appending hex alpha to the primary
+               only works when it is a hex string, and drew a black track
+               when the token resolved to rgb(). */
+            backgroundColor: Highcharts.color(v.fg).setOpacity(0.1).get("rgba") as string,
+            innerRadius: ring, outerRadius: "100%",
             shape: "arc" as const, borderWidth: 0,
           }],
         },
         yAxis: {
-          min: 0, max: 100, lineWidth: 0, tickWidth: 0,
+          min: 0, max, lineWidth: 0, tickWidth: 0,
           minorTickInterval: null as any,
           labels: { enabled: false },
         },
         series: [{
           name: "Health", data: [val], type: "solidgauge" as any,
           dataLabels: {
-            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">{y}%</span>`,
-            borderWidth: 0, y: -20,
+            format: `<span style="font-size:22px;font-weight:600;color:${v.fg}">${number}${suffix}</span>${caption}`,
+            borderWidth: 0, y: wide ? -24 : framed ? -28 : -20,
+            style: { textOutline: "none" },
           },
-          innerRadius: "60%", radius: "100%",
+          /* One mark: nothing beside it to separate it from. */
+          borderWidth: 0,
+          innerRadius: ring, radius: "100%",
         }],
+      };
+    }
+
+    case "radar": {
+      /* A spider chart: one spoke per category, a polygon grid, lines that
+         close on themselves. */
+      const series = props.series ?? [
+        { name: "This year", data: [62, 48, 71, 55, 66, 59] },
+        { name: "Last year", data: [54, 52, 60, 49, 58, 63], dashStyle: "ShortDash" as const },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, polar: true, type: "line" },
+        title: { ...tt, text: props.title || "Capability profile" },
+        pane: { size: "78%" },
+        xAxis: {
+          ...tx,
+          categories: props.categories ?? ["Quality", "Speed", "Cost", "Coverage", "Support", "Reach"],
+          tickmarkPlacement: "on",
+          lineWidth: 0,
+          gridLineColor: v.border,
+        },
+        yAxis: { ...ty, gridLineInterpolation: "polygon", lineWidth: 0, min: 0, gridLineColor: v.border },
+        tooltip: { ...(t.tooltip as any), shared: true },
+        series: series.map((s) => ({ ...s, type: "line" as const, pointPlacement: "on", marker: { enabled: true, radius: 3 } })) as any,
+      };
+    }
+
+    case "corridor": {
+      /* A ceiling (dashed), a path under it, and the room between them as a
+         band. Series: [ceiling, path]. */
+      const [ceiling, path] = props.series ?? [
+        { name: "Budget", data: [40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0] },
+        { name: "Projected", data: [34, 30, 27, 23, 20, 16, 13, 10, 6, 3, 0] },
+      ];
+      const band = (ceiling?.data ?? []).map((upper, i) => [path?.data?.[i] ?? null, upper]);
+      const [c0, c1] = (t.colors as string[] | undefined) ?? [v.primary, v.positive];
+      return {
+        ...t,
+        chart: { ...tc, type: "line" },
+        title: { ...tt, text: props.title || "Pathway" },
+        xAxis: { ...tx, categories: props.categories ?? ["2030", "2032", "2034", "2036", "2038", "2040", "2042", "2044", "2046", "2048", "2050"] },
+        yAxis: { ...ty, min: 0 },
+        tooltip: { ...(t.tooltip as any), shared: true },
+        series: [
+          { type: "line", name: ceiling?.name ?? "Ceiling", data: ceiling?.data ?? [], dashStyle: "Dash", color: c0, marker: { enabled: false } },
+          { type: "arearange", name: props.bandName || "Headroom", data: band, color: c0, fillOpacity: 0.16, lineWidth: 0, marker: { enabled: false }, enableMouseTracking: false },
+          { type: "area", name: path?.name ?? "Path", data: path?.data ?? [], color: c1 ?? v.positive, fillOpacity: 0.14, marker: { enabled: false } },
+        ] as any,
+      };
+    }
+
+    case "waterfall": {
+      /* Steps that add to or take from a running total, then a sum bar. A
+         part flagged `isSum` shows the running total at that point. */
+      const steps = (props.seriesData as ({ name: string; y: number; isSum?: boolean })[] | undefined) ?? [
+        { name: "Opening", y: 1200 },
+        { name: "New", y: 340 },
+        { name: "Churn", y: -180 },
+        { name: "Expansion", y: 120 },
+        { name: "Closing", y: 0, isSum: true },
+      ];
+      return {
+        ...t,
+        chart: { ...tc, type: "waterfall" },
+        title: { ...tt, text: props.title || "Bridge" },
+        xAxis: { ...tx, type: "category", categories: steps.map((s) => s.name) },
+        legend: { enabled: false },
+        series: [{
+          name: props.title || "Value",
+          type: "waterfall" as any,
+          data: steps.map((s) => (s.isSum ? { name: s.name, isSum: true } : { name: s.name, y: s.y })),
+          lineWidth: 1,
+          lineColor: v.border,
+          dashStyle: "Dot",
+          dataLabels: {
+            enabled: true,
+            inside: false,
+            style: { fontSize: "11px", fontWeight: "500", color: v.fgSec, textOutline: "none" },
+          },
+        }] as any,
       };
     }
 
@@ -396,10 +848,47 @@ interface SimulatedHighchartProps {
   /** Domain chart data so templates/model output isn't generic. */
   seriesData?: { name: string; y: number }[];
   categories?: string[];
-  series?: { name: string; data: number[] }[];
+  series?: ChartSeries[];
+  /** Height, axis formats, legend, donut centre label, hidden title. */
+  height?: number;
+  hideTitle?: boolean;
+  yAxisFormat?: string;
+  yAxisTitle?: string;
+  secondaryAxisFormat?: string;
+  secondaryAxisTitle?: string;
+  centerLabel?: string;
+  legend?: boolean;
+  yAxisMax?: number;
+  valueDecimals?: number;
+  valueSuffix?: string;
+  valueMax?: number;
+  labelWrap?: boolean;
+  yAxisCategories?: string[];
+  bandName?: string;
+  pointColors?: string[];
+  pointColorsByName?: Record<string, string>;
+  selected?: string;
+  onSelectPoint?: (name: string) => void;
+  /** Gauge: degrees the arc sweeps (180 by default; 220 draws a thin ring). */
+  gaugeSweep?: number;
+  /** Gauge: a caption under the value ("% passive"). */
+  gaugeCaption?: string;
 }
 
-export function SimulatedHighchart({ chartType, title, value, system, seriesColors, seriesData, categories, series }: SimulatedHighchartProps) {
+const DEFAULT_CHART_HEIGHT = 250;
+const TIP_SIZE = `${11}px`;
+
+export function SimulatedHighchart({
+  chartType, title, value, system, seriesColors, seriesData, categories, series,
+  height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
+  valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, onSelectPoint, gaugeSweep, gaugeCaption,
+}: SimulatedHighchartProps) {
+  /* The click handler is read through a ref so a new function identity each
+     render does not rebuild the chart. */
+  const onSelectRef = useRef(onSelectPoint);
+  useEffect(() => { onSelectRef.current = onSelectPoint; }, [onSelectPoint]);
+  const selectable = Boolean(onSelectPoint);
+  const pointColorsKey = `${pointColors ? pointColors.join("|") : ""}#${pointColorsByName ? JSON.stringify(pointColorsByName) : ""}`;
   const mode = useBuilder((s) => s.mode);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<HighchartsReact.RefObject>(null);
@@ -444,22 +933,27 @@ export function SimulatedHighchart({ chartType, title, value, system, seriesColo
 
   const options = useMemo(() => {
     if (!vars) return null;
-    return chartOptions(
+    return buildChartOptions(
       chartType,
       baseTheme(vars, palette, seriesColors),
       vars,
-      { title, value, seriesData, categories, series },
+      {
+        title, value, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax,
+        valueMax, labelWrap, yAxisCategories, bandName, pointColors, pointColorsByName, selected, gaugeSweep, gaugeCaption,
+        ...(selectable ? { onSelectPoint: (name: string) => onSelectRef.current?.(name) } : {}),
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series]);
+  }, [vars, chartType, title, value, palette, seriesColorsKey, seriesData, categories, series, height, hideTitle, yAxisFormat, yAxisTitle, secondaryAxisFormat, secondaryAxisTitle, centerLabel, legend, valueDecimals, valueSuffix, yAxisMax, valueMax, labelWrap, yAxisCategories?.join("|"), bandName, pointColorsKey, selected, selectable, gaugeSweep, gaugeCaption]);
 
+  const boxHeight = height ?? DEFAULT_CHART_HEIGHT;
   return (
-    <div ref={wrapperRef} style={{ width: "100%", minHeight: 250 }}>
+    <div ref={wrapperRef} style={{ width: "100%", minHeight: boxHeight }}>
       {options ? (
         <HighchartsReact ref={chartRef} highcharts={Highcharts} options={options} />
       ) : (
         <div style={{
-          height: 250,
+          height: boxHeight,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

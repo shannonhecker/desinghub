@@ -108,6 +108,10 @@ export function buildProjectSnapshot(s: ReturnType<typeof useBuilder.getState>):
     colorOverrides: s.colorOverrides,
     activeTemplateId: s.activeTemplateId,
   };
+  /* Uploaded report data is deliberately NOT part of the cloud snapshot: it
+     may be a client's real figures, so it stays in the browser (the local
+     session keeps it). A session opened from the cloud on another device
+     shows the template's sample data. */
   const flushed = flushActiveBody(s);
   if (isMultiPage(flushed.pages)) {
     snapshot.pages = flushed.pages;
@@ -145,6 +149,24 @@ export interface SavedProject {
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
+/** The `createdAt` to write when upserting a project doc: the stored one
+ *  when the doc exists and is readable, otherwise `now`.
+ *
+ *  A read that is refused with permission-denied counts as "nothing of ours
+ *  to preserve" (see the call site): any other failure is rethrown. */
+export async function createdAtForUpsert<T>(
+  read: () => Promise<{ exists(): boolean; data(): { createdAt?: T } | undefined }>,
+  now: T,
+): Promise<T> {
+  try {
+    const existing = await read();
+    return existing.exists() ? (existing.data()?.createdAt ?? now) : now;
+  } catch (e) {
+    if ((e as { code?: string }).code !== "permission-denied") throw e;
+    return now;
+  }
+}
+
 export function useCloudStorage() {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<SavedProject[]>([]);
@@ -228,10 +250,15 @@ export function useCloudStorage() {
         /* Upsert path: preserve createdAt on updates by reading existing
          *  doc first, else stamp a fresh createdAt. */
         const ref = doc(db, "projects", opts.id);
-        const existing = await getDoc(ref);
-        const createdAt = existing.exists()
-          ? (existing.data()?.createdAt as Timestamp | undefined) ?? Timestamp.now()
-          : Timestamp.now();
+        /* The first save of a new session reads a doc that does not exist
+           yet. The security rules compare `resource.data.uid`, and for a
+           missing doc `resource` is null, so that read is refused with
+           permission-denied rather than answered "not found" - which used
+           to fail every first save ("Missing or insufficient permissions").
+           A refused read here means there is nothing of ours to preserve,
+           so stamp a fresh createdAt and let the write decide: creating the
+           doc is allowed, overwriting someone else's is still refused. */
+        const createdAt = await createdAtForUpsert(() => getDoc(ref), Timestamp.now());
         await setDoc(ref, {
           uid: u.uid,
           name,
@@ -303,6 +330,8 @@ export function useCloudStorage() {
         selectedComponents: snapshot.selectedComponents ?? [],
         colorOverrides,
         activeTemplateId: snapshot.activeTemplateId ?? null,
+        reportData: null,
+        reportState: {},
         hasOverrides: Object.keys(colorOverrides).length > 0,
         onboardingStep: "ready",
         /* Reattach the loaded project as the current session so subsequent

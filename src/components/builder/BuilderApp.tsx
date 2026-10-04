@@ -26,7 +26,8 @@ import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
-import { resolveStructurePadding } from "@/lib/structurePadding";
+import { resolveStructurePadding, uniformStructurePadding } from "@/lib/structurePadding";
+import { hasUniformStructure } from "@/lib/builderTemplates";
 import { copyShareLink, downloadCanvasJson, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
 import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
@@ -174,9 +175,24 @@ export function BuilderApp() {
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
   const placementMode = useBuilder((s) => s.placementMode);
   const interfaceType = useBuilder((s) => s.interfaceType);
+  /* A template that promises identical panel positions in every design
+     system pins the structural spacing to one scale (and, via the attribute,
+     the header height and sidebar width - see builder.css), so the body
+     starts at the same point whichever system is active. */
+  const uniformStructure = hasUniformStructure(activeTemplateId);
   useEffect(() => {
-    const v = resolveStructurePadding(designSystem, structurePadding);
     const root = document.documentElement;
+    if (uniformStructure) {
+      const u = uniformStructurePadding(structurePadding);
+      root.setAttribute('data-uniform-structure', '');
+      root.style.setProperty('--dh-pad-canvas', `${u.canvas}px`);
+      root.style.setProperty('--dh-pad-zone', `${u.zone}px`);
+      root.style.setProperty('--dh-pad-block', `${u.block}px`);
+      root.style.setProperty('--dh-pad-gap', `${u.gap}px`);
+      return;
+    }
+    root.removeAttribute('data-uniform-structure');
+    const v = resolveStructurePadding(designSystem, structurePadding);
     /* The Stripe-moderate density redefinition is scoped to uoaui + M3
        only. Salt / Fluent / Carbon keep their unchanged structure-padding
        scale: no marketing multiplier and no --dh-pad-canvas override, so
@@ -200,7 +216,7 @@ export function BuilderApp() {
     root.style.setProperty('--dh-pad-zone', `${v.zone * zoneMul}px`);
     root.style.setProperty('--dh-pad-block', `${v.block}px`);
     root.style.setProperty('--dh-pad-gap', `${v.gap * gapMul}px`);
-  }, [designSystem, structurePadding, interfaceType]);
+  }, [designSystem, structurePadding, interfaceType, uniformStructure]);
 
   /* Accent override: when `colorOverrides.accent` is set (AI
      setColorOverride action or a loaded session), paint the per-DS
