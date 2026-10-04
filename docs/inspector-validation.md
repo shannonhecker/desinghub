@@ -24,4 +24,6 @@ No blanket hook suppressions or coverage thresholds were introduced. Coverage me
 
 ## Validation
 
-Initial full coverage run: 1,895 tests / 149 files pass. Statements 49.18%, branches 41.88%, functions 42.90%, lines 49.72%. Typecheck and production build pass; lint 0 errors / 2,762 warnings (13 fewer). Token audit adds no literals. Browser verification and independent review are recorded in the PR.
+Final full coverage run: 1,917 tests / 149 files pass. Statements 49.25%, branches 42.06%, functions 43.01%, lines 49.80%. Typecheck and production build pass; lint 0 errors / 2,762 warnings (13 fewer). Token audit adds no literals. Browser verification and independent review are recorded in the PR.
+
+Independent review found two further chart-kind transitions to repair: stacked column/bar retained stacking, and leaving combination could discard a secondary-axis series. Both builder and generated helper explicitly reset stacking and rebind single-axis series to the primary axis. Axis options are emitted as an explicit collection so Highcharts removes a redundant secondary axis even when the primary options match. Live transition tests cover eight single-axis kinds and switching back to combination without losing names or values.

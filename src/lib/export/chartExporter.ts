@@ -1043,6 +1043,14 @@ ${x ? EXT_FUNCTIONS : ""}/* Options for one chart: the per-type build, then the 
    centre label). Each applies only when its prop is set. */
 function chartOptionsWithSettings(chartType: string, t: any, v: ReturnType<typeof chartTheme>, props: ChartProps): any {
   const o = chartOptionsFor(chartType, t, v, props);
+  const plots = { ...o.plotOptions };
+  for (const [type, stackedKind] of [["column", "stacked-column"], ["bar", "stacked-bar"], ["areaspline", "stacked-area"]]) {
+    plots[type] = { ...plots[type], stacking: chartType === stackedKind ? "normal" : undefined };
+  }
+  o.plotOptions = plots;
+  if (chartType !== "combination" && o.yAxis && !Array.isArray(o.yAxis)) {
+    o.series = o.series.map((series: any) => ({ ...series, yAxis: 0 }));
+  }
 ${x ? EXT_GAUGE_CALL : ""}  if (props.height) o.chart = { ...o.chart, height: props.height };
   if (props.hideTitle) o.title = { ...o.title, text: undefined };
   if (props.legend === false) o.legend = { ...o.legend, enabled: false };
@@ -1083,6 +1091,7 @@ ${sh ? SHAPE_SETTINGS : ""}${x ? EXT_SETTINGS : ""}  o.chart = {
     centerLabel: props.centerLabel && chartType === "donut" ? { text: props.centerLabel, color: v.fg } : null,
     events: { ...o.chart.events, render: renderCenterLabel },
   };
+  if (o.yAxis && !Array.isArray(o.yAxis)) o.yAxis = [o.yAxis];
   return o;
 }
 

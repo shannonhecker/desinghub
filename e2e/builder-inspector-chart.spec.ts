@@ -49,3 +49,31 @@ test('Allocation inspector updates donut to pie and back without stale geometry 
   await expect(block.locator('.highcharts-legend-item')).toHaveText(parts);
   await expect(block.locator('svg text').filter({ hasText: /^Portfolio$/ })).toHaveCount(0);
 });
+
+test('VaR inspector retains secondary-axis data and removes stacking when changing kinds', async ({ page }) => {
+  await page.route('**/api/health', route => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto('/builder');
+  await page.getByRole('button', { name: /Browse templates/ }).click();
+  await page.getByRole('button', { name: 'Use the Risk Analytics template' }).click();
+  await page.getByRole('button', { name: 'Edit canvas', exact: true }).click();
+  const block = page.locator('[data-block-id="tpl-risk-var"]');
+  await block.focus(); await block.press('Enter');
+  const show = page.getByRole('button', { name: 'Show component library', exact: true });
+  if (await show.isVisible()) await show.click();
+  const names = await block.locator('.highcharts-legend-item').allTextContents();
+  expect(names).toHaveLength(3);
+  const kind = async (name: string) => {
+    await page.getByRole('combobox', { name: 'Chart type', exact: true }).click();
+    await page.getByRole('option', { name, exact: true }).click();
+    await expect(block.locator('.highcharts-legend-item')).toHaveText(names);
+  };
+  await kind('Line');
+  await expect(block.locator('.highcharts-series-group > .highcharts-line-series:not(.highcharts-markers)')).toHaveCount(3);
+  await kind('Stacked column');
+  const firstPointX = (series: number) => block.locator(`.highcharts-series-group > .highcharts-series-${series} .highcharts-point`).first().evaluate(element => element.getBoundingClientRect().x);
+  await expect.poll(async () => Math.abs(await firstPointX(0) - await firstPointX(1))).toBeLessThan(1);
+  await kind('Column');
+  await expect.poll(async () => Math.abs(await firstPointX(0) - await firstPointX(1))).toBeGreaterThan(1);
+  await kind('Combination');
+  await expect(block.locator('.highcharts-series-group > .highcharts-series-0 .highcharts-point').first()).toBeVisible();
+});
