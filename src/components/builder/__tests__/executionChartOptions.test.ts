@@ -135,6 +135,12 @@ describe("executionChartOptions", () => {
     const label = (value: number, min: number, max: number) => ((lo.xAxis as Highcharts.XAxisOptions).labels!.formatter as (this: unknown) => string).call({ value, axis: { min, max } });
     expect(label(n - 10, n - 30, n - 1)).toMatch(/^\d{2}:\d{2}$/);
     expect(label(10, -0.5, n)).toMatch(/^\d{2} [A-Z][a-z]{2}$/);
+    /* Across days, two labels on one day: the date once, then the time. */
+    const day = (i: number) => new Date(lf.view.times[i]).toISOString().slice(0, 10);
+    const i = lf.view.times.findIndex((_, k) => k > 0 && k + 1 < n && day(k) === day(k + 1) && day(k - 1) !== day(k));
+    const withTicks = (value: number, tickPositions: number[]) => ((lo.xAxis as Highcharts.XAxisOptions).labels!.formatter as (this: unknown) => string).call({ value, axis: { min: -0.5, max: n, tickPositions } });
+    expect(withTicks(i, [i - 1, i, i + 1])).toMatch(/^\d{2} [A-Z][a-z]{2}$/);
+    expect(withTicks(i + 1, [i - 1, i, i + 1])).toMatch(/^\d{2}:\d{2}$/);
   });
 
   it("on a five-minute interval the last bucket moves until a new one opens", () => {

@@ -177,7 +177,16 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
         for (let i = lo + ((((offset - lo) % step) + step) % step); i <= hi; i += step) out.push(i);
         return out;
       },
-      labels: { rotation: 0, style: { color: v.fgTer, fontSize: SMALL, textOverflow: "none", whiteSpace: "nowrap" }, formatter() { const t = frame.view.times[Math.round(Number(this.value))]; return t === undefined ? "" : formatBarTime(t, acrossDays(this.axis)); } },
+      labels: { rotation: 0, style: { color: v.fgTer, fontSize: SMALL, textOverflow: "none", whiteSpace: "nowrap" }, formatter() {
+        const t = frame.view.times[Math.round(Number(this.value))];
+        if (t === undefined) return "";
+        if (!acrossDays(this.axis)) return formatBarTime(t, false);
+        /* Across days: the date where a day begins on the axis, the time for
+           the later labels of that day (never the same date twice in a row). */
+        const ticks = this.axis.tickPositions ?? [];
+        const before = frame.view.times[Math.round(ticks[ticks.indexOf(Number(this.value)) - 1])];
+        return before !== undefined && formatBarTime(before, true) === formatBarTime(t, true) ? formatBarTime(t, false) : formatBarTime(t, true);
+      } },
       plotBands: view.bands.map((b) => ({ id: b.state, from: b.from - 0.5, to: b.to - 0.5, color: alpha(v[STATE_TONES[b.state] ?? "fgTer"] as string, 0.14) })),
     },
     yAxis: [
