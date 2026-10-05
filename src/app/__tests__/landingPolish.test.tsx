@@ -887,14 +887,44 @@ describe("instrument", () => {
     expect(r?.getAttribute("src")).toBe("/showcase/cmp-uoaui-light.webp");
   });
 
-  it("a change parks the divider on that side's edge until the new capture settles", () => {
+  it("while a new capture loads the divider stays put, and the waiting side says so", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
     expect(splitOf(sec)).toBe("0.5");
-    click(tab(sec, "Carbon")); // new left capture: the right one covers the frame
-    expect(splitOf(sec)).toBe("0");
-    click(right(sec, "uoaui")); // new right capture: the left one covers the frame
+    expect(sec.hasAttribute("data-waiting")).toBe(false);
+    // The frame never sits at an edge (one system on both halves) waiting
+    // for a capture: both systems stay on screen until it arrives.
+    click(tab(sec, "Carbon"));
+    expect(splitOf(sec)).toBe("0.5");
+    expect(sec.getAttribute("data-waiting")).toBe("left");
+    click(right(sec, "uoaui"));
+    expect(splitOf(sec)).toBe("0.5");
+    expect(sec.getAttribute("data-waiting")).toBe("right");
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300));
+    });
+    expect(splitOf(sec)).toBe("0.5");
+    // The waiting side's name goes quiet; nothing else changes.
+    const css = readFileSync(CSS_PATH, "utf8");
+    expect(css).toMatch(
+      /\.lsl-instrument\[data-waiting="right"\] \.lsl-corner\[data-side="right"\]\s*\{\s*color:\s*var\(--lsl-fg-subtle\);/,
+    );
+    // When the capture settles the divider goes to that side's edge and
+    // leaves it in the same moment.
+    act(() => {
+      rightImg(sec)!.dispatchEvent(new Event("load"));
+    });
     expect(splitOf(sec)).toBe("1");
+    expect(sec.hasAttribute("data-waiting")).toBe(false);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 200));
+    });
+    expect(Number(splitOf(sec))).toBeLessThan(1);
+    expect(Number(splitOf(sec))).toBeGreaterThan(0.5);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 700));
+    });
+    expect(splitOf(sec)).toBe("0.5");
     // The slider's own value and text stay at rest; they are not rewritten
     // while the divider is moving.
     const range = sec.querySelector<HTMLInputElement>(".lsl-split-range")!;
@@ -1126,26 +1156,36 @@ describe("instrument", () => {
   it("a mode change re-keys a waiting sweep, and the sweep runs once the capture settles", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(tab(sec, "Carbon")); // parked at the left edge, waiting for carbon-dark
-    expect(splitOf(sec)).toBe("0");
+    click(tab(sec, "Carbon")); // waiting for carbon-dark, divider at rest
+    expect(splitOf(sec)).toBe("0.5");
+    expect(sec.getAttribute("data-waiting")).toBe("left");
     click(modeBtn(sec, "Light")); // now the frame needs carbon-light instead
     expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-carbon-light.webp");
-    expect(splitOf(sec)).toBe("0");
-    // The capture that settles is the light one: the sweep must still run.
-    await act(async () => {
+    expect(splitOf(sec)).toBe("0.5");
+    expect(sec.getAttribute("data-waiting")).toBe("left");
+    // The capture that settles is the light one: the sweep must still run,
+    // from the left edge.
+    act(() => {
       leftImg(sec)!.dispatchEvent(new Event("load"));
+    });
+    expect(splitOf(sec)).toBe("0");
+    await act(async () => {
       await new Promise((r) => setTimeout(r, 900));
     });
     expect(splitOf(sec)).toBe("0.5");
+    expect(sec.hasAttribute("data-waiting")).toBe(false);
   });
 
   it("a capture that fails to load still releases the sweep", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui")); // parked at the right edge, waiting for uoaui-dark
-    expect(splitOf(sec)).toBe("1");
-    await act(async () => {
+    click(right(sec, "uoaui")); // waiting for uoaui-dark, divider at rest
+    expect(splitOf(sec)).toBe("0.5");
+    act(() => {
       rightImg(sec)!.dispatchEvent(new Event("error"));
+    });
+    expect(splitOf(sec)).toBe("1"); // released: the sweep starts from the right edge
+    await act(async () => {
       await new Promise((r) => setTimeout(r, 900));
     });
     expect(splitOf(sec)).toBe("0.5");
@@ -1177,7 +1217,7 @@ describe("instrument", () => {
       await new Promise((r) => setTimeout(r, 900));
     });
     click(right(sec, "carbon")); // waits for carbon-dark, which never arrives
-    expect(splitOf(sec)).toBe("1");
+    expect(splitOf(sec)).toBe("0.5");
     click(right(sec, "uoaui")); // settled: sweeps straight away
     await act(async () => {
       await new Promise((r) => setTimeout(r, 900));
@@ -1191,6 +1231,42 @@ describe("instrument", () => {
       await new Promise((r) => setTimeout(r, 120));
     });
     expect(splitOf(sec)).toBe("0.5");
+  });
+
+  it("the divider always arrives: a timer finishes a sweep whose frames stop coming", async () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(right(sec, "uoaui"));
+    // From here on the page gets no animation frames (a throttled tab).
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 1);
+    try {
+      act(() => {
+        rightImg(sec)!.dispatchEvent(new Event("load"));
+      });
+      expect(splitOf(sec)).toBe("1");
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 800));
+      });
+      // Not parked on one system: the sweep's own length plus a short grace.
+      expect(splitOf(sec)).toBe("0.5");
+    } finally {
+      raf.mockRestore();
+    }
+  });
+
+  it("a page that is not being drawn skips the sweep and shows both systems at once", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(right(sec, "uoaui"));
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    try {
+      act(() => {
+        rightImg(sec)!.dispatchEvent(new Event("load"));
+      });
+      expect(splitOf(sec)).toBe("0.5");
+    } finally {
+      hidden.mockRestore();
+    }
   });
 
   it("the Left tab of the system on the right says why the arrow keys step over it", () => {

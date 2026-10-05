@@ -224,6 +224,124 @@ test("each side is chosen on its own, and a change sweeps in from that side", as
   await expect(page.getByRole("tab", { name: "Salt DS" })).toHaveAttribute("aria-selected", "true");
 });
 
+/* ── A side pick and its capture ─────────────────────────────────────────
+   The divider must never sit at an edge (one system on both halves) while a
+   capture is still on its way. These two tests record the divider on every
+   frame, in the page, with the time of the pick and of the capture's load. */
+async function recordDivider(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { __div: { t: number; n: number }[]; __loaded: number };
+    w.__div = [];
+    w.__loaded = 0;
+    const figure = document.querySelector<HTMLElement>("#showcase")!;
+    const tick = () => {
+      w.__div.push({ t: performance.now(), n: Number(figure.style.getPropertyValue("--split-n")) });
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    document
+      .querySelector<HTMLImageElement>("#showcase .lsl-compare-layer img.lsl-showcase-shot")!
+      .addEventListener("load", () => {
+        w.__loaded = performance.now();
+      });
+  });
+}
+const dividerLog = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { __div: { t: number; n: number }[]; __loaded: number };
+    return { samples: w.__div, loaded: w.__loaded, now: performance.now() };
+  });
+async function restAfterFirstView(page: Page) {
+  await expect.poll(() => splitOf(page), { timeout: 5000, intervals: [50] }).toBeLessThan(0.4);
+  await expect.poll(() => splitOf(page), { timeout: 5000 }).toBe(0.5);
+}
+
+test("a capture that takes 1.5 s: the divider stays put while it loads, then the reveal starts at once", async ({ page }) => {
+  // The warm-up never gets this capture (its request fails), so the pick
+  // has to fetch it, and that fetch takes 1.5 s.
+  let slow = false;
+  await page.route("**/showcase/cmp-uoaui-dark.webp", async (route) => {
+    if (!slow) return route.abort();
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  await page.goto("/", { waitUntil: "load" });
+  await restAfterFirstView(page);
+  slow = true;
+  await recordDivider(page);
+  const picked = await page.evaluate(() => performance.now());
+  await rightOption(page, "uoaui").check();
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-uoaui-dark.webp");
+  // The side that is waiting says so, quietly.
+  await expect(page.locator("#showcase")).toHaveAttribute("data-waiting", "right");
+  await expect.poll(async () => (await dividerLog(page)).loaded, { timeout: 8000 }).toBeGreaterThan(0);
+  await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
+  await page.waitForTimeout(100);
+  const { samples, loaded } = await dividerLog(page);
+
+  // The capture really was slow.
+  expect(loaded - picked).toBeGreaterThan(1200);
+  // While it loaded, the divider did not move: both systems stayed on screen.
+  const waiting = samples.filter((s) => s.t > picked && s.t < loaded - 20);
+  expect(waiting.length).toBeGreaterThan(30);
+  for (const s of waiting) expect(s.n).toBe(0.5);
+  // Once it settled the reveal started within 200 ms, from the right edge...
+  const moving = samples.find((s) => s.t >= loaded - 20 && s.n !== 0.5);
+  expect(moving, "the sweep started").toBeTruthy();
+  expect(moving!.t - loaded).toBeLessThan(200);
+  expect(Math.max(...samples.filter((s) => s.t >= loaded - 20).map((s) => s.n))).toBeGreaterThan(0.9);
+  // ...and the frame showed one system on both halves for no longer than the sweep itself.
+  const atEdge = samples.filter((s) => s.n > 0.9);
+  expect(atEdge[atEdge.length - 1].t - atEdge[0].t).toBeLessThan(400);
+  await expect(page.locator("#showcase")).not.toHaveAttribute("data-waiting", /.+/);
+});
+
+test("a capture that is ready: the reveal starts within 300 ms of the pick", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await restAfterFirstView(page);
+  await page.locator(".lsl-mode-btn", { hasText: "Light" }).click();
+  await expect(rightShot(page)).toHaveAttribute("src", "/showcase/cmp-md3-light.webp");
+  await page.waitForTimeout(600); // the light captures warm up
+  for (const [name, id] of [["Carbon", "carbon"], ["uoaui", "uoaui"]] as const) {
+    await recordDivider(page);
+    const picked = await page.evaluate(() => performance.now());
+    await rightOption(page, name).check();
+    await expect(rightShot(page)).toHaveAttribute("src", `/showcase/cmp-${id}-light.webp`);
+    await expect.poll(async () => (await dividerLog(page)).samples.some((s) => s.t > picked && s.n > 0.9)).toBe(true);
+    await expect.poll(() => splitOf(page), { timeout: 3000 }).toBe(0.5);
+    await page.waitForTimeout(100);
+    const { samples } = await dividerLog(page);
+    const after = samples.filter((s) => s.t > picked);
+    const first = after.find((s) => s.n !== 0.5)!;
+    expect(first.t - picked, `${name}: reveal starts`).toBeLessThan(300);
+    // One system on both halves only for the first part of the sweep.
+    const atEdge = after.filter((s) => s.n > 0.9);
+    expect(atEdge[atEdge.length - 1].t - atEdge[0].t, `${name}: time at the edge`).toBeLessThan(400);
+    // Back at rest within the sweep's own length (560 ms) plus the start.
+    const home = after.find((s) => s.t > first.t && s.n === 0.5)!;
+    expect(home.t - picked, `${name}: back at rest`).toBeLessThan(1100);
+  }
+});
+
+test("every capture of the current mode is warmed when the hero is in view, the other mode's on idle", async ({ page }) => {
+  const seen: { name: string; t: number }[] = [];
+  const t0 = Date.now();
+  page.on("request", (r) => {
+    const m = r.url().match(/\/showcase\/(cmp-[\w-]+\.webp)/);
+    if (m) seen.push({ name: m[1], t: Date.now() - t0 });
+  });
+  await page.goto("/", { waitUntil: "load" });
+  const names = () => new Set(seen.map((s) => s.name));
+  const all = (mode: string) => SYSTEMS.map(([, id]) => `cmp-${id}-${mode}.webp`);
+  // Dark is the mode on screen: all five, straight away.
+  await expect.poll(() => all("dark").every((n) => names().has(n)), { timeout: 1500 }).toBe(true);
+  // The light ones follow when the page is idle.
+  await expect.poll(() => all("light").every((n) => names().has(n)), { timeout: 6000 }).toBe(true);
+  const firstLight = Math.min(...seen.filter((s) => s.name.includes("-light")).map((s) => s.t));
+  const lastDark = Math.max(...all("dark").map((n) => seen.find((s) => s.name === n)!.t));
+  expect(firstLight).toBeGreaterThanOrEqual(lastDark);
+});
+
 const PAIRS = [
   ["Salt DS", "Material 3"],
   ["Salt DS", "Carbon"],
