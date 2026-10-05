@@ -166,7 +166,13 @@ test.describe("Builder - finance templates", () => {
 
     test(`${tpl.label}: Edit matches Present`, async ({ page }) => {
       await applyTemplate(page, tpl.label);
+      /* Present on the desktop device is full-bleed (5 Oct), so it is
+         measured in a 1320px window, where its content width equals Edit's
+         1320px design width (like with like). Tolerances are unchanged. */
+      await page.setViewportSize({ width: 1320, height: 900 });
+      await settle(page);
       const present = await measure(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByRole("button", { name: "Edit canvas" }).click();
       await expect(page.locator(".bp-viewport-wrapper .bp-main [data-block-id]").first()).toBeVisible();
       await settle(page);

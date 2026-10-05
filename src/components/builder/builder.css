@@ -5174,6 +5174,31 @@
   padding-bottom: clamp(78px, 12vh, 128px);
 }
 
+/* Full-bleed desktop Present (5 Oct): no mat, no frame chrome; the
+   dashboard fills the stage and scrolls inside it. The inner scroller keeps
+   the floating bar's footprint clear of the last row. */
+.present-stage-viewport[data-full-bleed="true"] {
+  padding: 0;
+  display: block;
+  /* The dashboard's own body scrolls; the stage never does, so no gutter. */
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+.present-stage .bp-device-frame--full,
+.bp-device-frame.bp-device-frame--full {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+}
+.present-stage-viewport[data-full-bleed="true"] .bp-main {
+  padding-bottom: var(--bc-present-bar-footprint);
+  scroll-padding-bottom: var(--bc-present-bar-footprint);
+}
+
 /* On the stage the frame sizes to its content (capped), centred,
    rather than the flex:1 fill it uses inside the narrow side panel.
    Desktop caps at a presentation width so it reads as "presented",

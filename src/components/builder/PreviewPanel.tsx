@@ -1397,7 +1397,7 @@ function DashboardFooter() {
    The spring is wrapped in useReducedMotion — when a user prefers
    reduced motion the width/height changes apply instantly
    (duration 0) instead of springing. */
-export function DeviceFrame({ children }: { children: React.ReactNode }) {
+export function DeviceFrame({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
   const deviceMode = useBuilder(effectiveDeviceMode);
   /* A canvas with several pages is an app the reader moves around: hold the
      frame at its full height so a short page does not shrink and re-centre
@@ -1441,6 +1441,24 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fit = fitFrame(preset.width, preset.height, avail.width, avail.height);
+  /* Full-bleed desktop (Present and Preview, 5 Oct): the report is a
+     responsive app, so on the stage it takes the whole window, edge to edge,
+     at the window's real width, and scrolls inside the stage. No design
+     width, no scale, no frame chrome. Tablet and phone keep the framed,
+     centred preview, and Edit keeps its framed canvas beside the panels. */
+  if (fullBleed && deviceMode === "desktop") {
+    return (
+      <div
+        ref={frameRef}
+        className="bp-device-frame bp-device-frame--full"
+        data-frame-zoom={1}
+        data-full-bleed="true"
+        style={{ width: "100%", height: "100%", "--dh-frame-zoom": 1 } as React.CSSProperties}
+      >
+        {children}
+      </div>
+    );
+  }
   return (
     <motion.div
       ref={frameRef}
@@ -1486,6 +1504,9 @@ interface BuilderCanvasProps {
   responsive?: boolean;
   resizableSidebar?: boolean;
   allowEmptyState?: boolean;
+  /** Present and Preview: with the desktop device the frame fills the stage
+     edge to edge instead of a centred design-width frame. */
+  fullBleedDesktop?: boolean;
 }
 
 export function BuilderCanvas({
@@ -1493,6 +1514,7 @@ export function BuilderCanvas({
   responsive = false,
   resizableSidebar = false,
   allowEmptyState = false,
+  fullBleedDesktop = false,
 }: BuilderCanvasProps) {
   const plainCanvas = useBuilder((st) => st.zoneLayouts.body.plain === true);
   const designSystem = useBuilder((s) => s.designSystem);
@@ -1620,7 +1642,7 @@ export function BuilderCanvas({
   if (!framed) return dashboard;
   /* Framed shells: Compare mode swaps the entire device frame for the
      four-up CompareView (unchanged behaviour from the side panel). */
-  return compareMode ? <CompareView /> : <DeviceFrame>{dashboard}</DeviceFrame>;
+  return compareMode ? <CompareView /> : <DeviceFrame fullBleed={fullBleedDesktop}>{dashboard}</DeviceFrame>;
 }
 
 /* ══════════════════════════════════════════════════════════

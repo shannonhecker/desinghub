@@ -81,6 +81,9 @@
   --bc-stage-cap:   1320px;
   --bc-stage-mat:   clamp(16px, 3vw, 40px);
   --bc-overlay:     rgba(0, 0, 0, 0.40);
+  /* Full-bleed Present: the floating bar's footprint (its offset from the
+     bottom plus its height), kept clear under the last row of content. */
+  --bc-present-bar-footprint: 88px;
 
   /* Inner content caps (per interface type) + fluid page gutter.
      The device frame caps at --bc-stage-cap; WITHIN it, body content

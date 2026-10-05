@@ -118,7 +118,15 @@ test.describe("Builder - template layout parity", () => {
 
   test("Edit matches Present: the canvas is scaled to the stage, not re-flowed", async ({ page }) => {
     await applyAnalyticsTemplate(page);
+    /* Present on the desktop device is full-bleed (5 Oct): the report lays
+       out at the window's width. Edit lays out at the 1320px design width
+       and scales it to the stage, so Present is measured in a 1320px window,
+       where the two resolve to the same content width (like with like).
+       The tolerances below are unchanged. */
+    await page.setViewportSize({ width: 1320, height: 900 });
+    await settle(page);
     const present = await measure(page);
+    await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole("button", { name: "Edit canvas" }).click();
     await expect(page.locator(".bp-viewport-wrapper .bp-main [data-block-id]").first()).toBeVisible();
