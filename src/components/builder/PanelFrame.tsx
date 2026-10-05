@@ -154,6 +154,8 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
     const onFocus = (e: FocusEvent) => {
       /* The Configuration dialog (portalled) keeps focus itself. */
       if (expandedRef.current?.contains(e.target as Node) || menuOpen() || overlayIsOpen()) return;
+      /* A dialog takes focus as it opens, before it has registered as open. */
+      if (e.target instanceof Element && e.target.closest(".dh-kit-scope, .dh-kit-dialog")) return;
       focusBoundary(backwards);
     };
     const onKey = (e: KeyboardEvent) => {
