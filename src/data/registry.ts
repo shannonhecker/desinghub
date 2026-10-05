@@ -164,6 +164,7 @@ export function getFullCSS(system: SystemId, theme: ThemeTokens, densityOrSize: 
         --h:${d.h}px;--pad:${d.pad}px;--fs:${d.fs}px;--cr:${d.cr}px;
         --salt-spacing-25:${d.sp*0.25}px;
         --salt-spacing-50:${d.sp*0.5}px;
+        --salt-spacing-75:${d.sp*0.75}px;
         --salt-spacing-100:${d.sp}px;
         --salt-spacing-150:${d.sp*1.5}px;
         --salt-spacing-200:${d.sp*2}px;
