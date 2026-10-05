@@ -24,6 +24,7 @@ import {
 import { useState, useEffect } from "react";
 import { useBuilder, flushActiveBody, isMultiPage } from "@/store/useBuilder";
 import { migrateBlocks } from "./blockMigrations";
+import { stripUndefinedDeep } from "./stripUndefinedDeep";
 import type {
   ChatMessage,
   Block,
@@ -121,6 +122,12 @@ export function buildProjectSnapshot(s: ReturnType<typeof useBuilder.getState>):
     snapshot.blocks = flushed.pages.find((p) => p.id === flushed.activePageId)?.body ?? s.blocks;
   }
   return snapshot;
+}
+
+/* What the cloud save writes: the snapshot with every undefined stripped,
+   so one stray undefined can never block saving (Firestore rejects it). */
+export function buildCloudSnapshot(s: ReturnType<typeof useBuilder.getState>): ProjectSnapshot {
+  return stripUndefinedDeep(buildProjectSnapshot(s));
 }
 
 /* Pure: derive the multi-page restore payload from a loaded snapshot, or null
@@ -243,7 +250,7 @@ export function useCloudStorage() {
     try {
       const { db } = getFirebaseInstances();
       const u = await ensureAuth();
-      const projectSnapshot = buildProjectSnapshot(useBuilder.getState());
+      const projectSnapshot = buildCloudSnapshot(useBuilder.getState());
 
       let savedId: string;
       if (opts?.id) {

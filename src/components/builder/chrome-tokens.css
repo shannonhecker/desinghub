@@ -76,6 +76,10 @@
   --dh-exec-btn:            32px;
   --dh-exec-chip-h:         26px;
   --dh-exec-flyout-w:       200px;
+  /* The rail's menus float: a gap from the rail's edge, and a short slide
+     in from it when they open. */
+  --dh-exec-menu-gap:       6px;
+  --dh-exec-menu-enter:     -4px;
   /* The sample feed's controls: one slot as tall as the tallest compact
      design-system button (Carbon sm), so the header is one height in all five. */
   --dh-feed-h:              32px;
@@ -307,6 +311,96 @@
   --bc-shadow-sm:   0 1px 2px rgba(15, 17, 22, 0.08);
   --bc-shadow-md:   0 6px 16px rgba(15, 17, 22, 0.12), 0 1px 3px rgba(15, 17, 22, 0.08);
   --bc-shadow-lg:   0 16px 40px rgba(15, 17, 22, 0.16), 0 2px 6px rgba(15, 17, 22, 0.10);
+}
+
+/* FX Execution: the chart rail's menus are each design system's overlay.
+   Surface, hairline, elevation, radius and rows come from the system's own
+   tokens where it has them (Salt overlayable / container / separable, MUI
+   paper + shadows-8 + overlays-8, Fluent shadow16 + stroke + radius, Carbon
+   layer-02 + border-subtle + shadow); the few literals below are the
+   systems' published menu metrics. In dark mode each menu sits on a surface
+   a step lighter than the chart panel, since a shadow alone barely reads. */
+.preview-salt {
+  --dh-exec-menu-bg: var(--salt-container-tertiary-background);
+  /* Salt's quietest separator (20% of the foreground) is still a ring on a
+     menu; under half of it is a hairline, in light and dark. */
+  --dh-exec-menu-border: color-mix(in srgb, var(--salt-separable-tertiary-borderColor) 45%, transparent);
+  --dh-exec-menu-shadow: var(--salt-overlayable-shadow-popout), var(--salt-overlayable-shadow);
+  --dh-exec-menu-radius: var(--salt-curve-100);
+  --dh-exec-menu-pad: var(--salt-spacing-50, 4px);
+  --dh-exec-menu-item-h: var(--salt-size-base);
+  --dh-exec-menu-item-pad: var(--salt-spacing-100);
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-title-case: uppercase;
+  --dh-exec-menu-title-track: 0.06em;
+}
+.builder-light .preview-salt {
+  --dh-exec-menu-bg: var(--salt-container-primary-background);
+}
+.preview-m3 {
+  --dh-exec-menu-bg: var(--mui-palette-background-paper);
+  /* MUI's dark elevation: a white overlay on the paper (Menu = elevation 8). */
+  --dh-exec-menu-image: var(--mui-overlays-8);
+  --dh-exec-menu-border: color-mix(in srgb, var(--mui-palette-divider) 60%, transparent);
+  --dh-exec-menu-shadow: var(--mui-shadows-8);
+  --dh-exec-menu-radius: var(--mui-shape-borderRadius, 4px);
+  --dh-exec-menu-pad: 8px 0;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 12px;
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-active-bg: var(--mui-palette-action-selected);
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0.1px;
+}
+.builder-light .preview-m3 {
+  --dh-exec-menu-image: none;
+}
+.preview-fluent {
+  --dh-exec-menu-bg: var(--colorNeutralBackground1);
+  --dh-exec-menu-border: color-mix(in srgb, var(--colorNeutralStroke3) 85%, transparent);
+  --dh-exec-menu-shadow: var(--shadow16);
+  --dh-exec-menu-radius: var(--borderRadiusMedium);
+  --dh-exec-menu-pad: 4px;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 6px;
+  --dh-exec-menu-item-radius: var(--borderRadiusMedium);
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0;
+}
+.builder-light .preview-fluent {
+  --dh-exec-menu-border: var(--colorNeutralStroke2);
+}
+.preview-carbon {
+  --dh-exec-menu-bg: var(--cds-layer-02);
+  --dh-exec-menu-border: color-mix(in srgb, var(--cds-border-subtle-01) 55%, transparent);
+  --dh-exec-menu-shadow: 0 2px 6px var(--cds-shadow);
+  --dh-exec-menu-radius: 0;
+  --dh-exec-menu-pad: 0;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 16px;
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-active-bg: var(--cds-layer-selected-02, var(--cds-layer-selected-01));
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0.32px;
+}
+.preview-uoaui {
+  /* Glass: an opaque tint of the page under a blur, so the plot never
+     shows through the list. */
+  --dh-exec-menu-bg: color-mix(in srgb, var(--ds-fg) 7%, var(--ds-bg));
+  --dh-exec-menu-border: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  --dh-exec-menu-shadow: var(--dh-shadow-lg);
+  --dh-exec-menu-backdrop: blur(16px);
+  --dh-exec-menu-radius: var(--ds-radius);
+  --dh-exec-menu-pad: 6px;
+  --dh-exec-menu-item-h: 30px;
+  --dh-exec-menu-item-pad: 10px;
+  --dh-exec-menu-item-radius: var(--ds-btn-radius);
+  --dh-exec-menu-title-case: uppercase;
+  --dh-exec-menu-title-track: 0.06em;
+}
+.builder-light .preview-uoaui {
+  --dh-exec-menu-bg: var(--ds-bg);
+  --dh-exec-menu-border: color-mix(in srgb, var(--ds-primary) 10%, transparent);
 }
 
 /* Respect reduced motion globally */

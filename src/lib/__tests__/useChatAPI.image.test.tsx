@@ -181,4 +181,20 @@ describe("useChatAPI: image turns", () => {
     const msgs = useBuilder.getState().messages;
     expect(msgs[msgs.length - 1].content).toBe(CHAT_ERROR_COPY.generic);
   });
+
+  it("Retry then 429 hands the image back instead of losing it", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 500, headers: new Headers() } as Response)
+      .mockResolvedValueOnce({ ok: false, status: 429, headers: new Headers({ "Retry-After": "3" }) } as unknown as Response);
+    globalThis.fetch = fetchMock;
+    await act(async () => {
+      await api.sendMessage("Build this screen from the image.", { image: IMAGE });
+    });
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await api.retryFailedSend();
+    });
+    expect(outcome).toEqual({ status: "rate-limited", image: IMAGE });
+  });
 });

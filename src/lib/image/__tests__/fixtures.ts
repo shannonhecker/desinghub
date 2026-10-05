@@ -12,29 +12,53 @@ function withPadding(head: number[], pad: number): Uint8Array {
   return out;
 }
 
-export function makePng(width: number, height: number, pad = 64): Uint8Array {
-  return withPadding(
-    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...be32(13), ...ascii("IHDR"), ...be32(width), ...be32(height), 8, 6, 0, 0, 0],
-    pad,
-  );
+/* A well-formed PNG chunk (CRC zeroed: nothing here checks it). */
+function pngChunk(name: string, data: number[] | Uint8Array): number[] {
+  return [...be32(data.length), ...ascii(name), ...Array.from(data), 0, 0, 0, 0];
+}
+const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const ihdr = (w: number, h: number) => pngChunk("IHDR", [...be32(w), ...be32(h), 8, 6, 0, 0, 0]);
+
+function bytesOf(parts: number[][], padAt: number, pad: number): Uint8Array {
+  /* `pad` zero bytes go inside the chunk/segment at index padAt, so the file
+     stays well formed at any size. */
+  const head = parts.slice(0, padAt).flat();
+  const tail = parts.slice(padAt).flat();
+  const out = new Uint8Array(head.length + pad + tail.length);
+  out.set(head);
+  out.set(tail, head.length + pad);
+  return out;
+}
+
+export function makePng(width: number, height: number, pad = 64, extraChunks: number[][] = [], afterIdat: number[][] = []): Uint8Array {
+  /* IDAT carries the padding: [len][IDAT][pad zeros][crc]. */
+  const idatHead = [...be32(pad), ...ascii("IDAT")];
+  return bytesOf([PNG_SIG, ihdr(width, height), ...extraChunks, idatHead, [0, 0, 0, 0], ...afterIdat, pngChunk("IEND", [])], 3 + extraChunks.length, pad);
 }
 
 export function makeJpeg(width: number, height: number, pad = 64): Uint8Array {
-  return withPadding(
-    [
-      0xff, 0xd8,
-      // APP0 (JFIF), length 16
-      0xff, 0xe0, 0x00, 0x10, ...ascii("JFIF"), 0, 1, 1, 0, 0, 1, 0, 1, 0, 0,
-      // SOF0, length 17: precision, height, width, components
-      0xff, 0xc0, 0x00, 0x11, 8, (height >> 8) & 255, height & 255, (width >> 8) & 255, width & 255, 3,
-      1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1,
-    ],
-    pad,
-  );
+  const head = [
+    0xff, 0xd8,
+    // APP0 (JFIF), length 16
+    0xff, 0xe0, 0x00, 0x10, ...ascii("JFIF"), 0, 1, 1, 0, 0, 1, 0, 1, 0, 0,
+    // SOF0, length 17: precision, height, width, components
+    0xff, 0xc0, 0x00, 0x11, 8, (height >> 8) & 255, height & 255, (width >> 8) & 255, width & 255, 3,
+    1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1,
+    // SOS, length 12, then entropy-coded data (the padding), then EOI
+    0xff, 0xda, 0x00, 0x0c, 3, 1, 0, 2, 0x11, 3, 0x11, 0, 0x3f, 0,
+  ];
+  return bytesOf([head, [0xff, 0xd9]], 1, pad);
 }
 
 export function makeGif(width: number, height: number, pad = 64): Uint8Array {
-  return withPadding([...ascii("GIF89a"), ...le16(width), ...le16(height), 0, 0, 0], pad);
+  /* Header with no colour table, then the trailer; padding after it. */
+  return bytesOf([[...ascii("GIF89a"), ...le16(width), ...le16(height), 0, 0, 0, 0x3b]], 1, pad);
+}
+
+/* A GIF with a comment extension before the trailer. */
+export function makeGifWithComment(width: number, height: number, comment: string): Uint8Array {
+  const c = ascii(comment);
+  return new Uint8Array([...ascii("GIF89a"), ...le16(width), ...le16(height), 0, 0, 0, 0x21, 0xfe, c.length, ...c, 0, 0x3b]);
 }
 
 /* Extended WebP (VP8X): canvas size minus one, 24-bit little endian. */
@@ -69,14 +93,12 @@ export function makeJpegWithExif(width: number, height: number, pad = 64): Uint8
 
 /* A PNG with an eXIf chunk after IHDR. */
 export function makePngWithExif(width: number, height: number): Uint8Array {
-  const base = makePng(width, height, 0);
-  const data = ascii(GPS_MARKER);
-  /* makePng stops after the IHDR data; add its CRC, then the eXIf chunk. */
-  const chunk = [0, 0, 0, 0, ...be32(data.length), ...ascii("eXIf"), ...data, 0, 0, 0, 0];
-  const out = new Uint8Array(base.length + chunk.length + 32);
-  out.set(base);
-  out.set(chunk, base.length);
-  return out;
+  return makePng(width, height, 32, [pngChunk("eXIf", ascii(GPS_MARKER))]);
+}
+
+/* A PNG whose tEXt chunk sits after IDAT (legal, and easy to miss). */
+export function makePngWithTextAfterIdat(width: number, height: number): Uint8Array {
+  return makePng(width, height, 32, [], [pngChunk("tEXt", ascii(`Comment\0${GPS_MARKER}`))]);
 }
 
 export const containsAscii = (bytes: Uint8Array, text: string) =>

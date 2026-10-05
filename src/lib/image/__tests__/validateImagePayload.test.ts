@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { validateImagePayload, imageContentBlock } from "../validateImagePayload";
+import { validateImagePayload, imageContentBlock, IMAGE_REJECTED_ERROR } from "../validateImagePayload";
+import { IMAGE_REJECTED_ERROR as SHARED_REJECT } from "../imageBytes";
 import { MAX_IMAGE_BYTES } from "../imageBytes";
 import { makePng, makeJpeg, makeWebp, makeGif, toBase64 } from "./fixtures";
 
@@ -56,5 +57,12 @@ describe("imageContentBlock", () => {
       type: "image",
       source: { type: "base64", media_type: "image/webp", data: "AAAA" },
     });
+  });
+});
+
+describe("the reject message is one shared constant", () => {
+  it("the server module re-exports the isomorphic constant the client matches on", () => {
+    expect(IMAGE_REJECTED_ERROR).toBe(SHARED_REJECT);
+    expect(SHARED_REJECT).toBe("That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB.");
   });
 });

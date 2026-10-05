@@ -112,7 +112,8 @@ describe("prepareImageAttachment: downscales to a long edge of 1568", () => {
   });
 
   it("falls back to JPEG when the PNG is over the byte cap", async () => {
-    const bytes = makeJpeg(4032, 3024);
+    /* A PNG source (a photo saved as PNG): PNG first, then JPEG. */
+    const bytes = makePng(4032, 3024);
     const { codec, encode } = fakeCodec({
       decoded: { width: 4032, height: 3024 },
       encodedBytes: (type) => (type === "image/png" ? MAX_IMAGE_BYTES + 1 : 500_000),
@@ -173,5 +174,30 @@ describe("prepareImageAttachment: metadata never leaves the browser", () => {
     const out = await prepareImageAttachment(fileFrom(makePngWithExif(10, 10), "x.png"), codec);
     expect(encode).toHaveBeenCalled();
     expect(containsAscii(base64ToBytes(out.base64), GPS_MARKER)).toBe(false);
+  });
+});
+
+describe("prepareImageAttachment: JPEG sources stay JPEG", () => {
+  it("re-encodes a JPEG as JPEG first, never PNG", async () => {
+    const { codec, encode } = fakeCodec({ decoded: { width: 4032, height: 3024 } });
+    const out = await prepareImageAttachment(fileFrom(makeJpeg(4032, 3024), "photo.jpg"), codec);
+    expect(encode.mock.calls.map((c) => c[3])).toEqual(["image/jpeg"]);
+    expect(encode.mock.calls[0][4]).toBe(0.88);
+    expect(out.mediaType).toBe("image/jpeg");
+  });
+});
+
+describe("browserImageCodec", () => {
+  it("decodes with imageOrientation 'from-image' explicitly", async () => {
+    const { browserImageCodec } = await import("../prepareImageAttachment");
+    const spy = vi.fn(async () => ({ width: 2, height: 1, close: vi.fn() }));
+    const prev = (globalThis as { createImageBitmap?: unknown }).createImageBitmap;
+    (globalThis as { createImageBitmap?: unknown }).createImageBitmap = spy;
+    try {
+      await browserImageCodec.decode(new Blob([new Uint8Array([1])]));
+      expect(spy).toHaveBeenCalledWith(expect.any(Blob), { imageOrientation: "from-image" });
+    } finally {
+      (globalThis as { createImageBitmap?: unknown }).createImageBitmap = prev;
+    }
   });
 });
