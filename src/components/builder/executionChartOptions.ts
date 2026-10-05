@@ -383,9 +383,14 @@ export function drawPills(chart: Highcharts.Chart, frame: ChartFrame, v: ThemeVa
   if (!axis) return;
   const top = chart.plotTop;
   const bottom = chart.plotTop + axis.len;
+  const user = axis.getExtremes?.();
+  const zoomedPrice = user?.userMin !== undefined || user?.userMax !== undefined;
   const pills = frame.view.pills
     .map((p) => ({ p, y: axis.toPixels(p.value, false) }))
-    .filter(({ y }) => Number.isFinite(y));
+    .filter(({ y }) => Number.isFinite(y))
+    /* On a zoomed price scale a tag whose price is off the scale would sit
+       at the plot's edge pointing at no line: it is left out. */
+    .filter(({ y }) => !zoomedPrice || (y >= top - 1 && y <= bottom + 1));
   const ys = layoutTags(pills.map((t) => t.y), top, bottom, PILL_HEIGHT, 2);
   const x = chart.plotLeft + chart.plotWidth + 4;
   /* The bands the tags (and the countdown) take on the axis. */
