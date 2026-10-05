@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { PanelConfig } from "../panelConfig";
-import { addColumn, addGroup, availableTree, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation } from "../panelConfigDialog";
+import { addColumn, addGroup, availableTree, canPivot, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation } from "../panelConfigDialog";
 import { financeDataset } from "../financeDataset";
 import { dimensionsOf, measuresOf, tableOf } from "../types";
 
@@ -78,9 +78,18 @@ describe("groups", () => {
     expect(addGroup(base, mets[0].key, holdings)).toBe(base);
   });
 
-  it("removes a slot", () => {
+  it("a pie or donut takes a row group only", () => {
+    const donut: PanelConfig = { ...base, view: "chart", chartType: "donut", rows: dims[0].key };
+    expect(canPivot(donut)).toBe(false);
+    expect(addGroup(donut, dims[1].key, holdings)).toBe(donut);
+    expect(availableTree(holdings, donut, "groups").groups[0].leaves.some((l) => l.addable)).toBe(false);
+    expect(canPivot({ ...donut, chartType: "bar" })).toBe(true);
+  });
+
+  it("removes a slot; the column group moves up when the row group goes", () => {
     const two = { ...base, rows: dims[0].key, columns: dims[1].key };
-    expect(removeGroup(two, "rows")).toMatchObject({ rows: null, columns: dims[1].key });
+    expect(removeGroup(two, "rows")).toMatchObject({ rows: dims[1].key, columns: null });
+    expect(removeGroup({ ...base, rows: dims[0].key }, "rows")).toMatchObject({ rows: null, columns: null });
     expect(removeGroup(two, "columns")).toMatchObject({ rows: dims[0].key, columns: null });
   });
 });

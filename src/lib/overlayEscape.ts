@@ -48,6 +48,11 @@ export function useOverlayEscape(open: boolean, onClose: () => void): void {
   useEffect(() => (open ? register({ close: () => close.current() }) : undefined), [open]);
 }
 
+/** True while any kit overlay is open (a panel's own keys stand aside). */
+export function overlayIsOpen(): boolean {
+  return stack.length > 0;
+}
+
 /** True when this Escape was pressed while an overlay was open (it was the overlay's, or its popup's). */
 export function overlayTookEscape(e: KeyboardEvent): boolean {
   return taken.has(e);

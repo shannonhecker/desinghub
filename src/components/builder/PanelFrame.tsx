@@ -6,7 +6,8 @@ import { Maximize2, Minimize2, SlidersHorizontal } from "lucide-react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { usePreviewReadOnly } from "./previewReadOnly";
-import { PanelConfigDrawer } from "./PanelConfigDrawer";
+import { PanelConfigDialog } from "./PanelConfigDialog";
+import { overlayIsOpen } from "@/lib/overlayEscape";
 import { LazyDataGrid as SimulatedDataGrid } from "./lazyBlocks";
 import type { GridColumn, GridRow } from "@/lib/dataGridModel";
 import {
@@ -30,8 +31,9 @@ import {
    Panel tools (data-bound panels only):
    - Expand: the panel takes over the canvas body, with the data
      behind a chart shown as a table beneath it.
-   - Configure: expands and opens the configuration drawer (chart
-     or grid, rows, pivot columns, values).
+   - Configure: expands and opens the Configuration dialog (chart
+     or grid, columns and their aggregation, row and column groups,
+     shares, top N), in the active system's own components.
    ══════════════════════════════════════════════════════════ */
 
 interface PanelFrameProps {
@@ -79,6 +81,8 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
   const anchorRef = useRef<HTMLElement>(null);
   const expandedRef = useRef<HTMLDivElement>(null);
   const restoreTool = useRef<"configure" | "expand">("expand");
+  /* The Configure button, where the Configuration dialog hands focus back. */
+  const configureRef = useRef<HTMLButtonElement>(null);
   const wasExpanded = useRef(false);
   /* A narrow panel cannot hold its title, the select and the tools on one
      line: the select and the tools drop to a second line, and the content
@@ -148,10 +152,13 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
       (last ? items.at(-1) : items[0])?.focus();
     };
     const onFocus = (e: FocusEvent) => {
-      if (expandedRef.current?.contains(e.target as Node) || menuOpen()) return;
+      /* The Configuration dialog (portalled) keeps focus itself. */
+      if (expandedRef.current?.contains(e.target as Node) || menuOpen() || overlayIsOpen()) return;
       focusBoundary(backwards);
     };
     const onKey = (e: KeyboardEvent) => {
+      /* An open dialog over the panel takes its own Tab and Escape. */
+      if (overlayIsOpen()) return;
       if (e.key === "Tab" && expandedRef.current) {
         backwards = e.shiftKey;
         if (menuOpen()) return;
@@ -213,6 +220,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
             type="button"
             className={`dh-panel-tool${configOpen ? " is-active" : ""}`}
             data-tool="configure"
+            ref={configureRef}
             aria-label={`Configure ${title || "panel"}`}
             aria-pressed={configOpen}
             title="Configure"
@@ -274,7 +282,7 @@ export function PanelFrame({ system, blockId, title, subtitle, viewBy, viewBySta
                 ) : null}
               </div>
             </section>
-            {configOpen ? <PanelConfigDrawer system={system} blockId={blockId!} /> : null}
+            {configOpen ? <PanelConfigDialog system={system} blockId={blockId!} launcher={configureRef} /> : null}
           </div>,
           host,
         )}

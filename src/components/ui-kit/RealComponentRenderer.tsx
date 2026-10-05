@@ -67,6 +67,7 @@ import {
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 import { RealKitDialog, RealKitMenu, type KitDialogModel, type KitMenuModel } from "@/components/ui-kit/RealDialogKit";
 import { RealFormDialog, type FormDialogModel } from "@/components/ui-kit/RealFormDialog";
+import { RealConfigDialog, type ConfigDialogModel } from "@/components/ui-kit/RealConfigDialog";
 import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
 import {
@@ -1173,6 +1174,8 @@ export function RealComponentRenderer({
   if (type === "KitDialog") return props.model ? <RealKitDialog system={system} mode={mode} density={saltDensity} model={props.model as KitDialogModel} /> : null;
   if (type === "KitMenu") return props.model ? <RealKitMenu system={system} mode={mode} model={props.model as KitMenuModel} /> : null;
   /* Not a canvas block: a small form in each system's own dialog (props.model). */
+  /* Not a canvas block: a data panel's Configuration dialog (props.model). */
+  if (type === "ConfigDialog") return props.model ? <RealConfigDialog system={system} mode={mode} density={saltDensity} model={props.model as ConfigDialogModel} /> : null;
   if (type === "FormDialog") return props.model ? <RealFormDialog system={system} mode={mode} density={saltDensity} model={props.model as FormDialogModel} /> : null;
   if (!canRenderReal(system, type)) return null;
 

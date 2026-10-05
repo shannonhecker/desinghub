@@ -32,6 +32,16 @@ export interface AvailableTree {
   count: number;
 }
 
+/** A pie or donut has one ring: no column group (applyPanelConfig drops it). */
+export function canPivot(config: PanelConfig): boolean {
+  return !(config.view === "chart" && (config.chartType === "pie" || config.chartType === "donut"));
+}
+
+/** No room for another group: the row group is set and the column group is too, or cannot be. */
+function groupsFull(config: PanelConfig): boolean {
+  return Boolean(config.rows && (config.columns || !canPivot(config)));
+}
+
 /** What is chosen already on a tab: its figures (Columns) or its groups (Groups). */
 function chosen(config: PanelConfig, tab: ConfigTab): Set<string> {
   if (tab === "groups") return new Set([config.rows, config.columns].filter((k): k is string => Boolean(k)));
@@ -42,10 +52,10 @@ function chosen(config: PanelConfig, tab: ConfigTab): Set<string> {
 export function availableTree(table: DataTable, config: PanelConfig, tab: ConfigTab, filter = ""): AvailableTree {
   const q = filter.trim().toLowerCase();
   const taken = chosen(config, tab);
-  const groupsFull = Boolean(config.rows && config.columns);
+  const full = groupsFull(config);
   const match = (label: string) => !q || label.toLowerCase().includes(q);
   const dims = dimensionsOf(table).filter((f) => match(f.label)).map<TreeLeaf>((f) => ({
-    key: f.key, label: f.label, tag: "abc", addable: tab === "groups" && !taken.has(f.key) && !groupsFull,
+    key: f.key, label: f.label, tag: "abc", addable: tab === "groups" && !taken.has(f.key) && !full,
   }));
   const mets = measuresOf(table).filter((f) => match(f.label)).map<TreeLeaf>((f) => ({
     key: f.key, label: f.label, tag: "123", addable: tab === "columns" && !taken.has(f.key),
@@ -94,10 +104,13 @@ export function addGroup(config: PanelConfig, key: string, table: DataTable): Pa
   const field = fieldOf(table, key);
   if (!field || field.role !== "dimension" || config.rows === key || config.columns === key) return config;
   if (!config.rows) return { ...config, rows: key };
-  if (!config.columns) return { ...config, columns: key };
+  if (!groupsFull(config)) return { ...config, columns: key };
   return config;
 }
 
+/** Remove a group. The column group moves up when the row group goes (a
+ *  pivot needs rows to pivot). */
 export function removeGroup(config: PanelConfig, slot: "rows" | "columns"): PanelConfig {
-  return { ...config, [slot]: null };
+  if (slot === "rows") return { ...config, rows: config.columns, columns: null };
+  return { ...config, columns: null };
 }

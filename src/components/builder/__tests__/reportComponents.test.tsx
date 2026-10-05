@@ -5,7 +5,7 @@ import { useBuilder } from '@/store/useBuilder';
 import { BUILDER_TEMPLATES } from '@/lib/builderTemplates';
 import { EXECUTION_KEYS } from '@/lib/executionModel';
 import { PanelFrame } from '../PanelFrame';
-import { PanelConfigDrawer } from '../PanelConfigDrawer';
+import { PanelConfigDialog } from '../PanelConfigDialog';
 import { InstrumentHeaderBlock } from '../InstrumentHeader';
 import { ExecutionChartBlock } from '../ExecutionChart';
 import { RecordPanelBlock } from '../RecordPanel';
@@ -60,18 +60,69 @@ describe('report component behavior', () => {
     expect(document.activeElement?.isConnected).toBe(true);
   });
 
-  it('PanelConfigDrawer resets panel props to its template and closes configuration', () => {
+  it('PanelConfigDialog resets panel props to its template, then closes with Close and with Escape', () => {
     const tpl = BUILDER_TEMPLATES['performance-analytics'];
     const original = tpl.body.find(block => block.id === 'tpl-perf-allocation')!;
     useBuilder.setState({ activeTemplateId: 'performance-analytics', reportData: null,
       blocks: [{ ...original, props: { ...original.props, title: 'Changed title' } }],
       expandedPanel: { id: original.id, config: true },
     });
-    render(<PanelConfigDrawer system="uoaui" blockId={original.id} />);
-    click('.dh-config-reset');
+    const launcher = { current: null };
+    render(<PanelConfigDialog system="uoaui" blockId={original.id} launcher={launcher} />);
+    const dialog = document.body.querySelector<HTMLElement>('[role="dialog"].dh-cfg-dialog');
+    expect(dialog?.getAttribute('aria-labelledby')).toBeTruthy();
+    expect(document.getElementById(dialog!.getAttribute('aria-labelledby')!)?.textContent).toBe('Configuration');
+    const button = (name: string) => [...document.body.querySelectorAll<HTMLButtonElement>('.dh-cfg-dialog button')].find(b => (b.getAttribute('aria-label') ?? b.textContent) === name)!;
+    expect(button('Reset to first loaded').disabled).toBe(false);
+    act(() => button('Reset to first loaded').click());
     expect(useBuilder.getState().blocks[0].props).toEqual(original.props);
-    click('[aria-label="Close configuration"]');
+    expect(button('Reset to first loaded').disabled).toBe(true);
+    act(() => button('Close').click());
     expect(useBuilder.getState().expandedPanel).toEqual({ id: original.id, config: false });
+    useBuilder.setState({ expandedPanel: { id: original.id, config: true } });
+    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(useBuilder.getState().expandedPanel).toEqual({ id: original.id, config: false });
+  });
+
+  it('PanelConfigDialog: the tabs, the Available tree and its filter, and a row group regroups the panel', () => {
+    const tpl = BUILDER_TEMPLATES['performance-analytics'];
+    const original = tpl.body.find(block => block.id === 'tpl-perf-allocation')!;
+    useBuilder.setState({ activeTemplateId: 'performance-analytics', reportData: null, reportState: {},
+      blocks: [original], expandedPanel: { id: original.id, config: true } });
+    render(<PanelConfigDialog system="uoaui" blockId={original.id} launcher={{ current: null }} />);
+    const q = <T extends Element = HTMLElement>(sel: string) => document.body.querySelector<T>(`.dh-cfg-dialog ${sel}`);
+    const tabs = [...document.body.querySelectorAll<HTMLButtonElement>('.dh-cfg-dialog [role="tab"]')];
+    expect(tabs.map(t => t.textContent)).toEqual(['Columns', 'Groups', 'Display']);
+    expect(q('[role="tablist"]')?.getAttribute('aria-label')).toBeTruthy();
+    /* Arrow keys move along the tabs. */
+    act(() => { tabs[0].focus(); tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); });
+    expect(q('[role="tab"][aria-selected="true"]')?.textContent).toBe('Groups');
+    expect(q('[role="tree"]')).not.toBeNull();
+    expect(q('[role="treeitem"][aria-expanded="true"]')).not.toBeNull();
+    const before = q('#dh-cfg-available')!.textContent;
+    /* Filter: counts follow, then "No matches". */
+    const input = q<HTMLInputElement>('#dh-cfg-filter-groups')!;
+    const type = (v: string) => act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, v);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    type('zzzz');
+    expect(q('#dh-cfg-available')!.textContent).toBe('Available: 0');
+    expect(q('.dh-cfg-pane')!.textContent).toContain('No matches');
+    type('');
+    expect(q('#dh-cfg-available')!.textContent).toBe(before);
+    /* The donut is grouped already and has no column group: nothing to add. */
+    expect(q('.dh-cfg-leaf.is-addable')).toBeNull();
+    expect(q('.dh-cfg-pane:last-child')!.textContent).toContain('A pie or donut has no column group');
+    /* Remove the row group: the empty state; add one back: the panel regroups by it. */
+    act(() => q<HTMLButtonElement>('.dh-cfg-pane:last-child button[aria-label^="Remove"]')!.click());
+    expect(q('.dh-cfg-pane:last-child')!.textContent).toContain('No row groups');
+    expect(q('.dh-cfg-pane:last-child')!.textContent).toContain('Add attributes from Available');
+    const addable = q<HTMLElement>('.dh-cfg-leaf.is-addable')!;
+    const key = addable.getAttribute('data-node')!.replace('leaf-', '');
+    act(() => addable.click());
+    expect((useBuilder.getState().blocks[0].props.binding as { groupBy?: string }).groupBy).toBe(key);
+    expect(q('.dh-cfg-pane:last-child')!.textContent).toContain(addable.querySelector('.dh-cfg-name')!.textContent);
   });
 
   it('InstrumentHeader changes the selected order and updates the active tab', () => {
