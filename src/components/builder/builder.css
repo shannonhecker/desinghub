@@ -18052,7 +18052,8 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--bc-gap-sm);
   padding: var(--insp-head-pad-y) calc(var(--insp-inset) - var(--insp-icon-btn-pad)) var(--insp-head-pad-y) var(--insp-inset);
   border-bottom: var(--bc-hairline) solid var(--insp-hairline);
-  min-height: var(--insp-header-h);
+  /* Hugs its content: the panel's standard vertical padding, no reserved
+     subtitle line in browse mode. */
 }
 .lib-header-text {
   display: flex;
