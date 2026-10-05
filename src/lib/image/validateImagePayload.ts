@@ -29,8 +29,8 @@ export type ImageValidation =
   | { ok: true; image: ChatImagePayload; bytes: number; width: number; height: number }
   | { ok: false; reason: ImageRejectReason };
 
-/* What the client is told for any rejected image. */
-export const IMAGE_REJECTED_ERROR = "That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB.";
+/* What the client is told for any rejected image (one shared constant). */
+export { IMAGE_REJECTED_ERROR } from "./imageCopy";
 
 export function validateImagePayload(raw: unknown): ImageValidation {
   if (typeof raw !== "object" || raw === null) return { ok: false, reason: "shape" };

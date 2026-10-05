@@ -165,6 +165,48 @@ test.describe("Build the UI from an uploaded image", () => {
     expect(chatRequests).toHaveLength(0);
   });
 
+  test("'Copy image' from a web page (img-only html, no text) attaches", async ({ page }) => {
+    const chatRequests = await openBuilder(page);
+    await chatInput(page).focus();
+    await page.evaluate((b64) => {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const dt = new DataTransfer();
+      dt.items.add(new File([bytes], "image.png", { type: "image/png" }));
+      dt.setData("text/html", '<meta charset="utf-8"><img src="https://example.com/dashboard.png" alt="">');
+      document.querySelector("textarea.input-textarea")!.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+    }, PNG_B64);
+    await expect(page.getByRole("group", { name: "Attached image: image.png" })).toBeVisible();
+    expect(chatRequests).toHaveLength(0);
+  });
+
+  test("blocks from a multi-call build land top to bottom in the order emitted", async ({ page }) => {
+    await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: true, firebaseConfigured: false } }));
+    const order = ["Page selector", "Configuration", "Report defaults", "Base currency", "Data sources"];
+    await page.route("**/api/chat", (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: sse([
+          { text: "Building it." },
+          { tool_use: { name: "clearCanvas", input: { zone: "body" } } },
+          ...order.map((title) => ({ tool_use: { name: "addBlock", input: { type: "SimulatedCard", props: { title }, layout: { width: "fill" } } } })),
+        ]),
+      }),
+    );
+    await page.goto("/builder");
+    await page.locator('[data-testid="composer-file-input"]').setInputFiles({ name: "config.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.locator(".composer-attachment")).toBeVisible();
+    await page.getByRole("button", { name: "Send" }).click();
+    await expect(page.locator(".bp-main").getByText("Data sources")).toBeVisible();
+    const seen = await bodyBlocks(page).evaluateAll((els, wanted) =>
+      els.map((el) => wanted.find((w) => el.textContent?.includes(w))).filter(Boolean),
+      order,
+    );
+    expect(seen).toEqual(order);
+  });
+
   test("a file dropped outside the composer does not navigate away", async ({ page }) => {
     await openBuilder(page);
     const prevented = await page.evaluate(() => {

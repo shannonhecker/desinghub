@@ -8,16 +8,21 @@ import { createRoot, type Root } from "react-dom/client";
 import { shouldInterceptPaste, useImageAttachment } from "../useImageAttachment";
 
 describe("shouldInterceptPaste", () => {
+  const clip = (types: string[], fileCount: number, text = "", html = "") => ({ types, fileCount, text, html });
   it("takes over an image-only clipboard", () => {
-    expect(shouldInterceptPaste(["Files"], 1)).toBe(true);
+    expect(shouldInterceptPaste(clip(["Files"], 1))).toBe(true);
   });
   it("leaves Office-style clipboards (text plus a rendered bitmap) to paste as text", () => {
-    expect(shouldInterceptPaste(["text/plain", "text/html", "Files"], 1)).toBe(false);
-    expect(shouldInterceptPaste(["text/plain", "Files"], 1)).toBe(false);
-    expect(shouldInterceptPaste(["text/html", "Files"], 1)).toBe(false);
+    expect(shouldInterceptPaste(clip(["text/plain", "text/html", "Files"], 1, "Q3 revenue", "<table><tr><td>Q3 revenue</td></tr></table>"))).toBe(false);
+    expect(shouldInterceptPaste(clip(["text/plain", "Files"], 1, "Q3 revenue"))).toBe(false);
+    expect(shouldInterceptPaste(clip(["text/html", "Files"], 1, "", "<p>Q3 revenue</p>"))).toBe(false);
+  });
+  it("takes over 'Copy image' from a web page: html that is only an img tag, empty text", () => {
+    expect(shouldInterceptPaste(clip(["text/html", "Files"], 1, "", '<meta charset="utf-8"><img src="https://example.com/a.png" alt="">'))).toBe(true);
+    expect(shouldInterceptPaste(clip(["text/plain", "text/html", "Files"], 1, "  ", "<html><body><!--StartFragment--><img src=x><!--EndFragment--></body></html>"))).toBe(true);
   });
   it("ignores a clipboard with no files", () => {
-    expect(shouldInterceptPaste(["text/plain"], 0)).toBe(false);
+    expect(shouldInterceptPaste(clip(["text/plain"], 0, "hi"))).toBe(false);
   });
 });
 
@@ -87,6 +92,13 @@ describe("errors", () => {
     expect(api.errorSeq).toBeGreaterThan(first);
     act(() => api.clearError());
     expect(api.error).toBeNull();
+  });
+
+  it("restore does not overwrite a newer attachment", () => {
+    mount();
+    act(() => api.restore({ mediaType: "image/png", base64: "AAAA", width: 2, height: 2, bytes: 3 }, "newer.png"));
+    act(() => api.restore({ mediaType: "image/png", base64: "BBBB", width: 2, height: 2, bytes: 3 }, "older.png"));
+    expect(api.attachment?.name).toBe("newer.png");
   });
 
   it("restore puts an image back after a send could not go through", () => {
