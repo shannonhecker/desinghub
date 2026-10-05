@@ -10,6 +10,7 @@ import { buildCanvasManifest } from "./canvasManifest";
 import { toolUseToAction } from "./chatTools";
 import type { AIAction } from "./parseAIResponse";
 import type { ImageMediaType } from "./image/imageBytes";
+import { IMAGE_REJECTED_ERROR } from "./image/imageCopy";
 
 /* An image for this one turn (from prepareImageAttachment). Held only in
    memory: it goes into the request body and is never written to the store,
@@ -17,6 +18,12 @@ import type { ImageMediaType } from "./image/imageBytes";
 export interface ChatTurnImage {
   mediaType: ImageMediaType;
   base64: string;
+  /* Optional, never sent: lets the composer show the image again if the
+     request bounces (rate limit). */
+  width?: number;
+  height?: number;
+  bytes?: number;
+  name?: string;
 }
 
 export interface SendOptions {
@@ -32,9 +39,9 @@ export type SendOutcome =
   | { status: "rate-limited"; image?: ChatTurnImage }
   | { status: "image-rejected" };
 
-/* The route's generic reply for a rejected image (validateImagePayload.ts).
-   Kept as a literal so the client bundle does not pull in the server module. */
-const IMAGE_REJECTED_SERVER_ERROR = "That image could not be used. Try a PNG, JPEG, WebP or GIF under 2 MB.";
+/* The route's one reply for a rejected image: the same constant the
+   server sends (imageCopy.ts), so the two cannot drift. */
+const IMAGE_REJECTED_SERVER_ERROR = IMAGE_REJECTED_ERROR;
 
 /* ── Differentiated failure states (QW4) ──
    One copy table so ChatPanel (LifecyclePill error detection, retry
@@ -619,7 +626,7 @@ export function useChatAPI() {
     });
     const image = failedImageRef.current;
     setFailedSend(null);
-    await sendMessage(failed.userText, image ? { image } : undefined);
+    return sendMessage(failed.userText, image ? { image } : undefined);
   }, [sendMessage, setFailedSend]);
 
   const abort = useCallback(() => {

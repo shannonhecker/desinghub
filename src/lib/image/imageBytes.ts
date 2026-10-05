@@ -163,51 +163,126 @@ export function base64ToBytes(value: string): Uint8Array {
 }
 
 /** True when the file carries metadata that could identify the user or
- *  their location: an EXIF/XMP APP1 segment in a JPEG, an eXIf or text
- *  chunk in a PNG, an EXIF or XMP chunk in a WebP. Such files are
- *  re-encoded in the browser so the metadata never leaves it. */
+ *  their location: EXIF/XMP and comment segments in a JPEG, eXIf or text
+ *  chunks anywhere in a PNG, EXIF or XMP chunks in a WebP, comment or
+ *  non-animation application extensions in a GIF. Such files are re-encoded
+ *  in the browser so the metadata never leaves it.
+ *
+ *  Fails closed: any parse anomaly (truncation, a malformed segment, a chunk
+ *  running past the end) returns true, so the file is re-encoded rather
+ *  than sent as is. */
 export function hasImageMetadata(bytes: Uint8Array, type: ImageMediaType): boolean {
   switch (type) {
-    case "image/jpeg": {
-      let i = 2;
-      while (i + 3 < bytes.length) {
-        if (bytes[i] !== 0xff) return false;
-        const marker = bytes[i + 1];
-        if (marker === 0xff) { i += 1; continue; }
-        if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) { i += 2; continue; }
-        /* Start of scan: no more header segments. */
-        if (marker === 0xda) return false;
-        /* APP1 (EXIF, XMP), APP3-APP13, APP15 and comments. APP0 (JFIF),
-           APP2 (ICC colour) and APP14 (Adobe colour transform) are kept. */
-        if (marker === 0xe1 || (marker >= 0xe3 && marker <= 0xed) || marker === 0xef || marker === 0xfe) return true;
-        const len = be16(bytes, i + 2);
-        if (len < 2) return false;
-        i += 2 + len;
-      }
-      return false;
-    }
-    case "image/png": {
-      let i = 8;
-      while (i + 8 <= bytes.length) {
-        const len = be32(bytes, i);
-        const name = String.fromCharCode(bytes[i + 4], bytes[i + 5], bytes[i + 6], bytes[i + 7]);
-        if (name === "eXIf" || name === "tEXt" || name === "iTXt" || name === "zTXt") return true;
-        if (name === "IDAT" || name === "IEND") return false;
-        i += 12 + len;
-      }
-      return false;
-    }
-    case "image/webp": {
-      let i = 12;
-      while (i + 8 <= bytes.length) {
-        const name = String.fromCharCode(bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]);
-        if (name === "EXIF" || name === "XMP ") return true;
-        const len = bytes[i + 4] | (bytes[i + 5] << 8) | (bytes[i + 6] << 16) | (bytes[i + 7] << 24);
-        i += 8 + len + (len % 2);
-      }
-      return false;
-    }
+    case "image/jpeg":
+      return jpegHasMetadata(bytes);
+    case "image/png":
+      return pngHasMetadata(bytes);
+    case "image/webp":
+      return webpHasMetadata(bytes);
     case "image/gif":
-      return false;
+      return gifHasMetadata(bytes);
   }
 }
+
+function jpegHasMetadata(b: Uint8Array): boolean {
+  let i = 2;
+  while (i + 3 < b.length) {
+    if (b[i] !== 0xff) return true;
+    const marker = b[i + 1];
+    if (marker === 0xff) { i += 1; continue; }
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue; }
+    /* Start of scan: header segments are done, the file is clean. */
+    if (marker === 0xda) return false;
+    /* EOI before any scan is malformed. */
+    if (marker === 0xd8 || marker === 0xd9) return true;
+    /* APP1 (EXIF, XMP), APP3-APP13, APP15 and comments. APP0 (JFIF),
+       APP2 (ICC colour) and APP14 (Adobe colour transform) are kept. */
+    if (marker === 0xe1 || (marker >= 0xe3 && marker <= 0xed) || marker === 0xef || marker === 0xfe) return true;
+    const len = be16(b, i + 2);
+    if (len < 2 || i + 2 + len > b.length) return true;
+    i += 2 + len;
+  }
+  /* Ran out of bytes before a scan. */
+  return true;
+}
+
+function pngHasMetadata(b: Uint8Array): boolean {
+  let i = 8;
+  while (i + 8 <= b.length) {
+    const len = be32(b, i);
+    const name = String.fromCharCode(b[i + 4], b[i + 5], b[i + 6], b[i + 7]);
+    const next = i + 12 + len;
+    if (next > b.length) return true;
+    if (name === "eXIf" || name === "tEXt" || name === "iTXt" || name === "zTXt") return true;
+    if (name === "IEND") return false;
+    i = next;
+  }
+  /* No IEND: truncated. */
+  return true;
+}
+
+function webpHasMetadata(b: Uint8Array): boolean {
+  let i = 12;
+  while (i + 8 <= b.length) {
+    const name = String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+    if (name === "EXIF" || name === "XMP ") return true;
+    const len = (b[i + 4] | (b[i + 5] << 8) | (b[i + 6] << 16)) + b[i + 7] * 0x1000000;
+    const next = i + 8 + len + (len % 2);
+    if (next > b.length) return true;
+    i = next;
+  }
+  /* Leftover bytes that are not a whole chunk header: malformed. */
+  return i !== b.length;
+}
+
+function gifHasMetadata(b: Uint8Array): boolean {
+  if (b.length < 13) return true;
+  let i = 13;
+  const packed = b[10];
+  if (packed & 0x80) i += 3 * (1 << ((packed & 0x07) + 1));
+  /* Skip a run of data sub-blocks; returns the index after the terminator,
+     or -1 when the data runs past the end. */
+  const skipSubBlocks = (j: number): number => {
+    while (j < b.length) {
+      const size = b[j];
+      if (size === 0) return j + 1;
+      j += 1 + size;
+    }
+    return -1;
+  };
+  while (i < b.length) {
+    const block = b[i];
+    if (block === 0x3b) return false;
+    if (block === 0x21) {
+      const label = b[i + 1];
+      /* Comment extension. */
+      if (label === 0xfe) return true;
+      if (label === 0xff) {
+        /* Application extension: only the NETSCAPE/ANIMEXTS loop block is
+           harmless; anything else (XMP and friends) counts as metadata. */
+        const id = String.fromCharCode(...Array.from(b.subarray(i + 3, i + 11)));
+        if (id !== "NETSCAPE" && id !== "ANIMEXTS") return true;
+      }
+      const after = skipSubBlocks(i + 2);
+      if (after < 0) return true;
+      i = after;
+      continue;
+    }
+    if (block === 0x2c) {
+      if (i + 10 > b.length) return true;
+      const local = b[i + 9];
+      let j = i + 10;
+      if (local & 0x80) j += 3 * (1 << ((local & 0x07) + 1));
+      /* LZW minimum code size, then image data sub-blocks. */
+      const after = skipSubBlocks(j + 1);
+      if (after < 0) return true;
+      i = after;
+      continue;
+    }
+    return true;
+  }
+  /* No trailer: truncated. */
+  return true;
+}
+
+export { IMAGE_REJECTED_ERROR } from "./imageCopy";

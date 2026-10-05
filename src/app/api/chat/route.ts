@@ -20,9 +20,26 @@ const MAX_MESSAGES = 40;
    user's text, so the limit leaves room for both. */
 const MAX_CONTENT_LENGTH = 16000;
 /* Ceiling on model requests per chat turn (the first response plus its
-   continuations). A full dashboard build takes 2-3; the cap only stops a
+   continuations). A build that batches its calls takes 2-3. Raised from 8:
+   on production an image build sent one call per response, used all 8
+   steps and stopped mid-layout (Task 16 hotfix). Still a hard stop for a
    model that never finishes asking for tools. */
-const MAX_TOOL_STEPS = 8;
+const MAX_TOOL_STEPS = 20;
+/* Said when the cap or the clock, not the model, ended the turn. An image
+   is not kept after its turn, so an image build cannot simply "continue":
+   the note says what is there and asks for the image again. */
+const STEP_CAP_NOTE =
+  "I ran out of steps before finishing this layout. Say \"continue\" and I'll build the rest.";
+const STEP_CAP_NOTE_IMAGE =
+  "I ran out of steps before finishing this layout. What I built so far is on the canvas. " +
+  "To finish it, attach the image again and tell me what is missing.";
+
+/* Function time limit (seconds). A long build of one call per step can
+   run past the platform default; the loop below stops itself before this
+   limit so the user gets a plain note, not a cut stream. */
+export const maxDuration = 300;
+/* Wall-clock budget for one turn: no new model request starts after this. */
+const TURN_BUDGET_MS = 240_000;
 /* What the model is told about each canvas call. The calls are applied in
    the browser when the stream ends, so the route can only say they are
    queued - it must not claim an outcome it has not seen. */
@@ -222,8 +239,12 @@ export async function POST(req: Request) {
       /* Text from a later step is set apart from an earlier step's text so
          the bubble does not read "On it.Added the chart." */
       let textSent = false;
+      /* True while the model still wants tools when the loop ends. */
+      let cutByCap = false;
+      const startedAt = Date.now();
       try {
         for (let step = 0; step < MAX_TOOL_STEPS; step++) {
+          cutByCap = false;
           const stream = await anthropic.messages.stream({
             model: MODEL_ID,
             max_tokens: 16000,
@@ -321,9 +342,18 @@ export async function POST(req: Request) {
           }
 
           if (stopReason !== "tool_use" || toolResults.length === 0) break;
+          cutByCap = true;
           if (stepText) assistantContent.push({ type: "text", text: stepText });
           conversation.push({ role: "assistant", content: assistantContent });
           conversation.push({ role: "user", content: toolResults });
+          if (Date.now() - startedAt > TURN_BUDGET_MS) {
+            console.log(`[api/chat] time budget reached: step=${step} budget_ms=${TURN_BUDGET_MS}`);
+            break;
+          }
+        }
+        if (cutByCap) {
+          console.log(`[api/chat] turn cut short: max_steps=${MAX_TOOL_STEPS} image=${turnImage ? 1 : 0}`);
+          send({ text: `${textSent ? "\n\n" : ""}${turnImage ? STEP_CAP_NOTE_IMAGE : STEP_CAP_NOTE}` });
         }
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } catch (err) {

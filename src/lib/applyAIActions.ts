@@ -172,7 +172,15 @@ export function applyAIActions(actions: AIAction[], messageId?: string): ApplyRe
             ? { layout: v.layout as LayoutProps }
             : (() => { const d = defaultLayoutForType(v.type); return d ? { layout: d } : {}; })()),
         };
-        store.addBlockToZone(zone, block, v.index);
+        /* An omitted (or invalid) index APPENDS, as the tool schema tells
+           the model. addBlockToZone prepends without an index, which built
+           multi-block layouts upside down. */
+        const zoneLength = (zone === "body" ? useBuilder.getState().blocks : useBuilder.getState()[`${zone}Blocks` as "headerBlocks" | "sidebarBlocks" | "footerBlocks"]).length;
+        const insertAt =
+          typeof v.index === "number" && Number.isInteger(v.index) && v.index >= 0 && v.index <= zoneLength
+            ? v.index
+            : zoneLength;
+        store.addBlockToZone(zone, block, insertAt);
         /* Phase 3a (N4): emit a tool-use event carrying the new
            block id + zone so the card can wire per-action undo. */
         emitToolUse({
