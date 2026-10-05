@@ -172,15 +172,15 @@ function Buttons(){
 function Inputs(){
   const [v1,setV1]=useState(""); const [v2,setV2]=useState("");
   return <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
-    <div style={{display:"flex",flexDirection:"column",gap:4,width:200}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)",width:200}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Full name</label>
       <input className="s-input" value={v1} onChange={e=>setV1(e.target.value)} placeholder="Enter name"/>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:4,width:200}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)",width:200}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Email</label>
       <input className="s-input" value={v2} onChange={e=>setV2(e.target.value)} placeholder="you@example.com"/>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:4,width:200}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)",width:200}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fgDis,fontFamily:FONT}}>Disabled</label>
       <input className="s-input" disabled placeholder="Cannot edit"/>
     </div>
@@ -756,16 +756,16 @@ function PatForm(){
   const [valid,setValid]=useState(true);
   /* Vertical form layout via Salt's real StackLayout. */
   return <SaltProvider mode={modeOf(T)}><SaltStack gap={1} style={{fontFamily:FONT,maxWidth:320}}>
-    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Full Name <span style={{color:T.negative}}>*</span></label>
       <input className="s-input" placeholder="Jane Doe" style={{fontSize:12}}/>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Email <span style={{color:T.negative}}>*</span></label>
       <input className="s-input" placeholder="jane@company.com" style={{fontSize:12,borderColor:valid?undefined:T.negative}} onChange={e=>setValid(e.target.value.includes("@")||!e.target.value)}/>
       {!valid&&<span style={{fontSize:10,color:T.negative}}>Please enter a valid email</span>}
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
       <label style={{fontSize:11,fontWeight:600,color:T.fg}}>Department</label>
       <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderRadius:"var(--cr,4px)",padding:"0 var(--pad,8px)",background:T.bg,fontSize:12,color:T.fg2}}>Select department...</div>
     </div>
@@ -1009,7 +1009,7 @@ function FormField(){
     <div style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Validation States</div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10}}>
       {validations.map(v=>(
-        <div key={v.status} style={{display:"flex",flexDirection:"column",gap:2}}>
+        <div key={v.status} style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
           <label style={{fontSize:11,fontWeight:600,color:v.status==="Default"?T.fg:v.color,fontFamily:FONT}}>Label *</label>
           <div style={{position:"relative"}}>
             <input className="s-input" defaultValue={v.status==="Default"?"":"Value"} placeholder="Enter value" style={{borderBottomColor:v.border,width:"100%",paddingRight:v.icon?24:undefined}}/>
@@ -1395,7 +1395,7 @@ function DatePickerDemo(){
   return <div style={{display:"flex",flexDirection:"column",gap:14}}>
     <div style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Single Date Picker (composable)</div>
     <div style={{position:"relative",maxWidth:220}}>
-      <div style={{display:"flex",flexDirection:"column",gap:2}}>
+      <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
         <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Select Date</label>
         <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${open?T.accent:T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"0 var(--pad,8px)",gap:6}}>
           <input value={date} onChange={e=>setDate(e.target.value)} style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
@@ -1421,12 +1421,12 @@ function DatePickerDemo(){
 
     <div style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT,marginTop:4}}>Range Date Picker</div>
     <div style={{display:"flex",gap:8,alignItems:"flex-end",maxWidth:320}}>
-      <div style={{flex:1,display:"flex",flexDirection:"column",gap:2}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
         <label style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>Start</label>
         <input className="s-input" value={rangeStart} onChange={e=>setRangeStart(e.target.value)} style={{fontSize:11}}/>
       </div>
       <span style={{fontSize:11,color:T.fg3,paddingBottom:6}}>→</span>
-      <div style={{flex:1,display:"flex",flexDirection:"column",gap:2}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
         <label style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>End</label>
         <input className="s-input" value={rangeEnd} onChange={e=>setRangeEnd(e.target.value)} style={{fontSize:11}}/>
       </div>
@@ -1510,7 +1510,7 @@ function ComboBoxDemo(){
   const filtered=options.filter(o=>o.toLowerCase().includes(val.toLowerCase()));
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <div style={{position:"relative",maxWidth:220}}>
-      <div style={{display:"flex",flexDirection:"column",gap:2}}>
+      <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
         <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Fruit</label>
         <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${open?T.accent:T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"0 var(--pad,8px)"}}>
           <input aria-label="Combobox filter" type="text" autoComplete="off" spellCheck={false} value={val} onChange={e=>{setVal(e.target.value);setOpen(true);}} onFocus={()=>setOpen(true)} placeholder="Type to filter&hellip;" style={{flex:1,border:"none",background:"transparent",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
@@ -1534,7 +1534,7 @@ function DropdownDemo(){
   const options=["Option Alpha","Option Beta","Option Gamma","Option Delta"];
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <div style={{position:"relative",maxWidth:220}}>
-      <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Category</label>
+      <label style={{display:"block",marginBottom:"var(--salt-spacing-75)",fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Category</label>
       <button onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${open?T.accent:T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"0 var(--pad,8px)",fontSize:"var(--fs,12px)",color:sel==="Select..."?T.fg3:T.fg,fontFamily:FONT,cursor:"pointer"}}>
         {sel}<SIcon name="chevronDown" size={12} color={T.fg3}/>
       </button>
@@ -1553,7 +1553,7 @@ function NumberInputDemo(){
   const [val,setVal]=useState(42);
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
     <div style={{maxWidth:160}}>
-      <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Quantity</label>
+      <label style={{display:"block",marginBottom:"var(--salt-spacing-75)",fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Quantity</label>
       <div style={{display:"flex",alignItems:"center",height:"var(--h,28px)",border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg}}>
         <button onClick={()=>setVal(v=>v-1)} style={{width:"var(--h,28px)",height:"100%",border:"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:T.fg3,fontSize:14}}>−</button>
         <input value={val} onChange={e=>setVal(+e.target.value||0)} style={{flex:1,border:"none",borderLeft:`1px solid ${T.border}`,borderRight:`1px solid ${T.border}`,background:"transparent",textAlign:"center",outline:"none",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT}}/>
@@ -1569,10 +1569,12 @@ function NumberInputDemo(){
 
 function MultilineInputDemo(){
   return <div style={{display:"flex",flexDirection:"column",gap:10}}>
-    <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Description</label>
-    <textarea aria-label="Multi-line text" style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text&hellip;" defaultValue="Line 1
+    <div style={{display:"flex",flexDirection:"column",gap:"var(--salt-spacing-75)"}}>
+      <label style={{fontSize:11,fontWeight:600,color:T.fg,fontFamily:FONT}}>Description</label>
+      <textarea aria-label="Multi-line text" style={{width:"100%",minHeight:60,border:`1px solid ${T.border}`,borderBottom:`2px solid ${T.borderStrong}`,borderRadius:"var(--cr,4px) var(--cr,4px) 0 0",background:T.bg,padding:"var(--pad,8px)",fontSize:"var(--fs,12px)",color:T.fg,fontFamily:FONT,outline:"none",resize:"vertical"}} placeholder="Enter multi-line text&hellip;" defaultValue="Line 1
 Line 2
 Line 3"/>
+    </div>
     <div style={{fontSize:10,color:T.fg3,fontFamily:FONT}}>
       <code style={{fontFamily:"monospace",fontSize:10}}>{'<MultilineInput variant="primary" bordered={false} rows={3} />'}</code>
       <br/>Resizable text area. Same variant/bordered/validation API as Input. Adornment support.
@@ -1714,6 +1716,7 @@ export default function App(){
     --h:${D.h}px;--pad:${D.pad}px;--fs:${D.fs}px;--cr:${D.cr}px;
     --salt-spacing-25:${D.sp*0.25}px;
     --salt-spacing-50:${D.sp*0.5}px;
+    --salt-spacing-75:${D.sp*0.75}px;
     --salt-spacing-100:${D.sp}px;
     --salt-spacing-150:${D.sp*1.5}px;
     --salt-spacing-200:${D.sp*2}px;
