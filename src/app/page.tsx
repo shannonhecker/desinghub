@@ -1132,7 +1132,7 @@ export default function LandingPage() {
                         height={656}
                         loading="lazy"
                         decoding="async"
-                        alt={`The whole Portfolio report card in ${s.name}, dark mode.`}
+                        alt={`The whole SI Portfolio Report card in ${s.name}, dark mode.`}
                       />
                     </span>
                     <span className="lsl-syscard-name">{s.name}</span>
