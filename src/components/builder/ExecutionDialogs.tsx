@@ -80,7 +80,8 @@ export function CompareDialog({ ctx, open, dataset, vars, palette }: { ctx: Dial
       chart: { height: CHART_HEIGHT, backgroundColor: "transparent", animation: false, spacing: [8, 4, 4, 4], style: { fontFamily: "inherit" } },
       title: { text: undefined },
       credits: { enabled: false },
-      accessibility: { description: "Percent done over the session for each order." },
+      /* The table above is the data; the chart is not a tab stop of its own. */
+      accessibility: { description: "Percent done over the session for each order.", keyboardNavigation: { enabled: false } },
       legend: { itemStyle: { color: vars.fgSec, fontSize: AXIS_FONT, fontWeight: "400" }, itemHoverStyle: { color: vars.fg } },
       xAxis: { title: { text: "Session bar", style: label.style }, labels: label, lineColor: vars.border, tickColor: vars.border },
       yAxis: { min: 0, max: 100, title: { text: undefined }, gridLineColor: Highcharts.color(vars.border).setOpacity(0.5).get("rgba") as string, labels: { ...label, format: "{value}%" } },

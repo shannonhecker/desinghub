@@ -61,7 +61,7 @@ export function OrderWorkflow({ system, dataset, vars, palette }: { system: Desi
 
   if (!view || !view.last) return null;
   const market = { bid: view.last.bid, ask: view.last.ask };
-  const tones = vars ? ({ "--dh-kit-up": vars.positive, "--dh-kit-down": vars.negative } as React.CSSProperties) : {};
+  const tones = vars ? ({ "--dh-kit-up": vars.positive, "--dh-kit-down": vars.negative, "--dh-kit-fg": vars.fg } as React.CSSProperties) : {};
   const ctx = { system: system as SystemId, mode, launcher: session.launcher, tones } as const;
   const latest = () => {
     const samples = useFeedStore.getState().samples;

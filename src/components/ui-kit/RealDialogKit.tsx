@@ -306,7 +306,7 @@ function M3KitDialog({ mode, model }: Omit<DialogProps, "system">) {
       <MuiDialog open={model.open} onClose={model.onClose} maxWidth={model.size === "small" ? "xs" : "sm"} fullWidth aria-labelledby={titleId(model, "m3")} className={`dh-kit-dialog dh-kit-${model.name}`} {...ESCAPE_OWNER}
         slotProps={{ paper: { component: "form", onSubmit: submitOnEnter(model), noValidate: true } as object }}>
         <MuiDialogTitle id={titleId(model, "m3")}>{model.title}</MuiDialogTitle>
-        <MuiDialogContent>
+        <MuiDialogContent sx={{ fontFamily: theme.typography.fontFamily }}>
           {model.description ? <MuiDialogContentText className="dh-kit-description">{model.description}</MuiDialogContentText> : null}
           <Body model={model} parts={muiParts} />
         </MuiDialogContent>
@@ -386,6 +386,8 @@ const carbonParts: Parts = {
       <CarbonTextInput id={f.id} labelText={f.label} value={f.value} size="md" readOnly={f.kind === "static"}
         inputMode={f.kind === "text" ? f.inputMode : undefined} style={f.kind === "text" && f.align === "end" ? { textAlign: "right" } : undefined}
         invalid={f.kind === "text" && Boolean(f.error)} invalidText={f.kind === "text" ? (f.error ?? undefined) : undefined}
+        /* Carbon points aria-errormessage at its message; described-by makes every reader announce it. */
+        aria-describedby={f.kind === "text" && f.error ? `${f.id}-error-msg` : undefined}
         onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} />
     ),
   table: (t) => (
@@ -406,11 +408,12 @@ function CarbonKitDialog({ mode, model }: Omit<DialogProps, "system">) {
         <CarbonModal
           open={model.open} size={model.size === "small" ? "sm" : "md"} className={`dh-kit-dialog dh-kit-${model.name}`}
           modalHeading={model.title} aria-label={model.title}
-          primaryButtonText={model.primary?.label} secondaryButtonText={model.secondary.label}
-          passiveModal={!model.primary}
-          onRequestSubmit={model.primary?.onClick} onRequestClose={model.onClose} onSecondarySubmit={model.onClose}
+          /* With nothing to submit, the one footer button closes (and takes
+             focus: Carbon's X shows a tooltip that would take the first Escape). */
+          primaryButtonText={model.primary?.label ?? model.secondary.label} secondaryButtonText={model.primary ? model.secondary.label : undefined}
+          onRequestSubmit={model.primary?.onClick ?? model.onClose} onRequestClose={model.onClose} onSecondarySubmit={model.onClose}
           launcherButtonRef={model.returnFocus as React.RefObject<HTMLButtonElement>}
-          selectorPrimaryFocus={model.choice ? ".cds--tile-input:checked" : "input, select"}
+          selectorPrimaryFocus={model.choice ? ".cds--tile-input:checked" : model.primary ? "input, select" : ".cds--modal-footer .cds--btn"}
         >
           <form onSubmit={submitOnEnter(model)} noValidate>
             {model.description ? <p className="dh-kit-description">{model.description}</p> : null}
@@ -485,7 +488,7 @@ const uoauiParts: Parts = {
   table: (t) => (
     <table className="a-table" aria-label={t.caption}>
       <thead><tr>{t.columns.map((c, i) => <th key={i} scope="col">{c}</th>)}</tr></thead>
-      <tbody>{t.rows.map((r, i) => <tr key={i}>{r.cells.map((c, j) => (j === 0 ? <th key={j} scope="row">{c}</th> : <td key={j} className={toneClass(r.tones?.[j - 1])}>{c}</td>))}</tr>)}</tbody>
+      <tbody>{t.rows.map((r, i) => <tr key={i}>{r.cells.map((c, j) => (j === 0 ? <th key={j} scope="row" className="dh-kit-rowhead">{c}</th> : <td key={j} className={toneClass(r.tones?.[j - 1])}>{c}</td>))}</tr>)}</tbody>
     </table>
   ),
 };
@@ -494,18 +497,18 @@ function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
   const panel = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     if (!model.open) return;
-    panel.current?.querySelector<HTMLElement>('[aria-checked="true"], input:not([readonly]), select, button')?.focus();
+    panel.current?.querySelector<HTMLElement>('[aria-checked="true"], input:not([readonly]), select, .dh-kit-actions button')?.focus();
   }, [model.open]);
   if (!model.open || typeof document === "undefined") return null;
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") { e.preventDefault(); model.onClose(); return; }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); model.onClose(); return; }
     trapTab(panel.current, e);
   };
   return createPortal(
     <div className="preview-uoaui a-app dh-kit-scope" {...ESCAPE_OWNER}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="a-dialog-backdrop dh-kit-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) model.onClose(); }}>
-        <div ref={panel} className={`a-dialog dh-kit-dialog dh-kit-${model.name} dh-kit-uoaui-${model.size ?? "medium"}`} role="dialog" aria-modal="true" aria-labelledby={titleId(model, "uoaui")} onKeyDown={onKey}>
+        <div ref={panel} className={`a-dialog dh-kit-dialog dh-kit-${model.name} dh-kit-uoaui-${model.size ?? "medium"}`} role="dialog" aria-modal="true" aria-labelledby={titleId(model, "uoaui")} onKeyDown={onKey} style={model.tones}>
           <form onSubmit={submitOnEnter(model)} noValidate>
             <h2 id={titleId(model, "uoaui")} className="dh-kit-title">{model.title}</h2>
             {model.description ? <p className="dh-kit-description">{model.description}</p> : null}
@@ -619,7 +622,7 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
     else if (e.key === "ArrowUp") go(at - 1);
     else if (e.key === "Home") go(0);
     else if (e.key === "End") go(all.length - 1);
-    else if (e.key === "Escape" || e.key === "Tab") { if (e.key === "Escape") e.preventDefault(); model.onClose(); }
+    else if (e.key === "Escape" || e.key === "Tab") { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); } model.onClose(); }
     else if (e.key.length === 1 && /\S/.test(e.key)) {
       const k = e.key.toLowerCase();
       const next = [...all.slice(at + 1), ...all.slice(0, at + 1)].find((el) => el.textContent?.trim().toLowerCase().startsWith(k));
