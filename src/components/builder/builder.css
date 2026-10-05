@@ -18862,7 +18862,11 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
    "Body layout" section holds the same controls). On hover the pill treats
    it as an obstacle (HoverInspector). Icons on the solid surface use the
    muted foreground (over 3:1 in both modes). */
-.zone-drop-container:has(.hover-inspector.is-pinned) > .zone-layout-overlay {
+/* Set from state (ZoneLayoutOverlay), not a :has() over the zone: a
+   descendant :has() made the browser re-check the zone's style on every DOM
+   change inside it, and a chart redraw is about 150,000 of them (the
+   theme-switch freeze on FX Execution, 5 Oct). */
+.zone-layout-overlay[data-suppressed="true"] {
   opacity: 0;
   pointer-events: none;
 }
@@ -18944,7 +18948,7 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   transform: translateY(0);
   pointer-events: auto;
 }
-.zone-drop-container:has(.hover-inspector.is-pinned) > .zone-layout-overlay:not(:focus-within) {
+.zone-drop-container > .zone-layout-overlay[data-suppressed="true"]:not(:focus-within) {
   opacity: 0;
   pointer-events: none;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useInspectorPin } from "@/store/useInspectorPin";
 import { ChromeIcon } from "./ChromeIcon";
 import React from "react";
 import { useBuilder, normalizeGap, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify, type ZoneTone, type Block } from "@/store/useBuilder";
@@ -157,7 +158,13 @@ interface ZoneLayoutOverlayProps {
 
 export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps) {
   const setZoneLayout = useBuilder((s) => s.setZoneLayout);
+  /* While a block in this zone is selected (pinned) the bar steps aside for
+     the block pill. From state, as an attribute: a CSS :has() over the zone
+     re-checked its style on every DOM change inside it. */
+  const pinned = useInspectorPin((s) => s.pinnedBlockId != null);
+  const selectedZone = useBuilder((s) => s.selectedBlockZone);
   if (!zoneLayout || zoneLayout.visible === false) return null;
+  const suppressed = pinned && selectedZone === zoneId;
 
   const mode = zoneLayout.mode;
   const alignOpts = crossAxisAlignOptions(mode);
@@ -166,7 +173,7 @@ export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps
   const activeJustify = zoneLayout.justify ?? "start";
 
   return (
-    <div className="zone-layout-overlay" role="group" aria-label={`${zoneId} layout`} data-zone={zoneId}>
+    <div className="zone-layout-overlay" role="group" aria-label={`${zoneId} layout`} data-zone={zoneId} data-suppressed={suppressed ? "true" : undefined}>
       <div className="zlo-group" role="radiogroup" aria-label="Align items">
         {alignOpts.map((o) => (
           <button
