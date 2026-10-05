@@ -42,6 +42,14 @@
   --kp-control-sm: 32px;
   --kp-control-lg: 44px;
   --kp-stage-h: 208px;
+  --kp-compare-h: 220px;
+  --kp-fp-h: 100px;
+  --kp-compare-h-compact: 148px;
+  --kp-compare-h-tall: 300px;
+  --kp-compare-meta-h: 78px;
+  /* Chrome text sits on a numeric line height, so a line is the same height
+     whichever system's typeface draws it. */
+  --kp-leading: 1.5;
   /* Top bar and detail header: one size in every system, so nothing moves
      when the system changes (owner rule: no jumping). */
   --kp-topbar-h: 48px;
@@ -148,6 +156,12 @@
 .uikit-card mark,
 .kit-page mark { background: var(--kit-accent-tint); color: inherit; border-radius: var(--kp-space-1); padding: 0 1px; }
 
+/* Library chrome never inherits `normal` line height (it varies by
+   typeface, so rows would change height with the system). Everything that
+   holds a specimen is reset: a specimen's metrics are its system's. */
+.kit-page, .kit-detail, .kit-nis { line-height: var(--kp-leading); }
+.kit-specimen, .kit-compare-stage, .kit-hero-inner, .kit-play-stage, .dh-matrix-specimen { line-height: normal; }
+
 /* ── Overview page ── */
 .kit-page {
   min-height: 100%;
@@ -171,10 +185,11 @@
   line-height: 1.05;
   letter-spacing: -0.015em;
 }
-.kit-lede { margin: var(--kp-space-3) 0 0; max-width: 54ch; font-size: var(--kp-text-md); line-height: 1.5; color: var(--kit-text-muted); }
+.kit-lede { margin: var(--kp-space-3) 0 0; max-width: 480px; min-height: 3em; font-size: var(--kp-text-md); line-height: 1.5; color: var(--kit-text-muted); }
 
 /* Fingerprint: the system drawn from its own tokens */
 .kit-fp {
+  box-sizing: border-box;
   display: flex;
   align-items: stretch;
   gap: var(--kp-space-1);
@@ -190,7 +205,8 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--kp-space-2);
-  min-height: 76px;
+  box-sizing: border-box;
+  min-height: var(--kp-fp-h);
   padding: var(--kp-space-3) var(--kp-space-4);
   border-radius: var(--kit-stage-radius);
 }
@@ -431,20 +447,28 @@
 .kit-compare { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--kp-space-3); animation: kit-in var(--dh-motion-dur-emphasis, 240ms) var(--kp-ease) both; }
 .kit-compare-panel { display: flex; flex-direction: column; min-width: 0; border-radius: var(--kit-card-radius); background: var(--kit-card-bg); box-shadow: var(--kit-card-shadow); overflow: hidden; }
 .kit-compare-panel[data-current] { background: var(--kit-card-bg-hover); }
+/* One fixed outer size in every system: the active system's stylesheet can
+   flip the box model, which used to add the padding to the height and move
+   everything below on a switch. */
+.kit-compare-panel, .kit-compare-stage, .kit-compare-meta { box-sizing: border-box; }
 .kit-compare-stage {
   display: flex; align-items: center; justify-content: center;
-  min-height: 220px; margin: var(--kp-space-2) var(--kp-space-2) 0; padding: var(--kp-space-5) var(--kp-space-4);
+  height: var(--kp-compare-h); margin: var(--kp-space-2) var(--kp-space-2) 0; padding: var(--kp-space-5) var(--kp-space-4);
   border-radius: var(--kit-stage-radius);
   overflow: auto;
 }
-.kit-compare.is-compact .kit-compare-stage { min-height: 148px; }
+.kit-compare.is-compact .kit-compare-stage { height: var(--kp-compare-h-compact); }
+/* A table needs more room than a control; still one size in every system. */
+.kit-compare[data-concept="data-table"] .kit-compare-stage { height: var(--kp-compare-h-tall); align-items: flex-start; justify-content: flex-start; }
 .kit-compare-stage > * { max-width: 100%; }
 .kit-compare-none { margin: 0; font-size: var(--kp-text-sm); opacity: 0.75; text-align: center; }
-.kit-compare-meta { display: flex; flex-direction: column; gap: 2px; padding: var(--kp-space-3) var(--kp-space-4) var(--kp-space-4); font-size: var(--kp-text-sm); color: var(--kit-text-muted); }
+.kit-compare-meta { display: flex; flex-direction: column; gap: var(--kp-space-0); height: var(--kp-compare-meta-h); padding: var(--kp-space-3) var(--kp-space-4) var(--kp-space-4); font-size: var(--kp-text-sm); line-height: var(--kp-space-5); color: var(--kit-text-muted); overflow: hidden; }
+.kit-compare-meta > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kit-compare-meta strong { font-size: 14px; font-weight: 600; color: var(--kit-text); }
 .kit-compare-meta a, .kit-compare-list a { color: var(--kit-accent-text); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--kp-space-1); }
 .kit-compare-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--kp-space-2); max-width: 420px; }
 .kit-compare-list li { display: flex; justify-content: space-between; gap: var(--kp-space-4); padding: var(--kp-space-3) var(--kp-space-4); border-radius: var(--kit-radius-control); background: var(--kit-surface-sunken); font-size: 14px; }
+.kit-detail .kit-compare-lede { max-width: 640px; min-height: 3.2em; }
 .kit-note { margin: var(--kp-space-3) 0 0; font-size: var(--kp-text-sm); color: var(--kit-text-muted); }
 
 /* ── Not in this system ── */
@@ -614,6 +638,9 @@
   .kit-head { padding-bottom: var(--kp-space-3); }
   .kit-search { max-width: none; flex-basis: 100%; }
   .kit-search kbd { display: none; }
+  /* The search bar is opaque here: section headings passing under a
+     translucent bar read through it on a small screen. */
+  .kit-toolbar { background: var(--kp-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 @media (max-width: 900px) {
   .kit-play { grid-template-columns: minmax(0, 1fr); }
@@ -626,6 +653,11 @@
   /* Phones: the detail page uses the full width. */
   .kit-detail.dh-detail { padding-left: var(--kp-inset-phone); padding-right: var(--kp-inset-phone); }
   .kit-topbar { padding: 0 var(--kp-inset-phone); }
+  /* Two lines of description, always: the tab strip starts at the same
+     place in every system. The full text is on the Overview's first screen
+     in the system's own words; here it is the page's one-line summary. */
+  .kit-detail .dh-detail-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kit-detail .dh-detail-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; height: calc(var(--kp-desc-lh) * 2); min-height: 0; }
   .kit-tabs { margin-left: calc(var(--kp-inset-phone) * -1); margin-right: calc(var(--kp-inset-phone) * -1); padding-left: var(--kp-inset-phone); padding-right: var(--kp-inset-phone); }
   .kit-hero { padding: var(--kp-space-5) var(--kp-space-4); min-height: 220px; justify-content: flex-start; }
 }

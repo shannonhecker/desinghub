@@ -362,7 +362,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
             <section className="kit-band" aria-labelledby="kit-band-h">
               <div className="kit-section-head">
                 <h2 id="kit-band-h">Same component, five systems</h2>
-                <p>One component drawn by each system's own library, in the mode you are viewing.</p>
+                <p>The same component in each system&rsquo;s own styling, in the mode you are viewing.</p>
               </div>
               <div className="kit-seg kit-band-picks" ref={picksFade} role="group" aria-label="Component to compare">
                 {COMPARE_PICKS.map((k) => (

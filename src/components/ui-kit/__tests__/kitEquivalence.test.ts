@@ -64,7 +64,7 @@ describe("kitEquivalence", () => {
   });
 
   it("never redirects: a missing equivalent is null with the closest matches", () => {
-    expect(resolveEquivalent("m3", "fabs", "carbon")).toEqual({ id: null, label: "FAB", systemOnly: true, closest: [{ id: "buttons", label: "Button" }] });
+    expect(resolveEquivalent("m3", "fabs", "carbon")).toEqual({ id: null, label: "FAB", systemOnly: false, closest: [{ id: "buttons", label: "Button" }] });
     /* Material has data tables; this library has no page for it yet. */
     expect(resolveEquivalent("salt", "table", "m3")).toEqual({ id: null, label: "Data table", systemOnly: false, closest: [{ id: "ag-grid", label: "AG Grid" }, { id: "buttons", label: "Button" }] });
     expect(resolveEquivalent("m3", "pat-feed", "salt").closest[0]).toEqual({ id: "pat-list-detail", label: "List and detail" });
@@ -90,7 +90,7 @@ describe("kitEquivalence", () => {
     /* Material FAB -> Carbon: same entry, marked as Material's. */
     const missing = switchPlace({ ds: "m3", c: "fabs", tab: "code" }, "carbon");
     /* Only a handful of concepts are truly one system's own. */
-    expect(Object.entries(CONCEPTS).filter(([, c]) => c.systemOnly).map(([k]) => k)).toEqual(["fab", "f-state-layers"]);
+    expect(Object.entries(CONCEPTS).filter(([, c]) => c.systemOnly).map(([k]) => k)).toEqual(["f-state-layers"]);
     expect(missing).toEqual({ ds: "carbon", c: "fabs", from: "m3", tab: "code" });
     expect(kitHref(missing)).toBe("/ui-kit?ds=carbon&c=fabs&from=m3&tab=code");
     /* From that state, on to Salt (also none), then back to Material. */

@@ -28,7 +28,8 @@ interface Concept {
   ids: Partial<Record<SystemId, string>>;
   /** Concepts to try, in order, where a system lacks this one. */
   fallback?: string[];
-  /** True when the real design system has no such thing (Material's FAB).
+  /** True when the real design system has no such thing (Material's state
+      layers).
       Everything else that is missing is a gap in this library, not in the
       system, and the copy must say so. */
   systemOnly?: true;
@@ -40,7 +41,7 @@ export const CONCEPTS: Record<string, Concept> = {
   /* ── Components ── */
   button: { label: "Button", group: "component", ids: all("buttons") },
   "icon-button": { label: "Icon button", group: "component", ids: { m3: "icon-buttons", carbon: "icon-button" }, fallback: ["button"] },
-  fab: { label: "FAB", group: "component", ids: { m3: "fabs" }, fallback: ["button"], systemOnly: true },
+  fab: { label: "FAB", group: "component", ids: { m3: "fabs" }, fallback: ["button"] },
   "toggle-button": { label: "Toggle button", group: "component", ids: { salt: "toggle-btn" }, fallback: ["segmented", "switch"] },
   segmented: { label: "Segmented control", group: "component", ids: { salt: "segmented-btn", m3: "segmented-buttons", carbon: "content-switcher" }, fallback: ["tabs"] },
   link: { label: "Link", group: "component", ids: { salt: "link", fluent: "links", carbon: "link" }, fallback: ["button"] },

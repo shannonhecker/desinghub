@@ -115,7 +115,7 @@ test("missing equivalent: says so, offers the closest matches, never redirects",
 
   await railLink(page, "Carbon DS").click();
   const state = page.getByTestId("not-in-system");
-  await expect(state.getByRole("heading", { level: 1 })).toHaveText("Carbon has no FAB.");
+  await expect(state.getByRole("heading", { level: 1 })).toHaveText("This library has no FAB page for Carbon yet.");
   /* The place is kept in the URL: same entry, marked as Material's. */
   await expect(page).toHaveURL(/\/ui-kit\?ds=carbon&c=fabs&from=m3$/);
   await expect(page.getByTestId("detail-page")).toHaveCount(0);
@@ -127,7 +127,7 @@ test("missing equivalent: says so, offers the closest matches, never redirects",
 
   /* The state survives a reload. */
   await page.reload({ waitUntil: "networkidle" });
-  await expect(page.getByTestId("not-in-system").getByRole("heading", { level: 1 })).toHaveText("Carbon has no FAB.");
+  await expect(page.getByTestId("not-in-system").getByRole("heading", { level: 1 })).toHaveText("This library has no FAB page for Carbon yet.");
 
   /* A closest match is a link the visitor chooses. */
   await page.getByTestId("not-in-system").getByRole("link", { name: "Button" }).click();

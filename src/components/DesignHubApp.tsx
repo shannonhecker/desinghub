@@ -290,7 +290,14 @@ export function DesignHubApp({ held = false }: {
   }, []);
   /* A tab change is the visitor moving on: stop holding the old position. */
   const activeTab = store.activeTab;
-  React.useEffect(() => { hold.current = null; }, [activeTab]);
+  /* Only a tab change on its own: when the tab moves together with the
+     system (the store restores it on the way back from a not-here page),
+     that is the switch itself and the hold it has just set must stand. */
+  const tabSystem = React.useRef(activeSystem);
+  React.useEffect(() => {
+    if (tabSystem.current === activeSystem) hold.current = null;
+    tabSystem.current = activeSystem;
+  }, [activeTab, activeSystem]);
   const holdStart = React.useRef<() => void>(() => {});
   const prevPlace = React.useRef({ system: activeSystem, entry: selectedComponent });
   React.useLayoutEffect(() => {
@@ -329,6 +336,9 @@ export function DesignHubApp({ held = false }: {
   const onScroll = React.useCallback(() => {
     const sc = scrollerRef.current;
     if (!sc) return;
+    /* A scroll past the held position is the visitor's: let go here, before
+       the position is read, so where they went is what is remembered. */
+    if (hold.current && sc.scrollTop > hold.current.top + 1) hold.current = null;
     /* While a switch is settling, a clamp is not the visitor scrolling. */
     /* A page that fits the viewport carries no position (it cannot scroll),
        so passing through one, such as the not-here state, does not forget

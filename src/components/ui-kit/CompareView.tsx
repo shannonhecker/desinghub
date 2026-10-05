@@ -13,9 +13,10 @@ import { useEdgeFade } from "./useEdgeFade";
 /**
  * Compare: one component, five design systems, side by side.
  *
- * Every panel is that system's REAL component (RealComponentRenderer: the
- * official Salt, MUI, Fluent and Carbon packages and the uoaui classes) on
- * that system's own surface and typeface, in the mode in view. Which entry is
+ * Every panel is drawn by RealComponentRenderer in that system's styling:
+ * the official Salt, Fluent and Carbon packages, MUI wearing the kit's
+ * Material 3 theme, and the uoaui classes, each on that system's own
+ * surface and typeface, in the mode in view. Which entry is
  * "the same component" in each system comes from kitEquivalence, the same
  * map the system switcher uses.
  */
@@ -70,7 +71,7 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
   if (!type || !def) return null;
 
   return (
-    <ul className={`kit-compare${compact ? " is-compact" : ""}`} ref={compact ? fade : undefined} data-testid="compare-panels">
+    <ul className={`kit-compare${compact ? " is-compact" : ""}`} ref={compact ? fade : undefined} data-testid="compare-panels" data-concept={concept}>
       {EQ_SYSTEMS.map((sys) => {
         const id = def.ids[sys];
         const current = sys === state.activeSystem;
@@ -122,9 +123,9 @@ export function CompareView({ componentId }: { componentId: string }) {
   return (
     <section className="dh-section" aria-labelledby="dh-h-compare">
       <h2 id="dh-h-compare" className="dh-section-h">{def.label} in five systems</h2>
-      <p className="dh-section-lede">
+      <p className="dh-section-lede kit-compare-lede">
         {canCompare(concept)
-          ? "Each panel is that system's own component on its own surface and typeface, in the mode you are viewing. Choose a system to open its page here."
+          ? "The same component in each system's own styling, on its own surface and typeface, in the mode you are viewing. Choose a system to open its page here."
           : `A live side-by-side is not built for ${def.label.toLowerCase()} yet. These systems document it:`}
       </p>
       {canCompare(concept) ? <ComparePanels concept={concept} /> : (

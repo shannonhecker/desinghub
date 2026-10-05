@@ -783,6 +783,13 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
           MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 4 }, notchedOutline: { borderColor: c("outline") } } },
           MuiPaper: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none", borderRadius: 12 } } },
         }),
+        ...(k && {
+          /* The kit's switch has no padding of its own (Material's track is
+             the whole control), so the label needs a real gap and must not
+             keep the negative margin MUI uses to offset that padding. Only a
+             label that holds a switch; a checkbox keeps MUI's spacing. */
+          MuiFormControlLabel: { styleOverrides: { root: { "&:has(.MuiSwitch-root)": { marginLeft: 0, gap: 12 } } } },
+        }),
         MuiCheckbox: { defaultProps: { size: size3 } },
         MuiToggleButtonGroup: { defaultProps: { size: size3 } },
         MuiTextField: { defaultProps: { size: size2 } },

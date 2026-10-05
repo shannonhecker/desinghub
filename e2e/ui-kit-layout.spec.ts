@@ -74,6 +74,74 @@ for (const entry of [
   });
 }
 
+/* Compare panels are one size in every system, so nothing below them moves
+   on a switch: on the Compare tab the panels' bottom edge and the pager's
+   top, and on the overview the band's bottom edge. */
+const edges = (page: Page, sel: string) => page.evaluate((s) => {
+  const half = (n: number) => Math.round(n * 2) / 2;
+  const panels = [...document.querySelectorAll(`${s} li`)].map((li) => li.getBoundingClientRect());
+  const stages = [...document.querySelectorAll(`${s} .kit-compare-stage`)].map((el) => Math.round(el.getBoundingClientRect().height));
+  const pager = document.querySelector(".kit-pager")?.getBoundingClientRect();
+  return {
+    stageHeights: [...new Set(stages)],
+    panelTop: half(Math.min(...panels.map((r) => r.top))),
+    panelBottom: half(Math.max(...panels.map((r) => r.bottom))),
+    listBottom: half(document.querySelector(s)!.getBoundingClientRect().bottom),
+    pagerTop: pager ? half(pager.top) : null,
+  };
+}, sel);
+
+for (const entry of [{ name: "Button", query: "c=buttons" }, { name: "Switch", query: "c=switches" }]) {
+  test(`${entry.name} Compare tab: panels and pager sit at the same place in all five systems`, async ({ page }) => {
+    await page.goto(`/ui-kit?ds=salt&${entry.query}&tab=compare`, { waitUntil: "networkidle" });
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('[data-testid="compare-panels"] li')).toHaveCount(5);
+    await page.waitForTimeout(600);
+    const base = await edges(page, '[data-testid="compare-panels"]');
+    expect(base.stageHeights).toEqual([220]);
+    expect(base.pagerTop).not.toBeNull();
+    for (const label of [...SYSTEMS.slice(1), SYSTEMS[0]]) {
+      await rail(page).getByRole("link", { name: label, exact: true }).click();
+      await expect(rail(page).getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "true");
+      await expect(page.locator('[data-testid="compare-panels"] li')).toHaveCount(5);
+      await page.evaluate(() => document.fonts.ready);
+      /* Carbon's sheet and the other engines' styles arrive after mount. */
+      await page.waitForTimeout(900);
+      expect(await edges(page, '[data-testid="compare-panels"]'), `${entry.name} compare in ${label}`).toEqual(base);
+    }
+    /* Dark too. */
+    await rail(page).getByRole("button", { name: /^Switch to (light|dark) mode$/ }).click();
+    await page.waitForTimeout(600);
+    expect(await edges(page, '[data-testid="compare-panels"]'), `${entry.name} compare after a mode change`).toEqual(base);
+  });
+}
+
+test("overview: the compare band ends at the same place in all five systems, for every pick", async ({ page }) => {
+  await page.goto("/ui-kit?ds=salt", { waitUntil: "networkidle" });
+  await page.evaluate(() => document.fonts.ready);
+  const band = ".kit-compare.is-compact";
+  const read = async () => ({ ...(await edges(page, band)), foundationsTop: await page.evaluate(() => Math.round(document.querySelector("#kit-foundations")!.getBoundingClientRect().top * 2) / 2) });
+  await expect(page.locator(`${band} li`)).toHaveCount(5);
+  await page.waitForTimeout(600);
+  const base = await read();
+  expect(base.stageHeights).toEqual([148]);
+  for (const label of [...SYSTEMS.slice(1), SYSTEMS[0]]) {
+    await rail(page).getByRole("link", { name: label, exact: true }).click();
+    await expect(rail(page).getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "true");
+    await expect(page.locator(`${band} li`)).toHaveCount(5);
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(900);
+    expect(await read(), `overview band in ${label}`).toEqual(base);
+  }
+  /* Picks that are controls keep the band's size; the table is taller, and
+     the same height in every system. */
+  for (const pick of ["Text input", "Checkbox", "Switch"]) {
+    await page.getByRole("group", { name: "Component to compare" }).getByRole("button", { name: pick }).click();
+    await page.waitForTimeout(700);
+    expect(await read(), `band with ${pick}`).toEqual(base);
+  }
+});
+
 test("a deep link never renders the overview first", async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as { __overviewSeen: boolean }).__overviewSeen = false;

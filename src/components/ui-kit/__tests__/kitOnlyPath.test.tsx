@@ -100,6 +100,47 @@ describe("builder path (no kit) keeps the controls it always rendered", () => {
   });
 });
 
+describe("Material button and chip overrides do not leak to the builder", () => {
+  const css = () => Array.from(document.styleSheets).map((sh) => Array.from(sh.cssRules).map((r) => r.cssText).join("\n")).join("\n");
+  const rulesFor = (el: Element | null) => {
+    const cls = Array.from(el!.classList).filter((c) => c.startsWith("css-"));
+    return css().split("\n").filter((line) => cls.some((c) => line.includes(c))).join("\n");
+  };
+
+  it("button: MUI's default shape without kit, the Material pill with it", async () => {
+    const plain = await render(<RealComponentRenderer system="m3" type="SimulatedButton" mode="light" props={{ variant: "primary", label: "Go" }} />);
+    const plainRule = rulesFor(plain.querySelector("button"));
+    expect(plainRule).not.toMatch(/border-radius:\s*9999px/);
+    expect(plainRule).toMatch(/text-transform:\s*uppercase/);
+    expect(plainRule).not.toMatch(/rgb\(103, 80, 164\)|#6750a4/i);
+    afterEachUnmount();
+    const kit = await render(<RealComponentRenderer system="m3" type="SimulatedButton" mode="light" kit={m3} props={{ variant: "primary", label: "Go" }} />);
+    const kitRule = rulesFor(kit.querySelector("button"));
+    expect(kitRule).toMatch(/border-radius:\s*9999px/);
+    expect(kitRule).toMatch(/text-transform:\s*none/);
+  });
+
+  it("chip: MUI's filled pill without kit, the outlined 8px chip with it", async () => {
+    const plain = await render(<RealComponentRenderer system="m3" type="SimulatedPill" mode="light" props={{ label: "Tag" }} />);
+    const plainRule = rulesFor(plain.querySelector(".MuiChip-root"));
+    expect(plainRule).not.toMatch(/border-radius:\s*8px/);
+    expect(plainRule).not.toMatch(/border:\s*1px solid/);
+    afterEachUnmount();
+    const kit = await render(<RealComponentRenderer system="m3" type="SimulatedPill" mode="light" kit={m3} props={{ label: "Tag" }} />);
+    const kitRule = rulesFor(kit.querySelector(".MuiChip-root"));
+    expect(kitRule).toMatch(/border-radius:\s*8px/);
+    expect(kitRule).toMatch(/height:\s*32px/);
+  });
+
+  it("switch label: MUI's spacing without kit, a real gap with it", async () => {
+    const plain = await render(<RealComponentRenderer system="m3" type="SimulatedSwitch" mode="light" props={{ id: "g1", label: "Switch" }} />);
+    expect(rulesFor(plain.querySelector(".MuiFormControlLabel-root"))).not.toMatch(/gap:\s*12px/);
+    afterEachUnmount();
+    const kit = await render(<RealComponentRenderer system="m3" type="SimulatedSwitch" mode="light" kit={m3} props={{ id: "g2", label: "Switch" }} />);
+    expect(rulesFor(kit.querySelector(".MuiFormControlLabel-root"))).toMatch(/gap:\s*12px/);
+  });
+});
+
 function afterEachUnmount() {
   if (root) {
     const r = root;
