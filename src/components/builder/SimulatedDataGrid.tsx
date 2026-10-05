@@ -308,16 +308,59 @@ function rowLabel(columns: GridColumn[], row: GridRow | undefined): string {
   return field && row ? String(row[field] ?? "") : "";
 }
 
-export function SimulatedDataGrid({ columns, rows, height, label, selected, onSelect, edgeFade = false }: SimulatedDataGridProps) {
+/** Structural equality for the grid's plain data (columns and rows). */
+function sameData(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    const other = b as unknown[];
+    return a.length === other.length && a.every((v, i) => sameData(v, other[i]));
+  }
+  const x = a as Record<string, unknown>;
+  const y = b as Record<string, unknown>;
+  const keys = Object.keys(x);
+  return keys.length === Object.keys(y).length && keys.every((k) => k in y && sameData(x[k], y[k]));
+}
+
+/**
+ * The value last given, for as long as what arrives says the same thing.
+ * A bound grid's columns and rows are derived again on every change of the
+ * report state, as new arrays even when nothing in them changed (a row
+ * selection changes the state and nothing in the selecting grid). Handed
+ * to the grid as new data, every row and cell was destroyed and drawn
+ * again, and the focused cell with them.
+ */
+function useSameData<T>(value: T): T {
+  const [held, setHeld] = useState(value);
+  if (held === value || sameData(held, value)) return held;
+  setHeld(value);
+  return value;
+}
+
+export function SimulatedDataGrid({ columns: givenColumns, rows: givenRows, height, label, selected, onSelect, edgeFade = false }: SimulatedDataGridProps) {
+  const columns = useSameData(givenColumns);
+  const rows = useSameData(givenRows);
   const columnDefs = useMemo(() => toColDefs(columns, rows), [columns, rows]);
   const apiRef = useRef<GridApi<GridRow> | null>(null);
   /* Row styling reads the latest selection through a ref, so the grid's
-     callbacks stay stable and only a redraw is needed when it changes. */
+     callbacks stay stable. When the selection changes, only the two rows it
+     concerns (the one that was selected, the one that is) are refreshed, in
+     place: their classes are re-read and the cells stay the same elements.
+     Redrawing every row (redrawRows) removed the focused cell for a moment,
+     so focus fell to the page: the next arrow key did nothing, and Tab went
+     back into the grid instead of leaving it. */
   const selectedRef = useRef(selected);
   useEffect(() => {
+    const before = selectedRef.current;
     selectedRef.current = selected;
-    apiRef.current?.redrawRows();
-  }, [selected]);
+    if (before === selected) return;
+    apiRef.current?.forEachNode((node) => {
+      if (!node.data) return;
+      const label = rowLabel(columns, node.data);
+      if (label === before || label === selected) node.setData(node.data);
+    });
+  }, [selected, columns]);
   const rowClassRules = useMemo(
     () => ({
       /* The selected group's own row is marked, not the child rows under it. */
