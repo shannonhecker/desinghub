@@ -161,10 +161,12 @@ type FieldDef =
    A chart's kind is its `chartType` prop, so swapping it in place is one
    select. The two families take different data (series over categories vs.
    named parts of a whole), so each offers only the kinds its data can draw. */
+/* Subtitle and "View by" are drawn in the panel's header, so they only show
+   once "Framed panel" is on; their labels say so. */
 const PANEL_FIELDS: FieldDef[] = [
-  { type: "text", propKey: "subtitle", label: "Subtitle", placeholder: "e.g. (Stacked)" },
   { type: "toggle", propKey: "panel", label: "Framed panel" },
-  { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Asset type, Region" },
+  { type: "text", propKey: "subtitle", label: "Subtitle (framed panel)", placeholder: "e.g. (Stacked)" },
+  { type: "text", propKey: "viewByCsv", label: "View by options (framed panel)", placeholder: "Asset type, Region" },
   { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
 ];
 const CATEGORY_CHART_FIELDS: FieldDef[] = [
@@ -180,6 +182,7 @@ const CATEGORY_CHART_FIELDS: FieldDef[] = [
     { value: "stacked-area", label: "Stacked area" },
     { value: "combination", label: "Combination" },
   ]},
+  { type: "toggle", propKey: "hideLegend", label: "Hide legend" },
   ...PANEL_FIELDS,
 ];
 const PART_CHART_FIELDS: FieldDef[] = [
@@ -504,6 +507,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedButton", label: "Button", icon: "smart_button", defaults: { variant: "primary", label: "New Button" }, fields: [
     { type: "text", propKey: "label", label: "Label" },
     { type: "select", propKey: "variant", label: "Variant", options: [{ value: "primary", label: "Primary (CTA)" }, { value: "secondary", label: "Secondary" }, { value: "outline", label: "Outline" }, { value: "ghost", label: "Ghost / Text" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "SimulatedTitle", label: "Title / Heading", icon: "title", defaults: { level: "h2", text: "New Heading" }, fields: [
     { type: "text", propKey: "text", label: "Text" },
@@ -511,6 +515,9 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "SimulatedTextInput", label: "Text Input", icon: "text_fields", defaults: { placeholder: "Enter text...", label: "Label" }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "value", label: "Value" },
+    { type: "select", propKey: "validationStatus", label: "Validation", options: [{ value: "", label: "None" }, { value: "error", label: "Error" }, { value: "warning", label: "Warning" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "Alert", label: "Alert", icon: "warning", defaults: { variant: "info", title: "Update Available", message: "A new version is ready." }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "text", propKey: "message", label: "Message" },
@@ -546,12 +553,14 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "label", label: "Label", placeholder: "e.g. Currency" },
     { type: "text", propKey: "value", label: "Selected value" },
     { type: "text", propKey: "optionsCsv", label: "Options (comma separated)", placeholder: "GBP, USD, EUR" },
-    { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "placeholder", label: "Placeholder (shown when nothing is selected)" },
   ]},
 
   /* ── Data Display ── */
   { type: "SimulatedDataTable", label: "Data Table", icon: "table_chart", defaults: {}, fields: [
-    { type: "static", text: "Use the Describe bar above the table to fill it with AI, e.g. \"8 customers with plan and MRR\"." },
+    { type: "select", propKey: "maxRows", label: "Rows shown", options: [{ value: "", label: "All rows" }, { value: "3", label: "3" }, { value: "5", label: "5" }, { value: "8", label: "8" }, { value: "10", label: "10" }] },
+    { type: "text", propKey: "hiddenColumnsCsv", label: "Hide columns (comma separated)", placeholder: "e.g. Seats, Date" },
+    { type: "static", text: "To fill the table with new data, ask in the chat, e.g. \"8 customers with plan and MRR\"." },
   ]},
   { type: "SimulatedProgress", label: "Progress Bar", icon: "percent", defaults: { label: "Uploading assets...", value: 50 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
@@ -677,6 +686,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedStatCard", label: "Stat Card", icon: "monitoring", defaults: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "value", label: "Value" },
     { type: "range", propKey: "pct", label: "Progress", max: 100, suffix: "%" },
+    { type: "toggle", propKey: "hideProgress", label: "Hide progress bar" },
   ]},
 
   /* ── Zone-specific types ── */

@@ -615,12 +615,14 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
             it to the card's content width so the bar shares the text
             block's inset. hideLabel: the pct is a decorative fill here —
             M3/Fluent/uoaui stat cards show no number either. */}
-        <SaltLinearProgress
-          aria-label={s(props.label, "Metric")}
-          value={num(props.pct, 0)}
-          hideLabel
-          style={{ width: "100%", minWidth: 0 }}
-        />
+        {!props.hideProgress && (
+          <SaltLinearProgress
+            aria-label={s(props.label, "Metric")}
+            value={num(props.pct, 0)}
+            hideLabel
+            style={{ width: "100%", minWidth: 0 }}
+          />
+        )}
       </SaltCard>
     );
   } else if (type === "SimulatedDropdown") {
@@ -825,7 +827,7 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
         <MuiCardContent>
           <MuiTypography variant="body2" color="text.secondary">{s(props.label, "Metric")}</MuiTypography>
           <MuiTypography variant="h4">{s(props.value, "0")}</MuiTypography>
-          <MuiLinearProgress variant="determinate" value={num(props.pct, 0)} sx={{ mt: 1 }} />
+          {!props.hideProgress && <MuiLinearProgress variant="determinate" value={num(props.pct, 0)} sx={{ mt: 1 }} />}
         </MuiCardContent>
       </MuiCard>
     );
@@ -967,7 +969,7 @@ function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRender
       <FluentCard size={size}>
         <FluentCardHeader header={<FluentCaption1>{s(props.label, "Metric")}</FluentCaption1>} />
         <FluentTitle3>{s(props.value, "0")}</FluentTitle3>
-        <FluentProgressBar value={num(props.pct, 0) / 100} />
+        {!props.hideProgress && <FluentProgressBar value={num(props.pct, 0) / 100} />}
       </FluentCard>
     );
   } else if (type === "SimulatedDropdown") {

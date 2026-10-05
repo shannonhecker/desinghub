@@ -378,7 +378,7 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       { className: "a-card", style: { padding: 16 } },
       React.createElement("div", { style: { fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 } }, s(p.label, "Metric")),
       React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" } }, s(p.value, "0")),
-      React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${pct}%` } })),
+      p.hideProgress ? null : React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${pct}%` } })),
     );
   },
 
@@ -688,7 +688,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       React.createElement("p", { className: "cds--type-heading-04" }, s(p.value, "0")),
       /* `pct` is progress toward a goal (a bar in the other four systems),
          not a signed change - see the matching export entry. */
-      React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
+      p.hideProgress ? null : React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
     ),
 
   SimulatedAccordion: (p) =>

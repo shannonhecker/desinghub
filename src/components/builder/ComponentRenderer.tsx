@@ -5,6 +5,7 @@ import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { coerceDensity } from "@/lib/densitySize";
 import { RealComponentRenderer, canRenderReal } from "../ui-kit/RealComponentRenderer";
+import { adjustBlockProps, adjustTableProps } from "@/lib/blockPropAdjust";
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { showToast } from "@/lib/toast";
 import { undo as canvasUndo } from "@/lib/builderHistory";
@@ -808,11 +809,13 @@ function SimulatedButtonBlock({
   system,
   variant = "primary",
   label = "New Button",
+  disabled = false,
   blockId,
 }: {
   system: DesignSystem;
   variant?: string;
   label?: string;
+  disabled?: boolean;
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
@@ -869,10 +872,12 @@ function SimulatedButtonBlock({
         borderRadius: btnRadius,
         fontSize: 13,
         fontWeight: 600,
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.15s ease",
         ...vs,
+        ...(disabled ? { opacity: 0.45 } : null),
       }}
+      aria-disabled={disabled || undefined}
     >
       {isSelected && blockId ? (
         <InlineEditable
@@ -947,15 +952,26 @@ function SimulatedTextInputBlock({
   system,
   label = "Label",
   placeholder = "Enter text...",
+  value = "",
+  disabled = false,
+  validationStatus = "",
   blockId,
 }: {
   system: DesignSystem;
   label?: string;
   placeholder?: string;
+  value?: string;
+  disabled?: boolean;
+  validationStatus?: string;
   blockId?: string;
 }) {
   const { isSelected, update } = useBlockInAnyZone(blockId);
   const prefix = system === "salt" ? "s" : system === "m3" ? "m3" : system === "carbon" ? "cb" : "f";
+  /* Validation and disabled, as the five real systems draw them. */
+  const fieldState: React.CSSProperties = {
+    ...(validationStatus === "error" ? { borderColor: t.statusNegative } : validationStatus === "warning" ? { borderColor: t.statusWarning } : null),
+    ...(disabled ? { opacity: 0.45, cursor: "not-allowed" } : null),
+  };
   /* Programmatic label ↔ input association. While the block is selected the
      label is an inline editor (contentEditable), so the input carries the
      label text via aria-label instead. */
@@ -991,6 +1007,10 @@ function SimulatedTextInputBlock({
             type="text"
             className={`${prefix}-input`}
             placeholder={placeholder}
+            value={value || undefined}
+            disabled={disabled}
+            aria-invalid={validationStatus === "error" || undefined}
+            style={fieldState}
             readOnly
           />
         )}
@@ -1105,7 +1125,7 @@ function SimulatedStatCardBlock({
           <InlineEditable value={displayValue} onChange={(v) => handleUpdate("value", v)} style={{ outline: "none" }} />
         ) : displayValue}
       </div>
-      <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: t.border }}>
+      {block?.props.hideProgress ? null : <div style={{ marginTop: 8, height: 4, borderRadius: 2, background: t.border }}>
         <div style={{
           width: `${displayPct}%`,
           height: "100%",
@@ -1113,7 +1133,7 @@ function SimulatedStatCardBlock({
           background: t.primary,
           transition: "width 500ms ease",
         }} />
-      </div>
+      </div>}
     </div>
   );
 }
@@ -1331,8 +1351,10 @@ function SimulatedDataTableBlock({
 }) {
   const blocks = useBuilder((s) => s.blocks);
   const block = blockId ? blocks.find((b) => b.id === blockId) : null;
-  const data = (block?.props.rows as unknown[]) ?? undefined;
-  const columns = (block?.props.columns as string[]) ?? undefined;
+  /* Rows shown / hidden columns (panel controls), as every system draws them. */
+  const shown = block ? adjustTableProps(block.props) : null;
+  const data = (shown?.rows as unknown[]) ?? undefined;
+  const columns = (shown?.columns as string[]) ?? undefined;
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
 
@@ -1712,7 +1734,7 @@ function HighchartBlockRenderer({
       secondaryAxisFormat={text(p.secondaryAxisFormat)}
       secondaryAxisTitle={text(p.secondaryAxisTitle)}
       centerLabel={centerLabel}
-      legend={p.legend === false ? false : undefined}
+      legend={p.legend === false || p.hideLegend === true ? false : undefined}
       valueDecimals={typeof p.valueDecimals === "number" ? p.valueDecimals : undefined}
       valueSuffix={text(p.valueSuffix)}
       yAxisMax={typeof p.yAxisMax === "number" ? p.yAxisMax : undefined}
@@ -2040,9 +2062,9 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
   const stateValue = useBuilder((s) => (stateKey ? s.reportState[stateKey] : undefined));
   /* A settings control (`persistValue`) also saves the choice on its block,
      so it survives a reload; other report state stays transient. */
-  const liveProps: Record<string, unknown> = stateKey
+  const liveProps: Record<string, unknown> = adjustBlockProps(type, stateKey
     ? { ...rawProps, value: stateValue ?? rawProps.value, onValueChange: (v: string) => setReportControlValue(blockId, rawProps, stateKey, v) }
-    : rawProps;
+    : rawProps);
   const coversReal = canRenderReal(system as SystemId, type);
   const rendersRealInEdit = !readOnly && editRendersReal && coversReal;
   const isSelectedBlock = useBuilder((s) => blockId != null && s.selectedBlockId === blockId);
