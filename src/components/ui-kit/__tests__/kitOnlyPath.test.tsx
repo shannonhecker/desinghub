@@ -3,9 +3,14 @@
 
    RealComponentRenderer and CarbonScopeStyles are shared with the builder,
    which holds its geometry to the pixel across systems. Everything the
-   library adds (the Material theme, the Salt skin, normal instead of
+   library adds (Material's own sizes, the Salt skin, normal instead of
    read-only controls, the Carbon font handling) must be off unless the
    caller passes `kit` or renders under <CarbonKitScope>.
+
+   Material: the builder and the library share one Material 3 theme
+   (m3MuiTheme). Colour, corner and case are the same in both; only the
+   library takes Material's sizes (40px button, 52 by 32 switch root,
+   32px chip with 16px label padding), so the builder's slots hold.
    ════════════════════════════════════════════════════════════ */
 
 import { describe, it, expect, afterEach, beforeAll, beforeEach, vi } from "vitest";
@@ -100,36 +105,47 @@ describe("builder path (no kit) keeps the controls it always rendered", () => {
   });
 });
 
-describe("Material button and chip overrides do not leak to the builder", () => {
+describe("Material's own sizes do not leak to the builder", () => {
   const css = () => Array.from(document.styleSheets).map((sh) => Array.from(sh.cssRules).map((r) => r.cssText).join("\n")).join("\n");
   const rulesFor = (el: Element | null) => {
     const cls = Array.from(el!.classList).filter((c) => c.startsWith("css-"));
     return css().split("\n").filter((line) => cls.some((c) => line.includes(c))).join("\n");
   };
 
-  it("button: MUI's default shape without kit, the Material pill with it", async () => {
+  it("button: the Material pill in both, Material's 40px height only with kit", async () => {
     const plain = await render(<RealComponentRenderer system="m3" type="SimulatedButton" mode="light" props={{ variant: "primary", label: "Go" }} />);
     const plainRule = rulesFor(plain.querySelector("button"));
-    expect(plainRule).not.toMatch(/border-radius:\s*9999px/);
-    expect(plainRule).toMatch(/text-transform:\s*uppercase/);
-    expect(plainRule).not.toMatch(/rgb\(103, 80, 164\)|#6750a4/i);
+    /* The builder is Material 3 too: the primary role, a pill, sentence case. */
+    expect(plainRule).toMatch(/border-radius:\s*9999px/);
+    expect(plainRule).toMatch(/text-transform:\s*none/);
+    expect(plainRule).not.toMatch(/text-transform:\s*uppercase/);
+    expect(plainRule).toMatch(/rgb\(103, 80, 164\)|#6750a4/i);
+    /* Its size is still MUI's for the density: the template's slot. */
+    expect(plainRule).not.toMatch(/height:\s*40px/);
+    expect(plainRule).not.toMatch(/padding:\s*0(px)? 24px/);
+    expect(plainRule).toMatch(/padding:\s*6px 16px/);
     afterEachUnmount();
     const kit = await render(<RealComponentRenderer system="m3" type="SimulatedButton" mode="light" kit={m3} props={{ variant: "primary", label: "Go" }} />);
     const kitRule = rulesFor(kit.querySelector("button"));
     expect(kitRule).toMatch(/border-radius:\s*9999px/);
     expect(kitRule).toMatch(/text-transform:\s*none/);
+    expect(kitRule).toMatch(/height:\s*40px/);
   });
 
-  it("chip: MUI's filled pill without kit, the outlined 8px chip with it", async () => {
+  it("chip: the outlined 8px chip in both, Material's label padding and type size only with kit", async () => {
     const plain = await render(<RealComponentRenderer system="m3" type="SimulatedPill" mode="light" props={{ label: "Tag" }} />);
     const plainRule = rulesFor(plain.querySelector(".MuiChip-root"));
-    expect(plainRule).not.toMatch(/border-radius:\s*8px/);
-    expect(plainRule).not.toMatch(/border:\s*1px solid/);
+    expect(plainRule).toMatch(/border-radius:\s*8px/);
+    expect(plainRule).toMatch(/border:\s*1px solid/);
+    expect(plainRule).not.toMatch(/font-size:\s*14px/);
+    expect(rulesFor(plain.querySelector(".MuiChip-label"))).not.toMatch(/padding-left:\s*16px/);
     afterEachUnmount();
     const kit = await render(<RealComponentRenderer system="m3" type="SimulatedPill" mode="light" kit={m3} props={{ label: "Tag" }} />);
     const kitRule = rulesFor(kit.querySelector(".MuiChip-root"));
     expect(kitRule).toMatch(/border-radius:\s*8px/);
     expect(kitRule).toMatch(/height:\s*32px/);
+    expect(kitRule).toMatch(/font-size:\s*14px/);
+    expect(rulesFor(kit.querySelector(".MuiChip-label"))).toMatch(/padding-left:\s*16px/);
   });
 
   it("switch label: MUI's spacing without kit, a real gap with it", async () => {

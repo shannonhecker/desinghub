@@ -25,7 +25,8 @@ import React from "react";
 import type { SystemId } from "@/lib/componentApiRegistry";
 
 import { SaltProvider, Input as SaltInput, Dropdown as SaltDropdown, Option as SaltOption, Switch as SaltSwitch } from "@salt-ds/core";
-import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { buildM3Theme } from "@/lib/m3MuiTheme";
 import MuiTextField from "@mui/material/TextField";
 import MuiMenuItem from "@mui/material/MenuItem";
 import MuiSwitch from "@mui/material/Switch";
@@ -76,7 +77,7 @@ export function DsControlScope({
 }) {
   const mounted = useMounted();
   /* Memoise so the MUI theme isn't rebuilt every render (mirrors RealComponentRenderer). */
-  const m3Theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const m3Theme = React.useMemo(() => buildM3Theme({ mode }), [mode]);
   if (!mounted || !supportsDsControls(system)) return <>{children}</>;
   switch (system) {
     case "salt":
