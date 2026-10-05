@@ -8054,6 +8054,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   --ds-fg-secondary: #9CA3AF;
   --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: rgba(255,255,255,0.04);
+  /* The glass surface as it reads on the background, as one opaque colour:
+     for ink on an inverted fill and for anything that must hide what scrolls
+     under it. The 4% is --ds-surface's alpha. */
+  --ds-surface-solid: color-mix(in srgb, white 4%, var(--ds-bg));
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
   /* Quieter separator for card outlines and row rules. */
@@ -10986,12 +10990,15 @@ th[class*="-th"] > span { vertical-align: middle; }
 [data-uniform-structure] .bp-dashboard {
   --dh-canvas: var(--ds-bg);
   --dh-card: var(--ds-surface);
+  /* The card as an opaque colour (uoaui's dark card is glass). */
+  --dh-card-solid: var(--ds-surface-solid, var(--ds-surface));
   --bc-gutter: var(--dh-report-gutter);
 }
 [data-uniform-structure] .builder-light .bp-dashboard,
 [data-uniform-structure] .builder-light.bp-dashboard {
   --dh-canvas: color-mix(in srgb, var(--ds-fg) 6%, var(--ds-bg));
   --dh-card: var(--ds-bg);
+  --dh-card-solid: var(--ds-bg);
 }
 [data-uniform-structure] .bp-main,
 [data-uniform-structure] .bp-main > .preview-canvas-root {
@@ -11312,8 +11319,9 @@ th[class*="-th"] > span { vertical-align: middle; }
   cursor: pointer;
 }
 .dh-exec-range:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
-/* The chosen range is an inverted pill. */
-.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
+/* The chosen range is an inverted pill: the label is the card's colour, as
+   an opaque colour (a glass card would leave the label the pill's own tone). */
+.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card-solid, var(--ds-bg)); }
 
 /* ── FX sample orders (PR D): the quote's sides and the header launchers,
    the targets over the price tags, the toast. The dialogs and menus are
@@ -11533,15 +11541,15 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-exec-range-goto { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 1.5); padding-inline: var(--dh-nav-pad); }
 .dh-exec-range-goto.is-active { padding-inline-end: var(--dh-nav-inset); }
 /* On a narrow panel the range row scrolls sideways: the calendar chip stays
-   in reach at its end, on the panel's own surface, the presets sliding
-   under a soft edge. Showing a window, it is a chip in the row again (it
+   in reach at its end, on the panel's own surface (opaque, so nothing shows
+   through it), the presets sliding under a soft edge. Showing a window, it is a chip in the row again (it
    is scrolled into view when the window is set). */
 .dh-exec-range-goto:not(.is-active) {
   position: sticky; inset-inline-end: 0;
-  background: var(--dh-card, var(--ds-surface));
-  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card, var(--ds-surface));
+  background: var(--dh-card-solid, var(--ds-surface));
+  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card-solid, var(--ds-surface));
 }
-.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card, var(--ds-surface))); }
+.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card-solid, var(--ds-surface))); }
 .dh-exec-plot { position: relative; }
 .dh-exec-plot.is-navigable { touch-action: pan-y; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 /* A vertical swipe on the plot scrolls the page; the box zoom tool and the
