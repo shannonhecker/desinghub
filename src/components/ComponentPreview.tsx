@@ -14,6 +14,7 @@ import { AnatomyDiagram } from "./ui-kit/AnatomyDiagram";
 import { VariantExample } from "./ui-kit/VariantExample";
 import { Playground } from "./ui-kit/Playground";
 import { CompareView } from "./ui-kit/CompareView";
+import { useEdgeFade, revealInline } from "./ui-kit/useEdgeFade";
 import { COMPONENT_SUBCATS } from "@/data/componentCategories";
 import { getUiKitGroup } from "./ui-kit/uiKitGroups";
 import {
@@ -97,6 +98,32 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
      per-DS custom properties off this node (the DS CSS declares them on a scoped
      selector, so resolving off :root in the document head would miss them). */
   const scopeRef = React.useRef<HTMLDivElement | null>(null);
+  /* The tab strip scrolls on narrow screens: fade the edge it continues
+     past, and keep the selected tab in view (a shared link to Compare on a
+     phone must not open with its tab off screen). */
+  const tabsEl = React.useRef<HTMLDivElement | null>(null);
+  const tabsFade = useEdgeFade<HTMLDivElement>();
+  const tabsRef = React.useCallback((el: HTMLDivElement | null) => { tabsEl.current = el; tabsFade(el); }, [tabsFade]);
+  React.useEffect(() => {
+    const el = tabsEl.current;
+    revealInline(el, el?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ?? null);
+  }, [activeTab, activeSystem, componentId]);
+  /* The strip sticks to the top of the scroller. Only then does it take a
+     backdrop, so page content passing under it stays readable; at rest it is
+     just the pill group on the page. A one-pixel sentinel above it tells the
+     two states apart. */
+  const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    const mark = sentinelRef.current;
+    const el = tabsEl.current;
+    if (!mark || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => {
+      const above = !entry.isIntersecting && entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0) + 1;
+      if (above) el.setAttribute("data-stuck", ""); else el.removeAttribute("data-stuck");
+    }, { root: mark.closest('[data-testid="kit-scroller"]'), threshold: 0 });
+    io.observe(mark);
+    return () => io.disconnect();
+  }, [componentId, activeSystem]);
   if (!comp) return null;
 
   const densityOrSize = activeSystem === "salt" ? store.salt.density
@@ -454,7 +481,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
         <h1 className="dh-detail-title" style={{ color: t.fg }}>{comp.name}</h1>
         <p className="dh-detail-desc" style={{ color: t.fg2 }}>{comp.desc}</p>
       </header>
-      <div className="kit-tabs">
+      <div ref={sentinelRef} className="kit-tabs-mark" aria-hidden="true" />
+      <div className="kit-tabs" ref={tabsRef}>
         <div role="tablist" aria-label="Component view" className="kit-seg" onKeyDown={onTabKey}>
           {TABS.map(([id, label]) => (
             <button key={id} role="tab" type="button" id={`dh-tab-${id}`} data-tab={id} aria-selected={tab === id} aria-controls="dh-tabpanel"
@@ -488,7 +516,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       {(prev || next) && (
         <nav className="kit-pager" aria-label="More in this section">
           {prev && <a href={`/ui-kit?ds=${activeSystem}&c=${prev.id}`} onClick={go(prev.id)}><small>Previous</small>{prev.name}</a>}
-          {next && <a href={`/ui-kit?ds=${activeSystem}&c=${next.id}`} onClick={go(next.id)}><small>Next</small>{next.name}</a>}
+          {next && <a className="is-next" href={`/ui-kit?ds=${activeSystem}&c=${next.id}`} onClick={go(next.id)}><small>Next</small>{next.name}</a>}
         </nav>
       )}
     </div>

@@ -8,6 +8,7 @@ import { RealComponentRenderer, canRenderReal } from "./RealComponentRenderer";
 import { CONCEPTS, EQ_SYSTEMS, SYSTEM_LABEL, conceptOf, kitHref } from "./kitEquivalence";
 import { isDarkActive } from "./kitHandoff";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useEdgeFade } from "./useEdgeFade";
 
 /**
  * Compare: one component, five design systems, side by side.
@@ -65,10 +66,11 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
   const type = COMPARE_BLOCK[concept];
   const entry = type ? kitEntry(type) : null;
   const def = CONCEPTS[concept];
+  const fade = useEdgeFade<HTMLUListElement>();
   if (!type || !def) return null;
 
   return (
-    <ul className={`kit-compare${compact ? " is-compact" : ""}`} data-testid="compare-panels">
+    <ul className={`kit-compare${compact ? " is-compact" : ""}`} ref={compact ? fade : undefined} data-testid="compare-panels">
       {EQ_SYSTEMS.map((sys) => {
         const id = def.ids[sys];
         const current = sys === state.activeSystem;

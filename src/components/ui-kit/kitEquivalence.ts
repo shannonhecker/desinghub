@@ -78,7 +78,7 @@ export const CONCEPTS: Record<string, Concept> = {
   "side-nav": { label: "Side navigation", group: "component", ids: { salt: "vert-nav", carbon: "sidenav" }, fallback: ["nav-bar", "tabs"] },
   "nav-bar": { label: "Navigation bar", group: "component", ids: { m3: "nav-bar", carbon: "bottom-nav" }, fallback: ["side-nav", "tabs"] },
   "nav-item": { label: "Navigation item", group: "component", ids: { salt: "nav-item" }, fallback: ["side-nav", "nav-bar", "tabs"] },
-  header: { label: "UI shell header", group: "component", ids: { carbon: "header" }, fallback: ["side-nav", "nav-bar", "tabs"], systemOnly: true },
+  header: { label: "UI shell header", group: "component", ids: { carbon: "header" }, fallback: ["side-nav", "nav-bar", "tabs"] },
   tag: { label: "Tag", group: "component", ids: { salt: "pills", m3: "chips", carbon: "tags" }, fallback: ["badge"] },
   "static-tag": { label: "Static tag", group: "component", ids: { salt: "tag" }, fallback: ["tag", "badge"] },
   badge: { label: "Badge", group: "component", ids: { salt: "badges", m3: "badges", fluent: "badges", uoaui: "badges", carbon: "badge" } },

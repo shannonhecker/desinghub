@@ -145,7 +145,16 @@ export function buttonIcon(p: Record<string, unknown>): React.ReactNode | null {
 
 export interface RealBlockContext {
   density: DensityLevel;
+  /** KIT ONLY. Set by the UI library's panels; the builder never sets it.
+      The form controls then mount in their normal state instead of
+      read-only, because Carbon styles a read-only control differently (no
+      field fill, an outlined toggle) and the library shows each control as
+      its system's own page draws it. Without it every branch below is
+      exactly what the builder has always rendered. */
+  kit?: boolean;
 }
+
+const noop = () => {};
 
 /** A render fn takes the block's resolved props (+ context) and returns the real markup. */
 export type RealBlockRenderer = (props: Record<string, unknown>, ctx?: RealBlockContext) => React.ReactNode;
@@ -540,24 +549,24 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       size: carbonSize(densityOf(ctx)),
       labelText: s(p.label, "Label"),
       placeholder: s(p.placeholder),
-      value: s(p.value) || undefined,
+      ...(ctx?.kit ? { key: s(p.value), defaultValue: s(p.value) || undefined } : { value: s(p.value) || undefined }),
       invalid: status === "error",
       invalidText: status === "error" ? "This field has an error" : undefined,
       warn: status === "warning",
       warnText: status === "warning" ? "This field has a warning" : undefined,
       disabled: Boolean(p.disabled),
-      readOnly: true,
+      ...(ctx?.kit ? {} : { readOnly: true }),
     });
   },
 
-  SimulatedCheckbox: (p) =>
+  SimulatedCheckbox: (p, ctx) =>
     React.createElement(CarbonCheckbox, {
       id: fieldId(p, "checkbox"),
       labelText: s(p.label),
       checked: Boolean(p.defaultChecked),
       indeterminate: Boolean(p.indeterminate),
       disabled: Boolean(p.disabled),
-      readOnly: true,
+      ...(ctx?.kit ? { onChange: noop } : { readOnly: true }),
     }),
 
   /* Carbon's Switch maps to Toggle (a labelled on/off switch). */
@@ -568,7 +577,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       labelText: s(p.label, "Switch"),
       toggled: Boolean(p.defaultOn),
       disabled: Boolean(p.disabled),
-      readOnly: true,
+      ...(ctx?.kit ? { onToggle: noop } : { readOnly: true }),
     }),
 
   /* Carbon's Card maps to Tile. */

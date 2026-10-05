@@ -37,6 +37,7 @@ import type { ActiveTheme } from "@/contexts/ThemeContext";
 import type { ComponentVariantMatrix, UiKitComponentId } from "@/data/ui-kit-meta";
 import { RealComponentRenderer, canRenderReal } from "@/components/ui-kit/RealComponentRenderer";
 import type { SystemId } from "@/lib/componentApiRegistry";
+import { useEdgeFade } from "@/components/ui-kit/useEdgeFade";
 
 interface VariantsMatrixProps {
   matrix: ComponentVariantMatrix;
@@ -139,6 +140,9 @@ export function VariantsMatrix({
      hydration — mirrors RealComponentRenderer's caller contract. */
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
+  /* On a phone the grid is wider than the page: fade the edge it continues
+     past so a cut column reads as "more this way". */
+  const fade = useEdgeFade<HTMLDivElement>();
 
   if (!matrix) return null;
 
@@ -165,7 +169,7 @@ export function VariantsMatrix({
         </span>
       </div>
 
-      <div className="dh-matrix-scroll">
+      <div className="dh-matrix-scroll" ref={fade}>
         <table className="dh-matrix" style={{ fontFamily: t.font }}>
           <thead>
             <tr>

@@ -18,6 +18,7 @@ import { builderHrefFor, isDarkActive, toggleActiveMode } from "./ui-kit/kitHand
 import { kitPrimitives } from "./ui-kit/kitChrome";
 import { kitHref, switchHref, type KitPlace } from "./ui-kit/kitEquivalence";
 import { getComponents, getFont } from "@/data/registry";
+import { CarbonKitScope } from "./ui-kit/CarbonScopeStyles";
 import "./ui-kit/kit-chrome.css";
 
 /**
@@ -28,8 +29,21 @@ export function useActiveTheme(): ActiveTheme {
   return useTheme();
 }
 
+/* How long a system switch holds the scroll position while the new page
+   settles: at least FIRST, then QUIET after each further change in the page's
+   height, never past LIMIT. Any input from the visitor ends it at once. */
+const HOLD_FIRST_MS = 1500;
+const HOLD_QUIET_MS = 1500;
+const HOLD_LIMIT_MS = 8000;
+
 /* ── MAIN APP - fully themed by active DS ── */
-export function DesignHubApp() {
+export function DesignHubApp({ held = false }: {
+  /** True on the route that serves a link to a place (/ui-kit?c=...): the
+      main column waits for the place from the URL, so the overview is never
+      drawn first. The plain /ui-kit route passes nothing and its overview is
+      in the server HTML. */
+  held?: boolean;
+} = {}) {
   const store = useDesignHub();
   const { sidebarOpen, activeSystem } = store;
   const t = useTheme();
@@ -80,6 +94,9 @@ export function DesignHubApp() {
      link lands on the same entry and tab. Opening an entry or switching
      system adds a history step (back and forward work); mode, density, tab,
      search and filter replace the current one and never navigate. */
+  /* False until the place in the URL has been applied to the store. The URL
+     writer below waits for it (it must never write the pre-URL state back
+     over the address), and the held route waits for it before drawing. */
   const [urlReady, setUrlReady] = React.useState(false);
   const applyPlaceFromUrl = React.useCallback(() => {
     const SYS = ["salt", "m3", "fluent", "carbon", "uoaui"];
@@ -105,8 +122,10 @@ export function DesignHubApp() {
   }, []);
 
   /* Layout effect: the place from the URL is applied before the first
-     paint, and the main column is held empty until then, so a deep link
-     never flashes the overview. */
+     paint. A link to a place is served by the held route (see `held`), whose
+     main column stays empty until this has run, so a deep link never draws
+     the overview. The plain route renders its overview at once, on the
+     server too. */
   React.useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -215,23 +234,32 @@ export function DesignHubApp() {
   const scrollerRef = React.useRef<HTMLDivElement | null>(null);
   const selectedComponent = store.selectedComponent;
   const lastTop = React.useRef(0);
-  const hold = React.useRef<{ top: number; until: number } | null>(null);
+  const hold = React.useRef<{ top: number; until: number; cap: number; height: number } | null>(null);
   /* While a system switch settles, keep putting the scroller back where it
      was: the new page's demos, panels and code mount over a few frames, and
      each one can briefly make the page shorter (which clamps the scroll) or
      taller. A frame loop is simpler and surer than observing every element.
-     The visitor's own scrolling always wins. */
+     The visitor always wins: the hold lets go on a wheel, a touch, any key,
+     a press anywhere in the scroller (its scrollbar included), on a scroll
+     past the held position, and on a tab change. */
   React.useEffect(() => {
     const sc = scrollerRef.current;
     if (!sc) return;
     let raf = 0;
+    const wanted = (h: { top: number }) => Math.min(h.top, Math.max(0, sc.scrollHeight - sc.clientHeight));
     const tick = () => {
       const h = hold.current;
       if (!h) return;
-      if (Date.now() > h.until) { hold.current = null; return; }
+      const now = Date.now();
+      /* Still settling: every change in the page's height (a panel's
+         stylesheet arriving, a demo mounting) keeps the hold a little
+         longer, up to a hard limit. A page that has stopped changing is
+         let go. */
+      if (sc.scrollHeight !== h.height) { h.height = sc.scrollHeight; h.until = Math.min(h.cap, Math.max(h.until, now + HOLD_QUIET_MS)); }
+      if (now > h.until) { hold.current = null; return; }
       const st = useDesignHub.getState();
       if (st.selectedComponent !== null || st.missing) {
-        const want = Math.min(h.top, Math.max(0, sc.scrollHeight - sc.clientHeight));
+        const want = wanted(h);
         if (Math.abs(sc.scrollTop - want) > 1) sc.scrollTop = want;
       }
       raf = requestAnimationFrame(tick);
@@ -239,11 +267,30 @@ export function DesignHubApp() {
     const start = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); };
     holdStart.current = start;
     const release = () => { hold.current = null; };
+    /* A scroll past the held position can only be the visitor's (the hold
+       never sets a larger value and a shorter page only clamps downward),
+       whatever produced it: find-in-page, an anchor, a scroll from script. */
+    const onAnyScroll = () => {
+      const h = hold.current;
+      if (h && sc.scrollTop > h.top + 1) hold.current = null;
+    };
     sc.addEventListener("wheel", release, { passive: true });
     sc.addEventListener("touchstart", release, { passive: true });
-    sc.addEventListener("keydown", release);
-    return () => { cancelAnimationFrame(raf); sc.removeEventListener("wheel", release); sc.removeEventListener("touchstart", release); sc.removeEventListener("keydown", release); };
+    sc.addEventListener("pointerdown", release, { passive: true });
+    /* Any key, wherever focus is: Tab from the rail moves focus into the
+       page and the browser scrolls to it; that must not be pulled back. */
+    window.addEventListener("keydown", release);
+    sc.addEventListener("scroll", onAnyScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      sc.removeEventListener("wheel", release); sc.removeEventListener("touchstart", release);
+      sc.removeEventListener("pointerdown", release); window.removeEventListener("keydown", release);
+      sc.removeEventListener("scroll", onAnyScroll);
+    };
   }, []);
+  /* A tab change is the visitor moving on: stop holding the old position. */
+  const activeTab = store.activeTab;
+  React.useEffect(() => { hold.current = null; }, [activeTab]);
   const holdStart = React.useRef<() => void>(() => {});
   const prevPlace = React.useRef({ system: activeSystem, entry: selectedComponent });
   React.useLayoutEffect(() => {
@@ -258,7 +305,10 @@ export function DesignHubApp() {
          shorter, which would clamp the scroll and read as a jump. The
          overview keeps its place by section instead (below). */
       const st = useDesignHub.getState();
-      hold.current = st.selectedComponent || st.missing ? { top: lastTop.current, until: Date.now() + 1500 } : null;
+      const now = Date.now();
+      hold.current = st.selectedComponent || st.missing
+        ? { top: lastTop.current, until: now + HOLD_FIRST_MS, cap: now + HOLD_LIMIT_MS, height: -1 }
+        : null;
       if (hold.current) holdStart.current();
       return;
     }
@@ -338,6 +388,7 @@ export function DesignHubApp() {
   const builderHref = builderHrefFor(store);
 
   return (
+    <CarbonKitScope>
     <div className="uikit-shell" data-system={activeSystem} style={{ ...kitPrimitives(t, isDarkTheme), display: "flex", flexDirection: "column", height: "100dvh",
       /* C2 PER-DS STAGE at the shell level. uoaui gets the signature
          aurora gradient as the app-level wash so the transparent stage +
@@ -575,10 +626,11 @@ export function DesignHubApp() {
         <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: stageBg }}>
           <ContentTopBar />
           <div ref={scrollerRef} onScroll={onScroll} data-testid="kit-scroller" style={{ flex: 1, overflowY: "auto", overflowAnchor: "none" }}>
-            {urlReady ? <MainContent /> : null}
+            {urlReady || !held ? <MainContent /> : null}
           </div>
         </main>
       </div>
     </div>
+    </CarbonKitScope>
   );
 }

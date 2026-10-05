@@ -90,7 +90,7 @@ describe("kitEquivalence", () => {
     /* Material FAB -> Carbon: same entry, marked as Material's. */
     const missing = switchPlace({ ds: "m3", c: "fabs", tab: "code" }, "carbon");
     /* Only a handful of concepts are truly one system's own. */
-    expect(Object.entries(CONCEPTS).filter(([, c]) => c.systemOnly).map(([k]) => k)).toEqual(["fab", "header", "f-state-layers"]);
+    expect(Object.entries(CONCEPTS).filter(([, c]) => c.systemOnly).map(([k]) => k)).toEqual(["fab", "f-state-layers"]);
     expect(missing).toEqual({ ds: "carbon", c: "fabs", from: "m3", tab: "code" });
     expect(kitHref(missing)).toBe("/ui-kit?ds=carbon&c=fabs&from=m3&tab=code");
     /* From that state, on to Salt (also none), then back to Material. */

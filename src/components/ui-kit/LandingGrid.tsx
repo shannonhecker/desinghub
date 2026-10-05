@@ -13,6 +13,7 @@ import { isDarkActive, toggleActiveMode } from "./kitHandoff";
 import { LiveSpecimen } from "./LiveSpecimen";
 import { ComparePanels } from "./CompareView";
 import { CONCEPTS } from "./kitEquivalence";
+import { useEdgeFade } from "./useEdgeFade";
 
 /* One plain sentence per system. Only things the kit itself documents. */
 const SYSTEM_LEDE: Record<SystemId, string> = {
@@ -100,21 +101,29 @@ function Fingerprint() {
   const t = useTheme();
   const sys = state.activeSystem;
   const dark = isDarkActive(state);
-  /* The first real family in the stack (a var(--font-…) entry is a loader
-     alias for the family named after it). */
-  /* Named as the stack resolves here: the first family the browser can
-     actually draw (Segoe UI is first in Fluent's stack but only on Windows). */
+  /* The system's typeface is the first family its stack names (a
+     var(--font-...) entry is a loader alias for the family named after it).
+     That is the fact the Typography page states too, so the two agree. Where
+     this browser cannot draw it (Segoe UI ships with Windows only), the
+     caption says which face stands in, instead of renaming the system's
+     typeface after the fallback. */
   const families = t.font.split(",").map((f) => f.replace(/['"]/g, "").trim()).filter((f) => f && !f.startsWith("var("));
-  const [fontName, setFontName] = React.useState(families[0] ?? "System");
+  const fontName = families[0] ?? "System";
+  const aliased = /^\s*var\(/.test(t.font);
+  const [standIn, setStandIn] = React.useState<string | null>(null);
   React.useEffect(() => {
-    let name = families[0] ?? "System";
+    let next: string | null = null;
     try {
-      const generic = new Set(["sans-serif", "serif", "monospace", "system-ui"]);
-      const found = families.find((f) => !generic.has(f) && document.fonts.check(`12px "${f}"`));
-      name = found ?? families.find((f) => generic.has(f)) ?? name;
-      if (name === "system-ui" || name === "sans-serif") name = "System sans";
-    } catch { /* keep the first family */ }
-    setFontName(name);
+      /* A loader alias is always available: the app hosts that face. */
+      if (!aliased && !document.fonts.check(`12px "${fontName}"`)) {
+        const apple = /Mac|iPhone|iPad/.test(navigator.platform);
+        const system = (f: string) => f === "system-ui" || f === "sans-serif" || (apple && (f === "-apple-system" || f === "BlinkMacSystemFont"));
+        /* Walk the stack in order: the first entry this browser can use. */
+        const used = families.slice(1).find((f) => system(f) || (!f.startsWith("-") && f !== "BlinkMacSystemFont" && document.fonts.check(`12px "${f}"`)));
+        next = !used || system(used) ? "the system sans" : used;
+      }
+    } catch { /* leave the caption plain */ }
+    setStandIn(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t.font]);
   const palette = [t.accent, t.accentWeak, t.successStrong, t.warningStrong, t.dangerStrong, t.infoStrong, t.fg, t.fg2, t.bg3]
@@ -132,11 +141,12 @@ function Fingerprint() {
     else state.setUoauiDensity(v);
   };
   const unit = BASE_UNIT[sys];
+  const fade = useEdgeFade<HTMLDivElement>();
   return (
-    <div className="kit-fp" aria-label={`${getSystemInfo(sys).name} at a glance`}>
+    <div className="kit-fp" ref={fade} aria-label={`${getSystemInfo(sys).name} at a glance`}>
       <div className="kit-fp-cell kit-fp-type">
         <span className="kit-fp-aa" aria-hidden="true">Aa</span>
-        <span><b>{fontName}</b><i>Typeface</i></span>
+        <span><b>{fontName}</b><i>{standIn ? `Typeface, shown in ${standIn}` : "Typeface"}</i></span>
       </div>
       <div className="kit-fp-cell">
         <span className="kit-fp-ramp" aria-hidden="true">{palette.map((c) => <span key={c} style={{ background: c }} />)}</span>
@@ -177,6 +187,8 @@ export const LandingGrid = React.memo(function LandingGrid() {
   const searchRef = React.useRef<HTMLInputElement | null>(null);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const [pick, setPick] = React.useState(COMPARE_PICKS[0]);
+  const filtersFade = useEdgeFade<HTMLDivElement>();
+  const picksFade = useEdgeFade<HTMLDivElement>();
 
   /* "/" jumps to search from anywhere on the overview (unless typing). */
   React.useEffect(() => {
@@ -306,7 +318,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
           />
           <kbd aria-hidden="true">/</kbd>
         </div>
-        <div className="kit-filters" role="group" aria-label="Show">
+        <div className="kit-filters" ref={filtersFade} role="group" aria-label="Show">
           {filters.map((f) => (
             <button key={f.id} type="button" aria-pressed={filter === f.id} disabled={f.count === 0 && filter !== f.id} onClick={() => onFilter(f.id)}>
               {f.label} <span>{f.count}</span>
@@ -335,7 +347,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
                 <h2 id="kit-band-h">Same component, five systems</h2>
                 <p>One component drawn by each system's own library, in the mode you are viewing.</p>
               </div>
-              <div className="kit-seg kit-band-picks" role="group" aria-label="Component to compare">
+              <div className="kit-seg kit-band-picks" ref={picksFade} role="group" aria-label="Component to compare">
                 {COMPARE_PICKS.map((k) => (
                   <button key={k} type="button" aria-pressed={pick === k} onClick={() => setPick(k)}>{CONCEPTS[k].label}</button>
                 ))}

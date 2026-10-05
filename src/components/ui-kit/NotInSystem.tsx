@@ -30,12 +30,12 @@ export function NotInSystem() {
         {eq.systemOnly ? (
           <>
             <h1>{SYSTEM_LABEL[system]} has no {eq.label}.</h1>
-            <p>{sourceName} is {getSystemInfo(missing.from).name}&rsquo;s own. Nothing in {getSystemInfo(system).name} does the same job, so there is no page to show here.</p>
+            <p>{sourceName} is {getSystemInfo(missing.from).name}&rsquo;s own, so there is no page to show here.</p>
           </>
         ) : (
           <>
             <h1>This library has no {eq.label} page for {SYSTEM_LABEL[system]} yet.</h1>
-            <p>{getSystemInfo(system).name} does have one; it is not written up here. The closest pages that are:</p>
+            <p>This is a gap in the library, not a statement about {getSystemInfo(system).name}. The closest pages it has:</p>
           </>
         )}
         <h2>{eq.systemOnly ? `Closest in ${SYSTEM_LABEL[system]}` : `Here for ${SYSTEM_LABEL[system]}`}</h2>

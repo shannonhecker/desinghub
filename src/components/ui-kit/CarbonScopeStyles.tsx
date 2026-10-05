@@ -11,50 +11,74 @@
  * public/carbon-scoped.css; this component loads it the first time it mounts,
  * so the heavy CSS only loads when Carbon is actually on screen.
  *
- * WHY fetched and injected as <style>, not a <link>: the sheet carries
- * Carbon's own @font-face rules, which point at IBM's CDN. The site's content
- * security policy blocks that host, so every face logged a CSP violation as
- * soon as a real Carbon component rendered (120 blocked requests on the UI
- * kit). The app already self-hosts IBM Plex through its font loader, so the
- * @font-face blocks are dropped here and Carbon's text uses the same typeface
- * from the app (see kit-chrome.css). Nothing else in the sheet changes.
+ * TWO PATHS.
  *
- * IDEMPOTENT + SSR-SAFE: a module-level flag + a marker check guarantee a
- * single injection even across many CarbonReal subtrees. It runs in an effect
- * (client only), so SSR never emits it and there's no hydration mismatch.
- * Renders nothing.
+ * Builder (default, no `kit`): a plain <link> to the sheet, exactly as on
+ * main. The builder holds its geometry to the pixel across systems, so the
+ * sheet it gets is Carbon's, untouched.
+ *
+ * Library (`kit` prop, or anywhere under <CarbonKitScope>): the sheet is
+ * fetched and injected as a <style>. The sheet carries Carbon's own
+ * @font-face rules, which point at IBM's CDN; the site's content security
+ * policy blocks that host, so every face logged a CSP violation as soon as a
+ * real Carbon component rendered (120 blocked requests on the UI kit). The
+ * library drops those blocks and lets Carbon's font-family rules read two
+ * custom properties (--kit-carbon-sans / --kit-carbon-mono) that only the
+ * library shell defines (kit-chrome.css), with Carbon's own family as the
+ * fallback. Inside the library Carbon text uses the app's self-hosted IBM
+ * Plex; anywhere else the properties are unset and each rule computes to
+ * exactly what Carbon wrote. Nothing else in the sheet changes.
+ *
+ * IDEMPOTENT + SSR-SAFE: a module-level flag + a marker check per path
+ * guarantee a single injection even across many CarbonReal subtrees. It runs
+ * in an effect (client only), so SSR never emits it and there's no hydration
+ * mismatch. Renders nothing.
  */
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 
 const HREF = "/carbon-scoped.css";
 const MARKER = "data-carbon-scope";
+const KIT_MARKER = "data-carbon-scope-kit";
 
-/* Module-level guard so repeated mounts don't re-query the DOM every time. */
+/* Module-level guards so repeated mounts don't re-query the DOM every time. */
 let injected = false;
+let kitInjected = false;
+
+/* ── Builder path: main's loader, unchanged. ── */
+function injectOnce(): void {
+  if (injected || typeof document === "undefined") return;
+  injected = true;
+  /* Belt-and-suspenders: also skip if the link is already in the DOM (e.g. a
+     prior session in the same document, or fast-refresh re-eval of this
+     module). */
+  if (document.querySelector(`link[${MARKER}]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = HREF;
+  link.setAttribute(MARKER, "true");
+  document.head.appendChild(link);
+}
 
 /**
- * Remove every @font-face block (they contain no nested braces) and point
- * Carbon's own font-family declarations at the app's self-hosted IBM Plex
- * first. The family names Carbon asks for stay in the list, so the rule is
- * the same rule with a reachable face in front of it; sans stays sans and
- * mono stays mono.
+ * Library path. Remove every @font-face block (they contain no nested
+ * braces) and let Carbon's own font-family declarations read a custom
+ * property first, falling back to the family Carbon names. Sans stays sans
+ * and mono stays mono; the rest of each family list is kept as written.
  */
 export function stripFontFaces(css: string): string {
   return css
     .replace(/@font-face\s*\{[^}]*\}/g, "")
-    .replace(/font-family:\s*'IBM Plex Sans'/g, "font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans'")
-    .replace(/font-family:\s*'IBM Plex Mono'/g, "font-family: var(--font-ibm-plex-mono), 'IBM Plex Mono'");
+    .replace(/font-family:\s*'IBM Plex Sans'/g, "font-family: var(--kit-carbon-sans, 'IBM Plex Sans')")
+    .replace(/font-family:\s*'IBM Plex Mono'/g, "font-family: var(--kit-carbon-mono, 'IBM Plex Mono')");
 }
 
-function injectOnce(): void {
-  if (injected || typeof document === "undefined") return;
-  injected = true;
-  /* Belt-and-suspenders: also skip if it is already in the DOM (e.g. a prior
-     session in the same document, or fast-refresh re-eval of this module). */
-  if (document.querySelector(`[${MARKER}]`)) return;
+function injectKitOnce(): void {
+  if (kitInjected || typeof document === "undefined") return;
+  kitInjected = true;
+  if (document.querySelector(`style[${KIT_MARKER}]`)) return;
   const style = document.createElement("style");
-  style.setAttribute(MARKER, "true");
+  style.setAttribute(KIT_MARKER, "true");
   document.head.appendChild(style);
   fetch(HREF)
     .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`carbon-scoped.css ${r.status}`))))
@@ -62,13 +86,23 @@ function injectOnce(): void {
     .catch(() => {
       /* Offline or blocked: let a later mount try again. */
       style.remove();
-      injected = false;
+      kitInjected = false;
     });
 }
 
-export function CarbonScopeStyles(): null {
+const CarbonKitContext = React.createContext(false);
+
+/** Wraps the library shell: every Carbon sheet request below it takes the
+    library path. The builder never mounts this. */
+export function CarbonKitScope({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <CarbonKitContext.Provider value={true}>{children}</CarbonKitContext.Provider>;
+}
+
+export function CarbonScopeStyles({ kit = false }: { kit?: boolean } = {}): null {
+  const inKit = React.useContext(CarbonKitContext) || kit;
   useEffect(() => {
-    injectOnce();
-  }, []);
+    if (inKit) injectKitOnce();
+    else injectOnce();
+  }, [inKit]);
   return null;
 }

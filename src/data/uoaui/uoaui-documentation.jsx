@@ -1010,7 +1010,7 @@ const COMPS = [
   // Foundations
   { id: "dl-color", name: "Color", cat: "Foundations", desc: "Dark aurora palette with glassmorphism surfaces. Muted teal accent, white-opacity layers.", render: DLColor },
   { id: "dl-icons", name: "Iconography", cat: "Foundations", desc: "Material Symbols Outlined icons with muted white tones. Density-responsive sizing.", render: DLIcons },
-  { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "DM Sans type scale. 7 styles from Caption to Display. White-opacity hierarchy.", render: DLTypography },
+  { id: "dl-typography", name: "Typography", cat: "Foundations", desc: "Inter type scale. 7 styles from Caption to Display. White-opacity hierarchy.", render: DLTypography },
   { id: "dl-elevation", name: "Elevation", cat: "Foundations", desc: "4 glass elevation levels using backdrop-filter blur + white-opacity borders.", render: DLElevation },
   { id: "dl-spacing", name: "Spacing", cat: "Foundations", desc: "4px base grid. Proportional scale. Adjusts with density.", render: DLSpacing },
   { id: "dl-tokens", name: "Token Architecture", cat: "Foundations", desc: "Semantic CSS variables: --a-bg, --a-surface, --a-fg, --a-accent, --a-border.", render: DLTokens },
