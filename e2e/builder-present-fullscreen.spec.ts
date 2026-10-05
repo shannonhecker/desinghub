@@ -63,6 +63,30 @@ test.describe("Present is full screen on the desktop device", () => {
     });
   }
 
+  test("at 2000 wide an app fills the width while a form and a marketing page keep their reading width", async ({ page }) => {
+    await page.setViewportSize({ width: 2000, height: 900 });
+    const column = () => page.evaluate(() => {
+      const main = document.querySelector(".present-stage .bp-main") as HTMLElement;
+      const body = main.firstElementChild as HTMLElement;
+      const m = main.getBoundingClientRect();
+      const b = body.getBoundingClientRect();
+      return { bodyW: b.width, mainW: m.width, leftGap: b.left - m.left, rightGap: m.right - b.right, cap: getComputedStyle(body).maxWidth };
+    });
+    await present(page, "Analytics Dashboard");
+    const app = await column();
+    expect(Math.abs(app.bodyW - app.mainW), "an app fills its body").toBeLessThanOrEqual(1);
+    await page.goto("/builder");
+    await present(page, "Settings Page");
+    const form = await column();
+    expect(form.bodyW, "a form keeps its reading width").toBeLessThan(900);
+    expect(Math.abs(form.leftGap - form.rightGap), "the form column is centred").toBeLessThanOrEqual(2);
+    await page.goto("/builder");
+    await present(page, "Landing Page");
+    const marketing = await column();
+    expect(marketing.bodyW, "a marketing page keeps its measure").toBeLessThan(1200);
+    expect(Math.abs(marketing.leftGap - marketing.rightGap), "the marketing column is centred").toBeLessThanOrEqual(2);
+  });
+
   test("tablet and phone stay framed and centred", async ({ page }) => {
     await page.setViewportSize({ width: 1512, height: 900 });
     await present(page);

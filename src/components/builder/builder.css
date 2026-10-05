@@ -5148,10 +5148,12 @@
   width: 100%;
   height: 100%;
 }
-/* Full screen means the content too: the body's working-width cap is
-   lifted so charts and tables use the room; the template keeps its own
-   page gutter. */
-.present-stage-viewport[data-full-bleed="true"] .bp-main > * {
+/* Full screen means the content too, for app-type interfaces: the body's
+   working-width cap is lifted so charts and tables use the room; the
+   template keeps its own page gutter. Document, form, blog and marketing
+   interfaces keep their reading-width caps, centred in the full-width frame
+   (the complement of the per-interface cap rules below). */
+.present-stage-viewport[data-full-bleed="true"] [data-interface]:not([data-interface="form"]):not([data-interface="blog"]):not([data-interface="landing"]):not([data-interface="ecommerce"]):not([data-interface="portfolio"]) .bp-main > * {
   max-width: 100%;
 }
 .present-stage-viewport[data-full-bleed="true"] .bp-main {
