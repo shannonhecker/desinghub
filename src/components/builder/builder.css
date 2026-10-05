@@ -19004,7 +19004,8 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   transform: translateY(0);
   pointer-events: auto;
 }
-.zone-drop-container > .zone-layout-overlay[data-suppressed="true"]:not(:focus-within) {
+/* Doubled class: this must outweigh the label-hover reveal rules (0,5,0). */
+.zone-drop-container > .zone-layout-overlay.zone-layout-overlay.zone-layout-overlay[data-suppressed="true"]:not(:focus-within) {
   opacity: 0;
   pointer-events: none;
 }
