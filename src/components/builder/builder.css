@@ -8153,7 +8153,10 @@ th[class*="-th"] > span { vertical-align: middle; }
    is-dragging is the drag state. Both keep the final scale and
    skip the in-animation replay. */
 .canvas-block.is-dragging,
-.canvas-block.is-sorting-peer {
+.canvas-block.is-sorting-peer,
+/* ...and once a block has entered it never enters again: those two classes
+   come off at the drop, which would otherwise start the animation afresh. */
+.canvas-block.has-entered {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
