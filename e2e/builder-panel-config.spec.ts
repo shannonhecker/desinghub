@@ -163,6 +163,9 @@ test.describe("panel Configuration dialog", () => {
         await page.getByRole("option", { name: "% of total", exact: true }).click();
       }
       await expect(dialog.getByRole("button", { name: "Reset to first loaded" })).toBeEnabled();
+      /* Every row, at every level, is a share: nothing like "440,000,000.00%". */
+      await expect(page.locator(".dh-panel-expanded .ag-center-cols-container .ag-row").nth(3)).toContainText("%");
+      await expect(page.locator(".dh-panel-expanded .ag-center-cols-container")).not.toContainText(/\d{1,3}(,\d{3})+(\.\d+)?%/);
       /* Nothing in the dialog spills sideways. */
       const overflow = await dialog.locator(".dh-cfg").evaluate((el) => el.scrollWidth - el.clientWidth);
       expect(overflow).toBeLessThanOrEqual(1);
