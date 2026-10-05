@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React from "react";
 
 export interface BlockTypeOption {
@@ -52,7 +53,7 @@ export function SwapMenu({ onSelect, onClose }: SwapMenuProps) {
             }}
             type="button"
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <ChromeIcon name={item.icon} />
             {item.label}
           </button>
         ))}

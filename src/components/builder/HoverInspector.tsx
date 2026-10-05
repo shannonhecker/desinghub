@@ -47,6 +47,7 @@
 
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useRef, useState } from "react";
 import type { ZoneId } from "@/store/useBuilder";
 import { useInspectorPin } from "@/store/useInspectorPin";
@@ -216,13 +217,7 @@ export function HoverInspector({
           aria-label="Remove block"
           type="button"
         >
-          <span
-            className="material-symbols-outlined"
-            aria-hidden="true"
-            style={{ fontSize: 14 }}
-          >
-            close
-          </span>
+          <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
         </button>
       )}
 
@@ -236,13 +231,7 @@ export function HoverInspector({
           aria-label="Swap component"
           type="button"
         >
-          <span
-            className="material-symbols-outlined"
-            aria-hidden="true"
-            style={{ fontSize: 14 }}
-          >
-            swap_horiz
-          </span>
+          <ChromeIcon name="swap_horiz" aria-hidden="true" style={{ fontSize: 14 }} />
         </button>
       )}
     </div>

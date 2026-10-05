@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem } from "@/store/useBuilder";
@@ -131,9 +132,7 @@ function RadioChips({
             {renderLead?.(opt)}
             {opt.label}
             {selected && (
-              <span className="material-symbols-outlined onboarding-radio-check" aria-hidden="true">
-                check
-              </span>
+              <ChromeIcon name="check" className="onboarding-radio-check" aria-hidden="true" />
             )}
           </button>
         );
@@ -263,12 +262,7 @@ export function ConversationalOnboarding({
               onSelect={pickType}
               autoFocusFirst
               renderLead={(opt) => (
-                <span
-                  className="material-symbols-outlined onboarding-radio-icon"
-                  aria-hidden="true"
-                >
-                  {TYPE_OPTIONS.find((o) => o.value === opt.value)?.icon ?? "dashboard"}
-                </span>
+                <ChromeIcon name={TYPE_OPTIONS.find((o) => o.value === opt.value)?.icon ?? "dashboard"} className="onboarding-radio-icon" aria-hidden="true" />
               )}
             />
           </>
@@ -298,12 +292,7 @@ export function ConversationalOnboarding({
               onSelect={(v) => setMode(v as typeof mode)}
               autoFocusFirst
               renderLead={(opt) => (
-                <span
-                  className="material-symbols-outlined onboarding-radio-icon"
-                  aria-hidden="true"
-                >
-                  {MODE_OPTIONS.find((o) => o.value === opt.value)?.icon ?? "light_mode"}
-                </span>
+                <ChromeIcon name={MODE_OPTIONS.find((o) => o.value === opt.value)?.icon ?? "light_mode"} className="onboarding-radio-icon" aria-hidden="true" />
               )}
             />
             <RadioChips
@@ -317,9 +306,7 @@ export function ConversationalOnboarding({
             />
             <button type="button" className="onboarding-build-primary onboarding-continue" onClick={advance}>
               Continue
-              <span className="material-symbols-outlined" aria-hidden="true">
-                arrow_forward
-              </span>
+              <ChromeIcon name="arrow_forward" aria-hidden="true" />
             </button>
           </>
         );
@@ -397,9 +384,7 @@ export function ConversationalOnboarding({
             </p>
             <button type="button" className="onboarding-build-primary" onClick={() => onBuild(args())}>
               Build it
-              <span className="material-symbols-outlined" aria-hidden="true">
-                auto_awesome
-              </span>
+              <ChromeIcon name="auto_awesome" aria-hidden="true" />
             </button>
           </>
         );
@@ -447,9 +432,7 @@ export function ConversationalOnboarding({
       <div className="onboarding-footer">
         {wizardStep !== "confirm" && (
           <button type="button" className="onboarding-footer-link onboarding-build-now" onClick={() => onBuild(args())}>
-            <span className="material-symbols-outlined" aria-hidden="true">
-              bolt
-            </span>
+            <ChromeIcon name="bolt" aria-hidden="true" />
             Build it now
           </button>
         )}

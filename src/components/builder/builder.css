@@ -4,15 +4,18 @@
 
 @import "./chrome-tokens.css";
 
-/* Icon ligatures. Material Symbols is a ligature font from a CDN: before it
-   arrives (or if it never does) a span draws its literal word ("compare"),
-   wider than its button and over the neighbour. Every ligature in the builder
-   keeps one square glyph box and clips, so a word can never spill. With the
-   font loaded the glyph is exactly this box, so nothing moves. `clip` (not
-   `hidden`) leaves the span's baseline where it was; `hidden` is the fallback
-   for browsers without it. Declared first and at one class of specificity so
-   any rule below that sizes an icon still wins. A rule that gives an icon a
-   taller line must also free the height (see .composer-attach-error). */
+/* Icons. The chrome draws inline SVG (ChromeIcon, sized by .chrome-icon in
+   globals.css): nothing to load, so a control never shows letters.
+
+   Canvas blocks still draw Material Symbols ligatures where the design
+   system on show does (Material 3, uoaui DS) or the content names an icon.
+   A ligature font draws the icon's literal word ("compare") until it
+   arrives, wider than its box and over the neighbour, so every ligature in
+   the builder keeps one square glyph box and clips: a word can never spill.
+   With the font loaded the glyph is exactly this box, so nothing moves.
+   `clip` (not `hidden`) leaves the span's baseline where it was; `hidden` is
+   the fallback for browsers without it. Declared first and at one class of
+   specificity so any rule below that sizes an icon still wins. */
 :where(.builder-shell) .material-symbols-outlined {
   display: inline-block;
   width: 1em;
@@ -1127,7 +1130,7 @@
 }
 .top-bar-export-item:hover { background: rgba(255, 255, 255, 0.06); }
 .top-bar-export-item:disabled { opacity: 0.55; cursor: wait; }
-.top-bar-export-item .material-symbols-outlined {
+.top-bar-export-item .chrome-icon {
   font-size: 18px !important;
   color: rgba(148, 132, 214, 0.9);
   flex-shrink: 0;
@@ -1163,7 +1166,7 @@
 }
 .builder-light .top-bar-export-item { color: #15102a; }
 .builder-light .top-bar-export-item:hover { background: rgba(0, 0, 0, 0.04); }
-.builder-light .top-bar-export-item .material-symbols-outlined { color: #6b57b0; }
+.builder-light .top-bar-export-item .chrome-icon { color: #6b57b0; }
 .builder-light .top-bar-export-item-desc { color: rgba(0, 0, 0, 0.55); }
 .builder-light .top-bar-export-divider { background: rgba(0, 0, 0, 0.06); }
 
@@ -1477,7 +1480,7 @@
 }
 .chat-reopen-fab:hover { filter: brightness(1.08); box-shadow: 0 6px 22px rgba(0, 0, 0, 0.34); }
 .chat-reopen-fab:focus-visible { outline: 2px solid var(--b-fg); outline-offset: 2px; }
-.chat-reopen-fab .material-symbols-outlined { font-size: 22px; }
+.chat-reopen-fab .chrome-icon { font-size: 22px; }
 @media (prefers-reduced-motion: reduce) { .chat-reopen-fab { transition: none; } }
 
 /* ── UNIFIED CHAT LAYOUT ── */
@@ -1529,7 +1532,7 @@
 }
 .chat-controls-btn:hover { background: var(--bc-gallery-tonal-hover); }
 .chat-controls-btn:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; opacity: 1; }
-.chat-controls-btn .material-symbols-outlined { font-size: 19px; }
+.chat-controls-btn .chrome-icon { font-size: 19px; }
 .chat-controls-btn[aria-pressed="true"] { background: var(--bc-gallery-selected); color: var(--bc-gallery-selected-fg); }
 @media (prefers-reduced-motion: reduce) { .chat-controls-btn { transition: none; } }
 
@@ -1604,7 +1607,7 @@
   touch-action: none;
 }
 .chat-float-grip:active { cursor: grabbing; }
-.chat-float-grip .material-symbols-outlined { font-size: 16px; line-height: 1; opacity: 0.55; }
+.chat-float-grip .chrome-icon { font-size: 16px; line-height: 1; opacity: 0.55; }
 
 /* #15 pin-to-edge — release the card near a side to dock it there. Placed
    after the size variants so these win (same specificity, later in file);
@@ -1775,7 +1778,7 @@
   outline-offset: 3px;
   border-radius: 4px;
 }
-.hero-setup-link .material-symbols-outlined { font-size: 16px; opacity: 0.85; }
+.hero-setup-link .chrome-icon { font-size: 16px; opacity: 0.85; }
 .builder-light .hero-setup-link { color: rgba(0, 0, 0, 0.55); }
 
 /* ── Pattern cards grid - zero state (glassmorphism) ── */
@@ -2045,7 +2048,7 @@
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.16);
 }
-.templates-drawer-close .material-symbols-outlined {
+.templates-drawer-close .chrome-icon {
   font-size: 18px !important;
 }
 
@@ -2102,7 +2105,7 @@
   align-items: center;
   gap: 8px;
 }
-.templates-drawer-card-head .material-symbols-outlined {
+.templates-drawer-card-head .chrome-icon {
   font-size: 18px !important;
   color: rgba(126, 107, 196, 0.9);
 }
@@ -2211,7 +2214,7 @@
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.16);
 }
-.sessions-drawer-close .material-symbols-outlined {
+.sessions-drawer-close .chrome-icon {
   font-size: 16px !important;
 }
 
@@ -2236,7 +2239,7 @@
   background: rgba(126, 107, 196, 0.25);
   border-color: rgba(126, 107, 196, 0.55);
 }
-.sessions-new-btn .material-symbols-outlined {
+.sessions-new-btn .chrome-icon {
   font-size: 18px !important;
 }
 
@@ -2382,7 +2385,7 @@
   background: rgba(248, 113, 113, 0.15);
   color: rgba(248, 113, 113, 0.95);
 }
-.sessions-row-action .material-symbols-outlined {
+.sessions-row-action .chrome-icon {
   font-size: 14px !important;
 }
 
@@ -3100,7 +3103,7 @@
 .template-gallery-arrow:hover:not(:disabled) { background: var(--bc-gallery-tonal-hover); }
 .template-gallery-arrow:disabled { opacity: 0.35; cursor: default; }
 .template-gallery-arrow:focus-visible { outline: var(--dh-focus-ring) solid var(--b-accent); outline-offset: var(--dh-focus-ring); }
-.template-gallery-arrow .material-symbols-outlined { font-size: var(--bc-gallery-arrow-icon); }
+.template-gallery-arrow .chrome-icon { font-size: var(--bc-gallery-arrow-icon); }
 
 .template-card {
   min-width: 0;
@@ -3132,7 +3135,7 @@
   gap: 6px;
   color: var(--b-fg);
 }
-.template-card-head .material-symbols-outlined { font-size: 17px; color: var(--b-accent); }
+.template-card-head .chrome-icon { font-size: 17px; color: var(--b-accent); }
 .template-card-label { font-size: 13px; font-weight: 600; }
 /* What the template contains, in full. The row's cards share one height
    (the tallest), and the actions sit on its bottom edge. */
@@ -3517,7 +3520,7 @@
   transition: color 0.18s ease, background 0.18s ease;
 }
 .wizard-back:hover { color: var(--b-fg); background: var(--b-surface); }
-.wizard-back .material-symbols-outlined { font-size: 16px; }
+.wizard-back .chrome-icon { font-size: 16px; }
 .wizard-back:focus-visible { outline: 2px solid var(--b-accent); outline-offset: 2px; }
 .wizard-continue {
   display: inline-flex;
@@ -3536,7 +3539,7 @@
   transition: box-shadow 0.2s ease, filter 0.18s ease;
   box-shadow: 0 2px 10px rgba(180, 144, 245, 0.3);
 }
-.wizard-continue .material-symbols-outlined { font-size: 17px; }
+.wizard-continue .chrome-icon { font-size: 17px; }
 /* Affordance via brightness + shadow bloom, not a positional lift. */
 .wizard-continue:hover { filter: brightness(1.08); box-shadow: 0 4px 16px rgba(180, 144, 245, 0.4); }
 .wizard-continue:focus-visible { outline: 2px solid var(--b-fg); outline-offset: 2px; }
@@ -3904,7 +3907,7 @@
   color: var(--bc-fg-muted);
   transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
-.composer-attach-btn .material-symbols-outlined { font-size: var(--bc-attach-icon); }
+.composer-attach-btn .chrome-icon { font-size: var(--bc-attach-icon); }
 .composer-attach-btn:hover:not(:disabled) {
   background: var(--bc-attach-surface);
   color: var(--bc-fg);
@@ -4005,7 +4008,7 @@
   cursor: pointer;
   transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
-.composer-attachment-remove .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+.composer-attachment-remove .chrome-icon { font-size: var(--bc-attach-icon-sm); }
 .composer-attachment-remove:hover {
   background: var(--bc-attach-surface-hover);
   color: var(--bc-fg);
@@ -4065,15 +4068,12 @@
   --attach-error-line: calc(var(--bc-attach-font-sm) * 1.45);
   line-height: var(--attach-error-line);
 }
-.composer-attach-error .material-symbols-outlined {
+.composer-attach-error .chrome-icon {
   font-size: var(--bc-attach-icon-sm);
-  /* The icon's box is one line of the sentence tall, so the glyph is centred
-     on the first row. Not the 1em square of the containment rule, which
-     under a taller line cut the glyph's foot; and not the inherited ratio,
-     which made a line of the icon's own larger size and sat it low. Still
-     1em wide, still clipped. */
-  line-height: var(--attach-error-line);
-  height: var(--attach-error-line);
+  /* Centred on the first row of the sentence: the icon is one em square and
+     the margin makes up the rest of one line, so a second line of text does
+     not pull it down. */
+  margin-block: calc((var(--attach-error-line) - 1em) / 2);
   flex-shrink: 0;
 }
 .composer-attach-dismiss {
@@ -4092,7 +4092,7 @@
   transition: background var(--bc-duration-fast) var(--bc-ease);
 }
 .composer-attach-dismiss:hover { background: var(--bc-attach-error-fill); }
-.composer-attach-dismiss .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+.composer-attach-dismiss .chrome-icon { font-size: var(--bc-attach-icon-sm); }
 .composer-sr-only {
   position: absolute;
   width: var(--bc-hairline);
@@ -4116,7 +4116,7 @@
   font-size: var(--bc-attach-font-sm);
   line-height: 1.5;
 }
-.chat-msg-attachment .material-symbols-outlined { font-size: var(--bc-attach-icon-sm); }
+.chat-msg-attachment .chrome-icon { font-size: var(--bc-attach-icon-sm); }
 
 @media (prefers-reduced-motion: reduce) {
   .composer-attachment,
@@ -4297,7 +4297,7 @@
   background: var(--b-accent);
   color: #0b1020; /* dark ink: ~6:1 on accent in light, high in dark (white fails) */
 }
-.onboarding-freetext-go .material-symbols-outlined { font-size: 18px; }
+.onboarding-freetext-go .chrome-icon { font-size: 18px; }
 
 /* Primary Build / Continue affordance. */
 .onboarding-build-primary {
@@ -4327,7 +4327,7 @@
   outline: 2px solid var(--b-accent);
   outline-offset: 2px;
 }
-.onboarding-build-primary .material-symbols-outlined { font-size: 18px; }
+.onboarding-build-primary .chrome-icon { font-size: 18px; }
 .onboarding-continue { margin-top: 12px; }
 
 /* Confirm summary with tap-to-edit chips. */
@@ -4382,7 +4382,7 @@
   outline-offset: 3px;
   border-radius: 4px;
 }
-.onboarding-footer-link .material-symbols-outlined { font-size: 16px; }
+.onboarding-footer-link .chrome-icon { font-size: 16px; }
 .onboarding-build-now { color: var(--b-accent); font-weight: 600; }
 .onboarding-build-now:hover { color: var(--b-accent); filter: brightness(1.15); }
 
@@ -4509,7 +4509,7 @@
   background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
-.chat-scope-clear .material-symbols-outlined {
+.chat-scope-clear .chrome-icon {
   font-size: 14px !important;
 }
 
@@ -8447,7 +8447,7 @@ th[class*="-th"] > span { vertical-align: middle; }
 .swap-menu-item:hover {
   background: var(--ds-hover, rgba(255,255,255,0.06));
 }
-.swap-menu-item .material-symbols-outlined {
+.swap-menu-item .chrome-icon {
   font-size: 16px;
   color: var(--ds-primary);
 }
@@ -8845,7 +8845,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
   color: var(--bc-accent, #7cc4ff);
 }
-.inspector-link-toggle .material-symbols-outlined {
+.inspector-link-toggle .chrome-icon {
   font-size: 14px;
   line-height: 1;
 }
@@ -9638,7 +9638,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   flex-shrink: 0;
   color: currentColor;
 }
-.context-menu-icon .material-symbols-outlined {
+.context-menu-icon .chrome-icon {
   font-size: 16px !important;
 }
 .context-menu-label {
@@ -10250,7 +10250,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   border-color: rgba(126, 107, 196, 0.5);
   color: var(--b-fg, #ffffff) !important;
 }
-.preview-bar-ds-trigger .material-symbols-outlined {
+.preview-bar-ds-trigger .chrome-icon {
   color: var(--b-fg2, rgba(255, 255, 255, 0.6));
 }
 .builder-light .preview-bar-ds-trigger {
@@ -10299,7 +10299,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   transition: background 0.12s;
 }
 .preview-bar-ds-item:hover { background: rgba(255, 255, 255, 0.06); }
-.preview-bar-ds-item .material-symbols-outlined {
+.preview-bar-ds-item .chrome-icon {
   font-size: 16px !important;
   color: var(--b-fg2, rgba(255, 255, 255, 0.55));
 }
@@ -10308,11 +10308,11 @@ th[class*="-th"] > span { vertical-align: middle; }
   color: var(--b-fg, #ffffff);
   font-weight: 600;
 }
-.preview-bar-ds-item.preview-bar-ds-item-active .material-symbols-outlined {
+.preview-bar-ds-item.preview-bar-ds-item-active .chrome-icon {
   color: var(--ds-primary, rgba(126, 107, 196, 0.9));
 }
 .builder-light .preview-bar-ds-item:hover { background: rgba(0, 0, 0, 0.05); }
-.builder-light .preview-bar-ds-item .material-symbols-outlined { color: rgba(0, 0, 0, 0.55); }
+.builder-light .preview-bar-ds-item .chrome-icon { color: rgba(0, 0, 0, 0.55); }
 .builder-light .preview-bar-ds-item.preview-bar-ds-item-active {
   background: rgba(126, 107, 196, 0.1);
 }
@@ -10381,10 +10381,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   background: rgba(126, 107, 196, 0.14);
   color: var(--dh-fg);
 }
-.preview-bar-overflow-item.preview-bar-overflow-item-active .material-symbols-outlined {
+.preview-bar-overflow-item.preview-bar-overflow-item-active .chrome-icon {
   color: var(--ds-primary, rgba(126, 107, 196, 0.9));
 }
-.preview-bar-overflow-item .material-symbols-outlined {
+.preview-bar-overflow-item .chrome-icon {
   font-size: 16px !important;
   color: rgba(255, 255, 255, 0.65);
 }
@@ -10408,7 +10408,7 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .builder-light .preview-bar-overflow-item { color: #15102a; }
 .builder-light .preview-bar-overflow-item:hover { background: rgba(0, 0, 0, 0.05); }
-.builder-light .preview-bar-overflow-item .material-symbols-outlined { color: rgba(0, 0, 0, 0.55); }
+.builder-light .preview-bar-overflow-item .chrome-icon { color: rgba(0, 0, 0, 0.55); }
 .builder-light .preview-bar-overflow-item.preview-bar-overflow-item-active {
   background: rgba(126, 107, 196, 0.1);
 }
@@ -13381,7 +13381,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   outline: 2px solid var(--bc-accent-ring);
   outline-offset: 1px;
 }
-.bp-frame-tab-remove .material-symbols-outlined {
+.bp-frame-tab-remove .chrome-icon {
   font-size: 13px;
   line-height: 1;
 }
@@ -13428,7 +13428,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   outline: 2px solid var(--bc-accent-ring);
   outline-offset: 2px;
 }
-.bp-zone-add-chip .material-symbols-outlined {
+.bp-zone-add-chip .chrome-icon {
   font-size: 16px;
   line-height: 1;
   color: var(--bc-accent);
@@ -14785,7 +14785,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   }
   /* "UI Kit" text and "Preview" text hide - keep only icon */
   .top-bar-btn:not(.icon-only) .top-bar-btn-label,
-  .top-bar-btn:not(.icon-only):not(.preview-toggle-btn) > :not(.material-symbols-outlined) {
+  .top-bar-btn:not(.icon-only):not(.preview-toggle-btn) > :not(.chrome-icon) {
     display: none;
   }
   .preview-toggle-btn {
@@ -14803,7 +14803,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   }
   .bp-dimensions { display: none; }
   /* Hide the "Refresh" label text, keep icon */
-  .bp-refresh-btn span:not(.material-symbols-outlined) { display: none; }
+  .bp-refresh-btn span:not(.chrome-icon) { display: none; }
 
   /* ── Preview toolbar: horizontally scrollable strip ── */
   .preview-toolbar {
@@ -15476,7 +15476,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
 }
-.zlo-btn .material-symbols-outlined { font-size: 17px; }
+.zlo-btn .chrome-icon { font-size: 17px; }
 .zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-btn.active { background: var(--bc-accent); color: #fff; }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
@@ -15509,7 +15509,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 .zlo-gap:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
 .zlo-gap:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
-.zlo-gap .material-symbols-outlined { font-size: 15px; }
+.zlo-gap .chrome-icon { font-size: 15px; }
 .zlo-gap-val { min-width: 14px; text-align: center; }
 
 /* Issue #79: zone preview when a library tile is being hovered. The

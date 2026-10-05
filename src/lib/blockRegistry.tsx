@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import { useBuilder, type Block } from "@/store/useBuilder";
 import {
@@ -207,9 +208,7 @@ function ImagePicker({
             >
               <img src={publicAssetUrl(img.url)} alt="" loading="lazy" />
               {selected ? (
-                <span className="img-picker-check material-symbols-outlined" aria-hidden="true">
-                  check
-                </span>
+                <ChromeIcon name="check" className="img-picker-check" aria-hidden="true" />
               ) : null}
             </button>
           );

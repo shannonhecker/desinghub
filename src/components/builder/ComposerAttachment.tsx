@@ -4,6 +4,7 @@
    button, the thumbnail chip, the drop veil and the polite status line.
    State lives in useImageAttachment; these only render it. */
 
+import { ChromeIcon } from "./ChromeIcon";
 import type React from "react";
 import type { ComposerImage } from "./useImageAttachment";
 import { IMAGE_ACCEPT } from "./useImageAttachment";
@@ -29,7 +30,7 @@ export function ComposerAttachButton({
         aria-label="Attach an image"
         title="Attach an image to build from (PNG, JPEG, WebP or GIF). You can also paste or drop one."
       >
-        <span className="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>
+        <ChromeIcon name="add_photo_alternate" aria-hidden="true" />
       </button>
       <input
         ref={inputRef}
@@ -77,7 +78,7 @@ export function ComposerAttachmentChip({
         </span>
       </span>
       <button type="button" className="composer-attachment-remove" onClick={onRemove} aria-label="Remove image" title="Remove image">
-        <span className="material-symbols-outlined" aria-hidden="true">close</span>
+        <ChromeIcon name="close" aria-hidden="true" />
       </button>
     </div>
   );
@@ -87,7 +88,7 @@ export function ComposerDropVeil({ active }: { active: boolean }) {
   if (!active) return null;
   return (
     <div className="composer-drop-veil" aria-hidden="true">
-      <span className="material-symbols-outlined composer-drop-icon">add_photo_alternate</span>
+      <ChromeIcon name="add_photo_alternate" className="composer-drop-icon" />
       <span className="composer-drop-label">Drop an image to build from it</span>
     </div>
   );
@@ -113,7 +114,7 @@ export function ComposerAttachStatus({
       <div className="composer-attach-live" role="status" aria-live="polite">
         {error ? (
           <p key={errorSeq} className="composer-attach-error">
-            <span className="material-symbols-outlined" aria-hidden="true">error</span>
+            <ChromeIcon name="error" aria-hidden="true" />
             <span>{error}</span>
           </p>
         ) : (
@@ -122,7 +123,7 @@ export function ComposerAttachStatus({
       </div>
       {error && (
         <button type="button" className="composer-attach-dismiss" onClick={onDismiss} aria-label="Dismiss message" title="Dismiss">
-          <span className="material-symbols-outlined" aria-hidden="true">close</span>
+          <ChromeIcon name="close" aria-hidden="true" />
         </button>
       )}
     </div>
@@ -132,7 +133,7 @@ export function ComposerAttachStatus({
 export function ImageAttachedMarker() {
   return (
     <span className="chat-msg-attachment">
-      <span className="material-symbols-outlined" aria-hidden="true">image</span>
+      <ChromeIcon name="image" aria-hidden="true" />
       Image attached
     </span>
   );

@@ -8,6 +8,8 @@
  * time to read + act).
  */
 
+import { createChromeIconElement } from "@/lib/chromeIcons";
+
 const ROOT_ID = "dh-toast-root";
 const DEFAULT_VISIBLE_MS = 1800;
 const EXIT_MS = 180;
@@ -18,6 +20,7 @@ export interface ToastAction {
 }
 
 export interface ToastOptions {
+  /** A Material Symbols name; drawn as the matching chrome icon. */
   icon?: string;
   action?: ToastAction;
   /** Override visible duration. Defaults to 1800ms. Delete-class toasts
@@ -51,13 +54,7 @@ export function showToast(message: string, opts?: ToastOptions): void {
   const el = document.createElement("div");
   el.className = "dh-toast dh-toast-entering";
 
-  if (opts?.icon) {
-    const icon = document.createElement("span");
-    icon.className = "material-symbols-outlined dh-toast-icon";
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = opts.icon;
-    el.appendChild(icon);
-  }
+  if (opts?.icon) el.appendChild(createChromeIconElement(opts.icon, "dh-toast-icon"));
 
   const text = document.createElement("span");
   text.className = "dh-toast-text";

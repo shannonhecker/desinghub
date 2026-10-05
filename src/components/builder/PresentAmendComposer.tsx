@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useState } from "react";
 import { useBuilder, findBlockInTree } from "@/store/useBuilder";
 import { useChatAPI } from "@/lib/useChatAPI";
@@ -85,9 +86,7 @@ export function PresentAmendComposer() {
           aria-label="Clear selection"
           onClick={dismiss}
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-            close
-          </span>
+          <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 16 }} />
         </button>
       </div>
       <div className="present-amend-row">
@@ -122,9 +121,7 @@ export function PresentAmendComposer() {
           disabled={isGenerating || !text.trim()}
           aria-label="Send amend"
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18 }}>
-            {isGenerating ? "hourglass_empty" : "arrow_upward"}
-          </span>
+          <ChromeIcon name={isGenerating ? "hourglass_empty" : "arrow_upward"} aria-hidden="true" style={{ fontSize: 18 }} />
         </button>
       </div>
       {hint && (

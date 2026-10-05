@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useCallback } from "react";
 import { useBuilder, type DesignSystem, type Block } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
@@ -97,9 +98,7 @@ const CompareQuadrant = React.memo(function CompareQuadrant({
         ) : (
           <button className="compare-quadrant-open" onClick={() => onOpen(ds)} aria-label={`Switch editor to ${label}`}>
             Open
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginLeft: 4 }}>
-              arrow_forward
-            </span>
+            <ChromeIcon name="arrow_forward" aria-hidden="true" style={{ fontSize: 14, marginLeft: 4 }} />
           </button>
         )}
       </div>
@@ -200,9 +199,7 @@ export function CompareView() {
   return (
     <div className="compare-view">
       <div className="compare-view-banner">
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 6 }}>
-          dashboard
-        </span>
+        <ChromeIcon name="dashboard" aria-hidden="true" style={{ fontSize: 16, marginRight: 6 }} />
         Compare mode - same canvas, five design systems.
         Click <strong>Open</strong> on any quadrant to keep building in that DS, or
         press the <kbd>Compare</kbd> toolbar button again to return to a single view.

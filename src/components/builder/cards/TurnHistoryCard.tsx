@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "../ChromeIcon";
 import React from "react";
 
 /* TurnHistoryCard (Phase 2) — a compact, non-destructive "Restore" affordance
@@ -10,14 +11,10 @@ import React from "react";
 export function TurnHistoryCard({ onRestore }: { onRestore: () => void }) {
   return (
     <div className="turn-history-card">
-      <span className="material-symbols-outlined turn-history-icon" aria-hidden="true">
-        history
-      </span>
+      <ChromeIcon name="history" className="turn-history-icon" aria-hidden="true" />
       <span className="turn-history-label">Before this change</span>
       <button type="button" className="turn-history-restore" onClick={onRestore}>
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 15 }}>
-          undo
-        </span>
+        <ChromeIcon name="undo" aria-hidden="true" style={{ fontSize: 15 }} />
         Restore
       </button>
     </div>

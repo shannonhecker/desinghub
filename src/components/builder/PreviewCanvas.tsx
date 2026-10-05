@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useBuilder, type Block, type LayoutWidth } from "@/store/useBuilder";
@@ -77,9 +78,7 @@ export function CodeViewer({ blocks }: { blocks: import("@/store/useBuilder").Bl
         <span className="canvas-code-filename">ui-schema.json</span>
         <span className="canvas-code-count">{totalBlocks} block{totalBlocks !== 1 ? "s" : ""}</span>
         <button className="canvas-code-copy-btn" onClick={handleCopy} title="Copy to clipboard">
-          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-            {copied ? "check" : "content_copy"}
-          </span>
+          <ChromeIcon name={copied ? "check" : "content_copy"} style={{ fontSize: 13 }} />
           {copied ? "Copied!" : "Copy"}
         </button>
       </div>

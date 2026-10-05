@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILDER_TEMPLATES,
@@ -75,10 +76,10 @@ export function TemplateCardsMessage({
       <TemplateGalleryControls category={category} onCategory={setCategory}>
         <div className="template-gallery-arrows">
           <button type="button" className="template-gallery-arrow" onClick={() => nudge(-1)} disabled={atStart} aria-label="Scroll to previous templates">
-            <span className="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+            <ChromeIcon name="chevron_left" aria-hidden="true" />
           </button>
           <button type="button" className="template-gallery-arrow" onClick={() => nudge(1)} disabled={atEnd} aria-label="Scroll to more templates">
-            <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+            <ChromeIcon name="chevron_right" aria-hidden="true" />
           </button>
         </div>
       </TemplateGalleryControls>
@@ -91,9 +92,7 @@ export function TemplateCardsMessage({
                 <TemplatePreview id={id} />
               </div>
               <div className="template-card-head">
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {tpl.icon}
-                </span>
+                <ChromeIcon name={tpl.icon} aria-hidden="true" />
                 <span className="template-card-label">{tpl.label}</span>
               </div>
               <p className="template-card-desc">{tpl.desc}</p>

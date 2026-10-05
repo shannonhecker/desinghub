@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { isFirebaseConfigured } from "@/lib/firebase";
@@ -110,9 +111,7 @@ export function SaveIndicator() {
   if (saveState === "error") {
     return (
       <div className="save-indicator save-indicator--error" aria-live="polite" role="status">
-        <span className="material-symbols-outlined save-indicator-icon" aria-hidden="true">
-          error
-        </span>
+        <ChromeIcon name="error" className="save-indicator-icon" aria-hidden="true" />
         <span>
           Couldn&apos;t save
           {saveError && <span className="save-indicator-error-detail"> · {saveError}</span>}
@@ -137,9 +136,7 @@ export function SaveIndicator() {
   if (localOnly) {
     return (
       <div className="save-indicator save-indicator--saved" aria-live="polite">
-        <span className="material-symbols-outlined save-indicator-icon" aria-hidden="true">
-          check_circle
-        </span>
+        <ChromeIcon name="check_circle" className="save-indicator-icon" aria-hidden="true" />
         <span>
           Saved on this device
           {!hintDismissed && (
@@ -167,9 +164,7 @@ export function SaveIndicator() {
   const when = relativeTimeLabel(lastSavedAt);
   return (
     <div className="save-indicator save-indicator--saved" aria-live="polite">
-      <span className="material-symbols-outlined save-indicator-icon" aria-hidden="true">
-        check_circle
-      </span>
+      <ChromeIcon name="check_circle" className="save-indicator-icon" aria-hidden="true" />
       <span>Saved {when}</span>
     </div>
   );

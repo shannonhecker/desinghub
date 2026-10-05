@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import { TemplateGalleryControls, TemplateWorkspaceOption } from "./TemplateGalleryControls";
 import { TemplateSourceNote } from "./TemplateSourceNote";
 
@@ -133,7 +134,7 @@ export function TemplatesDrawer() {
             aria-label="Close drawer (Esc)"
             title="Close (Esc)"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">close</span>
+            <ChromeIcon name="close" aria-hidden="true" />
           </button>
         </header>
 
@@ -151,9 +152,7 @@ export function TemplatesDrawer() {
               <TemplatePreview id={tpl.id as TemplateId} />
               <div className="templates-drawer-card-text">
                 <div className="templates-drawer-card-head">
-                  <span className="material-symbols-outlined" aria-hidden="true">
-                    {tpl.icon}
-                  </span>
+                  <ChromeIcon name={tpl.icon} aria-hidden="true" />
                   <span className="templates-drawer-card-label">{tpl.label}</span>
                 </div>
                 <p className="templates-drawer-card-desc">{tpl.desc}</p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { exportReactFiles, type ExportFile } from "@/lib/export/reactExporter";
 import { exportHTML } from "@/lib/export/htmlExporter";
@@ -187,7 +188,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
         <div className="export-modal-header">
           <span className="export-modal-title" id="export-modal-title">Export Code</span>
           <button className="export-modal-close" onClick={onClose} aria-label="Close export">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+            <ChromeIcon name="close" style={{ fontSize: 18 }} />
           </button>
         </div>
 
@@ -197,14 +198,14 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             className={`export-format-btn ${format === "react" ? "active" : ""}`}
             onClick={() => selectFormat("react")}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>code</span>
+            <ChromeIcon name="code" style={{ fontSize: 16 }} />
             React (TSX)
           </button>
           <button
             className={`export-format-btn ${format === "html" ? "active" : ""}`}
             onClick={() => selectFormat("html")}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>language</span>
+            <ChromeIcon name="language" style={{ fontSize: 16 }} />
             HTML
           </button>
           <button
@@ -212,7 +213,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             onClick={() => selectFormat("vite")}
             title="Self-extracting shell script - run `sh design-hub-app.sh` to bootstrap a working Vite + React + TS project"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
+            <ChromeIcon name="folder_zip" style={{ fontSize: 16 }} />
             Vite project
           </button>
           <button
@@ -220,7 +221,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             onClick={() => selectFormat("svg")}
             title="Wireframe / medium-fidelity vector SVG of the canvas. Figma-editable layers. Always available - reads the builder store, no Preview needed."
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>shapes</span>
+            <ChromeIcon name="shapes" style={{ fontSize: 16 }} />
             SVG
           </button>
           <button
@@ -228,7 +229,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             onClick={() => selectFormat("tokens")}
             title="The active design system's official tokens as W3C Design Tokens (DTCG) JSON - for Style Dictionary, Tokens Studio and Figma Variables importers"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>data_object</span>
+            <ChromeIcon name="data_object" style={{ fontSize: 16 }} />
             Tokens (JSON)
           </button>
           <button
@@ -236,14 +237,14 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             onClick={() => selectFormat("figma")}
             title="Pixel-accurate SVG measured from the live canvas. Drag onto a Figma canvas - imports as editable layers. Requires Preview to be open."
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>design_services</span>
+            <ChromeIcon name="design_services" style={{ fontSize: 16 }} />
             Figma (SVG)
           </button>
         </div>
 
         {/* Generate button */}
         <button className="export-generate-btn" onClick={generate}>
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>magic_button</span>
+          <ChromeIcon name="magic_button" style={{ fontSize: 18 }} />
           Generate {
             format === "react" ? "React Component"
             : format === "html" ? "HTML Page"
@@ -256,7 +257,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
 
         {format === "tokens" && code && (
           <p className="export-helper-note">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true">data_object</span>
+            <ChromeIcon name="data_object" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true" />
             W3C Design Tokens format, read from the official token packages for the active system and mode. Each token records its CSS variable under <code>$extensions</code>. Feed it to Style Dictionary, Tokens Studio or a Figma Variables importer.
           </p>
         )}
@@ -275,15 +276,13 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
                   className={`export-format-btn ${i === activeFile ? "active" : ""}`}
                   onClick={() => selectFile(i)}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }} aria-hidden="true">
-                    {f.path.endsWith(".css") ? "palette" : "code"}
-                  </span>
+                  <ChromeIcon name={f.path.endsWith(".css") ? "palette" : "code"} style={{ fontSize: 16 }} aria-hidden="true" />
                   {f.path}
                 </button>
               ))}
             </div>
             <p className="export-helper-note">
-              <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true">info</span>
+              <ChromeIcon name="info" style={{ fontSize: 14, marginRight: 4 }} aria-hidden="true" />
               <code>dashboard.tsx</code> imports <code>./styles.css</code> (the design-system token block + fallback styles for blocks the real component library does not cover). Save both files next to each other.
             </p>
           </>
@@ -291,28 +290,28 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
 
         {format === "vite" && code && (
           <p className="export-helper-note">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>terminal</span>
+            <ChromeIcon name="terminal" style={{ fontSize: 14, marginRight: 4 }} />
             Download the script, then run <code>sh design-hub-app.sh</code> in an empty folder to bootstrap a working Vite + React + TS project.
           </p>
         )}
 
         {format === "svg" && code && (
           <p className="export-helper-note">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>info</span>
+            <ChromeIcon name="info" style={{ fontSize: 14, marginRight: 4 }} />
             Wireframe / medium-fidelity vector. Reproduces canvas regions and component silhouettes, not the exact live layout. Drag the <code>.svg</code> into Figma: each block imports as an editable layer.
           </p>
         )}
 
         {format === "figma" && code && isGuard && (
           <p className="export-helper-note">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>visibility</span>
+            <ChromeIcon name="visibility" style={{ fontSize: 14, marginRight: 4 }} />
             {FIGMA_GUARD} It measures the rendered canvas, so the Preview / Present view must be on screen.
           </p>
         )}
 
         {format === "figma" && code && !isGuard && (
           <p className="export-helper-note">
-            <span className="material-symbols-outlined" style={{ fontSize: 14, marginRight: 4 }}>design_services</span>
+            <ChromeIcon name="design_services" style={{ fontSize: 14, marginRight: 4 }} />
             Pixel-accurate, measured from the live canvas. Download the <code>.svg</code> and drag it onto a Figma canvas: it imports as editable layers, no plugin needed.
           </p>
         )}
@@ -329,13 +328,11 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
             {/* Actions */}
             <div className="export-actions">
               <button className="export-action-btn" onClick={copyToClipboard}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  {copied ? "check" : "content_copy"}
-                </span>
+                <ChromeIcon name={copied ? "check" : "content_copy"} style={{ fontSize: 16 }} />
                 {copied ? "Copied!" : "Copy"}
               </button>
               <button className="export-action-btn" onClick={download}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
+                <ChromeIcon name="download" style={{ fontSize: 16 }} />
                 Download {
                   files.length > 0 ? files[activeFile]?.path ?? ".tsx"
                   : format === "html" ? ".html"
@@ -346,7 +343,7 @@ export function ExportPanel({ onClose }: { onClose: () => void }) {
               </button>
               {files.length > 1 && (
                 <button className="export-action-btn" onClick={downloadAll}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_zip</span>
+                  <ChromeIcon name="folder_zip" style={{ fontSize: 16 }} />
                   Download all ({files.length} files)
                 </button>
               )}
