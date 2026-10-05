@@ -67,6 +67,7 @@ import {
   type DensityLevel,
 } from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
+import { RealFormDialog, type FormDialogModel } from "@/components/ui-kit/RealFormDialog";
 import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
 import {
@@ -1250,6 +1251,8 @@ export function RealComponentRenderer({
   props,
   kit,
 }: RealComponentRendererProps): React.ReactElement | null {
+  /* Not a canvas block: a small form in each system's own dialog (props.model). */
+  if (type === "FormDialog") return props.model ? <RealFormDialog system={system} mode={mode} density={saltDensity} model={props.model as FormDialogModel} /> : null;
   if (!canRenderReal(system, type)) return null;
 
   if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} kit={kit} />;

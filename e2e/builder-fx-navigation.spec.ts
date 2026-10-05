@@ -1,0 +1,724 @@
+import { test, expect, type Page } from "@playwright/test";
+
+/**
+ * FX Execution, PR B: chart navigation (Present only).
+ *
+ *   - The page is never trapped: at the full view a plain wheel, up or down,
+ *     scrolls the page (a note says "hold Ctrl and scroll"); Ctrl or Cmd
+ *     wheel zooms; once zoomed the wheel zooms time on the plot, centred on
+ *     the pointer, and price on the price axis.
+ *   - Drag pans; panned back, new feed bars do not move the view; "Back to
+ *     live" returns; Reset returns to the full view and to following.
+ *   - Box zoom from the rail zooms both axes and switches itself off.
+ *   - Press and hold pins the values; keys pan, zoom and reset.
+ *   - Go to: the design system's own dialog in all five systems, with a
+ *     calendar; focus stays inside, Escape closes it and only it, focus
+ *     returns to the chip; bounds give a plain message; the chip shows the
+ *     window and the range chips let it go.
+ *   - The calendar and date-range interactions of the original dashboard
+ *     (see the list in the test "Go to: every calendar interaction").
+ *   - A Go to window holds still against the feed; End is the keyboard way
+ *     back to live.
+ *   - Edit is static: no zoom, and the builder still selects the block.
+ *   - Tablet and phone: the dialog fits the screen, nothing is cut off.
+ *
+ * Sample data only: nothing connects to a market.
+ */
+
+const SYSTEMS = ["Salt DS", "Material 3", "Fluent 2", "uoaui", "Carbon"] as const;
+
+async function applyFx(page: Page) {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/builder", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+  const use = page.getByRole("button", { name: "Use the FX Execution template" });
+  await expect(async () => {
+    if (!(await use.isVisible())) await page.getByRole("button", { name: /Browse templates/ }).click();
+    await expect(use).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 60_000 });
+  await use.click();
+  await expect(page.locator(".present-stage .dh-exec .highcharts-root")).toBeVisible({ timeout: 30_000 });
+}
+
+const stage = (page: Page) => page.locator(".present-stage");
+const plot = (page: Page) => stage(page).locator(".dh-exec-plot");
+const viewX = async (page: Page) => {
+  const v = await plot(page).getAttribute("data-view-x");
+  return v ? (v.split(",").map(Number) as [number, number]) : null;
+};
+const viewY = async (page: Page) => {
+  const v = await plot(page).getAttribute("data-view-y");
+  return v ? (v.split(",").map(Number) as [number, number]) : null;
+};
+const feedBars = async (page: Page) => Number(await stage(page).locator(".dh-exec").getAttribute("data-feed-bars"));
+/** The plot area (inside the axes), in page pixels. */
+async function plotArea(page: Page) {
+  const r = await plot(page).locator(".highcharts-plot-background").boundingBox();
+  return r!;
+}
+async function pause(page: Page) {
+  await stage(page).getByRole("button", { name: "Pause the sample feed" }).click();
+  await expect(stage(page).locator(".dh-feed-status")).toHaveClass(/is-paused/);
+}
+/** A wheel with Ctrl held: how zooming starts from the full view (a trackpad pinch arrives the same way). */
+async function ctrlWheel(page: Page, dy: number) {
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, dy);
+  await page.keyboard.up("Control");
+}
+const rail = (page: Page, name: string) => stage(page).getByRole("button", { name, exact: true });
+
+async function switchSystem(page: Page, label: (typeof SYSTEMS)[number]) {
+  await page.getByRole("button", { name: /^Design system:/ }).click();
+  await page.getByText(label, { exact: true }).last().click();
+  await expect(page.getByRole("button", { name: /^Design system:/ })).toContainText(label);
+}
+
+test.describe("Builder - FX Execution chart navigation", () => {
+  test("wheel zooms time around the pointer; Reset and a double-click restore the full view; off the chart the page scrolls", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    expect(await viewX(page)).toBeNull();
+    await expect(rail(page, "Reset view")).toHaveAttribute("aria-disabled", "true");
+    const area = await plotArea(page);
+    const px = area.x + area.width * 0.3;
+    /* Did the chart take the last wheel event (so the page did not scroll)? */
+    await page.evaluate(() => { window.addEventListener("wheel", (e) => { (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken = e.defaultPrevented; }); });
+    const taken = () => page.evaluate(() => (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken);
+    /* Off the chart (the header above it): the page's. */
+    const header = (await stage(page).locator(".dh-feed-status").boundingBox())!;
+    await page.mouse.move(header.x + 4, header.y + 4);
+    await page.mouse.wheel(0, 120);
+    await expect.poll(taken).toBe(false);
+    expect(await viewX(page)).toBeNull();
+    await page.mouse.move(px, area.y + area.height * 0.5);
+    /* On the plot at the full view a plain wheel is the page's, down and up, and a note says how to zoom. */
+    await page.mouse.wheel(0, 120);
+    await expect.poll(taken).toBe(false);
+    await page.mouse.wheel(0, -120);
+    await expect.poll(taken).toBe(false);
+    expect(await viewX(page)).toBeNull();
+    await expect(plot(page).locator(".dh-exec-wheel-note")).toHaveText(/^Hold (Ctrl|\u2318) and scroll to zoom$/);
+    await expect(plot(page).locator(".dh-exec-wheel-note")).toHaveCount(0, { timeout: 5_000 });
+    /* With Ctrl held, the chart's. */
+    await ctrlWheel(page, -200);
+    await expect.poll(() => viewX(page)).not.toBeNull();
+    expect(await taken()).toBe(true);
+    const [a, b] = (await viewX(page))!;
+    await page.mouse.wheel(0, -200);
+    await expect.poll(async () => (await viewX(page))![1]).toBeLessThan(b);
+    const [c, d] = (await viewX(page))!;
+    /* Anchored: the value under the pointer is the same after the second zoom. */
+    const share = (px - area.x) / area.width;
+    expect(Math.abs(a + share * (b - a) - (c + share * (d - c)))).toBeLessThan(0.6);
+    expect(d - c).toBeLessThan(b - a);
+    await expect(plot(page)).toHaveAttribute("data-zoomed", "true");
+
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewX(page)).toBeNull();
+    await page.mouse.move(px, area.y + area.height * 0.5);
+    await ctrlWheel(page, -300);
+    await expect.poll(() => viewX(page)).not.toBeNull();
+    await page.mouse.dblclick(px, area.y + area.height * 0.5);
+    await expect.poll(() => viewX(page)).toBeNull();
+
+    /* Over the price axis: the page's at the full view; with Ctrl price zooms, time does not. */
+    await page.mouse.move(area.x + area.width + 30, area.y + area.height * 0.3);
+    await page.waitForTimeout(500);
+    await page.mouse.wheel(0, -200);
+    await expect.poll(taken).toBe(false);
+    expect(await viewY(page)).toBeNull();
+    await ctrlWheel(page, -200);
+    await expect.poll(() => viewY(page)).not.toBeNull();
+    expect(await viewX(page)).toBeNull();
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewY(page)).toBeNull();
+  });
+
+  test("drag pans; panned back, the feed's bars do not move the view; Back to live and Reset return to following", async ({ page }) => {
+    await applyFx(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+    const area = await plotArea(page);
+    const y = area.y + area.height * 0.5;
+    await page.mouse.move(area.x + area.width * 0.5, y);
+    await ctrlWheel(page, -200);
+    for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -200);
+    await expect.poll(() => viewX(page)).not.toBeNull();
+    /* Drag right: earlier bars come in from the left. */
+    await page.mouse.move(area.x + area.width * 0.3, y);
+    await page.mouse.down();
+    await page.mouse.move(area.x + area.width * 0.9, y, { steps: 10 });
+    await page.mouse.up();
+    await expect(plot(page)).toHaveAttribute("data-away", "true");
+    const held = await viewX(page);
+    const bars = await feedBars(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThan(bars + 1);
+    expect(await viewX(page)).toEqual(held);
+    /* A pan does not click the fill under the pointer (that selects a venue). */
+    await expect(stage(page).locator(".present-amend-input")).toHaveCount(0);
+
+    const live = stage(page).getByRole("button", { name: /^Back to live/ });
+    await expect(live).toBeVisible();
+    await live.click();
+    await expect(plot(page)).not.toHaveAttribute("data-away", "true");
+    const [, end] = (await viewX(page))!;
+    /* Following: the view moves on with the next bars. */
+    const now = await feedBars(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThan(now);
+    await expect.poll(async () => (await viewX(page))![1]).toBeGreaterThan(end);
+    await expect(live).toHaveCount(0);
+
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewX(page)).toBeNull();
+  });
+
+  test("box zoom zooms both axes and switches itself off; Escape cancels it", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const box = rail(page, "Box zoom");
+    await box.click();
+    await expect(box).toHaveAttribute("aria-pressed", "true");
+    await plot(page).focus();
+    await page.keyboard.press("Escape");
+    await expect(box).toHaveAttribute("aria-pressed", "false");
+    /* Escape cancelled the tool, not Present. */
+    await expect(stage(page).locator(".dh-exec")).toBeVisible();
+    await box.click();
+    const area = await plotArea(page);
+    await page.mouse.move(area.x + area.width * 0.3, area.y + area.height * 0.2);
+    await page.mouse.down();
+    await page.mouse.move(area.x + area.width * 0.55, area.y + area.height * 0.5, { steps: 8 });
+    await expect(plot(page).locator(".dh-exec-box")).toHaveCount(1);
+    await page.mouse.up();
+    await expect(plot(page).locator(".dh-exec-box")).toHaveCount(0);
+    const x = (await viewX(page))!;
+    const yv = (await viewY(page))!;
+    expect(x[1] - x[0]).toBeGreaterThan(4);
+    expect(yv[1]).toBeGreaterThan(yv[0]);
+    await expect(box).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("press and hold pins the values; release lets them go", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const area = await plotArea(page);
+    await page.mouse.move(area.x + area.width * 0.5, area.y + area.height * 0.4);
+    await page.mouse.down();
+    await expect(plot(page)).toHaveAttribute("data-pinned", "true", { timeout: 2_000 });
+    const tip = plot(page).locator(".highcharts-tooltip");
+    await expect(tip).toBeVisible();
+    /* Pinned means pinned: fully opaque, on its own solid panel, for as long as it is held (it used to fade out after half a second). */
+    const solid = () => tip.evaluate((el) => {
+      const box = el.querySelector(".highcharts-tooltip-box") as SVGElement | null;
+      const fill = box ? getComputedStyle(box).fill : "none";
+      const alpha = /rgba\(.*,\s*([\d.]+)\)/.exec(fill)?.[1];
+      return { opacity: getComputedStyle(el).opacity, visibility: el.getAttribute("visibility"), filled: fill !== "none" && fill !== "transparent" && (alpha === undefined || Number(alpha) === 1), boxOpacity: box ? getComputedStyle(box).opacity + getComputedStyle(box).fillOpacity : "" };
+    });
+    for (const wait of [300, 900, 1500]) {
+      await page.waitForTimeout(wait);
+      expect(await solid()).toEqual({ opacity: "1", visibility: null, filled: true, boxOpacity: "11" });
+    }
+    /* It follows the pointer while held. */
+    await page.mouse.move(area.x + area.width * 0.6, area.y + area.height * 0.45, { steps: 4 });
+    await page.waitForTimeout(700);
+    expect((await solid()).opacity).toBe("1");
+    await page.mouse.up();
+    await expect(plot(page)).not.toHaveAttribute("data-pinned", "true");
+  });
+
+  test("keys: the chart takes focus with a visible ring; arrows pan, plus and minus zoom, 0 resets", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await plot(page).focus();
+    await page.keyboard.press("+");
+    /* Reached and used by keyboard: the focus ring shows. */
+    expect(await plot(page).evaluate((el) => el.matches(":focus-visible") && getComputedStyle(el).outlineStyle !== "none")).toBe(true);
+    await page.keyboard.press("+");
+    const zoomed = (await viewX(page))!;
+    expect(zoomed).not.toBeNull();
+    await page.keyboard.press("ArrowLeft");
+    const panned = (await viewX(page))!;
+    expect(panned[0]).toBeLessThan(zoomed[0]);
+    expect(panned[1] - panned[0]).toBeCloseTo(zoomed[1] - zoomed[0], 5);
+    await page.keyboard.press("PageUp");
+    expect(await viewY(page)).not.toBeNull();
+    await page.keyboard.press("-");
+    await page.keyboard.press("0");
+    expect(await viewX(page)).toBeNull();
+    expect(await viewY(page)).toBeNull();
+    /* The rail has the same moves. */
+    await rail(page, "Zoom in").click();
+    expect(await viewX(page)).not.toBeNull();
+    await rail(page, "Zoom out").click();
+    expect(await viewX(page)).toBeNull();
+
+    /* Panned back by keyboard: End is the way back to the latest bar; Shift takes a bigger step. */
+    await plot(page).focus();
+    for (let i = 0; i < 4; i++) await page.keyboard.press("+");
+    const before = (await viewX(page))!;
+    await page.keyboard.press("Shift+ArrowLeft");
+    const far = (await viewX(page))!;
+    expect(before[0] - far[0]).toBeCloseTo((before[1] - before[0]) / 2, 3);
+    await page.keyboard.press("Shift+ArrowLeft");
+    await expect(plot(page)).toHaveAttribute("data-away", "true");
+    const live = stage(page).getByRole("button", { name: /^Back to live/ });
+    await expect(live).toBeVisible();
+    await page.keyboard.press("End");
+    await expect(plot(page)).not.toHaveAttribute("data-away", "true");
+    await expect(live).toHaveCount(0);
+    /* The same zoom, at the right edge. */
+    const back = (await viewX(page))!;
+    expect(back[1] - back[0]).toBeCloseTo(far[1] - far[0], 3);
+    /* The rail's tools work from the keyboard: Enter on Box zoom arms it, Enter again lets it go. */
+    await rail(page, "Box zoom").focus();
+    await page.keyboard.press("Enter");
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Enter");
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "false");
+    await rail(page, "Reset view").focus();
+    await page.keyboard.press("Enter");
+    expect(await viewX(page)).toBeNull();
+  });
+
+  test("the rail keeps main's menus (overlays, radio items, Escape returns focus) beside the zoom tools", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const interval = stage(page).getByRole("button", { name: "Interval", exact: true });
+    await interval.focus();
+    await page.keyboard.press("Enter");
+    const menu = stage(page).getByRole("menu", { name: "Interval" });
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("menuitemradio").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await expect(interval).toBeFocused();
+    /* Escape closed the menu, not Present; the zoom tools sit under the menus in one toolbar. */
+    const bar = stage(page).getByRole("toolbar", { name: "Chart tools" });
+    await expect(bar.getByRole("button")).toHaveCount(8);
+  });
+
+  for (const system of SYSTEMS) {
+    test(`${system}: Go to is the system's own dialog; keyboard, bounds, Escape and focus`, async ({ page }) => {
+      await applyFx(page);
+      if (system !== "Salt DS") await switchSystem(page, system);
+      await pause(page);
+      const chip = stage(page).getByRole("button", { name: "Go to a date or range" });
+      await chip.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: "Go to" });
+      await expect(dialog).toBeVisible();
+      /* Focus stays inside. */
+      for (let i = 0; i < 25; i++) {
+        await page.keyboard.press("Tab");
+        /* Inside the dialog (a focus guard or sentinel of the system's own trap counts: it hands focus straight back). */
+        await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="dialog"], [data-floating-ui-focus-guard], .dh-form-dialog-scope'))), { timeout: 1_000, message: `Tab ${i + 1}` }).toBe(true);
+      }
+      /* Two kinds of day cannot be picked, told apart the same way in every system, with a key under the grid. */
+      const closed = dialog.locator('[data-day="2026-01-03"]');
+      const outside = dialog.locator('[data-day="2026-01-06"]');
+      await expect(closed).toHaveAttribute("data-off", "closed");
+      await expect(closed).toHaveAccessibleName(/market closed, no sample data$/);
+      await expect(outside).toHaveAttribute("data-off", "outside");
+      await expect(outside).toHaveAccessibleName(/outside the sample data$/);
+      const line = (el: Element) => getComputedStyle(el, "::after").borderTopStyle;
+      expect(await closed.evaluate(line)).toBe("solid");
+      expect(await outside.evaluate(line)).toBe("none");
+      for (const day of ["2026-01-04", "2026-01-10", "2026-01-15", "2026-01-22", "2026-01-31"]) {
+        /* Every later day of the month is outside the data, whatever its digits or weekday: none is struck through. */
+        await expect(dialog.locator(`[data-day="${day}"]`)).toHaveAttribute("data-off", day === "2026-01-04" ? "closed" : "outside");
+      }
+      await expect(dialog.locator(".dh-cal-legend")).toHaveText("12Market closed12Outside the sample data");
+      /* Outside the data: a plain message by the field. */
+      const date = dialog.getByLabel("Date", { exact: true });
+      await date.fill("2026-03-02");
+      await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+      await expect(dialog.getByText(/Pick a date from .* to 5 Jan 2026\./)).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(chip).toBeFocused();
+      /* Escape closed the dialog, not Present. */
+      await expect(page.getByRole("button", { name: "Edit canvas" })).toBeVisible();
+
+      /* A day picked on the calendar with the keys, then a time. */
+      await page.keyboard.press("Enter");
+      await expect(dialog).toBeVisible();
+      const today = dialog.locator('[data-day="2026-01-05"]');
+      await today.focus();
+      await page.keyboard.press("Enter");
+      await dialog.getByLabel(/^Time/).first().fill("10:30");
+      await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+      await expect(dialog).toBeHidden();
+      const custom = stage(page).getByRole("button", { name: /^Go to: showing 5 Jan 09:45 to 11:15/ });
+      await expect(custom).toHaveAttribute("aria-pressed", "true");
+      await expect(stage(page).getByRole("button", { name: "1D", exact: true })).toHaveAttribute("aria-pressed", "false");
+      expect(await viewX(page)).not.toBeNull();
+      /* A range chip lets the window go. */
+      await stage(page).getByRole("button", { name: "1D", exact: true }).click();
+      await expect.poll(() => viewX(page)).toBeNull();
+      await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-pressed", "false");
+    });
+  }
+
+  test("Go to a custom range further back moves the range preset and shows the window", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await dialog.getByText("Custom range", { exact: true }).first().click();
+    /* The calendar fills From, then To. */
+    await dialog.getByRole("button", { name: "Previous month" }).click();
+    await dialog.locator('[data-day="2025-12-29"]').click();
+    await expect(dialog.getByText("Pick the end day")).toBeVisible();
+    await dialog.locator('[data-day="2025-12-30"]').click();
+    await dialog.getByLabel("From", { exact: true }).fill("2025-12-29");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 29 Dec 10:00 to 30 Dec 11:00/ })).toBeVisible();
+    /* 1W is the range that reaches 29 December (5D starts on the 31st). */
+    await expect(stage(page).locator(".dh-exec-ranges")).toHaveAttribute("data-range", "1W");
+    expect(await viewX(page)).not.toBeNull();
+  });
+
+  test("a custom range that starts before the range on screen is shown whole, not cut to the bars already there", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await expect(stage(page).locator(".dh-exec-ranges")).toHaveAttribute("data-range", "1D");
+    const barsBefore = Number(await stage(page).locator(".dh-exec").getAttribute("data-chart-bars"));
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await dialog.getByText("Custom range", { exact: true }).first().click();
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-02");
+    await dialog.getByLabel(/^Time/).first().fill("10:00");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel(/^Time/).nth(1).fill("11:00");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 2 Jan 10:00 to 5 Jan 11:00/ })).toHaveAttribute("aria-pressed", "true");
+    /* The window starts on 2 January: the range reaches back for it (3D starts on the 2nd). */
+    await expect(stage(page).locator(".dh-exec-ranges")).toHaveAttribute("data-range", "3D");
+    await expect.poll(async () => Number(await stage(page).locator(".dh-exec").getAttribute("data-chart-bars"))).toBeGreaterThan(barsBefore);
+    /* The view holds more than the session's part of the window (bars 0 to 61 of the 1D view), and its first time label is a January 2 one. */
+    const x = (await viewX(page))!;
+    expect(x[1] - x[0]).toBeGreaterThan(63);
+    await expect(plot(page).locator(".highcharts-xaxis-labels text").first()).toHaveText(/^02 Jan$/);
+  });
+
+  test("with only the price scale zoomed, a plain wheel over the plot scrolls the page and leaves the view alone", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await plot(page).focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press("PageUp");
+    const y = (await viewY(page))!;
+    expect(y).not.toBeNull();
+    expect(await viewX(page)).toBeNull();
+    await page.evaluate(() => { window.addEventListener("wheel", (e) => { (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken = e.defaultPrevented; }); });
+    const taken = () => page.evaluate(() => (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken);
+    const area = await plotArea(page);
+    await page.mouse.move(area.x + area.width * 0.4, area.y + area.height * 0.3);
+    const top = () => plot(page).evaluate((el) => el.getBoundingClientRect().top);
+    const before = await top();
+    for (const dy of [160, 160]) await page.mouse.wheel(0, dy);
+    await expect.poll(taken).toBe(false);
+    /* The page scrolled: the chart moved up the screen. */
+    await expect.poll(top).toBeLessThan(before - 50);
+    expect(await viewX(page)).toBeNull();
+    expect(await viewY(page)).toEqual(y);
+    /* And back up, the same. */
+    const down = await top();
+    await page.mouse.wheel(0, -160);
+    await expect.poll(top).toBeGreaterThan(down + 50);
+    expect(await viewY(page)).toEqual(y);
+    /* Over the price gutter the wheel is still the price scale's. */
+    const now = await plotArea(page);
+    await page.mouse.move(now.x + now.width + 30, now.y + now.height * 0.3);
+    await page.mouse.wheel(0, -200);
+    await expect.poll(taken).toBe(true);
+    await expect.poll(() => viewY(page)).not.toEqual(y);
+    expect(await viewX(page)).toBeNull();
+  });
+
+  test("on a zoomed price scale, tags whose price is off the scale are not drawn; the hint stays clear of the tags", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const pills = plot(page).locator(".dh-exec-pill");
+    const all = await pills.count();
+    expect(all).toBeGreaterThanOrEqual(4);
+    await plot(page).focus();
+    for (let i = 0; i < 8; i++) await page.keyboard.press("PageUp");
+    const y = (await viewY(page))!;
+    await expect.poll(() => pills.count()).toBeLessThan(all);
+    for (const text of await pills.allTextContents()) {
+      const price = Number(text.trim().split(/\s+/).pop());
+      expect(price, text).toBeGreaterThanOrEqual(y[0] - 0.00002);
+      expect(price, text).toBeLessThanOrEqual(y[1] + 0.00002);
+    }
+    /* The one-time hint: inside the plot, under its top gridline, over no tag, and in sight on a laptop-height screen. */
+    const hint = stage(page).locator(".dh-exec-hint");
+    await expect(hint).toBeVisible();
+    for (const size of [{ width: 1440, height: 900 }, { width: 1512, height: 738 }]) {
+      await page.setViewportSize(size);
+      await page.evaluate(() => document.querySelectorAll("*").forEach((el) => { if (el.scrollTop) el.scrollTop = 0; }));
+      await expect(hint).toBeInViewport({ ratio: 1 });
+      const box = (await hint.boundingBox())!;
+      const plotBox = await plotArea(page);
+      expect(box.y, `${size.width}x${size.height}`).toBeGreaterThanOrEqual(plotBox.y + 1);
+      expect(box.x).toBeGreaterThanOrEqual(plotBox.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(plotBox.x + plotBox.width + 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(size.height);
+    }
+    const h = (await hint.boundingBox())!;
+    await page.keyboard.press("0");
+    await expect.poll(() => pills.count()).toBe(all);
+    for (const b of await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
+      expect(b.x >= h.x + h.width || b.x + b.width <= h.x || b.y >= h.y + h.height || b.y + b.height <= h.y).toBe(true);
+    }
+  });
+
+  test("Go to: every calendar interaction of the original, by pointer and by keyboard", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const chip = stage(page).getByRole("button", { name: "Go to a date or range" });
+    await chip.click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await expect(dialog).toBeVisible();
+    /* The data window is stated. */
+    await expect(dialog.getByText(/^Sample data from .* to 5 Jan 2026\.$/)).toBeVisible();
+    /* The calendar opens on the latest day with data, selected. */
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    const cell = (day: string) => dialog.locator(`td:has([data-day="${day}"])`);
+    const dayBtn = (day: string) => dialog.locator(`[data-day="${day}"]`);
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    /* Bounds: no month after the data's last; days without data cannot be picked. */
+    await expect(dialog.getByRole("button", { name: "Next month" })).toBeDisabled();
+    await expect(dayBtn("2026-01-03")).toHaveAttribute("aria-disabled", "true");
+    await dayBtn("2026-01-03").click({ force: true });
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    await expect(cell("2026-01-03")).toHaveAttribute("aria-selected", "false");
+    await expect(dayBtn("2026-01-06")).toHaveAttribute("aria-disabled", "true");
+    /* Picking a day fills the Date field. */
+    await dayBtn("2026-01-02").click();
+    await expect(dialog.getByLabel("Date", { exact: true })).toHaveValue("2026-01-02");
+    /* The grid's keys: arrows move a day or a week, Page Up a month; Enter picks. */
+    await dayBtn("2026-01-02").focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(dayBtn("2026-01-01")).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(dialog.getByText("December 2025")).toBeVisible();
+    await expect(dayBtn("2025-12-25")).toBeFocused();
+    await page.keyboard.press("PageDown");
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    /* Kept inside the data: Page Down from 25 December stops at the last day. */
+    await expect(dayBtn("2026-01-05")).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByLabel("Date", { exact: true })).toHaveValue("2026-01-05");
+    /* Month buttons. */
+    await dialog.getByRole("button", { name: "Previous month" }).click();
+    await expect(dialog.getByText("December 2025")).toBeVisible();
+    await dialog.getByRole("button", { name: "Next month" }).click();
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    /* A typed day inside the data's range that has no bars (a Saturday): a plain message, the dialog stays. */
+    await dialog.getByLabel("Date", { exact: true }).fill("2026-01-03");
+    await dialog.getByLabel(/^Time/).first().fill("12:00");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText("No bars in that window. Try a wider one.")).toBeVisible();
+    /* A half-typed time is not midnight. */
+    await dialog.getByLabel("Date", { exact: true }).fill("2026-01-05");
+    const time = dialog.getByLabel(/^Time/).first();
+    await time.focus();
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("10");
+    if (await time.evaluate((el: HTMLInputElement) => el.validity.badInput)) {
+      await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+      await expect(dialog.getByText("Enter the whole time as HH:MM, for example 10:30.")).toBeVisible();
+      await expect(time).toBeFocused();
+    }
+    await time.fill("10:30");
+    await expect(dialog).toBeVisible();
+
+    /* Custom range: the calendar fills From, then To, and the field in hand is the one it fills. */
+    await dialog.getByText("Custom range", { exact: true }).first().click();
+    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    await dayBtn("2026-01-02").click();
+    await expect(dialog.getByLabel("From", { exact: true })).toHaveValue("2026-01-02");
+    await expect(dialog.getByText("Pick the end day")).toBeVisible();
+    await dayBtn("2026-01-05").click();
+    await expect(dialog.getByLabel("To", { exact: true })).toHaveValue("2026-01-05");
+    await expect(cell("2026-01-02")).toHaveAttribute("aria-selected", "true");
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    /* The days between are marked. */
+    await expect(cell("2026-01-03")).toHaveClass(/is-between/);
+    /* Both ends chosen: no instruction is pending; the line states the range. */
+    await expect(dialog.getByText("Pick the start day")).toHaveCount(0);
+    await expect(dialog.getByText("Pick the end day")).toHaveCount(0);
+    await expect(dialog.locator(".dh-cal-prompt")).toHaveText("2 Jan 2026 to 5 Jan 2026");
+    await dialog.getByLabel("To", { exact: true }).focus();
+    await expect(dialog.getByText("Pick the end day")).toBeVisible();
+    await dialog.getByLabel("From", { exact: true }).focus();
+    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    /* The end before the start. */
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-02");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText("The end must be after the start.")).toBeVisible();
+    await expect(dialog.getByLabel("To", { exact: true })).toBeFocused();
+    /* Before the data begins. */
+    await dialog.getByLabel("From", { exact: true }).fill("2024-06-03");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-05");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText(/Pick a date from .* to 5 Jan 2026\./)).toBeVisible();
+    await expect(dialog.getByLabel("From", { exact: true })).toBeFocused();
+    /* Enter in a field submits: the session's morning. */
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel(/^Time/).first().fill("09:00");
+    await dialog.getByLabel(/^Time/).nth(1).fill("10:00");
+    await dialog.getByLabel(/^Time/).nth(1).press("Enter");
+    await expect(dialog).toBeHidden();
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 5 Jan 09:00 to 10:00/ })).toHaveAttribute("aria-pressed", "true");
+    /* No preset is the range now. */
+    await expect(stage(page).locator(".dh-exec-ranges button.is-active")).toHaveCount(1);
+    await expect(stage(page).locator(".dh-exec-ranges button.is-active")).toHaveClass(/dh-exec-range-goto/);
+    /* Moving the view lets the window go: the preset is the range again. */
+    await rail(page, "Zoom out").click();
+    await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-pressed", "false");
+    await expect(stage(page).getByRole("button", { name: "1D", exact: true })).toHaveAttribute("aria-pressed", "true");
+    /* Cancel closes without moving anything. */
+    const kept = await viewX(page);
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toBeHidden();
+    expect(await viewX(page)).toEqual(kept);
+  });
+
+  test("a Go to window holds still while the feed runs; Back to live and Reset return to following", async ({ page }) => {
+    await applyFx(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await dialog.getByLabel(/^Time/).first().fill("10:30");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    const held = await viewX(page);
+    expect(held).not.toBeNull();
+    const bars = await feedBars(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThan(bars + 1);
+    expect(await viewX(page)).toEqual(held);
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 5 Jan 09:45 to 11:15/ })).toHaveAttribute("aria-pressed", "true");
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewX(page)).toBeNull();
+    await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("Edit is static: no zoom, the zoom tools wait for Present, and the builder still selects the block", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await page.getByRole("button", { name: "Edit canvas" }).click();
+    const edit = page.locator(".bp-viewport-wrapper");
+    const editPlot = edit.locator(".dh-exec-plot");
+    await expect(editPlot).toBeVisible();
+    await expect(editPlot).not.toHaveAttribute("tabindex", "0");
+    const r = (await editPlot.locator(".highcharts-plot-background").boundingBox())!;
+    await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
+    await page.mouse.wheel(0, -300);
+    await page.waitForTimeout(300);
+    expect(await editPlot.getAttribute("data-view-x")).toBeNull();
+    await expect(edit.getByRole("button", { name: "Zoom in", exact: true })).toHaveAttribute("aria-disabled", "true");
+    await expect(edit.getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-disabled", "true");
+    await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
+    await expect(edit.locator("[data-block-id]", { has: page.locator(".dh-exec") }).first()).toHaveClass(/is-selected/);
+  });
+
+  test("phone: a vertical swipe is the page's (pan-y), the tools are 24px targets, nothing on the rail is cut off", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await page.getByRole("button", { name: /Mobile/i }).first().click();
+    await expect(plot(page)).toHaveCSS("touch-action", "pan-y");
+    const zoom = Number(await page.locator(".bp-device-frame").getAttribute("data-frame-zoom")) || 1;
+    const railBox = (await stage(page).locator(".dh-exec-rail").boundingBox())!;
+    for (const name of ["Box zoom", "Zoom in", "Zoom out", "Reset view"]) {
+      const b = (await rail(page, name).boundingBox())!;
+      expect(b.height / zoom).toBeGreaterThanOrEqual(24);
+      expect(b.y + b.height).toBeLessThanOrEqual(railBox.y + railBox.height + 1);
+    }
+    await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toBeVisible();
+  });
+
+  for (const frame of [{ name: "tablet", button: /Tablet/i }, { name: "phone", button: /Mobile/i }] as const) {
+    test(`${frame.name}: the tools and the range row are not cut off, and Go to fits the screen`, async ({ page }) => {
+      await applyFx(page);
+      await pause(page);
+      await page.getByRole("button", { name: frame.button }).first().click();
+      const panel = (await stage(page).locator(".dh-exec").boundingBox())!;
+      for (const name of ["Box zoom", "Zoom in", "Zoom out", "Reset view"]) {
+        const b = (await rail(page, name).boundingBox())!;
+        expect(b.y + b.height, name).toBeLessThanOrEqual(panel.y + panel.height + 1);
+      }
+      const chip = stage(page).getByRole("button", { name: "Go to a date or range" });
+      const c = (await chip.boundingBox())!;
+      expect(c.x + c.width).toBeLessThanOrEqual(panel.x + panel.width + 1);
+      /* The rail's zoom works in the frame. */
+      await rail(page, "Zoom in").click();
+      expect(await viewX(page)).not.toBeNull();
+      await rail(page, "Reset view").click();
+      expect(await viewX(page)).toBeNull();
+      await chip.click();
+      const dialog = page.getByRole("dialog", { name: "Go to" });
+      await expect(dialog).toBeVisible();
+      const d = (await dialog.boundingBox())!;
+      const view = page.viewportSize()!;
+      /* No wider than the device frame it was opened from. */
+      const device = (await page.locator(".bp-device-frame").boundingBox())!;
+      expect(d.x).toBeGreaterThanOrEqual(device.x - 1);
+      expect(d.x + d.width).toBeLessThanOrEqual(device.x + device.width + 1);
+      expect(d.x).toBeGreaterThanOrEqual(0);
+      expect(d.x + d.width).toBeLessThanOrEqual(view.width);
+      expect(d.y).toBeGreaterThanOrEqual(0);
+      expect(d.y + d.height).toBeLessThanOrEqual(view.height);
+      const go = dialog.getByRole("button", { name: "Go to", exact: true });
+      await expect(go).toBeInViewport();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(chip).toBeFocused();
+    });
+  }
+});
+
+test.describe("Builder - FX Execution chart navigation, touch", () => {
+  test.use({ hasTouch: true });
+
+  /** One finger from a to b, through the browser's own touch pipeline (touch-action applies). */
+  async function swipe(page: Page, a: { x: number; y: number }, b: { x: number; y: number }, steps = 8) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: a.x, y: a.y }] });
+    for (let i = 1; i <= steps; i++) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: a.x + ((b.x - a.x) * i) / steps, y: a.y + ((b.y - a.y) * i) / steps }] });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await cdp.detach();
+  }
+
+  test("a finger scales the price axis and draws a box zoom (neither is cancelled by a vertical move); a vertical swipe on the plot stays the page's", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await expect(plot(page)).toHaveCSS("touch-action", "pan-y");
+    await expect(plot(page).locator(".dh-exec-gutter")).toHaveCSS("touch-action", "none");
+    const area = await plotArea(page);
+    /* A vertical swipe on the plot: the browser takes it for the page; the view does not move. */
+    await swipe(page, { x: area.x + area.width * 0.5, y: area.y + area.height * 0.6 }, { x: area.x + area.width * 0.5, y: area.y + area.height * 0.3 });
+    expect(await viewX(page)).toBeNull();
+    expect(await viewY(page)).toBeNull();
+    /* A vertical drag on the price gutter scales the price axis. */
+    await swipe(page, { x: area.x + area.width + 40, y: area.y + area.height * 0.3 }, { x: area.x + area.width + 40, y: area.y + area.height * 0.6 });
+    await expect.poll(() => viewY(page)).not.toBeNull();
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewY(page)).toBeNull();
+    /* Box zoom: a diagonal drag, mostly vertical, zooms both axes and the tool switches off. */
+    await rail(page, "Box zoom").click();
+    await expect(plot(page)).toHaveCSS("touch-action", "none");
+    await swipe(page, { x: area.x + area.width * 0.4, y: area.y + area.height * 0.15 }, { x: area.x + area.width * 0.55, y: area.y + area.height * 0.6 }, 10);
+    await expect.poll(() => viewX(page)).not.toBeNull();
+    expect(await viewY(page)).not.toBeNull();
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "false");
+    await expect(plot(page)).toHaveCSS("touch-action", "pan-y");
+  });
+});

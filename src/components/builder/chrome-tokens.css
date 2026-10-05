@@ -120,6 +120,11 @@
   --dh-exec-btn:            32px;
   --dh-exec-chip-h:         26px;
   --dh-exec-flyout-w:       200px;
+  /* FX chart navigation: the Go to dialog's calendar day cell, its month
+     buttons and its form's width. */
+  --dh-cal-cell:            36px;
+  --dh-cal-nav:             32px;
+  --dh-form-dialog-w:       400px;
   /* The rail's menus float: a gap from the rail's edge, and a short slide
      in from it when they open. */
   --dh-exec-menu-gap:       6px;

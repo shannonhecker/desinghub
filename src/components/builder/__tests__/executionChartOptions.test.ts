@@ -24,13 +24,14 @@ function fakeChart(frame: ChartFrame) {
     series.set(id, s);
   }
   const axisUpdate = vi.fn();
+  const setExtremes = vi.fn();
   const chart = {
     get: (id: string) => series.get(id),
-    xAxis: [{ update: axisUpdate }],
+    xAxis: [{ update: axisUpdate, setExtremes }],
     yAxis: [{}, { removePlotLine: vi.fn(), addPlotLine: vi.fn() }],
     redraw: vi.fn(),
   };
-  return { chart: chart as unknown as Highcharts.Chart, series, axisUpdate };
+  return { chart: chart as unknown as Highcharts.Chart, series, axisUpdate, setExtremes };
 }
 
 describe("executionChartOptions", () => {
@@ -90,6 +91,56 @@ describe("executionChartOptions", () => {
       expect(frame.axisMax!).toBeGreaterThan(next.times.length - 0.5);
     }
     expect(steps).toBe(1);
+  });
+
+  it("a zoomed view decides the time axis: held still when panned back, moved on when it shows the latest bar", () => {
+    const before = resolveExecution(dataset, BUY)!;
+    const frame: ChartFrame = { view: before, countdown: null, counts: {} };
+    buildExecutionOptions(frame, vars, palette, { width: 900, height: 600 }, () => {});
+    const { chart, setExtremes } = fakeChart(frame);
+    const samples = feedOf(2);
+    const last = before.times.length - 1;
+    /* Panned back: the view says hold this span; the axis is set to it, not yanked. */
+    const held = vi.fn(() => ({ min: 20, max: 60 }));
+    const next = resolveExecution(withFeed(dataset, EXECUTION_ORDERS[0], samples.slice(0, 1)), BUY)!;
+    expect(applyFeedView(chart, frame, next, vars, palette, null, false, held)).toBe(true);
+    expect(held).toHaveBeenCalledWith(last, last + 1);
+    expect(setExtremes).toHaveBeenLastCalledWith(20, 60, false, false);
+    /* The full view: no extremes are set; the walk-in step owns the axis. */
+    setExtremes.mockClear();
+    const next2 = resolveExecution(withFeed(dataset, EXECUTION_ORDERS[0], samples), BUY)!;
+    expect(applyFeedView(chart, frame, next2, vars, palette, null, false, () => null)).toBe(true);
+    expect(setExtremes).not.toHaveBeenCalled();
+    expect((chart.redraw as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(2);
+  });
+
+  it("time labels: as many as fit the bars on screen, in the same places while panning, dates only across days", () => {
+    const frame: ChartFrame = { view: resolveExecution(dataset, BUY)!, countdown: null, counts: {} };
+    const o = buildExecutionOptions(frame, vars, palette, { width: 900, height: 600 }, () => {});
+    const x = o.xAxis as Highcharts.XAxisOptions;
+    const ticks = (min: number, max: number) => (x.tickPositioner as (this: unknown) => number[]).call({ min, max, chart: { plotWidth: 840 } });
+    const full = ticks(-0.5, axisEnd(150));
+    const zoomed = ticks(40.5, 60.5);
+    expect(zoomed.every((t) => t >= 41 && t <= 60)).toBe(true);
+    expect(zoomed.length).toBeGreaterThanOrEqual(5);
+    expect(zoomed[1] - zoomed[0]).toBeLessThan(full[1] - full[0]);
+    /* Panned by a bar: the labels stay on the same bars. */
+    const panned = ticks(41.5, 61.5);
+    expect(panned.filter((t) => zoomed.includes(t)).length).toBeGreaterThanOrEqual(zoomed.length - 1);
+    /* Three months, zoomed into one session: times, not dates. */
+    const long = { ...BUY, [EXECUTION_KEYS.range]: "3M" };
+    const lf: ChartFrame = { view: resolveExecution(dataset, long)!, countdown: null, counts: {} };
+    const lo = buildExecutionOptions(lf, vars, palette, { width: 900, height: 600 }, () => {});
+    const n = lf.view.times.length;
+    const label = (value: number, min: number, max: number) => ((lo.xAxis as Highcharts.XAxisOptions).labels!.formatter as (this: unknown) => string).call({ value, axis: { min, max } });
+    expect(label(n - 10, n - 30, n - 1)).toMatch(/^\d{2}:\d{2}$/);
+    expect(label(10, -0.5, n)).toMatch(/^\d{2} [A-Z][a-z]{2}$/);
+    /* Across days, two labels on one day: the date once, then the time. */
+    const day = (i: number) => new Date(lf.view.times[i]).toISOString().slice(0, 10);
+    const i = lf.view.times.findIndex((_, k) => k > 0 && k + 1 < n && day(k) === day(k + 1) && day(k - 1) !== day(k));
+    const withTicks = (value: number, tickPositions: number[]) => ((lo.xAxis as Highcharts.XAxisOptions).labels!.formatter as (this: unknown) => string).call({ value, axis: { min: -0.5, max: n, tickPositions } });
+    expect(withTicks(i, [i - 1, i, i + 1])).toMatch(/^\d{2} [A-Z][a-z]{2}$/);
+    expect(withTicks(i + 1, [i - 1, i, i + 1])).toMatch(/^\d{2}:\d{2}$/);
   });
 
   it("on a five-minute interval the last bucket moves until a new one opens", () => {
