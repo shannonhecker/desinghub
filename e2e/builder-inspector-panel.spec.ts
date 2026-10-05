@@ -594,3 +594,17 @@ for (const mode of ["dark", "light"] as const) {
     expect(m.untitled, "every toolbar button has a tooltip").toEqual([]);
   });
 }
+
+test("FX Execution: the gauge's value is read-only and equals the canvas figure; its title still edits the canvas", async ({ page }) => {
+  await openFxInEdit(page);
+  const gauge = page.locator('[data-block-id="tpl-fx-passive"]');
+  await gauge.click({ position: { x: 8, y: 60 } });
+  await expect(page.locator(".inspector-stack")).toBeVisible();
+  await expect(page.locator(".component-sidebar").getByRole("slider", { name: "Value" })).toHaveCount(0);
+  const row = page.locator('.component-sidebar [data-field-readonly="value"]');
+  await expect(row).toContainText("From the sample data");
+  const shown = (await row.locator(".inspector-field-value").textContent())!.trim();
+  await expect(gauge.locator(".highcharts-data-label, .highcharts-data-labels").first()).toContainText(shown);
+  await page.locator(".component-sidebar").getByRole("textbox", { name: "Title", exact: true }).fill("Passive share");
+  await expect(gauge.locator(".dh-panel-title")).toHaveText("Passive share");
+});
