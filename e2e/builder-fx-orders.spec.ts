@@ -879,3 +879,60 @@ test.describe("Builder - FX Execution sample orders, touch and phone", () => {
     });
   }
 });
+
+/**
+ * Where the confirmation is drawn. It is over the chart panel for its four
+ * seconds, so it must not sit on anything a reader needs there: every tag
+ * on the price scale (LMT, BID, RTP, ARR, AVG) stays in the clear, on a
+ * phone as on a desk, in every system.
+ */
+test.describe("Builder - FX Execution sample orders, the toast's place", () => {
+  type Rect = { name: string; x: number; y: number; right: number; bottom: number };
+  const touching = (a: Rect, b: Rect) => a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom;
+
+  async function drawn(page: Page) {
+    return stage(page).locator(".dh-exec").evaluate((panel) => {
+      const rect = (el: Element, name: string) => {
+        const r = el.getBoundingClientRect();
+        return { name, x: r.left, y: r.top, right: r.right, bottom: r.bottom };
+      };
+      const message = panel.querySelector(".dh-order-toast > span");
+      const tags = [
+        ...[...panel.querySelectorAll(".dh-exec-pill")].map((el) => rect(el, `price tag ${el.getAttribute("class")?.match(/dh-exec-pill-(\w+)/)?.[1] ?? ""}`)),
+        ...[...panel.querySelectorAll(".dh-order-tag")].map((el) => rect(el, `tag target ${el.getAttribute("class")?.match(/dh-order-tag-(\w+)/)?.[1] ?? ""}`)),
+      ];
+      return { toast: message ? rect(message, "toast") : null, panel: rect(panel, "panel"), tags, opacity: getComputedStyle(panel.querySelector(".dh-order-toast")!).opacity };
+    });
+  }
+
+  for (const width of [375, 1440] as const) {
+    test(`${width}px: in every system the toast covers no price tag, stays inside the panel and the screen`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 812 });
+      await applyFx(page);
+      for (const system of SYSTEMS) {
+        await pickSystem(page, system);
+        await expect(toast(page)).toHaveText("", { timeout: 6_000 });
+        await fillNow(page).click();
+        await submit(page).click();
+        await expect(dialog(page)).toHaveCount(0);
+        await expect(toast(page)).toHaveText(CONFIRMATION);
+        await expect(toast(page)).toHaveAttribute("aria-live", "polite");
+        await expect(stage(page).locator('.dh-exec [role="status"]')).toHaveCount(1);
+        await expect(toast(page).locator("> span")).toHaveCount(1);
+        /* Fully shown (its fade is over) before it is measured. */
+        await expect.poll(async () => (await drawn(page)).opacity).toBe("1");
+        const { toast: message, panel, tags } = await drawn(page);
+        expect(message, `${system}: the toast is drawn`).not.toBeNull();
+        expect(tags.filter((t) => t.name.startsWith("price tag")).length, `${system}: the price scale has its tags`).toBeGreaterThanOrEqual(2);
+        for (const tag of tags) {
+          expect(touching(message!, tag), `${system} at ${width}px: the toast covers the ${tag.name}`).toBe(false);
+        }
+        expect(message!.x, `${system}: inside the panel`).toBeGreaterThanOrEqual(panel.x - 1);
+        expect(message!.right, `${system}: inside the panel`).toBeLessThanOrEqual(panel.right + 1);
+        expect(message!.x).toBeGreaterThanOrEqual(0);
+        expect(message!.right).toBeLessThanOrEqual(width);
+        expect(message!.y, `${system}: on screen`).toBeGreaterThanOrEqual(0);
+      }
+    });
+  }
+});

@@ -11396,6 +11396,16 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
   transition: opacity var(--bc-duration-medium) ease, transform var(--bc-duration-medium) ease;
 }
 .dh-order-toast.is-shown { opacity: 1; transform: none; }
+/* On a phone-width chart a centred toast reaches the price scale and sat on
+   the tag at its top (LMT). There it starts at the plot's left edge and stops
+   short of the scale, the sentence taking a second line: no tag is covered,
+   wherever the panel is scrolled. */
+.dh-exec[data-narrow] .dh-order-toast {
+  max-width: calc(100% - var(--dh-exec-rail) - var(--dh-exec-gutter) - 2 * var(--dh-exec-pad) - var(--dh-order-toast-y));
+  margin-inline: calc(var(--dh-exec-rail) + var(--dh-exec-pad)) auto;
+}
+.dh-exec[data-narrow] .dh-order-toast > span { align-items: flex-start; white-space: normal; text-wrap: balance; }
+.dh-exec[data-narrow] .dh-order-toast-dot { margin-top: calc(var(--dh-cell-dot) / 2); }
 .dh-order-toast > span {
   display: inline-flex;
   align-items: center;
