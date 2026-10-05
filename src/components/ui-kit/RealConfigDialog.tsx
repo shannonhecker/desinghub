@@ -190,7 +190,7 @@ function AvailablePane({ model, kit }: { model: ConfigDialogModel; kit: Kit }) {
   const branch = (id: string, label: string, count: number, level: number, children: React.ReactNode) => {
     const open = !closed.has(id);
     return (
-      <li role="treeitem" aria-expanded={open} aria-level={level} aria-selected={false} tabIndex={current === id ? 0 : -1} data-node={id}
+      <li role="treeitem" aria-label={`${label} (${count})`} aria-expanded={open} aria-level={level} aria-selected={false} tabIndex={current === id ? 0 : -1} data-node={id}
         className="dh-cfg-node" onFocus={(e) => { if (e.target === e.currentTarget) setActive(id); }}
         onClick={(e) => { e.stopPropagation(); setActive(id); toggle(id); }}>
         <span className="dh-cfg-row" style={{ "--dh-cfg-level": level - 1 } as React.CSSProperties}>
