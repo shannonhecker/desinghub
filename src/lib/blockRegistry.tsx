@@ -11,6 +11,8 @@ import {
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 import { beginHistoryTransaction } from "@/lib/builderHistory";
+import { useBoundData } from "@/components/builder/useBoundData";
+import { PANEL_DEFAULT_HEIGHT } from "@/lib/panelMetrics";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -142,16 +144,23 @@ function useBlockProps(blockId: string) {
    ═══════════════════════════════════════════════════════════ */
 
 type FieldDef =
-  | { type: "text"; propKey: string; label: string; placeholder?: string }
+  /** `hideWhen: "pinnedRecord"`: a record card bound to data that always
+     shows a record never draws this text, so it is not offered there. */
+  | { type: "text"; propKey: string; label: string; placeholder?: string; hideWhen?: "pinnedRecord" }
   | { type: "textarea"; propKey: string; label: string; rows?: number }
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
-  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string }
+  /** `dataDriven`: when the block's figure comes from a data binding the
+     slider would write a prop nothing reads, so the field shows the live
+     figure read-only instead (rule: a control changes the canvas, or it is
+     not offered). `fallback`: what the block draws while the prop is unset,
+     so the read-out matches the canvas (defaults to `min`). */
+  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; dataDriven?: boolean; fallback?: (props: Record<string, unknown>) => number }
   /** Stock-image picker: a categorized grid of verified stock photos +
      a paste-your-own-URL input. Writes a URL to `propKey` (the block's
      `src`). */
   | { type: "image"; propKey: string; label: string }
-  | { type: "static"; text: string }
+  | { type: "static"; text: string; when?: "pinnedRecord" }
   /** Custom action button rendered inline inside the inspector.
      Used by LayoutGroup's "Ungroup" affordance. The action reads
      the block's location in the store and mutates accordingly. */
@@ -161,11 +170,15 @@ type FieldDef =
    A chart's kind is its `chartType` prop, so swapping it in place is one
    select. The two families take different data (series over categories vs.
    named parts of a whole), so each offers only the kinds its data can draw. */
+/* Subtitle and "View by" are drawn in the panel's header, so they only show
+   once "Framed panel" is on; their labels say so. */
 const PANEL_FIELDS: FieldDef[] = [
-  { type: "text", propKey: "subtitle", label: "Subtitle", placeholder: "e.g. (Stacked)" },
   { type: "toggle", propKey: "panel", label: "Framed panel" },
-  { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Asset type, Region" },
-  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+  { type: "text", propKey: "subtitle", label: "Subtitle (framed panel)", placeholder: "e.g. (Stacked)" },
+  { type: "text", propKey: "viewByCsv", label: "View by options (framed panel)", placeholder: "Asset type, Region" },
+  /* Unset, a bare chart is 250 px tall (SimulatedHighchart) and a framed one
+     the panel default. */
+  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px", fallback: (p) => (p.panel === true ? PANEL_DEFAULT_HEIGHT : 250) },
 ];
 const CATEGORY_CHART_FIELDS: FieldDef[] = [
   { type: "text", propKey: "title", label: "Title" },
@@ -180,6 +193,7 @@ const CATEGORY_CHART_FIELDS: FieldDef[] = [
     { value: "stacked-area", label: "Stacked area" },
     { value: "combination", label: "Combination" },
   ]},
+  { type: "toggle", propKey: "hideLegend", label: "Hide legend" },
   ...PANEL_FIELDS,
 ];
 const PART_CHART_FIELDS: FieldDef[] = [
@@ -319,15 +333,28 @@ function TextAreaField({ id, value, rows, ariaLabel, onChange }: { id: string; v
 /* ── Schema-driven inspector renderer ──
    Every control is builder chrome (one style per control type): the panel
    edits the block, the canvas shows the design system. */
+/** A record card bound to data with no way to clear it always shows a record. */
+const pinnedRecord = (props: Record<string, unknown>) => Boolean(props.binding) && props.clearable === false;
+
+/** The figure a data-driven gauge shows, formatted as on the canvas. */
+export function boundValueText(value: number, props: Record<string, unknown>, fallbackSuffix = ""): string {
+  const decimals = typeof props.valueDecimals === "number" ? props.valueDecimals : undefined;
+  const suffix = typeof props.valueSuffix === "string" ? props.valueSuffix : props.valueMax === undefined ? fallbackSuffix : "";
+  return `${decimals !== undefined ? value.toFixed(decimals) : String(value)}${suffix}`;
+}
+
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
   const { props, set } = useBlockProps(blockId);
   const idBase = React.useId();
+  const bound = useBoundData(props);
+  const uploaded = useBuilder((s) => Boolean(s.reportData));
   return (
     <>
       {fields.map((f, i) => {
         const id = `${idBase}-${i}`;
         switch (f.type) {
           case "text":
+            if (f.hideWhen === "pinnedRecord" && pinnedRecord(props)) return null;
             return (
               <InspectorField key={i} label={f.label} htmlFor={id}>
                 <TextField id={id} ariaLabel={f.label} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
@@ -359,7 +386,18 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             );
           }
           case "range": {
-            const val = Number(props[f.propKey] ?? f.min ?? 0);
+            if (f.dataDriven && bound?.view === "value" && bound.value != null) {
+              return (
+                <div key={i} className="inspector-field" data-field-readonly={f.propKey}>
+                  <div className="inspector-field-label">
+                    <span>{f.label}</span>
+                    <span className="inspector-field-value">{boundValueText(bound.value, props, f.suffix ?? "")}</span>
+                  </div>
+                  <p className="inspector-field-hint">{uploaded ? "From your data" : "From the sample data"}</p>
+                </div>
+              );
+            }
+            const val = Number(props[f.propKey] ?? f.fallback?.(props) ?? f.min ?? 0);
             return (
               <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
                 <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
@@ -377,6 +415,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
               </InspectorField>
             );
           case "static":
+            if (f.when === "pinnedRecord" && !pinnedRecord(props)) return null;
             return <p key={i} className="inspector-field-hint">{f.text}</p>;
           case "action":
             return <ActionButton key={i} blockId={blockId} label={f.label} action={f.action} />;
@@ -504,6 +543,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedButton", label: "Button", icon: "smart_button", defaults: { variant: "primary", label: "New Button" }, fields: [
     { type: "text", propKey: "label", label: "Label" },
     { type: "select", propKey: "variant", label: "Variant", options: [{ value: "primary", label: "Primary (CTA)" }, { value: "secondary", label: "Secondary" }, { value: "outline", label: "Outline" }, { value: "ghost", label: "Ghost / Text" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "SimulatedTitle", label: "Title / Heading", icon: "title", defaults: { level: "h2", text: "New Heading" }, fields: [
     { type: "text", propKey: "text", label: "Text" },
@@ -511,6 +551,9 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "SimulatedTextInput", label: "Text Input", icon: "text_fields", defaults: { placeholder: "Enter text...", label: "Label" }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "value", label: "Value" },
+    { type: "select", propKey: "validationStatus", label: "Validation", options: [{ value: "", label: "None" }, { value: "error", label: "Error" }, { value: "warning", label: "Warning" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "Alert", label: "Alert", icon: "warning", defaults: { variant: "info", title: "Update Available", message: "A new version is ready." }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "text", propKey: "message", label: "Message" },
@@ -546,12 +589,14 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "label", label: "Label", placeholder: "e.g. Currency" },
     { type: "text", propKey: "value", label: "Selected value" },
     { type: "text", propKey: "optionsCsv", label: "Options (comma separated)", placeholder: "GBP, USD, EUR" },
-    { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "placeholder", label: "Placeholder (shown when nothing is selected)" },
   ]},
 
   /* ── Data Display ── */
   { type: "SimulatedDataTable", label: "Data Table", icon: "table_chart", defaults: {}, fields: [
-    { type: "static", text: "Use the Describe bar above the table to fill it with AI, e.g. \"8 customers with plan and MRR\"." },
+    { type: "select", propKey: "maxRows", label: "Rows shown", options: [{ value: "", label: "All rows" }, { value: "3", label: "3" }, { value: "5", label: "5" }, { value: "8", label: "8" }, { value: "10", label: "10" }] },
+    { type: "text", propKey: "hiddenColumnsCsv", label: "Hide columns (comma separated)", placeholder: "e.g. Seats, Date" },
+    { type: "static", text: "To fill the table with new data, ask in the chat, e.g. \"8 customers with plan and MRR\"." },
   ]},
   { type: "SimulatedProgress", label: "Progress Bar", icon: "percent", defaults: { label: "Uploading assets...", value: 50 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
@@ -602,7 +647,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "HighchartRadar", label: "Radar", icon: "radar", defaults: { chartType: "radar", title: "Capability profile" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartCorridor", label: "Pathway Corridor", icon: "ssid_chart", defaults: { chartType: "corridor", title: "Pathway" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
-    { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
+    { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%", dataDriven: true },
   ]},
   { type: "HighchartHeatmap", label: "Heatmap", icon: "grid_on", defaults: { chartType: "heatmap", title: "Correlation Matrix" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
   { type: "HighchartTreemap", label: "Treemap", icon: "grid_view", defaults: { chartType: "treemap", title: "Portfolio Treemap" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
@@ -677,6 +722,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedStatCard", label: "Stat Card", icon: "monitoring", defaults: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "value", label: "Value" },
     { type: "range", propKey: "pct", label: "Progress", max: 100, suffix: "%" },
+    { type: "toggle", propKey: "hideProgress", label: "Hide progress bar" },
   ]},
 
   /* ── Zone-specific types ── */
@@ -717,8 +763,9 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   /* ── Record panel: the detail of the row a grid has selected ── */
   { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
-    { type: "text", propKey: "title", label: "Title" },
-    { type: "text", propKey: "emptyText", label: "Empty text" },
+    { type: "text", propKey: "title", label: "Title", hideWhen: "pinnedRecord" },
+    { type: "text", propKey: "emptyText", label: "Empty text", hideWhen: "pinnedRecord" },
+    { type: "static", text: "This card shows the selected record from the data. Its heading and rows come from that record.", when: "pinnedRecord" },
   ]},
   /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
   { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {
@@ -785,6 +832,12 @@ const BLOCK_DEFS: BlockDef[] = [
 /* ═══════════════════════════════════════════════════════════
    Lookup helpers - same public API as before
    ═══════════════════════════════════════════════════════════ */
+
+/** Each block type's Content field prop keys (for the panel-vs-renderer
+ *  contract test: a field must write a prop the renderers draw). */
+export const BLOCK_FIELD_KEYS: Record<string, string[]> = Object.fromEntries(
+  BLOCK_DEFS.map((b) => [b.type, b.fields.flatMap((f) => ("propKey" in f ? [f.propKey] : []))]),
+);
 
 /** Library blueprints for drag-and-drop */
 export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({

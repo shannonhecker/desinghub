@@ -31,6 +31,7 @@
  */
 
 import { dropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
+import { publicAssetUrl } from "@/lib/sampleImages";
 
 /** An inline dropdown: its label on the left, the control on the right, on
  *  one line (see InlineField in RealComponentRenderer). */
@@ -179,6 +180,20 @@ function uoauiButtonClass(variant: string): string {
 /* ════════════════════════════════════════════════════════════════════
    UOAUI core blocks — real `.a-*` markup (CSS injected by UoauiReal).
    ════════════════════════════════════════════════════════════════════ */
+/* The avatar's photo, falling back to the initials when the image fails to
+   load (as Salt, M3 and Fluent do), so a dead host never shows a broken image. */
+function UoauiAvatarFace({ src, initials }: { src: string; initials: string }): React.ReactElement {
+  const [failed, setFailed] = React.useState(false);
+  const photo = src && !failed;
+  return React.createElement(
+    "div",
+    { className: "a-avatar", style: photo ? { overflow: "hidden", padding: 0 } : undefined },
+    photo
+      ? React.createElement("img", { src: publicAssetUrl(src), alt: initials, onError: () => setFailed(true), style: { width: "100%", height: "100%", objectFit: "cover" } })
+      : initials,
+  );
+}
+
 const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
   SimulatedButton: (p) =>
     React.createElement(
@@ -365,7 +380,8 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     return React.createElement(
       "div",
       { style: { position: "relative", display: "inline-flex" } },
-      React.createElement("div", { className: "a-avatar" }, s(p.initials, "?")),
+      /* Keyed on the photo, so a new photo gets a fresh try. */
+      React.createElement(UoauiAvatarFace, { key: s(p.src), src: s(p.src), initials: s(p.initials, "?") }),
       dot,
     );
   },
@@ -378,7 +394,7 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
       { className: "a-card", style: { padding: 16 } },
       React.createElement("div", { style: { fontSize: 11, color: "var(--a-fg-3)", fontWeight: 500 } }, s(p.label, "Metric")),
       React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: "var(--a-fg)", letterSpacing: "-0.02em", margin: "6px 0 10px" } }, s(p.value, "0")),
-      React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${pct}%` } })),
+      p.hideProgress ? null : React.createElement("div", { className: "a-progress-track" }, React.createElement("div", { className: "a-progress-fill", style: { width: `${pct}%` } })),
     );
   },
 
@@ -555,7 +571,9 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       warn: status === "warning",
       warnText: status === "warning" ? "This field has a warning" : undefined,
       disabled: Boolean(p.disabled),
-      ...(ctx?.kit ? {} : { readOnly: true }),
+      /* Carbon's read-only styling wins over disabled, so a disabled field is
+         not also marked read-only. */
+      ...(ctx?.kit || p.disabled ? {} : { readOnly: true }),
     });
   },
 
@@ -688,7 +706,7 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       React.createElement("p", { className: "cds--type-heading-04" }, s(p.value, "0")),
       /* `pct` is progress toward a goal (a bar in the other four systems),
          not a signed change - see the matching export entry. */
-      React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
+      p.hideProgress ? null : React.createElement(CarbonProgressBar, { label: s(p.label, "Metric"), hideLabel: true, value: num(p.pct, 0), max: 100 }),
     ),
 
   SimulatedAccordion: (p) =>

@@ -234,14 +234,14 @@ describe("bug 5: inspector order and leaf/container disclosure", () => {
     /* 5 Oct inspector redesign: the block's own properties are titled "Content"; the container section is "Layout". */
     expect(titles[0]).toBe("Content");
     expect(titles.indexOf("Size")).toBeGreaterThan(0);
-    expect(titles.indexOf("Layout")).toBeGreaterThan(titles.indexOf("Size"));
+    expect(titles.indexOf("Body layout")).toBeGreaterThan(titles.indexOf("Size"));
   });
 
   it("Auto layout is collapsed by default for LEAF blocks", () => {
     seed(checkbox);
     const c = render(<ComponentLibrary />);
     const head = [...c.querySelectorAll(".inspector-section-head")].find(
-      (h) => h.textContent?.trim() === "Layoutchevron_right" || h.textContent?.trim() === "Layout" || /^Layout\b/.test(h.textContent?.trim() ?? ""),
+      (h) => /^Body layout\b/.test(h.textContent?.trim() ?? ""),
     )!;
     expect(head.getAttribute("aria-expanded")).toBe("false");
     /* Collapsed → its body (Direction / Distribute) is not rendered. */
@@ -252,7 +252,7 @@ describe("bug 5: inspector order and leaf/container disclosure", () => {
     seed(group);
     const c = render(<ComponentLibrary />);
     const head = [...c.querySelectorAll(".inspector-section-head")].find(
-      (h) => h.textContent?.trim() === "Layoutchevron_right" || h.textContent?.trim() === "Layout" || /^Layout\b/.test(h.textContent?.trim() ?? ""),
+      (h) => /^Body layout\b/.test(h.textContent?.trim() ?? ""),
     )!;
     expect(head.getAttribute("aria-expanded")).toBe("true");
     expect(c.textContent).toContain("Distribute");
@@ -268,7 +268,7 @@ describe("bug 5: inspector order and leaf/container disclosure", () => {
     const c = render(<ComponentLibrary />);
     /* Expand the (leaf-collapsed) Auto layout section. */
     const head = [...c.querySelectorAll(".inspector-section-head")].find(
-      (h) => h.textContent?.trim() === "Layoutchevron_right" || h.textContent?.trim() === "Layout" || /^Layout\b/.test(h.textContent?.trim() ?? ""),
+      (h) => /^Body layout\b/.test(h.textContent?.trim() ?? ""),
     )! as HTMLButtonElement;
     act(() => head.click());
     expect(c.textContent).toContain("Direction");

@@ -24,6 +24,9 @@ import {
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
+import { showToast } from "@/lib/toast";
+import { undo } from "@/lib/builderHistory";
+import { useInspectorPin } from "@/store/useInspectorPin";
 import { InspectorSwitch } from "@/lib/blockRegistry";
 import { plainBlockName } from "@/lib/blockNames";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
@@ -264,6 +267,60 @@ export function ComponentLibrary() {
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [selectedBlockId]);
 
+  /* The LayoutGroup that holds the selected block, if it is nested. */
+  const selectedParentGroupId = (() => {
+    if (!selectedBlockId) return null;
+    for (const arr of [blocks, headerBlocks, sidebarBlocks, footerBlocks]) {
+      for (const b of arr) if (b.children?.some((c) => c.id === selectedBlockId)) return b.id;
+    }
+    return null;
+  })();
+  const duplicateSelected = () => {
+    if (!selectedBlockId) return;
+    const st = useBuilder.getState();
+    st.duplicateBlocks(selectedBlockZone ?? "body", [selectedBlockId]);
+    /* The clone is the new selection (the store selects it): pin it too. */
+    const next = useBuilder.getState().selectedBlockId;
+    if (next && next !== selectedBlockId) useInspectorPin.getState().pin(next);
+  };
+  const deleteSelected = () => {
+    if (!selectedBlockId) return;
+    const st = useBuilder.getState();
+    if (selectedParentGroupId) st.removeBlockFromGroup(selectedParentGroupId, selectedBlockId);
+    else st.removeBlockFromZone(selectedBlockZone ?? "body", selectedBlockId);
+    /* The same toast every canvas delete shows. */
+    showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: undo } });
+    goBackToLibrary();
+  };
+
+  /* Back from a selected block to the library and templates (owner, 5 Oct:
+     there was no visible way back). Clears the selection, which puts the
+     panel in browse mode at the top; the panel stays open at the same width,
+     so the canvas does not move. Focus lands on the panel's title so
+     keyboard and screen-reader users arrive in the new view. */
+  const titleRef = useRef<HTMLSpanElement | null>(null);
+  const focusTitleRef = useRef(false);
+  const goBackToLibrary = () => {
+    focusTitleRef.current = true;
+    useBuilder.getState().clearSelection();
+    useInspectorPin.getState().unpin();
+  };
+  useEffect(() => {
+    if (!selectedBlockId && focusTitleRef.current) {
+      focusTitleRef.current = false;
+      titleRef.current?.focus();
+    }
+  }, [selectedBlockId]);
+  /* Escape with focus inside the panel but not in a field does the same. */
+  const onPanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Escape" || e.defaultPrevented || !selectedBlockId) return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    goBackToLibrary();
+  };
+
   /* Escape inside a panel field leaves the field and stops there (the
      builder's own Escape, which clears the selection, is for the canvas). */
   const onStackKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -278,14 +335,20 @@ export function ComponentLibrary() {
 
   return (
     <HoverContext.Provider value={hoverCtx}>
-    <div className="component-library">
+    <div className="component-library" onKeyDown={onPanelKeyDown}>
       {/* Hover-preview overlay - positioned via portal into document.body
           so it escapes the sidebar's overflow clipping. */}
       <HoverPreview state={hoverState} />
 
       <div className="lib-header">
-        <div className="lib-header-text">
-          <span className="lib-header-title">
+        <div className={`lib-header-text${selectedBlock && FieldsComponent ? " lib-header-text--inspect" : ""}`}>
+          {selectedBlock && FieldsComponent && (
+            <button type="button" className="lib-back-btn" onClick={goBackToLibrary}>
+              <ChromeIcon name="chevron_left" />
+              <span>Components and templates</span>
+            </button>
+          )}
+          <span className="lib-header-title" ref={titleRef} tabIndex={-1}>
             {selectedBlock && FieldsComponent ? plainBlockName(selectedBlock.type) : "Components"}
           </span>
           {selectedBlock && FieldsComponent && (
@@ -346,6 +409,21 @@ export function ComponentLibrary() {
             {selectedBlock.type.startsWith("Highchart") && (
               <ChartColoursSection block={selectedBlock} />
             )}
+
+            {/* Block actions (5 Oct): the same store calls as the canvas pill
+                and the keyboard, so Undo restores a deleted block. */}
+            <div className="inspector-actions" role="group" aria-label="Block actions">
+              {!selectedParentGroupId && (
+                <button type="button" className="inspector-action-btn" aria-label={`Duplicate ${plainBlockName(selectedBlock.type)}`} onClick={duplicateSelected}>
+                  <ChromeIcon name="content_copy" />
+                  <span>Duplicate</span>
+                </button>
+              )}
+              <button type="button" className="inspector-action-btn inspector-action-btn--danger" aria-label={`Delete ${plainBlockName(selectedBlock.type)}`} onClick={deleteSelected}>
+                <ChromeIcon name="delete" />
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -624,40 +702,6 @@ function LayoutSection({
         </div>
       </div>
 
-      {/* P3-3 column-start: pin a spanning block to a grid column. Shown only for
-          a sub-row block in a grid zone (where pinning is meaningful). The field
-          reads/writes the zone's ACTUAL column count (1..N); the value is stored
-          DS-agnostic canonical-12, so the pin holds its position across a DS /
-          column-count switch. Empty = Auto (auto-place, today's flow). */}
-      {gridCols !== null && isSpanning && (
-        <div className="inspector-field">
-          <ScrubNumberField
-            layout="stacked"
-            label="Column start"
-            value={layout.gridCol !== undefined ? String(Math.min(maxStart, toDisplayColumn(layout.gridCol, gridCols))) : ""}
-            placeholder="Auto"
-            min={1}
-            max={maxStart}
-            ariaLabel="Grid column start"
-            onValueChange={(v) => {
-              const n = parseInt(v, 10);
-              updateBlockLayout(zone, block.id, {
-                gridCol:
-                  Number.isFinite(n) && n >= 1
-                    ? toCanonicalColumn(Math.min(maxStart, n), gridCols)
-                    : undefined,
-              });
-            }}
-          />
-          {/* P4 honesty: only when a pin is actually set on an M3 canvas.
-              No exporter change — M3 flexbox auto-place stays; copy tells
-              the truth instead. */}
-          {isM3 && layout.gridCol !== undefined && (
-            <p className="inspector-section-scope">Material export auto-places by order; the column pin applies in the other systems.</p>
-          )}
-        </div>
-      )}
-
       {/* P4 honesty: in freeform a hug/auto or px width can't take a column
           pin (gridCol is honored only on % / fr spans). Shown ONLY for an
           explicitly set non-fill width — fill is the default, so surfacing
@@ -718,6 +762,40 @@ function LayoutSection({
       {/* Advanced sizing — collapsed by default so Layout leads with its
           core controls (Width + Align). */}
       <InspectorSubgroup id="layout-advanced" title="Advanced">
+      {/* P3-3 column-start: pin a spanning block to a grid column. Shown only for
+            a sub-row block in a grid zone (where pinning is meaningful). The field
+            reads/writes the zone's ACTUAL column count (1..N); the value is stored
+            DS-agnostic canonical-12, so the pin holds its position across a DS /
+            column-count switch. Empty = Auto (auto-place, today's flow). */}
+        {gridCols !== null && isSpanning && (
+          <div className="inspector-field">
+            <ScrubNumberField
+              layout="stacked"
+              label="Column start"
+              value={layout.gridCol !== undefined ? String(Math.min(maxStart, toDisplayColumn(layout.gridCol, gridCols))) : ""}
+              placeholder="Auto"
+              min={1}
+              max={maxStart}
+              ariaLabel="Grid column start"
+              onValueChange={(v) => {
+                const n = parseInt(v, 10);
+                updateBlockLayout(zone, block.id, {
+                  gridCol:
+                    Number.isFinite(n) && n >= 1
+                      ? toCanonicalColumn(Math.min(maxStart, n), gridCols)
+                      : undefined,
+                });
+              }}
+            />
+            {/* P4 honesty: only when a pin is actually set on an M3 canvas.
+                No exporter change — M3 flexbox auto-place stays; copy tells
+                the truth instead. */}
+            {isM3 && layout.gridCol !== undefined && (
+              <p className="inspector-section-scope">Material export auto-places by order; the column pin applies in the other systems.</p>
+            )}
+          </div>
+        )}
+
         {/* Min / max width (px). Empty string clears the constraint. */}
         <div className="inspector-field-row">
           <div className="inspector-field">
@@ -866,7 +944,7 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
        LEAF blocks (anything but a Group column) collapse it by default —
        it edits the container, not the selected block — and hide the
        container-only Columns / Distribute controls. */
-    <InspectorSection id={`zone-layout-${zone}`} title="Layout" defaultOpen={!leaf}>
+    <InspectorSection id={`zone-layout-${zone}`} title={`${label} layout`} defaultOpen={!leaf}>
       {/* Scope lead-in: this cluster edits the parent CONTAINER's flow, not the
           selected leaf block. Without it the Auto-layout suite reads as the
           selected block's own controls (QA-sweep batch 2, finding #6). */}
@@ -875,7 +953,6 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
       <div className="inspector-field">
         <label className="inspector-field-label">
           <span>Direction</span>
-          <span className="inspector-zone-hint">{label}</span>
         </label>
         <div className="inspector-toggle-group" role="radiogroup" aria-label="Auto-layout direction">
           {([
@@ -1607,42 +1684,42 @@ function LibraryBrowser() {
           padded sticky band, so the magnifier sits inside the box. */}
       <div className="lib-search lib-search-sticky">
         <label className="dh-visually-hidden" htmlFor="lib-search-input">Search component library</label>
-        <div className="lib-search-field">
-          <ChromeIcon name="search" className="lib-search-icon" aria-hidden="true" />
-          <input
-            id="lib-search-input"
-            ref={searchRef}
-            type="search"
-            className="lib-search-input"
-            placeholder="Search components  (press /)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-describedby={hasQuery ? "lib-search-count" : undefined}
-          />
-          {query && (
-            <button
-              type="button"
-              className="lib-search-clear"
-              onClick={() => { setQuery(""); searchRef.current?.focus(); }}
-              aria-label="Clear search"
-            >
-              <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
-            </button>
-          )}
-        </div>
-        {!hasQuery && (
-          <div className="lib-search-row">
+        <div className="lib-search-row">
+          <div className="lib-search-field">
+            <ChromeIcon name="search" className="lib-search-icon" aria-hidden="true" />
+            <input
+              id="lib-search-input"
+              ref={searchRef}
+              type="search"
+              className="lib-search-input"
+              placeholder="Search components  (press /)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-describedby={hasQuery ? "lib-search-count" : undefined}
+            />
+            {query && (
+              <button
+                type="button"
+                className="lib-search-clear"
+                onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+                aria-label="Clear search"
+              >
+                <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
+              </button>
+            )}
+          </div>
+          {!hasQuery && (
             <button
               type="button"
               className="lib-collapse-toggle"
               onClick={() => setAllCategories(!anyCategoryOpen)}
-              aria-label={anyCategoryOpen ? "Collapse all categories" : "Expand all categories"}
+              aria-label={anyCategoryOpen ? "Collapse all" : "Expand all"}
+              title={anyCategoryOpen ? "Collapse all" : "Expand all"}
             >
               <ChromeIcon name={anyCategoryOpen ? "unfold_less" : "unfold_more"} className="lib-collapse-icon" aria-hidden="true" />
-              {anyCategoryOpen ? "Collapse all" : "Expand all"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {hasQuery && totalVisible > 0 && (
@@ -1652,7 +1729,16 @@ function LibraryBrowser() {
       )}
 
       {totalVisible === 0 && (
-        <div className="lib-empty">No components match &ldquo;{query}&rdquo;.</div>
+        <div className="lib-empty">
+          <p className="lib-empty-text">No components match &ldquo;{query}&rdquo;.</p>
+          <button
+            type="button"
+            className="lib-empty-clear"
+            onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+          >
+            Clear search
+          </button>
+        </div>
       )}
 
       {/* Recently used — click-to-re-add the last handful of components.

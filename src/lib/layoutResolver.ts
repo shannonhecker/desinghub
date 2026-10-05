@@ -253,6 +253,14 @@ export function computeItemStyle(
       style.width = widthCss;
       style.justifySelf = "start";
     }
+    /* A zone-level justify (center, end, space-*) sets justify-items on the
+       grid, which would shrink every spanning block to its content width:
+       charts and grids, whose content is 100% of their box, collapsed to
+       nothing (the blank body, 5 Oct). A block that spans tracks keeps
+       filling its span whatever the zone's distribution. */
+    if (zoneLayout.justify && style.gridColumn !== undefined && style.justifySelf === undefined) {
+      style.justifySelf = "stretch";
+    }
     /* Narrow-frame spans, published as custom properties: the container
        queries in builder.css read them at tablet and phone width. */
     const responsive = style as Record<string, string | number>;
@@ -296,6 +304,26 @@ export function computeItemStyle(
     if (zoneLayout.mode === "row") {
       style.flex = "1 1 auto";
       style.minWidth = minCss || "min-content";
+    } else {
+      style.width = "100%";
+    }
+  } else if (typeof layout.width === "string" && layout.width.endsWith("fr") && Number.isFinite(parseFloat(layout.width))) {
+    /* An fr width is a share of a 12-column grid. `fr` is not a length a
+       flex container can take: as a flex-basis or width it is invalid CSS, so
+       the block fell back to its content width, and a chart or grid (whose
+       content is 100% of its box) collapsed to nothing when a grid zone was
+       switched to Row or Stack (the blank body, 5 Oct). In a row the share
+       becomes a percentage of the line (less one gap, so a full row of
+       shares still fits); in a stack every block takes the full width. */
+    if (zoneLayout.mode === "row") {
+      const pct = Math.max(1, Math.min(100, (parseFloat(layout.width) / 12) * 100));
+      const colGap = normalizeGap(zoneLayout.gap)?.col ?? 0;
+      const basis = colGap > 0 ? `calc(${+pct.toFixed(4)}% - ${colGap}px)` : `${+pct.toFixed(4)}%`;
+      style.flex = `${grow} 1 ${basis}`;
+      style.width = basis;
+      /* No wrap: the shares shrink to fit the one line instead of running
+         past the zone's edge, where they would be clipped out of reach. */
+      if (zoneLayout.wrap === false && !minCss) style.minWidth = 0;
     } else {
       style.width = "100%";
     }
