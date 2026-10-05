@@ -1,40 +1,54 @@
 "use client";
 
 /**
- * /landing-southleft — sibling prototype to evaluate a restrained,
- * editorial-minimal direction (inspired by southleft.com) against the
- * orbital/maximalist direction on feat/hero-orbital-tension (PR #140).
+ * Landing page: "product studio" direction.
  *
- * Scoping: all styles live behind .landing-southleft (see ./landing-southleft.css).
- * No --dh-* / --a-* / DS tokens are redefined. Local tokens are --lsl-*.
+ * One idea, executed fully: the same finance screen in two design systems at
+ * once, with a divider the visitor drags. The hero pairs a two-line headline
+ * and the real prompt with that instrument. Every image under
+ * /public/showcase is a capture of the running builder (the Analytics Home
+ * template in Present mode, 5 systems x light/dark); nothing is redrawn. The
+ * walkthrough video is a screen recording of the builder.
  *
- * Scroll: globals.css gates page-scroll behind :has(.hero). The root
- * element carries both `landing-southleft` and `hero` so this page scrolls
- * without us touching globals.
+ * Scoping: all styles live behind .landing-southleft (see ./landing.css).
+ * Local tokens are --lsl-*; no --dh-* / --a-* / DS tokens are redefined.
  *
- * Motion: minimal fade-in on scroll only. No parallax, no chromatic, no
- * cursor effects (those belong to PR #140's direction).
+ * Scroll: globals.css gates page scroll behind :has(.hero). The root element
+ * carries both `landing-southleft` and `hero` so this page scrolls without
+ * touching globals.
  *
- * Copy rule (Shannon, project-wide): no em-dashes / en-dashes in display
+ * Motion: the divider. It sweeps when the visitor picks a system and makes
+ * one short pass on first view; both are skipped under reduced motion. No
+ * scroll reveals: all content is visible without JavaScript.
+ *
+ * Copy rule (Shannon, project-wide): no em dashes or en dashes in display
  * copy. Colons, commas, periods only.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   motion,
   useScroll,
   useTransform,
   useMotionTemplate,
   useReducedMotion,
-  useSpring,
-  type MotionValue,
 } from "framer-motion";
 import Link from "next/link";
 
+import { EXPORT_SAMPLES } from "./landingExports";
+import { canPrefetchBuilder, subscribePrefetch } from "./landingPrefetch";
+import {
+  SYSTEMS,
+  differences,
+  specOf,
+  type Accent,
+  type Mode,
+  type SystemId,
+} from "./landingSystems";
 import "./landing.css";
 
 /** uoaui mark (the "ao" with macron). Inline so we can recolor parts
-    independently — body cream, macron orange-coral. Source: public/aologo.svg. */
+    independently: body white, macron accent. Source: public/aologo.svg. */
 function UoauiMark({ className }: { className?: string }) {
   return (
     <svg
@@ -51,452 +65,11 @@ function UoauiMark({ className }: { className?: string }) {
   );
 }
 
-/* ── Card hero graphics ─────────────────────────────────────────────────
-   Miniature builder-derived demonstrations. Each one ANIMATES the
-   specific behaviour the card claims. Hand-rolled SVG + CSS keyframes
-   (no GSAP). All respect prefers-reduced-motion via .css. */
-
-/** Card 1: a single mini-card morphs through the five DS styles —
-    rendering Salt → Material 3 → Fluent → Carbon → uoaui in turn.
-    Demonstrates "Five systems, side by side": the SAME comp, swapped. */
-function GraphicSystemMorph() {
-  return (
-    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-morph" aria-hidden="true">
-      {/* Builder canvas hairline */}
-      <rect x="20" y="20" width="280" height="180" rx="12"
-            fill="none" stroke="currentColor" strokeOpacity="0.10" strokeWidth="1" />
-      {/* The morphing card surface */}
-      <rect className="lsl-morph-card"
-            x="60" y="50" width="200" height="120"
-            rx="8" fill="#FFFFFF" />
-      {/* Title line */}
-      <rect x="76" y="68" width="90" height="8" rx="2"
-            fill="#1E1E1E" opacity="0.85" className="lsl-morph-ink" />
-      {/* Body lines */}
-      <rect x="76" y="86" width="150" height="5" rx="2"
-            fill="#1E1E1E" opacity="0.32" className="lsl-morph-ink-faint" />
-      <rect x="76" y="96" width="120" height="5" rx="2"
-            fill="#1E1E1E" opacity="0.32" className="lsl-morph-ink-faint" />
-      {/* Button — morphs radius + fill across systems */}
-      <rect className="lsl-morph-btn"
-            x="76" y="128" width="74" height="26"
-            rx="6" fill="#0D7A95" />
-      {/* Mono label below — five stacked, opacity-cycled to match the
-          morph step. Only one visible at a time. */}
-      {["SALT", "MATERIAL 3", "FLUENT 2", "CARBON", "UOAUI"].map((label, i) => (
-        <text
-          key={label}
-          x="160"
-          y="194"
-          textAnchor="middle"
-          className={`lsl-morph-label lsl-morph-label-${i + 1}`}
-        >
-          {label}
-        </text>
-      ))}
-    </svg>
-  );
-}
-
-/** Card 2: tokens emit from a left-side rail and fly into a component
-    card on the right, changing its surface + accent on each strike.
-    Demonstrates "Tokens travel with the block". */
-function GraphicTokenFlow() {
-  return (
-    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-tokens" aria-hidden="true">
-      {/* Token rail (left) */}
-      <rect x="20" y="30" width="68" height="160" rx="8"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.14" />
-      {/* Token rail rows */}
-      {[0, 1, 2, 3].map((i) => (
-        <g key={i}>
-          <rect x="30" y={46 + i * 36} width="14" height="14" rx="3"
-                fill={["#A78BFA", "#F0B5A4", "#A78BFA", "currentColor"][i]} />
-          <rect x="50" y={50 + i * 36} width="30" height="6" rx="2"
-                fill="currentColor" opacity="0.5" />
-        </g>
-      ))}
-      {/* Component card (right) — surface contrasts wrapper bg via .lsl-tokens-target */}
-      <rect className="lsl-tokens-target"
-            x="148" y="50" width="148" height="120" rx="12" />
-      <rect x="166" y="68" width="84" height="8" rx="2" fill="currentColor" opacity="0.85"
-            className="lsl-on-tokens-target" />
-      <rect x="166" y="86" width="110" height="5" rx="2" fill="currentColor" opacity="0.30"
-            className="lsl-on-tokens-target" />
-      <rect x="166" y="96" width="90" height="5" rx="2" fill="currentColor" opacity="0.30"
-            className="lsl-on-tokens-target" />
-      <rect className="lsl-tokens-target-btn"
-            x="166" y="124" width="64" height="24" rx="12" fill="#A78BFA" />
-      {/* Travelling token (animated) */}
-      <circle className="lsl-token-particle lsl-token-particle-1" r="6" fill="#A78BFA" />
-      <circle className="lsl-token-particle lsl-token-particle-2" r="6" fill="#F0B5A4" />
-    </svg>
-  );
-}
-
-/** Card 3: a component thumbnail lifts off the sidebar palette,
-    follows an arc, settles into the canvas drop-zone.
-    Demonstrates "Sketch in real components" (drag and drop). */
-function GraphicDragDrop() {
-  return (
-    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-drag" aria-hidden="true">
-      {/* Sidebar palette */}
-      <rect x="20" y="20" width="86" height="180" rx="8"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.14" />
-      <rect x="32" y="36" width="62" height="36" rx="6" fill="currentColor" opacity="0.35" />
-      <rect x="32" y="80" width="62" height="36" rx="6" fill="currentColor" opacity="0.35" />
-      <rect x="32" y="124" width="62" height="36" rx="6"
-            className="lsl-drag-source" fill="currentColor" opacity="0.35" />
-      <rect x="32" y="168" width="62" height="20" rx="6" fill="currentColor" opacity="0.35" />
-      {/* Canvas */}
-      <rect x="126" y="20" width="174" height="180" rx="8"
-            fill="currentColor" fillOpacity="0.03"
-            stroke="currentColor" strokeOpacity="0.14"
-            strokeDasharray="4 4" />
-      {/* Drop-zone hint, fades out as the ghost lands */}
-      <rect className="lsl-drag-target"
-            x="154" y="92" width="118" height="40" rx="6"
-            fill="rgba(167,139,250,0.10)" stroke="#A78BFA" strokeDasharray="3 3" />
-      {/* Travelling ghost (animated from sidebar → canvas) */}
-      <rect className="lsl-drag-ghost"
-            x="32" y="124" width="62" height="36" rx="6"
-            fill="#A78BFA" />
-    </svg>
-  );
-}
-
-/** Card 4: a prompt input "types" then three variant cards stagger-in
-    below. Demonstrates "Brief it, get variants back". */
-function GraphicBriefVariants() {
-  return (
-    <svg viewBox="0 0 320 220" className="lsl-graphic lsl-g-brief" aria-hidden="true">
-      {/* Prompt input */}
-      <rect x="20" y="22" width="280" height="42" rx="10"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.20" />
-      {/* Mono prompt-prefix glyph */}
-      <text x="36" y="48" className="lsl-brief-prefix">/</text>
-      {/* Typing line — width animates 0 → 220 */}
-      <rect className="lsl-brief-typing"
-            x="50" y="42" width="0" height="6" rx="2" fill="currentColor" opacity="0.85" />
-      {/* Cursor — blinks at end of typing range */}
-      <rect className="lsl-brief-cursor"
-            x="50" y="36" width="2" height="18" fill="#F0B5A4" />
-      {/* Three variant cards (animate-in stagger) */}
-      <rect className="lsl-brief-variant lsl-brief-variant-1"
-            x="20"  y="92" width="88" height="100" rx="8"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.22" />
-      <rect className="lsl-brief-variant lsl-brief-variant-2"
-            x="116" y="92" width="88" height="100" rx="8"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.22" />
-      <rect className="lsl-brief-variant lsl-brief-variant-3"
-            x="212" y="92" width="88" height="100" rx="8"
-            fill="currentColor" fillOpacity="0.05"
-            stroke="currentColor" strokeOpacity="0.22" />
-      {/* Variant content lines */}
-      {[20, 116, 212].map((x, i) => (
-        <g key={i} className={`lsl-brief-variant lsl-brief-variant-${i + 1}`}>
-          <rect x={x + 12} y="108" width="40" height="6" rx="2" fill="currentColor" opacity="0.85" />
-          <rect x={x + 12} y="124" width="56" height="4" rx="2" fill="currentColor" opacity="0.30" />
-          <rect x={x + 12} y="134" width="48" height="4" rx="2" fill="currentColor" opacity="0.30" />
-          <rect x={x + 12} y="162" width="44" height="18" rx="9"
-                fill={i === 1 ? "#A78BFA" : "#F0B5A4"} opacity={i === 1 ? 1 : 0.7} />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-const GRAPHIC_MAP = {
-  stack: GraphicSystemMorph,
-  flow: GraphicTokenFlow,
-  grid: GraphicDragDrop,
-  crescent: GraphicBriefVariants,
-} as const;
-
-/** Up-right arrow icon, top-right corner of each card. */
-function ArrowUpRight() {
-  return (
-    <svg viewBox="0 0 24 24" className="lsl-card-arrow" aria-hidden="true">
-      <path
-        d="M7 17 L17 7 M9 7 H17 V15"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
-  );
-}
-
-/** Mock of a "card with a button" component rendered with one DS's
-    signature: surface color, ink color, card radius, button radius,
-    stroke. Hand-rolled, not pulled from the real DS packages. */
-function SystemCardMock({ spec }: { spec: SystemSpec }) {
-  return (
-    <svg viewBox="0 0 220 160" className="lsl-syscard-svg" aria-hidden="true">
-      {/* Card surface */}
-      <rect
-        x="6" y="6" width="208" height="148"
-        rx={spec.radius}
-        fill={spec.surface}
-        stroke={spec.stroke ?? "none"}
-        strokeWidth={spec.stroke ? 1 : 0}
-      />
-      {/* Title line (full opacity) */}
-      <rect x="22" y="24" width="100" height="10" rx="2" fill={spec.ink} opacity="0.92" />
-      {/* Body lines (faded) */}
-      <rect x="22" y="46" width="170" height="6" rx="2" fill={spec.ink} opacity="0.34" />
-      <rect x="22" y="58" width="140" height="6" rx="2" fill={spec.ink} opacity="0.34" />
-      <rect x="22" y="70" width="158" height="6" rx="2" fill={spec.ink} opacity="0.34" />
-      {/* Primary button */}
-      <rect
-        x="22" y="108"
-        width="78" height="30"
-        rx={spec.btnRadius}
-        fill={spec.brand}
-      />
-      <rect x="36" y="118" width="50" height="10" rx="2" fill="#FFFFFF" opacity="0.94" />
-    </svg>
-  );
-}
-
-/* ── Content (kept local — prototype, not a CMS surface) ────────────── */
-
-const NAV_LINKS = [
-  { href: "#services", label: "Workbench" },
-  { href: "#systems", label: "Systems" },
-  { href: "#tokens", label: "Tokens" },
-  { href: "#about", label: "About" },
-] as const;
-
-type ServiceTone = "dark" | "cream";
-type ServiceGraphic = "stack" | "flow" | "grid" | "crescent";
-interface Service {
-  heading: string;
-  bullets: readonly string[];
-  tone: ServiceTone;
-  graphic: ServiceGraphic;
-  href: string;
-}
-
-const SERVICES: readonly Service[] = [
-  {
-    heading: "Five systems, side by side",
-    bullets: [
-      "Drop a Salt card. See it as Material 3, Fluent, Carbon, uoaui.",
-      "Demo the same brief to five stakeholders at once.",
-      "Decide which system fits before you commit a codebase to it.",
-      "No swap penalty: the comp carries across renderers.",
-    ],
-    tone: "dark",
-    graphic: "stack",
-    href: "/builder",
-  },
-  {
-    heading: "Tokens travel with the block",
-    bullets: [
-      "Swap a block, tokens follow it.",
-      "Spacing, radius, color, density resolve through the right layer.",
-      "No hardcoded hex, no inline overrides leaking in.",
-      "Token diff surfaced inline whenever you change a system.",
-    ],
-    tone: "dark",
-    graphic: "flow",
-    href: "/token-editor",
-  },
-  {
-    heading: "Sketch in real components",
-    bullets: [
-      "Compose at the speed of a presentation tool.",
-      "Drop production components, not lorem rectangles.",
-      "LayoutGroups and row primitives keep the diff readable.",
-      "Every drag is keyboard-reachable too.",
-    ],
-    tone: "dark",
-    graphic: "grid",
-    href: "/builder",
-  },
-  {
-    heading: "Brief it, get variants back",
-    bullets: [
-      "Hand the canvas a brief, get three layouts back.",
-      "Audit contrast and density without leaving the page.",
-      "Pressure-test against the scenarios you care about.",
-      "Your canvas stays the source of truth, not the screenshot.",
-    ],
-    tone: "dark",
-    graphic: "crescent",
-    href: "/builder",
-  },
-] as const;
-
-/* The "same comp, five systems" strip. Each entry mocks the visual
-   signature of one design system rendering the same card-with-button
-   primitive. Hand-rolled SVG, not real components — the canvas is the
-   source of truth, this is the brochure. */
-interface SystemSpec {
-  name: string;
-  /** Brand-ish chip color used as a hint of the DS palette. */
-  brand: string;
-  /** Card background. */
-  surface: string;
-  /** Card text color. */
-  ink: string;
-  /** Border-radius the DS prefers for cards. */
-  radius: number;
-  /** Border-radius the DS prefers for buttons (Carbon = 0, M3 = 20). */
-  btnRadius: number;
-  /** Subtle stroke around the card (Carbon-flat / Salt-bordered / etc). */
-  stroke: string | null;
-  href: string;
-}
-
-const SYSTEMS: readonly SystemSpec[] = [
-  {
-    name: "Salt DS",
-    brand: "#0D7A95",  // Salt accent teal
-    surface: "#FFFFFF",
-    ink: "#1E1E1E",
-    radius: 6,
-    btnRadius: 6,
-    stroke: "rgba(0,0,0,0.10)",
-    href: "/builder?ds=salt",
-  },
-  {
-    name: "Material 3",
-    brand: "#6750A4",  // M3 primary purple
-    surface: "#FEF7FF",
-    ink: "#1D1B20",
-    radius: 16,
-    btnRadius: 20,
-    stroke: null,
-    href: "/builder?ds=md3",
-  },
-  {
-    name: "Fluent 2",
-    brand: "#0F6CBD",  // Fluent brand blue
-    surface: "#FAFAFA",
-    ink: "#242424",
-    radius: 4,
-    btnRadius: 4,
-    stroke: "rgba(0,0,0,0.08)",
-    href: "/builder?ds=fluent",
-  },
-  {
-    name: "Carbon",
-    brand: "#0F62FE",  // IBM blue
-    surface: "#F4F4F4",
-    ink: "#161616",
-    radius: 0,
-    btnRadius: 0,
-    stroke: null,
-    href: "/builder?ds=carbon",
-  },
-  {
-    name: "uoaui",
-    brand: "#A78BFA",  // Teal Input — uoaui primary
-    surface: "rgba(255,255,255,0.06)",
-    ink: "#FFFFFF",
-    radius: 14,
-    btnRadius: 999,
-    stroke: "rgba(255,255,255,0.18)",
-    href: "/builder?ds=uoaui",
-  },
-] as const;
-
-/* The showcase reskin gallery: ONE real analytics dashboard, captured from the
-   builder's Present mode, then reskinned across all five systems. Unlike the
-   #systems strip (hand-rolled SVG card mocks that the canvas is the truth of),
-   these are real captures of the live canvas, swapped in place. Brand accents
-   mirror SYSTEMS; the capture itself is the source of truth, the hex only tints
-   the active-tab underline. Images live at /public/showcase/<id>.webp. */
-type ShowcaseDS = "salt" | "md3" | "fluent" | "carbon" | "uoaui";
-
-interface ShowcaseShot {
-  id: ShowcaseDS;
-  name: string;
-  brand: string;
-  alt: string;
-}
-
-const SHOWCASE_DEFAULT: ShowcaseDS = "salt";
-
-const SHOWCASE: readonly ShowcaseShot[] = [
-  {
-    id: "salt",
-    name: "Salt DS",
-    brand: "#0D7A95",
-    alt: "The analytics dashboard rendered in Salt DS: white card surfaces, teal accents, restrained 6px corners, reading as enterprise neutral.",
-  },
-  {
-    id: "md3",
-    name: "Material 3",
-    brand: "#6750A4",
-    alt: "The same analytics dashboard rendered in Material 3: tonal lilac surfaces, fully rounded pill buttons, generous 16px corners, and softly elevated cards.",
-  },
-  {
-    id: "fluent",
-    name: "Fluent 2",
-    brand: "#0F6CBD",
-    alt: "The same analytics dashboard rendered in Fluent 2: cool grey surfaces, brand blue accents, tight 4px corners, and a compact productivity layout.",
-  },
-  {
-    id: "carbon",
-    name: "Carbon",
-    brand: "#0F62FE",
-    alt: "The same analytics dashboard rendered in IBM Carbon: flat zero radius cards, IBM blue accents, hairline rules, and a precise gridded structure.",
-  },
-  {
-    id: "uoaui",
-    name: "uoaui",
-    brand: "#A78BFA",
-    alt: "The same analytics dashboard rendered in the uoaui system: translucent glass cards on a Midnight Canvas, Purple Compute accents, and fully rounded controls.",
-  },
-] as const;
-
-/* Token primitives shown verbatim in the "tokens you can read" section.
-   Pulled from --dh-* / --lsl-* / brand vars so they read as the actual
-   surface of the design system, not decorative swatches. */
-
-const COLOR_TOKENS = [
-  { name: "--lsl-accent",  hex: "#A78BFA",                 role: "Purple Compute · primary" },
-  { name: "--lsl-amber",   hex: "#F0B5A4",                 role: "Peach Output · secondary" },
-  { name: "--lsl-teal",    hex: "#3DDCC4",                 role: "Teal Input · signal"      },
-  { name: "--lsl-bg",      hex: "#0A0E1A",                 role: "Midnight Canvas · surface" },
-  { name: "--lsl-fg",      hex: "rgba(255,255,255,0.92)",  role: "Ink · high emphasis"      },
-  { name: "--lsl-fg-muted",hex: "rgba(255,255,255,0.65)",  role: "Ink · medium"             },
-] as const;
-
-const TYPE_TOKENS = [
-  { sample: "Display 800", spec: "Bricolage Grotesque · 80px · −0.028em",  fam: "display" },
-  { sample: "Section 800", spec: "Bricolage Grotesque · 40px · −0.025em",  fam: "display" },
-  { sample: "Body",         spec: "Inter · 16.5px · 1.55",                   fam: "sans" },
-  { sample: "TOKEN / 01",   spec: "IBM Plex Mono · 12px · uppercase",        fam: "mono" },
-] as const;
-
-const SPACE_TOKENS = [
-  { v: 4,  name: "01" },
-  { v: 8,  name: "02" },
-  { v: 12, name: "03" },
-  { v: 16, name: "04" },
-  { v: 24, name: "06" },
-  { v: 32, name: "08" },
-  { v: 48, name: "12" },
-] as const;
-
-/* ── Hooks ───────────────────────────────────────────────────────────── */
-
 /** Scroll-linked glass for the sticky nav.
  *
  * Rather than snapping on at a threshold, the glass *builds in* as the user
  * scrolls: blur radius, saturation, background tint, hairline border and drop
- * shadow all ramp 0 → full across the first GLASS_RANGE px of scroll. Returns
+ * shadow all ramp 0 to full across the first GLASS_RANGE px of scroll. Returns
  * a style object of MotionValues to spread onto a <motion.nav>.
  *
  * Why JS-driven inline styles instead of the old `[data-scrolled]` CSS rule:
@@ -523,7 +96,7 @@ function useNavGlassStyle() {
   const borderAlpha = useTransform(scrollY, range, [0, 0.1], { clamp: true });
   const shadowAlpha = useTransform(scrollY, range, [0, 0.45], { clamp: true });
   // Inset top highlight ramps too, so at the default (top, y=0) the nav is
-  // FULLY transparent — no colour, no border, no highlight line — and the
+  // FULLY transparent - no colour, no border, no highlight line - and the
   // glossy/blur glass only appears as the user scrolls.
   const highlightAlpha = useTransform(scrollY, range, [0, 0.05], { clamp: true });
 
@@ -541,806 +114,1085 @@ function useNavGlassStyle() {
   };
 }
 
-/**
- * Minimal IntersectionObserver-driven reveal. Avoids pulling GSAP for what
- * is fundamentally one opacity + 12px translate per element. Respects
- * prefers-reduced-motion via CSS (see landing-southleft.css).
- */
-function useRevealOnScroll(rootRef: React.RefObject<HTMLElement | null>): void {
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || typeof window === "undefined") return;
-    const targets = root.querySelectorAll<HTMLElement>("[data-reveal]");
-    if (targets.length === 0) return;
+/* ── Content ─────────────────────────────────────────────────────────── */
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.setAttribute("data-revealed", "true");
-            io.unobserve(entry.target);
-          }
-        }
-      },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.05 },
+const NAV_LINKS = [
+  { href: "#systems", label: "Systems" },
+  { href: "#workflow", label: "Workflow" },
+  { href: "#export", label: "Export" },
+  { href: "/ui-kit", label: "UI Kit" },
+] as const;
+
+const DEFAULT_SYSTEM: SystemId = "salt";
+const DEFAULT_COMPARE: SystemId = "md3";
+const DEFAULT_MODE: Mode = "dark";
+const DEFAULT_SPLIT = 50;
+
+/** Present-mode captures of the Analytics Home template, at device pixel
+    ratio 2. Each frame is a board of whole controls cut from that one screen
+    and set on the system's own surface. Both halves of a board carry the
+    same controls, so with the divider at rest one system's search field,
+    button, filter and table sit beside the other's: the search field with
+    its button (twice), an empty band where the divider's grip and the two
+    side names ride, the Class and Theme filters, and the first two columns
+    of the table (twice). The phone board stacks the field, the band, the
+    button on its own (twice) and the two filters. Nothing is redrawn or
+    scaled up: the frame is capped at the board's real width.
+    Wide boards are 710x264 CSS px, phone boards 361x267. */
+const SHOT = { w: 1420, h: 528, phoneW: 722, phoneH: 534 } as const;
+const PHONE_QUERY = "(max-width: 640px)";
+
+function shotSrc(id: SystemId, mode: Mode, phone = false): string {
+  return `/showcase/cmp-${id}-${mode}${phone ? "-phone" : ""}.webp`;
+}
+
+function shotAlt(name: string, mode: Mode): string {
+  return `Parts of the Analytics Dashboard screen rendered in ${name}, ${mode} mode: the search field and its button, the Class and Theme filters and the first rows of the dashboards table, captured from the builder's Present mode.`;
+}
+
+/** The builder builds this exact screen from this message, with no model
+    call (it is the template's own chat command). */
+const REPORT_HANDOFF = "/builder?prompt=Build+me+an+Analytics+Home";
+
+/* The three chapters of the walkthrough recording, with the second each
+   starts at (logged by the recording script). */
+const STEPS = [
+  {
+    at: 0,
+    title: "Describe it",
+    body: "Type what the screen is for, or start from one of 13 finance templates: risk, performance, ESG, climate, screening, FX execution and more.",
+  },
+  {
+    at: 4.4,
+    title: "Edit it",
+    body: "Select any block and tell the chat what to change. Drag components in from the library and resize them on the grid. Reordering and resizing work from the keyboard too.",
+  },
+  {
+    at: 8,
+    title: "Present it",
+    body: "Switch design system, light or dark, and desktop, tablet or phone without rebuilding. Share the canvas as a link.",
+  },
+] as const;
+
+const clock = (s: number) => `0:${String(Math.floor(s)).padStart(2, "0")}`;
+
+/* ── Small pieces ────────────────────────────────────────────────────── */
+
+/** Light syntax tint for an excerpt: strings and keywords only. The text is
+    untouched, so what you read is what the exporter wrote. */
+const CODE_TOKEN = /("[^"\n]*")|\b(import|from|export|default|function|return|set|if|then|fi|exit|cd|echo)\b/g;
+function CodeExcerpt({ source }: { source: string }) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of source.matchAll(CODE_TOKEN)) {
+    const at = m.index ?? 0;
+    if (at > last) parts.push(source.slice(last, at));
+    parts.push(
+      <span key={at} className={m[1] ? "lsl-code-str" : "lsl-code-kw"}>
+        {m[0]}
+      </span>,
     );
-
-    targets.forEach((t) => io.observe(t));
-    return () => io.disconnect();
-  }, [rootRef]);
+    last = at + m[0].length;
+  }
+  parts.push(source.slice(last));
+  return <code>{parts}</code>;
 }
 
-/** Gate for all scrubbed/parallax motion: off under prefers-reduced-motion
- *  and below the 900px breakpoint (mobile address-bar resize jank). All
- *  parallax ranges collapse to [0,0] when this returns false. */
-function useParallaxEnabled(): boolean {
-  const reduce = useReducedMotion();
-  const [wide, setWide] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 901px)");
-    const update = () => setWide(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return !reduce && wide;
+function useBuilderPrefetch(): false | null {
+  const ok = useSyncExternalStore(subscribePrefetch, canPrefetchBuilder, () => false);
+  return ok ? null : false;
 }
 
-/** True when the device has a fine hover pointer (mouse/trackpad). Gates
- *  the cursor-glow + magnetic effects so touch devices never attach work. */
-function useFinePointer(): boolean {
-  const [fine, setFine] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => setFine(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return fine;
-}
-
-/* ── Motion components (additive wrappers, no markup restructuring) ──── */
-
-/** Magnetic primary CTA: lerps max 8px toward the cursor with a spring
- *  return. The ONLY magnetic element on the page. Disabled entirely under
- *  reduced motion and on coarse pointers. */
-const MAGNET_MAX_PX = 8;
-
-/** Hero prompt control: the cold-start entry point. Type an app idea, submit,
- *  and deep-link into the builder via /builder?prompt=… (the builder reads URL
- *  query params, same mechanism as the DS cards' ?ds=… links). This is the
- *  Lovable-style "land, type, build" loop. Strictly additive: the headline,
- *  subhead, graphics, and the #demo link are untouched. A small "open the
- *  builder" link preserves the old href="/builder" fallback behaviour.
- *  Copy rule: no em-/en-dashes in any visible string. */
-function HeroPrompt() {
-  // Native GET form: submitting navigates to /builder?prompt=<input value>
-  // with zero client JS or router context, so it works in SSR, in the test
-  // renderer (no App Router provider needed), and even with JS disabled. The
-  // builder reads the prompt query param, the same mechanism as the DS cards'
-  // ?ds= links. `required` blocks an empty submit natively.
+function SunIcon() {
   return (
-    <form className="lsl-hero-prompt" action="/builder" method="get" role="search">
-      <label className="lsl-hero-prompt-label" htmlFor="lsl-hero-prompt-input">
-        Describe the app you want to build
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <circle cx="10" cy="10" r="3.4" />
+      <path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+      <path d="M16.2 12.1A6.8 6.8 0 0 1 7.9 3.8a6.8 6.8 0 1 0 8.3 8.3Z" />
+    </svg>
+  );
+}
+
+/* ── Prompt ──────────────────────────────────────────────────────────── */
+
+/** The cold-start entry point. A native GET form: submitting navigates to
+ *  /builder?prompt=...&ds=...&mode=... with no client JS or router context,
+ *  so it works in SSR, in the test renderer and with JS disabled. The builder
+ *  reads the prompt, ds and mode query params. `required` blocks an empty
+ *  submit natively.
+ *
+ *  The system travels with the prompt: as a hidden field that follows the
+ *  instrument (hero), or as five visible radio chips (closing band). */
+function PromptForm({
+  id,
+  system,
+  mode,
+  onSystem,
+  skip,
+}: {
+  id: string;
+  system: SystemId;
+  mode: Mode;
+  onSystem?: (id: SystemId) => void;
+  /** The system on the hero's right side: arrow keys step over it, so the
+      keyboard never changes a side the visitor did not pick. */
+  skip?: SystemId;
+}) {
+  const chipsRef = useRef<HTMLFieldSetElement>(null);
+  const onChipKey = (e: React.KeyboardEvent<HTMLFieldSetElement>) => {
+    const step =
+      e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    if (!step || !onSystem) return;
+    e.preventDefault();
+    const at = SYSTEMS.findIndex((s) => s.id === system);
+    let n = (at + step + SYSTEMS.length) % SYSTEMS.length;
+    if (SYSTEMS[n].id === skip) n = (n + step + SYSTEMS.length) % SYSTEMS.length;
+    onSystem(SYSTEMS[n].id);
+    chipsRef.current?.querySelectorAll<HTMLInputElement>("input")[n]?.focus();
+  };
+  return (
+    <form className="lsl-hero-prompt" action="/builder" method="get">
+      {onSystem && (
+        <fieldset className="lsl-chips" ref={chipsRef} onKeyDown={onChipKey}>
+          <legend className="lsl-chips-legend">Start in</legend>
+          {SYSTEMS.map((s) => (
+            <label
+              key={s.id}
+              className="lsl-chip"
+              style={{ "--chip-brand": s.brand } as React.CSSProperties}
+            >
+              <input
+                type="radio"
+                name="ds"
+                value={s.id}
+                checked={system === s.id}
+                onChange={() => onSystem(s.id)}
+              />
+              <span>{s.name}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <label className="lsl-hero-prompt-label" htmlFor={id}>
+        Describe the screen you want to build
       </label>
       <div className="lsl-hero-prompt-field">
         <input
-          id="lsl-hero-prompt-input"
+          id={id}
           name="prompt"
           type="text"
           className="lsl-hero-prompt-input"
-          placeholder="Describe an app to build…"
+          placeholder="Risk summary by fund"
           autoComplete="off"
           enterKeyHint="go"
           required
         />
+        {!onSystem && <input type="hidden" name="ds" value={system} />}
+        <input type="hidden" name="mode" value={mode} />
         <button type="submit" className="lsl-hero-prompt-submit">
-          <span>Build it</span>
-          <span aria-hidden="true">{"→"}</span>
+          Build it
         </button>
       </div>
     </form>
   );
 }
 
-function MagneticCta({
-  href,
-  className,
-  children,
+/* ── The instrument ──────────────────────────────────────────────────── */
+
+/** One capture, as a stable element: its sources change, it never remounts,
+ *  so the old picture stays on screen until the new one has decoded. Reports
+ *  when the current source has settled (decoded, or failed). */
+function Shot({
+  id,
+  mode,
+  alt,
+  priority,
+  onSettled,
 }: {
-  href: string;
-  className?: string;
-  children: React.ReactNode;
+  id: SystemId;
+  mode: Mode;
+  alt: string;
+  priority: "high" | "auto";
+  onSettled: (key: string) => void;
 }) {
-  const reduce = useReducedMotion();
-  const fine = useFinePointer();
-  const enabled = !reduce && fine;
-  const x = useSpring(0, { stiffness: 260, damping: 18 });
-  const y = useSpring(0, { stiffness: 260, damping: 18 });
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!enabled) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const dx = e.clientX - (r.left + r.width / 2);
-    const dy = e.clientY - (r.top + r.height / 2);
-    x.set(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dx * 0.15)));
-    y.set(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dy * 0.3)));
-  };
-  const onPointerLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
+  const ref = useRef<HTMLImageElement>(null);
+  const key = `${id}-${mode}`;
+  useEffect(() => {
+    const img = ref.current;
+    if (img && img.complete) onSettled(key);
+    // Re-check whenever the source changes (a cached image fires no event
+    // we can rely on across browsers).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
   return (
-    <motion.div
-      className="lsl-magnetic"
-      style={{ x, y }}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-    >
-      <Link href={href} className={className}>
-        {children}
-      </Link>
-    </motion.div>
+    <picture>
+      <source
+        media={PHONE_QUERY}
+        srcSet={shotSrc(id, mode, true)}
+        width={SHOT.phoneW}
+        height={SHOT.phoneH}
+      />
+      {/* Plain img inside <picture>: the phone source is art direction (a
+          different capture), which next/image does not express. */}
+      <img
+        ref={ref}
+        className="lsl-showcase-shot"
+        src={shotSrc(id, mode)}
+        width={SHOT.w}
+        height={SHOT.h}
+        alt={alt}
+        loading="eager"
+        fetchPriority={priority}
+        decoding="async"
+        onLoad={() => onSettled(key)}
+        onError={() => onSettled(key)}
+      />
+    </picture>
   );
 }
 
-/** Service card: per-card graphic parallax (figure leads scroll, ±12px)
- *  plus a cursor-aware glow border via --glow-x/--glow-y custom props.
- *  Glow painting is gated in CSS to (hover:hover) and (pointer:fine);
- *  the pointermove listener is rAF-throttled and disabled under reduce. */
-function ServiceCard({
-  service,
-  index,
-  parallaxOn,
-}: {
-  service: Service;
-  index: number;
-  parallaxOn: boolean;
-}) {
-  const reduce = useReducedMotion();
-  const fine = useFinePointer();
-  const glowOn = !reduce && fine;
-  const ref = useRef<HTMLAnchorElement>(null);
-  const frame = useRef(0);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const figY = useTransform(
-    scrollYProgress,
-    [0, 1],
-    parallaxOn ? [12, -12] : [0, 0],
+function Swatch({ accent }: { accent: Accent }) {
+  return (
+    <span
+      className="lsl-swatch"
+      style={{ "--swatch": accent.hex } as React.CSSProperties}
+      title={accent.hex}
+      aria-hidden="true"
+    />
   );
+}
+
+const SWEEP_MS = 560;
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+/** The hero instrument: one real screen, two design systems, one divider.
+ *
+ *  Two plain controls choose the sides: the "Left" tabs and the "Right"
+ *  options. Nothing changes a side the visitor did not pick, with one
+ *  exception that is announced: choosing the system that is already on the
+ *  other side swaps the two. Drag the divider (pointer or touch), or focus
+ *  it and use the arrow keys: it is a native range input. A change sweeps
+ *  the new capture in from its own edge once it has decoded.
+ *
+ *  ARIA: a tablist (roving tabindex, arrow keys, Home/End) with one stable
+ *  tabpanel, a radiogroup, a labelled slider, and a pressed-state pair for
+ *  light/dark. Under reduced motion nothing sweeps: systems swap in place. */
+function Instrument({
+  system,
+  compare,
+  mode,
+  onChange,
+  prefetch,
+}: {
+  system: SystemId;
+  compare: SystemId;
+  mode: Mode;
+  onChange: (system: SystemId, compare: SystemId, mode: Mode) => void;
+  prefetch: false | null;
+}) {
+  const figureRef = useRef<HTMLElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const modeRef = useRef<HTMLDivElement>(null);
+  /* Where the divider rests, 0 to 100: how much of the frame the left system
+     takes. React owns this value. While a sweep runs, the moving position is
+     written straight to the --split-n custom property and React is left
+     alone, so the slider's value text is not rewritten sixty times a second. */
+  const [rest, setRest] = useState(DEFAULT_SPLIT);
+  const restRef = useRef(DEFAULT_SPLIT);
+  const raf = useRef(0);
+  const touched = useRef(false);
+  const inView = useRef(false);
+  const demoDone = useRef(false);
+  /* Captures that have settled, by "system-mode". */
+  const settled = useRef(new Set<string>());
+  /* A sweep waiting for its capture: which key, and from which edge. */
+  const pending = useRef<{ key: string; from: 0 | 100 } | null>(null);
+
+  const leftKey = `${system}-${mode}`;
+  const rightKey = `${compare}-${mode}`;
+
+  const motionOk = () =>
+    typeof window.matchMedia === "function" &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const paint = (v: number) =>
+    figureRef.current?.style.setProperty("--split-n", String(v / 100));
+  const stop = () => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = 0;
+  };
+  /** Move the divider through a list of [target, duration] legs. */
+  const run = (from: number, legs: readonly (readonly [number, number])[]) => {
+    stop();
+    let i = 0;
+    let start = 0;
+    let origin = from;
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const [to, ms] = legs[i];
+      const t = Math.min(1, (now - start) / ms);
+      paint(origin + (to - origin) * easeInOut(t));
+      if (t < 1) {
+        raf.current = requestAnimationFrame(tick);
+      } else if (++i < legs.length) {
+        origin = to;
+        start = 0;
+        raf.current = requestAnimationFrame(tick);
+      } else {
+        raf.current = 0;
+      }
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
+  useEffect(() => stop, []);
+
+  /** One short demonstration, once: the divider travels right, left, and
+   *  home. It waits until the frame is in view AND both captures have
+   *  settled, and never runs under reduced motion or after a touch. */
+  const maybeDemo = () => {
+    if (demoDone.current || touched.current || !inView.current) return;
+    if (!settled.current.has(leftKey) || !settled.current.has(rightKey)) return;
+    if (!motionOk()) return;
+    demoDone.current = true;
+    run(restRef.current, [
+      [76, 620],
+      [26, 900],
+      [restRef.current, 620],
+    ]);
+  };
+
+  const onSettled = (key: string) => {
+    settled.current.add(key);
+    const p = pending.current;
+    if (p && p.key === key) {
+      pending.current = null;
+      run(p.from, [[restRef.current, SWEEP_MS]]);
+    }
+    maybeDemo();
+  };
 
   useEffect(() => {
-    return () => {
-      if (frame.current) cancelAnimationFrame(frame.current);
-    };
+    const node = viewportRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        inView.current = true;
+        io.disconnect();
+        maybeDemo();
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onPointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
-    if (!glowOn || frame.current) return;
-    const el = e.currentTarget;
-    const cx = e.clientX;
-    const cy = e.clientY;
-    frame.current = requestAnimationFrame(() => {
-      frame.current = 0;
-      const r = el.getBoundingClientRect();
-      el.style.setProperty("--glow-x", `${((cx - r.left) / r.width) * 100}%`);
-      el.style.setProperty("--glow-y", `${((cy - r.top) / r.height) * 100}%`);
+  /** Start a sweep for a side that just changed: park the divider on that
+   *  side's edge (the other capture covers the frame), then travel to rest
+   *  once the new capture has settled. */
+  const sweep = (key: string, from: 0 | 100) => {
+    if (!motionOk()) return;
+    stop();
+    paint(from);
+    // An earlier sweep may still be waiting for its capture: this one replaces it.
+    pending.current = null;
+    if (settled.current.has(key)) run(from, [[restRef.current, SWEEP_MS]]);
+    else pending.current = { key, from };
+  };
+
+  const setLeft = (next: SystemId) => {
+    if (next === system) return;
+    touched.current = true;
+    // Picking the system that is on the right swaps the two sides.
+    const nextRight = next === compare ? system : compare;
+    onChange(next, nextRight, mode);
+    sweep(`${next}-${mode}`, 0);
+  };
+  const setRight = (next: SystemId) => {
+    if (next === compare || next === system) return;
+    touched.current = true;
+    onChange(system, next, mode);
+    sweep(`${next}-${mode}`, 100);
+  };
+
+  const onSplitInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    touched.current = true;
+    stop();
+    pending.current = null;
+    const v = Number(e.target.value);
+    restRef.current = v;
+    setRest(v);
+    paint(v);
+  };
+
+  /* When only the icon toggle is shown (see landing.css) the pressed button
+     disappears on click. Hand focus to its sibling. */
+  const changeMode = (next: Mode) => {
+    if (next === mode) return;
+    touched.current = true;
+    /* A sweep still waiting for its capture now waits for that system's
+       capture in the new mode, so the divider can never stay parked. */
+    const p = pending.current;
+    if (p) {
+      const waiting = p.from === 0 ? system : compare;
+      pending.current = { key: `${waiting}-${next}`, from: p.from };
+    }
+    onChange(system, compare, next);
+    requestAnimationFrame(() => {
+      const group = modeRef.current;
+      const focused = document.activeElement as HTMLElement | null;
+      if (!group || !focused || !group.contains(focused)) return;
+      if (focused.offsetParent === null) {
+        group.querySelector<HTMLButtonElement>('[aria-pressed="false"]')?.focus();
+      }
     });
   };
 
-  const Graphic = GRAPHIC_MAP[service.graphic];
-  const num = String(index + 1).padStart(2, "0");
-  return (
-    <Link
-      ref={ref}
-      href={service.href}
-      className="lsl-service-card"
-      data-tone={service.tone}
-      data-reveal
-      onPointerMove={onPointerMove}
-    >
-      <ArrowUpRight />
-      <div className="lsl-service-content">
-        <p className="lsl-service-num">{num}</p>
-        <h3 className="lsl-service-heading">{service.heading}</h3>
-        <ul className="lsl-service-bullets">
-          {service.bullets.map((b) => (
-            <li key={b}>{b}</li>
-          ))}
-        </ul>
-      </div>
-      <motion.div className="lsl-service-figure" style={{ y: figY }}>
-        <Graphic />
-      </motion.div>
-    </Link>
-  );
-}
-
-/** Systems-strip card: settle-to-grid scrub. Alternating ±10px offsets
- *  ease to 0 as the section's scroll progress reaches center, reading as
- *  the five renderings snapping into alignment. */
-function SystemCardItem({
-  spec,
-  index,
-  progress,
-  parallaxOn,
-}: {
-  spec: SystemSpec;
-  index: number;
-  progress: MotionValue<number>;
-  parallaxOn: boolean;
-}) {
-  const offset = index % 2 === 0 ? 10 : -10; /* 1-based odd +10, even -10 */
-  const y = useTransform(progress, [0, 1], parallaxOn ? [offset, 0] : [0, 0]);
-  return (
-    <Link
-      href={spec.href}
-      className="lsl-syscard"
-      data-system={spec.name.toLowerCase().replace(/\s+/g, "-")}
-      style={{ "--syscard-brand": spec.brand } as React.CSSProperties}
-    >
-      <motion.div className="lsl-syscard-frame" style={{ y }}>
-        <SystemCardMock spec={spec} />
-      </motion.div>
-      <p className="lsl-syscard-label">{spec.name}</p>
-    </Link>
-  );
-}
-
-/** Showcase reskin gallery: an ARIA tablist (one tab per design system) that
- *  swaps a single large Present-mode capture of the SAME dashboard. The frame
- *  is fixed by aspect-ratio so only the rendering changes between systems,
- *  which is the whole point of the moat. Roving tabindex + arrow keys +
- *  Home/End per the WAI-ARIA tabs pattern; the opacity crossfade collapses to
- *  an instant swap under reduced motion (see landing.css). These are real
- *  captures, never mockups. Copy rule: no em-/en-dashes. */
-function ShowcaseGallery() {
-  const [active, setActive] = useState<ShowcaseDS>(SHOWCASE_DEFAULT);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  const selectAt = (i: number) => {
-    const n = (i + SHOWCASE.length) % SHOWCASE.length;
-    setActive(SHOWCASE[n].id);
+  /* Arrow keys walk the Left row but step over the system that is on the
+     right: a side the visitor did not pick never changes from the keyboard.
+     (A click or Enter on that tab is an explicit choice, and swaps.) */
+  const selectAt = (i: number, step: 1 | -1) => {
+    let n = (i + SYSTEMS.length) % SYSTEMS.length;
+    if (SYSTEMS[n].id === compare) n = (n + step + SYSTEMS.length) % SYSTEMS.length;
+    setLeft(SYSTEMS[n].id);
     tabRefs.current[n]?.focus();
   };
 
-  const onTabKeyDown = (
-    e: React.KeyboardEvent<HTMLButtonElement>,
-    i: number,
-  ) => {
+  const onTabKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
     switch (e.key) {
       case "ArrowRight":
       case "ArrowDown":
         e.preventDefault();
-        selectAt(i + 1);
+        selectAt(i + 1, 1);
         break;
       case "ArrowLeft":
       case "ArrowUp":
         e.preventDefault();
-        selectAt(i - 1);
+        selectAt(i - 1, -1);
         break;
       case "Home":
         e.preventDefault();
-        selectAt(0);
+        selectAt(0, 1);
         break;
       case "End":
         e.preventDefault();
-        selectAt(SHOWCASE.length - 1);
+        selectAt(SYSTEMS.length - 1, -1);
         break;
     }
   };
 
+  /* Warm the other captures once the page is idle, so a switch sweeps
+     straight to a decoded image. Skipped when the visitor asked to save data. */
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) return;
+    const phone = window.matchMedia(PHONE_QUERY).matches;
+    const warm = () => {
+      const other: Mode = mode === "dark" ? "light" : "dark";
+      const urls = [
+        ...SYSTEMS.filter((s) => s.id !== system && s.id !== compare).map((s) =>
+          shotSrc(s.id, mode, phone),
+        ),
+        shotSrc(system, other, phone),
+        shotSrc(compare, other, phone),
+      ];
+      for (const url of urls) {
+        const img = new Image();
+        img.fetchPriority = "low";
+        img.src = url;
+      }
+    };
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const h = w.requestIdleCallback(warm, { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(h);
+    }
+    const t = window.setTimeout(warm, 1200);
+    return () => window.clearTimeout(t);
+  }, [system, compare, mode]);
+
+  const a = specOf(system);
+  const b = specOf(compare);
+
   return (
-    <section
+    <figure
+      ref={figureRef}
       id="showcase"
-      className="lsl-section lsl-showcase"
-      aria-labelledby="lsl-showcase-heading"
+      className="lsl-instrument"
+      style={
+        {
+          "--showcase-brand": a.brand,
+          "--compare-brand": b.brand,
+          "--split-n": rest / 100,
+        } as React.CSSProperties
+      }
     >
-      <div className="lsl-container">
-        <p className="lsl-section-label" data-reveal>
-          showcase / reskinned live
-        </p>
-        <h2
-          id="lsl-showcase-heading"
-          className="lsl-section-heading"
-          data-reveal
-        >
-          One dashboard. Five skins, no rebuild.
-        </h2>
-        <p className="lsl-section-lede" data-reveal>
-          The same analytics dashboard, composed once on the canvas, then
-          reskinned across all five systems. These are captures of the real
-          Present mode, not redrawn mockups. Switch a system and the layout
-          holds, only the skin changes.
-        </p>
-
-        <div className="lsl-showcase-stage" data-reveal>
-          <div
-            className="lsl-showcase-tabs"
-            role="tablist"
-            aria-label="Reskin the dashboard across design systems"
-          >
-            {SHOWCASE.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                role="tab"
-                id={`lsl-showcase-tab-${s.id}`}
-                aria-selected={active === s.id}
-                aria-controls={`lsl-showcase-panel-${s.id}`}
-                tabIndex={active === s.id ? 0 : -1}
-                className="lsl-showcase-tab"
-                style={{ "--showcase-brand": s.brand } as React.CSSProperties}
-                ref={(el) => {
-                  tabRefs.current[i] = el;
-                }}
-                onClick={() => setActive(s.id)}
-                onKeyDown={(e) => onTabKeyDown(e, i)}
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="lsl-showcase-viewport">
-            {SHOWCASE.map((s) => {
-              const isActive = active === s.id;
-              return (
-                <div
+      <div className="lsl-instrument-bar">
+        <div className="lsl-sides">
+          <div className="lsl-side">
+            <span className="lsl-side-label" id="lsl-side-left">
+              Left
+            </span>
+            <div className="lsl-showcase-tabs" role="tablist" aria-labelledby="lsl-side-left">
+              {SYSTEMS.map((s, i) => (
+                <button
                   key={s.id}
-                  role="tabpanel"
-                  id={`lsl-showcase-panel-${s.id}`}
-                  aria-labelledby={`lsl-showcase-tab-${s.id}`}
-                  className="lsl-showcase-panel"
-                  data-active={isActive ? "true" : undefined}
-                  aria-hidden={isActive ? undefined : true}
-                  tabIndex={isActive ? 0 : undefined}
+                  type="button"
+                  role="tab"
+                  id={`lsl-showcase-tab-${s.id}`}
+                  aria-selected={system === s.id}
+                  aria-controls="lsl-showcase-panel"
+                  aria-describedby={compare === s.id ? "lsl-side-swap-hint" : undefined}
+                  tabIndex={system === s.id ? 0 : -1}
+                  className="lsl-showcase-tab"
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
+                  onClick={() => setLeft(s.id)}
+                  onKeyDown={(e) => onTabKeyDown(e, i)}
                 >
-                  <img
-                    className="lsl-showcase-shot"
-                    src={`/showcase/${s.id}.webp`}
-                    width={2400}
-                    height={1356}
-                    loading="lazy"
-                    decoding="async"
-                    alt={s.alt}
-                  />
-                </div>
-              );
-            })}
+                  {s.name}
+                </button>
+              ))}
+            </div>
+            {/* Why the arrow keys step over one tab: said on that tab. */}
+            <span id="lsl-side-swap-hint" className="sr-only">
+              Showing on the right. Choose it here to swap the two sides.
+            </span>
           </div>
-
-          <p className="lsl-showcase-caption">
-            Real builder output, not a mockup. Each frame is a Present mode
-            capture of the live canvas, reskinned in place.
-          </p>
+          <div className="lsl-side">
+            <span className="lsl-side-label" id="lsl-side-right">
+              Right
+            </span>
+            <div className="lsl-showcase-tabs" role="radiogroup" aria-labelledby="lsl-side-right">
+              {SYSTEMS.map((s) => (
+                <label
+                  key={s.id}
+                  className="lsl-showcase-tab lsl-side-option"
+                  data-checked={compare === s.id ? "true" : undefined}
+                  data-disabled={system === s.id ? "true" : undefined}
+                >
+                  <input
+                    type="radio"
+                    name="lsl-right-side"
+                    value={s.id}
+                    checked={compare === s.id}
+                    disabled={system === s.id}
+                    onChange={() => setRight(s.id)}
+                  />
+                  <span>{s.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </section>
+
+      <div className="lsl-stage">
+        <div ref={modeRef} className="lsl-mode" role="group" aria-label="Colour mode of the screen">
+          <button
+            type="button"
+            className="lsl-mode-btn"
+            aria-pressed={mode === "light"}
+            onClick={() => changeMode("light")}
+          >
+            <SunIcon />
+            <span>Light</span>
+          </button>
+          <button
+            type="button"
+            className="lsl-mode-btn"
+            aria-pressed={mode === "dark"}
+            onClick={() => changeMode("dark")}
+          >
+            <MoonIcon />
+            <span>Dark</span>
+          </button>
+        </div>
+      <div ref={viewportRef} className="lsl-showcase-viewport" data-mode={mode}>
+        <div
+          role="tabpanel"
+          id="lsl-showcase-panel"
+          aria-labelledby={`lsl-showcase-tab-${system}`}
+          className="lsl-showcase-panel"
+          data-system={system}
+          tabIndex={0}
+        >
+          <Shot id={system} mode={mode} alt={shotAlt(a.name, mode)} priority="high" onSettled={onSettled} />
+        </div>
+        <div className="lsl-compare-layer" data-system={compare}>
+          <Shot id={compare} mode={mode} alt={shotAlt(b.name, mode)} priority="auto" onSettled={onSettled} />
+        </div>
+        <input
+          className="lsl-split-range"
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={rest}
+          onChange={onSplitInput}
+          aria-label={`Divider between ${a.name} and ${b.name}`}
+          aria-valuetext={`${a.name} ${rest} percent, ${b.name} ${100 - rest} percent`}
+        />
+        <span className="lsl-split-line" aria-hidden="true">
+          <span className="lsl-split-grip">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7.5 5.5 3.5 10l4 4.5M12.5 5.5l4 4.5-4 4.5" />
+            </svg>
+          </span>
+        </span>
+        {/* Which system is on which side, said inside the frame. The legend
+            below carries the same names for assistive technology. */}
+        <span className="lsl-corner" data-side="left" aria-hidden="true">
+          {a.name}
+        </span>
+        <span className="lsl-corner" data-side="right" aria-hidden="true">
+          {b.name}
+        </span>
+      </div>
+      </div>
+
+      <div className="lsl-legend">
+        <p className="lsl-legend-side" data-side="left">
+          <span className="lsl-legend-name">{a.name}</span>
+          <span className="lsl-legend-traits">
+            {a.font}, {a.corners === "0px" ? "square corners" : `${a.corners} corners`},{" "}
+            <Swatch accent={a.accent[mode]} />
+            {a.accent[mode].name}
+          </span>
+        </p>
+        <p className="lsl-legend-side" data-side="right">
+          <span className="lsl-legend-name">{b.name}</span>
+          <span className="lsl-legend-traits">
+            {b.font}, {b.corners === "0px" ? "square corners" : `${b.corners} corners`},{" "}
+            <Swatch accent={b.accent[mode]} />
+            {b.accent[mode].name}
+          </span>
+        </p>
+      </div>
+      {/* The same comparison as one sentence, announced after a change. */}
+      <p className="lsl-diff sr-only" aria-live="polite">
+        {a.name} on the left, {b.name} on the right. What differs:{" "}
+        {differences(a, b, mode)}.
+      </p>
+
+      <figcaption className="lsl-showcase-caption">
+        <span>
+          The same controls from the Analytics Dashboard screen (the
+          builder&apos;s Analytics Home template), cut whole, one system on
+          each side. Real builder output, captured, not redrawn.
+        </span>
+        <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
+          Open this screen in the builder
+        </Link>
+      </figcaption>
+    </figure>
+  );
+}
+
+/* ── Workflow: the recording with its three chapters ─────────────────── */
+
+function Workflow() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [chapter, setChapter] = useState(-1);
+
+  const playFrom = (at: number) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const seek = () => {
+      v.currentTime = at;
+    };
+    // preload="none": nothing is loaded until this click asks for it.
+    if (v.readyState >= 1) seek();
+    else v.addEventListener("loadedmetadata", seek, { once: true });
+    void v.play()?.catch(() => {});
+  };
+
+  const onTime = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const t = e.currentTarget.currentTime;
+    let i = -1;
+    STEPS.forEach((s, n) => {
+      if (t >= s.at) i = n;
+    });
+    setChapter(i);
+  };
+
+  return (
+    <div className="lsl-workflow-grid">
+      <figure id="demo" className="lsl-demo" aria-label="Builder walkthrough">
+        <div className="lsl-demo-frame">
+          {/* Playback is explicit for every visitor; the poster is a frame of
+              the recording, so nothing downloads until play. */}
+          <video
+            ref={videoRef}
+            className="lsl-demo-video"
+            src="/builder-walkthrough.mp4"
+            muted
+            playsInline
+            preload="none"
+            poster="/showcase/builder-recording-poster.webp"
+            controls
+            aria-label="Builder walkthrough video"
+            onTimeUpdate={onTime}
+            onEnded={() => setChapter(-1)}
+          />
+        </div>
+        <figcaption className="lsl-demo-caption">
+          A 22 second screen recording of the builder: pick a template, edit a
+          card, present it in five systems. No sound. Nothing loads until you
+          press play.
+        </figcaption>
+      </figure>
+
+      <ol className="lsl-steps">
+        {STEPS.map((step, i) => (
+          <li key={step.title} className="lsl-step" data-current={chapter === i ? "true" : undefined}>
+            <h3 className="lsl-step-title">
+              <button
+                type="button"
+                className="lsl-step-play"
+                onClick={() => playFrom(step.at)}
+                aria-label={`${step.title}: play the recording from ${clock(step.at)}`}
+              >
+                <span className="lsl-step-time">{clock(step.at)}</span>
+                <span>{step.title}</span>
+              </button>
+            </h3>
+            <p className="lsl-step-body">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/* ── Export: real output, one file at a time ─────────────────────────── */
+
+function ExportViewer() {
+  const [active, setActive] = useState(0);
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const sample = EXPORT_SAMPLES[active];
+
+  const move = (i: number) => {
+    const n = (i + EXPORT_SAMPLES.length) % EXPORT_SAMPLES.length;
+    setActive(n);
+    refs.current[n]?.focus();
+  };
+  const onKey = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      move(i + 1);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      move(i - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      move(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      move(EXPORT_SAMPLES.length - 1);
+    }
+  };
+
+  return (
+    <figure className="lsl-code">
+      <div className="lsl-code-tabs" role="tablist" aria-label="Exported files">
+        {EXPORT_SAMPLES.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            id={`lsl-code-tab-${s.id}`}
+            aria-selected={active === i}
+            aria-controls="lsl-code-panel"
+            tabIndex={active === i ? 0 : -1}
+            className="lsl-code-tab"
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            onClick={() => setActive(i)}
+            onKeyDown={(e) => onKey(e, i)}
+          >
+            {s.file}
+          </button>
+        ))}
+      </div>
+      <div
+        id="lsl-code-panel"
+        role="tabpanel"
+        aria-labelledby={`lsl-code-tab-${sample.id}`}
+        className="lsl-code-panel"
+      >
+        <pre className="lsl-code-pre" tabIndex={0}>
+          <CodeExcerpt source={sample.source} />
+        </pre>
+        <p className="lsl-code-more">
+          Lines {sample.from} to {sample.from + sample.shown - 1} of {sample.total}
+        </p>
+      </div>
+      <figcaption className="lsl-code-caption">
+        <strong>{sample.format}.</strong> {sample.note} Exported from the
+        Analytics Dashboard screen in Salt DS, dark, exactly as the builder
+        wrote it.
+      </figcaption>
+    </figure>
   );
 }
 
 /* ── Page ────────────────────────────────────────────────────────────── */
 
-export default function LandingSouthleftPage() {
-  const rootRef = useRef<HTMLElement>(null);
+export default function LandingPage() {
   const navGlass = useNavGlassStyle();
-  useRevealOnScroll(rootRef);
-  /* a11y: gate the looping hero demo video (WCAG 2.2.2). */
-  const reduce = useReducedMotion();
+  const prefetch = useBuilderPrefetch();
+  const [system, setSystem] = useState<SystemId>(DEFAULT_SYSTEM);
+  const [compare, setCompare] = useState<SystemId>(DEFAULT_COMPARE);
+  const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
 
-  /* 3-tier parallax depth model (transform-only, MotionValue-driven).
-     Tier A background lags (~0.92x feel, max +24px), Tier B content at 1x,
-     Tier C foreground product imagery leads (~1.04x feel, max 16px).
-     All ranges collapse to [0,0] under reduce / below 900px. */
-  const parallaxOn = useParallaxEnabled();
-
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: heroProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  /* Tier A: aurora lags scroll (+24px as the hero scrolls out). */
-  const auroraY = useTransform(
-    heroProgress,
-    [0, 1],
-    parallaxOn ? [0, 24] : [0, 0],
-  );
-  /* Tier C: demo frame leads scroll (-16px), floats off the background. */
-  const demoY = useTransform(
-    heroProgress,
-    [0, 1],
-    parallaxOn ? [0, -16] : [0, 0],
-  );
-
-  /* Systems strip: settle-to-grid progress (start → center of viewport). */
-  const systemsRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: systemsProgress } = useScroll({
-    target: systemsRef,
-    offset: ["start end", "center center"],
-  });
-
-  /* CTA band: the page's only second aurora moment, echoing the hero. */
-  const ctaRef = useRef<HTMLElement>(null);
-  const { scrollYProgress: ctaProgress } = useScroll({
-    target: ctaRef,
-    offset: ["start end", "center center"],
-  });
-  const ctaAuroraScale = useTransform(
-    ctaProgress,
-    [0, 1],
-    parallaxOn ? [0.9, 1] : [1, 1],
-  );
-  const ctaAuroraY = useTransform(
-    ctaProgress,
-    [0, 1],
-    parallaxOn ? [12, 0] : [0, 0],
-  );
+  /** From the closing band's chips: sets the left side, like the tabs.
+   *  Picking the system that is on the right swaps the two. */
+  const chooseSystem = (next: SystemId) => {
+    if (next === system) return;
+    if (next === compare) setCompare(system);
+    setSystem(next);
+  };
 
   return (
     // `hero` class is required to enable page scroll (see globals.css :has(.hero)).
-    <main
-      id="main-content"
-      ref={rootRef}
-      className="landing-southleft hero"
-    >
-      {/* ── Nav ── */}
-      <motion.nav className="lsl-nav" style={navGlass} aria-label="Primary">
-        <div className="lsl-container lsl-nav-inner">
-          <Link href="/" className="lsl-logo" aria-label="uoaui.ai home">
-            <UoauiMark className="lsl-logo-mark-svg" />
-            <span className="lsl-logo-word">uoaui.ai</span>
-          </Link>
-          <ul className="lsl-nav-links">
-            {NAV_LINKS.map((l) => (
-              <li key={l.href}>
-                <a className="lsl-nav-link" href={l.href}>
-                  {l.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <Link href="/builder" className="lsl-cta">
-            Open the workbench
-          </Link>
-        </div>
-      </motion.nav>
-
-      {/* ── Hero ── */}
-      <section
-        ref={heroRef}
-        className="lsl-hero"
-        aria-labelledby="lsl-hero-headline"
-      >
-        {/* Aurora wash — cyan + pale glow, matches portfolio's .proj-nda-glow
-            motif. Pure decoration, kept under content. Tier A parallax:
-            lags scroll via transform only (the gradient never repaints). */}
-        <motion.div
-          className="lsl-hero-aurora"
-          aria-hidden="true"
-          style={{ y: auroraY }}
-        />
-
-        <div className="lsl-container">
-          <p className="lsl-hero-eyebrow" data-reveal>
-            uoaui.ai / five systems, one canvas
-          </p>
-          {/* LCP: no data-reveal here — the headline paints at opacity 1 on
-              first paint and animates transform-only (rise + one-shot
-              spotlight sweep, both in CSS). */}
-          <h1 id="lsl-hero-headline" className="lsl-hero-headline">
-            A visual web builder for designers who <em>think in systems</em>.
-          </h1>
-          <p className="lsl-hero-sub" data-reveal>
-            UI Kit plus private-preview Builder across Salt, Material 3,
-            Fluent 2, Carbon, and the uoaui system. The canvas renders real
-            components, and the export is code you can run.
-          </p>
-          <div className="lsl-hero-actions" data-reveal>
-            <HeroPrompt />
-            <div className="lsl-hero-actions-row">
-              <a className="lsl-hero-secondary" href="#demo">
-                Watch the demo
-                <span aria-hidden="true">{"→"}</span>
-              </a>
-              <Link className="lsl-hero-actions-link" href="/builder">
-                or open the builder
-              </Link>
-            </div>
+    <div className="landing-southleft hero">
+      <header className="lsl-header">
+        <motion.nav className="lsl-nav" style={navGlass} aria-label="Primary">
+          <div className="lsl-container lsl-nav-inner">
+            <Link prefetch={false} href="/" className="lsl-logo" aria-label="uoaui.ai home">
+              <UoauiMark className="lsl-logo-mark-svg" />
+              <span className="lsl-logo-word">uoaui.ai</span>
+            </Link>
+            <ul className="lsl-nav-links">
+              {NAV_LINKS.map((l) => (
+                <li key={l.href}>
+                  <a className="lsl-nav-link" href={l.href}>
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <Link prefetch={prefetch} href="/builder" className="lsl-cta lsl-nav-cta">
+              Open the builder
+            </Link>
           </div>
+        </motion.nav>
+      </header>
 
-          {/* Demo video — restored from the portfolio. Matches the
-              shannonhecker.com/project-uoaui.html cover treatment:
-              autoplay/muted/loop/playsinline + theme-aware framing. */}
-          <figure
-            id="demo"
-            className="lsl-hero-demo"
-            data-reveal
-            aria-label="uoaui.ai builder walkthrough"
-          >
-            {/* Tier C parallax: the frame leads scroll (-16px), floating the
-                product shot off the lagging aurora. Transform-only. */}
-            <motion.div className="lsl-hero-demo-frame" style={{ y: demoY }}>
-              {/* a11y (WCAG 2.2.2): don't autoplay/loop the demo for
-                  reduced-motion users — show a static first frame instead. */}
-              <video
-                className="lsl-hero-demo-video"
-                src="/uoaui-demo.mp4"
-                autoPlay={!reduce}
-                muted
-                loop={!reduce}
-                playsInline
-                preload="metadata"
-                aria-hidden="true"
-              />
-              <div className="lsl-hero-demo-shield" aria-hidden="true" />
-            </motion.div>
-            <figcaption className="lsl-hero-demo-caption">
-              Live capture · Workbench across Salt, Material 3, Fluent 2,
-              Carbon, and uoaui
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      {/* ── Systems trust strip (additive): real components from five systems ── */}
-      <section className="lsl-trust" aria-label="Design systems uoaui renders">
-        <div className="lsl-container">
-          <p className="lsl-trust-eyebrow" data-reveal>
-            Renders real components from
-          </p>
-          <ul className="lsl-trust-row" data-reveal>
-            {SYSTEMS.map((s) => (
-              <li key={s.name} className="lsl-trust-item">
-                <Link
-                  href={s.href}
-                  className="lsl-trust-mark"
-                  style={{ "--trust-brand": s.brand } as React.CSSProperties}
-                >
-                  {s.name}
+      <main id="main-content">
+        {/* ── Hero: headline, prompt and the instrument in one viewport ── */}
+        <section className="lsl-hero" aria-labelledby="lsl-hero-headline">
+          <div className="lsl-container lsl-hero-grid">
+            <div className="lsl-hero-copy">
+              <h1 id="lsl-hero-headline" className="lsl-hero-headline">
+                <span>One finance screen.</span>{" "}
+                <span>Five design systems.</span>
+              </h1>
+              <p className="lsl-hero-sub">
+                Describe the screen. Switch the system. Export code that runs.
+              </p>
+              <PromptForm id="lsl-hero-prompt-input" system={system} mode={mode} />
+              <p className="lsl-hero-alt">
+                No brief yet?{" "}
+                <Link prefetch={prefetch} className="lsl-inline-link" href="/builder">
+                  Start from a template
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ── Showcase: one real dashboard, reskinned across five systems ── */}
-      <ShowcaseGallery />
-
-      <hr className="lsl-rule" data-reveal />
-
-      {/* ── Services / what it does ── */}
-      <section
-        id="services"
-        className="lsl-section"
-        aria-labelledby="lsl-services-heading"
-      >
-        <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>canvas / overview</p>
-          <h2
-            id="lsl-services-heading"
-            className="lsl-section-heading"
-            data-reveal
-          >
-            A working canvas for design-system decisions.
-          </h2>
-          <p className="lsl-section-lede" data-reveal>
-            Compare, audit, and hand off across systems without leaving the
-            canvas. Four moves cover the day to day.
-          </p>
-
-          <div className="lsl-services">
-            {SERVICES.map((s, idx) => (
-              <ServiceCard
-                key={s.heading}
-                service={s}
-                index={idx}
-                parallaxOn={parallaxOn}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <hr className="lsl-rule" data-reveal />
-
-      {/* ── Same comp, five systems ── */}
-      <section
-        id="systems"
-        ref={systemsRef}
-        className="lsl-section"
-        aria-labelledby="lsl-systems-heading"
-      >
-        <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>
-            systems / side-by-side
-          </p>
-          <h2
-            id="lsl-systems-heading"
-            className="lsl-section-heading"
-            data-reveal
-          >
-            The same card. Five renderings.
-          </h2>
-          <p className="lsl-section-lede" data-reveal>
-            Pick a system to compose with. Swap later without rewriting the
-            comp. Tokens carry the intent, the renderer is a choice you can
-            unmake.
-          </p>
-
-          <div className="lsl-systems" data-reveal>
-            {SYSTEMS.map((s, idx) => (
-              <SystemCardItem
-                key={s.name}
-                spec={s}
-                index={idx}
-                progress={systemsProgress}
-                parallaxOn={parallaxOn}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <hr className="lsl-rule" data-reveal />
-
-      {/* ── Tokens you can read ── */}
-      <section
-        id="tokens"
-        className="lsl-section"
-        aria-labelledby="lsl-tokens-heading"
-      >
-        <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>tokens / primitives</p>
-          <h2
-            id="lsl-tokens-heading"
-            className="lsl-section-heading"
-            data-reveal
-          >
-            Tokens you can read.
-          </h2>
-          <p className="lsl-section-lede" data-reveal>
-            The unit of portability across five systems. Same primitives,
-            different rendering. This is a slice of the actual canvas, not a
-            style guide.
-          </p>
-
-          <div className="lsl-tokens" data-reveal>
-            {/* Colour column */}
-            <div className="lsl-tokens-col">
-              <p className="lsl-tokens-col-label">color</p>
-              <ul className="lsl-tokens-list">
-                {COLOR_TOKENS.map((t) => (
-                  <li key={t.name} className="lsl-token-row">
-                    <span
-                      className="lsl-token-swatch"
-                      style={{ background: t.hex }}
-                      aria-hidden="true"
-                    />
-                    <span className="lsl-token-meta">
-                      <span className="lsl-token-name">{t.name}</span>
-                      <span className="lsl-token-detail">
-                        {t.hex} · {t.role}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              </p>
             </div>
+            <Instrument
+              system={system}
+              compare={compare}
+              mode={mode}
+              prefetch={prefetch}
+              onChange={(s, c, m) => {
+                setSystem(s);
+                setCompare(c);
+                setMode(m);
+              }}
+            />
+          </div>
+        </section>
 
-            {/* Type column */}
-            <div className="lsl-tokens-col">
-              <p className="lsl-tokens-col-label">type</p>
-              <ul className="lsl-tokens-list">
-                {TYPE_TOKENS.map((t) => (
-                  <li key={t.sample} className="lsl-token-row">
+        {/* ── Systems: the same two parts, five at once ── */}
+        <section id="systems" className="lsl-section" aria-labelledby="lsl-systems-heading">
+          <div className="lsl-container">
+            <div className="lsl-section-head">
+              <h2 id="lsl-systems-heading" className="lsl-section-heading">
+                <span>The layout holds.</span> <span>The system changes.</span>
+              </h2>
+              <p className="lsl-section-lede">
+                The same search field and the same report card, whole, on each
+                system&apos;s own surface. The corners, the typeface and the
+                accent come from that system&apos;s components and tokens. The
+                content stays where you put it.
+              </p>
+            </div>
+            <ul className="lsl-systems">
+              {SYSTEMS.map((s) => (
+                <li key={s.id} className="lsl-systems-item">
+                  <Link
+                    prefetch={prefetch}
+                    href={`/builder?ds=${s.id}`}
+                    className="lsl-syscard"
+                    style={{ "--syscard-brand": s.brand } as React.CSSProperties}
+                  >
                     <span
-                      className="lsl-token-typesample"
-                      data-fam={t.fam}
+                      className="lsl-syscard-frame"
+                      style={{ "--sheet": s.surface } as React.CSSProperties}
                     >
-                      {t.sample}
+                      {/* Plain img: static captures with fixed dimensions. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/showcase/part-search-${s.id}.webp`}
+                        width={730}
+                        height={144}
+                        loading="lazy"
+                        decoding="async"
+                        alt={`The whole search field and its button in ${s.name}, dark mode.`}
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/showcase/part-card-${s.id}.webp`}
+                        width={730}
+                        height={656}
+                        loading="lazy"
+                        decoding="async"
+                        alt={`The whole Portfolio report card in ${s.name}, dark mode.`}
+                      />
                     </span>
-                    <span className="lsl-token-detail">{t.spec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                    <span className="lsl-syscard-name">{s.name}</span>
+                    <span className="lsl-syscard-trait">
+                      {s.font}. {s.corners === "0px" ? "Square corners" : `${s.corners} corners`}.{" "}
+                      <Swatch accent={s.accent.dark} />
+                      <span className="lsl-syscard-accent">{s.accent.dark.name}</span>
+                    </span>
+                    <span className="lsl-syscard-go">Build in {s.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="lsl-systems-hint">Swipe sideways for all five.</p>
+          </div>
+        </section>
 
-            {/* Spacing column */}
-            <div className="lsl-tokens-col">
-              <p className="lsl-tokens-col-label">space</p>
-              <ul className="lsl-tokens-list lsl-tokens-list-space">
-                {SPACE_TOKENS.map((t) => (
-                  <li key={t.name} className="lsl-token-row lsl-token-row-space">
-                    <span className="lsl-token-name lsl-token-name-mono">
-                      {t.name}
-                    </span>
-                    <span
-                      className="lsl-token-bar"
-                      style={{ width: `${t.v * 3}px` }}
-                      aria-hidden="true"
-                    />
-                    <span className="lsl-token-detail">{t.v}px</span>
-                  </li>
-                ))}
-              </ul>
+        {/* ── Workflow: describe, edit, present ── */}
+        <section id="workflow" className="lsl-section lsl-band" aria-labelledby="lsl-workflow-heading">
+          <div className="lsl-container">
+            <div className="lsl-section-head">
+              <h2 id="lsl-workflow-heading" className="lsl-section-heading">
+                <span>From one sentence</span> <span>to a finished screen.</span>
+              </h2>
+              <p className="lsl-section-lede">
+                The canvas is built from real components, so what you edit is
+                what you present and what you export. Pick a chapter to watch
+                it happen.
+              </p>
+            </div>
+            <Workflow />
+          </div>
+        </section>
+
+        {/* ── Export: real output ── */}
+        <section id="export" className="lsl-section" aria-labelledby="lsl-export-heading">
+          <div className="lsl-container lsl-export-grid">
+            <div className="lsl-export-copy">
+              <h2 id="lsl-export-heading" className="lsl-section-heading">
+                <span>Leave with code,</span> <span>not a screenshot.</span>
+              </h2>
+              <p className="lsl-section-lede">
+                Six formats: React, a Vite project, HTML, design tokens, and
+                two kinds of SVG, one of them measured for Figma. Shown here:
+                the opening lines of two of the six, exactly as the builder
+                wrote them.
+              </p>
+              <p className="lsl-export-proof">
+                We ran the Vite export of this screen: it installed, passed
+                the TypeScript check and built.
+              </p>
+            </div>
+            <ExportViewer />
+          </div>
+        </section>
+
+        {/* ── Closing band: the prompt, with the system in hand ── */}
+        <section id="cta" className="lsl-section lsl-cta-band" aria-labelledby="lsl-cta-heading">
+          <div className="lsl-container lsl-cta-grid">
+            <div>
+              <h2 id="lsl-cta-heading" className="lsl-cta-heading">
+                <span>Start with</span> <span>one sentence.</span>
+              </h2>
+              <p className="lsl-section-lede">
+                Pick the system, describe the screen, and the builder opens
+                with both.
+              </p>
+            </div>
+            <div className="lsl-cta-panel">
+              <PromptForm
+                id="lsl-cta-prompt-input"
+                system={system}
+                mode={mode}
+                onSystem={chooseSystem}
+                skip={compare}
+              />
+              <div className="lsl-cta-actions">
+                <Link prefetch={prefetch} href="/builder" className="lsl-cta-textlink">
+                  Open the builder
+                </Link>
+                <Link prefetch={prefetch} href="/ui-kit" className="lsl-cta-textlink">
+                  Browse the UI Kit
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <hr className="lsl-rule" data-reveal />
-
-      {/* ── Closing CTA band ── */}
-      <section
-        id="cta"
-        ref={ctaRef}
-        className="lsl-section lsl-cta-band"
-        aria-labelledby="lsl-cta-heading"
-      >
-        {/* The page's only second aurora moment — same recipe as the hero,
-            background pseudo-layer only, never on content surfaces. */}
-        <motion.div
-          className="lsl-cta-aurora"
-          aria-hidden="true"
-          style={{ scale: ctaAuroraScale, y: ctaAuroraY }}
-        />
-        <div className="lsl-container">
-          <p className="lsl-section-label" data-reveal>
-            builder / private preview
-          </p>
-          <h2 id="lsl-cta-heading" className="lsl-section-heading" data-reveal>
-            Stop choosing. Start composing.
-          </h2>
-          <p className="lsl-section-lede" data-reveal>
-            Open the workbench, drop a block, and watch five systems render
-            it. The export is real code, ready to run.
-          </p>
-          <div className="lsl-cta-actions" data-reveal>
-            <Link href="/builder" className="lsl-cta">
-              Open the workbench
-            </Link>
-            <Link href="/ui-kit" className="lsl-cta-textlink">
-              Browse the UI Kit
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       {/* ── Footer ── */}
-      <footer
-        id="about"
-        className="lsl-footer"
-        aria-labelledby="lsl-footer-heading"
-      >
+      <footer id="about" className="lsl-footer" aria-labelledby="lsl-footer-heading">
         <h2 id="lsl-footer-heading" className="sr-only">
           Site footer
         </h2>
         <div className="lsl-container">
-          <div className="lsl-footer-brand" data-reveal>
-            <div className="lsl-footer-brand-lockup">
-              <UoauiMark className="lsl-footer-brand-mark-svg" />
-              <p className="lsl-footer-brand-mark">uoaui.ai</p>
+          <div className="lsl-footer-top">
+            <div className="lsl-footer-brand">
+              <div className="lsl-footer-brand-lockup">
+                <UoauiMark className="lsl-footer-brand-mark-svg" />
+                <p className="lsl-footer-brand-mark">uoaui.ai</p>
+              </div>
+              <p className="lsl-footer-brand-body">
+                A workbench for designing across five systems. Built by a
+                design engineer who got tired of choosing.
+              </p>
             </div>
-            <p className="lsl-footer-brand-body">
-              A workbench for designing across five systems. Built by a
-              design engineer who got tired of choosing.
-            </p>
+            <ul className="lsl-footer-list" aria-label="Product">
+              <li><Link prefetch={prefetch} href="/builder">Builder</Link></li>
+              <li><Link prefetch={prefetch} href="/ui-kit">UI Kit</Link></li>
+              <li><Link prefetch={prefetch} href="/theme-builder">Theme builder</Link></li>
+              <li><Link prefetch={prefetch} href="/token-editor">Token editor</Link></li>
+            </ul>
           </div>
-
           <div className="lsl-footer-fine">
             <span>{"©"} {new Date().getFullYear()} uoaui.ai</span>
             <span>Built with restraint.</span>
           </div>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
