@@ -31,7 +31,7 @@ import { resolve } from "node:path";
 
 import LandingPage from "../page";
 import { EXPORT_SAMPLES } from "../landingExports";
-import { canPrefetchBuilder, PREFETCH_QUERY } from "../landingPrefetch";
+import { INTENT_DWELL_MS, isHoverPointer, prefetchFor, savesData } from "../landingPrefetch";
 import { SYSTEMS, differences, traits } from "../landingSystems";
 import { contrastRatio } from "@/lib/contrastUtils";
 
@@ -1634,17 +1634,9 @@ describe("instrument CSS contract", () => {
   });
 });
 
-/* ── 10. Builder prefetch gating ─────────────────────────────── */
+/* ── 10. Prefetch waits for intent ───────────────────────────── */
 
-describe("builder prefetch gating", () => {
-  const setMedia = (matches: boolean) => {
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query === PREFETCH_QUERY ? matches : false,
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })) as unknown as typeof window.matchMedia;
-  };
+describe("prefetch waits for intent", () => {
   const setSaveData = (saveData: boolean | undefined) =>
     Object.defineProperty(navigator, "connection", {
       value: saveData === undefined ? undefined : { saveData },
@@ -1653,26 +1645,42 @@ describe("builder prefetch gating", () => {
 
   afterEach(() => {
     setSaveData(undefined);
-    stubMatchMedia(false);
+    vi.useRealTimers();
   });
 
-  it("asks only wide, fine-pointer screens", () => {
-    expect(PREFETCH_QUERY).toBe("(min-width: 1241px) and (pointer: fine)");
+  const heavyLinks = () =>
+    [...container!.querySelectorAll<HTMLAnchorElement>("a[href]")].filter((a) =>
+      /^\/(builder|ui-kit|theme-builder|token-editor)/.test(a.getAttribute("href") ?? ""));
+
+  it("no link to another route asks Next to prefetch on sight", () => {
+    renderPage();
+    expect(heavyLinks().length).toBeGreaterThanOrEqual(12);
+    const src = readFileSync(PAGE_PATH, "utf8");
+    /* Every <Link> either never prefetches or takes its prefetch from intent. */
+    const links = [...src.matchAll(/<Link\s[\s\S]*?href=/g)].map((m) => m[0]);
+    expect(links.length).toBeGreaterThanOrEqual(10);
+    for (const link of links) expect(link, link).toMatch(/prefetch=\{false\}|\{\.\.\.intent\(/);
   });
 
-  it("allows prefetch on a desktop that has not asked to save data", () => {
-    setMedia(true);
-    expect(canPrefetchBuilder()).toBe(true);
+  it("a route is only warmed once it has been reached for", () => {
+    expect(prefetchFor(new Set(), "/builder")).toBe(false);
+    expect(prefetchFor(new Set(["/builder"]), "/builder")).toBe(null);
+    expect(prefetchFor(new Set(["/builder"]), "/ui-kit")).toBe(false);
   });
 
-  it("refuses on phones and narrow or touch screens", () => {
-    setMedia(false);
-    expect(canPrefetchBuilder()).toBe(false);
+  it("a mouse or a pen can hover; a finger cannot", () => {
+    expect(isHoverPointer("mouse")).toBe(true);
+    expect(isHoverPointer("pen")).toBe(true);
+    expect(isHoverPointer("touch")).toBe(false);
+    expect(INTENT_DWELL_MS).toBeGreaterThanOrEqual(50);
+    expect(INTENT_DWELL_MS).toBeLessThanOrEqual(150);
   });
 
-  it("refuses when the visitor asked to save data, even on a desktop", () => {
-    setMedia(true);
+  it("honours a request to save data", () => {
+    expect(savesData()).toBe(false);
+    setSaveData(false);
+    expect(savesData()).toBe(false);
     setSaveData(true);
-    expect(canPrefetchBuilder()).toBe(false);
+    expect(savesData()).toBe(true);
   });
 });

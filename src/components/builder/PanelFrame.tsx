@@ -7,7 +7,7 @@ import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { ComponentRenderer } from "./ComponentRenderer";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { PanelConfigDrawer } from "./PanelConfigDrawer";
-import { SimulatedDataGrid } from "./SimulatedDataGrid";
+import { LazyDataGrid as SimulatedDataGrid } from "./lazyBlocks";
 import type { GridColumn, GridRow } from "@/lib/dataGridModel";
 import {
   PANEL_HEADER_HEIGHT,

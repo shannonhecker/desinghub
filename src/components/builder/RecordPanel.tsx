@@ -7,7 +7,7 @@ import { toneColor, type GridTone } from "@/lib/dataGridModel";
 import { panelHeightOf } from "@/lib/panelMetrics";
 import { isRecordBinding, resolveRecord, type ResolvedSection } from "@/lib/recordPanelModel";
 import { PanelFrame } from "./PanelFrame";
-import { SimulatedHighchart } from "./SimulatedHighchart";
+import { LazyTrendChart as SimulatedHighchart, RECORD_TREND_HEIGHT } from "./lazyBlocks";
 import { useCanvasDataset } from "./useBoundData";
 import { useFeedDataset } from "./useExecutionFeed";
 
@@ -20,7 +20,7 @@ import { useFeedDataset } from "./useExecutionFeed";
    nothing selected it says how to select.
    ══════════════════════════════════════════════════════════ */
 
-const TREND_HEIGHT = 150;
+const TREND_HEIGHT = RECORD_TREND_HEIGHT;
 const toneStyle = (tone: GridTone): React.CSSProperties => ({ "--dh-tone": toneColor(tone) }) as React.CSSProperties;
 
 function Section({ section, system }: { section: ResolvedSection; system: DesignSystem }) {

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import dynamic from "next/dynamic";
 import { useBuilder } from "@/store/useBuilder";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { coerceDensity } from "@/lib/densitySize";
@@ -57,7 +56,6 @@ import { PanelFrame } from "./PanelFrame";
 import { RecordPanelBlock } from "./RecordPanel";
 import { EntityHeaderBlock, HeroSearchBlock, LauncherCardBlock, MetricTileBlock, VerdictCardBlock } from "./ReportBlocks";
 import { TopNavBlock, TabStripBlock, NavGroupBlock, PageTitleBlock, ContextBarBlock } from "./ChromeBars";
-import { ExecutionChartBlock } from "./ExecutionChart";
 import { InstrumentHeaderBlock } from "./InstrumentHeader";
 import { panelHeightOf, viewByOf, viewByStateKey } from "@/lib/panelMetrics";
 import { seriesToGrid, partsToGrid } from "@/lib/reportData/shape";
@@ -65,28 +63,11 @@ import { readGridColumns, readGridRows, formatGridValue } from "@/lib/dataGridMo
 import { useBoundData, useCanvasDataset, usePanelExpanded } from "./useBoundData";
 import { CURRENCY_STATE, centerColumn, nextSelection } from "@/lib/reportData/binding";
 import { dropdownModel } from "@/lib/dropdownModel";
-/* Highcharts core + react wrapper are heavy and only needed when a chart block
-   is actually on the canvas. Lazy-load (ssr:false) so Highcharts never enters
-   the builder's critical-path bundle / first paint. The `type` import above is
+/* Highcharts and AG Grid are heavy and only needed when a chart or a data
+   grid block is on the canvas: they load on first use (see lazyBlocks.tsx),
+   so neither enters the builder's first load. The `type` import above is
    erased at build time, so it does not pull the module eagerly. */
-/* AG Grid is as heavy as Highcharts and only needed when a Data Grid block is
-   on the canvas: same lazy, client-only treatment. */
-const SimulatedDataGrid = dynamic(
-  () => import("./SimulatedDataGrid").then((m) => m.SimulatedDataGrid),
-  { ssr: false },
-);
-const SimulatedHighchart = dynamic(
-  () => import("./SimulatedHighchart").then((m) => m.SimulatedHighchart),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        aria-hidden
-        style={{ height: 250, borderRadius: 8, background: "var(--ds-surface-2, rgba(127,127,127,0.08))" }}
-      />
-    ),
-  },
-);
+import { LazyDataGrid as SimulatedDataGrid, LazyHighchart as SimulatedHighchart, LazyExecutionChartBlock as ExecutionChartBlock } from "./lazyBlocks";
 import { SortableBlock } from "./SortableBlock";
 import { BlockErrorBoundary } from "./BlockErrorBoundary";
 import { GroupDropContainer } from "./GroupDropContainer";

@@ -3692,6 +3692,18 @@
   color: var(--dh-fg-muted);
   line-height: 1.45;
 }
+/* On the home screen the composer and the greeting are centred as one
+   column, and this line only appears once the page has heard from the server
+   that AI is off. As part of the column it made the column taller, which
+   moved the greeting and the composer up after they had been drawn (a layout
+   shift of 0.17 on a slow phone). Here it hangs below the composer instead:
+   same place on screen relative to the box, nothing else moves. */
+.chat-layout.chat-hero-state .chat-input-hint {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+}
 .chat-input-hint code {
   font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
   font-size: 10.5px;
