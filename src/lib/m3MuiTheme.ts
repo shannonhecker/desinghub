@@ -18,11 +18,16 @@
  * Two fits, one theme:
  *
  *   "slot" (default)  the builder. Its templates hold every block within a
- *                     pixel across five design systems, so controls keep the
- *                     sizes MUI gives them for the builder's density (see
- *                     densitySize.ts). The theme changes colour, corner,
- *                     case, typeface and state only; it never sets a
- *                     height, a width, a padding or a font size.
+ *                     pixel across five design systems, so every control
+ *                     keeps the outer box MUI gives it for the builder's
+ *                     density (see densitySize.ts): the theme sets no
+ *                     height, width, padding or font size on a button, chip,
+ *                     field, menu row or dialog title. Two things are sized
+ *                     inside an unchanged box: the switch (MUI's root stays
+ *                     58 by 38, or 40 by 24 small; its padding and handle
+ *                     sizes are set so Material's track and handles are
+ *                     drawn within it) and a dialog's actions (Material's
+ *                     24px side inset; the row's height is untouched).
  *   "spec"            the UI library. Controls take Material's own sizes
  *                     (40px button, 52 by 32 switch, 32px chip), as the
  *                     library's Material pages draw them.
@@ -96,6 +101,81 @@ export function withAlpha(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+/** HSL helpers for deriving a tone from a role (hue in degrees, s and l 0 to 1). */
+function toHsl(hex: string): [number, number, number] {
+  const [r, g, b] = rgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+function fromHsl(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1))).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+}
+function luminanceOf(hex: string): number {
+  const [r, g, b] = rgb(hex).map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrastOf(a: string, b: string): number {
+  const [hi, lo] = [luminanceOf(a), luminanceOf(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Material has no "success" role. A positive status takes the primary
+ *  container pair turned to green: the same saturation and tone as the
+ *  theme's own container (so it follows a custom colour), at this hue. */
+export const M3_POSITIVE_HUE = 145;
+
+export interface M3Tone { container: string; on: string }
+export type M3Status = "success" | "warning" | "error" | "info" | "secondary";
+
+/** Tonal container pairs for a status: what a filled status chip is drawn
+ *  in. Error and warning are Material's own error and tertiary containers,
+ *  info the primary container, "secondary" the secondary container, and
+ *  positive is derived (M3_POSITIVE_HUE). Every pair is at least 4.5:1
+ *  for a well-formed token set (the unit test holds the baseline to it). */
+export function m3StatusTones(roles: M3Roles): Record<M3Status, M3Tone> {
+  const [, cs, cl] = toHsl(roles.primaryContainer);
+  const [, os, ol] = toHsl(roles.onPrimaryContainer);
+  /* Green is lighter to the eye than violet at one HSL lightness, so the
+     pair is opened up until it reads. On a pale container (light mode) the
+     label is deepened; on a deep one (dark mode) the container is deepened,
+     which keeps it a container tone instead of bleaching the label. Only
+     if that runs out does the other side move. */
+  const darkLabel = ol < cl;
+  /* As far apart as Material's own container pairs are (about 7:1), and
+     never under 4.5:1. */
+  const target = Math.max(4.5, Math.min(7, contrastOf(roles.onPrimaryContainer, roles.primaryContainer)));
+  const sat = Math.min(cs, 0.6);
+  let containerL = cl;
+  let labelL = ol;
+  let container = fromHsl(M3_POSITIVE_HUE, sat, containerL);
+  let on = fromHsl(M3_POSITIVE_HUE, os, labelL);
+  for (let i = 0; i < 80 && contrastOf(on, container) < target; i++) {
+    if (darkLabel) labelL = Math.max(0.06, labelL - 0.02);
+    else containerL = Math.max(0.1, containerL - 0.02);
+    if (i > 20) { labelL = darkLabel ? labelL : Math.min(0.96, labelL + 0.02); containerL = darkLabel ? Math.min(0.96, containerL + 0.02) : containerL; }
+    container = fromHsl(M3_POSITIVE_HUE, sat, containerL);
+    on = fromHsl(M3_POSITIVE_HUE, os, labelL);
+  }
+  return {
+    success: { container, on },
+    warning: { container: roles.tertiaryContainer, on: roles.onTertiaryContainer },
+    error: { container: roles.errorContainer, on: roles.onErrorContainer },
+    info: { container: roles.primaryContainer, on: roles.onPrimaryContainer },
+    secondary: { container: roles.secondaryContainer, on: roles.onSecondaryContainer },
+  };
+}
+
 /** The MUI palette for the roles. Shared by the component theme below and by
  *  the builder's `--mui-*` token sheet (officialM3FluentTokens.ts), so the
  *  canvas around a component and the component agree. */
@@ -128,6 +208,7 @@ export function m3Palette(mode: M3Mode, roles: M3Roles) {
 function slotOptions(mode: M3Mode, density: DensityLevel, roles: M3Roles): ThemeOptions {
   const size3 = muiSize(density);
   const size2 = muiSize2(density);
+  const tones = m3StatusTones(roles);
   const tonal = {
     backgroundColor: roles.secondaryContainer,
     color: roles.onSecondaryContainer,
@@ -168,6 +249,10 @@ function slotOptions(mode: M3Mode, density: DensityLevel, roles: M3Roles): Theme
       MuiDialog: { styleOverrides: { paper: { borderRadius: M3_SHAPE.extraLarge, backgroundColor: roles.surfaceContainerHigh } } },
       /* Headline, not a bold title: Material sets dialog headlines at 400. */
       MuiDialogTitle: { styleOverrides: { root: { fontWeight: 400 } } },
+      /* Material insets a dialog's actions as far as its content (24px), so
+         the primary action ends on the fields' column and clear of the 28px
+         corner. Sides only: the row keeps MUI's height. */
+      MuiDialogActions: { styleOverrides: { root: { paddingLeft: 24, paddingRight: 24 } } },
       MuiMenu: { styleOverrides: { paper: { borderRadius: M3_SHAPE.extraSmall, backgroundColor: roles.surfaceContainer } } },
       MuiMenuItem: { styleOverrides: { root: { "&.Mui-selected": tonal, "&.Mui-selected.Mui-focusVisible": tonal["&:hover"] } } },
       MuiListItemButton: { styleOverrides: { root: { borderRadius: M3_SHAPE.full, "&.Mui-selected": tonal } } },
@@ -196,10 +281,24 @@ function slotOptions(mode: M3Mode, density: DensityLevel, roles: M3Roles): Theme
           root: {
             borderRadius: M3_SHAPE.small,
             fontWeight: 500,
-            variants: [{
-              props: { color: "default" },
-              style: { backgroundColor: "transparent", border: `1px solid ${roles.outline}`, color: roles.onSurfaceVariant },
-            }],
+            variants: [
+              {
+                props: { color: "default" },
+                style: { backgroundColor: "transparent", border: `1px solid ${roles.outline}`, color: roles.onSurfaceVariant },
+              },
+              /* A filled status chip is a tonal container with its
+                 on-container label (m3StatusTones), not MUI's saturated
+                 fill. Colour only: the chip's size is unchanged. */
+              ...(Object.entries(tones) as [M3Status, M3Tone][]).map(([color, tone]) => ({
+                props: { color, variant: "filled" as const },
+                style: {
+                  backgroundColor: tone.container,
+                  color: tone.on,
+                  "& .MuiChip-deleteIcon": { color: withAlpha(tone.on, 0.7) },
+                  "& .MuiChip-deleteIcon:hover": { color: tone.on },
+                },
+              })),
+            ],
           },
         },
       },

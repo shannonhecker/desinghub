@@ -57,9 +57,10 @@ async function setMode(page: Page, mode: Mode) {
   await expect(page.getByRole("button", { name: `Switch to ${mode === "dark" ? "light" : "dark"} mode` }).first()).toBeVisible();
   /* The canvas repaints in the new mode a frame or two after the toggle
      says so (the token sheet and each MUI theme follow the store): wait
-     until the canvas's own primary is that mode's before reading anything. */
+     until the canvas's own primary is that mode's before reading anything.
+     (Present's canvas, or the Edit canvas when that is what is showing.) */
   await expect(async () => {
-    const primary = await stage(page).locator(".bp-dashboard").evaluate((el) => {
+    const primary = await page.locator(".bp-dashboard").first().evaluate((el) => {
       const probe = document.createElement("span");
       probe.style.color = "var(--ds-primary)";
       el.appendChild(probe);
@@ -198,7 +199,8 @@ test.describe("Builder - Material 3 is Material 3", () => {
       expectPill(track);
       expect(track.borderWidth, "2px outline").toBe(2);
       const on = stage(page).locator(".MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track").first();
-      if (await on.count()) expect((await look(on)).bg, "an on switch is the primary role").toBe(ROLES[mode].primary);
+      await expect(on, "the template has switches that are on").toBeVisible();
+      expect((await look(on)).bg, "an on switch is the primary role").toBe(ROLES[mode].primary);
       /* The row keeps the height the template gives it (MUI's 38px root). */
       expect((await look(sw)).height).toBeCloseTo(38, 0);
     }
@@ -268,5 +270,199 @@ test.describe("Builder - Material 3 is Material 3", () => {
       expect(selectLook.family).toBe("roboto");
       expect(selectLook.contrast).toBeGreaterThanOrEqual(4.5);
     }
+  });
+});
+
+/* ── Dialog actions sit on the content column ──
+   Material insets a dialog's actions 24px, the same as its content, so the
+   primary action's right edge is the fields' right edge. (MUI's own 8px put
+   Submit about 16px past the column, into the 28px corner.) */
+test.describe("Builder - Material 3 dialogs: the actions sit on the content column", () => {
+  for (const width of [1440, 375] as const) {
+    test(`order ticket and Go to at ${width}: the primary action ends where the content does`, async ({ page }) => {
+      await page.setViewportSize(width === 1440 ? { width: 1440, height: 900 } : { width: 375, height: 812 });
+      await applyTemplate(page, "FX Execution");
+      await expect(stage(page).locator(".dh-exec .highcharts-root")).toBeVisible({ timeout: 30_000 });
+      for (const mode of MODES) {
+        await setMode(page, mode);
+        for (const opener of ["Fill now", "Go to a date or range"]) {
+          await stage(page).getByRole("button", { name: opener }).click();
+          const dialog = page.getByRole("dialog");
+          await expect(dialog).toBeVisible();
+          /* Once the dialog has finished opening (it scales in). */
+          await settled(async () => {
+            const edges = await dialog.evaluate((d) => {
+              const content = d.querySelector<HTMLElement>(".MuiDialogContent-root")!;
+              const cs = getComputedStyle(content);
+              const box = content.getBoundingClientRect();
+              const buttons = [...d.querySelectorAll<HTMLElement>(".MuiDialogActions-root button")].map((b) => b.getBoundingClientRect());
+              return {
+                left: box.left + parseFloat(cs.paddingLeft),
+                right: box.right - parseFloat(cs.paddingRight),
+                first: buttons[0].left,
+                primary: buttons[buttons.length - 1].right,
+                oneRow: buttons.every((b) => Math.abs(b.top - buttons[0].top) < 1),
+              };
+            });
+            expect(Math.abs(edges.primary - edges.right), `${opener}, ${mode}: primary action's right edge on the content column`).toBeLessThanOrEqual(1);
+            expect(edges.first, "the actions fit inside the column").toBeGreaterThanOrEqual(edges.left - 1);
+            expect(edges.oneRow, "the actions stay on one row").toBe(true);
+          });
+          await page.keyboard.press("Escape");
+          await expect(dialog).toHaveCount(0);
+        }
+      }
+    });
+  }
+});
+
+/* ── The chart rail's menus are Material surfaces ── */
+const SURFACES = {
+  light: { surfaceContainer: [243, 237, 247], secondaryContainer: [232, 222, 248], onSecondaryContainer: "rgb(29, 25, 43)" },
+  dark: { surfaceContainer: [33, 31, 38], secondaryContainer: [74, 68, 88], onSecondaryContainer: "rgb(232, 222, 248)" },
+} as const;
+const channels = (rgb: string) => rgb.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+const near = (rgb: string, want: readonly number[], by: number) => channels(rgb).every((c, i) => Math.abs(c - want[i]) <= by);
+
+test.describe("Builder - Material 3 rail menu", () => {
+  test("FX Execution: the Interval menu is surface-container and its checked row is the secondary container", async ({ page }) => {
+    await applyTemplate(page, "FX Execution");
+    await expect(stage(page).locator(".dh-exec .highcharts-root")).toBeVisible({ timeout: 30_000 });
+    for (const mode of MODES) {
+      await setMode(page, mode);
+      await stage(page).locator(".dh-exec-rail").getByRole("button", { name: "Interval", exact: true }).click();
+      const menu = page.getByRole("menu");
+      await expect(menu).toBeVisible();
+      const surface = await menu.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, image: getComputedStyle(el).backgroundImage, shadow: getComputedStyle(el).boxShadow }));
+      expect(near(surface.bg, SURFACES[mode].surfaceContainer, 0), `menu surface ${surface.bg}`).toBe(true);
+      /* No Material 2 elevation overlay on top of the role. */
+      expect(surface.image).not.toMatch(/gradient\(rgba\(255, 255, 255/);
+      expect(surface.shadow, "it still floats").not.toBe("none");
+      const checked = menu.locator(".is-checked").first();
+      await expect(checked).toBeVisible();
+      const row = await look(checked);
+      /* The highlighted checked row carries a 6% state layer over the role. */
+      expect(near(row.bg, SURFACES[mode].secondaryContainer, 16), `checked row ${row.bg}`).toBe(true);
+      expect(row.color).toBe(SURFACES[mode].onSecondaryContainer);
+      expect(row.contrast).toBeGreaterThanOrEqual(4.5);
+      const plain = await look(menu.locator('[role^="menuitem"]:not(.is-checked)').first());
+      expect(plain.contrast).toBeGreaterThanOrEqual(4.5);
+      await page.keyboard.press("Escape");
+    }
+  });
+});
+
+/* ── Status chips are tonal ── */
+const luminance = (rgb: string) => {
+  const [r, g, b] = channels(rgb).map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const TERTIARY = {
+  light: { container: "rgb(255, 216, 228)", on: "rgb(49, 17, 29)" },
+  dark: { container: "rgb(99, 59, 72)", on: "rgb(255, 216, 228)" },
+} as const;
+/* MUI's saturated fills, which Material 3 does not use for a status. */
+const SATURATED = ["rgb(46, 125, 50)", "rgb(102, 187, 106)", "rgb(237, 108, 2)", "rgb(255, 167, 38)"];
+
+test.describe("Builder - Material 3 status chips", () => {
+  test("Settings, Members: Active and Pending are tonal containers with readable labels, at the chip's size", async ({ page }) => {
+    await applyTemplate(page, "Settings Page");
+    await stage(page).getByRole("button", { name: "Members" }).first().click();
+    for (const mode of MODES) {
+      await setMode(page, mode);
+      const active = stage(page).locator(".MuiChip-root", { hasText: "Active" }).first();
+      const pending = stage(page).locator(".MuiChip-root", { hasText: "Pending" }).first();
+      await expect(active).toBeVisible();
+      await settled(async () => expect(SATURATED).not.toContain((await look(active)).bg));
+      const a = await look(active);
+      expect(a.contrast, "Active label").toBeGreaterThanOrEqual(4.5);
+      /* A container tone: pale in light, deep in dark; never the saturated fill. */
+      if (mode === "light") expect(luminance(a.bg)).toBeGreaterThan(0.6);
+      else expect(luminance(a.bg)).toBeLessThan(0.2);
+      const [r, g, b] = channels(a.bg);
+      expect(g, "positive reads green").toBeGreaterThan(Math.max(r, b));
+      expect(Math.round(a.height)).toBe(32);
+      expect(a.radius).toBe(8);
+      const p = await look(pending);
+      expect(p.bg, "warning is the tertiary container").toBe(TERTIARY[mode].container);
+      expect(p.color).toBe(TERTIARY[mode].on);
+      expect(p.contrast).toBeGreaterThanOrEqual(4.5);
+      expect(Math.round(p.height)).toBe(32);
+    }
+  });
+});
+
+/* ── The switch at every size the builder asks for, and on a finance template ── */
+async function editCanvas(page: Page) {
+  await page.getByRole("button", { name: "Edit canvas" }).click();
+  await expect(chatInput(page)).toBeVisible();
+  await page.keyboard.press("Escape");
+}
+const canvasSwitch = (page: Page) => page.locator(".bp-device-frame .bp-main .MuiSwitch-root");
+
+interface SwitchLook { root: [number, number]; track: [number, number]; trackRadius: number; trackBorder: number; thumb: number; trackBg: string; checked: boolean }
+async function switchLook(sw: Locator): Promise<SwitchLook> {
+  return sw.evaluate((el) => {
+    /* Layout sizes (offset and client boxes), which the Edit canvas's scale
+       does not touch: a rendered rectangle there is scaled and rounded. */
+    const size = (n: Element): [number, number] => [(n as HTMLElement).offsetWidth, (n as HTMLElement).offsetHeight];
+    const track = el.querySelector<HTMLElement>(".MuiSwitch-track")!;
+    const cs = getComputedStyle(track);
+    return {
+      root: size(el), track: size(track),
+      trackRadius: parseFloat(cs.borderTopLeftRadius), trackBorder: (track.offsetWidth - track.clientWidth) / 2,
+      thumb: size(el.querySelector(".MuiSwitch-thumb")!)[0], trackBg: cs.backgroundColor,
+      checked: Boolean(el.querySelector(".Mui-checked")),
+    };
+  });
+}
+
+test.describe("Builder - Material 3 switch sizes", () => {
+  test("Settings at High density: Material's switch at three quarters, inside MUI's small box", async ({ page }) => {
+    await applyTemplate(page, "Settings Page");
+    await stage(page).getByRole("button", { name: "Notifications" }).first().click();
+    await editCanvas(page);
+    await page.getByRole("button", { name: "More canvas actions" }).click();
+    await page.getByRole("menuitemradio", { name: "High" }).click();
+    const on = canvasSwitch(page).filter({ has: page.locator(".Mui-checked") }).first();
+    const off = canvasSwitch(page).filter({ hasNot: page.locator(".Mui-checked") }).first();
+    await expect(on).toHaveClass(/MuiSwitch-sizeSmall/);
+    for (const mode of MODES) {
+      await setMode(page, mode);
+      const a = await switchLook(on);
+      expect(a.root, "MUI's small box").toEqual([40, 24]);
+      expect(a.track, "the track fills it").toEqual([40, 24]);
+      expect(a.trackRadius).toBeGreaterThanOrEqual(12);
+      expect(a.trackBorder).toBe(2);
+      expect(a.thumb, "the on handle").toBe(18);
+      expect(a.trackBg, "on is the primary role").toBe(ROLES[mode].primary);
+      const b = await switchLook(off);
+      expect(b.thumb, "the off handle").toBe(12);
+      expect(b.root).toEqual([40, 24]);
+    }
+  });
+
+  test("a switch added to a finance template (ESG Analytics) is Material's, and the panels do not move", async ({ page }) => {
+    await applyTemplate(page, "ESG Analytics");
+    await editCanvas(page);
+    const boxes = () => page.locator(".bp-device-frame .bp-main [data-block-id]").evaluateAll((els) => els.slice(0, 6).map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.width), Math.round(r.height)]; }));
+    const before = await boxes();
+    const show = page.getByRole("button", { name: "Show component library", exact: true });
+    if (await show.isVisible()) await show.click();
+    await page.getByRole("searchbox", { name: "Search component library" }).fill("Switch");
+    await page.getByRole("button", { name: /^Toggle Switch, drag onto canvas/ }).click();
+    const sw = canvasSwitch(page).first();
+    await expect(sw).toBeVisible();
+    for (const mode of MODES) {
+      await setMode(page, mode);
+      const s = await switchLook(sw);
+      expect(s.root, "MUI's medium box").toEqual([58, 38]);
+      expect(s.track, "Material's track").toEqual([52, 32]);
+      expect(s.trackRadius).toBeGreaterThanOrEqual(16);
+      expect(s.trackBorder).toBe(2);
+      expect(s.thumb).toBe(s.checked ? 24 : 16);
+    }
+    /* The report's panels keep their columns and heights. */
+    expect((await boxes()).slice(0, before.length)).toEqual(before);
   });
 });

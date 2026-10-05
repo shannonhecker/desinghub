@@ -11297,6 +11297,9 @@ th[class*="-th"] > span { vertical-align: middle; }
    marks it with the check alone), with a lighter tint over it on hover or
    focus rather than a second full one. */
 .dh-exec-flyout-item.is-checked:not(:hover):not(.is-active) { background: var(--dh-exec-menu-active-bg, transparent); }
+/* A system whose selected fill has its own text role (Material's
+   on-secondary-container) says so; the others leave the row's colour alone. */
+.dh-exec-flyout-item.is-checked { color: var(--dh-exec-menu-active-fg, inherit); }
 .dh-exec-flyout-item.is-checked:hover,
 .dh-exec-flyout-item.is-checked.is-active { background: color-mix(in srgb, var(--ds-fg) 6%, var(--dh-exec-menu-active-bg, transparent)); }
 /* Inside the menu's edge, which scrolls (and so clips) when it is capped. */

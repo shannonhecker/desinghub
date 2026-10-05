@@ -11,7 +11,7 @@
 import { describe, it, expect } from "vitest";
 import { THEMES } from "@/data/m3/themes";
 import { contrastRatio } from "@/lib/contrastUtils";
-import { buildM3Theme, m3Roles, m3ThemeOptions, m3ThemeSource, stateLayer } from "@/lib/m3MuiTheme";
+import { buildM3Theme, m3Roles, m3StatusTones, m3ThemeOptions, m3ThemeSource, stateLayer } from "@/lib/m3MuiTheme";
 
 const MODES = ["light", "dark"] as const;
 
@@ -163,5 +163,87 @@ describe("the theme is data, so the export can write it out", () => {
     /* It is an expression: evaluating it gives back the options. */
     const evaluated = new Function(`return (${source});`)();
     expect(evaluated).toEqual(m3ThemeOptions({ mode: "dark", density: "medium", fit: "slot" }));
+  });
+});
+
+describe("status tones: a status is a tonal container, not a saturated fill", () => {
+  for (const mode of MODES) {
+    it(`${mode}: every status pair is at least 4.5:1`, () => {
+      const tones = m3StatusTones(m3Roles(mode));
+      for (const [status, tone] of Object.entries(tones)) {
+        expect(contrastRatio(tone.on, tone.container), status).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+
+    it(`${mode}: error, warning, info and secondary are Material's own container roles`, () => {
+      const roles = m3Roles(mode);
+      const tones = m3StatusTones(roles);
+      expect(tones.error).toEqual({ container: roles.errorContainer, on: roles.onErrorContainer });
+      expect(tones.warning).toEqual({ container: roles.tertiaryContainer, on: roles.onTertiaryContainer });
+      expect(tones.info).toEqual({ container: roles.primaryContainer, on: roles.onPrimaryContainer });
+      expect(tones.secondary).toEqual({ container: roles.secondaryContainer, on: roles.onSecondaryContainer });
+    });
+
+    it(`${mode}: positive is derived from the primary container, turned green, at a container tone`, () => {
+      const roles = m3Roles(mode);
+      const { container } = m3StatusTones(roles).success;
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(container.slice(i, i + 2), 16));
+      expect(g).toBeGreaterThan(Math.max(r, b));
+      /* A container tone: as pale as the theme's own container in light,
+         at least as deep as it in dark (green needs to be deeper to read). */
+      const light = (hex: string) => { const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return (Math.max(...c) + Math.min(...c)) / 510; };
+      if (mode === "light") expect(light(container)).toBeCloseTo(light(roles.primaryContainer), 1);
+      else expect(light(container)).toBeLessThanOrEqual(light(roles.primaryContainer));
+    });
+  }
+
+  it("a custom primary carries through to the positive tone's saturation and lightness", () => {
+    const tones = m3StatusTones(m3Roles("light", { ...THEMES.light, primaryContainer: "#CFE9E0", onPrimaryContainer: "#002019" }));
+    expect(contrastRatio(tones.success.on, tones.success.container)).toBeGreaterThanOrEqual(4.5);
+    expect(tones.success.container).not.toBe(m3StatusTones(m3Roles("light")).success.container);
+  });
+
+  it("slot: filled status chips take the tones; the library's chip is as it was", () => {
+    type Variant = { props: Record<string, unknown>; style: Record<string, unknown> };
+    for (const mode of MODES) {
+      const tones = m3StatusTones(m3Roles(mode));
+      const root = buildM3Theme({ mode, fit: "slot" }).components!.MuiChip!.styleOverrides!.root as { variants: Variant[] };
+      for (const [status, tone] of Object.entries(tones)) {
+        const variant = root.variants.find((v) => v.props.color === status && v.props.variant === "filled");
+        expect(variant, status).toBeTruthy();
+        expect(variant!.style.backgroundColor).toBe(tone.container);
+        expect(variant!.style.color).toBe(tone.on);
+        /* Colour only: the chip keeps its size. */
+        for (const key of ["height", "padding", "fontSize", "minWidth", "width"]) expect(Object.keys(variant!.style)).not.toContain(key);
+      }
+      const spec = buildM3Theme({ mode, fit: "spec" }).components!.MuiChip!.styleOverrides!.root as { variants: Variant[] };
+      expect(spec.variants).toHaveLength(1);
+    }
+  });
+});
+
+describe("slot: sized inside an unchanged box", () => {
+  it("dialog actions take Material's 24px side inset and nothing vertical", () => {
+    const actions = buildM3Theme({ mode: "light", fit: "slot" }).components!.MuiDialogActions!.styleOverrides!.root as Record<string, unknown>;
+    expect(actions).toEqual({ paddingLeft: 24, paddingRight: 24 });
+    expect(buildM3Theme({ mode: "light", fit: "spec" }).components!.MuiDialogActions).toBeUndefined();
+  });
+
+  it("the small switch (High density) is the same drawing at three quarters, in MUI's 40 by 24 box", () => {
+    type Variant = { props: Record<string, unknown>; style: Record<string, Record<string, unknown> | number> };
+    const root = buildM3Theme({ mode: "light", density: "high", fit: "slot" }).components!.MuiSwitch!.styleOverrides!.root as { variants: Variant[] } & Record<string, unknown>;
+    expect(buildM3Theme({ mode: "light", density: "high" }).components!.MuiSwitch!.defaultProps!.size).toBe("small");
+    const small = root.variants.find((v) => v.props.size === "small")!.style;
+    /* The track fills MUI's small root (no padding), and no width or height is set. */
+    expect(small.padding).toBe(0);
+    expect(Object.keys(small)).not.toContain("width");
+    expect(Object.keys(small)).not.toContain("height");
+    /* 12 off and 18 on, against 16 and 24 at medium. */
+    expect(small["& .MuiSwitch-thumb"]).toMatchObject({ width: 12, height: 12, margin: 3 });
+    expect(small["& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb"]).toMatchObject({ width: 18, height: 18, margin: 0 });
+    /* The handle's box is the track's height: 3 + 18 + 3. */
+    expect(small["& .MuiSwitch-switchBase"]).toMatchObject({ padding: 3, top: 0, left: 0 });
+    expect(root["& .MuiSwitch-thumb"]).toMatchObject({ width: 16, height: 16 });
+    expect(root["& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb"]).toMatchObject({ width: 24, height: 24 });
   });
 });
