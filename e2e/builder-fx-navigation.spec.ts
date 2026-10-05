@@ -400,7 +400,13 @@ test.describe("Builder - FX Execution chart navigation", () => {
     /* The view holds more than the session's part of the window (bars 0 to 61 of the 1D view), and its first time label is a January 2 one. */
     const x = (await viewX(page))!;
     expect(x[1] - x[0]).toBeGreaterThan(63);
-    await expect(plot(page).locator(".highcharts-xaxis-labels text").first()).toHaveText(/^02 Jan$/);
+    /* The leftmost label (by position, not DOM order: Highcharts does not
+       keep its label elements in axis order once the wider full-screen
+       plot fits more ticks) is the 2 January date label. */
+    await expect.poll(async () => plot(page).locator(".highcharts-xaxis-labels text").evaluateAll((els) => {
+      const byX = els.map((el) => ({ x: el.getBoundingClientRect().left, text: el.textContent?.trim() ?? "" })).filter((l) => l.text).sort((a, b) => a.x - b.x);
+      return byX[0]?.text ?? "";
+    })).toMatch(/^02 Jan$/);
   });
 
   test("with only the price scale zoomed, a plain wheel over the plot scrolls the page and leaves the view alone", async ({ page }) => {

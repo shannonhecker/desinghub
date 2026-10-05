@@ -1,3 +1,12 @@
+/**
+ * Rule (5 Oct): Edit equals Present at the design width. Edit lays the
+ * canvas out at 1320px (inside a 1px frame border each side) and scales it to
+ * the stage; Present on the desktop device is full screen and re-flows
+ * fluidly at the window's width. So the Edit-matches-Present comparison is
+ * made in a 1318px window, and a wider Present window must keep the same
+ * block order, the same row grouping and the same heights for fixed-height
+ * blocks (within 1px) while its columns stretch.
+ */
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -97,8 +106,11 @@ async function applyTemplateFromChat(page: Page, ask: string) {
 async function measure(page: Page): Promise<Measure> {
   return page.evaluate(() => {
     const frame = document.querySelector<HTMLElement>(".bp-device-frame")!;
-    const fr = frame.getBoundingClientRect();
     const zoom = parseFloat(frame.getAttribute("data-frame-zoom") ?? "1") || 1;
+    /* Origin: the frame's CONTENT box (inside its border, if it has one), so
+       the framed Edit canvas and the full-bleed Present canvas measure alike. */
+    const fb = frame.getBoundingClientRect();
+    const fr = { x: fb.x + frame.clientLeft * zoom, y: fb.y + frame.clientTop * zoom };
     const main = frame.querySelector<HTMLElement>(".bp-main")!;
     /* The grid cell (the block's wrapper) is what the layout places. */
     const boxes = [...main.querySelectorAll<HTMLElement>("[data-block-id]")].map((el) => {
@@ -124,6 +136,30 @@ async function settle(page: Page) {
     last = now;
     expect(stable).toBe(true);
   }).toPass({ timeout: 20_000, intervals: [500] });
+}
+
+/* Order, row grouping (blocks whose tops are within 2px share a row) and the
+   heights of blocks with a pinned height, for the fluid-Present rule. */
+async function measureWide(page: Page): Promise<{ ids: string[]; rows: number[]; fixed: (number | null)[] }> {
+  return page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".bp-device-frame .bp-main")!;
+    const els = [...main.querySelectorAll<HTMLElement>("[data-block-id]")];
+    const ids = els.map((el) => el.getAttribute("data-block-id") ?? "");
+    const tops = els.map((el) => (el.parentElement ?? el).getBoundingClientRect().top);
+    const rows: number[] = [];
+    let count = 0;
+    tops.forEach((t, i) => { if (i > 0 && Math.abs(t - tops[i - 1]) > 2) { rows.push(count); count = 0; } count++; });
+    rows.push(count);
+    /* A pinned height reaches the DOM as an inline px height on the block,
+       its grid cell, or its panel (a chart's height prop). */
+    const px = /(^|[;\s])(min-)?height:\s*\d+(\.\d+)?px|--[\w-]*height[\w-]*:\s*\d+(\.\d+)?px/i;
+    const pinned = (el: HTMLElement) =>
+      px.test(el.style.cssText) ||
+      px.test((el.parentElement as HTMLElement | null)?.style.cssText ?? "") ||
+      [...el.querySelectorAll<HTMLElement>("[style]")].some((n) => px.test(n.style.cssText));
+    const fixed = els.map((el) => (pinned(el) ? Math.round(el.getBoundingClientRect().height) : null));
+    return { ids, rows, fixed };
+  });
 }
 
 async function switchSystem(page: Page, label: (typeof SYSTEMS)[number]) {
@@ -166,8 +202,33 @@ test.describe("Builder - finance templates", () => {
 
     test(`${tpl.label}: Edit matches Present`, async ({ page }) => {
       await applyTemplate(page, tpl.label);
+      /* Present on the desktop device is full-bleed (5 Oct), so it is
+         measured in a 1318px window, where its content width equals Edit's
+         (a 1320px design width inside a 1px frame border each side). Like
+         with like; tolerances are unchanged. */
+      await page.setViewportSize({ width: 1318, height: 900 });
+      await settle(page);
       const present = await measure(page);
+
+      /* Wider Present re-flows fluidly: same order, same rows, same fixed heights. */
+      const narrow = await measureWide(page);
+      await page.setViewportSize({ width: 2000, height: 900 });
+      await settle(page);
+      const wideM = await measureWide(page);
+      expect(wideM.ids, "block order at 2000").toEqual(narrow.ids);
+      expect(wideM.rows, "row grouping at 2000").toEqual(narrow.rows);
+      expect(narrow.fixed.filter((h) => h !== null).length, "fixed-height blocks were found").toBeGreaterThan(0);
+      narrow.fixed.forEach((h, i) => {
+        if (h === null) return;
+        expect(wideM.fixed[i], `block ${i} is still fixed-height at 2000`).not.toBeNull();
+        expect(Math.abs(wideM.fixed[i]! - h), `fixed-height block ${i} at 2000`).toBeLessThanOrEqual(1);
+      });
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.getByRole("button", { name: "Edit canvas" }).click();
+      /* The panel opens on entering Edit (5 Oct); these design-pixel measurements
+         were calibrated with it hidden (a smaller zoom rounds to 2px): hide it. */
+      const closePanel = page.getByRole("button", { name: "Close panel", exact: true });
+      if (await closePanel.isVisible()) await closePanel.click();
       await expect(page.locator(".bp-viewport-wrapper .bp-main [data-block-id]").first()).toBeVisible();
       await settle(page);
       const edit = await measure(page);
@@ -178,6 +239,21 @@ test.describe("Builder - finance templates", () => {
           /* Heights are pinned by the template, so all four sides hold to
              1px here (unlike a table whose row hairlines add up). */
           expect.soft(Math.abs(box[s] - present.boxes[i][s]), `block ${i} ${side} ${box[s]} vs present ${present.boxes[i][s]}`).toBeLessThanOrEqual(1);
+        });
+      });
+
+      /* The default Edit state has the panel open: the same geometry within
+         one SCREEN pixel (design tolerance ceil(1 / zoom) from the real zoom). */
+      await page.getByRole("button", { name: "Show component library", exact: true }).click();
+      await settle(page);
+      const open = await measure(page);
+      const tol = Math.ceil(1 / open.zoom);
+      expect(open.zoom).toBeLessThan(edit.zoom);
+      expect(open.overflow).toBe(0);
+      expect(open.boxes.length).toBe(present.boxes.length);
+      open.boxes.forEach((box, i) => {
+        SIDES.forEach((side, s) => {
+          expect.soft(Math.abs(box[s] - present.boxes[i][s]), `panel open: block ${i} ${side} ${box[s]} vs present ${present.boxes[i][s]}`).toBeLessThanOrEqual(tol);
         });
       });
     });

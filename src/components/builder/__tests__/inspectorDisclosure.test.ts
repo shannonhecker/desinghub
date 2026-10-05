@@ -36,7 +36,7 @@ describe("inspector progressive disclosure", () => {
     // The section is titled "Size" and leads with a W/H dimensions row
     // (Figma-style: each axis is a value field + a Fill/Hug/px/% dropdown).
     expect(cl).toMatch(/<InspectorSection id="layout" title="Size">/);
-    const sizeRow = cl.indexOf('className="inspector-dim-cell"');
+    const sizeRow = cl.indexOf('className={`inspector-dim-controls');
     expect(sizeRow).toBeGreaterThan(-1);
     expect(sizeRow).toBeLessThan(sg);
     // Align is core → appears before the Advanced subgroup
@@ -56,7 +56,8 @@ describe("inspector progressive disclosure", () => {
     // rendered for EVERY selection (it edits the container's flow), but
     // leaf selections now collapse it by default — component properties
     // lead the stack. Behavioural coverage in visualQaBatch1.test.tsx.
-    expect(cl).toMatch(/title="Auto layout" defaultOpen=\{!leaf\}>/);
+    /* 5 Oct inspector redesign: the container-flow section is titled "Layout" (plain name). */
+    expect(cl).toMatch(/title="Layout" defaultOpen=\{!leaf\}>/);
     expect(cl).toMatch(/<ZoneLayoutSection\b/);
   });
 

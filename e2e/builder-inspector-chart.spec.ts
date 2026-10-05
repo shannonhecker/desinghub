@@ -16,15 +16,14 @@ test('Allocation inspector updates donut to pie and back without stale geometry 
   await expect.poll(arcCount).toBe(2);
   await expect(block.locator('svg text').filter({ hasText: '£3.55bn' })).toBeVisible();
   const parts = await block.locator('.highcharts-legend-item').allTextContents();
-  await page.getByRole('combobox', { name: 'Chart type', exact: true }).click();
-  await page.getByRole('option', { name: 'Pie', exact: true }).click();
+  /* 5 Oct: the inspector's select is the builder's own native select (one chrome style). */
+  await page.getByRole('combobox', { name: 'Chart type', exact: true }).selectOption({ label: 'Pie' });
   await expect.poll(arcCount).toBe(1);
   await expect(block.locator('svg text').filter({ hasText: '£3.55bn' })).toHaveCount(0);
   await expect(block.locator('.highcharts-legend-item')).toHaveText(parts);
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Portfolio composition');
   await expect(block.locator('.dh-panel-title')).toHaveText('Portfolio composition');
-  await page.getByRole('combobox', { name: 'Chart type', exact: true }).click();
-  await page.getByRole('option', { name: 'Donut', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Chart type', exact: true }).selectOption({ label: 'Donut' });
   await expect.poll(arcCount).toBe(2);
   await expect(block.locator('svg text').filter({ hasText: '£3.55bn' })).toBeVisible();
   await expect(block.locator('.highcharts-legend-item')).toHaveText(parts);
@@ -39,8 +38,7 @@ test('Allocation inspector updates donut to pie and back without stale geometry 
   await expect(block.locator('.highcharts-title')).toHaveText('Portfolio composition');
   await frame.click();
   await expect(block.locator('.dh-panel')).toHaveCSS('height', '500px');
-  await page.getByRole('combobox', { name: 'Chart type', exact: true }).click();
-  await page.getByRole('option', { name: 'Pie', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Chart type', exact: true }).selectOption({ label: 'Pie' });
   await expect.poll(arcCount).toBe(1);
   await page.reload();
   await expect(block.locator('.dh-panel-title')).toHaveText('Portfolio composition');
@@ -63,8 +61,7 @@ test('VaR inspector retains secondary-axis data and removes stacking when changi
   const names = await block.locator('.highcharts-legend-item').allTextContents();
   expect(names).toHaveLength(3);
   const kind = async (name: string) => {
-    await page.getByRole('combobox', { name: 'Chart type', exact: true }).click();
-    await page.getByRole('option', { name, exact: true }).click();
+    await page.getByRole('combobox', { name: 'Chart type', exact: true }).selectOption({ label: name });
     await expect(block.locator('.highcharts-legend-item')).toHaveText(names);
   };
   await kind('Line');

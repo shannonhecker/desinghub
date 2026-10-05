@@ -1372,7 +1372,7 @@ function DashboardFooter() {
    The spring is wrapped in useReducedMotion — when a user prefers
    reduced motion the width/height changes apply instantly
    (duration 0) instead of springing. */
-export function DeviceFrame({ children }: { children: React.ReactNode }) {
+export function DeviceFrame({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
   const deviceMode = useBuilder(effectiveDeviceMode);
   /* A canvas with several pages is an app the reader moves around: hold the
      frame at its full height so a short page does not shrink and re-centre
@@ -1391,6 +1391,12 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
       const cs = getComputedStyle(stage);
       const width = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const height = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      /* The stage reserves its scrollbar gutter (scrollbar-gutter: stable)
+         and never scrolls sideways (overflow-x: hidden), so a scrollbar can
+         no longer change this width: that was the Edit-mode shake. No
+         heuristic here: on a classic-scrollbar machine the gutter is always
+         present, and ignoring small shrinks would let a narrowed stage clip
+         the frame. */
       setAvail((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
     };
     measure();
@@ -1400,14 +1406,28 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fit = fitFrame(preset.width, preset.height, avail.width, avail.height);
+  /* Full-bleed desktop (Present and Preview, 5 Oct): the report is a
+     responsive app, so on the stage it takes the whole window, edge to edge,
+     at the window's real width, and scrolls inside the stage. No design
+     width, no scale, no frame chrome. Tablet and phone keep the framed,
+     centred preview, and Edit keeps its framed canvas beside the panels.
+     One element in both cases, so switching device does not remount the
+     dashboard (charts would replay, grids lose their state). */
+  const full = fullBleed && deviceMode === "desktop";
+  const zoom = full ? 1 : fit.zoom;
   return (
     <motion.div
       ref={frameRef}
-      className="bp-device-frame"
-      data-frame-zoom={fit.zoom}
+      className={`bp-device-frame${full ? " bp-device-frame--full" : ""}`}
+      data-frame-zoom={zoom}
+      data-full-bleed={full ? "true" : undefined}
       initial={false}
-      style={{ zoom: fit.zoom, "--dh-frame-zoom": fit.zoom, ...(multiPage ? { minHeight: preset.height } : {}) } as React.CSSProperties}
-      animate={{ width: preset.width, maxHeight: fit.maxHeight }}
+      style={{
+        zoom,
+        "--dh-frame-zoom": zoom,
+        ...(full ? { height: "100%" } : multiPage ? { minHeight: preset.height } : {}),
+      } as unknown as React.CSSProperties}
+      animate={full ? { width: "100%", maxHeight: "100%" } : { width: preset.width, maxHeight: fit.maxHeight }}
       transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 28 }}
     >
       {children}
@@ -1445,6 +1465,9 @@ interface BuilderCanvasProps {
   responsive?: boolean;
   resizableSidebar?: boolean;
   allowEmptyState?: boolean;
+  /** Present and Preview: with the desktop device the frame fills the stage
+     edge to edge instead of a centred design-width frame. */
+  fullBleedDesktop?: boolean;
 }
 
 export function BuilderCanvas({
@@ -1452,6 +1475,7 @@ export function BuilderCanvas({
   responsive = false,
   resizableSidebar = false,
   allowEmptyState = false,
+  fullBleedDesktop = false,
 }: BuilderCanvasProps) {
   const plainCanvas = useBuilder((st) => st.zoneLayouts.body.plain === true);
   const designSystem = useBuilder((s) => s.designSystem);
@@ -1579,7 +1603,7 @@ export function BuilderCanvas({
   if (!framed) return dashboard;
   /* Framed shells: Compare mode swaps the entire device frame for the
      four-up CompareView (unchanged behaviour from the side panel). */
-  return compareMode ? <CompareView /> : <DeviceFrame>{dashboard}</DeviceFrame>;
+  return compareMode ? <CompareView /> : <DeviceFrame fullBleed={fullBleedDesktop}>{dashboard}</DeviceFrame>;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2310,7 +2334,6 @@ export function PreviewSidePanel() {
 export function StandalonePreview() {
   const designSystem = useBuilder((s) => s.designSystem);
   const mode = useBuilder((s) => s.mode);
-  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
@@ -2348,12 +2371,8 @@ export function StandalonePreview() {
             <BuilderCanvas />
           </div>
 
-          {/* Right: Component Library Sidebar in standalone */}
-          {componentLibraryOpen && (
-            <aside className="component-sidebar">
-              <ComponentLibrary />
-            </aside>
-          )}
+          {/* No component sidebar here: the pop-out is read-only, and the
+              panel's open state now carries over from Edit (5 Oct). */}
         </div>
       </CanvasDndProvider>
     </div>

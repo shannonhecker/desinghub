@@ -10,8 +10,7 @@ import {
   publicAssetUrl,
   type SampleImageCategory,
 } from "@/lib/sampleImages";
-import { DsControlScope, DsText, DsSelect, DsToggle, supportsDsControls, useMounted, type Mode } from "@/components/builder/DsInspectorControls";
-import type { SystemId } from "@/lib/componentApiRegistry";
+import { beginHistoryTransaction } from "@/lib/builderHistory";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -20,13 +19,60 @@ import type { SystemId } from "@/lib/componentApiRegistry";
    field components needed.
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Shared inspector field wrapper ── */
-function InspectorField({ label, children }: { label: string; children: React.ReactNode }) {
+/* ── Shared inspector field wrapper ──
+   A stacked label tied to its control by id. `value` prints a live read-out
+   at the right of the label row (sliders). `inline` puts label and control
+   on one row (switches). */
+function InspectorField({
+  label,
+  htmlFor,
+  value,
+  inline = false,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  value?: React.ReactNode;
+  inline?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="inspector-field">
-      <label className="inspector-field-label">{label}</label>
+    <div className={`inspector-field${inline ? " inspector-field--switch" : ""}`}>
+      <label className="inspector-field-label" htmlFor={htmlFor}>
+        <span>{label}</span>
+        {value !== undefined && <span className="inspector-field-value">{value}</span>}
+      </label>
       {children}
     </div>
+  );
+}
+
+/* ── Switch ──
+   The one boolean control of the panel: a real switch (role, aria-checked,
+   Space toggles), labelled by the row's label through aria-labelledby. */
+export function InspectorSwitch({
+  id,
+  checked,
+  ariaLabel,
+  onChange,
+}: {
+  id?: string;
+  checked: boolean;
+  ariaLabel: string;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      className="inspector-switch"
+      onClick={() => onChange(!checked)}
+    >
+      <span className="inspector-switch-knob" aria-hidden="true" />
+    </button>
   );
 }
 
@@ -240,75 +286,84 @@ function ImagePicker({
   );
 }
 
+/* A focused text field is one undo step: open a history transaction on
+   focus, close it on blur. Escape leaves the field (and stops there). */
+export function useFieldCommit() {
+  const endRef = React.useRef<(() => void) | null>(null);
+  React.useEffect(() => () => endRef.current?.(), []);
+  return {
+    onFocus: () => { endRef.current?.(); endRef.current = beginHistoryTransaction(); },
+    onBlur: () => { endRef.current?.(); endRef.current = null; },
+    onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); (e.currentTarget as HTMLElement).blur(); }
+    },
+  };
+}
+
+function TextField({ id, value, placeholder, ariaLabel, onChange }: { id: string; value: string; placeholder?: string; ariaLabel: string; onChange: (v: string) => void }) {
+  const commit = useFieldCommit();
+  return (
+    <input id={id} className="inspector-input" type="text" value={value} placeholder={placeholder} aria-label={ariaLabel}
+      onChange={(e) => onChange(e.target.value)} {...commit} />
+  );
+}
+
+function TextAreaField({ id, value, rows, ariaLabel, onChange }: { id: string; value: string; rows: number; ariaLabel: string; onChange: (v: string) => void }) {
+  const commit = useFieldCommit();
+  return (
+    <textarea id={id} className="inspector-input" rows={rows} value={value} aria-label={ariaLabel}
+      onChange={(e) => onChange(e.target.value)} {...commit} />
+  );
+}
+
 /* ── Schema-driven inspector renderer ──
-   Text/Select/Toggle render as the ACTIVE DS's real components (Salt/M3/Fluent)
-   wrapped once in DsControlScope; the rest stay neutral. Carbon/uoaui fall back
-   to neutral controls until their scope machinery lands (supportsDsControls).
-   `useDs` is gated on client mount (same signal as DsControlScope) so the DS
-   controls never render a frame before their provider exists. */
+   Every control is builder chrome (one style per control type): the panel
+   edits the block, the canvas shows the design system. */
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
   const { props, set } = useBlockProps(blockId);
-  const system = useBuilder((s) => s.designSystem) as SystemId;
-  const mode = (useBuilder((s) => s.mode) === "dark" ? "dark" : "light") as Mode;
-  const mounted = useMounted();
-  const useDs = mounted && supportsDsControls(system);
+  const idBase = React.useId();
   return (
-    <DsControlScope system={system} mode={mode}>
+    <>
       {fields.map((f, i) => {
+        const id = `${idBase}-${i}`;
         switch (f.type) {
           case "text":
             return (
-              <InspectorField key={i} label={f.label}>
-                {useDs ? (
-                  <DsText system={system} ariaLabel={f.label} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
-                    onChange={(v) => set({ [f.propKey]: v })} />
-                ) : (
-                  <input className="inspector-input" type="text" value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
-                    onChange={(e) => set({ [f.propKey]: e.target.value })} />
-                )}
+              <InspectorField key={i} label={f.label} htmlFor={id}>
+                <TextField id={id} ariaLabel={f.label} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
+                  onChange={(v) => set({ [f.propKey]: v })} />
               </InspectorField>
             );
           case "textarea":
             return (
-              <InspectorField key={i} label={f.label}>
-                <textarea className="inspector-input" rows={f.rows ?? 3} value={(props[f.propKey] as string) ?? ""}
-                  onChange={(e) => set({ [f.propKey]: e.target.value })} style={{ resize: "vertical", lineHeight: 1.5 }} />
+              <InspectorField key={i} label={f.label} htmlFor={id}>
+                <TextAreaField id={id} ariaLabel={f.label} rows={f.rows ?? 3} value={(props[f.propKey] as string) ?? ""}
+                  onChange={(v) => set({ [f.propKey]: v })} />
               </InspectorField>
             );
           case "select":
             return (
-              <InspectorField key={i} label={f.label}>
-                {useDs ? (
-                  <DsSelect system={system} ariaLabel={f.label} value={(props[f.propKey] as string) ?? f.options[0]?.value ?? ""} options={f.options}
-                    onChange={(v) => set({ [f.propKey]: v })} />
-                ) : (
-                  <select className="inspector-select" value={(props[f.propKey] as string) ?? f.options[0]?.value}
-                    onChange={(e) => set({ [f.propKey]: e.target.value })}>
-                    {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
-                )}
+              <InspectorField key={i} label={f.label} htmlFor={id}>
+                <select id={id} className="inspector-select" aria-label={f.label} value={(props[f.propKey] as string) ?? f.options[0]?.value}
+                  onChange={(e) => set({ [f.propKey]: e.target.value })}>
+                  {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
               </InspectorField>
             );
           case "toggle": {
             const checked = Boolean(props[f.propKey]);
             return (
-              <InspectorField key={i} label={f.label}>
-                {useDs ? (
-                  <DsToggle system={system} ariaLabel={f.label} checked={checked} onChange={(v) => set({ [f.propKey]: v })} />
-                ) : (
-                  <button className={`inspector-toggle-btn${checked ? " active" : ""}`} onClick={() => set({ [f.propKey]: !checked })} style={{ width: "100%" }}>
-                    {checked ? "On" : "Off"}
-                  </button>
-                )}
+              <InspectorField key={i} label={f.label} htmlFor={id} inline>
+                <InspectorSwitch id={id} ariaLabel={f.label} checked={checked} onChange={(v) => set({ [f.propKey]: v })} />
               </InspectorField>
             );
           }
           case "range": {
             const val = Number(props[f.propKey] ?? f.min ?? 0);
             return (
-              <InspectorField key={i} label={`${f.label} (${val}${f.suffix ?? ""})`}>
-                <input className="inspector-input" type="range" aria-label={f.label} min={f.min ?? 0} max={f.max ?? 100} value={val}
-                  onChange={(e) => set({ [f.propKey]: Number(e.target.value) })} style={{ width: "100%" }} />
+              <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
+                <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
+                  onChange={(e) => set({ [f.propKey]: Number(e.target.value) })} />
               </InspectorField>
             );
           }
@@ -322,12 +377,12 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
               </InspectorField>
             );
           case "static":
-            return <div key={i} style={{ padding: "4px 0", fontSize: 11, opacity: 0.5 }}>{f.text}</div>;
+            return <p key={i} className="inspector-field-hint">{f.text}</p>;
           case "action":
             return <ActionButton key={i} blockId={blockId} label={f.label} action={f.action} />;
         }
       })}
-    </DsControlScope>
+    </>
   );
 }
 
@@ -364,8 +419,7 @@ function ActionButton({
     <div className="inspector-field">
       <button
         type="button"
-        className="inspector-toggle-btn"
-        style={{ width: "100%" }}
+        className="inspector-btn inspector-btn--full"
         onClick={handleClick}
       >
         {label}
