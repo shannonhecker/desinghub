@@ -67,6 +67,7 @@ import {
   type DensityLevel,
 } from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
+import { RealKitDialog, RealKitMenu, type KitDialogModel, type KitMenuModel } from "@/components/ui-kit/RealDialogKit";
 import { RealFormDialog, type FormDialogModel } from "@/components/ui-kit/RealFormDialog";
 import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
@@ -1251,6 +1252,9 @@ export function RealComponentRenderer({
   props,
   kit,
 }: RealComponentRendererProps): React.ReactElement | null {
+  /* Not canvas blocks: a dialog and an anchored menu (props.model), in each system's own components (RealDialogKit). */
+  if (type === "KitDialog") return props.model ? <RealKitDialog system={system} mode={mode} density={saltDensity} model={props.model as KitDialogModel} /> : null;
+  if (type === "KitMenu") return props.model ? <RealKitMenu system={system} mode={mode} model={props.model as KitMenuModel} /> : null;
   /* Not a canvas block: a small form in each system's own dialog (props.model). */
   if (type === "FormDialog") return props.model ? <RealFormDialog system={system} mode={mode} density={saltDensity} model={props.model as FormDialogModel} /> : null;
   if (!canRenderReal(system, type)) return null;

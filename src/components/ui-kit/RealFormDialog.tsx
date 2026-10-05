@@ -21,6 +21,7 @@
  */
 
 import React from "react";
+import { useOverlayEscape, useReturnFocus } from "@/lib/overlayEscape";
 import { createPortal } from "react-dom";
 import { getFullCSS, getTheme } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
@@ -112,7 +113,6 @@ interface Props { system: SystemId; mode: Mode; density?: DensityLevel | string;
 /** Escape closes the dialog and nothing else; on close focus returns to the launcher. */
 function useDialogKeys(model: FormDialogModel) {
   const { open, onClose, returnFocus } = model;
-  const wasOpen = React.useRef(false);
   /* Opened from inside a device frame (a tablet or phone preview): no wider
      than the frame, as it would be on that device. The dialogs are drawn at
      the end of the page, so the cap is a variable on the root while open. */
@@ -124,31 +124,9 @@ function useDialogKeys(model: FormDialogModel) {
     root.style.setProperty("--dh-form-dialog-cap", `${Math.round(frame.getBoundingClientRect().width)}px`);
     return () => { root.style.removeProperty("--dh-form-dialog-cap"); };
   }, [open, returnFocus]);
-  React.useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.stopPropagation();
-      e.preventDefault();
-      onClose();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [open, onClose]);
-  React.useEffect(() => {
-    if (open) { wasOpen.current = true; return; }
-    if (!wasOpen.current) return;
-    wasOpen.current = false;
-    /* After the system's own focus handling has run (some systems keep focus
-       in a closing dialog until its exit animation ends). */
-    const back = () => {
-      const target = returnFocus?.current;
-      const now = document.activeElement as HTMLElement | null;
-      if (target && now !== target && (!now || now === document.body || now.closest('[role="dialog"], .dh-form-dialog'))) target.focus();
-    };
-    const ids = [0, 120, 320].map((ms) => window.setTimeout(back, ms));
-    return () => ids.forEach((id) => window.clearTimeout(id));
-  }, [open, returnFocus]);
+  /* Escape and the hand-back of focus are the kit's one mechanism (overlayEscape). */
+  useOverlayEscape(open, onClose);
+  useReturnFocus(open, returnFocus);
 }
 
 const errorId = (f: FormDialogField) => `${f.id}-error`;

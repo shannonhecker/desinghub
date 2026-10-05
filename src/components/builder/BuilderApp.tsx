@@ -31,6 +31,7 @@ import { hasUniformStructure } from "@/lib/builderTemplates";
 import { copyShareLink, downloadCanvasJson, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
 import { startNewSessionWithUndo } from "@/lib/sessionReset";
 import { ACCENT_VAR_BY_DS, ACCENT_KEY_BY_DS } from "@/data/_shared/accentPresets";
+import { overlayTookEscape } from "@/lib/overlayEscape";
 import "./builder.css";
 
 export function BuilderApp() {
@@ -282,6 +283,8 @@ export function BuilderApp() {
       /* A menu or popover that handled Escape itself (closing) keeps it. */
       if (e.key === "Escape" && e.defaultPrevented) return;
       if (e.key === "Escape") {
+        /* An Escape pressed while a kit dialog or menu was open was that overlay's (or its popup's). */
+        if (overlayTookEscape(e)) return;
         const s = usePreviewMode.getState();
         if (s.mode === "preview") {
           e.preventDefault();
