@@ -6,7 +6,7 @@ import type { KitDialogModel, KitField } from "@/components/ui-kit/RealDialogKit
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { splitQuote } from "@/lib/executionModel";
 import {
-  draftTicket, GOOD_TILL, ORDER_TYPES, SAMPLE_ACCOUNT, SAMPLE_CONFIRMATION, START_OPTIONS, validateTicket,
+  draftTicket, GOOD_TILL, ORDER_TYPES, SAMPLE_ACCOUNT, SAMPLE_CONFIRMATION, START_OPTIONS, tidyAmount, validateTicket,
   type Market, type Side, type TicketDraft, type TicketErrors,
 } from "@/lib/executionOrders";
 import { orderActions, showToast, type TicketRequest } from "./useOrderSession";
@@ -52,7 +52,13 @@ export function OrderTicket({ request, open, ctx }: { request: TicketRequest; op
   const pickSide = (side: Side) => set({ side, price: (side === "SELL" ? ctx.market.bid : ctx.market.ask).toFixed(5) });
   const submit = () => {
     const r = validateTicket(draft, ctx.market);
-    if (!r.ok) { setErrors(r.errors); return; }
+    if (!r.ok) {
+      setErrors(r.errors);
+      /* Focus goes to the first field that needs fixing. */
+      const first = (["notional", "price", "iceberg"] as const).find((k) => r.errors[k]);
+      if (first) window.setTimeout(() => document.getElementById(`dh-ticket-${first}`)?.focus(), 0);
+      return;
+    }
     orderActions.place(ctx.order, r.order);
     orderActions.close();
     showToast(SAMPLE_CONFIRMATION);
@@ -86,11 +92,11 @@ export function OrderTicket({ request, open, ctx }: { request: TicketRequest; op
       ],
       [{ kind: "static", id: "dh-ticket-direction", label: "Direction", value: draft.side === "BUY" ? `Buy ${base}, sell ${quote}` : `Sell ${base}, buy ${quote}` }],
       [
-        { kind: "text", id: "dh-ticket-notional", label: `Notional (${base})`, value: draft.notional, inputMode: "decimal", align: "end", error: errors?.notional, onChange: (notional) => set({ notional }) },
+        { kind: "text", id: "dh-ticket-notional", label: `Notional (${base})`, value: draft.notional, inputMode: "decimal", align: "end", error: errors?.notional, onChange: (notional) => set({ notional }), onBlur: () => { const t = tidyAmount(draft.notional); if (t !== draft.notional) set({ notional: t }); } },
         priceField,
       ],
       [
-        { kind: "text", id: "dh-ticket-iceberg", label: `Iceberg (${base}, optional)`, value: draft.iceberg, inputMode: "decimal", align: "end", error: errors?.iceberg, onChange: (iceberg) => set({ iceberg }) },
+        { kind: "text", id: "dh-ticket-iceberg", label: `Iceberg (${base}, optional)`, value: draft.iceberg, inputMode: "decimal", align: "end", error: errors?.iceberg, onChange: (iceberg) => set({ iceberg }), onBlur: () => { const t = tidyAmount(draft.iceberg); if (t !== draft.iceberg) set({ iceberg: t }); } },
         { kind: "select", id: "dh-ticket-start", label: "Start", value: draft.start, options: START_OPTIONS, onChange: (v) => set({ start: v as TicketDraft["start"] }) },
       ],
       [

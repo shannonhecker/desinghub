@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type Highcharts from "highcharts";
+import Highcharts from "highcharts";
 import type HighchartsReact from "highcharts-react-official";
 import { create } from "zustand";
 import { formatPrice, type ExecutionView } from "@/lib/executionModel";
-import { amendLimit, canAmend, snapPrice, stagedTicket, type Side } from "@/lib/executionOrders";
+import { amendLimit, canAmend, SAMPLE_CONFIRMATION, snapPrice, stagedTicket, validateAmendment, type Side } from "@/lib/executionOrders";
 import type { ReportDataset } from "@/lib/reportData/types";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { ThemeVars } from "./SimulatedHighchart";
-import { pillColors, type ChartFrame } from "./executionChartOptions";
-import { orderActions, useOrderSession } from "./useOrderSession";
+import { layoutTags, pillColors, type ChartFrame } from "./executionChartOptions";
+import { orderActions, showToast, useOrderSession } from "./useOrderSession";
 import { OrderTagLayer } from "./OrderTagLayer";
 import { OrderWorkflow } from "./OrderWorkflow";
 
@@ -19,8 +19,8 @@ import { OrderWorkflow } from "./OrderWorkflow";
 
    Grab the working order's limit line, or its LMT tag, and drag it: a
    dashed preview with "LMT → price" follows, snapped to 0.00001; on
-   release the Amend dialog opens on that price, and confirming it steps
-   the limit series and shows the toast (the design note, PR D). Drag the BID tag: release above the market stages a SELL
+   release the limit series steps to it and a toast confirms (the design
+   note, PR D). Drag the BID tag: release above the market stages a SELL
    take profit ticket, below a BUY limit. A tap or click on a tag opens
    its price menu. Escape cancels a drag. The keyboard does the same on
    the focused tag: arrows step the price, Enter amends (or stages), the
@@ -37,6 +37,8 @@ const PREVIEW_DASH = "6,4";
 const READOUT_PAD = 4;
 const READOUT_GAP = 6;
 const READOUT_FONT = 11;
+/** A placed order's label: its text and padding, as tall as the layout allows for. */
+const PLACED_HEIGHT = 20;
 
 export type TagKey = "limit" | "bid";
 export interface TagBox { key: TagKey; price: number; top: number; left: number; width: number; height: number }
@@ -71,6 +73,18 @@ interface Options {
   vars: ThemeVars | null;
   palette: string[];
   system: DesignSystem;
+  /** View: Table. There is no chart, so no tags to grab. */
+  table?: boolean;
+}
+
+/** A colour laid over an opaque one, as one opaque colour (a glass card over
+ *  the page): a label's backing must hide the lines behind it. */
+function opaqueOver(color: string, under: string): string {
+  const [r, g, b, a = 1] = Highcharts.color(color).rgba;
+  const [ur, ug, ub] = Highcharts.color(under).rgba;
+  if (![r, g, b, ur, ug, ub].every(Number.isFinite)) return under;
+  const mix = (top: number, low: number) => Math.round(top * a + low * (1 - a));
+  return `rgb(${mix(r, ur)}, ${mix(g, ug)}, ${mix(b, ub)})`;
 }
 
 const marketOf = (view: ExecutionView) => ({ bid: view.last?.bid ?? view.bid[view.bid.length - 1], ask: view.last?.ask ?? view.ask[view.ask.length - 1] });
@@ -82,7 +96,7 @@ export function useSessionAmend(active: boolean): (view: ExecutionView | null) =
   return useCallback((view) => (view && active ? amendLimit(view, amendments) : view), [active, amendments]);
 }
 
-export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palette, system }: Options) {
+export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palette, system, table = false }: Options) {
   const placed = useOrderSession((s) => s.placed);
   const frameRef = useRef<ChartFrame | null>(null);
   const drawn = useRef<Highcharts.SVGElement[]>([]);
@@ -135,18 +149,30 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
     const v = env.current.vars;
     if (!v || !env.current.active) return;
     const axis = priceAxis(c);
-    for (const o of env.current.placed.filter((p) => p.order === view.order.id)) {
-      const y = axis.toPixels(o.price, false);
-      if (!Number.isFinite(y) || y < c.plotTop || y > c.plotTop + axis.len) continue;
-      const tone = o.side === "BUY" ? v.positive : v.negative;
-      drawn.current.push(
-        c.renderer.path(["M", c.plotLeft, y, "L", c.plotLeft + c.plotWidth, y] as unknown as Highcharts.SVGPathArray)
-          .attr({ stroke: tone, "stroke-width": 1, "stroke-dasharray": "2,3", zIndex: 6, class: "dh-order-placed" }).add(),
-        c.renderer.text(`SAMPLE ${o.side} ${formatPrice(o.price)}`, c.plotLeft + READOUT_GAP, y - READOUT_GAP / 2)
-          .css({ color: tone, fontSize: `${READOUT_FONT - 1}px`, fontWeight: "600" })
-          .attr({ zIndex: 6, class: "dh-order-placed-label" }).add(),
-      );
+    const top = (axis as unknown as { top: number }).top;
+    const shown = env.current.placed
+      .filter((p) => p.order === view.order.id)
+      .map((o) => ({ o, y: axis.toPixels(o.price, false) }))
+      .filter(({ y }) => Number.isFinite(y) && y >= top && y <= top + axis.len);
+    /* Each label is a small tag at the plot's left edge, centred on its line
+       where there is room and moved clear of its neighbours where there is
+       not (the price tags' own layout, on the other edge). Its backing is
+       the panel's colour, so no line runs through the words. */
+    const ys = layoutTags(shown.map((s) => s.y), top, top + axis.len, PLACED_HEIGHT, 2);
+    const backing = opaqueOver(v.card ?? v.surface, v.bg);
+    const tone = (side: Side) => (side === "BUY" ? v.positive : v.negative);
+    /* Every line first, then the labels over them. */
+    for (const { o, y } of shown) {
+      drawn.current.push(c.renderer.path(["M", c.plotLeft, y, "L", c.plotLeft + c.plotWidth, y] as unknown as Highcharts.SVGPathArray)
+        .attr({ stroke: tone(o.side), "stroke-width": 1, "stroke-dasharray": "2,3", zIndex: 6, class: "dh-order-placed" }).add());
     }
+    shown.forEach(({ o }, i) => {
+      drawn.current.push(c.renderer.label(`SAMPLE ${o.side} ${formatPrice(o.price)}`, c.plotLeft + READOUT_GAP, ys[i] - PLACED_HEIGHT / 2)
+        .attr({ fill: backing, r: READOUT_PAD, padding: READOUT_PAD, zIndex: 7 })
+        .css({ color: tone(o.side), fontSize: `${READOUT_FONT - 1}px`, fontWeight: "600" })
+        .addClass("dh-order-placed-label")
+        .add());
+    });
   };
 
   /** Called from the chart's render event (one line in ExecutionChart). */
@@ -208,10 +234,15 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       }
       const current = view.pills.find((p) => p.key === "limit")?.value;
       if (!canAmend(view.order) || (current !== undefined && snapPrice(current) === snapPrice(price))) return;
-      /* A drop is a proposal: the Amend dialog opens on the dropped price and
-         the reader confirms it there (or Escape leaves the limit as it was).
-         Focus goes back to the LMT tag, the drag's keyboard twin. */
-      orderActions.openAmend(snapPrice(price), launcher ?? plotRef.current?.querySelector<HTMLElement>(".dh-order-tag-limit") ?? null);
+      /* The drop commits (the design note, PR D): the limit steps from the
+         view's last bar on and the one toast confirms. Focus goes to the LMT
+         tag, the drag's keyboard twin. */
+      const tag = launcher ?? plotRef.current?.querySelector<HTMLElement>(".dh-order-tag-limit") ?? null;
+      const checked = validateAmendment(view.order, formatPrice(price), market);
+      if (!checked.ok) { showToast(checked.error); tag?.focus(); return; }
+      orderActions.amend({ order: view.order.id, time: view.times[view.times.length - 1], price: checked.price });
+      showToast(SAMPLE_CONFIRMATION);
+      tag?.focus();
     },
   }), [drawPreview]); // eslint-disable-line react-hooks/exhaustive-deps -- the chart is read through refs
 
@@ -268,22 +299,37 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       plot.style.cursor = "";
       if (price !== null) api.commit("limit", price, null);
     };
+    /* A cancelled press (the system took the pointer) amends nothing. */
+    const cancel = (e: PointerEvent) => {
+      if (!drag) return;
+      e.stopPropagation();
+      drag = null;
+      api.preview("limit", null);
+      plot.style.cursor = "";
+    };
     plot.addEventListener("pointerdown", down, true);
     plot.addEventListener("pointermove", move, true);
     plot.addEventListener("pointerup", up, true);
-    plot.addEventListener("pointercancel", up, true);
+    plot.addEventListener("pointercancel", cancel, true);
     window.addEventListener("keydown", onKey, true);
     return () => {
       plot.removeEventListener("pointerdown", down, true);
       plot.removeEventListener("pointermove", move, true);
       plot.removeEventListener("pointerup", up, true);
-      plot.removeEventListener("pointercancel", up, true);
+      plot.removeEventListener("pointercancel", cancel, true);
       window.removeEventListener("keydown", onKey, true);
     };
   }, [active, api, plotRef]); // eslint-disable-line react-hooks/exhaustive-deps -- chart() reads a ref
 
   /* Leaving Present, or a new chart: no stale preview or lines. */
-  useEffect(() => () => { clearPreview(); drawn.current.forEach((el) => el.destroy()); drawn.current = []; }, [active]);
+  useEffect(() => () => { clearPreview(); previewState.current = null; drawn.current.forEach((el) => el.destroy()); drawn.current = []; }, [active]);
+  /* Table view (or Edit): the chart is gone, and so are its tags' targets. */
+  const tags = active && !table;
+  useEffect(() => {
+    if (tags) return;
+    previewState.current = null;
+    useTagStore.setState({ boxes: [], range: null });
+  }, [tags]);
   /* A confirmed sample order is drawn at once (no chart rebuild). */
   useEffect(() => {
     const c = chart();
@@ -293,7 +339,7 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
   const overlay = active
     ? React.createElement(React.Fragment, null,
         // eslint-disable-next-line react-hooks/refs -- the api reads the chart only in event handlers, never while rendering
-        React.createElement(OrderTagLayer, { api }),
+        tags ? React.createElement(OrderTagLayer, { api }) : null,
         React.createElement(OrderWorkflow, { system, dataset, vars, palette }))
     : null;
 

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { executionDataset, EXECUTION_ORDERS, MINUTE } from "../reportData/executionDataset";
-import { EXECUTION_KEYS, resolveExecution } from "../executionModel";
+import { EXECUTION_INTERVALS, EXECUTION_KEYS, resolveExecution } from "../executionModel";
 import { createTicker, feedBaseView, FEED_SEED, withFeed } from "../executionFeed";
 import {
-  amendLimit, canAmend, compareOrders, COMPARE_MEASURES, defaultOrderType, draftTicket, formatAmount, parseAmount, parsePrice,
+  amendLimit, canAmend, compareOrders, COMPARE_MEASURES, defaultOrderType, draftTicket, formatAmount, parseAmount, parsePrice, tidyAmount,
   percentDoneSeries, PRICE_BAND, priceBand, PRICE_STEP, SAMPLE_CONFIRMATION, snapPrice, stagedTicket, stepPrice, validateAmendment, validateTicket,
   type Amendment, type TicketDraft,
 } from "../executionOrders";
@@ -119,6 +119,30 @@ describe("validateTicket", () => {
   });
 });
 
+describe("notional limits and tidyAmount", () => {
+  const market = { bid: 1.37627, ask: 1.37635 };
+  const draft = (notional: string) => ({ ...draftTicket({ side: "BUY", price: market.ask, market, venue: "Meridian Pool" }), notional });
+  it("refuses a notional below 1,000 or above 1,000,000,000, in words", () => {
+    for (const [text, message] of [["0.4", /at least 1,000/], ["999", /at least 1,000/], ["1e24", /above zero/], ["1000000000000000000000000", /at most 1,000,000,000/], ["1,000,000,001", /at most 1,000,000,000/]] as const) {
+      const r = validateTicket(draft(text), market);
+      expect(r.ok, text).toBe(false);
+      if (!r.ok) expect(r.errors.notional, text).toMatch(message);
+    }
+  });
+  it("takes the limits themselves", () => {
+    expect(validateTicket(draft("1,000"), market).ok).toBe(true);
+    expect(validateTicket(draft("1,000,000,000"), market).ok).toBe(true);
+  });
+  it("tidies an amount on leaving the field, and leaves anything else as typed", () => {
+    expect(tidyAmount("2.5m")).toBe("2,500,000");
+    expect(tidyAmount("750000")).toBe("750,000");
+    expect(tidyAmount("250k")).toBe("250,000");
+    expect(tidyAmount("abc")).toBe("abc");
+    expect(tidyAmount("0")).toBe("0");
+    expect(tidyAmount("")).toBe("");
+  });
+});
+
 describe("stagedTicket (the BID tag dropped at a price)", () => {
   it("above the market stages a SELL take profit; below, a BUY limit; snapped", () => {
     expect(stagedTicket(1.377004, 1.3765)).toEqual({ side: "SELL", type: "Take profit", price: 1.377 });
@@ -188,6 +212,27 @@ describe("amendLimit", () => {
   it("an amendment after the last bar shown waits (nothing changes yet)", () => {
     expect(amendLimit(buyView, [at(1.3762, lastTime + 5 * MINUTE)]).limit).toEqual(buyView.limit);
   });
+});
+
+describe("amendLimit on every interval", () => {
+  const lastMinute = buyView.times[buyView.times.length - 1];
+  for (const interval of Object.keys(EXECUTION_INTERVALS)) {
+    const view = resolveExecution(dataset, { ...BUY, [EXECUTION_KEYS.interval]: interval })!;
+    it(`${interval}: an amendment on the latest minute steps the last bar and the LMT tag`, () => {
+      const out = amendLimit(view, [{ order: view.order.id, time: lastMinute, price: 1.3762 }]);
+      expect(out).not.toBe(view);
+      expect(out.limit[out.limit.length - 1]).toBe(1.3762);
+      expect(out.pills.find((p) => p.key === "limit")?.value).toBe(1.3762);
+    });
+    it(`${interval}: an amendment stamped with the last bar's own time does the same`, () => {
+      const out = amendLimit(view, [{ order: view.order.id, time: view.times[view.times.length - 1], price: 1.3764 }]);
+      expect(out.limit[out.limit.length - 1]).toBe(1.3764);
+    });
+    it(`${interval}: an amendment a full bar after the view ends is not drawn`, () => {
+      const after = view.times[view.times.length - 1] + EXECUTION_INTERVALS[interval] * MINUTE;
+      expect(amendLimit(view, [{ order: view.order.id, time: after, price: 1.3762 }])).toBe(view);
+    });
+  }
 });
 
 describe("compareOrders", () => {

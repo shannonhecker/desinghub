@@ -164,6 +164,22 @@ test.describe("Builder - FX Execution sample orders", () => {
       const RealSocket = window.WebSocket;
       window.WebSocket = new Proxy(RealSocket, { construct(target, args) { note("websocket", args[0]); return new target(...(args as [string])); } });
     });
+    /* Each dialog is opened once first, so a typeface it uses is already
+       loaded: from here on any request at all is a failure, with no exceptions. */
+    await compare(page).click();
+    await expect(dialog(page)).toContainText("Compare orders");
+    await closeWithEscape(page, compare(page));
+    await limitTag(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog(page)).toContainText("Amend limit price");
+    await closeWithEscape(page, limitTag(page));
+    for (const tag of [limitTag(page), bidTag(page)]) {
+      await dragStart(page, tag, -30);
+      await expect(readout(page)).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+    }
+    await page.evaluate(() => document.fonts.ready);
     const requests: string[] = [];
     page.on("request", (r) => requests.push(`${r.method()} ${r.url()}`));
 
@@ -176,6 +192,18 @@ test.describe("Builder - FX Execution sample orders", () => {
     await submit(page).click();
     await expect(dialog(page)).toContainText("Enter a notional above zero");
     await expect(dialog(page)).toContainText(/Enter a price between \d\.\d{5} and \d\.\d{5}\./);
+    /* Focus is on the first field to fix. */
+    await expect(page.locator("#dh-ticket-notional")).toBeFocused();
+    /* Too small and too large are refused in words; leaving the field tidies the number. */
+    await page.locator("#dh-ticket-notional").fill("0.4");
+    await expect(dialog(page)).toContainText("Enter a notional of at least 1,000.");
+    await page.locator("#dh-ticket-notional").fill("1e24");
+    await expect(dialog(page)).toContainText("Enter a notional above zero");
+    await page.locator("#dh-ticket-notional").fill("5000000000");
+    await expect(dialog(page)).toContainText("Enter a notional of at most 1,000,000,000.");
+    await page.locator("#dh-ticket-notional").fill("2.5m");
+    await page.locator("#dh-ticket-price").focus();
+    await expect(page.locator("#dh-ticket-notional")).toHaveValue("2,500,000");
     await expect(toast(page)).toHaveText("");
     await expect(stage(page).locator(".dh-order-placed")).toHaveCount(0);
 
@@ -200,6 +228,28 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(toast(page)).toHaveText("", { timeout: 6_000 });
     expect(requests, `requests during submit: ${requests.join(", ")}`).toEqual([]);
     expect(await page.evaluate(() => (window as unknown as { __sent: string[] }).__sent)).toEqual([]);
+    /* The rest of the workflow asks for nothing either: an amendment by drag
+       and by dialog, a staged ticket, Compare. */
+    await dragStart(page, limitTag(page), 40);
+    await page.mouse.up();
+    await expect(toast(page)).toHaveText(CONFIRMATION);
+    await limitTag(page).focus();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Amend", exact: true }).click();
+    await expect(dialog(page)).toHaveCount(0);
+    await dragStart(page, bidTag(page), -60);
+    await page.mouse.up();
+    await expectTicket(page, "SELL", "Take profit");
+    await submit(page).click();
+    await expect(dialog(page)).toHaveCount(0);
+    await compare(page).click();
+    await expect(dialog(page)).toContainText("Compare orders");
+    await page.keyboard.press("Escape");
+    await expect(dialog(page)).toHaveCount(0);
+    await expect(toast(page)).toHaveText("", { timeout: 6_000 });
+    expect(requests, `requests during the workflow: ${requests.join(", ")}`).toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __sent: string[] }).__sent)).toEqual([]);
     /* Nothing reached the saved session either. */
     const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }));
     expect(stored).not.toContain("1.37650");
@@ -217,10 +267,9 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(stage(page).locator(".dh-order-placed")).toHaveCount(2);
   });
 
-  test("dragging the LMT tag amends the limit: a read-out follows, snapped; release asks to confirm; Escape cancels", async ({ page }) => {
+  test("dragging the LMT tag amends the limit: a read-out follows, snapped; release steps the limit; Escape cancels", async ({ page }) => {
     await applyFx(page);
     const before = (await priceOf(limitTag(page)))!;
-    const amendButton = page.getByRole("button", { name: "Amend", exact: true });
 
     /* Escape during the drag: nothing changes, and Present stays. */
     await dragStart(page, limitTag(page), 50);
@@ -229,38 +278,23 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(readout(page)).toHaveCount(0);
     await page.mouse.up();
     await stillPresenting(page);
-    await expect(dialog(page)).toHaveCount(0);
     expect(await priceOf(limitTag(page))).toBe(before);
     await expect(toast(page)).toHaveText("");
 
-    /* Released: the Amend dialog opens on the dropped price. Escape there leaves the limit alone. */
     await dragStart(page, limitTag(page), 50);
     const shown = (await readout(page).textContent())!.replace("LMT → ", "");
     expect(shown).toMatch(PRICE);
     expect(Number(shown)).toBeLessThan(Number(before));
     await page.mouse.up();
     await expect(readout(page)).toHaveCount(0);
-    await expect(dialog(page)).toContainText("Amend limit price");
-    await expect(dialog(page)).toContainText(`Limit now ${before}`);
-    await expect(page.locator("#dh-amend-price")).toHaveValue(shown);
-    await expect(toast(page)).toHaveText("");
-    await closeWithEscape(page, limitTag(page));
-    expect(await priceOf(limitTag(page))).toBe(before);
-    await expect(toast(page)).toHaveText("");
-
-    /* Dragged again and confirmed: the limit steps, one toast says so, focus is back on the tag. */
-    await dragStart(page, limitTag(page), 50);
-    const again = (await readout(page).textContent())!.replace("LMT → ", "");
-    await page.mouse.up();
-    await expect(page.locator("#dh-amend-price")).toHaveValue(again);
-    await amendButton.click();
+    /* The drop commits: no dialog, one toast, focus on the tag. */
     await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
     await expect(toast(page).locator("> span")).toHaveCount(1);
-    await expect.poll(() => priceOf(limitTag(page))).toBe(again);
+    await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
     await expect(limitTag(page)).toBeFocused();
     /* The drawn limit series steps: its last point is the new limit, the one before is the old. */
-    await expect(stage(page).locator(".dh-exec")).toHaveAttribute("data-limit-tail", `${before},${again}`);
+    await expect(stage(page).locator(".dh-exec")).toHaveAttribute("data-limit-tail", `${before},${shown}`);
   });
 
   test("the limit line itself can be grabbed and dragged", async ({ page }) => {
@@ -276,13 +310,98 @@ test.describe("Builder - FX Execution sample orders", () => {
     await expect(readout(page)).toHaveText(/^LMT → \d\.\d{5}$/);
     const shown = (await readout(page).textContent())!.replace("LMT → ", "");
     await page.mouse.up();
-    await expect(page.locator("#dh-amend-price")).toHaveValue(shown);
-    await page.locator("#dh-amend-price").press("Enter");
     await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
     await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
     expect(shown).not.toBe(before);
     await expect(limitTag(page)).toBeFocused();
+  });
+
+  for (const interval of ["15m", "30m"]) {
+    test(`${interval} bars: a dropped limit is drawn, not only confirmed`, async ({ page }) => {
+      await applyFx(page);
+      const chart = stage(page).locator(".dh-exec");
+      await chart.getByRole("button", { name: "Interval", exact: true }).click();
+      await page.getByRole("menuitemradio", { name: interval, exact: true }).click();
+      await expect(limitTag(page)).toBeVisible();
+      const before = (await priceOf(limitTag(page)))!;
+      await dragStart(page, limitTag(page), 40);
+      const shown = (await readout(page).textContent())!.replace("LMT → ", "");
+      await page.mouse.up();
+      await expect(toast(page)).toHaveText(CONFIRMATION);
+      await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
+      expect(shown).not.toBe(before);
+      await expect(stage(page).locator(".dh-exec")).toHaveAttribute("data-limit-tail", new RegExp(`${shown.replace(".", "\\.")}$`));
+    });
+  }
+
+  test("Amend reads the limit as amended: 'Limit now' follows, and amending back to the seed price is a change", async ({ page }) => {
+    await applyFx(page);
+    const seed = (await priceOf(limitTag(page)))!;
+    const amendButton = page.getByRole("button", { name: "Amend", exact: true });
+    const open = async () => { await limitTag(page).focus(); await page.keyboard.press("Enter"); await expect(dialog(page)).toContainText("Amend limit price"); };
+    await open();
+    await expect(dialog(page)).toContainText(`Limit now ${seed}`);
+    await page.locator("#dh-amend-price").fill("1.37650");
+    await amendButton.click();
+    await expect.poll(() => priceOf(limitTag(page))).toBe("1.37650");
+    await open();
+    await expect(dialog(page)).toContainText("Limit now 1.37650");
+    await expect(page.locator("#dh-amend-price")).toHaveValue("1.37650");
+    await page.locator("#dh-amend-price").fill(seed);
+    await amendButton.click();
+    await expect(toast(page)).toHaveText(CONFIRMATION);
+    await expect.poll(() => priceOf(limitTag(page))).toBe(seed);
+  });
+
+  test("Table view has no tag targets; the ticket still opens from the header; the chart's tags come back", async ({ page }) => {
+    await applyFx(page);
+    const chart = stage(page).locator(".dh-exec");
+    await expect(page.locator(".dh-order-tag")).toHaveCount(2);
+    await chart.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Table" }).click();
+    await expect(chart.locator("[role='treegrid'], [role='grid']").first()).toBeVisible();
+    await expect(page.locator(".dh-order-tag")).toHaveCount(0);
+    await expect(page.locator('.dh-exec [role="slider"]')).toHaveCount(0);
+    await fillNow(page).click();
+    await expectTicket(page, "BUY", "Limit");
+    await closeWithEscape(page, fillNow(page));
+    await chart.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: "Chart" }).click();
+    await expect(page.locator(".dh-order-tag")).toHaveCount(2);
+  });
+
+  test("a press, a drag and the arrow keys on a tag never reach the chart's own listeners", async ({ page }) => {
+    await applyFx(page);
+    await stage(page).locator(".dh-exec-plot").evaluate((plot) => {
+      const w = window as unknown as { __leaked: string[] };
+      w.__leaked = [];
+      for (const type of ["pointerdown", "pointermove", "pointerup", "mousedown", "mousemove", "mouseup", "touchstart", "keydown"]) {
+        plot.addEventListener(type, (e) => { if ((e.target as Element).closest?.(".dh-order-tag") && (type !== "keydown" || /^Arrow|^Page|^Enter$/.test((e as KeyboardEvent).key))) w.__leaked.push(type); });
+      }
+    });
+    for (const tag of [limitTag(page), bidTag(page)]) {
+      await dragStart(page, tag, 30);
+      await expect(readout(page)).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await page.mouse.up();
+      await tag.focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("PageUp");
+      await page.keyboard.press("Escape");
+    }
+    expect(await page.evaluate(() => (window as unknown as { __leaked: string[] }).__leaked)).toEqual([]);
+    await stillPresenting(page);
+  });
+
+  test("the focused BID tag keeps the price it had when focused: it is not read out on every tick", async ({ page }) => {
+    await applyFx(page, { paused: false });
+    await bidTag(page).focus();
+    await expect(bidTag(page)).toHaveAttribute("aria-live", "off");
+    const heard = await bidTag(page).getAttribute("aria-valuetext");
+    const first = await priceOf(bidTag(page));
+    await expect.poll(() => priceOf(bidTag(page)), { timeout: 15_000 }).not.toBe(first);
+    expect(await bidTag(page).getAttribute("aria-valuetext")).toBe(heard);
   });
 
   test("keyboard: arrows step the limit by 0.00001, Enter opens Amend with that price, the dialog's field amends, focus returns", async ({ page }) => {
@@ -384,8 +503,13 @@ test.describe("Builder - FX Execution sample orders", () => {
     const side = page.locator("button.dh-instrument-side").first();
     await expect(side).toHaveAttribute("aria-disabled", "true");
     await expect(side).toHaveCSS("pointer-events", "none");
-    await edit.getByRole("button", { name: "Fill now" }).click();
-    await edit.getByRole("button", { name: "Compare orders" }).click();
+    /* Compare and Fill now say they are off, and are not tab stops. */
+    for (const name of ["Fill now", "Compare orders"]) {
+      const b = edit.getByRole("button", { name });
+      await expect(b).toHaveAttribute("aria-disabled", "true");
+      await expect(b).toHaveAttribute("tabindex", "-1");
+      await b.click({ force: true });
+    }
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
@@ -520,6 +644,68 @@ test.describe("Builder - FX Execution sample orders", () => {
   });
 });
 
+test.describe("Builder - FX Execution sample orders, with the feed live", () => {
+  for (const system of SYSTEMS) {
+    test(`${system}: the price menu keeps focus where the reader put it while the feed ticks`, async ({ page }) => {
+      await applyFx(page, { paused: false });
+      await pickSystem(page, system);
+      const bars = async () => Number(await stage(page).locator(".dh-exec").getAttribute("data-feed-bars"));
+      await limitTag(page).click();
+      await expect(page.getByRole("menu")).toBeVisible();
+      const at = () => page.evaluate(() => (document.activeElement?.closest('[role="menu"]') ? document.activeElement?.textContent?.trim() ?? "" : ""));
+      /* The menu has focus; the reader moves off its first item. */
+      await expect.poll(at).not.toBe("");
+      const firstItem = (await page.getByRole("menuitem").first().textContent())!.trim();
+      await expect(async () => { await page.keyboard.press("ArrowDown"); expect(await at()).toMatch(/^(Add order|Sell stop|Amend)/); }).toPass({ timeout: 5_000 });
+      const item = await at();
+      expect(item).not.toBe(firstItem);
+      const from = await bars();
+      await expect.poll(bars, { timeout: 15_000 }).toBeGreaterThanOrEqual(from + 3);
+      expect(await at()).toBe(item);
+      await expect(page.getByRole("menu")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await stillPresenting(page);
+    });
+  }
+
+  test("uoaui: the ticket keeps what was typed and where focus is while the feed ticks", async ({ page }) => {
+    await applyFx(page, { paused: false });
+    await pickSystem(page, "uoaui");
+    const bars = async () => Number(await stage(page).locator(".dh-exec").getAttribute("data-feed-bars"));
+    await fillNow(page).click();
+    await page.locator("#dh-ticket-notional").fill("3,000,000");
+    const from = await bars();
+    await expect.poll(bars, { timeout: 15_000 }).toBeGreaterThanOrEqual(from + 3);
+    await expect(page.locator("#dh-ticket-notional")).toBeFocused();
+    await expect(page.locator("#dh-ticket-notional")).toHaveValue("3,000,000");
+  });
+});
+
+test.describe("Builder - FX Execution sample orders, the uoaui dialog", () => {
+  test("a click on the title keeps focus in the dialog; Tab stays inside; Escape closes it and Present stays", async ({ page }) => {
+    await applyFx(page);
+    await pickSystem(page, "uoaui");
+    await fillNow(page).click();
+    await expectTicket(page, "BUY", "Limit");
+    await dialog(page).locator(".dh-kit-title").click();
+    const where = () => page.evaluate(() => { const a = document.activeElement; return !a || a === document.body ? "page" : a.closest('[role="dialog"]') ? "dialog" : "behind"; });
+    expect(await where()).toBe("dialog");
+    for (let i = 0; i < 16; i++) { await page.keyboard.press("Tab"); expect(await where(), `Tab ${i + 1}`).toBe("dialog"); }
+    for (let i = 0; i < 4; i++) { await page.keyboard.press("Shift+Tab"); expect(await where(), `Shift+Tab ${i + 1}`).toBe("dialog"); }
+    await dialog(page).locator(".dh-kit-title").click();
+    await closeWithEscape(page, fillNow(page));
+
+    /* Focus sent to the page behind comes back, and Escape still closes the dialog only. */
+    await fillNow(page).click();
+    await expectTicket(page, "BUY", "Limit");
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press("Escape");
+    await expect(dialog(page)).toHaveCount(0);
+    await stillPresenting(page);
+  });
+});
+
 test.describe("Builder - FX Execution sample orders, touch and phone", () => {
   test.use({ hasTouch: true });
 
@@ -540,14 +726,12 @@ test.describe("Builder - FX Execution sample orders, touch and phone", () => {
       for (let i = 1; i <= 6; i++) fire("pointermove", y + i * 8);
       fire("pointerup", y + 48);
     }, at.y);
-    /* The drop asks first, as with a mouse. */
-    await expect(dialog(page)).toContainText("Amend limit price");
-    await page.getByRole("button", { name: "Amend", exact: true }).click();
+    await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
     expect(await priceOf(limitTag(page))).not.toBe(before);
   });
 
-  test("tablet: the ticket fits, and the limit can be dragged and confirmed", async ({ page }) => {
+  test("tablet: the ticket fits, and the limit can be dragged", async ({ page }) => {
     await applyFx(page);
     await page.setViewportSize({ width: 834, height: 1112 });
     await page.getByRole("button", { name: /Tablet/i }).first().click();
@@ -569,8 +753,7 @@ test.describe("Builder - FX Execution sample orders, touch and phone", () => {
     await dragStart(page, limitTag(page), 30);
     await expect(readout(page)).toHaveText(/^LMT → \d\.\d{5}$/);
     await page.mouse.up();
-    await expect(dialog(page)).toContainText("Amend limit price");
-    await page.getByRole("button", { name: "Amend", exact: true }).click();
+    await expect(dialog(page)).toHaveCount(0);
     await expect(toast(page)).toHaveText(CONFIRMATION);
     await expect.poll(() => priceOf(limitTag(page))).not.toBe(before);
   });

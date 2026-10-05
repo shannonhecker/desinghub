@@ -14,7 +14,7 @@
  * Design note: docs/superpowers/specs/2026-10-06-fx-execution-trading-design.md (PR D)
  */
 
-import type { ExecutionView } from "./executionModel";
+import { EXECUTION_INTERVALS, type ExecutionView } from "./executionModel";
 import { parseExecutionTime } from "./reportData/executionDataset";
 import { tableOf, type DataRow, type ReportDataset } from "./reportData/types";
 
@@ -94,6 +94,17 @@ export function parsePrice(text: string): number | null {
 
 export const formatAmount = (value: number): string => Math.round(value).toLocaleString("en-US");
 
+/** The smallest and largest notional a sample ticket takes (base currency). */
+export const MIN_NOTIONAL = 1_000;
+export const MAX_NOTIONAL = 1_000_000_000;
+
+/** An amount field as it reads once the reader leaves it: "2.5m" becomes
+ *  "2,500,000". Text that is not an amount is left as typed. */
+export function tidyAmount(text: string): string {
+  const value = parseAmount(text);
+  return value === null || !(value > 0) ? text : formatAmount(value);
+}
+
 /** The prices a ticket or amendment may use: one percent either side of the mid. */
 export function priceBand(market: Market): { min: number; max: number } {
   const mid = (market.bid + market.ask) / 2;
@@ -124,6 +135,8 @@ export function validateTicket(draft: TicketDraft, market: Market): { ok: true; 
   const errors: TicketErrors = {};
   const notional = parseAmount(draft.notional);
   if (notional === null || !(notional > 0)) errors.notional = "Enter a notional above zero, like 1,000,000.";
+  else if (notional < MIN_NOTIONAL) errors.notional = `Enter a notional of at least ${formatAmount(MIN_NOTIONAL)}.`;
+  else if (notional > MAX_NOTIONAL) errors.notional = `Enter a notional of at most ${formatAmount(MAX_NOTIONAL)}.`;
   let price = draft.side === "BUY" ? market.ask : market.bid;
   if (draft.type !== "Market") {
     const checked = checkPrice(draft.price, market);
@@ -186,11 +199,10 @@ export function amendLimit(view: ExecutionView, amendments: readonly Amendment[]
   return { ...view, limit, pills };
 }
 
-/** How long one bar of the view lasts (the gap between two bars, at least a minute). */
+/** How long one bar of the view lasts: its interval (never the gap between
+ *  two bars, which spans the session's inactive hours). */
 function bucketSpan(view: ExecutionView): number {
-  const n = view.times.length;
-  const gap = n > 1 ? view.times[n - 1] - view.times[n - 2] : 60_000;
-  return Math.max(60_000, gap) - 1;
+  return (EXECUTION_INTERVALS[view.interval] ?? 1) * 60_000 - 1;
 }
 
 /* ── Compare ── */

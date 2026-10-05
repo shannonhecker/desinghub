@@ -94,7 +94,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const [narrow, setNarrow] = useState(false);
   const [rebuilds, setRebuilds] = useState(0);
   const palette = useMemo(() => getPalette(system), [system]);
-  const orders = useOrderAmend({ chartRef, plotRef, active: readOnly, dataset, vars, palette, system }); // FX D: limit drag, BID staging, price menus, dialogs, toast
+  const orders = useOrderAmend({ chartRef, plotRef, active: readOnly, dataset, vars, palette, system, table: showTable }); // FX D: limit drag, BID staging, price menus, dialogs, toast
 
   useEffect(() => { ensureHighchartsModules(); }, []);
   /* Colours and width are read before the first paint, so the chart is

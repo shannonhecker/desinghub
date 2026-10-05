@@ -22,6 +22,8 @@ import { useTagStore, type OrderChartApi, type TagBox, type TagKey } from "./use
    ══════════════════════════════════════════════════════════ */
 
 const HINT_ID = "dh-order-tag-hint";
+/* Events on a tag that are never the chart's. */
+const STOPPED = ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "wheel", "dblclick", "contextmenu"];
 const DRAG_START = 3;
 
 const NAMES: Record<TagKey, string> = { limit: "Limit price", bid: "Latest bid" };
@@ -29,32 +31,43 @@ const NAMES: Record<TagKey, string> = { limit: "Limit price", bid: "Latest bid" 
 function Tag({ box, api, working, range }: { box: TagBox; api: OrderChartApi; working: boolean; range: { min: number; max: number } | null }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [pending, setPending] = useState<number | null>(null);
+  /* What a screen reader is told: the price as it was when the tag took
+     focus, then the reader's own steps. The live bid moves every tick and is
+     not read out each time (the tag is aria-live="off"). */
+  const [heard, setHeard] = useState(box.price);
+  const [focused, setFocused] = useState(false);
   const press = useRef<{ id: number; y: number; moved: boolean; price: number | null } | null>(null);
   /* A press that did not move: the click that follows opens the menu. */
   const tapped = useRef(false);
   /* LMT of a filled order: a button for the menu (it can't be amended). */
   const adjustable = box.key === "bid" || working;
   const value = pending ?? box.price;
+  const spoken = pending ?? (focused && box.key === "bid" ? heard : box.price);
 
   const drop = () => { setPending(null); api.preview(box.key, null); };
   const openMenu = () => { drop(); if (ref.current) orderActions.openMenu(ref.current, box.price, box.key); };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+  /* The tag's keys and presses are taken natively, on the tag itself, and go
+     no further: React's own stopPropagation only acts once an event has
+     reached the root, after the chart's listeners (pan, zoom, the price axis)
+     have already seen it. */
+  const onKeyDown = (e: KeyboardEvent) => {
+    const mine = () => { e.preventDefault(); e.stopPropagation(); };
     const step = (dir: 1 | -1, large: boolean) => {
-      e.preventDefault();
+      mine();
       const next = stepPrice(value, dir, large);
       setPending(next);
       api.preview(box.key, next);
     };
-    if ((e.key === "F10" && e.shiftKey) || e.key === "ContextMenu") { e.preventDefault(); openMenu(); return; }
+    if ((e.key === "F10" && e.shiftKey) || e.key === "ContextMenu") { mine(); openMenu(); return; }
     if (!adjustable) return;
     if (e.key === "ArrowUp" || e.key === "ArrowRight") step(1, e.shiftKey);
     else if (e.key === "ArrowDown" || e.key === "ArrowLeft") step(-1, e.shiftKey);
     else if (e.key === "PageUp") step(1, true);
     else if (e.key === "PageDown") step(-1, true);
-    else if (e.key === "Escape" && pending !== null) { e.preventDefault(); e.stopPropagation(); drop(); }
+    else if (e.key === "Escape" && pending !== null) { mine(); drop(); }
     else if (e.key === "Enter") {
-      e.preventDefault();
+      mine();
       const price = value;
       drop();
       if (box.key === "limit") orderActions.openAmend(price, ref.current);
@@ -62,14 +75,20 @@ function Tag({ box, api, working, range }: { box: TagBox; api: OrderChartApi; wo
       else openMenu();
     }
   };
-
-  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+  const onPointerDown = (e: PointerEvent) => {
     if (e.button !== 0) return;
+    /* Ours alone: no compatibility mouse events follow, so nothing under
+       the tag starts a drag of its own. Focus is given by hand. */
     e.stopPropagation();
+    e.preventDefault();
+    const el = ref.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
     press.current = { id: e.pointerId, y: e.clientY, moved: false, price: null };
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* no such pointer: the moves still reach the tag */ }
+    try { el.setPointerCapture(e.pointerId); } catch { /* no such pointer: the moves still reach the tag */ }
   };
-  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+  const onPointerMove = (e: PointerEvent) => {
+    e.stopPropagation();
     const p = press.current;
     if (!p || !adjustable) return;
     if (!p.moved && Math.abs(e.clientY - p.y) < DRAG_START) return;
@@ -80,16 +99,45 @@ function Tag({ box, api, working, range }: { box: TagBox; api: OrderChartApi; wo
     p.price = price;
     api.preview(box.key, price);
   };
-  const finish = (e: React.PointerEvent<HTMLButtonElement>, commit: boolean) => {
+  const finish = (e: PointerEvent, commit: boolean) => {
+    e.stopPropagation();
     const p = press.current;
     press.current = null;
     if (!p) return;
-    if (e.currentTarget.hasPointerCapture(p.id)) e.currentTarget.releasePointerCapture(p.id);
+    const el = ref.current;
+    if (el?.hasPointerCapture(p.id)) el.releasePointerCapture(p.id);
     api.preview(box.key, null);
     if (!commit) return;
     if (!p.moved) { tapped.current = true; return; }
-    if (p.price !== null) api.commit(box.key, p.price, ref.current);
+    if (p.price !== null) api.commit(box.key, p.price, el);
   };
+  const handlers = useRef({ onKeyDown, onPointerDown, onPointerMove, finish });
+  React.useLayoutEffect(() => { handlers.current = { onKeyDown, onPointerDown, onPointerMove, finish }; });
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const key = (e: KeyboardEvent) => handlers.current.onKeyDown(e);
+    const down = (e: PointerEvent) => handlers.current.onPointerDown(e);
+    const move = (e: PointerEvent) => handlers.current.onPointerMove(e);
+    const up = (e: PointerEvent) => handlers.current.finish(e, true);
+    const cancel = (e: PointerEvent) => handlers.current.finish(e, false);
+    /* A press on a tag is never the chart's (mouse and touch listeners too). */
+    const stop = (e: Event) => e.stopPropagation();
+    el.addEventListener("keydown", key);
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", cancel);
+    for (const type of STOPPED) el.addEventListener(type, stop);
+    return () => {
+      el.removeEventListener("keydown", key);
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      el.removeEventListener("pointerup", up);
+      el.removeEventListener("pointercancel", cancel);
+      for (const type of STOPPED) el.removeEventListener(type, stop);
+    };
+  }, []);
 
   /* A drag in progress is cancelled by Escape (taken before the builder's,
      which would leave Present). */
@@ -116,18 +164,15 @@ function Tag({ box, api, working, range }: { box: TagBox; api: OrderChartApi; wo
       style={{ "--dh-order-tag-top": `${box.top}`, "--dh-order-tag-left": `${box.left}`, "--dh-order-tag-w": `${box.width}`, "--dh-order-tag-h": `${box.height}` } as React.CSSProperties}
       data-price={formatPrice(box.price)}
       {...(adjustable
-        ? { role: "slider", "aria-valuenow": value, "aria-valuetext": formatPrice(value), "aria-valuemin": range?.min ?? value, "aria-valuemax": range?.max ?? value, "aria-orientation": "vertical" as const }
+        ? { role: "slider", "aria-valuenow": spoken, "aria-valuetext": formatPrice(spoken), "aria-valuemin": range?.min ?? spoken, "aria-valuemax": range?.max ?? spoken, "aria-orientation": "vertical" as const }
         : {})}
+      aria-live="off"
       aria-label={adjustable ? NAMES[box.key] : `${text}, filled order`}
       aria-describedby={HINT_ID}
       aria-haspopup="menu"
       title={box.key === "limit" ? (working ? "Drag to amend the limit, or click for the price menu" : "The order is filled") : "Drag to stage an order, or click for the price menu"}
-      onKeyDown={onKeyDown}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={(e) => finish(e, true)}
-      onPointerCancel={(e) => finish(e, false)}
-      onBlur={() => { if (pending !== null) drop(); }}
+      onFocus={() => { setHeard(box.price); setFocused(true); }}
+      onBlur={() => { setFocused(false); if (pending !== null) drop(); }}
       onClick={(e) => {
         e.stopPropagation();
         /* A keyboard click (Space), or the click after a press that did not

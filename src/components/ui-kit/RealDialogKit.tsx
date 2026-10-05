@@ -80,7 +80,7 @@ import {
 
 export type KitField =
   | { kind: "select"; id: string; label: string; value: string; options: readonly string[]; onChange: (value: string) => void }
-  | { kind: "text"; id: string; label: string; value: string; onChange: (value: string) => void; error?: string | null; inputMode?: "decimal" | "numeric" | "text"; align?: "end" }
+  | { kind: "text"; id: string; label: string; value: string; onChange: (value: string) => void; /** Leaving the field (the ticket tidies the number). */ onBlur?: () => void; error?: string | null; inputMode?: "decimal" | "numeric" | "text"; align?: "end" }
   | { kind: "static"; id: string; label: string; value: string };
 
 export interface KitChoiceOption {
@@ -167,6 +167,29 @@ function useReturnFocus(open: boolean, target?: React.RefObject<HTMLElement | nu
   }, [open]);
 }
 
+/** While an overlay is open, an Escape pressed outside it (focus fell to the
+ *  page: a click on a backdrop, a system that let it go) still closes the
+ *  overlay and goes no further, so it never leaves Present instead. Taken
+ *  at the window on the way down. `always` takes every Escape (uoaui, which
+ *  has no component of its own to do it). */
+function useOverlayEscape(open: boolean, onClose: () => void, always = false) {
+  const close = React.useRef(onClose);
+  React.useEffect(() => { close.current = onClose; });
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const inside = e.target instanceof Element && Boolean(e.target.closest("[data-dh-escape-owner]"));
+      if (inside && !always) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      close.current();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [open, always]);
+}
+
 const titleId = (model: KitDialogModel, system: string) => `dh-kit-${model.name}-${system}-title`;
 const errorId = (f: KitField) => `${f.id}-error`;
 const submitOnEnter = (model: KitDialogModel) => (e: React.FormEvent) => { e.preventDefault(); model.primary?.onClick(); };
@@ -221,7 +244,7 @@ function Body({ model, parts }: { model: KitDialogModel; parts: Parts }) {
 /* ── Salt ── */
 const saltParts: Parts = {
   choice: (c) => (
-    <SaltToggleButtonGroup aria-label={c.label} value={c.value} onChange={(e) => c.onChange((e.currentTarget as HTMLButtonElement).value)}>
+    <SaltToggleButtonGroup aria-label={c.label} value={c.value} sentiment="accented" appearance="bordered" onChange={(e) => c.onChange((e.currentTarget as HTMLButtonElement).value)}>
       {c.options.map((o) => <SaltToggleButton key={o.value} value={o.value}><TileFace o={o} /></SaltToggleButton>)}
     </SaltToggleButtonGroup>
   ),
@@ -236,7 +259,7 @@ const saltParts: Parts = {
         <SaltInput
           value={f.value} readOnly={f.kind === "static"} textAlign={f.kind === "text" && f.align === "end" ? "right" : "left"}
           onChange={f.kind === "text" ? (e) => f.onChange((e.target as HTMLInputElement).value) : undefined}
-          inputProps={{ id: f.id, inputMode: f.kind === "text" ? f.inputMode : undefined }}
+          inputProps={{ id: f.id, inputMode: f.kind === "text" ? f.inputMode : undefined, onBlur: f.kind === "text" ? f.onBlur : undefined }}
         />
       )}
       {f.kind === "text" && f.error ? <SaltFormFieldHelperText>{f.error}</SaltFormFieldHelperText> : null}
@@ -288,7 +311,7 @@ const muiParts: Parts = {
       <MuiTextField
         id={f.id} label={f.label} value={f.value} size="small" fullWidth
         error={f.kind === "text" && Boolean(f.error)} helperText={f.kind === "text" ? (f.error ?? undefined) : undefined}
-        onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined}
+        onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} onBlur={f.kind === "text" ? f.onBlur : undefined}
         slotProps={{ input: { readOnly: f.kind === "static" }, htmlInput: { inputMode: f.kind === "text" ? f.inputMode : undefined, style: f.kind === "text" && f.align === "end" ? { textAlign: "right" } : undefined } }}
       />
     ),
@@ -323,7 +346,7 @@ function M3KitDialog({ mode, model }: Omit<DialogProps, "system">) {
 const fluentParts: Parts = {
   choice: (c) => (
     <div role="group" aria-label={c.label} className="dh-kit-tiles">
-      {c.options.map((o) => <FluentToggleButton key={o.value} checked={o.value === c.value} onClick={() => c.onChange(o.value)} className="dh-kit-tile-btn"><TileFace o={o} /></FluentToggleButton>)}
+      {c.options.map((o) => <FluentToggleButton key={o.value} checked={o.value === c.value} appearance={o.value === c.value ? "primary" : "secondary"} onClick={() => c.onChange(o.value)} className="dh-kit-tile-btn"><TileFace o={o} /></FluentToggleButton>)}
     </div>
   ),
   field: (f) => (
@@ -335,7 +358,7 @@ const fluentParts: Parts = {
       ) : (
         <FluentInput id={f.id} value={f.value} readOnly={f.kind === "static"} inputMode={f.kind === "text" ? f.inputMode : undefined}
           input={{ style: f.kind === "text" && f.align === "end" ? { textAlign: "right" } : undefined }}
-          onChange={f.kind === "text" ? (_e, d) => f.onChange(d.value) : undefined} />
+          onChange={f.kind === "text" ? (_e, d) => f.onChange(d.value) : undefined} onBlur={f.kind === "text" ? f.onBlur : undefined} />
       )}
     </FluentField>
   ),
@@ -388,7 +411,7 @@ const carbonParts: Parts = {
         invalid={f.kind === "text" && Boolean(f.error)} invalidText={f.kind === "text" ? (f.error ?? undefined) : undefined}
         /* Carbon points aria-errormessage at its message; described-by makes every reader announce it. */
         aria-describedby={f.kind === "text" && f.error ? `${f.id}-error-msg` : undefined}
-        onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} />
+        onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} onBlur={f.kind === "text" ? f.onBlur : undefined} />
     ),
   table: (t) => (
     <CarbonTable size="sm" aria-label={t.caption}>
@@ -450,13 +473,18 @@ function useUoauiCss(mode: Mode, density?: DensityLevel | string): string {
   return React.useMemo(() => scopeUoaui(sanitizeCSS(getFullCSS("uoaui", getTheme("uoaui", mode), coerceDensity(density)))), [mode, density]);
 }
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])';
-function trapTab(panel: HTMLElement | null, e: React.KeyboardEvent) {
+/** Tab stays in the panel: it wraps at either end, and comes back in from
+ *  anywhere else (the panel itself, the page behind). */
+function trapTab(panel: HTMLElement | null, e: KeyboardEvent) {
   if (e.key !== "Tab" || !panel) return;
   const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null);
-  if (!items.length) return;
+  if (!items.length) { e.preventDefault(); panel.focus(); return; }
   const [first, last] = [items[0], items[items.length - 1]];
-  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  const at = document.activeElement as HTMLElement | null;
+  const inside = Boolean(at && at !== panel && panel.contains(at));
+  if (!inside) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  else if (e.shiftKey && at === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && at === last) { e.preventDefault(); first.focus(); }
 }
 const uoauiParts: Parts = {
   choice: (c) => (
@@ -480,7 +508,7 @@ const uoauiParts: Parts = {
         <input id={f.id} className="a-input" value={f.value} readOnly={f.kind === "static"} inputMode={f.kind === "text" ? f.inputMode : undefined}
           style={f.kind === "text" && f.align === "end" ? { textAlign: "right" } : undefined}
           aria-invalid={f.kind === "text" && f.error ? true : undefined} aria-describedby={f.kind === "text" && f.error ? errorId(f) : undefined}
-          onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} />
+          onChange={f.kind === "text" ? (e) => f.onChange(e.target.value) : undefined} onBlur={f.kind === "text" ? f.onBlur : undefined} />
       )}
       {f.kind === "text" && f.error ? <span id={errorId(f)} className="dh-kit-error">{f.error}</span> : null}
     </div>
@@ -495,24 +523,36 @@ const uoauiParts: Parts = {
 function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
   const css = useUoauiCss(mode, density);
   const panel = React.useRef<HTMLDivElement>(null);
+  const open = model.open;
+  useOverlayEscape(open, model.onClose, true);
   React.useEffect(() => {
-    if (!model.open) return;
-    panel.current?.querySelector<HTMLElement>('[aria-checked="true"], input:not([readonly]), select, .dh-kit-actions button')?.focus();
-  }, [model.open]);
-  if (!model.open || typeof document === "undefined") return null;
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); model.onClose(); return; }
-    trapTab(panel.current, e);
-  };
+    if (!open) return;
+    const p = panel.current;
+    (p?.querySelector<HTMLElement>('[aria-checked="true"], input:not([readonly]), select, .dh-kit-actions button') ?? p)?.focus();
+    /* Focus is kept inside: Tab is trapped at the window (it works wherever
+       focus is), and focus that lands on the page behind comes back. */
+    const onKey = (e: KeyboardEvent) => trapTab(panel.current, e);
+    const onFocus = (e: FocusEvent) => {
+      const to = e.target as Node | null;
+      if (panel.current && to && !panel.current.contains(to) && !(to instanceof Element && to.closest("[data-dh-escape-owner]"))) panel.current.focus();
+    };
+    window.addEventListener("keydown", onKey, true);
+    document.addEventListener("focusin", onFocus);
+    return () => { window.removeEventListener("keydown", onKey, true); document.removeEventListener("focusin", onFocus); };
+  }, [open]);
+  if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div className="preview-uoaui a-app dh-kit-scope" {...ESCAPE_OWNER}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="a-dialog-backdrop dh-kit-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) model.onClose(); }}>
-        <div ref={panel} className={`a-dialog dh-kit-dialog dh-kit-${model.name} dh-kit-uoaui-${model.size ?? "medium"}`} role="dialog" aria-modal="true" aria-labelledby={titleId(model, "uoaui")} onKeyDown={onKey} style={model.tones}>
+        <div ref={panel} tabIndex={-1} className={`a-dialog dh-kit-dialog dh-kit-${model.name} dh-kit-uoaui-${model.size ?? "medium"}`} role="dialog" aria-modal="true" aria-labelledby={titleId(model, "uoaui")} style={model.tones}>
           <form onSubmit={submitOnEnter(model)} noValidate>
             <h2 id={titleId(model, "uoaui")} className="dh-kit-title">{model.title}</h2>
-            {model.description ? <p className="dh-kit-description">{model.description}</p> : null}
-            <Body model={model} parts={uoauiParts} />
+            {/* The fields scroll; the title and the actions stay in view. */}
+            <div className="dh-kit-scroll">
+              {model.description ? <p className="dh-kit-description">{model.description}</p> : null}
+              <Body model={model} parts={uoauiParts} />
+            </div>
             <div className="dh-kit-actions">
               <button type="button" className="a-btn a-btn-ghost" onClick={model.onClose}>{model.secondary.label}</button>
               {model.primary ? <button type="submit" className="a-btn a-btn-primary">{model.primary.label}</button> : null}
@@ -528,6 +568,7 @@ function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
 /** A dialog in the active system. */
 export function RealKitDialog({ system, mode, density, model }: DialogProps): React.ReactElement | null {
   useReturnFocus(model.open, model.returnFocus);
+  useOverlayEscape(model.open, model.onClose);
   if (system === "salt") return <SaltKitDialog mode={mode} density={density} model={model} />;
   if (system === "m3") return <M3KitDialog mode={mode} model={model} />;
   if (system === "fluent") return <FluentKitDialog mode={mode} model={model} />;
@@ -601,6 +642,23 @@ function FluentKitMenu({ mode, model }: Omit<MenuProps, "system">) {
 }
 function CarbonKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   const [scope, setScope] = React.useState<HTMLDivElement | null>(null);
+  /* Carbon opens a menu from its anchor's left edge; a tag sits at the
+     chart's right edge, so the menu is moved to end where the tag ends. */
+  const { open, anchor } = model;
+  React.useEffect(() => {
+    if (!scope || !anchor || !open) return;
+    /* Carbon places the menu itself, after it has drawn: put right each time it does. */
+    const align = () => {
+      const menu = scope.querySelector<HTMLElement>(".cds--menu");
+      if (!menu || !menu.offsetWidth) return;
+      const left = Math.max(8, anchor.getBoundingClientRect().right - menu.offsetWidth);
+      if (Math.abs(menu.getBoundingClientRect().left - left) > 0.5) menu.style.insetInlineStart = `${left}px`;
+    };
+    align();
+    const seen = new MutationObserver(align);
+    seen.observe(scope, { subtree: true, childList: true, attributes: true, attributeFilter: ["style", "class"] });
+    return () => seen.disconnect();
+  }, [scope, anchor, open]);
   if (typeof document === "undefined") return null;
   const rect = model.anchor?.getBoundingClientRect();
   const themeClass = mode === "dark" ? "cds--g100" : "cds--white";
@@ -625,13 +683,19 @@ function CarbonKitMenu({ mode, model }: Omit<MenuProps, "system">) {
 function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   const css = useUoauiCss(mode);
   const list = React.useRef<HTMLUListElement>(null);
+  const { open, anchor } = model;
+  const close = React.useRef(model.onClose);
+  React.useEffect(() => { close.current = model.onClose; });
+  useOverlayEscape(open, model.onClose, true);
+  /* On opening only (the model is a new object on every render, and the
+     page re-renders on every feed tick): focus the first item once. */
   React.useEffect(() => {
-    if (!model.open) return;
+    if (!open) return;
     list.current?.querySelector<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])')?.focus();
-    const away = (e: PointerEvent) => { if (!list.current?.contains(e.target as Node) && !model.anchor?.contains(e.target as Node)) model.onClose(); };
+    const away = (e: PointerEvent) => { if (!list.current?.contains(e.target as Node) && !anchor?.contains(e.target as Node)) close.current(); };
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
-  }, [model.open, model]);
+  }, [open, anchor]);
   if (!model.open || !model.anchor || typeof document === "undefined") return null;
   const rect = model.anchor.getBoundingClientRect();
   const look = overlayLook(model.anchor);
@@ -644,7 +708,7 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
     else if (e.key === "ArrowUp") go(at - 1);
     else if (e.key === "Home") go(0);
     else if (e.key === "End") go(all.length - 1);
-    else if (e.key === "Escape" || e.key === "Tab") { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); } model.onClose(); }
+    else if (e.key === "Tab") model.onClose();
     else if (e.key.length === 1 && /\S/.test(e.key)) {
       const k = e.key.toLowerCase();
       const next = [...all.slice(at + 1), ...all.slice(0, at + 1)].find((el) => el.textContent?.trim().toLowerCase().startsWith(k));
@@ -672,6 +736,7 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
 /** A menu anchored to an element, in the active system. */
 export function RealKitMenu({ system, mode, model }: MenuProps): React.ReactElement | null {
   useMenuFocus(model);
+  useOverlayEscape(model.open && Boolean(model.anchor), model.onClose);
   if (!model.anchor) return null;
   if (system === "salt") return <SaltKitMenu mode={mode} model={model} />;
   if (system === "m3") return <M3KitMenu mode={mode} model={model} />;
