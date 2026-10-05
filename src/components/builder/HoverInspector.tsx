@@ -52,7 +52,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { ZoneId } from "@/store/useBuilder";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { usePreviewMode } from "@/store/usePreviewMode";
-import { placeToolbar, type Placement } from "@/lib/toolbarPlacement";
+import { placeToolbarAt, type Placed } from "@/lib/toolbarPlacement";
 
 /* Hover-reveal delay. Phase A research pinned this at the
    Lovable convention (~80ms): long enough that flicking the
@@ -150,26 +150,45 @@ export function HoverInspector({
      block's controls. Measured on pin and again on resize and scroll; all in
      screen pixels (the pill counter-zooms the frame, so its size is fixed). */
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const [placement, setPlacement] = useState<Placement>("above-right");
+  const [placed, setPlaced] = useState<Placed>({ placement: "above-right", shift: 0 });
   useEffect(() => {
     if (!hoverActive && !isPinned) return;
     const compute = () => {
       const root = rootRef.current;
       const block = root?.closest("[data-block-id]") as HTMLElement | null;
       if (!root || !block) return;
-      const stage = block.closest(".bp-main, .bp-header, .bp-footer, .bp-dashboard") as HTMLElement | null;
-      const bounds = (stage ?? block.parentElement ?? block).getBoundingClientRect();
-      const others = [...document.querySelectorAll<HTMLElement>("[data-block-id]")]
-        .filter((el) => el !== block && !block.contains(el) && !el.contains(block))
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.width > 0 && r.height > 0);
+      const frame = block.closest(".bp-device-frame") as HTMLElement | null;
+      /* The zone's scroller clips what leaves it, so the pill must stay inside it. */
+      const clip = block.closest(".bp-main, .bp-header, .bp-footer") as HTMLElement | null;
+      const bounds = (clip ?? frame ?? block.parentElement ?? block).getBoundingClientRect();
+      const b = block.getBoundingClientRect();
       const cs = getComputedStyle(root);
       const h = parseFloat(cs.getPropertyValue("--insp-toolbar-h")) || 24;
       const btn = parseFloat(cs.getPropertyValue("--insp-toolbar-btn")) || 24;
       const gap = parseFloat(cs.getPropertyValue("--insp-toolbar-gap")) || 4;
       const count = (dragHandleRef ? 1 : 0) + (onRemove ? 1 : 0) + (onSwapClick ? 1 : 0);
       const width = count * btn + (count + 1) * 2;
-      setPlacement(placeToolbar(block.getBoundingClientRect(), others, bounds, { width, height: h, gap }));
+      /* Content near the block: text, controls and charts (not the empty
+         padding of neighbouring blocks). Only what lies in the bands just
+         above and below the block, or inside it, matters. */
+      const reach = h + gap * 2;
+      const near = (r: DOMRect) => r.width > 0 && r.height > 0 && r.bottom > b.top - reach && r.top < b.bottom + reach;
+      const isChrome = (el: Element) => !!el.closest(".hover-inspector, .zone-layout-overlay, .bp-frame-tab, .insertion-slot, .block-resize-handle");
+      const obstacles: DOMRect[] = [];
+      const own: DOMRect[] = [];
+      const scope = frame ?? document.body;
+      const add = (el: Element, r: DOMRect) => { if (!near(r) || isChrome(el)) return; (block.contains(el) ? own : obstacles).push(r); };
+      for (const el of scope.querySelectorAll("svg, canvas, img, input, button, select, textarea, [role='button'], [role='combobox']")) add(el, el.getBoundingClientRect());
+      const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+      const range = document.createRange();
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!n.textContent || !n.textContent.trim() || !n.parentElement) continue;
+        range.selectNodeContents(n);
+        add(n.parentElement, range.getBoundingClientRect());
+      }
+      /* While a block is selected its zone's layout toolbar is hidden. */
+      const bars = isPinned ? [] : [...document.querySelectorAll<HTMLElement>(".zone-layout-overlay")].map((el) => el.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+      setPlaced(placeToolbarAt(b, obstacles, bars, own, bounds, { width, height: h, gap }));
     };
     compute();
     const raf = requestAnimationFrame(compute);
@@ -226,14 +245,14 @@ export function HoverInspector({
           the previous sibling has room, below when the next has, else
           inside this block's own top-right corner. See placeToolbar. */}
       {(dragHandleRef || onRemove || onSwapClick) && (
-        <div className="hover-inspector-toolbar" data-placement={placement} role="toolbar" aria-label="Block actions">
+        <div className="hover-inspector-toolbar" data-placement={placed.placement} style={{ "--pill-shift": `${placed.shift}px` } as React.CSSProperties} role="toolbar" aria-label="Block actions">
           {dragHandleRef && (
             <div
               ref={dragHandleRef}
               className={`canvas-block-handle${isNewlyMounted ? " is-newly-mounted" : ""}`}
               {...dragAttributes}
               {...(dragListeners ?? {})}
-              title="Drag to reorder"
+              title="Move block (drag to reorder)"
               role="button"
               tabIndex={0}
               aria-roledescription="sortable"

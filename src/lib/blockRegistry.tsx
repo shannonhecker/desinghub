@@ -11,6 +11,7 @@ import {
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 import { beginHistoryTransaction } from "@/lib/builderHistory";
+import { useBoundData } from "@/components/builder/useBoundData";
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -142,16 +143,22 @@ function useBlockProps(blockId: string) {
    ═══════════════════════════════════════════════════════════ */
 
 type FieldDef =
-  | { type: "text"; propKey: string; label: string; placeholder?: string }
+  /** `hideWhen: "pinnedRecord"`: a record card bound to data that always
+     shows a record never draws this text, so it is not offered there. */
+  | { type: "text"; propKey: string; label: string; placeholder?: string; hideWhen?: "pinnedRecord" }
   | { type: "textarea"; propKey: string; label: string; rows?: number }
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
-  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string }
+  /** `dataDriven`: when the block's figure comes from a data binding the
+     slider would write a prop nothing reads, so the field shows the live
+     figure read-only instead (rule: a control changes the canvas, or it is
+     not offered). */
+  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; dataDriven?: boolean }
   /** Stock-image picker: a categorized grid of verified stock photos +
      a paste-your-own-URL input. Writes a URL to `propKey` (the block's
      `src`). */
   | { type: "image"; propKey: string; label: string }
-  | { type: "static"; text: string }
+  | { type: "static"; text: string; when?: "pinnedRecord" }
   /** Custom action button rendered inline inside the inspector.
      Used by LayoutGroup's "Ungroup" affordance. The action reads
      the block's location in the store and mutates accordingly. */
@@ -319,15 +326,28 @@ function TextAreaField({ id, value, rows, ariaLabel, onChange }: { id: string; v
 /* ── Schema-driven inspector renderer ──
    Every control is builder chrome (one style per control type): the panel
    edits the block, the canvas shows the design system. */
+/** A record card bound to data with no way to clear it always shows a record. */
+const pinnedRecord = (props: Record<string, unknown>) => Boolean(props.binding) && props.clearable === false;
+
+/** The figure a data-driven gauge shows, formatted as on the canvas. */
+export function boundValueText(value: number, props: Record<string, unknown>, fallbackSuffix = ""): string {
+  const decimals = typeof props.valueDecimals === "number" ? props.valueDecimals : undefined;
+  const suffix = typeof props.valueSuffix === "string" ? props.valueSuffix : props.valueMax === undefined ? fallbackSuffix : "";
+  return `${decimals !== undefined ? value.toFixed(decimals) : String(value)}${suffix}`;
+}
+
 function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[] }) {
   const { props, set } = useBlockProps(blockId);
   const idBase = React.useId();
+  const bound = useBoundData(props);
+  const uploaded = useBuilder((s) => Boolean(s.reportData));
   return (
     <>
       {fields.map((f, i) => {
         const id = `${idBase}-${i}`;
         switch (f.type) {
           case "text":
+            if (f.hideWhen === "pinnedRecord" && pinnedRecord(props)) return null;
             return (
               <InspectorField key={i} label={f.label} htmlFor={id}>
                 <TextField id={id} ariaLabel={f.label} value={(props[f.propKey] as string) ?? ""} placeholder={f.placeholder}
@@ -359,6 +379,17 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             );
           }
           case "range": {
+            if (f.dataDriven && bound?.view === "value" && bound.value != null) {
+              return (
+                <div key={i} className="inspector-field" data-field-readonly={f.propKey}>
+                  <div className="inspector-field-label">
+                    <span>{f.label}</span>
+                    <span className="inspector-field-value">{boundValueText(bound.value, props, f.suffix ?? "")}</span>
+                  </div>
+                  <p className="inspector-field-hint">{uploaded ? "From your data" : "From the sample data"}</p>
+                </div>
+              );
+            }
             const val = Number(props[f.propKey] ?? f.min ?? 0);
             return (
               <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
@@ -377,6 +408,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
               </InspectorField>
             );
           case "static":
+            if (f.when === "pinnedRecord" && !pinnedRecord(props)) return null;
             return <p key={i} className="inspector-field-hint">{f.text}</p>;
           case "action":
             return <ActionButton key={i} blockId={blockId} label={f.label} action={f.action} />;
@@ -602,7 +634,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "HighchartRadar", label: "Radar", icon: "radar", defaults: { chartType: "radar", title: "Capability profile" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartCorridor", label: "Pathway Corridor", icon: "ssid_chart", defaults: { chartType: "corridor", title: "Pathway" }, fields: CATEGORY_CHART_FIELDS },
   { type: "HighchartGauge", label: "Gauge", icon: "speed", defaults: { chartType: "gauge", title: "System Health", value: 87 }, fields: [
-    { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
+    { type: "text", propKey: "title", label: "Title" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%", dataDriven: true },
   ]},
   { type: "HighchartHeatmap", label: "Heatmap", icon: "grid_on", defaults: { chartType: "heatmap", title: "Correlation Matrix" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
   { type: "HighchartTreemap", label: "Treemap", icon: "grid_view", defaults: { chartType: "treemap", title: "Portfolio Treemap" }, fields: [{ type: "text", propKey: "title", label: "Title" }] },
@@ -717,8 +749,9 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   /* ── Record panel: the detail of the row a grid has selected ── */
   { type: "RecordPanel", label: "Record Detail", icon: "contact_page", defaults: { title: "Detail", height: 360, emptyText: "Select a row to see its detail." }, fields: [
-    { type: "text", propKey: "title", label: "Title" },
-    { type: "text", propKey: "emptyText", label: "Empty text" },
+    { type: "text", propKey: "title", label: "Title", hideWhen: "pinnedRecord" },
+    { type: "text", propKey: "emptyText", label: "Empty text", hideWhen: "pinnedRecord" },
+    { type: "static", text: "This card shows the selected record from the data. Its heading and rows come from that record.", when: "pinnedRecord" },
   ]},
   /* ── Data grid (AG Grid): grouped headers, pinned column, formatted numbers ── */
   { type: "DataGrid", label: "Data Grid", icon: "table_rows", defaults: {

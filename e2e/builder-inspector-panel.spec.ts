@@ -175,18 +175,23 @@ test("the block toolbar never covers another block", async ({ page }) => {
     await select(page, prefix);
     await page.waitForTimeout(300);
     const hits = await page.evaluate(() => {
-      const chrome = [...document.querySelectorAll(".hover-inspector .canvas-block-handle, .hover-inspector .canvas-block-remove, .hover-inspector .canvas-block-swap, .hover-inspector-toolbar")];
+      /* "Covers another block" means its content (text, controls, charts),
+         not the empty padding of its box: the pill sits outside the selected
+         block, in the gap or over a neighbour's empty margin. */
+      const chrome = [...document.querySelectorAll(".hover-inspector-toolbar")];
       const selId = document.querySelector("[data-inspector-block-id]")?.getAttribute("data-inspector-block-id");
-      const blocks = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id], .bp-footer [data-block-id]")];
+      const blocks = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id], .bp-footer [data-block-id]")].filter((b) => b.getAttribute("data-block-id") !== selId);
       const out: string[] = [];
+      const range = document.createRange();
       for (const c of chrome) {
         const r = c.getBoundingClientRect();
         if (!r.width) continue;
+        const hit = (o: DOMRect) => o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top;
         for (const b of blocks) {
           const id = b.getAttribute("data-block-id");
-          if (id === selId) continue;
-          const br = b.getBoundingClientRect();
-          if (r.left < br.right && r.right > br.left && r.top < br.bottom && r.bottom > br.top) out.push(`${c.className} over ${id}`);
+          for (const el of b.querySelectorAll("svg, canvas, img, input, button, select, textarea")) if (!el.closest(".hover-inspector") && hit(el.getBoundingClientRect())) out.push(`pill over ${el.tagName} in ${id}`);
+          const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+          for (let n = w.nextNode(); n; n = w.nextNode()) { if (!n.textContent?.trim()) continue; range.selectNodeContents(n); if (hit(range.getBoundingClientRect())) out.push(`pill over "${n.textContent.trim().slice(0, 16)}" in ${id}`); }
         }
       }
       return { chromeCount: chrome.length, out };
@@ -445,7 +450,13 @@ test("the hover pill on a second-row block is clear of other blocks and does not
     const pill = document.querySelector(".hover-inspector-toolbar")!;
     const r = pill.getBoundingClientRect();
     const host = pill.closest("[data-block-id]")!.getAttribute("data-block-id");
-    const hits = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].filter((b) => b.getAttribute("data-block-id") !== host).filter((b) => { const o = b.getBoundingClientRect(); return r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top; }).map((b) => b.getAttribute("data-block-id"));
+    const range = document.createRange();
+    const hits: string[] = [];
+    for (const b of [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].filter((x) => x.getAttribute("data-block-id") !== host)) {
+      const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) { if (!n.textContent?.trim()) continue; range.selectNodeContents(n); const o = range.getBoundingClientRect(); if (o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top) hits.push(b.getAttribute("data-block-id") ?? ""); }
+      for (const el of b.querySelectorAll("svg, canvas, img, input, button, select")) { const o = el.getBoundingClientRect(); if (!el.closest(".hover-inspector") && o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top) hits.push(b.getAttribute("data-block-id") ?? ""); }
+    }
     return { rect: [r.x, r.y, r.width, r.height].map(Math.round), placement: pill.getAttribute("data-placement"), hits };
   });
   const hovered = await measure();
@@ -457,4 +468,233 @@ test("the hover pill on a second-row block is clear of other blocks and does not
   expect(pinned.rect, "pill does not move on click").toEqual(hovered.rect);
   expect(pinned.hits).toEqual([]);
   await page.screenshot({ path: "test-results/hover-pill-row2.png" });
+});
+
+test.describe("back from a selected block to the library and templates", () => {
+  const canvas = (page: Page) => page.evaluate(() => {
+    const frame = document.querySelector(".bp-device-frame") as HTMLElement;
+    return { zoom: frame.getAttribute("data-frame-zoom"), b: [...document.querySelectorAll(".bp-main [data-block-id]")].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round); }) };
+  });
+  const back = (page: Page) => page.locator(".component-sidebar").getByRole("button", { name: "Components and templates", exact: true });
+
+  test("the back control clears the selection, shows Templates, keeps the panel open and the canvas still", async ({ page }) => {
+    await openAnalyticsInEdit(page);
+    await expect(back(page)).toHaveCount(0);
+    await select(page, "tpl-ad-kpi-1-");
+    await page.waitForTimeout(400);
+    const before = await canvas(page);
+    await expect(back(page)).toBeVisible();
+    const box = (await back(page).boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    await back(page).click();
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    await expect(page.locator(".canvas-block.is-selected, .hover-inspector.is-pinned")).toHaveCount(0);
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+    await expect(page.locator(".component-sidebar .lib-templates-head")).toBeInViewport();
+    await expect(page.locator(".component-sidebar .lib-header-title")).toHaveText("Components");
+    await page.waitForTimeout(400);
+    expect(await canvas(page)).toEqual(before);
+  });
+
+  test("keyboard: Enter on the back control goes back and focus lands in the panel; Escape on a panel control goes back, Escape in a field does not", async ({ page }) => {
+    await openAnalyticsInEdit(page);
+    await select(page, "tpl-ad-kpi-1-");
+    await back(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    expect(await page.evaluate(() => !!document.activeElement?.closest(".component-sidebar"))).toBe(true);
+
+    await select(page, "tpl-ad-kpi-1-");
+    const label = page.getByRole("textbox", { name: "Label", exact: true });
+    await label.click();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".inspector-stack")).toBeVisible();
+    await page.locator(".inspector-section-head", { hasText: "Size" }).focus();
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".inspector-stack")).toHaveCount(0);
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+  });
+
+  test("phone: the sheet stays open in browse after going back", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openAnalyticsEditNoPanel(page);
+    await select(page, "tpl-ad-kpi-1-");
+    await expect(back(page)).toBeInViewport();
+    await back(page).click();
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+    await expect(page.locator(".component-sidebar .lib-header-title")).toHaveText("Components");
+  });
+
+  for (const mode of ["dark", "light"] as const) {
+    test(`${mode}: the back label clears 4.5:1`, async ({ page }) => {
+      await openAnalyticsInEdit(page);
+      if (mode === "light") await page.getByRole("button", { name: "Switch to light mode" }).click();
+      await select(page, "tpl-ad-kpi-1-");
+      const ratio = await back(page).locator("span").evaluate((el) => {
+        const parse = (s: string) => { const p = s.match(/rgba?\(([^)]+)\)/)![1].split(",").map(Number); return { r: p[0], g: p[1], b: p[2], a: p[3] ?? 1 }; };
+        const over = (t: { r: number; g: number; b: number; a: number }, b: { r: number; g: number; b: number }) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a) });
+        const lum = (c: { r: number; g: number; b: number }) => { const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+        const stack: Array<{ r: number; g: number; b: number; a: number }> = [];
+        for (let n: Element | null = el; n; n = n.parentElement) { const c = parse(getComputedStyle(n).backgroundColor); if (c.a > 0) { stack.push(c); if (c.a >= 1) break; } }
+        let bg = { r: 255, g: 255, b: 255 };
+        for (let i = stack.length - 1; i >= 0; i--) bg = over(stack[i], bg);
+        const fg = over(parse(getComputedStyle(el).color), bg);
+        const a = lum(fg), b = lum(bg);
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+      await page.screenshot({ path: `test-results/back-${mode}.png` });
+    });
+  }
+});
+
+/* FX Execution in Edit, feed paused. */
+async function openFxInEdit(page: Page) {
+  await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto("/builder", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Use the FX Execution template" }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  await page.locator(".present-stage").getByRole("button", { name: "Pause the sample feed" }).click();
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  await expect(page.locator(".component-sidebar")).toBeVisible();
+  await page.waitForTimeout(800);
+}
+
+for (const mode of ["dark", "light"] as const) {
+  test(`${mode}: the layout toolbar and the block pill are solid, named, and never show over each other or the card's content`, async ({ page }) => {
+    await openFxInEdit(page);
+    if (mode === "light") await page.getByRole("button", { name: "Switch to light mode" }).click();
+    const card = page.locator('[data-block-id="tpl-fx-stats"]');
+    const read = () => page.evaluate(() => {
+      const card = document.querySelector('[data-block-id="tpl-fx-stats"]')!;
+      const bar = card.closest(".zone-drop-container")!.querySelector(":scope > .zone-layout-overlay") as HTMLElement;
+      const pill = card.querySelector(".hover-inspector-toolbar") as HTMLElement | null;
+      const alpha = (el: Element) => { const mm = getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/)!; const p = mm[1].split(","); return p.length > 3 ? Number(p[3]) : 1; };
+      const p = pill?.getBoundingClientRect();
+      const b = bar.getBoundingClientRect();
+      const barShown = getComputedStyle(bar).opacity !== "0";
+      const range = document.createRange();
+      const content: string[] = [];
+      if (p) {
+        const w = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          if (!n.textContent?.trim() || n.parentElement?.closest(".hover-inspector")) continue;
+          range.selectNodeContents(n);
+          const o = range.getBoundingClientRect();
+          if (o.width > 0 && p.left < o.right && p.right > o.left && p.top < o.bottom && p.bottom > o.top) content.push(n.textContent.trim().slice(0, 20));
+        }
+      }
+      const controls = [...bar.querySelectorAll("button, [role=slider], [role=radio]"), ...(pill ? [...pill.querySelectorAll("button, [role=button]")] : [])];
+      return {
+        barShown,
+        barsOverlap: !!p && barShown && p.left < b.right && p.right > b.left && p.top < b.bottom && p.bottom > b.top,
+        pillOverContent: content,
+        alphas: [alpha(bar), pill ? alpha(pill) : 1],
+        blur: [getComputedStyle(bar).backdropFilter, pill ? getComputedStyle(pill).backdropFilter : "none"],
+        unnamed: controls.filter((c) => !(c.getAttribute("aria-label") || "").trim()).map((c) => c.className),
+        untitled: controls.filter((c) => c.tagName === "BUTTON" && !(c.getAttribute("title") || "").trim()).map((c) => c.className),
+      };
+    });
+    const check = (m: Awaited<ReturnType<typeof read>>, label: string) => {
+      expect(m.barsOverlap, `${label}: the two bars do not overlap`).toBe(false);
+      /* Selected is the state the owner reported; on hover, with the layout
+         toolbar also showing over a full card, the pill takes the corner
+         that covers least and is asserted clear of the toolbar only. */
+      if (label === "selected") expect(m.pillOverContent, `${label}: the pill is clear of the card's title and rows`).toEqual([]);
+      expect(m.alphas, `${label}: both bars are opaque`).toEqual([1, 1]);
+      for (const b of m.blur) expect(b === "none" || b === "", `${label}: no backdrop blur`).toBe(true);
+      expect(m.unnamed, `${label}: every toolbar control has an accessible name`).toEqual([]);
+      expect(m.untitled, `${label}: every toolbar button has a tooltip`).toEqual([]);
+    };
+    /* Hovering: the zone's layout toolbar and the pill may both show. */
+    const box = (await card.boundingBox())!;
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
+    await expect(card.locator(".hover-inspector-toolbar")).toBeVisible();
+    await page.waitForTimeout(300);
+    check(await read(), "hover");
+    /* Selected: the layout toolbar steps aside for the pill. */
+    await card.click({ position: { x: 8, y: 60 } });
+    await expect(page.locator(".hover-inspector.is-pinned .hover-inspector-toolbar")).toBeVisible();
+    await page.waitForTimeout(400);
+    const selected = await read();
+    expect(selected.barShown, "the layout toolbar is hidden while a block is selected").toBe(false);
+    check(selected, "selected");
+  });
+}
+
+test("FX Execution: the gauge's value is read-only and equals the canvas figure; its title still edits the canvas", async ({ page }) => {
+  await openFxInEdit(page);
+  const gauge = page.locator('[data-block-id="tpl-fx-passive"]');
+  await gauge.click({ position: { x: 8, y: 60 } });
+  await expect(page.locator(".inspector-stack")).toBeVisible();
+  await expect(page.locator(".component-sidebar").getByRole("slider", { name: "Value" })).toHaveCount(0);
+  const row = page.locator('.component-sidebar [data-field-readonly="value"]');
+  await expect(row).toContainText("From the sample data");
+  const shown = (await row.locator(".inspector-field-value").textContent())!.trim();
+  await expect(gauge.locator(".highcharts-data-label, .highcharts-data-labels").first()).toContainText(shown);
+  await page.locator(".component-sidebar").getByRole("textbox", { name: "Title", exact: true }).fill("Passive share");
+  await expect(gauge.locator(".dh-panel-title")).toHaveText("Passive share");
+});
+
+test("block actions: Duplicate selects the copy; Delete returns to the library with the panel open; Undo restores the block", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  const panel = page.locator(".component-sidebar");
+  const count = () => page.locator(".bp-main [data-block-id]").count();
+  const zoom = () => page.locator(".bp-device-frame").getAttribute("data-frame-zoom");
+  const before = await count();
+  const z = await zoom();
+  const selectedId = () => page.evaluate(() => document.querySelector("[data-inspector-block-id]")?.getAttribute("data-inspector-block-id") ?? null);
+  const original = await selectedId();
+
+  await panel.getByRole("button", { name: "Duplicate Stat card", exact: true }).click();
+  await expect.poll(count).toBe(before + 1);
+  await expect(panel.locator(".lib-header-title")).toHaveText("Stat card");
+  await expect.poll(selectedId).not.toBe(original);
+
+  const del = panel.getByRole("button", { name: "Delete Stat card", exact: true });
+  await del.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(count).toBe(before);
+  await expect(page.locator(".inspector-stack")).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await expect(panel.locator(".lib-header-title")).toHaveText("Components");
+  expect(await zoom()).toBe(z);
+
+  await page.getByRole("button", { name: /^Undo \(/ }).click();
+  await expect.poll(count).toBe(before + 1);
+});
+
+test("Column start sits in Advanced, and the container section is named by its zone", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  const panel = page.locator(".component-sidebar");
+  await expect(panel.locator(".inspector-section-head", { hasText: "Body layout" })).toHaveAttribute("aria-expanded", "false");
+  await expect(panel.getByRole("spinbutton", { name: "Grid column start" })).toHaveCount(0);
+  await panel.locator(".inspector-subgroup-head", { hasText: "Advanced" }).click();
+  const col = panel.getByRole("spinbutton", { name: "Grid column start" });
+  await expect(col).toBeVisible();
+  expect(await col.evaluate((el) => !!el.closest(".inspector-subgroup-body"))).toBe(true);
+  await panel.locator(".inspector-section-head", { hasText: "Body layout" }).click();
+  await expect(panel.getByText("Controls the Body container, not the selected block.")).toHaveCount(1);
+});
+
+test("the pill sits outside a stat card, not over its content", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  await page.waitForTimeout(400);
+  const m = await page.evaluate(() => {
+    const pill = document.querySelector(".hover-inspector-toolbar")!;
+    const card = pill.closest("[data-block-id]")!;
+    const p = pill.getBoundingClientRect(), c = card.getBoundingClientRect();
+    return { inside: p.left < c.right && p.right > c.left && p.top < c.bottom && p.bottom > c.top, placement: pill.getAttribute("data-placement") };
+  });
+  expect(m.inside, `pill outside the block (${m.placement})`).toBe(false);
+  await page.screenshot({ path: "test-results/pill-outside-statcard.png" });
 });

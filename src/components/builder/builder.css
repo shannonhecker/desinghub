@@ -14790,10 +14790,11 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: 4px;
   padding: 3px;
   border-radius: var(--b-radius-sm, 6px);
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(8px);
+  /* Solid chrome (5 Oct): the bar was translucent, so the card under it and
+     the block pill read through each other. */
+  background: var(--bc-toolbar-surface);
+  border: var(--bc-hairline) solid var(--insp-hairline);
+  box-shadow: var(--bc-shadow-md);
   opacity: 0;
   transform: translateY(-2px);
   pointer-events: none;
@@ -14849,7 +14850,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   pointer-events: auto;
 }
 .zlo-group { display: flex; align-items: center; gap: 1px; }
-.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--glass-border-subtle); }
+.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--bc-border); }
 .zlo-btn {
   display: grid;
   place-items: center;
@@ -14863,8 +14864,9 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   transition: background 0.1s, color 0.1s;
 }
 .zlo-btn .chrome-icon { font-size: 17px; }
-.zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
-.zlo-btn.active { background: var(--bc-accent); color: #fff; }
+.zlo-btn:hover { background: var(--bc-bg-hover); color: var(--bc-fg); }
+/* Selected: a filled tonal chip with full-strength icon. */
+.zlo-btn.active { background: var(--bc-bg-active); color: var(--bc-fg); }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
 /* Tone swatches: each paints with the tone's own background, so the control
    previews what the zone will look like in the active design system. */
@@ -14893,7 +14895,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.zlo-gap:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-gap:hover { background: var(--bc-bg-hover); color: var(--bc-fg); }
 .zlo-gap:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
 .zlo-gap .chrome-icon { font-size: 15px; }
 .zlo-gap-val { min-width: 14px; text-align: center; }
@@ -18075,7 +18077,8 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--bc-gap-sm);
   padding: var(--insp-head-pad-y) calc(var(--insp-inset) - var(--insp-icon-btn-pad)) var(--insp-head-pad-y) var(--insp-inset);
   border-bottom: var(--bc-hairline) solid var(--insp-hairline);
-  min-height: var(--insp-header-h);
+  /* Hugs its content: the panel's standard vertical padding, no reserved
+     subtitle line in browse mode. */
 }
 .lib-header-text {
   display: flex;
@@ -18100,6 +18103,37 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Back to the library and templates (inspect mode): a quiet text button
+   above the title, on the panel's inset, level with the close button. */
+.lib-header-text--inspect { padding-top: 0; gap: var(--bc-gap-xs); }
+.lib-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs);
+  height: var(--insp-icon-btn);
+  /* The chevron's edge meets the inset; the fill extends past it on hover. */
+  margin-left: calc(-1 * var(--insp-icon-btn-pad));
+  padding: 0 var(--bc-gap-sm) 0 var(--bc-gap-xxs);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: transparent;
+  color: var(--insp-label-fg);
+  font: var(--insp-label-type);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.lib-back-btn .chrome-icon { font-size: var(--insp-caret); }
+.lib-back-btn:hover { background: var(--insp-field-bg-hover); color: var(--insp-field-fg); }
+.lib-back-btn:focus-visible,
+.lib-header-title:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+  border-radius: var(--insp-radius-inner);
+}
+.lib-header-title:focus { outline: none; }
+.lib-header-title:focus-visible { outline: var(--insp-focus-w) solid var(--insp-focus); }
 .lib-close-btn {
   flex-shrink: 0;
   width: var(--insp-icon-btn);
@@ -18756,11 +18790,14 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   z-index: var(--bc-z-hud);
   zoom: calc(1 / var(--dh-frame-zoom, 1));
 }
-.hover-inspector-toolbar[data-placement="above-right"] { bottom: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="above-right"] { bottom: calc(100% + var(--insp-toolbar-gap)); right: var(--pill-shift, 0px); }
 .hover-inspector-toolbar[data-placement="above-left"]  { bottom: calc(100% + var(--insp-toolbar-gap)); left: 0; }
-.hover-inspector-toolbar[data-placement="below-right"] { top: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="below-right"] { top: calc(100% + var(--insp-toolbar-gap)); right: var(--pill-shift, 0px); }
 .hover-inspector-toolbar[data-placement="below-left"]  { top: calc(100% + var(--insp-toolbar-gap)); left: 0; }
 .hover-inspector-toolbar[data-placement="inside"]      { top: var(--insp-toolbar-gap); right: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-tl"] { top: var(--insp-toolbar-gap); left: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-br"] { bottom: var(--insp-toolbar-gap); right: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-bl"] { bottom: var(--insp-toolbar-gap); left: var(--insp-toolbar-gap); }
 /* A block shorter than the pill: the pill sits centred on the block's own
    height (its corner would spill into the row below). */
 .hover-inspector-toolbar[data-placement="inside-middle"] { top: 50%; right: var(--insp-toolbar-gap); transform: translateY(-50%); }
@@ -18818,3 +18855,48 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   }
   .comp-resize-handle { display: none !important; }
 }
+
+/* Floating canvas toolbars never overlap (5 Oct). The zone's layout toolbar
+   is a zone-level tool: it shows on zone hover while no block in the zone is
+   selected, and steps aside for the block pill once one is (the panel's
+   "Body layout" section holds the same controls). On hover the pill treats
+   it as an obstacle (HoverInspector). Icons on the solid surface use the
+   muted foreground (over 3:1 in both modes). */
+.zone-drop-container:has(.hover-inspector.is-pinned) > .zone-layout-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+.zone-layout-overlay .zlo-btn,
+.zone-layout-overlay .zlo-gap { color: var(--bc-fg-muted); }
+.zone-layout-overlay .zlo-btn.active { color: var(--bc-fg); }
+
+/* Block actions at the end of the inspector (5 Oct): quiet ghost buttons on
+   the panel inset; Delete in the danger text tone, no outline. */
+.inspector-actions {
+  display: flex;
+  gap: var(--insp-gap-row);
+  padding: var(--insp-gap-field) 0 var(--insp-gap-section);
+  border-top: var(--bc-hairline) solid var(--insp-hairline);
+}
+.inspector-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: var(--insp-control-h);
+  padding: 0 var(--insp-field-pad-x) 0 var(--bc-gap-sm);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-field-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-action-btn .chrome-icon { font-size: var(--insp-caret-sm); }
+.inspector-action-btn:hover { background: var(--insp-field-bg-hover); }
+.inspector-action-btn:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-action-btn--danger { color: var(--bc-danger); margin-left: auto; }
