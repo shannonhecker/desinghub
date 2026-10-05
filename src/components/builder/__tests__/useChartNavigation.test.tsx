@@ -100,6 +100,44 @@ describe("useChartNavigation", () => {
     expect(out.nav!.status.custom).toBe(false);
   });
 
+  it("a Go to window holds still against the feed, even when it shows the latest bar, and says when the feed has left it", () => {
+    const { out } = mount(true);
+    act(() => out.nav!.showSpan({ min: 100, max: 150 }));
+    expect(out.nav!.status.away).toBe(false);
+    let held: unknown;
+    act(() => { held = out.nav!.holdTime(149, 150); });
+    expect(held).toEqual({ min: 100, max: 150 });
+    act(() => { held = out.nav!.holdTime(150, 152); });
+    expect(held).toEqual({ min: 100, max: 150 });
+    /* The latest bar is now off the right edge: the rail offers the way back. */
+    expect(out.nav!.status.away).toBe(true);
+    expect(out.nav!.status.custom).toBe(true);
+  });
+
+  it("the wheel zooms on the plot; at the full view a wheel down is left to the page", () => {
+    const { fake, out } = mount(true);
+    /* The fake chart has no pointer: give it a plot and one. */
+    Object.assign(fake.chart, {
+      plotLeft: 0, plotTop: 0, plotWidth: 400, plotHeight: 200, series: [],
+      pointer: { normalize: (e: MouseEvent) => ({ chartX: e.clientX, chartY: e.clientY }) },
+    });
+    Object.assign(fake.x, { toValue: (px: number) => -0.5 + (px / 400) * 158 });
+    Object.assign(fake.y, { len: 200, toValue: (px: number) => 1.378 - (px / 200) * 0.002 });
+    const wheel = (deltaY: number, y = 100) => {
+      const e = new WheelEvent("wheel", { deltaY, clientX: 100, clientY: y, bubbles: true, cancelable: true });
+      act(() => { out.plot!.dispatchEvent(e); });
+      return e.defaultPrevented;
+    };
+    /* Nothing to zoom out of: the page scrolls. */
+    expect(wheel(120)).toBe(false);
+    expect(fake.x.user).toBeNull();
+    /* Zoom in is the chart's. */
+    expect(wheel(-240)).toBe(true);
+    expect(fake.x.user).not.toBeNull();
+    /* Off the plot and its axes: the page's. */
+    expect(wheel(-240, 900)).toBe(false);
+  });
+
   it("a new order, interval or range starts from the full view", () => {
     const { out, rerender } = mount(true);
     act(() => out.nav!.setViewport({ x: { min: 20, max: 60 }, y: null }));

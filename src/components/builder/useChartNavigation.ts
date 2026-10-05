@@ -41,6 +41,8 @@ const BOX_SLOP = 8;
 const AXIS_DRAG_SCALE = 300;
 /** How far below the plot the time axis's labels reach. */
 const TIME_AXIS_BAND = 28;
+/** After the last wheel zoom, how long before a wheel at the full view scrolls the page (ms). */
+const WHEEL_RELEASE = 400;
 const HINT_KEY = "uoaui:fx-hold-hint";
 
 export interface NavigationStatus {
@@ -232,6 +234,7 @@ export function useChartNavigation(o: Options): ChartNavigation {
     let hold: ReturnType<typeof setTimeout> | null = null;
     let box: Highcharts.SVGElement | null = null;
     let swallowClick = false;
+    let lastWheelZoom = 0;
     const touches = new Map<number, { x: number; y: number }>();
 
     const norm = (e: MouseEvent | PointerEvent, c: Highcharts.Chart) => {
@@ -417,7 +420,12 @@ export function useChartNavigation(o: Options): ChartNavigation {
       const region = regionOf(c, p.chartX, p.chartY);
       /* Off the plot and its axes the page scrolls as usual. */
       if (!region) return;
+      /* Nothing left to zoom out of: the wheel is the page's again (after a
+         beat, so the tail of a zoom-out flick does not jump the page). */
+      const vertical = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
+      if (region !== "price" && vertical && e.deltaY > 0 && vp.current.x === null && !e.ctrlKey && e.timeStamp - lastWheelZoom > WHEEL_RELEASE) return;
       e.preventDefault();
+      if (vertical) lastWheelZoom = e.timeStamp;
       const now = shown(c);
       if (region === "price") {
         apply({ x: vp.current.x, y: zoomPrice(now.y, c.yAxis[1].toValue(p.chartY), wheelFactor(e.deltaY, e.deltaMode), priceLimits(c)) });
@@ -496,12 +504,16 @@ export function useChartNavigation(o: Options): ChartNavigation {
 
   const holdTime = useCallback((before: number, after: number): Span | null => {
     if (!vp.current.x) return null;
-    const next = followFeed(vp.current.x, before, after);
+    /* A Go to window is a chosen stretch of time: it holds still even when
+       it shows the latest bar (its chip names it). Any other view that
+       shows the latest bar moves on with the feed. */
+    const next = statusRef.current.custom ? vp.current.x : followFeed(vp.current.x, before, after);
     vp.current = { ...vp.current, x: next };
     const el = opts.current.plotRef.current;
     if (el && next) el.dataset.viewX = spanText(next);
+    setStatus({ away: isAwayFromLive(next, after) });
     return next;
-  }, []);
+  }, [setStatus]);
 
   return {
     status,
