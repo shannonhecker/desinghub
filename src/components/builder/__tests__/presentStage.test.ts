@@ -56,7 +56,8 @@ describe("PresentStage is a read-only full-stage shell", () => {
 
   it("wraps the shared BuilderCanvas in a read-only CanvasDndProvider", () => {
     expect(presentStageSrc).toMatch(/<CanvasDndProvider readOnly>/);
-    expect(presentStageSrc).toMatch(/<BuilderCanvas framed responsive resizableSidebar allowEmptyState \/>/);
+    /* 5 Oct: Present passes fullBleedDesktop (desktop fills the stage edge to edge). */
+    expect(presentStageSrc).toMatch(/<BuilderCanvas framed responsive resizableSidebar allowEmptyState fullBleedDesktop \/>/);
   });
 
   it("imports the canvas pieces from PreviewPanel (one render path)", () => {

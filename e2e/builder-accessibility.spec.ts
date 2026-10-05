@@ -64,6 +64,68 @@ test("Fluent edit canvas remains still with both panels open", async ({ page }) 
   }
 });
 
+/* The Edit-mode shake (owner, 5 Oct): with the chat and the component
+   library both open, the frame fit read a stage width that its own vertical
+   scrollbar had just narrowed, refit, lost the scrollbar, and refit again
+   every frame. The stage now reserves the gutter and never scrolls sideways;
+   this measures the whole state at the owner's widths: idle, hovering a
+   block, and with a block selected, three seconds each. */
+test("Edit canvas is still with the library showing, at every wide width, idle, hovering and selected", async ({ page }) => {
+  test.setTimeout(8 * 60 * 1000);
+  await page.goto("/builder");
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible();
+  await page.getByRole("button", { name: /Browse templates/ }).click();
+  await page.getByRole("button", { name: "Use the Analytics Dashboard template" }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible();
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  const showLibrary = page.getByRole("button", { name: "Show component library" });
+  if (await showLibrary.isVisible()) await showLibrary.click();
+  await expect(page.locator(".lib-browser")).toBeVisible();
+  const still = async (label: string) => {
+    const result = await page.locator(".bp-viewport-wrapper").evaluate(async (stage) => {
+      const frame = stage.querySelector(".bp-device-frame") as HTMLElement;
+      const nodes = [frame, ...stage.querySelectorAll(".bp-main [data-block-id]")].slice(0, 8);
+      const read = () => nodes.flatMap((n) => { const r = n.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; });
+      const first = read();
+      let moved = 0;
+      const zooms = new Set<string>();
+      const t0 = Date.now();
+      while (Date.now() - t0 < 3000) {
+        await new Promise(requestAnimationFrame);
+        zooms.add(frame.getAttribute("data-frame-zoom") ?? "");
+        const now = read();
+        for (let i = 0; i < now.length; i++) moved = Math.max(moved, Math.abs(now[i] - first[i]));
+      }
+      return {
+        moved,
+        zooms: zooms.size,
+        sideways: stage.scrollWidth - stage.clientWidth,
+        gutter: getComputedStyle(stage).scrollbarGutter,
+      };
+    });
+    expect(result.moved, `${label}: geometry moved`).toBeLessThanOrEqual(0.5);
+    expect(result.zooms, `${label}: one frame zoom`).toBe(1);
+    expect(result.sideways, `${label}: no sideways overflow`).toBeLessThanOrEqual(0);
+    expect(result.gutter, `${label}: the scrollbar gutter is reserved`).toBe("stable");
+  };
+  for (const width of [1512, 1728, 1920, 2000]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(1200);
+    await still(`${width} idle`);
+    const block = page.locator('[data-block-id^="tpl-ad-kpi-2-"]').first();
+    const box = (await block.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(300);
+    await still(`${width} hovering`);
+    await block.focus();
+    await block.press("Enter");
+    await page.waitForTimeout(600);
+    await still(`${width} selected`);
+    await page.keyboard.press("Escape");
+  }
+});
+
 test("report grid uses arrow navigation and Tab exits the cells", async ({ page }) => {
   await performance(page);
   const grid = page.locator('.dh-grid').first();
