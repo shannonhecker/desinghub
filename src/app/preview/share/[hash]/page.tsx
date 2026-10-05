@@ -40,9 +40,11 @@ export async function generateMetadata({
         uoaui: "uoaui DS",
         carbon: "Carbon DS",
       }[state.designSystem]
-    : "Design Hub";
+    : "uoaui";
   return {
     title: `Shared preview - ${dsName}`,
-    description: "A shared Design Hub canvas preview.",
+    description: "A read-only preview of a canvas shared from uoaui.ai.",
+    /* A shared link is for whoever holds it, not for search results. */
+    robots: { index: false, follow: false },
   };
 }

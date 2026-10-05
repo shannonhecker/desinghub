@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { preload } from "react-dom";
 import { PRELOADED_FONTS } from "@/fonts/preload";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, isPreviewDeployment, siteUrl } from "@/lib/site";
 import { uoauiLandingSchemeVars } from "@/data/uoaui/tokens";
 import "@/fonts/fonts.css";
 import "./globals.css";
@@ -10,11 +11,22 @@ import "./conversion.css";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
-  title: "uoaui - AI Design-System Builder for Product Teams",
-  description:
-    "Turn one product brief into responsive Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions for comparison, review, and handoff.",
+  metadataBase: new URL(siteUrl()),
+  title: { default: `${SITE_TITLE} | ${SITE_NAME}`, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  /* The share image is src/app/opengraph-image.png (and twitter-image.png):
+     Next adds its address, size and type. */
+  openGraph: { type: "website", siteName: SITE_NAME, title: SITE_TITLE, description: SITE_DESCRIPTION, url: "/" },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
+  /* A preview deployment is never listed. */
+  robots: isPreviewDeployment() ? { index: false, follow: false } : { index: true, follow: true },
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
