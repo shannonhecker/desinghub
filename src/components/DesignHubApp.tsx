@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
@@ -523,7 +524,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("components")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
+                    <ChromeIcon name="widgets" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Browse</span>
                   </button>
                   <button
@@ -535,7 +536,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("search")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>search</span>
+                    <ChromeIcon name="search" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Search</span>
                   </button>
                   <button
@@ -547,7 +548,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("theme")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>tune</span>
+                    <ChromeIcon name="tune" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Theme</span>
                   </button>
                 </div>
@@ -564,7 +565,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={toggleMode}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>{isDarkTheme ? "light_mode" : "dark_mode"}</span>
+                    <ChromeIcon name={isDarkTheme ? "light_mode" : "dark_mode"} className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">{isDarkTheme ? "Light" : "Dark"}</span>
                   </button>
                   <Link
@@ -576,7 +577,7 @@ export function DesignHubApp({ held = false }: {
                        (not DS-tinted) — pin it to the uoaui purple AI gradient. */
                     style={{ borderRadius: railRadius, color: "#ffffff", background: "var(--dh-builder-grad, linear-gradient(135deg, #9D71D2, #7343B0))", border: "none", textDecoration: "none" }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>auto_awesome</span>
+                    <ChromeIcon name="auto_awesome" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Builder</span>
                   </Link>
                 </div>
@@ -618,7 +619,7 @@ export function DesignHubApp({ held = false }: {
                   ["--dh-focus-ring" as string]: t.focusRing,
                 }}
               >
-                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>chevron_left</span>
+                <ChromeIcon name="chevron_left" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }} />
               </button>
               <div style={{ flex: 1, minWidth: 0, marginLeft: -12 }}>
                 <SidebarDSBrand />

@@ -219,6 +219,11 @@ const MAP = {
   web_asset: "panel-top-dashed",
   input: "text-cursor",
   dashboard_customize: "layout-panel-top",
+  build: "wrench",
+  format_paint: "paint-roller",
+  cancel: "circle-x",
+  keyboard: "keyboard",
+  hearing: "ear",
 };
 
 /** Drawn for a name with no entry: a neutral mark, never the name's letters. */

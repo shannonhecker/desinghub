@@ -18,6 +18,7 @@
  * Pure presentation — reads the theme only. Works light + dark.
  */
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import type { ActiveTheme } from "@/contexts/ThemeContext";
 import type { ComponentGuidance } from "@/data/ui-kit-meta";
@@ -103,13 +104,7 @@ function GuidanceColumn({
       aria-label={`${label} guidance`}
     >
       <header className="dh-guidance-head">
-        <span
-          className="material-symbols-outlined dh-guidance-icon"
-          aria-hidden="true"
-          style={{ color: accent }}
-        >
-          {glyph}
-        </span>
+        <ChromeIcon name={glyph} className="dh-guidance-icon" aria-hidden="true" style={{ color: accent }} />
         <span className="dh-guidance-label" style={{ color: accent }}>
           {label}:
         </span>
@@ -117,13 +112,7 @@ function GuidanceColumn({
       <ul className="dh-guidance-list">
         {items.map((item, i) => (
           <li key={i} className="dh-guidance-item" style={{ color: t.fg2 }}>
-            <span
-              className="material-symbols-outlined dh-guidance-bullet"
-              aria-hidden="true"
-              style={{ color: accent }}
-            >
-              {isDo ? "check" : "block"}
-            </span>
+            <ChromeIcon name={isDo ? "check" : "block"} className="dh-guidance-bullet" aria-hidden="true" style={{ color: accent }} />
             <span>{item}</span>
           </li>
         ))}

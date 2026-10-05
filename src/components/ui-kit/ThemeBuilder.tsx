@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useState, useMemo, useRef } from "react";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -168,7 +169,7 @@ function ThemeBuilderInner() {
         <div className="tool-actions">
           {canUndo && (
             <button type="button" className="tool-btn" onClick={undoLast}>
-              <span className="material-symbols-outlined" aria-hidden="true">undo</span>
+              <ChromeIcon name="undo" aria-hidden="true" />
               Undo
             </button>
           )}
@@ -176,7 +177,7 @@ function ThemeBuilderInner() {
             <button type="button" className="tool-btn" onClick={resetAll}>Reset all</button>
           )}
           <button type="button" className="tool-btn" onClick={() => { setShowImport((v) => !v); setImportError(""); }} aria-expanded={showImport} aria-controls="theme-import-panel">
-            <span className="material-symbols-outlined" aria-hidden="true">upload</span>
+            <ChromeIcon name="upload" aria-hidden="true" />
             Import
           </button>
           <button
@@ -186,7 +187,7 @@ function ThemeBuilderInner() {
             disabled={overrideCount === 0}
             aria-describedby="theme-status"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+            <ChromeIcon name={copied ? "check" : "content_copy"} aria-hidden="true" />
             {copied ? "Copied" : "Copy JSON"}
           </button>
         </div>
@@ -211,7 +212,7 @@ function ThemeBuilderInner() {
           />
           {importError && (
             <p id="theme-import-error" className="theme-import-error" role="alert">
-              <span className="material-symbols-outlined" aria-hidden="true">error</span>
+              <ChromeIcon name="error" aria-hidden="true" />
               {importError}
             </p>
           )}
@@ -288,7 +289,7 @@ function ThemeBuilderInner() {
                       </div>
                       {isOverridden && (
                         <button type="button" className="theme-reset" onClick={() => resetToken(key)} title="Reset to the base colour" aria-label={`Reset ${key} to the base colour`}>
-                          <span className="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                          <ChromeIcon name="restart_alt" aria-hidden="true" />
                         </button>
                       )}
                     </div>

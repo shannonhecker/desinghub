@@ -1,12 +1,12 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import dynamic from "next/dynamic";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getFullCSS, getDemoComponent } from "@/data/registry";
 import { useActiveTheme } from "@/components/DesignHubApp";
 import { CodePanel } from "./CodePanel";
-import { DSAgGrid } from "./DSAgGrid";
 import { VariantsMatrix } from "./ui-kit/VariantsMatrix";
 import { GuidanceCards } from "./ui-kit/GuidanceCards";
 import { TokenSwatches } from "./ui-kit/TokenSwatches";
@@ -33,6 +33,11 @@ import {
    opening a non-chart /ui-kit component preview never pulls Highcharts into
    the preview chunk. */
 const ChartsPage = dynamic(() => import("./ChartsPage").then((m) => m.ChartsPage), { ssr: false });
+
+/* The same for AG Grid: only the AG Grid page draws it, and as a static
+   import it put the whole grid library into the first load of every library
+   page, the overview included. */
+const DSAgGrid = dynamic(() => import("./DSAgGrid").then((m) => m.DSAgGrid), { ssr: false });
 
 /* ════════════════════════════════════════════════════════════════════
    Registry-id → ui-kit-meta id map.
@@ -372,7 +377,8 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
     color: t.fg2, font: `400 14px/1.45 ${t.font}`,
   };
   const a11yMarkerStyle: React.CSSProperties = {
-    flex: "0 0 auto", color: t.accent, fontSize: 18, lineHeight: "21px",
+    /* An 18px icon on the 21px first line of its sentence. */
+    flex: "0 0 auto", color: t.accent, fontSize: 18, margin: "1.5px 0",
   };
   const a11ySubheadStyle: React.CSSProperties = {
     margin: "0 0 12px", color: t.fg, font: `600 15px/1.3 ${t.font}`,
@@ -389,9 +395,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <ul style={a11yListStyle}>
         {a11y.keyboard.map((line, i) => (
           <li key={`kb-${i}`} style={a11yItemStyle}>
-            <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
-              keyboard
-            </span>
+            <ChromeIcon name="keyboard" aria-hidden="true" style={a11yMarkerStyle} />
             <span>{line}</span>
           </li>
         ))}
@@ -401,9 +405,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
       <ul style={a11yListStyle}>
         {a11y.aria.map((line, i) => (
           <li key={`aria-${i}`} style={a11yItemStyle}>
-            <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
-              hearing
-            </span>
+            <ChromeIcon name="hearing" aria-hidden="true" style={a11yMarkerStyle} />
             <span>{line}</span>
           </li>
         ))}
@@ -414,9 +416,7 @@ export function ComponentPreview({ componentId }: { componentId: string }) {
           <h3 style={a11ySubheadStyle}>Contrast</h3>
           <ul style={{ ...a11yListStyle, marginBottom: 0 }}>
             <li style={a11yItemStyle}>
-              <span className="material-symbols-outlined" aria-hidden="true" style={a11yMarkerStyle}>
-                contrast
-              </span>
+              <ChromeIcon name="contrast" aria-hidden="true" style={a11yMarkerStyle} />
               <span>{a11y.contrast}</span>
             </li>
           </ul>

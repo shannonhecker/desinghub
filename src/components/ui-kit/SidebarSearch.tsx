@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -12,10 +13,7 @@ export const SidebarSearch = React.memo(function SidebarSearch() {
   const inputClass = activeSystem === "salt" ? "s-input" : activeSystem === "m3" ? "" : "f-input";
   return (
     <div style={{ position: "relative" }}>
-      <span className="material-symbols-outlined" style={{
-        position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)",
-        fontSize: 15, color: t.fg3, pointerEvents: "none", lineHeight: 1,
-      }}>search</span>
+      <ChromeIcon name="search" style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontSize: 15, color: t.fg3, pointerEvents: "none", lineHeight: 1, }} />
       <input
         type="text"
         placeholder="Search..."

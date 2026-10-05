@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
@@ -326,7 +327,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
 
       <div className="kit-toolbar">
         <div className="kit-search">
-          <span className="material-symbols-outlined" aria-hidden="true">search</span>
+          <ChromeIcon name="search" aria-hidden="true" />
           <label htmlFor="kit-search" className="sr-only">Search {sysInfo.name}</label>
           <input
             id="kit-search" ref={searchRef} type="search" value={searchQuery}
@@ -417,7 +418,7 @@ export const LandingGrid = React.memo(function LandingGrid() {
               <ul className="kit-tools">
                 {tools.map((c) => (
                   <li key={c.id} className="uikit-card kit-tool">
-                    <span className="material-symbols-outlined kit-tool-icon" aria-hidden="true">{c.icon}</span>
+                    <span className="kit-tool-icon" aria-hidden="true"><ChromeIcon name={c.icon} /></span>
                     <div>
                       <h3 className="kit-tile-name">
                         {c.href

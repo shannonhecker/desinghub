@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -97,11 +98,11 @@ export function ToolPageShell({ children }: { children: ReactNode }) {
             ))}
           </div>
           <button type="button" className="tool-ghost" onClick={toggleActiveMode} aria-label={`Switch to ${nextMode} mode`}>
-            <span className="material-symbols-outlined" aria-hidden="true">{dark ? "light_mode" : "dark_mode"}</span>
+            <ChromeIcon name={dark ? "light_mode" : "dark_mode"} aria-hidden="true" />
             <span>{dark ? "Light" : "Dark"}</span>
           </button>
           <Link href={builderHrefFor(state)} className="tool-ghost" data-testid="tool-builder-link">
-            <span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+            <ChromeIcon name="auto_awesome" aria-hidden="true" />
             <span>Open Builder</span>
           </Link>
         </div>

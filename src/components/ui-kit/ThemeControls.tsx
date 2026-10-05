@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -216,7 +217,7 @@ export function ThemeControls() {
                   <ModeIndicator value={isCustom ? "custom" : m3.themeKey} customColor={m3.customColor} border={t.border} />
                   {M3_MODE_OPTIONS.find(o => o.value === (isCustom ? "custom" : m3.themeKey))?.label}
                 </span>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>{modeOpen ? "expand_less" : "expand_more"}</span>
+                <ChromeIcon name={modeOpen ? "expand_less" : "expand_more"} style={{ fontSize: 16, color: t.fg3 }} />
               </button>
               {modeOpen && (
                 <div style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99, background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", overflow: "hidden" }}>
@@ -227,7 +228,7 @@ export function ThemeControls() {
                         style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, padding: "9px 12px", border: "none", cursor: "pointer", fontFamily: t.font, fontSize: 13, textAlign: "left", background: isSelected ? t.accentWeak : "transparent", color: isSelected ? t.accentText : t.fg, transition: "background 100ms" }}>
                         <ModeIndicator value={opt.value} customColor={m3.customColor} border={t.border} />
                         <span style={{ flex: 1 }}>{opt.label}</span>
-                        {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.accentText }}>check</span>}
+                        {isSelected && <ChromeIcon name="check" style={{ fontSize: 16, color: t.accentText }} />}
                       </button>
                     );
                   })}
@@ -249,7 +250,7 @@ export function ThemeControls() {
                     ? <><span style={{ width: 12, height: 12, borderRadius: "50%", background: selectedPalette.hex, flexShrink: 0, border: `1px solid ${t.border}`, display: "inline-block" }} />{selectedPalette.name}</>
                     : <span style={{ color: t.fg3 }}>Choose a color…</span>}
                 </span>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>{paletteOpen ? "expand_less" : "expand_more"}</span>
+                <ChromeIcon name={paletteOpen ? "expand_less" : "expand_more"} style={{ fontSize: 16, color: t.fg3 }} />
               </button>
               {paletteOpen && (
                 <div style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99, background: t.bg2, border: `1px solid ${t.border}`, borderRadius: 4, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", maxHeight: 220, overflowY: "auto" }}>
@@ -261,7 +262,7 @@ export function ThemeControls() {
                         <span style={{ width: 12, height: 12, borderRadius: "50%", background: c.hex, flexShrink: 0, border: `1px solid ${t.border}`, display: "inline-block" }} />
                         <span style={{ flex: 1 }}>{c.name}</span>
                         <span style={{ fontSize: 10, color: isSelected ? t.accentText : t.fg3, fontFamily: "monospace" }}>{c.hex}</span>
-                        {isSelected && <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.accentText }}>check</span>}
+                        {isSelected && <ChromeIcon name="check" style={{ fontSize: 16, color: t.accentText }} />}
                       </button>
                     );
                   })}
@@ -306,7 +307,7 @@ export function ThemeControls() {
                   <span style={{ width: 14, height: 14, borderRadius: "50%", background: UOAUI_ACCENTS.find(a => a.hex === uoaui.accentColor)?.grad || uoaui.accentColor, flexShrink: 0, border: `1px solid ${t.border}` }} />
                   {UOAUI_ACCENTS.find(a => a.hex === uoaui.accentColor)?.name || "Custom"}
                 </span>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: t.fg3 }}>{accentOpen ? "expand_less" : "expand_more"}</span>
+                <ChromeIcon name={accentOpen ? "expand_less" : "expand_more"} style={{ fontSize: 16, color: t.fg3 }} />
               </button>
               {accentOpen && (
                 <div style={{ position: "absolute", top: "calc(100% + 2px)", left: 0, right: 0, zIndex: 99, background: t.bg2 || t.bg, border: `1px solid ${t.border}`, borderRadius: t.scale.gap, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", overflow: "hidden" }}>
@@ -315,7 +316,7 @@ export function ThemeControls() {
                       style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, padding: `${t.scale.gap}px ${t.scale.gap + 4}px`, border: "none", cursor: "pointer", fontFamily: t.font, fontSize: t.scale.navF, textAlign: "left", background: uoaui.accentColor === a.hex ? (t.accentWeak || "rgba(0,0,0,0.05)") : "transparent", color: uoaui.accentColor === a.hex ? a.hex : t.fg, transition: "background 100ms" }}>
                       <span style={{ width: 14, height: 14, borderRadius: "50%", background: a.grad, flexShrink: 0, border: `1px solid ${t.border}` }} />
                       <span style={{ flex: 1 }}>{a.name}</span>
-                      {uoaui.accentColor === a.hex && <span className="material-symbols-outlined" style={{ fontSize: 14, color: a.hex }}>check</span>}
+                      {uoaui.accentColor === a.hex && <ChromeIcon name="check" style={{ fontSize: 14, color: a.hex }} />}
                     </button>
                   ))}
                 </div>

@@ -389,3 +389,63 @@ test.describe("Builder chrome icons are drawn whole", () => {
   });
 });
 
+
+/**
+ * The component library's own controls (the rail, search, breadcrumb, copy
+ * buttons, the tool pages) draw SVG icons too. Specimens of a design system
+ * keep that system's icons, font included.
+ */
+test.describe("Component library chrome icons without the icon font", () => {
+  /** Ligatures in the library's chrome: everything outside a specimen. */
+  const chromeLigatures = (page: Page) => page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>(".uikit-rail .material-symbols-outlined, .kit-toolbar .material-symbols-outlined, .kit-crumbs .material-symbols-outlined, .kit-copy .material-symbols-outlined, .kit-tool .material-symbols-outlined, .tool-page .material-symbols-outlined, .dh-guidance-head .material-symbols-outlined, .dh-guidance-item > .material-symbols-outlined")]
+      .map(el => `${el.parentElement?.className}: ${(el.textContent ?? "").trim()}`));
+
+  test("overview, an entry, its code and the tool pages show no icon names as text", async ({ page }) => {
+    await blockIconFont(page);
+    await page.goto("/ui-kit", { waitUntil: "networkidle" });
+    await expect(page.locator(".uikit-shell")).toBeVisible();
+    expect(await chromeLigatures(page), "overview").toEqual([]);
+    const rail = page.getByRole("navigation", { name: "Design systems, sections and actions" });
+    await expect(rail.locator("svg.chrome-icon")).toHaveCount(5);
+    for (const name of ["widgets", "search", "tune", "auto_awesome"]) await expect(rail.locator(`svg.chrome-icon[data-icon="${name}"]`)).toHaveCount(1);
+    await expect(page.locator(".kit-search > svg.chrome-icon")).toHaveAttribute("data-icon", "search");
+    /* A tool tile keeps its tinted square, with the icon inside it. */
+    const tile = page.locator(".kit-tool-icon").first();
+    await tile.scrollIntoViewIfNeeded();
+    const box = await tile.evaluate(el => {
+      const outer = el.getBoundingClientRect();
+      const icon = el.querySelector("svg.chrome-icon")!.getBoundingClientRect();
+      return { outer: outer.width, icon: icon.width, centred: Math.abs((outer.left + outer.right) / 2 - (icon.left + icon.right) / 2) };
+    });
+    expect(box.icon).toBe(20);
+    expect(box.outer).toBeGreaterThan(box.icon + 8);
+    expect(box.centred).toBeLessThanOrEqual(0.5);
+    await expectIconsDrawn(page, 8);
+
+    await page.goto("/ui-kit?ds=salt&c=buttons&tab=code", { waitUntil: "networkidle" });
+    await expect(page.locator(".kit-copy svg.chrome-icon").first()).toHaveAttribute("data-icon", "content_copy");
+    expect(await chromeLigatures(page), "code tab").toEqual([]);
+
+    await page.goto("/ui-kit?ds=fluent&c=buttons&tab=accessibility", { waitUntil: "networkidle" });
+    expect(await chromeLigatures(page), "accessibility tab").toEqual([]);
+    await expectIconsDrawn(page, 6);
+
+    for (const tool of ["/token-editor", "/theme-builder"]) {
+      await page.goto(tool, { waitUntil: "networkidle" });
+      await expect(page.locator(".tool-page svg.chrome-icon").first()).toBeVisible();
+      expect(await chromeLigatures(page), tool).toEqual([]);
+      await expectIconsDrawn(page, 3);
+    }
+  });
+
+  test("the library overview does not ask for the icon font unless a specimen draws with it", async ({ page }) => {
+    const fonts: string[] = [];
+    page.on("request", r => { if (r.resourceType() === "font" && /material-?symbols/i.test(r.url())) fonts.push(r.url()); });
+    for (const tool of ["/token-editor", "/theme-builder"]) {
+      await page.goto(tool, { waitUntil: "networkidle" });
+      await page.evaluate(() => document.fonts.ready);
+      expect(fonts, `${tool} draws no ligature`).toEqual([]);
+    }
+  });
+});

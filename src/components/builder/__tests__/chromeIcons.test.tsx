@@ -74,9 +74,33 @@ describe("chrome icons", () => {
     expect(left).toEqual(["src/components/builder/SimulatedUI.tsx"]);
   });
 
+  it("the component library's own controls draw SVG too: only specimens keep the icon font", () => {
+    const left = files(join(ROOT, "src/components"))
+      .filter((f) => !f.startsWith(BUILDER) && read(f).includes("material-symbols-outlined"))
+      .map(rel)
+      .sort();
+    /* Each of these draws a design system's component, not the library's
+       chrome: an anatomy diagram, the iconography foundation, a variant
+       example and the real-component renderers. */
+    expect(left).toEqual([
+      "src/components/ui-kit/AnatomyDiagram.tsx",
+      "src/components/ui-kit/FoundationThumb.tsx",
+      "src/components/ui-kit/RealComponentRenderer.tsx",
+      "src/components/ui-kit/VariantExample.tsx",
+      "src/components/ui-kit/realBlockMap.ts",
+    ]);
+    for (const css of ["src/components/ui-kit/kit-chrome.css", "src/components/ui-kit/tool-page.css"]) {
+      expect(read(join(ROOT, css)), css).not.toContain("material-symbols-outlined");
+    }
+    /* Names the library takes from data or picks in code. */
+    for (const name of ["palette", "fact_check", "widgets", "build", "table_rows", "format_paint", "check_circle", "cancel", "keyboard", "hearing", "contrast"]) {
+      expect(hasChromeIcon(name), name).toBe(true);
+    }
+  });
+
   it("every icon a chrome call site names has an icon", () => {
     const missing: string[] = [];
-    for (const file of [...files(BUILDER), join(ROOT, "src/lib/blockRegistry.tsx"), join(ROOT, "src/app/preview/share/[hash]/loading.tsx")]) {
+    for (const file of [...files(join(ROOT, "src/components")), ...files(join(ROOT, "src/app")), join(ROOT, "src/lib/blockRegistry.tsx")]) {
       const text = read(file);
       for (const tag of text.matchAll(/<ChromeIcon\b[^>]*?\bname=(?:"([a-z_0-9]+)"|\{([^}]*)\})/g)) {
         const names = tag[1] ? [tag[1]] : [...tag[2].matchAll(/"([a-z_0-9]+)"/g)].map((m) => m[1]);
