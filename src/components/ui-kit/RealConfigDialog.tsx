@@ -76,7 +76,7 @@ import {
 import {
   ComposedModal as CarbonComposedModal, ModalHeader as CarbonModalHeader, ModalBody as CarbonModalBody,
   ModalFooter as CarbonModalFooter, Select as CarbonSelect, SelectItem as CarbonSelectItem, Toggle as CarbonToggle,
-  Tooltip as CarbonTooltip, Tabs as CarbonTabs, TabList as CarbonTabList, Tab as CarbonTab, TabPanels as CarbonTabPanels,
+  Tabs as CarbonTabs, TabList as CarbonTabList, Tab as CarbonTab, TabPanels as CarbonTabPanels,
   TabPanel as CarbonTabPanel, Search as CarbonSearch, Button as CarbonButton,
 } from "@carbon/react";
 import {
@@ -475,7 +475,7 @@ function M3Config({ mode, model }: Omit<Props, "system">) {
   return (
     <MuiThemeProvider theme={theme}>
       <MuiDialog open={model.open} onClose={model.onClose} maxWidth={false} aria-labelledby="dh-cfg-title-m3" aria-describedby="dh-cfg-desc" className="dh-kit-dialog dh-cfg-dialog dh-cfg-m3"
-        slotProps={{ paper: { className: "dh-cfg-paper" } }}>
+        slotProps={{ paper: { className: "dh-cfg-paper", sx: { fontFamily: theme.typography.fontFamily } } }}>
         <MuiDialogTitle id="dh-cfg-title-m3" className="dh-cfg-title-row">
           <span>Configuration</span>
           <MuiIconButton aria-label="Close configuration" onClick={model.onClose}>{m3Icon("close")}</MuiIconButton>
@@ -484,7 +484,7 @@ function M3Config({ mode, model }: Omit<Props, "system">) {
           <p id="dh-cfg-desc" className="dh-cfg-sr">Configure {model.panel}</p>
           <Body model={model} kit={muiKit} />
         </MuiDialogContent>
-        <MuiDialogActions><Footer model={model} kit={muiKit} /></MuiDialogActions>
+        <MuiDialogActions style={{ fontFamily: theme.typography.fontFamily }}><Footer model={model} kit={muiKit} /></MuiDialogActions>
       </MuiDialog>
     </MuiThemeProvider>
   );
@@ -562,11 +562,7 @@ const carbonKit: Kit = {
       <CarbonToggle id={id} size="sm" hideLabel labelText="Aggregated" labelA="" labelB="" toggled={m.checked} disabled={m.disabled} onToggle={(on: boolean) => m.onChange(on)} />
     </span>
   ),
-  info: (label, text) => (
-    <CarbonTooltip description={text} label={text} align="bottom-right">
-      <button type="button" className="cds--btn cds--btn--ghost cds--btn--sm cds--btn--icon-only dh-cfg-icon-btn" aria-label={label}>{carbonKit.icon("info")}</button>
-    </CarbonTooltip>
-  ),
+  info: (label, text) => <PlainInfo label={label} text={text} buttonClass="cds--btn cds--btn--ghost cds--btn--sm cds--btn--icon-only" icon={carbonKit.icon("info")} tipClass="dh-cfg-tip-carbon" />,
   tabs: (model, panel) => {
     const at = Math.max(0, model.tabs.findIndex((t) => t.value === model.tab));
     return (
@@ -586,8 +582,9 @@ const carbonKit: Kit = {
       <CarbonSearch id={id} size="md" labelText={FILTER_LABEL} placeholder={FILTER_PLACEHOLDER} value={value} renderIcon={CarbonFilter} closeButtonLabelText="Clear filter" onChange={(e: { target: HTMLInputElement }) => onChange(e.target.value)} />
     </div>
   ),
+  /* Carbon's own ghost icon button, without its tooltip wrapper (three to a row). */
   iconButton: (label, icon, onClick, disabled) => (
-    <CarbonButton kind="ghost" size="sm" hasIconOnly renderIcon={carbonIcons[icon]} iconDescription={label} tooltipPosition="left" disabled={disabled} onClick={onClick} className="dh-cfg-icon-btn" />
+    <button type="button" className="cds--btn cds--btn--ghost cds--btn--sm cds--btn--icon-only dh-cfg-icon-btn" aria-label={label} title={label} disabled={disabled} onClick={onClick}>{carbonKit.icon(icon)}</button>
   ),
   button: (label, kind, onClick, disabled) => <CarbonButton kind={kind === "quiet" ? "ghost" : "secondary"} size="md" disabled={disabled} onClick={onClick}>{label}</CarbonButton>,
 };
@@ -644,13 +641,16 @@ function keepTabInside(e: React.KeyboardEvent | KeyboardEvent, root: HTMLElement
   if (e.shiftKey && (now === first || !root.contains(now))) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && (now === last || !root.contains(now))) { e.preventDefault(); first.focus(); }
 }
-function UoauiInfo({ label, text }: { label: string; text: string }) {
+/** An info button and its tooltip, for the systems whose tooltip cannot sit
+ *  in a portalled dialog (uoaui has none; Carbon's popover misplaces there):
+ *  shown on hover and on focus, named by the button, described by the tip. */
+function PlainInfo({ label, text, buttonClass, icon, tipClass }: { label: string; text: string; buttonClass: string; icon: React.ReactNode; tipClass: string }) {
   const [shown, setShown] = React.useState(false);
   return (
     <span className="dh-cfg-tip-wrap" onMouseEnter={() => setShown(true)} onMouseLeave={() => setShown(false)}>
-      <button type="button" className="a-btn a-btn-ghost dh-cfg-icon-btn" aria-label={label} aria-describedby="dh-cfg-tip"
-        onFocus={() => setShown(true)} onBlur={() => setShown(false)}>{uoauiKit.icon("info")}</button>
-      <span id="dh-cfg-tip" role="tooltip" className="a-tooltip dh-cfg-tip" hidden={!shown}>{text}</span>
+      <button type="button" className={`${buttonClass} dh-cfg-icon-btn`} aria-label={label} aria-describedby="dh-cfg-tip"
+        onFocus={() => setShown(true)} onBlur={() => setShown(false)}>{icon}</button>
+      <span id="dh-cfg-tip" role="tooltip" className={`dh-cfg-tip ${tipClass}`} hidden={!shown}>{text}</span>
     </span>
   );
 }
@@ -671,7 +671,7 @@ const uoauiKit: Kit = {
         className={`a-switch${m.checked ? " on" : ""}`} onClick={() => m.onChange(!m.checked)}><span className="a-sw-thumb" /></button>
     </span>
   ),
-  info: (label, text) => <UoauiInfo label={label} text={text} />,
+  info: (label, text) => <PlainInfo label={label} text={text} buttonClass="a-btn a-btn-ghost" icon={m3Icon("info")} tipClass="a-tooltip dh-cfg-tip-uoaui" />,
   tabs: (model, panel) => (
     <div className="dh-cfg-tabs">
       <div className="a-tabs dh-cfg-tablist" role="tablist" aria-label="Configuration sections">
