@@ -1,3 +1,4 @@
+import { ANALYTICS_WAVES } from "../templateReferenceAssets";
 /**
  * stylesCss - the fallback stylesheet every runnable export ships
  * (Vite `src/styles.css`, and the React download's `styles.css`).
@@ -704,10 +705,18 @@ button.tile { appearance: none; cursor: pointer; }
 
 /* ── Launcher card: a way into another report ── */
 .launcher { box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 16px; background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-top: 3px solid var(--tone); border-radius: var(--radius); }
-.launcher-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.launcher-title { margin: 0; min-width: 0; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.launcher-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.launcher-title { margin: 0; min-width: 0; min-height: 2.6em; font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance; }
 /* Where the canvas draws a thumbnail of the report: a neutral block. */
-.launcher-thumb { aspect-ratio: 220 / 130; border-radius: var(--radius); background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.launcher-thumb { aspect-ratio: 349 / 239; min-height: 0; overflow: hidden; border-radius: var(--radius); background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.launcher-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* The source's wave graphic behind the hero, on its own layer, bleeding above
+   and below it as on the canvas. Dark mode: quieter waves, and the white
+   wireframe thumbnails inverted and screened into faint lines. */
+.hero-reference { position: relative; isolation: isolate; }
+.hero-reference::before { content: ""; position: absolute; z-index: -1; inset-inline: 0; top: -40px; bottom: -48px; background: url("${ANALYTICS_WAVES}") center top / 100% auto no-repeat; pointer-events: none; }
+.dashboard-layout[data-mode="dark"] .hero-reference::before { opacity: 0.85; }
+.dashboard-layout[data-mode="dark"] .launcher-thumb img { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
 .launcher-desc { flex: 1 1 auto; margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-muted); }
 .launcher-open { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; color: var(--accent); }
 .launcher-open:hover { text-decoration: underline; }

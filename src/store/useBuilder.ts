@@ -474,6 +474,10 @@ interface BuilderState {
   sidebarCollapsed: boolean;
   previewKey: number;
   deviceMode: DeviceMode;
+  /** A frame the screen chose on its own (a phone opens in the phone frame).
+   *  Session-only: never saved, shared or put in the undo history, so the
+   *  author's own `deviceMode` is what travels. Cleared by setDeviceMode. */
+  autoDeviceMode: DeviceMode | null;
 
   // Compare-DS mode - renders the current canvas in all four design systems
   // simultaneously (2x2 grid) so designers can compare visual output.
@@ -714,6 +718,7 @@ interface BuilderState {
   toggleChatMode: () => void;
   setChatPlacement: (p: { dock: 'free' | 'left' | 'right' | 'bottom'; x: number; y: number } | null) => void;
   setDeviceMode: (d: DeviceMode) => void;
+  setAutoDeviceMode: (d: DeviceMode | null) => void;
   toggleSidebar: () => void;
   bumpPreview: () => void;
 
@@ -865,6 +870,12 @@ function seedPages(s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "
    snapshot, autosave, share-link) MUST flush through this before serializing, or it
    captures a stale page body and silently drops the current page's in-progress edits
    — `s.blocks` only syncs back into `pages` on a page switch otherwise. */
+/** The frame the canvas renders in: the screen's automatic choice when there
+ *  is one, else the author's. */
+export function effectiveDeviceMode(s: Pick<BuilderState, "deviceMode" | "autoDeviceMode">): DeviceMode {
+  return s.autoDeviceMode ?? s.deviceMode;
+}
+
 export function flushActiveBody(
   s: Pick<BuilderState, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts">,
 ): { pages: Page[]; activePageId: string } {
@@ -1001,6 +1012,7 @@ export const useBuilder = create<BuilderState>((set) => ({
   sidebarCollapsed: false,
   previewKey: 0,
   deviceMode: 'desktop',
+  autoDeviceMode: null,
   compareMode: false,
   editRendersReal: true,
   structurePadding: 'medium',
@@ -1771,7 +1783,8 @@ export const useBuilder = create<BuilderState>((set) => ({
   toggleChatMode: () =>
     set((s) => ({ chatMode: s.chatMode === 'floating' ? 'docked' : 'floating' })),
   setChatPlacement: (p) => set({ chatPlacement: p }),
-  setDeviceMode: (d) => set({ deviceMode: d }),
+  setDeviceMode: (d) => set({ deviceMode: d, autoDeviceMode: null }),
+  setAutoDeviceMode: (d) => set({ autoDeviceMode: d }),
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
 

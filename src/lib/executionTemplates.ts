@@ -86,7 +86,7 @@ const venues: DataBinding = {
 export const fxExecution: BuilderTemplate = {
   id: "fx-execution",
   label: "FX Execution",
-  desc: "One algo order worked through a session: market, limit price, fills by venue and percent done on one chart, with the order's statistics, a passive gauge and a venue breakdown",
+  desc: "One algo order through a session: fills by venue, statistics and a venue breakdown",
   icon: "candlestick_chart",
   category: "finance",
   uniformStructure: true,

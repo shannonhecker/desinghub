@@ -25,6 +25,17 @@ export const PANEL_STACK_WIDTH = 340;
 /** Height the second header line adds. */
 export const PANEL_STACK_ROW = 28;
 
+/** The dense report grid's row and header heights (SimulatedDataGrid). */
+export const GRID_ROW_HEIGHT = 28;
+export const GRID_HEADER_HEIGHT = 30;
+
+/** A grid panel tall enough to show `rows` rows without an empty tail
+ *  (the frame's header and padding, the grid's header, the rows and its
+ *  1px borders). */
+export function gridPanelHeightFor(rows: number): number {
+  return PANEL_HEADER_HEIGHT + PANEL_PADDING + GRID_HEADER_HEIGHT + rows * GRID_ROW_HEIGHT + 2;
+}
+
 /** Height left for a panel's content once the header and the body padding
  *  (top is shared with the header, so one padding at the bottom) are taken. */
 export function panelContentHeight(panelHeight: number): number {
