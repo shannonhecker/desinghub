@@ -373,7 +373,15 @@ test.describe("Builder - Material 3 status chips", () => {
       const active = stage(page).locator(".MuiChip-root", { hasText: "Active" }).first();
       const pending = stage(page).locator(".MuiChip-root", { hasText: "Pending" }).first();
       await expect(active).toBeVisible();
-      await settled(async () => expect(SATURATED).not.toContain((await look(active)).bg));
+      /* The chip's fill and its label colour cross-fade on a mode change and
+         on first paint: read them once both have arrived (the label must
+         still reach 4.5:1, it is only given time to get there). */
+      await settled(async () => {
+        const now = await look(active);
+        expect(SATURATED).not.toContain(now.bg);
+        expect(now.contrast, "Active label").toBeGreaterThanOrEqual(4.5);
+        expect((await look(pending)).contrast, "Pending label").toBeGreaterThanOrEqual(4.5);
+      });
       const a = await look(active);
       expect(a.contrast, "Active label").toBeGreaterThanOrEqual(4.5);
       /* A container tone: pale in light, deep in dark; never the saturated fill. */
