@@ -146,3 +146,23 @@ describe("TemplatesDrawer instant apply (QW5)", () => {
     expect(s.messages.length).toBe(0);
   });
 });
+
+function clickNamedButton(name: string) {
+  const button = [...container!.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent?.trim() === name);
+  expect(button).toBeDefined();
+  act(() => button!.click());
+}
+
+it('filters individual templates and offers the connected workspace separately', () => {
+  mountDrawer();
+  clickNamedButton('Finance');
+  /* Twelve individual finance reports; the linked app is not one of the cards. */
+  expect(container!.querySelectorAll('.templates-drawer-card')).toHaveLength(12);
+  expect(container!.querySelector('[aria-label="Start from the Analytics Home template"]')).toBeNull();
+  expect(container!.querySelector('[aria-label="Start from the Performance Analytics template"]')).not.toBeNull();
+  expect(container!.querySelector('[aria-label="Start from the CRM Contacts template"]')).toBeNull();
+  clickNamedButton('Open workspace');
+  expect(useBuilder.getState().activeTemplateId).toBe('analytics-home');
+  expect(useBuilder.getState().pages).toHaveLength(4);
+  expect(useBuilder.getState().templatesDrawerOpen).toBe(false);
+});

@@ -92,6 +92,7 @@ import { BlockErrorBoundary } from "./BlockErrorBoundary";
 import { GroupDropContainer } from "./GroupDropContainer";
 import { computeGroupItemStyle } from "@/lib/layoutResolver";
 import type { Block } from "@/store/useBuilder";
+import { setReportControlValue } from "@/lib/applyTemplate";
 
 type DesignSystem = "salt" | "m3" | "fluent" | "uoaui" | "carbon";
 
@@ -1817,7 +1818,7 @@ function DataGridBlockRenderer({ system, blockId }: { system: DesignSystem; bloc
   }, [grouping, selectState, setReportState]);
 
   const grid = (height: number) => (
-    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} />
+    <SimulatedDataGrid columns={columns} rows={rows} height={height} label={title || "Data grid"} selected={selected} onSelect={onSelect} edgeFade={p.edgeFade === true} />
   );
   if (p.panel === false) return grid(panelHeight);
   return (
@@ -2056,9 +2057,10 @@ function ComponentRendererImpl({ type, system, blockId, mode: modeProp, saltDens
   const rawProps = props as Record<string, unknown>;
   const stateKey = typeof rawProps.stateKey === "string" && rawProps.stateKey ? rawProps.stateKey : null;
   const stateValue = useBuilder((s) => (stateKey ? s.reportState[stateKey] : undefined));
-  const setReportState = useBuilder((s) => s.setReportState);
+  /* A settings control (`persistValue`) also saves the choice on its block,
+     so it survives a reload; other report state stays transient. */
   const liveProps: Record<string, unknown> = stateKey
-    ? { ...rawProps, value: stateValue ?? rawProps.value, onValueChange: (v: string) => setReportState(stateKey, v) }
+    ? { ...rawProps, value: stateValue ?? rawProps.value, onValueChange: (v: string) => setReportControlValue(blockId, rawProps, stateKey, v) }
     : rawProps;
   const coversReal = canRenderReal(system as SystemId, type);
   const rendersRealInEdit = !readOnly && editRendersReal && coversReal;

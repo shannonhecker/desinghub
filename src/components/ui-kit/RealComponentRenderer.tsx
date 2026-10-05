@@ -550,11 +550,12 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
       <SaltFormField validationStatus={saltValidation(props.validationStatus as ValidationStatus)} disabled={disabled}>
         <SaltFormFieldLabel>{s(props.label, "Label")}</SaltFormFieldLabel>
         {kit
-          /* Kit only: Salt draws an empty read-only field as a dash, which
-             read as a broken input beside four placeholders. The library
-             mounts it editable, so the placeholder shows as Salt draws it. */
+          /* Kit only: Salt styles a read-only field differently from a
+             normal one (no fill, a lighter edge), so the library mounts the
+             normal, editable field, as the Salt page draws it. */
           ? <SaltInput key={s(props.value)} placeholder={s(props.placeholder)} defaultValue={s(props.value) || undefined} />
-          : <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly />}
+          /* No dash for an empty read-only field: the placeholder shows what goes there. */
+          : <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly emptyReadOnlyMarker="" />}
       </SaltFormField>
     );
   } else if (type === "SimulatedCheckbox") {
@@ -624,7 +625,7 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
   } else if (type === "SimulatedDropdown") {
     inner = <SaltDropdownField model={dropdownModel(props)} onChange={changeHandler(props)} />;
   } else if (type === "SimulatedSearchbox") {
-    inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly />;
+    inner = <SaltInput placeholder={s(props.placeholder, "Search...")} startAdornment={<SearchIcon />} readOnly emptyReadOnlyMarker="" />;
   } else if (type === "SimulatedSegmentedGroup") {
     const opts = csv(props.optionsCsv, ["Day", "Week", "Month"]);
     const di = num(props.defaultIndex, 0);

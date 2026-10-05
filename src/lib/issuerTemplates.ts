@@ -10,6 +10,7 @@
  * filter sets it, and every panel reads its rows.
  */
 
+import { ANALYTICS_HOME_PAGES } from "./analyticsHomePages";
 import type { Block } from "@/store/useBuilder";
 import type { BuilderTemplate } from "./builderTemplates";
 import { BODY_LAYOUT, FINANCE_BRAND, FULL, HALF, WORKSPACES, WORKSPACE_TEMPLATES, filter } from "./financeTemplates";
@@ -107,7 +108,7 @@ const peers = (blockId: string, cohort: string): DataBinding => {
 };
 
 export const issuerClimate: BuilderTemplate = {
-  ...base("issuer-climate", "Issuer Climate", "An issuer's emissions against a benchmark, its net-zero pathway, an alignment verdict and peer rankings", "thermostat"),
+  ...base("issuer-climate", "Issuer Climate", "An issuer's emissions, net-zero pathway, alignment verdict and peer rankings", "thermostat"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ic", "issuer-climate", [ENTITY_FILTER]),
   body: [
@@ -234,7 +235,7 @@ const controversyDetail: DataBinding = {
 };
 
 export const issuerControversies: BuilderTemplate = {
-  ...base("issuer-controversies", "Issuer Controversies", "Three controversy score cards and a severity grid grouped by pillar for one issuer", "report"),
+  ...base("issuer-controversies", "Issuer Controversies", "Controversy scores and a severity grid by pillar for one issuer", "report"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ico", "issuer-controversies", [ENTITY_FILTER]),
   body: [
@@ -292,7 +293,7 @@ const summaryCard = (id: string, lookup: RowLookup & { state: string }, accent: 
 const pairChart = (chart: string): DataBinding => seriesChart(chart, [forPair, OWN]);
 
 export const entityComparison: BuilderTemplate = {
-  ...base("entity-comparison", "Entity Comparison", "Two issuers side by side: summaries, involvement radar, ESG scores, rating trend, emissions and controversies", "compare"),
+  ...base("entity-comparison", "Entity Comparison", "Two issuers side by side: involvement, ESG scores, ratings and emissions", "compare"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("ec", "issuer-comparison", [ENTITY_FILTER, filter("Compare with", COMPARATOR_STATE, DEFAULT_COMPARATOR, ISSUER_NAMES)]),
   body: [
@@ -389,7 +390,7 @@ const reference: DataBinding = {
 };
 
 export const governanceScorecard: BuilderTemplate = {
-  ...base("governance-scorecard", "Governance Scorecard", "Four category cards that filter positive and negative indicator grids, with a reference grid for one issuer", "fact_check"),
+  ...base("governance-scorecard", "Governance Scorecard", "Category cards that filter positive and negative indicators for one issuer", "fact_check"),
   zoneLayouts: { body: BODY_LAYOUT, ...SI_CHROME_LAYOUTS },
   ...siChrome("sc", "scorecard", [ENTITY_FILTER]),
   body: [
@@ -452,6 +453,7 @@ const homeFilter = (id: string, label: string, stateKey: string, options: string
 });
 
 export const analyticsHome: BuilderTemplate = {
+  pages: ANALYTICS_HOME_PAGES,
   ...base("analytics-home", "Analytics Home", "A hero with search, four launcher cards that open the reports, and a filterable list of dashboards", "home"),
   /* A start page: no context bar, and its content sits straight on the page. */
   zoneLayouts: { body: { ...BODY_LAYOUT, plain: true }, ...SI_CHROME_LAYOUTS },
@@ -464,12 +466,15 @@ export const analyticsHome: BuilderTemplate = {
   body: [
     {
       id: "tpl-home-hero", type: "HeroSearch",
-      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", buttonLabel: "Search", height: 168 },
+      props: { title: "Analytics Dashboard", subtitle: "Search for a comprehensive range of reports and performance.", placeholder: "Search by entity, sector or ticker", placeholderShort: "Entity, sector or ticker", buttonLabel: "Search", referenceGraphic: "analytics", height: 168 },
       layout: { width: "12fr", height: "168px" },
     },
     { id: "tpl-home-featured", type: "PageTitle", props: { text: "Featured", level: 2 }, layout: { width: "12fr", height: "32px", align: "center" } },
-    launcher(0, "Portfolio report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
-    launcher(1, "Issuer report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
+    /* Card titles: the short forms the Reports page uses, so the two
+       Sustainable Investment reports tell apart on a card (the full names
+       are in the list below). */
+    launcher(0, "SI Portfolio Report", "Holdings", "esg-analytics", "ESG, climate and screening views of a portfolio."),
+    launcher(1, "SI Issuer Report", "Company", "issuer-climate", "Climate, involvement and controversies for one issuer.", "mid"),
     launcher(2, "Performance", "Holdings", "performance-analytics", "Multi-period returns against benchmark, with allocation."),
     launcher(3, "Risk", "Holdings", "risk-analytics", "Value at risk, exposures and risk contribution."),
 
