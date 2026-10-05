@@ -18840,3 +18840,34 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
 .zone-layout-overlay .zlo-btn,
 .zone-layout-overlay .zlo-gap { color: var(--bc-fg-muted); }
 .zone-layout-overlay .zlo-btn.active { color: var(--bc-fg); }
+
+/* Block actions at the end of the inspector (5 Oct): quiet ghost buttons on
+   the panel inset; Delete in the danger text tone, no outline. */
+.inspector-actions {
+  display: flex;
+  gap: var(--insp-gap-row);
+  padding: var(--insp-gap-field) 0 var(--insp-gap-section);
+  border-top: var(--bc-hairline) solid var(--insp-hairline);
+}
+.inspector-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  height: var(--insp-control-h);
+  padding: 0 var(--insp-field-pad-x) 0 var(--bc-gap-sm);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-field-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-action-btn .chrome-icon { font-size: var(--insp-caret-sm); }
+.inspector-action-btn:hover { background: var(--insp-field-bg-hover); }
+.inspector-action-btn:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-action-btn--danger { color: var(--bc-danger); margin-left: auto; }

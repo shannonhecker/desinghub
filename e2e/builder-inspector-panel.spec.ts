@@ -608,3 +608,46 @@ test("FX Execution: the gauge's value is read-only and equals the canvas figure;
   await page.locator(".component-sidebar").getByRole("textbox", { name: "Title", exact: true }).fill("Passive share");
   await expect(gauge.locator(".dh-panel-title")).toHaveText("Passive share");
 });
+
+test("block actions: Duplicate selects the copy; Delete returns to the library with the panel open; Undo restores the block", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  const panel = page.locator(".component-sidebar");
+  const count = () => page.locator(".bp-main [data-block-id]").count();
+  const zoom = () => page.locator(".bp-device-frame").getAttribute("data-frame-zoom");
+  const before = await count();
+  const z = await zoom();
+  const selectedId = () => page.evaluate(() => document.querySelector("[data-inspector-block-id]")?.getAttribute("data-inspector-block-id") ?? null);
+  const original = await selectedId();
+
+  await panel.getByRole("button", { name: "Duplicate Stat card", exact: true }).click();
+  await expect.poll(count).toBe(before + 1);
+  await expect(panel.locator(".lib-header-title")).toHaveText("Stat card");
+  await expect.poll(selectedId).not.toBe(original);
+
+  const del = panel.getByRole("button", { name: "Delete Stat card", exact: true });
+  await del.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(count).toBe(before);
+  await expect(page.locator(".inspector-stack")).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await expect(panel.locator(".lib-header-title")).toHaveText("Components");
+  expect(await zoom()).toBe(z);
+
+  await page.getByRole("button", { name: /^Undo \(/ }).click();
+  await expect.poll(count).toBe(before + 1);
+});
+
+test("Column start sits in Advanced, and the container section is named by its zone", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  const panel = page.locator(".component-sidebar");
+  await expect(panel.locator(".inspector-section-head", { hasText: "Body layout" })).toHaveAttribute("aria-expanded", "false");
+  await expect(panel.getByRole("spinbutton", { name: "Grid column start" })).toHaveCount(0);
+  await panel.locator(".inspector-subgroup-head", { hasText: "Advanced" }).click();
+  const col = panel.getByRole("spinbutton", { name: "Grid column start" });
+  await expect(col).toBeVisible();
+  expect(await col.evaluate((el) => !!el.closest(".inspector-subgroup-body"))).toBe(true);
+  await panel.locator(".inspector-section-head", { hasText: "Body layout" }).click();
+  await expect(panel.getByText("Controls the Body container, not the selected block.")).toHaveCount(1);
+});
