@@ -18658,6 +18658,9 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
     box-shadow: var(--bc-shadow-lg);
     z-index: var(--bc-z-hud);
     padding-bottom: env(safe-area-inset-bottom);
+    /* clip, not hidden: a scrollIntoView inside the body must not scroll the
+       sheet itself and carry its header off the top. */
+    overflow: clip;
   }
   .component-sidebar::before {
     content: "";
