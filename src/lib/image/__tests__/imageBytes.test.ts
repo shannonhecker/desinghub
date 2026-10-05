@@ -12,7 +12,7 @@ import {
   base64ToBytes,
   isStrictBase64,
 } from "../imageBytes";
-import { makePng, makeJpeg, makeGif, makeWebp, toBase64, makeJpegWithExif, makePngWithExif } from "./fixtures";
+import { makePng, makeJpeg, makeGif, makeWebp, toBase64, makeJpegWithExif, makePngWithExif, makePngWithTextAfterIdat, makeGifWithComment } from "./fixtures";
 
 describe("imageBytes: allowlist and caps", () => {
   it("allows exactly png, jpeg, webp and gif", () => {
@@ -99,5 +99,32 @@ describe("hasImageMetadata: EXIF must not leave the browser", () => {
   });
   it("caps decode work at about 50 megapixels", () => {
     expect(MAX_IMAGE_PIXELS).toBe(50_000_000);
+  });
+});
+
+describe("hasImageMetadata fails closed", () => {
+  it("finds a PNG text chunk after IDAT", () => {
+    expect(hasImageMetadata(makePngWithTextAfterIdat(10, 10), "image/png")).toBe(true);
+  });
+  it("treats a truncated or malformed PNG as having metadata", () => {
+    const png = makePng(10, 10);
+    expect(hasImageMetadata(png.slice(0, png.length - 6), "image/png")).toBe(true);
+  });
+  it("treats a malformed JPEG segment as having metadata", () => {
+    const jpeg = makeJpeg(10, 10);
+    const broken = jpeg.slice();
+    broken[2] = 0x00; // first segment no longer starts with 0xFF
+    expect(hasImageMetadata(broken, "image/jpeg")).toBe(true);
+    expect(hasImageMetadata(jpeg.slice(0, 12), "image/jpeg")).toBe(true);
+  });
+  it("finds a GIF comment extension; a plain GIF is clean", () => {
+    expect(hasImageMetadata(makeGifWithComment(4, 4, "shot on Pixel"), "image/gif")).toBe(true);
+    expect(hasImageMetadata(makeGif(4, 4), "image/gif")).toBe(false);
+  });
+  it("a well-formed WebP is clean; a chunk running past the end is not", () => {
+    expect(hasImageMetadata(makeWebp(10, 10, 0), "image/webp")).toBe(false);
+    const webp = makeWebp(10, 10, 0);
+    const broken = new Uint8Array([...webp, ...[0x41, 0x4c, 0x50, 0x48, 0xff, 0xff, 0, 0]]);
+    expect(hasImageMetadata(broken, "image/webp")).toBe(true);
   });
 });

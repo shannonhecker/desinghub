@@ -72,12 +72,16 @@ export interface ImageCodec {
   release?(source: unknown): void;
 }
 
-/* Re-encode ladder: crisp PNG for UI screenshots, then JPEG for photos. */
-const ENCODE_LADDER: { type: "image/png" | "image/jpeg"; quality?: number }[] = [
-  { type: "image/png" },
+type EncodeStep = { type: "image/png" | "image/jpeg"; quality?: number };
+/* Re-encode ladder: crisp PNG for UI screenshots, then JPEG for photos.
+   A JPEG source is a photo already: re-encoding it as PNG would only grow
+   it, so it goes straight to JPEG. */
+const JPEG_STEPS: EncodeStep[] = [
   { type: "image/jpeg", quality: 0.88 },
   { type: "image/jpeg", quality: 0.75 },
 ];
+const encodeLadder = (source: ImageMediaType): EncodeStep[] =>
+  source === "image/jpeg" ? JPEG_STEPS : [{ type: "image/png" }, ...JPEG_STEPS];
 
 async function readBytes(file: Blob): Promise<Uint8Array> {
   if (typeof file.arrayBuffer === "function") return new Uint8Array(await file.arrayBuffer());
@@ -117,7 +121,7 @@ export async function prepareImageAttachment(file: File, codec: ImageCodec = bro
     if (!(decoded.width > 0 && decoded.height > 0)) throw new ImageAttachmentError("unreadable");
     if (decoded.width * decoded.height > MAX_IMAGE_PIXELS) throw new ImageAttachmentError("too-large");
     const target = fitWithinEdge(decoded.width, decoded.height);
-    for (const step of ENCODE_LADDER) {
+    for (const step of encodeLadder(mediaType)) {
       let out: Uint8Array;
       try {
         out = await codec.encode(decoded.source, target.width, target.height, step.type, step.quality);
@@ -142,7 +146,9 @@ export async function prepareImageAttachment(file: File, codec: ImageCodec = bro
 /* ── Browser codec: createImageBitmap + canvas ── */
 export const browserImageCodec: ImageCodec = {
   async decode(blob) {
-    const bitmap = await createImageBitmap(blob);
+    /* Explicit, so a phone photo's EXIF rotation is applied before the
+       pixels are re-encoded without it. */
+    const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
     return { width: bitmap.width, height: bitmap.height, source: bitmap };
   },
   async encode(source, width, height, type, quality) {
