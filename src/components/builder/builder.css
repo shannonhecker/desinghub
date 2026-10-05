@@ -4,6 +4,24 @@
 
 @import "./chrome-tokens.css";
 
+/* Icon ligatures. Material Symbols is a ligature font from a CDN: before it
+   arrives (or if it never does) a span draws its literal word ("compare"),
+   wider than its button and over the neighbour. Every ligature in the builder
+   keeps one square glyph box and clips, so a word can never spill. With the
+   font loaded the glyph is exactly this box, so nothing moves. `clip` (not
+   `hidden`) leaves the span's baseline where it was; `hidden` is the fallback
+   for browsers without it. Declared first and at one class of specificity so
+   any rule below that sizes an icon still wins. */
+:where(.builder-shell) .material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  overflow: clip;
+}
+
 /* --------------------------------------------------------------------------
    Builder chrome polish
    Tone down ambient blobs and align app chrome with the calmer uoaui landing
@@ -5449,7 +5467,10 @@
   font-size: 12px;
   font-weight: 600;
 }
-.present-bar-ds-caret { color: var(--bc-fg-muted); }
+.present-bar-ds-caret { display: inline-flex; align-items: center; color: var(--bc-fg-muted); }
+/* Icons in the bar are inline SVG: nothing here waits for an icon font. */
+.present-bar-btn svg { flex: none; }
+.present-bar-btn-lead { margin-right: var(--bc-gap-xs); }
 /* Opaque menu surface — NO backdrop-filter (lightningcss can strip it,
    leaving the busy canvas bleeding through the menu). --bc-bg-raised is
    ~opaque and theme-aware, so no separate light override is needed.
@@ -5493,9 +5514,10 @@
 }
 .present-bar-ds-option-selected { color: var(--bc-accent); }
 .present-bar-ds-check {
+  display: inline-flex;
   width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  font-size: 16px;
   color: var(--bc-accent);
 }
 @media (prefers-reduced-motion: reduce) {
