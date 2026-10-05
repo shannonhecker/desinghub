@@ -23,7 +23,8 @@ import { useTagStore, type OrderChartApi, type TagBox, type TagKey } from "./use
 
 const HINT_ID = "dh-order-tag-hint";
 /* Events on a tag that are never the chart's. */
-const STOPPED = ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "wheel", "dblclick", "contextmenu"];
+/* (A wheel over a tag is still the chart's: it zooms the price scale the tag sits on.) */
+const STOPPED = ["mousedown", "mousemove", "mouseup", "touchstart", "touchmove", "touchend", "dblclick", "contextmenu"];
 const DRAG_START = 3;
 
 const NAMES: Record<TagKey, string> = { limit: "Limit price", bid: "Latest bid" };

@@ -263,6 +263,22 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       return Math.abs(priceAxis(c).toPixels(limit, false) - n.chartY) <= LINE_GRAB;
     };
     let drag: { id: number; price: number | null } | null = null;
+    /* The cursor is ours only over the grab zone or during a drag; otherwise
+       it is left to the chart (its navigation sets its own by region). */
+    let ours = false;
+    const cursor = (on: boolean) => {
+      if (on === ours) return;
+      ours = on;
+      plot.style.cursor = on ? "ns-resize" : "";
+    };
+    /* The click that ends a drag is not a click on the fill under it. */
+    let swallow = false;
+    const onClick = (e: MouseEvent) => {
+      if (!swallow) return;
+      swallow = false;
+      e.stopPropagation();
+      e.preventDefault();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || !drag) return;
       e.stopPropagation();
@@ -270,19 +286,20 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       if (plot.hasPointerCapture(drag.id)) plot.releasePointerCapture(drag.id);
       drag = null;
       api.preview("limit", null);
-      plot.style.cursor = "";
+      cursor(false);
     };
     const down = (e: PointerEvent) => {
+      swallow = false;
       if (e.button !== 0 || !near(e)) return;
       /* Ours: the chart's own press (pan, tooltip) does not start. */
       e.stopPropagation();
       e.preventDefault();
       drag = { id: e.pointerId, price: null };
       try { plot.setPointerCapture(e.pointerId); } catch { /* no such pointer: the moves still reach the plot */ }
-      plot.style.cursor = "ns-resize";
+      cursor(true);
     };
     const move = (e: PointerEvent) => {
-      if (!drag) { plot.style.cursor = near(e) ? "ns-resize" : ""; return; }
+      if (!drag) { cursor(near(e)); return; }
       e.stopPropagation();
       const price = api.priceAt(e);
       if (price === null) return;
@@ -296,8 +313,8 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       if (plot.hasPointerCapture(drag.id)) plot.releasePointerCapture(drag.id);
       drag = null;
       api.preview("limit", null);
-      plot.style.cursor = "";
-      if (price !== null) api.commit("limit", price, null);
+      cursor(near(e));
+      if (price !== null) { swallow = true; window.setTimeout(() => { swallow = false; }, 0); api.commit("limit", price, null); }
     };
     /* A cancelled press (the system took the pointer) amends nothing. */
     const cancel = (e: PointerEvent) => {
@@ -305,14 +322,17 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
       e.stopPropagation();
       drag = null;
       api.preview("limit", null);
-      plot.style.cursor = "";
+      cursor(false);
     };
+    plot.addEventListener("click", onClick, true);
     plot.addEventListener("pointerdown", down, true);
     plot.addEventListener("pointermove", move, true);
     plot.addEventListener("pointerup", up, true);
     plot.addEventListener("pointercancel", cancel, true);
     window.addEventListener("keydown", onKey, true);
     return () => {
+      cursor(false);
+      plot.removeEventListener("click", onClick, true);
       plot.removeEventListener("pointerdown", down, true);
       plot.removeEventListener("pointermove", move, true);
       plot.removeEventListener("pointerup", up, true);

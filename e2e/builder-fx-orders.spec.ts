@@ -644,6 +644,98 @@ test.describe("Builder - FX Execution sample orders", () => {
   });
 });
 
+test.describe("Builder - FX Execution sample orders, on a zoomed chart (FX B's navigation)", () => {
+  const plot = (page: Page) => stage(page).locator(".dh-exec-plot");
+  const view = async (page: Page) => `${await plot(page).getAttribute("data-view-x")} | ${await plot(page).getAttribute("data-view-y")}`;
+  const ctrlWheel = async (page: Page, dy: number) => { await page.keyboard.down("Control"); await page.mouse.wheel(0, dy); await page.keyboard.up("Control"); };
+  const area = async (page: Page) => (await plot(page).locator(".highcharts-plot-background").boundingBox())!;
+
+  test("time and price zoomed: the limit drag reads the drawn axis and commits that price; no pan, no price-axis drag, no key pan", async ({ page }) => {
+    await applyFx(page);
+    const a = await area(page);
+    /* Zoom time over the plot, then price over the gutter, anchored on the LMT tag so it stays on the scale. */
+    await page.mouse.move(a.x + a.width * 0.7, a.y + a.height * 0.4);
+    await ctrlWheel(page, -300);
+    await expect.poll(() => plot(page).getAttribute("data-view-x")).not.toBeNull();
+    const tagY = (await centre(limitTag(page))).y;
+    await page.mouse.move(a.x + a.width + 30, tagY);
+    await ctrlWheel(page, -200);
+    await expect.poll(() => plot(page).getAttribute("data-view-y")).not.toBeNull();
+    await expect(limitTag(page)).toBeVisible();
+    let last = -1;
+    await expect.poll(async () => { const y = (await centre(limitTag(page))).y; const still = Math.abs(y - last) < 0.5; last = y; return still; }, { timeout: 10_000 }).toBe(true);
+    const zoomed = await view(page);
+    const price = Number(await priceOf(limitTag(page)));
+
+    /* Out and back: the read-out is the tag's own price again (a pixel is worth less on a zoomed scale). */
+    const from = await centre(limitTag(page));
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x, from.y + 40, { steps: 6 });
+    expect(Number((await readout(page).textContent())!.replace("LMT → ", ""))).toBeLessThan(price);
+    await page.mouse.move(from.x, from.y, { steps: 6 });
+    expect(Math.abs(Number((await readout(page).textContent())!.replace("LMT → ", "")) - price)).toBeLessThanOrEqual(0.00004);
+    /* Dropped lower: that price is the limit, and the view has not moved. */
+    await page.mouse.move(from.x, from.y + 30, { steps: 6 });
+    const shown = (await readout(page).textContent())!.replace("LMT → ", "");
+    await page.mouse.up();
+    await expect(toast(page)).toHaveText(CONFIRMATION);
+    await expect.poll(() => priceOf(limitTag(page))).toBe(shown);
+    expect(await view(page)).toBe(zoomed);
+
+    /* The line itself, grabbed in the plot: an amendment, not a pan. */
+    const line = await centre(limitTag(page));
+    const x = a.x + a.width - 60;
+    await page.mouse.move(x, line.y);
+    await page.mouse.down();
+    await page.mouse.move(x, line.y + 24, { steps: 6 });
+    await expect(readout(page)).toHaveText(/^LMT → \d\.\d{5}$/);
+    const second = (await readout(page).textContent())!.replace("LMT → ", "");
+    await page.mouse.up();
+    await expect.poll(() => priceOf(limitTag(page))).toBe(second);
+    expect(await view(page)).toBe(zoomed);
+
+    /* Arrow keys on a focused tag step its price; the chart does not pan. */
+    await limitTag(page).focus();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowLeft");
+    await expect(readout(page)).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    expect(await view(page)).toBe(zoomed);
+    await stillPresenting(page);
+
+    /* The BID tag, if it is on the scale: staging, not a price-axis drag. */
+    if (await bidTag(page).count()) {
+      await dragStart(page, bidTag(page), -20);
+      await page.mouse.up();
+      await expect(dialog(page)).toContainText("EURUSD order ticket");
+      await page.keyboard.press("Escape");
+      await expect(dialog(page)).toHaveCount(0);
+      expect(await view(page)).toBe(zoomed);
+    }
+    /* A plain press and drag in the plot is still the chart's pan. */
+    await page.mouse.move(a.x + a.width * 0.5, a.y + a.height * 0.75);
+    await page.mouse.down();
+    await page.mouse.move(a.x + a.width * 0.5 + 80, a.y + a.height * 0.75, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(() => view(page)).not.toBe(zoomed);
+  });
+
+  test("a tag off the zoomed price scale has no target, and comes back with it", async ({ page }) => {
+    await applyFx(page);
+    const a = await area(page);
+    await expect(page.locator(".dh-order-tag")).toHaveCount(2);
+    /* Zoom price far from the LMT tag (it is near the top): it leaves the scale. */
+    await page.mouse.move(a.x + a.width + 30, a.y + a.height * 0.62);
+    await expect(async () => { await ctrlWheel(page, -300); await expect(plot(page).locator(".dh-exec-pill-limit")).toHaveCount(0, { timeout: 500 }); }).toPass({ timeout: 15_000 });
+    await expect(limitTag(page)).toHaveCount(0);
+    /* Every target that is left sits on a drawn tag. */
+    for (const key of ["limit", "bid"]) await expect(page.locator(`.dh-order-tag-${key}`)).toHaveCount(await plot(page).locator(`.dh-exec-pill-${key}`).count());
+    await stage(page).getByRole("button", { name: "Reset view", exact: true }).click();
+    await expect(page.locator(".dh-order-tag")).toHaveCount(2);
+  });
+});
+
 test.describe("Builder - FX Execution sample orders, with the feed live", () => {
   for (const system of SYSTEMS) {
     test(`${system}: the price menu keeps focus where the reader put it while the feed ticks`, async ({ page }) => {

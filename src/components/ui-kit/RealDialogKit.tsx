@@ -20,11 +20,12 @@
  *
  * Every dialog: role dialog named by its title, focus kept inside, Escape
  * closes it, and focus goes back to `returnFocus` (the launcher) after it
- * closes. Dialogs and menus carry `data-dh-escape-owner`, so the builder's
- * own Escape (which leaves Present) leaves them alone.
+ * closes. Escape is taken once, at the window (overlayEscape), for every
+ * dialog and menu here and in RealFormDialog.
  */
 
 import React from "react";
+import { useOverlayEscape, useReturnFocus } from "@/lib/overlayEscape";
 import { createPortal } from "react-dom";
 import { getFullCSS, getTheme } from "@/data/registry";
 import { sanitizeCSS } from "@/lib/sanitizeCSS";
@@ -134,61 +135,7 @@ type Mode = "light" | "dark";
 interface DialogProps { system: SystemId; mode: Mode; density?: DensityLevel | string; model: KitDialogModel }
 interface MenuProps { system: SystemId; mode: Mode; model: KitMenuModel }
 
-/** Tells the builder's Escape (leave Present) to leave this subtree alone. */
-export const ESCAPE_OWNER = { "data-dh-escape-owner": "" } as const;
-
 /* ── Shared behaviour ── */
-
-/** After a dialog or menu closes (or is unmounted while open): focus the
- *  launcher once the system's own focus handling has run (some systems keep
- *  focus in a closing dialog until its exit animation ends). Only when focus
- *  is lost or still inside the overlay. */
-/* Focus hand-backs still waiting: a dialog or menu that opens meanwhile
-   cancels them (it takes focus itself). */
-const handBacks = new Set<number>();
-function useReturnFocus(open: boolean, target?: React.RefObject<HTMLElement | null>) {
-  const latest = React.useRef(target);
-  React.useEffect(() => { latest.current = target; });
-  React.useEffect(() => {
-    if (!open) return;
-    handBacks.forEach((id) => window.clearTimeout(id));
-    handBacks.clear();
-    return () => {
-      const back = () => {
-        const el = latest.current?.current;
-        const now = document.activeElement as HTMLElement | null;
-        if (el && el.isConnected && now !== el && (!now || now === document.body || now.closest("[data-dh-escape-owner]"))) el.focus();
-      };
-      for (const ms of [0, 120, 320]) {
-        const id = window.setTimeout(() => { handBacks.delete(id); back(); }, ms);
-        handBacks.add(id);
-      }
-    };
-  }, [open]);
-}
-
-/** While an overlay is open, an Escape pressed outside it (focus fell to the
- *  page: a click on a backdrop, a system that let it go) still closes the
- *  overlay and goes no further, so it never leaves Present instead. Taken
- *  at the window on the way down. `always` takes every Escape (uoaui, which
- *  has no component of its own to do it). */
-function useOverlayEscape(open: boolean, onClose: () => void, always = false) {
-  const close = React.useRef(onClose);
-  React.useEffect(() => { close.current = onClose; });
-  React.useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      const inside = e.target instanceof Element && Boolean(e.target.closest("[data-dh-escape-owner]"));
-      if (inside && !always) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      close.current();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [open, always]);
-}
 
 const titleId = (model: KitDialogModel, system: string) => `dh-kit-${model.name}-${system}-title`;
 const errorId = (f: KitField) => `${f.id}-error`;
@@ -278,7 +225,7 @@ const saltParts: Parts = {
 function SaltKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
   return (
     <SaltProvider mode={mode} density={coerceDensity(density)} applyClassesTo="scope">
-      <SaltDialog open={model.open} onOpenChange={(o) => { if (!o) model.onClose(); }} size={model.size === "small" ? "small" : "medium"} className={`dh-kit-dialog dh-kit-${model.name}`} {...ESCAPE_OWNER}>
+      <SaltDialog open={model.open} onOpenChange={(o) => { if (!o) model.onClose(); }} size={model.size === "small" ? "small" : "medium"} className={`dh-kit-dialog dh-kit-${model.name}`}>
         <SaltDialogHeader header={model.title} />
         <SaltDialogContent>
           {model.description ? <p className="dh-kit-description">{model.description}</p> : null}
@@ -304,7 +251,7 @@ const muiParts: Parts = {
   field: (f) =>
     f.kind === "select" ? (
       <MuiTextField select id={f.id} label={f.label} value={f.value} size="small" fullWidth onChange={(e) => f.onChange(e.target.value)}
-        slotProps={{ select: { MenuProps: { slotProps: { root: { ...ESCAPE_OWNER } as object } } } }}>
+        >
         {f.options.map((o) => <MuiMenuItem key={o} value={o}>{o}</MuiMenuItem>)}
       </MuiTextField>
     ) : (
@@ -326,7 +273,7 @@ function M3KitDialog({ mode, model }: Omit<DialogProps, "system">) {
   const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
   return (
     <MuiThemeProvider theme={theme}>
-      <MuiDialog open={model.open} onClose={model.onClose} maxWidth={model.size === "small" ? "xs" : "sm"} fullWidth aria-labelledby={titleId(model, "m3")} className={`dh-kit-dialog dh-kit-${model.name}`} {...ESCAPE_OWNER}
+      <MuiDialog open={model.open} onClose={model.onClose} maxWidth={model.size === "small" ? "xs" : "sm"} fullWidth aria-labelledby={titleId(model, "m3")} className={`dh-kit-dialog dh-kit-${model.name}`}
         slotProps={{ paper: { component: "form", onSubmit: submitOnEnter(model), noValidate: true } as object }}>
         <MuiDialogTitle id={titleId(model, "m3")}>{model.title}</MuiDialogTitle>
         <MuiDialogContent sx={{ fontFamily: theme.typography.fontFamily }}>
@@ -373,7 +320,7 @@ function FluentKitDialog({ mode, model }: Omit<DialogProps, "system">) {
   return (
     <FluentProvider theme={mode === "dark" ? webDarkTheme : webLightTheme}>
       <FluentDialog open={model.open} onOpenChange={(_e, d) => { if (!d.open) model.onClose(); }}>
-        <FluentDialogSurface className={`dh-kit-dialog dh-kit-${model.name} dh-kit-fluent-${model.size ?? "medium"}`} aria-labelledby={titleId(model, "fluent")} {...ESCAPE_OWNER}>
+        <FluentDialogSurface className={`dh-kit-dialog dh-kit-${model.name} dh-kit-fluent-${model.size ?? "medium"}`} aria-labelledby={titleId(model, "fluent")}>
           <form onSubmit={submitOnEnter(model)} noValidate>
             <FluentDialogBody>
               <FluentDialogTitle id={titleId(model, "fluent")}>{model.title}</FluentDialogTitle>
@@ -427,7 +374,7 @@ function CarbonKitDialog({ mode, model }: Omit<DialogProps, "system">) {
   return createPortal(
     <>
       <CarbonScopeStyles />
-      <div className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"} {...ESCAPE_OWNER}>
+      <div className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"}>
         <CarbonModal
           open={model.open} size={model.size === "small" ? "sm" : "md"} className={`dh-kit-dialog dh-kit-${model.name}`}
           modalHeading={model.title} aria-label={model.title}
@@ -524,7 +471,6 @@ function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
   const css = useUoauiCss(mode, density);
   const panel = React.useRef<HTMLDivElement>(null);
   const open = model.open;
-  useOverlayEscape(open, model.onClose, true);
   React.useEffect(() => {
     if (!open) return;
     const p = panel.current;
@@ -534,7 +480,7 @@ function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
     const onKey = (e: KeyboardEvent) => trapTab(panel.current, e);
     const onFocus = (e: FocusEvent) => {
       const to = e.target as Node | null;
-      if (panel.current && to && !panel.current.contains(to) && !(to instanceof Element && to.closest("[data-dh-escape-owner]"))) panel.current.focus();
+      if (panel.current && to && !panel.current.contains(to) && !(to instanceof Element && to.closest(".dh-kit-scope, [role=\"listbox\"], [role=\"menu\"]"))) panel.current.focus();
     };
     window.addEventListener("keydown", onKey, true);
     document.addEventListener("focusin", onFocus);
@@ -542,7 +488,7 @@ function UoauiKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
   }, [open]);
   if (!open || typeof document === "undefined") return null;
   return createPortal(
-    <div className="preview-uoaui a-app dh-kit-scope" {...ESCAPE_OWNER}>
+    <div className="preview-uoaui a-app dh-kit-scope">
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="a-dialog-backdrop dh-kit-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) model.onClose(); }}>
         <div ref={panel} tabIndex={-1} className={`a-dialog dh-kit-dialog dh-kit-${model.name} dh-kit-uoaui-${model.size ?? "medium"}`} role="dialog" aria-modal="true" aria-labelledby={titleId(model, "uoaui")} style={model.tones}>
@@ -606,7 +552,7 @@ function SaltKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   return (
     <SaltProvider mode={mode} applyClassesTo="scope">
       <SaltMenu open={model.open} onOpenChange={(o) => { if (!o) model.onClose(); }} getVirtualElement={() => model.anchor} placement="bottom-end">
-        <SaltMenuPanel aria-label={model.label} className={look.className} style={look.style} {...ESCAPE_OWNER}>
+        <SaltMenuPanel aria-label={model.label} className={look.className} style={look.style}>
           {model.items.map((it) => <SaltMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</SaltMenuItem>)}
         </SaltMenuPanel>
       </SaltMenu>
@@ -620,7 +566,7 @@ function M3KitMenu({ mode, model }: Omit<MenuProps, "system">) {
     <MuiThemeProvider theme={theme}>
       <MuiMenu open={model.open && Boolean(model.anchor)} anchorEl={model.anchor} onClose={model.onClose} autoFocus
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ list: { "aria-label": model.label, dense: true } as object, paper: { style: look.style } }} className={look.className} {...ESCAPE_OWNER}>
+        slotProps={{ list: { "aria-label": model.label, dense: true } as object, paper: { style: look.style } }} className={look.className}>
         {model.items.map((it) => <MuiMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</MuiMenuItem>)}
       </MuiMenu>
     </MuiThemeProvider>
@@ -631,7 +577,7 @@ function FluentKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   return (
     <FluentProvider theme={mode === "dark" ? webDarkTheme : webLightTheme}>
       <FluentMenu open={model.open} onOpenChange={(_e, d) => { if (!d.open) model.onClose(); }} positioning={{ target: model.anchor, position: "below", align: "end" }}>
-        <FluentMenuPopover className={look.className} style={look.style} {...ESCAPE_OWNER}>
+        <FluentMenuPopover className={look.className} style={look.style}>
           <FluentMenuList aria-label={model.label}>
             {model.items.map((it) => <FluentMenuItem key={it.id} disabled={it.disabled} onClick={() => { model.onClose(); it.onSelect(); }}>{it.label}</FluentMenuItem>)}
           </FluentMenuList>
@@ -666,7 +612,7 @@ function CarbonKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   return createPortal(
     <>
       <CarbonScopeStyles />
-      <div ref={setScope} className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"} style={look.style} {...ESCAPE_OWNER}>
+      <div ref={setScope} className={`carbon-live-scope ${themeClass} dh-kit-scope`} data-carbon-theme={mode === "dark" ? "g100" : "white"} style={look.style}>
         {scope && rect ? (
           <CarbonMenu open={model.open} label={model.label} mode="basic" size="sm" target={scope} className={look.className}
             x={[rect.left, rect.right]} y={[rect.top, rect.bottom]} onClose={model.onClose}>
@@ -686,7 +632,6 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   const { open, anchor } = model;
   const close = React.useRef(model.onClose);
   React.useEffect(() => { close.current = model.onClose; });
-  useOverlayEscape(open, model.onClose, true);
   /* On opening only (the model is a new object on every render, and the
      page re-renders on every feed tick): focus the first item once. */
   React.useEffect(() => {
@@ -716,7 +661,7 @@ function UoauiKitMenu({ mode, model }: Omit<MenuProps, "system">) {
     }
   };
   return createPortal(
-    <div className="preview-uoaui a-app dh-kit-scope" {...ESCAPE_OWNER}>
+    <div className="preview-uoaui a-app dh-kit-scope">
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <ul ref={list} role="menu" aria-label={model.label} className={`a-dropdown-menu ${look.className} dh-kit-menu-uoaui`} onKeyDown={onKey}
         style={{ ...look.style, position: "fixed", top: rect.bottom + 4, left: "auto", right: Math.max(8, window.innerWidth - rect.right) }}>

@@ -10,6 +10,7 @@ import { describe, it, expect, afterEach, beforeAll, vi } from "vitest";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { RealComponentRenderer } from "../RealComponentRenderer";
+import { overlayTookEscape } from "@/lib/overlayEscape";
 import type { KitDialogModel, KitMenuModel } from "../RealDialogKit";
 
 beforeAll(() => {
@@ -68,7 +69,11 @@ describe("KitDialog, real", () => {
       expect(dialog, "a dialog").not.toBeNull();
       const named = dialog!.getAttribute("aria-labelledby") ? document.getElementById(dialog!.getAttribute("aria-labelledby")!)?.textContent : dialog!.getAttribute("aria-label");
       expect(named).toContain("Order ticket");
-      expect(dialog!.closest("[data-dh-escape-owner]") ?? dialog!.querySelector("[data-dh-escape-owner]")).not.toBeNull();
+      /* Escape is the dialog's: it closes it, and the builder is told to leave the key alone. */
+      const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+      act(() => { dialog!.dispatchEvent(escape); });
+      expect(overlayTookEscape(escape)).toBe(true);
+      expect(model.onClose).toHaveBeenCalled();
       expect(document.body.textContent).toContain("Sample data. Nothing is sent.");
       /* The tiles name their side and price. */
       const tiles = [...document.querySelectorAll(".dh-kit-tile")].map((t) => t.querySelector(".dh-kit-sr")?.textContent);
