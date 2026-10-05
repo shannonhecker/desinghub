@@ -31,6 +31,7 @@
  */
 
 import { dropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
+import { publicAssetUrl } from "@/lib/sampleImages";
 
 /** An inline dropdown: its label on the left, the control on the right, on
  *  one line (see InlineField in RealComponentRenderer). */
@@ -365,7 +366,13 @@ const UOAUI_REAL: Partial<Record<string, RealBlockRenderer>> = {
     return React.createElement(
       "div",
       { style: { position: "relative", display: "inline-flex" } },
-      React.createElement("div", { className: "a-avatar" }, s(p.initials, "?")),
+      React.createElement(
+        "div",
+        { className: "a-avatar", style: s(p.src) ? { overflow: "hidden", padding: 0 } : undefined },
+        s(p.src)
+          ? React.createElement("img", { src: publicAssetUrl(s(p.src)), alt: s(p.initials, ""), style: { width: "100%", height: "100%", objectFit: "cover" } })
+          : s(p.initials, "?"),
+      ),
       dot,
     );
   },
@@ -555,7 +562,9 @@ const CARBON_REAL: Partial<Record<string, RealBlockRenderer>> = {
       warn: status === "warning",
       warnText: status === "warning" ? "This field has a warning" : undefined,
       disabled: Boolean(p.disabled),
-      ...(ctx?.kit ? {} : { readOnly: true }),
+      /* Carbon's read-only styling wins over disabled, so a disabled field is
+         not also marked read-only. */
+      ...(ctx?.kit || p.disabled ? {} : { readOnly: true }),
     });
   },
 

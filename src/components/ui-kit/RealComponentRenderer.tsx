@@ -187,6 +187,7 @@ import {
   TableCell as FluentTableCell,
 } from "@fluentui/react-components";
 import { resolveCell, isStatusColumn, statusToClass } from "@/lib/tableCells";
+import { publicAssetUrl } from "@/lib/sampleImages";
 
 import type { SystemId } from "@/lib/componentApiRegistry";
 
@@ -584,9 +585,14 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
       ? <SaltLink href="#" IconComponent={ChevronRightIcon}>{s(props.text, "Learn more")}</SaltLink>
       : <SaltLink href="#">{s(props.text, "Learn more")}</SaltLink>;
   } else if (type === "SimulatedBadge") {
-    inner = <SaltBadge value={1}><SaltButton>{s(props.label, "Badge")}</SaltButton></SaltBadge>;
+    /* Salt's Badge carries no status, so a status shows as Salt's own status
+       indicator beside it (the default status adds nothing). */
+    const st = saltIndicatorStatus(s(props.status));
+    const badge = <SaltBadge value={1}><SaltButton>{s(props.label, "Badge")}</SaltButton></SaltBadge>;
+    inner = st ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><SaltStatusIndicator status={st} />{badge}</span> : badge;
   } else if (type === "SimulatedPill") {
-    inner = <SaltPill onClick={() => {}}>{s(props.label, "Tag")}</SaltPill>;
+    const st = saltIndicatorStatus(s(props.status));
+    inner = <SaltPill onClick={() => {}}>{st ? <SaltStatusIndicator status={st} /> : null}{s(props.label, "Tag")}</SaltPill>;
   } else if (type === "Alert") {
     const title = s(props.title) ? `${s(props.title)} ` : "";
     inner = <SaltBanner status={saltAlertStatus(s(props.variant, "info"))}><SaltBannerContent>{title}{s(props.message)}</SaltBannerContent></SaltBanner>;
@@ -603,7 +609,7 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
     // fill their container; pin Salt to match so the bar tracks its cell width.
     inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} style={{ width: "100%", minWidth: 0 }} />;
   } else if (type === "SimulatedAvatar") {
-    inner = <SaltAvatar name={s(props.initials, "?")} size={saltAvatarSize(s(props.size, "md"))} />;
+    inner = <SaltAvatar name={s(props.initials, "?")} src={s(props.src) ? publicAssetUrl(s(props.src)) : undefined} size={saltAvatarSize(s(props.size, "md"))} />;
   } else if (type === "SimulatedStatCard") {
     inner = (
       <SaltCard>
@@ -820,7 +826,7 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
     inner = <MuiLinearProgress variant="determinate" value={num(props.value, 50)} />;
   } else if (type === "SimulatedAvatar") {
     const dim = ({ sm: 28, md: 40, lg: 56 } as Record<string, number>)[s(props.size, "md")] ?? 40;
-    inner = <MuiAvatar sx={{ width: dim, height: dim }}>{s(props.initials, "?")}</MuiAvatar>;
+    inner = <MuiAvatar sx={{ width: dim, height: dim }} src={s(props.src) ? publicAssetUrl(s(props.src)) : undefined}>{s(props.initials, "?")}</MuiAvatar>;
   } else if (type === "SimulatedStatCard") {
     inner = (
       <MuiCard variant="outlined">
@@ -963,7 +969,7 @@ function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRender
     );
   } else if (type === "SimulatedAvatar") {
     const size = ({ sm: 24, md: 32, lg: 48 } as Record<string, 24 | 32 | 48>)[s(props.size, "md")] ?? 32;
-    inner = <FluentAvatar name={s(props.initials, "?")} size={size} />;
+    inner = <FluentAvatar name={s(props.initials, "?")} image={s(props.src) ? { src: publicAssetUrl(s(props.src)) } : undefined} size={size} />;
   } else if (type === "SimulatedStatCard") {
     inner = (
       <FluentCard size={size}>

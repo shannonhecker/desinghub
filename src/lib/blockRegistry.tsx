@@ -796,6 +796,12 @@ const BLOCK_DEFS: BlockDef[] = [
    Lookup helpers - same public API as before
    ═══════════════════════════════════════════════════════════ */
 
+/** Each block type's Content field prop keys (for the panel-vs-renderer
+ *  contract test: a field must write a prop the renderers draw). */
+export const BLOCK_FIELD_KEYS: Record<string, string[]> = Object.fromEntries(
+  BLOCK_DEFS.map((b) => [b.type, b.fields.flatMap((f) => ("propKey" in f ? [f.propKey] : []))]),
+);
+
 /** Library blueprints for drag-and-drop */
 export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
   id: `lib-${i}`,
