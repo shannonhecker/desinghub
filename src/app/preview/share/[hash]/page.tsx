@@ -41,9 +41,16 @@ export async function generateMetadata({
         carbon: "Carbon DS",
       }[state.designSystem]
     : "uoaui";
+  const title = `Shared preview - ${dsName}`;
+  const description = "A read-only preview of a canvas shared from uoaui.ai.";
   return {
-    title: `Shared preview - ${dsName}`,
-    description: "A read-only preview of a canvas shared from uoaui.ai.",
+    title,
+    description,
+    /* Its own address, not the landing's: no canonical (each link is its own
+       page) and a share card that points back at this link. */
+    alternates: { canonical: null },
+    openGraph: { type: "website", siteName: "uoaui.ai", title, description, url: `/preview/share/${hash}` },
+    twitter: { card: "summary_large_image", title, description },
     /* A shared link is for whoever holds it, not for search results. */
     robots: { index: false, follow: false },
   };

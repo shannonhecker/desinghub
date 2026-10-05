@@ -41,15 +41,15 @@ export function isPreviewDeployment(env: Record<string, string | undefined> = pr
 }
 
 /**
- * The pages a search engine should list. The builder and the sign-in page sit
- * behind the access gate, and a shared preview is private to whoever holds
- * its link, so none of them is here; each also says `noindex` itself.
+ * The pages a search engine should list: only those the access gate
+ * (src/proxy.ts) lets everyone open. The builder, the sign-in page and the
+ * two tool pages sit behind the gate, and a shared preview is private to
+ * whoever holds its link, so none of them is here; each also says `noindex`
+ * itself. A unit test fails if a path here is not public in the proxy.
  */
 export const PUBLIC_PAGES: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
   { path: "/ui-kit", priority: 0.8 },
-  { path: "/theme-builder", priority: 0.5 },
-  { path: "/token-editor", priority: 0.5 },
 ];
 
 /**

@@ -227,7 +227,10 @@ test.describe("Builder chrome icons without the icon font", () => {
     /* A toast draws its icon the same way. */
     await page.keyboard.press("Escape");
     await block.click({ button: "right", position: { x: 5, y: 5 } });
-    await page.getByRole("menuitem", { name: /^Copy as JSON/ }).click().catch(() => {});
+    await page.getByRole("menuitem", { name: /^Copy as JSON/ }).click();
+    const toast = page.locator(".dh-toast").last();
+    await expect(toast).toBeVisible();
+    await expect(toast.locator("svg.chrome-icon.dh-toast-icon")).toHaveAttribute("data-icon", /^(content_copy|warning)$/);
     expect(await ligaturesInChrome(page), "after a toast").toEqual([]);
 
     /* Phone width hides labels and keeps icons: still no letters. */

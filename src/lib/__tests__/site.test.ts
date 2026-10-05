@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { PUBLIC_PAGES, SITE_DESCRIPTION, SITE_TITLE, isPreviewDeployment, siteUrl } from "../site";
 
 describe("site address", () => {
@@ -37,6 +39,25 @@ describe("site address", () => {
   });
 });
 
+describe("listed pages and the access gate", () => {
+  it("every listed page is one the gate lets everyone open", () => {
+    /* The gate's own list, read from its source so the two cannot drift. */
+    const proxy = readFileSync(resolve(__dirname, "../../proxy.ts"), "utf8");
+    const block = proxy.slice(proxy.indexOf("// Public routes - always allow through"), proxy.indexOf("return NextResponse.next();", proxy.indexOf("// Public routes - always allow through")));
+    const open = [...block.matchAll(/pathname === "([^"]+)"/g)].map((m) => m[1]);
+    expect(open).toContain("/");
+    expect(open).toContain("/ui-kit");
+    for (const page of PUBLIC_PAGES) expect(open, `${page.path} is public in src/proxy.ts`).toContain(page.path);
+    for (const gated of ["/builder", "/theme-builder", "/token-editor"]) expect(open).not.toContain(gated);
+  });
+
+  it("gated pages say noindex", () => {
+    for (const route of ["builder", "theme-builder", "token-editor", "login"]) {
+      expect(readFileSync(resolve(__dirname, `../../app/${route}/layout.tsx`), "utf8"), route).toMatch(/index: false/);
+    }
+  });
+});
+
 describe("robots.txt and sitemap.xml", () => {
   afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
 
@@ -63,13 +84,8 @@ describe("robots.txt and sitemap.xml", () => {
 
   it("the sitemap lists the public pages with absolute addresses, and nothing behind the gate", async () => {
     const { sitemap } = await load({});
-    expect(sitemap.map((e) => e.url)).toEqual([
-      "https://uoaui.ai/",
-      "https://uoaui.ai/ui-kit",
-      "https://uoaui.ai/theme-builder",
-      "https://uoaui.ai/token-editor",
-    ]);
-    for (const gated of ["/builder", "/login", "/preview", "/api"]) {
+    expect(sitemap.map((e) => e.url)).toEqual(["https://uoaui.ai/", "https://uoaui.ai/ui-kit"]);
+    for (const gated of ["/builder", "/login", "/preview", "/api", "/theme-builder", "/token-editor"]) {
       expect(PUBLIC_PAGES.some((p) => p.path.startsWith(gated)), gated).toBe(false);
     }
   });

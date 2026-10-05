@@ -24,10 +24,17 @@ function Placeholder({ height }: { height: number }) {
   return <div aria-hidden style={{ height, borderRadius: 8, background: "var(--ds-surface-2, rgba(127,127,127,0.08))" }} />;
 }
 
-export const LazyDataGrid = dynamic(
-  () => import("./SimulatedDataGrid").then((m) => m.SimulatedDataGrid),
-  { ssr: false },
-);
+const DataGridImpl = lazy(() => import("./SimulatedDataGrid").then((m) => ({ default: m.SimulatedDataGrid })));
+type DataGridProps = React.ComponentProps<typeof import("./SimulatedDataGrid").SimulatedDataGrid>;
+
+/** A data grid. While AG Grid loads, the block holds the grid's height. */
+export function LazyDataGrid(props: DataGridProps) {
+  return (
+    <Suspense fallback={<Placeholder height={typeof props.height === "number" ? props.height : 240} />}>
+      <DataGridImpl {...props} />
+    </Suspense>
+  );
+}
 
 export const LazyHighchart = dynamic(
   () => import("./SimulatedHighchart").then((m) => m.SimulatedHighchart),

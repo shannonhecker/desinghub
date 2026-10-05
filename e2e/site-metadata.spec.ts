@@ -27,7 +27,7 @@ test("sitemap.xml: XML, the public pages only, absolute addresses that all answe
   const body = await res.text();
   expect(body).toMatch(/^<\?xml version="1.0" encoding="UTF-8"\?>/);
   const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-  expect(locs).toEqual([`${SITE}/`, `${SITE}/ui-kit`, `${SITE}/theme-builder`, `${SITE}/token-editor`]);
+  expect(locs).toEqual([`${SITE}/`, `${SITE}/ui-kit`]);
   for (const loc of locs) {
     const page = await request.get(new URL(loc).pathname);
     expect(page.status(), loc).toBe(200);
@@ -113,9 +113,9 @@ test("landing: title, description, canonical, icons and a complete share card", 
 const PAGES: { path: string; title: string; canonical: string; robots: string }[] = [
   { path: "/ui-kit", title: "Component library | uoaui.ai", canonical: "/ui-kit", robots: "index, follow" },
   { path: "/ui-kit?ds=m3&c=buttons", title: "Component library | uoaui.ai", canonical: "/ui-kit", robots: "index, follow" },
-  { path: "/theme-builder", title: "Theme builder | uoaui.ai", canonical: "/theme-builder", robots: "index, follow" },
-  { path: "/token-editor", title: "Token reference | uoaui.ai", canonical: "/token-editor", robots: "index, follow" },
   /* Behind the access gate, or private to a link's holder: not listed. */
+  { path: "/theme-builder", title: "Theme builder | uoaui.ai", canonical: "/theme-builder", robots: "noindex, follow" },
+  { path: "/token-editor", title: "Token reference | uoaui.ai", canonical: "/token-editor", robots: "noindex, follow" },
   { path: "/builder", title: "Builder | uoaui.ai", canonical: "/builder", robots: "noindex, follow" },
   { path: "/login", title: "Sign in | uoaui.ai", canonical: "/login", robots: "noindex, nofollow" },
 ];
@@ -154,4 +154,8 @@ test("a shared preview is not listed in search", async ({ page }) => {
   await page.goto(`/preview/share/${hash}`);
   await expect(page).toHaveTitle("Shared preview - Salt DS | uoaui.ai");
   expect(await page.locator('meta[name="robots"]').first().getAttribute("content")).toBe("noindex, nofollow");
+  /* It is not the landing: no canonical pointing there, and its own address. */
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+  expect(await page.locator('meta[property="og:url"]').first().getAttribute("content")).toBe(`${SITE}/preview/share/${hash}`);
+  expect(await page.locator('meta[property="og:title"]').first().getAttribute("content")).toBe("Shared preview - Salt DS");
 });

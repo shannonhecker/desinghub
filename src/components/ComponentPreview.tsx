@@ -37,7 +37,11 @@ const ChartsPage = dynamic(() => import("./ChartsPage").then((m) => m.ChartsPage
 /* The same for AG Grid: only the AG Grid page draws it, and as a static
    import it put the whole grid library into the first load of every library
    page, the overview included. */
-const DSAgGrid = dynamic(() => import("./DSAgGrid").then((m) => m.DSAgGrid), { ssr: false });
+const DSAgGrid = dynamic(() => import("./DSAgGrid").then((m) => m.DSAgGrid), {
+  ssr: false,
+  /* The grid is 400px tall under a toolbar row: hold that room while it loads. */
+  loading: () => <div aria-hidden style={{ height: 434, borderRadius: 8, background: "rgba(127,127,127,0.08)" }} />,
+});
 
 /* ════════════════════════════════════════════════════════════════════
    Registry-id → ui-kit-meta id map.
