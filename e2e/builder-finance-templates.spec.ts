@@ -241,6 +241,21 @@ test.describe("Builder - finance templates", () => {
           expect.soft(Math.abs(box[s] - present.boxes[i][s]), `block ${i} ${side} ${box[s]} vs present ${present.boxes[i][s]}`).toBeLessThanOrEqual(1);
         });
       });
+
+      /* The default Edit state has the panel open: the same geometry within
+         one SCREEN pixel (design tolerance ceil(1 / zoom) from the real zoom). */
+      await page.getByRole("button", { name: "Show component library", exact: true }).click();
+      await settle(page);
+      const open = await measure(page);
+      const tol = Math.ceil(1 / open.zoom);
+      expect(open.zoom).toBeLessThan(edit.zoom);
+      expect(open.overflow).toBe(0);
+      expect(open.boxes.length).toBe(present.boxes.length);
+      open.boxes.forEach((box, i) => {
+        SIDES.forEach((side, s) => {
+          expect.soft(Math.abs(box[s] - present.boxes[i][s]), `panel open: block ${i} ${side} ${box[s]} vs present ${present.boxes[i][s]}`).toBeLessThanOrEqual(tol);
+        });
+      });
     });
   }
 
