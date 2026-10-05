@@ -114,7 +114,7 @@ describe("useChartNavigation", () => {
     expect(out.nav!.status.custom).toBe(true);
   });
 
-  it("the wheel zooms on the plot; at the full view a wheel down is left to the page", () => {
+  it("the wheel: at the full view a plain wheel is the page's, up or down; Ctrl or Cmd zooms; once zoomed the wheel is the chart's", () => {
     const { fake, out } = mount(true);
     /* The fake chart has no pointer: give it a plot and one. */
     Object.assign(fake.chart, {
@@ -123,19 +123,66 @@ describe("useChartNavigation", () => {
     });
     Object.assign(fake.x, { toValue: (px: number) => -0.5 + (px / 400) * 158 });
     Object.assign(fake.y, { len: 200, toValue: (px: number) => 1.378 - (px / 200) * 0.002 });
-    const wheel = (deltaY: number, y = 100) => {
-      const e = new WheelEvent("wheel", { deltaY, clientX: 100, clientY: y, bubbles: true, cancelable: true });
+    const wheel = (deltaY: number, init: WheelEventInit = {}) => {
+      const e = new WheelEvent("wheel", { deltaY, clientX: 100, clientY: 100, bubbles: true, cancelable: true, ...init });
       act(() => { out.plot!.dispatchEvent(e); });
       return e.defaultPrevented;
     };
-    /* Nothing to zoom out of: the page scrolls. */
+    /* The full view: the page scrolls either way, and a note says how to zoom. */
     expect(wheel(120)).toBe(false);
+    expect(wheel(-120)).toBe(false);
     expect(fake.x.user).toBeNull();
-    /* Zoom in is the chart's. */
-    expect(wheel(-240)).toBe(true);
+    expect(out.nav!.status.wheelNote).toBe(true);
+    /* Over the price axis too. */
+    expect(wheel(-120, { clientX: 450 })).toBe(false);
+    expect(fake.y.user).toBeNull();
+    /* With Ctrl (a pinch arrives so) or Cmd: the chart's. */
+    expect(wheel(-240, { ctrlKey: true })).toBe(true);
     expect(fake.x.user).not.toBeNull();
-    /* Off the plot and its axes: the page's. */
-    expect(wheel(-240, 900)).toBe(false);
+    act(() => out.nav!.reset());
+    expect(wheel(-240, { metaKey: true })).toBe(true);
+    expect(fake.x.user).not.toBeNull();
+    /* Zoomed: a plain wheel zooms on, and price on the price axis. */
+    const [a, b] = fake.x.user!;
+    expect(wheel(-240)).toBe(true);
+    expect(fake.x.user![1] - fake.x.user![0]).toBeLessThan(b - a);
+    expect(wheel(-240, { clientX: 450 })).toBe(true);
+    expect(fake.y.user).not.toBeNull();
+    /* Off the plot and its axes: always the page's. */
+    expect(wheel(-240, { clientY: 900 })).toBe(false);
+  });
+
+  it("a touch the browser takes over (pointercancel) ends a box zoom without zooming, and the tool switches off", () => {
+    const { fake, out } = mount(true);
+    const made: { destroy: ReturnType<typeof vi.fn> }[] = [];
+    const el = () => { const r = { attr: () => r, addClass: () => r, add: () => r, destroy: vi.fn() }; made.push(r); return r; };
+    Object.assign(fake.chart, {
+      plotLeft: 0, plotTop: 0, plotWidth: 400, plotHeight: 200, chartWidth: 480, series: [],
+      pointer: { normalize: (e: MouseEvent) => ({ chartX: e.clientX, chartY: e.clientY }) },
+      renderer: { rect: el },
+    });
+    Object.assign(fake.x, { toValue: (px: number) => -0.5 + (px / 400) * 158 });
+    Object.assign(fake.y, { len: 200, toValue: (px: number) => 1.378 - (px / 200) * 0.002 });
+    const fire = (type: string, x: number, y: number) => act(() => {
+      const e = new MouseEvent(type, { clientX: x, clientY: y, button: 0, bubbles: true, cancelable: true });
+      Object.assign(e, { pointerId: 7, pointerType: "touch" });
+      out.plot!.dispatchEvent(e);
+    });
+    act(() => out.nav!.toggleBoxZoom());
+    fire("pointerdown", 100, 40);
+    fire("pointermove", 200, 150);
+    expect(made.length).toBe(1);
+    fire("pointercancel", 200, 150);
+    expect(made[0].destroy).toHaveBeenCalled();
+    expect(fake.x.user).toBeNull();
+    expect(out.nav!.status.boxArmed).toBe(false);
+    /* Completed, the same drag zooms both axes. */
+    act(() => out.nav!.toggleBoxZoom());
+    fire("pointerdown", 100, 40);
+    fire("pointermove", 200, 150);
+    fire("pointerup", 200, 150);
+    expect(fake.x.user).not.toBeNull();
+    expect(fake.y.user).not.toBeNull();
   });
 
   it("a new order, interval or range starts from the full view", () => {

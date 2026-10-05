@@ -43,6 +43,11 @@ const AXIS_DRAG_SCALE = 300;
 const TIME_AXIS_BAND = 28;
 /** After the last wheel zoom, how long before a wheel at the full view scrolls the page (ms). */
 const WHEEL_RELEASE = 400;
+/** How long the "hold Ctrl and scroll" note shows, and the quiet time before it may show again (ms). */
+const WHEEL_NOTE_SHOWN = 1800;
+const WHEEL_NOTE_REST = 8000;
+/** A pinch on a trackpad arrives as a Ctrl wheel with small deltas: scaled up to feel like the fingers. */
+const PINCH_GAIN = 6;
 const HINT_KEY = "uoaui:fx-hold-hint";
 
 export interface NavigationStatus {
@@ -57,6 +62,8 @@ export interface NavigationStatus {
   hint: boolean;
   /** The view is a Go to window, untouched since (the range chips show it). */
   custom: boolean;
+  /** A plain wheel went to the page at the full view: say how to zoom, for a moment. */
+  wheelNote: boolean;
 }
 
 export interface ChartNavigation {
@@ -117,12 +124,12 @@ const storeHint = () => {
 
 export function useChartNavigation(o: Options): ChartNavigation {
   const vp = useRef<Viewport>({ ...FULL_VIEW });
-  const [status, setStatusState] = useState<NavigationStatus>({ zoomed: false, away: false, boxArmed: false, pinned: false, hint: false, custom: false });
+  const [status, setStatusState] = useState<NavigationStatus>({ zoomed: false, away: false, boxArmed: false, pinned: false, hint: false, custom: false, wheelNote: false });
   const statusRef = useRef(status);
   const setStatus = useCallback((patch: Partial<NavigationStatus>) => {
     const next = { ...statusRef.current, ...patch };
     const s = statusRef.current;
-    if (next.zoomed === s.zoomed && next.away === s.away && next.boxArmed === s.boxArmed && next.pinned === s.pinned && next.hint === s.hint && next.custom === s.custom) return;
+    if ((Object.keys(next) as (keyof NavigationStatus)[]).every((k) => next[k] === s[k])) return;
     statusRef.current = next;
     setStatusState(next);
   }, []);
@@ -226,6 +233,32 @@ export function useChartNavigation(o: Options): ChartNavigation {
   const disarmBox = useCallback(() => { boxArmed.current = false; setStatus({ boxArmed: false }); }, [setStatus]);
   const dismissHint = useCallback(() => { storeHint(); setStatus({ hint: false }); }, [setStatus]);
 
+  /* Touch: the plot lets a vertical swipe scroll the page (touch-action:
+     pan-y in builder.css), which would cancel a drag on the price axis. A
+     clear rectangle over the price gutter takes touch-action: none (the
+     price tags, drawn above it, have the same). Redrawn with the chart. */
+  useEffect(() => {
+    const c = chart();
+    if (!o.enabled || !c?.renderer) return;
+    let rect: Highcharts.SVGElement | null = null;
+    const place = () => {
+      const x = c.plotLeft + c.plotWidth;
+      const at = { x, y: c.plotTop, width: Math.max(0, c.chartWidth - x), height: c.yAxis[1]?.len ?? c.plotHeight };
+      if (!rect) rect = c.renderer.rect(at.x, at.y, at.width, at.height).attr({ fill: "rgba(0,0,0,0)", zIndex: 1 }).addClass("dh-exec-gutter").add();
+      else rect.attr(at);
+      /* Where the plot sits in its element, for what is laid over it (the hint). */
+      const host = opts.current.plotRef.current;
+      if (host) {
+        host.style.setProperty("--nav-plot-left", `${c.plotLeft}px`);
+        host.style.setProperty("--nav-plot-right", `${Math.max(0, c.chartWidth - x)}px`);
+        host.style.setProperty("--nav-plot-bottom", `${Math.max(0, c.chartHeight - c.plotTop - c.plotHeight)}px`);
+      }
+    };
+    place();
+    const off = Highcharts.addEvent(c, "render", place);
+    return () => { off(); try { rect?.destroy(); } catch { /* the chart is already gone */ } };
+  }, [o.build, o.enabled]);
+
   /* ── Pointer, wheel and double-click on the plot (Present only) ── */
   useEffect(() => {
     const el = o.plotRef.current;
@@ -235,6 +268,15 @@ export function useChartNavigation(o: Options): ChartNavigation {
     let box: Highcharts.SVGElement | null = null;
     let swallowClick = false;
     let lastWheelZoom = 0;
+    let noteAt = -Infinity;
+    let noteTimer: ReturnType<typeof setTimeout> | null = null;
+    const wheelNote = (at: number) => {
+      if (at - noteAt < WHEEL_NOTE_REST) return;
+      noteAt = at;
+      setStatus({ wheelNote: true });
+      if (noteTimer) clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => setStatus({ wheelNote: false }), WHEEL_NOTE_SHOWN);
+    };
     const touches = new Map<number, { x: number; y: number }>();
 
     const norm = (e: MouseEvent | PointerEvent, c: Highcharts.Chart) => {
@@ -305,7 +347,8 @@ export function useChartNavigation(o: Options): ChartNavigation {
           drag = { mode: "inspect", id: drag.id };
           /* Letting go after a hold is not a click on the fill under it. */
           swallowClick = true;
-          try { el.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+          /* Not captured: capturing the pointer makes the chart see it leave,
+             and the chart then fades the tooltip out under the reader's finger. */
           setRegion("plot");
           setStatus({ pinned: true });
           if (statusRef.current.hint) dismissHint();
@@ -420,15 +463,25 @@ export function useChartNavigation(o: Options): ChartNavigation {
       const region = regionOf(c, p.chartX, p.chartY);
       /* Off the plot and its axes the page scrolls as usual. */
       if (!region) return;
-      /* Nothing left to zoom out of: the wheel is the page's again (after a
-         beat, so the tail of a zoom-out flick does not jump the page). */
+      /* The page must never feel trapped. At the full view a plain wheel,
+         up or down, is the page's: zooming starts with Ctrl or Cmd held (a
+         trackpad pinch arrives that way), or from the rail, the keys or a
+         box. Once the view is zoomed the wheel is the chart's, until it is
+         back at the full view (and a beat longer, so the tail of a zoom-out
+         flick does not jump the page). */
+      const modifier = e.ctrlKey || e.metaKey;
       const vertical = Math.abs(e.deltaY) >= Math.abs(e.deltaX);
-      if (region !== "price" && vertical && e.deltaY > 0 && vp.current.x === null && !e.ctrlKey && e.timeStamp - lastWheelZoom > WHEEL_RELEASE) return;
+      if (!modifier && isFullView(vp.current)) {
+        if (e.timeStamp - lastWheelZoom <= WHEEL_RELEASE) e.preventDefault();
+        else if (vertical && region === "plot") wheelNote(e.timeStamp);
+        return;
+      }
       e.preventDefault();
       if (vertical) lastWheelZoom = e.timeStamp;
+      const pinch = e.ctrlKey && e.deltaMode === 0 && Math.abs(e.deltaY) < 50 ? PINCH_GAIN : 1;
       const now = shown(c);
       if (region === "price") {
-        apply({ x: vp.current.x, y: zoomPrice(now.y, c.yAxis[1].toValue(p.chartY), wheelFactor(e.deltaY, e.deltaMode), priceLimits(c)) });
+        apply({ x: vp.current.x, y: zoomPrice(now.y, c.yAxis[1].toValue(p.chartY), wheelFactor(e.deltaY * pinch, e.deltaMode), priceLimits(c)) });
         return;
       }
       /* A sideways swipe (a trackpad) pans time. */
@@ -437,7 +490,7 @@ export function useChartNavigation(o: Options): ChartNavigation {
         if (vp.current.x || e.deltaX < 0) apply({ x: clampTime(panTime(now.x, e.deltaX * perPx, timeBounds()), timeBounds()), y: vp.current.y });
         return;
       }
-      apply({ x: zoomTime(vp.current.x, c.xAxis[0].toValue(p.chartX), wheelFactor(e.deltaY, e.deltaMode), timeBounds()), y: vp.current.y });
+      apply({ x: zoomTime(vp.current.x, c.xAxis[0].toValue(p.chartX), wheelFactor(e.deltaY * pinch, e.deltaMode), timeBounds()), y: vp.current.y });
     };
 
     const onDoubleClick = (e: MouseEvent) => {
@@ -452,6 +505,8 @@ export function useChartNavigation(o: Options): ChartNavigation {
     const onLeave = () => {
       /* A press that slid off the plot before it became a drag is over. */
       if (drag?.mode === "press") { clearHold(); drag = null; }
+      /* Pinned values end where the plot ends. */
+      if (drag?.mode === "inspect") { drag = null; endInspect(chart()); }
       if (!drag) setRegion(null);
     };
 
@@ -466,6 +521,8 @@ export function useChartNavigation(o: Options): ChartNavigation {
     el.addEventListener("dblclick", onDoubleClick);
     return () => {
       clearHold();
+      if (noteTimer) clearTimeout(noteTimer);
+      setStatus({ wheelNote: false });
       box?.destroy();
       el.removeEventListener("pointerdown", onPointerDownReset, true);
       el.removeEventListener("pointerdown", onPointerDown);
