@@ -19,6 +19,19 @@ async function editTemplate(page: Page) {
   await page.getByRole('button', { name: 'Use the Performance Analytics template' }).click();
   await page.getByRole('button', { name: 'Edit canvas', exact: true }).click();
   await expect(bodyBlocks(page)).toHaveCount(6);
+  await atRest(page);
+}
+
+/**
+ * Every block is at rest. When the edit canvas mounts, each block plays its
+ * entrance (canvas-block-in: 260 ms, a scale that overshoots 1 on the way).
+ * Until it ends a block's box on screen is up to 0.6% larger than its
+ * layout, so a width read then is not the width the block has: this is what
+ * made "Undo restores it" miss by 2.7 to 4.8px about one run in three.
+ */
+async function atRest(page: Page) {
+  await bodyBlocks(page).evaluateAll(els => Promise.all(els.flatMap(el => el.getAnimations().filter(a => a instanceof CSSAnimation).map(a => a.finished.catch(() => undefined)))));
+  await expect.poll(() => bodyBlocks(page).evaluateAll(els => els.filter(el => getComputedStyle(el).transform !== 'none' || el.getAnimations().some(a => a instanceof CSSAnimation && a.playState !== 'finished')).length)).toBe(0);
 }
 
 async function selectBlock(block: Locator) {
@@ -135,6 +148,10 @@ test('pointer resize changes block width and Undo restores it', async ({ page })
   await editTemplate(page);
   const block = bodyBlocks(page).first();
   await selectBlock(block);
+  /* The width to come back to is the block's own, at rest: boundingBox()
+     reads the scaled box while an entrance animation is still running. */
+  expect(await block.evaluate(el => el.getAnimations().filter(a => a instanceof CSSAnimation && a.playState !== 'finished').length), 'the block is at rest when it is measured').toBe(0);
+  await expect(block).toHaveCSS('transform', 'none');
   const before = (await block.boundingBox())!;
   const handle = block.getByRole('slider', { name: 'Resize width', exact: true });
   const grip = (await handle.boundingBox())!;
