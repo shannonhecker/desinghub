@@ -3891,6 +3891,8 @@
   gap: var(--bc-gap-sm);
   /* Left edge on the text column (the textarea's inline padding). */
   max-width: min(100% - 2 * var(--bc-composer-text-inset), var(--bc-attach-chip-max));
+  /* Padding inside the max-width, or the chip overshoots at 375. */
+  box-sizing: border-box;
   margin: var(--bc-gap-md) var(--bc-composer-text-inset) 0;
   padding: var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs) var(--bc-gap-xs);
   border-radius: var(--bc-radius-md);

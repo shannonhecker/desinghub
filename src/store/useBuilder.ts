@@ -1014,9 +1014,17 @@ export const useBuilder = create<BuilderState>((set) => ({
     set((s) => ({
       messages: [
         ...s.messages,
-        meta?.attachment
-          ? { id, role, content, timestamp: Date.now(), messageType, attachment: meta.attachment }
-          : { id, role, content, timestamp: Date.now(), messageType },
+        /* Optional fields are set only when present: Firestore rejects an
+           undefined value, and a bare `messageType: undefined` here used
+           to block every cloud save of a session with a chat message. */
+        {
+          id,
+          role,
+          content,
+          timestamp: Date.now(),
+          ...(messageType ? { messageType } : {}),
+          ...(meta?.attachment ? { attachment: meta.attachment } : {}),
+        },
       ],
       inputText: role === 'user' ? '' : s.inputText,
     }));

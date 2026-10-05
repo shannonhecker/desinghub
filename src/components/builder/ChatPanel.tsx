@@ -1269,7 +1269,7 @@ export function ChatPanel() {
     const turnMsgId = addMessage("user", msg, undefined, { attachment: "image" });
     saveTurnSnapshot(turnMsgId);
     if (!previewOpen) setPreviewOpen(true);
-    sendToAPI(msg, { image: { mediaType: image.mediaType, base64: image.base64 } }).then((outcome) => {
+    sendToAPI(msg, { image: { mediaType: image.mediaType, base64: image.base64, width: image.width, height: image.height, bytes: image.bytes, name } }).then((outcome) => {
       /* The request never reached the model: put the image (and the note)
          back in the composer so nothing is lost. A rejected image would
          fail the same way again, so it is not restored. */
@@ -1745,7 +1745,17 @@ export function ChatPanel() {
                       type="button"
                       className="chat-retry-btn"
                       onClick={() => {
-                        void retryFailedSend();
+                        void retryFailedSend().then((outcome) => {
+                          /* Retry hit the rate limit: an image turn hands
+                             its image back to the composer. */
+                          const img = outcome && outcome.status === "rate-limited" ? outcome.image : undefined;
+                          if (img && img.width && img.height) {
+                            imageAttach.restore(
+                              { mediaType: img.mediaType, base64: img.base64, width: img.width, height: img.height, bytes: img.bytes ?? 0 },
+                              img.name ?? "Image",
+                            );
+                          }
+                        });
                       }}
                       aria-label="Retry sending your last message"
                     >

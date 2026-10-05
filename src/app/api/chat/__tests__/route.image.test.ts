@@ -90,6 +90,9 @@ describe("POST /api/chat: image on the latest user message", () => {
     const text = (b.system[0] as { text: string }).text;
     expect(text).toContain("## Building from an image");
     expect(text).toMatch(/say(?:ing)? plainly what you could not match/i);
+    /* Build the whole layout in one response, top to bottom. */
+    expect(text).toMatch(/one response/i);
+    expect(text).toMatch(/top to bottom/i);
   });
 
   it("the image stays on its turn across tool continuations", async () => {
@@ -107,6 +110,23 @@ describe("POST /api/chat: image on the latest user message", () => {
     expect(second).toHaveLength(3);
     expect((second[0].content as { type: string }[])[0].type).toBe("image");
     expect(JSON.stringify(second.slice(1))).not.toContain(goodImage.data);
+  });
+
+  it("when the cap cuts an image build, it does not promise to continue without the image", async () => {
+    streamMock.mockImplementation(async () =>
+      (async function* () {
+        yield { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "tu_1", name: "clearCanvas", input: {} } };
+        yield { type: "content_block_stop", index: 0 };
+        yield { type: "message_delta", delta: { stop_reason: "tool_use" } };
+      })(),
+    );
+    const text = await (await post({ messages: [{ role: "user", content: "x", image: goodImage }] })).text();
+    const frames = text.split("\n\n").filter((l) => l.startsWith("data: {")).map((l) => JSON.parse(l.slice(6)) as { text?: string });
+    const last = frames[frames.length - 1].text ?? "";
+    expect(last).toMatch(/ran out of steps/i);
+    expect(last).toMatch(/attach the image again/i);
+    expect(last).toMatch(/on the canvas/i);
+    expect(last).not.toMatch(/say "continue"/i);
   });
 
   it.each([
