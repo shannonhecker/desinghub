@@ -218,6 +218,10 @@ function apply(snapshot: CanvasSnapshot) {
  *  later and corrupt the new redo lineage; then pushes the current snap
  *  to past[], anchors `lastCaptured` to current, and clears future[]. */
 export function pushSnapshot() {
+  /* A focused inspector field holds a transaction for its whole focus; an
+     explicit push (an AI result landing) closes it first so the field's
+     older "before" cannot land on top of the newer entry at blur. */
+  activeGesture?.finish();
   if (pendingRaf !== null) {
     cancelAnimationFrame(pendingRaf);
     pendingRaf = null;

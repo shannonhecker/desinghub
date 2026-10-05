@@ -42,7 +42,7 @@
   --b-border2: rgba(255, 255, 255, 0.12);
   --b-fg: rgba(244, 248, 241, 0.92);
   --b-fg2: rgba(238, 242, 237, 0.64);
-  --b-fg3: rgba(238, 242, 237, 0.42);
+  --b-fg3: rgba(238, 242, 237, 0.56);
   --b-accent: #b490f5;
   --b-accent2: #c5f4de;
   --b-accent3: #d7f8e8;
@@ -116,9 +116,12 @@
    over the busy canvas needs a fully opaque surface (see its own rule below),
    not the 0.9-alpha glass used by the larger drawers/panels (which sit over a
    dimmed overlay). */
-.builder-shell.builder-shell .sessions-drawer,
-.builder-shell.builder-shell .templates-drawer,
-.builder-shell.builder-shell .export-panel {
+/* Dark chrome only (5 Oct): in light chrome each surface keeps its own
+   light rules; this group used to beat them and left dark glass under dark
+   text in the Sessions drawer. */
+.builder-shell.builder-shell:not(.builder-light) .sessions-drawer,
+.builder-shell.builder-shell:not(.builder-light) .templates-drawer,
+.builder-shell.builder-shell:not(.builder-light) .export-panel {
   border-color: rgba(255, 255, 255, 0.09);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.068), rgba(255, 255, 255, 0.026)),
@@ -143,7 +146,7 @@
   --b-border2: rgba(15, 23, 42, 0.12);
   --b-fg: rgba(15, 16, 30, 0.9);
   --b-fg2: rgba(15, 16, 30, 0.62);
-  --b-fg3: rgba(15, 16, 30, 0.42);
+  --b-fg3: rgba(15, 16, 30, 0.6);
   --b-accent-glow: rgba(180, 144, 245, 0.12);
 }
 
@@ -1323,7 +1326,7 @@
   font-style: italic;
   line-height: 1.4;
 }
-.builder-light .preview-bar-overflow-hint { color: rgba(0, 0, 0, 0.5); }
+.builder-light .preview-bar-overflow-hint { color: var(--bc-fg-muted); }
 
 .top-bar-btn.icon-only {
   padding: 0;
@@ -2144,26 +2147,33 @@
    Mirrors TemplatesDrawer but on the left, with session rows
    instead of template cards.
    ══════════════════════════════════════════════════════════ */
+/* Sessions drawer (5 Oct, light-mode fix). The drawer follows the chrome's
+   mode from the --bc-* tokens: in light a raised white surface with dark
+   text, in dark the glass surface the dark-only group above keeps. Tone, not
+   outlines: tonal rows, a tonal primary action, hover and selected as fills,
+   the keyboard focus ring as the one outline. Text sits on --bc-fg and
+   --bc-fg-muted (both over 4.5:1 in either mode); icons and the selected
+   marker on --bc-fg-muted or the selected foreground (over 3:1). */
 .sessions-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--bc-overlay);
+  backdrop-filter: blur(var(--bc-scrim-blur));
   display: flex;
   justify-content: flex-start;
-  animation: drawer-overlay-in 0.15s ease-out;
+  animation: drawer-overlay-in var(--bc-duration-medium) var(--bc-ease);
 }
 .sessions-drawer {
   width: min(360px, 85vw);
   height: 100%;
-  background: var(--b-bg, #0b1120);
-  color: var(--b-fg);
-  border-right: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
-  box-shadow: 24px 0 48px rgba(0, 0, 0, 0.5);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
+  border-right: var(--bc-hairline) solid var(--bc-border);
+  box-shadow: var(--bc-shadow-lg);
   display: flex;
   flex-direction: column;
-  animation: sessions-drawer-slide-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: sessions-drawer-slide-in var(--bc-duration-medium) var(--bc-ease);
   overflow: hidden;
 }
 @keyframes sessions-drawer-slide-in {
@@ -2175,9 +2185,9 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding: 20px 22px 16px;
-  border-bottom: 1px solid var(--b-border2);
+  gap: var(--bc-gap-md);
+  padding: var(--bc-gap-lg) var(--bc-panel-inset) var(--bc-gap-md);
+  border-bottom: var(--bc-hairline) solid var(--bc-border);
   flex-shrink: 0;
 }
 .sessions-drawer-title {
@@ -2185,10 +2195,11 @@
   font-weight: 700;
   letter-spacing: -0.015em;
   margin: 0 0 3px;
+  color: var(--bc-fg);
 }
 .sessions-drawer-subtitle {
   font-size: 12px;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.55));
+  color: var(--bc-fg-muted);
   margin: 0;
   line-height: 1.5;
 }
@@ -2198,18 +2209,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--b-border2);
+  border-radius: var(--bc-radius-sm);
+  border: 0;
   background: transparent;
-  color: var(--b-fg);
+  color: var(--bc-fg-muted);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
   flex-shrink: 0;
 }
 .sessions-drawer-close:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
+}
+.sessions-drawer-close:focus-visible,
+.sessions-new-btn:focus-visible,
+.sessions-row-main:focus-visible,
+.sessions-row-action:focus-visible {
+  outline: 2px solid var(--bc-accent);
+  outline-offset: 1px;
 }
 .sessions-drawer-close .material-symbols-outlined {
   font-size: 16px !important;
@@ -2220,21 +2238,20 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 14px 18px 10px;
+  margin: var(--bc-gap-md) var(--bc-panel-inset) var(--bc-gap-sm);
   padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(126, 107, 196, 0.35);
-  background: rgba(126, 107, 196, 0.15);
-  color: var(--b-fg);
+  border-radius: var(--bc-radius-md);
+  border: 0;
+  background: var(--bc-gallery-tonal);
+  color: var(--bc-fg);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-new-btn:hover {
-  background: rgba(126, 107, 196, 0.25);
-  border-color: rgba(126, 107, 196, 0.55);
+  background: var(--bc-gallery-tonal-hover);
 }
 .sessions-new-btn .material-symbols-outlined {
   font-size: 18px !important;
@@ -2242,7 +2259,7 @@
 
 .sessions-search {
   position: relative;
-  margin: 0 18px 8px;
+  margin: 0 var(--bc-panel-inset) var(--bc-gap-sm);
 }
 .sessions-search-icon {
   position: absolute;
@@ -2250,76 +2267,80 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 14px !important;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
 }
 .sessions-search-input {
   width: 100%;
   padding: 7px 10px 7px 30px;
-  border-radius: 8px;
-  border: 1px solid var(--b-border2);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--b-fg);
+  border-radius: var(--bc-radius-sm);
+  border: 0;
+  background: var(--bc-bg-hover);
+  color: var(--bc-fg);
   font-family: inherit;
   font-size: 12px;
 }
+.sessions-search-input::placeholder { color: var(--bc-fg-muted); }
 .sessions-search-input:focus {
   outline: none;
-  border-color: rgba(126, 107, 196, 0.5);
+  box-shadow: 0 0 0 2px var(--bc-accent);
 }
 
 .sessions-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 12px 14px;
+  padding: var(--bc-gap-xs) var(--bc-gap-sm) var(--bc-gap-lg);
 }
 .sessions-empty {
   padding: 32px 16px;
   text-align: center;
   font-size: 12px;
-  color: var(--b-fg3);
-  font-style: italic;
+  color: var(--bc-fg-muted);
   line-height: 1.5;
 }
 .sessions-empty--error {
-  color: rgba(248, 113, 113, 0.9);
+  color: var(--bc-danger);
 }
 
 .sessions-row {
   display: flex;
   align-items: stretch;
-  border-radius: 8px;
-  transition: background 0.15s;
+  border-radius: var(--bc-radius-sm);
+  transition: background var(--bc-duration-fast) var(--bc-ease);
   margin: 2px 0;
 }
 .sessions-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bc-bg-hover);
 }
 .sessions-row.is-active {
-  background: rgba(126, 107, 196, 0.15);
+  background: var(--bc-gallery-selected);
+}
+.sessions-row.is-active .sessions-row-title,
+.sessions-row.is-active .sessions-row-timestamp {
+  color: var(--bc-gallery-selected-fg);
 }
 .sessions-row-main {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bc-gap-sm);
   padding: 8px 10px;
   border: 0;
   background: transparent;
-  color: var(--b-fg);
+  color: var(--bc-fg);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
   min-width: 0;
-  border-radius: 8px;
+  border-radius: var(--bc-radius-sm);
 }
 .sessions-row-main:disabled { cursor: text; }
 .sessions-row-icon {
   font-size: 14px !important;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
   flex-shrink: 0;
 }
 .sessions-row.is-active .sessions-row-icon {
-  color: rgba(126, 107, 196, 0.95);
+  color: var(--bc-gallery-selected-fg);
 }
 .sessions-row-title {
   flex: 1;
@@ -2335,16 +2356,17 @@
   font-family: inherit;
   font-size: 13px;
   padding: 2px 6px;
-  border: 1px solid rgba(126, 107, 196, 0.5);
-  border-radius: 4px;
-  background: var(--b-bg);
-  color: var(--b-fg);
+  border: 0;
+  border-radius: var(--bc-radius-xs);
+  background: var(--bc-bg-raised);
+  color: var(--bc-fg);
   min-width: 0;
+  box-shadow: 0 0 0 2px var(--bc-accent);
 }
-.sessions-row-rename-input:focus { outline: none; border-color: rgba(126, 107, 196, 0.85); }
+.sessions-row-rename-input:focus { outline: none; }
 .sessions-row-timestamp {
-  font-size: 10.5px;
-  color: var(--b-fg3);
+  font-size: 11px;
+  color: var(--bc-fg-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2354,9 +2376,10 @@
   gap: 2px;
   padding-right: 6px;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-row:hover .sessions-row-actions,
+.sessions-row:focus-within .sessions-row-actions,
 .sessions-row.is-active .sessions-row-actions {
   opacity: 1;
 }
@@ -2367,48 +2390,23 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--bc-radius-sm);
   background: transparent;
-  color: var(--b-fg3);
+  color: var(--bc-fg-muted);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
 .sessions-row-action:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--b-fg);
+  background: var(--bc-bg-active);
+  color: var(--bc-fg);
 }
 .sessions-row-action--danger:hover {
-  background: rgba(248, 113, 113, 0.15);
-  color: rgba(248, 113, 113, 0.95);
+  color: var(--bc-danger);
 }
 .sessions-row-action .material-symbols-outlined {
   font-size: 14px !important;
 }
-
-/* Light mode */
-.builder-light .sessions-drawer {
-  background: #ffffff;
-  border-right-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 24px 0 48px rgba(0, 0, 0, 0.18);
-}
-.builder-light .sessions-drawer-close {
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.builder-light .sessions-drawer-close:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.18);
-}
-.builder-light .sessions-new-btn {
-  background: rgba(126, 107, 196, 0.1);
-  border-color: rgba(126, 107, 196, 0.35);
-  color: #3a2d75;
-}
-.builder-light .sessions-new-btn:hover {
-  background: rgba(126, 107, 196, 0.18);
-}
-.builder-light .sessions-row:hover { background: rgba(0, 0, 0, 0.04); }
-.builder-light .sessions-row.is-active { background: rgba(126, 107, 196, 0.08); }
 
 /* ══════════════════════════════════════════════════════════
    Save indicator - calm badge in the top bar showing auto-save
@@ -4530,51 +4528,6 @@
   color: rgba(0, 0, 0, 0.9);
 }
 
-/* ── COLOR OVERRIDE ROWS (per-block accent, ComponentLibrary) ── */
-.color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.color-label { flex: 1; font-size: 12px; color: var(--b-fg2); }
-.color-swatch {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 2px solid var(--b-border);
-  cursor: pointer;
-  padding: 0;
-  appearance: none;
-  -webkit-appearance: none;
-}
-.color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
-.color-swatch::-webkit-color-swatch { border: none; border-radius: 6px; }
-
-/* Issue #11: per-DS accent preset swatch grid (per-block accent in ComponentLibrary).
-   One-click presets sit alongside the native color input which acts
-   as the custom-hex fallback. */
-.accent-preset-row {
-  display: inline-flex;
-  gap: 6px;
-  margin-right: 8px;
-}
-.accent-preset-swatch {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  outline: 1px solid var(--b-border);
-  outline-offset: -1px;
-  padding: 0;
-  cursor: pointer;
-  transition: transform 120ms ease, border-color 120ms ease;
-}
-.accent-preset-swatch:hover { transform: scale(1.08); }
-.accent-preset-swatch.is-active {
-  border-color: var(--b-fg);
-  outline-color: transparent;
-}
-.accent-preset-swatch:focus-visible {
-  outline: 2px solid var(--b-accent2, #5ee7df);
-  outline-offset: 2px;
-}
-
 /* ── EXPORT BAR ── */
 .export-bar {
   display: flex;
@@ -5156,7 +5109,11 @@
 .present-stage-viewport {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  /* Same rule as the edit stage: no sideways scroll, a reserved gutter, so
+     the frame fit and the scrollbar cannot chase each other. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   /* flex-start (not center) is the scroll-safe fallback. When the framed
      canvas is TALLER than the stage — e.g. a portrait tablet (1024px) on a
@@ -5168,6 +5125,40 @@
   justify-content: flex-start;
   padding: clamp(20px, 4vh, 56px) clamp(16px, 4vw, 64px);
   padding-bottom: clamp(78px, 12vh, 128px);
+}
+
+/* Full-bleed desktop Present (5 Oct): no mat, no frame chrome; the
+   dashboard fills the stage and scrolls inside it. The inner scroller keeps
+   the floating bar's footprint clear of the last row. */
+.present-stage-viewport[data-full-bleed="true"] {
+  padding: 0;
+  display: block;
+  /* The dashboard's own body scrolls; the stage never does, so no gutter. */
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+/* Doubled class so this beats the framed rule below at equal specificity. */
+.present-stage .bp-device-frame.bp-device-frame--full,
+.bp-device-frame.bp-device-frame--full {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  max-height: none;
+  width: 100%;
+  height: 100%;
+}
+/* Full screen means the content too, for app-type interfaces: the body's
+   working-width cap is lifted so charts and tables use the room; the
+   template keeps its own page gutter. Document, form, blog and marketing
+   interfaces keep their reading-width caps, centred in the full-width frame
+   (the complement of the per-interface cap rules below). */
+.present-stage-viewport[data-full-bleed="true"] [data-interface]:not([data-interface="form"]):not([data-interface="blog"]):not([data-interface="landing"]):not([data-interface="ecommerce"]):not([data-interface="portfolio"]) .bp-main > * {
+  max-width: 100%;
+}
+.present-stage-viewport[data-full-bleed="true"] .bp-main {
+  padding-bottom: var(--bc-present-bar-footprint);
+  scroll-padding-bottom: var(--bc-present-bar-footprint);
 }
 
 /* On the stage the frame sizes to its content (capped), centred,
@@ -8449,7 +8440,9 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .swap-menu-item .material-symbols-outlined {
   font-size: 16px;
-  color: var(--ds-primary);
+  /* Secondary foreground, not the brand colour: the accent sat under 3:1
+     on the dark canvas (5 Oct light-chrome audit). */
+  color: var(--ds-fg-secondary, var(--ds-fg));
 }
 
 /* Add block button */
@@ -8513,608 +8506,6 @@ th[class*="-th"] > span { vertical-align: middle; }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-}
-
-/* ══════════════════════════════════════════
-   PROPERTIES INSPECTOR
-   ══════════════════════════════════════════ */
-
-.properties-inspector {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--b-border, rgba(255,255,255,0.08));
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 12px;
-  background: var(--b-surface, #1a1a1a);
-}
-
-.inspector-section {
-  flex: 1;
-  min-width: 120px;
-}
-
-.inspector-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--b-fg-secondary, #888);
-  margin-bottom: 6px;
-}
-
-/* ── Collapsible inspector sections ──
-   Each "{Type} Properties" / "Layout" / "Zone Layout" / "Colours"
-   header is now a button that toggles its body. Default open; state
-   persisted per section key in sessionStorage. Visually mirrors the
-   library category accordion style so the panel feels consistent. */
-.inspector-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-xs, 4px);
-}
-.inspector-section {
-  display: flex;
-  flex-direction: column;
-}
-/* P1 flat-Figma inspector: sections are flush. The only separator is a
-   hairline rule between adjacent sections — no padding-card stacking, no
-   nested boxes. Single-level spacing rhythm driven by --bc-gap-* tokens. */
-.inspector-section + .inspector-section {
-  border-top: 1px solid var(--bc-border, rgba(255, 255, 255, 0.10));
-  margin-top: var(--bc-gap-xs, 4px);
-}
-.inspector-section-head {
-  display: flex;
-  align-items: center;
-  gap: var(--bc-gap-sm, 8px);
-  width: 100%;
-  padding: var(--bc-gap-xs, 4px) var(--bc-gap-xxs, 2px);
-  background: transparent;
-  border: 0;
-  border-radius: var(--bc-radius-sm, 6px);
-  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  transition: background 0.12s, color 0.12s;
-  text-align: left;
-}
-.inspector-section-head:hover {
-  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
-  color: var(--b-fg, rgba(245, 247, 250, 0.96));
-}
-.inspector-section-head:focus-visible {
-  outline: 2px solid var(--bc-accent, #7cc4ff);
-  outline-offset: 2px;
-}
-.inspector-section-title-text {
-  flex: 1;
-}
-.inspector-section-caret {
-  font-size: 16px !important;
-  color: var(--b-fg3);
-  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
-  transform: rotate(0deg);
-  flex-shrink: 0;
-}
-.inspector-section-caret.is-open {
-  transform: rotate(90deg);
-}
-.inspector-section-body {
-  display: flex;
-  flex-direction: column;
-  /* Breathing room between control rows (was --bc-gap-sm/8px — read as
-     cramped). --bc-gap-md gives each field a calmer vertical rhythm. */
-  gap: var(--bc-gap-md, 12px);
-  padding-top: var(--bc-gap-xxs, 2px);
-}
-
-/* Inspector sub-group — nested collapsible inside a section (e.g. Layout
-   "Advanced"). Indented with a left rule, lighter header, leading caret. */
-.inspector-subgroup {
-  padding-left: var(--bc-gap-sm, 8px);
-  border-left: 1px solid var(--bc-border, rgba(255, 255, 255, 0.10));
-}
-.inspector-subgroup-head {
-  display: flex;
-  align-items: center;
-  gap: var(--bc-gap-xs, 4px);
-  width: 100%;
-  padding: var(--bc-gap-xs, 4px) var(--bc-gap-xxs, 2px);
-  background: transparent;
-  border: 0;
-  border-radius: var(--bc-radius-sm, 6px);
-  color: var(--b-fg3);
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: color 0.12s;
-  text-align: left;
-}
-.inspector-subgroup-head:hover {
-  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
-}
-.inspector-subgroup-head:focus-visible {
-  outline: 2px solid var(--ds-primary, #5ee7df);
-  outline-offset: 2px;
-}
-.builder-light .inspector-subgroup-head:hover {
-  color: var(--dh-fg, rgba(15, 16, 30, 0.92));
-}
-.inspector-subgroup-caret {
-  font-size: 14px !important;
-  color: var(--b-fg3);
-  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
-  transform: rotate(0deg);
-  flex-shrink: 0;
-}
-.inspector-subgroup-caret.is-open {
-  transform: rotate(90deg);
-}
-.inspector-subgroup-title {
-  flex: 1;
-}
-.inspector-subgroup-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-sm, 8px);
-  padding-top: var(--bc-gap-xxs, 2px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .inspector-subgroup-caret { transition: none; }
-}
-
-/* P1 flat-Figma segmented control. Figma's segmented controls sit flush:
-   no wrapper box, no inner padding, transparent track. The active segment
-   reads as a subtle filled chip + bolder weight (NOT a doubled box). Driven
-   by --bc-* tokens; AA in both light and dark; keeps focus-visible ring and
-   keyboard arrow operation. */
-/* Salt-style segmented toggle (Fixed/Hug/Fill, px/%, width presets):
-   ONE bordered track whose segments share borders, with a solid neutral
-   selected fill — reads as a toggle group, not the old underline-active
-   "tabs". Selected uses --bc-bg-active + --bc-fg (NOT accent-fill: accent
-   text only hits 3.76:1 on the light-mode accent — see present-bar-btn-exit
-   for the same house decision), so selection is fill + weight, AA in both
-   themes, never color-only. */
-.inspector-toggle-group {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  gap: 0;
-  background: transparent;
-  border: 1px solid var(--bc-border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--bc-radius-sm, 6px);
-  padding: 0;
-}
-
-.inspector-toggle-btn {
-  flex: 1 1 0;
-  min-width: 0;
-  white-space: nowrap;
-  text-align: center;
-  padding: 4px 6px;
-  border: none;
-  border-right: 1px solid var(--bc-border, rgba(255, 255, 255, 0.12));
-  border-radius: 0;
-  background: transparent;
-  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-  font-family: inherit;
-}
-.inspector-toggle-btn:first-child {
-  border-top-left-radius: var(--bc-radius-sm, 6px);
-  border-bottom-left-radius: var(--bc-radius-sm, 6px);
-}
-.inspector-toggle-btn:last-child {
-  border-right: none;
-  border-top-right-radius: var(--bc-radius-sm, 6px);
-  border-bottom-right-radius: var(--bc-radius-sm, 6px);
-}
-.inspector-toggle-btn:hover {
-  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
-  color: var(--b-fg, #e4e4e7);
-}
-.inspector-toggle-btn:focus-visible {
-  outline: 2px solid var(--bc-accent, #7cc4ff);
-  outline-offset: -2px;
-}
-.inspector-toggle-btn.active {
-  background: var(--bc-bg-active, rgba(255, 255, 255, 0.12));
-  color: var(--b-fg, #e4e4e7);
-  font-weight: 600;
-}
-
-.inspector-divider {
-  width: 1px;
-  background: var(--b-border, rgba(255,255,255,0.08));
-  align-self: stretch;
-  margin: 0 2px;
-}
-
-/* P1 flat-Figma field rhythm. Even, single-level spacing — the
-   section-body owns the gap BETWEEN fields (var(--bc-gap-sm)); each field
-   keeps a tight label→control gap and no own margin so there are no
-   compounding margins / nested boxes. */
-.inspector-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-xxs, 2px);
-}
-/* Horizontal row variant - used when two short inputs need to
-   sit side-by-side (e.g. Min / Max width fields). */
-.inspector-field-row {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: var(--bc-gap-sm, 8px);
-}
-.inspector-field-row > div {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-xxs, 2px);
-}
-
-/* Figma dimensions cell: a value field + a compact sizing/unit dropdown,
-   inline. Lives in an .inspector-field-row so W and H sit side by side. */
-.inspector-field-row > .inspector-dim-cell {
-  flex-direction: row;
-  align-items: center;
-  gap: var(--bc-gap-xs, 4px);
-  min-width: 0;
-}
-.inspector-dim-cell > :first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.inspector-dim-cell .inspector-select.inspector-dim-mode {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 0;
-  padding-right: 22px; /* room for the baked-in caret */
-}
-
-/* Custom-width row: the numeric input grows, the px/% unit toggle
-   sits beside it at its intrinsic width. */
-.inspector-width-custom {
-  display: flex;
-  gap: var(--bc-gap-xs, 4px);
-  align-items: stretch;
-}
-.inspector-width-custom .inspector-input {
-  flex: 1;
-  min-width: 0;
-}
-.inspector-width-custom .inspector-toggle-group {
-  flex: 0 0 auto;
-}
-
-/* P1 SIZE row — W and H stacked full-width. The Fixed/Hug/Fill segmented
-   control needs the full panel width to read; at the ~240px inspector width
-   two 3-button segments side by side overlap, so each axis gets its own row. */
-.inspector-size-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-sm, 8px);
-}
-.inspector-size-cell {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bc-gap-xxs, 2px);
-  min-width: 0;
-}
-
-/* P5 padding/gap — Figma-style link toggle + per-side grid. Flat chrome,
-   token-driven, AA in both themes, keyboard-operable with a visible focus ring.
-   The link toggle is a small icon button sitting at the end of the field label
-   row (label uses justify-content: space-between). */
-.inspector-link-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 18px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: var(--bc-radius-xs, 3px);
-  background: transparent;
-  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
-  cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-.inspector-link-toggle:hover {
-  background: var(--bc-bg-hover, rgba(255, 255, 255, 0.06));
-  color: var(--b-fg, #e4e4e7);
-}
-.inspector-link-toggle:focus-visible {
-  outline: 2px solid var(--bc-accent, #7cc4ff);
-  outline-offset: 1px;
-}
-/* Unlinked = active: filled chip + accent underline so the state is never
-   color-only (mirrors .inspector-toggle-btn.active). */
-.inspector-link-toggle.is-unlinked {
-  background: var(--bc-bg-active, rgba(255, 255, 255, 0.10));
-  border-color: var(--bc-border, rgba(255, 255, 255, 0.10));
-  color: var(--bc-accent, #7cc4ff);
-}
-.inspector-link-toggle .material-symbols-outlined {
-  font-size: 14px;
-  line-height: 1;
-}
-
-/* Per-side padding grid (4 cells) / per-axis gap grid (2 cells). Each cell is a
-   side-glyph + a compact number input. */
-.inspector-pad-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--bc-gap-xs, 4px);
-}
-.inspector-pad-grid--2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-.inspector-pad-cell {
-  display: flex;
-  align-items: center;
-  gap: var(--bc-gap-xxs, 2px);
-  min-width: 0;
-}
-.inspector-pad-side {
-  flex: 0 0 auto;
-  width: 12px;
-  text-align: center;
-  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
-  font-weight: 600;
-  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
-}
-.inspector-pad-input {
-  flex: 1;
-  min-width: 0;
-  /* tighter horizontal padding so a 2- or 3-digit value fits in a quarter cell */
-  padding-left: 6px;
-  padding-right: 4px;
-}
-
-/* P1 zone hint — the small {Header}/{Body}/… tag beside the Auto-layout
-   "Direction" label so it's clear which container the cluster affects. */
-.inspector-zone-hint {
-  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
-  font-weight: 600;
-  color: var(--b-fg3, rgba(245, 247, 250, 0.40));
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-/* Scope lead-in for the zone Auto-layout cluster (finding #6). This is
-   load-bearing SENTENCE copy, so it must clear AA 4.5:1 — uses --b-fg2
-   (passes all four builder themes: 7.36/5.11/7.42/7.64:1), NOT the
-   decorative --b-fg3 used above (fails AA in 3 of 4 themes for body copy). */
-.inspector-section-scope {
-  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
-  color: var(--b-fg2, rgba(238, 242, 237, 0.64));
-  margin: 0 0 var(--bc-gap-sm, 8px);
-  line-height: 1.35;
-}
-
-/* P1 disabled control — used where a control has no backing field yet
-   (e.g. Height before P3 wires it). Reads as present-but-inert, with a
-   tooltip on hover, rather than a missing control. */
-.inspector-toggle-btn:disabled,
-.inspector-toggle-btn[aria-disabled="true"],
-.inspector-toggle-group[aria-disabled="true"] .inspector-toggle-btn {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.inspector-toggle-btn:disabled:hover,
-.inspector-toggle-btn[aria-disabled="true"]:hover {
-  background: transparent;
-  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
-}
-
-/* P4 Order Up/Down — momentary action buttons (not toggles). min-height
-   lifts them to the WCAG 2.5.8 24px minimum target without touching the
-   global toggle sizing (dense desktop panel: deliberate 24px, not the
-   44px touch spec). */
-.inspector-order-btn {
-  min-height: 24px;
-}
-
-.inspector-field-label {
-  /* P1: labels use the chrome label token. Figma uses sentence-case
-     subdued labels, not all-caps shout — drop the uppercase + tracking. */
-  font: var(--bc-type-label, 500 11px/1.2 ui-sans-serif, system-ui, sans-serif);
-  color: var(--b-fg2, rgba(245, 247, 250, 0.62));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--bc-gap-xs, 4px);
-}
-
-/* P6 Scrubbable NumberField — drag the label / glyph to scrub the value,
-   Figma-style. The handle advertises horizontal scrubbing; the real <input>
-   stays the focusable target so keyboard + screen-reader are unaffected.
-   Tokens / keywords only (no new px/ms/hex literals → tokens:audit baseline). */
-.inspector-scrub-handle {
-  cursor: ew-resize;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.inspector-scrub-handle:hover {
-  color: var(--bc-accent);
-}
-.inspector-scrub-inline {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: var(--bc-gap-xxs);
-  min-width: 0;
-}
-
-/* Chart colour section (P1.3) */
-.inspector-chart-reset {
-  font-size: 9.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: rgba(126, 107, 196, 0.9);
-  background: transparent;
-  border: 0;
-  padding: 0 2px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.inspector-chart-reset:hover { text-decoration: underline; }
-
-.inspector-chart-swatches {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  padding: 2px;
-}
-.inspector-chart-swatch {
-  aspect-ratio: 1 / 1;
-  width: 100%;
-  border-radius: 6px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
-  padding: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) inset;
-  position: relative;
-}
-.inspector-chart-swatch:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-.inspector-chart-swatch.is-active {
-  border-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 0 2px rgba(126, 107, 196, 0.65);
-}
-.builder-light .inspector-chart-swatch.is-active {
-  border-color: rgba(0, 0, 0, 0.75);
-  box-shadow: 0 0 0 2px rgba(126, 107, 196, 0.55);
-}
-.inspector-chart-swatch:focus-visible {
-  outline: 2px solid rgba(126, 107, 196, 0.8);
-  outline-offset: 2px;
-}
-
-.inspector-chart-hex-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.inspector-chart-hex-input {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.1));
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--b-fg);
-  font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 11.5px;
-  text-transform: uppercase;
-}
-.inspector-chart-hex-input:focus {
-  outline: none;
-  border-color: rgba(126, 107, 196, 0.55);
-}
-.inspector-chart-hex-apply {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(126, 107, 196, 0.35);
-  background: rgba(126, 107, 196, 0.15);
-  color: var(--b-fg);
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.inspector-chart-hex-apply:hover {
-  background: rgba(126, 107, 196, 0.28);
-}
-.builder-light .inspector-chart-hex-input {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: #15102a;
-}
-.builder-light .inspector-chart-hex-apply {
-  color: #3a2d75;
-}
-
-.inspector-input {
-  padding: 5px 8px;
-  border: 1px solid var(--b-border, rgba(255,255,255,0.12));
-  border-radius: 4px;
-  background: rgba(255,255,255,0.04);
-  color: var(--b-fg, #e4e4e7);
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.inspector-input:focus {
-  border-color: var(--ds-primary, var(--b-accent, #6366f1));
-}
-
-.inspector-select {
-  padding: 5px 8px;
-  border: 1px solid var(--b-border, rgba(255,255,255,0.12));
-  border-radius: 4px;
-  background: rgba(255,255,255,0.04);
-  color: var(--b-fg, #e4e4e7);
-  font-size: 12px;
-  font-family: inherit;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 6px center;
-  padding-right: 24px;
-}
-.inspector-select:focus {
-  border-color: var(--ds-primary, var(--b-accent, #6366f1));
-}
-
-.inspector-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--b-fg-secondary, #888);
-  font-size: 11px;
-  padding: 2px 0;
-  flex: 1;
-  min-width: 160px;
-}
-
-/* ── Light mode overrides ── */
-.builder-light .properties-inspector {
-  background: #f8f8f8;
-  border-bottom-color: rgba(0,0,0,0.08);
-}
-/* P1: toggle-group / toggle-btn now resolve from mode-aware --bc-* tokens,
-   so they need no separate light-mode override (the old override re-painted
-   the boxed background the flat look removes). Only inputs/selects keep an
-   explicit light treatment below. */
-.builder-light .inspector-input,
-.builder-light .inspector-select {
-  background: #fff;
-  border-color: rgba(0,0,0,0.12);
-  color: #18181b;
-}
-.builder-light .inspector-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -9271,69 +8662,6 @@ th[class*="-th"] > span { vertical-align: middle; }
   flex-direction: row;
   min-height: 0;
   overflow: hidden;
-}
-
-/* ── Right component sidebar (outside the device frame) ── */
-.component-sidebar {
-  width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width, 300px));
-  flex-shrink: 0;
-  background: var(--b-bg);
-  border-left: 1px solid var(--b-border2);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Component library fills its sidebar container */
-.component-library {
-  width: 100%;
-  flex-shrink: 0;
-  flex: 1;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-
-.lib-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.08));
-}
-.lib-header-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--b-fg, #e4e4e7);
-}
-.lib-close-btn {
-  background: none;
-  border: none;
-  color: var(--b-fg-secondary, #888);
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s, background 0.15s;
-}
-.lib-close-btn:hover {
-  color: var(--b-fg, #e4e4e7);
-  background: rgba(255,255,255,0.08);
-}
-
-.lib-body {
-  padding: 18px 18px 24px;
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .lib-hint {
@@ -9623,7 +8951,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   color: rgba(15, 16, 30, 0.5);
 }
 .context-menu-item.is-danger {
-  color: #f46a6a;
+  color: var(--bc-danger);
 }
 .context-menu-item.is-danger.is-active,
 .context-menu-item.is-danger:hover:not(.is-disabled) {
@@ -9769,6 +9097,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   transition: background 0.12s, color 0.12s;
   text-align: left;
 }
+/* Light chrome: the lavender accent sits under 3:1 on the light panel, so
+   the zone and category icons take the muted foreground (5 Oct audit). */
+.builder-light .lib-zone-icon,
+.builder-light .lib-category-icon { color: var(--bc-fg-muted); }
 .builder-light .lib-category-head {
   background: rgba(255, 255, 255, 0.92);
 }
@@ -10375,7 +9707,7 @@ th[class*="-th"] > span { vertical-align: middle; }
 .builder-light .preview-bar-overflow-soon {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.12);
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--bc-fg-muted);
 }
 .preview-bar-overflow-item.preview-bar-overflow-item-active {
   background: rgba(126, 107, 196, 0.14);
@@ -12738,16 +12070,6 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 }
 
 /* ── Light mode overrides ── */
-.builder-light .component-sidebar {
-  background: var(--b-bg);
-  border-left-color: var(--b-border2);
-}
-.builder-light .component-library {
-  background: transparent;
-}
-.builder-light .lib-header-title {
-  color: #18181b;
-}
 .builder-light .lib-hint {
   color: #71717a;
 }
@@ -12911,7 +12233,14 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   align-items: flex-start;
   justify-content: center;
   padding: 0;
-  overflow: auto;
+  /* The frame is scaled to the stage's width (frameFit.ts), so the stage
+     never needs to scroll sideways, and the vertical scrollbar's gutter is
+     reserved. Without both, the fit read a clientWidth that the scrollbar
+     it had just caused made 15px narrower, refit, lost the scrollbar, and
+     refit again every frame: the Edit-mode shake (5 Oct). */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   background: var(--b-bg);
 }
 .bp-viewport-wrapper .bp-device-frame {
@@ -14726,7 +14055,6 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   .bp-controls { padding: 6px 12px; gap: 8px; }
   .bp-dimensions { display: none; }
   .preview-toolbar { padding: 4px 12px; }
-  .component-sidebar { width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width-tablet, 248px)); }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -14867,10 +14195,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Component sidebar: hidden on mobile */
-  .component-sidebar {
-    display: none !important;
-  }
+  /* Component sidebar: a bottom sheet on phones (see the inspector block at the end). */
 
   /* Builder body: single column on mobile */
   .preview-builder-body {
@@ -14918,7 +14243,6 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   }
   .gsb-inner { width: 240px; }
   /* Narrow the right-hand component library so canvas keeps breathing room */
-  .component-sidebar { width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width-tablet, 248px)); }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -18672,4 +17996,788 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   .template-gallery-wrap .template-workspace { padding: var(--bc-gap-md); gap: var(--bc-gap-sm); }
   .template-gallery-wrap .template-gallery-controls { margin-top: 0; row-gap: var(--bc-gap-xs); }
   .template-gallery-wrap .template-cards .template-card { padding: var(--bc-gap-sm) var(--bc-gap-md); }
+}
+/* ════════════════════════════════════════════════════════════
+   INSPECTOR PANEL (2026-10-05 redesign)
+   ════════════════════════════════════════════════════════════
+   One language for the component configuration panel: one inset
+   (--insp-inset) for every edge, one spacing scale (label 6 / field
+   12 / section 20), one height for every control (--insp-control-h),
+   one tonal field style, one segmented control, one switch, one
+   slider. Tokens live in chrome-tokens.css (semantic --insp-* layer
+   over the --bc-* primitives). Owner rule: tone, not outlines; the
+   keyboard focus ring is the one outline that stays.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Panel shell ── */
+.component-sidebar {
+  width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width));
+  flex-shrink: 0;
+  background: var(--b-bg);
+  border-left: var(--bc-hairline) solid var(--insp-hairline);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.component-library {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header: the block's plain name (or "Components" in browse mode), a quiet
+   line under it, and the close button on the right at the same inset. */
+.lib-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bc-gap-sm);
+  padding: var(--insp-head-pad-y) calc(var(--insp-inset) - var(--insp-icon-btn-pad)) var(--insp-head-pad-y) var(--insp-inset);
+  border-bottom: var(--bc-hairline) solid var(--insp-hairline);
+  min-height: var(--insp-header-h);
+}
+.lib-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bc-gap-xxs);
+  min-width: 0;
+  padding-top: var(--insp-icon-btn-pad);
+}
+.lib-header-title {
+  font: var(--insp-title-type);
+  color: var(--insp-title-fg);
+  letter-spacing: 0;
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-header-sub {
+  font: var(--insp-label-type);
+  color: var(--insp-label-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-close-btn {
+  flex-shrink: 0;
+  width: var(--insp-icon-btn);
+  height: var(--insp-icon-btn);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: transparent;
+  color: var(--insp-label-fg);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.lib-close-btn:hover {
+  background: var(--insp-field-bg-hover);
+  color: var(--insp-field-fg);
+}
+.lib-close-btn:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+
+/* ── Stack and sections ── */
+.inspector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* The scroll body already pads by the inset; the stack sits flush and
+     every row starts on that line. The section hairlines bleed to the
+     panel edges through negative margins on the section itself. */
+  margin: calc(-1 * var(--bc-panel-inset)) 0 0;
+}
+.inspector-section {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.inspector-section + .inspector-section {
+  /* A quiet rule on the inset lines (no bleed: a bled rule widened the
+     stack's scroll width by the inset). */
+  border-top: var(--bc-hairline) solid var(--insp-hairline);
+}
+.inspector-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bc-gap-sm);
+  width: 100%;
+  min-height: var(--insp-head-h);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--insp-radius);
+  color: var(--insp-title-fg);
+  font: var(--insp-section-type);
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-section-head:hover { color: var(--insp-title-fg); }
+.inspector-section-head:hover .inspector-section-caret { color: var(--insp-title-fg); }
+.inspector-section-head:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-section-title-text { flex: 1; min-width: 0; }
+.inspector-section-caret {
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
+  flex-shrink: 0;
+  /* Caret points right when closed, down when open: the panel's one motion. */
+  transition: transform var(--bc-duration-medium) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+  transform: rotate(0deg);
+}
+.inspector-section-caret.is-open { transform: rotate(90deg); }
+.inspector-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-field);
+  padding: 0 0 var(--insp-gap-section);
+  min-width: 0;
+}
+
+/* Sub-group (Advanced): a lighter title, same inset, same rhythm. */
+.inspector-subgroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.inspector-subgroup-head {
+  display: flex;
+  align-items: center;
+  gap: var(--bc-gap-xs);
+  width: 100%;
+  min-height: var(--insp-control-h-sm);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--insp-radius);
+  color: var(--insp-label-fg);
+  font: var(--insp-label-type);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-subgroup-head:hover { color: var(--insp-title-fg); }
+.inspector-subgroup-head:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-subgroup-caret {
+  font-size: var(--insp-caret-sm) !important;
+  color: var(--insp-label-fg);
+  flex-shrink: 0;
+  transition: transform var(--bc-duration-medium) var(--bc-ease);
+  transform: rotate(0deg);
+}
+.inspector-subgroup-caret.is-open { transform: rotate(90deg); }
+.inspector-subgroup-title { flex: 1; }
+.inspector-subgroup-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-field);
+  padding-top: var(--insp-gap-label);
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inspector-section-caret, .inspector-subgroup-caret { transition: none; }
+}
+
+/* ── Fields ── */
+.inspector-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--insp-gap-label);
+  min-width: 0;
+}
+.inspector-field-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--insp-gap-row);
+  min-width: 0;
+}
+.inspector-field-row > * { flex: 1 1 0; min-width: 0; }
+.inspector-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bc-gap-xs);
+  min-height: var(--insp-label-h);
+  font: var(--insp-label-type);
+  color: var(--insp-label-fg);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.inspector-field-value {
+  font: var(--insp-label-type);
+  font-variant-numeric: tabular-nums;
+  color: var(--insp-field-fg);
+}
+/* Plain inline copy: a scope line under a section title or a hint under a
+   field. Load-bearing sentences use the muted (AA) colour, not the subtle one. */
+.inspector-section-scope,
+.inspector-field-hint {
+  margin: 0;
+  font: var(--insp-label-type);
+  line-height: var(--insp-copy-leading);
+  color: var(--insp-label-fg);
+}
+.inspector-field-hint.is-invalid { color: var(--bc-danger); }
+
+/* The one text field style: tonal fill, no border, focus ring. */
+.inspector-input,
+.inspector-select,
+.inspector-chart-hex-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: var(--insp-control-h);
+  padding: var(--insp-field-pad);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-field-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  outline: none;
+  transition: background var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-input::placeholder,
+.inspector-chart-hex-input::placeholder { color: var(--insp-placeholder-fg); }
+.inspector-input:hover,
+.inspector-select:hover,
+.inspector-chart-hex-input:hover { background: var(--insp-field-bg-hover); }
+.inspector-input:focus,
+.inspector-select:focus,
+.inspector-chart-hex-input:focus {
+  background: var(--insp-field-bg-hover);
+  box-shadow: 0 0 0 var(--insp-focus-w) var(--insp-focus);
+}
+textarea.inspector-input {
+  height: auto;
+  min-height: var(--insp-textarea-min);
+  padding-top: var(--insp-field-pad-y);
+  padding-bottom: var(--insp-field-pad-y);
+  line-height: var(--insp-copy-leading);
+  resize: vertical;
+}
+input[type="number"].inspector-input {
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"].inspector-input::-webkit-outer-spin-button,
+input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.inspector-select {
+  cursor: pointer;
+  appearance: none;
+  padding-right: var(--insp-select-pad-r);
+  background-image: var(--insp-select-caret);
+  background-repeat: no-repeat;
+  background-position: right var(--insp-field-pad-x) center;
+  background-size: var(--insp-caret-sm) var(--insp-caret-sm);
+}
+.inspector-chart-hex-input {
+  font-family: var(--bc-type-tabular-family);
+  text-transform: uppercase;
+}
+
+/* Prefixed numeric field: a glyph (W, T, ↔) inside the field box, the input
+   itself is bare. The glyph is the scrub handle. */
+.inspector-scrub-inline,
+.inspector-pad-cell {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
+  height: var(--insp-control-h);
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  transition: background var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-scrub-inline:hover,
+.inspector-pad-cell:hover { background: var(--insp-field-bg-hover); }
+.inspector-scrub-inline:focus-within,
+.inspector-pad-cell:focus-within {
+  background: var(--insp-field-bg-hover);
+  box-shadow: 0 0 0 var(--insp-focus-w) var(--insp-focus);
+}
+.inspector-scrub-inline .inspector-input,
+.inspector-pad-cell .inspector-input {
+  flex: 1 1 0;
+  height: 100%;
+  padding-left: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.inspector-scrub-inline .inspector-input:hover,
+.inspector-pad-cell .inspector-input:hover,
+.inspector-scrub-inline .inspector-input:focus,
+.inspector-pad-cell .inspector-input:focus { background: transparent; box-shadow: none; }
+.inspector-pad-side {
+  flex: 0 0 auto;
+  width: var(--insp-glyph-w);
+  text-align: center;
+  font: var(--insp-label-type);
+  font-weight: 600;
+  color: var(--insp-label-fg);
+  user-select: none;
+}
+.inspector-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--insp-gap-row);
+}
+.inspector-pad-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.inspector-pad-input { padding-right: var(--insp-field-pad-x-sm); }
+.inspector-scrub-handle {
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.inspector-scrub-handle:hover { color: var(--insp-field-fg); }
+
+/* Dimension cell (Size): a labelled cell whose controls sit in one row. The
+   value input shows only for px and % (seeded), the mode select fills the
+   cell otherwise, so there is never a dead empty box. */
+.inspector-dim-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-row);
+  min-width: 0;
+}
+.inspector-dim-controls > .inspector-input { flex: 1 1 0; }
+.inspector-dim-controls > .inspector-select { flex: 1 1 0; }
+.inspector-dim-controls.has-value > .inspector-select {
+  flex: 0 0 var(--insp-unit-w);
+  width: var(--insp-unit-w);
+}
+
+/* ── Segmented control ── */
+.inspector-toggle-group {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  gap: var(--insp-seg-gap);
+  padding: var(--insp-seg-gap);
+  height: var(--insp-control-h);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-seg-track);
+}
+.inspector-toggle-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  padding: var(--insp-seg-pad);
+  border: 0;
+  border-radius: var(--insp-radius-inner);
+  background: transparent;
+  color: var(--insp-label-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-toggle-btn:hover { color: var(--insp-field-fg); background: var(--insp-seg-hover); }
+.inspector-toggle-btn:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: calc(-1 * var(--insp-focus-w));
+}
+.inspector-toggle-btn.active,
+.inspector-toggle-btn[aria-checked="true"] {
+  background: var(--insp-seg-on);
+  color: var(--insp-field-fg);
+  font-weight: 600;
+  box-shadow: var(--insp-seg-on-shadow);
+}
+.inspector-toggle-btn:disabled,
+.inspector-toggle-btn[aria-disabled="true"] { opacity: var(--insp-disabled-opacity); cursor: not-allowed; }
+.inspector-toggle-btn:disabled:hover,
+.inspector-toggle-btn[aria-disabled="true"]:hover { background: transparent; color: var(--insp-label-fg); }
+.inspector-order-btn { min-height: var(--insp-control-h-sm); }
+
+/* Single tonal action (Ungroup, Apply, Reset). */
+.inspector-btn,
+.inspector-chart-hex-apply {
+  box-sizing: border-box;
+  height: var(--insp-control-h);
+  padding: var(--insp-field-pad);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-field-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-btn:hover,
+.inspector-chart-hex-apply:hover { background: var(--insp-field-bg-hover); }
+.inspector-btn:focus-visible,
+.inspector-chart-hex-apply:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-btn--full { width: 100%; }
+/* Quiet text action in a label row (Reset). */
+.inspector-chart-reset,
+.inspector-text-btn {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--insp-label-fg);
+  font: var(--insp-label-type);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+.inspector-chart-reset:hover,
+.inspector-text-btn:hover { color: var(--insp-field-fg); text-decoration: underline; }
+.inspector-chart-reset:focus-visible,
+.inspector-text-btn:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+  border-radius: var(--bc-radius-xs);
+}
+
+/* ── Switch ── */
+.inspector-field--switch {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--insp-gap-row);
+  min-height: var(--insp-control-h);
+}
+.inspector-field--switch > .inspector-field-label { flex: 1 1 auto; min-height: 0; }
+.inspector-switch {
+  flex: 0 0 auto;
+  position: relative;
+  width: var(--insp-switch-w);
+  height: var(--insp-switch-h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-switch-off);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-switch:hover { background: var(--insp-switch-off-hover); }
+.inspector-switch[aria-checked="true"] { background: var(--insp-switch-on); }
+.inspector-switch[aria-checked="true"]:hover { background: var(--insp-switch-on); }
+.inspector-switch:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-switch-knob {
+  position: absolute;
+  top: var(--insp-switch-inset);
+  left: var(--insp-switch-inset);
+  width: var(--insp-switch-knob);
+  height: var(--insp-switch-knob);
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-switch-knob-fg);
+  box-shadow: var(--bc-shadow-sm);
+  transition: transform var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-switch[aria-checked="true"] .inspector-switch-knob {
+  transform: translateX(calc(var(--insp-switch-w) - var(--insp-switch-knob) - 2 * var(--insp-switch-inset)));
+}
+
+/* ── Slider ── */
+.inspector-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--insp-control-h);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.inspector-slider:focus { outline: none; }
+.inspector-slider::-webkit-slider-runnable-track {
+  height: var(--insp-slider-track);
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-slider-track-bg);
+}
+.inspector-slider::-moz-range-track {
+  height: var(--insp-slider-track);
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-slider-track-bg);
+}
+.inspector-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--insp-slider-thumb);
+  height: var(--insp-slider-thumb);
+  margin-top: calc((var(--insp-slider-track) - var(--insp-slider-thumb)) / 2);
+  border: 0;
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-slider-thumb-bg);
+  box-shadow: var(--bc-shadow-sm);
+  transition: transform var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-slider::-moz-range-thumb {
+  width: var(--insp-slider-thumb);
+  height: var(--insp-slider-thumb);
+  border: 0;
+  border-radius: var(--bc-radius-pill);
+  background: var(--insp-slider-thumb-bg);
+  box-shadow: var(--bc-shadow-sm);
+}
+.inspector-slider:hover::-webkit-slider-thumb { transform: scale(1.1); }
+.inspector-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 var(--insp-focus-w) var(--insp-focus); }
+.inspector-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 var(--insp-focus-w) var(--insp-focus); }
+
+/* ── Link toggle (gap / padding) ── */
+.inspector-link-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--insp-control-h-sm);
+  height: var(--insp-control-h-sm);
+  padding: 0;
+  border: 0;
+  border-radius: var(--bc-radius-xs);
+  background: transparent;
+  color: var(--insp-label-fg);
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.inspector-link-toggle:hover { background: var(--insp-field-bg-hover); color: var(--insp-field-fg); }
+.inspector-link-toggle:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.inspector-link-toggle.is-unlinked { background: var(--insp-seg-on); color: var(--insp-field-fg); }
+.inspector-link-toggle .material-symbols-outlined { font-size: var(--insp-caret-sm); line-height: 1; }
+.inspector-zone-hint {
+  font: var(--insp-label-type);
+  color: var(--insp-label-fg);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── Colour swatches (chart palette, block accent) ── */
+.inspector-chart-swatches,
+.accent-preset-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--insp-swatch-gap);
+  margin: 0;
+  padding: 0;
+}
+.inspector-chart-swatch,
+.accent-preset-swatch,
+.color-swatch {
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  padding: 0;
+  border: 0;
+  outline: none;
+  border-radius: var(--insp-radius);
+  cursor: pointer;
+  transition: transform var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease);
+  box-shadow: inset 0 0 0 var(--bc-hairline) var(--insp-swatch-edge);
+}
+.inspector-chart-swatch:hover,
+.accent-preset-swatch:hover,
+.color-swatch:hover { transform: translateY(calc(-1 * var(--bc-hairline))); }
+.inspector-chart-swatch.is-active,
+.accent-preset-swatch.is-active {
+  box-shadow: 0 0 0 var(--insp-focus-w) var(--b-bg), 0 0 0 calc(2 * var(--insp-focus-w)) var(--insp-field-fg);
+}
+.inspector-chart-swatch:focus-visible,
+.accent-preset-swatch:focus-visible,
+.color-swatch:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+}
+.color-swatch {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--insp-field-bg);
+}
+.color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.color-swatch::-webkit-color-swatch { border: none; border-radius: var(--insp-radius); }
+.color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--insp-gap-row);
+  min-height: var(--insp-label-h);
+}
+.color-label { flex: 1; font: var(--insp-label-type); color: var(--insp-label-fg); }
+.inspector-chart-hex-row {
+  display: flex;
+  gap: var(--insp-gap-row);
+  align-items: center;
+}
+.inspector-chart-hex-row > .inspector-chart-hex-input { flex: 1 1 0; }
+.inspector-chart-hex-row > .inspector-chart-hex-apply { flex: 0 0 auto; }
+
+/* ── Light chrome ── */
+.builder-light .component-sidebar { background: var(--b-bg); }
+.builder-light .inspector-input,
+.builder-light .inspector-select,
+.builder-light .inspector-chart-hex-input { color: var(--insp-field-fg); }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .component-sidebar { width: var(--comp-sidebar-width, var(--bc-comp-sidebar-width-tablet)); }
+}
+/* Phone: the panel is a bottom sheet. It overlays the canvas (no re-fit),
+   opens with a selection or the Show button, and closes from its header. */
+@media (max-width: 767px) {
+  .component-sidebar {
+    display: flex !important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto !important;
+    height: var(--insp-sheet-h);
+    max-height: var(--insp-sheet-max);
+    border-left: 0;
+    border-top: var(--bc-hairline) solid var(--insp-hairline);
+    border-radius: var(--insp-sheet-radius) var(--insp-sheet-radius) 0 0;
+    box-shadow: var(--bc-shadow-lg);
+    z-index: var(--bc-z-hud);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* clip, not hidden: a scrollIntoView inside the body must not scroll the
+       sheet itself and carry its header off the top. */
+    overflow: clip;
+  }
+  .component-sidebar::before {
+    content: "";
+    position: absolute;
+    top: var(--bc-gap-sm);
+    left: 50%;
+    width: var(--insp-sheet-grab-w);
+    height: var(--insp-sheet-grab-h);
+    margin-left: calc(-1 * var(--insp-sheet-grab-w) / 2);
+    border-radius: var(--bc-radius-pill);
+    background: var(--insp-seg-on);
+  }
+  .component-sidebar .lib-header { padding-top: calc(var(--insp-head-pad-y) + var(--insp-sheet-grab-h) + var(--bc-gap-xs)); }
+  .comp-resize-handle { display: none !important; }
+}
+
+/* ── Block toolbar (2026-10-05) ──
+   Drag handle, swap and remove in one raised pill. HoverInspector measures
+   the room around the selected block and sets data-placement: above the
+   block when the gap to the previous sibling has room, below when the gap to
+   the next one has, otherwise inside the block's own top-right corner (over
+   its padding), so it never covers another block's controls. The pill
+   counter-zooms the device frame's scale so its targets stay 24px on
+   screen whatever the stage width. */
+.hover-inspector-toolbar {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bc-gap-xxs);
+  height: var(--insp-toolbar-h);
+  padding: 0 var(--bc-gap-xxs);
+  border-radius: var(--insp-radius);
+  background: var(--insp-toolbar-bg);
+  box-shadow: var(--bc-shadow-md), inset 0 0 0 var(--bc-hairline) var(--insp-hairline);
+  pointer-events: auto;
+  z-index: var(--bc-z-hud);
+  zoom: calc(1 / var(--dh-frame-zoom, 1));
+}
+.hover-inspector-toolbar[data-placement="above-right"] { bottom: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="above-left"]  { bottom: calc(100% + var(--insp-toolbar-gap)); left: 0; }
+.hover-inspector-toolbar[data-placement="below-right"] { top: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="below-left"]  { top: calc(100% + var(--insp-toolbar-gap)); left: 0; }
+.hover-inspector-toolbar[data-placement="inside"]      { top: var(--insp-toolbar-gap); right: var(--insp-toolbar-gap); }
+/* A block shorter than the pill: the pill sits centred on the block's own
+   height (its corner would spill into the row below). */
+.hover-inspector-toolbar[data-placement="inside-middle"] { top: 50%; right: var(--insp-toolbar-gap); transform: translateY(-50%); }
+.hover-inspector-toolbar .canvas-block-handle,
+.hover-inspector-toolbar .canvas-block-remove,
+.hover-inspector-toolbar .canvas-block-swap {
+  position: static;
+  top: auto;
+  left: auto;
+  right: auto;
+  width: var(--insp-toolbar-btn);
+  height: var(--insp-toolbar-btn);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--insp-radius-inner);
+  background: transparent;
+  color: var(--insp-toolbar-fg);
+  opacity: 1;
+  font-size: var(--insp-caret-sm);
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
+}
+.hover-inspector-toolbar .canvas-block-handle:hover,
+.hover-inspector-toolbar .canvas-block-swap:hover {
+  background: var(--insp-toolbar-hover);
+  color: var(--insp-toolbar-fg-hover);
+}
+.hover-inspector-toolbar .canvas-block-remove:hover {
+  background: var(--insp-toolbar-hover);
+  color: var(--bc-danger);
+}
+.hover-inspector-toolbar .canvas-block-handle:focus-visible,
+.hover-inspector-toolbar .canvas-block-remove:focus-visible,
+.hover-inspector-toolbar .canvas-block-swap:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: calc(-1 * var(--insp-focus-w));
+}
+/* The pill shows on hover too (after the hover delay): the drag handle must
+   be reachable without a click, as before. */
+
+/* Tablet (under 1024): the panel is a drawer over the canvas's right edge so
+   the stage keeps its width; close from its header. */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .preview-builder-body { position: relative; }
+  .component-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--bc-comp-sidebar-width) !important;
+    z-index: var(--bc-z-hud);
+    box-shadow: var(--bc-shadow-lg);
+  }
+  .comp-resize-handle { display: none !important; }
 }

@@ -32,7 +32,7 @@
    early-return sits after all of its hooks. */
 
 import React, { useEffect, useRef } from "react";
-import { useBuilder } from "@/store/useBuilder";
+import { useBuilder, effectiveDeviceMode } from "@/store/useBuilder";
 import { CanvasDndProvider, BuilderCanvas, DSPreviewStyles } from "./PreviewPanel";
 import { PresentBar } from "./PresentBar";
 import { AmendableContext } from "./previewAmendable";
@@ -64,6 +64,9 @@ export function PresentStage({
      shows 0/0/0. Mirroring the store value keeps both modes on one box
      model ("component locations and padding styles the same"). */
   const canvasSpacing = useBuilder((s) => s.canvasSpacing);
+  /* Desktop presents full-bleed (the report takes the whole window); tablet
+     and phone keep the framed, centred preview. */
+  const fullBleed = useBuilder(effectiveDeviceMode) === "desktop";
 
   /* Amend flow (Phase 1): only the AUTHOR's Present mode is amendable —
      clicking a block selects it for the in-place composer. The shared-link
@@ -113,6 +116,7 @@ export function PresentStage({
         <CanvasDndProvider readOnly>
           <div
             className="present-stage-viewport"
+            data-full-bleed={fullBleed ? "true" : undefined}
             onClick={
               amendable
                 ? (e) => {
@@ -126,7 +130,7 @@ export function PresentStage({
                 : undefined
             }
           >
-            <BuilderCanvas framed responsive resizableSidebar allowEmptyState />
+            <BuilderCanvas framed responsive resizableSidebar allowEmptyState fullBleedDesktop />
           </div>
         </CanvasDndProvider>
         {amendable && <PresentAmendComposer />}

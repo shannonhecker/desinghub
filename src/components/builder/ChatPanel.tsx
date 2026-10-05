@@ -1,5 +1,6 @@
 "use client";
 
+import { plainBlockName } from "@/lib/blockNames";
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { DesignSystem, InterfaceType, BuilderMode, ZoneId } from "@/store/useBuilder";
@@ -478,17 +479,12 @@ export function ChatPanel() {
     for (const key of candidates) {
       const v = p[key];
       if (typeof v === "string" && v.trim()) {
-        const friendly = selectedBlock.type
-          .replace(/^Simulated/, "")
-          .replace(/([A-Z])/g, " $1")
-          .trim();
+        /* The same plain name the inspector shows ("Stat card"). */
+        const friendly = plainBlockName(selectedBlock.type);
         return { friendly, detail: v.length > 28 ? v.slice(0, 26) + "…" : v };
       }
     }
-    const friendly = selectedBlock.type
-      .replace(/^Simulated/, "")
-      .replace(/([A-Z])/g, " $1")
-      .trim();
+    const friendly = plainBlockName(selectedBlock.type);
     return { friendly, detail: null as string | null };
   })();
 
@@ -715,6 +711,13 @@ export function ChatPanel() {
     if (gallery) gallery.scrollIntoView({ behavior: "smooth", block: "start" });
     else chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  /* The "Editing ..." chip grows the composer and shrinks the thread, which
+     slid the last message under the chip's fade; keep the thread's end in
+     view when the chip appears or goes. */
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [selectedBlockId]);
 
   /* ═══════════════════════════════════
      Pattern card click - stage the choice
