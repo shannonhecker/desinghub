@@ -51,6 +51,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { ZoneId } from "@/store/useBuilder";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { usePreviewMode } from "@/store/usePreviewMode";
+import { placeToolbar, type Placement } from "@/lib/toolbarPlacement";
 
 /* Hover-reveal delay. Phase A research pinned this at the
    Lovable convention (~80ms): long enough that flicking the
@@ -103,6 +104,44 @@ export function HoverInspector({
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
+
+  /* Block toolbar placement (5 Oct): the pill goes above the block when the
+     gap to the previous sibling has room, below when the next has, else
+     inside the block's own top-right corner, so it never covers another
+     block's controls. Measured on pin and again on resize and scroll; all in
+     screen pixels (the pill counter-zooms the frame, so its size is fixed). */
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [placement, setPlacement] = useState<Placement>("above-right");
+  useEffect(() => {
+    if (!isPinned) return;
+    const compute = () => {
+      const root = rootRef.current;
+      const block = root?.closest("[data-block-id]") as HTMLElement | null;
+      if (!root || !block) return;
+      const stage = block.closest(".bp-main, .bp-header, .bp-footer, .bp-dashboard") as HTMLElement | null;
+      const bounds = (stage ?? block.parentElement ?? block).getBoundingClientRect();
+      const others = [...document.querySelectorAll<HTMLElement>("[data-block-id]")]
+        .filter((el) => el !== block && !block.contains(el) && !el.contains(block))
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      const cs = getComputedStyle(root);
+      const h = parseFloat(cs.getPropertyValue("--insp-toolbar-h")) || 24;
+      const btn = parseFloat(cs.getPropertyValue("--insp-toolbar-btn")) || 24;
+      const gap = parseFloat(cs.getPropertyValue("--insp-toolbar-gap")) || 4;
+      const count = (dragHandleRef ? 1 : 0) + (onRemove ? 1 : 0) + (onSwapClick ? 1 : 0);
+      const width = count * btn + (count + 1) * 2;
+      setPlacement(placeToolbar(block.getBoundingClientRect(), others, bounds, { width, height: h, gap }));
+    };
+    compute();
+    const raf = requestAnimationFrame(compute);
+    window.addEventListener("resize", compute);
+    document.addEventListener("scroll", compute, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", compute);
+      document.removeEventListener("scroll", compute, true);
+    };
+  }, [isPinned, blockId, dragHandleRef, onRemove, onSwapClick]);
 
   /* Active = the inspector chrome is currently rendered.
      Pinned beats hover (no delay on a pinned block).
@@ -163,7 +202,7 @@ export function HoverInspector({
     .join(" ");
 
   return (
-    <div className={containerClass} data-inspector-block-id={blockId} aria-hidden={!isPinned}>
+    <div className={containerClass} data-inspector-block-id={blockId} aria-hidden={!isPinned} ref={rootRef}>
       {/* Outline layer — sits behind chrome controls. Hover
           and pin emit different styling via the wrapper class
           (is-pinned vs is-hovered). */}
@@ -180,70 +219,77 @@ export function HoverInspector({
         </>
       )}
 
-      {/* Inspector control rail — drag handle + remove + swap.
-          Sits above the block bounds via .canvas-block-handle
-          docking rules in builder.css (PR #167 A1). */}
-      {dragHandleRef && (
-        <div
-          ref={dragHandleRef}
-          className={`canvas-block-handle${isNewlyMounted ? " is-newly-mounted" : ""}`}
-          {...dragAttributes}
-          {...(dragListeners ?? {})}
-          title="Drag to reorder"
-          role="button"
-          tabIndex={0}
-          aria-roledescription="sortable"
-          aria-label="Drag handle"
-          onClick={(e) => {
-            /* Don't pin the block when clicking the drag handle —
-               dnd-kit owns this gesture. */
-            e.stopPropagation();
-          }}
-        >
-          <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
-            &#x2807;
-          </span>
+      {/* Block toolbar (5 Oct): drag handle + remove + swap in one raised
+          pill, placed clear of every other block: above when the gap to
+          the previous sibling has room, below when the next has, else
+          inside this block's own top-right corner. See placeToolbar. */}
+      {(dragHandleRef || onRemove || onSwapClick) && (
+        <div className="hover-inspector-toolbar" data-placement={placement} role="toolbar" aria-label="Block actions">
+          {dragHandleRef && (
+            <div
+              ref={dragHandleRef}
+              className={`canvas-block-handle${isNewlyMounted ? " is-newly-mounted" : ""}`}
+              {...dragAttributes}
+              {...(dragListeners ?? {})}
+              title="Drag to reorder"
+              role="button"
+              tabIndex={0}
+              aria-roledescription="sortable"
+              aria-label="Drag handle"
+              onClick={(e) => {
+                /* Don't pin the block when clicking the drag handle —
+                   dnd-kit owns this gesture. */
+                e.stopPropagation();
+              }}
+            >
+              <span aria-hidden="true" style={{ fontSize: 14, lineHeight: 1 }}>
+                &#x2807;
+              </span>
+            </div>
+          )}
+
+          {onSwapClick && (
+            <button
+              className="canvas-block-swap"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwapClick();
+              }}
+              aria-label="Swap component"
+              title="Swap component"
+              type="button"
+            >
+              <span
+                className="material-symbols-outlined"
+                aria-hidden="true"
+                style={{ fontSize: 14 }}
+              >
+                swap_horiz
+              </span>
+            </button>
+          )}
+
+          {onRemove && (
+            <button
+              className="canvas-block-remove"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              aria-label="Remove block"
+              title="Remove block"
+              type="button"
+            >
+              <span
+                className="material-symbols-outlined"
+                aria-hidden="true"
+                style={{ fontSize: 14 }}
+              >
+                close
+              </span>
+            </button>
+          )}
         </div>
-      )}
-
-      {onRemove && (
-        <button
-          className="canvas-block-remove"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          aria-label="Remove block"
-          type="button"
-        >
-          <span
-            className="material-symbols-outlined"
-            aria-hidden="true"
-            style={{ fontSize: 14 }}
-          >
-            close
-          </span>
-        </button>
-      )}
-
-      {onSwapClick && (
-        <button
-          className="canvas-block-swap"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSwapClick();
-          }}
-          aria-label="Swap component"
-          type="button"
-        >
-          <span
-            className="material-symbols-outlined"
-            aria-hidden="true"
-            style={{ fontSize: 14 }}
-          >
-            swap_horiz
-          </span>
-        </button>
       )}
     </div>
   );

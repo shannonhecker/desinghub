@@ -305,6 +305,20 @@ export function BuilderApp() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  /* The component panel is docked chrome in Edit (inspector design note,
+     5 Oct): it opens on the move from Preview back to Edit, so selecting a
+     block only swaps the panel's content and never re-fits the canvas. The
+     start screen (Edit by default, no canvas yet) keeps its chat-first
+     layout; hiding the panel from the bar is an explicit act. Tracked here
+     because the side panel itself unmounts while presenting. */
+  const prevBuilderModeRef = useRef(builderMode);
+  useEffect(() => {
+    if (prevBuilderModeRef.current === "preview" && builderMode === "edit") {
+      useBuilder.getState().setComponentLibraryOpen(true);
+    }
+    prevBuilderModeRef.current = builderMode;
+  }, [builderMode]);
+
   /* Phase E2: click-outside releases the inspector pin. Any
      pointerdown that isn't inside a [data-block-id] subtree (so
      not on a block, not on the inspector controls) clears the

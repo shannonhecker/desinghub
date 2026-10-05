@@ -532,3 +532,121 @@
   --bc-attach-error-fill: rgba(180, 35, 24, 0.07);
   --bc-attach-focus:      #0b69d9;
 }
+
+/* ════════════════════════════════════════════════════════════
+   Inspector panel tokens (2026-10-05). Semantic layer (--insp-*) over the
+   --bc-* primitives, plus the component tokens for field, section,
+   segmented control, slider, switch, swatch and the block toolbar. See
+   docs/superpowers/specs/2026-10-05-inspector-panel-design.md.
+   ════════════════════════════════════════════════════════════ */
+:root {
+  /* Spacing: one 4px scale. */
+  --insp-inset:          var(--bc-panel-inset);   /* 16px: every left and right edge */
+  --insp-gap-label:      6px;                     /* label to control */
+  --insp-gap-field:      var(--bc-gap-md);        /* field to field */
+  --insp-gap-section:    20px;                    /* last control to the next section title */
+  --insp-gap-row:        var(--bc-gap-sm);        /* between cells that share a row */
+  --insp-head-h:         36px;                    /* section title row */
+  --insp-header-h:       56px;                    /* panel header */
+  --insp-head-pad-y:     var(--bc-gap-md);
+  --insp-label-h:        16px;
+  /* Controls. */
+  --insp-control-h:      28px;
+  --insp-control-h-sm:   24px;
+  --insp-icon-btn:       28px;
+  --insp-icon-btn-pad:   6px;                     /* (icon button - glyph) / 2, so the glyph's edge meets the inset */
+  --insp-radius:         var(--bc-radius-sm);
+  --insp-radius-inner:   var(--bc-radius-xs);
+  --insp-caret:          16px;
+  --insp-caret-sm:       14px;
+  --insp-glyph-w:        24px;                    /* W / T / ↔ prefix inside a numeric field */
+  --insp-unit-w:         64px;                    /* px / % select beside a value */
+  --insp-textarea-min:   72px;
+  --insp-copy-leading:   1.4;
+  --insp-field-pad-x:    10px;
+  --insp-field-pad-x-sm: 6px;
+  --insp-field-pad-y:    6px;
+  --insp-field-pad:      0 var(--insp-field-pad-x);
+  --insp-select-pad-r:   28px;
+  --insp-seg-gap:        2px;
+  --insp-seg-pad:        0 6px;
+  --insp-switch-w:       32px;
+  --insp-switch-h:       18px;
+  --insp-switch-knob:    14px;
+  --insp-switch-inset:   2px;
+  --insp-slider-track:   4px;
+  --insp-slider-thumb:   14px;
+  --insp-swatch-gap:     var(--bc-gap-sm);
+  --insp-focus-w:        2px;
+  --insp-focus-offset:   1px;
+  --insp-disabled-opacity: 0.45;
+  /* Phone sheet. */
+  --insp-sheet-h:        60vh;
+  --insp-sheet-max:      80vh;
+  --insp-sheet-radius:   14px;
+  --insp-sheet-grab-w:   36px;
+  --insp-sheet-grab-h:   4px;
+  /* Block toolbar on the canvas (drag, swap, remove in one pill). */
+  --insp-toolbar-h:      24px;
+  --insp-toolbar-btn:    24px;
+  --insp-toolbar-gap:    4px;
+  /* Type. */
+  --insp-title-type:     600 13px/1.25 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --insp-section-type:   600 12px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --insp-label-type:     500 11px/1.3 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --insp-field-type:     500 12px/1.3 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bc-type-tabular-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Colour (dark chrome). Tone, not outlines. */
+  --insp-title-fg:       var(--bc-fg);
+  --insp-label-fg:       var(--bc-fg-muted);
+  --insp-field-fg:       var(--bc-fg);
+  --insp-placeholder-fg: var(--bc-fg-subtle);
+  --insp-field-bg:       rgba(255, 255, 255, 0.06);
+  --insp-field-bg-hover: rgba(255, 255, 255, 0.09);
+  --insp-hairline:       rgba(255, 255, 255, 0.07);
+  --insp-focus:          var(--bc-accent);
+  --insp-seg-track:      rgba(255, 255, 255, 0.06);
+  --insp-seg-hover:      rgba(255, 255, 255, 0.05);
+  --insp-seg-on:         rgba(255, 255, 255, 0.14);
+  --insp-seg-on-shadow:  0 1px 2px rgba(0, 0, 0, 0.24);
+  --insp-switch-off:     rgba(255, 255, 255, 0.16);
+  --insp-switch-off-hover: rgba(255, 255, 255, 0.22);
+  --insp-switch-on:      var(--bc-accent);
+  --insp-switch-knob-fg: #ffffff;
+  --insp-slider-track-bg: rgba(255, 255, 255, 0.16);
+  --insp-slider-thumb-bg: var(--bc-accent);
+  --insp-swatch-edge:    rgba(255, 255, 255, 0.08);
+  --insp-select-caret:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9afbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --insp-toolbar-bg:     var(--bc-bg-raised);
+  --insp-toolbar-fg:     var(--bc-fg-muted);
+  --insp-toolbar-fg-hover: var(--bc-fg);
+  --insp-toolbar-hover:  var(--bc-bg-hover);
+}
+/* Colour aliases that point at mode-aware --bc-* tokens are declared again
+   under .builder-light: a custom property resolves its var() where it is
+   declared, so a :root alias would keep the dark value in light chrome. */
+.builder-light {
+  --insp-title-fg:       var(--bc-fg);
+  --insp-label-fg:       var(--bc-fg-muted);
+  --insp-field-fg:       var(--bc-fg);
+  --insp-placeholder-fg: var(--bc-fg-subtle);
+  --insp-focus:          var(--bc-accent);
+  --insp-switch-on:      var(--bc-accent);
+  --insp-slider-thumb-bg: var(--bc-accent);
+  --insp-toolbar-bg:     var(--bc-bg-raised);
+  --insp-toolbar-fg:     var(--bc-fg-muted);
+  --insp-toolbar-fg-hover: var(--bc-fg);
+  --insp-toolbar-hover:  var(--bc-bg-hover);
+  --insp-field-bg:       rgba(15, 17, 22, 0.05);
+  --insp-field-bg-hover: rgba(15, 17, 22, 0.08);
+  --insp-hairline:       rgba(15, 17, 22, 0.08);
+  --insp-seg-track:      rgba(15, 17, 22, 0.05);
+  --insp-seg-hover:      rgba(15, 17, 22, 0.04);
+  --insp-seg-on:         #ffffff;
+  --insp-seg-on-shadow:  0 1px 2px rgba(15, 17, 22, 0.12), 0 0 0 1px rgba(15, 17, 22, 0.04);
+  --insp-switch-off:     rgba(15, 17, 22, 0.18);
+  --insp-switch-off-hover: rgba(15, 17, 22, 0.26);
+  --insp-slider-track-bg: rgba(15, 17, 22, 0.14);
+  --insp-swatch-edge:    rgba(15, 17, 22, 0.10);
+  --insp-select-caret:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
