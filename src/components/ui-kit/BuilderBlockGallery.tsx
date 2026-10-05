@@ -17,6 +17,7 @@
  * themes — so the demos are pixel-identical to the builder.
  */
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -138,9 +139,7 @@ export function BuilderBlockGallery() {
       {groups.map((group) => (
         <section key={group.key} style={{ marginBottom: 40 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 16 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18, color: "var(--ds-primary)" }}>
-              {group.icon}
-            </span>
+            <ChromeIcon name={group.icon} style={{ fontSize: 18, color: "var(--ds-primary)" }} />
             <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{group.label}</h2>
             <span style={{ fontSize: 13, color: "var(--ds-fg-tertiary)" }}>{group.items.length}</span>
           </div>
@@ -266,9 +265,7 @@ function BlockCard({
       </div>
 
       <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 8 }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 16, color: "var(--ds-fg-secondary)" }}>
-          {entry.icon}
-        </span>
+        <ChromeIcon name={entry.icon} style={{ fontSize: 16, color: "var(--ds-fg-secondary)" }} />
         <span style={{ fontSize: 13, fontWeight: 600 }}>{entry.label}</span>
         {/* Honest provenance of the LIVE DEMO: a real official React component
             (Salt/M3/Fluent core set), a faithful Simulated preview of a DS that

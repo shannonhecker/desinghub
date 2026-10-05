@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /* ══════════════════════════════════════════════════════════
@@ -202,17 +203,12 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
             >
               <span className="context-menu-icon" aria-hidden="true">
                 {item.icon && (
-                  <span className="material-symbols-outlined">{item.icon}</span>
+                  <ChromeIcon name={item.icon} />
                 )}
               </span>
               <span className="context-menu-label">{item.label}</span>
               {hasSubmenu(item) ? (
-                <span
-                  className="material-symbols-outlined context-menu-chevron"
-                  aria-hidden="true"
-                >
-                  chevron_right
-                </span>
+                <ChromeIcon name="chevron_right" className="context-menu-chevron" aria-hidden="true" />
               ) : (
                 !hasSubmenu(item) && "shortcut" in item && item.shortcut && (
                   <span className="context-menu-shortcut">{item.shortcut}</span>
@@ -286,7 +282,7 @@ function Submenu({
           >
             <span className="context-menu-icon" aria-hidden="true">
               {item.icon && (
-                <span className="material-symbols-outlined">{item.icon}</span>
+                <ChromeIcon name={item.icon} />
               )}
             </span>
             <span className="context-menu-label">{item.label}</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useRef, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { BUILDER_TEMPLATES, type BuilderTemplate } from "@/lib/builderTemplates";
@@ -124,7 +125,7 @@ export function ReportDataButton() {
         aria-busy={busy}
         title="Use your own data in this report"
       >
-        <span className="material-symbols-outlined preview-bar-btn-glyph" aria-hidden="true">table_view</span>
+        <ChromeIcon name="table_view" className="preview-bar-btn-glyph" aria-hidden="true" />
         {uploaded ? "Your data" : "Sample data"}
       </button>
       <input
@@ -142,7 +143,7 @@ export function ReportDataButton() {
             {uploaded ? "Showing your data (kept in this browser only)" : "Showing sample data"}
           </div>
           <button type="button" className="preview-bar-overflow-item" role="menuitem" onClick={() => void download()} disabled={busy}>
-            <span className="material-symbols-outlined" aria-hidden="true">download</span>
+            <ChromeIcon name="download" aria-hidden="true" />
             Download data template (.xlsx)
           </button>
           <button
@@ -152,14 +153,14 @@ export function ReportDataButton() {
             disabled={busy}
             onClick={() => { setOpen(false); fileRef.current?.click(); }}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">upload</span>
+            <ChromeIcon name="upload" aria-hidden="true" />
             Upload your data…
           </button>
           {uploaded && (
             <>
               <div className="preview-bar-overflow-divider" />
               <button type="button" className="preview-bar-overflow-item" role="menuitem" onClick={reset}>
-                <span className="material-symbols-outlined" aria-hidden="true">restart_alt</span>
+                <ChromeIcon name="restart_alt" aria-hidden="true" />
                 Use the sample data again
               </button>
             </>

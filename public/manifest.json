@@ -1,7 +1,7 @@
 {
-  "name": "uoaui — Design System Builder",
+  "name": "uoaui.ai",
   "short_name": "uoaui",
-  "description": "AI-powered design system builder for Salt DS, Material 3, and Fluent 2",
+  "description": "One finance screen in five design systems: Salt DS, Material 3, Fluent 2, Carbon and uoaui DS.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

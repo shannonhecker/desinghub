@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useEffect, useState } from "react";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -50,7 +51,7 @@ export function ContentTopBar() {
             {dsOpen && <div className="kit-crumb-scrim" onClick={() => setDsOpen(false)} />}
             <button type="button" className="kit-crumb-pick" onClick={() => setDsOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={dsOpen}>
               <span>{sysInfo.name}</span>
-              <span className="material-symbols-outlined" aria-hidden="true">{dsOpen ? "expand_less" : "expand_more"}</span>
+              <ChromeIcon name={dsOpen ? "expand_less" : "expand_more"} aria-hidden="true" />
             </button>
             {dsOpen && (
               <div role="listbox" aria-label="Design system" className="kit-crumb-menu" style={{
@@ -63,7 +64,7 @@ export function ContentTopBar() {
                   return (
                     <button key={opt.id} type="button" role="option" aria-selected={isSelected} onClick={() => { setActiveSystem(opt.id); setDsOpen(false); }}>
                       <span>{opt.label}</span>
-                      {isSelected && <span className="material-symbols-outlined" aria-hidden="true">check</span>}
+                      {isSelected && <ChromeIcon name="check" aria-hidden="true" />}
                     </button>
                   );
                 })}

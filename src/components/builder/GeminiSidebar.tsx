@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React from "react";
 import { useBuilder } from "@/store/useBuilder";
 import type { SavedProject } from "@/lib/firebase";
@@ -36,17 +37,13 @@ export function GeminiSidebar({
             title="Close sidebar"
             aria-label="Close sidebar"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
-              chevron_left
-            </span>
+            <ChromeIcon name="chevron_left" style={{ fontSize: 22 }} />
           </button>
         </div>
 
         {/* ── New Chat ── */}
         <button className="gsb-new-chat-btn" onClick={clearChat} title="New chat">
-          <span className="material-symbols-outlined" style={{ fontSize: 17 }}>
-            edit_square
-          </span>
+          <ChromeIcon name="edit_square" style={{ fontSize: 17 }} />
           <span className="gsb-btn-label">New chat</span>
         </button>
 
@@ -66,12 +63,7 @@ export function GeminiSidebar({
                 onClick={() => onProjectLoad(p)}
                 title={p.name}
               >
-                <span
-                  className="material-symbols-outlined gsb-hist-icon"
-                  style={{ fontSize: 15 }}
-                >
-                  folder_open
-                </span>
+                <ChromeIcon name="folder_open" className="gsb-hist-icon" style={{ fontSize: 15 }} />
                 <div className="gsb-hist-meta">
                   <span className="gsb-hist-name">{p.name}</span>
                   <span className="gsb-hist-date">

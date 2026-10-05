@@ -147,7 +147,7 @@ export const UOAUI_LANDING = {
   // Decorative hero-wash radial stops
   auroraCyan:  'rgba(130, 224, 255, 0.10)',
   auroraPale:  'rgba(175, 240, 255, 0.06)',
-  // Editorial type families (resolve through next/font CSS vars)
+  // Editorial type families (resolve through the CSS vars in src/fonts/fonts.css)
   fontSans:    "var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
   fontDisplay: "var(--font-bricolage), var(--font-outfit), -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
   fontMono:    "var(--font-ibm-plex-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace",

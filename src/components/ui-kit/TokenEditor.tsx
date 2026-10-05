@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useState, useMemo } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -81,14 +82,14 @@ export function TokenEditor() {
         </div>
         <div className="tool-actions">
           <button type="button" className="tool-btn is-primary" onClick={handleCopyAll}>
-            <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+            <ChromeIcon name={copied ? "check" : "content_copy"} aria-hidden="true" />
             {copied ? "Copied" : "Copy JSON"}
           </button>
         </div>
       </div>
 
       <div className="tool-search">
-        <span className="material-symbols-outlined" aria-hidden="true">search</span>
+        <ChromeIcon name="search" aria-hidden="true" />
         <label htmlFor="token-search" className="sr-only">Search tokens</label>
         <input
           id="token-search"
@@ -138,7 +139,7 @@ export function TokenEditor() {
                         <td className="cell-value">
                           <button type="button" className="token-copy" onClick={() => copyText(value, value)} aria-label={`Copy ${key} value ${value}`}>
                             <span>{value}</span>
-                            <span className="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                            <ChromeIcon name="content_copy" aria-hidden="true" />
                           </button>
                         </td>
                         <td className="cell-contrast">

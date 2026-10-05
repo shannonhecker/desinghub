@@ -1,3 +1,4 @@
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import "@/components/builder/builder.css";
 
 /**
@@ -16,9 +17,7 @@ export default function Loading() {
     <main className="shared-preview" aria-busy="true" aria-label="Loading shared canvas">
       <header className="shared-preview-header">
         <div className="shared-preview-brand">
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18, marginRight: 6 }}>
-            share
-          </span>
+          <ChromeIcon name="share" aria-hidden="true" style={{ fontSize: 18, marginRight: 6 }} />
           <strong>Shared preview</strong>
         </div>
         <div className="shared-preview-skel-row" aria-hidden="true">

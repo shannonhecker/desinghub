@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useMemo, useState } from "react";
 import { useBuilder } from "@/store/useBuilder";
 import { useCloudStorage } from "@/lib/firebase";
@@ -258,7 +259,7 @@ export function SessionsDrawer() {
             aria-label="Close drawer (Esc)"
             title="Close (Esc)"
           >
-            <span className="material-symbols-outlined" aria-hidden="true">close</span>
+            <ChromeIcon name="close" aria-hidden="true" />
           </button>
         </header>
 
@@ -267,13 +268,13 @@ export function SessionsDrawer() {
           className="sessions-new-btn"
           onClick={handleNew}
         >
-          <span className="material-symbols-outlined" aria-hidden="true">add</span>
+          <ChromeIcon name="add" aria-hidden="true" />
           New session
         </button>
 
         {sessions.length > 2 && (
           <div className="sessions-search">
-            <span className="material-symbols-outlined sessions-search-icon" aria-hidden="true">search</span>
+            <ChromeIcon name="search" className="sessions-search-icon" aria-hidden="true" />
             <input
               type="text"
               className="sessions-search-input"
@@ -312,9 +313,7 @@ export function SessionsDrawer() {
                   disabled={isRenaming}
                   aria-label={`Load session ${session.name}`}
                 >
-                  <span className="sessions-row-icon material-symbols-outlined" aria-hidden="true">
-                    {isActive ? "radio_button_checked" : "chat_bubble"}
-                  </span>
+                  <ChromeIcon name={isActive ? "radio_button_checked" : "chat_bubble"} className="sessions-row-icon" aria-hidden="true" />
                   {isRenaming ? (
                     <input
                       type="text"
@@ -347,7 +346,7 @@ export function SessionsDrawer() {
                       aria-label={`Rename ${session.name}`}
                       title="Rename"
                     >
-                      <span className="material-symbols-outlined" aria-hidden="true">edit</span>
+                      <ChromeIcon name="edit" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -356,7 +355,7 @@ export function SessionsDrawer() {
                       aria-label={`Delete ${session.name}`}
                       title="Delete"
                     >
-                      <span className="material-symbols-outlined" aria-hidden="true">delete</span>
+                      <ChromeIcon name="delete" aria-hidden="true" />
                     </button>
                   </div>
                 )}

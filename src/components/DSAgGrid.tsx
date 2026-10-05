@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useMemo, useCallback, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
 import {
@@ -273,17 +274,17 @@ export function DSAgGrid({ system, theme: T, density, height = 400 }: DSAgGridPr
         <div style={{ display: "flex", gap: 4 }}>
           <button className={btnCls} onClick={autoSizeAll}
             style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>fit_screen</span>
+            <ChromeIcon name="fit_screen" aria-hidden="true" style={{ fontSize: 14 }} />
             Auto Size
           </button>
           <button className={btnCls} onClick={resetColumns}
             style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>restart_alt</span>
+            <ChromeIcon name="restart_alt" aria-hidden="true" style={{ fontSize: 14 }} />
             Reset
           </button>
           <button className={btnCls} onClick={exportCsv}
             style={{ fontSize: 11, padding: "3px 10px", height: "auto", minWidth: 0, minHeight: 24, display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>download</span>
+            <ChromeIcon name="download" aria-hidden="true" style={{ fontSize: 14 }} />
             CSV
           </button>
         </div>

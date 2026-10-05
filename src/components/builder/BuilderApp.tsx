@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useShallow } from "zustand/react/shallow";
@@ -656,7 +657,7 @@ export function BuilderApp() {
               title="Open sessions"
               aria-label="Open sessions drawer"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }} aria-hidden="true">menu</span>
+              <ChromeIcon name="menu" style={{ fontSize: 20 }} aria-hidden="true" />
             </button>
             <Link
               href="/"
@@ -676,7 +677,7 @@ export function BuilderApp() {
               title="Start a new session"
               aria-label="Start a new session"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">edit_square</span>
+              <ChromeIcon name="edit_square" style={{ fontSize: 18 }} aria-hidden="true" />
             </button>
             <SaveIndicator />
           </div>
@@ -695,7 +696,7 @@ export function BuilderApp() {
               title="UI Kit overview"
               aria-label="Open UI Kit overview"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">palette</span>
+              <ChromeIcon name="palette" style={{ fontSize: 18 }} aria-hidden="true" />
               UI Kit
             </Link>
 
@@ -711,11 +712,9 @@ export function BuilderApp() {
                 aria-haspopup="menu"
                 aria-expanded={exportMenuOpen}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">ios_share</span>
+                <ChromeIcon name="ios_share" style={{ fontSize: 18 }} aria-hidden="true" />
                 Export
-                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginLeft: 2 }}>
-                  {exportMenuOpen ? "expand_less" : "expand_more"}
-                </span>
+                <ChromeIcon name={exportMenuOpen ? "expand_less" : "expand_more"} aria-hidden="true" style={{ fontSize: 16, marginLeft: 2 }} />
               </button>
               {exportMenuOpen && (
                 <div className="top-bar-export-menu" role="menu">
@@ -726,11 +725,7 @@ export function BuilderApp() {
                     onClick={handleExportShare}
                     title="Copy a shareable preview URL to the clipboard"
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">
-                      {exportShareState === "copied" ? "check"
-                        : exportShareState === "too-long" || exportShareState === "error" ? "warning"
-                        : "link"}
-                    </span>
+                    <ChromeIcon name={exportShareState === "copied" ? "check" : exportShareState === "too-long" || exportShareState === "error" ? "warning" : "link"} aria-hidden="true" />
                     <div className="top-bar-export-item-text">
                       <span className="top-bar-export-item-title">
                         {exportShareState === "copied" ? "Link copied to clipboard"
@@ -751,9 +746,7 @@ export function BuilderApp() {
                     disabled={exportDownloading}
                     title="Download the canvas as a JSON config"
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">
-                      {exportDownloading ? "hourglass_top" : "download"}
-                    </span>
+                    <ChromeIcon name={exportDownloading ? "hourglass_top" : "download"} aria-hidden="true" />
                     <div className="top-bar-export-item-text">
                       <span className="top-bar-export-item-title">Download canvas JSON</span>
                       <span className="top-bar-export-item-desc">
@@ -769,7 +762,7 @@ export function BuilderApp() {
                     onClick={handleOpenExportModal}
                     title="Generate React / HTML / Vite project code"
                   >
-                    <span className="material-symbols-outlined" aria-hidden="true">code_blocks</span>
+                    <ChromeIcon name="code_blocks" aria-hidden="true" />
                     <div className="top-bar-export-item-text">
                       <span className="top-bar-export-item-title">Export as code...</span>
                       <span className="top-bar-export-item-desc">
@@ -839,7 +832,7 @@ export function BuilderApp() {
               title="Drag to move. Release near an edge to pin."
               aria-hidden="true"
             >
-              <span className="material-symbols-outlined">drag_indicator</span>
+              <ChromeIcon name="drag_indicator" />
             </div>
             <ChatPanel />
           </aside>
@@ -863,7 +856,7 @@ export function BuilderApp() {
           title="Open chat"
           aria-label="Open chat"
         >
-          <span className="material-symbols-outlined" aria-hidden="true">forum</span>
+          <ChromeIcon name="forum" aria-hidden="true" />
         </button>
       )}
 

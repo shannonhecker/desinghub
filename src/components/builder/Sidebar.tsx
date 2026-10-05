@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React from "react";
 import Link from "next/link";
 import { useBuilder } from "@/store/useBuilder";
@@ -28,7 +29,7 @@ export function Sidebar() {
             <img src="/aologo.svg" alt="uoaui" className="uoaui-logo-img" />
           </div>
           <button className="sidebar-collapse-btn" onClick={toggleSidebar} aria-label="Collapse sidebar">
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
+            <ChromeIcon name="chevron_left" style={{ fontSize: 16 }} />
           </button>
         </div>
 
@@ -36,7 +37,7 @@ export function Sidebar() {
           <div className="sidebar-section-title">Chat</div>
           <ul className="sidebar-nav">
             <li className={!hasChat ? "active" : ""} onClick={clearChat}>
-              <span className="nav-icon material-symbols-outlined">add_circle</span>
+              <ChromeIcon name="add_circle" className="nav-icon" />
               New Chat
             </li>
           </ul>
@@ -45,12 +46,12 @@ export function Sidebar() {
           <ul className="sidebar-nav">
             {hasChat ? (
               <li className="active">
-                <span className="nav-icon material-symbols-outlined">chat_bubble</span>
+                <ChromeIcon name="chat_bubble" className="nav-icon" />
                 Current Session
               </li>
             ) : (
               <li style={{ color: "var(--b-fg3)", cursor: "default", fontSize: 12 }}>
-                <span className="nav-icon material-symbols-outlined" style={{ fontSize: 16 }}>history</span>
+                <ChromeIcon name="history" className="nav-icon" style={{ fontSize: 16 }} />
                 No history yet
               </li>
             )}
@@ -59,7 +60,7 @@ export function Sidebar() {
           <div className="sidebar-section-title">Saved</div>
           <ul className="sidebar-nav">
             <li style={{ color: "var(--b-fg3)", cursor: "default", fontSize: 12 }}>
-              <span className="nav-icon material-symbols-outlined" style={{ fontSize: 16 }}>bookmark_border</span>
+              <ChromeIcon name="bookmark_border" className="nav-icon" style={{ fontSize: 16 }} />
               No saved chats
             </li>
           </ul>
@@ -68,18 +69,18 @@ export function Sidebar() {
         {/* Theme toggle */}
         <div className="theme-toggle">
           <button className={`theme-toggle-btn ${mode === "dark" ? "active" : ""}`} onClick={() => setMode("dark")}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>dark_mode</span>
+            <ChromeIcon name="dark_mode" style={{ fontSize: 16 }} />
             Dark
           </button>
           <button className={`theme-toggle-btn ${mode === "light" ? "active" : ""}`} onClick={() => setMode("light")}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>light_mode</span>
+            <ChromeIcon name="light_mode" style={{ fontSize: 16 }} />
             Light
           </button>
         </div>
 
         {/* UI Kit link */}
         <Link href="/ui-kit" className="sidebar-uikit-link">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>view_quilt</span>
+          <ChromeIcon name="view_quilt" style={{ fontSize: 18 }} />
           UI Kit Overview
         </Link>
       </aside>

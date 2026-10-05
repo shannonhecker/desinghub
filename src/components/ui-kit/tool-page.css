@@ -21,7 +21,7 @@
   outline: 2px solid var(--tool-focus, currentColor);
   outline-offset: 2px;
 }
-.tool-page .material-symbols-outlined { font-size: 18px; line-height: 1; }
+.tool-page .chrome-icon { font-size: 18px; line-height: 1; }
 
 /* ── Top bar ── */
 .tool-bar {
@@ -192,7 +192,7 @@
 .tool-note { margin: 0; font-size: 12px; color: var(--tool-muted); }
 
 .tool-search { position: relative; margin-bottom: 8px; }
-.tool-search .material-symbols-outlined {
+.tool-search .chrome-icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -277,11 +277,11 @@
   overflow-wrap: anywhere;
   cursor: pointer;
 }
-.token-copy .material-symbols-outlined { flex: none; font-size: 15px; opacity: 0; transition: opacity 120ms ease; }
+.token-copy .chrome-icon { flex: none; font-size: 15px; opacity: 0; transition: opacity 120ms ease; }
 .token-copy:hover,
 .token-copy:focus-visible { background: color-mix(in srgb, var(--tool-fg) 7%, transparent); color: var(--tool-fg); }
-.token-copy:hover .material-symbols-outlined,
-.token-copy:focus-visible .material-symbols-outlined { opacity: 0.8; }
+.token-copy:hover .chrome-icon,
+.token-copy:focus-visible .chrome-icon { opacity: 0.8; }
 .token-ratio { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--tool-muted); white-space: nowrap; }
 .token-ratio b { font-weight: 600; color: var(--tool-fg); }
 .token-ratio em { font-style: normal; margin-left: 10px; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--tool-fg) 7%, transparent); font-size: 11.5px; }
@@ -463,7 +463,7 @@
   .tool-bar { gap: 4px 12px; }
   .tool-brand span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .tool-tabs a { padding: 0 8px; }
-  .tool-ghost span:not(.material-symbols-outlined) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tool-ghost span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .tool-ghost { padding: 0 10px; }
   .tool-systems button { padding: 0 10px; }
 }

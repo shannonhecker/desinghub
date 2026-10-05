@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Fuse from "fuse.js";
 import { useBuilder, type ZoneId } from "@/store/useBuilder";
@@ -492,9 +493,7 @@ export function SlashInserter() {
           </span>
         </div>
         <div className="slash-search">
-          <span className="material-symbols-outlined slash-search-icon" aria-hidden="true">
-            search
-          </span>
+          <ChromeIcon name="search" className="slash-search-icon" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"

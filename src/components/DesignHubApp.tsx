@@ -1,5 +1,7 @@
 "use client";
 
+import { LIBRARY_INTER_300_CSS } from "@/fonts/libraryInter300";
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import Link from "next/link";
 import { useDesignHub, type SystemId } from "@/store/useDesignHub";
@@ -31,7 +33,8 @@ export function useActiveTheme(): ActiveTheme {
 
 /* How long a system switch holds the scroll position while the new page
    settles: at least FIRST, then QUIET after each further change in the page's
-   height, never past LIMIT. Any input from the visitor ends it at once. */
+   height, and for as long as the page is still too short to reach the
+   position, never past LIMIT. Any input from the visitor ends it at once. */
 const HOLD_FIRST_MS = 1500;
 const HOLD_QUIET_MS = 1500;
 const HOLD_LIMIT_MS = 8000;
@@ -256,7 +259,15 @@ export function DesignHubApp({ held = false }: {
          longer, up to a hard limit. A page that has stopped changing is
          let go. */
       if (sc.scrollHeight !== h.height) { h.height = sc.scrollHeight; h.until = Math.min(h.cap, Math.max(h.until, now + HOLD_QUIET_MS)); }
-      if (now > h.until) { hold.current = null; return; }
+      /* A page still shorter than the remembered position has not finished
+         arriving: its code and demos load on demand, and on a slow connection
+         (or a busy machine) that takes longer than the quiet window. Letting
+         go then left the visitor at the top of a page that grew under them a
+         moment later. So a quiet page is only let go once the position can be
+         reached; a page that really is shorter is let go at the hard limit.
+         Holding longer costs nothing: any input still ends the hold at once. */
+      const reachable = sc.scrollHeight - sc.clientHeight >= h.top - 1;
+      if (now > h.cap || (now > h.until && reachable)) { hold.current = null; return; }
       const st = useDesignHub.getState();
       if (st.selectedComponent !== null || st.missing) {
         const want = wanted(h);
@@ -343,7 +354,7 @@ export function DesignHubApp({ held = false }: {
     /* A page that fits the viewport carries no position (it cannot scroll),
        so passing through one, such as the not-here state, does not forget
        where the visitor was on the pages that do. */
-    if ((!hold.current || Date.now() > hold.current.until) && sc.scrollHeight > sc.clientHeight + 4) lastTop.current = sc.scrollTop;
+    if ((!hold.current || Date.now() > hold.current.cap) && sc.scrollHeight > sc.clientHeight + 4) lastTop.current = sc.scrollTop;
     if (useDesignHub.getState().selectedComponent) return;
     const top = sc.getBoundingClientRect().top;
     let found: { section: string; offset: number } | null = null;
@@ -412,6 +423,8 @@ export function DesignHubApp({ held = false }: {
           link here was a duplicate "Skip to main content" (WCAG 2.4.1/4.1.2). */}
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
+      {/* uoaui's light text: see src/fonts/libraryInter300.ts. */}
+      {activeSystem === "uoaui" ? <style id="library-inter-300" dangerouslySetInnerHTML={{ __html: LIBRARY_INTER_300_CSS }} /> : null}
 
       <div className="uikit-shell-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* ICON-RAIL — the SOLE primary nav (owner: the old top header nav was
@@ -514,7 +527,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("components")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>widgets</span>
+                    <ChromeIcon name="widgets" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Browse</span>
                   </button>
                   <button
@@ -526,7 +539,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("search")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>search</span>
+                    <ChromeIcon name="search" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Search</span>
                   </button>
                   <button
@@ -538,7 +551,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={() => openPanel("theme")}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>tune</span>
+                    <ChromeIcon name="tune" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Theme</span>
                   </button>
                 </div>
@@ -555,7 +568,7 @@ export function DesignHubApp({ held = false }: {
                     onClick={toggleMode}
                     style={{ borderRadius: railRadius, ...sectionBtn }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>{isDarkTheme ? "light_mode" : "dark_mode"}</span>
+                    <ChromeIcon name={isDarkTheme ? "light_mode" : "dark_mode"} className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">{isDarkTheme ? "Light" : "Dark"}</span>
                   </button>
                   <Link
@@ -567,7 +580,7 @@ export function DesignHubApp({ held = false }: {
                        (not DS-tinted) — pin it to the uoaui purple AI gradient. */
                     style={{ borderRadius: railRadius, color: "#ffffff", background: "var(--dh-builder-grad, linear-gradient(135deg, #9D71D2, #7343B0))", border: "none", textDecoration: "none" }}
                   >
-                    <span className="uikit-rail-glyph material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }}>auto_awesome</span>
+                    <ChromeIcon name="auto_awesome" className="uikit-rail-glyph" aria-hidden="true" style={{ fontSize: t.scale.navF + 6 }} />
                     <span className="uikit-rail-label">Builder</span>
                   </Link>
                 </div>
@@ -609,7 +622,7 @@ export function DesignHubApp({ held = false }: {
                   ["--dh-focus-ring" as string]: t.focusRing,
                 }}
               >
-                <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }}>chevron_left</span>
+                <ChromeIcon name="chevron_left" aria-hidden="true" style={{ fontSize: t.scale.navF + 4, lineHeight: 1 }} />
               </button>
               <div style={{ flex: 1, minWidth: 0, marginLeft: -12 }}>
                 <SidebarDSBrand />

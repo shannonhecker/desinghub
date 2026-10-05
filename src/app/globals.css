@@ -73,6 +73,23 @@ a { color: inherit; text-decoration: none; }
   font-size: 16px !important;
   color: var(--ds-primary, #5ee7df);
 }
+
+/* Chrome icons (ChromeIcon): inline SVG, one em square in the current colour,
+   as the icon-font glyph they replaced was, so `font-size` still sets the
+   size and `color` the ink. 24px is that font's default size. One class of
+   specificity and declared early: any rule that sizes an icon wins.
+   content-box: padding on an icon (a badge) goes around the square. */
+.chrome-icon {
+  display: inline-block;
+  box-sizing: content-box;
+  width: 1em;
+  height: 1em;
+  font-size: 24px;
+  flex: none;
+  /* The glyph's baseline was the bottom of its square (the font's ascent is
+     the whole em), which is where an inline SVG sits by default. */
+  vertical-align: baseline;
+}
 .dh-toast-action {
   /* Toast root has pointer-events: none for click-through transience.
      The action button overrides that so users can actually click Undo. */
@@ -1015,7 +1032,9 @@ a { color: inherit; text-decoration: none; }
 }
 .dh-guidance-bullet {
   font-size: 16px;
-  line-height: 1.4;
+  /* The mark sits on the first line of its sentence: half the difference
+     between a 1.4 line and the icon's own square, above and below. */
+  margin-block: 0.2em;
   flex-shrink: 0;
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useState } from "react";
 import { useDesignHub, type ActiveTab } from "@/store/useDesignHub";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -127,7 +128,7 @@ export function ComponentList() {
         <div>
           <button className="uikit-section-toggle" onClick={() => toggleGroup("Foundations")} aria-expanded={expandedGroups.has("Foundations")} style={groupHeaderStyle(expandedGroups.has("Foundations"))}>
             <span style={sectionHeaderStyle}>Foundations</span>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Foundations") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
+            <ChromeIcon name="expand_more" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Foundations") ? "rotate(0deg)" : "rotate(-90deg)" }} />
           </button>
           {expandedGroups.has("Foundations") && foundationItems.map(c => renderItem(c))}
         </div>
@@ -137,7 +138,7 @@ export function ComponentList() {
         <div>
           <button className="uikit-section-toggle" onClick={() => toggleGroup("Tools")} aria-expanded={expandedGroups.has("Tools")} style={groupHeaderStyle(expandedGroups.has("Tools"))}>
             <span style={sectionHeaderStyle}>Tools</span>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
+            <ChromeIcon name="expand_more" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Tools") ? "rotate(0deg)" : "rotate(-90deg)" }} />
           </button>
           {showHelpers && expandedGroups.has("Tools") && <div style={helperStyle}>Inspect tokens, audit code, builder blocks</div>}
           {expandedGroups.has("Tools") && toolItems.map(c => renderItem(c))}
@@ -157,7 +158,7 @@ export function ComponentList() {
         <div key={g.sub}>
           <button className="uikit-section-toggle" onClick={() => toggleGroup(g.sub)} aria-expanded={expandedGroups.has(g.sub)} style={groupHeaderStyle(expandedGroups.has(g.sub))}>
             <span>{g.sub}</span>
-            <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
+            <ChromeIcon name="expand_more" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has(g.sub) ? "rotate(0deg)" : "rotate(-90deg)" }} />
           </button>
           {expandedGroups.has(g.sub) && g.items.map(c => renderItem(c, true))}
         </div>
@@ -172,7 +173,7 @@ export function ComponentList() {
           <div>
             <button className="uikit-section-toggle" onClick={() => toggleGroup("Patterns")} aria-expanded={expandedGroups.has("Patterns")} style={groupHeaderStyle(expandedGroups.has("Patterns"))}>
               <span style={sectionHeaderStyle}>Patterns & Flows</span>
-              <span className="material-symbols-outlined" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)" }}>expand_more</span>
+              <ChromeIcon name="expand_more" style={{ fontSize: 14, color: t.fg3, transition: "transform 0.2s", transform: expandedGroups.has("Patterns") ? "rotate(0deg)" : "rotate(-90deg)" }} />
             </button>
             {showHelpers && expandedGroups.has("Patterns") && <div style={helperStyle}>Page layouts &amp; multi-component flows</div>}
             {expandedGroups.has("Patterns") && patternItems.map(c => renderItem(c))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React, { useEffect, useState } from "react";
 import { useDesignHub } from "@/store/useDesignHub";
 import { getComponents, getSystemInfo } from "@/data/registry";
@@ -132,7 +133,7 @@ export function CodeBlock({ code, theme: t, cardClass }: { code: string; theme: 
     }}>
       {/* Library chrome, not a specimen: a tonal pill, no outline. */}
       <button type="button" className="kit-copy" data-copied={copied || undefined} onClick={copy} aria-label="Copy code" style={{ fontFamily: t.font }}>
-        <span className="material-symbols-outlined" aria-hidden="true">{copied ? "check" : "content_copy"}</span>
+        <ChromeIcon name={copied ? "check" : "content_copy"} aria-hidden="true" />
         <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
       </button>
       <pre aria-label="Code example" style={{

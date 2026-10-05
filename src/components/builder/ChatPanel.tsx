@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import { plainBlockName } from "@/lib/blockNames";
 import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useBuilder } from "@/store/useBuilder";
@@ -1421,13 +1422,7 @@ export function ChatPanel() {
               disabled={isRegeneratingContent}
               title="Ask Claude for fresh mock data for this template"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }}
-                aria-hidden="true"
-              >
-                {isRegeneratingContent ? "hourglass_empty" : "auto_awesome"}
-              </span>
+              <ChromeIcon name={isRegeneratingContent ? "hourglass_empty" : "auto_awesome"} style={{ fontSize: 14, marginRight: 4, verticalAlign: "middle" }} aria-hidden="true" />
               {isRegeneratingContent ? "Regenerating…" : "Regenerate data"}
             </button>
           )}
@@ -1589,9 +1584,7 @@ export function ChatPanel() {
           aria-label={chatMode === "floating" ? "Dock chat to the side" : "Float chat over the canvas"}
           aria-pressed={chatMode === "docked"}
         >
-          <span className="material-symbols-outlined" aria-hidden="true">
-            {chatMode === "floating" ? "dock_to_left" : "picture_in_picture"}
-          </span>
+          <ChromeIcon name={chatMode === "floating" ? "dock_to_left" : "picture_in_picture"} aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -1600,7 +1593,7 @@ export function ChatPanel() {
           title="Minimize to corner"
           aria-label="Minimize chat to corner"
         >
-          <span className="material-symbols-outlined" aria-hidden="true">close</span>
+          <ChromeIcon name="close" aria-hidden="true" />
         </button>
       </div>
 
@@ -1684,11 +1677,11 @@ export function ChatPanel() {
             </div>
             <div className="hero-setup-links">
               <button type="button" className="hero-setup-link" onClick={() => setWizardStep("type")}>
-                <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                <ChromeIcon name="tune" aria-hidden="true" />
                 Set it up step by step
               </button>
               <button type="button" className="hero-setup-link" onClick={showTemplateCards}>
-                <span className="material-symbols-outlined" aria-hidden="true">grid_view</span>
+                <ChromeIcon name="grid_view" aria-hidden="true" />
                 Browse templates
               </button>
             </div>
@@ -1770,13 +1763,7 @@ export function ChatPanel() {
                       }}
                       aria-label="Retry sending your last message"
                     >
-                      <span
-                        className="material-symbols-outlined"
-                        aria-hidden="true"
-                        style={{ fontSize: 14 }}
-                      >
-                        refresh
-                      </span>
+                      <ChromeIcon name="refresh" aria-hidden="true" style={{ fontSize: 14 }} />
                       Retry
                     </button>
                   )}
@@ -1844,9 +1831,7 @@ export function ChatPanel() {
             will be scoped to that element. */}
         {selectedBlock && selectedBlockLabel && (
           <div className="chat-scope-chip" role="status" aria-live="polite">
-            <span className="material-symbols-outlined chat-scope-icon" aria-hidden="true">
-              edit
-            </span>
+            <ChromeIcon name="edit" className="chat-scope-icon" aria-hidden="true" />
             <span className="chat-scope-text">
               Editing <strong>{selectedBlockLabel.friendly}</strong>
               {selectedBlockLabel.detail && (
@@ -1860,7 +1845,7 @@ export function ChatPanel() {
               aria-label="Clear selection"
               title="Clear selection (Esc)"
             >
-              <span className="material-symbols-outlined" aria-hidden="true">close</span>
+              <ChromeIcon name="close" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -1936,7 +1921,7 @@ export function ChatPanel() {
                         : "Send"
                     }
                   >
-                    <span className="btn-icon material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                    <ChromeIcon name="send" className="btn-icon" filled />
                   </button>
                 )}
               </div>

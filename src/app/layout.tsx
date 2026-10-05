@@ -1,18 +1,32 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { fontVariables } from "@/lib/fonts";
+import { preload } from "react-dom";
+import { PRELOADED_FONTS } from "@/fonts/preload";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, isPreviewDeployment, siteUrl } from "@/lib/site";
 import { uoauiLandingSchemeVars } from "@/data/uoaui/tokens";
+import "@/fonts/fonts.css";
 import "./globals.css";
 import "./conversion.css";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
-  title: "uoaui - AI Design-System Builder for Product Teams",
-  description:
-    "Turn one product brief into responsive Salt DS, Material 3, Fluent 2, Carbon, and uoaui interface directions for comparison, review, and handoff.",
+  metadataBase: new URL(siteUrl()),
+  title: { default: `${SITE_TITLE} | ${SITE_NAME}`, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  /* The share image is src/app/opengraph-image.png (and twitter-image.png):
+     Next adds its address, size and type. */
+  openGraph: { type: "website", siteName: SITE_NAME, title: SITE_TITLE, description: SITE_DESCRIPTION, url: "/" },
+  twitter: { card: "summary_large_image", title: SITE_TITLE, description: SITE_DESCRIPTION },
+  /* A preview deployment is never listed. */
+  robots: isPreviewDeployment() ? { index: false, follow: false } : { index: true, follow: true },
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
@@ -34,16 +48,13 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  /* Every font is served from this origin (src/fonts). The three faces the
+     first paint of the landing, the login and the builder chrome draws with
+     are fetched early; the rest load when a page uses them. */
+  for (const href of PRELOADED_FONTS) preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
-    <html lang="en" className={fontVariables}>
+    <html lang="en">
       <head>
-        {/* Material Symbols stays on CDN - variable icon font, not supported by next/font.
-            display=block: a ligature font must never swap its fallback in early,
-            because the fallback is the icon's literal name drawn as a word. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
-          rel="stylesheet"
-        />
         {/* uoaui DS "landing" scheme — Refined Aurora palette + editorial type
             families, emitted globally as --a-landing-* so marketing surfaces
             (landing, login) alias their --lsl-* layer onto the DS source.

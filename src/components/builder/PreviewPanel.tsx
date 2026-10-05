@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useState, useCallback, useRef, useEffect, useMemo, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { fitFrame, FRAME_PRESETS } from "@/lib/frameFit";
@@ -333,9 +334,7 @@ function PreviewBar() {
         title={chatOpen ? "Collapse chat" : "Expand chat"}
         aria-label={chatOpen ? "Collapse chat" : "Expand chat"}
       >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-          {chatOpen ? "chevron_left" : "chevron_right"}
-        </span>
+        <ChromeIcon name={chatOpen ? "chevron_left" : "chevron_right"} aria-hidden="true" style={{ fontSize: 16 }} />
       </button>
 
       <span className="preview-bar-sep" aria-hidden="true" />
@@ -348,7 +347,7 @@ function PreviewBar() {
           title={`Undo · ${modKey}+Z`}
           aria-label={`Undo (${modKey}+Z)`}
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>undo</span>
+          <ChromeIcon name="undo" aria-hidden="true" style={{ fontSize: 16 }} />
         </button>
         <button
           className="preview-bar-btn preview-bar-btn-icon"
@@ -356,7 +355,7 @@ function PreviewBar() {
           title={`Redo · ${modKey}+Shift+Z`}
           aria-label={`Redo (${modKey}+Shift+Z)`}
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>redo</span>
+          <ChromeIcon name="redo" aria-hidden="true" style={{ fontSize: 16 }} />
         </button>
       </div>
 
@@ -405,9 +404,7 @@ function PreviewBar() {
           aria-expanded={dsMenuOpen}
         >
           <span className="preview-bar-ds-label">{activeDsLabel}</span>
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-            {dsMenuOpen ? "expand_less" : "expand_more"}
-          </span>
+          <ChromeIcon name={dsMenuOpen ? "expand_less" : "expand_more"} aria-hidden="true" style={{ fontSize: 16 }} />
         </button>
         {dsMenuOpen && (
           <div className="preview-bar-ds-menu" role="menu" aria-label="Design system">
@@ -420,9 +417,7 @@ function PreviewBar() {
                 onClick={() => { setDesignSystem(s.key); setDsMenuOpen(false); }}
                 title={`Switch canvas to ${s.label}`}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {designSystem === s.key ? "check" : "palette"}
-                </span>
+                <ChromeIcon name={designSystem === s.key ? "check" : "palette"} aria-hidden="true" />
                 {s.label}
               </button>
             ))}
@@ -439,9 +434,7 @@ function PreviewBar() {
         title={mode === "dark" ? "Switch canvas to light mode" : "Switch canvas to dark mode"}
         aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-          {mode === "dark" ? "light_mode" : "dark_mode"}
-        </span>
+        <ChromeIcon name={mode === "dark" ? "light_mode" : "dark_mode"} aria-hidden="true" style={{ fontSize: 16 }} />
       </button>
 
       {/* Density + Code + Compare live in the ⋯ overflow menu — power-user
@@ -464,13 +457,7 @@ function PreviewBar() {
             aria-label="Show component library"
             aria-pressed={false}
           >
-            <span
-              className="material-symbols-outlined"
-              aria-hidden="true"
-              style={{ fontSize: 14, marginRight: 4 }}
-            >
-              category
-            </span>
+            <ChromeIcon name="category" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }} />
             Components
           </button>
         </>
@@ -486,7 +473,7 @@ function PreviewBar() {
           aria-haspopup="menu"
           aria-expanded={overflowOpen}
         >
-          <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 18 }}>more_horiz</span>
+          <ChromeIcon name="more_horiz" aria-hidden="true" style={{ fontSize: 18 }} />
         </button>
         {overflowOpen && (
           <div className="preview-bar-overflow" role="menu">
@@ -509,9 +496,7 @@ function PreviewBar() {
               onClick={() => { setCanvasSpacing(canvasSpacing === "tight" ? "comfortable" : "tight"); setOverflowOpen(false); }}
               title="Tight matches the real UI; Comfortable adds editing room"
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                {canvasSpacing === "comfortable" ? "check" : "fit_screen"}
-              </span>
+              <ChromeIcon name={canvasSpacing === "comfortable" ? "check" : "fit_screen"} aria-hidden="true" />
               Comfortable spacing
             </button>
             <div className="preview-bar-overflow-divider" />
@@ -527,9 +512,7 @@ function PreviewBar() {
                 onClick={() => { setDensity(d.key); setOverflowOpen(false); }}
                 title={d.hint}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {density === d.key ? "check" : "density_medium"}
-                </span>
+                <ChromeIcon name={density === d.key ? "check" : "density_medium"} aria-hidden="true" />
                 {d.label}
               </button>
             ))}
@@ -554,9 +537,7 @@ function PreviewBar() {
                 onClick={() => { if (opt.ready) { setPlacementMode(opt.v); setOverflowOpen(false); } }}
                 title={opt.tip}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {placementMode === opt.v ? "check" : opt.icon}
-                </span>
+                <ChromeIcon name={placementMode === opt.v ? "check" : opt.icon} aria-hidden="true" />
                 {opt.label}
                 {!opt.ready && <span className="preview-bar-overflow-soon" aria-hidden="true">Soon</span>}
               </button>
@@ -580,9 +561,7 @@ function PreviewBar() {
                       onClick={() => { setZoneLayout("body", { columns: n }); setOverflowOpen(false); }}
                       title={`Body grid: ${n} columns`}
                     >
-                      <span className="material-symbols-outlined" aria-hidden="true">
-                        {active ? "check" : "view_column"}
-                      </span>
+                      <ChromeIcon name={active ? "check" : "view_column"} aria-hidden="true" />
                       {n} columns
                     </button>
                   );
@@ -598,7 +577,7 @@ function PreviewBar() {
               aria-checked={compareMode}
               onClick={() => { toggleCompareMode(); setOverflowOpen(false); }}
             >
-              <span className="material-symbols-outlined" aria-hidden="true">compare</span>
+              <ChromeIcon name="compare" aria-hidden="true" />
               {compareMode ? "Exit compare mode" : "Compare design systems"}
             </button>
             {/* Edit-mode fidelity: real DS components while editing (default) vs
@@ -610,9 +589,7 @@ function PreviewBar() {
               onClick={() => { toggleEditRendersReal(); setOverflowOpen(false); }}
               title="On: covered blocks render as the real design-system component while editing; edit their text in the inspector. Off: simulated blocks with inline text editing."
             >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                {editRendersReal ? "check" : "auto_awesome"}
-              </span>
+              <ChromeIcon name={editRendersReal ? "check" : "auto_awesome"} aria-hidden="true" />
               Real components in Edit
             </button>
             <div className="preview-bar-overflow-divider" />
@@ -634,24 +611,22 @@ function PreviewBar() {
                   onClick={() => setZoneLayout(z, { visible: !visible })}
                   title={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
                 >
-                  <span className="material-symbols-outlined" aria-hidden="true">
-                    {visible ? "check_box" : "check_box_outline_blank"}
-                  </span>
+                  <ChromeIcon name={visible ? "check_box" : "check_box_outline_blank"} aria-hidden="true" />
                   {label}
                 </button>
               );
             })}
             <div className="preview-bar-overflow-divider" />
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleToggleLibrary}>
-              <span className="material-symbols-outlined" aria-hidden="true">category</span>
+              <ChromeIcon name="category" aria-hidden="true" />
               {componentLibraryOpen ? "Hide component library" : "Show component library"}
             </button>
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handleRefresh}>
-              <span className="material-symbols-outlined" aria-hidden="true">refresh</span>
+              <ChromeIcon name="refresh" aria-hidden="true" />
               Refresh preview
             </button>
             <button className="preview-bar-overflow-item" role="menuitem" onClick={handlePopOut}>
-              <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+              <ChromeIcon name="open_in_new" aria-hidden="true" />
               Pop out to window
             </button>
             <div className="preview-bar-overflow-divider" />
@@ -702,7 +677,7 @@ function FrameTab({ zone }: { zone: "header" | "sidebar" | "footer" }) {
   };
   return (
     <div className={`bp-frame-tab bp-frame-tab-${zone}`} contentEditable={false} aria-hidden={false}>
-      <span className="material-symbols-outlined bp-frame-tab-icon" aria-hidden="true">{meta.icon}</span>
+      <ChromeIcon name={meta.icon} className="bp-frame-tab-icon" aria-hidden="true" />
       <span className="bp-frame-tab-label">{meta.label}</span>
       <button
         type="button"
@@ -711,7 +686,7 @@ function FrameTab({ zone }: { zone: "header" | "sidebar" | "footer" }) {
         title={`Remove ${meta.label.toLowerCase()}`}
         aria-label={`Remove ${meta.label.toLowerCase()} frame`}
       >
-        <span className="material-symbols-outlined" aria-hidden="true">close</span>
+        <ChromeIcon name="close" aria-hidden="true" />
       </button>
     </div>
   );
@@ -741,7 +716,7 @@ function ZoneAddBar() {
             onClick={() => setZoneVisible(z, true)}
             title={`Add ${meta.label.toLowerCase()}`}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">add</span>
+            <ChromeIcon name="add" aria-hidden="true" />
             <span>{meta.label}</span>
           </button>
         );
@@ -1249,7 +1224,7 @@ function DashboardSidebar({
         </ZoneDropContainer>
         {!collapsed && !readOnly && (
           <button className="bp-nav-add-btn" onClick={handleAddNavItem}>
-            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>add</span>
+            <ChromeIcon name="add" style={{ fontSize: 13 }} />
             Add item
           </button>
         )}
@@ -2206,9 +2181,7 @@ export function CanvasDndProvider({ children, readOnly = false }: { children: Re
       <DragOverlay dropAnimation={null}>
         {activeBlueprintLabel ? (
           <div className="lib-drag-overlay">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              {activeBlueprintLabel.icon}
-            </span>
+            <ChromeIcon name={activeBlueprintLabel.icon} style={{ fontSize: 18 }} />
             <span>{activeBlueprintLabel.label}</span>
           </div>
         ) : null}

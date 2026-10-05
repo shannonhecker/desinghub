@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React from "react";
 import { useBuilder, normalizeGap, type ZoneId, type ZoneLayout, type LayoutMode, type LayoutAlign, type LayoutJustify, type ZoneTone, type Block } from "@/store/useBuilder";
 
@@ -143,7 +144,7 @@ function GapScrubber({ zoneId, zoneLayout }: { zoneId: ZoneId; zoneLayout: ZoneL
       onPointerUp={onPointerUp}
       onKeyDown={onKeyDown}
     >
-      <span className="material-symbols-outlined" aria-hidden="true">width</span>
+      <ChromeIcon name="width" aria-hidden="true" />
       <span className="zlo-gap-val">{currentGap}</span>
     </div>
   );
@@ -178,7 +179,7 @@ export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps
             className={`zlo-btn${activeAlign === o.v ? " active" : ""}`}
             onClick={() => setZoneLayout(zoneId, { align: o.v })}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">{o.icon}</span>
+            <ChromeIcon name={o.icon} aria-hidden="true" />
           </button>
         ))}
       </div>
@@ -197,7 +198,7 @@ export function ZoneLayoutOverlay({ zoneId, zoneLayout }: ZoneLayoutOverlayProps
                projects lean + back-compatible, mirroring the inspector. */
             onClick={() => setZoneLayout(zoneId, { justify: o.v === "start" ? undefined : o.v })}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">{o.icon}</span>
+            <ChromeIcon name={o.icon} aria-hidden="true" />
           </button>
         ))}
       </div>
@@ -263,7 +264,7 @@ function ChromeControls({ zoneId, zoneLayout }: { zoneId: ZoneId; zoneLayout: Zo
           className={`zlo-btn${right ? " active" : ""}`}
           onClick={() => setZoneLayout(zoneId, { side: right ? undefined : "right" })}
         >
-          <span className="material-symbols-outlined" aria-hidden="true">{right ? "dock_to_left" : "dock_to_right"}</span>
+          <ChromeIcon name={right ? "dock_to_left" : "dock_to_right"} aria-hidden="true" />
         </button>
       ) : (
         <button
@@ -274,7 +275,7 @@ function ChromeControls({ zoneId, zoneLayout }: { zoneId: ZoneId; zoneLayout: Zo
           className={`zlo-btn${zoneLayout.flush ? " active" : ""}`}
           onClick={() => setZoneLayout(zoneId, zoneLayout.flush ? { flush: undefined } : { flush: true, mode: "stack", gap: 0 })}
         >
-          <span className="material-symbols-outlined" aria-hidden="true">width_full</span>
+          <ChromeIcon name="width_full" aria-hidden="true" />
         </button>
       )}
     </>

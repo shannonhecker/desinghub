@@ -1,22 +1,37 @@
 /**
- * Landing: when may Next prefetch the builder route?
+ * Landing: when may Next prefetch another route?
  *
- * Next prefetches every <Link> in view, and the builder route is about 2 MB
- * of script. That is a good trade on a desktop (the handoff is instant) and a
- * poor one on a phone, so prefetch is opt-in: wide, fine-pointer screens that
- * have not asked to save data. Everyone else loads the builder on tap.
+ * Next prefetches every <Link> in view. From the landing those links lead to
+ * the builder (about 2 MB of script), the component library and the two
+ * tools, so a visitor who only reads the page would download all of them.
+ * Prefetch therefore waits for intent: a mouse resting on the link, or the
+ * keyboard focusing it. Then that one route is fetched, and the click that
+ * follows is instant.
+ *
+ * Never on touch: a finger that lands on a link is usually starting a scroll,
+ * and a phone is where 2 MB costs most. Never when the visitor asked the
+ * browser to save data. Those visitors load the route when they open it.
  */
-export const PREFETCH_QUERY = "(min-width: 1241px) and (pointer: fine)";
 
-export function canPrefetchBuilder(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+/** How long a mouse must rest on a link before it counts as intent, so a
+    pointer crossing the page does not start a download. */
+export const INTENT_DWELL_MS = 90;
+
+export function savesData(): boolean {
+  if (typeof navigator === "undefined") return false;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-  return !conn?.saveData && window.matchMedia(PREFETCH_QUERY).matches;
+  return conn?.saveData === true;
 }
 
-export function subscribePrefetch(onChange: () => void): () => void {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-  const mq = window.matchMedia(PREFETCH_QUERY);
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
+/** A pointer that can hover: a mouse or a pen held over the screen. */
+export function isHoverPointer(pointerType: string): boolean {
+  return pointerType === "mouse" || pointerType === "pen";
+}
+
+/** What <Link prefetch> takes: `false` is never, `null` is Next's default
+    (fetch the route now that the link is on screen). */
+export type LinkPrefetch = false | null;
+
+export function prefetchFor(warmed: ReadonlySet<string>, href: string): LinkPrefetch {
+  return warmed.has(href) ? null : false;
 }

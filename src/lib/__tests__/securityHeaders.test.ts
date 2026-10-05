@@ -16,8 +16,10 @@ describe("HTTP response security policy", () => {
     expect(csp).toContain("form-action 'self'");
     expect(csp).not.toContain("unsafe-eval");
     expect(csp).not.toContain("api.anthropic.com");
-    expect(csp).toContain("https://fonts.googleapis.com");
-    expect(csp).toContain("https://fonts.gstatic.com");
+    /* Every font is served from this origin (src/fonts): no font host is allowed. */
+    expect(csp).not.toContain("fonts.googleapis.com");
+    expect(csp).not.toContain("fonts.gstatic.com");
+    expect(csp).toMatch(/font-src 'self'/);
     expect(csp).toContain("https://firestore.googleapis.com");
   });
 });

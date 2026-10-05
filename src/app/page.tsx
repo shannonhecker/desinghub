@@ -25,7 +25,7 @@
  * copy. Colons, commas, periods only.
  */
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useScroll,
@@ -36,7 +36,7 @@ import {
 import Link from "next/link";
 
 import { EXPORT_SAMPLES } from "./landingExports";
-import { canPrefetchBuilder, subscribePrefetch } from "./landingPrefetch";
+import { INTENT_DWELL_MS, isHoverPointer, prefetchFor, savesData, type LinkPrefetch } from "./landingPrefetch";
 import {
   SYSTEMS,
   differences,
@@ -207,9 +207,35 @@ function CodeExcerpt({ source }: { source: string }) {
   return <code>{parts}</code>;
 }
 
-function useBuilderPrefetch(): false | null {
-  const ok = useSyncExternalStore(subscribePrefetch, canPrefetchBuilder, () => false);
-  return ok ? null : false;
+/** Props that make a <Link> prefetch its route only on intent: see
+ *  landingPrefetch.ts. One set of warmed routes for the whole page. */
+type IntentProps = {
+  prefetch: LinkPrefetch;
+  onPointerEnter: (e: React.PointerEvent) => void;
+  onPointerLeave: () => void;
+  onFocus: (e: React.FocusEvent<HTMLElement>) => void;
+};
+type Intent = (href: string) => IntentProps;
+
+function useIntentPrefetch(): Intent {
+  const [warmed, setWarmed] = useState<ReadonlySet<string>>(() => new Set());
+  const dwell = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(dwell.current), []);
+  const warm = (href: string) => setWarmed((prev) => (prev.has(href) ? prev : new Set(prev).add(href)));
+  return (href) => ({
+    prefetch: prefetchFor(warmed, href),
+    onPointerEnter: (e) => {
+      if (!isHoverPointer(e.pointerType) || savesData()) return;
+      window.clearTimeout(dwell.current);
+      dwell.current = window.setTimeout(() => warm(href), INTENT_DWELL_MS);
+    },
+    onPointerLeave: () => window.clearTimeout(dwell.current),
+    onFocus: (e) => {
+      /* The keyboard reaching a link is intent; a click or a tap focusing it
+         is already a navigation. */
+      if (!savesData() && e.currentTarget.matches(":focus-visible")) warm(href);
+    },
+  });
 }
 
 function SunIcon() {
@@ -400,13 +426,13 @@ function Instrument({
   compare,
   mode,
   onChange,
-  prefetch,
+  intent,
 }: {
   system: SystemId;
   compare: SystemId;
   mode: Mode;
   onChange: (system: SystemId, compare: SystemId, mode: Mode) => void;
-  prefetch: false | null;
+  intent: Intent;
 }) {
   const figureRef = useRef<HTMLElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -854,7 +880,7 @@ function Instrument({
           builder&apos;s Analytics Home template), cut whole, one system on
           each side. Real builder output, captured, not redrawn.
         </span>
-        <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
+        <Link {...intent(REPORT_HANDOFF)} className="lsl-inline-link" href={REPORT_HANDOFF}>
           Open this screen in the builder
         </Link>
       </figcaption>
@@ -1015,7 +1041,7 @@ function ExportViewer() {
 
 export default function LandingPage() {
   const navGlass = useNavGlassStyle();
-  const prefetch = useBuilderPrefetch();
+  const intent = useIntentPrefetch();
   const [system, setSystem] = useState<SystemId>(DEFAULT_SYSTEM);
   const [compare, setCompare] = useState<SystemId>(DEFAULT_COMPARE);
   const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
@@ -1047,7 +1073,7 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <Link prefetch={prefetch} href="/builder" className="lsl-cta lsl-nav-cta">
+            <Link {...intent("/builder")} href="/builder" className="lsl-cta lsl-nav-cta">
               Open the builder
             </Link>
           </div>
@@ -1069,7 +1095,7 @@ export default function LandingPage() {
               <PromptForm id="lsl-hero-prompt-input" system={system} mode={mode} />
               <p className="lsl-hero-alt">
                 No brief yet?{" "}
-                <Link prefetch={prefetch} className="lsl-inline-link" href="/builder">
+                <Link {...intent("/builder")} className="lsl-inline-link" href="/builder">
                   Start from a template
                 </Link>
               </p>
@@ -1078,7 +1104,7 @@ export default function LandingPage() {
               system={system}
               compare={compare}
               mode={mode}
-              prefetch={prefetch}
+              intent={intent}
               onChange={(s, c, m) => {
                 setSystem(s);
                 setCompare(c);
@@ -1106,7 +1132,7 @@ export default function LandingPage() {
               {SYSTEMS.map((s) => (
                 <li key={s.id} className="lsl-systems-item">
                   <Link
-                    prefetch={prefetch}
+                    {...intent(`/builder?ds=${s.id}`)}
                     href={`/builder?ds=${s.id}`}
                     className="lsl-syscard"
                     style={{ "--syscard-brand": s.brand } as React.CSSProperties}
@@ -1210,10 +1236,10 @@ export default function LandingPage() {
                 skip={compare}
               />
               <div className="lsl-cta-actions">
-                <Link prefetch={prefetch} href="/builder" className="lsl-cta-textlink">
+                <Link {...intent("/builder")} href="/builder" className="lsl-cta-textlink">
                   Open the builder
                 </Link>
-                <Link prefetch={prefetch} href="/ui-kit" className="lsl-cta-textlink">
+                <Link {...intent("/ui-kit")} href="/ui-kit" className="lsl-cta-textlink">
                   Browse the UI Kit
                 </Link>
               </div>
@@ -1240,10 +1266,10 @@ export default function LandingPage() {
               </p>
             </div>
             <ul className="lsl-footer-list" aria-label="Product">
-              <li><Link prefetch={prefetch} href="/builder">Builder</Link></li>
-              <li><Link prefetch={prefetch} href="/ui-kit">UI Kit</Link></li>
-              <li><Link prefetch={prefetch} href="/theme-builder">Theme builder</Link></li>
-              <li><Link prefetch={prefetch} href="/token-editor">Token editor</Link></li>
+              <li><Link {...intent("/builder")} href="/builder">Builder</Link></li>
+              <li><Link {...intent("/ui-kit")} href="/ui-kit">UI Kit</Link></li>
+              <li><Link {...intent("/theme-builder")} href="/theme-builder">Theme builder</Link></li>
+              <li><Link {...intent("/token-editor")} href="/token-editor">Token editor</Link></li>
             </ul>
           </div>
           <div className="lsl-footer-fine">

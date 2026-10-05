@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "../ChromeIcon";
 import React, { useId, useState } from "react";
 import { MiniPreview } from "../MiniPreview";
 import { DS_LABELS } from "@/lib/assumptionDims";
@@ -99,12 +100,7 @@ export function ToolUseCard({
 
   const headContent = (
     <>
-      <span
-        className="material-symbols-outlined tool-use-card__icon"
-        aria-hidden="true"
-      >
-        {icon}
-      </span>
+      <ChromeIcon name={icon} className="tool-use-card__icon" aria-hidden="true" />
       <span className="tool-use-card__title">{title}</span>
       {subtitle && (
         <span className="tool-use-card__subtitle">{subtitle}</span>
@@ -128,13 +124,7 @@ export function ToolUseCard({
           onClick={() => setExpanded((v) => !v)}
         >
           {headContent}
-          <span
-            className="material-symbols-outlined tool-use-card__chevron"
-            aria-hidden="true"
-            data-open={expanded}
-          >
-            expand_more
-          </span>
+          <ChromeIcon name="expand_more" className="tool-use-card__chevron" aria-hidden="true" data-open={expanded} />
         </button>
       ) : (
         <div className="tool-use-card__head tool-use-card__head--static">
@@ -163,13 +153,7 @@ export function ToolUseCard({
             disabled={undone}
             aria-label={undone ? "Action undone" : "Undo this action"}
           >
-            <span
-              className="material-symbols-outlined"
-              aria-hidden="true"
-              style={{ fontSize: 14 }}
-            >
-              {undone ? "check" : "undo"}
-            </span>
+            <ChromeIcon name={undone ? "check" : "undo"} aria-hidden="true" style={{ fontSize: 14 }} />
             <span>{undone ? "Undone" : "Undo this action"}</span>
           </button>
         </div>

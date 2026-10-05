@@ -1,5 +1,6 @@
 "use client";
 
+import { ChromeIcon } from "./ChromeIcon";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import {
@@ -298,9 +299,7 @@ export function ComponentLibrary() {
           title="Close panel"
           aria-label="Close panel"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            close
-          </span>
+          <ChromeIcon name="close" style={{ fontSize: 16 }} />
         </button>
       </div>
 
@@ -963,9 +962,7 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
               }
             }}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {showGapSplit ? "link_off" : "link"}
-            </span>
+            <ChromeIcon name={showGapSplit ? "link_off" : "link"} aria-hidden="true" />
           </button>
         </label>
         {showGapSplit ? (
@@ -1022,9 +1019,7 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
               }
             }}
           >
-            <span className="material-symbols-outlined" aria-hidden="true">
-              {showPerSide ? "link_off" : "link"}
-            </span>
+            <ChromeIcon name={showPerSide ? "link_off" : "link"} aria-hidden="true" />
           </button>
         </label>
         {showPerSide ? (
@@ -1161,12 +1156,7 @@ function TemplatesAccordion() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
-        <span
-          className={`material-symbols-outlined lib-templates-caret ${open ? "is-open" : ""}`}
-          aria-hidden="true"
-        >
-          chevron_right
-        </span>
+        <ChromeIcon name="chevron_right" className={`lib-templates-caret ${open ? "is-open" : ""}`} aria-hidden="true" />
         <span className="lib-templates-label">Templates</span>
         <span className="lib-templates-count">{templates.length}</span>
         <span className="lib-templates-hint">Swap the whole layout</span>
@@ -1313,12 +1303,7 @@ function InspectorSection({
         aria-controls={`${id}-panel`}
       >
         <span className="inspector-section-title-text">{title}</span>
-        <span
-          className={`material-symbols-outlined inspector-section-caret${open ? " is-open" : ""}`}
-          aria-hidden="true"
-        >
-          chevron_right
-        </span>
+        <ChromeIcon name="chevron_right" className={`inspector-section-caret${open ? " is-open" : ""}`} aria-hidden="true" />
       </button>
       {open && (
         <div id={`${id}-panel`} className="inspector-section-body">
@@ -1367,12 +1352,7 @@ function InspectorSubgroup({
         aria-expanded={open}
         aria-controls={`${id}-panel`}
       >
-        <span
-          className={`material-symbols-outlined inspector-subgroup-caret${open ? " is-open" : ""}`}
-          aria-hidden="true"
-        >
-          chevron_right
-        </span>
+        <ChromeIcon name="chevron_right" className={`inspector-subgroup-caret${open ? " is-open" : ""}`} aria-hidden="true" />
         <span className="inspector-subgroup-title">{title}</span>
       </button>
       {open && (
@@ -1415,17 +1395,10 @@ function CollapsibleGroup({
         aria-expanded={open}
         aria-controls={`${id}-panel`}
       >
-        <span className="material-symbols-outlined lib-category-icon" aria-hidden="true">
-          {icon}
-        </span>
+        <ChromeIcon name={icon} className="lib-category-icon" aria-hidden="true" />
         <span className="lib-category-label">{label}</span>
         <span className="lib-category-count">{count}</span>
-        <span
-          className={`material-symbols-outlined lib-category-caret${open ? " is-open" : ""}`}
-          aria-hidden="true"
-        >
-          chevron_right
-        </span>
+        <ChromeIcon name="chevron_right" className={`lib-category-caret${open ? " is-open" : ""}`} aria-hidden="true" />
       </button>
       {open && (
         <div id={`${id}-panel`} className="lib-category-panel" role="region" aria-label={label}>
@@ -1635,7 +1608,7 @@ function LibraryBrowser() {
       <div className="lib-search lib-search-sticky">
         <label className="dh-visually-hidden" htmlFor="lib-search-input">Search component library</label>
         <div className="lib-search-field">
-          <span className="material-symbols-outlined lib-search-icon" aria-hidden="true">search</span>
+          <ChromeIcon name="search" className="lib-search-icon" aria-hidden="true" />
           <input
             id="lib-search-input"
             ref={searchRef}
@@ -1653,7 +1626,7 @@ function LibraryBrowser() {
               onClick={() => { setQuery(""); searchRef.current?.focus(); }}
               aria-label="Clear search"
             >
-              <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14 }}>close</span>
+              <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
             </button>
           )}
         </div>
@@ -1665,9 +1638,7 @@ function LibraryBrowser() {
               onClick={() => setAllCategories(!anyCategoryOpen)}
               aria-label={anyCategoryOpen ? "Collapse all categories" : "Expand all categories"}
             >
-              <span className="material-symbols-outlined lib-collapse-icon" aria-hidden="true">
-                {anyCategoryOpen ? "unfold_less" : "unfold_more"}
-              </span>
+              <ChromeIcon name={anyCategoryOpen ? "unfold_less" : "unfold_more"} className="lib-collapse-icon" aria-hidden="true" />
               {anyCategoryOpen ? "Collapse all" : "Expand all"}
             </button>
           </div>
@@ -1694,7 +1665,7 @@ function LibraryBrowser() {
         return (
           <div className="lib-zone-group">
             <div className="lib-zone-head">
-              <span className="material-symbols-outlined lib-zone-icon" aria-hidden="true">history</span>
+              <ChromeIcon name="history" className="lib-zone-icon" aria-hidden="true" />
               <span className="lib-zone-label">Recently used</span>
               <span className="lib-zone-count">{recentBlueprints.length}</span>
             </div>
@@ -1711,9 +1682,7 @@ function LibraryBrowser() {
       {grouped.body.length > 0 && (
         <div className="lib-zone-group">
           <div className="lib-zone-head">
-            <span className="material-symbols-outlined lib-zone-icon" aria-hidden="true">
-              {ZONE_LABELS.body.icon}
-            </span>
+            <ChromeIcon name={ZONE_LABELS.body.icon} className="lib-zone-icon" aria-hidden="true" />
             <span className="lib-zone-label">{ZONE_LABELS.body.label}</span>
             <span className="lib-zone-count">{grouped.body.length}</span>
           </div>
@@ -1768,7 +1737,7 @@ function LibraryBrowser() {
         return (
           <div key={zone} className="lib-zone-group">
             <div className="lib-zone-head">
-              <span className="material-symbols-outlined lib-zone-icon" aria-hidden="true">{meta.icon}</span>
+              <ChromeIcon name={meta.icon} className="lib-zone-icon" aria-hidden="true" />
               <span className="lib-zone-label">{meta.label}</span>
               <span className="lib-zone-count">{items.length}</span>
             </div>
