@@ -64,6 +64,29 @@ const KNOWN_PARTIAL: Record<string, Record<string, string[]>> = {
   NavItem: { icon: ["salt", "fluent", "carbon"] },
 };
 
+/* The partial list as it stood when it was written: it may only shrink, so a
+   new entry (a newly dead field) fails the snapshot below. */
+const KNOWN_PARTIAL_SNAPSHOT: Record<string, Record<string, string[]>> = {
+  SimulatedAvatar: { presence: ["salt", "m3", "fluent"] },
+  SimulatedPill: { dismissible: ["salt", "carbon"] },
+  NavItem: { icon: ["salt", "fluent", "carbon"] },
+};
+
+/* Registry types whose renderers have not been audited yet (Simulated-only
+   general blocks, report and chrome blocks, layout primitives). Every
+   registry type is in READS or here, so a new type cannot slip by. */
+const NOT_AUDITED = [
+  "LayoutGroup", "Spacer",
+  "SimulatedImage", "SimulatedChatMessage", "SimulatedChart",
+  "SimulatedTabs", "SimulatedBreadcrumb", "SimulatedDialog", "SimulatedTooltip", "SimulatedDatePicker",
+  "HighchartStackedBar", "HighchartStackedArea", "HighchartCombination", "HighchartWaterfall", "HighchartRadar", "HighchartCorridor",
+  "SimulatedRadioGroup", "SimulatedSlider", "SimulatedNumberInput", "SimulatedMultilineInput", "SimulatedToggleButton",
+  "SimulatedListBox", "SimulatedComboBox", "SimulatedFileDropZone", "SimulatedTree", "SimulatedRating", "SimulatedSkeleton",
+  "SimulatedTokenizedInput", "SimulatedNavDrawer", "SimulatedPopover", "SimulatedPersona", "SimulatedAvatarGroup",
+  "EntityHeader", "MetricTile", "VerdictCard", "LauncherCard", "HeroSearch", "RecordPanel", "DataGrid",
+  "TopNav", "InstrumentHeader", "ExecutionChart", "ContextBar", "TabStrip", "PageTitle", "NavGroup",
+];
+
 describe("panel Content fields vs renderers", () => {
   for (const [type, reads] of Object.entries(READS)) {
     it(`${type}: every field writes a prop the renderers read`, () => {
@@ -83,9 +106,23 @@ describe("panel Content fields vs renderers", () => {
     expect(BLOCK_FIELD_KEYS.SimulatedDataTable).toEqual(expect.arrayContaining(["maxRows", "hiddenColumnsCsv"]));
   });
 
-  it("known partial fields are still offered (the list only shrinks)", () => {
+  it("every registry type is audited (READS) or listed as not audited, never both", () => {
+    for (const type of Object.keys(BLOCK_FIELD_KEYS)) {
+      const audited = type in READS;
+      const listed = NOT_AUDITED.includes(type);
+      expect(audited !== listed, `${type}: in READS=${audited}, in NOT_AUDITED=${listed}`).toBe(true);
+    }
+    for (const type of NOT_AUDITED) expect(BLOCK_FIELD_KEYS[type], `${type} is in the registry`).toBeDefined();
+  });
+
+  it("known partial fields only shrink: no entry beyond the snapshot", () => {
     for (const [type, fields] of Object.entries(KNOWN_PARTIAL)) {
-      for (const k of Object.keys(fields)) expect(BLOCK_FIELD_KEYS[type]).toContain(k);
+      for (const [k, systems] of Object.entries(fields)) {
+        expect(KNOWN_PARTIAL_SNAPSHOT[type]?.[k], `${type}.${k} is a new partial field`).toBeDefined();
+        for (const sys of systems) expect(KNOWN_PARTIAL_SNAPSHOT[type][k], `${type}.${k} newly partial in ${sys}`).toContain(sys);
+        expect(BLOCK_FIELD_KEYS[type], `${type}.${k} is still offered`).toContain(k);
+        expect(READS[type], `${type}.${k} is in READS`).toContain(k);
+      }
     }
   });
 });
@@ -190,6 +227,16 @@ describe("new controls change the rendered block in all five systems", () => {
       expect(el.textContent).toContain("Seats used");
     });
   }
+
+  it("uoaui: an avatar photo that fails to load shows the initials", () => {
+    const el = render("uoaui", "SimulatedAvatar", { initials: "JD", src: "https://example.invalid/face.jpg" });
+    const img = el.querySelector("img")!;
+    expect(img).not.toBeNull();
+    expect(el.textContent).not.toContain("JD");
+    act(() => { img.dispatchEvent(new Event("error")); });
+    expect(el.querySelector("img")).toBeNull();
+    expect(el.textContent).toContain("JD");
+  });
 
   it("salt: a badge status shows a status indicator", () => {
     const plain = render("salt", "SimulatedBadge", { label: "New", status: "default" });
