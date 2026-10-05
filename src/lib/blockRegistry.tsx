@@ -11,7 +11,11 @@ import {
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 import { beginHistoryTransaction } from "@/lib/builderHistory";
+<<<<<<< HEAD
 import { useBoundData } from "@/components/builder/useBoundData";
+=======
+import { PANEL_DEFAULT_HEIGHT } from "@/lib/panelMetrics";
+>>>>>>> claude/panel-content-fields
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -149,11 +153,17 @@ type FieldDef =
   | { type: "textarea"; propKey: string; label: string; rows?: number }
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
+<<<<<<< HEAD
   /** `dataDriven`: when the block's figure comes from a data binding the
      slider would write a prop nothing reads, so the field shows the live
      figure read-only instead (rule: a control changes the canvas, or it is
      not offered). */
   | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; dataDriven?: boolean }
+=======
+  /** `fallback`: what the block draws while the prop is unset, so the
+     read-out matches the canvas (defaults to `min`). */
+  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; fallback?: (props: Record<string, unknown>) => number }
+>>>>>>> claude/panel-content-fields
   /** Stock-image picker: a categorized grid of verified stock photos +
      a paste-your-own-URL input. Writes a URL to `propKey` (the block's
      `src`). */
@@ -168,11 +178,15 @@ type FieldDef =
    A chart's kind is its `chartType` prop, so swapping it in place is one
    select. The two families take different data (series over categories vs.
    named parts of a whole), so each offers only the kinds its data can draw. */
+/* Subtitle and "View by" are drawn in the panel's header, so they only show
+   once "Framed panel" is on; their labels say so. */
 const PANEL_FIELDS: FieldDef[] = [
-  { type: "text", propKey: "subtitle", label: "Subtitle", placeholder: "e.g. (Stacked)" },
   { type: "toggle", propKey: "panel", label: "Framed panel" },
-  { type: "text", propKey: "viewByCsv", label: "View by options", placeholder: "Asset type, Region" },
-  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px" },
+  { type: "text", propKey: "subtitle", label: "Subtitle (framed panel)", placeholder: "e.g. (Stacked)" },
+  { type: "text", propKey: "viewByCsv", label: "View by options (framed panel)", placeholder: "Asset type, Region" },
+  /* Unset, a bare chart is 250 px tall (SimulatedHighchart) and a framed one
+     the panel default. */
+  { type: "range", propKey: "height", label: "Height", min: 200, max: 640, suffix: "px", fallback: (p) => (p.panel === true ? PANEL_DEFAULT_HEIGHT : 250) },
 ];
 const CATEGORY_CHART_FIELDS: FieldDef[] = [
   { type: "text", propKey: "title", label: "Title" },
@@ -187,6 +201,7 @@ const CATEGORY_CHART_FIELDS: FieldDef[] = [
     { value: "stacked-area", label: "Stacked area" },
     { value: "combination", label: "Combination" },
   ]},
+  { type: "toggle", propKey: "hideLegend", label: "Hide legend" },
   ...PANEL_FIELDS,
 ];
 const PART_CHART_FIELDS: FieldDef[] = [
@@ -379,6 +394,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             );
           }
           case "range": {
+<<<<<<< HEAD
             if (f.dataDriven && bound?.view === "value" && bound.value != null) {
               return (
                 <div key={i} className="inspector-field" data-field-readonly={f.propKey}>
@@ -391,6 +407,9 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
               );
             }
             const val = Number(props[f.propKey] ?? f.min ?? 0);
+=======
+            const val = Number(props[f.propKey] ?? f.fallback?.(props) ?? f.min ?? 0);
+>>>>>>> claude/panel-content-fields
             return (
               <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
                 <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
@@ -536,6 +555,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedButton", label: "Button", icon: "smart_button", defaults: { variant: "primary", label: "New Button" }, fields: [
     { type: "text", propKey: "label", label: "Label" },
     { type: "select", propKey: "variant", label: "Variant", options: [{ value: "primary", label: "Primary (CTA)" }, { value: "secondary", label: "Secondary" }, { value: "outline", label: "Outline" }, { value: "ghost", label: "Ghost / Text" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "SimulatedTitle", label: "Title / Heading", icon: "title", defaults: { level: "h2", text: "New Heading" }, fields: [
     { type: "text", propKey: "text", label: "Text" },
@@ -543,6 +563,9 @@ const BLOCK_DEFS: BlockDef[] = [
   ]},
   { type: "SimulatedTextInput", label: "Text Input", icon: "text_fields", defaults: { placeholder: "Enter text...", label: "Label" }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "value", label: "Value" },
+    { type: "select", propKey: "validationStatus", label: "Validation", options: [{ value: "", label: "None" }, { value: "error", label: "Error" }, { value: "warning", label: "Warning" }] },
+    { type: "toggle", propKey: "disabled", label: "Disabled" },
   ]},
   { type: "Alert", label: "Alert", icon: "warning", defaults: { variant: "info", title: "Update Available", message: "A new version is ready." }, fields: [
     { type: "text", propKey: "title", label: "Title" }, { type: "text", propKey: "message", label: "Message" },
@@ -578,12 +601,14 @@ const BLOCK_DEFS: BlockDef[] = [
     { type: "text", propKey: "label", label: "Label", placeholder: "e.g. Currency" },
     { type: "text", propKey: "value", label: "Selected value" },
     { type: "text", propKey: "optionsCsv", label: "Options (comma separated)", placeholder: "GBP, USD, EUR" },
-    { type: "text", propKey: "placeholder", label: "Placeholder" },
+    { type: "text", propKey: "placeholder", label: "Placeholder (shown when nothing is selected)" },
   ]},
 
   /* ── Data Display ── */
   { type: "SimulatedDataTable", label: "Data Table", icon: "table_chart", defaults: {}, fields: [
-    { type: "static", text: "Use the Describe bar above the table to fill it with AI, e.g. \"8 customers with plan and MRR\"." },
+    { type: "select", propKey: "maxRows", label: "Rows shown", options: [{ value: "", label: "All rows" }, { value: "3", label: "3" }, { value: "5", label: "5" }, { value: "8", label: "8" }, { value: "10", label: "10" }] },
+    { type: "text", propKey: "hiddenColumnsCsv", label: "Hide columns (comma separated)", placeholder: "e.g. Seats, Date" },
+    { type: "static", text: "To fill the table with new data, ask in the chat, e.g. \"8 customers with plan and MRR\"." },
   ]},
   { type: "SimulatedProgress", label: "Progress Bar", icon: "percent", defaults: { label: "Uploading assets...", value: 50 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "range", propKey: "value", label: "Value", max: 100, suffix: "%" },
@@ -709,6 +734,7 @@ const BLOCK_DEFS: BlockDef[] = [
   { type: "SimulatedStatCard", label: "Stat Card", icon: "monitoring", defaults: { label: "Revenue", value: "$42.8K", pct: 60, colSpan: 1 }, fields: [
     { type: "text", propKey: "label", label: "Label" }, { type: "text", propKey: "value", label: "Value" },
     { type: "range", propKey: "pct", label: "Progress", max: 100, suffix: "%" },
+    { type: "toggle", propKey: "hideProgress", label: "Hide progress bar" },
   ]},
 
   /* ── Zone-specific types ── */
@@ -818,6 +844,12 @@ const BLOCK_DEFS: BlockDef[] = [
 /* ═══════════════════════════════════════════════════════════
    Lookup helpers - same public API as before
    ═══════════════════════════════════════════════════════════ */
+
+/** Each block type's Content field prop keys (for the panel-vs-renderer
+ *  contract test: a field must write a prop the renderers draw). */
+export const BLOCK_FIELD_KEYS: Record<string, string[]> = Object.fromEntries(
+  BLOCK_DEFS.map((b) => [b.type, b.fields.flatMap((f) => ("propKey" in f ? [f.propKey] : []))]),
+);
 
 /** Library blueprints for drag-and-drop */
 export const LIBRARY_BLUEPRINTS = BLOCK_DEFS.map((b, i) => ({
