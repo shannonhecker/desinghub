@@ -521,8 +521,8 @@ for (const mode of ["dark", "light"] as const) {
    output and are not retouched, so this is a property of which pair is
    shown first: on each capture of the default pair, in both modes and on
    both boards, the primary button's label against its own fill is at least
-   4.5:1. (Material 3's dark capture, a pale label on pale lilac, is why the
-   default right-hand side is not Material 3.) */
+   4.5:1. (Material 3's captures pass this too since its label became the
+   on-primary role; the default right-hand side is still uoaui.) */
 for (const board of [{ name: "wide", width: 1512, height: 738 }, { name: "phone", width: 375, height: 812 }] as const) {
   test(`the default pair's primary buttons read in both modes (${board.name} board)`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });

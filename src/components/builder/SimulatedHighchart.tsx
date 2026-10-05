@@ -39,9 +39,24 @@ export interface ThemeVars {
 /** Width of the separator between adjacent data marks. */
 const MARK_SEPARATOR = 1;
 
+/** An element's background colour as it will be, not as it is mid-change.
+ *  Straight after a theme change (a design system or light/dark switch) a
+ *  transition on the element is still at its start, so its computed
+ *  background is the previous theme's. Under reduced motion every element
+ *  has one (globals.css sets a near-zero duration on everything), and a
+ *  chart that read its surface then kept the old colour until the next
+ *  switch. With the transition off for the read, the answer is the new one. */
+export function settledBackground(el: HTMLElement): string {
+  const was = el.style.transition;
+  el.style.transition = "none";
+  const color = getComputedStyle(el).backgroundColor;
+  el.style.transition = was;
+  return color;
+}
+
 function cardColorOf(el: HTMLElement): string | undefined {
-  const panel = el.closest(".dh-panel");
-  const color = panel ? getComputedStyle(panel).backgroundColor : "";
+  const panel = el.closest<HTMLElement>(".dh-panel");
+  const color = panel ? settledBackground(panel) : "";
   return color && color !== "transparent" && !/, 0\)$/.test(color) ? color : undefined;
 }
 

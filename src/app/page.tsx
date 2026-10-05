@@ -44,6 +44,7 @@ import {
   type Accent,
   type Mode,
   type SystemId,
+  cornerWords,
 } from "./landingSystems";
 import "./landing.css";
 
@@ -123,12 +124,15 @@ const NAV_LINKS = [
   { href: "/ui-kit", label: "UI Kit" },
 ] as const;
 
+const sentenceCase = (words: string) => words.charAt(0).toUpperCase() + words.slice(1);
+
 const DEFAULT_SYSTEM: SystemId = "salt";
 /* The first pair a visitor sees must read in both modes. Salt DS against
    uoaui does: the Search label is at least 4.8:1 on its fill in all four
    captures, and the two differ at a glance (steel blue and 4px corners
-   against violet and 12px, graphite against navy). Material 3 stays one
-   pick away; its dark capture has a pale label on pale lilac (1.7:1). */
+   against violet and 12px, graphite against navy). Material 3 reads too now
+   (its label is the on-primary role: 6.4:1 light, 7.7:1 dark) and stays one
+   pick away; the first pair is unchanged. */
 const DEFAULT_COMPARE: SystemId = "uoaui";
 const DEFAULT_MODE: Mode = "dark";
 const DEFAULT_SPLIT = 50;
@@ -824,7 +828,7 @@ function Instrument({
         <p className="lsl-legend-side" data-side="left">
           <span className="lsl-legend-name">{a.name}</span>
           <span className="lsl-legend-traits">
-            {a.font}, {a.corners === "0px" ? "square corners" : `${a.corners} corners`},{" "}
+            {a.font}, {cornerWords(a)},{" "}
             <Swatch accent={a.accent[mode]} />
             {a.accent[mode].name}
           </span>
@@ -832,7 +836,7 @@ function Instrument({
         <p className="lsl-legend-side" data-side="right">
           <span className="lsl-legend-name">{b.name}</span>
           <span className="lsl-legend-traits">
-            {b.font}, {b.corners === "0px" ? "square corners" : `${b.corners} corners`},{" "}
+            {b.font}, {cornerWords(b)},{" "}
             <Swatch accent={b.accent[mode]} />
             {b.accent[mode].name}
           </span>
@@ -1128,12 +1132,12 @@ export default function LandingPage() {
                         height={656}
                         loading="lazy"
                         decoding="async"
-                        alt={`The whole Portfolio report card in ${s.name}, dark mode.`}
+                        alt={`The whole SI Portfolio Report card in ${s.name}, dark mode.`}
                       />
                     </span>
                     <span className="lsl-syscard-name">{s.name}</span>
                     <span className="lsl-syscard-trait">
-                      {s.font}. {s.corners === "0px" ? "Square corners" : `${s.corners} corners`}.{" "}
+                      {s.font}. {sentenceCase(cornerWords(s))}.{" "}
                       <Swatch accent={s.accent.dark} />
                       <span className="lsl-syscard-accent">{s.accent.dark.name}</span>
                     </span>

@@ -420,9 +420,11 @@
   --dh-exec-menu-bg: var(--salt-container-primary-background);
 }
 .preview-m3 {
-  --dh-exec-menu-bg: var(--mui-palette-background-paper);
-  /* MUI's dark elevation: a white overlay on the paper (Menu = elevation 8). */
-  --dh-exec-menu-image: var(--mui-overlays-8);
+  /* Material 3 menus are a tonal surface (surface-container), not paper
+     with Material 2's white elevation overlay; the chosen row is the
+     secondary container (--mui-m3-*: officialM3FluentTokens.ts). */
+  --dh-exec-menu-bg: var(--mui-m3-surfaceContainer, var(--mui-palette-background-paper));
+  --dh-exec-menu-image: none;
   --dh-exec-menu-border: color-mix(in srgb, var(--mui-palette-divider) 60%, transparent);
   --dh-exec-menu-shadow: var(--mui-shadows-8);
   --dh-exec-menu-radius: var(--mui-shape-borderRadius, 4px);
@@ -430,7 +432,8 @@
   --dh-exec-menu-item-h: 32px;
   --dh-exec-menu-item-pad: 12px;
   --dh-exec-menu-item-radius: 0;
-  --dh-exec-menu-active-bg: var(--mui-palette-action-selected);
+  --dh-exec-menu-active-bg: var(--mui-m3-secondaryContainer, var(--mui-palette-action-selected));
+  --dh-exec-menu-active-fg: var(--mui-m3-onSecondaryContainer, inherit);
   --dh-exec-menu-title-case: none;
   --dh-exec-menu-title-track: 0.1px;
 }

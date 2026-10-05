@@ -772,6 +772,11 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
         placeholder={s(props.placeholder)}
         value={s(props.value) || undefined}
         variant="outlined"
+        /* On the canvas a field fills its block, as the other four systems'
+           fields do: the block's width (the template's column) is the
+           field's width, and a value is not clipped at MUI's natural
+           width. The library shows the field at its own width. */
+        fullWidth={!kit}
         error={validation === "error"}
         color={validation === "success" ? "success" : validation === "warning" ? "warning" : undefined}
         focused={validation === "success" || validation === "warning" ? true : undefined}

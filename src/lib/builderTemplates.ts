@@ -249,15 +249,20 @@ const settingsPage: BuilderTemplate = {
     { id: tid("sp-t1"), type: "SimulatedTitle", props: { text: "Profile", level: "h3" }, layout: { width: "12fr" } },
     { id: tid("sp-avatar"), type: "SimulatedAvatar", props: { initials: settingsProfile.initials, src: getImageById(settingsProfile.avatarId)?.url, size: "lg", presence: "available" }, layout: { width: "2fr" } },
     { id: tid("sp-btn-photo"), type: "SimulatedButton", props: { label: "Upload photo", variant: "secondary" }, layout: { width: "4fr" } },
-    { id: tid("sp-btn-remove"), type: "SimulatedButton", props: { label: "Remove", variant: "ghost" }, layout: { width: "3fr" } },
+    { id: tid("sp-btn-remove"), type: "SimulatedButton", props: { label: "Remove", variant: "ghost" }, layout: { width: "12fr" } },
     /* Current-value fields: `value` renders solid in the read-only Preview (real
        Salt/MUI Input show value); `placeholder` mirrors it so the edit canvas
        (which reads placeholder) stays populated rather than blank. */
-    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "12fr" } },
-    { id: tid("sp-display"), type: "SimulatedTextInput", props: { label: "Display name", value: settingsProfile.displayName, placeholder: settingsProfile.displayName }, layout: { width: "12fr" } },
-    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "12fr" } },
-    { id: tid("sp-title"), type: "SimulatedTextInput", props: { label: "Job title", value: settingsProfile.jobTitle, placeholder: settingsProfile.jobTitle }, layout: { width: "12fr" } },
-    { id: tid("sp-tz"), type: "SimulatedDropdown", props: { value: settingsProfile.timezone, placeholder: settingsProfile.timezone }, layout: { width: "12fr" } },
+    /* A form in two columns: each field is half the measure, wide enough for
+       its value (an email address) without running the full 960px. Remove
+       (above) takes its whole row, where it already sat alone, so the pairs
+       are name and display name, email and job title, and not Remove beside
+       Full name. */
+    { id: tid("sp-name"), type: "SimulatedTextInput", props: { label: "Full name", value: settingsProfile.fullName, placeholder: settingsProfile.fullName }, layout: { width: "6fr" } },
+    { id: tid("sp-display"), type: "SimulatedTextInput", props: { label: "Display name", value: settingsProfile.displayName, placeholder: settingsProfile.displayName }, layout: { width: "6fr" } },
+    { id: tid("sp-email"), type: "SimulatedTextInput", props: { label: "Work email", value: settingsProfile.email, placeholder: settingsProfile.email }, layout: { width: "6fr" } },
+    { id: tid("sp-title"), type: "SimulatedTextInput", props: { label: "Job title", value: settingsProfile.jobTitle, placeholder: settingsProfile.jobTitle }, layout: { width: "6fr" } },
+    { id: tid("sp-tz"), type: "SimulatedDropdown", props: { label: "Time zone", value: settingsProfile.timezone, placeholder: settingsProfile.timezone }, layout: { width: "6fr" } },
 
     /* DANGER ZONE - isolated last */
     { id: tid("sp-t3"), type: "SimulatedTitle", props: { text: "Danger zone", level: "h3" }, layout: { width: "12fr" } },
