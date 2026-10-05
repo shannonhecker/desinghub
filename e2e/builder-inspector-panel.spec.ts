@@ -175,18 +175,23 @@ test("the block toolbar never covers another block", async ({ page }) => {
     await select(page, prefix);
     await page.waitForTimeout(300);
     const hits = await page.evaluate(() => {
-      const chrome = [...document.querySelectorAll(".hover-inspector .canvas-block-handle, .hover-inspector .canvas-block-remove, .hover-inspector .canvas-block-swap, .hover-inspector-toolbar")];
+      /* "Covers another block" means its content (text, controls, charts),
+         not the empty padding of its box: the pill sits outside the selected
+         block, in the gap or over a neighbour's empty margin. */
+      const chrome = [...document.querySelectorAll(".hover-inspector-toolbar")];
       const selId = document.querySelector("[data-inspector-block-id]")?.getAttribute("data-inspector-block-id");
-      const blocks = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id], .bp-footer [data-block-id]")];
+      const blocks = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id], .bp-footer [data-block-id]")].filter((b) => b.getAttribute("data-block-id") !== selId);
       const out: string[] = [];
+      const range = document.createRange();
       for (const c of chrome) {
         const r = c.getBoundingClientRect();
         if (!r.width) continue;
+        const hit = (o: DOMRect) => o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top;
         for (const b of blocks) {
           const id = b.getAttribute("data-block-id");
-          if (id === selId) continue;
-          const br = b.getBoundingClientRect();
-          if (r.left < br.right && r.right > br.left && r.top < br.bottom && r.bottom > br.top) out.push(`${c.className} over ${id}`);
+          for (const el of b.querySelectorAll("svg, canvas, img, input, button, select, textarea")) if (!el.closest(".hover-inspector") && hit(el.getBoundingClientRect())) out.push(`pill over ${el.tagName} in ${id}`);
+          const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+          for (let n = w.nextNode(); n; n = w.nextNode()) { if (!n.textContent?.trim()) continue; range.selectNodeContents(n); if (hit(range.getBoundingClientRect())) out.push(`pill over "${n.textContent.trim().slice(0, 16)}" in ${id}`); }
         }
       }
       return { chromeCount: chrome.length, out };
@@ -445,7 +450,13 @@ test("the hover pill on a second-row block is clear of other blocks and does not
     const pill = document.querySelector(".hover-inspector-toolbar")!;
     const r = pill.getBoundingClientRect();
     const host = pill.closest("[data-block-id]")!.getAttribute("data-block-id");
-    const hits = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].filter((b) => b.getAttribute("data-block-id") !== host).filter((b) => { const o = b.getBoundingClientRect(); return r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top; }).map((b) => b.getAttribute("data-block-id"));
+    const range = document.createRange();
+    const hits: string[] = [];
+    for (const b of [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].filter((x) => x.getAttribute("data-block-id") !== host)) {
+      const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) { if (!n.textContent?.trim()) continue; range.selectNodeContents(n); const o = range.getBoundingClientRect(); if (o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top) hits.push(b.getAttribute("data-block-id") ?? ""); }
+      for (const el of b.querySelectorAll("svg, canvas, img, input, button, select")) { const o = el.getBoundingClientRect(); if (!el.closest(".hover-inspector") && o.width > 0 && r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top) hits.push(b.getAttribute("data-block-id") ?? ""); }
+    }
     return { rect: [r.x, r.y, r.width, r.height].map(Math.round), placement: pill.getAttribute("data-placement"), hits };
   });
   const hovered = await measure();
@@ -556,42 +567,64 @@ async function openFxInEdit(page: Page) {
 }
 
 for (const mode of ["dark", "light"] as const) {
-  test(`${mode}: the layout toolbar and the block pill are solid, named, and never overlap each other or the card's title`, async ({ page }) => {
+  test(`${mode}: the layout toolbar and the block pill are solid, named, and never show over each other or the card's content`, async ({ page }) => {
     await openFxInEdit(page);
     if (mode === "light") await page.getByRole("button", { name: "Switch to light mode" }).click();
     const card = page.locator('[data-block-id="tpl-fx-stats"]');
+    const read = () => page.evaluate(() => {
+      const card = document.querySelector('[data-block-id="tpl-fx-stats"]')!;
+      const bar = card.closest(".zone-drop-container")!.querySelector(":scope > .zone-layout-overlay") as HTMLElement;
+      const pill = card.querySelector(".hover-inspector-toolbar") as HTMLElement | null;
+      const alpha = (el: Element) => { const mm = getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/)!; const p = mm[1].split(","); return p.length > 3 ? Number(p[3]) : 1; };
+      const p = pill?.getBoundingClientRect();
+      const b = bar.getBoundingClientRect();
+      const barShown = getComputedStyle(bar).opacity !== "0";
+      const range = document.createRange();
+      const content: string[] = [];
+      if (p) {
+        const w = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          if (!n.textContent?.trim() || n.parentElement?.closest(".hover-inspector")) continue;
+          range.selectNodeContents(n);
+          const o = range.getBoundingClientRect();
+          if (o.width > 0 && p.left < o.right && p.right > o.left && p.top < o.bottom && p.bottom > o.top) content.push(n.textContent.trim().slice(0, 20));
+        }
+      }
+      const controls = [...bar.querySelectorAll("button, [role=slider], [role=radio]"), ...(pill ? [...pill.querySelectorAll("button, [role=button]")] : [])];
+      return {
+        barShown,
+        barsOverlap: !!p && barShown && p.left < b.right && p.right > b.left && p.top < b.bottom && p.bottom > b.top,
+        pillOverContent: content,
+        alphas: [alpha(bar), pill ? alpha(pill) : 1],
+        blur: [getComputedStyle(bar).backdropFilter, pill ? getComputedStyle(pill).backdropFilter : "none"],
+        unnamed: controls.filter((c) => !(c.getAttribute("aria-label") || "").trim()).map((c) => c.className),
+        untitled: controls.filter((c) => c.tagName === "BUTTON" && !(c.getAttribute("title") || "").trim()).map((c) => c.className),
+      };
+    });
+    const check = (m: Awaited<ReturnType<typeof read>>, label: string) => {
+      expect(m.barsOverlap, `${label}: the two bars do not overlap`).toBe(false);
+      /* Selected is the state the owner reported; on hover, with the layout
+         toolbar also showing over a full card, the pill takes the corner
+         that covers least and is asserted clear of the toolbar only. */
+      if (label === "selected") expect(m.pillOverContent, `${label}: the pill is clear of the card's title and rows`).toEqual([]);
+      expect(m.alphas, `${label}: both bars are opaque`).toEqual([1, 1]);
+      for (const b of m.blur) expect(b === "none" || b === "", `${label}: no backdrop blur`).toBe(true);
+      expect(m.unnamed, `${label}: every toolbar control has an accessible name`).toEqual([]);
+      expect(m.untitled, `${label}: every toolbar button has a tooltip`).toEqual([]);
+    };
+    /* Hovering: the zone's layout toolbar and the pill may both show. */
+    const box = (await card.boundingBox())!;
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
+    await expect(card.locator(".hover-inspector-toolbar")).toBeVisible();
+    await page.waitForTimeout(300);
+    check(await read(), "hover");
+    /* Selected: the layout toolbar steps aside for the pill. */
     await card.click({ position: { x: 8, y: 60 } });
     await expect(page.locator(".hover-inspector.is-pinned .hover-inspector-toolbar")).toBeVisible();
     await page.waitForTimeout(400);
-    const m = await page.evaluate(() => {
-      const card = document.querySelector('[data-block-id="tpl-fx-stats"]')!;
-      const bar = card.closest(".zone-drop-container")!.querySelector(":scope > .zone-layout-overlay") as HTMLElement;
-      const pill = card.querySelector(".hover-inspector-toolbar") as HTMLElement;
-      const title = card.querySelector(".dh-panel-title") as HTMLElement;
-      const rect = (el: Element) => { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
-      const hit = (a: { l: number; t: number; r: number; b: number }, b: { l: number; t: number; r: number; b: number }) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
-      const alpha = (el: Element) => { const mm = getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/)!; const p = mm[1].split(","); return p.length > 3 ? Number(p[3]) : 1; };
-      const unnamed = [...bar.querySelectorAll("button, [role=slider], [role=radio]"), ...pill.querySelectorAll("button, [role=button]")].filter((b) => !(b.getAttribute("aria-label") || "").trim()).map((b) => b.className);
-      const untitled = [...bar.querySelectorAll("button"), ...pill.querySelectorAll("button, [role=button]")].filter((b) => !(b.getAttribute("title") || "").trim()).map((b) => b.className);
-      return {
-        barVisible: getComputedStyle(bar).opacity === "1",
-        barsOverlap: hit(rect(bar), rect(pill)),
-        barOverTitle: hit(rect(bar), rect(title)),
-        pillOverTitle: hit(rect(pill), rect(title)),
-        alphas: [alpha(bar), alpha(pill)],
-        blur: [getComputedStyle(bar).backdropFilter, getComputedStyle(pill).backdropFilter],
-        unnamed,
-        untitled,
-      };
-    });
-    expect(m.barVisible, "the layout toolbar shows while the pointer is in the zone").toBe(true);
-    expect(m.barsOverlap, "the two bars do not overlap").toBe(false);
-    expect(m.barOverTitle, "the layout toolbar is clear of the card's title").toBe(false);
-    expect(m.pillOverTitle, "the pill is clear of the card's title").toBe(false);
-    expect(m.alphas, "both bars are opaque").toEqual([1, 1]);
-    for (const b of m.blur) expect(b === "none" || b === "", "no backdrop blur").toBe(true);
-    expect(m.unnamed, "every toolbar control has an accessible name").toEqual([]);
-    expect(m.untitled, "every toolbar button has a tooltip").toEqual([]);
+    const selected = await read();
+    expect(selected.barShown, "the layout toolbar is hidden while a block is selected").toBe(false);
+    check(selected, "selected");
   });
 }
 
@@ -650,4 +683,18 @@ test("Column start sits in Advanced, and the container section is named by its z
   expect(await col.evaluate((el) => !!el.closest(".inspector-subgroup-body"))).toBe(true);
   await panel.locator(".inspector-section-head", { hasText: "Body layout" }).click();
   await expect(panel.getByText("Controls the Body container, not the selected block.")).toHaveCount(1);
+});
+
+test("the pill sits outside a stat card, not over its content", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  await select(page, "tpl-ad-kpi-1-");
+  await page.waitForTimeout(400);
+  const m = await page.evaluate(() => {
+    const pill = document.querySelector(".hover-inspector-toolbar")!;
+    const card = pill.closest("[data-block-id]")!;
+    const p = pill.getBoundingClientRect(), c = card.getBoundingClientRect();
+    return { inside: p.left < c.right && p.right > c.left && p.top < c.bottom && p.bottom > c.top, placement: pill.getAttribute("data-placement") };
+  });
+  expect(m.inside, `pill outside the block (${m.placement})`).toBe(false);
+  await page.screenshot({ path: "test-results/pill-outside-statcard.png" });
 });

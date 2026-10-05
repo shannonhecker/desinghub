@@ -18765,11 +18765,14 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   z-index: var(--bc-z-hud);
   zoom: calc(1 / var(--dh-frame-zoom, 1));
 }
-.hover-inspector-toolbar[data-placement="above-right"] { bottom: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="above-right"] { bottom: calc(100% + var(--insp-toolbar-gap)); right: var(--pill-shift, 0px); }
 .hover-inspector-toolbar[data-placement="above-left"]  { bottom: calc(100% + var(--insp-toolbar-gap)); left: 0; }
-.hover-inspector-toolbar[data-placement="below-right"] { top: calc(100% + var(--insp-toolbar-gap)); right: 0; }
+.hover-inspector-toolbar[data-placement="below-right"] { top: calc(100% + var(--insp-toolbar-gap)); right: var(--pill-shift, 0px); }
 .hover-inspector-toolbar[data-placement="below-left"]  { top: calc(100% + var(--insp-toolbar-gap)); left: 0; }
 .hover-inspector-toolbar[data-placement="inside"]      { top: var(--insp-toolbar-gap); right: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-tl"] { top: var(--insp-toolbar-gap); left: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-br"] { bottom: var(--insp-toolbar-gap); right: var(--insp-toolbar-gap); }
+.hover-inspector-toolbar[data-placement="inside-bl"] { bottom: var(--insp-toolbar-gap); left: var(--insp-toolbar-gap); }
 /* A block shorter than the pill: the pill sits centred on the block's own
    height (its corner would spill into the row below). */
 .hover-inspector-toolbar[data-placement="inside-middle"] { top: 50%; right: var(--insp-toolbar-gap); transform: translateY(-50%); }
@@ -18828,14 +18831,15 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   .comp-resize-handle { display: none !important; }
 }
 
-/* Floating canvas toolbars never overlap (5 Oct). The body zone's layout
-   toolbar sits just above the zone's top edge, in the page gutter, instead
-   of over the first row's content; the block pill treats it as an obstacle
-   (HoverInspector) and takes the next clear place. Icons on the solid
-   surface use the muted foreground (over 3:1 in both modes). */
-.zone-drop-body > .zone-layout-overlay {
-  top: auto;
-  bottom: calc(100% + var(--bc-gap-xxs));
+/* Floating canvas toolbars never overlap (5 Oct). The zone's layout toolbar
+   is a zone-level tool: it shows on zone hover while no block in the zone is
+   selected, and steps aside for the block pill once one is (the panel's
+   "Body layout" section holds the same controls). On hover the pill treats
+   it as an obstacle (HoverInspector). Icons on the solid surface use the
+   muted foreground (over 3:1 in both modes). */
+.zone-drop-container:has(.hover-inspector.is-pinned) > .zone-layout-overlay {
+  opacity: 0;
+  pointer-events: none;
 }
 .zone-layout-overlay .zlo-btn,
 .zone-layout-overlay .zlo-gap { color: var(--bc-fg-muted); }
