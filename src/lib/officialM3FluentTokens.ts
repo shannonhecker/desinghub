@@ -73,6 +73,16 @@ function schemePalette(mode: "light" | "dark") {
   return { primary: pair(primary), secondary: pair(secondary), error: pair(error) };
 }
 
+/** Material surface roles MUI's palette has no slot for, for the canvas's own
+ *  overlays (the chart rail's menus): `--mui-m3-<role>`. They sit beside the
+ *  official tokens, scoped the same way, and come from the same roles the
+ *  component theme uses. The canvas ground does not read them. */
+const SURFACE_ROLES = ["surfaceContainer", "surfaceContainerHigh", "secondaryContainer", "onSecondaryContainer", "onSurface", "onSurfaceVariant", "outlineVariant"] as const;
+function surfaceRoleDecls(mode: "light" | "dark"): Record<string, string> {
+  const roles = m3Roles(mode);
+  return Object.fromEntries(SURFACE_ROLES.map((role) => [`--mui-m3-${role}`, roles[role]]));
+}
+
 /**
  * Build the scoped, leak-proof MUI `--mui-*` token stylesheet. Reads the
  * official Material UI CSS-variables theme and re-scopes its generated sheets
@@ -118,8 +128,8 @@ export function buildM3TokenCSS(): string {
 
   /* Dark = builder base; light = .builder-light override. Base (shape) vars
      are merged into both so e.g. --mui-shape-borderRadius always resolves. */
-  const darkCss = declsToCss({ ...baseDecls, ...darkDecls });
-  const lightCss = declsToCss({ ...baseDecls, ...lightDecls });
+  const darkCss = declsToCss({ ...baseDecls, ...darkDecls, ...surfaceRoleDecls("dark") });
+  const lightCss = declsToCss({ ...baseDecls, ...lightDecls, ...surfaceRoleDecls("light") });
 
   return [
     `.preview-m3{${darkCss}}`,

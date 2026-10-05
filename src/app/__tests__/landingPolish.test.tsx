@@ -722,8 +722,9 @@ describe("instrument", () => {
     ).toEqual(NAMES);
   });
 
-  /* The first pair a visitor sees is one whose primary buttons read in both
-     modes (Material 3's dark capture has a pale label on pale lilac). */
+  /* The first pair a visitor sees: Salt DS against uoaui, whose primary
+     buttons read in both modes. (Every capture's does now: Material 3's
+     label is its on-primary role.) */
   it("starts with Salt on the left and uoaui on the right, in dark mode", () => {
     const el = renderPage();
     const sec = sectionOf(el);
@@ -1399,6 +1400,50 @@ describe("legend facts are pinned to their sources", () => {
     }
     // The primary button is roughly 70 x 35 CSS px at 2x: several thousand pixels.
     expect(hits).toBeGreaterThan(3000);
+  });
+
+  /* A system whose buttons are fully rounded says so beside its corner
+     radius. Pinned twice: to the builder's own rule for that system's
+     primary action, and to the button as it is in the shipped capture. */
+  it.each(SYSTEMS.map((s) => [s.name, s] as const))("%s: 'pill buttons' is the builder's rule for its primary action", (_name, s) => {
+    const rule = new RegExp(`\\.preview-${s.builderId} \\.dh-hero-button \\{[^}]*border-radius:\\s*var\\(--ds-btn-radius\\)`);
+    expect(rule.test(builderCss), `${s.name}: .preview-${s.builderId} .dh-hero-button rounds to --ds-btn-radius`).toBe(s.buttons === "pill");
+    if (s.buttons !== "pill") return;
+    /* Fully rounded: the radius is at least half the button's height
+       (the hero field's height less one and a half cell gaps). */
+    const tokens = readFileSync(resolve(process.cwd(), "src/components/builder/chrome-tokens.css"), "utf8");
+    const px = (name: string) => parseFloat(tokens.match(new RegExp(`${name}:\\s*([\\d.]+)px`))![1]);
+    const height = px("--dh-hero-search-h") - px("--dh-cell-gap") * 1.5;
+    expect(parseFloat(decl(block(s.builderId), "--ds-btn-radius"))).toBeGreaterThanOrEqual(height / 2);
+  });
+
+  it.each(
+    SYSTEMS.flatMap((s) =>
+      (["light", "dark"] as const).map((mode) => [s.name, mode, s] as const),
+    ),
+  )("%s %s: the capture's primary button has the corner the legend names", async (_name, mode, s) => {
+    const { default: sharp } = await import("sharp");
+    const { data, info } = await sharp(resolve(process.cwd(), `public/showcase/cmp-${s.id}-${mode}.webp`)).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const hex = s.accent[mode].hex;
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const isAccent = (x: number, y: number) => {
+      const i = (y * info.width + x) * info.channels;
+      return Math.abs(data[i] - r) <= 10 && Math.abs(data[i + 1] - g) <= 10 && Math.abs(data[i + 2] - b) <= 10;
+    };
+    /* The left half's button: the box of accent pixels in the field's band. */
+    let [x0, y0, x1, y1] = [Infinity, Infinity, -1, -1];
+    for (let y = 0; y < Math.round(info.height * 0.4); y++) {
+      for (let x = 0; x < info.width / 2; x++) {
+        if (!isAccent(x, y)) continue;
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+      }
+    }
+    expect(x1 - x0, "a button-sized accent box").toBeGreaterThan(100);
+    expect(y1 - y0).toBeGreaterThan(50);
+    /* 8px in from the box's corner (capture pixels, 2 per CSS px): inside a
+       button whose radius is 12px or less, outside a fully rounded one. */
+    const filledNearCorner = isAccent(x0 + 8, y0 + 8) && isAccent(x1 - 8, y1 - 8);
+    expect(filledNearCorner, `${s.name} ${mode}: ${s.buttons === "pill" ? "a pill" : `${s.corners} corners`}`).toBe(s.buttons !== "pill");
   });
 
   it("phrases are built from those facts, with no hex in them", () => {

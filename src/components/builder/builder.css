@@ -10641,6 +10641,9 @@ th[class*="-th"] > span { vertical-align: middle; }
    marks it with the check alone), with a lighter tint over it on hover or
    focus rather than a second full one. */
 .dh-exec-flyout-item.is-checked:not(:hover):not(.is-active) { background: var(--dh-exec-menu-active-bg, transparent); }
+/* A system whose selected fill has its own text role (Material's
+   on-secondary-container) says so; the others leave the row's colour alone. */
+.dh-exec-flyout-item.is-checked { color: var(--dh-exec-menu-active-fg, inherit); }
 .dh-exec-flyout-item.is-checked:hover,
 .dh-exec-flyout-item.is-checked.is-active { background: color-mix(in srgb, var(--ds-fg) 6%, var(--dh-exec-menu-active-bg, transparent)); }
 /* Inside the menu's edge, which scrolls (and so clips) when it is capped. */
@@ -11688,7 +11691,12 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 /* A multi-page canvas holds the frame at full height (DeviceFrame): the
    app fills it rather than leaving the frame's own background below. */
 .bp-device-frame > .bp-dashboard { flex-grow: 1; }
-.bp-dashboard[data-mode="dark"] .dh-launcher-art { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+/* The thumbnails are light artwork: in dark mode they are inverted onto the
+   card. Dark is the canvas's base and `.builder-light` the override, as for
+   every token above (only Salt carries a data-mode attribute, so keying on
+   it left the other four systems with white thumbnails in dark). */
+.dh-launcher-art { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+.builder-light .dh-launcher-art { filter: none; mix-blend-mode: normal; }
 .dh-launcher-desc { flex: 1 1 auto; margin: 0; font-size: var(--dh-panel-meta-size); line-height: 1.45; color: var(--ds-fg-secondary); }
 .dh-launcher-open {
   align-self: flex-start;
@@ -12809,21 +12817,24 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   letter-spacing: -0.01em;
 }
 
+/* Drawn in the header's own text colour, so it reads on whatever the header
+   is (any system, light or dark, any zone tone). It used to be white at 50%
+   on a white tint: an empty outline with a dot on every light header. */
 .bp-status-pill {
   display: flex;
   align-items: center;
   gap: 5px;
   padding: 3px 9px 3px 7px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
 }
 
 .bp-status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(74, 222, 128, 0.8);
+  background: var(--ds-status-positive);
   animation: bp-pulse 2.5s ease-in-out infinite;
 }
 
@@ -12835,7 +12846,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
 .bp-status-label {
   font-size: 10px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, currentColor 80%, transparent);
   letter-spacing: 0.03em;
 }
 

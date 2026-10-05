@@ -20,7 +20,7 @@ import type { SystemId } from "@/lib/componentApiRegistry";
 import { RealComponentRenderer } from "@/components/ui-kit/RealComponentRenderer";
 import { executionOrderOf, feedSwitchedOn, type FeedSample } from "@/lib/executionFeed";
 import type { GridColumn } from "@/lib/dataGridModel";
-import { readThemeVars, type ThemeVars } from "./SimulatedHighchart";
+import { readThemeVars, settledBackground, type ThemeVars } from "./SimulatedHighchart";
 import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, PRICE_GUTTER, PRICE_GUTTER_NARROW, type ChartFrame } from "./executionChartOptions";
 import { ExecutionRail, type RailMenu, type RailTool } from "./ExecutionRail";
 import { SimulatedDataGrid } from "./SimulatedDataGrid";
@@ -122,7 +122,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
      drawn once, at its container's width (it used to draw narrow and
      reflow a moment later). */
   useLayoutEffect(() => {
-    if (rootRef.current) setVars({ ...readThemeVars(rootRef.current), card: getComputedStyle(rootRef.current).backgroundColor });
+    if (rootRef.current) setVars({ ...readThemeVars(rootRef.current), card: settledBackground(rootRef.current) });
   }, [system, mode]);
   const hasView = view !== null;
   useLayoutEffect(() => {

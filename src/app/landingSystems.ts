@@ -6,6 +6,9 @@
  *    (--ds-font and --ds-radius in src/components/builder/builder.css; for
  *    Fluent, borderRadiusMedium from the official Fluent theme). A unit test
  *    reads those sources and fails on drift.
+ *  - `buttons` says where a system's buttons are fully rounded regardless of
+ *    that radius (Material 3). A unit test reads the builder's rule for the
+ *    system's primary action and checks the button's corner in the capture.
  *  - `accent` is the fill of the primary button as the builder rendered it,
  *    per mode. A unit test finds that colour in the shipped capture.
  */
@@ -28,6 +31,11 @@ export interface SystemSpec {
   brand: string;
   font: string;
   corners: string;
+  /** Set where the system's buttons are fully rounded whatever its corner
+   *  radius is: the capture then shows a pill beside `corners`-radius fields
+   *  and cards, and the legend says both. Pinned to the builder's own rule
+   *  for the system's primary action and to the capture's pixels. */
+  buttons?: "pill";
   accent: Record<Mode, Accent>;
   /** The system's own page surface in dark mode: the specimen sheet's ground. */
   surface: string;
@@ -51,6 +59,7 @@ export const SYSTEMS: readonly SystemSpec[] = [
     brand: "#D0BCFF",
     font: "Roboto",
     corners: "12px",
+    buttons: "pill",
     accent: { light: { name: "violet", hex: "#6750A4" }, dark: { name: "lilac", hex: "#D0BCFF" } },
     surface: "#121212",
   },
@@ -89,11 +98,14 @@ export const SYSTEMS: readonly SystemSpec[] = [
 export const specOf = (id: SystemId): SystemSpec =>
   SYSTEMS.find((s) => s.id === id) ?? SYSTEMS[0];
 
-const cornerWords = (c: string) => (c === "0px" ? "square corners" : `${c} corners`);
+/** A system's shape in words: its corner radius, and its buttons where they
+ *  are rounded differently ("12px corners, pill buttons"). */
+export const cornerWords = (s: SystemSpec) =>
+  `${s.corners === "0px" ? "square corners" : `${s.corners} corners`}${s.buttons === "pill" ? ", pill buttons" : ""}`;
 
 /** One side's facts as a plain phrase, with no hex in it. */
 export function traits(s: SystemSpec, mode: Mode): string {
-  return `${s.font}, ${cornerWords(s.corners)}, ${s.accent[mode].name} accent`;
+  return `${s.font}, ${cornerWords(s)}, ${s.accent[mode].name} accent`;
 }
 
 /** What actually differs between two systems, in words. Only real
@@ -101,7 +113,7 @@ export function traits(s: SystemSpec, mode: Mode): string {
     left out for that pair. No hex digits: this sentence is read aloud. */
 export function differences(a: SystemSpec, b: SystemSpec, mode: Mode): string {
   const parts = [`${a.font} against ${b.font}`];
-  if (a.corners !== b.corners) parts.push(`${cornerWords(a.corners)} against ${cornerWords(b.corners)}`);
+  if (cornerWords(a) !== cornerWords(b)) parts.push(`${cornerWords(a)} against ${cornerWords(b)}`);
   if (a.accent[mode].hex !== b.accent[mode].hex) {
     parts.push(`${a.accent[mode].name} against ${b.accent[mode].name}`);
   }

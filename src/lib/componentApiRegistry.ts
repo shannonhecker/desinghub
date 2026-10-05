@@ -467,7 +467,8 @@ const M3: Record<string, ComponentApiEntry> = {
   },
   SimulatedTextInput: {
     imports: { from: MUI, names: ["TextField"] },
-    toJsx: (p) => `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" variant="outlined" />`,
+    /* fullWidth: on the canvas a field fills its block (RealComponentRenderer). */
+    toJsx: (p) => `<TextField label="${jsxAttr(p.label, "Label")}" placeholder="${jsxAttr(p.placeholder)}" variant="outlined" fullWidth />`,
   },
   SimulatedCheckbox: {
     imports: { from: MUI, names: ["Checkbox", "FormControlLabel"] },
