@@ -112,18 +112,35 @@ function Fingerprint() {
   const aliased = /^\s*var\(/.test(t.font);
   const [standIn, setStandIn] = React.useState<string | null>(null);
   React.useEffect(() => {
-    let next: string | null = null;
-    try {
-      /* A loader alias is always available: the app hosts that face. */
-      if (!aliased && !document.fonts.check(`12px "${fontName}"`)) {
-        const apple = /Mac|iPhone|iPad/.test(navigator.platform);
-        const system = (f: string) => f === "system-ui" || f === "sans-serif" || (apple && (f === "-apple-system" || f === "BlinkMacSystemFont"));
-        /* Walk the stack in order: the first entry this browser can use. */
-        const used = families.slice(1).find((f) => system(f) || (!f.startsWith("-") && f !== "BlinkMacSystemFont" && document.fonts.check(`12px "${f}"`)));
-        next = !used || system(used) ? "the system sans" : used;
-      }
-    } catch { /* leave the caption plain */ }
-    setStandIn(next);
+    let live = true;
+    const detect = () => {
+      let next: string | null = null;
+      try {
+        /* A loader alias is always available: the app hosts that face. For a
+           named family, document.fonts.check answers true for anything it has
+           no face rule for, so measure instead: a family the browser cannot
+           draw sets the sample exactly as the generic fallback does. */
+        const ctx = document.createElement("canvas").getContext("2d");
+        const sample = "mmmmmmmmmmlliWQ@#0123456789";
+        const width = (family: string) => { ctx!.font = `72px ${family}`; return ctx!.measureText(sample).width; };
+        const drawable = (f: string) => !!ctx && (width(`"${f}", monospace`) !== width("monospace") || width(`"${f}", serif`) !== width("serif"));
+        if (ctx && !aliased && !drawable(fontName)) {
+          const apple = /Mac|iPhone|iPad/.test(navigator.platform);
+          const system = (f: string) => f === "system-ui" || f === "sans-serif" || (apple && (f === "-apple-system" || f === "BlinkMacSystemFont"));
+          /* Walk the stack in order: the first entry this browser can use. */
+          const used = families.slice(1).find((f) => system(f) || (!f.startsWith("-") && f !== "BlinkMacSystemFont" && drawable(f)));
+          next = !used || system(used) ? "the system sans" : used;
+        }
+      } catch { /* leave the caption plain */ }
+      if (live) setStandIn(next);
+    };
+    /* Web fonts arrive after first paint: measure once they are in, and
+       again whenever another face finishes loading. */
+    const fonts = typeof document !== "undefined" ? document.fonts : undefined;
+    if (!fonts?.ready) { detect(); return; }
+    void fonts.ready.then(detect);
+    fonts.addEventListener?.("loadingdone", detect);
+    return () => { live = false; fonts.removeEventListener?.("loadingdone", detect); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t.font]);
   const palette = [t.accent, t.accentWeak, t.successStrong, t.warningStrong, t.dangerStrong, t.infoStrong, t.fg, t.fg2, t.bg3]
