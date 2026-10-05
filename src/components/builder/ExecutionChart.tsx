@@ -12,7 +12,7 @@ import {
   EXECUTION_CHART_STYLES, EXECUTION_INTERVALS, EXECUTION_KEYS, EXECUTION_OVERLAYS, EXECUTION_RANGES,
   executionRangeStart, executionRows, rangeCovering, resolveExecution, toggleOverlay,
 } from "@/lib/executionModel";
-import { goToSpan } from "@/lib/chartViewport";
+import { goToPlan, goToSpan } from "@/lib/chartViewport";
 import { dataDays } from "@/lib/calendarGrid";
 import { parseExecutionTime } from "@/lib/reportData/executionDataset";
 import { tableOf } from "@/lib/reportData/types";
@@ -76,7 +76,8 @@ function windowLabel(from: number, to: number): string {
 }
 /** What each range preset shows (its tooltip, as in the original). */
 const RANGE_HINTS: Record<string, string> = { "1D": "The session", "3D": "The last 3 days", "5D": "The last 5 days", "1W": "The last week", "1M": "The last month", "3M": "The last 3 months", YTD: "This year to date", Order: "The order, first bar to last" };
-const KEYS_HELP = "Arrow keys pan, plus and minus zoom time, Page Up and Page Down zoom price, 0 resets, End goes back to the latest bar.";
+const KEYS_HELP = "Arrow keys pan, plus and minus zoom time, Page Up and Page Down zoom price, 0 resets, End goes back to the latest bar. With a mouse, hold Control or Command and scroll to zoom.";
+const isMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform ?? "");
 
 export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
   const block = useBuilder((s) => (blockId ? s.blocks.find((b) => b.id === blockId) : undefined));
@@ -216,22 +217,23 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const goTo = (from: number, to: number): string | null => {
     if (!view || !dataset) return "The chart is not ready yet.";
     const shown = built?.frame.view.times ?? view.times;
-    const noBars = "No bars in that window: the market was closed. Pick a weekday time.";
-    /* Bars of the window already on the chart: show them. */
-    const here = goToSpan(shown, from, to, MIN_BARS);
-    if (here) {
+    const noBars = "No bars in that window. Try a wider one.";
+    /* The bars already on the chart answer it, unless the window starts
+       before them and a longer range holds more of it (goToPlan). */
+    const startsBefore = shown.length > 0 && shown[0] > from;
+    const range = startsBefore || !shown.length ? rangeCovering(from, sessionStart) : null;
+    const samples = peek();
+    const source = order && samples.length ? liveDataset(dataset, order, samples) : dataset;
+    const wider = range && range !== view.range ? resolveExecution(source, { ...reportState, [EXECUTION_KEYS.range]: range }) : null;
+    const plan = goToPlan(shown, wider?.times ?? null, from, to);
+    if (plan === "here") {
+      const here = goToSpan(shown, from, to, MIN_BARS);
+      if (!here) return noBars;
       nav.showSpan(here);
       setCustomLabel(windowLabel(from, to));
       return null;
     }
-    if (shown.length && shown[0] <= from) return noBars;
-    /* Further back than this range reaches: the shortest range that does. */
-    const range = rangeCovering(from, sessionStart);
-    if (!range) return "That is further back than the sample data reaches.";
-    const samples = peek();
-    const source = order && samples.length ? liveDataset(dataset, order, samples) : dataset;
-    const wider = resolveExecution(source, { ...reportState, [EXECUTION_KEYS.range]: range });
-    if (!wider || !goToSpan(wider.times, from, to, MIN_BARS)) return noBars;
+    if (plan === "none" || !range) return startsBefore && !range ? "That is further back than the sample data reaches." : noBars;
     pendingGoTo.current = { from, to, range };
     setReportState(EXECUTION_KEYS.range, range);
     return null;
@@ -327,6 +329,10 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
             <HighchartsReact ref={chartRef} highcharts={Highcharts} options={options} immutable />
           ) : null}
           {navigable ? <span id={keysHelpId} className="dh-exec-sr">{KEYS_HELP}</span> : null}
+          {navigable && nav.status.wheelNote ? (
+            /* Shown for a moment when a plain wheel scrolls the page past the chart (the keys help says the same). */
+            <div className="dh-exec-wheel-note" aria-hidden="true">Hold {isMac() ? "\u2318" : "Ctrl"} and scroll to zoom</div>
+          ) : null}
           {navigable && nav.status.hint ? (
             <div className="dh-exec-hint" role="note">
               <p>Press and hold the chart to see the values under it.</p>

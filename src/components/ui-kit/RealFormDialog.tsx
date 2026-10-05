@@ -113,6 +113,17 @@ interface Props { system: SystemId; mode: Mode; density?: DensityLevel | string;
 function useDialogKeys(model: FormDialogModel) {
   const { open, onClose, returnFocus } = model;
   const wasOpen = React.useRef(false);
+  /* Opened from inside a device frame (a tablet or phone preview): no wider
+     than the frame, as it would be on that device. The dialogs are drawn at
+     the end of the page, so the cap is a variable on the root while open. */
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    const frame = returnFocus?.current?.closest(".bp-device-frame");
+    if (!frame) return;
+    const root = document.documentElement;
+    root.style.setProperty("--dh-form-dialog-cap", `${Math.round(frame.getBoundingClientRect().width)}px`);
+    return () => { root.style.removeProperty("--dh-form-dialog-cap"); };
+  }, [open, returnFocus]);
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -141,7 +152,6 @@ function useDialogKeys(model: FormDialogModel) {
 }
 
 const errorId = (f: FormDialogField) => `${f.id}-error`;
-const titleId = (system: string) => `dh-form-dialog-${system}-title`;
 const submitOnEnter = (model: FormDialogModel) => (e: React.FormEvent) => { e.preventDefault(); model.primary.onClick(); };
 
 /** The form's grid of rows (ours: the same rhythm in every system). */
@@ -195,6 +205,7 @@ function SaltForm({ mode, density, model }: Omit<Props, "system">) {
 
 /* ── Material 3 ── */
 function M3Form({ mode, model }: Omit<Props, "system">) {
+  const title = React.useId();
   const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
   /* Material's colours come from its theme object, not CSS variables. */
   const calendarTokens = {
@@ -204,8 +215,8 @@ function M3Form({ mode, model }: Omit<Props, "system">) {
   } as React.CSSProperties;
   return (
     <MuiThemeProvider theme={theme}>
-      <MuiDialog open={model.open} onClose={model.onClose} aria-labelledby={titleId("m3")} className="dh-form-dialog dh-form-dialog-m3" slotProps={{ paper: { component: "form", onSubmit: submitOnEnter(model), noValidate: true } as object }}>
-        <MuiDialogTitle id={titleId("m3")}>{model.title}</MuiDialogTitle>
+      <MuiDialog open={model.open} onClose={model.onClose} aria-labelledby={title} className="dh-form-dialog dh-form-dialog-m3" slotProps={{ paper: { component: "form", onSubmit: submitOnEnter(model), noValidate: true } as object }}>
+        <MuiDialogTitle id={title}>{model.title}</MuiDialogTitle>
         <MuiDialogContent>
           {model.note ? <MuiDialogContentText sx={{ mb: 2 }}>{model.note}</MuiDialogContentText> : null}
           {model.choice ? (
@@ -234,13 +245,14 @@ function M3Form({ mode, model }: Omit<Props, "system">) {
 
 /* ── Fluent 2 ── */
 function FluentForm({ mode, model }: Omit<Props, "system">) {
+  const title = React.useId();
   return (
     <FluentProvider theme={mode === "dark" ? webDarkTheme : webLightTheme}>
       <FluentDialog open={model.open} onOpenChange={(_, d) => { if (!d.open) model.onClose(); }}>
-        <FluentDialogSurface className="dh-form-dialog dh-form-dialog-fluent" aria-labelledby={titleId("fluent")}>
+        <FluentDialogSurface className="dh-form-dialog dh-form-dialog-fluent" aria-labelledby={title}>
           <form onSubmit={submitOnEnter(model)} noValidate>
             <FluentDialogBody>
-              <FluentDialogTitle id={titleId("fluent")}>{model.title}</FluentDialogTitle>
+              <FluentDialogTitle id={title}>{model.title}</FluentDialogTitle>
               <FluentDialogContent>
                 {model.note ? <FluentText as="p" block className="dh-form-dialog-note">{model.note}</FluentText> : null}
                 {model.choice ? (
@@ -340,6 +352,7 @@ function keepTabInside(e: React.KeyboardEvent, root: HTMLElement | null) {
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
 
 function UoauiForm({ mode, density, model }: Omit<Props, "system">) {
+  const title = React.useId();
   const css = React.useMemo(() => scopeCss(sanitizeCSS(getFullCSS("uoaui", getTheme("uoaui", mode), coerceDensity(density)))), [mode, density]);
   const panel = React.useRef<HTMLDivElement>(null);
   /* uoaui's colours live in its theme object, not in CSS variables. */
@@ -369,9 +382,9 @@ function UoauiForm({ mode, density, model }: Omit<Props, "system">) {
     <div className="preview-uoaui a-app dh-form-dialog-scope">
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="a-dialog-backdrop dh-form-dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) model.onClose(); }}>
-        <div ref={panel} className="a-dialog dh-form-dialog dh-form-dialog-uoaui" style={tokens} role="dialog" aria-modal="true" aria-labelledby={titleId("uoaui")} onKeyDown={trap}>
+        <div ref={panel} className="a-dialog dh-form-dialog dh-form-dialog-uoaui" style={tokens} role="dialog" aria-modal="true" aria-labelledby={title} onKeyDown={trap}>
           <form onSubmit={submitOnEnter(model)} noValidate>
-            <h2 id={titleId("uoaui")} className="dh-form-dialog-title">{model.title}</h2>
+            <h2 id={title} className="dh-form-dialog-title">{model.title}</h2>
             {model.note ? <p className="dh-form-dialog-note">{model.note}</p> : null}
             {model.choice ? (
               <div className="a-tabs dh-form-dialog-choice" role="tablist" aria-label={model.choice.label}>

@@ -72,6 +72,15 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
   const errorOf = (field: GoToField) => (error?.field === field ? error.text : null);
 
   const submit = () => {
+    /* A half-typed time (the browser's own field reports it, with an empty
+       value) is not midnight: say so. */
+    const times: GoToField[] = goMode === "Date" ? ["time"] : ["fromTime", "toTime"];
+    const half = times.find((f) => (document.getElementById(`fx-goto-${f}`) as HTMLInputElement | null)?.validity?.badInput);
+    if (half) {
+      setError({ field: half, text: "Enter the whole time as HH:MM, for example 10:30." });
+      document.getElementById(`fx-goto-${half}`)?.focus();
+      return;
+    }
     const r = parseGoTo(goMode === "Date" ? { mode: "date", date, time } : { mode: "range", fromDate, fromTime, toDate, toTime }, { first, last });
     if (!r.ok) {
       setError({ field: r.field, text: r.error });
