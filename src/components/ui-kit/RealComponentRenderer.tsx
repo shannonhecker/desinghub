@@ -581,8 +581,10 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
     const TitleComponent = ({ h1: SaltH1, h2: SaltH2, h3: SaltH3, h4: SaltH4 } as Record<string, React.ComponentType<{ children?: React.ReactNode }>>)[s(props.level, "h2")] ?? SaltH2;
     inner = <TitleComponent>{s(props.text, "Heading")}</TitleComponent>;
   } else if (type === "SimulatedLink") {
+    /* Salt's IconComponent only draws for a new-tab link, so the arrow is a
+       child icon here. */
     inner = props.showIcon
-      ? <SaltLink href="#" IconComponent={ChevronRightIcon}>{s(props.text, "Learn more")}</SaltLink>
+      ? <SaltLink href="#" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>{s(props.text, "Learn more")}<ChevronRightIcon aria-hidden /></SaltLink>
       : <SaltLink href="#">{s(props.text, "Learn more")}</SaltLink>;
   } else if (type === "SimulatedBadge") {
     /* Salt's Badge carries no status, so a status shows as Salt's own status
@@ -607,7 +609,13 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
     // standalone progress block overflows narrow columns and floats at a fixed
     // size in wide ones. M3 (MuiLinearProgress) and Fluent (ProgressBar) both
     // fill their container; pin Salt to match so the bar tracks its cell width.
-    inner = <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} style={{ width: "100%", minWidth: 0 }} />;
+    /* The label shows above the bar, as the other four systems draw it. */
+    inner = (
+      <div>
+        {s(props.label) ? <SaltText styleAs="label" variant="secondary">{s(props.label)}</SaltText> : null}
+        <SaltLinearProgress aria-label={s(props.label, "Progress")} value={num(props.value, 50)} style={{ width: "100%", minWidth: 0 }} />
+      </div>
+    );
   } else if (type === "SimulatedAvatar") {
     inner = <SaltAvatar name={s(props.initials, "?")} src={s(props.src) ? publicAssetUrl(s(props.src)) : undefined} size={saltAvatarSize(s(props.size, "md"))} />;
   } else if (type === "SimulatedStatCard") {
@@ -809,7 +817,12 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
     const variant = ({ h1: "h3", h2: "h4", h3: "h5", h4: "h6" } as Record<string, "h3" | "h4" | "h5" | "h6">)[s(props.level, "h2")] ?? "h4";
     inner = <MuiTypography variant={variant} component={s(props.level, "h2") as React.ElementType}>{s(props.text, "Heading")}</MuiTypography>;
   } else if (type === "SimulatedLink") {
-    inner = <MuiLink href="#" underline="hover">{s(props.text, "Learn more")}</MuiLink>;
+    inner = (
+      <MuiLink href="#" underline="hover" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+        {s(props.text, "Learn more")}
+        {props.showIcon ? <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>arrow_forward</span> : null}
+      </MuiLink>
+    );
   } else if (type === "SimulatedBadge") {
     inner = <MuiChip label={s(props.label, "Badge")} color={muiChipColor(s(props.status, "default"))} />;
   } else if (type === "SimulatedPill") {
@@ -823,7 +836,12 @@ function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRende
   } else if (type === "FooterText") {
     inner = <MuiTypography variant="body2" color="text.secondary">{s(props.label, "Footer")} · {s(props.version, "v1.0")}</MuiTypography>;
   } else if (type === "SimulatedProgress") {
-    inner = <MuiLinearProgress variant="determinate" value={num(props.value, 50)} />;
+    inner = (
+      <div>
+        {s(props.label) ? <MuiTypography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>{s(props.label)}</MuiTypography> : null}
+        <MuiLinearProgress variant="determinate" value={num(props.value, 50)} aria-label={s(props.label, "Progress")} />
+      </div>
+    );
   } else if (type === "SimulatedAvatar") {
     const dim = ({ sm: 28, md: 40, lg: 56 } as Record<string, number>)[s(props.size, "md")] ?? 40;
     inner = <MuiAvatar sx={{ width: dim, height: dim }} src={s(props.src) ? publicAssetUrl(s(props.src)) : undefined}>{s(props.initials, "?")}</MuiAvatar>;
@@ -940,7 +958,12 @@ function FluentReal({ type, mode, saltDensity, props }: Omit<RealComponentRender
     const TitleComponent = ({ h1: FluentTitle1, h2: FluentTitle2, h3: FluentTitle3, h4: FluentSubtitle2 } as Record<string, React.ComponentType<{ children?: React.ReactNode }>>)[s(props.level, "h2")] ?? FluentTitle2;
     inner = <TitleComponent>{s(props.text, "Heading")}</TitleComponent>;
   } else if (type === "SimulatedLink") {
-    inner = <FluentLink href="#">{s(props.text, "Learn more")}</FluentLink>;
+    inner = (
+      <FluentLink href="#" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {s(props.text, "Learn more")}
+        {props.showIcon ? <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>arrow_forward</span> : null}
+      </FluentLink>
+    );
   } else if (type === "SimulatedBadge") {
     const color = ({ default: "brand", info: "informative", success: "success", warning: "warning", error: "danger" } as Record<string, "brand" | "informative" | "success" | "warning" | "danger">)[s(props.status, "default")] ?? "brand";
     inner = <FluentBadge appearance="filled" color={color} size={size}>{s(props.label, "Badge")}</FluentBadge>;

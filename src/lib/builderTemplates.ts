@@ -142,7 +142,7 @@ const analyticsDashboard: BuilderTemplate = {
   body: [
     /* Scope bar - section title + date-range + export (canonical dashboard header row) */
     { id: tid("ad-title"), type: "SimulatedTitle", props: { text: "Revenue overview", level: "h3" }, layout: { width: "6fr" } },
-    { id: tid("ad-range"), type: "SimulatedDropdown", props: { value: "Last 30 days", placeholder: "Last 30 days" }, layout: { width: "3fr" } },
+    { id: tid("ad-range"), type: "SimulatedDropdown", props: { value: "Last 30 days", optionsCsv: "Last 7 days, Last 30 days, Last 90 days, This year", placeholder: "Choose a date range" }, layout: { width: "3fr" } },
     { id: tid("ad-export"), type: "SimulatedButton", props: { label: "Export CSV", variant: "secondary" }, layout: { width: "3fr" } },
     /* KPI row - 4 cards (3 cols each), lead metric first. label + value from the
        shared analyticsKpis dataset; `pct` drives the card's progress-bar fill

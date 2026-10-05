@@ -61,8 +61,6 @@ const READS: Record<string, string[]> = {
 const KNOWN_PARTIAL: Record<string, Record<string, string[]>> = {
   SimulatedAvatar: { presence: ["salt", "m3", "fluent"] },
   SimulatedPill: { dismissible: ["salt", "carbon"] },
-  SimulatedLink: { showIcon: ["m3", "fluent"] },
-  SimulatedProgress: { label: ["salt", "m3"] },
   NavItem: { icon: ["salt", "fluent", "carbon"] },
 };
 
@@ -176,6 +174,20 @@ describe("new controls change the rendered block in all five systems", () => {
       const input = el.querySelector("input")!;
       expect(input.disabled).toBe(true);
       expect(input.value).toBe("Ada");
+    });
+  }
+
+  for (const system of SYSTEMS) {
+    it(`${system}: link arrow icon on and off`, () => {
+      const off = render(system, "SimulatedLink", { text: "Learn more", showIcon: false }).innerHTML;
+      act(() => root?.unmount()); container?.remove();
+      const on = render(system, "SimulatedLink", { text: "Learn more", showIcon: true }).innerHTML;
+      expect(on).not.toBe(off);
+    });
+
+    it(`${system}: progress label shows`, () => {
+      const el = render(system, "SimulatedProgress", { label: "Seats used", value: 40 });
+      expect(el.textContent).toContain("Seats used");
     });
   }
 
