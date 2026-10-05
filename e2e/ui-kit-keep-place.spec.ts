@@ -19,6 +19,14 @@ const railLink = (page: Page, label: string) => page.getByRole("navigation", { n
 const scroller = (page: Page) => page.getByTestId("kit-scroller");
 const scrollTop = (page: Page) => scroller(page).evaluate((el) => el.scrollTop);
 const selectedTab = (page: Page) => page.getByRole("tab", { selected: true });
+/* Where the page is and how far it can go, read together: two separate reads
+   can straddle a render and pair an old position with a new height. */
+const place = (page: Page) => scroller(page).evaluate((el) => ({ top: el.scrollTop, max: el.scrollHeight - el.clientHeight }));
+/* A system's code arrives on demand the first time that system is shown.
+   Until it does the tab holds one line ("Loading ... snippets") and the page
+   is short, so a position check made then says nothing about the page the
+   visitor ends up on. */
+const codeArrived = (page: Page) => expect(page.getByText(/^Loading .+ snippets/)).toHaveCount(0);
 
 async function open(page: Page, query: string) {
   await page.goto(`/ui-kit?${query}`, { waitUntil: "networkidle" });
@@ -54,16 +62,69 @@ for (const entry of SAME) {
       /* Focus stays on the control that was pressed. */
       await expect(link).toBeFocused();
       /* No scroll reset: within a few pixels of where it was, unless the
-         new page is simply shorter than the old scroll position. */
+         new page is simply shorter than the old scroll position. Checked on
+         the page once its code has arrived, with one read of both numbers. */
+      await codeArrived(page);
       await expect.poll(async () => {
-        const max = await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight);
-        return Math.abs((await scrollTop(page)) - Math.min(before, max));
+        const at = await place(page);
+        return Math.abs(at.top - Math.min(before, at.max));
       }).toBeLessThanOrEqual(4);
-      const max = await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight);
-      if (max > 0) expect(await scrollTop(page)).toBeGreaterThan(0);
+      const at = await place(page);
+      if (at.max > 0) expect(at.top).toBeGreaterThan(0);
     }
   });
 }
+
+test("a slow connection: the position is kept when the new system's code arrives late", async ({ page }) => {
+  /* A short window, so the page has somewhere to scroll to. */
+  await page.setViewportSize({ width: 1280, height: 560 });
+  await open(page, "ds=salt&c=pat-wizard");
+  await page.getByRole("tab", { name: "Code" }).click();
+  await expect(selectedTab(page)).toHaveText("Code");
+  await codeArrived(page);
+  await scroller(page).evaluate((el) => { el.scrollTop = 240; });
+  const before = (await place(page)).top;
+  expect(before, "the page scrolls").toBeGreaterThan(100);
+  /* Let the page record where it is before the switch. */
+  await page.waitForTimeout(150);
+
+  /* From here every script the page has not loaded yet takes three seconds:
+     longer than the hold's quiet window. Material's code is such a script. */
+  let delayed = 0;
+  await page.route("**/_next/static/chunks/**", async (route) => {
+    delayed++;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await route.continue();
+  });
+  await railLink(page, "Material 3").click();
+  await expect(page.getByTestId("detail-page")).toHaveAttribute("data-component", "pat-wizard");
+  /* The code is still on its way: the tab says so and the page is too short
+     to reach the old position. */
+  await expect(page.getByText(/^Loading .+ snippets/)).toBeVisible();
+  const waiting = await place(page);
+  expect(waiting.max, "while the code loads the page cannot reach the old position").toBeLessThan(before - 20);
+
+  await codeArrived(page);
+  expect(delayed, "the new system's code was fetched, late").toBeGreaterThan(0);
+  const arrived = await place(page);
+  const expected = Math.min(before, arrived.max);
+  expect(expected, "the finished page reaches further than the loading one did").toBeGreaterThan(waiting.max + 20);
+  /* The page grew; the visitor is where they were, not left where the short
+     page put them. */
+  await expect.poll(async () => Math.abs((await place(page)).top - expected)).toBeLessThanOrEqual(2);
+  await page.waitForTimeout(400);
+  expect(Math.abs((await place(page)).top - expected)).toBeLessThanOrEqual(2);
+  await expect(railLink(page, "Material 3")).toBeFocused();
+
+  /* The hold is still the visitor's to end: a wheel lets go at once. */
+  await page.unroute("**/_next/static/chunks/**");
+  await scroller(page).hover();
+  await page.mouse.wheel(0, -80);
+  await expect.poll(async () => (await place(page)).top).toBeLessThan(expected - 40);
+  const after = (await place(page)).top;
+  await page.waitForTimeout(600);
+  expect((await place(page)).top, "not pulled back").toBe(after);
+});
 
 test("Data table maps to each system's table, or says the system has none", async ({ page }) => {
   await open(page, "ds=salt&c=table");
@@ -106,7 +167,10 @@ test("Data table maps to each system's table, or says the system has none", asyn
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Table");
   await expect(selectedTab(page)).toHaveText("Compare");
   await expect(railLink(page, "Salt DS")).toBeFocused();
-  await expect.poll(async () => Math.abs((await scrollTop(page)) - Math.min(before, await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight)))).toBeLessThanOrEqual(4);
+  await expect.poll(async () => {
+    const at = await place(page);
+    return Math.abs(at.top - Math.min(before, at.max));
+  }).toBeLessThanOrEqual(4);
 });
 
 test("missing equivalent: says so, offers the closest matches, never redirects", async ({ page }) => {

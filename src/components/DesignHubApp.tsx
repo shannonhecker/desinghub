@@ -31,7 +31,8 @@ export function useActiveTheme(): ActiveTheme {
 
 /* How long a system switch holds the scroll position while the new page
    settles: at least FIRST, then QUIET after each further change in the page's
-   height, never past LIMIT. Any input from the visitor ends it at once. */
+   height, and for as long as the page is still too short to reach the
+   position, never past LIMIT. Any input from the visitor ends it at once. */
 const HOLD_FIRST_MS = 1500;
 const HOLD_QUIET_MS = 1500;
 const HOLD_LIMIT_MS = 8000;
@@ -256,7 +257,15 @@ export function DesignHubApp({ held = false }: {
          longer, up to a hard limit. A page that has stopped changing is
          let go. */
       if (sc.scrollHeight !== h.height) { h.height = sc.scrollHeight; h.until = Math.min(h.cap, Math.max(h.until, now + HOLD_QUIET_MS)); }
-      if (now > h.until) { hold.current = null; return; }
+      /* A page still shorter than the remembered position has not finished
+         arriving: its code and demos load on demand, and on a slow connection
+         (or a busy machine) that takes longer than the quiet window. Letting
+         go then left the visitor at the top of a page that grew under them a
+         moment later. So a quiet page is only let go once the position can be
+         reached; a page that really is shorter is let go at the hard limit.
+         Holding longer costs nothing: any input still ends the hold at once. */
+      const reachable = sc.scrollHeight - sc.clientHeight >= h.top - 1;
+      if (now > h.cap || (now > h.until && reachable)) { hold.current = null; return; }
       const st = useDesignHub.getState();
       if (st.selectedComponent !== null || st.missing) {
         const want = wanted(h);
@@ -343,7 +352,7 @@ export function DesignHubApp({ held = false }: {
     /* A page that fits the viewport carries no position (it cannot scroll),
        so passing through one, such as the not-here state, does not forget
        where the visitor was on the pages that do. */
-    if ((!hold.current || Date.now() > hold.current.until) && sc.scrollHeight > sc.clientHeight + 4) lastTop.current = sc.scrollTop;
+    if ((!hold.current || Date.now() > hold.current.cap) && sc.scrollHeight > sc.clientHeight + 4) lastTop.current = sc.scrollTop;
     if (useDesignHub.getState().selectedComponent) return;
     const top = sc.getBoundingClientRect().top;
     let found: { section: string; offset: number } | null = null;
