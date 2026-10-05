@@ -36,6 +36,7 @@
  */
 
 import { extendTheme } from "@mui/material/styles";
+import { m3Palette, m3Roles } from "@/lib/m3MuiTheme";
 import { webLightTheme, webDarkTheme } from "@fluentui/react-theme";
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -62,6 +63,16 @@ function declsToCss(decls: Record<string, string | number>): string {
     .join("");
 }
 
+/** The accent roles of the shared M3 palette (m3MuiTheme). The surface, text
+ *  and divider slots stay MUI's neutral defaults here: the canvas's own
+ *  ground is a pinned decision (officialTokens.test.ts), separate from the
+ *  component theme. */
+function schemePalette(mode: "light" | "dark") {
+  const { primary, secondary, error } = m3Palette(mode, m3Roles(mode));
+  const pair = (c: { main: string; contrastText: string }) => ({ main: c.main, contrastText: c.contrastText });
+  return { primary: pair(primary), secondary: pair(secondary), error: pair(error) };
+}
+
 /**
  * Build the scoped, leak-proof MUI `--mui-*` token stylesheet. Reads the
  * official Material UI CSS-variables theme and re-scopes its generated sheets
@@ -77,31 +88,18 @@ function declsToCss(decls: Record<string, string | number>): string {
  * shape/radius resolve in either mode.
  */
 export function buildM3TokenCSS(): string {
-  /* Configure MUI with the Material 3 BASELINE palette so the emitted --mui-*
-     tokens reflect real M3 (purple), not MUI's own default theme (blue). Without
-     this, --mui-palette-primary-main resolves to MUI's default blue, which the
-     builder bridge (.preview-m3 { --ds-primary: var(--mui-palette-primary-main) })
-     rendered as blue M3 components — wrong, since M3 baseline primary is purple.
-     Values = the M3 baseline tokens (match src/data/m3/themes.ts Light/Dark), so
-     the builder's M3 components agree with the UI-Kit's M3 theme. */
+  /* Configure MUI with the app's Material 3 accent roles so the emitted
+     --mui-* tokens are real M3 (purple primary with its on-primary), not
+     MUI's own default theme (blue). The values are the ones the component
+     theme uses (m3MuiTheme, from src/data/m3/themes.ts), so the canvas the
+     bridge paints (.preview-m3 { --ds-primary: var(--mui-palette-primary-main) })
+     and the MUI components on it share one primary. */
   const theme = extendTheme({
     cssVarPrefix: "mui",
     colorSchemeSelector: "class",
     colorSchemes: {
-      light: {
-        palette: {
-          primary: { main: "#6750A4", contrastText: "#FFFFFF" },
-          secondary: { main: "#625B71", contrastText: "#FFFFFF" },
-          error: { main: "#B3261E", contrastText: "#FFFFFF" },
-        },
-      },
-      dark: {
-        palette: {
-          primary: { main: "#D0BCFF", contrastText: "#381E72" },
-          secondary: { main: "#CCC2DC", contrastText: "#332D41" },
-          error: { main: "#F2B8B5", contrastText: "#601410" },
-        },
-      },
+      light: { palette: schemePalette("light") },
+      dark: { palette: schemePalette("dark") },
     },
   });
   const sheets = theme.generateStyleSheets() as unknown as MuiSheet[];
