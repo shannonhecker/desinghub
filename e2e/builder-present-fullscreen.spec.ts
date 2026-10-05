@@ -44,6 +44,19 @@ test.describe("Present is full screen on the desktop device", () => {
       expect(e.radius, "no rounded frame corners").toBe("0px");
       expect(e.border, "no frame border").toBe("0px");
       expect(Math.abs(e.bottom - e.winH), "fills to the bottom").toBeLessThanOrEqual(1);
+      /* The content fills the width too (no centred column): the first
+         block starts at the page gutter and the last block ends at the
+         window minus the gutter. */
+      const blocks = await page.evaluate(() => {
+        const main = document.querySelector(".present-stage .bp-main") as HTMLElement;
+        const gutter = parseFloat(getComputedStyle(main.firstElementChild as HTMLElement).paddingLeft);
+        const rects = [...main.querySelectorAll("[data-block-id]")].map((el) => el.getBoundingClientRect());
+        return { gutter, minLeft: Math.min(...rects.map((r) => r.left)), maxRight: Math.max(...rects.map((r) => r.right)), win: window.innerWidth };
+      });
+      expect(blocks.gutter, "a page gutter exists").toBeGreaterThan(0);
+      expect(blocks.gutter, "the gutter is a gutter, not a column").toBeLessThan(64);
+      expect(Math.abs(blocks.minLeft - blocks.gutter), "first block starts at the gutter").toBeLessThanOrEqual(2);
+      expect(Math.abs(blocks.win - blocks.gutter - blocks.maxRight), "last block ends at the gutter").toBeLessThanOrEqual(2);
     });
   }
 
