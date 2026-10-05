@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  backToLive, boxSpans, clampTime, followFeed, FULL_VIEW, goToSpan, isAwayFromLive, isFullView, keyAction,
+  backToLive, boxSpans, clampTime, followFeed, FULL_VIEW, goToPlan, goToSpan, isAwayFromLive, isFullView, keyAction,
   panPrice, panTime, parseGoTo, scalePrice, scaleTime, wheelFactor, ZOOM_STEP, zoomPrice, zoomTime,
   type PriceLimits, type TimeBounds,
 } from "../chartViewport";
@@ -220,5 +220,30 @@ describe("the range a Go to needs", () => {
     expect(executionRangeStart("1D", session)).toBe(session);
     expect(executionRangeStart("1W", session)).toBe(session - 7 * 24 * HOUR);
     expect(executionRangeStart("YTD", session)).toBe(Date.UTC(2026, 0, 1));
+  });
+});
+
+describe("goToPlan", () => {
+  const H = 60 * 60_000;
+  /* The session: minute bars from hour 100; the longer range adds hourly bars before it. */
+  const session = Array.from({ length: 60 }, (_, i) => 100 * H + i * 60_000);
+  const history = Array.from({ length: 20 }, (_, i) => (80 + i) * H);
+  const wider = [...history, ...session];
+
+  it("a window inside the bars on the chart is shown from them", () => {
+    expect(goToPlan(session, null, 100 * H + 5 * 60_000, 100 * H + 30 * 60_000)).toBe("here");
+  });
+  it("a window that starts before the chart's first bar takes the longer range, so it is shown whole", () => {
+    expect(goToPlan(session, wider, 90 * H, 100 * H + 30 * 60_000)).toBe("wider");
+  });
+  it("a window wholly before the chart takes the longer range", () => {
+    expect(goToPlan(session, wider, 85 * H, 90 * H)).toBe("wider");
+  });
+  it("a window that starts a little before the first bar, with nothing more further back, stays on the chart", () => {
+    expect(goToPlan(session, wider, 99 * H + 50 * 60_000, 100 * H + 30 * 60_000)).toBe("here");
+  });
+  it("no bar in the window anywhere: none", () => {
+    expect(goToPlan(session, wider, 99 * H + 10 * 60_000, 99 * H + 50 * 60_000)).toBe("none");
+    expect(goToPlan(session, null, 100 * H + 10_000, 100 * H + 20_000)).toBe("none");
   });
 });

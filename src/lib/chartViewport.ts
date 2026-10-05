@@ -226,3 +226,18 @@ export function goToSpan(times: readonly number[], from: number, to: number, min
   const mid = (span.min + span.max) / 2;
   return { min: mid - minSpan / 2, max: mid + minSpan / 2 };
 }
+
+/** Which bars answer a Go to window: the ones on the chart now ("here"), a
+ *  longer range's ("wider"), or none. The chart's own bars are enough when
+ *  they start at or before the window; when the window starts earlier, a
+ *  longer range is taken if it holds more of the window (so a window that
+ *  straddles the range's start is shown whole, not cut to what was on
+ *  screen). `wider` is the bars the shortest range reaching `from` would
+ *  show, or null when there is none. */
+export function goToPlan(shown: readonly number[], wider: readonly number[] | null, from: number, to: number): "here" | "wider" | "none" {
+  const count = (times: readonly number[]) => { let n = 0; for (const t of times) if (t >= from && t <= to) n++; return n; };
+  const here = count(shown);
+  if (shown.length && shown[0] <= from) return here ? "here" : "none";
+  if (wider && count(wider) > here) return "wider";
+  return here ? "here" : "none";
+}
