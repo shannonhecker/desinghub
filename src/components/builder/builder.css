@@ -11346,28 +11346,38 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-order-tag:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: var(--bc-hairline); }
 
 /* One message at a time, over the top of the plot; it never moves the layout. */
+/* The one toast: on the chart panel's top edge, above the plot (half in
+   the gap over the panel, half in its top padding), clear of the price tags
+   and of every line a price can sit on. It is sticky inside a zone the size
+   of the panel, so when the panel's top has scrolled away it stays in view
+   at the top of what can be seen. Its surface is the canvas's overlay (the
+   rail's menus): opaque in every system and mode. */
+.dh-exec { position: relative; }
+.dh-order-toast-zone { position: absolute; inset: 0; z-index: 12; pointer-events: none; }
 .dh-order-toast {
-  position: absolute;
+  position: sticky;
   top: var(--dh-order-toast-y);
-  left: 50%;
-  z-index: 12;
+  width: fit-content;
   max-width: min(var(--dh-order-toast-max), calc(100% - 2 * var(--dh-order-toast-y)));
-  transform: translate(-50%, calc(-1 * var(--dh-order-toast-y)));
+  margin: calc(-1 * var(--dh-order-toast-lift)) auto 0;
+  transform: translateY(calc(-1 * var(--dh-order-toast-y)));
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--bc-duration-medium) ease, transform var(--bc-duration-medium) ease;
 }
-.dh-order-toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+.dh-order-toast.is-shown { opacity: 1; transform: none; }
 .dh-order-toast > span {
   display: inline-flex;
   align-items: center;
   gap: var(--dh-nav-pad);
   padding: var(--dh-nav-pad) var(--dh-nav-inset);
-  border-radius: var(--ds-radius);
-  background: var(--dh-card, var(--ds-surface));
+  border-radius: var(--dh-exec-menu-radius, var(--ds-radius));
+  /* Under the overlay tint, the page's own opaque colour. */
+  background-color: var(--ds-bg);
+  background-image: var(--dh-exec-menu-image, none), linear-gradient(var(--dh-exec-menu-bg, var(--ds-surface)), var(--dh-exec-menu-bg, var(--ds-surface)));
   color: var(--ds-fg);
-  border: var(--bc-hairline) solid color-mix(in srgb, var(--ds-fg) 8%, transparent);
-  box-shadow: var(--ds-shadow, 0 0.5rem 1.5rem color-mix(in srgb, var(--ds-fg) 14%, transparent));
+  border: var(--bc-hairline) solid var(--dh-exec-menu-border, color-mix(in srgb, var(--ds-fg) 8%, transparent));
+  box-shadow: var(--dh-exec-menu-shadow, var(--dh-shadow-md));
   font-family: var(--ds-font);
   font-size: var(--dh-panel-meta-size);
   font-weight: 600;
@@ -11421,7 +11431,20 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-kit-backdrop { z-index: 1400; padding: var(--bc-gutter-narrow); }
 .dh-kit-uoaui-medium { width: min(var(--dh-kit-uoaui-w), 100%); }
 .dh-kit-uoaui-small { width: min(var(--dh-kit-uoaui-w-small), 100%); }
-.dh-kit-dialog.a-dialog { box-sizing: border-box; max-height: calc(100dvh - 2 * var(--bc-gutter-narrow)); overflow: auto; min-width: 0; }
+/* The title and the actions stay in view; the fields between them scroll. */
+.dh-kit-dialog.a-dialog { box-sizing: border-box; display: flex; flex-direction: column; max-height: calc(100dvh - 2 * var(--bc-gutter-narrow)); overflow: hidden; min-width: 0; }
+.dh-kit-dialog.a-dialog:focus { outline: none; }
+.dh-kit-dialog.a-dialog > form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.dh-kit-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.dh-kit-dialog.a-dialog .dh-kit-actions { flex: none; }
+/* Salt: its dialog may use the height the screen has (a short one hid half the ticket on a phone). */
+.saltDialog.dh-kit-dialog { max-height: calc(100dvh - 2 * var(--bc-gutter-narrow)); }
+/* Salt: room between a label and its field, so the field's focus ring does not cut the label. */
+.saltDialog.dh-kit-dialog .saltFormFieldLabel { margin-block-end: var(--dh-kit-gap-tight); }
+/* Carbon: the invalid mark sits at the field's start, clear of a right-aligned number. */
+.dh-kit-scope .dh-kit-cell .cds--text-input__field-wrapper { position: relative; }
+.dh-kit-scope .dh-kit-cell .cds--text-input__field-wrapper .cds--text-input__invalid-icon { position: absolute; inset-block-start: 50%; inset-inline: auto 1rem; inline-size: 1rem; block-size: 1rem; transform: translateY(-50%); }
+.dh-kit-scope .dh-kit-cell .cds--text-input__field-wrapper .cds--text-input--invalid { padding-inline-end: 2.5rem; }
 .dh-kit-dialog.a-dialog { color: var(--dh-kit-fg, inherit); }
 .preview-uoaui.a-app.dh-kit-scope .dh-kit-dialog .dh-kit-title { margin: 0 0 var(--dh-kit-gap-tight); font-size: var(--dh-kit-title); font-weight: 600; line-height: 1.3; }
 .preview-uoaui.a-app.dh-kit-scope .dh-kit-dialog .dh-kit-actions { display: flex; justify-content: flex-end; gap: var(--dh-nav-pad); margin-top: var(--dh-kit-gap); }
@@ -11461,6 +11484,10 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-kit-scope .cds--modal.dh-kit-dialog .cds--modal-close-button .cds--popover { box-shadow: none; }
 @media (max-width: 30rem) {
   .dh-kit-row { grid-template-columns: minmax(0, 1fr); }
+  /* Compare on a phone: three columns that share the width, and words that
+     wrap inside their cell, so no column is cut off. */
+  .dh-kit-dialog .dh-kit-body .dh-kit-table table { table-layout: fixed; width: 100%; min-width: 0; }
+  .dh-kit-dialog .dh-kit-body .dh-kit-table table :is(th, td) { white-space: normal; overflow-wrap: anywhere; padding: var(--dh-kit-gap-tight); font-size: var(--dh-cell-small); line-height: 1.3; height: auto; }
 }
 
 .dh-navgroup {

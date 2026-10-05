@@ -142,6 +142,8 @@
   --dh-order-hit-min:       24px;
   --dh-order-toast-max:     360px;
   --dh-order-toast-y:       12px;
+  /* How far the toast sits above the chart panel's top edge (about half its height). */
+  --dh-order-toast-lift:    16px;
   /* One CSS pixel: the tag targets take their place from the chart as plain numbers. */
   --dh-order-px:            1px;
   /* Dense text navigation. */

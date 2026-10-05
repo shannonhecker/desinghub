@@ -65,7 +65,7 @@ export function AmendDialog({ ctx, open, order, current, start, market, latest }
 }
 
 /* The small chart's size and type (Highcharts takes CSS lengths). */
-const CHART_HEIGHT = 180;
+const CHART_HEIGHT = 220;
 const AXIS_FONT = `${10}px`;
 
 /** Compare orders: a measure per row, an order per column, and both
@@ -82,7 +82,8 @@ export function CompareDialog({ ctx, open, dataset, vars, palette }: { ctx: Dial
       credits: { enabled: false },
       /* The table above is the data; the chart is not a tab stop of its own. */
       accessibility: { description: "Percent done over the session for each order.", keyboardNavigation: { enabled: false } },
-      legend: { itemStyle: { color: vars.fgSec, fontSize: AXIS_FONT, fontWeight: "400" }, itemHoverStyle: { color: vars.fg } },
+      /* On top, beside the title: always in view, and the plot keeps the height. */
+      legend: { align: "right", verticalAlign: "top", padding: 0, margin: 6, itemStyle: { color: vars.fgSec, fontSize: AXIS_FONT, fontWeight: "400" }, itemHoverStyle: { color: vars.fg } },
       xAxis: { title: { text: "Session bar", style: label.style }, labels: label, lineColor: vars.border, tickColor: vars.border },
       yAxis: { min: 0, max: 100, title: { text: undefined }, gridLineColor: Highcharts.color(vars.border).setOpacity(0.5).get("rgba") as string, labels: { ...label, format: "{value}%" } },
       tooltip: { shared: true, backgroundColor: vars.card ?? vars.surface, borderColor: vars.border, style: { color: vars.fg }, valueDecimals: 1, valueSuffix: "%" },

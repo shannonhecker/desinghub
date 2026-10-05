@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import type { SystemId } from "@/lib/componentApiRegistry";
 import { resolveExecution } from "@/lib/executionModel";
-import { canAmend } from "@/lib/executionOrders";
+import { amendLimit, canAmend } from "@/lib/executionOrders";
 import { parseExecutionTime } from "@/lib/reportData/executionDataset";
 import { tableOf, type ReportDataset } from "@/lib/reportData/types";
 import type { ThemeVars } from "./SimulatedHighchart";
@@ -41,13 +42,18 @@ export function OrderWorkflow({ system, dataset, vars, palette }: { system: Desi
   const reportState = useBuilder((s) => s.reportState);
   const session = useOrderSession();
   const live = useFeedDataset(dataset);
-  const view = useMemo(() => (live ? resolveExecution(live, reportState) : null), [live, reportState]);
+  /* The view as the chart draws it: this session's amendments laid over it. */
+  const view = useMemo(() => {
+    const resolved = live ? resolveExecution(live, reportState) : null;
+    return resolved ? amendLimit(resolved, session.amendments) : null;
+  }, [live, reportState, session.amendments]);
   const mounted = useSyncExternalStore(noSubscription, () => true, () => false);
   const ticket = useLast(session.ticket);
   const amend = useLast(session.amend);
   const menu = useLast(session.menu);
   /* Compare is drawn from its first opening on (it then closes through `open`). */
   const [compared, setCompared] = useState(false);
+  const [host, setHost] = useState<HTMLElement | null>(null);
   if (session.compare && !compared) setCompared(true);
 
   /* The feed starting again (Reset, another order) returns to the seeded session. */
@@ -83,9 +89,16 @@ export function OrderWorkflow({ system, dataset, vars, palette }: { system: Desi
           {menu ? <PriceMenu system={system as SystemId} mode={mode} open={Boolean(session.menu)} anchor={menu.anchor} price={menu.price} working={canAmend(view.order)} /> : null}
         </>
       ) : null}
-      <div className={`dh-order-toast${session.toast ? " is-shown" : ""}`} role="status" aria-live="polite" aria-atomic="true">
-        {session.toast ? <span key={session.toast.id}><span className="dh-order-toast-dot" aria-hidden="true" />{session.toast.text}</span> : null}
-      </div>
+      {/* The toast is drawn on the chart panel itself (the plot clips what leaves it). */}
+      <span hidden ref={(el) => { const panel = el?.closest<HTMLElement>(".dh-exec") ?? null; if (panel && panel !== host) setHost(panel); }} />
+      {host ? createPortal(
+        <div className="dh-order-toast-zone">
+          <div className={`dh-order-toast${session.toast ? " is-shown" : ""}`} role="status" aria-live="polite" aria-atomic="true">
+            {session.toast ? <span key={session.toast.id}><span className="dh-order-toast-dot" aria-hidden="true" />{session.toast.text}</span> : null}
+          </div>
+        </div>,
+        host,
+      ) : null}
     </>
   );
 }
