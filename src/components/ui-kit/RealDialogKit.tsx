@@ -42,7 +42,8 @@ import {
   Menu as SaltMenu, MenuPanel as SaltMenuPanel, MenuItem as SaltMenuItem,
 } from "@salt-ds/core";
 
-import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { buildM3Theme, M3_SHAPE } from "@/lib/m3MuiTheme";
 import MuiDialog from "@mui/material/Dialog";
 import MuiDialogTitle from "@mui/material/DialogTitle";
 import MuiDialogContent from "@mui/material/DialogContent";
@@ -242,9 +243,13 @@ function SaltKitDialog({ mode, density, model }: Omit<DialogProps, "system">) {
 }
 
 /* ── Material 3 ── */
+const M3_TILE_CORNER = `${M3_SHAPE.medium}px`;
 const muiParts: Parts = {
   choice: (c) => (
-    <MuiToggleButtonGroup exclusive fullWidth aria-label={c.label} value={c.value} onChange={(_e, v) => { if (v) c.onChange(v); }}>
+    /* Price tiles are tall, so they take Material's medium corner (12), not
+       the full rounding a one-line segmented button has. */
+    <MuiToggleButtonGroup exclusive fullWidth aria-label={c.label} value={c.value} onChange={(_e, v) => { if (v) c.onChange(v); }}
+      sx={{ "& .MuiToggleButtonGroup-firstButton": { borderTopLeftRadius: M3_TILE_CORNER, borderBottomLeftRadius: M3_TILE_CORNER }, "& .MuiToggleButtonGroup-lastButton": { borderTopRightRadius: M3_TILE_CORNER, borderBottomRightRadius: M3_TILE_CORNER } }}>
       {c.options.map((o) => <MuiToggleButton key={o.value} value={o.value}><TileFace o={o} /></MuiToggleButton>)}
     </MuiToggleButtonGroup>
   ),
@@ -270,7 +275,7 @@ const muiParts: Parts = {
   ),
 };
 function M3KitDialog({ mode, model }: Omit<DialogProps, "system">) {
-  const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const theme = React.useMemo(() => buildM3Theme({ mode }), [mode]);
   return (
     <MuiThemeProvider theme={theme}>
       <MuiDialog open={model.open} onClose={model.onClose} maxWidth={model.size === "small" ? "xs" : "sm"} fullWidth aria-labelledby={titleId(model, "m3")} className={`dh-kit-dialog dh-kit-${model.name}`}
@@ -560,7 +565,7 @@ function SaltKitMenu({ mode, model }: Omit<MenuProps, "system">) {
   );
 }
 function M3KitMenu({ mode, model }: Omit<MenuProps, "system">) {
-  const theme = React.useMemo(() => createTheme({ palette: { mode } }), [mode]);
+  const theme = React.useMemo(() => buildM3Theme({ mode }), [mode]);
   const look = overlayLook(model.anchor);
   return (
     <MuiThemeProvider theme={theme}>

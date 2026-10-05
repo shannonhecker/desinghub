@@ -59,8 +59,6 @@ import { sanitizeCSS } from "@/lib/sanitizeCSS";
 import { buttonActionProps, buttonIcon, getRealBlockRenderer } from "@/components/ui-kit/realBlockMap";
 import {
   coerceDensity,
-  muiSize,
-  muiSize2,
   fluentSize,
   fluentSize2,
   fluentCheckboxSize,
@@ -109,7 +107,8 @@ import {
 } from "@salt-ds/core";
 import { ChevronRightIcon, SearchIcon } from "@salt-ds/icons";
 
-import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { buildM3Theme } from "@/lib/m3MuiTheme";
 import MuiButton from "@mui/material/Button";
 import MuiIconButton from "@mui/material/IconButton";
 import MuiTextField from "@mui/material/TextField";
@@ -738,107 +737,20 @@ function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRen
 
 /* ── M3 (MUI) real subtree ── */
 function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRendererProps, "system">) {
-  /* createTheme with the active mode; emotion styles are scoped per component
-     (no global reset). MUI has no global density knob, so the shared density
-     level becomes theme-wide default `size` props: every sized component in
-     this subtree follows the builder's High/Medium/Low/Touch control without
-     each branch repeating the mapping. Memoise so the theme isn't rebuilt
-     every render. */
+  /* Emotion styles are scoped per component (no global reset). MUI has no
+     global density knob, so the shared density level becomes theme-wide
+     default `size` props: every sized component in this subtree follows the
+     builder's High/Medium/Low/Touch control. Memoised so the theme is not
+     rebuilt every render. */
   const density = coerceDensity(saltDensity);
-  const theme = React.useMemo(() => {
-    const size3 = muiSize(density);
-    const size2 = muiSize2(density);
-    /* Kit skin: the real M3 colour roles, pill corners, sentence case and
-       Roboto, as the Material page draws them. The builder passes no kit and
-       keeps MUI's default theme. */
-    const k = kit;
-    const c = (key: string) => kitStr(k, key);
-    const palette = k
-      ? {
-          mode,
-          primary: { main: c("primary")!, contrastText: c("onPrimary") },
-          secondary: { main: c("secondary") ?? c("primary")!, contrastText: c("onSecondary") },
-          error: { main: c("error") ?? "#B3261E", contrastText: c("onError") },
-          background: { default: c("surface"), paper: c("surfaceContainerLow") ?? c("surface") },
-          text: { primary: c("onSurface"), secondary: c("onSurfaceVariant") },
-          divider: c("outlineVariant"),
-        }
-      : { mode };
-    return createTheme({
-      palette,
-      ...(k && {
-        shape: { borderRadius: 12 },
-        typography: { fontFamily: "Roboto, sans-serif", button: { textTransform: "none", fontWeight: 500, letterSpacing: "0.1px" } },
-      }),
-      components: {
-        MuiButton: {
-          defaultProps: { size: size3, ...(k && { disableElevation: true }) },
-          ...(k && {
-            styleOverrides: {
-              root: { borderRadius: 9999, height: 40, padding: "0 24px", fontSize: 14 },
-              outlined: { borderColor: c("outline") },
-              text: { color: c("primary") },
-            },
-          }),
-        },
-        ...(k && {
-          MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 4 }, notchedOutline: { borderColor: c("outline") } } },
-          MuiPaper: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none", borderRadius: 12 } } },
-        }),
-        ...(k && {
-          /* The kit's switch has no padding of its own (Material's track is
-             the whole control), so the label needs a real gap and must not
-             keep the negative margin MUI uses to offset that padding. Only a
-             label that holds a switch; a checkbox keeps MUI's spacing. */
-          MuiFormControlLabel: { styleOverrides: { root: { "&:has(.MuiSwitch-root)": { marginLeft: 0, gap: 12 } } } },
-        }),
-        MuiCheckbox: { defaultProps: { size: size3 } },
-        MuiToggleButtonGroup: { defaultProps: { size: size3 } },
-        MuiTextField: { defaultProps: { size: size2 } },
-        MuiFormControl: { defaultProps: { size: size2 } },
-        /* Chip and Switch carry a default size for the builder AND, for the
-           kit only, the Material shapes. One key each: a second key of the
-           same name later in this literal would replace the first. */
-        MuiChip: {
-          defaultProps: { size: size2 },
-          ...(k && {
-            styleOverrides: {
-              /* Material's chip: 32 high, 8 corner, outlined on the surface. */
-              root: {
-                height: 32, borderRadius: 8, fontSize: 14,
-                variants: [{
-                  props: { color: "default" },
-                  style: { backgroundColor: "transparent", border: `1px solid ${c("outline")}`, color: c("onSurfaceVariant") },
-                }],
-              },
-              label: { paddingLeft: 16, paddingRight: 16 },
-            },
-          }),
-        },
-        MuiSwitch: {
-          defaultProps: { size: size2 },
-          ...(k && {
-            styleOverrides: {
-              /* Material's switch: a 52 by 32 track with a 2px outline; the
-                 handle is 16 when off and 24 when on. Written on the root
-                 with the part classes so it outranks MUI's size rules. */
-              root: {
-                width: 52, height: 32, padding: 0, overflow: "visible",
-                "& .MuiSwitch-switchBase": { padding: 4, top: 0, left: 0, color: c("outline"), transform: "none" },
-                "& .MuiSwitch-switchBase.Mui-checked": { transform: "translateX(20px)", color: c("onPrimary") },
-                "& .MuiSwitch-thumb": { width: 16, height: 16, margin: 4, boxShadow: "none", backgroundColor: "currentColor" },
-                "& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb": { width: 24, height: 24, margin: 0 },
-                "& .MuiSwitch-track": { boxSizing: "border-box", borderRadius: 16, backgroundColor: c("surfaceContainerHighest"), border: `2px solid ${c("outline")}`, opacity: 1 },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: c("primary"), borderColor: c("primary"), opacity: 1 },
-                "& .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track": { opacity: 0.38 },
-              },
-            },
-          }),
-        },
-        MuiTable: { defaultProps: { size: size2 } },
-      },
-    });
-  }, [mode, density, kit]);
+  /* One theme for every Material surface (m3MuiTheme): the builder takes
+     the "slot" fit, which keeps MUI's sizes for the density and so the
+     templates' geometry; the library passes its tokens (`kit`) and takes
+     the "spec" fit, Material's own sizes. */
+  const theme = React.useMemo(
+    () => buildM3Theme({ mode, density, tokens: kit, fit: kit ? "spec" : "slot" }),
+    [mode, density, kit],
+  );
   const disabled = Boolean(props.disabled);
   const validation = props.validationStatus as ValidationStatus;
   let inner: React.ReactNode = null;
