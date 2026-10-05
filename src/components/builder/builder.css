@@ -11500,6 +11500,191 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
   .dh-kit-dialog .dh-kit-body .dh-kit-table table { table-layout: fixed; width: 100%; min-width: 0; }
   .dh-kit-dialog .dh-kit-body .dh-kit-table table :is(th, td) { white-space: normal; overflow-wrap: anywhere; padding: var(--dh-kit-gap-tight); font-size: var(--dh-cell-small); line-height: 1.3; height: auto; }
 }
+/* ── Chart navigation (Present): zoom tools in the rail, the Go to chip,
+   "Back to live", the hold hint. Tonal surfaces, no outlines. ── */
+.dh-exec-rail-sep { flex: none; width: 50%; height: var(--bc-hairline); margin-block: calc(var(--dh-cell-gap) / 2); background: color-mix(in srgb, var(--ds-fg) 10%, transparent); }
+.dh-exec-rail-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--ds-primary) 16%, transparent); color: var(--ds-primary); }
+.dh-exec-rail-btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
+.dh-exec-rail-btn[aria-disabled="true"]:hover { background: transparent; color: var(--ds-fg-secondary); }
+.dh-exec-rail-live { color: var(--ds-primary); background: color-mix(in srgb, var(--ds-primary) 12%, transparent); }
+.dh-exec-rail-live:hover { background: color-mix(in srgb, var(--ds-primary) 20%, transparent); color: var(--ds-primary); }
+.dh-exec-range-goto { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 1.5); padding-inline: var(--dh-nav-pad); }
+.dh-exec-range-goto.is-active { padding-inline-end: var(--dh-nav-inset); }
+/* On a narrow panel the range row scrolls sideways: the calendar chip stays
+   in reach at its end, on the panel's own surface, the presets sliding
+   under a soft edge. Showing a window, it is a chip in the row again (it
+   is scrolled into view when the window is set). */
+.dh-exec-range-goto:not(.is-active) {
+  position: sticky; inset-inline-end: 0;
+  background: var(--dh-card, var(--ds-surface));
+  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card, var(--ds-surface));
+}
+.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card, var(--ds-surface))); }
+.dh-exec-plot { position: relative; }
+.dh-exec-plot.is-navigable { touch-action: pan-y; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+/* A vertical swipe on the plot scrolls the page; the box zoom tool and the
+   price gutter (its tags too) take every direction, or the browser would
+   cancel the drag as soon as it turned vertical. */
+.dh-exec-plot.is-navigable.is-boxing,
+.dh-exec-plot.is-navigable .dh-exec-gutter,
+.dh-exec-plot.is-navigable .dh-exec-pill { touch-action: none; }
+.dh-exec-plot.is-navigable:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: calc(var(--dh-focus-ring) * -1); border-radius: var(--ds-radius); }
+.dh-exec-plot[data-nav-region="price"] { cursor: ns-resize; }
+.dh-exec-plot[data-nav-region="time"] { cursor: ew-resize; }
+.dh-exec-plot[data-nav-region="grab"] { cursor: grabbing; }
+/* While dragging (pan, box, an axis) the hover tooltip stays out of the way. */
+.dh-exec-plot[data-dragging] .highcharts-tooltip,
+.dh-exec-plot[data-dragging] .highcharts-crosshair { visibility: hidden; }
+.dh-exec-plot[data-nav-region="box"],
+.dh-exec-plot.is-boxing { cursor: crosshair; }
+/* The one-time hint sits at the top left of the plot, just under the top
+   gridline and inside the plot's edges: in sight on a short screen, and
+   clear of the price tags in the gutter (the plot's place comes from the
+   navigation hook). Its button is the design system's own quiet button. */
+.dh-exec-hint {
+  position: absolute;
+  inset-block-start: calc(var(--nav-plot-top, 0px) + var(--dh-nav-pad));
+  inset-inline: calc(var(--nav-plot-left, 0px) + var(--dh-nav-pad)) calc(var(--nav-plot-right, 0px) + var(--dh-nav-pad));
+  margin-inline: 0 auto;
+  width: fit-content;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--dh-nav-pad);
+  box-sizing: border-box;
+  padding: var(--dh-cell-gap) var(--dh-cell-gap) var(--dh-cell-gap) var(--dh-nav-inset);
+  border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--dh-card, var(--ds-surface)) 88%, var(--ds-fg));
+  color: var(--ds-fg);
+  font-size: var(--dh-cell-small);
+  box-shadow: var(--ds-shadow, none);
+}
+.dh-exec-hint p { flex: 1 1 auto; min-width: 0; margin: 0; line-height: 1.35; white-space: normal; }
+.dh-exec-hint > :not(p) { flex: none; white-space: nowrap; }
+/* "Hold Ctrl and scroll to zoom": a moment, in the middle of the plot. */
+.dh-exec-wheel-note {
+  position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content; z-index: 5;
+  padding: var(--dh-cell-gap) var(--dh-nav-inset); border-radius: var(--ds-radius);
+  background: color-mix(in srgb, var(--dh-card, var(--ds-surface)) 86%, var(--ds-fg));
+  color: var(--ds-fg); font-size: var(--bc-bar-font); font-weight: 600; pointer-events: none;
+  box-shadow: var(--ds-shadow, none);
+}
+.dh-exec-sr { position: absolute; width: var(--bc-hairline); height: var(--bc-hairline); overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── A form in a design system's own dialog (RealFormDialog) ──
+   Ours: the rows' rhythm and the calendar grid. The dialog, fields,
+   choice and buttons are the system's. */
+.dh-form-dialog-scope { position: relative; z-index: 2147483000; }
+/* Salt's dialog sizes are page sizes; this is a small form. */
+/* Every system's dialog is the form's width, and no wider than the device
+   frame it was opened from (--dh-form-dialog-cap, set while it is open). */
+.saltDialog.dh-form-dialog-salt { width: min(var(--dh-form-dialog-w), calc(var(--dh-form-dialog-cap, 100vw) - var(--dh-report-gutter))); max-height: calc(100vh - var(--dh-report-gutter)); }
+.fui-DialogSurface.dh-form-dialog-fluent { box-sizing: border-box; width: min(var(--dh-form-dialog-w), calc(var(--dh-form-dialog-cap, 100vw) - var(--dh-report-gutter))); max-width: none; }
+.dh-form-dialog-fluent .fui-DialogActions { margin-block-start: var(--dh-nav-inset); }
+.dh-form-dialog-carbon .cds--modal-container { max-inline-size: calc(var(--dh-form-dialog-cap, 100vw) - var(--dh-report-gutter)); }
+.dh-form-dialog-uoaui { width: min(var(--dh-form-dialog-w), calc(var(--dh-form-dialog-cap, 100vw) - var(--dh-report-gutter))); max-height: calc(100vh - var(--dh-report-gutter) * 2); overflow: auto; box-sizing: border-box; }
+.dh-form-dialog-backdrop { z-index: 2147483000; padding: var(--dh-nav-inset); }
+.dh-form-dialog .dh-form-dialog-title { margin: 0 0 var(--dh-nav-pad); font-size: var(--dh-page-title-size); font-weight: 600; line-height: 1.2; }
+.dh-form-dialog-note, .dh-form-dialog .dh-form-dialog-note { margin: 0 0 var(--dh-nav-inset); font-size: var(--dh-panel-meta-size); opacity: 0.8; }
+.dh-form-dialog-note-salt { color: var(--salt-content-secondary-foreground); opacity: 1; font-family: var(--salt-text-fontFamily); }
+.dh-form-dialog-choice, .dh-form-dialog .dh-form-dialog-choice { margin-block-end: var(--dh-nav-inset); }
+.dh-form-dialog-rows { display: flex; flex-direction: column; gap: var(--dh-nav-inset); }
+.dh-form-dialog-row { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: var(--dh-nav-inset); align-items: start; }
+.dh-form-dialog-row[data-cols="1"] { --cols: 1; }
+.dh-form-dialog-cell { min-width: 0; }
+.dh-form-dialog-cell input { box-sizing: border-box; max-width: 100%; }
+/* Material sizes its input as content plus padding: keep its own box, so the
+   field is its full height and the label sits on the outline. Its dialog is
+   the form's width from the start (an error under a field must not widen it). */
+.dh-form-dialog-m3 .dh-form-dialog-cell input { box-sizing: content-box; max-width: none; }
+.dh-form-dialog-m3 .MuiDialog-paper { box-sizing: border-box; margin: 0; width: min(var(--dh-form-dialog-w), calc(var(--dh-form-dialog-cap, 100vw) - var(--dh-report-gutter))); }
+.dh-form-dialog-m3 .dh-form-dialog-rows { gap: calc(var(--dh-nav-inset) + var(--dh-cell-gap)); padding-block-start: calc(var(--dh-cell-gap) / 2); }
+/* Carbon's invalid icon lands on a date or time field's own picker button:
+   the red frame and the message under the field carry the error. */
+.dh-form-dialog-carbon .cds--text-input__field-wrapper:has(input[type="date"], input[type="time"]) .cds--text-input__invalid-icon { display: none; }
+.dh-form-dialog-error { display: block; margin-top: calc(var(--dh-cell-gap) / 2); font-size: var(--dh-panel-meta-size); color: var(--a-error, var(--ds-negative, currentColor)); }
+.dh-form-dialog-actions { display: flex; justify-content: flex-end; gap: var(--dh-nav-pad); margin-top: var(--dh-report-gutter); }
+.dh-form-dialog-carbon .cds--modal-content { padding-inline-end: var(--dh-nav-inset); }
+/* Carbon's close button wraps itself in a tooltip popover; drawn in a scope
+   its popover box shows as a shadowed panel. The button keeps its name. */
+.dh-form-dialog-carbon .cds--modal-close-button .cds--popover-container,
+.dh-form-dialog-carbon .cds--modal-close-button .cds--tooltip-trigger__wrapper { display: flex; justify-content: flex-end; width: auto; box-shadow: none; filter: none; }
+.dh-form-dialog-carbon .cds--modal-close-button .cds--popover { display: none; }
+/* uoaui's resting tab colour is too faint on its glass dialog: its secondary text colour. */
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .a-tab:not(.active) { color: var(--cal-muted); }
+/* Its error red is under 4.5:1 on the light glass: the label stays the text colour (the underline and the message carry the error). */
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .a-input-error .a-input-label { color: var(--cal-fg); }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-actions { margin-top: var(--dh-report-gutter); }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-cal { margin: var(--dh-nav-inset) auto; }
+.preview-uoaui.a-app.dh-form-dialog-scope .dh-form-dialog-uoaui .dh-form-dialog-note { margin: 0 0 var(--dh-nav-inset); }
+
+.dh-cal, .dh-form-dialog .dh-cal { --cal-cell: var(--dh-cal-cell); width: max-content; max-width: 100%; margin: 0 auto var(--dh-nav-inset); color: var(--cal-fg); font-family: var(--cal-font, inherit); }
+.dh-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(var(--dh-cell-gap) / 2); }
+.dh-cal-month { font-weight: 600; font-size: var(--bc-bar-font); }
+.dh-cal-nav {
+  appearance: none; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--dh-cal-nav); height: var(--dh-cal-nav); padding: 0; border: 0; border-radius: var(--cal-radius, var(--ds-radius));
+  background: transparent; color: var(--cal-fg); cursor: pointer;
+}
+.dh-cal-nav svg { width: 50%; height: 50%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.dh-cal-nav:hover:not(:disabled) { background: var(--cal-hover); }
+.dh-cal-nav:disabled { opacity: 0.35; cursor: default; }
+.dh-cal-grid { border-collapse: separate; border-spacing: 0 calc(var(--dh-cell-gap) / 3); }
+.dh-cal-grid th { width: var(--cal-cell); padding: 0 0 calc(var(--dh-cell-gap) / 2); font-size: var(--dh-cell-small); font-weight: 600; color: var(--cal-muted); text-align: center; }
+.dh-cal-grid td { padding: 0; text-align: center; }
+.dh-cal-grid td.is-between { background: var(--cal-range, var(--cal-hover)); }
+.dh-cal-day {
+  appearance: none; width: var(--cal-cell); height: var(--cal-cell); padding: 0; border: 0;
+  border-radius: var(--cal-radius, var(--ds-radius)); background: transparent; color: var(--cal-fg);
+  font: inherit; font-size: var(--dh-panel-meta-size); font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.dh-cal-day:hover:not([aria-disabled="true"]) { background: var(--cal-hover); }
+/* Two kinds of day cannot be picked, and they look different in every
+   system: outside the sample data (before its first day or after its last)
+   is the system's disabled tone; inside it with no bars (the market was
+   closed) is the same tone with a line through the number. The line is
+   drawn, not text-decoration, so it reads the same on every digit. */
+.dh-cal-day { position: relative; }
+.dh-cal-day[aria-disabled="true"] { color: var(--cal-off, var(--cal-muted)); cursor: default; }
+.dh-cal-salt .dh-cal-day[aria-disabled="true"] { opacity: 0.55; }
+.dh-cal-day[data-off="closed"]::after, .dh-cal-key-closed::after {
+  content: ""; position: absolute; inset-inline: 28%; inset-block-start: 50%;
+  border-block-start: var(--bc-hairline) solid currentColor;
+}
+.dh-cal-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--dh-cell-gap) / 2) var(--dh-nav-inset); margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-cell-small); line-height: 1.45; color: var(--cal-muted); }
+.dh-cal-legend span { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 2); }
+.dh-cal-key { position: relative; display: inline-block; min-width: calc(var(--dh-cell-gap) * 3); text-align: center; font-variant-numeric: tabular-nums; color: var(--cal-off, var(--cal-muted)); }
+.dh-cal-salt .dh-cal-key { opacity: 0.55; }
+.dh-cal-key-closed::after { inset-inline: 10%; }
+.carbon-live-scope .dh-form-dialog-carbon .dh-cal-carbon .dh-cal-legend { font-size: var(--dh-cell-small); line-height: 1.45; }
+.dh-cal-grid td.is-picked .dh-cal-day { background: var(--cal-accent); color: var(--cal-accent-fg); font-weight: 600; }
+.dh-cal-day:focus-visible, .dh-cal-nav:focus-visible { outline: var(--dh-focus-ring) solid var(--cal-focus, var(--cal-accent)); outline-offset: calc(var(--dh-focus-ring) * -1 + var(--bc-hairline)); }
+.dh-cal-prompt { margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-panel-meta-size); color: var(--cal-muted); text-align: center; }
+.dh-cal-salt {
+  --cal-fg: var(--salt-content-primary-foreground); --cal-muted: var(--salt-content-secondary-foreground);
+  --cal-accent: var(--salt-actionable-accented-bold-background); --cal-accent-fg: var(--salt-actionable-accented-bold-foreground);
+  --cal-hover: var(--salt-actionable-subtle-background-hover); --cal-focus: var(--salt-focused-outlineColor);
+  --cal-font: var(--salt-text-fontFamily); --cal-radius: var(--salt-palette-corner-weak, 0);
+  --cal-range: color-mix(in srgb, var(--salt-actionable-accented-bold-background) 14%, transparent);
+}
+.dh-cal-fluent {
+  --cal-fg: var(--colorNeutralForeground1); --cal-muted: var(--colorNeutralForeground3); --cal-off: var(--colorNeutralForegroundDisabled);
+  --cal-accent: var(--colorBrandBackground); --cal-accent-fg: var(--colorNeutralForegroundOnBrand);
+  --cal-hover: var(--colorSubtleBackgroundHover); --cal-focus: var(--colorStrokeFocus2);
+  --cal-font: var(--fontFamilyBase); --cal-radius: var(--borderRadiusMedium); --cal-range: var(--colorBrandBackground2);
+}
+.dh-cal-carbon {
+  --cal-fg: var(--cds-text-primary); --cal-muted: var(--cds-text-secondary); --cal-off: var(--cds-text-disabled);
+  --cal-accent: var(--cds-button-primary); --cal-accent-fg: var(--cds-text-on-color);
+  --cal-hover: var(--cds-layer-hover-01, var(--cds-background-hover)); --cal-focus: var(--cds-focus);
+  --cal-radius: 0; --cal-range: var(--cds-highlight, var(--cds-layer-selected-01));
+}
+/* Carbon's own type rules for table headers and paragraphs reach into the
+   grid: the calendar keeps one scale, as in the other four. */
+.carbon-live-scope .dh-form-dialog-carbon .dh-cal-carbon th { font-size: var(--dh-cell-small); line-height: 1.45; }
+.carbon-live-scope .dh-form-dialog-carbon .dh-cal-carbon .dh-cal-prompt { font-size: var(--dh-panel-meta-size); line-height: 1.35; }
+.carbon-live-scope .dh-form-dialog-carbon .dh-cal-carbon .dh-cal-month { font-size: var(--bc-bar-font); line-height: 1.25; }
+/* uoaui: colours come inline from its theme object (RealFormDialog). */
 
 .dh-navgroup {
   padding: calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 2) calc(var(--bc-bar-gap) / 4);

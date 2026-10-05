@@ -68,6 +68,7 @@ import {
 } from "@/lib/densitySize";
 import { CarbonScopeStyles } from "@/components/ui-kit/CarbonScopeStyles";
 import { RealKitDialog, RealKitMenu, type KitDialogModel, type KitMenuModel } from "@/components/ui-kit/RealDialogKit";
+import { RealFormDialog, type FormDialogModel } from "@/components/ui-kit/RealFormDialog";
 import { dropdownModel, type DropdownModel, INLINE_DROPDOWN_FONT, INLINE_DROPDOWN_HEIGHT, INLINE_LABEL_FONT } from "@/lib/dropdownModel";
 
 import {
@@ -508,7 +509,24 @@ interface RealComponentRendererProps {
   saltDensity?: SaltDensity;
   /** The block's default props (variant/label/title/content/...). */
   props: Record<string, unknown>;
+  /**
+   * KIT ONLY (additive): the UI kit's own token set for this system, so the
+   * real component renders as that system's page shows it. Without it the
+   * provider subtrees keep the builder's rendering exactly as before:
+   * MUI's default theme, Salt's shipped theme, and so on. The kit passes the
+   * same theme object its pages draw from (getTheme / useTheme().T), so a
+   * Compare, Playground or Specs panel matches the page beside it.
+   */
+  kit?: Record<string, unknown>;
 }
+
+/* Optional skin for the kit: a system's own theme, as its page draws it. */
+type Kit = Record<string, unknown> | undefined;
+const kitNoop = () => {};
+const kitStr = (kit: Kit, key: string): string | undefined => {
+  const v = kit?.[key];
+  return typeof v === "string" ? v : undefined;
+};
 
 /* ── Per-cell state props the variants matrix threads in. Real DS props on
    every covered component (disabled, validationStatus, indeterminate); state
@@ -523,7 +541,7 @@ function saltValidation(v: ValidationStatus): "error" | "warning" | undefined {
 }
 
 /* ── SALT real subtree ── */
-function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+function SaltReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRendererProps, "system">) {
   const disabled = Boolean(props.disabled);
   let inner: React.ReactNode = null;
   if (type === "SimulatedButton") {
@@ -533,14 +551,25 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
     inner = (
       <SaltFormField validationStatus={saltValidation(props.validationStatus as ValidationStatus)} disabled={disabled}>
         <SaltFormFieldLabel>{s(props.label, "Label")}</SaltFormFieldLabel>
-        {/* No dash for an empty read-only field: the placeholder shows what goes there. */}
-        <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly emptyReadOnlyMarker="" />
+        {kit
+          /* Kit only: Salt styles a read-only field differently from a
+             normal one (no fill, a lighter edge), so the library mounts the
+             normal, editable field, as the Salt page draws it. */
+          ? <SaltInput key={s(props.value)} placeholder={s(props.placeholder)} defaultValue={s(props.value) || undefined} />
+          /* No dash for an empty read-only field: the placeholder shows what goes there. */
+          : <SaltInput placeholder={s(props.placeholder)} value={s(props.value) || undefined} readOnly emptyReadOnlyMarker="" />}
       </SaltFormField>
     );
   } else if (type === "SimulatedCheckbox") {
-    inner = <SaltCheckbox label={s(props.label)} checked={Boolean(props.defaultChecked)} indeterminate={Boolean(props.indeterminate)} disabled={disabled} readOnly />;
+    /* Kit only (here and for the switch): Salt styles a read-only control
+       differently from a normal one, so the library mounts the normal one. */
+    inner = kit
+      ? <SaltCheckbox label={s(props.label)} checked={Boolean(props.defaultChecked)} indeterminate={Boolean(props.indeterminate)} disabled={disabled} onChange={kitNoop} />
+      : <SaltCheckbox label={s(props.label)} checked={Boolean(props.defaultChecked)} indeterminate={Boolean(props.indeterminate)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedSwitch") {
-    inner = <SaltSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly />;
+    inner = kit
+      ? <SaltSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} onChange={kitNoop} />
+      : <SaltSwitch label={s(props.label)} checked={Boolean(props.defaultOn)} disabled={disabled} readOnly />;
   } else if (type === "SimulatedCard") {
     inner = (
       <SaltCard>
@@ -648,15 +677,67 @@ function SaltReal({ type, mode, saltDensity, props }: Omit<RealComponentRenderer
      whole document and, on the canvas, losing to the closer preview scope so
      density never changed. "scope" renders a wrapper element that carries the
      classes, so this subtree is self-contained and its density wins. */
-  return (
+  const provider = (
     <SaltProvider mode={mode} density={coerceDensity(saltDensity)} applyClassesTo="scope">
       {inner}
     </SaltProvider>
   );
+  if (!kit) return provider;
+  /* Kit skin: Salt's own theming variables, set to the kit's token values for
+     the theme in view (JPM Brand teal, sentence-case actions, 4px corners, as
+     the Salt page draws them from its GitHub source). Salt's shipped sheet
+     is the UITK legacy look, which the kit documents as "Legacy". */
+  const legacy = kit.theme === "legacy";
+  const skin = {
+    "--salt-palette-accent": kitStr(kit, "accent"),
+    "--salt-actionable-accented-bold-background": kitStr(kit, "accent"),
+    "--salt-actionable-accented-bold-background-hover": kitStr(kit, "accentHover"),
+    "--salt-actionable-accented-bold-background-active": kitStr(kit, "accentActive"),
+    "--salt-actionable-accented-bold-foreground": kitStr(kit, "accentFg"),
+    "--salt-actionable-accented-bold-foreground-hover": kitStr(kit, "accentFg"),
+    "--salt-actionable-accented-bold-foreground-active": kitStr(kit, "accentFg"),
+    "--salt-actionable-accented-subtle-foreground": kitStr(kit, "accentText"),
+    "--salt-actionable-accented-subtle-borderColor": kitStr(kit, "accent"),
+    "--salt-actionable-accented-bold-borderColor": kitStr(kit, "accent"),
+    "--salt-text-action-textTransform": legacy ? "uppercase" : "none",
+    "--salt-text-action-fontWeight": "600",
+    "--salt-palette-corner-weak": legacy ? "0px" : "4px",
+    "--salt-palette-corner-weaker": legacy ? "0px" : "4px",
+    "--salt-color-blue-500": kitStr(kit, "accent"),
+    "--salt-palette-interact-cta-background": kitStr(kit, "accent"),
+    "--salt-palette-interact-cta-background-hover": kitStr(kit, "accentHover"),
+    "--salt-palette-interact-cta-background-active": kitStr(kit, "accentActive"),
+    "--salt-palette-interact-primary-foreground": kitStr(kit, "fg"),
+    "--salt-content-primary-foreground": kitStr(kit, "fg"),
+    "--salt-content-secondary-foreground": kitStr(kit, "fg2"),
+    "--salt-container-primary-background": kitStr(kit, "bg"),
+    "--salt-container-secondary-background": kitStr(kit, "bg2"),
+    "--salt-container-primary-borderColor": kitStr(kit, "border"),
+    "--salt-editable-primary-background": kitStr(kit, "bg"),
+    "--salt-editable-borderColor": kitStr(kit, "border"),
+    "--salt-selectable-borderColor": kitStr(kit, "borderStrong"),
+    "--salt-accent-background": kitStr(kit, "accent"),
+    "--salt-accent-foreground": kitStr(kit, "accentFg"),
+    "--salt-palette-navigate-default": kitStr(kit, "accentText"),
+    "--salt-content-foreground-highlight": kitStr(kit, "accentText"),
+  };
+  /* The provider's scope element re-declares Salt's variables on itself, so
+     the skin must be declared on that element with a stronger selector than
+     Salt's own `.salt-theme`. Values are the kit's hex tokens only. */
+  const decls = Object.entries(skin)
+    .filter(([, v]) => typeof v === "string" && /^(#[0-9a-fA-F]{3,8}|none|uppercase|[0-9]+(px)?)$/.test(v))
+    .map(([k, v]) => `${k}:${v}`)
+    .join(";");
+  return (
+    <div className="kit-salt-skin">
+      <style dangerouslySetInnerHTML={{ __html: `.kit-salt-skin .salt-theme,.kit-salt-skin .salt-theme-next{${decls}}` }} />
+      {provider}
+    </div>
+  );
 }
 
 /* ── M3 (MUI) real subtree ── */
-function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+function M3Real({ type, mode, saltDensity, props, kit }: Omit<RealComponentRendererProps, "system">) {
   /* createTheme with the active mode; emotion styles are scoped per component
      (no global reset). MUI has no global density knob, so the shared density
      level becomes theme-wide default `size` props: every sized component in
@@ -667,20 +748,97 @@ function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererPr
   const theme = React.useMemo(() => {
     const size3 = muiSize(density);
     const size2 = muiSize2(density);
+    /* Kit skin: the real M3 colour roles, pill corners, sentence case and
+       Roboto, as the Material page draws them. The builder passes no kit and
+       keeps MUI's default theme. */
+    const k = kit;
+    const c = (key: string) => kitStr(k, key);
+    const palette = k
+      ? {
+          mode,
+          primary: { main: c("primary")!, contrastText: c("onPrimary") },
+          secondary: { main: c("secondary") ?? c("primary")!, contrastText: c("onSecondary") },
+          error: { main: c("error") ?? "#B3261E", contrastText: c("onError") },
+          background: { default: c("surface"), paper: c("surfaceContainerLow") ?? c("surface") },
+          text: { primary: c("onSurface"), secondary: c("onSurfaceVariant") },
+          divider: c("outlineVariant"),
+        }
+      : { mode };
     return createTheme({
-      palette: { mode },
+      palette,
+      ...(k && {
+        shape: { borderRadius: 12 },
+        typography: { fontFamily: "Roboto, sans-serif", button: { textTransform: "none", fontWeight: 500, letterSpacing: "0.1px" } },
+      }),
       components: {
-        MuiButton: { defaultProps: { size: size3 } },
+        MuiButton: {
+          defaultProps: { size: size3, ...(k && { disableElevation: true }) },
+          ...(k && {
+            styleOverrides: {
+              root: { borderRadius: 9999, height: 40, padding: "0 24px", fontSize: 14 },
+              outlined: { borderColor: c("outline") },
+              text: { color: c("primary") },
+            },
+          }),
+        },
+        ...(k && {
+          MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 4 }, notchedOutline: { borderColor: c("outline") } } },
+          MuiPaper: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none", borderRadius: 12 } } },
+        }),
+        ...(k && {
+          /* The kit's switch has no padding of its own (Material's track is
+             the whole control), so the label needs a real gap and must not
+             keep the negative margin MUI uses to offset that padding. Only a
+             label that holds a switch; a checkbox keeps MUI's spacing. */
+          MuiFormControlLabel: { styleOverrides: { root: { "&:has(.MuiSwitch-root)": { marginLeft: 0, gap: 12 } } } },
+        }),
         MuiCheckbox: { defaultProps: { size: size3 } },
         MuiToggleButtonGroup: { defaultProps: { size: size3 } },
         MuiTextField: { defaultProps: { size: size2 } },
         MuiFormControl: { defaultProps: { size: size2 } },
-        MuiChip: { defaultProps: { size: size2 } },
-        MuiSwitch: { defaultProps: { size: size2 } },
+        /* Chip and Switch carry a default size for the builder AND, for the
+           kit only, the Material shapes. One key each: a second key of the
+           same name later in this literal would replace the first. */
+        MuiChip: {
+          defaultProps: { size: size2 },
+          ...(k && {
+            styleOverrides: {
+              /* Material's chip: 32 high, 8 corner, outlined on the surface. */
+              root: {
+                height: 32, borderRadius: 8, fontSize: 14,
+                variants: [{
+                  props: { color: "default" },
+                  style: { backgroundColor: "transparent", border: `1px solid ${c("outline")}`, color: c("onSurfaceVariant") },
+                }],
+              },
+              label: { paddingLeft: 16, paddingRight: 16 },
+            },
+          }),
+        },
+        MuiSwitch: {
+          defaultProps: { size: size2 },
+          ...(k && {
+            styleOverrides: {
+              /* Material's switch: a 52 by 32 track with a 2px outline; the
+                 handle is 16 when off and 24 when on. Written on the root
+                 with the part classes so it outranks MUI's size rules. */
+              root: {
+                width: 52, height: 32, padding: 0, overflow: "visible",
+                "& .MuiSwitch-switchBase": { padding: 4, top: 0, left: 0, color: c("outline"), transform: "none" },
+                "& .MuiSwitch-switchBase.Mui-checked": { transform: "translateX(20px)", color: c("onPrimary") },
+                "& .MuiSwitch-thumb": { width: 16, height: 16, margin: 4, boxShadow: "none", backgroundColor: "currentColor" },
+                "& .MuiSwitch-switchBase.Mui-checked .MuiSwitch-thumb": { width: 24, height: 24, margin: 0 },
+                "& .MuiSwitch-track": { boxSizing: "border-box", borderRadius: 16, backgroundColor: c("surfaceContainerHighest"), border: `2px solid ${c("outline")}`, opacity: 1 },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: c("primary"), borderColor: c("primary"), opacity: 1 },
+                "& .MuiSwitch-switchBase.Mui-disabled + .MuiSwitch-track": { opacity: 0.38 },
+              },
+            },
+          }),
+        },
         MuiTable: { defaultProps: { size: size2 } },
       },
     });
-  }, [mode, density]);
+  }, [mode, density, kit]);
   const disabled = Boolean(props.disabled);
   const validation = props.validationStatus as ValidationStatus;
   let inner: React.ReactNode = null;
@@ -690,6 +848,10 @@ function M3Real({ type, mode, saltDensity, props }: Omit<RealComponentRendererPr
     /* An icon-only button is Material's IconButton. */
     inner = icon
       ? <MuiIconButton color="inherit" disabled={disabled} {...buttonActionProps(props)}>{icon}</MuiIconButton>
+      : kit && s(props.variant) === "secondary"
+      /* Kit only: Material's secondary action is the filled tonal button
+         (secondary container), not a second outlined one. */
+      ? <MuiButton variant="contained" disabled={disabled} sx={{ bgcolor: kitStr(kit, "secondaryContainer"), color: kitStr(kit, "onSecondaryContainer"), "&:hover": { bgcolor: kitStr(kit, "secondaryContainer") } }} {...buttonActionProps(props)}>{s(props.label, "Button")}</MuiButton>
       : <MuiButton variant={variant} color={color} disabled={disabled} {...buttonActionProps(props)}>{s(props.label, "Button")}</MuiButton>;
   } else if (type === "SimulatedTextInput") {
     inner = (
@@ -1023,16 +1185,17 @@ function scopeUoauiCSS(css: string): string {
   return out;
 }
 
-function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+function UoauiReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRendererProps, "system">) {
   /* Resolve the uoaui theme object from the active mode (dark/light) and build
      the DS CSS via the shared registry helper. Memoised on mode+density so the
      string isn't reassembled every render. setUoauiT inside uoauiBuildCSS is a
      pure read of the passed theme, so this is render-safe. */
   const density = coerceDensity(saltDensity);
   const scopedCss = React.useMemo(() => {
-    const theme = getTheme("uoaui", mode === "dark" ? "dark" : "light");
+    /* Kit skin: the kit's own uoaui theme (it may carry a custom accent). */
+    const theme = (kit as Parameters<typeof getFullCSS>[1] | undefined) ?? getTheme("uoaui", mode === "dark" ? "dark" : "light");
     return scopeUoauiCSS(sanitizeCSS(getFullCSS("uoaui", theme, density)));
-  }, [mode, density]);
+  }, [mode, density, kit]);
 
   const render = getRealBlockRenderer("uoaui", type);
   const inner = render ? render(props, { density }) : null;
@@ -1053,16 +1216,16 @@ function UoauiReal({ type, mode, saltDensity, props }: Omit<RealComponentRendere
    values on the subtree (Carbon themes are class-based, not attribute-based).
    CarbonScopeStyles lazy-injects public/carbon-scoped.css once on first mount,
    so the heavy sheet only loads when Carbon is actually on screen. */
-function CarbonReal({ type, mode, saltDensity, props }: Omit<RealComponentRendererProps, "system">) {
+function CarbonReal({ type, mode, saltDensity, props, kit }: Omit<RealComponentRendererProps, "system">) {
   const themeClass = mode === "dark" ? "cds--g100" : "cds--white";
   const render = getRealBlockRenderer("carbon", type);
   /* Carbon sizes per component (sm/md/lg field heights); the map applies the
      shared density level to each real component's `size`. */
-  const inner = render ? render(props, { density: coerceDensity(saltDensity) }) : null;
+  const inner = render ? render(props, kit ? { density: coerceDensity(saltDensity), kit: true } : { density: coerceDensity(saltDensity) }) : null;
 
   return (
     <>
-      <CarbonScopeStyles />
+      <CarbonScopeStyles kit={Boolean(kit)} />
       <div className={`carbon-live-scope ${themeClass}`} data-carbon-theme={mode === "dark" ? "g100" : "white"}>
         {inner}
       </div>
@@ -1087,16 +1250,19 @@ export function RealComponentRenderer({
   mode,
   saltDensity,
   props,
+  kit,
 }: RealComponentRendererProps): React.ReactElement | null {
   /* Not canvas blocks: a dialog and an anchored menu (props.model), in each system's own components (RealDialogKit). */
   if (type === "KitDialog") return props.model ? <RealKitDialog system={system} mode={mode} density={saltDensity} model={props.model as KitDialogModel} /> : null;
   if (type === "KitMenu") return props.model ? <RealKitMenu system={system} mode={mode} model={props.model as KitMenuModel} /> : null;
+  /* Not a canvas block: a small form in each system's own dialog (props.model). */
+  if (type === "FormDialog") return props.model ? <RealFormDialog system={system} mode={mode} density={saltDensity} model={props.model as FormDialogModel} /> : null;
   if (!canRenderReal(system, type)) return null;
 
-  if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
-  if (system === "m3") return <M3Real type={type} mode={mode} saltDensity={saltDensity} props={props} />;
+  if (system === "salt") return <SaltReal type={type} mode={mode} saltDensity={saltDensity} props={props} kit={kit} />;
+  if (system === "m3") return <M3Real type={type} mode={mode} saltDensity={saltDensity} props={props} kit={kit} />;
   if (system === "fluent") return <FluentReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
-  if (system === "uoaui") return <UoauiReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
-  if (system === "carbon") return <CarbonReal type={type} mode={mode} saltDensity={saltDensity} props={props} />;
+  if (system === "uoaui") return <UoauiReal type={type} mode={mode} saltDensity={saltDensity} props={props} kit={kit} />;
+  if (system === "carbon") return <CarbonReal type={type} mode={mode} saltDensity={saltDensity} props={props} kit={kit} />;
   return null;
 }

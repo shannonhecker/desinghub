@@ -18,8 +18,12 @@ import { Check } from "lucide-react";
    ══════════════════════════════════════════════════════════ */
 
 export interface RailMenu { key: string; label: string; icon: React.ReactNode; items: { label: string; active: boolean; onPick: () => void }[]; multi?: boolean }
+/** A plain button under the menus, after a separator (the Zoom group, Back
+ *  to live). `disabled` keeps it focusable and says so (aria-disabled);
+ *  `pressed` makes it a toggle; `tone: "live"` is the accent way back. */
+export interface RailTool { key: string; label: string; title?: string; icon: React.ReactNode; onClick: () => void; pressed?: boolean; disabled?: boolean; tone?: "live" }
 
-export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
+export function ExecutionRail({ menus, tools, toolsNote }: { menus: RailMenu[]; tools?: RailTool[]; /** Why the tools are at rest, added to their tooltips ("while presenting"). */ toolsNote?: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const railRef = useRef<HTMLDivElement>(null);
@@ -150,6 +154,25 @@ export function ExecutionRail({ menus }: { menus: RailMenu[] }) {
           ) : null}
         </div>
       ))}
+      {tools?.length ? (
+        <>
+          <span className="dh-exec-rail-sep" aria-hidden="true" />
+          {tools.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`dh-exec-rail-btn${t.tone === "live" ? " dh-exec-rail-live" : ""}`}
+              aria-label={t.label}
+              title={toolsNote ? `${t.title ?? t.label} (${toolsNote})` : t.title ?? t.label}
+              aria-pressed={t.pressed}
+              aria-disabled={t.disabled ? true : undefined}
+              onClick={t.disabled ? undefined : t.onClick}
+            >
+              {t.icon}
+            </button>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }

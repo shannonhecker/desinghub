@@ -22,15 +22,39 @@ function resetStore() {
 describe("useDesignHub", () => {
   beforeEach(resetStore);
 
-  it("setActiveSystem switches DS and resets selection", () => {
-    useDesignHub.getState().setSelectedComponent("buttons");
+  /* Owner rule (4 Oct): switching system keeps the visitor's place. This
+     replaces the earlier "switch resets selection and search" behaviour. */
+  it("setActiveSystem switches DS and keeps the entry, tab and search", () => {
+    useDesignHub.getState().setSelectedComponent("inputs");
+    useDesignHub.getState().setActiveTab("specs");
     useDesignHub.getState().setSearchQuery("test");
     useDesignHub.getState().setActiveSystem("m3");
 
     const state = useDesignHub.getState();
     expect(state.activeSystem).toBe("m3");
-    expect(state.selectedComponent).toBeNull();
-    expect(state.searchQuery).toBe("");
+    expect(state.selectedComponent).toBe("text-fields");
+    expect(state.activeTab).toBe("specs");
+    expect(state.searchQuery).toBe("test");
+    expect(state.missing).toBeNull();
+  });
+
+  it("setActiveSystem remembers an entry the target system lacks, and returns to it", () => {
+    useDesignHub.getState().setActiveSystem("m3");
+    useDesignHub.getState().setSelectedComponent("fabs");
+    useDesignHub.getState().setActiveSystem("carbon");
+    expect(useDesignHub.getState().selectedComponent).toBeNull();
+    expect(useDesignHub.getState().missing).toEqual({ from: "m3", id: "fabs" });
+    useDesignHub.getState().setActiveSystem("salt");
+    expect(useDesignHub.getState().missing).toEqual({ from: "m3", id: "fabs" });
+    useDesignHub.getState().setActiveSystem("m3");
+    expect(useDesignHub.getState().selectedComponent).toBe("fabs");
+    expect(useDesignHub.getState().missing).toBeNull();
+  });
+
+  it("setActiveSystem on the overview stays on the overview", () => {
+    useDesignHub.getState().setActiveSystem("fluent");
+    expect(useDesignHub.getState().selectedComponent).toBeNull();
+    expect(useDesignHub.getState().missing).toBeNull();
   });
 
   it("setSaltTheme updates salt theme key", () => {

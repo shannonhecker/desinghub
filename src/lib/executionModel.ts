@@ -33,6 +33,22 @@ export type ExecutionChartStyle = (typeof EXECUTION_CHART_STYLES)[number];
 export const EXECUTION_RANGES = ["1D", "3D", "5D", "1W", "1M", "3M", "YTD", "Order"] as const;
 export type ExecutionRange = (typeof EXECUTION_RANGES)[number];
 const RANGE_DAYS: Partial<Record<ExecutionRange, number>> = { "3D": 3, "5D": 5, "1W": 7, "1M": 30, "3M": 92 };
+/** Where a range preset's window starts ("1D" and "Order": the session's
+ *  first bar; "YTD": the first of January; the others: days before it). */
+export function executionRangeStart(range: ExecutionRange, sessionStart: number): number {
+  if (range === "YTD") return Date.UTC(new Date(sessionStart).getUTCFullYear(), 0, 1);
+  const days = RANGE_DAYS[range];
+  return days ? sessionStart - days * 24 * 60 * MINUTE : sessionStart;
+}
+/** The preset that reaches back to `t` and starts latest (the least extra
+ *  history), or null when no preset reaches that far. "Order" is not offered. */
+export function rangeCovering(t: number, sessionStart: number): ExecutionRange | null {
+  const reach = EXECUTION_RANGES.filter((r) => r !== "Order")
+    .map((r) => ({ r, from: executionRangeStart(r, sessionStart) }))
+    .filter(({ from }) => from <= t)
+    .sort((a, b) => b.from - a.from);
+  return reach[0]?.r ?? null;
+}
 /** Things the reader can take off the chart. */
 export const EXECUTION_OVERLAYS = ["Mid line", "Avg market fill", "Session TWAP", "Benchmarks", "Percent done", "Volume", "Gridlines"] as const;
 export type ExecutionOverlay = (typeof EXECUTION_OVERLAYS)[number];
@@ -124,9 +140,7 @@ export function resolveExecution(dataset: ReportDataset, state: ReportState): Ex
   /* The window: the session, plus the history the range reaches back to. */
   const session = market.filter((r) => r.period !== "History");
   const sessionStart = parseExecutionTime(session[0]?.time);
-  let from = sessionStart;
-  if (range === "YTD") from = Date.UTC(new Date(sessionStart).getUTCFullYear(), 0, 1);
-  else if (RANGE_DAYS[range]) from = sessionStart - RANGE_DAYS[range]! * 24 * 60 * MINUTE;
+  let from = executionRangeStart(range, sessionStart);
   let to = Infinity;
   if (range === "Order") {
     /* From the order's first bar to its last working one. */

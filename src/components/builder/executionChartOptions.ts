@@ -116,7 +116,13 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
   frame.narrow = Boolean(size.narrow);
   const line = { type: "line" as const, step: "left" as const, yAxis: 1, marker: { enabled: false }, states: { hover: { lineWidthPlus: 0 } } };
   const plotShare = shows("Volume") ? 100 - VOLUME_SHARE : 100;
-  const acrossDays = () => { const t = frame.view.times; return t[t.length - 1] - t[0] > 36 * 60 * 60 * 1000; };
+  /* Dates when the bars on screen span more than a day and a half, times otherwise. */
+  const acrossDays = (axis?: { min?: number | null; max?: number | null }) => {
+    const t = frame.view.times;
+    const lo = Math.max(0, Math.min(t.length - 1, Math.ceil(axis?.min ?? 0)));
+    const hi = Math.max(0, Math.min(t.length - 1, Math.floor(axis?.max ?? t.length - 1)));
+    return t[hi] - t[lo] > 36 * 60 * 60 * 1000;
+  };
 
   const market: Highcharts.SeriesOptionsType[] =
     view.chartStyle === "Line"
@@ -155,16 +161,32 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
       min: -0.5, max: frame.axisMax,
       lineColor: v.border, tickLength: 0,
       crosshair: { dashStyle: "Dash", color: v.fgTer, width: 1 },
-      /* As many time labels as the plot has room for. */
+      /* The fewest bars a zoomed view shows (useChartNavigation's MIN_BARS). */
+      minRange: 5,
+      /* As many time labels as the plot has room for, over the bars on
+         screen. A label sits on every `step`th bar counted from the first,
+         so panning moves the labels with their bars. */
       tickPositioner() {
         const count = frame.view.times.length;
+        const lo = Math.max(0, Math.ceil(this.min ?? 0));
+        const hi = Math.min(count - 1, Math.floor(this.max ?? count - 1));
         const room = Math.max(2, Math.floor((this.chart.plotWidth || 600) / TICK_ROOM));
-        const step = Math.max(1, Math.round(count / room));
+        const step = Math.max(1, Math.round((hi - lo + 1) / room));
+        const offset = Math.floor(step / 2);
         const out: number[] = [];
-        for (let i = Math.floor(step / 2); i < count; i += step) out.push(i);
+        for (let i = lo + ((((offset - lo) % step) + step) % step); i <= hi; i += step) out.push(i);
         return out;
       },
-      labels: { rotation: 0, style: { color: v.fgTer, fontSize: SMALL, textOverflow: "none", whiteSpace: "nowrap" }, formatter() { const t = frame.view.times[Math.round(Number(this.value))]; return t === undefined ? "" : formatBarTime(t, acrossDays()); } },
+      labels: { rotation: 0, style: { color: v.fgTer, fontSize: SMALL, textOverflow: "none", whiteSpace: "nowrap" }, formatter() {
+        const t = frame.view.times[Math.round(Number(this.value))];
+        if (t === undefined) return "";
+        if (!acrossDays(this.axis)) return formatBarTime(t, false);
+        /* Across days: the date where a day begins on the axis, the time for
+           the later labels of that day (never the same date twice in a row). */
+        const ticks = this.axis.tickPositions ?? [];
+        const before = frame.view.times[Math.round(ticks[ticks.indexOf(Number(this.value)) - 1])];
+        return before !== undefined && formatBarTime(before, true) === formatBarTime(t, true) ? formatBarTime(t, false) : formatBarTime(t, true);
+      } },
       plotBands: view.bands.map((b) => ({ id: b.state, from: b.from - 0.5, to: b.to - 0.5, color: alpha(v[STATE_TONES[b.state] ?? "fgTer"] as string, 0.14) })),
     },
     yAxis: [
@@ -187,6 +209,9 @@ export function buildExecutionOptions(frame: ChartFrame, v: ThemeVars, palette: 
     },
     tooltip: {
       shared: true, backgroundColor: v.card ?? v.surface, borderColor: v.border, borderRadius: 4, shadow: false,
+      /* A finger moving over the chart scrolls the page or pans; press and
+         hold shows the values (useChartNavigation). */
+      followTouchMove: false,
       style: { color: v.fg, fontSize: TIP },
       formatter() {
         const points = (this as unknown as { points?: Highcharts.Point[] }).points ?? [this as unknown as Highcharts.Point];
@@ -252,7 +277,13 @@ function latestPriceLine(view: ExecutionView, v: ThemeVars): Highcharts.YAxisPlo
  * false when the chart cannot be patched (fewer bars than it holds), and
  * the caller rebuilds it.
  */
-export function applyFeedView(chart: Highcharts.Chart, frame: ChartFrame, next: ExecutionView, v: ThemeVars, palette: string[], countdown: string | null, animate: boolean): boolean {
+/** Who decides the time axis when a bar arrives: given the latest bar's
+ *  position before and after, the span to show, or null to leave the axis to
+ *  the walk-in step (the full view). The navigation hook passes its own. */
+export type HoldTime = (before: number, after: number) => { min: number; max: number } | null;
+
+export function applyFeedView(chart: Highcharts.Chart, frame: ChartFrame, next: ExecutionView, v: ThemeVars, palette: string[], countdown: string | null, animate: boolean, holdTime?: HoldTime): boolean {
+  const lastBefore = frame.view.times.length - 1;
   const data = executionSeriesData(next, v, palette);
   for (const [id, points] of Object.entries(data)) {
     const series = chart.get(id) as Highcharts.Series | undefined;
@@ -272,8 +303,14 @@ export function applyFeedView(chart: Highcharts.Chart, frame: ChartFrame, next: 
   const bars = next.times.length;
   if (frame.axisMax === undefined || bars - 0.5 > frame.axisMax - 1) {
     frame.axisMax = axisEnd(bars);
+    /* The full view's end. A zoomed view's own extremes survive an axis
+       update (Highcharts keeps userMin / userMax). */
     chart.xAxis[0]?.update({ max: frame.axisMax }, false);
   }
+  /* A zoomed or panned view is the reader's: it holds still, or moves on
+     with the bars when it shows the latest one. */
+  const held = holdTime?.(lastBefore, bars - 1);
+  if (held) chart.xAxis[0]?.setExtremes(held.min, held.max, false, false);
   const price = chart.yAxis[1];
   if (price) {
     price.removePlotLine(LATEST_LINE);
@@ -346,9 +383,14 @@ export function drawPills(chart: Highcharts.Chart, frame: ChartFrame, v: ThemeVa
   if (!axis) return;
   const top = chart.plotTop;
   const bottom = chart.plotTop + axis.len;
+  const user = axis.getExtremes?.();
+  const zoomedPrice = user?.userMin !== undefined || user?.userMax !== undefined;
   const pills = frame.view.pills
     .map((p) => ({ p, y: axis.toPixels(p.value, false) }))
-    .filter(({ y }) => Number.isFinite(y));
+    .filter(({ y }) => Number.isFinite(y))
+    /* On a zoomed price scale a tag whose price is off the scale would sit
+       at the plot's edge pointing at no line: it is left out. */
+    .filter(({ y }) => !zoomedPrice || (y >= top - 1 && y <= bottom + 1));
   const ys = layoutTags(pills.map((t) => t.y), top, bottom, PILL_HEIGHT, 2);
   const x = chart.plotLeft + chart.plotWidth + 4;
   /* The bands the tags (and the countdown) take on the axis. */
