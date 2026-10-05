@@ -2361,7 +2361,6 @@ export function PreviewSidePanel() {
 export function StandalonePreview() {
   const designSystem = useBuilder((s) => s.designSystem);
   const mode = useBuilder((s) => s.mode);
-  const componentLibraryOpen = useBuilder((s) => s.componentLibraryOpen);
 
   return (
     <div className={`standalone-preview ${mode === "light" ? "builder-light" : ""}`}>
@@ -2399,12 +2398,8 @@ export function StandalonePreview() {
             <BuilderCanvas />
           </div>
 
-          {/* Right: Component Library Sidebar in standalone */}
-          {componentLibraryOpen && (
-            <aside className="component-sidebar">
-              <ComponentLibrary />
-            </aside>
-          )}
+          {/* No component sidebar here: the pop-out is read-only, and the
+              panel's open state now carries over from Edit (5 Oct). */}
         </div>
       </CanvasDndProvider>
     </div>

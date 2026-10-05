@@ -178,6 +178,10 @@ test.describe("Builder - template layout parity", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole("button", { name: "Edit canvas" }).click();
+    /* The panel opens on entering Edit (5 Oct); these design-pixel measurements
+       were calibrated with it hidden (a smaller zoom rounds to 2px): hide it. */
+    const closePanel = page.getByRole("button", { name: "Close panel", exact: true });
+    if (await closePanel.isVisible()) await closePanel.click();
     await expect(page.locator(".bp-viewport-wrapper .bp-main [data-block-id]").first()).toBeVisible();
     await settle(page);
     const edit = await measure(page);
