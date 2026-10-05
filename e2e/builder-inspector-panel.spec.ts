@@ -731,3 +731,120 @@ for (const [w, h] of [[1440, 900], [900, 800], [390, 844]] as const) {
     await scrolls("browse");
   });
 }
+
+/* Any template in Edit, by label. */
+async function openTemplateInEdit(page: Page, label: string) {
+  await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto("/builder", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.getByRole("button", { name: `Use the ${label} template` }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  await expect(page.locator(".component-sidebar")).toBeVisible();
+  await page.waitForTimeout(800);
+}
+
+for (const label of ["Performance Analytics", "Analytics Dashboard"]) {
+  test(`${label}: hovering a first-row block never raises the zone toolbar, and a click on the block's own control reaches it`, async ({ page }) => {
+    await openTemplateInEdit(page, label);
+    const layoutOf = () => page.evaluate(() => { const z = document.querySelector(".bp-main .zone-drop-container") as HTMLElement; return z.style.cssText; });
+    const before = await layoutOf();
+    const firstRow = await page.evaluate(() => {
+      const els = [...document.querySelectorAll(".bp-main [data-block-id]")];
+      const top = Math.min(...els.map((e) => e.getBoundingClientRect().top));
+      return els.filter((e) => Math.abs(e.getBoundingClientRect().top - top) < 4).map((e) => e.getAttribute("data-block-id")!);
+    });
+    expect(firstRow.length).toBeGreaterThan(0);
+    for (const id of firstRow) {
+      const block = page.locator(`[data-block-id="${id}"]`);
+      const box = (await block.boundingBox())!;
+      /* The block's top-right corner, where panel tools live. */
+      await page.mouse.move(box.x + box.width - 14, box.y + 14);
+      await page.waitForTimeout(350);
+      const bars = await page.evaluate(() => {
+        const shown = [...document.querySelectorAll<HTMLElement>(".zone-layout-overlay")].filter((b) => getComputedStyle(b).opacity !== "0" && getComputedStyle(b).pointerEvents !== "none");
+        const blocks = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].map((b) => b.getBoundingClientRect());
+        return shown.filter((b) => { const r = b.getBoundingClientRect(); return blocks.some((o) => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top); }).length;
+      });
+      expect(bars, `${id}: no zone toolbar over a block while hovering`).toBe(0);
+      const tool = block.getByRole("button", { name: /^(Configure|Expand)/ }).first();
+      if (await tool.count()) {
+        await tool.click();
+        expect(await page.evaluate(() => { const a = document.activeElement; return !!a?.closest(".zone-layout-overlay"); }), `${id}: the click did not land on the zone toolbar`).toBe(false);
+        await page.keyboard.press("Escape");
+        await page.keyboard.press("Escape");
+      }
+    }
+    expect(await layoutOf(), "the zone's layout did not change").toBe(before);
+  });
+
+  test(`${label}: no body layout option makes a block disappear; Undo returns to the start`, async ({ page }) => {
+    test.setTimeout(4 * 60 * 1000);
+    await openTemplateInEdit(page, label);
+    const blocks = () => page.evaluate(() => [...document.querySelectorAll(".bp-main [data-block-id]")].map((el) => { const r = el.getBoundingClientRect(); const z = (el.closest(".bp-main") as HTMLElement).getBoundingClientRect(); return { id: el.getAttribute("data-block-id"), w: Math.round(r.width), h: Math.round(r.height), inside: r.right > z.left && r.left < z.right }; }));
+    const start = await blocks();
+    const zoneStyle = () => page.evaluate(() => (document.querySelector(".bp-main .zone-drop-container") as HTMLElement).style.cssText);
+    const startStyle = await zoneStyle();
+    const first = page.locator(".bp-main [data-block-id]").first();
+    await first.focus();
+    await first.press("Enter");
+    const panel = page.locator(".component-sidebar");
+    await panel.locator(".inspector-section-head", { hasText: "Body layout" }).click();
+    const section = panel.locator(".inspector-section", { hasText: "Body layout" });
+    let changes = 0;
+    const allVisible = async (what: string) => {
+      await page.waitForTimeout(250);
+      for (const b of await blocks()) {
+        /* Visible with a real size. (A no-wrap row of fourteen shares is
+           narrow by the author's own choice, but nothing is lost.) */
+        expect(b.w, `${what}: ${b.id} has width`).toBeGreaterThan(8);
+        expect(b.h, `${what}: ${b.id} has height`).toBeGreaterThan(8);
+        expect(b.inside, `${what}: ${b.id} is inside the zone`).toBe(true);
+      }
+    };
+    for (const dir of ["Row", "Stack", "Grid"]) {
+      await section.getByRole("radiogroup", { name: "Auto-layout direction" }).getByRole("radio", { name: dir, exact: true }).click();
+      changes++;
+      await allVisible(dir);
+      for (const group of await section.getByRole("radiogroup").all()) {
+        const name = (await group.getAttribute("aria-label")) ?? (await group.getAttribute("aria-labelledby")) ?? "";
+        if (name === "Auto-layout direction") continue;
+        for (const option of await group.getByRole("radio").all()) {
+          const optionName = (await option.textContent())?.trim();
+          if ((await option.getAttribute("aria-checked")) === "true") continue;
+          await option.click();
+          changes++;
+          await allVisible(`${dir} / ${name} / ${optionName}`);
+        }
+      }
+    }
+    /* The on-canvas toolbar's distribution options too (keyboard focus opens it). */
+    const bar = page.locator(".bp-main .zone-drop-container > .zone-layout-overlay");
+    for (const option of await bar.getByRole("radio").all()) {
+      if ((await option.getAttribute("aria-checked")) === "true") continue;
+      await option.focus();
+      await page.keyboard.press("Enter");
+      changes++;
+      await allVisible(`toolbar / ${await option.getAttribute("aria-label")}`);
+    }
+    await bar.getByRole("slider", { name: "Gap between items" }).focus();
+    await page.keyboard.press("ArrowRight");
+    changes++;
+    await allVisible("toolbar / gap");
+    /* Back to the start: Undo until the zone's own layout is the one we began with. */
+    const undo = page.getByRole("button", { name: /^Undo \(/ });
+    for (let i = 0; i < changes + 2; i++) {
+      if ((await zoneStyle()) === startStyle) break;
+      await undo.click();
+      await page.waitForTimeout(120);
+    }
+    expect(await zoneStyle(), "Undo returns the zone to its starting layout").toBe(startStyle);
+    await page.waitForTimeout(600);
+    expect((await blocks()).map((b) => [b.id, b.w])).toEqual(start.map((b) => [b.id, b.w]));
+  });
+}
