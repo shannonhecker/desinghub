@@ -186,8 +186,9 @@ export function HoverInspector({
         range.selectNodeContents(n);
         add(n.parentElement, range.getBoundingClientRect());
       }
-      /* While a block is selected its zone's layout toolbar is hidden. */
-      const bars = isPinned ? [] : [...document.querySelectorAll<HTMLElement>(".zone-layout-overlay")].map((el) => el.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
+      /* While a block is selected its zone's layout toolbar is hidden; a hidden
+         bar (opacity 0) is no obstacle for a hover pill on another block either. */
+      const bars = isPinned ? [] : [...document.querySelectorAll<HTMLElement>(".zone-layout-overlay")].filter((el) => getComputedStyle(el).opacity !== "0").map((el) => el.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
       setPlaced(placeToolbarAt(b, obstacles, bars, own, bounds, { width, height: h, gap }));
     };
     compute();

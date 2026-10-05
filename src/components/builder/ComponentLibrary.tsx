@@ -24,6 +24,8 @@ import {
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
+import { showToast } from "@/lib/toast";
+import { undo } from "@/lib/builderHistory";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { InspectorSwitch } from "@/lib/blockRegistry";
 import { plainBlockName } from "@/lib/blockNames";
@@ -286,6 +288,8 @@ export function ComponentLibrary() {
     const st = useBuilder.getState();
     if (selectedParentGroupId) st.removeBlockFromGroup(selectedParentGroupId, selectedBlockId);
     else st.removeBlockFromZone(selectedBlockZone ?? "body", selectedBlockId);
+    /* The same toast every canvas delete shows. */
+    showToast("Block deleted", { icon: "delete", durationMs: 4000, action: { label: "Undo", onClick: undo } });
     goBackToLibrary();
   };
 
