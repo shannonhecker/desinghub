@@ -313,6 +313,21 @@ test.describe("Builder - FX Execution chart navigation", () => {
         /* Inside the dialog (a focus guard or sentinel of the system's own trap counts: it hands focus straight back). */
         await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('[role="dialog"], [data-floating-ui-focus-guard], .dh-form-dialog-scope'))), { timeout: 1_000, message: `Tab ${i + 1}` }).toBe(true);
       }
+      /* Two kinds of day cannot be picked, told apart the same way in every system, with a key under the grid. */
+      const closed = dialog.locator('[data-day="2026-01-03"]');
+      const outside = dialog.locator('[data-day="2026-01-06"]');
+      await expect(closed).toHaveAttribute("data-off", "closed");
+      await expect(closed).toHaveAccessibleName(/market closed, no sample data$/);
+      await expect(outside).toHaveAttribute("data-off", "outside");
+      await expect(outside).toHaveAccessibleName(/outside the sample data$/);
+      const line = (el: Element) => getComputedStyle(el, "::after").borderTopStyle;
+      expect(await closed.evaluate(line)).toBe("solid");
+      expect(await outside.evaluate(line)).toBe("none");
+      for (const day of ["2026-01-04", "2026-01-10", "2026-01-15", "2026-01-22", "2026-01-31"]) {
+        /* Every later day of the month is outside the data, whatever its digits or weekday: none is struck through. */
+        await expect(dialog.locator(`[data-day="${day}"]`)).toHaveAttribute("data-off", day === "2026-01-04" ? "closed" : "outside");
+      }
+      await expect(dialog.locator(".dh-cal-legend")).toHaveText("12Market closed12Outside the sample data");
       /* Outside the data: a plain message by the field. */
       const date = dialog.getByLabel("Date", { exact: true });
       await date.fill("2026-03-02");
@@ -388,6 +403,40 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await expect(plot(page).locator(".highcharts-xaxis-labels text").first()).toHaveText(/^02 Jan$/);
   });
 
+  test("with only the price scale zoomed, a plain wheel over the plot scrolls the page and leaves the view alone", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    await plot(page).focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press("PageUp");
+    const y = (await viewY(page))!;
+    expect(y).not.toBeNull();
+    expect(await viewX(page)).toBeNull();
+    await page.evaluate(() => { window.addEventListener("wheel", (e) => { (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken = e.defaultPrevented; }); });
+    const taken = () => page.evaluate(() => (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken);
+    const area = await plotArea(page);
+    await page.mouse.move(area.x + area.width * 0.4, area.y + area.height * 0.3);
+    const top = () => plot(page).evaluate((el) => el.getBoundingClientRect().top);
+    const before = await top();
+    for (const dy of [160, 160]) await page.mouse.wheel(0, dy);
+    await expect.poll(taken).toBe(false);
+    /* The page scrolled: the chart moved up the screen. */
+    await expect.poll(top).toBeLessThan(before - 50);
+    expect(await viewX(page)).toBeNull();
+    expect(await viewY(page)).toEqual(y);
+    /* And back up, the same. */
+    const down = await top();
+    await page.mouse.wheel(0, -160);
+    await expect.poll(top).toBeGreaterThan(down + 50);
+    expect(await viewY(page)).toEqual(y);
+    /* Over the price gutter the wheel is still the price scale's. */
+    const now = await plotArea(page);
+    await page.mouse.move(now.x + now.width + 30, now.y + now.height * 0.3);
+    await page.mouse.wheel(0, -200);
+    await expect.poll(taken).toBe(true);
+    await expect.poll(() => viewY(page)).not.toEqual(y);
+    expect(await viewX(page)).toBeNull();
+  });
+
   test("on a zoomed price scale, tags whose price is off the scale are not drawn; the hint stays clear of the tags", async ({ page }) => {
     await applyFx(page);
     await pause(page);
@@ -403,13 +452,21 @@ test.describe("Builder - FX Execution chart navigation", () => {
       expect(price, text).toBeGreaterThanOrEqual(y[0] - 0.00002);
       expect(price, text).toBeLessThanOrEqual(y[1] + 0.00002);
     }
-    /* The one-time hint: inside the plot, low, over no tag. */
+    /* The one-time hint: inside the plot, under its top gridline, over no tag, and in sight on a laptop-height screen. */
     const hint = stage(page).locator(".dh-exec-hint");
     await expect(hint).toBeVisible();
+    for (const size of [{ width: 1440, height: 900 }, { width: 1512, height: 738 }]) {
+      await page.setViewportSize(size);
+      await page.evaluate(() => document.querySelectorAll("*").forEach((el) => { if (el.scrollTop) el.scrollTop = 0; }));
+      await expect(hint).toBeInViewport({ ratio: 1 });
+      const box = (await hint.boundingBox())!;
+      const plotBox = await plotArea(page);
+      expect(box.y, `${size.width}x${size.height}`).toBeGreaterThanOrEqual(plotBox.y + 1);
+      expect(box.x).toBeGreaterThanOrEqual(plotBox.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(plotBox.x + plotBox.width + 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(size.height);
+    }
     const h = (await hint.boundingBox())!;
-    const area = await plotArea(page);
-    expect(h.y).toBeGreaterThan(area.y + area.height / 2);
-    expect(h.x + h.width).toBeLessThanOrEqual(area.x + area.width + 1);
     await page.keyboard.press("0");
     await expect.poll(() => pills.count()).toBe(all);
     for (const b of await pills.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
@@ -490,7 +547,10 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
     /* The days between are marked. */
     await expect(cell("2026-01-03")).toHaveClass(/is-between/);
-    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    /* Both ends chosen: no instruction is pending; the line states the range. */
+    await expect(dialog.getByText("Pick the start day")).toHaveCount(0);
+    await expect(dialog.getByText("Pick the end day")).toHaveCount(0);
+    await expect(dialog.locator(".dh-cal-prompt")).toHaveText("2 Jan 2026 to 5 Jan 2026");
     await dialog.getByLabel("To", { exact: true }).focus();
     await expect(dialog.getByText("Pick the end day")).toBeVisible();
     await dialog.getByLabel("From", { exact: true }).focus();
