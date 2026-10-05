@@ -5156,7 +5156,11 @@
 .present-stage-viewport {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  /* Same rule as the edit stage: no sideways scroll, a reserved gutter, so
+     the frame fit and the scrollbar cannot chase each other. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   /* flex-start (not center) is the scroll-safe fallback. When the framed
      canvas is TALLER than the stage — e.g. a portrait tablet (1024px) on a
@@ -12894,7 +12898,14 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   align-items: flex-start;
   justify-content: center;
   padding: 0;
-  overflow: auto;
+  /* The frame is scaled to the stage's width (frameFit.ts), so the stage
+     never needs to scroll sideways, and the vertical scrollbar's gutter is
+     reserved. Without both, the fit read a clientWidth that the scrollbar
+     it had just caused made 15px narrower, refit, lost the scrollbar, and
+     refit again every frame: the Edit-mode shake (5 Oct). */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   background: var(--b-bg);
 }
 .bp-viewport-wrapper .bp-device-frame {

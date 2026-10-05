@@ -1416,7 +1416,23 @@ export function DeviceFrame({ children }: { children: React.ReactNode }) {
       const cs = getComputedStyle(stage);
       const width = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const height = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      setAvail((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+      /* A classic scrollbar takes room from the client box. The stage
+         reserves its gutter (scrollbar-gutter: stable) and never scrolls
+         sideways, so this is belt and braces: a shrink of no more than one
+         scrollbar's width, with nothing else changing, is a scrollbar
+         appearing, not the stage resizing, and must not refit the frame
+         (that refit is what made the scrollbar vanish and the fit flip
+         back, every frame: the Edit-mode shake). */
+      const scrollbar = Math.max(stage.offsetWidth - stage.clientWidth, stage.offsetHeight - stage.clientHeight);
+      setAvail((prev) => {
+        if (prev.width === width && prev.height === height) return prev;
+        if (
+          prev.width > 0 && scrollbar > 0 &&
+          width <= prev.width && prev.width - width <= scrollbar &&
+          height <= prev.height && prev.height - height <= scrollbar
+        ) return prev;
+        return { width, height };
+      });
     };
     measure();
     const ro = new ResizeObserver(measure);
