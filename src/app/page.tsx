@@ -370,6 +370,8 @@ function Swatch({ accent }: { accent: Accent }) {
 }
 
 const SWEEP_MS = 560;
+/** How long past its own length a sweep may run before a timer finishes it. */
+const SWEEP_GRACE_MS = 150;
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 /** The hero instrument: one real screen, two design systems, one divider.
@@ -408,6 +410,7 @@ function Instrument({
   const [rest, setRest] = useState(DEFAULT_SPLIT);
   const restRef = useRef(DEFAULT_SPLIT);
   const raf = useRef(0);
+  const guard = useRef(0);
   const touched = useRef(false);
   const inView = useRef(false);
   const demoDone = useRef(false);
@@ -415,6 +418,9 @@ function Instrument({
   const settled = useRef(new Set<string>());
   /* A sweep waiting for its capture: which key, and from which edge. */
   const pending = useRef<{ key: string; from: 0 | 100 } | null>(null);
+  /* Capture URLs already asked for by the warm-up, and the mode on screen. */
+  const warmed = useRef(new Set<string>());
+  const modeNow = useRef(mode);
 
   const leftKey = `${system}-${mode}`;
   const rightKey = `${compare}-${mode}`;
@@ -428,10 +434,34 @@ function Instrument({
   const stop = () => {
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = 0;
+    if (guard.current) window.clearTimeout(guard.current);
+    guard.current = 0;
   };
-  /** Move the divider through a list of [target, duration] legs. */
+  /** Which side is waiting for its capture, said on the figure so the
+   *  waiting side's name can go quiet (see landing.css). */
+  const setWaiting = (side: "left" | "right" | null) => {
+    const node = figureRef.current;
+    if (!node) return;
+    if (side) node.setAttribute("data-waiting", side);
+    else node.removeAttribute("data-waiting");
+  };
+  /** Move the divider through a list of [target, duration] legs. The
+   *  divider always arrives: a page that is not being drawn (a background
+   *  tab gets no animation frames) goes straight to the end, and a timer
+   *  finishes a run whose frames stop coming. */
   const run = (from: number, legs: readonly (readonly [number, number])[]) => {
     stop();
+    const end = legs[legs.length - 1][0];
+    if (document.visibilityState === "hidden") {
+      paint(end);
+      return;
+    }
+    const total = legs.reduce((sum, [, ms]) => sum + ms, 0);
+    guard.current = window.setTimeout(() => {
+      guard.current = 0;
+      stop();
+      paint(end);
+    }, total + SWEEP_GRACE_MS);
     let i = 0;
     let start = 0;
     let origin = from;
@@ -447,7 +477,7 @@ function Instrument({
         start = 0;
         raf.current = requestAnimationFrame(tick);
       } else {
-        raf.current = 0;
+        stop();
       }
     };
     raf.current = requestAnimationFrame(tick);
@@ -457,6 +487,35 @@ function Instrument({
   /** One short demonstration, once: the divider travels right, left, and
    *  home. It waits until the frame is in view AND both captures have
    *  settled, and never runs under reduced motion or after a touch. */
+  const warm = (which: Mode) => {
+    if (typeof window.matchMedia !== "function") return;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) return;
+    const phone = window.matchMedia(PHONE_QUERY).matches;
+    for (const s of SYSTEMS) {
+      const url = shotSrc(s.id, which, phone);
+      if (warmed.current.has(url)) continue;
+      warmed.current.add(url);
+      const img = new Image();
+      img.fetchPriority = "low";
+      img.src = url;
+    }
+  };
+
+  /** Run something when the page is idle; returns how to call it off. */
+  const whenIdle = (cb: () => void) => {
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const h = w.requestIdleCallback(cb, { timeout: 2500 });
+      return () => w.cancelIdleCallback?.(h);
+    }
+    const t = window.setTimeout(cb, 1200);
+    return () => window.clearTimeout(t);
+  };
+
   const maybeDemo = () => {
     if (demoDone.current || touched.current || !inView.current) return;
     if (!settled.current.has(leftKey) || !settled.current.has(rightKey)) return;
@@ -474,6 +533,10 @@ function Instrument({
     const p = pending.current;
     if (p && p.key === key) {
       pending.current = null;
+      setWaiting(null);
+      // Only now does the divider go to that side's edge, and it leaves in
+      // the same breath: the frame never sits on one system.
+      paint(p.from);
       run(p.from, [[restRef.current, SWEEP_MS]]);
     }
     maybeDemo();
@@ -487,6 +550,8 @@ function Instrument({
         if (!entries.some((e) => e.isIntersecting)) return;
         inView.current = true;
         io.disconnect();
+        warm(modeNow.current);
+        whenIdle(() => warm(modeNow.current === "dark" ? "light" : "dark"));
         maybeDemo();
       },
       { threshold: 0.6 },
@@ -496,17 +561,24 @@ function Instrument({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Start a sweep for a side that just changed: park the divider on that
-   *  side's edge (the other capture covers the frame), then travel to rest
-   *  once the new capture has settled. */
-  const sweep = (key: string, from: 0 | 100) => {
+  /** Start a sweep for a side that just changed. If its capture is ready,
+   *  the divider goes to that side's edge and travels to rest at once. If
+   *  not, the divider stays where it is, both systems still on screen, and
+   *  the sweep runs when the capture settles (see onSettled). */
+  const sweep = (key: string, from: 0 | 100, side: "left" | "right") => {
     if (!motionOk()) return;
     stop();
-    paint(from);
     // An earlier sweep may still be waiting for its capture: this one replaces it.
     pending.current = null;
-    if (settled.current.has(key)) run(from, [[restRef.current, SWEEP_MS]]);
-    else pending.current = { key, from };
+    if (settled.current.has(key)) {
+      setWaiting(null);
+      paint(from);
+      run(from, [[restRef.current, SWEEP_MS]]);
+    } else {
+      paint(restRef.current);
+      pending.current = { key, from };
+      setWaiting(side);
+    }
   };
 
   const setLeft = (next: SystemId) => {
@@ -515,19 +587,20 @@ function Instrument({
     // Picking the system that is on the right swaps the two sides.
     const nextRight = next === compare ? system : compare;
     onChange(next, nextRight, mode);
-    sweep(`${next}-${mode}`, 0);
+    sweep(`${next}-${mode}`, 0, "left");
   };
   const setRight = (next: SystemId) => {
     if (next === compare || next === system) return;
     touched.current = true;
     onChange(system, next, mode);
-    sweep(`${next}-${mode}`, 100);
+    sweep(`${next}-${mode}`, 100, "right");
   };
 
   const onSplitInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     touched.current = true;
     stop();
     pending.current = null;
+    setWaiting(null);
     const v = Number(e.target.value);
     restRef.current = v;
     setRest(v);
@@ -590,39 +663,16 @@ function Instrument({
     }
   };
 
-  /* Warm the other captures once the page is idle, so a switch sweeps
-     straight to a decoded image. Skipped when the visitor asked to save data. */
+  /* Warm the captures so a pick sweeps straight to a decoded image: every
+     system in the mode on screen as soon as the hero is in view (and again
+     at once when the mode changes), the other mode's when the page is idle.
+     Skipped when the visitor asked to save data. */
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
-    if (conn?.saveData) return;
-    const phone = window.matchMedia(PHONE_QUERY).matches;
-    const warm = () => {
-      const other: Mode = mode === "dark" ? "light" : "dark";
-      const urls = [
-        ...SYSTEMS.filter((s) => s.id !== system && s.id !== compare).map((s) =>
-          shotSrc(s.id, mode, phone),
-        ),
-        shotSrc(system, other, phone),
-        shotSrc(compare, other, phone),
-      ];
-      for (const url of urls) {
-        const img = new Image();
-        img.fetchPriority = "low";
-        img.src = url;
-      }
-    };
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
-      cancelIdleCallback?: (h: number) => void;
-    };
-    if (w.requestIdleCallback) {
-      const h = w.requestIdleCallback(warm, { timeout: 2500 });
-      return () => w.cancelIdleCallback?.(h);
-    }
-    const t = window.setTimeout(warm, 1200);
-    return () => window.clearTimeout(t);
-  }, [system, compare, mode]);
+    modeNow.current = mode;
+    if (!inView.current) return;
+    warm(mode);
+    return whenIdle(() => warm(mode === "dark" ? "light" : "dark"));
+  }, [mode]);
 
   const a = specOf(system);
   const b = specOf(compare);
