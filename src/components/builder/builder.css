@@ -11561,6 +11561,8 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 }
 .dh-exec-hint p { flex: 1 1 auto; min-width: 0; margin: 0; line-height: 1.35; white-space: normal; }
 .dh-exec-hint > :not(p) { flex: none; white-space: nowrap; }
+/* Carbon's button sits in a full-width scope: here it is as wide as the button (it squeezed the sentence to nothing). */
+.dh-exec-hint > .carbon-live-scope { width: auto; }
 /* "Hold Ctrl and scroll to zoom": a moment, in the middle of the plot. */
 .dh-exec-wheel-note {
   position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content; z-index: 5;
