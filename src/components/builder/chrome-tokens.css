@@ -13,6 +13,38 @@
    ════════════════════════════════════════════════════════════ */
 
 :root {
+  --bc-source-font: 12px;
+  --bc-source-underline: 3px;
+  /* Template gallery: the connected-workspace option and the row's arrows. */
+  --bc-workspace-hint-gap: 2px;
+  --bc-workspace-arrow: 14px;
+  --bc-workspace-nudge: 2px;
+  --bc-workspace-radius: 14px;
+  --bc-gallery-card-radius: 14px;
+  --bc-gallery-well-radius: 10px;
+  --bc-workspace-title: 15px;
+  --bc-workspace-hint: 13px;
+  --bc-workspace-action-h: 36px;
+  --bc-workspace-text-min: 220px;
+  --bc-gallery-arrow-icon: 18px;
+  --bc-gallery-thumb: 112px;
+  /* Phone page menu: a 40px target, 16px text (no zoom on focus in iOS). */
+  --bc-page-menu-h: 40px;
+  --bc-page-menu-font: 16px;
+  --bc-page-menu-leading: 1.35;
+  /* The logo artwork is white; on light chrome it is drawn in the light
+     foreground's strength (b-fg is 90% ink). */
+  --bc-logo-light-opacity: 0.9;
+  --bc-page-menu-label-w: 36px;
+  --bc-page-menu-list-max: 360px;
+  --bc-chat-fade: 16px;
+  /* Opaque stop for mask gradients (only alpha matters). */
+  --bc-mask-solid: black;
+  /* Analytics Home wave graphic: how far it bleeds above / below the hero. */
+  --bc-hero-wave-rise: 40px;
+  --bc-hero-wave-fall: 48px;
+  --bc-hero-wave-dark-opacity: 0.85;
+  --bc-launcher-title-leading: 1.3;
   --bc-panel-inset: 16px;
   --bc-editor-font: 14px;
   --bc-composer-min: 72px;
@@ -25,6 +57,18 @@
   --bc-bg-raised:   rgba(30, 33, 38, 0.98);
   --bc-bg-hover:    rgba(255, 255, 255, 0.06);
   --bc-bg-active:   rgba(255, 255, 255, 0.10);
+  /* Template gallery (owner rule: tone, not outlines). A surface one step up
+     from the chat ground, a second step for the card's preview well, a
+     low-contrast hairline, and tonal fills for chips and secondary actions. */
+  --bc-gallery-surface:   rgba(255, 255, 255, 0.045);
+  --bc-gallery-surface-2: rgba(255, 255, 255, 0.035);
+  --bc-gallery-hover:     rgba(255, 255, 255, 0.075);
+  --bc-gallery-hairline:  rgba(255, 255, 255, 0.07);
+  --bc-gallery-tonal:     rgba(255, 255, 255, 0.07);
+  --bc-gallery-tonal-hover: rgba(255, 255, 255, 0.12);
+  --bc-gallery-selected:  rgba(167, 139, 250, 0.22);
+  --bc-gallery-selected-fg: #e4dcff;
+  --bc-gallery-feature:   rgba(167, 139, 250, 0.10);
   /* Present-mode stage backdrop — a step deeper than --bc-bg so the
      framed device canvas lifts off it like art on a gallery wall.
      Neutral cool near-black: must not bias any of the 5 design
@@ -76,6 +120,10 @@
   --dh-exec-btn:            32px;
   --dh-exec-chip-h:         26px;
   --dh-exec-flyout-w:       200px;
+  /* The rail's menus float: a gap from the rail's edge, and a short slide
+     in from it when they open. */
+  --dh-exec-menu-gap:       6px;
+  --dh-exec-menu-enter:     -4px;
   /* The sample feed's controls: one slot as tall as the tallest compact
      design-system button (Carbon sm), so the header is one height in all five. */
   --dh-feed-h:              32px;
@@ -147,7 +195,7 @@
   --dh-hero-search-max:     540px;
   --dh-launcher-accent:     3px;
   /* Template gallery in the chat. */
-  --tpl-desc-size:          11px;
+  --tpl-desc-size:          12px;
   --tpl-chip-gap:           6px;
   --tpl-chip-pad:           4px 12px;
   --tpl-chip-on-accent:     #15102a;
@@ -292,6 +340,15 @@
   --bc-bg:          rgba(253, 253, 254, 0.98);
   --bc-bg-raised:   rgba(255, 255, 255, 1);
   --bc-bg-hover:    rgba(15, 17, 22, 0.05);
+  --bc-gallery-surface:   rgba(255, 255, 255, 0.85);
+  --bc-gallery-surface-2: rgba(15, 17, 22, 0.035);
+  --bc-gallery-hover:     rgba(255, 255, 255, 1);
+  --bc-gallery-hairline:  rgba(15, 17, 22, 0.06);
+  --bc-gallery-tonal:     rgba(15, 17, 22, 0.05);
+  --bc-gallery-tonal-hover: rgba(15, 17, 22, 0.09);
+  --bc-gallery-selected:  rgba(108, 82, 196, 0.14);
+  --bc-gallery-selected-fg: #3f2f8f;
+  --bc-gallery-feature:   rgba(108, 82, 196, 0.08);
   --bc-bg-active:   rgba(15, 17, 22, 0.08);
   /* Present-mode stage backdrop (light): a soft grey, a touch darker
      than the near-white --bc-bg, so the near-white device frame still
@@ -326,10 +383,140 @@
   --bc-shadow-lg:   0 16px 40px rgba(15, 17, 22, 0.16), 0 2px 6px rgba(15, 17, 22, 0.10);
 }
 
+/* FX Execution: the chart rail's menus are each design system's overlay.
+   Surface, hairline, elevation, radius and rows come from the system's own
+   tokens where it has them (Salt overlayable / container / separable, MUI
+   paper + shadows-8 + overlays-8, Fluent shadow16 + stroke + radius, Carbon
+   layer-02 + border-subtle + shadow); the few literals below are the
+   systems' published menu metrics. In dark mode each menu sits on a surface
+   a step lighter than the chart panel, since a shadow alone barely reads. */
+.preview-salt {
+  --dh-exec-menu-bg: var(--salt-container-tertiary-background);
+  /* Salt's quietest separator (20% of the foreground) is still a ring on a
+     menu; under half of it is a hairline, in light and dark. */
+  --dh-exec-menu-border: color-mix(in srgb, var(--salt-separable-tertiary-borderColor) 45%, transparent);
+  --dh-exec-menu-shadow: var(--salt-overlayable-shadow-popout), var(--salt-overlayable-shadow);
+  --dh-exec-menu-radius: var(--salt-curve-100);
+  --dh-exec-menu-pad: var(--salt-spacing-50, 4px);
+  --dh-exec-menu-item-h: var(--salt-size-base);
+  --dh-exec-menu-item-pad: var(--salt-spacing-100);
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-title-case: uppercase;
+  --dh-exec-menu-title-track: 0.06em;
+}
+.builder-light .preview-salt {
+  --dh-exec-menu-bg: var(--salt-container-primary-background);
+}
+.preview-m3 {
+  --dh-exec-menu-bg: var(--mui-palette-background-paper);
+  /* MUI's dark elevation: a white overlay on the paper (Menu = elevation 8). */
+  --dh-exec-menu-image: var(--mui-overlays-8);
+  --dh-exec-menu-border: color-mix(in srgb, var(--mui-palette-divider) 60%, transparent);
+  --dh-exec-menu-shadow: var(--mui-shadows-8);
+  --dh-exec-menu-radius: var(--mui-shape-borderRadius, 4px);
+  --dh-exec-menu-pad: 8px 0;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 12px;
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-active-bg: var(--mui-palette-action-selected);
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0.1px;
+}
+.builder-light .preview-m3 {
+  --dh-exec-menu-image: none;
+}
+.preview-fluent {
+  --dh-exec-menu-bg: var(--colorNeutralBackground1);
+  --dh-exec-menu-border: color-mix(in srgb, var(--colorNeutralStroke3) 85%, transparent);
+  --dh-exec-menu-shadow: var(--shadow16);
+  --dh-exec-menu-radius: var(--borderRadiusMedium);
+  --dh-exec-menu-pad: 4px;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 6px;
+  --dh-exec-menu-item-radius: var(--borderRadiusMedium);
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0;
+}
+.builder-light .preview-fluent {
+  --dh-exec-menu-border: var(--colorNeutralStroke2);
+}
+.preview-carbon {
+  --dh-exec-menu-bg: var(--cds-layer-02);
+  --dh-exec-menu-border: color-mix(in srgb, var(--cds-border-subtle-01) 55%, transparent);
+  --dh-exec-menu-shadow: 0 2px 6px var(--cds-shadow);
+  --dh-exec-menu-radius: 0;
+  --dh-exec-menu-pad: 0;
+  --dh-exec-menu-item-h: 32px;
+  --dh-exec-menu-item-pad: 16px;
+  --dh-exec-menu-item-radius: 0;
+  --dh-exec-menu-active-bg: var(--cds-layer-selected-02, var(--cds-layer-selected-01));
+  --dh-exec-menu-title-case: none;
+  --dh-exec-menu-title-track: 0.32px;
+}
+.preview-uoaui {
+  /* Glass: an opaque tint of the page under a blur, so the plot never
+     shows through the list. */
+  --dh-exec-menu-bg: color-mix(in srgb, var(--ds-fg) 7%, var(--ds-bg));
+  --dh-exec-menu-border: color-mix(in srgb, var(--ds-fg) 8%, transparent);
+  --dh-exec-menu-shadow: var(--dh-shadow-lg);
+  --dh-exec-menu-backdrop: blur(16px);
+  --dh-exec-menu-radius: var(--ds-radius);
+  --dh-exec-menu-pad: 6px;
+  --dh-exec-menu-item-h: 30px;
+  --dh-exec-menu-item-pad: 10px;
+  --dh-exec-menu-item-radius: var(--ds-btn-radius);
+  --dh-exec-menu-title-case: uppercase;
+  --dh-exec-menu-title-track: 0.06em;
+}
+.builder-light .preview-uoaui {
+  --dh-exec-menu-bg: var(--ds-bg);
+  --dh-exec-menu-border: color-mix(in srgb, var(--ds-primary) 10%, transparent);
+}
+
 /* Respect reduced motion globally */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --bc-duration-fast: 0ms;
     --bc-duration-medium: 0ms;
   }
+}
+
+/* Composer image attachment (Task 16): attach button, thumbnail chip, drop
+   state and error line. Tonal surfaces with at most a low-contrast hairline;
+   the drop state is a soft tinted fill, not a ring. */
+:root {
+  --bc-attach-thumb:      40px;
+  --bc-attach-thumb-w:    56px;
+  --bc-attach-dismiss:    24px;
+  /* Hero composer textarea inline padding; the docked composer uses gap-md. */
+  --bc-composer-inset:    16px;
+  --bc-attach-chip-max:   320px;
+  --bc-attach-remove:     28px;
+  --bc-attach-icon:       20px;
+  --bc-attach-icon-sm:    16px;
+  --bc-attach-blur:       6px;
+  --bc-attach-font:       13px;
+  --bc-attach-font-sm:    12px;
+  --bc-attach-surface:    rgba(255, 255, 255, 0.07);
+  --bc-attach-surface-hover: rgba(255, 255, 255, 0.11);
+  --bc-attach-hairline:   rgba(255, 255, 255, 0.06);
+  --bc-attach-drop-fill:  rgba(124, 196, 255, 0.12);
+  --bc-attach-drop-base:  #14161e;
+  --bc-attach-thumb-ground: rgba(255, 255, 255, 0.05);
+  --bc-attach-drop-fg:    #b9defc;
+  --bc-attach-error-fg:   #ff9b9b;
+  --bc-attach-error-fill: rgba(255, 122, 122, 0.10);
+  --bc-attach-focus:      #7cc4ff;
+}
+.builder-light {
+  --bc-attach-surface:    rgba(15, 17, 22, 0.045);
+  --bc-attach-surface-hover: rgba(15, 17, 22, 0.08);
+  --bc-attach-hairline:   rgba(15, 17, 22, 0.06);
+  --bc-attach-drop-fill:  rgba(11, 105, 217, 0.08);
+  --bc-attach-drop-base:  #fafbfd;
+  --bc-attach-thumb-ground: rgba(15, 17, 22, 0.05);
+  --bc-attach-drop-fg:    #0a58b8;
+  --bc-attach-error-fg:   #b42318;
+  --bc-attach-error-fill: rgba(180, 35, 24, 0.07);
+  --bc-attach-focus:      #0b69d9;
 }

@@ -1,6 +1,6 @@
-import { useBuilder, DEFAULT_ZONE_LAYOUTS } from "@/store/useBuilder";
-import type { DesignSystem } from "@/store/useBuilder";
-import type { BuilderTemplate } from "@/lib/builderTemplates";
+import { useBuilder, DEFAULT_ZONE_LAYOUTS, flushActiveBody } from "@/store/useBuilder";
+import type { Block, DesignSystem } from "@/store/useBuilder";
+import { WORKSPACE_TEMPLATE_ID, type BuilderTemplate } from "@/lib/builderTemplates";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { titleFromTemplate } from "@/lib/sessionTitle";
 import { collectReportControls } from "@/lib/reportCommand";
@@ -25,7 +25,12 @@ import { collectReportControls } from "@/lib/reportCommand";
    without starting one - the canvas and every edit to it were never saved,
    and a refresh lost them. ensureSessionStarted is a no-op when a session
    is already running, so a caller that named one first keeps its title. ── */
-export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
+export function applyTemplateToCanvas(source: BuilderTemplate, ds: DesignSystem, opts: { linked?: boolean } = {}) {
+  /* An individual template is one report on its own. Links between
+     templates belong to the connected workspace: Home itself, and whatever
+     is opened from inside it (openTemplateLink). */
+  const linked = opts.linked ?? source.id === WORKSPACE_TEMPLATE_ID;
+  const tpl = linked ? source : standaloneTemplate(source);
   const s = useBuilder.getState();
   s.ensureSessionStarted(titleFromTemplate(tpl.label));
   /* A template is a single page: drop pages left over from a previous
@@ -62,12 +67,40 @@ export function applyTemplateToCanvas(tpl: BuilderTemplate, ds: DesignSystem) {
       footer: { ...(tpl.zoneLayouts?.footer ?? DEFAULT_ZONE_LAYOUTS.footer) },
     },
   });
+  if (tpl.pages?.length) {
+    // Seed the current dashboard first; subsequent switches flush live edits
+    // through the existing page model. Clone authored pages for each apply.
+    for (const page of structuredClone(tpl.pages)) s.addPage(page);
+  }
   s.setActiveTemplateId(tpl.id);
   s.bumpPreview();
   /* #16 (owner): once a template populates the canvas, show it in PREVIEW first
      (chrome hidden, the rendered UI front-and-centre) instead of dropping the
      user straight into edit. They flip to edit via the preview/edit toggle. */
   usePreviewMode.getState().setMode("preview");
+}
+
+/** A template with every link to another template taken out, so nothing on
+ *  it leads away or to a missing page: the workspace tab strip keeps only
+ *  this report's tab, and a sidebar that lists sibling reports keeps only
+ *  this one (a group heading goes when its items do). The definition is not
+ *  touched; this returns a copy. */
+export function standaloneTemplate(tpl: BuilderTemplate): BuilderTemplate {
+  const header = tpl.header.map((b) => {
+    if (!b.props.templates) return b;
+    const { templates: _links, ...props } = b.props;
+    void _links;
+    return { ...b, props: { ...props, ...(typeof props.active === "string" ? { tabsCsv: props.active } : {}) } };
+  });
+  const kept = tpl.sidebar.flatMap((b) => {
+    if (b.type !== "NavItem" || typeof b.props.templateId !== "string") return [b];
+    if (b.props.templateId !== tpl.id || b.props.active !== true) return [];
+    const { templateId: _link, ...props } = b.props;
+    void _link;
+    return [{ ...b, props }];
+  });
+  const sidebar = kept.filter((b, i) => b.type !== "NavGroup" || kept[i + 1]?.type === "NavItem");
+  return { ...tpl, header, sidebar };
 }
 
 /* ── Following a link between reports ────────────────────────────
@@ -80,11 +113,95 @@ export function openTemplateLink(tpl: BuilderTemplate, ds: DesignSystem) {
   const before = useBuilder.getState();
   const collapsed = before.zoneLayouts.sidebar.collapsed;
   const held = before.reportState;
-  applyTemplateToCanvas(tpl, ds);
+  const defaults = persistedReportDefaults(before);
+  applyTemplateToCanvas(tpl, ds, { linked: true });
   const s = useBuilder.getState();
   if (collapsed !== undefined && tpl.sidebar.length > 0) s.setZoneLayout("sidebar", { collapsed });
-  for (const control of collectReportControls([...tpl.header, ...tpl.body])) {
-    const value = held[control.key];
+  carryReportDefaults(defaults);
+  /* What the reader chose just now outranks a saved default. */
+  const carried = { ...defaults, ...held };
+  const after = useBuilder.getState();
+  for (const control of collectReportControls([...after.headerBlocks, ...after.blocks])) {
+    const value = carried[control.key];
     if (control.kind === "filter" && value !== undefined && value !== control.current && control.choices.includes(value)) s.setReportState(control.key, value);
   }
+}
+
+/* ── Saved report defaults ───────────────────────────────────────
+   Report state is transient on purpose: a reload clears it, so chart picks
+   and live values never outlive the visit. A few controls are SETTINGS (the
+   Configuration page's base currency, benchmark, periodicity and fee type):
+   they carry `persistValue`, so a change is also written into the control's
+   own `value`, which the page model and autosave already keep. A report
+   opened by a link starts from those saved values. No new saved fields. */
+
+const isPersisted = (props: Record<string, unknown> | undefined): boolean => props?.persistValue === true;
+
+/** Saved defaults by report-state key: the value of every control marked
+ *  `persistValue`, across every page (the active one flushed) and the header. */
+export function persistedReportDefaults(
+  s: Pick<ReturnType<typeof useBuilder.getState>, "pages" | "activePageId" | "blocks" | "sidebarBlocks" | "zoneLayouts" | "headerBlocks">,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  const read = (key: unknown, value: unknown) => {
+    if (typeof key === "string" && key && typeof value === "string" && value) out[key] = value;
+  };
+  const blocks = [...s.headerBlocks, ...flushActiveBody(s).pages.flatMap((p) => p.body)];
+  for (const b of blocks) {
+    const props = (b.props ?? {}) as Record<string, unknown>;
+    if (isPersisted(props)) read(props.stateKey, props.value);
+    if (Array.isArray(props.filters)) {
+      for (const f of props.filters as Record<string, unknown>[]) if (f && isPersisted(f)) read(f.stateKey, f.value);
+    }
+  }
+  return out;
+}
+
+const optionsOf = (props: Record<string, unknown>): string[] =>
+  Array.isArray(props.options) ? props.options.map(String) : String(props.optionsCsv ?? "").split(",").map((o) => o.trim()).filter(Boolean);
+
+/** Write saved defaults into the canvas just opened: its settings controls
+ *  take them, and a filter for the same key starts from them and keeps them
+ *  (marked, so they travel on to the next report and back). */
+function withDefaults(blocks: Block[], defaults: Record<string, string>): Block[] {
+  let changed = false;
+  const next = blocks.map((b) => {
+    const props = (b.props ?? {}) as Record<string, unknown>;
+    let out = b;
+    const key = props.stateKey;
+    if (isPersisted(props) && typeof key === "string" && defaults[key] !== undefined && defaults[key] !== props.value && optionsOf(props).includes(defaults[key])) {
+      out = { ...out, props: { ...out.props, value: defaults[key] } };
+    }
+    if (Array.isArray(props.filters)) {
+      const filters = (props.filters as Record<string, unknown>[]).map((f) => {
+        const k = f?.stateKey;
+        if (!f || typeof k !== "string" || defaults[k] === undefined || !optionsOf(f).includes(defaults[k])) return f;
+        return f.value === defaults[k] && isPersisted(f) ? f : { ...f, value: defaults[k], persistValue: true };
+      });
+      if (filters.some((f, i) => f !== (props.filters as unknown[])[i])) out = { ...out, props: { ...out.props, filters } };
+    }
+    if (out !== b) changed = true;
+    return out;
+  });
+  return changed ? next : blocks;
+}
+
+function carryReportDefaults(defaults: Record<string, string>) {
+  if (Object.keys(defaults).length === 0) return;
+  useBuilder.setState((st) => {
+    const blocks = withDefaults(st.blocks, defaults);
+    return {
+      headerBlocks: withDefaults(st.headerBlocks, defaults),
+      blocks,
+      pages: st.pages.map((p) => (p.id === st.activePageId ? { ...p, body: blocks } : { ...p, body: withDefaults(p.body, defaults) })),
+    };
+  });
+}
+
+/** A report control's change. Always the live report state; a settings
+ *  control (`persistValue`) also keeps the value on its block so it is saved. */
+export function setReportControlValue(blockId: string | undefined, props: Record<string, unknown>, stateKey: string, value: string) {
+  const s = useBuilder.getState();
+  s.setReportState(stateKey, value);
+  if (blockId && isPersisted(props) && value) s.updateBlockProps(blockId, { value });
 }

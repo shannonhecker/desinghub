@@ -3,7 +3,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { CandlestickChart, Check, Clock, Layers, Table2 } from "lucide-react";
+import { CandlestickChart, Clock, Layers, Table2 } from "lucide-react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { ensureHighchartsModules } from "@/lib/highchartsInit";
 import { getPalette } from "@/lib/categoricalPalettes";
@@ -16,6 +16,7 @@ import { executionOrderOf, feedSwitchedOn, type FeedSample } from "@/lib/executi
 import type { GridColumn } from "@/lib/dataGridModel";
 import { readThemeVars, type ThemeVars } from "./SimulatedHighchart";
 import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, type ChartFrame } from "./executionChartOptions";
+import { ExecutionRail, type RailMenu } from "./ExecutionRail";
 import { SimulatedDataGrid } from "./SimulatedDataGrid";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { useCanvasDataset } from "./useBoundData";
@@ -59,8 +60,6 @@ const TABLE_COLUMNS: GridColumn[] = [
 const NO_SAMPLES = (): readonly FeedSample[] => [];
 const prefersReducedMotion = (): boolean => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-interface RailMenu { key: string; label: string; icon: React.ReactNode; items: { label: string; active: boolean; onPick: () => void }[]; multi?: boolean }
-
 export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
   const block = useBuilder((s) => (blockId ? s.blocks.find((b) => b.id === blockId) : undefined));
   const reportState = useBuilder((s) => s.reportState);
@@ -94,7 +93,6 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   const [hasWidth, setHasWidth] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [rebuilds, setRebuilds] = useState(0);
-  const [open, setOpen] = useState<string | null>(null);
   const palette = useMemo(() => getPalette(system), [system]);
   const orders = useOrderAmend({ chartRef, plotRef, active: readOnly, dataset, vars, palette, system }); // FX D: limit drag, BID staging, price menus, dialogs, toast
 
@@ -140,16 +138,6 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     return () => observer.disconnect();
   }, [hasView, showTable]);
   useEffect(() => () => { chartRef.current?.chart?.destroy(); }, []);
-
-  /* A flyout closes on a click outside it and on Escape. */
-  useEffect(() => {
-    if (!open) return;
-    const away = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest?.(".dh-exec-rail")) setOpen(null); };
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(null); } };
-    document.addEventListener("mousedown", away);
-    window.addEventListener("keydown", key, true);
-    return () => { document.removeEventListener("mousedown", away); window.removeEventListener("keydown", key, true); };
-  }, [open]);
 
   const chartHeight = height - RANGE_ROW - PAD;
   const onVenueRef = useRef<(venue: string) => void>(() => {});
@@ -208,7 +196,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     return <section ref={rootRef} className="dh-panel dh-exec" style={{ "--dh-panel-h": `${height}px` } as React.CSSProperties} aria-label="Execution"><p className="dh-exec-empty">No execution data.</p></section>;
   }
 
-  const set = (key: string, value: string) => { setReportState(key, value); setOpen(null); };
+  const set = (key: string, value: string) => setReportState(key, value);
   const menus: RailMenu[] = [
     { key: "interval", label: "Interval", icon: <span className="dh-exec-rail-text">{view.interval}</span>, items: Object.keys(EXECUTION_INTERVALS).map((i) => ({ label: i, active: i === view.interval, onPick: () => set(EXECUTION_KEYS.interval, i) })) },
     { key: "chart", label: "Chart type", icon: <CandlestickChart size={16} strokeWidth={1.8} aria-hidden="true" />, items: EXECUTION_CHART_STYLES.map((c) => ({ label: c, active: c === view.chartStyle, onPick: () => set(EXECUTION_KEYS.chart, c) })) },
@@ -227,26 +215,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
          not select the block for the amend composer. */
       onClick={readOnly ? (e) => e.stopPropagation() : undefined}
     >
-      <div className="dh-exec-rail" role="toolbar" aria-label="Chart tools" aria-orientation="vertical">
-        {menus.map((m) => (
-          <div key={m.key} className="dh-exec-rail-group">
-            <button type="button" className={`dh-exec-rail-btn${open === m.key ? " is-open" : ""}`} aria-label={m.label} title={m.label} aria-haspopup="menu" aria-expanded={open === m.key} onClick={() => setOpen(open === m.key ? null : m.key)}>
-              {m.icon}
-            </button>
-            {open === m.key ? (
-              <div className="dh-exec-flyout" role="menu" aria-label={m.label}>
-                <p className="dh-exec-flyout-title">{m.label}</p>
-                {m.items.map((item) => (
-                  <button key={item.label} type="button" className="dh-exec-flyout-item" role={m.multi ? "menuitemcheckbox" : "menuitemradio"} aria-checked={item.active} onClick={item.onPick}>
-                    <span className="dh-exec-flyout-check" aria-hidden="true">{item.active ? <Check size={14} strokeWidth={2.2} /> : null}</span>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
+      <ExecutionRail menus={menus} />
       <div className="dh-exec-main">
         <div ref={plotRef} className="dh-exec-plot" style={{ height: chartHeight }}>
           {showTable ? (

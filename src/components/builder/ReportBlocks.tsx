@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ANALYTICS_WAVES, REFERENCE_THUMBNAILS } from "@/lib/templateReferenceAssets";
 import {
   ArrowRight, Briefcase, Clapperboard, Fuel, HardHat, HeartPulse, Landmark, Leaf, Scale, Search, Shield, ShoppingBag, Users, type LucideIcon,
 } from "lucide-react";
@@ -8,7 +9,7 @@ import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { toneColor, type GridTone } from "@/lib/dataGridModel";
 import { fieldText, fieldTone, isRowLookup, lookupKey, lookupRow, type RowLookup } from "@/lib/recordPanelModel";
 import { BUILDER_TEMPLATES, VALID_TEMPLATE_IDS, type TemplateId } from "@/lib/builderTemplates";
-import { applyTemplateToCanvas } from "@/lib/applyTemplate";
+import { openTemplateLink } from "@/lib/applyTemplate";
 import type { DataRow } from "@/lib/reportData/types";
 import { usePreviewReadOnly } from "./previewReadOnly";
 import { TemplatePreview } from "./TemplatePreviews";
@@ -220,7 +221,7 @@ export function LauncherCardBlock({ blockId }: Props) {
        the button goes to the report. */
     if (!readOnly || !templateId) return;
     e.stopPropagation();
-    applyTemplateToCanvas(BUILDER_TEMPLATES[templateId], designSystem);
+    openTemplateLink(BUILDER_TEMPLATES[templateId], designSystem);
   };
   return (
     <article className="dh-launcher" style={{ ...toneStyle(str(p.accent) === "mid" ? "mid" : "accent"), ...boxHeight(p) }}>
@@ -228,7 +229,7 @@ export function LauncherCardBlock({ blockId }: Props) {
         <h3 className="dh-launcher-title">{str(p.title, "Report")}</h3>
         {p.tag ? <span className="dh-cell-tag" style={toneStyle(str(p.tagTone) === "mid" ? "mid" : "accent")}>{str(p.tag)}</span> : null}
       </header>
-      <div className="dh-launcher-thumb" aria-hidden="true">{templateId ? <TemplatePreview id={templateId} /> : null}</div>
+      <div className="dh-launcher-thumb" aria-hidden="true">{templateId && REFERENCE_THUMBNAILS[templateId] ? <span className="dh-launcher-art" style={{ backgroundImage: `url("${REFERENCE_THUMBNAILS[templateId]}")` }} /> : templateId ? <TemplatePreview id={templateId} /> : null}</div>
       <p className="dh-launcher-desc">{str(p.description)}</p>
       <button type="button" className="dh-launcher-open" onClick={open} disabled={!templateId}>
         {str(p.actionLabel, "Open report")}
@@ -241,13 +242,45 @@ export function LauncherCardBlock({ blockId }: Props) {
 /* ── HeroSearch: a page's opening line and a search field ── */
 export function HeroSearchBlock({ blockId }: Props) {
   const p = useBlock(blockId);
+  const reference = p.referenceGraphic === "analytics";
+  /* A narrow field shows the short placeholder (when the block has one)
+     rather than cutting the long one mid-word. Measured on the input itself,
+     in layout pixels, so a zoomed frame does not change the answer. */
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [narrow, setNarrow] = React.useState(false);
+  const placeholder = str(p.placeholder, "Search");
+  const short = str(p.placeholderShort);
+  React.useEffect(() => {
+    const el = inputRef.current;
+    if (!el || !short || typeof ResizeObserver === "undefined") return;
+    const fits = () => {
+      const cs = getComputedStyle(el);
+      const ctx = document.createElement("canvas").getContext("2d");
+      if (!ctx) return;
+      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      /* Room for the text inside the padding, with a little air at the end
+         (a placeholder touching the edge reads as cut). */
+      const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.fontSize);
+      setNarrow(ctx.measureText(placeholder).width > room);
+    };
+    fits();
+    void document.fonts?.ready.then(fits);
+    const ro = new ResizeObserver(fits);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [placeholder, short]);
+  const shown = narrow && short ? short : placeholder;
   return (
-    <div className="dh-hero" style={boxHeight(p)}>
+    <div
+      className={`dh-hero${reference ? " dh-hero-reference" : ""}`}
+      /* The wave graphic comes from the one embedded copy the export also uses. */
+      style={{ ...boxHeight(p), ...(reference ? { "--dh-hero-waves": `url("${ANALYTICS_WAVES}")` } : {}) } as React.CSSProperties}
+    >
       <h1 className="dh-hero-title">{str(p.title, "Analytics")}</h1>
       {p.subtitle ? <p className="dh-hero-subtitle">{str(p.subtitle)}</p> : null}
       <div className="dh-hero-search" role="search">
         <Search size={16} strokeWidth={1.8} aria-hidden="true" />
-        <input type="search" className="dh-hero-input" placeholder={str(p.placeholder, "Search")} aria-label={str(p.placeholder, "Search")} readOnly />
+        <input ref={inputRef} type="search" className="dh-hero-input" placeholder={shown} aria-label={placeholder} readOnly />
         <span className="dh-hero-button" aria-hidden="true">{str(p.buttonLabel, "Search")}</span>
       </div>
     </div>

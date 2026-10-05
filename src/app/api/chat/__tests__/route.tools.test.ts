@@ -176,8 +176,57 @@ describe("POST /api/chat: canvas tools", () => {
       ]),
     );
     const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
-    expect(streamMock).toHaveBeenCalledTimes(8);
-    expect(frames.filter((f) => "tool_use" in f)).toHaveLength(8);
+    /* Cap raised 8 -> 20 (Task 16 hotfix): a one-call-per-step image build
+       used all 8 steps on production and stopped mid-layout. */
+    expect(streamMock).toHaveBeenCalledTimes(20);
+    expect(frames.filter((f) => "tool_use" in f)).toHaveLength(20);
+  });
+
+  it("says plainly when the step cap cut the build short, so the user can continue", async () => {
+    streamMock.mockImplementation(async () =>
+      scripted([
+        { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "tu_x", name: "clearCanvas", input: {} } },
+        { type: "content_block_stop", index: 0 },
+        { type: "message_delta", delta: { stop_reason: "tool_use" } },
+      ]),
+    );
+    const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+    const last = frames[frames.length - 1] as { text?: string };
+    expect(last.text).toMatch(/ran out of steps/i);
+    expect(last.text).toMatch(/continue/i);
+  });
+
+  it("stops before the function time limit and says so, rather than being cut off", async () => {
+    streamMock.mockImplementation(async () =>
+      scripted([
+        { type: "content_block_start", index: 0, content_block: { type: "tool_use", id: "tu_x", name: "clearCanvas", input: {} } },
+        { type: "content_block_stop", index: 0 },
+        { type: "message_delta", delta: { stop_reason: "tool_use" } },
+      ]),
+    );
+    /* Each look at the clock is 100 s later: the budget runs out after a
+       couple of steps, long before the step cap. */
+    let now = 1_000_000;
+    const spy = vi.spyOn(Date, "now").mockImplementation(() => (now += 100_000));
+    try {
+      const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+      expect(streamMock.mock.calls.length).toBeLessThan(20);
+      expect(streamMock.mock.calls.length).toBeGreaterThan(0);
+      expect((frames[frames.length - 1] as { text?: string }).text).toMatch(/ran out of (steps|time)/i);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("declares a 300 s function limit so a long build is not cut at the platform default", async () => {
+    const mod = (await import("../route")) as { maxDuration?: number };
+    expect(mod.maxDuration).toBe(300);
+  });
+
+  it("adds no step-cap note when the model finishes on its own", async () => {
+    streamMock.mockImplementation(async () => scripted([{ type: "message_delta", delta: { stop_reason: "end_turn" } }]));
+    const frames = await readFrames(await post({ messages: [{ role: "user", content: "x" }] }));
+    expect(frames.some((f) => typeof (f as { text?: string }).text === "string" && /ran out of steps/i.test((f as { text: string }).text))).toBe(false);
   });
 
   it("a tool block with no input deltas yields an empty object; unparseable input is reported, not dropped", async () => {

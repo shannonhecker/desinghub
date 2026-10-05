@@ -25,6 +25,17 @@ import { applyTemplateToCanvas } from "@/lib/applyTemplate";
 import { parseThemeCommand, describeThemeCommand } from "@/lib/themeCommand";
 import { parseTemplateCommand, parseReportFilterCommand, collectReportControls, describeReportFilterCommand } from "@/lib/reportCommand";
 import ReactMarkdown from "react-markdown";
+import { useImageAttachment } from "./useImageAttachment";
+import {
+  ComposerAttachButton,
+  ComposerAttachmentChip,
+  ComposerAttachStatus,
+  ComposerDropVeil,
+  ImageAttachedMarker,
+} from "./ComposerAttachment";
+
+/* What an image turn says when the user sends the image with no text. */
+export const IMAGE_ONLY_PROMPT = "Build this screen from the image.";
 
 /* ── Markdown render config (Phase 2b G16) ────────────────────
    react-markdown handles sanitisation natively (no
@@ -488,6 +499,9 @@ export function ChatPanel() {
     failedSend,
     retryFailedSend,
   } = useChatAPI();
+  /* One image per turn: attach, paste or drop. Held in this component's
+     memory only and handed to sendToAPI for that one request. */
+  const imageAttach = useImageAttachment({ enabled: !aiDisabled });
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
@@ -552,8 +566,16 @@ export function ChatPanel() {
        tool      -> "Applying changes…"  (a tool-use action just landed)
      done/error/idle never coincide with isGenerating, so they fall back to
      "Thinking…". Uses the ellipsis char to match the surrounding copy. */
+  const lastUserHasImage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].attachment === "image";
+    }
+    return false;
+  }, [messages]);
   const generatingLabel =
-    lifecycleState === "streaming"
+    lifecycleState === "thinking" && lastUserHasImage
+      ? "Reading your image…"
+      : lifecycleState === "streaming"
       ? "Building…"
       : lifecycleState === "tool"
         ? "Applying changes…"
@@ -680,10 +702,18 @@ export function ChatPanel() {
 
   const hasMessages = messages.length > 0;
   const hasText = inputText.trim().length > 0;
+  /* An attached image is enough to send: the turn then reads IMAGE_ONLY_PROMPT. */
+  const canSend = hasText || imageAttach.attachment !== null;
   const glowActive = focused || hasText;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    /* A template gallery is read from its top (the workspace, then the
+       cards): bring its start into view, not the end of the thread, or a
+       short screen opens on the gallery's last lines. */
+    const last = messages[messages.length - 1];
+    const gallery = last?.messageType === "templates" ? chatEndRef.current?.parentElement?.querySelector<HTMLElement>(`[data-message-id="${last.id}"]`) : null;
+    if (gallery) gallery.scrollIntoView({ behavior: "smooth", block: "start" });
+    else chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   /* ═══════════════════════════════════
@@ -937,6 +967,15 @@ export function ChatPanel() {
        where it surfaces feedback and re-stages the text instead of silently
        dropping the message (the user turn + input clear happen at addMessage
        below, so a bare drop after it would orphan the turn and lose the text). */
+    /* ── Image turn ──
+       Only a send from the composer itself (no programmatic text) carries
+       the attached image. It skips the local keyword shortcuts and the
+       first-turn questions: the image IS the brief, so it goes straight to
+       the model. The store keeps only an "image attached" marker. */
+    if (text === undefined && imageAttach.attachment && !isGenerating) {
+      sendImageTurn((inputText.trim() || IMAGE_ONLY_PROMPT));
+      return;
+    }
     if (!msg || isGenerating) return;
 
     /* First freeform refinement after a wizard build: clear the flag so the
@@ -1218,6 +1257,36 @@ export function ChatPanel() {
     sendToAPI(msg).then(() => bumpPreview());
   };
 
+  const sendImageTurn = (msg: string) => {
+    if (aiDisabled) {
+      imageAttach.showError("Reading an image needs AI, which is off right now.");
+      return;
+    }
+    /* C-429: keep the text and the image in the composer; nothing is lost. */
+    if (retrySeconds != null) {
+      imageAttach.showError(`Rate limit active. Send again in ${retrySeconds}s; your image is still attached.`);
+      return;
+    }
+    const taken = imageAttach.take();
+    if (!taken) return;
+    const { image, name } = taken;
+    if (builtViaWizard && messages.length > 0) setBuiltViaWizard(false);
+    if (messages.length === 0) ensureSessionStarted(titleFromMessage(msg));
+    const turnMsgId = addMessage("user", msg, undefined, { attachment: "image" });
+    saveTurnSnapshot(turnMsgId);
+    if (!previewOpen) setPreviewOpen(true);
+    sendToAPI(msg, { image: { mediaType: image.mediaType, base64: image.base64, width: image.width, height: image.height, bytes: image.bytes, name } }).then((outcome) => {
+      /* The request never reached the model: put the image (and the note)
+         back in the composer so nothing is lost. A rejected image would
+         fail the same way again, so it is not restored. */
+      if (outcome?.status === "rate-limited") {
+        imageAttach.restore(image, name);
+        if (msg !== IMAGE_ONLY_PROMPT && !useBuilder.getState().inputText.trim()) setInputText(msg);
+      }
+      bumpPreview();
+    });
+  };
+
   /* ── Deep-link auto-fire (/builder?prompt=<text>) ──
      A link like /builder?prompt=build%20a%20dashboard stages the text and
      fires ONE build on mount. The /start sibling page (separate PR) is the
@@ -1260,7 +1329,7 @@ export function ChatPanel() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (hasText && !isGenerating) handleSend();
+      if (canSend && !isGenerating && !imageAttach.busy) handleSend();
     } else if (e.key === "Escape" && selectedBlockId) {
       // Esc clears the click-to-edit scope without submitting anything
       setSelectedBlock(null, null);
@@ -1533,7 +1602,9 @@ export function ChatPanel() {
       </div>
 
       {/* Scrollable content area */}
-      <div className="chat-scroll" role="log" aria-live="polite" aria-label="Chat messages">
+      {/* A thread that ends on the template gallery reads from the top (the
+          gallery is a page of choices, not a reply at the composer). */}
+      <div className={`chat-scroll${messages[messages.length - 1]?.messageType === "templates" ? " chat-scroll-gallery" : ""}`} role="log" aria-live="polite" aria-label="Chat messages">
         {/* Flex spacer - pushes content to bottom when messages are few */}
         <div className="chat-scroll-spacer" />
 
@@ -1638,7 +1709,7 @@ export function ChatPanel() {
                 !shouldAnimate &&
                 hasMarkdown(msg.content);
               return (
-                <div key={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
+                <div key={msg.id} data-message-id={msg.id} className={`chat-msg chat-msg-${msg.role}`}>
                   {msg.role === "ai" ? (
                     shouldAnimate ? (
                       <MemoFadingWords text={msg.content} />
@@ -1652,7 +1723,10 @@ export function ChatPanel() {
                       <MemoPlainMessage text={msg.content} />
                     )
                   ) : (
-                    <MemoPlainMessage text={msg.content} />
+                    <>
+                      {msg.attachment === "image" && <ImageAttachedMarker />}
+                      <MemoPlainMessage text={msg.content} />
+                    </>
                   )}
                   {msg.messageType === "templates" && (
                     <TemplateCardsMessage
@@ -1679,7 +1753,17 @@ export function ChatPanel() {
                       type="button"
                       className="chat-retry-btn"
                       onClick={() => {
-                        void retryFailedSend();
+                        void retryFailedSend().then((outcome) => {
+                          /* Retry hit the rate limit: an image turn hands
+                             its image back to the composer. */
+                          const img = outcome && outcome.status === "rate-limited" ? outcome.image : undefined;
+                          if (img && img.width && img.height) {
+                            imageAttach.restore(
+                              { mediaType: img.mediaType, base64: img.base64, width: img.width, height: img.height, bytes: img.bytes ?? 0 },
+                              img.name ?? "Image",
+                            );
+                          }
+                        });
                       }}
                       aria-label="Retry sending your last message"
                     >
@@ -1779,20 +1863,55 @@ export function ChatPanel() {
         )}
         <div className="input-container">
           <div className={`input-glow ${glowActive ? "active" : ""}`} />
-          <div className={`input-box ${focused ? "focused" : ""}`}>
+          <div
+            className={`input-box ${focused ? "focused" : ""}${imageAttach.dragActive ? " is-drop-target" : ""}`}
+            {...imageAttach.dropHandlers}
+          >
+            <ComposerDropVeil active={imageAttach.dragActive} />
+            <ComposerAttachmentChip
+              attachment={imageAttach.attachment}
+              busy={imageAttach.busy}
+              onRemove={() => {
+                imageAttach.remove();
+                inputRef.current?.focus();
+              }}
+            />
+            <ComposerAttachStatus
+              error={imageAttach.error}
+              errorSeq={imageAttach.errorSeq}
+              notice={imageAttach.notice}
+              onDismiss={() => {
+                imageAttach.clearError();
+                inputRef.current?.focus();
+              }}
+            />
             <textarea
               ref={inputRef}
               className="input-textarea"
               aria-label="Chat message input"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => {
+                setInputText(e.target.value);
+                if (imageAttach.error) imageAttach.clearError();
+              }}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={handleKeyDown}
-              placeholder={placeholderText}
+              onPaste={imageAttach.onPaste}
+              placeholder={imageAttach.attachment ? "Add a note, or just send" : placeholderText}
               rows={1}
             />
             <div className="input-toolbar">
+              {!aiDisabled && (
+                <div className="toolbar-left">
+                  <ComposerAttachButton
+                    onClick={imageAttach.openPicker}
+                    inputRef={imageAttach.fileInputRef}
+                    onChange={imageAttach.onFileInputChange}
+                    disabled={isGenerating}
+                  />
+                </div>
+              )}
               <div className="toolbar-right">
                 {isGenerating ? (
                   <button
@@ -1807,7 +1926,7 @@ export function ChatPanel() {
                   <button
                     className="send-btn"
                     onClick={() => handleSend()}
-                    disabled={!hasText}
+                    disabled={!canSend || imageAttach.busy}
                     aria-label={
                       retrySeconds !== null
                         ? `Send. Local commands run now; network sends resend after ${retrySeconds}s`

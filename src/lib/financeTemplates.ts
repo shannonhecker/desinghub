@@ -220,7 +220,7 @@ const riskVar: DataBinding = {
 export const riskAnalytics: BuilderTemplate = {
   id: "risk-analytics",
   label: "Risk Analytics",
-  desc: "Value-at-risk summary grid that drives exposure, contribution and VaR trend charts",
+  desc: "Value-at-risk summary driving exposure, contribution and VaR trend charts",
   icon: "shield",
   category: "finance",
   uniformStructure: true,
@@ -454,7 +454,7 @@ const perfTrend: DataBinding = {
 export const performanceAnalytics: BuilderTemplate = {
   id: "performance-analytics",
   label: "Performance Analytics",
-  desc: "Multi-period results grid that drives returns, allocation and trend charts, with fee and benchmark filters",
+  desc: "Multi-period results driving returns, allocation and trend charts",
   icon: "trending_up",
   category: "finance",
   uniformStructure: true,
