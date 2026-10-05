@@ -162,6 +162,8 @@ export function HoverInspector({
       const others = [...document.querySelectorAll<HTMLElement>("[data-block-id]")]
         .filter((el) => el !== block && !block.contains(el) && !el.contains(block))
         .map((el) => el.getBoundingClientRect())
+        /* The zone's layout toolbar is an obstacle too: the two bars never overlap. */
+        .concat([...document.querySelectorAll<HTMLElement>(".zone-layout-overlay")].map((el) => el.getBoundingClientRect()))
         .filter((r) => r.width > 0 && r.height > 0);
       const cs = getComputedStyle(root);
       const h = parseFloat(cs.getPropertyValue("--insp-toolbar-h")) || 24;
@@ -233,7 +235,7 @@ export function HoverInspector({
               className={`canvas-block-handle${isNewlyMounted ? " is-newly-mounted" : ""}`}
               {...dragAttributes}
               {...(dragListeners ?? {})}
-              title="Drag to reorder"
+              title="Move block (drag to reorder)"
               role="button"
               tabIndex={0}
               aria-roledescription="sortable"

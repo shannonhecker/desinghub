@@ -536,3 +536,61 @@ test.describe("back from a selected block to the library and templates", () => {
     });
   }
 });
+
+/* FX Execution in Edit, feed paused. */
+async function openFxInEdit(page: Page) {
+  await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto("/builder", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Use the FX Execution template" }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  await page.locator(".present-stage").getByRole("button", { name: "Pause the sample feed" }).click();
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  await expect(page.locator(".component-sidebar")).toBeVisible();
+  await page.waitForTimeout(800);
+}
+
+for (const mode of ["dark", "light"] as const) {
+  test(`${mode}: the layout toolbar and the block pill are solid, named, and never overlap each other or the card's title`, async ({ page }) => {
+    await openFxInEdit(page);
+    if (mode === "light") await page.getByRole("button", { name: "Switch to light mode" }).click();
+    const card = page.locator('[data-block-id="tpl-fx-stats"]');
+    await card.click({ position: { x: 8, y: 60 } });
+    await expect(page.locator(".hover-inspector.is-pinned .hover-inspector-toolbar")).toBeVisible();
+    await page.waitForTimeout(400);
+    const m = await page.evaluate(() => {
+      const card = document.querySelector('[data-block-id="tpl-fx-stats"]')!;
+      const bar = card.closest(".zone-drop-container")!.querySelector(":scope > .zone-layout-overlay") as HTMLElement;
+      const pill = card.querySelector(".hover-inspector-toolbar") as HTMLElement;
+      const title = card.querySelector(".dh-panel-title") as HTMLElement;
+      const rect = (el: Element) => { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+      const hit = (a: { l: number; t: number; r: number; b: number }, b: { l: number; t: number; r: number; b: number }) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+      const alpha = (el: Element) => { const mm = getComputedStyle(el).backgroundColor.match(/rgba?\(([^)]+)\)/)!; const p = mm[1].split(","); return p.length > 3 ? Number(p[3]) : 1; };
+      const unnamed = [...bar.querySelectorAll("button, [role=slider], [role=radio]"), ...pill.querySelectorAll("button, [role=button]")].filter((b) => !(b.getAttribute("aria-label") || "").trim()).map((b) => b.className);
+      const untitled = [...bar.querySelectorAll("button"), ...pill.querySelectorAll("button, [role=button]")].filter((b) => !(b.getAttribute("title") || "").trim()).map((b) => b.className);
+      return {
+        barVisible: getComputedStyle(bar).opacity === "1",
+        barsOverlap: hit(rect(bar), rect(pill)),
+        barOverTitle: hit(rect(bar), rect(title)),
+        pillOverTitle: hit(rect(pill), rect(title)),
+        alphas: [alpha(bar), alpha(pill)],
+        blur: [getComputedStyle(bar).backdropFilter, getComputedStyle(pill).backdropFilter],
+        unnamed,
+        untitled,
+      };
+    });
+    expect(m.barVisible, "the layout toolbar shows while the pointer is in the zone").toBe(true);
+    expect(m.barsOverlap, "the two bars do not overlap").toBe(false);
+    expect(m.barOverTitle, "the layout toolbar is clear of the card's title").toBe(false);
+    expect(m.pillOverTitle, "the pill is clear of the card's title").toBe(false);
+    expect(m.alphas, "both bars are opaque").toEqual([1, 1]);
+    for (const b of m.blur) expect(b === "none" || b === "", "no backdrop blur").toBe(true);
+    expect(m.unnamed, "every toolbar control has an accessible name").toEqual([]);
+    expect(m.untitled, "every toolbar button has a tooltip").toEqual([]);
+  });
+}

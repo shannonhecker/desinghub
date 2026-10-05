@@ -14760,10 +14760,11 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: 4px;
   padding: 3px;
   border-radius: var(--b-radius-sm, 6px);
-  background: var(--glass-white);
-  border: 1px solid var(--glass-border-subtle);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(8px);
+  /* Solid chrome (5 Oct): the bar was translucent, so the card under it and
+     the block pill read through each other. */
+  background: var(--bc-toolbar-surface);
+  border: var(--bc-hairline) solid var(--insp-hairline);
+  box-shadow: var(--bc-shadow-md);
   opacity: 0;
   transform: translateY(-2px);
   pointer-events: none;
@@ -14819,7 +14820,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   pointer-events: auto;
 }
 .zlo-group { display: flex; align-items: center; gap: 1px; }
-.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--glass-border-subtle); }
+.zlo-sep { width: 1px; align-self: stretch; margin: 2px 2px; background: var(--bc-border); }
 .zlo-btn {
   display: grid;
   place-items: center;
@@ -14833,8 +14834,9 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   transition: background 0.1s, color 0.1s;
 }
 .zlo-btn .chrome-icon { font-size: 17px; }
-.zlo-btn:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
-.zlo-btn.active { background: var(--bc-accent); color: #fff; }
+.zlo-btn:hover { background: var(--bc-bg-hover); color: var(--bc-fg); }
+/* Selected: a filled tonal chip with full-strength icon. */
+.zlo-btn.active { background: var(--bc-bg-active); color: var(--bc-fg); }
 .zlo-btn:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
 /* Tone swatches: each paints with the tone's own background, so the control
    previews what the zone will look like in the active design system. */
@@ -14863,7 +14865,7 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.zlo-gap:hover { background: var(--glass-white-strong, rgba(255, 255, 255, 0.1)); }
+.zlo-gap:hover { background: var(--bc-bg-hover); color: var(--bc-fg); }
 .zlo-gap:focus-visible { outline: 2px solid var(--bc-accent-ring); outline-offset: 1px; }
 .zlo-gap .chrome-icon { font-size: 15px; }
 .zlo-gap-val { min-width: 14px; text-align: center; }
@@ -18824,3 +18826,16 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   }
   .comp-resize-handle { display: none !important; }
 }
+
+/* Floating canvas toolbars never overlap (5 Oct). The body zone's layout
+   toolbar sits just above the zone's top edge, in the page gutter, instead
+   of over the first row's content; the block pill treats it as an obstacle
+   (HoverInspector) and takes the next clear place. Icons on the solid
+   surface use the muted foreground (over 3:1 in both modes). */
+.zone-drop-body > .zone-layout-overlay {
+  top: auto;
+  bottom: calc(100% + var(--bc-gap-xxs));
+}
+.zone-layout-overlay .zlo-btn,
+.zone-layout-overlay .zlo-gap { color: var(--bc-fg-muted); }
+.zone-layout-overlay .zlo-btn.active { color: var(--bc-fg); }
