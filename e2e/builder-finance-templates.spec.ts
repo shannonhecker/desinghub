@@ -152,7 +152,11 @@ async function measureWide(page: Page): Promise<{ ids: string[]; rows: number[];
     rows.push(count);
     /* A pinned height reaches the DOM as an inline px height on the block,
        its grid cell, or its panel (a chart's height prop). */
-    const pinned = (el: HTMLElement) => /px$/.test(el.style.height) || /px$/.test((el.parentElement as HTMLElement | null)?.style.height ?? "") || /px$/.test((el.querySelector<HTMLElement>("[style*=\"height\"]")?.style.height) ?? "");
+    const px = /(^|[;\s])(min-)?height:\s*\d+(\.\d+)?px|--[\w-]*height[\w-]*:\s*\d+(\.\d+)?px/i;
+    const pinned = (el: HTMLElement) =>
+      px.test(el.style.cssText) ||
+      px.test((el.parentElement as HTMLElement | null)?.style.cssText ?? "") ||
+      [...el.querySelectorAll<HTMLElement>("[style]")].some((n) => px.test(n.style.cssText));
     const fixed = els.map((el) => (pinned(el) ? Math.round(el.getBoundingClientRect().height) : null));
     return { ids, rows, fixed };
   });
