@@ -755,6 +755,12 @@ html:has(.landing-southleft) body {
   );
   opacity: clamp(0, calc((1 - var(--chip-lo) - var(--split-n, 0.5)) * 25), 1);
 }
+/* A side whose new capture is still loading says so quietly: its name dims
+   until the capture arrives and sweeps in. The divider does not move. */
+.landing-southleft .lsl-instrument[data-waiting="left"] .lsl-corner[data-side="left"],
+.landing-southleft .lsl-instrument[data-waiting="right"] .lsl-corner[data-side="right"] {
+  color: var(--lsl-fg-subtle);
+}
 /* A colour, shown rather than spelled out. */
 .landing-southleft .lsl-swatch {
   display: inline-block;
