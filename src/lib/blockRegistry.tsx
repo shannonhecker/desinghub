@@ -11,11 +11,8 @@ import {
   type SampleImageCategory,
 } from "@/lib/sampleImages";
 import { beginHistoryTransaction } from "@/lib/builderHistory";
-<<<<<<< HEAD
 import { useBoundData } from "@/components/builder/useBoundData";
-=======
 import { PANEL_DEFAULT_HEIGHT } from "@/lib/panelMetrics";
->>>>>>> claude/panel-content-fields
 
 /* ═══════════════════════════════════════════════════════════
    Block Registry - schema-driven single source of truth.
@@ -153,17 +150,12 @@ type FieldDef =
   | { type: "textarea"; propKey: string; label: string; rows?: number }
   | { type: "select"; propKey: string; label: string; options: { value: string; label: string }[] }
   | { type: "toggle"; propKey: string; label: string }
-<<<<<<< HEAD
   /** `dataDriven`: when the block's figure comes from a data binding the
      slider would write a prop nothing reads, so the field shows the live
      figure read-only instead (rule: a control changes the canvas, or it is
-     not offered). */
-  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; dataDriven?: boolean }
-=======
-  /** `fallback`: what the block draws while the prop is unset, so the
-     read-out matches the canvas (defaults to `min`). */
-  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; fallback?: (props: Record<string, unknown>) => number }
->>>>>>> claude/panel-content-fields
+     not offered). `fallback`: what the block draws while the prop is unset,
+     so the read-out matches the canvas (defaults to `min`). */
+  | { type: "range"; propKey: string; label: string; min?: number; max?: number; suffix?: string; dataDriven?: boolean; fallback?: (props: Record<string, unknown>) => number }
   /** Stock-image picker: a categorized grid of verified stock photos +
      a paste-your-own-URL input. Writes a URL to `propKey` (the block's
      `src`). */
@@ -394,7 +386,6 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
             );
           }
           case "range": {
-<<<<<<< HEAD
             if (f.dataDriven && bound?.view === "value" && bound.value != null) {
               return (
                 <div key={i} className="inspector-field" data-field-readonly={f.propKey}>
@@ -406,10 +397,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
                 </div>
               );
             }
-            const val = Number(props[f.propKey] ?? f.min ?? 0);
-=======
             const val = Number(props[f.propKey] ?? f.fallback?.(props) ?? f.min ?? 0);
->>>>>>> claude/panel-content-fields
             return (
               <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
                 <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
