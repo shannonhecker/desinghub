@@ -606,9 +606,6 @@ function LayoutSection({
           </div>
         </div>
       </div>
-      {/* The dimension cell class is the disclosure contract's anchor. */}
-      <span className="inspector-dim-cell" hidden aria-hidden="true" />
-
       {/* Align-self on the cross axis (core control — kept visible) */}
       <div className="inspector-field">
         <label id={`align-${block.id}`} className="inspector-field-label">Align</label>
@@ -730,7 +727,7 @@ function LayoutSection({
               label="Min width (px)"
               value={parseWidthValue(layout.minWidth)}
               min={0}
-              placeholder="—"
+              placeholder="None"
               onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   minWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
@@ -744,7 +741,7 @@ function LayoutSection({
               label="Max width (px)"
               value={parseWidthValue(layout.maxWidth)}
               min={0}
-              placeholder="—"
+              placeholder="None"
               onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   maxWidth: v === "" ? undefined : (`${v}px` as LayoutWidth),
@@ -762,7 +759,7 @@ function LayoutSection({
               label="Min height (px)"
               value={parseWidthValue(layout.minHeight)}
               min={0}
-              placeholder="—"
+              placeholder="None"
               onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   minHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),
@@ -776,7 +773,7 @@ function LayoutSection({
               label="Max height (px)"
               value={parseWidthValue(layout.maxHeight)}
               min={0}
-              placeholder="—"
+              placeholder="None"
               onValueChange={(v) =>
                 updateBlockLayout(zone, block.id, {
                   maxHeight: v === "" ? undefined : (`${v}px` as LayoutWidth),

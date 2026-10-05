@@ -316,3 +316,24 @@ describe('gesture history', () => {
     expect(useBuilder.getState().density).toBe('medium');
   });
 });
+
+/* 5 Oct: a focused inspector field holds a history transaction for its
+   whole focus. An explicit pushSnapshot (an AI result landing meanwhile)
+   closes that transaction first, so the field's older "before" never lands
+   on top of the newer entry when the field blurs. */
+describe("pushSnapshot finishes an open gesture first", () => {
+  it("keeps history in order: field edit, then the pushed state", () => {
+    teardown?.();
+    useBuilder.setState({ blocks: [{ id: "f1", type: "SimulatedCard", props: { title: "one" } }], sidebarBlocks: [] } as never);
+    teardown = initBuilderHistory();
+    const end = beginHistoryTransaction();
+    useBuilder.getState().updateBlockProps("f1", { title: "two" });
+    pushSnapshot();
+    useBuilder.getState().updateBlockProps("f1", { title: "three" });
+    end();
+    undo();
+    expect((useBuilder.getState().blocks[0].props as { title: string }).title).toBe("two");
+    undo();
+    expect((useBuilder.getState().blocks[0].props as { title: string }).title).toBe("one");
+  });
+});

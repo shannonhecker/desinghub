@@ -23,6 +23,23 @@ import { BlockContextMenu } from "./BlockContextMenu";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { useInspectorPin } from "@/store/useInspectorPin";
 import { useBuilderShortcuts, isEditableTarget } from "@/lib/useBuilderShortcuts";
+
+/* The component panel is docked chrome on desktop (1024px and wider): the
+   phone sheet and the tablet drawer overlay the canvas and open only from a
+   selection or the Show button. */
+const PANEL_CLOSED_KEY = "dh-panel-closed";
+export const PANEL_AUTO_OPEN_MIN_WIDTH = 1024;
+function rememberPanelClosed(closed: boolean) {
+  try {
+    if (closed) sessionStorage.setItem(PANEL_CLOSED_KEY, "1");
+    else sessionStorage.removeItem(PANEL_CLOSED_KEY);
+  } catch { /* private mode */ }
+}
+function autoOpenComponentPanel() {
+  if (typeof window === "undefined" || window.innerWidth < PANEL_AUTO_OPEN_MIN_WIDTH) return;
+  try { if (sessionStorage.getItem(PANEL_CLOSED_KEY) === "1") return; } catch { /* private mode */ }
+  useBuilder.getState().setComponentLibraryOpen(true);
+}
 import { useAutoSave } from "@/lib/useAutoSave";
 import { useLocalAutoSave } from "@/lib/useLocalAutoSave";
 import { useBackendStatus } from "@/lib/useBackendStatus";
@@ -313,11 +330,26 @@ export function BuilderApp() {
      because the side panel itself unmounts while presenting. */
   const prevBuilderModeRef = useRef(builderMode);
   useEffect(() => {
-    if (prevBuilderModeRef.current === "preview" && builderMode === "edit") {
-      useBuilder.getState().setComponentLibraryOpen(true);
-    }
+    if (prevBuilderModeRef.current === "preview" && builderMode === "edit") autoOpenComponentPanel();
     prevBuilderModeRef.current = builderMode;
   }, [builderMode]);
+  /* A chat-built canvas starts in Edit with no panel: open it when the canvas
+     first gets blocks, so the first selection does not re-fit the canvas. */
+  const hadBlocks = useBuilder((s) => s.blocks.length > 0);
+  const prevHadBlocksRef = useRef(hadBlocks);
+  useEffect(() => {
+    if (!prevHadBlocksRef.current && hadBlocks && usePreviewMode.getState().mode === "edit") autoOpenComponentPanel();
+    prevHadBlocksRef.current = hadBlocks;
+  }, [hadBlocks]);
+  /* An explicit close is remembered for the session: no automatic reopen
+     until the user opens the panel again (Show, or selecting a block). */
+  const componentPanelOpen = useBuilder((s) => s.componentLibraryOpen);
+  const prevPanelOpenRef = useRef(componentPanelOpen);
+  useEffect(() => {
+    if (prevPanelOpenRef.current && !componentPanelOpen) rememberPanelClosed(true);
+    if (!prevPanelOpenRef.current && componentPanelOpen) rememberPanelClosed(false);
+    prevPanelOpenRef.current = componentPanelOpen;
+  }, [componentPanelOpen]);
 
   /* Phase E2: click-outside releases the inspector pin. Any
      pointerdown that isn't inside a [data-block-id] subtree (so

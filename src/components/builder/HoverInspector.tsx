@@ -105,43 +105,6 @@ export function HoverInspector({
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  /* Block toolbar placement (5 Oct): the pill goes above the block when the
-     gap to the previous sibling has room, below when the next has, else
-     inside the block's own top-right corner, so it never covers another
-     block's controls. Measured on pin and again on resize and scroll; all in
-     screen pixels (the pill counter-zooms the frame, so its size is fixed). */
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const [placement, setPlacement] = useState<Placement>("above-right");
-  useEffect(() => {
-    if (!isPinned) return;
-    const compute = () => {
-      const root = rootRef.current;
-      const block = root?.closest("[data-block-id]") as HTMLElement | null;
-      if (!root || !block) return;
-      const stage = block.closest(".bp-main, .bp-header, .bp-footer, .bp-dashboard") as HTMLElement | null;
-      const bounds = (stage ?? block.parentElement ?? block).getBoundingClientRect();
-      const others = [...document.querySelectorAll<HTMLElement>("[data-block-id]")]
-        .filter((el) => el !== block && !block.contains(el) && !el.contains(block))
-        .map((el) => el.getBoundingClientRect())
-        .filter((r) => r.width > 0 && r.height > 0);
-      const cs = getComputedStyle(root);
-      const h = parseFloat(cs.getPropertyValue("--insp-toolbar-h")) || 24;
-      const btn = parseFloat(cs.getPropertyValue("--insp-toolbar-btn")) || 24;
-      const gap = parseFloat(cs.getPropertyValue("--insp-toolbar-gap")) || 4;
-      const count = (dragHandleRef ? 1 : 0) + (onRemove ? 1 : 0) + (onSwapClick ? 1 : 0);
-      const width = count * btn + (count + 1) * 2;
-      setPlacement(placeToolbar(block.getBoundingClientRect(), others, bounds, { width, height: h, gap }));
-    };
-    compute();
-    const raf = requestAnimationFrame(compute);
-    window.addEventListener("resize", compute);
-    document.addEventListener("scroll", compute, true);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", compute);
-      document.removeEventListener("scroll", compute, true);
-    };
-  }, [isPinned, blockId, dragHandleRef, onRemove, onSwapClick]);
 
   /* Active = the inspector chrome is currently rendered.
      Pinned beats hover (no delay on a pinned block).
@@ -179,6 +142,44 @@ export function HoverInspector({
       }
     };
   }, [isHovered, reduceMotion]);
+
+  /* Block toolbar placement (5 Oct): the pill goes above the block when the
+     gap to the previous sibling has room, below when the next has, else
+     inside the block's own top-right corner, so it never covers another
+     block's controls. Measured on pin and again on resize and scroll; all in
+     screen pixels (the pill counter-zooms the frame, so its size is fixed). */
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [placement, setPlacement] = useState<Placement>("above-right");
+  useEffect(() => {
+    if (!hoverActive && !isPinned) return;
+    const compute = () => {
+      const root = rootRef.current;
+      const block = root?.closest("[data-block-id]") as HTMLElement | null;
+      if (!root || !block) return;
+      const stage = block.closest(".bp-main, .bp-header, .bp-footer, .bp-dashboard") as HTMLElement | null;
+      const bounds = (stage ?? block.parentElement ?? block).getBoundingClientRect();
+      const others = [...document.querySelectorAll<HTMLElement>("[data-block-id]")]
+        .filter((el) => el !== block && !block.contains(el) && !el.contains(block))
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+      const cs = getComputedStyle(root);
+      const h = parseFloat(cs.getPropertyValue("--insp-toolbar-h")) || 24;
+      const btn = parseFloat(cs.getPropertyValue("--insp-toolbar-btn")) || 24;
+      const gap = parseFloat(cs.getPropertyValue("--insp-toolbar-gap")) || 4;
+      const count = (dragHandleRef ? 1 : 0) + (onRemove ? 1 : 0) + (onSwapClick ? 1 : 0);
+      const width = count * btn + (count + 1) * 2;
+      setPlacement(placeToolbar(block.getBoundingClientRect(), others, bounds, { width, height: h, gap }));
+    };
+    compute();
+    const raf = requestAnimationFrame(compute);
+    window.addEventListener("resize", compute);
+    document.addEventListener("scroll", compute, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", compute);
+      document.removeEventListener("scroll", compute, true);
+    };
+  }, [hoverActive, isPinned, blockId, dragHandleRef, onRemove, onSwapClick]);
 
   /* Preview-mode gate — nothing renders regardless of
      hover/pin state. Phase E1 takes precedence. */

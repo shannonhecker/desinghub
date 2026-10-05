@@ -217,6 +217,15 @@ test.describe("Builder - FX Execution sample feed", () => {
       await expect(edit.locator(".dh-instrument-status")).toHaveText("1m Line · Percentile · 64% done");
       const inEdit = await measure(".bp-viewport-wrapper");
       inEdit.group.forEach((v, i) => expect(Math.abs(v - paused.group[i]), `${system}: feed group ${["inset", "width", "height"][i]}: edit ${inEdit.group} present ${paused.group}`).toBeLessThanOrEqual(1));
+      /* The default Edit state has the panel open: same group within one
+         SCREEN pixel (design tolerance ceil(1 / zoom) from the real zoom). */
+      await page.getByRole("button", { name: "Show component library", exact: true }).click();
+      await page.waitForTimeout(600);
+      const openZoom = Number(await page.locator(".bp-viewport-wrapper .bp-device-frame").getAttribute("data-frame-zoom")) || 1;
+      const tol = Math.ceil(1 / openZoom);
+      const inEditOpen = await measure(".bp-viewport-wrapper");
+      inEditOpen.group.forEach((v, i) => expect(Math.abs(v - paused.group[i]), `${system}, panel open: feed group ${["inset", "width", "height"][i]}: edit ${inEditOpen.group} present ${paused.group}`).toBeLessThanOrEqual(tol));
+      expect(Math.abs(inEditOpen.dot - paused.dot), `${system}, panel open: dot`).toBeLessThanOrEqual(tol);
       expect(Math.abs(inEdit.dot - paused.dot), `${system}: dot in Edit`).toBeLessThanOrEqual(1);
     });
   }

@@ -212,5 +212,27 @@ test.describe("Builder - template layout parity", () => {
       expect.soft(Math.abs(box[2] - ref[2]), `block ${i} width ${box[2]} vs present ${ref[2]}`).toBeLessThanOrEqual(1);
       expect.soft(Math.abs(box[3] - ref[3]), `block ${i} height ${box[3]} vs present ${ref[3]}`).toBeLessThanOrEqual(Math.max(2, Math.ceil(ref[3] * 0.01)));
     });
+
+    /* The default Edit state has the panel open: the same geometry within
+       one SCREEN pixel. The frame uses CSS zoom and hairlines snap to device
+       pixels, so the design-pixel tolerance is ceil(1 / zoom), from the real zoom. */
+    await page.getByRole("button", { name: "Show component library", exact: true }).click();
+    await settle(page);
+    const open = await measure(page);
+    const tol = Math.ceil(1 / open.zoom);
+    expect(open.zoom).toBeLessThan(edit.zoom);
+    expect(open.overflow).toBe(0);
+    expect(open.boxes.length).toBe(present.boxes.length);
+    open.boxes.forEach((box, i) => {
+      const ref = present.boxes[i];
+      expect.soft(Math.abs(box[0] - ref[0]), `panel open: block ${i} x ${box[0]} vs present ${ref[0]}`).toBeLessThanOrEqual(tol);
+      expect.soft(Math.abs(box[1] - ref[1]), `panel open: block ${i} y ${box[1]} vs present ${ref[1]}`).toBeLessThanOrEqual(tol);
+      expect.soft(Math.abs(box[2] - ref[2]), `panel open: block ${i} width ${box[2]} vs present ${ref[2]}`).toBeLessThanOrEqual(tol);
+      /* Heights: each snapped hairline is (1 / zoom - 1) design px thicker,
+         so the table's row borders add up; the hidden-panel 1% was set at
+         zoom 0.86 and is scaled here by the real zoom's hairline growth. */
+      const hairline = (1 / open.zoom - 1) / (1 / 0.86 - 1);
+      expect.soft(Math.abs(box[3] - ref[3]), `panel open: block ${i} height ${box[3]} vs present ${ref[3]}`).toBeLessThanOrEqual(Math.max(tol + 1, Math.ceil(ref[3] * 0.01 * hairline)));
+    });
   });
 });

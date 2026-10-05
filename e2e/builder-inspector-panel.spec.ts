@@ -321,3 +321,105 @@ test("the panel at 1024 wide keeps its inset and the phone sheet opens and close
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await expect(sheet).toBeHidden();
 });
+
+/* Opens the Analytics template in Edit without assuming the panel is open. */
+async function openAnalyticsEditNoPanel(page: Page) {
+  await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+  await page.goto("/builder", { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("textbox", { name: "Chat message input" })).toBeVisible({ timeout: 30_000 });
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Use the Analytics Dashboard template" }).click();
+  await expect(page.locator(".present-stage .bp-main [data-block-id]").first()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+  await page.waitForTimeout(600);
+}
+
+test.describe("panel auto-open", () => {
+  for (const [label, width, height] of [["phone", 390, 844], ["tablet", 820, 1180]] as const) {
+    test(`${label}: entering Edit does not open the panel; a selection does`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await openAnalyticsEditNoPanel(page);
+      await expect(page.locator(".component-sidebar")).toHaveCount(0);
+      await select(page, "tpl-ad-kpi-1-");
+      await expect(page.locator(".component-sidebar")).toBeVisible();
+      await expect(page.locator(".component-sidebar .lib-header-title")).toBeInViewport();
+      await expect(page.locator(".component-sidebar").getByRole("button", { name: "Close panel", exact: true })).toBeInViewport();
+      if (label === "phone") await page.screenshot({ path: "test-results/phone-sheet.png" });
+    });
+  }
+
+  test("a closed panel stays closed across a Preview round trip; Show opens it", async ({ page }) => {
+    await openAnalyticsInEdit(page);
+    await page.getByRole("button", { name: "Close panel", exact: true }).click();
+    await expect(page.locator(".component-sidebar")).toHaveCount(0);
+    await page.getByRole("button", { name: "Preview mode" }).click();
+    await expect(page.locator(".present-stage")).toBeVisible();
+    await page.getByRole("button", { name: "Edit canvas", exact: true }).click();
+    await page.waitForTimeout(600);
+    await expect(page.locator(".component-sidebar")).toHaveCount(0);
+    await page.keyboard.press("ControlOrMeta+Shift+p");
+    await expect(page.locator(".present-stage")).toBeVisible();
+    await page.keyboard.press("ControlOrMeta+Shift+p");
+    await page.waitForTimeout(600);
+    await expect(page.locator(".component-sidebar")).toHaveCount(0);
+    await page.getByRole("button", { name: "Show component library", exact: true }).click();
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+  });
+
+  test("a chat-built canvas gets the panel with its first blocks, so the first selection does not re-fit", async ({ page }) => {
+    await page.route("**/api/health", (route) => route.fulfill({ json: { anthropicConfigured: false, firebaseConfigured: false } }));
+    await page.goto("/builder", { waitUntil: "domcontentloaded" });
+    const chat = page.getByRole("textbox", { name: "Chat message input" });
+    await expect(chat).toBeVisible({ timeout: 30_000 });
+    await chat.fill("build an internal dashboard");
+    await chat.press("Enter");
+    const built = page.locator(".content-split.has-preview .bp-main [data-block-id]").first();
+    const ds = page.getByRole("button", { name: "Salt DS", exact: true });
+    await expect(built.or(ds).first()).toBeVisible();
+    if (!(await built.isVisible())) await ds.click();
+    await expect(built).toBeVisible();
+    await expect(page.locator(".component-sidebar")).toBeVisible();
+    await page.waitForTimeout(800);
+    const rects = () => page.evaluate(() => {
+      const frame = document.querySelector(".bp-device-frame") as HTMLElement;
+      return { zoom: frame.getAttribute("data-frame-zoom"), b: [...document.querySelectorAll(".bp-main [data-block-id]")].slice(0, 4).map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width].map(Math.round); }) };
+    });
+    const before = await rects();
+    const first = page.locator(".bp-main [data-block-id]").first();
+    await first.focus();
+    await first.press("Enter");
+    await expect(page.locator(".inspector-stack")).toBeVisible();
+    await page.waitForTimeout(400);
+    expect(await rects()).toEqual(before);
+  });
+});
+
+test("the hover pill on a second-row block is clear of other blocks and does not move on click", async ({ page }) => {
+  await openAnalyticsInEdit(page);
+  const block = page.locator('[data-block-id^="tpl-ad-kpi-2-"]').first();
+  const box = (await block.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const pill = page.locator(".hover-inspector-toolbar");
+  await expect(pill).toBeVisible();
+  await page.waitForTimeout(250);
+  const measure = () => page.evaluate(() => {
+    const pill = document.querySelector(".hover-inspector-toolbar")!;
+    const r = pill.getBoundingClientRect();
+    const host = pill.closest("[data-block-id]")!.getAttribute("data-block-id");
+    const hits = [...document.querySelectorAll(".bp-main [data-block-id], .bp-header [data-block-id]")].filter((b) => b.getAttribute("data-block-id") !== host).filter((b) => { const o = b.getBoundingClientRect(); return r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top; }).map((b) => b.getAttribute("data-block-id"));
+    return { rect: [r.x, r.y, r.width, r.height].map(Math.round), placement: pill.getAttribute("data-placement"), hits };
+  });
+  const hovered = await measure();
+  expect(hovered.hits, "hover pill clear of other blocks").toEqual([]);
+  await block.click({ position: { x: 6, y: 6 } });
+  await expect(page.locator(".hover-inspector.is-pinned")).toBeVisible();
+  await page.waitForTimeout(300);
+  const pinned = await measure();
+  expect(pinned.rect, "pill does not move on click").toEqual(hovered.rect);
+  expect(pinned.hits).toEqual([]);
+  await page.screenshot({ path: "test-results/hover-pill-row2.png" });
+});
