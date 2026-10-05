@@ -362,7 +362,7 @@ function SchemaFields({ blockId, fields }: { blockId: string; fields: FieldDef[]
           case "range": {
             const val = Number(props[f.propKey] ?? f.min ?? 0);
             return (
-              <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? ` ${f.suffix}` : ""}`}>
+              <InspectorField key={i} label={f.label} htmlFor={id} value={`${val}${f.suffix ? (f.suffix === "%" ? "%" : ` ${f.suffix}`) : ""}`}>
                 <input id={id} className="inspector-slider" type="range" aria-label={f.label} aria-valuetext={`${val}${f.suffix ?? ""}`} min={f.min ?? 0} max={f.max ?? 100} value={val}
                   onChange={(e) => set({ [f.propKey]: Number(e.target.value) })} />
               </InspectorField>

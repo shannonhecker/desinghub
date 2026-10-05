@@ -24,6 +24,7 @@ import {
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
 import { InspectorSwitch } from "@/lib/blockRegistry";
+import { plainBlockName } from "@/lib/blockNames";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
 import { spanOf } from "@/lib/export/gridSpan";
 import { normalizeColumns } from "@/lib/layoutResolver";
@@ -149,6 +150,10 @@ function BlueprintItem({ blueprint, zone }: {
        > body) is visible without explanation. */
     setLibraryHoverZone(resolveDestinationZone(blueprint.type, zone, selectedBlockZone));
     if (!hover) return;
+    /* A touch tap fires a synthetic mouseenter and never a mouseleave, so
+       the preview would stay up after the tap; hover previews are for
+       pointers that can hover. */
+    if (typeof window !== "undefined" && window.matchMedia?.("(hover: none)").matches) return;
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(() => {
       const el = tileRef.current;
@@ -198,18 +203,6 @@ function BlueprintItem({ blueprint, zone }: {
       <span className="lib-tile-label">{blueprint.label}</span>
     </div>
   );
-}
-
-/* Plain name for a block type: the library's label in sentence case
-   ("Stat card", "Area chart"); all-caps words (FX, KPI) keep their case; a
-   type without a library entry is split on its capitals. */
-export function plainBlockName(type: string): string {
-  const label = LIBRARY_BLUEPRINTS.find((b) => b.type === type)?.label
-    ?? type.replace(/^Simulated/, "").replace(/([a-z])([A-Z])/g, "$1 $2");
-  return label
-    .split(" ")
-    .map((w, i) => (i === 0 || /^[A-Z0-9]{2,}$/.test(w) ? w : w.toLowerCase()))
-    .join(" ");
 }
 
 const ZONE_NAMES: Record<string, string> = { body: "Body", header: "Header", sidebar: "Sidebar", footer: "Footer" };
