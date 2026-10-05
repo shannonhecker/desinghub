@@ -441,6 +441,10 @@ function MonthCalendar({ model, system }: { model: CalendarModel; system: System
     wantsFocus.current = false;
     grid.current?.querySelector<HTMLButtonElement>(`[data-day="${focusDay}"]`)?.focus();
   }, [focusDay, model.month]);
+  /* Why a day cannot be picked: outside the data's days, or inside them with no bars. */
+  const offOf = (day: string): "outside" | "closed" | undefined => (day < model.min || day > model.max ? "outside" : model.enabled(day) ? undefined : "closed");
+  const kinds = new Set(monthGrid(model.month).flat().map((day) => (day ? offOf(day) : undefined)));
+  const bothKinds = kinds.has("outside") && kinds.has("closed");
   const [lo, hi] = model.selected.length > 1 ? [...model.selected].sort() : [model.selected[0], model.selected[0]];
   const canPrev = addMonths(model.month, -1) >= monthOf(model.min);
   const canNext = addMonths(model.month, 1) <= monthOf(model.max);
@@ -474,15 +478,17 @@ function MonthCalendar({ model, system }: { model: CalendarModel; system: System
             <tr key={w}>
               {week.map((day, i) => {
                 if (!day) return <td key={i} role="gridcell" />;
-                const on = model.enabled(day) && day >= model.min && day <= model.max;
+                const off = offOf(day);
+                const on = off === undefined;
+                const outside = off === "outside";
                 const picked = model.selected.includes(day);
                 const inRange = lo !== undefined && day > lo && day < hi;
                 return (
                   <td key={i} role="gridcell" aria-selected={picked} className={`${picked ? "is-picked" : ""}${inRange ? " is-between" : ""}`}>
                     <button
                       type="button" data-day={day} tabIndex={day === shownMonth ? 0 : -1}
-                      className="dh-cal-day" aria-disabled={on ? undefined : true}
-                      aria-label={`${DAY_NAME.format(Date.parse(`${day}T00:00:00Z`))}${on ? "" : ", no sample data"}`}
+                      className="dh-cal-day" aria-disabled={on ? undefined : true} data-off={off}
+                      aria-label={`${DAY_NAME.format(Date.parse(`${day}T00:00:00Z`))}${on ? "" : outside ? ", outside the sample data" : ", market closed, no sample data"}`}
                       onClick={() => { setFocusDay(day); if (on) model.onPick(day); }}
                       onKeyDown={(e) => onKey(e, day)}
                     >
@@ -495,6 +501,13 @@ function MonthCalendar({ model, system }: { model: CalendarModel; system: System
           ))}
         </tbody>
       </table>
+      {/* A key, when the month shows both kinds of day that cannot be picked. */}
+      {bothKinds ? (
+        <p className="dh-cal-legend">
+          <span><span className="dh-cal-key dh-cal-key-closed" aria-hidden="true">12</span>Market closed</span>
+          <span><span className="dh-cal-key" aria-hidden="true">12</span>Outside the sample data</span>
+        </p>
+      ) : null}
       {model.prompt ? <p className="dh-cal-prompt" aria-live="polite">{model.prompt}</p> : null}
     </div>
   );

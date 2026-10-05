@@ -11330,14 +11330,15 @@ th[class*="-th"] > span { vertical-align: middle; }
 .dh-exec-plot[data-dragging] .highcharts-crosshair { visibility: hidden; }
 .dh-exec-plot[data-nav-region="box"],
 .dh-exec-plot.is-boxing { cursor: crosshair; }
-/* The one-time hint sits low in the plot, over the volume strip, clear of
-   the price tags and the top gridline (the plot's place comes from the
+/* The one-time hint sits at the top left of the plot, just under the top
+   gridline and inside the plot's edges: in sight on a short screen, and
+   clear of the price tags in the gutter (the plot's place comes from the
    navigation hook). Its button is the design system's own quiet button. */
 .dh-exec-hint {
   position: absolute;
-  inset-block-end: calc(var(--nav-plot-bottom, 0px) + var(--dh-cell-gap));
-  inset-inline: calc(var(--nav-plot-left, 0px) + var(--dh-cell-gap)) calc(var(--nav-plot-right, 0px) + var(--dh-cell-gap));
-  margin-inline: auto;
+  inset-block-start: calc(var(--nav-plot-top, 0px) + var(--dh-nav-pad));
+  inset-inline: calc(var(--nav-plot-left, 0px) + var(--dh-nav-pad)) calc(var(--nav-plot-right, 0px) + var(--dh-nav-pad));
+  margin-inline: 0 auto;
   width: fit-content;
   z-index: 5;
   display: flex;
@@ -11352,7 +11353,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   box-shadow: var(--ds-shadow, none);
 }
 .dh-exec-hint p { flex: 1 1 auto; min-width: 0; margin: 0; line-height: 1.35; white-space: normal; }
-.dh-exec-hint > :not(p) { flex: none; }
+.dh-exec-hint > :not(p) { flex: none; white-space: nowrap; }
 /* "Hold Ctrl and scroll to zoom": a moment, in the middle of the plot. */
 .dh-exec-wheel-note {
   position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content; z-index: 5;
@@ -11431,10 +11432,24 @@ th[class*="-th"] > span { vertical-align: middle; }
   font: inherit; font-size: var(--dh-panel-meta-size); font-variant-numeric: tabular-nums; cursor: pointer;
 }
 .dh-cal-day:hover:not([aria-disabled="true"]) { background: var(--cal-hover); }
+/* Two kinds of day cannot be picked, and they look different in every
+   system: outside the sample data (before its first day or after its last)
+   is the system's disabled tone; inside it with no bars (the market was
+   closed) is the same tone with a line through the number. The line is
+   drawn, not text-decoration, so it reads the same on every digit. */
+.dh-cal-day { position: relative; }
 .dh-cal-day[aria-disabled="true"] { color: var(--cal-off, var(--cal-muted)); cursor: default; }
-/* Salt has no disabled text colour of its own here: it dims and strikes
-   through a day that cannot be picked; the others use their disabled colour. */
-.dh-cal-salt .dh-cal-day[aria-disabled="true"] { opacity: 0.5; text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.dh-cal-salt .dh-cal-day[aria-disabled="true"] { opacity: 0.55; }
+.dh-cal-day[data-off="closed"]::after, .dh-cal-key-closed::after {
+  content: ""; position: absolute; inset-inline: 28%; inset-block-start: 50%;
+  border-block-start: var(--bc-hairline) solid currentColor;
+}
+.dh-cal-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--dh-cell-gap) / 2) var(--dh-nav-inset); margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-cell-small); line-height: 1.45; color: var(--cal-muted); }
+.dh-cal-legend span { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 2); }
+.dh-cal-key { position: relative; display: inline-block; min-width: calc(var(--dh-cell-gap) * 3); text-align: center; font-variant-numeric: tabular-nums; color: var(--cal-off, var(--cal-muted)); }
+.dh-cal-salt .dh-cal-key { opacity: 0.55; }
+.dh-cal-key-closed::after { inset-inline: 10%; }
+.carbon-live-scope .dh-form-dialog-carbon .dh-cal-carbon .dh-cal-legend { font-size: var(--dh-cell-small); line-height: 1.45; }
 .dh-cal-grid td.is-picked .dh-cal-day { background: var(--cal-accent); color: var(--cal-accent-fg); font-weight: 600; }
 .dh-cal-day:focus-visible, .dh-cal-nav:focus-visible { outline: var(--dh-focus-ring) solid var(--cal-focus, var(--cal-accent)); outline-offset: calc(var(--dh-focus-ring) * -1 + var(--bc-hairline)); }
 .dh-cal-prompt { margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-panel-meta-size); color: var(--cal-muted); text-align: center; }

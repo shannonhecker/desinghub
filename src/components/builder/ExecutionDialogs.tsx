@@ -45,7 +45,8 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
   const [fromTime, setFromTime] = useState("10:00");
   const [toDate, setToDate] = useState(last);
   const [toTime, setToTime] = useState("11:00");
-  const [armed, setArmed] = useState<"from" | "to">("from");
+  /* The end of the range the calendar fills next; null once both are chosen (the next pick starts a new range). */
+  const [armed, setArmed] = useState<"from" | "to" | null>("from");
   const [month, setMonth] = useState(monthOf(last || "2026-01-01"));
   const [error, setError] = useState<{ field: GoToField | "form"; text: string } | null>(null);
 
@@ -100,9 +101,9 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
   const pick = (day: string) => {
     setError(null);
     if (goMode === "Date") { setDate(day); return; }
-    if (armed === "from") { setFromDate(day); if (toDate < day) setToDate(day); setArmed("to"); return; }
+    if (armed !== "to") { setFromDate(day); if (toDate < day) setToDate(day); setArmed("to"); return; }
     if (day < fromDate) { setToDate(fromDate); setFromDate(day); } else setToDate(day);
-    setArmed("from");
+    setArmed(null);
   };
 
   const field = (id: GoToField, label: string, type: "date" | "time", value: string, set: (v: string) => void) => ({
@@ -123,7 +124,8 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
       month, onMonth: setMonth,
       selected: goMode === "Date" ? [date] : [fromDate, toDate],
       enabled: (d) => daySet.has(d), onPick: pick, min: first, max: last,
-      prompt: goMode === "Date" ? undefined : armed === "from" ? "Pick the start day" : "Pick the end day",
+      /* An instruction only while that end is pending; then the range chosen. */
+      prompt: goMode === "Date" ? undefined : armed === "from" ? "Pick the start day" : armed === "to" ? "Pick the end day" : `${dayLabel(fromDate)} to ${dayLabel(toDate)}`,
     },
     rows: goMode === "Date"
       ? [[field("date", "Date", "date", date, setDate), field("time", "Time (UTC)", "time", time, setTime)]]
