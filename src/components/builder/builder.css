@@ -18738,9 +18738,8 @@ input[type="number"].inspector-input::-webkit-inner-spin-button { -webkit-appear
   outline: var(--insp-focus-w) solid var(--insp-focus);
   outline-offset: calc(-1 * var(--insp-focus-w));
 }
-/* The hover-only (not pinned) state shows the outline alone; the pill waits
-   for the pin so a pointer passing over a row does not strobe chrome. */
-.hover-inspector.is-hovered:not(.is-pinned) .hover-inspector-toolbar { display: none; }
+/* The pill shows on hover too (after the hover delay): the drag handle must
+   be reachable without a click, as before. */
 
 /* Tablet (under 1024): the panel is a drawer over the canvas's right edge so
    the stage keeps its width; close from its header. */

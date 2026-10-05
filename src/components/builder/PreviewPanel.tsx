@@ -2231,14 +2231,6 @@ export function PreviewSidePanel() {
      The canvas itself now lives in <BuilderCanvas> (one shared render path);
      this shell only owns the chat-split panel chrome + component library. */
   const builderMode = usePreviewMode((s) => s.mode);
-  /* The panel is docked chrome in Edit mode (inspector design note, 5 Oct):
-     it opens when the user enters Edit, so selecting a block swaps its
-     content and never changes the stage width. Hiding it is an explicit act
-     from the bar. */
-  const setComponentLibraryOpen = useBuilder((s) => s.setComponentLibraryOpen);
-  useEffect(() => {
-    if (builderMode === "edit") setComponentLibraryOpen(true);
-  }, [builderMode, setComponentLibraryOpen]);
 
   /* ── Component library sidebar resize ── */
   const compBodyRef = useRef<HTMLDivElement>(null);
