@@ -1607,42 +1607,42 @@ function LibraryBrowser() {
           padded sticky band, so the magnifier sits inside the box. */}
       <div className="lib-search lib-search-sticky">
         <label className="dh-visually-hidden" htmlFor="lib-search-input">Search component library</label>
-        <div className="lib-search-field">
-          <ChromeIcon name="search" className="lib-search-icon" aria-hidden="true" />
-          <input
-            id="lib-search-input"
-            ref={searchRef}
-            type="search"
-            className="lib-search-input"
-            placeholder="Search components  (press /)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-describedby={hasQuery ? "lib-search-count" : undefined}
-          />
-          {query && (
-            <button
-              type="button"
-              className="lib-search-clear"
-              onClick={() => { setQuery(""); searchRef.current?.focus(); }}
-              aria-label="Clear search"
-            >
-              <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
-            </button>
-          )}
-        </div>
-        {!hasQuery && (
-          <div className="lib-search-row">
+        <div className="lib-search-row">
+          <div className="lib-search-field">
+            <ChromeIcon name="search" className="lib-search-icon" aria-hidden="true" />
+            <input
+              id="lib-search-input"
+              ref={searchRef}
+              type="search"
+              className="lib-search-input"
+              placeholder="Search components  (press /)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-describedby={hasQuery ? "lib-search-count" : undefined}
+            />
+            {query && (
+              <button
+                type="button"
+                className="lib-search-clear"
+                onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+                aria-label="Clear search"
+              >
+                <ChromeIcon name="close" aria-hidden="true" style={{ fontSize: 14 }} />
+              </button>
+            )}
+          </div>
+          {!hasQuery && (
             <button
               type="button"
               className="lib-collapse-toggle"
               onClick={() => setAllCategories(!anyCategoryOpen)}
-              aria-label={anyCategoryOpen ? "Collapse all categories" : "Expand all categories"}
+              aria-label={anyCategoryOpen ? "Collapse all" : "Expand all"}
+              title={anyCategoryOpen ? "Collapse all" : "Expand all"}
             >
               <ChromeIcon name={anyCategoryOpen ? "unfold_less" : "unfold_more"} className="lib-collapse-icon" aria-hidden="true" />
-              {anyCategoryOpen ? "Collapse all" : "Expand all"}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {hasQuery && totalVisible > 0 && (
@@ -1652,7 +1652,16 @@ function LibraryBrowser() {
       )}
 
       {totalVisible === 0 && (
-        <div className="lib-empty">No components match &ldquo;{query}&rdquo;.</div>
+        <div className="lib-empty">
+          <p className="lib-empty-text">No components match &ldquo;{query}&rdquo;.</p>
+          <button
+            type="button"
+            className="lib-empty-clear"
+            onClick={() => { setQuery(""); searchRef.current?.focus(); }}
+          >
+            Clear search
+          </button>
+        </div>
       )}
 
       {/* Recently used — click-to-re-add the last handful of components.

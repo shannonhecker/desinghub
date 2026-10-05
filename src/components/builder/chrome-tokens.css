@@ -640,6 +640,15 @@
   --insp-toolbar-fg:     var(--bc-fg-muted);
   --insp-toolbar-fg-hover: var(--bc-fg);
   --insp-toolbar-hover:  var(--bc-bg-hover);
+  /* Component panel BROWSE mode (task 29): tiles and template cards are
+     tonal cards, their preview a recessed well; counts are quiet pills. */
+  --lib-card-bg:         rgba(255, 255, 255, 0.05);
+  --lib-card-bg-hover:   rgba(255, 255, 255, 0.08);
+  --lib-card-well:       rgba(0, 0, 0, 0.22);
+  --lib-card-well-hover: rgba(0, 0, 0, 0.16);
+  --lib-card-lift:       0 4px 12px rgba(0, 0, 0, 0.28);
+  --lib-card-on:         rgba(124, 196, 255, 0.12);
+  --lib-pill-bg:         rgba(255, 255, 255, 0.08);
 }
 /* Colour aliases that point at mode-aware --bc-* tokens are declared again
    under .builder-light: a custom property resolves its var() where it is
@@ -668,4 +677,11 @@
   --insp-slider-track-bg: rgba(15, 17, 22, 0.14);
   --insp-swatch-edge:    rgba(15, 17, 22, 0.10);
   --insp-select-caret:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --lib-card-bg:         rgba(255, 255, 255, 0.72);
+  --lib-card-bg-hover:   #ffffff;
+  --lib-card-well:       rgba(15, 17, 22, 0.045);
+  --lib-card-well-hover: rgba(15, 17, 22, 0.065);
+  --lib-card-lift:       0 4px 12px rgba(15, 17, 22, 0.10);
+  --lib-card-on:         rgba(11, 105, 217, 0.10);
+  --lib-pill-bg:         rgba(15, 17, 22, 0.06);
 }
