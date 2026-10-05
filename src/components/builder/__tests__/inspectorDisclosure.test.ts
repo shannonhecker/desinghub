@@ -56,7 +56,8 @@ describe("inspector progressive disclosure", () => {
     // rendered for EVERY selection (it edits the container's flow), but
     // leaf selections now collapse it by default — component properties
     // lead the stack. Behavioural coverage in visualQaBatch1.test.tsx.
-    expect(cl).toMatch(/title="Auto layout" defaultOpen=\{!leaf\}>/);
+    /* 5 Oct inspector redesign: the container-flow section is titled "Layout" (plain name). */
+    expect(cl).toMatch(/title="Layout" defaultOpen=\{!leaf\}>/);
     expect(cl).toMatch(/<ZoneLayoutSection\b/);
   });
 

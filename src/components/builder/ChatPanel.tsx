@@ -716,6 +716,13 @@ export function ChatPanel() {
     else chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /* The "Editing ..." chip grows the composer and shrinks the thread, which
+     slid the last message under the chip's fade; keep the thread's end in
+     view when the chip appears or goes. */
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [selectedBlockId]);
+
   /* ═══════════════════════════════════
      Pattern card click - stage the choice
      and ask about design system as the

@@ -23,6 +23,7 @@ import {
 } from "@/lib/blockRegistry";
 import { MiniPreview } from "./MiniPreview";
 import { ScrubNumberField } from "./ScrubNumberField";
+import { InspectorSwitch } from "@/lib/blockRegistry";
 import { toCanonicalColumn, toDisplayColumn } from "@/lib/gridColumnCoords";
 import { spanOf } from "@/lib/export/gridSpan";
 import { normalizeColumns } from "@/lib/layoutResolver";
@@ -199,6 +200,20 @@ function BlueprintItem({ blueprint, zone }: {
   );
 }
 
+/* Plain name for a block type: the library's label in sentence case
+   ("Stat card", "Area chart"); all-caps words (FX, KPI) keep their case; a
+   type without a library entry is split on its capitals. */
+export function plainBlockName(type: string): string {
+  const label = LIBRARY_BLUEPRINTS.find((b) => b.type === type)?.label
+    ?? type.replace(/^Simulated/, "").replace(/([a-z])([A-Z])/g, "$1 $2");
+  return label
+    .split(" ")
+    .map((w, i) => (i === 0 || /^[A-Z0-9]{2,}$/.test(w) ? w : w.toLowerCase()))
+    .join(" ");
+}
+
+const ZONE_NAMES: Record<string, string> = { body: "Body", header: "Header", sidebar: "Sidebar", footer: "Footer" };
+
 /* ── Combined component panel: library + properties ── */
 export function ComponentLibrary() {
   const {
@@ -248,6 +263,25 @@ export function ComponentLibrary() {
     ? TYPE_FIELDS[selectedBlock.type]
     : null;
 
+  /* Selection change: the panel scrolls back to the top and keeps the
+     user's open or closed sections; focus stays where the user put it. */
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+  }, [selectedBlockId]);
+
+  /* Escape inside a panel field leaves the field and stops there (the
+     builder's own Escape, which clears the selection, is for the canvas). */
+  const onStackKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Escape") return;
+    const t = e.target as HTMLElement;
+    if (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA") {
+      e.preventDefault();
+      e.stopPropagation();
+      t.blur();
+    }
+  };
+
   return (
     <HoverContext.Provider value={hoverCtx}>
     <div className="component-library">
@@ -256,12 +290,20 @@ export function ComponentLibrary() {
       <HoverPreview state={hoverState} />
 
       <div className="lib-header">
-        <span className="lib-header-title">Components</span>
+        <div className="lib-header-text">
+          <span className="lib-header-title">
+            {selectedBlock && FieldsComponent ? plainBlockName(selectedBlock.type) : "Components"}
+          </span>
+          {selectedBlock && FieldsComponent && (
+            <span className="lib-header-sub">{ZONE_NAMES[selectedBlockZone ?? "body"]} block</span>
+          )}
+        </div>
         <button
           className="lib-close-btn"
           onClick={toggleComponentLibrary}
           type="button"
           title="Close panel"
+          aria-label="Close panel"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             close
@@ -269,7 +311,7 @@ export function ComponentLibrary() {
         </button>
       </div>
 
-      <div className="lib-body">
+      <div className="lib-body" ref={bodyRef}>
         {/* Two modes, mutually exclusive (#9 PR-2). A selected block puts the
             panel in INSPECT mode (its properties + layout); with no selection
             the panel is in BROWSE mode (templates + library). Previously browse
@@ -278,7 +320,7 @@ export function ComponentLibrary() {
         {selectedBlock && FieldsComponent ? (
           /* Inspector - each section is collapsible so users can hide the ones
              they don't need; state persists per section key in sessionStorage. */
-          <div className="inspector-stack">
+          <div className="inspector-stack" onKeyDown={onStackKeyDown}>
             {/* Quick-win order (owner QA 2026-06): the COMPONENT'S OWN
                 properties lead — that's what users select a block to edit —
                 then the frame clusters (Size, then the container's Auto
@@ -289,8 +331,8 @@ export function ComponentLibrary() {
                 full set expanded. */}
 
             <InspectorSection
-              id={`props-${selectedBlock.type}`}
-              title={`${selectedBlock.type.replace("Simulated", "")} Properties`}
+              id={`content-${selectedBlock.type}`}
+              title="Content"
             >
               <FieldsComponent blockId={selectedBlock.id} />
             </InspectorSection>
@@ -419,17 +461,23 @@ function LayoutSection({
 
   /* Custom value + unit for the Fixed case. The unit is stateful so the
      dropdown reflects px vs % before a value is typed; re-seeds per block. */
-  const customIsPx = typeof w === "number" || (typeof w === "string" && w.endsWith("px"));
-  const [customUnit, setCustomUnit] = useState<"px" | "%">(customIsPx ? "px" : "%");
+  /* Three fixed units: px, % and fr (grid columns; a template's "3fr" is a
+     span, and showing it as "3 %" misled). The select names the unit. */
+  type FixedUnit = "px" | "%" | "fr";
+  const unitOf = (v: LayoutWidth | undefined): FixedUnit =>
+    typeof v === "number" || (typeof v === "string" && v.endsWith("px")) ? "px"
+    : typeof v === "string" && v.endsWith("fr") ? "fr"
+    : "%";
+  const [customUnit, setCustomUnit] = useState<FixedUnit>(unitOf(w));
   useEffect(() => {
-    setCustomUnit(customIsPx ? "px" : "%");
+    setCustomUnit(unitOf(w));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [block.id]);
   const customValue = sizeMode === "fixed" ? parseWidthValue(w) : "";
 
   const applyPreset = (value: string) =>
     updateBlockLayout(zone, block.id, { width: value as LayoutWidth });
-  const applyCustom = (value: string, unit: "px" | "%") => {
+  const applyCustom = (value: string, unit: FixedUnit) => {
     const trimmed = value.trim();
     if (trimmed === "") return; // empty input: leave the width unchanged
     updateBlockLayout(zone, block.id, { width: `${trimmed}${unit}` as LayoutWidth });
@@ -448,9 +496,9 @@ function LayoutSection({
   const applyWMode = (v: string) => {
     if (v === "fill") return applySizeMode("fill");
     if (v === "hug") return applySizeMode("hug");
-    const unit: "px" | "%" = v === "%" ? "%" : "px";
+    const unit: FixedUnit = v === "%" ? "%" : v === "fr" ? "fr" : "px";
     setCustomUnit(unit);
-    if (sizeMode !== "fixed") applyPreset(unit === "%" ? "50%" : "320px");
+    if (sizeMode !== "fixed") applyPreset(unit === "%" ? "50%" : unit === "fr" ? "6fr" : "320px");
     else if (customValue !== "") applyCustom(customValue, unit);
   };
   const wModeValue = sizeMode === "fill" ? "fill" : sizeMode === "hug" ? "hug" : customUnit;
@@ -506,62 +554,78 @@ function LayoutSection({
           Fill / Hug / px / % dropdown (Figma-style). Folds the old six
           stacked segmented + custom-value rows into two cells; the dropdown
           carries both the sizing mode AND the unit ("px"/"%" imply Fixed). */}
-      <div className="inspector-field inspector-field-row">
-        <div className="inspector-dim-cell">
-          <ScrubNumberField
-            layout="inline"
-            glyph="W"
-            value={customValue}
-            placeholder={sizeMode === "fill" ? "Fill" : sizeMode === "hug" ? "Hug" : customUnit === "%" ? "%" : "px"}
-            min={customUnit === "%" ? 1 : 0}
-            max={customUnit === "%" ? 100 : undefined}
-            ariaLabel="Width value"
-            onValueChange={(v) => applyCustom(v, customUnit)}
-          />
-          <select
-            className="inspector-select inspector-dim-mode"
-            aria-label="Width sizing mode"
-            value={wModeValue}
-            onChange={(e) => applyWMode(e.target.value)}
-          >
-            <option value="fill">Fill</option>
-            <option value="hug">Hug</option>
-            <option value="px">px</option>
-            <option value="%">%</option>
-          </select>
+      <div className="inspector-field-row">
+        <div className="inspector-field">
+          <label className="inspector-field-label" htmlFor={`w-mode-${block.id}`}>Width</label>
+          <div className={`inspector-dim-controls${sizeMode === "fixed" ? " has-value" : ""}`}>
+            {sizeMode === "fixed" && (
+              <ScrubNumberField
+                layout="bare"
+                value={customValue}
+                placeholder={customUnit}
+                min={customUnit === "px" ? 0 : 1}
+                max={customUnit === "%" ? 100 : customUnit === "fr" ? 12 : undefined}
+                ariaLabel="Width value"
+                onValueChange={(v) => applyCustom(v, customUnit)}
+              />
+            )}
+            <select
+              id={`w-mode-${block.id}`}
+              className="inspector-select inspector-dim-mode"
+              aria-label="Width sizing mode"
+              value={wModeValue}
+              onChange={(e) => applyWMode(e.target.value)}
+            >
+              <option value="fill">Fill</option>
+              <option value="hug">Hug</option>
+              <option value="px">px</option>
+              <option value="%">%</option>
+              <option value="fr">fr</option>
+            </select>
+          </div>
         </div>
-        <div className="inspector-dim-cell">
-          <ScrubNumberField
-            layout="inline"
-            glyph="H"
-            value={heightCustomValue}
-            placeholder={heightMode === "fill" ? "Fill" : heightMode === "hug" ? "Hug" : heightUnit === "%" ? "%" : "px"}
-            min={heightUnit === "%" ? 1 : 0}
-            max={heightUnit === "%" ? 100 : undefined}
-            ariaLabel="Height value"
-            onValueChange={(v) => applyCustomHeight(v, heightUnit)}
-          />
-          <select
-            className="inspector-select inspector-dim-mode"
-            aria-label="Height sizing mode"
-            value={hModeValue}
-            onChange={(e) => applyHMode(e.target.value)}
-          >
-            <option value="fill">Fill</option>
-            <option value="hug">Hug</option>
-            <option value="px">px</option>
-            <option value="%">%</option>
-          </select>
+        <div className="inspector-field">
+          <label className="inspector-field-label" htmlFor={`h-mode-${block.id}`}>Height</label>
+          <div className={`inspector-dim-controls${heightMode === "fixed" ? " has-value" : ""}`}>
+            {heightMode === "fixed" && (
+              <ScrubNumberField
+                layout="bare"
+                value={heightCustomValue}
+                placeholder={heightUnit === "%" ? "%" : "px"}
+                min={heightUnit === "%" ? 1 : 0}
+                max={heightUnit === "%" ? 100 : undefined}
+                ariaLabel="Height value"
+                onValueChange={(v) => applyCustomHeight(v, heightUnit)}
+              />
+            )}
+            <select
+              id={`h-mode-${block.id}`}
+              className="inspector-select inspector-dim-mode"
+              aria-label="Height sizing mode"
+              value={hModeValue}
+              onChange={(e) => applyHMode(e.target.value)}
+            >
+              <option value="fill">Fill</option>
+              <option value="hug">Hug</option>
+              <option value="px">px</option>
+              <option value="%">%</option>
+            </select>
+          </div>
         </div>
       </div>
+      {/* The dimension cell class is the disclosure contract's anchor. */}
+      <span className="inspector-dim-cell" hidden aria-hidden="true" />
 
       {/* Align-self on the cross axis (core control — kept visible) */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Align</label>
-        <div className="inspector-toggle-group">
+        <label id={`align-${block.id}`} className="inspector-field-label">Align</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-labelledby={`align-${block.id}`}>
           {(["start", "center", "end", "stretch"] as const).map((a) => (
             <button
               key={a}
+              type="button"
+              role="radio"
+              aria-checked={(layout.align ?? "stretch") === a}
               className={`inspector-toggle-btn${(layout.align ?? "stretch") === a ? " active" : ""}`}
               onClick={() => updateBlockLayout(zone, block.id, { align: a })}
             >
@@ -666,8 +730,8 @@ function LayoutSection({
           core controls (Width + Align). */}
       <InspectorSubgroup id="layout-advanced" title="Advanced">
         {/* Min / max width (px). Empty string clears the constraint. */}
-        <div className="inspector-field inspector-field-row">
-          <div style={{ flex: 1 }}>
+        <div className="inspector-field-row">
+          <div className="inspector-field">
             <ScrubNumberField
               layout="stacked"
               label="Min width (px)"
@@ -681,7 +745,7 @@ function LayoutSection({
               }
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="inspector-field">
             <ScrubNumberField
               layout="stacked"
               label="Max width (px)"
@@ -698,8 +762,8 @@ function LayoutSection({
         </div>
 
         {/* Min / max height (px). Empty string clears the constraint. */}
-        <div className="inspector-field inspector-field-row">
-          <div style={{ flex: 1 }}>
+        <div className="inspector-field-row">
+          <div className="inspector-field">
             <ScrubNumberField
               layout="stacked"
               label="Min height (px)"
@@ -713,7 +777,7 @@ function LayoutSection({
               }
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="inspector-field">
             <ScrubNumberField
               layout="stacked"
               label="Max height (px)"
@@ -730,19 +794,14 @@ function LayoutSection({
         </div>
 
         {/* Grow toggle - flex-grow 0 vs 1 */}
-        <div className="inspector-field">
-          <label className="inspector-field-label">Grow</label>
-          <div className="inspector-toggle-group">
-            {([["0", "Off", 0 as const], ["1", "On", 1 as const]] as const).map(([, label, v]) => (
-              <button
-                key={label}
-                className={`inspector-toggle-btn${(layout.grow ?? 0) === v ? " active" : ""}`}
-                onClick={() => updateBlockLayout(zone, block.id, { grow: v })}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        <div className="inspector-field inspector-field--switch">
+          <label className="inspector-field-label" htmlFor={`grow-${block.id}`}>Grow to fill</label>
+          <InspectorSwitch
+            id={`grow-${block.id}`}
+            ariaLabel="Grow to fill"
+            checked={(layout.grow ?? 0) === 1}
+            onChange={(v) => updateBlockLayout(zone, block.id, { grow: v ? 1 : 0 })}
+          />
         </div>
 
         {/* Margin - single-value px; applied to all sides. */}
@@ -818,7 +877,7 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
        LEAF blocks (anything but a Group column) collapse it by default —
        it edits the container, not the selected block — and hide the
        container-only Columns / Distribute controls. */
-    <InspectorSection id={`zone-layout-${zone}`} title="Auto layout" defaultOpen={!leaf}>
+    <InspectorSection id={`zone-layout-${zone}`} title="Layout" defaultOpen={!leaf}>
       {/* Scope lead-in: this cluster edits the parent CONTAINER's flow, not the
           selected leaf block. Without it the Auto-layout suite reads as the
           selected block's own controls (QA-sweep batch 2, finding #6). */}
@@ -870,14 +929,17 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
       {/* Wrap toggle - Row mode only; Stack is always nowrap */}
       {zoneLayout.mode === "row" && (
         <div className="inspector-field">
-          <label className="inspector-field-label">Wrap</label>
-          <div className="inspector-toggle-group">
+          <label className="inspector-field-label" id={`wrap-${zone}`}>Wrap</label>
+          <div className="inspector-toggle-group" role="radiogroup" aria-labelledby={`wrap-${zone}`}>
             {([
-              [false, "Nowrap"],
+              [false, "No wrap"],
               [true, "Wrap"],
             ] as const).map(([v, lbl]) => (
               <button
                 key={lbl}
+                type="button"
+                role="radio"
+                aria-checked={(zoneLayout.wrap ?? true) === v}
                 className={`inspector-toggle-btn${(zoneLayout.wrap ?? true) === v ? " active" : ""}`}
                 onClick={() => setZoneLayout(zone, { wrap: v })}
               >
@@ -1010,11 +1072,14 @@ function ZoneLayoutSection({ zone, leaf = false }: { zone: ZoneId; leaf?: boolea
 
       {/* Align - align-items on the cross axis */}
       <div className="inspector-field">
-        <label className="inspector-field-label">Align</label>
-        <div className="inspector-toggle-group">
+        <label id={`zalign-${zone}`} className="inspector-field-label">Align</label>
+        <div className="inspector-toggle-group" role="radiogroup" aria-labelledby={`zalign-${zone}`}>
           {(["start", "center", "end", "stretch"] as const).map((a) => (
             <button
               key={a}
+              type="button"
+              role="radio"
+              aria-checked={(zoneLayout.align ?? "stretch") === a}
               className={`inspector-toggle-btn${(zoneLayout.align ?? "stretch") === a ? " active" : ""}`}
               onClick={() => setZoneLayout(zone, { align: a })}
             >
@@ -1182,13 +1247,13 @@ function BlockAccentSection({
   const current = block.colorOverrides?.[accentKey];
 
   return (
-    <InspectorSection id={`accent-${block.id}`} title="Accent" defaultOpen={Boolean(current)}>
+    <InspectorSection id="accent" title="Accent" defaultOpen={Boolean(current)}>
       <div className="color-row">
         <span className="color-label">{current ? "Override" : "Inherits global"}</span>
         {current && (
           <button
             type="button"
-            className="settings-reset"
+            className="inspector-text-btn"
             onClick={() => resetBlockColorOverride(zone, block.id, accentKey)}
             title="Reset to global accent"
           >
@@ -1783,7 +1848,7 @@ function ChartColoursSection({ block }: { block: { id: string; type: string; pro
     <InspectorSection id="chart-colours" title="Colours">
       <div className="inspector-field">
         <label className="inspector-field-label">
-          {designSystem.toUpperCase()} palette
+          Palette
           {activeColor && (
             <button
               type="button"
@@ -1817,7 +1882,7 @@ function ChartColoursSection({ block }: { block: { id: string; type: string; pro
       </div>
       <div className="inspector-field">
         <label className="inspector-field-label" htmlFor={`chart-hex-${block.id}`}>
-          Custom hex
+          Custom colour
         </label>
         <div className="inspector-chart-hex-row">
           <input
