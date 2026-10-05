@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { useBuilder, type DesignSystem } from "@/store/useBuilder";
 import { BUILDER_TEMPLATES, type BuilderTemplate } from "@/lib/builderTemplates";
 import { RealComponentRenderer } from "@/components/ui-kit/RealComponentRenderer";
@@ -72,7 +72,12 @@ export function PanelConfigDialog({ system, blockId, launcher }: { system: Desig
   const dataset = useCanvasDataset();
   const [tab, setTab] = useState<ConfigTab>("columns");
   const [filter, setFilter] = useState("");
-  const [tones] = useState(() => tonesFrom(launcher.current));
+  /* The launcher is drawn in the same commit as the dialog: read its colours once it is there. */
+  const [tones, setTones] = useState<React.CSSProperties>({});
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read from the DOM after commit
+    setTones(tonesFrom(launcher.current));
+  }, [launcher]);
 
   const binding = block?.props.binding as DataBinding | undefined;
   const table = dataset && binding ? tableOf(dataset, binding.table) : undefined;

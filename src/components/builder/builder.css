@@ -11377,7 +11377,7 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg .dh-cfg-empty-hint { color: color-mix(in srgb, currentColor 72%, transparent); }
 .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-display { display: grid; gap: var(--dh-kit-gap); max-width: var(--dh-cfg-display-w); }
 .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg .dh-cfg-note { margin: var(--dh-kit-gap-tight) 0 0; font-size: var(--dh-cfg-small); line-height: 1.4; color: color-mix(in srgb, currentColor 72%, transparent); }
-.dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--dh-cfg-pad); flex-wrap: wrap; width: 100%; }
+.dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--dh-cfg-pad); flex-wrap: nowrap; width: 100%; }
 .preview-uoaui.a-app.dh-kit-scope .dh-cfg-dialog.a-dialog .dh-cfg-footer { flex: none; margin-top: var(--dh-kit-gap); padding-top: var(--dh-cfg-pad-wide); border-top: var(--bc-hairline) solid var(--dh-cfg-line); }
 .dh-cfg-salt .saltDialogActions, .dh-cfg-m3 .MuiDialogActions-root, .dh-cfg-fluent .fui-DialogActions { border-top: var(--bc-hairline) solid var(--dh-cfg-line); padding-top: var(--dh-cfg-pad-wide); }
 .dh-cfg-fluent .fui-DialogActions { grid-column: 1 / -1; display: block; }
@@ -11386,7 +11386,7 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-cfg-m3 .dh-cfg-paper { font-family: var(--dh-cfg-font, inherit); }
 /* Carbon: the tab panel's own padding is the gap under the tabs. */
 .dh-kit-scope .dh-cfg-carbon .cds--tab-content.dh-cfg-tabpanel { padding: var(--dh-cfg-gap) 0 0; }
-.dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-reset button { text-transform: uppercase; letter-spacing: 0.04em; }
+.dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-reset button { text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
 .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-footer-end { display: inline-flex; align-items: center; gap: var(--dh-cfg-pad-wide); margin-inline-start: auto; }
 .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-applied { font-size: var(--dh-cfg-small); color: color-mix(in srgb, currentColor 72%, transparent); }
 /* Carbon's footer lays out two half-width buttons: here it is a row. */
@@ -11406,10 +11406,14 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-cfg-input-icon > svg { position: absolute; inset-inline-start: var(--dh-cfg-pad-wide); top: 50%; transform: translateY(-50%); width: var(--dh-cfg-icon); height: var(--dh-cfg-icon); pointer-events: none; }
 .preview-uoaui.a-app.dh-kit-scope .dh-cfg-input-icon > .a-input { padding-inline-start: calc(var(--dh-cfg-pad-wide) * 2 + var(--dh-cfg-icon)); width: 100%; box-sizing: border-box; }
 .preview-uoaui.a-app.dh-kit-scope .dh-cfg-dialog select.a-input { appearance: auto; }
+/* uoaui's dialog text is its secondary grey: the canvas's own text colour, as the FX dialogs. */
+.preview-uoaui.a-app.dh-kit-scope .dh-cfg-dialog.a-dialog { color: var(--dh-kit-fg, inherit); }
 .preview-uoaui.a-app.dh-kit-scope .dh-cfg-dialog .a-btn.dh-cfg-icon-btn { min-width: var(--dh-cfg-row); width: var(--dh-cfg-row); height: var(--dh-cfg-row); padding: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .preview-uoaui.a-app.dh-kit-scope .dh-cfg-dialog .dh-cfg-uoaui-toggle .dh-cfg-toggle-label { font-size: var(--dh-cfg-small); font-weight: 500; }
+.dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-applied { white-space: nowrap; }
 @media (max-width: 40rem) {
-  .dh-cfg-panes { grid-template-columns: minmax(0, 1fr); }
+  .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-panes { grid-template-columns: minmax(0, 1fr); }
+  .dh-cfg-dialog.dh-cfg-dialog.dh-cfg-dialog .dh-cfg-footer { flex-wrap: wrap; }
 }
 
 /* ── Data grid (SimulatedDataGrid.tsx): master-grid row selection ── */

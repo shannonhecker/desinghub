@@ -719,7 +719,7 @@ function UoauiConfig({ mode, density, model }: Omit<Props, "system">) {
     <div className="preview-uoaui a-app dh-kit-scope">
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="a-dialog-backdrop dh-kit-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) model.onClose(); }}>
-        <div ref={panel} tabIndex={-1} className="a-dialog dh-kit-dialog dh-cfg-dialog dh-cfg-uoaui" role="dialog" aria-modal="true" aria-labelledby="dh-cfg-title-uoaui" aria-describedby="dh-cfg-desc">
+        <div ref={panel} tabIndex={-1} className="a-dialog dh-kit-dialog dh-cfg-dialog dh-cfg-uoaui" role="dialog" aria-modal="true" aria-labelledby="dh-cfg-title-uoaui" aria-describedby="dh-cfg-desc" style={model.tones}>
           <div className="dh-cfg-title-row">
             <h2 id="dh-cfg-title-uoaui" className="dh-kit-title">Configuration</h2>
             <button type="button" className="a-btn a-btn-ghost dh-cfg-icon-btn" aria-label="Close configuration" onClick={model.onClose}>{m3Icon("close")}</button>
