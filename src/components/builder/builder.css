@@ -8693,28 +8693,38 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .lib-search {
   position: relative;
-  margin: 0 0 12px;
+  margin: 0 0 var(--bc-gap-md);
 }
-/* Sticky search — pins to the top edge of the scrolling .lib-body
-   once the user scrolls past the inspector/templates sections above
-   it. Backdrop-blur + tinted surface so tiles scroll under it
-   legibly. The negative top offset cancels .lib-body's top padding
-   so the search sits flush against the panel top. */
+/* Sticky search: pins to the top edge of the scrolling .lib-body once the
+   user scrolls past the Templates row. It sits on the panel ground (no
+   tinted band); a hairline appears only while it is stuck, i.e. while
+   content scrolls under it (scroll-state query; browsers without it simply
+   show no hairline). The negative top offset cancels .lib-body's padding. */
 .lib-search-sticky {
   position: sticky;
-  top: -18px;
+  top: calc(-1 * var(--bc-panel-inset));
   z-index: 4;
-  margin: -18px -18px 12px;
-  padding: 12px 18px;
-  background: var(--b-bg2, rgba(20, 20, 30, 0.82));
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
+  margin: calc(-1 * var(--bc-panel-inset)) calc(-1 * var(--bc-panel-inset)) var(--bc-gap-md);
+  padding: var(--bc-gap-sm) var(--bc-panel-inset);
+  background: var(--b-bg);
+  container-type: scroll-state;
 }
-.builder-light .lib-search-sticky {
-  background: rgba(255, 255, 255, 0.88);
-  border-bottom-color: rgba(0, 0, 0, 0.06);
+/* The hairline under the stuck search, drawn edge to edge. */
+.lib-search-row::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--bc-panel-inset));
+  right: calc(-1 * var(--bc-panel-inset));
+  bottom: calc(-1 * var(--bc-gap-sm));
+  height: var(--bc-hairline);
+  background: var(--insp-hairline);
+  opacity: 0;
+  pointer-events: none;
 }
-/* Visually-hidden label — accessible name for the search input
+@container scroll-state(stuck: top) {
+  .lib-search-row::after { opacity: 1; }
+}
+/* Visually-hidden label: accessible name for the search input
    without a visible duplicate. (.sr-only/.bc-sr-only exist elsewhere
    but aren't scoped to this CSS file; define a local equivalent.) */
 .dh-visually-hidden {
@@ -8724,174 +8734,203 @@ th[class*="-th"] > span { vertical-align: middle; }
   clip-path: inset(50%);
   overflow: hidden;
 }
-/* Inner field wrapper — the icon + clear button position relative to
-   THIS box (which is the input's footprint), not the padded sticky
-   band, so the magnifier sits inside the input instead of floating in
-   the band's left padding. */
+/* The search row: the field takes the width, Collapse / Expand all is a
+   28px icon button at its end (hidden while searching). */
+.lib-search-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--insp-gap-row);
+}
+/* Inner field wrapper: the icon + clear button position relative to the
+   input's own footprint. */
 .lib-search-field {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .lib-search-icon {
   position: absolute;
-  left: 9px;
+  left: var(--insp-field-pad-x);
   top: 50%;
   transform: translateY(-50%);
-  font-size: 16px !important;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.4));
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
   pointer-events: none;
 }
+/* The inspector's text field: tonal fill, no border, focus ring. */
 .lib-search-input {
+  box-sizing: border-box;
   width: 100%;
-  padding: 7px 30px 7px 32px;
-  border-radius: 8px;
-  border: 1px solid var(--b-border2, rgba(255, 255, 255, 0.08));
-  background: var(--b-bg2, rgba(255, 255, 255, 0.03));
-  color: var(--b-fg);
+  height: var(--insp-control-h);
+  padding: 0 calc(var(--insp-control-h-sm) + var(--bc-gap-xs)) 0 calc(var(--insp-field-pad-x) + var(--insp-caret) + var(--insp-field-pad-x-sm));
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-field-fg);
+  font: var(--insp-field-type);
   font-family: inherit;
-  font-size: 12px;
-  transition: border-color 0.15s, background 0.15s;
-}
-.lib-search-input:focus {
   outline: none;
-  border-color: var(--b-accent);
-  background: var(--b-accent-glow);
+  transition: background var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease);
 }
-.lib-search-input::placeholder { color: var(--b-fg3); }
-/* Hide the native type=search clear control — we render our own
+.lib-search-input:hover { background: var(--insp-field-bg-hover); }
+.lib-search-input:focus {
+  background: var(--insp-field-bg-hover);
+  box-shadow: 0 0 0 var(--insp-focus-w) var(--insp-focus);
+}
+.lib-search-input::placeholder { color: var(--insp-placeholder-fg); }
+/* Hide the native type=search clear control: we render our own
    .lib-search-clear, and the browser default doubles up / mis-aligns. */
 .lib-search-input::-webkit-search-cancel-button { display: none; }
 .lib-search-clear {
   position: absolute;
-  right: 6px;
+  right: var(--insp-seg-gap);
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: var(--insp-control-h-sm);
+  height: var(--insp-control-h-sm);
   border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--b-fg);
+  border-radius: var(--insp-radius);
+  background: transparent;
+  color: var(--insp-label-fg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-family: inherit;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
-.lib-search-clear:hover { background: rgba(255, 255, 255, 0.15); }
-.builder-light .lib-search-clear { background: rgba(0, 0, 0, 0.06); }
-.builder-light .lib-search-clear:hover { background: rgba(0, 0, 0, 0.12); }
+.lib-search-clear:hover { background: var(--insp-field-bg-hover); color: var(--insp-title-fg); }
+.lib-search-clear:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: calc(-1 * var(--insp-focus-w));
+}
 
-/* Row under the search input holding the Collapse-all / Expand-all
-   text-button (right-aligned, low-emphasis). */
-/* Hierarchy pass: the collapse/expand-all control is the fastest cure for a
-   tile wall, so it leads the category list (left-aligned) with a real
-   affordance + icon instead of being the faintest right-tucked text. */
-.lib-search-row {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 10px;
-}
+/* Collapse all / Expand all: a ghost icon button at the end of the row. */
 .lib-collapse-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--b-fg);
+  justify-content: center;
+  flex: none;
+  width: var(--insp-icon-btn);
+  height: var(--insp-icon-btn);
+  padding: 0;
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: transparent;
+  color: var(--insp-label-fg);
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  padding: 5px 10px;
-  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.12s, background 0.12s, border-color 0.12s;
+  transition: color var(--bc-duration-fast) var(--bc-ease), background var(--bc-duration-fast) var(--bc-ease);
 }
 .lib-collapse-icon {
-  font-size: 16px;
+  font-size: var(--insp-caret);
   line-height: 1;
 }
-.builder-light .lib-collapse-toggle {
-  border-color: rgba(0, 0, 0, 0.08);
-  background: rgba(0, 0, 0, 0.02);
-}
 .lib-collapse-toggle:hover {
-  color: var(--b-accent);
-  background: var(--b-accent-glow);
-  border-color: color-mix(in srgb, var(--b-accent) 30%, transparent);
+  color: var(--insp-title-fg);
+  background: var(--insp-field-bg-hover);
 }
 .lib-collapse-toggle:focus-visible {
-  outline: 2px solid var(--bc-accent-ring);
-  outline-offset: 2px;
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
 }
 
-/* Search result count — was inline-styled; now a class so it carries
-   role=status / aria-live for screen-reader announcement. */
+/* Quiet tonal pill: search result count, zone / category / template counts. */
 .lib-search-count {
   align-self: flex-start;
-  margin: 0 0 8px 2px;
-  font-size: 10px;
-  color: var(--b-fg3);
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--b-accent-glow);
-  border: 1px solid rgba(180, 144, 245, 0.25);
-}
-.builder-light .lib-search-count {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
+  margin: 0 0 var(--bc-gap-sm);
+  font: var(--insp-label-type);
+  font-variant-numeric: tabular-nums;
+  color: var(--insp-label-fg);
+  padding: 0 var(--insp-field-pad-x-sm);
+  border-radius: var(--bc-radius-pill);
+  background: var(--lib-pill-bg);
 }
 
+/* Empty search: a small centred state in helper style with a ghost
+   "Clear search" button. */
 .lib-empty {
-  padding: 24px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bc-gap-sm);
+  padding: var(--bc-gap-lg) 0;
   text-align: center;
-  font-size: 12px;
-  color: var(--b-fg3);
-  font-style: italic;
+}
+.lib-empty-text {
+  margin: 0;
+  font: var(--insp-label-type);
+  line-height: var(--insp-copy-leading);
+  color: var(--insp-label-fg);
+  overflow-wrap: anywhere;
+}
+.lib-empty-clear {
+  display: inline-flex;
+  align-items: center;
+  height: var(--insp-icon-btn);
+  padding: 0 var(--insp-field-pad-x);
+  border: 0;
+  border-radius: var(--insp-radius);
+  background: var(--insp-field-bg);
+  color: var(--insp-title-fg);
+  font: var(--insp-field-type);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
+}
+.lib-empty-clear:hover { background: var(--insp-field-bg-hover); }
+.lib-empty-clear:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
 }
 
 .lib-zone-group {
-  margin-bottom: 22px;
+  margin-bottom: var(--insp-gap-section);
 }
+/* Zone title (Body, Recently used): the inspector's section-title style,
+   sentence case, not letter-spaced capitals. */
 .lib-zone-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 2px;
-  margin-bottom: 2px;
+  gap: var(--bc-gap-sm);
+  min-height: var(--insp-control-h);
+  padding: 0;
+  margin: 0;
 }
 .lib-zone-icon {
-  font-size: 14px !important;
-  color: var(--b-accent);
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
 }
 .lib-zone-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--b-fg2);
+  font: var(--insp-section-type);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--insp-title-fg);
   flex: 1;
 }
-.lib-zone-count {
-  font-size: 10px;
-  color: var(--b-fg3);
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--b-accent-glow);
-  border: 1px solid rgba(180, 144, 245, 0.25);
+.lib-zone-count,
+.lib-category-count,
+.lib-templates-count {
+  font: var(--insp-label-type);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--insp-label-fg);
+  padding: 0 var(--insp-field-pad-x-sm);
+  border: 0;
+  border-radius: var(--bc-radius-pill);
+  background: var(--lib-pill-bg);
 }
-.builder-light .lib-zone-count {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-}
+/* Helper line under a title: the inspector's scope / hint style. */
 .lib-zone-hint {
-  font-size: 10px;
-  color: var(--b-fg2);
-  padding: 0 2px;
-  margin-bottom: 6px;
-  letter-spacing: 0.01em;
+  margin: 0 0 var(--bc-gap-sm);
+  padding: 0;
+  font: var(--insp-label-type);
+  line-height: var(--insp-copy-leading);
+  letter-spacing: 0;
+  color: var(--insp-label-fg);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -9076,80 +9115,58 @@ th[class*="-th"] > span { vertical-align: middle; }
 .lib-category {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  border-top: 1px solid var(--b-border2, rgba(255, 255, 255, 0.06));
-  padding-top: 8px;
+  gap: 0;
+  margin-top: 0;
+  border-top: var(--bc-hairline) solid var(--insp-hairline);
+  padding-top: 0;
 }
 .lib-category:first-of-type {
   border-top: 0;
-  padding-top: 0;
-  margin-top: 4px;
 }
+/* Category row: the inspector's section header (same height, inset, type
+   and caret), on the opaque panel ground so it can stick under the search
+   without tiles bleeding through. Icon, label, count pill, caret. */
 .lib-category-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bc-gap-sm);
   width: 100%;
-  padding: 6px 4px;
-  /* Sticky under the search band (which pins at the top). Must be
-     OPAQUE so scrolling tiles never bleed through the header. */
+  min-height: var(--insp-head-h);
+  padding: 0;
+  /* Sticky right under the sticky search (control + its vertical padding,
+     less the inset that the search's negative offset cancels). */
   position: sticky;
-  top: 44px;
+  top: calc(var(--insp-control-h) + 2 * var(--bc-gap-sm) - var(--bc-panel-inset));
   z-index: 2;
-  background: var(--b-bg2, rgba(20, 20, 30, 0.92));
+  background: var(--b-bg);
   border: 0;
-  border-radius: var(--dh-curve-sm, 6px);
-  color: var(--b-fg2);
+  border-radius: var(--insp-radius);
+  color: var(--insp-title-fg);
+  font: var(--insp-section-type);
   font-family: inherit;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: color var(--bc-duration-fast) var(--bc-ease);
   text-align: left;
 }
-/* Light chrome: the lavender accent sits under 3:1 on the light panel, so
-   the zone and category icons take the muted foreground (5 Oct audit). */
-.builder-light .lib-zone-icon,
-.builder-light .lib-category-icon { color: var(--bc-fg-muted); }
-.builder-light .lib-category-head {
-  background: rgba(255, 255, 255, 0.92);
-}
-.lib-category-head:hover {
-  color: var(--dh-fg, rgba(255, 255, 255, 0.92));
-}
+.lib-category-head:hover .lib-category-caret,
+.lib-category-head:hover .lib-category-icon { color: var(--insp-title-fg); }
 .lib-category-head:focus-visible {
-  outline: 2px solid var(--bc-accent-ring);
-  outline-offset: 2px;
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
 }
 .lib-category-icon {
-  font-size: 14px !important;
-  color: var(--b-accent);
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
   flex-shrink: 0;
 }
 .lib-category-label {
   flex: 1;
 }
-.lib-category-count {
-  font-size: 10px;
-  color: var(--b-fg3);
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--b-accent-glow);
-  border: 1px solid rgba(180, 144, 245, 0.25);
-  font-weight: 500;
-  letter-spacing: 0;
-}
-.builder-light .lib-category-count {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: rgba(0, 0, 0, 0.6);
-}
 .lib-category-caret {
-  font-size: 16px !important;
-  color: var(--b-fg3);
-  transition: transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
+  transition: transform var(--bc-duration-medium) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
   transform: rotate(0deg);
   flex-shrink: 0;
 }
@@ -9157,7 +9174,7 @@ th[class*="-th"] > span { vertical-align: middle; }
   transform: rotate(90deg);
 }
 .lib-category-panel {
-  padding: 6px 0 12px;
+  padding: var(--bc-gap-xs) 0 var(--insp-gap-section);
 }
 
 /* Inline editable text on canvas */
@@ -9775,10 +9792,12 @@ th[class*="-th"] > span { vertical-align: middle; }
    empty state. Expanded: 2x2 grid of mini template cards.
    ══════════════════════════════════════════════════════════ */
 .lib-templates {
-  margin-bottom: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 10px;
+  /* The sticky search below pulls itself up by the inset (and adds its own
+     small padding), so this margin nets the inspector's field gap. */
+  margin-bottom: calc(var(--bc-panel-inset) + var(--bc-gap-xs));
+  border: 0;
+  background: var(--insp-field-bg);
+  border-radius: var(--insp-radius);
   overflow: hidden;
   /* Parent .lib-body is a flex-column; ensure this element contributes
      its own content height and doesn't get flex-shrunk to 0 when the
@@ -9786,141 +9805,121 @@ th[class*="-th"] > span { vertical-align: middle; }
   flex-shrink: 0;
   height: auto;
 }
-.builder-light .lib-templates {
-  border-color: rgba(0, 0, 0, 0.06);
-  background: rgba(0, 0, 0, 0.025);
-}
 .lib-templates-head {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--bc-gap-sm);
   width: 100%;
-  padding: 10px 12px;
+  min-height: var(--insp-head-h);
+  padding: 0 var(--insp-field-pad-x);
   border: 0;
+  border-radius: var(--insp-radius);
   background: transparent;
-  color: inherit;
+  color: var(--insp-title-fg);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: background 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease);
 }
-.lib-templates-head:hover { background: rgba(255, 255, 255, 0.04); }
-.builder-light .lib-templates-head:hover { background: rgba(0, 0, 0, 0.03); }
+.lib-templates-head:hover { background: var(--insp-field-bg); }
+.lib-templates-head:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: calc(-1 * var(--insp-focus-w));
+}
 .lib-templates-caret {
-  font-size: 16px !important;
-  color: var(--b-fg3, rgba(255, 255, 255, 0.5));
-  transition: transform 0.2s ease;
+  font-size: var(--insp-caret) !important;
+  color: var(--insp-label-fg);
+  transition: transform var(--bc-duration-medium) var(--bc-ease);
 }
 .lib-templates-caret.is-open { transform: rotate(90deg); }
 .lib-templates-label {
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--b-fg2);
-}
-.lib-templates-count {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(126, 107, 196, 0.22);
-  color: var(--b-fg);
-  font-weight: 600;
+  font: var(--insp-section-type);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--insp-title-fg);
 }
 .lib-templates-hint {
   flex: 1;
-  font-size: 10.5px;
-  color: var(--b-fg3);
-  font-style: italic;
+  min-width: 0;
+  font: var(--insp-label-type);
+  color: var(--insp-label-fg);
   text-align: right;
   margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .lib-templates-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 6px 10px 12px;
+  gap: var(--bc-gap-sm);
+  padding: var(--bc-gap-xs) var(--insp-field-pad-x) var(--insp-field-pad-x);
 }
+/* Template card: a tonal card like the tiles, the thumbnail a well. */
 .lib-template-card {
   display: flex;
   flex-direction: column;
   padding: 0;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
+  background: var(--lib-card-bg);
+  border: 0;
+  border-radius: var(--insp-radius);
   overflow: hidden;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
   color: inherit;
-  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease), transform var(--bc-duration-fast) var(--bc-ease);
 }
 .lib-template-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(126, 107, 196, 0.5);
-  transform: translateY(-1px);
+  background: var(--lib-card-bg-hover);
+  box-shadow: var(--lib-card-lift);
+  transform: translateY(calc(-1 * var(--bc-hairline)));
+}
+.lib-template-card:focus-visible {
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
 }
 .lib-template-card.is-active {
-  border-color: rgba(126, 107, 196, 0.65);
-  background: rgba(126, 107, 196, 0.1);
+  background: var(--lib-card-on);
 }
 .lib-template-thumb {
   aspect-ratio: 220 / 130;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.55);
+  background: var(--lib-card-well);
+  border-bottom: 0;
+  color: var(--insp-label-fg);
   padding: 0;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
 .lib-template-card:hover .lib-template-thumb {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.75);
+  background: var(--lib-card-well-hover);
+  color: var(--insp-title-fg);
 }
 .lib-template-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px 8px;
-  font-size: 10.5px;
+  gap: var(--insp-field-pad-x-sm);
+  padding: var(--insp-field-pad-x-sm) var(--bc-gap-sm) var(--bc-gap-sm);
+  font: var(--insp-label-type);
   font-weight: 600;
-  color: var(--b-fg2);
+  color: var(--insp-title-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .lib-template-active-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--insp-field-pad-x-sm);
+  height: var(--insp-field-pad-x-sm);
   border-radius: 50%;
-  background: rgba(126, 107, 196, 0.9);
+  background: var(--insp-focus);
   flex-shrink: 0;
   margin-left: auto;
-}
-/* Light mode */
-.builder-light .lib-template-card {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(0, 0, 0, 0.06);
-}
-.builder-light .lib-template-card:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(126, 107, 196, 0.5);
-}
-.builder-light .lib-template-card.is-active {
-  background: rgba(126, 107, 196, 0.08);
-  border-color: rgba(126, 107, 196, 0.5);
-}
-.builder-light .lib-template-thumb {
-  background: rgba(0, 0, 0, 0.03);
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.55);
 }
 
 /* ══════════════════════════════════════════════════════════
    Visual-grid component tiles (Phase E.2)
-   Replaces the old .lib-blueprint list rows with a 2-col grid
-   of tiles. Each tile shows a stylized MiniPreview silhouette
-   on top + component label below. Keeps the drag behaviour
-   identical to the list-row variant but trades density for
-   recognisability at a glance.
+   A 2-col grid of tonal cards: a stylized MiniPreview in a recessed well
+   on top, the component label below. No ring at rest; hover is one tone
+   lighter with a soft lift; the focus ring is the one outline.
    ══════════════════════════════════════════════════════════ */
 .lib-tile-grid {
   display: grid;
@@ -9930,28 +9929,26 @@ th[class*="-th"] > span { vertical-align: middle; }
 .lib-tile {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
+  gap: var(--insp-gap-label);
+  padding: var(--bc-gap-sm) var(--bc-gap-sm) var(--insp-field-pad-x);
+  background: var(--lib-card-bg);
+  border: 0;
+  border-radius: var(--bc-radius-md);
   cursor: grab;
   user-select: none;
-  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: background var(--bc-duration-fast) var(--bc-ease), box-shadow var(--bc-duration-fast) var(--bc-ease), transform var(--bc-duration-fast) var(--bc-ease);
+  box-shadow: none;
   min-width: 0;
 }
 .lib-tile:hover {
-  background: var(--b-accent-glow);
-  border-color: var(--b-accent);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transform: translateY(-1px);
+  background: var(--lib-card-bg-hover);
+  box-shadow: var(--lib-card-lift);
+  transform: translateY(calc(-1 * var(--bc-hairline)));
 }
 .lib-tile:focus-visible {
-  outline: 2px solid var(--bc-accent-ring);
-  outline-offset: 2px;
-  background: var(--b-accent-glow);
-  border-color: var(--b-accent);
+  outline: var(--insp-focus-w) solid var(--insp-focus);
+  outline-offset: var(--insp-focus-offset);
+  background: var(--lib-card-bg-hover);
 }
 .lib-tile:active {
   cursor: grabbing;
@@ -9962,46 +9959,34 @@ th[class*="-th"] > span { vertical-align: middle; }
 }
 .lib-tile-preview {
   aspect-ratio: 8 / 5;
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 6px;
-  padding: 6px;
+  background: var(--lib-card-well);
+  border-radius: var(--insp-radius);
+  padding: var(--insp-field-pad-x-sm);
   color: rgba(255, 255, 255, 0.7);
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--bc-duration-fast) var(--bc-ease), color var(--bc-duration-fast) var(--bc-ease);
 }
 .lib-tile:hover .lib-tile-preview {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--lib-card-well-hover);
   color: rgba(255, 255, 255, 0.88);
 }
 .lib-tile-label {
-  font-size: 11.5px;
+  font: var(--insp-label-type);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--insp-title-fg);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  padding: 0 2px;
+  padding: 0 var(--insp-seg-gap);
   line-height: 1.3;
 }
-/* Light mode */
-.builder-light .lib-tile {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.65);
-}
-.builder-light .lib-tile:hover {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.12);
-}
+/* Light mode: the preview art keeps its own (dark-on-light) ink. */
 .builder-light .lib-tile-preview {
-  background: rgba(0, 0, 0, 0.03);
   color: rgba(0, 0, 0, 0.7);
 }
 .builder-light .lib-tile:hover .lib-tile-preview {
-  background: rgba(0, 0, 0, 0.05);
   color: rgba(0, 0, 0, 0.9);
 }
-.builder-light .lib-tile-label { color: #1a1a2e; }
 
 /* Drag overlay ghost */
 .lib-drag-overlay {
@@ -17955,11 +17940,6 @@ button.dh-tile { appearance: none; font: inherit; font-family: var(--ds-font); c
   gap: var(--bc-gap-md);
   min-height: 0;
   overscroll-behavior: contain;
-}
-.lib-search-sticky {
-  top: calc(-1 * var(--bc-panel-inset));
-  margin: calc(-1 * var(--bc-panel-inset)) calc(-1 * var(--bc-panel-inset)) var(--bc-gap-md);
-  padding: var(--bc-gap-md) var(--bc-panel-inset);
 }
 
 /* Heading row of the individual templates: label, chips, then previous /

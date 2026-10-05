@@ -87,6 +87,65 @@ for (const mode of ["light", "dark"] as const) {
       expect(marker?.ratio ?? 0, "selected row marker").toBeGreaterThanOrEqual(3);
     });
 
+    test("the component panel in browse mode is tonal and readable; Collapse all is an icon button; an empty search clears", async ({ page }) => {
+      await openBuilder(page, mode);
+      const panel = page.locator(".component-sidebar");
+      if (!(await panel.isVisible())) await page.getByRole("button", { name: "Show component library", exact: true }).click();
+      await expect(panel.locator(".lib-search-input")).toBeVisible();
+      await panel.locator(".lib-templates-head").click();
+      await expect(panel.locator(".lib-template-card").first()).toBeVisible();
+      /* Tone, not outlines: no visible border on the Templates row, its cards,
+         the search field, the collapse button or the tiles. */
+      const outlined = await panel.evaluate((aside) => {
+        const sels = [".lib-templates", ".lib-templates-head", ".lib-template-card", ".lib-template-thumb", ".lib-search-sticky", ".lib-search-input", ".lib-collapse-toggle", ".lib-tile", ".lib-tile-preview", ".lib-category-count", ".lib-zone-count", ".lib-templates-count"];
+        const alpha = (c: string) => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return 0; const p = m[1].split(",").map(Number); return p.length > 3 ? p[3] : 1; };
+        const out: string[] = [];
+        for (const sel of sels) {
+          const els = [...aside.querySelectorAll(sel)].slice(0, 6);
+          if (els.length === 0) out.push(`${sel} missing`);
+          for (const el of els) {
+            const cs = getComputedStyle(el);
+            for (const side of ["Top", "Right", "Bottom", "Left"] as const) {
+              const w = parseFloat(cs.getPropertyValue(`border-${side.toLowerCase()}-width`));
+              const c = cs.getPropertyValue(`border-${side.toLowerCase()}-color`);
+              if (w > 0 && cs.getPropertyValue(`border-${side.toLowerCase()}-style`) !== "none" && alpha(c) >= 0.2) out.push(`${sel} border-${side} ${w}px ${c}`);
+            }
+          }
+        }
+        return out;
+      });
+      expect(outlined, "no outlined boxes in browse mode").toEqual([]);
+      for (const sel of [".lib-templates-head", ".lib-search", ".lib-zone-group", ".lib-category-head", ".lib-tile", ".lib-template-card"]) {
+        expectAllPass(await contrastOf(page, `.component-sidebar ${sel}`), `browse ${sel}`);
+      }
+      await panel.locator(".lib-templates-head").click();
+      /* Collapse all / Expand all is a 28px icon button at the end of the search row. */
+      const collapse = panel.getByRole("button", { name: "Collapse all", exact: true });
+      await expect(collapse).toBeVisible();
+      const box = await collapse.boundingBox();
+      expect(Math.round(box?.width ?? 0)).toBe(28);
+      expect(Math.round(box?.height ?? 0)).toBe(28);
+      const field = await panel.locator(".lib-search-input").boundingBox();
+      expect(Math.abs((field?.y ?? 0) - (box?.y ?? 0)), "same row as the search field").toBeLessThan(1);
+      await collapse.click();
+      await expect(panel.locator(".lib-category-head[aria-expanded='true']")).toHaveCount(0);
+      await panel.getByRole("button", { name: "Expand all", exact: true }).click();
+      await expect(panel.getByRole("button", { name: "Collapse all", exact: true })).toBeVisible();
+      await expect(panel.locator(".lib-category-head[aria-expanded='false']")).toHaveCount(0);
+      /* Empty search: a plain sentence and a Clear search button that clears
+         the field and puts focus back in it. */
+      const search = panel.getByRole("searchbox", { name: "Search component library" });
+      await search.fill("zzzz");
+      const empty = panel.locator(".lib-empty");
+      await expect(empty).toContainText("No components match");
+      expect(await empty.locator(".lib-empty-text").evaluate((el) => getComputedStyle(el).fontStyle)).toBe("normal");
+      expectAllPass(await contrastOf(page, ".component-sidebar .lib-empty"), "empty search");
+      await empty.getByRole("button", { name: "Clear search", exact: true }).click();
+      await expect(search).toHaveValue("");
+      await expect(search).toBeFocused();
+      await expect(panel.locator(".lib-tile").first()).toBeVisible();
+    });
+
     test("the other overlays are readable: toast, export menu, design system menu, canvas actions, context menu, top bar", async ({ page }) => {
       await openBuilder(page, mode);
       await page.getByRole("button", { name: "Open sessions drawer" }).click();
