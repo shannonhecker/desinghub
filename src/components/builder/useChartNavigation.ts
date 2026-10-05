@@ -300,14 +300,21 @@ export function useChartNavigation(o: Options): ChartNavigation {
         hold = setTimeout(() => {
           if (drag?.mode !== "press") return;
           drag = { mode: "inspect", id: drag.id };
+          /* Letting go after a hold is not a click on the fill under it. */
+          swallowClick = true;
+          try { el.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
           setRegion("plot");
           setStatus({ pinned: true });
           if (statusRef.current.hint) dismissHint();
           inspect(c, e);
         }, HOLD_DELAY);
       }
-      if (drag.mode !== "press") e.preventDefault();
-      try { el.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+      /* A plain press stays a click on what is under it (a fill selects its
+         venue): the pointer is captured only once a drag begins. */
+      if (drag.mode !== "press") {
+        e.preventDefault();
+        try { el.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+      }
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -334,6 +341,7 @@ export function useChartNavigation(o: Options): ChartNavigation {
         clearHold();
         drag = { ...drag, mode: "pan" };
         setRegion("grab");
+        try { el.setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
       }
       e.preventDefault();
       swallowClick = true;
@@ -433,7 +441,11 @@ export function useChartNavigation(o: Options): ChartNavigation {
       else if (region) apply({ ...FULL_VIEW });
     };
 
-    const onLeave = () => { if (!drag) setRegion(null); };
+    const onLeave = () => {
+      /* A press that slid off the plot before it became a drag is over. */
+      if (drag?.mode === "press") { clearHold(); drag = null; }
+      if (!drag) setRegion(null);
+    };
 
     el.addEventListener("pointerdown", onPointerDownReset, true);
     el.addEventListener("pointerdown", onPointerDown);
