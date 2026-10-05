@@ -84,6 +84,21 @@ describe("self-hosted fonts", () => {
     }
   });
 
+  it("declares exactly the weights next/font declared: a new weight changes how existing text is drawn", () => {
+    /* Inter 300 was added once and made uoaui's light text narrower in Edit
+       than in Present (the builder had always drawn it at 400). */
+    const weights = (family: string) => [...new Set([...css.matchAll(new RegExp(`font-family: "${family}"; font-style: normal; font-weight: (\\d+);`, "g"))].map((m) => m[1]))].sort();
+    expect(weights("Inter")).toEqual(["400", "500", "600", "700"]);
+    expect(weights("Outfit")).toEqual(["300", "400", "500", "600"]);
+    expect(weights("DM Sans")).toEqual(["300", "400", "500", "600", "700"]);
+    expect(weights("Space Grotesk")).toEqual(["300", "400", "500", "600", "700"]);
+    expect(weights("Open Sans")).toEqual(["400", "600", "700"]);
+    expect(weights("Roboto")).toEqual(["400", "500", "700"]);
+    expect(weights("IBM Plex Sans")).toEqual(["300", "400", "500", "600", "700"]);
+    expect(weights("IBM Plex Mono")).toEqual(["400", "500", "600"]);
+    expect(weights("Bricolage Grotesque")).toEqual(["500", "700", "800"]);
+  });
+
   it("the icon font blocks rather than swapping an icon's name in as a word", () => {
     const face = css.slice(css.indexOf('font-family: "Material Symbols Outlined";'));
     expect(face.slice(0, face.indexOf("}"))).toContain("font-display: block");

@@ -59,7 +59,7 @@ test("the three first-paint faces are preloaded from this origin and are the fil
 test("each design system's own typeface, and the icon font, load by the names the systems use", async ({ page }) => {
   const seen = watch(page);
   await page.goto("/ui-kit?ds=m3&c=buttons", { waitUntil: "networkidle" });
-  for (const font of ['400 16px "Open Sans"', '600 16px "Open Sans"', '500 16px "Roboto"', '400 16px "IBM Plex Sans"', '400 14px "IBM Plex Mono"', '600 16px "Inter"', '300 16px "Inter"', '500 16px "DM Sans"', '500 16px "Outfit"']) {
+  for (const font of ['400 16px "Open Sans"', '600 16px "Open Sans"', '500 16px "Roboto"', '400 16px "IBM Plex Sans"', '400 14px "IBM Plex Mono"', '600 16px "Inter"', '500 16px "DM Sans"', '500 16px "Outfit"']) {
     expect(await loaded(page, font), font).toBe(true);
   }
   expect(await loaded(page, '24px "Material Symbols Outlined"', "home")).toBe(true);
