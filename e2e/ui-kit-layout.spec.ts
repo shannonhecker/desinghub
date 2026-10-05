@@ -240,3 +240,80 @@ test("the scroll hold lets go when the visitor presses or scrolls", async ({ pag
   await page.waitForTimeout(700);
   expect(await sc.evaluate((el) => el.scrollTop)).toBeLessThanOrEqual(4);
 });
+
+/**
+ * Compare, the data table: a table that fits its tile. In a narrow tile the
+ * last column used to be cut ("Engineer" in Salt and uoaui; Carbon lost the
+ * column inside its own scroller). Every header and cell must be drawn
+ * whole inside its tile, in every system in view, light and dark, at every
+ * width the five tiles share a row.
+ */
+async function tableTiles(page: Page, list: string) {
+  return page.evaluate((sel) => {
+    const tiles = [...document.querySelectorAll<HTMLElement>(`${sel} > li`)];
+    return tiles.map((li) => {
+      const stage = li.querySelector<HTMLElement>(".kit-compare-stage")!;
+      const view = stage.getBoundingClientRect();
+      const cells = [...stage.querySelectorAll<HTMLElement>("th, td")];
+      /* What can be seen of a cell: clipped by every box between it and the tile. */
+      const cut: string[] = [];
+      for (const cell of cells) {
+        const r = cell.getBoundingClientRect();
+        let left = view.left, right = view.right;
+        for (let n = cell.parentElement; n && n !== stage.parentElement; n = n.parentElement) {
+          if (getComputedStyle(n).overflowX === "visible") continue;
+          const b = n.getBoundingClientRect();
+          left = Math.max(left, b.left + n.clientLeft);
+          right = Math.min(right, b.left + n.clientLeft + n.clientWidth * (b.width / (n.offsetWidth || b.width)));
+        }
+        if (r.left < left - 0.75 || r.right > right + 0.75) cut.push(`${(cell.textContent ?? "").trim()} (${Math.round(r.left)}-${Math.round(r.right)} in ${Math.round(left)}-${Math.round(right)})`);
+      }
+      const heads = [...stage.querySelectorAll("th")].map((th) => (th.textContent ?? "").trim());
+      /* How much smaller than life the specimen is drawn (1 is life size). */
+      const table = stage.querySelector<HTMLElement>("table");
+      const scale = table && table.offsetWidth ? table.getBoundingClientRect().width / table.offsetWidth : 1;
+      return { system: li.dataset.system ?? "", cells: cells.length, heads, cut, scrolls: stage.scrollWidth - stage.clientWidth, scale };
+    });
+  }, list);
+}
+
+for (const width of [1440, 1280, 1024] as const) {
+  test(`Compare, data table at ${width}px: every column is drawn whole in its tile, in the band and on the Compare tab`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const view of ["band", "tab"] as const) {
+      const list = view === "band" ? ".kit-compare.is-compact" : '[data-testid="compare-panels"]:not(.is-compact)';
+      await page.goto(view === "band" ? "/ui-kit?ds=salt" : "/ui-kit?ds=salt&c=table&tab=compare", { waitUntil: "networkidle" });
+      if (view === "band") await page.getByRole("group", { name: "Component to compare" }).getByRole("button", { name: "Data table" }).click();
+      await expect(page.locator(`${list}[data-concept="data-table"] > li`)).toHaveCount(5);
+      for (const mode of ["first", "other"] as const) {
+        if (mode === "other") await rail(page).getByRole("button", { name: /^Switch to (light|dark) mode$/ }).click();
+        /* The system in view draws from its page's own theme: each of the three with a table page takes a turn. */
+        for (const label of view === "band" ? ["Salt DS", "uoaui DS", "Carbon DS"] : ["Salt DS"]) {
+          await rail(page).getByRole("link", { name: label, exact: true }).click();
+          await expect(rail(page).getByRole("link", { name: label, exact: true })).toHaveAttribute("aria-current", "true");
+          await expect(page.locator(`${list} > li`)).toHaveCount(5);
+          await page.evaluate(() => document.fonts.ready);
+          /* Carbon's sheet and the other engines' styles arrive after mount. */
+          await page.waitForTimeout(900);
+          const tiles = await tableTiles(page, list);
+          const where = `${view}, ${label} in view, ${mode} mode, ${width}px`;
+          const withTable = tiles.filter((t) => t.cells > 0);
+          expect(withTable.map((t) => t.system), `${where}: the systems with a table page draw one`).toEqual(["salt", "uoaui", "carbon"]);
+          for (const tile of withTable) {
+            expect(tile.heads.length, `${where}: ${tile.system} has columns`).toBeGreaterThanOrEqual(2);
+            expect(tile.cut, `${where}: ${tile.system} cells cut off`).toEqual([]);
+            expect(tile.scrolls, `${where}: ${tile.system} tile does not scroll sideways`).toBeLessThanOrEqual(1);
+            /* Still a specimen you can read: at most a quarter smaller than life. */
+            expect(tile.scale, `${where}: ${tile.system} scale`).toBeGreaterThanOrEqual(0.75);
+            expect(tile.scale, `${where}: ${tile.system} is never drawn larger than life`).toBeLessThanOrEqual(1.01);
+          }
+          /* One scale for the row, so the systems can be compared by eye. */
+          const scales = withTable.map((t) => Math.round(t.scale * 100));
+          expect(Math.max(...scales) - Math.min(...scales), `${where}: one scale in every tile (${scales.join(", ")})`).toBeLessThanOrEqual(1);
+          /* One specimen in every system: the same columns. */
+          expect(new Set(withTable.map((t) => t.heads.map((h) => h.toLowerCase()).join("|"))).size, `${where}: the same columns in each system`).toBe(1);
+        }
+      }
+    }
+  });
+}
