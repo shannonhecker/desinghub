@@ -172,6 +172,17 @@ test.describe("panel Configuration dialog", () => {
       await dialog.getByRole("button", { name: "Close", exact: true }).click();
       await expect(page.getByRole("dialog", { name: "Configuration" })).toHaveCount(0);
       await expect(opener).toBeFocused();
+
+      /* Escape from a row of the Available tree closes the dialog too, and focus is back on Configure. */
+      await opener.click();
+      const again = page.getByRole("dialog", { name: "Configuration" });
+      await expect(again).toBeVisible();
+      const row = again.getByRole("treeitem", { name: /^Dimensions/ });
+      await row.focus();
+      await expect(row).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog", { name: "Configuration" })).toHaveCount(0);
+      await expect(opener).toBeFocused();
     });
   }
 });

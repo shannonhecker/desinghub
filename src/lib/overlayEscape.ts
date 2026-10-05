@@ -19,8 +19,9 @@ interface Entry { close: () => void }
 const stack: Entry[] = [];
 const taken = new WeakSet<Event>();
 
-/** A control with its popup open, or an element of that popup. */
-const NESTED = '[aria-expanded="true"], [role="listbox"], [role="option"]';
+/** A control with its popup open, or an element of that popup. An expanded
+ *  tree branch is not a popup: Escape in a tree closes the overlay. */
+const NESTED = '[aria-expanded="true"]:not([role="treeitem"]), [role="listbox"], [role="option"]';
 
 function onKey(e: KeyboardEvent): void {
   if (e.key !== "Escape" || stack.length === 0) return;
