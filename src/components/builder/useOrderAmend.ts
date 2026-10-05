@@ -5,7 +5,7 @@ import Highcharts from "highcharts";
 import type HighchartsReact from "highcharts-react-official";
 import { create } from "zustand";
 import { formatPrice, type ExecutionView } from "@/lib/executionModel";
-import { amendLimit, canAmend, SAMPLE_CONFIRMATION, snapPrice, stagedTicket, validateAmendment, type Side } from "@/lib/executionOrders";
+import { amendLimit, canAmend, groupSampleOrders, SAMPLE_CONFIRMATION, sampleOrderLabel, snapPrice, stagedTicket, validateAmendment, type Side } from "@/lib/executionOrders";
 import type { ReportDataset } from "@/lib/reportData/types";
 import type { DesignSystem } from "@/store/useBuilder";
 import type { ThemeVars } from "./SimulatedHighchart";
@@ -142,7 +142,8 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- reads the chart through refs
 
   /* Sample orders confirmed this session: a dashed line at each price,
-     labelled "SAMPLE BUY 1.37650" at the plot's left edge. */
+     labelled "SAMPLE BUY 1.37650" at the plot's left edge ("×3" after it
+     when three were placed there). */
   const drawPlaced = (c: Highcharts.Chart, view: ExecutionView) => {
     drawn.current.forEach((el) => el.destroy());
     drawn.current = [];
@@ -150,8 +151,8 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
     if (!v || !env.current.active) return;
     const axis = priceAxis(c);
     const top = (axis as unknown as { top: number }).top;
-    const shown = env.current.placed
-      .filter((p) => p.order === view.order.id)
+    /* One line and one label per side and price: repeats are counted. */
+    const shown = groupSampleOrders(env.current.placed.filter((p) => p.order === view.order.id))
       .map((o) => ({ o, y: axis.toPixels(o.price, false) }))
       .filter(({ y }) => Number.isFinite(y) && y >= top && y <= top + axis.len);
     /* Each label is a small tag at the plot's left edge, centred on its line
@@ -167,7 +168,7 @@ export function useOrderAmend({ chartRef, plotRef, active, dataset, vars, palett
         .attr({ stroke: tone(o.side), "stroke-width": 1, "stroke-dasharray": "2,3", zIndex: 6, class: "dh-order-placed" }).add());
     }
     shown.forEach(({ o }, i) => {
-      drawn.current.push(c.renderer.label(`SAMPLE ${o.side} ${formatPrice(o.price)}`, c.plotLeft + READOUT_GAP, ys[i] - PLACED_HEIGHT / 2)
+      drawn.current.push(c.renderer.label(sampleOrderLabel(o), c.plotLeft + READOUT_GAP, ys[i] - PLACED_HEIGHT / 2)
         .attr({ fill: backing, r: READOUT_PAD, padding: READOUT_PAD, zIndex: 7 })
         .css({ color: tone(o.side), fontSize: `${READOUT_FONT - 1}px`, fontWeight: "600" })
         .addClass("dh-order-placed-label")

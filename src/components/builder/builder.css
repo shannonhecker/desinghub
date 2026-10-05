@@ -4,6 +4,27 @@
 
 @import "./chrome-tokens.css";
 
+/* Icon ligatures. Material Symbols is a ligature font from a CDN: before it
+   arrives (or if it never does) a span draws its literal word ("compare"),
+   wider than its button and over the neighbour. Every ligature in the builder
+   keeps one square glyph box and clips, so a word can never spill. With the
+   font loaded the glyph is exactly this box, so nothing moves. `clip` (not
+   `hidden`) leaves the span's baseline where it was; `hidden` is the fallback
+   for browsers without it. Declared first and at one class of specificity so
+   any rule below that sizes an icon still wins. A rule that gives an icon a
+   taller line must also free the height (see .composer-attach-error). */
+:where(.builder-shell) .material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  overflow: clip;
+  /* The square is the glyph's: padding on an icon (a badge) goes around it. */
+  box-sizing: content-box;
+}
+
 /* --------------------------------------------------------------------------
    Builder chrome polish
    Tone down ambient blobs and align app chrome with the calmer uoaui landing
@@ -4040,11 +4061,19 @@
   padding: var(--bc-gap-xxs) 0;
   color: var(--bc-attach-error-fg);
   font-size: var(--bc-attach-font-sm);
-  line-height: 1.45;
+  /* One line of the sentence, as a length: the icon beside it uses the same. */
+  --attach-error-line: calc(var(--bc-attach-font-sm) * 1.45);
+  line-height: var(--attach-error-line);
 }
 .composer-attach-error .material-symbols-outlined {
   font-size: var(--bc-attach-icon-sm);
-  line-height: inherit;
+  /* The icon's box is one line of the sentence tall, so the glyph is centred
+     on the first row. Not the 1em square of the containment rule, which
+     under a taller line cut the glyph's foot; and not the inherited ratio,
+     which made a line of the icon's own larger size and sat it low. Still
+     1em wide, still clipped. */
+  line-height: var(--attach-error-line);
+  height: var(--attach-error-line);
   flex-shrink: 0;
 }
 .composer-attach-dismiss {
@@ -5449,7 +5478,10 @@
   font-size: 12px;
   font-weight: 600;
 }
-.present-bar-ds-caret { color: var(--bc-fg-muted); }
+.present-bar-ds-caret { display: inline-flex; align-items: center; color: var(--bc-fg-muted); }
+/* Icons in the bar are inline SVG: nothing here waits for an icon font. */
+.present-bar-btn svg { flex: none; }
+.present-bar-btn-lead { margin-right: var(--bc-gap-xs); }
 /* Opaque menu surface — NO backdrop-filter (lightningcss can strip it,
    leaving the busy canvas bleeding through the menu). --bc-bg-raised is
    ~opaque and theme-aware, so no separate light override is needed.
@@ -5493,9 +5525,10 @@
 }
 .present-bar-ds-option-selected { color: var(--bc-accent); }
 .present-bar-ds-check {
+  display: inline-flex;
   width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  font-size: 16px;
   color: var(--bc-accent);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -8032,6 +8065,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   --ds-fg-secondary: #9CA3AF;
   --ds-fg-tertiary: var(--ds-fg-secondary);
   --ds-surface: rgba(255,255,255,0.04);
+  /* The glass surface as it reads on the background, as one opaque colour:
+     for ink on an inverted fill and for anything that must hide what scrolls
+     under it. The 4% is --ds-surface's alpha. */
+  --ds-surface-solid: color-mix(in srgb, white 4%, var(--ds-bg));
   --ds-surface-hover: rgba(255,255,255,0.08);
   --ds-border: rgba(255,255,255,0.07);
   /* Quieter separator for card outlines and row rules. */
@@ -8116,7 +8153,10 @@ th[class*="-th"] > span { vertical-align: middle; }
    is-dragging is the drag state. Both keep the final scale and
    skip the in-animation replay. */
 .canvas-block.is-dragging,
-.canvas-block.is-sorting-peer {
+.canvas-block.is-sorting-peer,
+/* ...and once a block has entered it never enters again: those two classes
+   come off at the drop, which would otherwise start the animation afresh. */
+.canvas-block.has-entered {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -10964,12 +11004,15 @@ th[class*="-th"] > span { vertical-align: middle; }
 [data-uniform-structure] .bp-dashboard {
   --dh-canvas: var(--ds-bg);
   --dh-card: var(--ds-surface);
+  /* The card as an opaque colour (uoaui's dark card is glass). */
+  --dh-card-solid: var(--ds-surface-solid, var(--ds-surface));
   --bc-gutter: var(--dh-report-gutter);
 }
 [data-uniform-structure] .builder-light .bp-dashboard,
 [data-uniform-structure] .builder-light.bp-dashboard {
   --dh-canvas: color-mix(in srgb, var(--ds-fg) 6%, var(--ds-bg));
   --dh-card: var(--ds-bg);
+  --dh-card-solid: var(--ds-bg);
 }
 [data-uniform-structure] .bp-main,
 [data-uniform-structure] .bp-main > .preview-canvas-root {
@@ -11290,8 +11333,9 @@ th[class*="-th"] > span { vertical-align: middle; }
   cursor: pointer;
 }
 .dh-exec-range:hover { color: var(--ds-fg); background: color-mix(in srgb, var(--ds-fg) 8%, transparent); }
-/* The chosen range is an inverted pill. */
-.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card, var(--ds-bg)); }
+/* The chosen range is an inverted pill: the label is the card's colour, as
+   an opaque colour (a glass card would leave the label the pill's own tone). */
+.dh-exec-range.is-active { background: var(--ds-fg); color: var(--dh-card-solid, var(--ds-bg)); }
 
 /* ── FX sample orders (PR D): the quote's sides and the header launchers,
    the targets over the price tags, the toast. The dialogs and menus are
@@ -11366,6 +11410,16 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
   transition: opacity var(--bc-duration-medium) ease, transform var(--bc-duration-medium) ease;
 }
 .dh-order-toast.is-shown { opacity: 1; transform: none; }
+/* On a phone-width chart a centred toast reaches the price scale and sat on
+   the tag at its top (LMT). There it starts at the plot's left edge and stops
+   short of the scale, the sentence taking a second line: no tag is covered,
+   wherever the panel is scrolled. */
+.dh-exec[data-narrow] .dh-order-toast {
+  max-width: calc(100% - var(--dh-exec-rail) - var(--dh-exec-gutter) - 2 * var(--dh-exec-pad) - var(--dh-order-toast-y));
+  margin-inline: calc(var(--dh-exec-rail) + var(--dh-exec-pad)) auto;
+}
+.dh-exec[data-narrow] .dh-order-toast > span { align-items: flex-start; white-space: normal; text-wrap: balance; }
+.dh-exec[data-narrow] .dh-order-toast-dot { margin-top: calc(var(--dh-cell-dot) / 2); }
 .dh-order-toast > span {
   display: inline-flex;
   align-items: center;
@@ -11511,15 +11565,15 @@ button.dh-instrument-side[aria-disabled="true"] { pointer-events: none; cursor: 
 .dh-exec-range-goto { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 1.5); padding-inline: var(--dh-nav-pad); }
 .dh-exec-range-goto.is-active { padding-inline-end: var(--dh-nav-inset); }
 /* On a narrow panel the range row scrolls sideways: the calendar chip stays
-   in reach at its end, on the panel's own surface, the presets sliding
-   under a soft edge. Showing a window, it is a chip in the row again (it
+   in reach at its end, on the panel's own surface (opaque, so nothing shows
+   through it), the presets sliding under a soft edge. Showing a window, it is a chip in the row again (it
    is scrolled into view when the window is set). */
 .dh-exec-range-goto:not(.is-active) {
   position: sticky; inset-inline-end: 0;
-  background: var(--dh-card, var(--ds-surface));
-  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card, var(--ds-surface));
+  background: var(--dh-card-solid, var(--ds-surface));
+  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card-solid, var(--ds-surface));
 }
-.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card, var(--ds-surface))); }
+.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card-solid, var(--ds-surface))); }
 .dh-exec-plot { position: relative; }
 .dh-exec-plot.is-navigable { touch-action: pan-y; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 /* A vertical swipe on the plot scrolls the page; the box zoom tool and the

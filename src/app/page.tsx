@@ -124,7 +124,12 @@ const NAV_LINKS = [
 ] as const;
 
 const DEFAULT_SYSTEM: SystemId = "salt";
-const DEFAULT_COMPARE: SystemId = "md3";
+/* The first pair a visitor sees must read in both modes. Salt DS against
+   uoaui does: the Search label is at least 4.8:1 on its fill in all four
+   captures, and the two differ at a glance (steel blue and 4px corners
+   against violet and 12px, graphite against navy). Material 3 stays one
+   pick away; its dark capture has a pale label on pale lilac (1.7:1). */
+const DEFAULT_COMPARE: SystemId = "uoaui";
 const DEFAULT_MODE: Mode = "dark";
 const DEFAULT_SPLIT = 50;
 

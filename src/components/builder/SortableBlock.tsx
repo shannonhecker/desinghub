@@ -980,6 +980,18 @@ export function SortableBlock({
     return () => window.clearTimeout(t);
   }, []);
 
+  /* The entrance (canvas-block-in) plays once, when the block mounts. Once it
+     has ended, or a drag has begun (which cuts it short), the block is marked
+     entered and the animation is off for good. Without the mark, the classes that
+     silence it during a drag (is-dragging, is-sorting-peer) coming off at
+     the drop started it again on every block: the canvas blinked out and
+     popped back in after each reorder. */
+  const [entered, setEntered] = useState(false);
+  if (!entered && (isDragging || isSorting)) setEntered(true);
+  const markEntered = useCallback((e: React.AnimationEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && e.animationName === "canvas-block-in") setEntered(true);
+  }, []);
+
   /* Block element ref forwarded to dnd-kit via setNodeRef. */
   const setRefs = useCallback(
     (el: HTMLElement | null) => {
@@ -997,6 +1009,7 @@ export function SortableBlock({
     compact && "zone-block-compact",
     "canvas-block--experimental",
     isNewlyMounted && "is-newly-mounted",
+    entered && "has-entered",
     /* Drop indicator: show when another item is being sorted and this item is shifting */
     isSorting && !isDragging && "is-sorting-peer",
   ]
@@ -1101,6 +1114,7 @@ export function SortableBlock({
       data-amend-selected={readOnly && amendable && selectedBlockIds.includes(id) ? "true" : undefined}
       onClickCapture={handleClickCapture}
       onClick={handleClick}
+      onAnimationEnd={entered ? undefined : markEntered}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onContextMenu={handleContextMenu}

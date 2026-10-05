@@ -16,7 +16,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Monitor, Tablet, Smartphone } from "lucide-react";
+import { Monitor, Tablet, Smartphone, Sun, Moon, Columns2, Link2, Check, TriangleAlert, Pencil, House, ChevronUp, ChevronDown } from "lucide-react";
 import { useBuilder, effectiveDeviceMode, type DeviceMode, type DesignSystem } from "@/store/useBuilder";
 import { usePreviewMode } from "@/store/usePreviewMode";
 import { copyShareLink, SHARE_FEEDBACK_MS } from "@/lib/canvasHandoff";
@@ -107,8 +107,8 @@ function PresentDSDropdown() {
         {DS_LABEL[designSystem]}
         {/* Bar is fixed bottom-centre, so the menu opens upward: caret
             points up when closed (toward the menu), down to collapse. */}
-        <span className="material-symbols-outlined present-bar-ds-caret" aria-hidden="true" style={{ fontSize: 18 }}>
-          {open ? "arrow_drop_down" : "arrow_drop_up"}
+        <span className="present-bar-ds-caret" aria-hidden="true">
+          {open ? <ChevronDown size={14} strokeWidth={2} /> : <ChevronUp size={14} strokeWidth={2} />}
         </span>
       </button>
       {open && (
@@ -132,8 +132,8 @@ function PresentDSDropdown() {
                 onClick={() => select(ds)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(ds); } }}
               >
-                <span className="material-symbols-outlined present-bar-ds-check" aria-hidden="true" style={{ fontSize: 16 }}>
-                  {selected ? "check" : ""}
+                <span className="present-bar-ds-check" aria-hidden="true">
+                  {selected ? <Check size={16} strokeWidth={2} /> : null}
                 </span>
                 {DS_LABEL[ds]}
               </li>
@@ -173,10 +173,10 @@ export function PresentBar({
     setTimeout(() => setShareState("idle"), SHARE_FEEDBACK_MS[result]);
   };
 
-  const shareIcon =
-    shareState === "copied" ? "check"
-    : shareState === "too-long" || shareState === "error" ? "warning"
-    : "link";
+  const ShareIcon =
+    shareState === "copied" ? Check
+    : shareState === "too-long" || shareState === "error" ? TriangleAlert
+    : Link2;
   const shareLabel =
     shareState === "copied" ? "Link copied"
     : shareState === "too-long" ? "Too large to share"
@@ -233,9 +233,7 @@ export function PresentBar({
         title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
         aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-          {mode === "dark" ? "light_mode" : "dark_mode"}
-        </span>
+        {mode === "dark" ? <Sun size={16} strokeWidth={1.6} aria-hidden="true" /> : <Moon size={16} strokeWidth={1.6} aria-hidden="true" />}
       </button>
 
       {/* Compare — toggle the 2×2 design-system grid. Moved into present
@@ -249,9 +247,7 @@ export function PresentBar({
         title={compareMode ? "Exit compare" : "Compare all design systems"}
         aria-label={compareMode ? "Exit compare mode" : "Compare design systems"}
       >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16 }}>
-          compare
-        </span>
+        <Columns2 size={16} strokeWidth={compareMode ? 2.2 : 1.6} aria-hidden="true" />
       </button>
 
       {/* Share — copies a stateless preview URL to the clipboard. */}
@@ -262,9 +258,7 @@ export function PresentBar({
         title="Copy a shareable preview link"
         aria-label="Copy share link"
       >
-        <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 14, marginRight: 4 }}>
-          {shareIcon}
-        </span>
+        <ShareIcon className="present-bar-btn-lead" size={14} strokeWidth={1.8} aria-hidden="true" />
         <span className="present-bar-btn-label">{shareLabel}</span>
       </button>
 
@@ -281,9 +275,7 @@ export function PresentBar({
             title="Open this canvas in the builder"
             aria-label="Edit this canvas in the builder"
           >
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
-              edit
-            </span>
+            <Pencil className="present-bar-btn-lead" size={14} strokeWidth={1.8} aria-hidden="true" />
             Edit
           </button>
           <Link
@@ -292,9 +284,7 @@ export function PresentBar({
             title="Design Hub home"
             aria-label="Design Hub home"
           >
-            <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: 16, marginRight: 4 }}>
-              home
-            </span>
+            <House className="present-bar-btn-lead" size={14} strokeWidth={1.8} aria-hidden="true" />
             Home
           </Link>
         </>

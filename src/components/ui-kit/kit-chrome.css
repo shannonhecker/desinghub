@@ -461,6 +461,13 @@
 /* A table needs more room than a control; still one size in every system. */
 .kit-compare[data-concept="data-table"] .kit-compare-stage { height: var(--kp-compare-h-tall); align-items: flex-start; justify-content: flex-start; }
 .kit-compare-stage > * { max-width: 100%; }
+/* A specimen as wide as its content (a table) is drawn smaller rather than
+   cut: laid out at the width it needs, then scaled to the tile from its top
+   left corner. --kit-compare-fit is measured (CompareView) and is the same
+   in every tile of the row. Only the stage scales; the component is as its
+   system draws it. */
+.kit-compare-fit { flex: 1 1 auto; min-width: 0; width: 100%; }
+.kit-compare-fit > * { width: calc(100% / var(--kit-compare-fit, 1)); max-width: none; transform: scale(var(--kit-compare-fit, 1)); transform-origin: 0 0; }
 .kit-compare-none { margin: 0; font-size: var(--kp-text-sm); opacity: 0.75; text-align: center; }
 .kit-compare-meta { display: flex; flex-direction: column; gap: var(--kp-space-0); height: var(--kp-compare-meta-h); padding: var(--kp-space-3) var(--kp-space-4) var(--kp-space-4); font-size: var(--kp-text-sm); line-height: var(--kp-space-5); color: var(--kit-text-muted); overflow: hidden; }
 .kit-compare-meta > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -641,6 +648,11 @@
   /* The search bar is opaque here: section headings passing under a
      translucent bar read through it on a small screen. */
   .kit-toolbar { background: var(--kp-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+/* Five tiles across are too narrow for a table before they are for a
+   control: the table's Compare tab goes to three across sooner. */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .kit-compare[data-concept="data-table"]:not(.is-compact) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 900px) {
   .kit-play { grid-template-columns: minmax(0, 1fr); }

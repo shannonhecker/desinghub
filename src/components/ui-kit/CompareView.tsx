@@ -9,6 +9,7 @@ import { CONCEPTS, EQ_SYSTEMS, SYSTEM_LABEL, conceptOf, kitHref } from "./kitEqu
 import { isDarkActive } from "./kitHandoff";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useEdgeFade } from "./useEdgeFade";
+import { DEFAULT_TABLE_COLUMNS, DEFAULT_TABLE_ROWS } from "@/lib/tableData";
 
 /**
  * Compare: one component, five design systems, side by side.
@@ -42,6 +43,67 @@ export const COMPARE_BLOCK: Record<string, string> = {
   "data-table": "SimulatedDataTable",
 };
 
+/* What a specimen shows in Compare when its everyday sample is too wide for
+   a tile a fifth of the page across. The table keeps its first two columns
+   (the name and the status tag: where the systems differ). The component is
+   untouched; it is handed less to draw. */
+const COMPARE_SPECIMEN: Record<string, Record<string, unknown>> = {
+  "data-table": {
+    columns: DEFAULT_TABLE_COLUMNS.slice(0, 2),
+    rows: DEFAULT_TABLE_ROWS.map((row) => row.slice(0, 2)),
+  },
+};
+/* Concepts whose specimen is as wide as its content (a table), so a narrow
+   tile can still cut it: the stage draws these smaller, one scale for the
+   whole row, until the widest fits. */
+const FIT_TO_TILE = new Set(["data-table"]);
+/** Below this the specimen is no longer one you can read. */
+const MIN_FIT = 0.75;
+
+/**
+ * Sets --kit-compare-fit on the list: the largest scale (at most 1) at which
+ * every tile's specimen is as wide as its tile. Measured from the specimens
+ * themselves at life size, so a system whose table scrolls inside its own
+ * wrapper (Carbon) is counted too.
+ */
+function useFitToTile(enabled: boolean, deps: React.DependencyList) {
+  const ref = React.useRef<HTMLUListElement | null>(null);
+  React.useEffect(() => {
+    const list = ref.current;
+    if (!enabled || !list) return;
+    let frame = 0;
+    const fit = () => {
+      frame = 0;
+      list.style.setProperty("--kit-compare-fit", "1");
+      let scale = 1;
+      for (const box of list.querySelectorAll<HTMLElement>(".kit-compare-fit")) {
+        const room = box.clientWidth;
+        if (room <= 0) continue;
+        let over = 0;
+        /* Containers only: a visually hidden label is also "wider than its box". */
+        for (const el of [box, ...box.querySelectorAll<HTMLElement>("*")]) {
+          if (el.clientWidth >= room / 2) over = Math.max(over, el.scrollWidth - el.clientWidth);
+        }
+        if (over > 0.5) scale = Math.min(scale, room / (room + over));
+      }
+      list.style.setProperty("--kit-compare-fit", String(Math.max(MIN_FIT, Math.floor(scale * 1000) / 1000)));
+    };
+    const queue = () => { if (!frame) frame = requestAnimationFrame(fit); };
+    fit();
+    /* The tiles change width with the page; a system's stylesheet and its
+       typeface can arrive after the first paint and change the table's. */
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(queue);
+    observer?.observe(list);
+    list.querySelectorAll(".kit-compare-fit table").forEach((t) => observer?.observe(t));
+    const mutations = new MutationObserver(queue);
+    mutations.observe(document.head, { childList: true });
+    void document.fonts?.ready.then(queue);
+    return () => { observer?.disconnect(); mutations.disconnect(); if (frame) cancelAnimationFrame(frame); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, ...deps]);
+  return ref;
+}
+
 const MODE_THEME: Record<SystemId, { light: string; dark: string }> = {
   salt: { light: "jpm-light", dark: "jpm-dark" },
   m3: { light: "light", dark: "dark" },
@@ -68,10 +130,20 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
   const entry = type ? kitEntry(type) : null;
   const def = CONCEPTS[concept];
   const fade = useEdgeFade<HTMLUListElement>();
+  const fits = FIT_TO_TILE.has(concept);
+  const fitRef = useFitToTile(fits, [mounted, mode, state.activeSystem, compact]);
+  const listRef = React.useCallback((el: HTMLUListElement | null) => {
+    fitRef.current = el;
+    if (compact) fade(el);
+  }, [compact, fade, fitRef]);
   if (!type || !def) return null;
 
+  const specimen = (sys: SystemId, theme: ReturnType<typeof getTheme>) => (
+    <RealComponentRenderer system={sys} type={type} mode={mode} saltDensity="medium" kit={theme} props={{ ...(entry?.defaults ?? {}), ...(COMPARE_SPECIMEN[concept] ?? {}), id: `cmp-${concept}-${sys}${compact ? "-band" : ""}` }} />
+  );
+
   return (
-    <ul className={`kit-compare${compact ? " is-compact" : ""}`} ref={compact ? fade : undefined} data-testid="compare-panels" data-concept={concept}>
+    <ul className={`kit-compare${compact ? " is-compact" : ""}`} ref={listRef} data-testid="compare-panels" data-concept={concept}>
       {EQ_SYSTEMS.map((sys) => {
         const id = def.ids[sys];
         const current = sys === state.activeSystem;
@@ -92,7 +164,7 @@ export function ComparePanels({ concept, compact = false }: { concept: string; c
               }}
             >
               {real && mounted ? (
-                <RealComponentRenderer system={sys} type={type} mode={mode} saltDensity="medium" kit={theme} props={{ ...(entry?.defaults ?? {}), id: `cmp-${concept}-${sys}${compact ? "-band" : ""}` }} />
+                fits ? <div className="kit-compare-fit">{specimen(sys, theme)}</div> : specimen(sys, theme)
               ) : real ? null : (
                 <p className="kit-compare-none">{def.systemOnly ? `${SYSTEM_LABEL[sys]} has no ${def.label.toLowerCase()}.` : `No ${def.label.toLowerCase()} page for ${SYSTEM_LABEL[sys]} in this library yet.`}</p>
               )}

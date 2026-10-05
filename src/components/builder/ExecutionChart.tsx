@@ -21,7 +21,7 @@ import { RealComponentRenderer } from "@/components/ui-kit/RealComponentRenderer
 import { executionOrderOf, feedSwitchedOn, type FeedSample } from "@/lib/executionFeed";
 import type { GridColumn } from "@/lib/dataGridModel";
 import { readThemeVars, type ThemeVars } from "./SimulatedHighchart";
-import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, type ChartFrame } from "./executionChartOptions";
+import { applyFeedView, barCountdown, buildExecutionOptions, drawPills, NARROW_CHART, PRICE_GUTTER, PRICE_GUTTER_NARROW, type ChartFrame } from "./executionChartOptions";
 import { ExecutionRail, type RailMenu, type RailTool } from "./ExecutionRail";
 import { SimulatedDataGrid } from "./SimulatedDataGrid";
 import { usePreviewReadOnly } from "./previewReadOnly";
@@ -304,7 +304,9 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     <section
       ref={rootRef}
       className="dh-panel dh-exec"
-      style={{ "--dh-panel-h": `${height}px`, "--dh-exec-rail": `${rail}px`, "--dh-exec-range": `${RANGE_ROW}px`, "--dh-exec-pad": `${PAD}px` } as React.CSSProperties}
+      style={{ "--dh-panel-h": `${height}px`, "--dh-exec-rail": `${rail}px`, "--dh-exec-range": `${RANGE_ROW}px`, "--dh-exec-pad": `${PAD}px`, "--dh-exec-gutter": `${narrow ? PRICE_GUTTER_NARROW : PRICE_GUTTER}px` } as React.CSSProperties}
+      /* A phone-width chart: what is drawn over the plot keeps off the price scale. */
+      data-narrow={narrow ? "true" : undefined}
       aria-label={`${view.pair} execution`}
       data-feed-bars={readOnly ? feed.samples.length : 0}
       /* While presenting, the chart's controls are its own: using one must

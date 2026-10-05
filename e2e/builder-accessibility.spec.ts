@@ -75,6 +75,47 @@ test("report grid uses arrow navigation and Tab exits the cells", async ({ page 
   await expect.poll(() => grid.evaluate(el => el.contains(document.activeElement))).toBe(false);
 });
 
+/* Selecting a row re-reads the page. It must not take the focused cell with
+   it: the grid used to redraw every row a moment after the selection, which
+   dropped focus to the page, so the next arrow key did nothing and Tab went
+   back into the grid instead of leaving it. */
+test("selecting a row keeps focus on its cell; arrows still move and one Tab leaves the grid", async ({ page }) => {
+  await performance(page);
+  const grid = page.locator('.dh-grid.dh-grid-selectable').first();
+  const inGrid = () => grid.evaluate(el => el.contains(document.activeElement));
+  /* The focused cell is marked, so "still focused" means the very same element. */
+  const mark = (name: string) => page.evaluate(n => { (document.activeElement as HTMLElement).dataset.probe = n; }, name);
+  const focusedMark = () => page.evaluate(() => (document.activeElement as HTMLElement | null)?.dataset.probe ?? null);
+  const selectedRows = () => grid.locator('.ag-row.dh-grid-row-selected').evaluateAll(rows => rows.map(r => r.getAttribute("row-index")).join(","));
+
+  /* By pointer: the click selects the row and focuses its cell. */
+  await grid.locator('.ag-row[row-index="1"] .ag-cell').first().click();
+  await expect(grid.locator('.ag-row[row-index="1"] .ag-cell:focus')).toHaveCount(1);
+  await mark("clicked");
+  await expect(grid.locator('.ag-row.dh-grid-row-selected')).toHaveCount(1);
+  /* Long after the selection has been drawn, the same cell is still focused. */
+  await page.waitForTimeout(500);
+  expect(await focusedMark()).toBe("clicked");
+  await page.keyboard.press("ArrowRight");
+  await expect(grid.locator('.ag-row[row-index="1"] .ag-cell:focus')).toHaveAttribute('col-id', 'marketValue');
+  await page.keyboard.press("Tab");
+  await expect.poll(inGrid).toBe(false);
+  expect(await page.evaluate(() => document.activeElement !== document.body), "Tab lands on a control").toBe(true);
+
+  /* By keyboard: Enter on a focused cell changes the selection and stays there. */
+  await page.keyboard.press("Shift+Tab");
+  await expect(grid.locator('.ag-cell:focus')).toHaveCount(1);
+  await mark("entered");
+  const before = await selectedRows();
+  await page.keyboard.press("Enter");
+  await expect.poll(selectedRows).not.toBe(before);
+  await page.waitForTimeout(500);
+  expect(await focusedMark()).toBe("entered");
+  await page.keyboard.press("Tab");
+  await expect.poll(inGrid).toBe(false);
+  expect(await page.evaluate(() => document.activeElement !== document.body), "Tab lands on a control").toBe(true);
+});
+
 test("device frame starts with concrete dimensions", async ({ page }) => {
   const warnings: string[] = [];
   page.on("console", msg => { if (/not an animatable value/.test(msg.text())) warnings.push(msg.text()); });

@@ -722,7 +722,9 @@ describe("instrument", () => {
     ).toEqual(NAMES);
   });
 
-  it("starts with Salt on the left and Material 3 on the right, in dark mode", () => {
+  /* The first pair a visitor sees is one whose primary buttons read in both
+     modes (Material 3's dark capture has a pale label on pale lilac). */
+  it("starts with Salt on the left and uoaui on the right, in dark mode", () => {
     const el = renderPage();
     const sec = sectionOf(el);
     const tabs = tabsOf(sec);
@@ -733,9 +735,12 @@ describe("instrument", () => {
     tabs
       .filter((t) => t.getAttribute("aria-selected") !== "true")
       .forEach((t) => expect(t.getAttribute("tabindex")).toBe("-1"));
-    expect(rightOf(sec).filter((r) => r.checked).map((r) => r.value)).toEqual(["md3"]);
+    expect(rightOf(sec).filter((r) => r.checked).map((r) => r.value)).toEqual(["uoaui"]);
     expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-salt-dark.webp");
-    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-md3-dark.webp");
+    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-uoaui-dark.webp");
+    // Material 3 is still there to pick, on either side.
+    expect(tab(sec, "Material 3")).toBeTruthy();
+    expect(right(sec, "md3").disabled).toBe(false);
     expect(modeBtn(sec, "Dark").getAttribute("aria-pressed")).toBe("true");
   });
 
@@ -799,7 +804,7 @@ describe("instrument", () => {
     const left = leftImg(sec)?.getAttribute("alt") ?? "";
     const rightAlt = rightImg(sec)?.getAttribute("alt") ?? "";
     expect(left).toMatch(/Analytics Dashboard screen rendered in Salt DS, dark mode/);
-    expect(rightAlt).toMatch(/Analytics Dashboard screen rendered in Material 3, dark mode/);
+    expect(rightAlt).toMatch(/Analytics Dashboard screen rendered in uoaui, dark mode/);
     for (const alt of [left, rightAlt]) {
       expect(alt).toMatch(/search field/);
       expect(alt).not.toMatch(/mock|placeholder|illustration/i);
@@ -838,16 +843,16 @@ describe("instrument", () => {
     expect(tabsOf(sec).filter((t) => t.getAttribute("aria-selected") === "true")).toHaveLength(1);
     expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-carbon-dark.webp");
     // The right side is untouched.
-    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-md3-dark.webp");
-    expect(right(sec, "md3").checked).toBe(true);
+    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-uoaui-dark.webp");
+    expect(right(sec, "uoaui").checked).toBe(true);
   });
 
   it("a Right option changes only the right side", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui"));
-    expect(rightOf(sec).filter((r) => r.checked).map((r) => r.value)).toEqual(["uoaui"]);
-    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-uoaui-dark.webp");
+    click(right(sec, "md3"));
+    expect(rightOf(sec).filter((r) => r.checked).map((r) => r.value)).toEqual(["md3"]);
+    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-md3-dark.webp");
     expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-salt-dark.webp");
     expect(tab(sec, "Salt DS").getAttribute("aria-selected")).toBe("true");
   });
@@ -863,12 +868,12 @@ describe("instrument", () => {
   it("picking the right-hand system on the left swaps the two, and says so", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(tab(sec, "Material 3"));
-    expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-md3-dark.webp");
+    click(tab(sec, "uoaui"));
+    expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-uoaui-dark.webp");
     expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-salt-dark.webp");
     expect(right(sec, "salt").checked).toBe(true);
     expect(norm(sec.querySelector('.lsl-diff[aria-live="polite"]')?.textContent)).toMatch(
-      /^Material 3 on the left, Salt DS on the right\./,
+      /^uoaui on the left, Salt DS on the right\./,
     );
   });
 
@@ -878,13 +883,13 @@ describe("instrument", () => {
     const l = leftImg(sec);
     const r = rightImg(sec);
     click(tab(sec, "Carbon"));
-    click(right(sec, "uoaui"));
+    click(right(sec, "md3"));
     click(modeBtn(sec, "Light"));
     // No remount: the old picture stays on screen until the new one decodes.
     expect(leftImg(sec)).toBe(l);
     expect(rightImg(sec)).toBe(r);
     expect(l?.getAttribute("src")).toBe("/showcase/cmp-carbon-light.webp");
-    expect(r?.getAttribute("src")).toBe("/showcase/cmp-uoaui-light.webp");
+    expect(r?.getAttribute("src")).toBe("/showcase/cmp-md3-light.webp");
   });
 
   it("while a new capture loads the divider stays put, and the waiting side says so", async () => {
@@ -897,7 +902,7 @@ describe("instrument", () => {
     click(tab(sec, "Carbon"));
     expect(splitOf(sec)).toBe("0.5");
     expect(sec.getAttribute("data-waiting")).toBe("left");
-    click(right(sec, "uoaui"));
+    click(right(sec, "md3"));
     expect(splitOf(sec)).toBe("0.5");
     expect(sec.getAttribute("data-waiting")).toBe("right");
     await act(async () => {
@@ -929,7 +934,7 @@ describe("instrument", () => {
     // while the divider is moving.
     const range = sec.querySelector<HTMLInputElement>(".lsl-split-range")!;
     expect(range.value).toBe("50");
-    expect(range.getAttribute("aria-valuetext")).toBe("Carbon 50 percent, uoaui 50 percent");
+    expect(range.getAttribute("aria-valuetext")).toBe("Carbon 50 percent, Material 3 50 percent");
   });
 
   it("under reduced motion a change leaves the divider where it is", () => {
@@ -938,7 +943,7 @@ describe("instrument", () => {
       const el = renderPage();
       const sec = sectionOf(el);
       click(tab(sec, "Carbon"));
-      click(right(sec, "uoaui"));
+      click(right(sec, "md3"));
       expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-carbon-dark.webp");
       expect(splitOf(sec)).toBe("0.5");
     } finally {
@@ -950,11 +955,11 @@ describe("instrument", () => {
     const el = renderPage();
     const sec = sectionOf(el);
     const range = sec.querySelector<HTMLInputElement>('input[type="range"].lsl-split-range')!;
-    expect(range.getAttribute("aria-label")).toBe("Divider between Salt DS and Material 3");
+    expect(range.getAttribute("aria-label")).toBe("Divider between Salt DS and uoaui");
     expect(range.min).toBe("0");
     expect(range.max).toBe("100");
     expect(range.value).toBe("50");
-    expect(range.getAttribute("aria-valuetext")).toBe("Salt DS 50 percent, Material 3 50 percent");
+    expect(range.getAttribute("aria-valuetext")).toBe("Salt DS 50 percent, uoaui 50 percent");
     // React listens for the native input event on a range control.
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
     act(() => {
@@ -962,7 +967,7 @@ describe("instrument", () => {
       range.dispatchEvent(new Event("input", { bubbles: true }));
     });
     expect(splitOf(sec)).toBe("0.3");
-    expect(range.getAttribute("aria-valuetext")).toBe("Salt DS 30 percent, Material 3 70 percent");
+    expect(range.getAttribute("aria-valuetext")).toBe("Salt DS 30 percent, uoaui 70 percent");
     // The visible line and grip are decoration for the real control.
     expect(sec.querySelector(".lsl-split-line")?.getAttribute("aria-hidden")).toBe("true");
   });
@@ -977,7 +982,7 @@ describe("instrument", () => {
       ]);
     expect(chips()).toEqual([
       ["left", "Salt DS"],
-      ["right", "Material 3"],
+      ["right", "uoaui"],
     ]);
     click(right(sec, "carbon"));
     expect(chips()).toEqual([
@@ -1017,17 +1022,17 @@ describe("instrument", () => {
     const sides = Array.from(sec.querySelectorAll(".lsl-legend-side")).map((p) => norm(p.textContent));
     expect(sides).toEqual([
       "Salt DSOpen Sans, 4px corners, steel blue",
-      "Material 3Roboto, 12px corners, lilac",
+      "uoauiInter, 12px corners, violet",
     ]);
     const swatches = Array.from(sec.querySelectorAll<HTMLElement>(".lsl-legend .lsl-swatch"));
-    expect(swatches.map((s) => s.getAttribute("title"))).toEqual(["#2670A9", "#D0BCFF"]);
+    expect(swatches.map((s) => s.getAttribute("title"))).toEqual(["#2670A9", "#8A58C9"]);
     swatches.forEach((s) => {
       expect(s.getAttribute("aria-hidden")).toBe("true");
       expect(s.style.getPropertyValue("--swatch")).toBe(s.getAttribute("title"));
     });
     const live = sec.querySelector('.lsl-diff[aria-live="polite"]');
     expect(norm(live?.textContent)).toBe(
-      "Salt DS on the left, Material 3 on the right. What differs: Open Sans against Roboto, 4px corners against 12px corners, steel blue against lilac.",
+      "Salt DS on the left, uoaui on the right. What differs: Open Sans against Inter, 4px corners against 12px corners, steel blue against violet.",
     );
     // No hex digits anywhere in what is read aloud or shown as text.
     expect(sec.textContent).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
@@ -1064,11 +1069,11 @@ describe("instrument", () => {
     expect(modeBtn(sec, "Light").getAttribute("aria-pressed")).toBe("true");
     expect(modeBtn(sec, "Dark").getAttribute("aria-pressed")).toBe("false");
     expect(leftImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-salt-light.webp");
-    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-md3-light.webp");
+    expect(rightImg(sec)?.getAttribute("src")).toBe("/showcase/cmp-uoaui-light.webp");
     expect(leftImg(sec)?.getAttribute("alt")).toMatch(/light mode/);
-    // The accent named in the legend follows the mode (Material's is violet in light).
+    // The accent named in the legend follows the mode (uoaui's is muted violet in light).
     expect(norm(sec.querySelectorAll(".lsl-legend-side")[1].textContent)).toBe(
-      "Material 3Roboto, 12px corners, violet",
+      "uoauiInter, 12px corners, muted violet",
     );
   });
 
@@ -1103,20 +1108,22 @@ describe("instrument", () => {
       });
       return ev;
     };
-    // ArrowRight from Salt steps over Material 3 (it is on the right) to
-    // Fluent 2, selected and focused. The right side does not change.
+    // ArrowRight from Salt goes to Material 3, selected and focused. The
+    // right side does not change.
     const ev1 = press(tabs[0], "ArrowRight");
     expect(ev1.defaultPrevented).toBe(true);
-    expect(tabs[2].getAttribute("aria-selected")).toBe("true");
-    expect(document.activeElement).toBe(tabs[2]);
-    expect(right(sec, "md3").checked).toBe(true);
-    // ArrowLeft from Salt (index 0) wraps to uoaui (guards negative modulo).
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[1]);
+    expect(right(sec, "uoaui").checked).toBe(true);
+    // ArrowLeft from Salt (index 0) wraps (guards negative modulo) and steps
+    // over uoaui (it is on the right) to Carbon.
     const ev2 = press(tabs[0], "ArrowLeft");
     expect(ev2.defaultPrevented).toBe(true);
-    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
-    expect(document.activeElement).toBe(tabs[4]);
-    // ArrowRight from uoaui (last) wraps back to Salt.
-    press(tabs[4], "ArrowRight");
+    expect(tabs[3].getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(tabs[3]);
+    expect(right(sec, "uoaui").checked).toBe(true);
+    // ArrowRight from Carbon steps over uoaui and wraps back to Salt.
+    press(tabs[3], "ArrowRight");
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs[0]);
   });
@@ -1179,7 +1186,7 @@ describe("instrument", () => {
   it("a capture that fails to load still releases the sweep", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui")); // waiting for uoaui-dark, divider at rest
+    click(right(sec, "md3")); // waiting for md3-dark, divider at rest
     expect(splitOf(sec)).toBe("0.5");
     act(() => {
       rightImg(sec)!.dispatchEvent(new Event("error"));
@@ -1211,14 +1218,14 @@ describe("instrument", () => {
   it("a sweep that starts at once drops an older one that was still waiting", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui"));
+    click(right(sec, "md3"));
     await act(async () => {
-      rightImg(sec)!.dispatchEvent(new Event("load")); // uoaui-dark has settled
+      rightImg(sec)!.dispatchEvent(new Event("load")); // md3-dark has settled
       await new Promise((r) => setTimeout(r, 900));
     });
     click(right(sec, "carbon")); // waits for carbon-dark, which never arrives
     expect(splitOf(sec)).toBe("0.5");
-    click(right(sec, "uoaui")); // settled: sweeps straight away
+    click(right(sec, "md3")); // settled: sweeps straight away
     await act(async () => {
       await new Promise((r) => setTimeout(r, 900));
     });
@@ -1236,7 +1243,7 @@ describe("instrument", () => {
   it("the divider always arrives: a timer finishes a sweep whose frames stop coming", async () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui"));
+    click(right(sec, "md3"));
     // From here on the page gets no animation frames (a throttled tab).
     const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 1);
     try {
@@ -1257,7 +1264,7 @@ describe("instrument", () => {
   it("a page that is not being drawn skips the sweep and shows both systems at once", () => {
     const el = renderPage();
     const sec = sectionOf(el);
-    click(right(sec, "uoaui"));
+    click(right(sec, "md3"));
     const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
     try {
       act(() => {
@@ -1276,8 +1283,8 @@ describe("instrument", () => {
       tabsOf(sec)
         .filter((t) => t.hasAttribute("aria-describedby"))
         .map((t) => norm(t.textContent));
-    expect(hinted()).toEqual(["Material 3"]);
-    const hint = sec.querySelector(`#${tab(sec, "Material 3").getAttribute("aria-describedby")}`);
+    expect(hinted()).toEqual(["uoaui"]);
+    const hint = sec.querySelector(`#${tab(sec, "uoaui").getAttribute("aria-describedby")}`);
     expect(norm(hint?.textContent)).toBe(
       "Showing on the right. Choose it here to swap the two sides.",
     );
@@ -1310,13 +1317,13 @@ describe("instrument", () => {
       return ev;
     };
     press(tabs[0], "End");
-    expect(tabs[4].getAttribute("aria-selected")).toBe("true");
-    expect(document.activeElement).toBe(tabs[4]);
-    press(tabs[4], "Home");
+    expect(tabs[3].getAttribute("aria-selected")).toBe("true"); // uoaui, the last, is on the right
+    expect(document.activeElement).toBe(tabs[3]);
+    press(tabs[3], "Home");
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(tabs[0]);
     press(tabs[0], "ArrowDown");
-    expect(tabs[2].getAttribute("aria-selected")).toBe("true"); // over Material 3
+    expect(tabs[1].getAttribute("aria-selected")).toBe("true");
     press(tabs[1], "ArrowUp");
     expect(tabs[0].getAttribute("aria-selected")).toBe("true");
     // An unrelated key neither preventDefaults nor changes selection.
@@ -1493,7 +1500,7 @@ describe("builder handoff", () => {
     const rightChecked = () =>
       sec.querySelector<HTMLInputElement>('[role="radiogroup"] input:checked')?.value;
     const chosen = () => band.querySelector<HTMLInputElement>("input:checked")?.value;
-    expect(rightChecked()).toBe("md3");
+    expect(rightChecked()).toBe("uoaui");
     const seen: (string | undefined)[] = [];
     for (let i = 0; i < 5; i++) {
       const current = band.querySelector<HTMLInputElement>("input:checked")!;
@@ -1503,14 +1510,14 @@ describe("builder handoff", () => {
       });
       expect(ev.defaultPrevented).toBe(true);
       seen.push(chosen());
-      expect(rightChecked()).toBe("md3"); // never rewritten from the keyboard
+      expect(rightChecked()).toBe("uoaui"); // never rewritten from the keyboard
       expect(document.activeElement).toBe(band.querySelector("input:checked"));
     }
-    expect(seen).toEqual(["fluent", "carbon", "uoaui", "salt", "fluent"]);
+    expect(seen).toEqual(["md3", "fluent", "carbon", "salt", "md3"]);
     // A click on the right-hand system is an explicit choice: it swaps.
-    click(band.querySelector<HTMLInputElement>('input[value="md3"]')!);
-    expect(chosen()).toBe("md3");
-    expect(rightChecked()).toBe("fluent");
+    click(band.querySelector<HTMLInputElement>('input[value="uoaui"]')!);
+    expect(chosen()).toBe("uoaui");
+    expect(rightChecked()).toBe("md3");
   });
 
   it("the chips are a labelled group of real radios", () => {
