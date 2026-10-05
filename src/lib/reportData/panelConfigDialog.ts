@@ -8,7 +8,8 @@
  * The dialog shows that and nothing it cannot do.
  */
 
-import { defaultAggregation, type PanelConfig } from "./panelConfig";
+import type { DataBinding, DataLevel } from "./binding";
+import { defaultAggregation, withDataLevel, type PanelConfig } from "./panelConfig";
 import { dimensionsOf, fieldOf, measuresOf, type DataTable } from "./types";
 
 export type ConfigTab = "columns" | "groups" | "display" | "setting";
@@ -113,4 +114,22 @@ export function addGroup(config: PanelConfig, key: string, table: DataTable): Pa
 export function removeGroup(config: PanelConfig, slot: "rows" | "columns"): PanelConfig {
   if (slot === "rows") return { ...config, rows: config.columns, columns: null };
   return { ...config, columns: null };
+}
+
+/* ── Aggregated: the grid's data level ── */
+
+/** Aggregated on or off. Off is the last level on its own ("leaf"). On goes
+ *  back to the level the panel had when the dialog opened (so off then on
+ *  changes nothing), or to the full hierarchy if it opened at the leaf. */
+export function withAggregated(current: DataBinding, opening: DataBinding, on: boolean, fullLevel: DataLevel): DataBinding {
+  if (!on) return withDataLevel(current, "leaf");
+  const openedAtLeaf = (opening.expanded?.dataLevel ?? opening.dataLevel) === "leaf";
+  if (openedAtLeaf) return withDataLevel(current, fullLevel);
+  const { dataLevel: _d, expanded: _e, ...rest } = current;
+  void _d; void _e;
+  return {
+    ...rest,
+    ...(opening.dataLevel !== undefined ? { dataLevel: opening.dataLevel } : {}),
+    ...(opening.expanded !== undefined ? { expanded: opening.expanded } : {}),
+  };
 }

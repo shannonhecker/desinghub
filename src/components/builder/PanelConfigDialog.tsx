@@ -20,7 +20,7 @@ import {
   type PanelConfig,
 } from "@/lib/reportData/panelConfig";
 import {
-  addColumn, addGroup, availableTree, canPivot, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation, type ConfigTab,
+  addColumn, addGroup, availableTree, canPivot, withAggregated, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation, type ConfigTab,
 } from "@/lib/reportData/panelConfigDialog";
 import { fieldOf, tableOf } from "@/lib/reportData/types";
 
@@ -74,10 +74,13 @@ export function PanelConfigDialog({ system, blockId, launcher }: { system: Desig
   const [filter, setFilter] = useState("");
   /* The launcher is drawn in the same commit as the dialog: read its colours once it is there. */
   const [tones, setTones] = useState<React.CSSProperties>({});
+  /* Read again when the system or the mode changes under the open dialog. */
   useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read from the DOM after commit
     setTones(tonesFrom(launcher.current));
-  }, [launcher]);
+  }, [launcher, system, mode]);
+  /* The binding as the dialog found it (Aggregated off then on returns to it). */
+  const [opening] = useState(() => block?.props.binding as DataBinding | undefined);
 
   const binding = block?.props.binding as DataBinding | undefined;
   const table = dataset && binding ? tableOf(dataset, binding.table) : undefined;
@@ -136,7 +139,7 @@ export function PanelConfigDialog({ system, blockId, launcher }: { system: Desig
       checked: level?.level !== "leaf",
       disabled: !hasLeaf,
       info: AGGREGATED_INFO,
-      onChange: (on) => setLevel(on ? fullLevel : "leaf"),
+      onChange: (on) => replaceBlock(blockId, { type: block.type, props: { ...block.props, binding: withAggregated(binding, opening ?? binding, on, fullLevel) } }),
     },
     tab,
     tabs: TABS,

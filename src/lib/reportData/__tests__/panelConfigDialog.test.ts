@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { PanelConfig } from "../panelConfig";
-import { addColumn, addGroup, availableTree, canPivot, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation } from "../panelConfigDialog";
+import { withAggregated, addColumn, addGroup, availableTree, canPivot, canRemoveColumn, moveColumn, removeColumn, removeGroup, setAggregation } from "../panelConfigDialog";
 import { financeDataset } from "../financeDataset";
 import { dimensionsOf, measuresOf, tableOf } from "../types";
 
@@ -91,5 +91,20 @@ describe("groups", () => {
     expect(removeGroup(two, "rows")).toMatchObject({ rows: dims[1].key, columns: null });
     expect(removeGroup({ ...base, rows: dims[0].key }, "rows")).toMatchObject({ rows: null, columns: null });
     expect(removeGroup(two, "columns")).toMatchObject({ rows: dims[0].key, columns: null });
+  });
+});
+
+describe("Aggregated", () => {
+  const binding = { table: "holdings", view: "grid", groupBy: "fund", hierarchy: ["fund", "assetClass", "security"], measures: [], display: [] } as unknown as import("../binding").DataBinding;
+  it("off then on gives back the binding it opened with", () => {
+    const off = withAggregated(binding, binding, false, 2);
+    expect(off.dataLevel).toBe("leaf");
+    expect(withAggregated(off, binding, true, 2)).toEqual(binding);
+    const set = { ...binding, dataLevel: 1, expanded: { dataLevel: 1 } } as typeof binding;
+    expect(withAggregated(withAggregated(set, set, false, 2), set, true, 2)).toEqual(set);
+  });
+  it("opened at the leaf, on is the full hierarchy", () => {
+    const leaf = { ...binding, dataLevel: "leaf", expanded: { dataLevel: "leaf" } } as typeof binding;
+    expect(withAggregated(leaf, leaf, true, 2)).toMatchObject({ dataLevel: 2, expanded: { dataLevel: 2 } });
   });
 });
