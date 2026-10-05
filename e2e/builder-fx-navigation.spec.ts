@@ -13,7 +13,12 @@ import { test, expect, type Page } from "@playwright/test";
  *     calendar; focus stays inside, Escape closes it and only it, focus
  *     returns to the chip; bounds give a plain message; the chip shows the
  *     window and the range chips let it go.
+ *   - The calendar and date-range interactions of the original dashboard
+ *     (see the list in the test "Go to: every calendar interaction").
+ *   - A Go to window holds still against the feed; End is the keyboard way
+ *     back to live.
  *   - Edit is static: no zoom, and the builder still selects the block.
+ *   - Tablet and phone: the dialog fits the screen, nothing is cut off.
  *
  * Sample data only: nothing connects to a market.
  */
@@ -69,10 +74,24 @@ test.describe("Builder - FX Execution chart navigation", () => {
     await expect(rail(page, "Reset view")).toHaveAttribute("aria-disabled", "true");
     const area = await plotArea(page);
     const px = area.x + area.width * 0.3;
+    /* Did the chart take the last wheel event (so the page did not scroll)? */
+    await page.evaluate(() => { window.addEventListener("wheel", (e) => { (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken = e.defaultPrevented; }); });
+    const taken = () => page.evaluate(() => (window as unknown as { fxWheelTaken?: boolean }).fxWheelTaken);
+    /* Off the chart (the header above it): the page's. */
+    const header = (await stage(page).locator(".dh-feed-status").boundingBox())!;
+    await page.mouse.move(header.x + 4, header.y + 4);
+    await page.mouse.wheel(0, 120);
+    await expect.poll(taken).toBe(false);
+    expect(await viewX(page)).toBeNull();
     await page.mouse.move(px, area.y + area.height * 0.5);
+    /* On the plot at the full view, a wheel down has nothing to zoom out of: the page's too. */
+    await page.mouse.wheel(0, 120);
+    await expect.poll(taken).toBe(false);
+    expect(await viewX(page)).toBeNull();
     /* The bar under the pointer, before: the full view runs from -0.5 to the axis end. */
     await page.mouse.wheel(0, -200);
     await expect.poll(() => viewX(page)).not.toBeNull();
+    expect(await taken()).toBe(true);
     const [a, b] = (await viewX(page))!;
     await page.mouse.wheel(0, -200);
     await expect.poll(async () => (await viewX(page))![1]).toBeLessThan(b);
@@ -199,6 +218,50 @@ test.describe("Builder - FX Execution chart navigation", () => {
     expect(await viewX(page)).not.toBeNull();
     await rail(page, "Zoom out").click();
     expect(await viewX(page)).toBeNull();
+
+    /* Panned back by keyboard: End is the way back to the latest bar; Shift takes a bigger step. */
+    await plot(page).focus();
+    for (let i = 0; i < 4; i++) await page.keyboard.press("+");
+    const before = (await viewX(page))!;
+    await page.keyboard.press("Shift+ArrowLeft");
+    const far = (await viewX(page))!;
+    expect(before[0] - far[0]).toBeCloseTo((before[1] - before[0]) / 2, 3);
+    await page.keyboard.press("Shift+ArrowLeft");
+    await expect(plot(page)).toHaveAttribute("data-away", "true");
+    const live = stage(page).getByRole("button", { name: /^Back to live/ });
+    await expect(live).toBeVisible();
+    await page.keyboard.press("End");
+    await expect(plot(page)).not.toHaveAttribute("data-away", "true");
+    await expect(live).toHaveCount(0);
+    /* The same zoom, at the right edge. */
+    const back = (await viewX(page))!;
+    expect(back[1] - back[0]).toBeCloseTo(far[1] - far[0], 3);
+    /* The rail's tools work from the keyboard: Enter on Box zoom arms it, Enter again lets it go. */
+    await rail(page, "Box zoom").focus();
+    await page.keyboard.press("Enter");
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Enter");
+    await expect(rail(page, "Box zoom")).toHaveAttribute("aria-pressed", "false");
+    await rail(page, "Reset view").focus();
+    await page.keyboard.press("Enter");
+    expect(await viewX(page)).toBeNull();
+  });
+
+  test("the rail keeps main's menus (overlays, radio items, Escape returns focus) beside the zoom tools", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const interval = stage(page).getByRole("button", { name: "Interval", exact: true });
+    await interval.focus();
+    await page.keyboard.press("Enter");
+    const menu = stage(page).getByRole("menu", { name: "Interval" });
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole("menuitemradio").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
+    await expect(interval).toBeFocused();
+    /* Escape closed the menu, not Present; the zoom tools sit under the menus in one toolbar. */
+    const bar = stage(page).getByRole("toolbar", { name: "Chart tools" });
+    await expect(bar.getByRole("button")).toHaveCount(8);
   });
 
   for (const system of SYSTEMS) {
@@ -268,6 +331,125 @@ test.describe("Builder - FX Execution chart navigation", () => {
     expect(await viewX(page)).not.toBeNull();
   });
 
+  test("Go to: every calendar interaction of the original, by pointer and by keyboard", async ({ page }) => {
+    await applyFx(page);
+    await pause(page);
+    const chip = stage(page).getByRole("button", { name: "Go to a date or range" });
+    await chip.click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await expect(dialog).toBeVisible();
+    /* The data window is stated. */
+    await expect(dialog.getByText(/^Sample data from .* to 5 Jan 2026\.$/)).toBeVisible();
+    /* The calendar opens on the latest day with data, selected. */
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    const cell = (day: string) => dialog.locator(`td:has([data-day="${day}"])`);
+    const dayBtn = (day: string) => dialog.locator(`[data-day="${day}"]`);
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    /* Bounds: no month after the data's last; days without data cannot be picked. */
+    await expect(dialog.getByRole("button", { name: "Next month" })).toBeDisabled();
+    await expect(dayBtn("2026-01-03")).toHaveAttribute("aria-disabled", "true");
+    await dayBtn("2026-01-03").click({ force: true });
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    await expect(cell("2026-01-03")).toHaveAttribute("aria-selected", "false");
+    await expect(dayBtn("2026-01-06")).toHaveAttribute("aria-disabled", "true");
+    /* Picking a day fills the Date field. */
+    await dayBtn("2026-01-02").click();
+    await expect(dialog.getByLabel("Date", { exact: true })).toHaveValue("2026-01-02");
+    /* The grid's keys: arrows move a day or a week, Page Up a month; Enter picks. */
+    await dayBtn("2026-01-02").focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(dayBtn("2026-01-01")).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(dialog.getByText("December 2025")).toBeVisible();
+    await expect(dayBtn("2025-12-25")).toBeFocused();
+    await page.keyboard.press("PageDown");
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    /* Kept inside the data: Page Down from 25 December stops at the last day. */
+    await expect(dayBtn("2026-01-05")).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByLabel("Date", { exact: true })).toHaveValue("2026-01-05");
+    /* Month buttons. */
+    await dialog.getByRole("button", { name: "Previous month" }).click();
+    await expect(dialog.getByText("December 2025")).toBeVisible();
+    await dialog.getByRole("button", { name: "Next month" }).click();
+    await expect(dialog.getByText("January 2026")).toBeVisible();
+    /* A typed day inside the data's range that has no bars (a Saturday): a plain message, the dialog stays. */
+    await dialog.getByLabel("Date", { exact: true }).fill("2026-01-03");
+    await dialog.getByLabel(/^Time/).first().fill("12:00");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText("No bars in that window: the market was closed. Pick a weekday time.")).toBeVisible();
+    await expect(dialog).toBeVisible();
+
+    /* Custom range: the calendar fills From, then To, and the field in hand is the one it fills. */
+    await dialog.getByText("Custom range", { exact: true }).first().click();
+    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    await dayBtn("2026-01-02").click();
+    await expect(dialog.getByLabel("From", { exact: true })).toHaveValue("2026-01-02");
+    await expect(dialog.getByText("Pick the end day")).toBeVisible();
+    await dayBtn("2026-01-05").click();
+    await expect(dialog.getByLabel("To", { exact: true })).toHaveValue("2026-01-05");
+    await expect(cell("2026-01-02")).toHaveAttribute("aria-selected", "true");
+    await expect(cell("2026-01-05")).toHaveAttribute("aria-selected", "true");
+    /* The days between are marked. */
+    await expect(cell("2026-01-03")).toHaveClass(/is-between/);
+    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    await dialog.getByLabel("To", { exact: true }).focus();
+    await expect(dialog.getByText("Pick the end day")).toBeVisible();
+    await dialog.getByLabel("From", { exact: true }).focus();
+    await expect(dialog.getByText("Pick the start day")).toBeVisible();
+    /* The end before the start. */
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-02");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText("The end must be after the start.")).toBeVisible();
+    await expect(dialog.getByLabel("To", { exact: true })).toBeFocused();
+    /* Before the data begins. */
+    await dialog.getByLabel("From", { exact: true }).fill("2024-06-03");
+    await dialog.getByLabel("To", { exact: true }).fill("2026-01-05");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog.getByText(/Pick a date from .* to 5 Jan 2026\./)).toBeVisible();
+    await expect(dialog.getByLabel("From", { exact: true })).toBeFocused();
+    /* Enter in a field submits: the session's morning. */
+    await dialog.getByLabel("From", { exact: true }).fill("2026-01-05");
+    await dialog.getByLabel(/^Time/).first().fill("09:00");
+    await dialog.getByLabel(/^Time/).nth(1).fill("10:00");
+    await dialog.getByLabel(/^Time/).nth(1).press("Enter");
+    await expect(dialog).toBeHidden();
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 5 Jan 09:00 to 10:00/ })).toHaveAttribute("aria-pressed", "true");
+    /* No preset is the range now. */
+    await expect(stage(page).locator(".dh-exec-ranges button.is-active")).toHaveCount(1);
+    await expect(stage(page).locator(".dh-exec-ranges button.is-active")).toHaveClass(/dh-exec-range-goto/);
+    /* Moving the view lets the window go: the preset is the range again. */
+    await rail(page, "Zoom out").click();
+    await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-pressed", "false");
+    await expect(stage(page).getByRole("button", { name: "1D", exact: true })).toHaveAttribute("aria-pressed", "true");
+    /* Cancel closes without moving anything. */
+    const kept = await viewX(page);
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toBeHidden();
+    expect(await viewX(page)).toEqual(kept);
+  });
+
+  test("a Go to window holds still while the feed runs; Back to live and Reset return to following", async ({ page }) => {
+    await applyFx(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+    await stage(page).getByRole("button", { name: "Go to a date or range" }).click();
+    const dialog = page.getByRole("dialog", { name: "Go to" });
+    await dialog.getByLabel(/^Time/).first().fill("10:30");
+    await dialog.getByRole("button", { name: "Go to", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    const held = await viewX(page);
+    expect(held).not.toBeNull();
+    const bars = await feedBars(page);
+    await expect.poll(() => feedBars(page), { timeout: 10_000 }).toBeGreaterThan(bars + 1);
+    expect(await viewX(page)).toEqual(held);
+    await expect(stage(page).getByRole("button", { name: /^Go to: showing 5 Jan 09:45 to 11:15/ })).toHaveAttribute("aria-pressed", "true");
+    await rail(page, "Reset view").click();
+    await expect.poll(() => viewX(page)).toBeNull();
+    await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toHaveAttribute("aria-pressed", "false");
+  });
+
   test("Edit is static: no zoom, the zoom tools wait for Present, and the builder still selects the block", async ({ page }) => {
     await applyFx(page);
     await pause(page);
@@ -301,4 +483,39 @@ test.describe("Builder - FX Execution chart navigation", () => {
     }
     await expect(stage(page).getByRole("button", { name: "Go to a date or range" })).toBeVisible();
   });
+
+  for (const frame of [{ name: "tablet", button: /Tablet/i }, { name: "phone", button: /Mobile/i }] as const) {
+    test(`${frame.name}: the tools and the range row are not cut off, and Go to fits the screen`, async ({ page }) => {
+      await applyFx(page);
+      await pause(page);
+      await page.getByRole("button", { name: frame.button }).first().click();
+      const panel = (await stage(page).locator(".dh-exec").boundingBox())!;
+      for (const name of ["Box zoom", "Zoom in", "Zoom out", "Reset view"]) {
+        const b = (await rail(page, name).boundingBox())!;
+        expect(b.y + b.height, name).toBeLessThanOrEqual(panel.y + panel.height + 1);
+      }
+      const chip = stage(page).getByRole("button", { name: "Go to a date or range" });
+      const c = (await chip.boundingBox())!;
+      expect(c.x + c.width).toBeLessThanOrEqual(panel.x + panel.width + 1);
+      /* The rail's zoom works in the frame. */
+      await rail(page, "Zoom in").click();
+      expect(await viewX(page)).not.toBeNull();
+      await rail(page, "Reset view").click();
+      expect(await viewX(page)).toBeNull();
+      await chip.click();
+      const dialog = page.getByRole("dialog", { name: "Go to" });
+      await expect(dialog).toBeVisible();
+      const d = (await dialog.boundingBox())!;
+      const view = page.viewportSize()!;
+      expect(d.x).toBeGreaterThanOrEqual(0);
+      expect(d.x + d.width).toBeLessThanOrEqual(view.width);
+      expect(d.y).toBeGreaterThanOrEqual(0);
+      expect(d.y + d.height).toBeLessThanOrEqual(view.height);
+      const go = dialog.getByRole("button", { name: "Go to", exact: true });
+      await expect(go).toBeInViewport();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(chip).toBeFocused();
+    });
+  }
 });
