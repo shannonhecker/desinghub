@@ -26,7 +26,9 @@ function edges(page: Page) {
     const d = document.querySelector(".present-stage .bp-dashboard")!.getBoundingClientRect();
     const f = document.querySelector(".present-stage .bp-device-frame")!;
     const cs = getComputedStyle(f);
-    return { left: d.left, right: d.right, top: d.top, width: d.width, radius: cs.borderTopLeftRadius, border: cs.borderLeftWidth, win: window.innerWidth, winH: window.innerHeight, bottom: f.getBoundingClientRect().bottom };
+    const stage = document.querySelector(".present-stage-viewport")!.getBoundingClientRect();
+    const stageClient = (document.querySelector(".present-stage-viewport") as HTMLElement).clientWidth;
+    return { left: d.left, right: d.right, top: d.top, width: d.width, radius: cs.borderTopLeftRadius, border: cs.borderLeftWidth, win: window.innerWidth, winH: window.innerHeight, bottom: f.getBoundingClientRect().bottom, stageLeft: stage.left, stageClient };
   });
 }
 
@@ -53,7 +55,10 @@ test.describe("Present is full screen on the desktop device", () => {
       await page.waitForTimeout(800);
       const e = await edges(page);
       expect(e.left, `${device} has a left margin`).toBeGreaterThan(40);
-      expect(Math.abs(e.left - (e.win - e.right)), `${device} is centred`).toBeLessThanOrEqual(2);
+      /* Centred inside the stage's client box (the stage reserves a scrollbar gutter). */
+      const leftGap = e.left - e.stageLeft;
+      const rightGap = e.stageLeft + e.stageClient - e.right;
+      expect(Math.abs(leftGap - rightGap), `${device} is centred`).toBeLessThanOrEqual(2);
       expect(e.radius, `${device} keeps its frame`).not.toBe("0px");
     }
   });

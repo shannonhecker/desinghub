@@ -97,8 +97,11 @@ async function applyTemplateFromChat(page: Page, ask: string) {
 async function measure(page: Page): Promise<Measure> {
   return page.evaluate(() => {
     const frame = document.querySelector<HTMLElement>(".bp-device-frame")!;
-    const fr = frame.getBoundingClientRect();
     const zoom = parseFloat(frame.getAttribute("data-frame-zoom") ?? "1") || 1;
+    /* Origin: the frame's CONTENT box (inside its border, if it has one), so
+       the framed Edit canvas and the full-bleed Present canvas measure alike. */
+    const fb = frame.getBoundingClientRect();
+    const fr = { x: fb.x + frame.clientLeft * zoom, y: fb.y + frame.clientTop * zoom };
     const main = frame.querySelector<HTMLElement>(".bp-main")!;
     /* The grid cell (the block's wrapper) is what the layout places. */
     const boxes = [...main.querySelectorAll<HTMLElement>("[data-block-id]")].map((el) => {
@@ -167,9 +170,10 @@ test.describe("Builder - finance templates", () => {
     test(`${tpl.label}: Edit matches Present`, async ({ page }) => {
       await applyTemplate(page, tpl.label);
       /* Present on the desktop device is full-bleed (5 Oct), so it is
-         measured in a 1320px window, where its content width equals Edit's
-         1320px design width (like with like). Tolerances are unchanged. */
-      await page.setViewportSize({ width: 1320, height: 900 });
+         measured in a 1318px window, where its content width equals Edit's
+         (a 1320px design width inside a 1px frame border each side). Like
+         with like; tolerances are unchanged. */
+      await page.setViewportSize({ width: 1318, height: 900 });
       await settle(page);
       const present = await measure(page);
       await page.setViewportSize({ width: 1440, height: 900 });

@@ -43,7 +43,13 @@ function chatInput(page: Page) {
 async function applyAnalyticsTemplate(page: Page) {
   await page.goto("/builder", { waitUntil: "domcontentloaded" });
   await expect(chatInput(page)).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: /Browse templates/ }).click();
+  /* Clicked before the page has hydrated, the click is lost (the finance
+     spec retries for the same reason): click until the gallery opens. */
+  await expect(async () => {
+    const browse = page.getByRole("button", { name: /Browse templates/ });
+    if (await browse.isVisible()) await browse.click();
+    await expect(page.getByRole("list", { name: "Starting templates" })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
   /* "Use this" applies the template at once, in the current design system
      (Salt on a fresh canvas), and opens it in Present. */
   await page.getByRole("button", { name: "Use the Analytics Dashboard template" }).click();
@@ -66,8 +72,11 @@ async function settle(page: Page) {
 async function measure(page: Page): Promise<Measure> {
   return page.evaluate(() => {
     const frame = document.querySelector<HTMLElement>(".bp-device-frame")!;
-    const fr = frame.getBoundingClientRect();
     const zoom = parseFloat(frame.getAttribute("data-frame-zoom") ?? "1") || 1;
+    /* Origin: the frame's CONTENT box (inside its border, if it has one), so
+       the framed Edit canvas and the full-bleed Present canvas measure alike. */
+    const fb = frame.getBoundingClientRect();
+    const fr = { x: fb.x + frame.clientLeft * zoom, y: fb.y + frame.clientTop * zoom };
     const main = frame.querySelector<HTMLElement>(".bp-main")!;
     const boxes = [...main.querySelectorAll<HTMLElement>("[data-block-id]")].map((el) => {
       const r = el.getBoundingClientRect();
@@ -120,10 +129,11 @@ test.describe("Builder - template layout parity", () => {
     await applyAnalyticsTemplate(page);
     /* Present on the desktop device is full-bleed (5 Oct): the report lays
        out at the window's width. Edit lays out at the 1320px design width
-       and scales it to the stage, so Present is measured in a 1320px window,
+       inside a frame with a 1px border each side (1318px of content) and
+       scales it to the stage, so Present is measured in a 1318px window,
        where the two resolve to the same content width (like with like).
        The tolerances below are unchanged. */
-    await page.setViewportSize({ width: 1320, height: 900 });
+    await page.setViewportSize({ width: 1318, height: 900 });
     await settle(page);
     const present = await measure(page);
     await page.setViewportSize({ width: 1440, height: 900 });
