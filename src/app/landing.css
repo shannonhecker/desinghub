@@ -82,7 +82,11 @@ html:has(.landing-southleft) body {
   --lsl-shadow-float: 0 6px 20px rgba(10, 14, 26, 0.45);
   --lsl-float-h: 28px;
   --lsl-float-gap: 12px;
+  --lsl-float-text: 13px;
   --lsl-grip: 28px;
+  /* The board of controls at its real size (CSS px). The frame never grows
+     past it, so no control is drawn larger than the builder draws it. */
+  --lsl-board-w: 710px;
   --lsl-radius-frame: 14px;
   --lsl-radius-control: 999px;
   --lsl-ease: cubic-bezier(0.2, 0, 0, 1);
@@ -478,7 +482,7 @@ html:has(.landing-southleft) body {
   margin: 0;
   min-width: 0;
   width: 100%;
-  max-width: 960px;
+  max-width: var(--lsl-board-w);
 }
 .landing-southleft .lsl-instrument-bar {
   margin: 0 0 12px;
@@ -601,7 +605,7 @@ html:has(.landing-southleft) body {
 .landing-southleft .lsl-showcase-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 1420 / 634;
+  aspect-ratio: 1420 / 528;
   container-type: inline-size;
   border-radius: var(--lsl-radius-frame);
   overflow: hidden;
@@ -614,9 +618,20 @@ html:has(.landing-southleft) body {
   /* The same position as a length (container width units), for transforms,
      where a percentage would mean the element's own size. */
   --split-cq: calc(22px + (100cqw - 44px) * var(--split-n, 0.5));
-  /* The grip rides in the empty band under the first row of controls, so it
-     never covers a label. */
-  --grip-y: 28.5%;
+  /* The grip and the two side names ride in the board's empty band, under
+     the search fields, so they never cover a control or a label. */
+  --grip-y: 37.12%;
+  /* What rides on the frame: light ink on a dark board, dark on a light one. */
+  --float-ink: var(--lsl-fg-strong);
+  --float-chip: var(--lsl-bg-elevated);
+  /* How far from an edge (0 to 1) a side keeps its name. Closer than this
+     there is no room for it beside the grip, so it lets go. Narrower frames
+     raise it below. */
+  --chip-lo: 0.12;
+}
+.landing-southleft .lsl-showcase-viewport[data-mode="light"] {
+  --float-ink: var(--lsl-bg);
+  --float-chip: var(--lsl-bg);
 }
 .landing-southleft .lsl-showcase-panel,
 .landing-southleft .lsl-compare-layer {
@@ -643,11 +658,12 @@ html:has(.landing-southleft) body {
   top: 0;
   bottom: 0;
   left: var(--split-x);
-  width: 2px;
-  margin-left: -1px;
-  background: var(--lsl-fg-strong);
-  box-shadow: 0 0 0 1px rgba(10, 14, 26, 0.35);
+  /* One 1px line in the frame's ink: no second edge beside it. */
+  width: 1px;
+  background: color-mix(in srgb, var(--float-ink) 70%, transparent);
   pointer-events: none;
+  /* The grip stays whole: it paints over a name that is letting go. */
+  z-index: 1;
 }
 .landing-southleft .lsl-split-grip {
   position: absolute;
@@ -659,10 +675,13 @@ html:has(.landing-southleft) body {
   height: var(--lsl-grip);
   margin: calc(var(--lsl-grip) / -2) 0 0 calc(var(--lsl-grip) / -2);
   border-radius: 50%;
-  background: var(--lsl-fg-strong);
+  background: var(--float-ink);
   color: var(--lsl-bg);
   box-shadow: var(--lsl-shadow-float);
   transition: transform var(--lsl-dur-fast) ease;
+}
+.landing-southleft .lsl-showcase-viewport[data-mode="light"] .lsl-split-grip {
+  color: var(--lsl-fg-strong);
 }
 /* The slider itself: a native range input laid over the whole frame, so the
    divider answers a drag anywhere, touch included, and the arrow keys. It is
@@ -698,37 +717,43 @@ html:has(.landing-southleft) body {
   outline: 2px solid var(--lsl-accent);
   outline-offset: 3px;
 }
-/* Each side is named inside the frame, next to the divider, and the names
-   travel with it. Tonal chips, no outline. */
+/* Each side is named inside the frame, beside the grip, in the board's empty
+   band, and the names travel with the divider. Tonal chips, no outline: a
+   raised tone on a dark board, the page's ink on a light one. */
 .landing-southleft .lsl-corner {
   position: absolute;
-  bottom: var(--lsl-float-gap);
+  top: var(--grip-y);
+  margin-top: calc(var(--lsl-float-h) / -2);
   display: inline-flex;
   align-items: center;
   height: var(--lsl-float-h);
   padding: 0 var(--lsl-float-gap);
   border-radius: var(--lsl-radius-control);
-  background: var(--lsl-bg);
+  background: var(--float-chip);
   color: var(--lsl-fg-strong);
-  font-size: 13px;
+  font-size: var(--lsl-float-text);
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
   box-shadow: var(--lsl-shadow-float);
 }
-/* Each name hugs its side of the divider and stops at the frame's corner,
-   so it is never cut off, even with the divider at an edge. */
+/* Each name sits a third of the float gap from the grip and stops at the frame's corner,
+   so it is never cut off. Near an edge the two would meet, so the side that
+   is losing the frame lets go of its name: on a desktop the left one is gone
+   below 12 percent and the right one above 88 percent (--chip-lo). */
 .landing-southleft .lsl-corner[data-side="left"] {
   left: var(--lsl-float-gap);
   transform: translateX(
-    max(0px, calc(var(--split-cq) - 14px - var(--lsl-float-gap) - 100%))
+    max(0px, calc(var(--split-cq) - var(--lsl-grip) / 2 - var(--lsl-float-gap) * 4 / 3 - 100%))
   );
+  opacity: clamp(0, calc((var(--split-n, 0.5) - var(--chip-lo)) * 25), 1);
 }
 .landing-southleft .lsl-corner[data-side="right"] {
   right: var(--lsl-float-gap);
   transform: translateX(
-    min(0px, calc(var(--split-cq) + 14px + var(--lsl-float-gap) + 100% - 100cqw))
+    min(0px, calc(var(--split-cq) + var(--lsl-grip) / 2 + var(--lsl-float-gap) * 4 / 3 + 100% - 100cqw))
   );
+  opacity: clamp(0, calc((1 - var(--chip-lo) - var(--split-n, 0.5)) * 25), 1);
 }
 /* A colour, shown rather than spelled out. */
 .landing-southleft .lsl-swatch {
@@ -1271,6 +1296,8 @@ html:has(.landing-southleft) body {
     white-space: nowrap;
   }
   .landing-southleft .lsl-showcase-tab { padding: 0 9px; }
+  /* A narrower frame: a name needs a larger share of it. */
+  .landing-southleft .lsl-showcase-viewport { --chip-lo: 0.19; }
   .landing-southleft .lsl-workflow-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
   }
@@ -1288,7 +1315,6 @@ html:has(.landing-southleft) body {
   }
   .landing-southleft .lsl-hero { padding-top: 20px; }
   .landing-southleft .lsl-hero-headline { font-size: var(--lsl-text-display-l); }
-  .landing-southleft .lsl-instrument { max-width: none; }
   .landing-southleft .lsl-section-head,
   .landing-southleft .lsl-export-grid,
   .landing-southleft .lsl-workflow-grid,
@@ -1350,13 +1376,18 @@ html:has(.landing-southleft) body {
     padding: 0 18px;
   }
   .landing-southleft .lsl-hero-alt { margin-top: 12px; padding-left: 18px; }
-  /* The phone capture is its own crop: the search field, then the first card. */
+  /* The phone board is its own composition: the search field, the empty
+     band, the button on its own, then the two filters. */
   .landing-southleft .lsl-showcase-viewport {
-    aspect-ratio: 722 / 592;
-    /* On the phone board the empty band is under the search field. */
-    --grip-y: 42%;
+    aspect-ratio: 722 / 534;
+    --grip-y: 34.46%;
+    --chip-lo: 0.31;
   }
-  .landing-southleft { --lsl-float-h: 26px; }
+  .landing-southleft {
+    --lsl-float-h: 26px;
+    --lsl-float-text: 12px;
+    --lsl-board-w: 361px;
+  }
   .landing-southleft .lsl-instrument-bar { margin-bottom: 8px; }
   .landing-southleft .lsl-side { gap: 4px; }
   .landing-southleft .lsl-side-label { flex-basis: 34px; font-size: 13px; }
@@ -1379,7 +1410,6 @@ html:has(.landing-southleft) body {
     margin-left: -22px;
   }
   .landing-southleft .lsl-legend { column-gap: 60px; min-height: 54px; }
-  .landing-southleft .lsl-corner { font-size: 12px; }
   .landing-southleft .lsl-legend-traits { font-size: 13px; }
   .landing-southleft .lsl-section-head { margin-bottom: 28px; }
   .landing-southleft .lsl-section-lede { font-size: var(--lsl-text-body-l); }
@@ -1412,4 +1442,5 @@ html:has(.landing-southleft) body {
   .landing-southleft .lsl-side-label { line-height: 44px; }
   .landing-southleft .lsl-hero-prompt-field { padding-left: 14px; gap: 4px; }
   .landing-southleft .lsl-hero-prompt-submit { padding: 0 14px; }
+  .landing-southleft .lsl-showcase-viewport { --chip-lo: 0.39; }
 }

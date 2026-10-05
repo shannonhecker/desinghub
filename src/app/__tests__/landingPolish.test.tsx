@@ -239,6 +239,11 @@ describe("copy", () => {
     for (const word of ["React", "Vite", "HTML", "tokens", "SVG", "Figma"]) {
       expect(lede).toContain(word);
     }
+    // And it claims only what the viewer shows: two of the six, as excerpts.
+    expect(lede).toMatch(/^Six formats: /);
+    expect(lede).toMatch(/the opening lines of two of the six, exactly as the builder wrote them\.$/);
+    expect(tabs).toHaveLength(2);
+    expect(lede).not.toMatch(/These are the files/);
   });
 
   it("export excerpt is real exporter output with the design system's own imports", () => {
@@ -958,7 +963,22 @@ describe("instrument", () => {
     const corner = css.match(/\.landing-southleft \.lsl-corner \{([^}]*)\}/)![1];
     expect(corner).toMatch(/box-shadow:\s*var\(--lsl-shadow-float\)/);
     expect(corner).toMatch(/height:\s*var\(--lsl-float-h\)/);
+    expect(corner).toMatch(/font-size:\s*var\(--lsl-float-text\)/);
     expect(corner).not.toMatch(/rgba\(/);
+    expect(corner).not.toMatch(/\d+px/);
+    // They ride in the board's empty band with the grip, never over the
+    // last row of the table.
+    expect(corner).toMatch(/top:\s*var\(--grip-y\)/);
+    expect(corner).not.toMatch(/bottom:/);
+    expect(css).toMatch(/\.lsl-split-grip\s*\{[^}]*top:\s*var\(--grip-y\)/);
+    // A raised tone on a dark board, so the chip reads as a chip.
+    expect(corner).toMatch(/background:\s*var\(--float-chip\)/);
+    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*--float-chip:\s*var\(--lsl-bg-elevated\)/);
+    // Near an edge the losing side lets go of its name, so the two never
+    // overlap: gone below 12 percent on the left and above 88 on the right.
+    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*--chip-lo:\s*0\.12;/);
+    expect(css).toMatch(/\.lsl-corner\[data-side="left"\]\s*\{[^}]*opacity:\s*clamp\(0, calc\(\(var\(--split-n, 0\.5\) - var\(--chip-lo\)\) \* 25\), 1\)/);
+    expect(css).toMatch(/\.lsl-corner\[data-side="right"\]\s*\{[^}]*opacity:\s*clamp\(0, calc\(\(1 - var\(--chip-lo\) - var\(--split-n, 0\.5\)\) \* 25\), 1\)/);
   });
 
   it("the legend shows the accent as a swatch and a plain name, never as spoken hex", () => {
@@ -1146,6 +1166,55 @@ describe("instrument", () => {
       await new Promise((r) => setTimeout(r, 900));
     });
     expect(splitOf(sec)).toBe("0.5");
+  });
+
+  it("a sweep that starts at once drops an older one that was still waiting", async () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    click(right(sec, "uoaui"));
+    await act(async () => {
+      rightImg(sec)!.dispatchEvent(new Event("load")); // uoaui-dark has settled
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    click(right(sec, "carbon")); // waits for carbon-dark, which never arrives
+    expect(splitOf(sec)).toBe("1");
+    click(right(sec, "uoaui")); // settled: sweeps straight away
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 900));
+    });
+    expect(splitOf(sec)).toBe("0.5");
+    // Nothing is left waiting: a mode change and its capture do not set off
+    // a sweep nobody asked for.
+    click(modeBtn(sec, "Light"));
+    await act(async () => {
+      rightImg(sec)!.dispatchEvent(new Event("load"));
+      await new Promise((r) => setTimeout(r, 120));
+    });
+    expect(splitOf(sec)).toBe("0.5");
+  });
+
+  it("the Left tab of the system on the right says why the arrow keys step over it", () => {
+    const el = renderPage();
+    const sec = sectionOf(el);
+    const hinted = () =>
+      tabsOf(sec)
+        .filter((t) => t.hasAttribute("aria-describedby"))
+        .map((t) => norm(t.textContent));
+    expect(hinted()).toEqual(["Material 3"]);
+    const hint = sec.querySelector(`#${tab(sec, "Material 3").getAttribute("aria-describedby")}`);
+    expect(norm(hint?.textContent)).toBe(
+      "Showing on the right. Choose it here to swap the two sides.",
+    );
+    // Present for assistive technology, not drawn.
+    expect(hint?.classList.contains("sr-only")).toBe(true);
+    // The hint follows the Right side, and only that tab carries it.
+    click(right(sec, "carbon"));
+    expect(hinted()).toEqual(["Carbon"]);
+    // Choosing that tab is still the announced swap.
+    click(tab(sec, "Carbon"));
+    expect(tab(sec, "Carbon").getAttribute("aria-selected")).toBe("true");
+    expect(right(sec, "salt").checked).toBe(true);
+    expect(hinted()).toEqual(["Salt DS"]);
   });
 
   it("Home/End jump to ends, Up/Down alias Left/Right, other keys pass through", () => {
@@ -1440,8 +1509,22 @@ describe("instrument CSS contract", () => {
     expect(tabRules).not.toMatch(/overflow-x/);
   });
 
+  it("the divider is one 1px line, and the frame never scales the board past its real size", () => {
+    const line = css.match(/\.landing-southleft \.lsl-split-line \{([^}]*)\}/)![1];
+    expect(line).toMatch(/width:\s*1px/);
+    // No second edge beside it (that read as a grey double line on a light board).
+    expect(line).not.toMatch(/box-shadow/);
+    expect(line).toMatch(/background:\s*color-mix\(in srgb, var\(--float-ink\) 70%, transparent\)/);
+    expect(css).toMatch(/\.lsl-showcase-viewport\[data-mode="light"\]\s*\{[^}]*--float-ink:\s*var\(--lsl-bg\)/);
+    // The wide board is 1420 px at device pixel ratio 2: 710 CSS px.
+    expect(readFileSync(PAGE_PATH, "utf8")).toMatch(/const SHOT = \{ w: 1420, /);
+    expect(css).toMatch(/--lsl-board-w:\s*710px/);
+    expect(css).toMatch(/\.landing-southleft \.lsl-instrument \{[^}]*max-width:\s*var\(--lsl-board-w\)/);
+    expect(css).not.toMatch(/\.lsl-instrument\s*\{\s*max-width:\s*none/);
+  });
+
   it("reserves the frame with an aspect-ratio so the swap cannot shift layout", () => {
-    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*aspect-ratio:\s*1420\s*\/\s*634/);
+    expect(css).toMatch(/\.lsl-showcase-viewport\s*\{[^}]*aspect-ratio:\s*1420\s*\/\s*528/);
   });
 
   it("the showcase rules use lsl tokens and leak no raw hex", () => {

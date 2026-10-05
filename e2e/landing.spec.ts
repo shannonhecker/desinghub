@@ -24,6 +24,7 @@ const rightOption = (page: Page, name: string) =>
 const rightShot = (page: Page) => page.locator("#showcase .lsl-compare-layer img.lsl-showcase-shot");
 
 const FOLDS = [
+  { name: "wide desktop 1920x1080", width: 1920, height: 1080, whole: true, phone: false },
   { name: "desktop 1512x738", width: 1512, height: 738, whole: true, phone: false },
   { name: "laptop 1024x768", width: 1024, height: 768, whole: true, phone: false },
   { name: "phone 375x812", width: 375, height: 812, whole: false, phone: true },
@@ -67,9 +68,10 @@ for (const fold of FOLDS) {
       expect(frame!.x).toBeGreaterThan(copy!.x + copy!.width);
     }
 
-    // The controls are shown at their real size or larger on a desktop: the
-    // wide capture is 710 CSS px across.
+    // The controls are shown at their real size on a desktop, and never
+    // larger at any width: the wide capture is 710 CSS px across.
     if (fold.width >= 1440) expect(frame!.width).toBeGreaterThanOrEqual(710);
+    expect(frame!.width).toBeLessThanOrEqual(710);
 
     // Both captures actually loaded, two different systems, and nothing
     // scrolls sideways.
@@ -236,10 +238,16 @@ const ACCENT: Record<string, { light: string; dark: string }> = {
   uoaui: { light: "#6B5AA8", dark: "#8A58C9" },
 };
 
-/** Pixel statistics for PNG screenshots, computed in the page. */
-async function stats(page: Page, a: Buffer, b: Buffer | null, hex: string) {
+/** Hides the page's own chrome over the frame (grip, line, side names) so a
+    screenshot holds the two captures and nothing else. */
+const FLOATERS_OFF = ".lsl-split-line, .lsl-corner { visibility: hidden !important; }";
+
+/** Pixel statistics for PNG screenshots, computed in the page. With `flat`,
+    also counts the pixels that differ from the picture's most common colour
+    (its surface) by more than a compression ripple. */
+async function stats(page: Page, a: Buffer, b: Buffer | null, hex: string, flat = false) {
   return page.evaluate(
-    async ([sa, sb, hex]) => {
+    async ([sa, sb, hex, flat]) => {
       const load = async (src: string) => {
         const img = new Image();
         img.src = "data:image/png;base64," + src;
@@ -265,9 +273,29 @@ async function stats(page: Page, a: Buffer, b: Buffer | null, hex: string) {
         if (d > 8) changed++;
       }
       const n = da.length / 4;
-      return { mean: sum / n, share: changed / n, accent };
+      let offSurface = 0;
+      if (flat) {
+        const seen = new Map<number, number>();
+        for (let i = 0; i < da.length; i += 4) {
+          const k = ((da[i] >> 2) << 12) | ((da[i + 1] >> 2) << 6) | (da[i + 2] >> 2);
+          seen.set(k, (seen.get(k) ?? 0) + 1);
+        }
+        let top = 0;
+        let best = -1;
+        seen.forEach((count, k) => {
+          if (count > best) {
+            best = count;
+            top = k;
+          }
+        });
+        const [sr, sg, sb2] = [(top >> 12) << 2, ((top >> 6) & 63) << 2, (top & 63) << 2];
+        for (let i = 0; i < da.length; i += 4) {
+          if (Math.abs(da[i] - sr) > 10 || Math.abs(da[i + 1] - sg) > 10 || Math.abs(da[i + 2] - sb2) > 10) offSurface++;
+        }
+      }
+      return { mean: sum / n, share: changed / n, accent, offSurface };
     },
-    [a.toString("base64"), b ? b.toString("base64") : null, hex],
+    [a.toString("base64"), b ? b.toString("base64") : null, hex, flat] as const,
   );
 }
 
@@ -288,8 +316,11 @@ for (const mode of ["dark", "light"] as const) {
       const frame = page.locator(".lsl-showcase-viewport");
       const box = (await frame.boundingBox())!;
       const half = Math.floor(box.width / 2);
-      const leftClip = { x: box.x + 2, y: box.y + 2, width: half - 30, height: box.height - 50 };
-      const rightClip = { x: box.x + half + 30, y: box.y + 2, width: half - 34, height: box.height - 50 };
+      // Measure the captures alone: the grip, the line and the side names
+      // are the page's own chrome and would count as differences.
+      await page.addStyleTag({ content: FLOATERS_OFF });
+      const leftClip = { x: box.x + 2, y: box.y + 2, width: half - 6, height: box.height - 4 };
+      const rightClip = { x: box.x + half + 4, y: box.y + 2, width: half - 6, height: box.height - 4 };
       const slider = page.getByRole("slider");
 
       // 1. The same region rendered by one system, then by the other.
@@ -312,17 +343,145 @@ for (const mode of ["dark", "light"] as const) {
         expect(diff.share * leftClip.width * leftClip.height).toBeGreaterThan(3000);
       }
 
-      // 2. At the resting position each side shows its own accent: the left
-      //    system's filled primary button, the right system's selected tab.
+      // 2. At the resting position each side shows its own primary button,
+      //    whole, in its own accent: the same control twice, side by side.
       for (let i = 0; i < 50; i++) await page.keyboard.press("ArrowRight");
       await page.waitForTimeout(250);
       expect(await splitOf(page)).toBe(0.5);
       const l = await stats(page, await page.screenshot({ clip: leftClip }), null, ACCENT[left][mode]);
       const r = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT[right][mode]);
       expect(l.accent, `${left} primary button on the left`).toBeGreaterThan(1200);
-      expect(r.accent, `${right} accent on the right`).toBeGreaterThan(30);
+      expect(r.accent, `${right} primary button on the right`).toBeGreaterThan(1200);
+      // And neither side shows the other's: the halves are different systems.
+      const lOther = await stats(page, await page.screenshot({ clip: leftClip }), null, ACCENT[right][mode]);
+      const rOther = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT[left][mode]);
+      expect(lOther.accent, `${right} accent on the left`).toBeLessThan(l.accent / 4);
+      expect(rOther.accent, `${left} accent on the right`).toBeLessThan(r.accent / 4);
     });
   }
+}
+
+/* Phone width: the phone board, in both modes. At rest each half shows a
+   primary button in its own system's accent. */
+for (const mode of ["dark", "light"] as const) {
+  test(`phone 375: Salt DS against Material 3, ${mode}: each half shows its own primary button`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/", { waitUntil: "networkidle" });
+    if (mode === "light") await page.locator(".lsl-mode-btn:visible").first().click();
+    for (const [shot, id] of [[leftShot(page), "salt"], [rightShot(page), "md3"]] as const) {
+      await expect
+        .poll(() => shot.evaluate((img: HTMLImageElement) => (img.complete && img.naturalWidth > 0 ? img.currentSrc : "")))
+        .toContain(`/showcase/cmp-${id}-${mode}-phone.webp`);
+    }
+    await page.locator(".lsl-showcase-viewport").scrollIntoViewIfNeeded();
+    const box = (await page.locator(".lsl-showcase-viewport").boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(812);
+    const half = Math.floor(box.width / 2);
+    await page.addStyleTag({ content: FLOATERS_OFF });
+    expect(await splitOf(page)).toBe(0.5);
+    const leftClip = { x: box.x + 2, y: box.y + 2, width: half - 6, height: box.height - 4 };
+    const rightClip = { x: box.x + half + 4, y: box.y + 2, width: half - 6, height: box.height - 4 };
+    const l = await stats(page, await page.screenshot({ clip: leftClip }), null, ACCENT["Salt DS"][mode]);
+    const r = await stats(page, await page.screenshot({ clip: rightClip }), null, ACCENT["Material 3"][mode]);
+    expect(l.accent, "Salt DS primary button on the left").toBeGreaterThan(1200);
+    expect(r.accent, "Material 3 primary button on the right").toBeGreaterThan(1200);
+  });
+}
+
+/* The side names and the grip ride in a band of the board that holds no
+   control and no text, so they cover nothing wherever the divider is. */
+for (const [width, height] of [[375, 812], [768, 1024], [1024, 768], [1512, 738], [1920, 1080]] as const) {
+  test(`the side names sit in an empty band and never meet, at ${width}px`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width, height });
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(leftShot(page)).toHaveJSProperty("complete", true);
+    await expect(rightShot(page)).toHaveJSProperty("complete", true);
+    await page.locator(".lsl-showcase-viewport").scrollIntoViewIfNeeded();
+    const frame = (await page.locator(".lsl-showcase-viewport").boundingBox())!;
+    const chip = (side: "left" | "right") => page.locator(`.lsl-corner[data-side="${side}"]`);
+    const rect = async (side: "left" | "right") => {
+      const b = (await chip(side).boundingBox())!;
+      const opacity = Number(await chip(side).evaluate((el) => getComputedStyle(el).opacity));
+      return { ...b, opacity };
+    };
+    const slider = page.getByRole("slider");
+    await slider.focus();
+    const grip = page.locator(".lsl-split-grip");
+
+    // At rest both names show, one each side of the grip, level with it.
+    const l0 = await rect("left");
+    const r0 = await rect("right");
+    const g0 = (await grip.boundingBox())!;
+    expect(l0.opacity).toBe(1);
+    expect(r0.opacity).toBe(1);
+    expect(l0.x + l0.width).toBeLessThanOrEqual(g0.x);
+    expect(r0.x).toBeGreaterThanOrEqual(g0.x + g0.width);
+    expect(Math.abs(l0.y + l0.height / 2 - (g0.y + g0.height / 2))).toBeLessThanOrEqual(1);
+
+    // The band they ride in is empty in both captures: with the page's own
+    // chrome hidden, the strip at that height is one flat surface, edge to edge.
+    // (The divider stops 22px short of each edge, half the slider's thumb,
+    // so each capture is measured over the part of the frame it covers.)
+    const y = Math.floor(l0.y) - 2;
+    const h = Math.ceil(l0.height) + 4;
+    const style = await page.addStyleTag({ content: FLOATERS_OFF });
+    for (const key of ["End", "Home"] as const) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(150);
+      const band = { x: frame.x + (key === "End" ? 1 : 24), y, width: frame.width - 25, height: h };
+      const flat = await stats(page, await page.screenshot({ clip: band }), null, "#000000", true);
+      expect(flat.offSurface, `band under the names, divider at ${key}`).toBe(0);
+    }
+    await style.evaluate((el) => (el as HTMLElement).remove());
+
+    // Across the whole travel: a name that shows is whole, inside the
+    // frame, on its own side of the grip, and the two never touch. At the
+    // extremes the losing side's name is gone.
+    await page.keyboard.press("Home");
+    for (let pct = 0; pct <= 100; pct += 2) {
+      if (pct > 0) {
+        for (const step of [pct - 1, pct]) {
+          await page.keyboard.press("ArrowRight");
+          await expect.poll(() => splitOf(page)).toBeCloseTo(step / 100, 5);
+        }
+      } else {
+        await expect.poll(() => splitOf(page)).toBe(0);
+      }
+      // Wait for the frame that draws this position: the grip is where the
+      // divider is (the middle of the 1px line, which travels from 22px to 22px short of the far edge).
+      const centre = frame.x + 22.5 + (frame.width - 44) * (pct / 100);
+      await expect
+        .poll(() => grip.evaluate((el) => { const b = el.getBoundingClientRect(); return b.x + b.width / 2; }))
+        .toBeCloseTo(centre, 0);
+      // One reading of all three, so they belong to the same frame.
+      const { l, r, g } = await page.evaluate(() => {
+        const box = (sel: string) => {
+          const el = document.querySelector(sel)!;
+          const b = el.getBoundingClientRect();
+          return { x: b.x, y: b.y, width: b.width, height: b.height, opacity: Number(getComputedStyle(el).opacity) };
+        };
+        return {
+          l: box('.lsl-corner[data-side="left"]'),
+          r: box('.lsl-corner[data-side="right"]'),
+          g: box(".lsl-split-grip"),
+        };
+      });
+      for (const c of [l, r]) {
+        if (c.opacity === 0) continue;
+        expect(c.x, `${pct}%`).toBeGreaterThanOrEqual(frame.x);
+        expect(c.x + c.width, `${pct}%`).toBeLessThanOrEqual(frame.x + frame.width);
+      }
+      if (l.opacity > 0 && r.opacity > 0) expect(l.x + l.width, `${pct}%`).toBeLessThan(r.x);
+      if (l.opacity === 1) expect(l.x + l.width, `left name clear of the grip at ${pct}%`).toBeLessThanOrEqual(g.x + 1);
+      if (r.opacity === 1) expect(r.x, `right name clear of the grip at ${pct}%`).toBeGreaterThanOrEqual(g.x + g.width - 1);
+      if (pct <= 10) expect(l.opacity, `left name at ${pct}%`).toBe(0);
+      if (pct >= 90) expect(r.opacity, `right name at ${pct}%`).toBe(0);
+      if (pct >= 40 && pct <= 60) expect(l.opacity + r.opacity, `${pct}%`).toBe(2);
+    }
+  });
 }
 
 test("reduced motion: no first-view pass and no sweep, the systems swap in place", async ({ page }) => {

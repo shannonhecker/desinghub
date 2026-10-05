@@ -130,14 +130,16 @@ const DEFAULT_SPLIT = 50;
 
 /** Present-mode captures of the Analytics Home template, at device pixel
     ratio 2. Each frame is a board of whole controls cut from that one screen
-    and set on the system's own surface: the search field with its button,
-    the workspace tabs, the Class and Theme filters and the first rows of the
-    table. Nothing is redrawn or resized: on a 1440 screen every control is
-    shown at its real size. The parts were chosen so that each half of the
-    frame holds a primary control or an accent, plus a control whose shape
-    differs between systems (see the task report for the measurements).
-    Wide boards are 710x317 CSS px, phone boards 361x296. */
-const SHOT = { w: 1420, h: 634, phoneW: 722, phoneH: 592 } as const;
+    and set on the system's own surface. Both halves of a board carry the
+    same controls, so with the divider at rest one system's search field,
+    button, filter and table sit beside the other's: the search field with
+    its button (twice), an empty band where the divider's grip and the two
+    side names ride, the Class and Theme filters, and the first two columns
+    of the table (twice). The phone board stacks the field, the band, the
+    button on its own (twice) and the two filters. Nothing is redrawn or
+    scaled up: the frame is capped at the board's real width.
+    Wide boards are 710x264 CSS px, phone boards 361x267. */
+const SHOT = { w: 1420, h: 528, phoneW: 722, phoneH: 534 } as const;
 const PHONE_QUERY = "(max-width: 640px)";
 
 function shotSrc(id: SystemId, mode: Mode, phone = false): string {
@@ -145,7 +147,7 @@ function shotSrc(id: SystemId, mode: Mode, phone = false): string {
 }
 
 function shotAlt(name: string, mode: Mode): string {
-  return `Parts of the Analytics Dashboard screen rendered in ${name}, ${mode} mode: the search field and its button, the workspace tabs, the Class and Theme filters and the first rows of the dashboards table, captured from the builder's Present mode.`;
+  return `Parts of the Analytics Dashboard screen rendered in ${name}, ${mode} mode: the search field and its button, the Class and Theme filters and the first rows of the dashboards table, captured from the builder's Present mode.`;
 }
 
 /** The builder builds this exact screen from this message, with no model
@@ -501,6 +503,8 @@ function Instrument({
     if (!motionOk()) return;
     stop();
     paint(from);
+    // An earlier sweep may still be waiting for its capture: this one replaces it.
+    pending.current = null;
     if (settled.current.has(key)) run(from, [[restRef.current, SWEEP_MS]]);
     else pending.current = { key, from };
   };
@@ -651,6 +655,7 @@ function Instrument({
                   id={`lsl-showcase-tab-${s.id}`}
                   aria-selected={system === s.id}
                   aria-controls="lsl-showcase-panel"
+                  aria-describedby={compare === s.id ? "lsl-side-swap-hint" : undefined}
                   tabIndex={system === s.id ? 0 : -1}
                   className="lsl-showcase-tab"
                   ref={(el) => {
@@ -663,6 +668,10 @@ function Instrument({
                 </button>
               ))}
             </div>
+            {/* Why the arrow keys step over one tab: said on that tab. */}
+            <span id="lsl-side-swap-hint" className="sr-only">
+              Showing on the right. Choose it here to swap the two sides.
+            </span>
           </div>
           <div className="lsl-side">
             <span className="lsl-side-label" id="lsl-side-right">
@@ -782,9 +791,9 @@ function Instrument({
 
       <figcaption className="lsl-showcase-caption">
         <span>
-          Controls from the Analytics Dashboard screen (the builder&apos;s
-          Analytics Home template), cut whole and set side by side. Real
-          builder output, captured, not redrawn.
+          The same controls from the Analytics Dashboard screen (the
+          builder&apos;s Analytics Home template), cut whole, one system on
+          each side. Real builder output, captured, not redrawn.
         </span>
         <Link prefetch={prefetch} className="lsl-inline-link" href={REPORT_HANDOFF}>
           Open this screen in the builder
@@ -1108,8 +1117,9 @@ export default function LandingPage() {
               </h2>
               <p className="lsl-section-lede">
                 Six formats: React, a Vite project, HTML, design tokens, and
-                two kinds of SVG, one of them measured for Figma. These are
-                the files, not a description of them.
+                two kinds of SVG, one of them measured for Figma. Shown here:
+                the opening lines of two of the six, exactly as the builder
+                wrote them.
               </p>
               <p className="lsl-export-proof">
                 We ran the Vite export of this screen: it installed, passed
