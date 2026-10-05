@@ -67,6 +67,8 @@ export interface FormDialogField {
   placeholder?: string;
   /** A plain sentence shown under the field (and announced). */
   error?: string | null;
+  /** The field took focus (the Go to range uses it to say which end the calendar fills). */
+  onFocus?: () => void;
 }
 
 export interface FormDialogModel {
@@ -175,7 +177,7 @@ function SaltForm({ mode, density, model }: Omit<Props, "system">) {
             <Rows model={model} render={(f) => (
               <SaltFormField validationStatus={f.error ? "error" : undefined}>
                 <SaltFormFieldLabel>{f.label}</SaltFormFieldLabel>
-                <SaltInput value={f.value} placeholder={f.placeholder} onChange={(e) => f.onChange((e.target as HTMLInputElement).value)} inputProps={{ id: f.id, type: f.type, min: f.min, max: f.max }} />
+                <SaltInput value={f.value} placeholder={f.placeholder} onChange={(e) => f.onChange((e.target as HTMLInputElement).value)} inputProps={{ id: f.id, type: f.type, min: f.min, max: f.max, onFocus: f.onFocus }} />
                 {f.error ? <SaltFormFieldHelperText>{f.error}</SaltFormFieldHelperText> : null}
               </SaltFormField>
             )} />
@@ -216,7 +218,7 @@ function M3Form({ mode, model }: Omit<Props, "system">) {
             <MuiTextField
               id={f.id} label={f.label} type={f.type} value={f.value} placeholder={f.placeholder} size="small" fullWidth
               error={Boolean(f.error)} helperText={f.error ?? undefined}
-              onChange={(e) => f.onChange(e.target.value)}
+              onChange={(e) => f.onChange(e.target.value)} onFocus={f.onFocus}
               slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: f.min, max: f.max } }}
             />
           )} />
@@ -249,7 +251,7 @@ function FluentForm({ mode, model }: Omit<Props, "system">) {
                 {model.calendar ? <MonthCalendar model={model.calendar} system="fluent" /> : null}
             <Rows model={model} render={(f) => (
                   <FluentField label={f.label} validationState={f.error ? "error" : "none"} validationMessage={f.error ?? undefined} validationMessageIcon={null}>
-                    <FluentInput id={f.id} type={f.type} value={f.value} placeholder={f.placeholder} min={f.min} max={f.max} onChange={(_, d) => f.onChange(d.value)} />
+                    <FluentInput id={f.id} type={f.type} value={f.value} placeholder={f.placeholder} min={f.min} max={f.max} onChange={(_, d) => f.onChange(d.value)} onFocus={f.onFocus} />
                   </FluentField>
                 )} />
               </FluentDialogContent>
@@ -294,7 +296,7 @@ function CarbonForm({ mode, model }: Omit<Props, "system">) {
             {model.calendar ? <MonthCalendar model={model.calendar} system="carbon" /> : null}
             <Rows model={model} render={(f) => (
               <CarbonTextInput id={f.id} labelText={f.label} type={f.type} value={f.value} placeholder={f.placeholder} size="md" min={f.min} max={f.max}
-                invalid={Boolean(f.error)} invalidText={f.error ?? undefined} aria-describedby={f.error ? `${f.id}-error-msg` : undefined} onChange={(e) => f.onChange(e.target.value)} />
+                invalid={Boolean(f.error)} invalidText={f.error ?? undefined} aria-describedby={f.error ? `${f.id}-error-msg` : undefined} onChange={(e) => f.onChange(e.target.value)} onFocus={f.onFocus} />
             )} />
           </form>
         </CarbonModal>
@@ -390,7 +392,7 @@ function UoauiForm({ mode, density, model }: Omit<Props, "system">) {
               <div className={`a-input-wrap${f.error ? " a-input-error" : ""}`}>
                 <label className="a-input-label" htmlFor={f.id}>{f.label}</label>
                 <input id={f.id} className="a-input" type={f.type} value={f.value} placeholder={f.placeholder} min={f.min} max={f.max}
-                  aria-invalid={f.error ? true : undefined} aria-describedby={f.error ? errorId(f) : undefined} onChange={(e) => f.onChange(e.target.value)} />
+                  aria-invalid={f.error ? true : undefined} aria-describedby={f.error ? errorId(f) : undefined} onChange={(e) => f.onChange(e.target.value)} onFocus={f.onFocus} />
                 {f.error ? <span id={errorId(f)} className="dh-form-dialog-error">{f.error}</span> : null}
               </div>
             )} />

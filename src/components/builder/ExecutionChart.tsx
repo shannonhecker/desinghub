@@ -74,6 +74,8 @@ function windowLabel(from: number, to: number): string {
   const a = `${STAMP_DAY.format(from)} ${STAMP_TIME.format(from)}`;
   return STAMP_DAY.format(from) === STAMP_DAY.format(to) ? `${a} to ${STAMP_TIME.format(to)}` : `${a} to ${STAMP_DAY.format(to)} ${STAMP_TIME.format(to)}`;
 }
+/** What each range preset shows (its tooltip, as in the original). */
+const RANGE_HINTS: Record<string, string> = { "1D": "The session", "3D": "The last 3 days", "5D": "The last 5 days", "1W": "The last week", "1M": "The last month", "3M": "The last 3 months", YTD: "This year to date", Order: "The order, first bar to last" };
 const KEYS_HELP = "Arrow keys pan, plus and minus zoom time, Page Up and Page Down zoom price, 0 resets, End goes back to the latest bar.";
 
 export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem; blockId?: string }) {
@@ -264,6 +266,9 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
     const width = plotRef.current?.clientWidth ?? 0;
     if (chart && width > 0 && chart.chartWidth !== width) chart.setSize(width, undefined, false);
   }, [built]);
+  const custom = navigable && nav.status.custom && customLabel !== null;
+  /* On a narrow panel the range row scrolls: bring the window's chip into view. */
+  useEffect(() => { const row = gotoRef.current?.parentElement; if (custom && row) row.scrollLeft = row.scrollWidth; }, [custom, customLabel]);
   const options = built?.options ?? null;
   const tableView = showTable ? liveView(readOnly ? feed.samples : []) : null;
 
@@ -272,7 +277,6 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
   }
 
   const set = (key: string, value: string) => setReportState(key, value);
-  const custom = navigable && nav.status.custom && customLabel !== null;
   const icon = { size: 16, strokeWidth: 1.8, "aria-hidden": true } as const;
   /* The rail's Zoom group (live while presenting; shown, at rest, in Edit). */
   const off = !navigable;
@@ -334,7 +338,7 @@ export function ExecutionChartBlock({ system, blockId }: { system: DesignSystem;
           {EXECUTION_RANGES.map((r) => {
             const on = r === view.range && !custom;
             return (
-              <button key={r} type="button" className={`dh-exec-range${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => { setCustomLabel(null); if (r === view.range) nav.reset(); setReportState(EXECUTION_KEYS.range, r); }}>
+              <button key={r} type="button" className={`dh-exec-range${on ? " is-active" : ""}`} aria-pressed={on} title={RANGE_HINTS[r]} onClick={() => { setCustomLabel(null); if (r === view.range) nav.reset(); setReportState(EXECUTION_KEYS.range, r); }}>
                 {r === "Order" ? "Order" : r}
               </button>
             );

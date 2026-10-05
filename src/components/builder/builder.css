@@ -11299,10 +11299,20 @@ th[class*="-th"] > span { vertical-align: middle; }
 .dh-exec-rail-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--ds-primary) 16%, transparent); color: var(--ds-primary); }
 .dh-exec-rail-btn[aria-disabled="true"] { opacity: 0.4; cursor: default; }
 .dh-exec-rail-btn[aria-disabled="true"]:hover { background: transparent; color: var(--ds-fg-secondary); }
-.dh-exec-rail-live { margin-block-start: auto; color: var(--ds-primary); background: color-mix(in srgb, var(--ds-primary) 12%, transparent); }
+.dh-exec-rail-live { color: var(--ds-primary); background: color-mix(in srgb, var(--ds-primary) 12%, transparent); }
 .dh-exec-rail-live:hover { background: color-mix(in srgb, var(--ds-primary) 20%, transparent); color: var(--ds-primary); }
 .dh-exec-range-goto { display: inline-flex; align-items: center; gap: calc(var(--dh-cell-gap) / 1.5); padding-inline: var(--dh-nav-pad); }
 .dh-exec-range-goto.is-active { padding-inline-end: var(--dh-nav-inset); }
+/* On a narrow panel the range row scrolls sideways: the calendar chip stays
+   in reach at its end, on the panel's own surface, the presets sliding
+   under a soft edge. Showing a window, it is a chip in the row again (it
+   is scrolled into view when the window is set). */
+.dh-exec-range-goto:not(.is-active) {
+  position: sticky; inset-inline-end: 0;
+  background: var(--dh-card, var(--ds-surface));
+  box-shadow: calc(var(--dh-cell-gap) * -1) 0 var(--dh-cell-gap) var(--dh-card, var(--ds-surface));
+}
+.dh-exec-range-goto:not(.is-active):hover { background: color-mix(in srgb, var(--ds-fg) 8%, var(--dh-card, var(--ds-surface))); }
 .dh-exec-plot { position: relative; }
 .dh-exec-plot.is-navigable { touch-action: pan-y; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 .dh-exec-plot.is-navigable:focus-visible { outline: var(--dh-focus-ring) solid var(--ds-primary); outline-offset: calc(var(--dh-focus-ring) * -1); border-radius: var(--ds-radius); }
@@ -11361,6 +11371,15 @@ th[class*="-th"] > span { vertical-align: middle; }
 .dh-form-dialog-row[data-cols="1"] { --cols: 1; }
 .dh-form-dialog-cell { min-width: 0; }
 .dh-form-dialog-cell input { box-sizing: border-box; max-width: 100%; }
+/* Material sizes its input as content plus padding: keep its own box, so the
+   field is its full height and the label sits on the outline. Its dialog is
+   the form's width from the start (an error under a field must not widen it). */
+.dh-form-dialog-m3 .dh-form-dialog-cell input { box-sizing: content-box; max-width: none; }
+.dh-form-dialog-m3 .MuiDialog-paper { box-sizing: border-box; width: min(var(--dh-form-dialog-w), calc(100vw - var(--dh-report-gutter))); }
+.dh-form-dialog-m3 .dh-form-dialog-rows { gap: calc(var(--dh-nav-inset) + var(--dh-cell-gap)); padding-block-start: calc(var(--dh-cell-gap) / 2); }
+/* Carbon's invalid icon lands on a date or time field's own picker button:
+   the red frame and the message under the field carry the error. */
+.dh-form-dialog-carbon .cds--text-input__field-wrapper:has(input[type="date"], input[type="time"]) .cds--text-input__invalid-icon { display: none; }
 .dh-form-dialog-error { display: block; margin-top: calc(var(--dh-cell-gap) / 2); font-size: var(--dh-panel-meta-size); color: var(--a-error, var(--ds-negative, currentColor)); }
 .dh-form-dialog-actions { display: flex; justify-content: flex-end; gap: var(--dh-nav-pad); margin-top: var(--dh-report-gutter); }
 .dh-form-dialog-carbon .cds--modal-content { padding-inline-end: var(--dh-nav-inset); }
@@ -11398,7 +11417,10 @@ th[class*="-th"] > span { vertical-align: middle; }
   font: inherit; font-size: var(--dh-panel-meta-size); font-variant-numeric: tabular-nums; cursor: pointer;
 }
 .dh-cal-day:hover:not([aria-disabled="true"]) { background: var(--cal-hover); }
-.dh-cal-day[aria-disabled="true"] { color: var(--cal-off, var(--cal-muted)); opacity: 0.5; cursor: default; text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.dh-cal-day[aria-disabled="true"] { color: var(--cal-off, var(--cal-muted)); cursor: default; }
+/* Salt has no disabled text colour of its own here: it dims and strikes
+   through a day that cannot be picked; the others use their disabled colour. */
+.dh-cal-salt .dh-cal-day[aria-disabled="true"] { opacity: 0.5; text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 .dh-cal-grid td.is-picked .dh-cal-day { background: var(--cal-accent); color: var(--cal-accent-fg); font-weight: 600; }
 .dh-cal-day:focus-visible, .dh-cal-nav:focus-visible { outline: var(--dh-focus-ring) solid var(--cal-focus, var(--cal-accent)); outline-offset: calc(var(--dh-focus-ring) * -1 + var(--bc-hairline)); }
 .dh-cal-prompt { margin: calc(var(--dh-cell-gap) / 2) 0 0; font-size: var(--dh-panel-meta-size); color: var(--cal-muted); text-align: center; }

@@ -98,6 +98,8 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
 
   const field = (id: GoToField, label: string, type: "date" | "time", value: string, set: (v: string) => void) => ({
     id: `fx-goto-${id}`, label, type, value, error: errorOf(id),
+    /* As the original's From and To buttons did: the end in hand is the one the calendar fills next. */
+    ...(id === "fromDate" || id === "fromTime" ? { onFocus: () => setArmed("from") } : id === "toDate" || id === "toTime" ? { onFocus: () => setArmed("to") } : {}),
     onChange: typed(id, set, type === "date"),
     ...(type === "date" ? { min: first, max: last } : { placeholder: "HH:MM" }),
   });
@@ -126,5 +128,5 @@ export function GoToDialog({ system, mode, open, onClose, launcher, days, onGo }
     returnFocus: launcher,
   };
 
-  return <RealComponentRenderer system={system as SystemId} type="FormDialog" mode={mode} saltDensity="high" props={{ model }} />;
+  return <RealComponentRenderer system={system as SystemId} type="FormDialog" mode={mode} saltDensity="medium" props={{ model }} />;
 }
