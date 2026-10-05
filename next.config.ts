@@ -9,8 +9,8 @@ const isDev = process.env.NODE_ENV === "development";
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://vercel.live${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://vercel.live",
-  "font-src 'self' https://fonts.gstatic.com https://vercel.live https://assets.vercel.com",
+  "style-src 'self' 'unsafe-inline' https://vercel.live",
+  "font-src 'self' https://vercel.live https://assets.vercel.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob:",
   `connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://firebaseinstallations.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com${isDev ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,

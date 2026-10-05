@@ -12,7 +12,6 @@ Production does not permit `unsafe-eval`; development permits it for Next.js.
 
 Allowed third-party origins serve these purposes:
 
-- Google Fonts and Material Symbols: styles and font files.
 - Google Analytics / Tag Manager: scripts and analytics requests.
 - Firebase: identity, token refresh, installations and Firestore requests.
 - Vercel: preview toolbar, its assets and WebSocket connection, and Web Vitals.

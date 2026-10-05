@@ -101,7 +101,6 @@ const FONT = "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMa
    declarations for motion, radius, elevation, stroke-width. */
 const modeOf = (T) => (T?.name === "Dark" ? "dark" : "light");
 const buildCSS = (T) => `
-@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap');
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Fluent 2 Design Tokens — emits both the short-form --f-* aliases used

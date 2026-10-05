@@ -30,7 +30,7 @@ import {
 
 export { CARBON_MOTION, CARBON_TYPE, CARBON_RADIUS, CARBON_SPACING, CARBON_BORDER };
 
-/* Font stack - next/font/google registers IBM Plex Sans at the
+/* Font stack - src/fonts/fonts.css registers IBM Plex Sans at the
    app root via the --font-ibm-plex-sans CSS variable, so the
    stack picks it up immediately. The raw family name is kept as
    a fallback for any consumer that inlines Carbon CSS outside
@@ -329,8 +329,8 @@ export function carbonBuildCSS(theme) {
       --cds-z-dropdown: 700; --cds-z-floating: 800; --cds-z-header: 1000;
       --cds-z-overlay: 6000; --cds-z-modal: 9000;`;
 
-  /* IBM Plex Sans + Mono are registered globally via next/font in
-     src/lib/fonts.ts; the CSS variable --font-ibm-plex-sans flows in
+  /* IBM Plex Sans + Mono are registered globally by
+     src/fonts/fonts.css; the CSS variable --font-ibm-plex-sans flows in
      via <html> so no @import is needed here. */
   return `
     .cds--white {${themeTokens(CARBON_THEMES.white)}
