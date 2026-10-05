@@ -112,7 +112,10 @@ async function measureWide(page: Page): Promise<{ ids: string[]; rows: number[];
     let count = 0;
     tops.forEach((t, i) => { if (i > 0 && Math.abs(t - tops[i - 1]) > 2) { rows.push(count); count = 0; } count++; });
     rows.push(count);
-    const fixed = els.map((el) => (/px$/.test(el.style.height) || /px$/.test((el.parentElement as HTMLElement | null)?.style.height ?? "")) ? Math.round(el.getBoundingClientRect().height) : null);
+    /* A pinned height reaches the DOM as an inline px height on the block,
+       its grid cell, or its panel (a chart's height prop). */
+    const pinned = (el: HTMLElement) => /px$/.test(el.style.height) || /px$/.test((el.parentElement as HTMLElement | null)?.style.height ?? "") || /px$/.test((el.querySelector<HTMLElement>("[style*=\"height\"]")?.style.height) ?? "");
+    const fixed = els.map((el) => (pinned(el) ? Math.round(el.getBoundingClientRect().height) : null));
     return { ids, rows, fixed };
   });
 }
@@ -170,11 +173,12 @@ test.describe("Builder - template layout parity", () => {
     const wideM = await measureWide(page);
     expect(wideM.ids, "block order at 2000").toEqual(narrow.ids);
     expect(wideM.rows, "row grouping at 2000").toEqual(narrow.rows);
+    expect(narrow.fixed.filter((h) => h !== null).length, "fixed-height blocks were found").toBeGreaterThan(0);
     narrow.fixed.forEach((h, i) => {
-      if (h === null || wideM.fixed[i] === null) return;
-      expect.soft(Math.abs(wideM.fixed[i]! - h), `fixed-height block ${i} at 2000`).toBeLessThanOrEqual(1);
+      if (h === null) return;
+      expect(wideM.fixed[i], `block ${i} is still fixed-height at 2000`).not.toBeNull();
+      expect(Math.abs(wideM.fixed[i]! - h), `fixed-height block ${i} at 2000`).toBeLessThanOrEqual(1);
     });
-    expect(narrow.fixed.some((h) => h !== null) || narrow.ids.length > 0).toBe(true);
     await page.setViewportSize({ width: 1440, height: 900 });
 
     await page.getByRole("button", { name: "Edit canvas" }).click();
