@@ -53,9 +53,9 @@ export function VariantExample({ componentId, style, label, t }: VariantExampleP
       // on a primary fill — an invisible label. Mirrors fluent-filled / salt-accent below.
       solid: { background: t.accent, color: t.accentFg ?? t.accentText, border: "1px solid transparent" },
       tonal: { background: `color-mix(in srgb, ${t.accent} 24%, ${t.bg})`, color: t.fg, border: "1px solid transparent" },
-      elevated: { background: t.bg2, color: t.accent, border: `1px solid ${t.border}`, boxShadow: "0 2px 7px rgba(0,0,0,0.24)" },
-      outlined: { background: "transparent", color: t.accent, border: `1px solid ${t.border}` },
-      text: { background: "transparent", color: t.accent, border: "1px solid transparent" },
+      elevated: { background: t.bg2, color: t.accentText, border: `1px solid ${t.border}`, boxShadow: "0 2px 7px rgba(0,0,0,0.24)" },
+      outlined: { background: "transparent", color: t.accentText, border: `1px solid ${t.border}` },
+      text: { background: "transparent", color: t.accentText, border: "1px solid transparent" },
     };
     return (
       <span style={{

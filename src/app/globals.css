@@ -522,7 +522,12 @@ a { color: inherit; text-decoration: none; }
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
+  /* Fixed outer width whatever box model a system's global sheet sets, so
+     the main column never moves on a system switch (owner: no jumping). */
+  box-sizing: border-box;
   width: 92px;
+  min-width: 92px;
+  max-width: 92px;
   padding: var(--dh-space-12, 12px) var(--dh-space-8, 8px);
   gap: var(--dh-space-12, 12px);
   overflow-y: auto;
@@ -563,6 +568,7 @@ a { color: inherit; text-decoration: none; }
    DS / section reads at a glance (material.io rail pattern). Colour + radius
    come inline from the active DS tokens. */
 .uikit-rail-btn {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -601,6 +607,11 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0;
   line-height: 1.1;
 }
+/* System entries: "Aa" in the system's own face. Fixed line box so the rail
+   does not move as faces swap; the current system is a filled tone. */
+.uikit-rail-aa { display: block; height: 24px; font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.uikit-rail-ds[aria-current="true"] { background: var(--kit-surface-selected); }
+.uikit-rail-ds[aria-current="true"] .uikit-rail-label { font-weight: 700; }
 .uikit-rail-btn:hover {
   /* Inactive (transparent) buttons pick up a subtle fill; the active accent +
      the Builder gradient are inline so they win here and just brighten. */
@@ -635,60 +646,58 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
-.uikit-card {
-  display: block;
-  /* Hover/active feel: a quick background/border response (matching the
-     prior inline 70ms) plus a slower lift on transform + shadow so the
-     card settles rather than snaps. */
-  transition:
-    background var(--ds-transition-fast, 70ms cubic-bezier(0.2, 0, 0.38, 0.9)),
-    border-color var(--dh-motion-dur-emphasis, 240ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
-    transform var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
-    box-shadow var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
-    filter var(--dh-motion-dur-hover, 160ms) var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
-}
-.uikit-card:hover {
-  /* Lift + brighten. translateY uses the shared hover-lift token; the
-     shadow token already swaps between dark/light via .builder-light so
-     the elevation reads correctly in both modes. brightness is a gentle,
-     mode-agnostic lift on the whole card incl. its live specimen. */
-  transform: var(--dh-motion-hover-lift, translateY(-1px));
-  box-shadow: var(--dh-shadow-md);
-  filter: brightness(1.04);
-}
-.uikit-card:active {
-  transform: translateY(0);
-  box-shadow: var(--dh-shadow-sm);
-}
-/* Keyboard parity: keep the lift on focus-visible too, on top of the
-   existing per-DS focus ring. */
-.uikit-card:focus-visible {
-  transform: var(--dh-motion-hover-lift, translateY(-1px));
-  box-shadow: var(--dh-shadow-md);
-}
-@media (prefers-reduced-motion: reduce) {
-  .uikit-card,
-  .uikit-card:hover,
-  .uikit-card:active,
-  .uikit-card:focus-visible {
-    transform: none;
+/* The two rail halves. On desktop they dissolve into the rail's own column.
+   On phones the rail itself dissolves instead: the systems become a top bar
+   and the sections + actions a bottom bar, so the catalogue gets the full
+   width rather than sharing 375px with a 92px side rail. */
+.uikit-rail-top,
+.uikit-rail-rest { display: contents; }
+@media (max-width: 768px) {
+  .uikit-shell-body { flex-direction: column; position: relative; }
+  .uikit-rail { display: contents; }
+  .uikit-rail-top,
+  .uikit-rail-rest {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 6px 8px;
+    background: var(--dh-rail-bg);
+  }
+  .uikit-rail-top { order: -1; border-bottom: 1px solid var(--dh-rail-edge); overflow-x: auto; scrollbar-width: none; }
+  .uikit-rail-rest { order: 9; border-top: 1px solid var(--dh-rail-edge); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .uikit-rail-divider { display: none; }
+  .uikit-rail-logo { align-self: center; padding: 0 10px 0 6px; min-height: 44px; }
+  .uikit-rail-group { flex-direction: row; flex: 1; gap: 4px; align-self: auto; }
+  .uikit-rail-bottom { margin-top: 0; flex: 0 1 40%; }
+  .uikit-rail-btn { flex: 1 1 0; min-width: 0; min-height: 48px; }
+  .uikit-rail-label { font-size: 10px; }
+  /* The side panel becomes a sheet between the two bars. */
+  .uikit-panel {
+    position: absolute;
+    z-index: 20;
+    top: 61px;
+    bottom: 61px;
+    left: 0;
+    width: min(340px, 92vw) !important;
+    background: var(--dh-panel-solid) !important;
+    box-shadow: var(--dh-shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.3));
   }
 }
 
-/* Tall-thumbnail specimen zone. Centres the live registry preview and
-   clips anything that overruns the ~120px frame, so a wide/tall specimen
-   never breaks the card grid. Height is set inline (thumbHeight). */
+/* Catalogue card rules live in components/ui-kit/kit-chrome.css. */
+
+/* Specimen zone. Centres the live registry preview and clips anything that
+   overruns the frame, so a wide or tall specimen never breaks the grid. */
 .uikit-card-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--dh-space-16, 16px) var(--dh-space-20, 20px);
+  padding: var(--dh-space-12, 12px) var(--dh-space-16, 16px);
   overflow: hidden;
 }
-/* The preview wrapper: constrain width and centre its contents so the
-   same component the card has always rendered sits comfortably in the
-   taller frame without being stretched. We do NOT swap which component
-   renders — only the box around it. */
+/* The preview wrapper: constrain width and centre its contents. We do NOT
+   swap which component renders, only the box around it. */
 .uikit-card-specimen {
   width: 100%;
   max-height: 100%;
@@ -696,6 +705,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

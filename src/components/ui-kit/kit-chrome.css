@@ -1,0 +1,668 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Library chrome: the UI kit's own surfaces around the system specimens.
+
+   Three token layers.
+   1. Primitives  --kp-*   the active design system's own tokens, set inline
+                           on .uikit-shell by kitPrimitives() (kitChrome.ts).
+   2. Semantic    --kit-*  one meaning each (surface, text, border, accent),
+                           defined once here from the primitives. Light and
+                           dark need no second definition: the primitives
+                           already swap with the system's mode.
+   3. Component   --kit-card-*, --kit-stage-*, --kit-rail-*, --kit-code-*
+                           reference only the semantic layer.
+   Rules below use component and semantic tokens only. No colour literals.
+
+   Owner style rule: no harsh outlines. Surfaces separate by tone; a border,
+   where one helps, is a hairline at 8 percent of the text colour; hover is a
+   small lift or tone shift; selected is a filled tone; the keyboard focus
+   ring is the one outline that stays. Specimens are never restyled.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.uikit-shell {
+  /* ── 1. Scale primitives shared by every system ── */
+  --kp-space-1: var(--dh-space-4, 4px);
+  --kp-space-2: var(--dh-space-8, 8px);
+  --kp-space-3: var(--dh-space-12, 12px);
+  --kp-space-4: var(--dh-space-16, 16px);
+  --kp-space-5: var(--dh-space-24, 24px);
+  --kp-space-6: var(--dh-space-32, 32px);
+  --kp-space-7: var(--dh-space-48, 48px);
+  --kp-space-8: var(--dh-space-64, 64px);
+  --kp-text-xs: 12px;
+  --kp-text-sm: 13px;
+  --kp-text-md: 15px;
+  --kp-text-lg: 18px;
+  --kp-text-xl: 24px;
+  --kp-text-2xl: clamp(32px, 3.6vw, 44px);
+  --kp-hairline: 1px;
+  --kp-ring: 2px;
+  --kp-space-0: 2px;
+  --kp-space-h: 6px;
+  --kp-control: 36px;
+  --kp-control-sm: 32px;
+  --kp-control-lg: 44px;
+  --kp-stage-h: 208px;
+  --kp-compare-h: 220px;
+  --kp-fp-h: 100px;
+  --kp-compare-h-compact: 148px;
+  --kp-compare-h-tall: 300px;
+  --kp-compare-meta-h: 78px;
+  /* Chrome text sits on a numeric line height, so a line is the same height
+     whichever system's typeface draws it. */
+  --kp-leading: 1.5;
+  /* Top bar and detail header: one size in every system, so nothing moves
+     when the system changes (owner rule: no jumping). */
+  --kp-topbar-h: 48px;
+  --kp-inset: 56px;
+  --kp-inset-phone: 16px;
+  --kp-title-size: 32px;
+  --kp-title-lh: 40px;
+  --kp-desc-size: 16px;
+  --kp-desc-lh: 26px;
+  /* Edge cue on a scroller that continues past its edge. */
+  --kp-fade: 28px;
+  --kp-fade-tall: 44px;
+  /* Foundation thumbnails. */
+  --kp-ft-bar: 10px;
+  --kp-ft-dot: 22px;
+  --kp-ft-icon: 26px;
+  --kp-ft-swatch: 40px;
+  --kp-ft-plate: 52px;
+  --kp-ft-card-w: 48px;
+  --kp-ft-card-h: 56px;
+  --kp-ft-display: 44px;
+  --kp-ft-heading: 22px;
+  --kp-ft-body: 14px;
+  --kp-icon-sm: 15px;
+  --kp-icon-md: 20px;
+  /* Carbon's own font-family rules read these inside the library, so its
+     text uses the app's self-hosted IBM Plex. Outside the library they are
+     not set and Carbon's rules resolve exactly as Carbon wrote them. */
+  --kit-carbon-sans: var(--font-ibm-plex-sans, 'IBM Plex Sans'), 'IBM Plex Sans';
+  --kit-carbon-mono: var(--font-ibm-plex-mono, 'IBM Plex Mono'), 'IBM Plex Mono';
+  --kp-dur: var(--dh-motion-dur-hover, 160ms);
+  --kp-ease: var(--dh-motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+
+  /* ── 2. Semantic ── */
+  --kit-surface: var(--kp-ground);
+  --kit-surface-raised: var(--kp-raised);
+  --kit-surface-sunken: color-mix(in srgb, var(--kp-text) 4%, transparent);
+  --kit-surface-hover: color-mix(in srgb, var(--kp-text) 7%, transparent);
+  --kit-surface-selected: color-mix(in srgb, var(--kp-text) 11%, transparent);
+  --kit-border-subtle: color-mix(in srgb, var(--kp-text) 8%, transparent);
+  --kit-text: var(--kp-text);
+  --kit-text-muted: var(--kp-text-2);
+  --kit-accent: var(--kp-accent);
+  --kit-accent-on: var(--kp-accent-on);
+  --kit-accent-text: var(--kp-accent-text);
+  --kit-accent-tint: color-mix(in srgb, var(--kp-accent) 14%, transparent);
+  --kit-focus: var(--kp-focus);
+  --kit-radius: var(--kp-corner);
+  --kit-radius-control: min(var(--kp-corner-control), 18px);
+  /* Lift is a soft layered shadow on light surfaces and nothing in dark,
+     where tone does the work (--kp-lift is 1 or 0). */
+  --kit-shadow-rest: 0 1px 2px color-mix(in srgb, var(--kp-text) calc(var(--kp-lift) * 6%), transparent);
+  --kit-shadow-lift: 0 8px 24px color-mix(in srgb, var(--kp-text) calc(var(--kp-lift) * 9%), transparent), 0 2px 6px color-mix(in srgb, var(--kp-text) calc(var(--kp-lift) * 5%), transparent);
+
+  /* ── 3. Component ── */
+  --kit-card-bg: var(--kit-surface-raised);
+  --kit-card-bg-hover: color-mix(in srgb, var(--kit-text) 3%, var(--kit-surface-raised));
+  --kit-card-radius: var(--kit-radius);
+  --kit-card-shadow: var(--kit-shadow-rest);
+  --kit-card-shadow-hover: var(--kit-shadow-lift);
+  --kit-stage-bg: var(--kit-surface-sunken);
+  --kit-stage-radius: max(0px, calc(var(--kit-radius) - var(--kp-space-1)));
+  --kit-rail-text: var(--kit-text-muted);
+  --kit-code-bg: var(--kit-surface-sunken);
+  --kit-chip-bg: var(--kit-surface-sunken);
+  --kit-chip-selected: var(--kit-surface-selected);
+}
+
+/* ── Catalogue card: tonal, no outline ── */
+.uikit-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--kit-card-radius);
+  background: var(--kit-card-bg);
+  box-shadow: var(--kit-card-shadow);
+  backdrop-filter: var(--kp-glass);
+  -webkit-backdrop-filter: var(--kp-glass);
+  transition: transform var(--kp-dur) var(--kp-ease), box-shadow var(--kp-dur) var(--kp-ease), background-color var(--kp-dur) var(--kp-ease);
+}
+.uikit-card:hover {
+  transform: translateY(calc(var(--kp-ring) * -1));
+  background-color: var(--kit-card-bg-hover);
+  box-shadow: var(--kit-card-shadow-hover);
+}
+/* The card's one control: its hit area covers the whole card. */
+.uikit-card-hit {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.uikit-card-hit::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.uikit-card-hit:focus-visible { outline: none; }
+.uikit-card:has(.uikit-card-hit:focus-visible) {
+  outline: var(--kp-ring) solid var(--kit-focus);
+  outline-offset: var(--kp-ring);
+}
+.uikit-card mark,
+.kit-page mark { background: var(--kit-accent-tint); color: inherit; border-radius: var(--kp-space-1); padding: 0 1px; }
+
+/* Library chrome never inherits `normal` line height (it varies by
+   typeface, so rows would change height with the system). Everything that
+   holds a specimen is reset: a specimen's metrics are its system's. */
+.kit-page, .kit-detail, .kit-nis { line-height: var(--kp-leading); }
+.kit-specimen, .kit-compare-stage, .kit-hero-inner, .kit-play-stage, .dh-matrix-specimen { line-height: normal; }
+
+/* ── Overview page ── */
+.kit-page {
+  min-height: 100%;
+  padding: 0 clamp(var(--kp-space-4), 4vw, var(--kp-space-7)) var(--kp-space-8);
+  color: var(--kit-text);
+  font-family: var(--kp-font);
+  container-type: inline-size;
+  container-name: kit;
+}
+.kit-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--kp-space-5) var(--kp-space-7);
+  padding: clamp(var(--kp-space-5), 3.4vw, var(--kp-space-7)) 0 var(--kp-space-5);
+}
+.kit-title {
+  margin: 0;
+  font-size: var(--kp-text-2xl);
+  font-weight: var(--kp-title-weight);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+.kit-lede { margin: var(--kp-space-3) 0 0; max-width: 480px; min-height: 3em; font-size: var(--kp-text-md); line-height: 1.5; color: var(--kit-text-muted); }
+
+/* Fingerprint: the system drawn from its own tokens */
+.kit-fp {
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  gap: var(--kp-space-1);
+  padding: var(--kp-space-1);
+  border-radius: var(--kit-card-radius);
+  background: var(--kit-card-bg);
+  box-shadow: var(--kit-card-shadow);
+  backdrop-filter: var(--kp-glass);
+  -webkit-backdrop-filter: var(--kp-glass);
+}
+.kit-fp-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--kp-space-2);
+  box-sizing: border-box;
+  min-height: var(--kp-fp-h);
+  padding: var(--kp-space-3) var(--kp-space-4);
+  border-radius: var(--kit-stage-radius);
+}
+.kit-fp-cell + .kit-fp-cell { background: var(--kit-surface-sunken); }
+.kit-fp-cell i { font-style: normal; font-size: var(--kp-text-xs); color: var(--kit-text-muted); white-space: nowrap; }
+.kit-fp-type { flex-direction: row; align-items: center; gap: var(--kp-space-3); }
+.kit-fp-type > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.kit-fp-type b { font-size: var(--kp-text-sm); font-weight: 600; white-space: nowrap; }
+.kit-fp-aa { font-size: 40px; line-height: 1; font-weight: var(--kp-title-weight); color: var(--kit-accent-text); letter-spacing: -0.02em; }
+.kit-fp-ramp { display: flex; height: 28px; border-radius: var(--kit-radius-control); overflow: hidden; }
+.kit-fp-ramp span { width: 20px; }
+.kit-fp-shapes { display: flex; align-items: flex-end; gap: var(--kp-space-2); height: 28px; }
+.kit-fp-corner { width: 28px; height: 28px; border-radius: var(--kp-corner) 0 0 0; background: var(--kit-surface-selected); }
+.kit-fp-corner.is-control { border-radius: var(--kp-corner-control) 0 0 0; background: var(--kit-accent); }
+.kit-fp-row { width: 44px; border-radius: var(--kit-radius-control); background: var(--kit-surface-selected); max-height: 28px; }
+.kit-fp-controls { gap: var(--kp-space-1); justify-content: center; }
+
+/* Segmented control: filled tone for the selected option, no outline */
+.kit-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: calc(var(--kit-radius-control) + 2px); background: var(--kit-chip-bg); }
+.kit-seg button {
+  min-height: 28px;
+  padding: 0 var(--kp-space-3);
+  border: 0;
+  border-radius: var(--kit-radius-control);
+  background: transparent;
+  color: var(--kit-text-muted);
+  font: inherit;
+  font-size: var(--kp-text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--kp-dur) var(--kp-ease), color var(--kp-dur) var(--kp-ease);
+}
+.kit-seg button:hover { color: var(--kit-text); }
+.kit-seg button[aria-pressed="true"],
+.kit-seg button[aria-selected="true"] { background: var(--kit-surface-raised); color: var(--kit-text); font-weight: 600; box-shadow: var(--kit-shadow-rest); }
+.kit-seg button:focus-visible,
+.kit-filters button:focus-visible,
+.kit-rail a:focus-visible,
+.kit-empty-actions button:focus-visible,
+.kit-compare-meta a:focus-visible,
+.kit-nis a:focus-visible,
+.kit-nis button:focus-visible,
+.kit-pager a:focus-visible { outline: var(--kp-ring) solid var(--kit-focus); outline-offset: 1px; }
+
+/* Search and filter stay in reach */
+.kit-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--kp-space-2) var(--kp-space-4);
+  margin: 0 calc(clamp(var(--kp-space-4), 4vw, var(--kp-space-7)) * -1);
+  padding: var(--kp-space-3) clamp(var(--kp-space-4), 4vw, var(--kp-space-7));
+  background: color-mix(in srgb, var(--kp-canvas) 82%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.kit-search { position: relative; flex: 1 1 260px; max-width: 420px; }
+.kit-search > .material-symbols-outlined { position: absolute; left: var(--kp-space-3); top: 50%; transform: translateY(-50%); font-size: var(--kp-text-lg); color: var(--kit-text-muted); pointer-events: none; }
+.kit-search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 40px 0 38px;
+  border: 0;
+  border-radius: var(--kit-radius-control);
+  background: var(--kit-surface-hover);
+  color: var(--kit-text);
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: background-color var(--kp-dur) var(--kp-ease);
+}
+.kit-search input:hover { background: var(--kit-surface-selected); }
+.kit-search input::placeholder { color: var(--kit-text-muted); opacity: 1; }
+.kit-search input::-webkit-search-cancel-button { display: none; }
+.kit-search input:focus-visible { outline: var(--kp-ring) solid var(--kit-focus); outline-offset: 1px; }
+.kit-search kbd {
+  position: absolute; right: var(--kp-space-3); top: 50%; transform: translateY(-50%);
+  min-width: 20px; padding: 1px 6px; border-radius: var(--kp-space-1);
+  background: var(--kit-surface-raised); font: inherit; font-size: var(--kp-text-xs); line-height: 1.4; text-align: center; color: var(--kit-text-muted);
+}
+.kit-search input:focus ~ kbd, .kit-search input:not(:placeholder-shown) ~ kbd { display: none; }
+.kit-filters { display: flex; gap: var(--kp-space-1); overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.kit-filters::-webkit-scrollbar { display: none; }
+.kit-filters button {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--kp-control); padding: 0 var(--kp-space-3);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: transparent; color: var(--kit-text-muted);
+  font: inherit; font-size: 13.5px; white-space: nowrap; cursor: pointer;
+  transition: background-color var(--kp-dur) var(--kp-ease), color var(--kp-dur) var(--kp-ease);
+}
+.kit-filters button span { font-size: var(--kp-text-xs); font-variant-numeric: tabular-nums; }
+.kit-filters button:hover:not(:disabled) { color: var(--kit-text); background: var(--kit-surface-hover); }
+.kit-filters button[aria-pressed="true"] { color: var(--kit-text); font-weight: 600; background: var(--kit-chip-selected); }
+.kit-filters button:disabled { opacity: 0.45; cursor: default; }
+
+/* Body: sticky section rail + sections */
+.kit-body { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: var(--kp-space-6); align-items: start; padding-top: var(--kp-space-5); }
+.kit-rail { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 2px; }
+.kit-rail a {
+  display: flex; justify-content: space-between; gap: var(--kp-space-2);
+  padding: var(--kp-space-2) var(--kp-space-3);
+  border-radius: var(--kit-radius-control);
+  color: var(--kit-rail-text); font-size: var(--kp-text-sm); text-decoration: none;
+  transition: background-color var(--kp-dur) var(--kp-ease), color var(--kp-dur) var(--kp-ease);
+}
+.kit-rail a span { font-variant-numeric: tabular-nums; }
+.kit-rail a:hover { background: var(--kit-surface-hover); color: var(--kit-text); }
+.kit-sections { min-width: 0; }
+.kit-section, .kit-band { padding-bottom: var(--kp-space-7); scroll-margin-top: 72px; }
+.kit-section-head { margin-bottom: var(--kp-space-5); }
+.kit-section-head h2 { margin: 0; font-size: var(--kp-text-xl); font-weight: var(--kp-title-weight); line-height: 1.2; }
+.kit-section-head h2 span, .kit-subgroup h3 span { margin-left: var(--kp-space-1); font-size: var(--kp-text-sm); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--kit-text-muted); }
+.kit-section-head p { margin: var(--kp-space-1) 0 0; font-size: 14px; color: var(--kit-text-muted); }
+.kit-subgroup + .kit-subgroup { margin-top: var(--kp-space-6); }
+.kit-subgroup h3 { margin: 0 0 var(--kp-space-3); font-size: var(--kp-text-md); font-weight: 600; }
+.kit-band-picks { margin-bottom: var(--kp-space-4); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+
+/* The wall: rows always complete (spans come from rowSpans) */
+.kit-wall { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: dense; gap: var(--kp-space-4); }
+.kit-wall > li { grid-column: span var(--s4, 1); animation: kit-in var(--dh-motion-dur-emphasis, 240ms) var(--kp-ease) both; }
+@keyframes kit-in { from { opacity: 0; transform: translateY(var(--kp-space-1)); } to { opacity: 1; transform: none; } }
+.kit-tile { overflow: hidden; }
+.kit-stage {
+  position: relative;
+  height: var(--kp-stage-h);
+  margin: var(--kp-space-2) var(--kp-space-2) 0;
+  border-radius: var(--kit-stage-radius);
+  background: var(--kit-stage-bg);
+  overflow: hidden;
+}
+/* The real demo at true size, anchored top-left; what does not fit fades
+   out rather than being scaled down. */
+.kit-specimen {
+  position: absolute; inset: 0;
+  padding: var(--kp-space-5) var(--kp-space-5) 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--kp-fade-tall)), transparent), linear-gradient(to right, #000 calc(100% - var(--kp-fade)), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--kp-fade-tall)), transparent), linear-gradient(to right, #000 calc(100% - var(--kp-fade)), transparent);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+/* Wide enough for a row of controls; text wraps at the tile, nothing is cut
+   at the right edge. */
+.kit-specimen > div { width: 100%; min-width: 0; }
+.kit-specimen.is-graphic { padding: var(--kp-space-4); -webkit-mask-image: none; mask-image: none; display: flex; align-items: center; justify-content: center; }
+
+/* Foundation thumbnails: one graphic per concept, sizes from the tokens
+   above. Numbers shown are data from the system, set inline. */
+.kit-ft { display: flex; width: 100%; height: 100%; min-width: 0; }
+.kit-ft b, .kit-ft i, .kit-ft code { font-style: normal; font-weight: 400; }
+.kit-ft-color { gap: var(--kp-space-0); align-items: stretch; }
+.kit-ft-color span { flex: 1; border-radius: var(--kp-space-1); }
+.kit-ft-mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--kp-ft-dot), 1fr)); grid-auto-rows: 1fr; gap: var(--kp-space-0); align-content: stretch; }
+.kit-ft-mosaic span { border-radius: var(--kp-space-0); min-height: var(--kp-ft-dot); }
+.kit-ft-layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--kp-space-2); align-content: center; }
+.kit-ft-layers span { display: flex; flex-direction: column; justify-content: center; gap: var(--kp-space-0); min-height: var(--kp-ft-plate); padding: var(--kp-space-2) var(--kp-space-3); border-radius: var(--kit-stage-radius); }
+.kit-ft-layers b { font-size: var(--kp-text-lg); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.kit-ft-layers i { font-size: var(--kp-text-xs); opacity: 0.8; }
+.kit-ft-type { flex-direction: column; justify-content: center; gap: var(--kp-space-0); line-height: 1.15; color: var(--kit-text); }
+.kit-ft-type .is-display { font-size: var(--kp-ft-display); font-weight: 700; }
+.kit-ft-type .is-heading { font-size: var(--kp-ft-heading); font-weight: 500; }
+.kit-ft-type .is-body { font-size: var(--kp-ft-body); }
+.kit-ft-type .is-caption { font-size: var(--kp-text-xs); }
+.kit-ft-content { flex-direction: column; justify-content: center; align-items: flex-start; gap: var(--kp-space-2); }
+.kit-ft-content span { display: block; height: var(--kp-space-2); border-radius: var(--kp-space-1); opacity: 0.55; }
+.kit-ft-content .is-title { width: 44%; height: var(--kp-space-3); opacity: 1; margin-bottom: var(--kp-space-1); }
+.kit-ft-content .is-action { display: flex; align-items: center; width: auto; height: var(--kp-control-sm); padding: 0 var(--kp-space-4); margin-top: var(--kp-space-2); opacity: 1; }
+.kit-ft-content .is-action i { display: block; width: var(--kp-ft-card-h); height: var(--kp-space-h); border-radius: var(--kp-space-1); }
+.kit-ft-spacing { flex-direction: column; justify-content: center; gap: var(--kp-space-2); }
+.kit-ft-spacing span { display: flex; align-items: center; gap: var(--kp-space-3); font-size: var(--kp-text-xs); color: var(--kit-text-muted); }
+.kit-ft-spacing b { flex: none; width: var(--kp-space-5); text-align: right; font-variant-numeric: tabular-nums; }
+.kit-ft-spacing i { display: block; height: var(--kp-ft-bar); max-width: 100%; border-radius: var(--kp-space-0); }
+.kit-ft-elevation { align-items: center; justify-content: center; gap: var(--kp-space-3); }
+.kit-ft-elevation span { width: var(--kp-ft-card-w); height: var(--kp-ft-card-h); }
+.kit-ft-icons { flex-wrap: wrap; align-content: center; justify-content: center; gap: var(--kp-space-4) var(--kp-space-5); font-size: var(--kp-ft-icon); }
+.kit-ft-icons span { display: inline-flex; align-items: center; justify-content: center; width: var(--kp-ft-icon); height: var(--kp-ft-icon); }
+.kit-ft-density { align-items: flex-end; justify-content: center; gap: var(--kp-space-2); padding-bottom: var(--kp-space-3); }
+.kit-ft-density span { flex: 0 1 var(--kp-ft-plate); min-width: 0; display: inline-flex; align-items: center; justify-content: center; font-size: var(--kp-text-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
+.kit-ft-shape { align-items: center; justify-content: center; gap: var(--kp-space-2); }
+.kit-ft-shape span { flex: 0 1 var(--kp-ft-swatch); aspect-ratio: 1; min-width: 0; }
+.kit-ft-motion { flex-direction: column; justify-content: center; gap: var(--kp-space-2); }
+.kit-ft-motion span { display: grid; grid-template-columns: minmax(0, 1fr) var(--kp-ft-card-w); align-items: center; gap: var(--kp-space-2); }
+.kit-ft-motion i { display: block; height: var(--kp-ft-bar); border-radius: var(--kp-space-h); }
+.kit-ft-motion b { font-size: var(--kp-text-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kit-ft-stack { flex-direction: column; justify-content: center; gap: var(--kp-space-0); }
+.kit-ft-stack span { display: flex; align-items: center; min-height: var(--kp-control); padding: 0 var(--kp-space-4); border-radius: var(--kit-stage-radius); font-size: var(--kp-text-sm); font-weight: 600; }
+.kit-ft-stack span:nth-child(2) { margin: 0 var(--kp-space-3); }
+.kit-ft-stack span:nth-child(1) { margin: 0 var(--kp-space-5); }
+.kit-ft-tonal { flex-direction: column; justify-content: center; gap: var(--kp-space-2); }
+.kit-ft-tonal span { display: flex; height: var(--kp-control-sm); border-radius: var(--kit-stage-radius); overflow: hidden; }
+.kit-ft-tonal i { flex: 1; }
+.kit-ft-tokens { flex-direction: column; justify-content: center; gap: var(--kp-space-2); font-size: var(--kp-text-sm); }
+.kit-ft-tokens span { display: flex; align-items: center; gap: var(--kp-space-3); }
+.kit-ft-tokens i { flex: none; display: block; width: var(--kp-ft-dot); height: var(--kp-ft-dot); border-radius: var(--kp-space-h); box-shadow: inset 0 0 0 var(--kp-hairline) var(--kit-border-subtle); }
+.kit-ft-tokens code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--kp-text-xs); }
+.kit-ft-mapping { flex-direction: column; justify-content: center; gap: var(--kp-space-3); }
+.kit-ft-mapping span { display: grid; grid-template-columns: var(--kp-ft-dot) minmax(var(--kp-space-4), 1fr) minmax(0, 2fr); align-items: center; gap: var(--kp-space-2); }
+.kit-ft-mapping i { display: block; }
+.kit-ft-mapping .is-dot { width: var(--kp-ft-dot); height: var(--kp-ft-dot); border-radius: 50%; box-shadow: inset 0 0 0 var(--kp-hairline) var(--kit-border-subtle); }
+.kit-ft-mapping .is-line { height: var(--kp-hairline); opacity: 0.6; }
+.kit-ft-mapping .is-pill { height: var(--kp-control-sm); border-radius: var(--kp-control-sm); }
+.kit-ft-mapping .is-field { height: var(--kp-control-sm); border-radius: var(--kp-space-1) var(--kp-space-1) 0 0; border-bottom: var(--kp-ring) solid; }
+.kit-ft-a11y { align-items: center; justify-content: center; gap: var(--kp-space-2); }
+.kit-ft-a11y span { display: inline-flex; align-items: center; justify-content: center; width: var(--kp-ft-plate); height: var(--kp-ft-plate); border-radius: var(--kit-stage-radius); font-size: var(--kp-icon-md); font-weight: 600; }
+.kit-tile-text { padding: var(--kp-space-4) var(--kp-space-4) var(--kp-space-5); }
+.kit-tile-name { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--kit-text); }
+.kit-tile-desc, .kit-tool-desc { margin: var(--kp-space-1) 0 0; font-size: var(--kp-text-sm); line-height: 1.5; color: var(--kit-text-muted); overflow-wrap: anywhere; }
+.kit-tile-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.kit-tile-meta { margin: var(--kp-space-2) 0 0; font-size: var(--kp-text-xs); color: var(--kit-text-muted); font-variant-numeric: tabular-nums; }
+
+/* Tools: small icon, name, description that wraps */
+.kit-tools { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--kp-space-4); }
+.kit-tool { flex-direction: row; align-items: flex-start; gap: var(--kp-space-4); padding: var(--kp-space-4); }
+.kit-tool-icon { flex: none; display: grid; place-items: center; width: var(--kp-control); height: var(--kp-control); border-radius: var(--kit-radius-control); background: var(--kit-accent-tint); color: var(--kit-accent-text); font-size: 20px; }
+
+/* Empty state */
+.kit-empty { padding: var(--kp-space-7) var(--kp-space-5); text-align: center; border-radius: var(--kit-card-radius); background: var(--kit-surface-sunken); }
+.kit-empty strong { display: block; font-size: var(--kp-text-lg); font-weight: 600; overflow-wrap: anywhere; }
+.kit-empty p { margin: var(--kp-space-2) 0 0; font-size: 14px; color: var(--kit-text-muted); }
+.kit-empty-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--kp-space-2); margin-top: var(--kp-space-4); }
+.kit-empty-actions button, .kit-nis button, .kit-nis a.kit-btn, .kit-pager a {
+  display: inline-flex; align-items: center; gap: var(--kp-space-2);
+  min-height: 40px; padding: 0 var(--kp-space-4);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: var(--kit-surface-hover); color: var(--kit-text);
+  font: inherit; font-size: 14px; text-decoration: none; cursor: pointer;
+  transition: background-color var(--kp-dur) var(--kp-ease);
+}
+.kit-empty-actions button:hover, .kit-nis button:hover, .kit-nis a.kit-btn:hover, .kit-pager a:hover { background: var(--kit-surface-selected); }
+.kit-empty-actions button.is-tonal, .kit-nis a.kit-btn.is-tonal { background: var(--kit-accent-tint); color: var(--kit-accent-text); font-weight: 600; }
+
+/* ── Compare: one component, five systems ── */
+.kit-compare { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--kp-space-3); animation: kit-in var(--dh-motion-dur-emphasis, 240ms) var(--kp-ease) both; }
+.kit-compare-panel { display: flex; flex-direction: column; min-width: 0; border-radius: var(--kit-card-radius); background: var(--kit-card-bg); box-shadow: var(--kit-card-shadow); overflow: hidden; }
+.kit-compare-panel[data-current] { background: var(--kit-card-bg-hover); }
+/* One fixed outer size in every system: the active system's stylesheet can
+   flip the box model, which used to add the padding to the height and move
+   everything below on a switch. */
+.kit-compare-panel, .kit-compare-stage, .kit-compare-meta { box-sizing: border-box; }
+.kit-compare-stage {
+  display: flex; align-items: center; justify-content: center;
+  height: var(--kp-compare-h); margin: var(--kp-space-2) var(--kp-space-2) 0; padding: var(--kp-space-5) var(--kp-space-4);
+  border-radius: var(--kit-stage-radius);
+  overflow: auto;
+}
+.kit-compare.is-compact .kit-compare-stage { height: var(--kp-compare-h-compact); }
+/* A table needs more room than a control; still one size in every system. */
+.kit-compare[data-concept="data-table"] .kit-compare-stage { height: var(--kp-compare-h-tall); align-items: flex-start; justify-content: flex-start; }
+.kit-compare-stage > * { max-width: 100%; }
+.kit-compare-none { margin: 0; font-size: var(--kp-text-sm); opacity: 0.75; text-align: center; }
+.kit-compare-meta { display: flex; flex-direction: column; gap: var(--kp-space-0); height: var(--kp-compare-meta-h); padding: var(--kp-space-3) var(--kp-space-4) var(--kp-space-4); font-size: var(--kp-text-sm); line-height: var(--kp-space-5); color: var(--kit-text-muted); overflow: hidden; }
+.kit-compare-meta > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kit-compare-meta strong { font-size: 14px; font-weight: 600; color: var(--kit-text); }
+.kit-compare-meta a, .kit-compare-list a { color: var(--kit-accent-text); text-decoration: underline; text-underline-offset: 3px; border-radius: var(--kp-space-1); }
+.kit-compare-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--kp-space-2); max-width: 420px; }
+.kit-compare-list li { display: flex; justify-content: space-between; gap: var(--kp-space-4); padding: var(--kp-space-3) var(--kp-space-4); border-radius: var(--kit-radius-control); background: var(--kit-surface-sunken); font-size: 14px; }
+.kit-detail .kit-compare-lede { max-width: 640px; min-height: 3.2em; }
+.kit-note { margin: var(--kp-space-3) 0 0; font-size: var(--kp-text-sm); color: var(--kit-text-muted); }
+
+/* ── Not in this system ── */
+.kit-nis { max-width: 720px; margin: 0 auto; padding: var(--kp-space-7) clamp(var(--kp-space-4), 4vw, var(--kp-space-7)); font-family: var(--kp-font); color: var(--kit-text); }
+.kit-nis-card { padding: var(--kp-space-7) var(--kp-space-6); border-radius: var(--kit-card-radius); background: var(--kit-card-bg); box-shadow: var(--kit-card-shadow); }
+.kit-nis h1 { margin: 0; font-size: var(--kp-text-xl); font-weight: var(--kp-title-weight); line-height: 1.2; }
+.kit-nis p { margin: var(--kp-space-2) 0 0; font-size: var(--kp-text-md); color: var(--kit-text-muted); }
+.kit-nis h2 { margin: var(--kp-space-6) 0 var(--kp-space-3); font-size: var(--kp-text-sm); font-weight: 600; color: var(--kit-text-muted); }
+.kit-nis ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--kp-space-2); }
+
+/* ── Top bar: breadcrumb. Fixed height and inset in every system. ── */
+.kit-topbar {
+  display: flex; align-items: center; flex: none;
+  box-sizing: border-box; height: var(--kp-topbar-h); min-height: var(--kp-topbar-h);
+  padding: 0 var(--kp-inset);
+  font-family: var(--kp-font); font-size: var(--kp-text-sm); line-height: var(--kp-space-5);
+  color: var(--kit-text);
+}
+.kit-crumbs { position: relative; display: flex; align-items: center; gap: var(--kp-space-2); min-width: 0; }
+.kit-crumbs button { font: inherit; cursor: pointer; }
+.kit-crumb-link {
+  margin: 0 calc(var(--kp-space-2) * -1); padding: var(--kp-space-1) var(--kp-space-2);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: transparent; color: var(--kit-text-muted);
+  transition: background-color var(--kp-dur) var(--kp-ease), color var(--kp-dur) var(--kp-ease);
+}
+.kit-crumb-link:hover { background: var(--kit-surface-hover); color: var(--kit-text); }
+.kit-crumb-sep { color: var(--kit-text-muted); opacity: 0.7; }
+.kit-crumb-here { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Phone: the system name opens a picker. Tonal, no outline. */
+.kit-crumb-pick {
+  display: inline-flex; align-items: center; gap: var(--kp-space-1);
+  min-height: var(--kp-control-sm); padding: 0 var(--kp-space-2) 0 var(--kp-space-3);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: var(--kit-surface-hover); color: var(--kit-text); font-weight: 600;
+}
+.kit-crumb-pick[aria-expanded="true"] { background: var(--kit-surface-selected); }
+.kit-crumb-pick .material-symbols-outlined { font-size: var(--kp-text-lg); color: var(--kit-text-muted); }
+.kit-crumb-scrim { position: fixed; inset: 0; z-index: 98; }
+.kit-crumb-menu {
+  position: absolute; top: calc(100% + var(--kp-space-1)); left: 0; z-index: 99;
+  display: flex; flex-direction: column; gap: var(--kp-space-0);
+  min-width: calc(var(--kp-ft-card-w) * 4); padding: var(--kp-space-1);
+  border-radius: var(--kit-card-radius);
+  background: color-mix(in srgb, var(--kp-text) 4%, var(--kp-canvas));
+  box-shadow: var(--kit-shadow-lift), 0 0 0 var(--kp-hairline) var(--kit-border-subtle);
+}
+.kit-crumb-menu button {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--kp-space-4);
+  min-height: var(--kp-control-lg); padding: 0 var(--kp-space-3);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: transparent; color: var(--kit-text); text-align: left;
+}
+.kit-crumb-menu button:hover { background: var(--kit-surface-hover); }
+.kit-crumb-menu button[aria-selected="true"] { background: var(--kit-accent-tint); color: var(--kit-accent-text); font-weight: 600; }
+.kit-crumb-menu .material-symbols-outlined { font-size: var(--kp-text-lg); }
+.kit-crumb-link:focus-visible, .kit-crumb-pick:focus-visible, .kit-crumb-menu button:focus-visible { outline: var(--kp-ring) solid var(--kit-focus); outline-offset: var(--kp-hairline); }
+
+/* ── Detail page chrome ── */
+/* The header keeps one shape in every system: same inset, a title on a
+   fixed line box and two reserved lines of description, so the tab strip
+   below starts at the same y whichever system is in view. */
+.kit-detail.dh-detail { box-sizing: border-box; padding: var(--kp-space-5) var(--kp-inset) var(--kp-space-8); }
+.kit-detail .dh-detail-header { max-width: 720px; margin: 0 0 var(--kp-space-5); }
+.kit-detail .dh-detail-title { margin: 0 0 var(--kp-space-2); font-family: var(--kp-font); font-size: var(--kp-title-size); line-height: var(--kp-title-lh); font-weight: var(--kp-title-weight); letter-spacing: -0.015em; min-height: var(--kp-title-lh); }
+.kit-detail .dh-detail-desc { margin: 0; font-family: var(--kp-font); font-size: var(--kp-desc-size); line-height: var(--kp-desc-lh); min-height: calc(var(--kp-desc-lh) * 2); }
+.kit-detail { font-family: var(--kp-font); color: var(--kit-text); }
+.kit-detail .dh-section-h { color: var(--kit-text); }
+.kit-detail .dh-section-lede { color: var(--kit-text-muted); }
+/* The tab strip spans the page inset to inset, so the backdrop it takes
+   when stuck reaches both edges of the column. */
+.kit-tabs-mark { height: var(--kp-hairline); margin-bottom: calc(var(--kp-hairline) * -1); pointer-events: none; }
+.kit-tabs {
+  position: sticky; top: 0; z-index: 2; display: flex;
+  margin: 0 calc(var(--kp-inset) * -1) var(--kp-space-6); padding: var(--kp-space-2) var(--kp-inset);
+  overflow-x: auto; scrollbar-width: none;
+  transition: background-color var(--kp-dur) var(--kp-ease);
+}
+.kit-tabs[data-stuck] {
+  background: color-mix(in srgb, var(--kp-canvas) 82%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.kit-tabs::-webkit-scrollbar { display: none; }
+/* A scroller fades only at an edge it continues past. useEdgeFade sets
+   data-fade from the element's real overflow and scroll position, so a row
+   that fits is never masked. */
+.uikit-shell [data-fade="end"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--kp-fade)), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--kp-fade)), transparent);
+}
+.uikit-shell [data-fade="start"] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - var(--kp-fade)), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - var(--kp-fade)), transparent);
+}
+.uikit-shell [data-fade="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--kp-fade), #000 calc(100% - var(--kp-fade)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--kp-fade), #000 calc(100% - var(--kp-fade)), transparent);
+}
+.kit-tabs .kit-seg button { min-height: var(--kp-control); padding: 0 var(--kp-space-4); font-size: 14px; }
+.kit-hero {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-height: 300px; padding: var(--kp-space-7) var(--kp-space-6);
+  border-radius: var(--kit-card-radius); background: var(--kit-card-bg); box-shadow: var(--kit-card-shadow);
+  overflow: auto;
+}
+.kit-hero-inner { position: relative; max-width: 100%; animation: kit-fade var(--kp-dur) var(--kp-ease) both; }
+@keyframes kit-fade { from { opacity: 0; } to { opacity: 1; } }
+.kit-chips { display: flex; flex-wrap: wrap; gap: var(--kp-space-2); margin-top: var(--kp-space-4); }
+.kit-chips span { display: inline-flex; align-items: center; min-height: 28px; padding: 0 var(--kp-space-3); border-radius: var(--kit-radius-control); background: var(--kit-chip-bg); color: var(--kit-text-muted); font-size: var(--kp-text-xs); }
+.kit-panel { border-radius: var(--kit-card-radius); background: var(--kit-card-bg); box-shadow: var(--kit-card-shadow); }
+.kit-play { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--kp-space-2); padding: var(--kp-space-2); }
+.kit-play-stage { display: flex; align-items: center; justify-content: center; min-height: 200px; padding: var(--kp-space-6); border-radius: var(--kit-stage-radius); background: var(--kit-stage-bg); overflow: auto; }
+.kit-play-controls { display: flex; flex-direction: column; gap: var(--kp-space-4); padding: var(--kp-space-4); }
+.kit-play-controls label, .kit-play-controls legend { display: block; margin-bottom: var(--kp-space-1); padding: 0; font-size: var(--kp-text-xs); color: var(--kit-text-muted); }
+.kit-play-controls fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.kit-play-controls .kit-seg { flex-wrap: wrap; }
+.kit-play-controls input[type="text"] { width: 100%; height: var(--kp-control); padding: 0 var(--kp-space-3); border: 0; border-radius: var(--kit-radius-control); background: var(--kit-surface-hover); color: var(--kit-text); font: inherit; font-size: 14px; box-sizing: border-box; }
+.kit-play-controls input[type="text"]:focus-visible { outline: var(--kp-ring) solid var(--kit-focus); outline-offset: 1px; }
+.kit-pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--kp-space-4); margin-top: var(--kp-space-7); }
+.kit-pager a { flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--kp-space-0); min-height: var(--kp-ft-card-h); padding: var(--kp-space-3) var(--kp-space-4); box-sizing: border-box; min-width: 0; overflow-wrap: anywhere; }
+.kit-pager a.is-next { grid-column: 2; align-items: flex-end; text-align: right; }
+.kit-pager small { font-size: var(--kp-text-xs); color: var(--kit-text-muted); }
+
+/* Code block and its copy control: tonal, inside the system's own type. */
+.kit-detail .kit-code { border: 0 !important; border-radius: var(--kit-card-radius) !important; background: var(--kit-code-bg) !important; box-shadow: none !important; }
+.kit-copy {
+  position: absolute; top: var(--kp-space-2); right: var(--kp-space-2); z-index: 2;
+  display: inline-flex; align-items: center; gap: var(--kp-space-h);
+  min-height: var(--kp-control-sm); padding: 0 var(--kp-space-3);
+  border: 0; border-radius: var(--kit-radius-control);
+  background: var(--kit-surface-raised); color: var(--kit-text);
+  box-shadow: var(--kit-shadow-rest);
+  font-size: var(--kp-text-xs); font-weight: 600; cursor: pointer;
+  transition: background-color var(--kp-dur) var(--kp-ease);
+}
+.kit-copy .material-symbols-outlined { font-size: var(--kp-icon-sm); }
+.kit-copy:hover { background: var(--kit-surface-selected); }
+.kit-copy[data-copied] { background: var(--kit-accent-tint); color: var(--kit-accent-text); }
+.kit-copy:focus-visible { outline: var(--kp-ring) solid var(--kit-focus); outline-offset: var(--kp-hairline); }
+
+/* ── Breakpoints (container: the content column) ── */
+@container kit (max-width: 1180px) {
+  .kit-head { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .kit-fp { justify-self: start; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .kit-body { grid-template-columns: minmax(0, 1fr); }
+  .kit-rail { display: none; }
+}
+@container kit (max-width: 1040px) {
+  .kit-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kit-wall > li { grid-column: span var(--s3, 1); }
+  /* The band becomes a strip to scrub through: five panels never leave an
+     orphan row. */
+  .kit-compare.is-compact { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding-bottom: var(--kp-space-1); }
+  .kit-compare.is-compact > li { flex: 0 0 min(72%, 280px); scroll-snap-align: start; }
+}
+@container kit (max-width: 740px) {
+  .kit-wall { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kit-wall > li { grid-column: span var(--s2, 1); }
+}
+@container kit (max-width: 480px) {
+  .kit-wall { grid-template-columns: minmax(0, 1fr); gap: var(--kp-space-3); }
+  .kit-wall > li { grid-column: auto; }
+  .kit-fp { justify-self: stretch; flex-wrap: wrap; overflow: visible; }
+  .kit-fp-cell { flex: 1 1 42%; min-height: 0; }
+  .kit-fp-controls { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; }
+  .kit-head { padding-bottom: var(--kp-space-3); }
+  .kit-search { max-width: none; flex-basis: 100%; }
+  .kit-search kbd { display: none; }
+  /* The search bar is opaque here: section headings passing under a
+     translucent bar read through it on a small screen. */
+  .kit-toolbar { background: var(--kp-canvas); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (max-width: 900px) {
+  .kit-play { grid-template-columns: minmax(0, 1fr); }
+  .kit-compare:not(.is-compact) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kit-compare:not(.is-compact) > li:last-child:nth-child(odd) { grid-column: span 2; }
+}
+@media (max-width: 520px) {
+  .kit-compare:not(.is-compact) { grid-template-columns: minmax(0, 1fr); }
+  .kit-compare:not(.is-compact) > li:last-child:nth-child(odd) { grid-column: auto; }
+  /* Phones: the detail page uses the full width. */
+  .kit-detail.dh-detail { padding-left: var(--kp-inset-phone); padding-right: var(--kp-inset-phone); }
+  .kit-topbar { padding: 0 var(--kp-inset-phone); }
+  /* Two lines of description, always: the tab strip starts at the same
+     place in every system. The full text is on the Overview's first screen
+     in the system's own words; here it is the page's one-line summary. */
+  .kit-detail .dh-detail-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kit-detail .dh-detail-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; height: calc(var(--kp-desc-lh) * 2); min-height: 0; }
+  .kit-tabs { margin-left: calc(var(--kp-inset-phone) * -1); margin-right: calc(var(--kp-inset-phone) * -1); padding-left: var(--kp-inset-phone); padding-right: var(--kp-inset-phone); }
+  .kit-hero { padding: var(--kp-space-5) var(--kp-space-4); min-height: 220px; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uikit-card, .kit-seg button, .kit-filters button, .kit-rail a, .kit-search input, .kit-tabs, .kit-crumb-link { transition: none; }
+  .uikit-card:hover { transform: none; }
+  .kit-wall > li, .kit-compare, .kit-hero-inner { animation: none; }
+}

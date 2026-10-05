@@ -52,6 +52,20 @@ const nextConfig: NextConfig = {
       "@fluentui/react-components",
     ],
   },
+  /* /ui-kit stays static in both forms. A link that carries a place
+     (/ui-kit?c=buttons) is served by a second static page that waits for the
+     place before drawing, so the plain /ui-kit HTML can contain its overview
+     and a deep link still never shows it. beforeFiles: the rewrite has to win
+     over the /ui-kit page itself. */
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/ui-kit", has: [{ type: "query", key: "c" }], destination: "/ui-kit/entry" },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   async redirects() {
     return [
       { source: "/landing-southleft", destination: "/", permanent: true },
