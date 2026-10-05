@@ -296,14 +296,25 @@ test.describe("Builder - finance templates", () => {
 
     /* Configuration: the data level. */
     await stage.getByRole("button", { name: "Configure Performance results", exact: true }).last().click();
-    const config = stage.locator(".dh-config");
+    const config = page.getByRole("dialog", { name: "Configuration" });
+    await expect(config).toBeVisible();
+    await expect(async () => {
+      await config.getByRole("tab", { name: "Display", exact: true }).click();
+      await expect(config.getByRole("tab", { name: "Display", exact: true })).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
     await expect(config).toContainText("Account > Asset class > Security");
     await config.getByRole("combobox", { name: "Data level" }).click();
     await page.getByRole("option", { name: "Account only", exact: true }).click();
     await expect(stage.locator(`${expanded} .ag-row`, { hasText: "Halden Capital Ord" })).toHaveCount(0);
     await expect(rows(expanded)).toHaveCount(6);
 
-    /* Escape collapses the panel; the report is still being presented. */
+    /* Escape closes the Configuration dialog only: the panel stays expanded. */
+    await page.keyboard.press("Escape");
+    await expect(config).toHaveCount(0);
+    await expect(stage.locator(expanded)).toBeVisible();
+    await expect(rows(expanded)).toHaveCount(6);
+
+    /* Escape again collapses the panel; the report is still being presented. */
     await page.keyboard.press("Escape");
     await expect(stage.locator(expanded)).toHaveCount(0);
     await expect(stage.locator(".bp-main [data-block-id]").first()).toBeVisible();

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * The panel Configuration dialog (the original Analytics Dashboard's): opened
@@ -40,6 +40,15 @@ async function openConfig(page: Page) {
   return { stage, dialog, opener: stage.getByRole("button", { name: "Configure Performance results", exact: true }).first() };
 }
 
+/** Carbon's modal fades in: a click in its first frames can land before it takes pointer events. */
+async function selectTab(dialog: Locator, name: string) {
+  const tab = dialog.getByRole("tab", { name, exact: true });
+  await expect(async () => {
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true", { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}
+
 const firstRows = (page: Page) => page.locator(".dh-panel-expanded .ag-center-cols-container .ag-row");
 
 test.describe("panel Configuration dialog", () => {
@@ -62,8 +71,7 @@ test.describe("panel Configuration dialog", () => {
     await expect(page.getByText("Aggregated shows one row per group. Turn it off to see every row.")).toBeVisible();
 
     /* Groups: remove the row group (empty state), add Asset class: the grid regroups. */
-    await dialog.getByRole("tab", { name: "Groups" }).click();
-    await expect(dialog.getByRole("tab", { name: "Groups" })).toHaveAttribute("aria-selected", "true");
+    await selectTab(dialog, "Groups");
     await dialog.getByRole("button", { name: /^Remove .* from row group$/ }).click();
     await expect(dialog.getByText("No row groups")).toBeVisible();
     await expect(dialog.getByText("Add attributes from Available")).toBeVisible();
@@ -127,7 +135,7 @@ test.describe("panel Configuration dialog", () => {
     /* Down to a metric that is not chosen, and Enter adds it. */
     const count = dialog.getByRole("heading", { name: /^Columns: \d+$/ });
     const before = Number((await count.textContent())!.replace(/\D/g, ""));
-    await dialog.getByRole("textbox", { name: "Filter Columns" }).fill("weight");
+    await dialog.getByRole("textbox", { name: "Filter Columns" }).fill("IVaR");
     const leaf = dialog.locator('.dh-cfg-leaf.is-addable').first();
     await leaf.focus();
     await page.keyboard.press("Enter");
@@ -146,7 +154,7 @@ test.describe("panel Configuration dialog", () => {
       const { dialog, opener } = await openConfig(page);
       await expect(dialog.getByRole("tab", { name: "Columns" })).toHaveAttribute("aria-selected", "true");
       /* One change: show values as % of total, applied at once. */
-      await dialog.getByRole("tab", { name: "Display" }).click();
+      await selectTab(dialog, "Display");
       const share = dialog.getByRole("combobox", { name: "Show values as" });
       await expect(share).toBeVisible();
       if (system === "uoaui" || system === "Carbon") await share.selectOption("% of total");
@@ -156,7 +164,7 @@ test.describe("panel Configuration dialog", () => {
       }
       await expect(dialog.getByRole("button", { name: "Reset to first loaded" })).toBeEnabled();
       /* Nothing in the dialog spills sideways. */
-      const overflow = await dialog.evaluate((el) => el.scrollWidth - el.clientWidth);
+      const overflow = await dialog.locator(".dh-cfg").evaluate((el) => el.scrollWidth - el.clientWidth);
       expect(overflow).toBeLessThanOrEqual(1);
       await dialog.getByRole("button", { name: "Close", exact: true }).click();
       await expect(page.getByRole("dialog", { name: "Configuration" })).toHaveCount(0);
