@@ -51,12 +51,15 @@ test.describe("Present is full screen on the desktop device", () => {
         const main = document.querySelector(".present-stage .bp-main") as HTMLElement;
         const gutter = parseFloat(getComputedStyle(main.firstElementChild as HTMLElement).paddingLeft);
         const rects = [...main.querySelectorAll("[data-block-id]")].map((el) => el.getBoundingClientRect());
-        return { gutter, minLeft: Math.min(...rects.map((r) => r.left)), maxRight: Math.max(...rects.map((r) => r.right)), win: window.innerWidth };
+        const m = main.getBoundingClientRect();
+        /* Relative to the body (the template's own sidebar sits beside it). */
+        return { gutter, minLeft: Math.min(...rects.map((r) => r.left)) - m.left, rightGap: m.right - Math.max(...rects.map((r) => r.right)), bodyRight: m.right, win: window.innerWidth };
       });
       expect(blocks.gutter, "a page gutter exists").toBeGreaterThan(0);
       expect(blocks.gutter, "the gutter is a gutter, not a column").toBeLessThan(64);
+      expect(Math.abs(blocks.bodyRight - blocks.win), "the body reaches the window's right edge").toBeLessThanOrEqual(1);
       expect(Math.abs(blocks.minLeft - blocks.gutter), "first block starts at the gutter").toBeLessThanOrEqual(2);
-      expect(Math.abs(blocks.win - blocks.gutter - blocks.maxRight), "last block ends at the gutter").toBeLessThanOrEqual(2);
+      expect(Math.abs(blocks.rightGap - blocks.gutter), "last block ends at the gutter").toBeLessThanOrEqual(2);
     });
   }
 
