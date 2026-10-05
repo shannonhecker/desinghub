@@ -8691,6 +8691,13 @@ th[class*="-th"] > span { vertical-align: middle; }
   flex-direction: column;
   gap: 10px;
 }
+/* The panel body scrolls (c64a2b0 dropped its overflow with the old rule,
+   so a long library or inspector was clipped under the panel's edge). */
+.component-library > .lib-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
 .lib-search {
   position: relative;
   margin: 0 0 12px;
