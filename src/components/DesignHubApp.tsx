@@ -1,5 +1,6 @@
 "use client";
 
+import { LIBRARY_INTER_300_CSS } from "@/fonts/libraryInter300";
 import { ChromeIcon } from "@/components/builder/ChromeIcon";
 import React from "react";
 import Link from "next/link";
@@ -422,6 +423,8 @@ export function DesignHubApp({ held = false }: {
           link here was a duplicate "Skip to main content" (WCAG 2.4.1/4.1.2). */}
       {/* Inject the DS CSS (sanitized to prevent injection) */}
       <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(t.css) }} />
+      {/* uoaui's light text: see src/fonts/libraryInter300.ts. */}
+      {activeSystem === "uoaui" ? <style id="library-inter-300" dangerouslySetInnerHTML={{ __html: LIBRARY_INTER_300_CSS }} /> : null}
 
       <div className="uikit-shell-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         {/* ICON-RAIL — the SOLE primary nav (owner: the old top header nav was

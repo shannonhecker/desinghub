@@ -99,6 +99,19 @@ describe("self-hosted fonts", () => {
     expect(weights("Bricolage Grotesque")).toEqual(["500", "700", "800"]);
   });
 
+  it("Inter 300 exists for the library's uoaui pages only, never for the builder", () => {
+    const light = readFileSync(join(FONTS, "libraryInter300.ts"), "utf8");
+    expect(light).toContain("font-weight: 300");
+    expect([...light.matchAll(/new URL\("\.\/inter\/(inter-[a-z-]+\.woff2)"/g)].length).toBe(7);
+    /* The site-wide stylesheet, which the builder loads, declares none. */
+    expect(css).not.toMatch(/font-family: "Inter"; font-style: normal; font-weight: 300/);
+    const users = sources(join(ROOT, "src")).filter((f) => /libraryInter300/.test(readFileSync(f, "utf8"))).map((f) => f.slice(ROOT.length + 1));
+    expect(users).toEqual(["src/components/DesignHubApp.tsx"]);
+    const app = readFileSync(join(ROOT, "src/components/DesignHubApp.tsx"), "utf8");
+    expect(app).toMatch(/activeSystem === "uoaui" \? <style id="library-inter-300"/);
+    expect(sources(join(ROOT, "src/components/builder")).some((f) => /DesignHubApp/.test(readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "")) && /from ["']@\/components\/DesignHubApp["']/.test(readFileSync(f, "utf8")))).toBe(false);
+  });
+
   it("the icon font blocks rather than swapping an icon's name in as a word", () => {
     const face = css.slice(css.indexOf('font-family: "Material Symbols Outlined";'));
     expect(face.slice(0, face.indexOf("}"))).toContain("font-display: block");

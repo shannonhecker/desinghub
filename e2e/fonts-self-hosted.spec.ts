@@ -98,3 +98,17 @@ test("each design system's own typeface, and the icon font, load by the names th
   const size = Number((await page.request.get(icon[0])).headers()["content-length"]);
   expect(size, "the icon font is the reduced file, not the 4 MB one").toBeLessThan(1_300_000);
 });
+
+test("Inter Light reaches the library's uoaui pages and never the builder", async ({ page }) => {
+  const seen = watch(page);
+  const light = () => page.evaluate(() => [...document.fonts].filter((f) => /Inter/.test(f.family) && f.weight === "300").length);
+  await page.goto("/ui-kit?ds=uoaui&c=buttons", { waitUntil: "networkidle" });
+  expect(await light(), "uoaui library page").toBe(7);
+  expect(await loaded(page, '300 16px "Inter"')).toBe(true);
+  /* Another system in view: the face goes with uoaui's stylesheet. */
+  await page.goto("/ui-kit?ds=salt&c=buttons", { waitUntil: "networkidle" });
+  expect(await light(), "Salt library page").toBe(0);
+  await page.goto("/builder", { waitUntil: "networkidle" });
+  expect(await light(), "builder").toBe(0);
+  expect(seen.foreign).toEqual([]);
+});
